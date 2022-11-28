@@ -35,7 +35,7 @@ class CCDPostSerializer(serializers.ModelSerializer):
     nombre = serializers.CharField(validators=[UniqueValidator(queryset=CuadrosClasificacionDocumental.objects.all(), message='El nombre del Cuadro de Clasificación Documental debe ser único')])
     class Meta:
         model = CuadrosClasificacionDocumental
-        fields = ['id_ccd', 'id_organigrama', 'version', 'nombre', 'ruta_soporte']
+        fields = ['id_ccd', 'id_organigrama', 'version', 'nombre']
         extra_kwargs = {
             'id_organigrama': {'required': True},
             'version': {'required': True},

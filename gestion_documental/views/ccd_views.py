@@ -55,7 +55,6 @@ class CreateCuadroClasificacionDocumental(generics.CreateAPIView):
         organigrama = serializer.validated_data.get('id_organigrama')
         organigrama_instance = Organigramas.objects.filter(id_organigrama=organigrama.id_organigrama).first()
         if organigrama_instance:
-            print(organigrama_instance)
             if organigrama_instance.fecha_terminado == None:
                 return Response({'success': False, 'detail': 'No se pueden seleccionar organigramas que no estén terminados'}, status=status.HTTP_403_FORBIDDEN)
             serializador = serializer.save()
