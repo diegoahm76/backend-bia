@@ -267,18 +267,20 @@ class CreateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
         else:
             return Response({'success': False, 'detail': 'No existe ninguna Tabla de Retención Documental con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
 
-# @api_view(['POST'])
-# def uploadDocument(request, id_serie_subserie_uniorg_trd):
-#     ssuorg_trd = SeriesSubSUnidadOrgTRD.objects.filter(id_serie_subs_unidadorg_trd=id_serie_subserie_uniorg_trd).first()
-#     if ssuorg_trd:
-#         if ssuorg_trd.id_trd.actual:
-#             return Response({'success': False, 'detail': ''})
-#         ssuorg_trd.ruta_archivo_cambio = request.FILES.get('document')
-#         ssuorg_trd.save()
-#     else:
-#         return Response({'success': False, 'detail': 'No se encontró ninguna ssuorg-trd con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+@api_view(['POST'])
+def uploadDocument(request, id_serie_subserie_uniorg_trd):
+    ssuorg_trd = SeriesSubSUnidadOrgTRD.objects.filter(id_serie_subs_unidadorg_trd=id_serie_subserie_uniorg_trd).first()
+    if ssuorg_trd:
+        if ssuorg_trd.id_trd.actual:
+            ssuorg_trd.ruta_archivo_cambio = request.FILES.get('document')
+            ssuorg_trd.save()
+            return Response({'success': True, 'detail': 'Documento cargado correctamente'}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'success': False, 'detail': 'El documento solo debe ser subido cuando se realizan cambios a una trd actual'}, status=status.HTTP_403_FORBIDDEN)
+    else:
+        return Response({'success': False, 'detail': 'No se encontró ninguna ssuorg-trd con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
 
-#     return Response({'success': True, 'detail': 'Documento cargado correctamente'}, status=status.HTTP_201_CREATED)
+    
 
 class UpdateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
     serializer_class = SeriesSubSeriesUnidadesOrgTRDPutSerializer
@@ -390,6 +392,7 @@ class UpdateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
                         tiempo_retencion_ac = previous_serie_subs_unidad_org_trd.tiempo_retencion_ac,
                         descripcion_procedimiento = previous_serie_subs_unidad_org_trd.descripcion_procedimiento,
                         justificacion = previous_serie_subs_unidad_org_trd.justificacion_cambio,
+                        ruta_archivo = previous_serie_subs_unidad_org_trd.ruta_archivo_cambio,
                         id_persona_cambia = persona_usuario_logeado
                     )
 
@@ -464,7 +467,7 @@ class PostTablaRetencionDocumental(generics.CreateAPIView):
             }
             Util.save_auditoria(auditoria_data)
 
-            return Response({'success': True, 'detail': 'TRD creada exitosamente'}, status=status.HTTP_201_CREATED)
+            return Response({'success': True, 'detail': 'TRD creada exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
         else:
             return Response({'success': False, 'detail': 'No existe un Cuadro de Clasificación Documental con el id_ccd enviado'}, status=status.HTTP_400_BAD_REQUEST)
 

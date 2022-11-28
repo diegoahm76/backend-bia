@@ -169,6 +169,8 @@ class FinalizarCuadroClasificacionDocumental(generics.RetrieveUpdateAPIView):
                         subseries_difference_list = [subserie for subserie in subseries_list if subserie not in subseries_asignacion_list]
                         subseries_difference_instance = SubseriesDoc.objects.filter(id_subserie_doc__in=subseries_difference_list).values()
                         return Response({'success': False, 'detail': 'Debe asociar todas las subseries creadas', 'Subseries sin asignar': subseries_difference_instance}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    #return Response({'holis': 'holis'})
 
                 if confirm == 'true':
                     if not set(series_list).issubset(series_asignacion_list):
@@ -190,10 +192,10 @@ class FinalizarCuadroClasificacionDocumental(generics.RetrieveUpdateAPIView):
                     series_difference_instance.delete()
                     subseries_difference_instance.delete()
                     
-                    ccd.fecha_terminado = datetime.now()
-                    ccd.save()
-                    return Response({'success': True, 'detail': 'Finalizado el CCD'}, status=status.HTTP_201_CREATED)
-                
+                ccd.fecha_terminado = datetime.now()
+                ccd.save()
+                return Response({'success': True, 'detail': 'Finalizado el CCD'}, status=status.HTTP_201_CREATED)
+            
             else:
                 return Response({'success': False, 'detail': 'Ya se encuentra finalizado este CCD'}, status=status.HTTP_404_NOT_FOUND)
         else:

@@ -12,15 +12,16 @@ urlpatterns = [
     path('get-list/', views.GetTablaRetencionDocumental.as_view(), name='trd-get-list'),
     path('create/', views.PostTablaRetencionDocumental.as_view(), name='trd-create'),
     path('update/<str:pk>/', views.UpdateTablaRetencionDocumental.as_view(), name='trd-update'),
-    # path('finish/<str:id_trd>/', views.FinalizarTablaRetencionDocumental.as_view(), name='trd-finish'),
+    path('finish/<str:id_trd>/', views.FinalizarTablaRetencionDocumental.as_view(), name='trd-finish'),
     path('get-ccd-terminados/<str:pk>/', views.GetCCDTerminadoByPk.as_view(), name='ccd-terminados-get-by-id'),
     path('get-trd-terminados/<str:pk>/', views.GetTRDTerminadoByPk.as_view(), name='trd-terminados-get-by-id'),
     path('activar/',views.Activar.as_view(),name='activar'),
+    path('confirmar-cambios/<str:id_trd>/',views.CambiosPorConfirmar.as_view(),name='confirmar-cambios-trd'),
+
     path('serie-subserie-unidad-trd/asignar/<str:id_trd>/',views.CreateSerieSubSeriesUnidadesOrgTRD.as_view(),name='serie-subserie-unidad-trd-create'),
     path('serie-subserie-unidad-trd/update/<str:id_serie_subs_unidadorg_trd>/', views.UpdateSerieSubSeriesUnidadesOrgTRD.as_view(),name='serie-subserie-unidad-trd-update'),
-    path('confirmar-cambios/<str:id_trd>/',views.CambiosPorConfirmar.as_view(),name='confirmar-cambios-trd'),
     path('serie-subserie-unidad-trd/delete/<str:id_ssuorg_trd>/',views.DeleteSerieSubserieUnidadTRD.as_view(), name='serie-subserie-unidad-trd-delete'),
-    path('serie-subserie-unidad-trd/delete/<str:id_ssuorg_trd>/',views.DeleteSerieSubserieUnidadTRD.as_view(), name='serie-subserie-unidad-trd-delete'),
+    path('serie-subserie-unidad-trd/upload/document/<str:id_serie_subserie_uniorg_trd>/',views.uploadDocument, name='serie-subserie-unidad-trd-upload-document'),
 
 
     # FORMATOS TIPOS MEDIO

@@ -56,7 +56,7 @@ class TRDPostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TablaRetencionDocumental
-        fields = ['id_trd', 'id_ccd', 'version', 'nombre', 'ruta_soporte']
+        fields = ['id_trd', 'id_ccd', 'version', 'nombre']
         extra_kwargs = {
             'id_ccd': {'required': True},
             'version': {'required': True},
