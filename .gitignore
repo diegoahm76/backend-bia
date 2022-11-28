@@ -1,6 +1,5 @@
 myenv/
 db.sqlite3
 report.html
-staticfiles/
 static/media/
 static/images/
