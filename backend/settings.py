@@ -204,6 +204,7 @@ STATICFILES_DIRS = [
 MEDIA_ROOT = BASE_DIR / 'static/media'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+
 CSRF_TRUSTED_ORIGINS = ['https://web-production-7eaf.up.railway.app',
                         'https://web-production-e470.up.railway.app']
 CORS_ALLOW_ALL_ORIGINS = True
