@@ -1032,25 +1032,34 @@ class DesactivarTipologiaActual(generics.UpdateAPIView):
         else:
             return Response({'success':False, 'detail':'La tipologia ingresada no existe'}, status=status.HTTP_404_NOT_FOUND)
 
-class finalizarTRD(generics.UpdateAPIView):
+class finalizarTRD(generics.RetrieveUpdateAPIView):
     serializer_class = TRDFinalizarSerializer
     queryset = TablaRetencionDocumental.objects.all()
     
     def put(self, request, pk):
         trd_ingresada = pk
-        confirm = request.query_params("confirm")
+        confirm = request.query_params.get("confirm")
         trd = TablaRetencionDocumental.objects.filter(id_trd = trd_ingresada).first()
-        series_subseries_unidad_org_trd = SeriesSubSUnidadOrgTRD.objects.filter(id_serie_subs_unidadorg_trd = trd_ingresada).values()
-        for i in series_subseries_unidad_org_trd:
-            if i['cod_disposicion_final'] == None and i['digitalizacion_dis_final'] == None and i['tiempo_retencion_ag'] == None and i['tiempo_retencion_ac'] == None:
-                return Response({'success': False, 'detail': 'No se encontró información relacionada a ese id'}, status=status.HTTP_403_FORBIDDEN)
-            if i['digitalizacion_dis_final'] == None: 
-                return Response({'success': False, 'detail': 'No se encontró información relacionada a ese id'}, status=status.HTTP_403_FORBIDDEN)
-            if i['tiempo_retencion_ag'] == None:
-                return Response({'success': False, 'detail': 'No se encontró información relacionada a ese id'}, status=status.HTTP_403_FORBIDDEN)
-            if i['tiempo_retencion_ac'] == None:
-                return Response({'success': False, 'detail': 'No se encontró información relacionada a ese id'}, status=status.HTTP_403_FORBIDDEN)
-        ids_series_subseries_unidad_org_trd = [i['id_serie_subs_unidadorg_trd'] for i in series_subseries_unidad_org_trd]
+        if trd.fecha_terminado == None:
+            series_subseries_unidad_org_trd = SeriesSubSUnidadOrgTRD.objects.filter(id_trd = trd_ingresada).values()
+            for i in series_subseries_unidad_org_trd:
+                if i['cod_disposicion_final'] != None and i['digitalizacion_dis_final'] != None and i['tiempo_retencion_ag'] != None and i['tiempo_retencion_ac'] != None:
+                    consulta = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_serie_subserie_unidadorg_trd = i['id_serie_subs_unidadorg_trd']).first()
+                    if not consulta:
+                        return Response({'success': False, 'detail': 'La relación ' + str(i['id_serie_subs_unidadorg_trd']) +  ' debe tener una tipología asignada'}, status=status.HTTP_403_FORBIDDEN)    
+            ids_series_subseries_unidad_org_trd = [i['id_serie_subs_unidadorg_trd'] for i in series_subseries_unidad_org_trd]
+            series_subseries_unidad_org_trd_tipologias = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_serie_subserie_unidadorg_trd__in = ids_series_subseries_unidad_org_trd).values()
+            id_tipologias_usadas = [i['id_tipologia_doc_id'] for i in series_subseries_unidad_org_trd_tipologias]
+            tipologias_sin_usar_instance = TipologiasDocumentales.objects.filter(~Q(id_tipologia_documental__in = id_tipologias_usadas))
+            if confirm == 'true':
+                tipologias_sin_usar_instance.delete()
+            if (tipologias_sin_usar_instance.values()):
+                return Response({'success': False, 'detail': 'Hay tipologias documentales sin usar', 'Tipologías sin usar' : tipologias_sin_usar_instance.values()}, status=status.HTTP_403_FORBIDDEN)
+            trd.fecha_terminado = datetime.now()
+            trd.save()
+        else:
+            return Response({'success': False, 'detail': 'Esta TRD ya está finalizada'}, status=status.HTTP_403_FORBIDDEN)
+        return Response({'success': True, 'detail': 'TRD finalizada con éxito'}, status=status.HTTP_200_OK)
         
         
         
