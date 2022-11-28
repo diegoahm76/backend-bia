@@ -288,6 +288,16 @@
           "subsistema":"GEST",
           "descripcion":"Permite adoptar una nueva Tabla de Control de Acceso de la entidad en el sistema"
         }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 33,
+        "fields": {
+          "id_modulo": 33,
+          "nombre_modulo": "Catálogo de Bienes",
+          "subsistema":"ALMA",
+          "descripcion":"Permite administrar el catálogo de los bienes de la entidad a manejar en el subsistema de Almacén"
+        }
       }
 
 

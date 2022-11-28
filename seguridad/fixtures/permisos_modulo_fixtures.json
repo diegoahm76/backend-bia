@@ -790,5 +790,41 @@
         "id_modulo": 32,
         "cod_permiso": "CO"
       }
+    },
+    {
+      "model": "seguridad.PermisosModulo",
+      "pk": 101,
+      "fields": {
+        "id_permisos_modulo":101,
+        "id_modulo": 33,
+        "cod_permiso": "CR"
+      }
+    },
+    {
+      "model": "seguridad.PermisosModulo",
+      "pk": 102,
+      "fields": {
+        "id_permisos_modulo":102,
+        "id_modulo": 33,
+        "cod_permiso": "AC"
+      }
+    },
+    {
+      "model": "seguridad.PermisosModulo",
+      "pk": 103,
+      "fields": {
+        "id_permisos_modulo":103,
+        "id_modulo": 33,
+        "cod_permiso": "BO"
+      }
+    },
+    {
+      "model": "seguridad.PermisosModulo",
+      "pk": 104,
+      "fields": {
+        "id_permisos_modulo":104,
+        "id_modulo": 33,
+        "cod_permiso": "CO"
+      }
     }
   ]
