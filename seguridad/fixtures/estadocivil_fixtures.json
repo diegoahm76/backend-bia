@@ -1,0 +1,57 @@
+[
+    {
+        "model": "seguridad.EstadoCivil",
+        "pk" : 1,
+        "fields": {
+            "cod_estado_civil" : "S",
+            "nombre": "Soltero",
+            "precargado": true,
+            "activo" : true,
+            "item_ya_usado" : false
+        }
+    },
+    {
+        "model": "seguridad.EstadoCivil",
+        "pk" : 2,
+        "fields": {
+            "cod_estado_civil" : "C",
+            "nombre": "Casado",
+            "precargado": true,
+            "activo" : true,
+            "item_ya_usado" : false
+        }
+    },
+    {
+        "model": "seguridad.EstadoCivil",
+        "pk" : 3,
+        "fields": {
+            "cod_estado_civil" : "U",
+            "nombre": "Unión libre",
+            "precargado": true,
+            "activo" : true,
+            "item_ya_usado" : false
+        }
+    },
+    {
+        "model": "seguridad.EstadoCivil",
+        "pk" : 4,
+        "fields": {
+            "cod_estado_civil" : "V",
+            "nombre": "Viudo",
+            "precargado": true,
+            "activo" : true,
+            "item_ya_usado" : false
+        }
+    },
+    {
+        "model": "seguridad.EstadoCivil",
+        "pk" : 5,
+        "fields": {
+            "cod_estado_civil" : "D",
+            "nombre": "Divorciado",
+            "precargado": true,
+            "activo" : true,
+            "item_ya_usado" : false
+        }
+    }
+]

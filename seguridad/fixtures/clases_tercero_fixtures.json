@@ -1,0 +1,42 @@
+[
+    {
+        "model": "seguridad.ClasesTercero",
+        "pk" : 1,
+        "fields": {
+            "id_clase_tercero" : 1,
+            "nombre": "Empresa"
+        }
+    },
+    {
+        "model": "seguridad.ClasesTercero",
+        "pk" : 2,
+        "fields": {
+            "id_clase_tercero" : 2,
+            "nombre": "Funcionario"
+        }
+    },
+    {
+        "model": "seguridad.ClasesTercero",
+        "pk" : 3,
+        "fields": {
+            "id_clase_tercero" : 3,
+            "nombre": "Contratista"
+        }
+    },
+    {
+        "model": "seguridad.ClasesTercero",
+        "pk" : 4,
+        "fields": {
+            "id_clase_tercero" : 4,
+            "nombre": "Proveedor"
+        }
+    },
+    {
+        "model": "seguridad.ClasesTercero",
+        "pk" : 5,
+        "fields": {
+            "id_clase_tercero" : 5,
+            "nombre": "Aseguradora"
+        }
+    }
+]

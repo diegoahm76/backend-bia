@@ -1,0 +1,22 @@
+[
+    {
+        "model": "seguridad.Roles",
+        "pk" : 1,
+        "fields": {
+            "id_rol" : 1,
+            "nombre_rol": "Rol Super Usuario",
+            "descripcion_rol": "Rol exclusivo para creación y administración de usuarios",
+            "Rol_sistema": true
+        }
+    },
+    {
+        "model": "seguridad.Roles",
+        "pk" : 2,
+        "fields": {
+            "id_rol" : 2,
+            "nombre_rol": "Rol Usuarios Web",
+            "descripcion_rol": "Rol exclusivo para usuarios externos creados vía portal de usuarios",
+            "Rol_sistema": true
+        }
+    }
+]

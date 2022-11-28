@@ -1,0 +1,29 @@
+[
+    {
+        "model": "almacen.MetodosValoracionArticulos",
+        "pk" : 1,
+        "fields": {
+            "cod_metodo_valoracion":1,
+            "nombre":"Promedio Ponderado",
+            "descripcion":"Promedio Ponderado"
+        }
+    },
+    {
+        "model": "almacen.MetodosValoracionArticulos",
+        "pk" : 2,
+        "fields": {
+            "cod_metodo_valoracion":2,
+            "nombre":"PEPS",
+            "descripcion":"Primeros en Entrar, primeros en salir"
+        }
+    },
+    {
+        "model": "almacen.MetodosValoracionArticulos",
+        "pk" : 3,
+        "fields": {
+            "cod_metodo_valoracion":3,
+            "nombre":"UEPS",
+            "descripcion":"Últimos en entrar, primeros en salir"
+        }
+    }
+]

@@ -1,0 +1,200 @@
+[
+    {
+        "model": "almacen.UnidadesMedida",
+        "pk" : 1,
+        "fields": {
+            "id_unidad_medida":1,
+            "nombre":"metro",
+            "abreviatura":"m",
+            "id_magnitud":1,
+            "precargado": true
+        }
+    },
+    {
+        "model": "almacen.UnidadesMedida",
+        "pk" : 2,
+        "fields": {
+            "id_unidad_medida":2,
+            "nombre":"kilómetro",
+            "abreviatura":"km",
+            "id_magnitud":1,
+            "precargado": true
+        }
+    },
+    {
+        "model": "almacen.UnidadesMedida",
+        "pk" : 3,
+        "fields": {
+            "id_unidad_medida":3,
+            "nombre":"centimetro",
+            "abreviatura":"cm",
+            "id_magnitud":1,
+            "precargado": true
+        }
+    },
+    {
+        "model": "almacen.UnidadesMedida",
+        "pk" : 4,
+        "fields": {
+            "id_unidad_medida":4,
+            "nombre":"litro",
+            "abreviatura":"lt",
+            "id_magnitud":2,
+            "precargado": true
+        }
+    },
+    {
+        "model": "almacen.UnidadesMedida",
+        "pk" : 5,
+        "fields":{
+            "id_unidad_medida":5,
+            "nombre":"galón",
+            "abreviatura":"gal",
+            "id_magnitud":2,
+            "precargado": true
+        }
+    },
+    {
+        "model": "almacen.UnidadesMedida",
+        "pk" : 6,
+        "fields": {
+            "id_unidad_medida":6,
+            "nombre":"centilitro",
+            "abreviatura":"cl",
+            "id_magnitud":2,
+            "precargado": true
+        }
+    },
+    {
+        "model": "almacen.UnidadesMedida",
+        "pk" : 7,
+        "fields": {
+            "id_unidad_medida":7,
+            "nombre":"kilogramo",
+            "abreviatura":"kg",
+            "id_magnitud":4,
+            "precargado": true
+        }
+    },
+    {
+        "model": "almacen.UnidadesMedida",
+        "pk" : 8,
+        "fields": {
+            "id_unidad_medida":8,
+            "nombre":"libra",
+            "abreviatura":"lb",
+            "id_magnitud":4,
+            "precargado": true
+        }
+    },
+    {
+        "model": "almacen.UnidadesMedida",
+        "pk" : 9,
+        "fields": {
+            "id_unidad_medida":9,
+            "nombre":"gramo",
+            "abreviatura":"g",
+            "id_magnitud":4,
+            "precargado": true
+        }
+    },
+    {
+        "model": "almacen.UnidadesMedida",
+        "pk" : 10,
+        "fields": {
+            "id_unidad_medida":10,
+            "nombre":"metro cuadrado",
+            "abreviatura":"m2",
+            "id_magnitud":5,
+            "precargado": true
+        }
+    },
+    {
+        "model": "almacen.UnidadesMedida",
+        "pk" : 11,
+        "fields": {
+            "id_unidad_medida":11,
+            "nombre":"hectárea",
+            "abreviatura":"ha",
+            "id_magnitud":5,
+            "precargado": true
+        }
+    },
+    {
+        "model": "almacen.UnidadesMedida",
+        "pk" : 12,
+        "fields": {
+            "id_unidad_medida":12,
+            "nombre":"unidad",
+            "abreviatura":"und",
+            "id_magnitud":3,
+            "precargado": true
+        }
+    },
+    {
+        "model": "almacen.UnidadesMedida",
+        "pk" : 13,
+        "fields": {
+            "id_unidad_medida":13,
+            "nombre":"caja",
+            "abreviatura":"caja",
+            "id_magnitud":3,
+            "precargado": true
+        }
+    },
+    {
+        "model": "almacen.UnidadesMedida",
+        "pk" : 14,
+        "fields": {
+            "id_unidad_medida":14,
+            "nombre":"decena",
+            "abreviatura":"dec",
+            "id_magnitud":3,
+            "precargado": true
+        }
+    },
+    {
+        "model": "almacen.UnidadesMedida",
+        "pk" : 15,
+        "fields": {
+            "id_unidad_medida":15,
+            "nombre":"paquete",
+            "abreviatura":"paq",
+            "id_magnitud":3,
+            "precargado": true
+        }
+    },
+    {
+        "model": "almacen.UnidadesMedida",
+        "pk" : 16,
+        "fields": {
+            "id_unidad_medida":16,
+            "nombre":"lote",
+            "abreviatura":"lote",
+            "id_magnitud":3,
+            "precargado": true
+        }
+    },
+    {
+        "model": "almacen.UnidadesMedida",
+        "pk" : 17,
+        "fields": {
+            "id_unidad_medida":17,
+            "nombre":"docena",
+            "abreviatura":"doc",
+            "id_magnitud":3,
+            "precargado": true
+        }
+    },
+    {
+        "model": "almacen.UnidadesMedida",
+        "pk" : 18,
+        "fields": {
+            "id_unidad_medida":18,
+            "nombre":"millar",
+            "abreviatura":"mill",
+            "id_magnitud":3,
+            "precargado": true
+        }
+    }
+]

@@ -1,0 +1,58 @@
+[
+    {
+        "model": "almacen.Magnitudes",
+        "pk" : "1",
+        "fields": {
+            "cod_magnitud":"1",
+            "nombre":"Longitud"
+        }
+    },
+    {
+        "model": "almacen.Magnitudes",
+        "pk" : "2",
+        "fields": {
+            "cod_magnitud":"2",
+            "nombre":"Volumen"
+        }
+    },
+    {
+        "model": "almacen.Magnitudes",
+        "pk" : "3",
+        "fields": {
+            "cod_magnitud":"3",
+            "nombre":"Cantidad"
+        }
+    },
+    {
+        "model": "almacen.Magnitudes",
+        "pk" : "4",
+        "fields": {
+            "cod_magnitud":"4",
+            "nombre":"Peso"
+        }
+    },
+    {
+        "model": "almacen.Magnitudes",
+        "pk" : "5",
+        "fields": {
+            "cod_magnitud":"5",
+            "nombre":"Superficie"
+        }
+    },
+    {
+        "model": "almacen.Magnitudes",
+        "pk" : "6",
+        "fields": {
+            "cod_magnitud":"6",
+            "nombre":"Temperatura"
+        }
+    },
+    {
+        "model": "almacen.Magnitudes",
+        "pk" : "7",
+        "fields": {
+            "cod_magnitud":"7",
+            "nombre":"Tiempo"
+        }
+    }
+]

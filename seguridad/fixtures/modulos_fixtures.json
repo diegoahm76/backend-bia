@@ -1,0 +1,295 @@
+[
+    {
+      "model": "seguridad.Modulos",
+      "pk": 1,
+      "fields": {
+        "id_modulo": 1,
+        "nombre_modulo": "Personas",
+        "subsistema":"TRSV",
+        "descripcion":"Permite alimentar la información básica de las personas"
+      }
+    },
+    {
+      "model": "seguridad.Modulos",
+      "pk": 2,
+      "fields": {
+        "id_modulo": 2,
+        "nombre_modulo": "Usuarios",
+        "subsistema":"SEGU",
+        "descripcion":"Permite administrar los usuarios del sistema"
+      }
+    },
+    {
+      "model": "seguridad.Modulos",
+      "pk": 3,
+      "fields": {
+        "id_modulo": 3,
+        "nombre_modulo": "Actualizacion de Datos Usuario",
+        "subsistema":"SEGU",
+        "descripcion":"Permite administrar a una persona que tiene un usuario interno, los datos de su usuario desde el sistema-Sóo para usuarios internos"
+      }
+    },
+    {
+      "model": "seguridad.Modulos",
+      "pk": 4,
+      "fields": {
+        "id_modulo": 4,
+        "nombre_modulo": "Actualizacion Datos Usuario Externo",
+        "subsistema":"SEGU",
+        "descripcion":"Permite administrar a una persona que tiene un usuario externo, los datos de su usuario desde el portal web-Sólo para usuarios externos"
+      }
+    },
+    {
+      "model": "seguridad.Modulos",
+      "pk": 5,
+      "fields": {
+        "id_modulo": 5,
+        "nombre_modulo": "Roles",
+        "subsistema":"SEGU",
+        "descripcion":"Permite administrar los roles del sistema"
+      }
+    },
+    {
+      "model": "seguridad.Modulos",
+      "pk": 6,
+      "fields": {
+        "id_modulo": 6,
+        "nombre_modulo": "Estado Civil",
+        "subsistema":"TRSV",
+        "descripcion":"Permite administrar la información básica de los Estados Civiles del sistema"
+      }
+    },
+    {
+        "model": "seguridad.Modulos",
+        "pk": 7,
+        "fields": {
+          "id_modulo": 7,
+          "nombre_modulo": "Tipo de Documento de ID",
+          "subsistema":"TRSV",
+          "descripcion":"Permite administrar los tipos de documentos de identificación"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 8,
+        "fields": {
+          "id_modulo": 8,
+          "nombre_modulo": "Delegación del Rol de SuperUsuario",
+          "subsistema":"SEGU",
+          "descripcion":"Proceso que permite a un SuperUsuario delegar dicha función a otra persona"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 9,
+        "fields": {
+          "id_modulo": 9,
+          "nombre_modulo": "Creación Persona Vía Portal",
+          "subsistema":"SEGU",
+          "descripcion":"Permite crear una persona vía Portal"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 10,
+        "fields": {
+          "id_modulo": 10,
+          "nombre_modulo": "Creación Usuario Vía Portal",
+          "subsistema":"SEGU",
+          "descripcion":"Permite crear un usuario vía Portal"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 11,
+        "fields": {
+          "id_modulo": 11,
+          "nombre_modulo": "Marcas",
+          "subsistema":"ALMA",
+          "descripcion":"Permite administrar la información básica de las Marcas de artículos activos fijos"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 12,
+        "fields": {
+          "id_modulo": 12,
+          "nombre_modulo": "Bodegas",
+          "subsistema":"ALMA",
+          "descripcion":"Permite administrar las bodegas del Almacén creadas en el sistema"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 13,
+        "fields": {
+          "id_modulo": 13,
+          "nombre_modulo": "Porcentajes de IVA",
+          "subsistema":"ALMA",
+          "descripcion":"Permite administrar la información básica de los porcentajes de IVA que manejará el sistema"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 14,
+        "fields": {
+          "id_modulo": 14,
+          "nombre_modulo": "Unidades de Medida",
+          "subsistema":"ALMA",
+          "descripcion":"Permite administrar la información básica de las unidades de medida que manejará el sistema"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 15,
+        "fields": {
+          "id_modulo": 15,
+          "nombre_modulo": "Organigramas",
+          "subsistema":"TRSV",
+          "descripcion":"Permite administrar los organigramas del sistema"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 16,
+        "fields": {
+          "id_modulo": 16,
+          "nombre_modulo": "Cambio de Organigrama Actual",
+          "subsistema":"TRSV",
+          "descripcion":"Permite adoptar un nuevo organigrama de la entidad en el sistema"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 17,
+        "fields": {
+          "id_modulo": 17,
+          "nombre_modulo": "Cargos",
+          "subsistema":"TRSV",
+          "descripcion":"Permite administrar los cargos disponibles en el sistema"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 21,
+        "fields": {
+          "id_modulo": 21,
+          "nombre_modulo": "Programación de Mantenimiento de Computadores",
+          "subsistema":"ALMA",
+          "descripcion":"Permite administrar la información de las programaciones de mantenimiento de computadores"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 22,
+        "fields": {
+          "id_modulo": 22,
+          "nombre_modulo": "Programación de Mantenimiento de Vehículos",
+          "subsistema":"ALMA",
+          "descripcion":"Permite administrar la información de las programaciones de mantenimiento de vehículos"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 23,
+        "fields": {
+          "id_modulo": 23,
+          "nombre_modulo": "Programación de Mantenimiento de Otros activos",
+          "subsistema":"ALMA",
+          "descripcion":"Permite administrar la información de las programaciones de mantenimiento de otros activos"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 24,
+        "fields": {
+          "id_modulo": 24,
+          "nombre_modulo": "Ejecución de Mantenimiento de Computadores",
+          "subsistema":"ALMA",
+          "descripcion":"Permite administrar la información de las ejecuciones de mantenimiento de computadores"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 25,
+        "fields": {
+          "id_modulo": 25,
+          "nombre_modulo": "Ejecución de Mantenimiento de Vehículos",
+          "subsistema":"ALMA",
+          "descripcion":"Permite administrar la información de las ejecuciones de mantenimiento de vehículos"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 26,
+        "fields": {
+          "id_modulo": 26,
+          "nombre_modulo": "Ejecución de Mantenimiento de Otros activos",
+          "subsistema":"ALMA",
+          "descripcion":"Permite administrar la información de las ejecuciones de mantenimiento de otros activos"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 27,
+        "fields": {
+          "id_modulo": 27,
+          "nombre_modulo": "Cuadro de clasificación documental",
+          "subsistema":"GEST",
+          "descripcion":"Permite administrar los Cuadros de Clasificación Documental de la entidad en el sistema"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 28,
+        "fields": {
+          "id_modulo": 28,
+          "nombre_modulo": "Cambio de Cuadro de Clasificación Documental Actual",
+          "subsistema":"GEST",
+          "descripcion":"Permite adoptar un nuevo Cuadro de Clasificación Documental de la entidad en el sistema"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 29,
+        "fields": {
+          "id_modulo": 29,
+          "nombre_modulo": "Tabla de Retención Documental",
+          "subsistema":"GEST",
+          "descripcion":"Permite administrar las Tablas de Retención Documental de la entidad en el sistema"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 30,
+        "fields": {
+          "id_modulo": 30,
+          "nombre_modulo": "Cambio de Tabla de Retención Documental Actual",
+          "subsistema":"GEST",
+          "descripcion":"Permite adoptar una nueva Tabla de Retención Documental de la entidad en el sistema"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 31,
+        "fields": {
+          "id_modulo": 31,
+          "nombre_modulo": "Tabla de Control de Acceso",
+          "subsistema":"GEST",
+          "descripcion":"Permite administrar las Tablas de Control de Acceso de la entidad en el sistema"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 32,
+        "fields": {
+          "id_modulo": 32,
+          "nombre_modulo": "Cambio de Tabla de Control de Acceso Actual",
+          "subsistema":"GEST",
+          "descripcion":"Permite adoptar una nueva Tabla de Control de Acceso de la entidad en el sistema"
+        }
+      }
+
+
+
+  ]

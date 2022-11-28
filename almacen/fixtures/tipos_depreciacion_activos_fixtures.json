@@ -1,0 +1,10 @@
+[
+    {
+        "model": "almacen.TiposDepreciacionActivos",
+        "pk" : 1,
+        "fields": {
+            "cod_tipo_depreciacion":1,
+            "nombre":"Línea Recta"
+        }
+    }
+]

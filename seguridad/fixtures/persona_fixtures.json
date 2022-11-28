@@ -1,0 +1,43 @@
+[
+    {
+        "model": "seguridad.Personas",
+        "pk" : 1,
+        "fields" : {
+            "tipo_documento": "CC",
+            "estado_civil": "S",
+            "representante_legal": null,
+            "tipo_persona": "N",
+            "numero_documento": "1006856548",
+            "digito_verificacion": null,
+            "primer_nombre": "admin",
+            "segundo_nombre": null,
+            "primer_apellido": "admin",
+            "segundo_apellido": null,
+            "nombre_comercial": null,
+            "razon_social": null,
+            "pais_residencia": null,
+            "municipio_residencia": null,
+            "direccion_residencia": null,
+            "direccion_residencia_ref": null,
+            "ubicacion_georeferenciada": "ubicacion",
+            "direccion_laboral": null,
+            "direccion_notificaciones": null,
+            "pais_nacimiento": null,
+            "fecha_nacimiento": "2000-09-05",
+            "sexo": null,
+            "email": "juan.rondon.bonilla@gmail.com",
+            "email_empresarial": "admin@admin.com",
+            "telefono_fijo_residencial": "+573103210287",
+            "telefono_celular": "+573144198170",
+            "telefono_empresa": null,
+            "cod_municipio_laboral_nal": null,
+            "cod_municipio_notificacion_nal": null,
+            "telefono_celular_empresa": null,
+            "telefono_empresa_2": null,
+            "cod_pais_nacionalidad_empresa": null,
+            "acepta_notificacion_sms": true,
+            "acepta_notificacion_email": true,
+            "acepta_tratamiento_datos": true
+        }
+    }
+]

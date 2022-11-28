@@ -1,0 +1,26 @@
+[
+    {
+        "model": "gestion_documental.TiposMediosDocumentos",
+        "pk" : "E",
+        "fields": {
+            "cod_tipo_medio_doc": "E",
+            "nombre": "Electrónico"
+        }
+    },
+    {
+        "model": "gestion_documental.TiposMediosDocumentos",
+        "pk" : "F",
+        "fields": {
+            "cod_tipo_medio_doc": "F",
+            "nombre": "Físico"
+        }
+    },
+    {
+        "model": "gestion_documental.TiposMediosDocumentos",
+        "pk" : "H",
+        "fields": {
+            "cod_tipo_medio_doc": "H",
+            "nombre": "Híbrido"
+        }
+    }
+]  

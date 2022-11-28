@@ -1,0 +1,42 @@
+[
+    {
+        "model": "almacen.PorcentajesIVA",
+        "pk" : 1,
+        "fields": {
+            "id_porcentaje_iva" : 1,
+            "porcentaje": 0.00,
+            "observacion" : "Bienes exentos del IVA",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "almacen.PorcentajesIVA",
+        "pk" : 2,
+        "fields": {
+            "id_porcentaje_iva" : 2,
+            "porcentaje": 5.00,
+            "observacion" : "Tarifa del 5 %",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "almacen.PorcentajesIVA",
+        "pk" : 3,
+        "fields": {
+            "id_porcentaje_iva" : 3,
+            "porcentaje": 16.00,
+            "observacion" : "Tarifa general IVA antes del año 2017, IVA del 16 %",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "almacen.PorcentajesIVA",
+        "pk" : 4,
+        "fields": {
+            "id_porcentaje_iva" : 4,
+            "porcentaje": 19.00,
+            "observacion" : "Tarifa general del IVA artículo 468, IVA del 19 %",
+            "registro_precargado": true
+        }
+    }
+]

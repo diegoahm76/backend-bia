@@ -1,0 +1,26 @@
+[
+    {
+        "model": "almacen.TiposActivo",
+        "pk" : "C",
+        "fields": {
+            "cod_tipo_activo":"C",
+            "nombre":"Computador"
+        }
+    },
+    {
+        "model": "almacen.TiposActivo",
+        "pk" : "V",
+        "fields": {
+            "cod_tipo_activo":"V",
+            "nombre":"Vehículo"
+        }
+    },
+    {
+        "model": "almacen.TiposActivo",
+        "pk" : "O",
+        "fields": {
+            "cod_tipo_activo":"O",
+            "nombre":"Otros Activos"
+        }
+    }
+]

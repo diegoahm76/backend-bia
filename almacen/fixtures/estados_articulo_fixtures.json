@@ -1,0 +1,26 @@
+[
+    {
+        "model": "almacen.EstadosArticulo",
+        "pk" : "O",
+        "fields": {
+            "cod_estado" : "O",
+            "nombre": "Óptimo"
+        }
+    },
+    {
+        "model": "almacen.EstadosArticulo",
+        "pk" : "D",
+        "fields": {
+            "cod_estado" : "D",
+            "nombre": "Defectuoso"
+        }
+    },
+    {
+        "model": "almacen.EstadosArticulo",
+        "pk" : "A",
+        "fields": {
+            "cod_estado" : "A",
+            "nombre": "Averiado"
+        }
+    }
+]

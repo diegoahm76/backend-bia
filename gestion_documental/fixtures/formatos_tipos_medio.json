@@ -1,0 +1,572 @@
+[
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 1,
+        "fields": {
+            "id_formato_tipo_medio":1,
+            "nombre":"ARC_IA",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 2,
+        "fields": {
+            "id_formato_tipo_medio":2,
+            "nombre":"BWF",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 3,
+        "fields": {
+            "id_formato_tipo_medio":3,
+            "nombre":"CGM",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 4,
+        "fields": {
+            "id_formato_tipo_medio":4,
+            "nombre":"dBase",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 5,
+        "fields": {
+            "id_formato_tipo_medio":5,
+            "nombre":"DWG",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 6,
+        "fields": {
+            "id_formato_tipo_medio":6,
+            "nombre":"DXF",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 7,
+        "fields": {
+            "id_formato_tipo_medio":7,
+            "nombre":"EML",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 8,
+        "fields": {
+            "id_formato_tipo_medio":8,
+            "nombre":"ESRI Shapefile",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 9,
+        "fields": {
+            "id_formato_tipo_medio":9,
+            "nombre":"XLSX",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 10,
+        "fields": {
+            "id_formato_tipo_medio":10,
+            "nombre":"Formulario electrónico",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 11,
+        "fields": {
+            "id_formato_tipo_medio":11,
+            "nombre":"GML",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 12,
+        "fields": {
+            "id_formato_tipo_medio":12,
+            "nombre":"GMLJP2",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 13,
+        "fields": {
+            "id_formato_tipo_medio":13,
+            "nombre":"GZIP",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 14,
+        "fields": {
+            "id_formato_tipo_medio":14,
+            "nombre":"HTML",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 15,
+        "fields": {
+            "id_formato_tipo_medio":15,
+            "nombre":"JPEG 2000-Motion",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 16,
+        "fields": {
+            "id_formato_tipo_medio":16,
+            "nombre":"JPEG/Exif",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 17,
+        "fields": {
+            "id_formato_tipo_medio":17,
+            "nombre":"JPEG2000",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 18,
+        "fields": {
+            "id_formato_tipo_medio":18,
+            "nombre":"JPG/JFIF",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 19,
+        "fields": {
+            "id_formato_tipo_medio":19,
+            "nombre":"JSON",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 20,
+        "fields": {
+            "id_formato_tipo_medio":20,
+            "nombre":"Maildir",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 21,
+        "fields": {
+            "id_formato_tipo_medio":21,
+            "nombre":"Matroska",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 22,
+        "fields": {
+            "id_formato_tipo_medio":22,
+            "nombre":"MBOX",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 23,
+        "fields": {
+            "id_formato_tipo_medio":23,
+            "nombre":"MNG",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 24,
+        "fields": {
+            "id_formato_tipo_medio":24,
+            "nombre":"MP3",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 25,
+        "fields": {
+            "id_formato_tipo_medio":25,
+            "nombre":"MPEG-1",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 26,
+        "fields": {
+            "id_formato_tipo_medio":26,
+            "nombre":"MPEG-2",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 27,
+        "fields": {
+            "id_formato_tipo_medio":27,
+            "nombre":"MPEG-4",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 28,
+        "fields": {
+            "id_formato_tipo_medio":28,
+            "nombre":"MXD",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 29,
+        "fields": {
+            "id_formato_tipo_medio":29,
+            "nombre":"MXF",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 30,
+        "fields": {
+            "id_formato_tipo_medio":30,
+            "nombre":"Office OpenXML",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 31,
+        "fields": {
+            "id_formato_tipo_medio":31,
+            "nombre":"OGM",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 32,
+        "fields": {
+            "id_formato_tipo_medio":32,
+            "nombre":"OOXML",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 33,
+        "fields": {
+            "id_formato_tipo_medio":33,
+            "nombre":"Open Document",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 34,
+        "fields": {
+            "id_formato_tipo_medio":34,
+            "nombre":"OpenDocument",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 35,
+        "fields": {
+            "id_formato_tipo_medio":35,
+            "nombre":"PDF",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 36,
+        "fields": {
+            "id_formato_tipo_medio":36,
+            "nombre":"PDF/ A-2",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 37,
+        "fields": {
+            "id_formato_tipo_medio":37,
+            "nombre":"PDF/ A-3",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 38,
+        "fields": {
+            "id_formato_tipo_medio":38,
+            "nombre":"PDF/A-1",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 39,
+        "fields": {
+            "id_formato_tipo_medio":39,
+            "nombre":"PDFA",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 40,
+        "fields": {
+            "id_formato_tipo_medio":40,
+            "nombre":"PNG",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 41,
+        "fields": {
+            "id_formato_tipo_medio":41,
+            "nombre":"SHP",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 42,
+        "fields": {
+            "id_formato_tipo_medio":42,
+            "nombre":"SIARD",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 43,
+        "fields": {
+            "id_formato_tipo_medio":43,
+            "nombre":"SQL",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 44,
+        "fields": {
+            "id_formato_tipo_medio":44,
+            "nombre":"SVG",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 45,
+        "fields": {
+            "id_formato_tipo_medio":45,
+            "nombre":"TXT",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 46,
+        "fields": {
+            "id_formato_tipo_medio":46,
+            "nombre":"TIFF",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 47,
+        "fields": {
+            "id_formato_tipo_medio":47,
+            "nombre":"WAVE",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 48,
+        "fields": {
+            "id_formato_tipo_medio":48,
+            "nombre":"Web Archive",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 49,
+        "fields": {
+            "id_formato_tipo_medio":49,
+            "nombre":"WebMovie",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 50,
+        "fields": {
+            "id_formato_tipo_medio":50,
+            "nombre":"WFS",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 51,
+        "fields": {
+            "id_formato_tipo_medio":51,
+            "nombre":"WMS",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 52,
+        "fields": {
+            "id_formato_tipo_medio":52,
+            "nombre":"DOCX",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 53,
+        "fields": {
+            "id_formato_tipo_medio":53,
+            "nombre":"XML",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 54,
+        "fields": {
+            "id_formato_tipo_medio":54,
+            "nombre":"XPDL",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 55,
+        "fields": {
+            "id_formato_tipo_medio":55,
+            "nombre":"XPM",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 56,
+        "fields": {
+            "id_formato_tipo_medio":56,
+            "nombre":"XPM Pixmap Graphic",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 57,
+        "fields": {
+            "id_formato_tipo_medio":57,
+            "nombre":"ZIP",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    }
+]  

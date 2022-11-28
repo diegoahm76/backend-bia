@@ -1,0 +1,58 @@
+[
+    {
+      "model": "seguridad.Permisos",
+      "pk": "AC",
+      "fields": {
+        "cod_permiso": "AC",
+        "nombre_permiso": "Actualizar"
+      }
+    },
+    {
+      "model": "seguridad.Permisos",
+      "pk": "AP",
+      "fields": {
+        "cod_permiso": "AP",
+        "nombre_permiso": "Aprobar"
+      }
+    },
+    {
+      "model": "seguridad.Permisos",
+      "pk": "BO",
+      "fields": {
+        "cod_permiso": "BO",
+        "nombre_permiso": "Borrar"
+      }
+    },
+    {
+      "model": "seguridad.Permisos",
+      "pk": "CO",
+      "fields": {
+        "cod_permiso": "CO",
+        "nombre_permiso": "Consultar"
+      }
+    },
+    {
+      "model": "seguridad.Permisos",
+      "pk": "CR",
+      "fields": {
+        "cod_permiso": "CR",
+        "nombre_permiso": "Crear"
+      }
+    },
+    {
+      "model": "seguridad.Permisos",
+      "pk": "EJ",
+      "fields": {
+        "cod_permiso": "EJ",
+        "nombre_permiso": "Ejecutar"
+      }
+    },
+    {
+      "model": "seguridad.Permisos",
+      "pk": "AN",
+      "fields": {
+        "cod_permiso": "AN",
+        "nombre_permiso": "Anular"
+      }
+    }
+  ]
