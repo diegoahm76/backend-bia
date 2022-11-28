@@ -27,7 +27,8 @@ SECRET_KEY = 'django-insecure-#i9hilnt48#&)x)gt@q-#x9-x82di)l+*2mk1t-#8nb520v!s$
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost','web-production-7eaf.up.railway.app', 'web-production-e5dc.up.railway.app', 'backend-bia-production.up.railway.app', 'backend-bia-production-933f.up.railway.app', 'web-production-3f60.up.railway.app', 'web-production-e470.up.railway.app',]
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'web-production-7eaf.up.railway.app', 'web-production-e5dc.up.railway.app', 'backend-bia-production.up.railway.app',
+                 'backend-bia-production-933f.up.railway.app', 'web-production-3f60.up.railway.app', 'web-production-e470.up.railway.app', ]
 
 
 # Application definition
@@ -61,8 +62,8 @@ INSTALLED_APPS = [
 ]
 
 SWAGGER_SETTINGS = {
-    'SECURITY_DEFINITIONS':{
-        'Bearer':{
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
             'type': 'apiKey',
             'name': 'Authorization',
             'in': 'header'
@@ -194,23 +195,24 @@ STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
 
 STATICFILES_DIRS = [
-    BASE_DIR / 'static',
+    os.path.join(BASE_DIR, 'static'),
     os.path.join(BASE_DIR, 'build/static'),
-     #coneccion a los statics IMPOPRTANTEEEEE....!
+    # coneccion a los statics IMPOPRTANTEEEEE....!
 ]
 
 
 MEDIA_ROOT = BASE_DIR / 'static/media'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-CSRF_TRUSTED_ORIGINS = ['https://web-production-7eaf.up.railway.app', 'https://web-production-e470.up.railway.app']
+CSRF_TRUSTED_ORIGINS = ['https://web-production-7eaf.up.railway.app',
+                        'https://web-production-e470.up.railway.app']
 CORS_ALLOW_ALL_ORIGINS = True
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.outlook.com'
 EMAIL_PORT = 587
-EMAIL_HOST_USER='bia-bia-cormacarena@outlook.com'
-EMAIL_HOST_PASSWORD='Isamc1234'
+EMAIL_HOST_USER = 'bia-bia-cormacarena@outlook.com'
+EMAIL_HOST_PASSWORD = 'Isamc1234'
 
 # Send SMS with Twilio
 # https://www.twilio.com/blog/verify-phone-numbers-django-twilio-verify
