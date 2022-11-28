@@ -21,7 +21,7 @@ from almacen.serializers.generics_serializers import (
     SerializersEstadosArticulo
     )   
 from almacen.models.generics_models import Marcas, PorcentajesIVA
-from almacen.models.articulos_models import EstadosArticulo
+from almacen.models.bienes_models import EstadosArticulo
 from almacen.choices.estados_articulo_choices import estados_articulo_CHOICES
 from almacen.choices.magnitudes_choices import magnitudes_CHOICES
 from rest_framework.response import Response

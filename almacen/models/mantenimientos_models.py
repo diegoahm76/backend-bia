@@ -1,7 +1,7 @@
 from django.db import models
 from almacen.choices.tipo_mantenimiento_choices import tipo_mantenimiento_CHOICES
 from seguridad.models import Personas
-from almacen.models.articulos_models import Articulos, EstadosArticulo
+from almacen.models.bienes_models import Articulos, EstadosArticulo
 
 class ProgramacionMantenimientos(models.Model):
     id_programacion_mtto = models.AutoField(primary_key=True, db_column='T069IdProgramacionMtto')

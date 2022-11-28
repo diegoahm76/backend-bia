@@ -6,7 +6,7 @@ from almacen.serializers.hoja_de_vida_serializers import (
 from almacen.models.hoja_de_vida_models import (
     HojaDeVidaVehiculos, HojaDeVidaComputadores, HojaDeVidaOtrosActivos
     )   
-from almacen.models.articulos_models import (
+from almacen.models.bienes_models import (
     Articulos
     )   
 from almacen.models.mantenimientos_models import (

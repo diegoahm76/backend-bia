@@ -17,7 +17,7 @@ from almacen.models.generics_models import (
     UnidadesMedida,
     Bodegas
 )
-from almacen.models.articulos_models import (
+from almacen.models.bienes_models import (
     MetodosValoracionArticulos,
     TiposDepreciacionActivos,
     TiposActivo,

@@ -3,7 +3,7 @@ from almacen.choices.tipo_documento_choices import tipo_documento_CHOICES
 from almacen.choices.tipo_vehiculo_choices import tipo_vehiculo_CHOICES
 from almacen.choices.tipo_combustible_choices import tipo_combustible_CHOICES
 from seguridad.models import Personas
-from almacen.models.articulos_models import Articulos
+from almacen.models.bienes_models import Articulos
 
 class VehiculosArrendados(models.Model):
     pass
