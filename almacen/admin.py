@@ -21,7 +21,7 @@ from almacen.models.bienes_models import (
     MetodosValoracionArticulos,
     TiposDepreciacionActivos,
     TiposActivo,
-    Articulos
+    CatalogoBienes
 )
 from almacen.models.hoja_de_vida_models import (
     VehiculosArrendados,
@@ -54,4 +54,4 @@ admin.site.register(HojaDeVidaOtrosActivos)
 admin.site.register(DocumentosVehiculo)
 admin.site.register(ProgramacionMantenimientos)
 admin.site.register(RegistroMantenimientos)
-admin.site.register(Articulos)
+admin.site.register(CatalogoBienes)

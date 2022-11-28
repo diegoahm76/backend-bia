@@ -1,26 +1,50 @@
 [
     {
         "model": "almacen.TiposActivo",
-        "pk" : "C",
+        "pk" : "Com",
         "fields": {
-            "cod_tipo_activo":"C",
+            "cod_tipo_activo":"Com",
             "nombre":"Computador"
         }
     },
     {
         "model": "almacen.TiposActivo",
-        "pk" : "V",
+        "pk" : "Veh",
         "fields": {
-            "cod_tipo_activo":"V",
+            "cod_tipo_activo":"Veh",
             "nombre":"Vehículo"
         }
     },
     {
         "model": "almacen.TiposActivo",
-        "pk" : "O",
+        "pk" : "OAc",
         "fields": {
-            "cod_tipo_activo":"O",
+            "cod_tipo_activo":"OAc",
             "nombre":"Otros Activos"
+        }
+    },
+    {
+        "model": "almacen.TiposActivo",
+        "pk" : "Ter",
+        "fields": {
+            "cod_tipo_activo":"Ter",
+            "nombre":"Terrenos"
+        }
+    },
+    {
+        "model": "almacen.TiposActivo",
+        "pk" : "CyE",
+        "fields": {
+            "cod_tipo_activo":"CyE",
+            "nombre":"Construcciones y Edificaciones"
+        }
+    },
+    {
+        "model": "almacen.TiposActivo",
+        "pk" : "Int",
+        "fields": {
+            "cod_tipo_activo":"Int",
+            "nombre":"Intangibles"
         }
     }
 ]

@@ -3,14 +3,14 @@ from almacen.choices.tipo_documento_choices import tipo_documento_CHOICES
 from almacen.choices.tipo_vehiculo_choices import tipo_vehiculo_CHOICES
 from almacen.choices.tipo_combustible_choices import tipo_combustible_CHOICES
 from seguridad.models import Personas
-from almacen.models.bienes_models import Articulos
+from almacen.models.bienes_models import CatalogoBienes
 
 class VehiculosArrendados(models.Model):
     pass
 
 class HojaDeVidaComputadores(models.Model):
     id_hoja_de_vida = models.AutoField(primary_key=True, db_column='T065IdHojaDeVida')
-    id_articulo = models.ForeignKey(Articulos, on_delete=models.CASCADE, db_column='T065Id_Articulo')
+    id_articulo = models.ForeignKey(CatalogoBienes, on_delete=models.CASCADE, db_column='T065Id_Articulo')
     sistema_operativo = models.CharField(max_length=40, db_column='T065sistemaOperativo', blank=True, null=True)
     suite_ofimatica = models.CharField(max_length=40, db_column='T065suiteOfimatica', blank=True, null=True)
     antivirus = models.CharField(max_length=40, db_column='T065antivirus', blank=True, null=True)
@@ -35,7 +35,7 @@ class HojaDeVidaComputadores(models.Model):
     
 class HojaDeVidaVehiculos(models.Model):
     id_hoja_de_vida = models.AutoField(primary_key=True, db_column='T066IdHojaDeVida')
-    id_articulo = models.ForeignKey(Articulos, on_delete=models.SET_NULL, db_column='T066Id_Articulo', blank=True, null=True)
+    id_articulo = models.ForeignKey(CatalogoBienes, on_delete=models.SET_NULL, db_column='T066Id_Articulo', blank=True, null=True)
     id_vehiculo_arrendado = models.ForeignKey(VehiculosArrendados, on_delete=models.SET_NULL, db_column='T066Id_VehiculoArrendado', blank=True, null=True)
     cod_tipo_vehiculo = models.CharField(max_length=1, choices=tipo_vehiculo_CHOICES, db_column='T066codTipoVehiculo', blank=True, null=True)
     tiene_platon = models.BooleanField(db_column='T066tienePlaton', blank=True, null=True)
@@ -72,7 +72,7 @@ class HojaDeVidaVehiculos(models.Model):
 
 class HojaDeVidaOtrosActivos(models.Model):
     id_hoja_de_vida = models.AutoField(primary_key=True, db_column='T067IdHojaDeVida')
-    id_articulo = models.ForeignKey(Articulos, on_delete=models.CASCADE, db_column='T067Id_Articulo')
+    id_articulo = models.ForeignKey(CatalogoBienes, on_delete=models.CASCADE, db_column='T067Id_Articulo')
     caracteristicas_fisicas = models.TextField(db_column='T067caracteristicasFisicas', blank=True, null=True)
     especificaciones_tecnicas = models.TextField(db_column='T067especificacionesTecnicas', blank=True, null=True)
     observaciones_adicionales = models.CharField(max_length=255, db_column='T067observacionesAdicionales', blank=True, null=True)
@@ -88,7 +88,7 @@ class HojaDeVidaOtrosActivos(models.Model):
 
 class DocumentosVehiculo(models.Model):
     id_documentos_vehiculos = models.AutoField(primary_key=True, db_column='T068IdDocumentosVehiculos')
-    id_articulo = models.ForeignKey(Articulos, on_delete=models.CASCADE, db_column='T068Id_Articulo')
+    id_articulo = models.ForeignKey(CatalogoBienes, on_delete=models.CASCADE, db_column='T068Id_Articulo')
     cod_tipo_documento = models.CharField(max_length=4, choices=tipo_documento_CHOICES, db_column='T068codTipoDocumento')
     nro_documento = models.CharField(max_length=20, db_column='T068nroDocumento')
     fecha_inicio_vigencia = models.DateField(db_column='T068fechaInicioVigencia')

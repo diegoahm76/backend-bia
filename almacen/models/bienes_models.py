@@ -1,20 +1,48 @@
 from django.db import models
 from seguridad.choices.municipios_choices import municipios_CHOICES
 from almacen.choices.tipos_activo_choices import tipos_activo_CHOICES
+from almacen.choices.cod_tipo_bien_choices import cod_tipo_bien_CHOICES
+from almacen.choices.metodos_valoracion_articulos_choices import metodos_valoracion_articulos_CHOICES
+from almacen.choices.tipos_depreciacion_activos_choices import tipos_depreciacion_activos_CHOICES
 from seguridad.models import Personas
+from almacen.models import Marcas, UnidadesMedida, PorcentajesIVA
+from django.core.validators import MaxValueValidator, MinValueValidator
 
-class Articulos(models.Model):
-    id_articulo = models.AutoField(primary_key=True, db_column='T057Id_Articulo')
-    nombre = models.CharField(max_length=20, db_column='T057nombre')
-    cod_estado_final = models.CharField(max_length=20, db_column='T057cod_estado_final')
+class CatalogoBienes(models.Model):
+    id_bien = models.AutoField(primary_key=True, db_column='T057IdBien')
+    codigo_bien = models.CharField(max_length=12, db_column='T057codigoBien')
+    nro_elemento_bien = models.PositiveSmallIntegerField(null=True, blank=True, db_column='T057nroElementoEnElBien')
+    nombre = models.CharField(max_length=100, db_column='T057nombre')
+    cod_tipo_bien = models.CharField(max_length=1, choices=cod_tipo_bien_CHOICES, db_column='T057codTipoBien')
+    cod_tipo_activo = models.CharField(max_length=3, choices=tipos_activo_CHOICES, null=True, blank=True, db_column='T057Cod_TipoActivo')
+    nivel_jerarquico = models.PositiveSmallIntegerField(validators=[MaxValueValidator(5), MinValueValidator(1)], db_column='T057nivelJerarquico')
+    nombre_cientifico = models.CharField(max_length=255, null=True, blank=True, db_column='T057nombreCientifico')
+    descripcion = models.CharField(max_length=255, null=True, blank=True, db_column='T057descripcion')
+    doc_identificador_nro = models.CharField(max_length=30, null=True, blank=True, db_column='T057docIdentificadorNro')
+    id_marca = models.ForeignKey(Marcas, on_delete=models.SET_NULL, null=True, blank=True, db_column='T057Id_Marca')
+    id_unidad_medida = models.ForeignKey(UnidadesMedida, related_name='unidad_medida', on_delete=models.CASCADE, db_column='T057Id_UnidadMedida')
+    id_porcentaje_iva = models.ForeignKey(PorcentajesIVA, on_delete=models.CASCADE, db_column='T057Id_PorcentajeIVA')
+    cod_metodo_valoracion = models.PositiveSmallIntegerField(choices=metodos_valoracion_articulos_CHOICES, null=True, blank=True, db_column='T057Cod_MetodoValoracion')
+    cod_tipo_depreciacion = models.PositiveSmallIntegerField(choices=tipos_depreciacion_activos_CHOICES, null=True, blank=True, db_column='T057Cod_TipoDepreciacion')
+    cantidad_vida_util = models.PositiveSmallIntegerField(null=True, blank=True, db_column='T057cantidadVidaUtil')
+    id_unidad_medida_vida_util = models.ForeignKey(UnidadesMedida, related_name='unidad_medida_vida_util', on_delete=models.SET_NULL, null=True, blank=True, db_column='T057Id_UnidadMedidaVidaUtil')
+    valor_residual = models.FloatField(null=True, blank=True, db_column='T057valorResidual')
+    stock_minimo = models.PositiveSmallIntegerField(null=True, blank=True, db_column='T057stockMinimo')
+    stock_maximo = models.PositiveIntegerField(null=True, blank=True, db_column='T057stockMaximo')
+    solicitable_vivero = models.BooleanField(default=False, db_column='T057solicitablePorVivero')
+    tiene_hoja_vida = models.BooleanField(null=True, blank=True, db_column='T057tieneHojaDeVida')
+    id_bien_padre = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, db_column='T057Id_BienPadre')
+    maneja_hoja_vida = models.BooleanField(default=False, db_column='T057manejaHojaDeVida')
+    visible_solicitudes = models.BooleanField(default=False, db_column='T057visibleEnSolicitudes')
     
     def __str__(self):
         return str(self.nombre)
 
     class Meta:
-        db_table = 'T057Articulos'
-        verbose_name = 'Artículo'
-        verbose_name_plural = 'Artículos'
+        db_table = 'T057CatalogoBienes'
+        verbose_name = 'Catalogo Bien'
+        verbose_name_plural = 'Catalogo Bienes'
+        unique_together = ['codigo_bien', 'nro_elemento_bien']
 
 class EstadosArticulo(models.Model):
     cod_estado = models.CharField(max_length=1, primary_key=True, unique=True, db_column='T051Cod_Estado')
@@ -54,8 +82,8 @@ class TiposDepreciacionActivos(models.Model):
         verbose_name_plural = 'Tipos Depreciacion Activos'
 
 class TiposActivo(models.Model):
-    cod_tipo_activo = models.CharField(primary_key=True, choices=tipos_activo_CHOICES, max_length=1, db_column='T060CodTipoActivo')
-    nombre = models.CharField(max_length=15, db_column='T060nombre', unique=True)
+    cod_tipo_activo = models.CharField(primary_key=True, choices=tipos_activo_CHOICES, max_length=3, db_column='T060CodTipoActivo')
+    nombre = models.CharField(max_length=30, db_column='T060nombre', unique=True)
 
     def __str__(self):
         return str(self.nombre)

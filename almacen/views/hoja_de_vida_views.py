@@ -7,7 +7,7 @@ from almacen.models.hoja_de_vida_models import (
     HojaDeVidaVehiculos, HojaDeVidaComputadores, HojaDeVidaOtrosActivos
     )   
 from almacen.models.bienes_models import (
-    Articulos
+    CatalogoBienes
     )   
 from almacen.models.mantenimientos_models import (
     RegistroMantenimientos,

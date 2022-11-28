@@ -11,4 +11,5 @@ urlpatterns = [
     path('tipo-combustible/', views.TipoCombustibleChoices.as_view(), name='tipo-combustible'),
     path('tipo-mantenimiento/', views.TipoMantenimientoChoices.as_view(), name='tipo-mantenimiento'),
     path('tipo-vehiculo/', views.TipoVehiculoChoices.as_view(), name='tipo-vehiculo'),
+    path('tipo-bien/', views.TipoBienChoices.as_view(), name='tipo-bien'),
 ]
