@@ -61,7 +61,7 @@ class UnidadesOrganizacionales(models.Model):
         verbose_name_plural= 'Unidad organizacionales'
         unique_together = ['id_organigrama', 'nombre']
         unique_together = ['id_organigrama', 'codigo']
-
+        ordering = ['id_nivel_organigrama']
 
 class Cargos(models.Model):
     id_cargo = models.AutoField(primary_key=True, editable=False, db_column='T009IdCargo')
