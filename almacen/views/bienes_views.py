@@ -105,14 +105,13 @@ class DeleteNodos(generics.RetrieveDestroyAPIView):
             if nodo.nro_elemento_bien:
                 registra_movimiento = Inventario.objects.filter(id_bien=nodo.id_bien)
                 if registra_movimiento:
-                    return Response({'success': False, 'detail': 'No se puede eliminar un elemento, solo nodos iniciales'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'success': False, 'detail': 'No se puede eliminar un elemento que tenga movimientos en inventario'}, status=status.HTTP_400_BAD_REQUEST)
                 nodo.delete()
                 return Response({'success': True, 'detail': 'Eliminado el elemento'}, status=status.HTTP_204_NO_CONTENT)
             
             hijos = CatalogoBienes.objects.filter(id_bien_padre=nodo.id_bien)
             if hijos:
-                return Response({'success': False, 'detail': 'No se puede eliminar un bien si es padre de otros bienes'}, status=status.HTTP_403_FORBIDDEN)
-            
+                return Response({'success': False, 'detail': 'No se puede eliminar un bien si es padre de otros bienes'}, status=status.HTTP_403_FORBIDDEN)  
             nodo.delete()
             return Response({'success': True,'detail': 'Se ha eliminado el bien correctamente'}, status=status.HTTP_204_NO_CONTENT)
         else:
@@ -127,7 +126,7 @@ class GetElementosByIdNodo(generics.ListAPIView):
         if nodo:
             id_nodo = nodo.codigo_bien
             elementos = CatalogoBienes.objects.filter(Q(codigo_bien=id_nodo) & ~Q(nro_elemento_bien=None))
-            print(elementos)
-            return Response({'detail': 'Holis'})
+            elementos_serializer = self.serializer_class(elementos, many=True)
+            return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': elementos_serializer.data})
         else:
             return Response({'success': False, 'detail': 'No se encontró ningún elemento con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
