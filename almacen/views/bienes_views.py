@@ -3,7 +3,10 @@ from rest_framework import generics, status
 from rest_framework.views import APIView
 from almacen.serializers.bienes_serializers import (
     CatalogoBienesSerializer
-)  
+    )
+from almacen.models.inventario_models import (
+    Inventario
+)   
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 
@@ -63,3 +66,28 @@ class GetCatalogoBienesList(generics.ListAPIView):
                                         nodo_cuatro['nodos_hijos'] = nodos_nivel_cinco
             
         return Response({'success':True, 'detail':'Se encontró lo siguiente en almacén', 'data':nodos_principales}, status=status.HTTP_200_OK)
+
+
+class DeleteNodos(generics.RetrieveDestroyAPIView):
+    serializer_class = CatalogoBienesSerializer
+    queryset = CatalogoBienes.objects.all()
+    lookup_field = 'id_bien'
+
+    def delete(self, request, id_bien):
+        nodo = CatalogoBienes.objects.filter(id_bien=id_bien).first()
+        if nodo:
+            if nodo.nro_elemento_bien:
+                registra_movimiento = Inventario.objects.filter(id_bien=nodo.id_bien)
+                if registra_movimiento:
+                    return Response({'success': False, 'detail': 'No se puede eliminar un elemento, solo nodos iniciales'}, status=status.HTTP_400_BAD_REQUEST)
+                nodo.delete()
+                return Response({'success': True, 'detail': 'Eliminado el elemento'}, status=status.HTTP_204_NO_CONTENT)
+            
+            hijos = CatalogoBienes.objects.filter(id_bien_padre=nodo.id_bien)
+            if hijos:
+                return Response({'success': False, 'detail': 'No se puede eliminar un bien si es padre de otros bienes'}, status=status.HTTP_403_FORBIDDEN)
+            
+            nodo.delete()
+            return Response({'success': True,'detail': 'Se ha eliminado el bien correctamente'}, status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response({'success': False, 'detail': 'No se encontró ningún nodo con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
