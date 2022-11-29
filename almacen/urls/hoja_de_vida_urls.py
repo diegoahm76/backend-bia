@@ -7,5 +7,7 @@ urlpatterns = [
     path('vehiculos/delete/<str:pk>/',views.DeleteHojaDeVidaVehiculos.as_view(),name='hdv-vehiculos-delete'),
     path('otros/delete/<str:pk>/',views.DeleteHojaDeVidaOtrosActivos.as_view(),name='hdv-otros-delete'),
     path('computador/create/',views.CreateHojaDeVidaComputadores.as_view(),name='hdv-computador-create'),
+    path('vehiculos/create/',views.CreateHojaDeVidaComputadores.as_view(),name='hdv-computador-create'),
+    path('otros/create/',views.CreateHojaDeVidaComputadores.as_view(),name='hdv-computador-create'),
     path('computador/update/<str:pk>/',views.UpdateHojaDeVidaComputadores.as_view(),name='hdv-computador-update')
 ]
