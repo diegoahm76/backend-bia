@@ -1,6 +1,8 @@
 from almacen.models.generics_models import Bodegas
 from rest_framework import generics, status
 from django.db.models import Q
+from seguridad.utils import Util
+from rest_framework.permissions import IsAuthenticated
 from almacen.serializers.hoja_de_vida_serializers import (
     SerializersHojaDeVidaComputadores, SerializersHojaDeVidaVehiculos, SerializersHojaDeVidaOtrosActivos
     )   
@@ -21,6 +23,7 @@ from rest_framework.exceptions import ValidationError
 class CreateHojaDeVidaComputadores(generics.CreateAPIView):
     serializer_class=SerializersHojaDeVidaComputadores
     queryset=HojaDeVidaComputadores.objects.all()
+    permission_classes = [IsAuthenticated]
     def post(self,request):
         data=request.data
         serializer = self.serializer_class(data=data)
@@ -32,9 +35,24 @@ class CreateHojaDeVidaComputadores(generics.CreateAPIView):
             return Response({'success':False,'detail':'No se puede crear una hoja de vida a un bien tipo consumo'},status=status.HTTP_403_FORBIDDEN)
         if articulo_existentes.cod_tipo_activo != 'Com':
             return Response({'success':False,'detail':'No se puede crear una hoja de vida a este bien ya que no es computador'},status=status.HTTP_403_FORBIDDEN)
-        hoja_vida_articulo=HojaDeVidaComputadores.objects.filter(id_articulo=id_articulo)
+        hoja_vida_articulo=HojaDeVidaComputadores.objects.filter(id_articulo=id_articulo).first()
         if hoja_vida_articulo:
             return Response({'success':False,'detail':'El bien ingresado ya tiene hoja de vida'},status=status.HTTP_403_FORBIDDEN)
+        
+        # auditoria crear persona
+        usuario = request.user.id_usuario
+        descripcion = {"NombreElemento": str(articulo_existentes.nombre), "Serial": str(articulo_existentes.doc_identificador_nro)}
+        direccion=Util.get_client_ip(request)
+
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 18,
+            "cod_permiso": "CR",
+            "subsistema": 'ALMA',
+            "dirip": direccion,
+            "descripcion": descripcion, 
+        }
+        Util.save_auditoria(auditoria_data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'success':True,'detail':'Hoja de vida creada','data': serializer.data},status=status.HTTP_200_OK)
@@ -42,6 +60,7 @@ class CreateHojaDeVidaComputadores(generics.CreateAPIView):
 class CreateHojaDeVidaVehiculos(generics.CreateAPIView):
     serializer_class=SerializersHojaDeVidaVehiculos
     queryset=HojaDeVidaVehiculos.objects.all()
+    permission_classes = [IsAuthenticated]
     def post(self,request):
         data=request.data
         serializer = self.serializer_class(data=data)
@@ -56,6 +75,22 @@ class CreateHojaDeVidaVehiculos(generics.CreateAPIView):
         hoja_vida_articulo=HojaDeVidaComputadores.objects.filter(id_articulo=id_articulo)
         if hoja_vida_articulo:
             return Response({'success':False,'detail':'El bien ingresado ya tiene hoja de vida'})
+        
+        # auditoria crear persona
+        usuario = request.user.id_usuario
+        descripcion = {"NombreElemento": str(articulo_existentes.nombre), "Serial": str(articulo_existentes.doc_identificador_nro)}
+        direccion=Util.get_client_ip(request)
+
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 19,
+            "cod_permiso": "CR",
+            "subsistema": 'TRSV',
+            "dirip": direccion,
+            "descripcion": descripcion, 
+        }
+        Util.save_auditoria(auditoria_data)
+        
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'Hoja de vida creada:': serializer.data})
@@ -63,6 +98,7 @@ class CreateHojaDeVidaVehiculos(generics.CreateAPIView):
 class CreateHojaDeVidaOtros(generics.CreateAPIView):
     serializer_class=SerializersHojaDeVidaOtrosActivos
     queryset=HojaDeVidaOtrosActivos.objects.all()
+    permission_classes = [IsAuthenticated]
     def post(self,request):
         data=request.data
         serializer = self.serializer_class(data=data)
@@ -77,6 +113,22 @@ class CreateHojaDeVidaOtros(generics.CreateAPIView):
         hoja_vida_articulo=HojaDeVidaComputadores.objects.filter(id_articulo=id_articulo)
         if hoja_vida_articulo:
             return Response({'success':False,'detail':'El bien ingresado ya tiene hoja de vida'})
+        
+        # auditoria crear persona
+        usuario = request.user.id_usuario
+        descripcion = {"NombreElemento": str(articulo_existentes.nombre), "Serial": str(articulo_existentes.doc_identificador_nro)}
+        direccion=Util.get_client_ip(request)
+
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 20,
+            "cod_permiso": "CR",
+            "subsistema": 'TRSV',
+            "dirip": direccion,
+            "descripcion": descripcion, 
+        }
+        Util.save_auditoria(auditoria_data)
+        
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'Hoja de vida creada:': serializer.data})
