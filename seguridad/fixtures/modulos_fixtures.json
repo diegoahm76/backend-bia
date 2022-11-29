@@ -171,6 +171,36 @@
       },
       {
         "model": "seguridad.Modulos",
+        "pk": 18,
+        "fields": {
+          "id_modulo": 18,
+          "nombre_modulo": "Hoja de Vida Computadores",
+          "subsistema":"ALMA",
+          "descripcion":"Permite administrar la información de las hojas de vidas de los computadores"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 19,
+        "fields": {
+          "id_modulo": 19,
+          "nombre_modulo": "Hoja de Vida Vehículos",
+          "subsistema":"ALMA",
+          "descripcion":"Permite administrar la información de las hojas de vidas de los vehículos"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 20,
+        "fields": {
+          "id_modulo": 20,
+          "nombre_modulo": "Hoja de Vida Otros Activos",
+          "subsistema":"ALMA",
+          "descripcion":"Permite administrar la información de las hojas de vidas de otros activos"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
         "pk": 21,
         "fields": {
           "id_modulo": 21,

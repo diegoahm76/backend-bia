@@ -4,7 +4,10 @@ from django.db.models import Q
 from seguridad.utils import Util
 from rest_framework.permissions import IsAuthenticated
 from almacen.serializers.hoja_de_vida_serializers import (
-    SerializersHojaDeVidaComputadores, SerializersHojaDeVidaVehiculos, SerializersHojaDeVidaOtrosActivos
+    SerializersHojaDeVidaComputadores,
+    SerializersHojaDeVidaVehiculos,
+    SerializersHojaDeVidaOtrosActivos,
+    SerializersPutHojaDeVidaComputadores
     )   
 from almacen.models.hoja_de_vida_models import (
     HojaDeVidaVehiculos, HojaDeVidaComputadores, HojaDeVidaOtrosActivos
@@ -18,6 +21,9 @@ from almacen.models.mantenimientos_models import (
     )   
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticated
+from seguridad.utils import Util
+import copy
 
 
 class CreateHojaDeVidaComputadores(generics.CreateAPIView):
@@ -187,3 +193,38 @@ class DeleteHojaDeVidaOtrosActivos(generics.DestroyAPIView):
             hv_a_borrar.delete()
             return Response({'success': True, 'detail': 'Se eliminó la hoja de vida del activo seleccionado'}, status=status.HTTP_403_FORBIDDEN)
         
+class UpdateHojaDeVidaComputadores(generics.UpdateAPIView):
+    serializer_class=SerializersPutHojaDeVidaComputadores
+    queryset=HojaDeVidaComputadores.objects.all()
+    permission_classes=[IsAuthenticated]
+
+    def put(self,request,pk):
+        data=request.data
+        hoja_vida_computador = HojaDeVidaComputadores.objects.filter(id_hoja_de_vida=pk).first()
+        if hoja_vida_computador:
+            hoja_vida_computador_previous = copy.copy(hoja_vida_computador)
+            bien = CatalogoBienes.objects.filter(id_bien=hoja_vida_computador.id_articulo.id_bien).first()
+            
+            serializer = self.serializer_class(hoja_vida_computador, data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            
+            # Auditoria
+            usuario = request.user.id_usuario
+            descripcion = {"nombre": str(bien.nombre), "serial": str(bien.doc_identificador_nro)}
+            direccion=Util.get_client_ip(request)
+            valores_actualizados={'previous':hoja_vida_computador_previous, 'current':hoja_vida_computador}
+            auditoria_data = {
+                'id_usuario': usuario,
+                'id_modulo': 18,
+                'cod_permiso': 'AC',
+                'subsistema': 'ALMA',
+                'dirip': direccion,
+                'descripcion': descripcion,
+                'valores_actualizados': valores_actualizados
+            }
+            Util.save_auditoria(auditoria_data)
+            
+            return Response({'success':True, 'detail':'Se ha actualizado la hoja de vida'}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'success':False, 'detail':'No existe la hoja de vida ingresada'}, status=status.HTTP_404_NOT_FOUND)

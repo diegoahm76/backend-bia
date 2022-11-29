@@ -11,6 +11,14 @@ class SerializersHojaDeVidaComputadores(serializers.ModelSerializer):
         model=HojaDeVidaComputadores
         fields=('__all__')
         
+class SerializersPutHojaDeVidaComputadores(serializers.ModelSerializer):
+    class Meta:
+        model=HojaDeVidaComputadores
+        fields=('sistema_operativo','suite_ofimatica','antivirus',
+                'otras_aplicaciones','color','tipo_de_equipo',
+                'tipo_almacenamiento','capacidad_almacenamiento','procesador',
+                'memoria_ram','observaciones_adicionales','otras_aplicaciones')
+        
 class SerializersHojaDeVidaVehiculos(serializers.ModelSerializer):
     class Meta:
         model=HojaDeVidaVehiculos
