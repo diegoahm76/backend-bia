@@ -1,5 +1,6 @@
 from almacen.models.generics_models import Bodegas
 from rest_framework import generics, status
+from django.db.models import Q
 from almacen.serializers.hoja_de_vida_serializers import (
     SerializersHojaDeVidaComputadores, SerializersHojaDeVidaVehiculos, SerializersHojaDeVidaOtrosActivos
     )   
@@ -20,18 +21,59 @@ from rest_framework.exceptions import ValidationError
 class CreateHojaDeVidaComputadores(generics.CreateAPIView):
     serializer_class=SerializersHojaDeVidaComputadores
     queryset=HojaDeVidaComputadores.objects.all()
-
     def post(self,request):
         data=request.data
         serializer = self.serializer_class(data=data)
         id_articulo=data['id_articulo']
-        articulo_existentes=CatalogoBienes.objects.filter(id_bien=id_articulo).first()
+        articulo_existentes=CatalogoBienes.objects.filter(Q(id_bien=id_articulo) & ~Q(nro_elemento_bien=None)).first()
         if not articulo_existentes:
             return Response({'success':False,'detail':'El bien ingresado no existe'},status=status.HTTP_400_BAD_REQUEST)
         if articulo_existentes.cod_tipo_bien == 'C':
             return Response({'success':False,'detail':'No se puede crear una hoja de vida a un bien tipo consumo'},status=status.HTTP_403_FORBIDDEN)
-        if articulo_existentes.cod_tipo_bien != 'Com':
+        if articulo_existentes.cod_tipo_activo != 'Com':
             return Response({'success':False,'detail':'No se puede crear una hoja de vida a este bien ya que no es computador'},status=status.HTTP_403_FORBIDDEN)
+        hoja_vida_articulo=HojaDeVidaComputadores.objects.filter(id_articulo=id_articulo)
+        if hoja_vida_articulo:
+            return Response({'success':False,'detail':'El bien ingresado ya tiene hoja de vida'},status=status.HTTP_403_FORBIDDEN)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success':True,'detail':'Hoja de vida creada','data': serializer.data},status=status.HTTP_200_OK)
+
+class CreateHojaDeVidaVehiculos(generics.CreateAPIView):
+    serializer_class=SerializersHojaDeVidaVehiculos
+    queryset=HojaDeVidaVehiculos.objects.all()
+    def post(self,request):
+        data=request.data
+        serializer = self.serializer_class(data=data)
+        id_articulo=data['id_articulo']
+        articulo_existentes=CatalogoBienes.objects.filter(Q(id_bien=id_articulo) & ~Q(nro_elemento_bien=None)).first()
+        if not articulo_existentes:
+            return Response({'success':False,'detail':'El bien ingresado no existe'},status=status.HTTP_400_BAD_REQUEST)
+        if articulo_existentes.cod_tipo_bien == 'C':
+            return Response({'success':False,'detail':'No se puede crear una hoja de vida a un bien tipo consumo'},status=status.HTTP_403_FORBIDDEN)
+        if articulo_existentes.cod_tipo_activo != 'Veh':
+            return Response({'success':False,'detail':'No se puede crear una hoja de vida a este bien ya que no es un vehículo'},status=status.HTTP_403_FORBIDDEN)
+        hoja_vida_articulo=HojaDeVidaComputadores.objects.filter(id_articulo=id_articulo)
+        if hoja_vida_articulo:
+            return Response({'success':False,'detail':'El bien ingresado ya tiene hoja de vida'})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'Hoja de vida creada:': serializer.data})
+
+class CreateHojaDeVidaOtros(generics.CreateAPIView):
+    serializer_class=SerializersHojaDeVidaOtrosActivos
+    queryset=HojaDeVidaOtrosActivos.objects.all()
+    def post(self,request):
+        data=request.data
+        serializer = self.serializer_class(data=data)
+        id_articulo=data['id_articulo']
+        articulo_existentes=CatalogoBienes.objects.filter(Q(id_bien=id_articulo) & ~Q(nro_elemento_bien=None)).first()
+        if not articulo_existentes:
+            return Response({'success':False,'detail':'El bien ingresado no existe'},status=status.HTTP_400_BAD_REQUEST)
+        if articulo_existentes.cod_tipo_bien == 'C':
+            return Response({'success':False,'detail':'No se puede crear una hoja de vida a un bien tipo consumo'},status=status.HTTP_403_FORBIDDEN)
+        if articulo_existentes.cod_tipo_activo != 'OAc':
+            return Response({'success':False,'detail':'No se puede crear una hoja de vida a este bien ya que no es de la categoría otro activo'},status=status.HTTP_403_FORBIDDEN)
         hoja_vida_articulo=HojaDeVidaComputadores.objects.filter(id_articulo=id_articulo)
         if hoja_vida_articulo:
             return Response({'success':False,'detail':'El bien ingresado ya tiene hoja de vida'})
