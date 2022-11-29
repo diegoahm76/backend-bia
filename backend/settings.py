@@ -194,18 +194,15 @@ STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
 
 STATICFILES_DIRS = [
-    os.path.join('static'),
-    os.path.join( 'build/static')
+    BASE_DIR / 'static',
+    BASE_DIR / 'frontend/build/static'
     # coneccion a los statics IMPOPRTANTEEEEE....!
 ]
 
 
 MEDIA_ROOT = BASE_DIR / 'static/media'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_FINDERS = (
-    'django.contrib.staticfiles.finders.FileSystemFinder',
-    #'django.contrib.staticfiles.finders.AppDirectoriesFinder',    #causes verbose duplicate notifications in django 1.9
-)
+
 
 CSRF_TRUSTED_ORIGINS = ['https://web-production-7eaf.up.railway.app',
                         'https://web-production-e470.up.railway.app',

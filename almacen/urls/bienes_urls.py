@@ -1,6 +1,6 @@
 from django.urls import path
-from gestion_documental.views import ccd_views as views
+from almacen.views import bienes_views as views
 
 urlpatterns = [
-    path('')
+    path('create-catalogo-bienes/', views.CreateCatalogoDeBienes.as_view(), name='')
 ]
