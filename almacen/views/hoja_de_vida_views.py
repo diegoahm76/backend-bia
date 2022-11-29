@@ -16,6 +16,29 @@ from almacen.models.mantenimientos_models import (
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 
+
+class CreateHojaDeVidaComputadores(generics.CreateAPIView):
+    serializer_class=SerializersHojaDeVidaComputadores
+    queryset=HojaDeVidaComputadores.objects.all()
+
+    def post(self,request):
+        data=request.data
+        serializer = self.serializer_class(data=data)
+        id_articulo=data['id_articulo']
+        articulo_existentes=CatalogoBienes.objects.filter(id_bien=id_articulo).first()
+        if not articulo_existentes:
+            return Response({'success':False,'detail':'El bien ingresado no existe'},status=status.HTTP_400_BAD_REQUEST)
+        if articulo_existentes.cod_tipo_bien == 'C':
+            return Response({'success':False,'detail':'No se puede crear una hoja de vida a un bien tipo consumo'},status=status.HTTP_403_FORBIDDEN)
+        if articulo_existentes.cod_tipo_bien != 'Com':
+            return Response({'success':False,'detail':'No se puede crear una hoja de vida a este bien ya que no es computador'},status=status.HTTP_403_FORBIDDEN)
+        hoja_vida_articulo=HojaDeVidaComputadores.objects.filter(id_articulo=id_articulo)
+        if hoja_vida_articulo:
+            return Response({'success':False,'detail':'El bien ingresado ya tiene hoja de vida'})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'Hoja de vida creada:': serializer.data})
+
 class DeleteHojaDeVidaComputadores(generics.DestroyAPIView):
     serializer_class=SerializersHojaDeVidaComputadores
     queryset=HojaDeVidaComputadores.objects.all()
