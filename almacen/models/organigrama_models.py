@@ -36,6 +36,7 @@ class NivelesOrganigrama(models.Model):
         db_table = 'T018NivelesOrganigrama'
         verbose_name = 'Nivel Organigrama'
         verbose_name_plural = 'Niveles Organigrama'
+        ordering = ['orden_nivel'] 
         unique_together = ['id_organigrama', 'nombre']
         unique_together = ['id_organigrama', 'orden_nivel']
 

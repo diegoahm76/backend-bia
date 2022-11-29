@@ -7,6 +7,7 @@ from almacen.serializers.bienes_serializers import (
 from almacen.models.inventario_models import (
     Inventario
 )   
+from django.db.models import Q
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 
@@ -91,3 +92,17 @@ class DeleteNodos(generics.RetrieveDestroyAPIView):
             return Response({'success': True,'detail': 'Se ha eliminado el bien correctamente'}, status=status.HTTP_204_NO_CONTENT)
         else:
             return Response({'success': False, 'detail': 'No se encontró ningún nodo con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+
+class GetElementosByIdNodo(generics.ListAPIView):
+    serializer_class = CatalogoBienesSerializer
+    queryset = CatalogoBienes.objects.all()
+
+    def get(self, request, id_nodo):
+        nodo = CatalogoBienes.objects.filter(id_bien=id_nodo).first()
+        if nodo:
+            id_nodo = nodo.codigo_bien
+            elementos = CatalogoBienes.objects.filter(Q(codigo_bien=id_nodo) & ~Q(nro_elemento_bien=None))
+            print(elementos)
+            return Response({'detail': 'Holis'})
+        else:
+            return Response({'success': False, 'detail': 'No se encontró ningún elemento con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
