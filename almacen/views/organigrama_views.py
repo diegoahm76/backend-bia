@@ -288,7 +288,10 @@ class GetUnidadesByOrganigrama(generics.ListAPIView):
     def get(self, request, id_organigrama):
         organigrama = Organigramas.objects.filter(id_organigrama=id_organigrama).first()
         if organigrama:
-            unidades = UnidadesOrganizacionales.objects.filter(id_organigrama = id_organigrama).values()
+            unidades = UnidadesOrganizacionales.objects.filter(id_organigrama = id_organigrama).values('id_unidad_organizacional', 'id_organigrama', 'id_nivel_organigrama', 'nombre', 'codigo', 'cod_tipo_unidad', 'cod_agrupacion_documental', 'unidad_raiz', 'id_unidad_org_padre')
+            for unidad in unidades:
+                unidad_padre_instance = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=unidad['id_unidad_org_padre']).first()
+                unidad['cod_unidad_org_padre'] = unidad_padre_instance.codigo if unidad_padre_instance else None
             if unidades:
                 return Response({'success': True, 'detail': 'Se encontraron unidades para el organigrama', 'data' : unidades}, status=status.HTTP_200_OK)
             else:
