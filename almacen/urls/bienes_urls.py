@@ -1,2 +1,6 @@
 from django.urls import path
-from almacen.views import choices_views as views
+from gestion_documental.views import ccd_views as views
+
+urlpatterns = [
+    path('')
+]
