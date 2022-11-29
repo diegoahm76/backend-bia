@@ -19,6 +19,16 @@ class SerializersPutHojaDeVidaComputadores(serializers.ModelSerializer):
                 'tipo_almacenamiento','capacidad_almacenamiento','procesador',
                 'memoria_ram','observaciones_adicionales','otras_aplicaciones')
         
+class SerializersPutHojaDeVidaVehiculos(serializers.ModelSerializer):
+    class Meta:
+        model=HojaDeVidaVehiculos
+        fields=('__all__')
+        
+class SerializersPutHojaDeVidaOtrosActivos(serializers.ModelSerializer):
+    class Meta:
+        model=HojaDeVidaOtrosActivos
+        fields=('caracteristicas_fisicas','especificaciones_tecnicas','observaciones_adicionales')
+        
 class SerializersHojaDeVidaVehiculos(serializers.ModelSerializer):
     class Meta:
         model=HojaDeVidaVehiculos

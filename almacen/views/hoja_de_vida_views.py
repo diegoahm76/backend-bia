@@ -7,7 +7,9 @@ from almacen.serializers.hoja_de_vida_serializers import (
     SerializersHojaDeVidaComputadores,
     SerializersHojaDeVidaVehiculos,
     SerializersHojaDeVidaOtrosActivos,
-    SerializersPutHojaDeVidaComputadores
+    SerializersPutHojaDeVidaComputadores,
+    SerializersPutHojaDeVidaVehiculos,
+    SerializersPutHojaDeVidaOtrosActivos
     )   
 from almacen.models.hoja_de_vida_models import (
     HojaDeVidaVehiculos, HojaDeVidaComputadores, HojaDeVidaOtrosActivos
@@ -217,6 +219,78 @@ class UpdateHojaDeVidaComputadores(generics.UpdateAPIView):
             auditoria_data = {
                 'id_usuario': usuario,
                 'id_modulo': 18,
+                'cod_permiso': 'AC',
+                'subsistema': 'ALMA',
+                'dirip': direccion,
+                'descripcion': descripcion,
+                'valores_actualizados': valores_actualizados
+            }
+            Util.save_auditoria(auditoria_data)
+            
+            return Response({'success':True, 'detail':'Se ha actualizado la hoja de vida'}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'success':False, 'detail':'No existe la hoja de vida ingresada'}, status=status.HTTP_404_NOT_FOUND)
+
+class UpdateHojaDeVidaVehiculos(generics.UpdateAPIView):
+    serializer_class=SerializersPutHojaDeVidaVehiculos
+    queryset=HojaDeVidaVehiculos.objects.all()
+    permission_classes=[IsAuthenticated]
+
+    def put(self,request,pk):
+        data=request.data
+        hoja_vida_vehiculo = HojaDeVidaVehiculos.objects.filter(id_hoja_de_vida=pk).first()
+        if hoja_vida_vehiculo:
+            hoja_vida_vehiculo_previous = copy.copy(hoja_vida_vehiculo)
+            bien = CatalogoBienes.objects.filter(id_bien=hoja_vida_vehiculo.id_articulo.id_bien).first()
+            
+            serializer = self.serializer_class(hoja_vida_vehiculo, data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            
+            # Auditoria
+            usuario = request.user.id_usuario
+            descripcion = {"nombre": str(bien.nombre), "serial": str(bien.doc_identificador_nro)}
+            direccion=Util.get_client_ip(request)
+            valores_actualizados={'previous':hoja_vida_vehiculo_previous, 'current':hoja_vida_vehiculo}
+            auditoria_data = {
+                'id_usuario': usuario,
+                'id_modulo': 19,
+                'cod_permiso': 'AC',
+                'subsistema': 'ALMA',
+                'dirip': direccion,
+                'descripcion': descripcion,
+                'valores_actualizados': valores_actualizados
+            }
+            Util.save_auditoria(auditoria_data)
+            
+            return Response({'success':True, 'detail':'Se ha actualizado la hoja de vida'}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'success':False, 'detail':'No existe la hoja de vida ingresada'}, status=status.HTTP_404_NOT_FOUND)
+
+class UpdateHojaDeVidaOtrosActivos(generics.UpdateAPIView):
+    serializer_class=SerializersPutHojaDeVidaOtrosActivos
+    queryset=HojaDeVidaOtrosActivos.objects.all()
+    permission_classes=[IsAuthenticated]
+
+    def put(self,request,pk):
+        data=request.data
+        hoja_vida_otros = HojaDeVidaOtrosActivos.objects.filter(id_hoja_de_vida=pk).first()
+        if hoja_vida_otros:
+            hoja_vida_otros_previous = copy.copy(hoja_vida_otros)
+            bien = CatalogoBienes.objects.filter(id_bien=hoja_vida_otros.id_articulo.id_bien).first()
+            
+            serializer = self.serializer_class(hoja_vida_otros, data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            
+            # Auditoria
+            usuario = request.user.id_usuario
+            descripcion = {"nombre": str(bien.nombre), "serial": str(bien.doc_identificador_nro)}
+            direccion=Util.get_client_ip(request)
+            valores_actualizados={'previous':hoja_vida_otros_previous, 'current':hoja_vida_otros}
+            auditoria_data = {
+                'id_usuario': usuario,
+                'id_modulo': 20,
                 'cod_permiso': 'AC',
                 'subsistema': 'ALMA',
                 'dirip': direccion,
