@@ -82,7 +82,7 @@ class CreateHojaDeVidaVehiculos(generics.CreateAPIView):
             return Response({'success':False,'detail':'No se puede crear una hoja de vida a este bien ya que no es un vehículo'},status=status.HTTP_403_FORBIDDEN)
         hoja_vida_articulo=HojaDeVidaVehiculos.objects.filter(id_articulo=id_articulo)
         if hoja_vida_articulo:
-            return Response({'success':False,'detail':'El bien ingresado ya tiene hoja de vida'})
+            return Response({'success':False,'detail':'El bien ingresado ya tiene hoja de vida'},status=status.HTTP_403_FORBIDDEN)
         
         # auditoria crear persona
         usuario = request.user.id_usuario
@@ -93,7 +93,7 @@ class CreateHojaDeVidaVehiculos(generics.CreateAPIView):
             "id_usuario" : usuario,
             "id_modulo" : 19,
             "cod_permiso": "CR",
-            "subsistema": 'TRSV',
+            "subsistema": 'ALMA',
             "dirip": direccion,
             "descripcion": descripcion, 
         }
@@ -101,7 +101,7 @@ class CreateHojaDeVidaVehiculos(generics.CreateAPIView):
         
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({'Hoja de vida creada:': serializer.data})
+        return Response({'success':True,'detail':'Hoja de vida creada','data': serializer.data},status=status.HTTP_200_OK)
 
 class CreateHojaDeVidaOtros(generics.CreateAPIView):
     serializer_class=SerializersHojaDeVidaOtrosActivos
@@ -120,7 +120,7 @@ class CreateHojaDeVidaOtros(generics.CreateAPIView):
             return Response({'success':False,'detail':'No se puede crear una hoja de vida a este bien ya que no es de la categoría otro activo'},status=status.HTTP_403_FORBIDDEN)
         hoja_vida_articulo=HojaDeVidaOtrosActivos.objects.filter(id_articulo=id_articulo)
         if hoja_vida_articulo:
-            return Response({'success':False,'detail':'El bien ingresado ya tiene hoja de vida'})
+            return Response({'success':False,'detail':'El bien ingresado ya tiene hoja de vida'},status=status.HTTP_403_FORBIDDEN)
         
         # auditoria crear persona
         usuario = request.user.id_usuario
@@ -131,7 +131,7 @@ class CreateHojaDeVidaOtros(generics.CreateAPIView):
             "id_usuario" : usuario,
             "id_modulo" : 20,
             "cod_permiso": "CR",
-            "subsistema": 'TRSV',
+            "subsistema": 'ALMA',
             "dirip": direccion,
             "descripcion": descripcion, 
         }
@@ -139,7 +139,7 @@ class CreateHojaDeVidaOtros(generics.CreateAPIView):
         
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({'Hoja de vida creada:': serializer.data})
+        return Response({'success':True,'detail':'Hoja de vida creada','data': serializer.data},status=status.HTTP_200_OK)
 
 class DeleteHojaDeVidaComputadores(generics.DestroyAPIView):
     serializer_class=SerializersHojaDeVidaComputadores
