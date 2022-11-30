@@ -14,22 +14,17 @@ class SerializersHojaDeVidaComputadores(serializers.ModelSerializer):
 class SerializersPutHojaDeVidaComputadores(serializers.ModelSerializer):
     class Meta:
         model=HojaDeVidaComputadores
-        fields=('sistema_operativo','suite_ofimatica','antivirus',
-                'otras_aplicaciones','color','tipo_de_equipo',
-                'tipo_almacenamiento','capacidad_almacenamiento','procesador',
-                'memoria_ram','observaciones_adicionales','otras_aplicaciones',
-                'ruta_imagen_foto')
+        exclude=('id_articulo',)
         
 class SerializersPutHojaDeVidaVehiculos(serializers.ModelSerializer):
     class Meta:
         model=HojaDeVidaVehiculos
-        fields=('__all__')
+        exclude=('id_articulo',)
         
 class SerializersPutHojaDeVidaOtrosActivos(serializers.ModelSerializer):
     class Meta:
         model=HojaDeVidaOtrosActivos
-        fields=('caracteristicas_fisicas','especificaciones_tecnicas',
-                'observaciones_adicionales', 'ruta_imagen_foto')
+        exclude=('id_articulo',)
         
 class SerializersHojaDeVidaVehiculos(serializers.ModelSerializer):
     class Meta:
