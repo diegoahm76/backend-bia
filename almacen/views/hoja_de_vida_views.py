@@ -47,7 +47,7 @@ class CreateHojaDeVidaComputadores(generics.CreateAPIView):
         if hoja_vida_articulo:
             return Response({'success':False,'detail':'El bien ingresado ya tiene hoja de vida'},status=status.HTTP_403_FORBIDDEN)
         
-        # auditoria crear persona
+        # auditoria crear hoja de vida computadores
         usuario = request.user.id_usuario
         descripcion = {"NombreElemento": str(articulo_existentes.nombre), "Serial": str(articulo_existentes.doc_identificador_nro)}
         direccion=Util.get_client_ip(request)
@@ -84,7 +84,7 @@ class CreateHojaDeVidaVehiculos(generics.CreateAPIView):
         if hoja_vida_articulo:
             return Response({'success':False,'detail':'El bien ingresado ya tiene hoja de vida'},status=status.HTTP_403_FORBIDDEN)
         
-        # auditoria crear persona
+        # auditoria crear hoja de vida vehiculos
         usuario = request.user.id_usuario
         descripcion = {"NombreElemento": str(articulo_existentes.nombre), "Serial": str(articulo_existentes.doc_identificador_nro)}
         direccion=Util.get_client_ip(request)
@@ -122,7 +122,8 @@ class CreateHojaDeVidaOtros(generics.CreateAPIView):
         if hoja_vida_articulo:
             return Response({'success':False,'detail':'El bien ingresado ya tiene hoja de vida'},status=status.HTTP_403_FORBIDDEN)
         
-        # auditoria crear persona
+        
+        # auditoria crear hoja de vida otros
         usuario = request.user.id_usuario
         descripcion = {"NombreElemento": str(articulo_existentes.nombre), "Serial": str(articulo_existentes.doc_identificador_nro)}
         direccion=Util.get_client_ip(request)
@@ -150,13 +151,30 @@ class DeleteHojaDeVidaComputadores(generics.DestroyAPIView):
         if hv_a_borrar == None:
             return Response({'success': False, 'detail': 'No se encuentra la hoja de vida'}, status=status.HTTP_403_FORBIDDEN)
     
-        mtto_registrado = RegistroMantenimientos.objects.filter(id_articulo=hv_a_borrar.id_articulo.id_articulo).first()
-        mtto_programado = ProgramacionMantenimientos.objects.filter(id_articulo=hv_a_borrar.id_articulo.id_articulo).first()
+        mtto_registrado = RegistroMantenimientos.objects.filter(id_articulo=hv_a_borrar.id_articulo.id_bien).first()
+        mtto_programado = ProgramacionMantenimientos.objects.filter(id_articulo=hv_a_borrar.id_articulo.id_bien).first()
+        articulo_existentes=CatalogoBienes.objects.filter(Q(id_bien=hv_a_borrar.id_articulo.id_bien) & ~Q(nro_elemento_bien=None)).first()
+        print({'articulo_existenteeeeee':articulo_existentes.nombre,'articulo_doc':articulo_existentes.doc_identificador_nro})
         
         if mtto_programado != None or mtto_registrado != None:
             return Response({'success': False, 'detail': 'No se puede eliminar una hoja de vida que ya tiene mantenimientos programados o ejecutados'}, status=status.HTTP_403_FORBIDDEN)
         else:
             hv_a_borrar.delete()
+            
+            # auditoria delete hoja de vida computadores
+            usuario = request.user.id_usuario
+            descripcion = {"NombreElemento": str(articulo_existentes.nombre), "Serial": str(articulo_existentes.doc_identificador_nro)}
+            direccion=Util.get_client_ip(request)
+
+            auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 18,
+                "cod_permiso": "BO",
+                "subsistema": 'ALMA',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+            }
+            Util.save_auditoria(auditoria_data)
             return Response({'success': True, 'detail': 'Se eliminó la hoja de vida del computador seleccionado'}, status=status.HTTP_403_FORBIDDEN)
         
 class DeleteHojaDeVidaVehiculos(generics.DestroyAPIView):
@@ -168,13 +186,28 @@ class DeleteHojaDeVidaVehiculos(generics.DestroyAPIView):
         if hv_a_borrar == None:
             return Response({'success': False, 'detail': 'No se encuentra la hoja de vida'}, status=status.HTTP_403_FORBIDDEN)
     
-        mtto_registrado = RegistroMantenimientos.objects.filter(id_articulo=hv_a_borrar.id_articulo.id_articulo).first()
-        mtto_programado = ProgramacionMantenimientos.objects.filter(id_articulo=hv_a_borrar.id_articulo.id_articulo).first()
-        
+        mtto_registrado = RegistroMantenimientos.objects.filter(id_articulo=hv_a_borrar.id_articulo.id_bien).first()
+        mtto_programado = ProgramacionMantenimientos.objects.filter(id_articulo=hv_a_borrar.id_articulo.id_bien).first()
+        articulo_existentes=CatalogoBienes.objects.filter(Q(id_bien=hv_a_borrar.id_articulo.id_bien) & ~Q(nro_elemento_bien=None)).first()
         if mtto_programado != None or mtto_registrado != None:
             return Response({'success': False, 'detail': 'No se puede eliminar una hoja de vida que ya tiene mantenimientos programados o ejecutados'}, status=status.HTTP_403_FORBIDDEN)
         else:
             hv_a_borrar.delete()
+            
+            # auditoria delete hoja de vida computadores
+            usuario = request.user.id_usuario
+            descripcion = {"NombreElemento": str(articulo_existentes.nombre), "Serial": str(articulo_existentes.doc_identificador_nro)}
+            direccion=Util.get_client_ip(request)
+
+            auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 19,
+                "cod_permiso": "BO",
+                "subsistema": 'ALMA',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+            }
+            Util.save_auditoria(auditoria_data)
             return Response({'success': True, 'detail': 'Se eliminó la hoja de vida del vehículo seleccionado'}, status=status.HTTP_403_FORBIDDEN)
         
 class DeleteHojaDeVidaOtrosActivos(generics.DestroyAPIView):
@@ -186,13 +219,29 @@ class DeleteHojaDeVidaOtrosActivos(generics.DestroyAPIView):
         if hv_a_borrar == None:
             return Response({'success': False, 'detail': 'No se encuentra la hoja de vida'}, status=status.HTTP_403_FORBIDDEN)
     
-        mtto_registrado = RegistroMantenimientos.objects.filter(id_articulo=hv_a_borrar.id_articulo.id_articulo).first()
-        mtto_programado = ProgramacionMantenimientos.objects.filter(id_articulo=hv_a_borrar.id_articulo.id_articulo).first()
+        mtto_registrado = RegistroMantenimientos.objects.filter(id_articulo=hv_a_borrar.id_articulo.id_bien).first()
+        mtto_programado = ProgramacionMantenimientos.objects.filter(id_articulo=hv_a_borrar.id_articulo.id_bien).first()
+        articulo_existentes=CatalogoBienes.objects.filter(Q(id_bien=hv_a_borrar.id_articulo.id_bien) & ~Q(nro_elemento_bien=None)).first()
         
         if mtto_programado != None or mtto_registrado != None:
             return Response({'success': False, 'detail': 'No se puede eliminar una hoja de vida que ya tiene mantenimientos programados o ejecutados'}, status=status.HTTP_403_FORBIDDEN)
         else:
             hv_a_borrar.delete()
+            
+            # auditoria delete hoja de vida computadores
+            usuario = request.user.id_usuario
+            descripcion = {"NombreElemento": str(articulo_existentes.nombre), "Serial": str(articulo_existentes.doc_identificador_nro)}
+            direccion=Util.get_client_ip(request)
+
+            auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 20,
+                "cod_permiso": "BO",
+                "subsistema": 'ALMA',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+            }
+            Util.save_auditoria(auditoria_data)
             return Response({'success': True, 'detail': 'Se eliminó la hoja de vida del activo seleccionado'}, status=status.HTTP_403_FORBIDDEN)
         
 class UpdateHojaDeVidaComputadores(generics.UpdateAPIView):
