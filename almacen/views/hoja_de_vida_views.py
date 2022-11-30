@@ -351,3 +351,39 @@ class UpdateHojaDeVidaOtrosActivos(generics.UpdateAPIView):
             return Response({'success':True, 'detail':'Se ha actualizado la hoja de vida'}, status=status.HTTP_201_CREATED)
         else:
             return Response({'success':False, 'detail':'No existe la hoja de vida ingresada'}, status=status.HTTP_404_NOT_FOUND)
+
+class GetHojaDeVidaComputadoresById(generics.RetrieveAPIView):
+    serializer_class=SerializersHojaDeVidaComputadores
+    queryset=HojaDeVidaComputadores.objects.all()
+    
+    def get(self, request, pk):
+        hoja_vida_computador = HojaDeVidaComputadores.objects.filter(id_hoja_de_vida=pk).first()
+        if hoja_vida_computador:
+            serializador = self.serializer_class(hoja_vida_computador)
+            return Response({'success':True, 'detail':'Se encontró la hoja de vida', 'data':serializador.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
+
+class GetHojaDeVidaVehiculosById(generics.RetrieveAPIView):
+    serializer_class=SerializersHojaDeVidaVehiculos
+    queryset=HojaDeVidaVehiculos.objects.all()
+    
+    def get(self, request, pk):
+        hoja_vida_vehiculo = HojaDeVidaVehiculos.objects.filter(id_hoja_de_vida=pk).first()
+        if hoja_vida_vehiculo:
+            serializador = self.serializer_class(hoja_vida_vehiculo)
+            return Response({'success':True, 'detail':'Se encontró la hoja de vida', 'data':serializador.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
+
+class GetHojaDeVidaOtrosActivosById(generics.RetrieveAPIView):
+    serializer_class=SerializersHojaDeVidaOtrosActivos
+    queryset=HojaDeVidaOtrosActivos.objects.all()
+    
+    def get(self, request, pk):
+        hoja_vida_otros = HojaDeVidaOtrosActivos.objects.filter(id_hoja_de_vida=pk).first()
+        if hoja_vida_otros:
+            serializador = self.serializer_class(hoja_vida_otros)
+            return Response({'success':True, 'detail':'Se encontró la hoja de vida', 'data':serializador.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)

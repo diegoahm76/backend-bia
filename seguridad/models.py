@@ -455,7 +455,7 @@ class Auditorias(models.Model):
     subsistema = models.CharField(max_length=4, choices=subsistemas_CHOICES, db_column='Tzsubsistema') #Juan camilo text choices
     dirip = models.CharField(max_length=255, db_column='Tzdirip')
     descripcion = models.TextField(db_column='Tzdescripcion')
-    valores_actualizados = models.CharField(max_length=255, null=True, blank=True, db_column='TzvaloresActualizados')
+    valores_actualizados = models.TextField(null=True, blank=True, db_column='TzvaloresActualizados')
 
     def __str__(self):
         return str(self.descripcion) 
