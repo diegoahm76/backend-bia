@@ -276,7 +276,7 @@ class UpdateHojaDeVidaComputadores(generics.UpdateAPIView):
             }
             Util.save_auditoria(auditoria_data)
             
-            return Response({'success':True, 'detail':'Se ha actualizado la hoja de vida'}, status=status.HTTP_201_CREATED)
+            return Response({'success':True, 'detail':'Se ha actualizado la hoja de vida', 'data':serializer.data}, status=status.HTTP_201_CREATED)
         else:
             return Response({'success':False, 'detail':'No existe la hoja de vida ingresada'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -312,7 +312,7 @@ class UpdateHojaDeVidaVehiculos(generics.UpdateAPIView):
             }
             Util.save_auditoria(auditoria_data)
             
-            return Response({'success':True, 'detail':'Se ha actualizado la hoja de vida'}, status=status.HTTP_201_CREATED)
+            return Response({'success':True, 'detail':'Se ha actualizado la hoja de vida', 'data':serializer.data}, status=status.HTTP_201_CREATED)
         else:
             return Response({'success':False, 'detail':'No existe la hoja de vida ingresada'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -348,7 +348,7 @@ class UpdateHojaDeVidaOtrosActivos(generics.UpdateAPIView):
             }
             Util.save_auditoria(auditoria_data)
             
-            return Response({'success':True, 'detail':'Se ha actualizado la hoja de vida'}, status=status.HTTP_201_CREATED)
+            return Response({'success':True, 'detail':'Se ha actualizado la hoja de vida', 'data':serializer.data}, status=status.HTTP_201_CREATED)
         else:
             return Response({'success':False, 'detail':'No existe la hoja de vida ingresada'}, status=status.HTTP_404_NOT_FOUND)
 
