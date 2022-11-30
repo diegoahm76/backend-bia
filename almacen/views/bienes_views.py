@@ -6,7 +6,8 @@ from almacen.serializers.bienes_serializers import (
 )
 from almacen.models.inventario_models import (
     Inventario
-)   
+) 
+from seguridad.utils import Util  
 from django.db.models import Q
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
@@ -107,12 +108,40 @@ class DeleteNodos(generics.RetrieveDestroyAPIView):
                 if registra_movimiento:
                     return Response({'success': False, 'detail': 'No se puede eliminar un elemento que tenga movimientos en inventario'}, status=status.HTTP_400_BAD_REQUEST)
                 nodo.delete()
+
+                #Auditoria Crear Organigrama
+                usuario = request.user.id_usuario
+                descripcion = {"Codigo bien": str(nodo.codigo_bien), "Numero elemento bien": str(nodo.nro_elemento_bien)}
+                direccion=Util.get_client_ip(request)
+                auditoria_data = {
+                    "id_usuario" : usuario,
+                    "id_modulo" : 18,
+                    "cod_permiso": "BO",
+                    "subsistema": 'ALMA',
+                    "dirip": direccion,
+                    "descripcion": descripcion, 
+                }
+                Util.save_auditoria(auditoria_data)
                 return Response({'success': True, 'detail': 'Eliminado el elemento'}, status=status.HTTP_204_NO_CONTENT)
             
             hijos = CatalogoBienes.objects.filter(id_bien_padre=nodo.id_bien)
             if hijos:
                 return Response({'success': False, 'detail': 'No se puede eliminar un bien si es padre de otros bienes'}, status=status.HTTP_403_FORBIDDEN)  
             nodo.delete()
+            
+            #Auditoria Crear Organigrama
+            usuario = request.user.id_usuario
+            descripcion = {"Codigo bien": str(nodo.codigo_bien), "Numero elemento bien": str(nodo.nro_elemento_bien)}
+            direccion=Util.get_client_ip(request)
+            auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 18,
+                "cod_permiso": "BO",
+                "subsistema": 'ALMA',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+            }
+            Util.save_auditoria(auditoria_data)
             return Response({'success': True,'detail': 'Se ha eliminado el bien correctamente'}, status=status.HTTP_204_NO_CONTENT)
         else:
             return Response({'success': False, 'detail': 'No se encontró ningún nodo con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
