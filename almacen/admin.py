@@ -21,7 +21,10 @@ from almacen.models.bienes_models import (
     MetodosValoracionArticulos,
     TiposDepreciacionActivos,
     TiposActivo,
-    CatalogoBienes
+    CatalogoBienes,
+)
+from almacen.models.inventario_models import (
+    Inventario
 )
 from almacen.models.hoja_de_vida_models import (
     VehiculosArrendados,
@@ -33,7 +36,7 @@ from almacen.models.hoja_de_vida_models import (
 #from almacen.models.inventario_models import ()
 from almacen.models.mantenimientos_models import (
     ProgramacionMantenimientos,
-    RegistroMantenimientos
+    RegistroMantenimientos,
 )
 
 admin.site.register(Organigramas)
@@ -55,3 +58,4 @@ admin.site.register(DocumentosVehiculo)
 admin.site.register(ProgramacionMantenimientos)
 admin.site.register(RegistroMantenimientos)
 admin.site.register(CatalogoBienes)
+admin.site.register(Inventario)

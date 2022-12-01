@@ -15,4 +15,5 @@ urlpatterns = [
     path('ejecutados/get-five-list/<str:id_articulo>/',views.GetMantenimientosEjecutadosFiveList.as_view(),name='mantenimientos-ejecutados-five-get'),
     path('ejecutados/get-by-id/<str:pk>/',views.GetMantenimientosEjecutadosById.as_view(),name='mantenimientos-ejecutados-id-get'),
     path('ejecutados/delete/<str:pk>/',views.DeleteRegistroMantenimiento.as_view(),name='mantenimientos-ejecutados-delete'),
+    path('ejecutados/update/<str:pk>/',views.UpdateRegistroMantenimiento.as_view(),name='mantenimiento-ejecutados-update')
 ]

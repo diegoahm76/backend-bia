@@ -1,6 +1,7 @@
 from django.db import models
 from seguridad.choices.municipios_choices import municipios_CHOICES
 from almacen.choices.magnitudes_choices import magnitudes_CHOICES
+from almacen.choices.tipo_doc_ultimo_choices import tipo_doc_ultimo_CHOICES
 from seguridad.models import Personas
 from almacen.models.bienes_models import (
     CatalogoBienes,
@@ -42,7 +43,7 @@ class Inventario(models.Model):
     id_persona_responsable = models.ForeignKey(Personas, related_name='persona_responsable', on_delete=models.SET_NULL, null=True, blank=True, db_column='T062Id_PersonaResponsable')
     cod_estado_activo = models.ForeignKey(EstadosArticulo, on_delete=models.SET_NULL, null=True, blank=True, db_column='T062Cod_EstadoDelActivo')
     fecha_ultimo_movimiento = models.DateTimeField(null=True, blank=True, db_column='T062fechaUltimoMov')
-    tipo_doc_ultimo_movimiento = models.CharField(max_length=5, null=True, blank=True, db_column='T062tipoDocUltimoMov')
+    tipo_doc_ultimo_movimiento = models.CharField(max_length=5,choices=tipo_doc_ultimo_CHOICES,null=True, blank=True, db_column='T062tipoDocUltimoMov')
     id_registro_doc_ultimo_movimiento = models.PositiveIntegerField(null=True, blank=True, db_column='T062IdRegEnDocUltimoMov')
     cantidad_entrante_consumo = models.PositiveIntegerField(null=True, blank=True, db_column='T062cantidadEntranteConsumo')
     cantidad_saliente_consumo = models.PositiveIntegerField(null=True, blank=True, db_column='T062cantidadSalienteConsumo')

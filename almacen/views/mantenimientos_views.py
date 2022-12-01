@@ -5,7 +5,8 @@ from almacen.serializers.mantenimientos_serializers import (
     SerializerProgramacionMantenimientos,
     SerializerRegistroMantenimientos,
     AnularMantenimientoProgramadoSerializer,
-    UpdateMantenimientoProgramadoSerializer
+    UpdateMantenimientoProgramadoSerializer,
+    SerializerUpdateRegistroMantenimientos
     )
 from almacen.models.mantenimientos_models import (
     ProgramacionMantenimientos,
@@ -13,6 +14,7 @@ from almacen.models.mantenimientos_models import (
 )
 from almacen.models.bienes_models import (
     CatalogoBienes,
+    EstadosArticulo
 )
 from almacen.models.inventario_models import (
     Inventario,
@@ -257,3 +259,53 @@ class DeleteRegistroMantenimiento(generics.DestroyAPIView):
                 return Response({'success': False, 'detail': 'No puede eliminar el mantenimiento porque no es el último movimiento'})
         else:
             return Response({'success': False, 'detail': 'No se encontró ningún mantenimiento con el parámetro ingresado'}, status.HTTP_404_NOT_FOUND)
+class UpdateRegistroMantenimiento(generics.UpdateAPIView):
+    serializer_class=SerializerUpdateRegistroMantenimientos
+    permission_classes = [IsAuthenticated]
+    queryset=RegistroMantenimientos.objects.all()
+    
+    def put (self,request,pk):
+        
+        registro_mantenimiento=RegistroMantenimientos.objects.filter(id_registro_mtto=pk).first()
+        persona = request.user.persona.id_persona
+        request.data['id_persona_diligencia']=persona
+        serializador=self.serializer_class(registro_mantenimiento,data=request.data)
+        if registro_mantenimiento:
+            inventario_bien = Inventario.objects.filter(id_bien=registro_mantenimiento.id_articulo.id_bien).first()
+            if inventario_bien.tipo_doc_ultimo_movimiento == 'MANT' and inventario_bien.id_registro_doc_ultimo_movimiento == int(pk):
+                registro_previous=copy.copy(registro_mantenimiento)
+                serializador.is_valid(raise_exception=True)
+                serializador.save()
+                
+                estado_articulo=EstadosArticulo.objects.filter(cod_estado=request.data['cod_estado_final']).first()
+                
+                inventario_bien.cod_estado_activo = estado_articulo
+                inventario_bien.save()
+                
+                usuario=request.user.id_usuario
+                valores_actualizados={'previous':registro_previous,'current':registro_mantenimiento}
+                bien = CatalogoBienes.objects.filter(id_bien=registro_mantenimiento.id_articulo.id_bien).first()
+                descripcion = {"nombre": str(bien.nombre), "serial": str(bien.doc_identificador_nro)}
+                direccion=Util.get_client_ip(request)
+                id_modulo = 0
+            
+                if bien.cod_tipo_activo == 'Com':
+                    id_modulo = 24
+                elif bien.cod_tipo_activo == 'Veh':
+                    id_modulo = 25
+                else:
+                    id_modulo = 26
+                
+                auditoria_data = {
+                    "id_usuario" : usuario,
+                    "id_modulo" : id_modulo,
+                    "cod_permiso": "AC",
+                    "subsistema": 'ALMA',
+                    "dirip": direccion,
+                    "descripcion": descripcion, 
+                    "valores_actualizados":valores_actualizados
+                }
+                Util.save_auditoria(auditoria_data)
+                return Response({'success':True,'detail':'actualizacion exitosa'},status=status.HTTP_200_OK)    
+            return Response({'success':False,'detail':'No puede actualizar el mantenimiento porque no es el último movimiento'},status=status.HTTP_403_FORBIDDEN)    
+        return Response({'success':False,'detail':'No existe el mantenimineto'},status=status.HTTP_404_NOT_FOUND)    
