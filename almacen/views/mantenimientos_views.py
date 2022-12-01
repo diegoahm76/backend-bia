@@ -13,6 +13,9 @@ from almacen.models.mantenimientos_models import (
 from almacen.models.bienes_models import (
     CatalogoBienes,
 )
+from almacen.models.inventario_models import (
+    Inventario,
+)
 from seguridad.models import (
     Personas
 )
@@ -193,3 +196,50 @@ class GetMantenimientosEjecutadosById(generics.ListAPIView):
             return Response({'success':True, 'detail':serializador.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success':False, 'detail':'No existe ningún mantenimiento con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+
+class DeleteRegistroMantenimiento(generics.DestroyAPIView):
+    serializer_class = SerializerRegistroMantenimientos
+    queryset = RegistroMantenimientos.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        registro_mantenimiento = RegistroMantenimientos.objects.filter(id_registro_mtto=pk).first()
+        if registro_mantenimiento:
+            inventario_bien = Inventario.objects.filter(id_bien=registro_mantenimiento.id_articulo.id_bien).first()
+            if inventario_bien.tipo_doc_ultimo_movimiento == 'MANT' and inventario_bien.id_registro_doc_ultimo_movimiento == int(pk):
+                inventario_bien.id_registro_doc_ultimo_movimiento = registro_mantenimiento.id_reg_doc_anterior_mov
+                inventario_bien.tipo_doc_ultimo_movimiento = registro_mantenimiento.tipo_doc_anterior_mov
+                inventario_bien.fecha_ultimo_movimiento = registro_mantenimiento.fecha_estado_anterior
+                inventario_bien.cod_estado_activo = registro_mantenimiento.cod_estado_anterior
+                inventario_bien.save()
+                registro_mantenimiento.delete()
+                
+                # Auditoria
+                bien = CatalogoBienes.objects.filter(id_bien=registro_mantenimiento.id_articulo.id_bien).first()
+                usuario = request.user.id_usuario
+                descripcion = {"nombre": str(bien.nombre), "serial": str(bien.doc_identificador_nro)}
+                direccion=Util.get_client_ip(request)
+                id_modulo = 0
+            
+                if bien.cod_tipo_activo == 'Com':
+                    id_modulo = 24
+                elif bien.cod_tipo_activo == 'Veh':
+                    id_modulo = 25
+                else:
+                    id_modulo = 26
+                    
+                auditoria_data = {
+                    "id_usuario" : usuario,
+                    "id_modulo" : id_modulo,
+                    "cod_permiso": "BO",
+                    "subsistema": 'ALMA',
+                    "dirip": direccion,
+                    "descripcion": descripcion, 
+                }
+                Util.save_auditoria(auditoria_data)
+                
+                return Response({'success': True, 'detail': 'Eliminado exitosamente'}, status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response({'success': False, 'detail': 'No puede eliminar el mantenimiento porque no es el último movimiento'})
+        else:
+            return Response({'success': False, 'detail': 'No se encontró ningún mantenimiento con el parámetro ingresado'}, status.HTTP_404_NOT_FOUND)
