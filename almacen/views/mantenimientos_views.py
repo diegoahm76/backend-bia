@@ -4,7 +4,8 @@ from rest_framework.views import APIView
 from almacen.serializers.mantenimientos_serializers import (
     SerializerProgramacionMantenimientos,
     SerializerRegistroMantenimientos,
-    AnularMantenimientoProgramadoSerializer
+    AnularMantenimientoProgramadoSerializer,
+    UpdateMantenimientoProgramadoSerializer
     )
 from almacen.models.mantenimientos_models import (
     ProgramacionMantenimientos,
@@ -119,6 +120,19 @@ class AnularMantenimientoProgramado(generics.RetrieveUpdateAPIView):
             return Response({'success': False, 'detail': 'No existe ningún mantenimiento con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
         
 
+class UpdateMantenimientoProgramado(generics.RetrieveUpdateAPIView):
+    serializer_class = UpdateMantenimientoProgramadoSerializer
+    queryset = ProgramacionMantenimientos.objects.all()
+
+    def put(self, request, id_mantenimiento):
+        mantenimiento = ProgramacionMantenimientos.objects.filter(id_programacion_mtto=id_mantenimiento).first()
+        if mantenimiento:
+            serializer = self.serializer_class(mantenimiento, data=request.data, many=False)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response({'success': True, 'detail': 'Actualizado correctamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'success': False, 'detail': 'No existe ningún mantenimiento con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
         
 class GetMantenimientosProgramadosByFechas(generics.ListAPIView):
     serializer_class=SerializerProgramacionMantenimientos

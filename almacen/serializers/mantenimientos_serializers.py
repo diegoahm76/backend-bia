@@ -20,6 +20,11 @@ class AnularMantenimientoProgramadoSerializer(serializers.ModelSerializer):
     class Meta:
         model=ProgramacionMantenimientos
         fields=['justificacion_anulacion']
+
+class UpdateMantenimientoProgramadoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=ProgramacionMantenimientos
+        fields=['cod_tipo_mantenimiento', 'observaciones']
         
 class SerializerRegistroMantenimientos(serializers.ModelSerializer):
     id_persona_realiza = PersonasSerializer(read_only=True)
