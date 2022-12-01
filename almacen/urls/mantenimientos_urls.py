@@ -8,6 +8,7 @@ urlpatterns = [
     path('programados/get-five-list/<str:id_articulo>/',views.GetMantenimientosProgramadosFiveList.as_view(),name='mantenimientos-programados-five-get'),
     path('programados/anular/<str:id_programacion_mtto>/',views.AnularMantenimientoProgramado.as_view(),name='mantenimientos-programados-anular'),
     path('programados/get-by-fechas/',views.GetMantenimientosProgramadosByFechas.as_view(),name='mantenimientos-programados-fechas-get'),
+    path('programados/update/<str:id_mantenimiento>/',views.UpdateMantenimientoProgramado.as_view(),name='mantenimientos-programados-update'),
 
     #Mantenimientos Ejecutados
     path('ejecutados/get-list/<str:id_articulo>/',views.GetMantenimientosEjecutadosList.as_view(),name='mantenimientos-ejecutados-get'),
