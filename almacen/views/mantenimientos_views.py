@@ -10,14 +10,19 @@ from almacen.models.mantenimientos_models import (
     ProgramacionMantenimientos,
     RegistroMantenimientos,
 )
+from almacen.models.bienes_models import (
+    CatalogoBienes,
+)
 from seguridad.models import (
     Personas
 )
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from django.db.models import F, Q
 from datetime import datetime
-import pytz
+from seguridad.utils import Util
+import pytz, copy
 
 class GetMantenimientosProgramadosById(generics.RetrieveAPIView):
     serializer_class=SerializerProgramacionMantenimientos
@@ -63,6 +68,7 @@ class GetMantenimientosProgramadosList(generics.ListAPIView):
 class AnularMantenimientoProgramado(generics.RetrieveUpdateAPIView):
     serializer_class = AnularMantenimientoProgramadoSerializer
     queryset = ProgramacionMantenimientos.objects.all()
+    permission_classes = [IsAuthenticated]
     lookup_field = 'id_programacion_mtto'
 
     def patch(self, request, id_programacion_mtto):
@@ -70,14 +76,43 @@ class AnularMantenimientoProgramado(generics.RetrieveUpdateAPIView):
         persona_instance = Personas.objects.filter(id_persona=persona_usuario_logeado).first()
         mantenimiento = ProgramacionMantenimientos.objects.filter(id_programacion_mtto=id_programacion_mtto).first()
         if mantenimiento:
+            mantenimiento_previous = copy.copy(mantenimiento)
             if mantenimiento.ejecutado == True:
                 return Response({'success': False, 'detail': 'No puede anular un mantenimiento que ya fue ejecutado'}, status=status.HTTP_403_FORBIDDEN)
+            if mantenimiento.fecha_anulacion != None:
+                return Response({'success': False, 'detail': 'No puede anular un mantenimiento que ya fue anulado'}, status=status.HTTP_403_FORBIDDEN)
             serializador = self.serializer_class(mantenimiento, data=request.data, many=False)
             serializador.is_valid(raise_exception=True)
-            mantenimiento.fecha_anulacion = datetime.now()
+            mantenimiento.fecha_anulacion = datetime.now(pytz.timezone('America/Bogota'))
             mantenimiento.id_persona_anula = persona_instance
             serializador.save()
             mantenimiento.save()
+            
+            # Auditoria
+            bien = CatalogoBienes.objects.filter(id_bien=mantenimiento.id_articulo.id_bien).first()
+            usuario = request.user.id_usuario
+            descripcion = {"nombre": str(bien.nombre), "serial": str(bien.doc_identificador_nro)}
+            direccion=Util.get_client_ip(request)
+            valores_actualizados={'previous':mantenimiento_previous, 'current':mantenimiento}
+            id_modulo = 0
+            
+            if bien.cod_tipo_activo == 'Com':
+                id_modulo = 21
+            elif bien.cod_tipo_activo == 'Veh':
+                id_modulo = 22
+            else:
+                id_modulo = 23
+            
+            auditoria_data = {
+                'id_usuario': usuario,
+                'id_modulo': id_modulo,
+                'cod_permiso': 'AC',
+                'subsistema': 'ALMA',
+                'dirip': direccion,
+                'descripcion': descripcion,
+                'valores_actualizados': valores_actualizados
+            }
+            Util.save_auditoria(auditoria_data)
 
             return Response({'success': True, 'detail': 'Anulación exitosa'}, status=status.HTTP_201_CREATED)
         else:
