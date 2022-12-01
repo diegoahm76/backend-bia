@@ -28,27 +28,29 @@ class ProgramacionMantenimientos(models.Model):
 
 class RegistroMantenimientos(models.Model):
     id_registro_mtto = models.AutoField(primary_key=True, db_column='T070IdRegistroMtto')
-    id_articulo = models.ForeignKey(CatalogoBienes, on_delete=models.CASCADE, db_column='T070d_Articulo', related_name='id_articulo_Registro')
+    id_articulo = models.ForeignKey(CatalogoBienes, on_delete=models.CASCADE, db_column='T070Id_Articulo', related_name='id_articulo_Registro')
     fecha_registrado = models.DateTimeField(db_column='T070fechaRegistrado')
     fecha_ejecutado = models.DateTimeField(db_column='T070fechaEjecutado')
     cod_tipo_mantenimiento = models.CharField(max_length=1, choices=tipo_mantenimiento_CHOICES, db_column='T070codTipoMantenimiento')
     acciones_realizadas = models.TextField(db_column='T070accionesRealizadas', blank=True, null=True)
     dias_empleados = models.SmallIntegerField(db_column='T070diasEmpleados')
     observaciones = models.CharField(max_length=255, db_column='T070observaciones', blank=True, null=True)
-    cod_estado_anterior = models.ForeignKey(EstadosArticulo, db_column='T070codEstadoAnterior', on_delete=models.SET_NULL, blank=True, null=True)
-    fecha_estado_anterior = models.DateTimeField(db_column='T070fechaEstadoAnterior', blank=True, null=True)
     cod_estado_final = models.ForeignKey(CatalogoBienes, db_column='T070Cod_EstadoFinal', on_delete=models.CASCADE, related_name='cod_estado_final_Registro')
     id_programacion_mtto = models.ForeignKey(ProgramacionMantenimientos, on_delete=models.SET_NULL, db_column='T070Id_ProgramacionMtto', blank=True, null=True)
-    valor_mantenimiento = models.IntegerField(db_column='T070valorMantenimiento', blank=True, null=True)
+    valor_mantenimiento = models.FloatField(db_column='T070valorMantenimiento', blank=True, null=True)
     contrato_mantenimiento = models.CharField(max_length=20, db_column='T070contratoMantenimiento', blank=True, null=True)
     id_persona_realiza = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T070Id_PersonaRealiza', related_name='id_persona_realiza')
     id_persona_diligencia = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T070Id_PersonaDiligencia', related_name='id_persona_diligencia')
-    ruta_documentos_soporte = models.CharField(max_length=255, db_column='T070rutaDocumentosSoporte', blank=True, null=True)
+    ruta_documentos_soporte = models.FileField(db_column='T070rutaDocumentoSoporte', blank=True, null=True)
+    cod_estado_anterior = models.ForeignKey(EstadosArticulo, db_column='T070codEstadoAnterior', on_delete=models.CASCADE)
+    fecha_estado_anterior = models.DateTimeField(db_column='T070fechaAnteriorMov')
+    tipo_doc_anterior_mov = models.CharField(max_length=5, db_column='T062tipoDocAnteriorMov')
+    id_reg_doc_anterior_mov = models.PositiveIntegerField(db_column='T062IdRegEnDocAnteriorMov')
     
     def __str__(self):
         return str(self.id_programacion_mtto)
 
     class Meta:
         db_table = 'T070RegistroMantenimientos'
-        verbose_name = 'Registro Mantenimientos'
+        verbose_name = 'Registro Mantenimiento'
         verbose_name_plural = 'Registros Mantenimientos'
