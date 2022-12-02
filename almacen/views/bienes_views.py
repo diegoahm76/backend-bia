@@ -5,36 +5,219 @@ from almacen.serializers.bienes_serializers import (
     CatalogoBienesSerializer
 )
 from almacen.models.inventario_models import (
-    Inventario
-)   
+    Inventario,
+) 
+from almacen.models.generics_models import UnidadesMedida , PorcentajesIVA 
 from django.db.models import Q
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 
 
-class CreateCatalogoDeBienes(generics.CreateAPIView):
+class CreateCatalogoDeBienes(generics.UpdateAPIView):
     serializer_class = CatalogoBienesSerializer
 
-    def post(self, request):
+    def put(self, request):
         data = request.data
 
-        match data:
-            case "JavaScript":
-                print("You can become a web developer.")
+        #Update
+        if data['id_bien']!=None:
+            catalogo_bien = CatalogoBienes.objects.filter(id_bien= data['id_bien']).first()
+            if catalogo_bien:
+                pass
+            else:
+                return Response({'success':False, 'detail':'No hay ningun bien referente al id_bien enviado'}, status=status.HTTP_400_BAD_REQUEST)
+        #Create
+        else:
+            #match de los 5 niveles jerarquicos
+            match data['nivel_jerarquico']:
+                case 1:
+                    if int(data['codigo_bien']) >=1 and len(data['codigo_bien'])==1:
+                        if CatalogoBienes.objects.filter(codigo_bien=data['codigo_bien']).exists():
+                            return Response({'success':False, 'detail':'Ya existe un codigo de bien relacionado en catalogo de bienes'}, status=status.HTTP_400_BAD_REQUEST) 
+                        else:
+                            nivel_bien_padre = None
 
-            case "Python":
-                print("You can become a Data Scientist")
+                    else:
+                        print(len(data['codigo_bien']))
+                        return Response({'success':False, 'detail':'Codigo bien fuera de rango'}, status=status.HTTP_400_BAD_REQUEST)                         
+                case 2:
+                    if (int(data['codigo_bien'][0]))>=1 and len(data['codigo_bien'])==2:
+                        if CatalogoBienes.objects.filter(codigo_bien=data['codigo_bien']).exists():
+                            return Response({'success':False, 'detail':'Ya existe un codigo de bien relacionado en catalogo de bienes'}, status=status.HTTP_400_BAD_REQUEST) 
+                        else:
+                            nivel_bien_padre = 1
+                    else:
+                        print((int(data['codigo_bien'][0]))>=1)
+                        print(len(data['codigo_bien'])==2)
+                        return Response({'success':False, 'detail':'Codigo bien fuera de rango'}, status=status.HTTP_400_BAD_REQUEST)
+                case 3:
+                    if int(data['codigo_bien'][0])>=1 and len(data['codigo_bien'])==4:
+                        if CatalogoBienes.objects.filter(codigo_bien=data['codigo_bien']).exists():
+                            return Response({'success':False, 'detail':'Ya existe un codigo de bien relacionado en catalogo de bienes'}, status=status.HTTP_400_BAD_REQUEST) 
+                        else:
+                            nivel_bien_padre = 2
+                    else:
+                        return Response({'success':False, 'detail':'Codigo bien fuera de rango'}, status=status.HTTP_400_BAD_REQUEST)
+                case 4:
+                    if int(data['codigo_bien'][0])>=1 and len(data['codigo_bien'])==7:
+                        if CatalogoBienes.objects.filter(codigo_bien=data['codigo_bien']).exists():
+                            return Response({'success':False, 'detail':'Ya existe un codigo de bien relacionado en catalogo de bienes'}, status=status.HTTP_400_BAD_REQUEST) 
+                        else:
+                            nivel_bien_padre = 3
+                    else:
+                        return Response({'success':False, 'detail':'Codigo bien fuera de rango'}, status=status.HTTP_400_BAD_REQUEST)
+                case 5:
+                    if int(data['codigo_bien'][0])>=1 and len(data['codigo_bien'])==12:                  
+                        nivel_bien_padre = 4
+                    else:
+                        return Response({'success':False, 'detail':'Codigo bien fuera de rango'}, status=status.HTTP_400_BAD_REQUEST)
+                case _:
+                    return Response({'success':False, 'detail':'Nivel jerarquico fuera de rango'}, status=status.HTTP_400_BAD_REQUEST)
 
-            case "PHP":
-                print("You can become a backend developer")
-            
-            case "Solidity":
-                print("You can become a Blockchain developer")
+            match data['cod_tipo_bien']:
+                case 'A':
+                    if CatalogoBienes.objects.filter(id_bien=data['id_bien_padre']).exists():
+                        padre = CatalogoBienes.objects.get(id_bien=data['id_bien_padre'])
+                        nivel_padre = padre.nivel_jerarquico
+                        #Crear un catalogo bien para nivel jerarquiro 1 activo fijo
+                        if data['nivel_jerarquico']>1 and nivel_padre==nivel_bien_padre:
+                                try:
+                                    id_unidad_medida = UnidadesMedida.objects.get(id_unidad_medida=data['id_unidad_medida'])
+                                    pass
+                                except:
+                                    return Response({'success':False, 'detail':'El id de unidad de medida ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                                try:
+                                    id_porcentaje_iva = PorcentajesIVA.objects.get(id_porcentaje_iva=data['id_porcentaje_iva'])
+                                    pass
+                                except:
+                                    return Response({'success':False, 'detail':'El id de porcentaje de iva ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                                try:
+                                    id_unidad_medida_vida_util = UnidadesMedida.objects.get(id_unidad_medida=data['id_unidad_medida_vida_util'])
+                                    pass
+                                except:
+                                    return Response({'success':False, 'detail':'El id de unidad de medida vida util ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                                catalogo_bien = CatalogoBienes.objects.create(
+                                    id_bien=data['id_bien'],
+                                    codigo_bien=data['codigo_bien'],
+                                    nombre=data['nombre'],
+                                    cod_tipo_bien=data['cod_tipo_bien'],
+                                    cod_tipo_activo=data['cod_tipo_activo'],
+                                    nivel_jerarquico=data['nivel_jerarquico'],
+                                    descripcion=data['descripcion'],
+                                    id_marca=data['id_marca'],
+                                    id_unidad_medida=id_unidad_medida,
+                                    id_porcentaje_iva=id_porcentaje_iva,
+                                    cod_tipo_depreciacion=data['cod_tipo_depreciacion'],
+                                    cantidad_vida_util=data['cantidad_vida_util'],
+                                    id_unidad_medida_vida_util=id_unidad_medida_vida_util,
+                                    valor_residual=data['valor_residual'],
+                                    maneja_hoja_vida=data['maneja_hoja_vida'],
+                                    visible_solicitudes=data['visible_solicitudes'],
+                                    id_bien_padre=padre  
+                                )
+                                serializer = self.serializer_class(catalogo_bien)
+                        else:
+                            return Response({'success':False, 'detail':'el nivel del bien badre no corresponde con el nivel anterior'})
+                    elif data['nivel_jerarquico'] == 1:
+                            try:
+                                id_unidad_medida = UnidadesMedida.objects.get(id_unidad_medida=data['id_unidad_medida'])
+                                pass
+                            except:
+                                return Response({'success':False, 'detail':'El id de unidad de medida ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                            try:
+                                id_porcentaje_iva = PorcentajesIVA.objects.get(id_porcentaje_iva=data['id_porcentaje_iva'])
+                                pass
+                            except:
+                                return Response({'success':False, 'detail':'El id de porcentaje de iva ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                            try:
+                                id_unidad_medida_vida_util = UnidadesMedida.objects.get(id_unidad_medida=data['id_unidad_medida_vida_util'])
+                                pass
+                            except:
+                                return Response({'success':False, 'detail':'El id de unidad de medida vida util ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
 
-            case "Java":
-                print("You can become a mobile app developer")
-            case _:
-                print("The language doesn't matter, what matters is solving problems.")
+                            catalogo_bien = CatalogoBienes.objects.create(
+                                    id_bien=data['id_bien'],
+                                    codigo_bien=data['codigo_bien'],
+                                    nombre=data['nombre'],
+                                    cod_tipo_bien=data['cod_tipo_bien'],
+                                    cod_tipo_activo=data['cod_tipo_activo'],
+                                    nivel_jerarquico=data['nivel_jerarquico'],
+                                    descripcion=data['descripcion'],
+                                    id_marca=data['id_marca'],
+                                    id_unidad_medida=id_unidad_medida,
+                                    id_porcentaje_iva=id_porcentaje_iva,
+                                    cod_tipo_depreciacion=data['cod_tipo_depreciacion'],
+                                    cantidad_vida_util=data['cantidad_vida_util'],
+                                    id_unidad_medida_vida_util=id_unidad_medida_vida_util,
+                                    valor_residual=data['valor_residual'],
+                                    maneja_hoja_vida=data['maneja_hoja_vida'],
+                                    visible_solicitudes=data['visible_solicitudes'],
+                                    id_bien_padre=None  
+                                )
+                            serializer = self.serializer_class(catalogo_bien)
+                case 'C':
+                    if CatalogoBienes.objects.filter(id_bien=data['id_bien_padre']).exists():
+                        padre = CatalogoBienes.objects.get(id_bien=data['id_bien_padre'])
+                        nivel_padre = padre.nivel_jerarquico
+                        #Crear un catalogo bien para nivel jerarquiro 1 activo fijo
+                        if data['nivel_jerarquico']>1 & nivel_padre==nivel_bien_padre:
+                            try:
+                                id_unidad_medida = UnidadesMedida.objects.get(id_unidad_medida=data['id_unidad_medida'])
+                                pass
+                            except:
+                                return Response({'success':False, 'detail':'El id de unidad de medida ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                            try:
+                                id_porcentaje_iva = PorcentajesIVA.objects.get(id_porcentaje_iva=data['id_porcentaje_iva'])
+                                pass
+                            except:
+                                return Response({'success':False, 'detail':'El id de porcentaje de iva ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                            CatalogoBienes.objects.create(
+                                    id_bien=data['id_bien'],
+                                    codigo_bien=data['codigo_bien'],
+                                    nombre=data['nombre'],
+                                    cod_tipo_bien=data['cod_tipo_bien'],
+                                    nivel_jerarquico=data['nivel_jerarquico'],
+                                    nombre_cientifico=data['nombre_cientifico'],
+                                    descripcion=data['descripcion'],
+                                    id_unidad_medida=id_unidad_medida,
+                                    id_porcentaje_iva=id_porcentaje_iva,
+                                    metodo_de_valoracion=data['metodo_de_valoracion'],
+                                    stock_minimo=data['stock_minimo'],
+                                    stock_maximo=data['stock_maximo'],
+                                    solicitable_vivero=data['solicitable_vivero'],
+                                    id_bien_padre=padre  
+                                )
+                        elif data['nivel_jerarquico'] == 1:
+                            try:
+                                id_unidad_medida = UnidadesMedida.objects.get(id_unidad_medida=data['id_unidad_medida'])
+                                pass
+                            except:
+                                return Response({'success':False, 'detail':'El id de unidad de medida ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                            try:
+                                id_porcentaje_iva = PorcentajesIVA.objects.get(id_porcentaje_iva=data['id_porcentaje_iva'])
+                                pass
+                            except:  
+                                return Response({'success':False, 'detail':'El id de porcentaje de iva ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                          
+                            CatalogoBienes.objects.create(
+                                    id_bien=data['id_bien'],
+                                    codigo_bien=data['codigo_bien'],
+                                    nombre=data['nombre'],
+                                    cod_tipo_bien=data['cod_tipo_bien'],
+                                    nivel_jerarquico=data['nivel_jerarquico'],
+                                    nombre_cientifico=data['nombre_cientifico'],
+                                    descripcion=data['descripcion'],
+                                    id_unidad_medida=data['id_unidad_medida'],
+                                    id_porcentaje_iva=data['id_porcentaje_iva'],
+                                    metodo_de_valoracion=data['metodo_de_valoracion'],
+                                    stock_minimo=data['stock_minimo'],
+                                    stock_maximo=data['stock_maximo'],
+                                    solicitable_vivero=data['solicitable_vivero'],
+                                    id_bien_padre=None
+                                )
+
+                
+            return Response(serializer.data)
 
 
 class GetCatalogoBienesList(generics.ListAPIView):
