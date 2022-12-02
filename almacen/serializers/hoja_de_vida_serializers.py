@@ -11,6 +11,21 @@ class SerializersHojaDeVidaComputadores(serializers.ModelSerializer):
         model=HojaDeVidaComputadores
         fields=('__all__')
         
+class SerializersPutHojaDeVidaComputadores(serializers.ModelSerializer):
+    class Meta:
+        model=HojaDeVidaComputadores
+        exclude=('id_articulo',)
+        
+class SerializersPutHojaDeVidaVehiculos(serializers.ModelSerializer):
+    class Meta:
+        model=HojaDeVidaVehiculos
+        exclude=('id_articulo',)
+        
+class SerializersPutHojaDeVidaOtrosActivos(serializers.ModelSerializer):
+    class Meta:
+        model=HojaDeVidaOtrosActivos
+        exclude=('id_articulo',)
+        
 class SerializersHojaDeVidaVehiculos(serializers.ModelSerializer):
     class Meta:
         model=HojaDeVidaVehiculos

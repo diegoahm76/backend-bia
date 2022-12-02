@@ -20,6 +20,11 @@ class AnularMantenimientoProgramadoSerializer(serializers.ModelSerializer):
     class Meta:
         model=ProgramacionMantenimientos
         fields=['justificacion_anulacion']
+
+class UpdateMantenimientoProgramadoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=ProgramacionMantenimientos
+        fields=['cod_tipo_mantenimiento', 'observaciones']
         
 class SerializerRegistroMantenimientos(serializers.ModelSerializer):
     id_persona_realiza = PersonasSerializer(read_only=True)
@@ -27,3 +32,9 @@ class SerializerRegistroMantenimientos(serializers.ModelSerializer):
     class Meta:
         model=RegistroMantenimientos
         fields=('__all__')
+        
+class SerializerUpdateRegistroMantenimientos(serializers.ModelSerializer):
+    # id_persona_diligencia = PersonasSerializer(read_only=True)
+    class Meta:
+        model=RegistroMantenimientos
+        fields=('cod_tipo_mantenimiento','acciones_realizadas','dias_empleados','observaciones','cod_estado_final','valor_mantenimiento','contrato_mantenimiento','id_persona_realiza','id_persona_diligencia','ruta_documentos_soporte')

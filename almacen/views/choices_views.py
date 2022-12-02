@@ -7,6 +7,7 @@ from almacen.choices.tipo_documento_choices import tipo_documento_CHOICES
 from almacen.choices.tipo_mantenimiento_choices import tipo_mantenimiento_CHOICES
 from almacen.choices.tipo_vehiculo_choices import tipo_vehiculo_CHOICES
 from almacen.choices.cod_tipo_bien_choices import cod_tipo_bien_CHOICES
+from almacen.choices.tipo_doc_ultimo_choices import tipo_doc_ultimo_CHOICES
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -52,4 +53,9 @@ class TipoVehiculoChoices(APIView):
 class TipoBienChoices(APIView):
     def get(self,request):
         choices = cod_tipo_bien_CHOICES
+        return Response(choices)
+
+class TipoDocUltimoChoices(APIView):
+    def get(self,request):
+        choices = tipo_doc_ultimo_CHOICES
         return Response(choices)

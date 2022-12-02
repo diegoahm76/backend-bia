@@ -12,4 +12,5 @@ urlpatterns = [
     path('tipo-mantenimiento/', views.TipoMantenimientoChoices.as_view(), name='tipo-mantenimiento'),
     path('tipo-vehiculo/', views.TipoVehiculoChoices.as_view(), name='tipo-vehiculo'),
     path('tipo-bien/', views.TipoBienChoices.as_view(), name='tipo-bien'),
+    path('tipo-doc-ultimo/', views.TipoDocUltimoChoices.as_view(), name='tipo-doc-ultimo'),
 ]

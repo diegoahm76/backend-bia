@@ -741,6 +741,16 @@ class finalizarTRD(generics.RetrieveUpdateAPIView):
         trd_ingresada = pk
         confirm = request.query_params.get("confirm")
         trd = TablaRetencionDocumental.objects.filter(id_trd = trd_ingresada).first()
+        series = SeriesDoc.objects.filter(id_ccd = trd.id_ccd).values()
+        id_series_totales = [i['id_serie_doc'] for i in series]
+        series_subseries_unidades_totales = SeriesSubseriesUnidadOrg.objects.filter(id_serie_doc__in = id_series_totales).values()
+        id_series_subseries_unidades_totales = [i['id_serie_subserie_doc'] for i in series_subseries_unidades_totales]
+        series_subseries_unidades_usadas = SeriesSubSUnidadOrgTRD.objects.filter(id_trd = trd_ingresada).values()
+        id_series_subseries_unidades_usadas = [i['id_serie_subserie_doc_id'] for i in series_subseries_unidades_usadas]
+        id_series_subseries_unidades_no_usadas = [i for i in id_series_subseries_unidades_totales if i not in id_series_subseries_unidades_usadas]
+        if len(id_series_subseries_unidades_no_usadas) >= 1:
+            instancia_id_series_subseries_unidades_no_usadas = SeriesSubseriesUnidadOrg.objects.filter(id_serie_subserie_doc__in = id_series_subseries_unidades_no_usadas).values()
+            return Response({'success': False, 'detail': 'Hay combinaciones de series, subseries y unidades que no se están usando', 'Combinaciones no usadas' : instancia_id_series_subseries_unidades_no_usadas}, status=status.HTTP_403_FORBIDDEN)
         if trd.fecha_terminado == None:
             series_subseries_unidad_org_trd = SeriesSubSUnidadOrgTRD.objects.filter(id_trd = trd_ingresada).values()
             for i in series_subseries_unidad_org_trd:
