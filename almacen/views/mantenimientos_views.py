@@ -1,10 +1,13 @@
 from almacen.models.generics_models import Bodegas
 from rest_framework import generics, status
 from rest_framework.views import APIView
+from seguridad.utils import Util
 from almacen.serializers.mantenimientos_serializers import (
     SerializerProgramacionMantenimientos,
     SerializerRegistroMantenimientos,
     AnularMantenimientoProgramadoSerializer,
+    SerializerRegistroMantenimientosPost,
+    SerializerProgramacionMantenimientosPost,
     UpdateMantenimientoProgramadoSerializer,
     SerializerUpdateRegistroMantenimientos
     )
@@ -13,22 +16,28 @@ from almacen.models.mantenimientos_models import (
     RegistroMantenimientos,
 )
 from almacen.models.bienes_models import (
-    CatalogoBienes,
     EstadosArticulo
 )
-from almacen.models.inventario_models import (
-    Inventario,
+from almacen.models.bienes_models import (
+    CatalogoBienes
+)
+from almacen.models.hoja_de_vida_models import (
+    HojaDeVidaVehiculos
 )
 from seguridad.models import (
     Personas
+)
+from almacen.models.inventario_models import (
+    Inventario
 )
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from django.db.models import F, Q
-from datetime import datetime
-from seguridad.utils import Util
-import pytz, copy
+from datetime import datetime, date, timedelta
+import pytz
+import copy
+from holidays_co import get_colombia_holidays_by_year
 
 class GetMantenimientosProgramadosById(generics.RetrieveAPIView):
     serializer_class=SerializerProgramacionMantenimientos
@@ -308,4 +317,295 @@ class UpdateRegistroMantenimiento(generics.UpdateAPIView):
                 Util.save_auditoria(auditoria_data)
                 return Response({'success':True,'detail':'actualizacion exitosa'},status=status.HTTP_200_OK)    
             return Response({'success':False,'detail':'No puede actualizar el mantenimiento porque no es el último movimiento'},status=status.HTTP_403_FORBIDDEN)    
-        return Response({'success':False,'detail':'No existe el mantenimineto'},status=status.HTTP_404_NOT_FOUND)    
+        return Response({'success':False,'detail':'No existe el mantenimineto'},status=status.HTTP_404_NOT_FOUND)
+        
+    
+class ValidarFechasProgramacion(generics.ListAPIView):
+    serializer_class = SerializerProgramacionMantenimientosPost
+    queryset = ProgramacionMantenimientos.objects.all()
+    
+    def get(self, request, *args, **kwargs):
+        datos_ingresados = request.data
+        today = date.today()
+        # Validacion de datos entrantes
+        if datos_ingresados['programacion'] != 'automatica' and datos_ingresados['programacion'] != 'manual' and datos_ingresados['programacion'] != 'kilometraje':
+            return Response({'success':False, 'detail': 'Elija entre manual o automatico'}, status=status.HTTP_404_NOT_FOUND)
+        
+        match datos_ingresados['programacion']:
+            case 'automatica':
+                if datos_ingresados['incluir_festivos'] != 'true' and datos_ingresados['incluir_festivos'] != 'false':
+                    return Response({'success':False, 'detail': 'Elija entre true o false'}, status=status.HTTP_404_NOT_FOUND)
+                if datos_ingresados['incluir_fds'] != 'true' and datos_ingresados['incluir_fds'] != 'false':
+                    return Response({'success':False, 'detail': 'Elija entre true o false'}, status=status.HTTP_404_NOT_FOUND)
+                if not (datos_ingresados['cada']).isdigit():
+                    return Response({'success':False, 'detail': 'Debe ingresar un numero en (cada)'}, status=status.HTTP_404_NOT_FOUND)
+                aux_v_f_p = datos_ingresados['desde'].split("-")
+                aux_v_f_p_2 = datos_ingresados['hasta'].split("-")
+                if not (aux_v_f_p[0]).isdigit() or not (aux_v_f_p[1]).isdigit() or not (aux_v_f_p[2]).isdigit() or not (aux_v_f_p_2[0]).isdigit() or not (aux_v_f_p_2[1]).isdigit() or not (aux_v_f_p_2[2]).isdigit():
+                    return Response({'success':False, 'detail': 'Formato de fecha no válido'}, status=status.HTTP_404_NOT_FOUND)
+                if len(aux_v_f_p) != 3 or len(aux_v_f_p_2) != 3:
+                    return Response({'success':False, 'detail': 'Formato de fecha no válido'}, status=status.HTTP_404_NOT_FOUND)
+                a = (len(aux_v_f_p[0]) != 4)
+                b = (len(aux_v_f_p[1]) <= 2 and len(aux_v_f_p[1]) >= 1)
+                c = (len(aux_v_f_p[2]) <= 2 and len(aux_v_f_p[2]) >= 1)
+                d = (len(aux_v_f_p[0]) != 4)
+                e = (len(aux_v_f_p[1]) <= 2 and len(aux_v_f_p[1]) >= 1)
+                f = (len(aux_v_f_p[2]) <= 2 and len(aux_v_f_p[2]) >= 1)
+                
+                if a or not b or not c or d or not e or not f:
+                    return Response({'success':False, 'detail': 'Formato de fecha no válido'}, status=status.HTTP_404_NOT_FOUND)
+
+                if int(aux_v_f_p[1]) <= 0 or int(aux_v_f_p[1]) >= 13 or int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 32 or int(aux_v_f_p_2[1]) <= 0 or int(aux_v_f_p_2[1]) >= 13 or int(aux_v_f_p_2[2]) <= 0 or int(aux_v_f_p_2[2]) >= 32:
+                    return Response({'success':False, 'detail': 'Formato de fecha no válido, debe ingresar un mes entre 1 y 12 y un día entre 1 y 31'}, status=status.HTTP_404_NOT_FOUND)
+                mes = int(aux_v_f_p[1])
+                anio = int(aux_v_f_p[0])
+                mes_2 = int(aux_v_f_p_2[1])
+                anio_2 = int(aux_v_f_p_2[0])
+                if mes == 2:
+                    if anio % 4 == 0 and (anio % 100 != 0 or anio % 400 == 0):
+                        if int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 30:
+                            return Response({'success':False, 'detail': 'En año bisiesto Febrero sólo puede tener hasta 29 días'}, status=status.HTTP_404_NOT_FOUND)
+                    else:
+                        if int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 29:
+                            return Response({'success':False, 'detail': 'Para le año ingresado Febrero solo puede tener hasta 28 días'}, status=status.HTTP_404_NOT_FOUND)
+                if mes == 1 or mes == 3 or mes == 5 or mes == 7 or mes == 8 or mes == 10 or mes == 12:
+                    if int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 32:
+                            return Response({'success':False, 'detail': 'Enero, Marzo, Mayo, Julio, Agosto, Octubre y Diciebre solo pueden tener entre 1 y 31 días'}, status=status.HTTP_404_NOT_FOUND)
+                if mes == 4 or mes == 6 or mes == 9 or mes == 11:
+                    if int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 31:
+                            return Response({'success':False, 'detail': 'Abril, Junio, Septiembre y Noviembre ssolo pueden tener entre 1 y 30 días'}, status=status.HTTP_404_NOT_FOUND)
+                
+                if mes_2 == 2:
+                    if anio_2 % 4 == 0 and (anio_2 % 100 != 0 or anio_2 % 400 == 0):
+                        if int(aux_v_f_p_2[2]) <= 0 or int(aux_v_f_p_2[2]) >= 30:
+                            return Response({'success':False, 'detail': 'En año bisiesto Febrero sólo puede tener hasta 29 días'}, status=status.HTTP_404_NOT_FOUND)
+                    else:
+                        if int(aux_v_f_p_2[2]) <= 0 or int(aux_v_f_p_2[2]) >= 29:
+                            return Response({'success':False, 'detail': 'Para le año ingresado Febrero solo puede tener hasta 28 días'}, status=status.HTTP_404_NOT_FOUND)
+                if mes_2 == 1 or mes_2 == 3 or mes_2 == 5 or mes_2 == 7 or mes_2 == 8 or mes_2 == 10 or mes_2 == 12:
+                    if int(aux_v_f_p_2[2]) <= 0 or int(aux_v_f_p_2[2]) >= 32:
+                            return Response({'success':False, 'detail': 'Enero, Marzo, Mayo, Julio, Agosto, Octubre y Diciebre solo pueden tener entre 1 y 31 días'}, status=status.HTTP_404_NOT_FOUND)
+                if mes_2 == 4 or mes_2 == 6 or mes_2 == 9 or mes_2 == 11:
+                    if int(aux_v_f_p_2[2]) <= 0 or int(aux_v_f_p_2[2]) >= 31:
+                            return Response({'success':False, 'detail': 'Abril, Junio, Septiembre y Noviembre ssolo pueden tener entre 1 y 30 días'}, status=status.HTTP_404_NOT_FOUND)
+                aux_cada = int(datos_ingresados['cada'])
+                if aux_cada <= 0 or aux_cada >= 18:
+                    return Response({'success':False, 'detail': 'La frecuencia (cada) debe de estar entre 1 y 17'}, status=status.HTTP_404_NOT_FOUND)
+                future_date_after_1yrs = today + timedelta(days = 365)
+                future_date_after_2yrs = today + timedelta(days = 730)
+                future_date_after_3yrs = today + timedelta(days = 1095)
+                current_year = today.year
+                holidays_next_year = get_colombia_holidays_by_year(future_date_after_1yrs.year)
+                holidays_future_date_after_2yrs = get_colombia_holidays_by_year(future_date_after_2yrs.year)
+                holidays_future_date_after_3yrs = get_colombia_holidays_by_year(future_date_after_3yrs.year)
+                holidays_current_year = get_colombia_holidays_by_year(current_year)
+                total_holidays = holidays_future_date_after_3yrs + holidays_future_date_after_2yrs + holidays_next_year + holidays_current_year
+                date_holidays_2022 = [(i[0]).strftime("%F") for i in total_holidays]
+                fecha_desde = (datetime.strptime(datos_ingresados['desde'], '%Y-%m-%d')).date()
+                fecha_hasta = (datetime.strptime(datos_ingresados['hasta'], '%Y-%m-%d')).date()
+                aux_validacion_tiempo_max = future_date_after_2yrs - fecha_hasta
+                aux_validacion_tiempo_min =  fecha_desde - today
+                aux_validacion_fechas_orden = fecha_hasta - fecha_desde
+                #Validación del rango de fechas
+                if int(aux_validacion_fechas_orden.days) <= 0:
+                    return Response({'success':False, 'detail':'La fecha hasta debe ser mayor de la fecha desde'}, status=status.HTTP_404_NOT_FOUND)
+                if int(aux_validacion_tiempo_min.days) <= 0 or int(aux_validacion_tiempo_min.days) >= 180:
+                    return Response({'success':False, 'detail':'La fecha ingresada debe ser mayor a la actual y menor a 180 días despues de hoy'}, status=status.HTTP_404_NOT_FOUND)
+                if int(aux_validacion_tiempo_max.days) <= 0:
+                    return Response({'success':False, 'detail':'La fecha hasta debe ser menos a dos años a partir de hoy'}, status=status.HTTP_404_NOT_FOUND)
+                cada = int(datos_ingresados['cada'])
+                
+                rango_dias = int(aux_validacion_fechas_orden.days)
+                cuenta_fechas = 0
+                fechas_return = []
+                match datos_ingresados['unidad_cada']:
+                    case 'semanas':
+                        periodo_semanal = cada * 7
+                        max_semanal_posible = int(rango_dias/periodo_semanal)
+                        cuenta_fechas = fecha_desde
+                                                     
+                        for i in range(max_semanal_posible):
+                            if datos_ingresados['incluir_festivos'] == 'false' and datos_ingresados['incluir_fds'] == 'false':
+                                aux_validar_sabados_domingos = (cuenta_fechas).strftime("%w")
+                                while (aux_validar_sabados_domingos == '6') or (aux_validar_sabados_domingos == '0') or (cuenta_fechas.strftime("%F") in date_holidays_2022):
+                                    cuenta_fechas = cuenta_fechas + timedelta(days = 1)
+                                    aux_validar_sabados_domingos = (cuenta_fechas).strftime("%w")
+                                    
+                            if datos_ingresados['incluir_festivos'] == 'false' and datos_ingresados['incluir_fds'] == 'true':
+                                while (cuenta_fechas.strftime("%F") in date_holidays_2022):
+                                    cuenta_fechas = cuenta_fechas + timedelta(days = 1)
+                            
+                            if datos_ingresados['incluir_festivos'] == 'true' and datos_ingresados['incluir_fds'] == 'false':
+                                aux_validar_sabados_domingos = (cuenta_fechas).strftime("%w")
+                                while (aux_validar_sabados_domingos == '6') or (aux_validar_sabados_domingos == '0'):
+                                    cuenta_fechas = cuenta_fechas + timedelta(days = 1)
+                                    aux_validar_sabados_domingos = (cuenta_fechas).strftime("%w")
+                                    
+                            fechas_return.append(cuenta_fechas.strftime('%Y-%m-%d'))
+                            cuenta_fechas = cuenta_fechas + timedelta(days = periodo_semanal)
+                            
+                        aux_last = fecha_hasta - (datetime.strptime(fechas_return[len(fechas_return)-1], '%Y-%m-%d')).date()
+                        if aux_last.days < 0:
+                            fechas_return.pop
+                    case 'meses':
+                        periodo_meses = cada * 30
+                        max_mensual_posible = int(rango_dias/periodo_meses)
+                        cuenta_fechas = fecha_desde
+                        aux_validar_sabados_domingos = (cuenta_fechas).strftime("%w")
+                        
+                        while (aux_validar_sabados_domingos == '6') or (aux_validar_sabados_domingos == '0') or (cuenta_fechas.strftime("%F") in date_holidays_2022):
+                            cuenta_fechas = cuenta_fechas + timedelta(days = 1)
+                            aux_validar_sabados_domingos = (cuenta_fechas).strftime("%w")
+                        
+                        for i in range(max_mensual_posible):
+                            if datos_ingresados['incluir_festivos'] == 'false' or datos_ingresados['incluir_fds'] == 'false':
+                                aux_validar_sabados_domingos = (cuenta_fechas).strftime("%w")
+                                while (aux_validar_sabados_domingos == '6') or (aux_validar_sabados_domingos == '0') or (cuenta_fechas.strftime("%F") in date_holidays_2022):
+                                    cuenta_fechas = cuenta_fechas + timedelta(days = 1)
+                                    aux_validar_sabados_domingos = (cuenta_fechas).strftime("%w")
+                                    
+                            if datos_ingresados['incluir_festivos'] == 'false' or datos_ingresados['incluir_fds'] == 'true':
+                                while (cuenta_fechas.strftime("%F") in date_holidays_2022):
+                                    cuenta_fechas = cuenta_fechas + timedelta(days = 1)
+                            
+                            if datos_ingresados['incluir_festivos'] == 'true' or datos_ingresados['incluir_fds'] == 'false':
+                                aux_validar_sabados_domingos = (cuenta_fechas).strftime("%w")
+                                while (aux_validar_sabados_domingos == '6') or (aux_validar_sabados_domingos == '0'):
+                                    cuenta_fechas = cuenta_fechas + timedelta(days = 1)
+                                    aux_validar_sabados_domingos = (cuenta_fechas).strftime("%w")
+                            fechas_return.append(cuenta_fechas.strftime('%Y-%m-%d'))
+                            cuenta_fechas = cuenta_fechas + timedelta(days = periodo_meses)
+                            
+                        aux_last = fecha_hasta - (datetime.strptime(fechas_return[len(fechas_return)-1], '%Y-%m-%d')).date()
+                        if aux_last.days < 0:
+                            fechas_return.pop
+
+                    case other:
+                        return Response({'success':False, 'detail':'Ingrese una unidad de cada válida', 'Opciones' : 'semanas o menses'}, status=status.HTTP_404_NOT_FOUND)
+                    
+                return Response({'success':True, 'detail': fechas_return}, status=status.HTTP_200_OK)
+            case 'manual':
+                return Response({'success':True, 'detail': 'Manual'}, status=status.HTTP_200_OK)
+            case 'kilometraje':
+                vehiculo = CatalogoBienes.objects.filter(id_bien=int(datos_ingresados['id_articulo'])).values().first()
+                if not vehiculo:
+                    return Response({'success':False, 'detail': 'Debe ingresar el id de un articulo existente'}, status=status.HTTP_400_BAD_REQUEST)
+                if vehiculo['cod_tipo_activo'] != 'Veh':
+                    return Response({'success':False, 'detail': 'No se puedeprogramar por kilometraje un tipo de activo diferente a un vehículo'}, status=status.HTTP_400_BAD_REQUEST)
+                if not datos_ingresados['desde'].isdigit() or not datos_ingresados['hasta'].isdigit() or not datos_ingresados['cada'].isdigit():
+                    return Response({'success':False, 'detail': 'En desde, cada o hasta debe ingresar un número entero'}, status=status.HTTP_400_BAD_REQUEST)
+                kilometraje_actual = HojaDeVidaVehiculos.objects.filter(id_articulo=vehiculo['id_bien']).values().first()
+                if int(datos_ingresados['desde']) <= int(kilometraje_actual['ultimo_kilometraje']) or int(datos_ingresados['desde']) >= (int(kilometraje_actual['ultimo_kilometraje']) + 10000) or int(datos_ingresados['hasta']) >= (int(kilometraje_actual['ultimo_kilometraje']) + 100000):
+                    return Response({'success':False, 'detail': 'El kilometraje (desde) debe ser mayor al último kilometraje del equipo'}, status=status.HTTP_400_BAD_REQUEST)
+                if int(datos_ingresados['cada']) > 10001:
+                    return Response({'success':False, 'detail': 'Cada debe ser menor 10000'}, status=status.HTTP_400_BAD_REQUEST)
+                max_mantenimientos = int((int(datos_ingresados['hasta']) - int(datos_ingresados['desde']))/int(datos_ingresados['cada']))
+                kilometros_mantenimientos = []
+                mantenimiento_suma = int(datos_ingresados['desde'])
+                for i in range(max_mantenimientos + 1):
+                    kilometros_mantenimientos.append(str(mantenimiento_suma))
+                    mantenimiento_suma = mantenimiento_suma + int(datos_ingresados['cada'])
+                return Response({'success':True, 'detail': kilometros_mantenimientos}, status=status.HTTP_200_OK)
+            case other:
+                return Response({'success':True, 'detail': 'Para (programacion) elija una opción entre manual o automatica'}, status=status.HTTP_200_OK)
+        
+        
+        
+            
+class CreateProgramacionMantenimiento(generics.CreateAPIView):
+    serializer_class = SerializerProgramacionMantenimientosPost
+    queryset = ProgramacionMantenimientos.objects.all()
+    
+    def post(self, request, *args, **kwargs):
+        datos_ingresados = request.data
+        
+        # Validación de datos ingresados
+        for i in datos_ingresados:
+            id_articulo = i['id_articulo']
+            articulo = CatalogoBienes.objects.filter(id_bien=id_articulo).values().first()
+            if not articulo:
+                return Response({'success':False, 'detail':'Ingrese un id de articulo válido'}, status=status.HTTP_404_NOT_FOUND)
+            if articulo['cod_tipo_bien'] != 'A':
+                return Response({'success':False, 'detail':'Para programar un mantenimiento el bien debe ser un activo fijo'}, status=status.HTTP_404_NOT_FOUND)
+            if articulo['cod_tipo_activo'] != 'Com' and articulo['cod_tipo_activo'] != 'Veh' and articulo['cod_tipo_activo'] != 'OAc':
+                return Response({'success':False, 'detail':'Para programar un mantenimiento el bien debe ser de tipo computador, vehiculo u otro tipo de activo'}, status=status.HTTP_404_NOT_FOUND)
+            if articulo['nivel_jerarquico'] != 5:
+                return Response({'success':False, 'detail':'Para programar un mantenimiento el bien debe ser de nivel 5'}, status=status.HTTP_404_NOT_FOUND)
+            if i['kilometraje_programado'] != None and i['fecha_programada'] != None:
+                return Response({'success':False, 'detail':'Debe programar por kilometraje o por fecha, no las dos opciones a la vez'}, status=status.HTTP_404_NOT_FOUND)
+            i['fecha_generada'] = date.today()
+            serializer = self.get_serializer(data=i)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            # AUDITORIA CREACIÓN DE MANTENIMIENTO
+            user_logeado = request.user.id_usuario
+            dirip = Util.get_client_ip(request)
+            descripcion = {'Articulo':str(i['id_articulo']), 'Fecha generada':str(i['fecha_generada']), 'Fecha programada':str(i['fecha_programada']), 'Kilometraje programado':str(i['kilometraje_programado'])}
+            valores_actualizados= None
+            auditoria_data = {
+                'id_usuario': user_logeado,
+                'id_modulo': 23,
+                'cod_permiso': 'CR',
+                'subsistema': 'ALMA',
+                'dirip': dirip,
+                'descripcion': descripcion,
+                'valores_actualizados': valores_actualizados
+            }
+            Util.save_auditoria(auditoria_data)
+        
+        return Response({'success':False, 'detail':'Mantenimiento programado con éxtio'}, status=status.HTTP_404_NOT_FOUND)
+   
+   
+class CreateRegistroMantenimiento(generics.CreateAPIView):
+    serializer_class = SerializerRegistroMantenimientosPost
+    queryset = RegistroMantenimientos.objects.all()
+    
+    def post(self, request, *args, **kwargs):
+        datos_ingresados = request.data
+        id_articulo = datos_ingresados['id_articulo']
+        fecha_registrado = (datetime.strptime(datos_ingresados['fecha_registrado'], '%Y-%m-%d')).date()
+        fecha_ejecutado = (datetime.strptime(datos_ingresados['fecha_ejecutado'], '%Y-%m-%d')).date()
+        diferencia_dias = fecha_registrado - fecha_ejecutado
+        programacion_mantenimientos = ProgramacionMantenimientos.objects.filter(id_programacion_mtto = datos_ingresados['id_programacion_mtto']).values().first()
+        cod_estado_final = EstadosArticulo.objects.filter(cod_estado=datos_ingresados['cod_estado_final'])
+        persona_realiza = Personas.objects.filter(id_persona=datos_ingresados['id_persona_realiza']).values().filter()
+        datos_ingresados['id_persona_diligencia'] = request.user.id_usuario
+        
+        if not articulo:
+            return Response({'success':False, 'detail':'Ingrese un id de articulo válido'}, status=status.HTTP_404_NOT_FOUND)
+        if diferencia_dias.days < 0:
+            return Response({'success':False, 'detail':'La fecha del registro del mantenimiento debe ser mayor o igual a la fecha de la ejecución del mantenimiento'}, status=status.HTTP_404_NOT_FOUND)
+        if not (datos_ingresados['dias_empleados']).isdigit() or int(datos_ingresados['dias_empleados']) <= 0:
+            return Response({'success':False, 'detail':'Cantidad de días debe ser un número entero mayor a cero'}, status=status.HTTP_404_NOT_FOUND)
+        if datos_ingresados['dias_empleados'] > diferencia_dias.days:
+            return Response({'success':False, 'detail':'La diferecia de fecha registrado y fecha ejecutado no puede ser mayo a la cantidad de días empleados'}, status=status.HTTP_404_NOT_FOUND)
+        articulo = CatalogoBienes.objects.filter(id_bien=id_articulo).values().first()
+        if datos_ingresados['cod_tipo_mantenimiento'] != 'P' and datos_ingresados['cod_tipo_mantenimiento'] != 'C':
+            return Response({'success':False, 'detail':'El tipo de mantenimiento debe ser P (preventivo) o C (correctivo)'}, status=status.HTTP_404_NOT_FOUND)
+        if not programacion_mantenimientos:
+            return Response({'success':False, 'detail':'El id de programación de mantenimientos no existe'}, status=status.HTTP_404_NOT_FOUND)
+        if programacion_mantenimientos['id_articulo_id'] != id_articulo:
+            return Response({'success':False, 'detail':'El id de programación de mantenimientos no tiene relación con el artículo enviado'}, status=status.HTTP_404_NOT_FOUND)
+        if not cod_estado_final:
+            return Response({'success':False, 'detail':'El codigo final no existe'}, status=status.HTTP_404_NOT_FOUND)
+        if not persona_realiza:
+            return Response({'success':False, 'detail':'El id de la persona que realiza el mantenimiento no existe'}, status=status.HTTP_404_NOT_FOUND)
+        if programacion_mantenimientos:
+            intance_programacion_mantenimientos = ProgramacionMantenimientos.objects.filter(id_programacion_mtto = datos_ingresados['id_programacion_mtto']).first()
+            intance_programacion_mantenimientos.ejecutado = True
+            intance_programacion_mantenimientos.save()
+        inventario = Inventario.objects.filter(id_bien=datos_ingresados['id_articulo']).first()
+        if inventario == None:
+            return Response({'success':False, 'detail':'El id del artículo aún no se encuentra en el inventario'}, status=status.HTTP_404_NOT_FOUND)
+        aux_fecha = fecha_registrado - inventario.fecha_ultimo_movimiento
+        if aux_fecha <= 0:
+            return Response({'success':False, 'detail':'No se puede registrar el mantenimiento debido a que La fecha del registro del mantenimiento debe ser POSTERIOR O IGUAL a la fecha en la cual fue actualizado el estado anterior del activo'}, status=status.HTTP_404_NOT_FOUND)
+        inventario.fecha_ultimo_movimiento = datos_ingresados['fecha_registrado']
+        inventario.cod_estado_activo = datos_ingresados['cod_estado_final']
+        inventario.save()        
+        
+        serializer = self.get_serializer(data=datos_ingresados)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success':True, 'detail':'Mantenimiento registrado con éxito'}, status=status.HTTP_404_NOT_FOUND)
+   

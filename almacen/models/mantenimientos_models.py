@@ -7,6 +7,7 @@ class ProgramacionMantenimientos(models.Model):
     id_programacion_mtto = models.AutoField(primary_key=True, db_column='T069IdProgramacionMtto')
     id_articulo = models.ForeignKey(CatalogoBienes, on_delete=models.CASCADE, db_column='T069Id_Articulo')
     cod_tipo_mantenimiento = models.CharField(max_length=1, choices=tipo_mantenimiento_CHOICES, db_column='T069codTipoMantenimiento')
+    kilometraje_programado = models.IntegerField(db_column='T069kilometrajeProgramado', blank=True, null = True)
     fecha_generada = models.DateField(db_column='T069fechaGenerada')
     fecha_programada = models.DateField(db_column='T069fechaProgramada')
     motivo_mantenimiento = models.CharField(max_length=255, db_column='T069motivoMantenimiento')
