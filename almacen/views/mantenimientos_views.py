@@ -424,7 +424,7 @@ class ValidarFechasProgramacion(generics.ListAPIView):
                         max_semanal_posible = int(rango_dias/periodo_semanal)
                         cuenta_fechas = fecha_desde
                                                      
-                        for i in range(max_semanal_posible):
+                        for i in range(max_semanal_posible + 1):
                             if datos_ingresados['incluir_festivos'] == 'false' and datos_ingresados['incluir_fds'] == 'false':
                                 aux_validar_sabados_domingos = (cuenta_fechas).strftime("%w")
                                 while (aux_validar_sabados_domingos == '6') or (aux_validar_sabados_domingos == '0') or (cuenta_fechas.strftime("%F") in date_holidays_2022):
@@ -457,7 +457,7 @@ class ValidarFechasProgramacion(generics.ListAPIView):
                             cuenta_fechas = cuenta_fechas + timedelta(days = 1)
                             aux_validar_sabados_domingos = (cuenta_fechas).strftime("%w")
                         
-                        for i in range(max_mensual_posible):
+                        for i in range(max_mensual_posible + 1):
                             if datos_ingresados['incluir_festivos'] == 'false' or datos_ingresados['incluir_fds'] == 'false':
                                 aux_validar_sabados_domingos = (cuenta_fechas).strftime("%w")
                                 while (aux_validar_sabados_domingos == '6') or (aux_validar_sabados_domingos == '0') or (cuenta_fechas.strftime("%F") in date_holidays_2022):
