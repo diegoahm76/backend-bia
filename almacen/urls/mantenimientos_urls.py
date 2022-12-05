@@ -9,6 +9,8 @@ urlpatterns = [
     path('programados/anular/<str:id_programacion_mtto>/',views.AnularMantenimientoProgramado.as_view(),name='mantenimientos-programados-anular'),
     path('programados/get-by-fechas/',views.GetMantenimientosProgramadosByFechas.as_view(),name='mantenimientos-programados-fechas-get'),
     path('programados/update/<str:id_mantenimiento>/',views.UpdateMantenimientoProgramado.as_view(),name='mantenimientos-programados-update'),
+    path('programados/create/',views.CreateProgramacionMantenimiento.as_view(),name='mantenimientos-programados-create'),
+    path('programados/validar-fechas/',views.ValidarFechasProgramacion.as_view(),name='validar-fechas'),
 
     #Mantenimientos Ejecutados
     path('ejecutados/get-list/<str:id_articulo>/',views.GetMantenimientosEjecutadosList.as_view(),name='mantenimientos-ejecutados-get'),
@@ -16,9 +18,5 @@ urlpatterns = [
     path('ejecutados/get-by-id/<str:pk>/',views.GetMantenimientosEjecutadosById.as_view(),name='mantenimientos-ejecutados-id-get'),
     path('ejecutados/delete/<str:pk>/',views.DeleteRegistroMantenimiento.as_view(),name='mantenimientos-ejecutados-delete'),
     path('ejecutados/update/<str:pk>/',views.UpdateRegistroMantenimiento.as_view(),name='mantenimiento-ejecutados-update'),
-    
-    #Programación de mantenimientos
-    path('programar/',views.CreateProgramacionMantenimiento.as_view(),name='programar-mantenimientos'),
-    path('validar-fechas/',views.ValidarFechasProgramacion.as_view(),name='validar-fechas'),
-    path('registrar/',views.CreateRegistroMantenimiento.as_view(),name='registrar-mantenimientos')
+    path('ejecutados/create/',views.CreateRegistroMantenimiento.as_view(),name='mantenimiento-ejecutados-create'),
 ]
