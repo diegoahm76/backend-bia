@@ -328,8 +328,75 @@
           "subsistema":"ALMA",
           "descripcion":"Permite administrar el catálogo de los bienes de la entidad a manejar en el subsistema de Almacén"
         }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 34,
+        "fields": {
+          "id_modulo": 34,
+          "nombre_modulo": "Entrada de Bienes de Almacén",
+          "subsistema":"ALMA",
+          "descripcion":"Permite ingresar bienes al Almacén de la entidad para su control"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 35,
+        "fields": {
+          "id_modulo": 35,
+          "nombre_modulo": "Solicitud de Bienes de Consumo",
+          "subsistema":"ALMA",
+          "descripcion":"Permite solicitar bienes de consumo por parte de la entidad al almacén de la misma"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 36,
+        "fields": {
+          "id_modulo": 36,
+          "nombre_modulo": "Solicitud de Bienes de Consumo para Viveros",
+          "subsistema":"ALMA",
+          "descripcion":"Permite solicitar bienes de consumo para uso en la actividad misional de Viveros por parte del personal de Viveros al Almacén de la entidad"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 37,
+        "fields": {
+          "id_modulo": 37,
+          "nombre_modulo": "Aprobación de Solicitudes de Bienes",
+          "subsistema":"ALMA",
+          "descripcion":"Permite aprobar o rechazar solicitudes de bienes de las cuales se le elijió como responsable por parte del solicitante"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 38,
+        "fields": {
+          "id_modulo": 38,
+          "nombre_modulo": "Aprobación de Solicitudes de Consumo para Vivero",
+          "subsistema":"ALMA",
+          "descripcion":"Permite aprobar o rechazar solicitudes de bienes de Consumo para la actividad misional de Vivero y sobre las cuales se le elijió como responsable por parte del solicitante"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 39,
+        "fields": {
+          "id_modulo": 39,
+          "nombre_modulo": "Rechazo de Solicitudes de Bienes desde Almacén",
+          "subsistema":"ALMA",
+          "descripcion":"Permite rechazar por parte de Almacén, solicitudes de bienes realizadas por las diferentes áreas de la entidad"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 40,
+        "fields": {
+          "id_modulo": 40,
+          "nombre_modulo": "Listado de Solicitudes de Bienes Pendientes por Despachar",
+          "subsistema":"ALMA",
+          "descripcion":"Lista todas las solicitudes realizadas por la empresa y que no han sido gestionadas por Almacén"
+        }
       }
-
-
-
   ]
