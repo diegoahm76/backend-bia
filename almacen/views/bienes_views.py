@@ -59,6 +59,9 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                         catalogo_bien.maneja_hoja_vida = data['maneja_hoja_vida']
                         catalogo_bien.visible_solicitudes = data['visible_solicitudes']
                         catalogo_bien.descripcion = data['descripcion']
+                        catalogo_bien.save()
+                        serializer = CatalogoBienesSerializer(catalogo_bien, many=False)
+                        return Response(serializer.data, status=status.HTTP_200_OK)
                     case 'C':
                         catalogo_bien.nombre = data['nombre']
                         catalogo_bien.cod_metodo_valoracion = data['cod_metodo_valoracion']
@@ -69,6 +72,10 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                         catalogo_bien.stock_maximo = data['stock_maximo']
                         catalogo_bien.solicitable_vivero = data['solicitable_vivero']
                         catalogo_bien.visible_solicitudes = data['visible_solicitudes']
+
+                        catalogo_bien.save()
+                        serializer = CatalogoBienesSerializer(catalogo_bien, many=False)
+                        return Response(serializer.data, status=status.HTTP_200_OK)
                     case _:
                         return Response({'success':False, 'detail':'No hay ningun bien referente al id_bien enviado'}, status=status.HTTP_400_BAD_REQUEST)    
             else:
