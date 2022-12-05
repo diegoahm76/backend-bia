@@ -26,7 +26,7 @@
         "pk" : 3,
         "fields": {
             "id_unidad_medida":3,
-            "nombre":"centimetro",
+            "nombre":"centímetro",
             "abreviatura":"cm",
             "id_magnitud":1,
             "precargado": true

@@ -8,6 +8,9 @@ from almacen.choices.tipo_mantenimiento_choices import tipo_mantenimiento_CHOICE
 from almacen.choices.tipo_vehiculo_choices import tipo_vehiculo_CHOICES
 from almacen.choices.cod_tipo_bien_choices import cod_tipo_bien_CHOICES
 from almacen.choices.tipo_doc_ultimo_choices import tipo_doc_ultimo_CHOICES
+from almacen.choices.metodos_valoracion_articulos_choices import metodos_valoracion_articulos_CHOICES
+from almacen.choices.tipos_activo_choices import tipos_activo_CHOICES
+from almacen.choices.tipos_depreciacion_activos_choices import tipos_depreciacion_activos_CHOICES
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -36,10 +39,12 @@ class TipoCombustibleChoices(APIView):
     def get(self,request):
         choices = tipo_combustible_CHOICES
         return Response(choices)
+
 class TipoDocumentoChoices(APIView):
     def get(self,request):
         choices = tipo_documento_CHOICES
         return Response(choices)
+
 class TipoMantenimientoChoices(APIView):
     def get(self,request):
         choices = tipo_mantenimiento_CHOICES
@@ -58,4 +63,19 @@ class TipoBienChoices(APIView):
 class TipoDocUltimoChoices(APIView):
     def get(self,request):
         choices = tipo_doc_ultimo_CHOICES
+        return Response(choices)
+
+class MetodoValoracionChoices(APIView):
+    def get(self,request):
+        choices = metodos_valoracion_articulos_CHOICES
+        return Response(choices)
+
+class TipoActivoChoices(APIView):
+    def get(self,request):
+        choices = tipos_activo_CHOICES
+        return Response(choices)
+
+class TipoDepreciacionActivos(APIView):
+    def get(self,request):
+        choices = tipos_depreciacion_activos_CHOICES
         return Response(choices)

@@ -13,4 +13,8 @@ urlpatterns = [
     path('tipo-vehiculo/', views.TipoVehiculoChoices.as_view(), name='tipo-vehiculo'),
     path('tipo-bien/', views.TipoBienChoices.as_view(), name='tipo-bien'),
     path('tipo-doc-ultimo/', views.TipoDocUltimoChoices.as_view(), name='tipo-doc-ultimo'),
+    path('metodo-valoracion-articulo/', views.MetodoValoracionChoices.as_view(), name='metodo-valoracion-articulo'),
+    path('tipo-activo/', views.TipoActivoChoices.as_view(), name='tipo-activo'),
+    path('tipo-depreciacion-activo/', views.TipoDepreciacionActivos.as_view(), name='tipo-depreciacion-activos'),
+    
 ]

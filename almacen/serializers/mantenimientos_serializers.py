@@ -38,3 +38,22 @@ class SerializerUpdateRegistroMantenimientos(serializers.ModelSerializer):
     class Meta:
         model=RegistroMantenimientos
         fields=('cod_tipo_mantenimiento','acciones_realizadas','dias_empleados','observaciones','cod_estado_final','valor_mantenimiento','contrato_mantenimiento','id_persona_realiza','id_persona_diligencia','ruta_documentos_soporte')
+
+
+class SerializerProgramacionMantenimientosPost(serializers.ModelSerializer):
+    class Meta:
+        model=ProgramacionMantenimientos
+        fields=('__all__')
+        extra_kwargs = {
+            'id_articulo': {'required': True},
+            'cod_tipo_mantenimiento': {'required': True},
+            'fecha_generada': {'required': True},
+            'fecha_programada': {'required': True},
+            'motivo_mantenimiento': {'required': True},
+            'ejecutado': {'required': True}
+        }
+
+class SerializerRegistroMantenimientosPost(serializers.ModelSerializer):
+    class Meta:
+        model=RegistroMantenimientos
+        fields=('__all__')
