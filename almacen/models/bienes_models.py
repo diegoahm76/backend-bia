@@ -130,12 +130,11 @@ class ItemEntradaAlmacen(models.Model):
     cod_estado = models.CharField(max_length=1, choices=EstadosArticulo,db_column='T064Cod_Estado')
     doc_identificador_bien= models.CharField(max_length=30, blank=True, null=True, db_column='T064docIdentificadorBien')
     cantidad_vida_util= models.SmallIntegerField(blank=True,  null=True, db_column='T064cantidadVidaUtil')
-    id_unidad_medida_vida_util= models.ForeignKey(UnidadesMedida,on_delete=models.SET_NULL,blank=True,null=True,db_column='')
+    id_unidad_medida_vida_util= models.ForeignKey(UnidadesMedida,on_delete=models.SET_NULL,blank=True,null=True,db_column='T064Id_UnidadMedidaVidaUtil')
+    valor_residual = models.DecimalField(max_digits=10, decimal_places=0, db_column='T064valorResidual',blank=True,null=True)
+    numero_posicion = models.SmallIntegerField(db_column='T064nroPosicion')
     class Meta:
         db_table = 'T064Items_EntradaAlmacen					'
         verbose_name = 'Tipo entrada de Almacen'
-        verbose_name_plural = 'Tipos de Entradas de Almacen'
+        verbose_name_plural = 'Tipos de Entradas de Almacen'	
 	
-			
-T064valorResidual	
-T064nroPosicion		
