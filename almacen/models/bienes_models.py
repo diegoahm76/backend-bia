@@ -5,7 +5,7 @@ from almacen.choices.cod_tipo_bien_choices import cod_tipo_bien_CHOICES
 from almacen.choices.metodos_valoracion_articulos_choices import metodos_valoracion_articulos_CHOICES
 from almacen.choices.tipos_depreciacion_activos_choices import tipos_depreciacion_activos_CHOICES
 from seguridad.models import Personas
-from almacen.models import Marcas, UnidadesMedida, PorcentajesIVA
+from almacen.models import Marcas, UnidadesMedida, PorcentajesIVA, TiposEntradas, Bodegas 
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 class CatalogoBienes(models.Model):
@@ -92,3 +92,50 @@ class TiposActivo(models.Model):
         db_table = 'T060TiposActivo'
         verbose_name = 'Tipo Activos'
         verbose_name_plural = 'Tipos Activos'
+
+class EntradasAlmacen(models.Model):
+    id_entrada_almacen = models.AutoField(primary_key=True, db_column='T063IdEntradaAlmacen')
+    numero_entrada_almacen = models.PositiveIntegerField(db_column='T063nroEntradaAlmacen')	
+    fecha_entrada = models.DateTimeField(db_column='T063fechaEntrada')
+    fecha_real_registro = models.DateTimeField(db_column='T063fechaRealRegistro')
+    motivo = models.CharField( max_length=255,db_column='T063motivo')
+    observacion = models.CharField( max_length=255,db_column='T063observacion',blank=True,null=True)
+    id_proveedor= models.ForeignKey(Personas,on_delete=models.CASCADE, db_column='T063Id_Proveedor')
+    id_tipo_entrada = models.ForeignKey(TiposEntradas, on_delete=models.CASCADE, db_column='T063Cod_TipoEntrada')
+    id_bodega = models.ForeignKey(Bodegas, on_delete=models.CASCADE, db_column='T063Id_BodegaGral')	
+    valor_total_entrada = models.DecimalField(max_digits=12,decimal_places=2, db_column='T063valorTotalEntrada')
+    id_creador = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T063Id_PersonaCrea')	
+    id_persona_ult_act_dif_creador = models.ForeignKey(Personas, on_delete=models.SET_NULL,blank=True,null=True, db_column='T063Id_PersonaUltActualizacionDifACrea')			
+    fecha_ultima_actualizacion_diferente_creador= models.DateTimeField(null=True,blank=True, db_column='T063fechaUltActualizacionDifACrea')	
+    entrada_anulada= models.BooleanField(default=False,db_column='T063entradaAnulada') 
+    justificacion_anulacion=models.CharField(max_length=255,blank=True,null=True,db_column='T063justificacionAnulacion') 
+    fecha_anulacion=models.DateTimeField(db_column='T063fechaAnulacion')
+    id_persona_anula=models.ForeignKey(Personas,on_delete=models.SET_NULL, blank=True, null=True, db_column='T063Id_PersonaAnula')
+
+    class Meta:
+        db_table = 'T063EntradasAlmacen'
+        verbose_name = 'Entrada de Almacen'
+        verbose_name_plural = 'Entradas de Almacen'
+
+class ItemEntradaAlmacen(models.Model):
+    id_item_entrada_almacen = models.AutoField(primary_key=True, db_column='T064IdItem_EntradaAlmacen')
+    id_entrada_almacen = models.ForeignKey(EntradasAlmacen, on_delete=models.CASCADE, db_column='T064Id_EntradaAlmacen	')
+    id_bien = models.ForeignKey(CatalogoBienes, on_delete=models.CASCADE, db_column='T064Id_Bien')
+    cantidad = models.IntegerField(db_column='T064cantidad')
+    valor_unitario = models.DecimalField(max_digits=9,decimal_places=2,db_column='T064valorUnitario')
+    porcentaje_iva = models.DecimalField(max_digits=5,decimal_places=2,db_column='T064porcentajeIVA')
+    valor_iva = models.DecimalField(max_digits=9,decimal_places=2,db_column='T064valorIVA')
+    valor_total_item = models.DecimalField(max_digits=9,decimal_places=2,db_column='T064valorTotalItem')
+    id_bodega = models.ForeignKey(Bodegas, on_delete=models.CASCADE, db_column='T064Id_Bodega')
+    cod_estado = models.CharField(max_length=1, choices=EstadosArticulo,db_column='T064Cod_Estado')
+    doc_identificador_bien= models.CharField(max_length=30, blank=True, null=True, db_column='T064docIdentificadorBien')
+    cantidad_vida_util= models.SmallIntegerField(blank=True,  null=True, db_column='T064cantidadVidaUtil')
+    id_unidad_medida_vida_util= models.ForeignKey(UnidadesMedida,on_delete=models.SET_NULL,blank=True,null=True,db_column='')
+    class Meta:
+        db_table = 'T064Items_EntradaAlmacen					'
+        verbose_name = 'Tipo entrada de Almacen'
+        verbose_name_plural = 'Tipos de Entradas de Almacen'
+	
+			
+T064valorResidual	
+T064nroPosicion		
