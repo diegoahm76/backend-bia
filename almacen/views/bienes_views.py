@@ -25,7 +25,52 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
         if data['id_bien']!=None:
             catalogo_bien = CatalogoBienes.objects.filter(id_bien= data['id_bien']).first()
             if catalogo_bien:
-                pass
+                try:
+                    id_unidad_medida = UnidadesMedida.objects.get(id_unidad_medida=data['id_unidad_medida'])
+                    pass
+                except:
+                    return Response({'success':False, 'detail':'El id de unidad de medida ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                try:
+                    id_porcentaje_iva = PorcentajesIVA.objects.get(id_porcentaje_iva=data['id_porcentaje_iva'])
+                    pass
+                except:
+                    return Response({'success':False, 'detail':'El id de porcentaje de iva ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                try:
+                    id_unidad_medida_vida_util = UnidadesMedida.objects.get(id_unidad_medida=data['id_unidad_medida_vida_util'])
+                    pass
+                except:
+                    return Response({'success':False, 'detail':'El id de unidad de medida vida util ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                try:
+                    id_marca = UnidadesMedida.objects.get(id_marca=data['id_marca'])
+                    pass
+                except:
+                    return Response({'success':False, 'detail':'El id de marca ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+ 
+                match data['cod_tipo_bien']:
+                    case 'A':                       
+                        catalogo_bien.nombre = data['nombre']
+                        catalogo_bien.cod_tipo_activo = data['cod_tipo_activo']
+                        catalogo_bien.id_porcentaje_iva = id_porcentaje_iva
+                        catalogo_bien.cod_tipo_depreciacion = data['cod_tipo_depreciacion']
+                        catalogo_bien.id_unidad_medida_vida_util = id_unidad_medida_vida_util
+                        catalogo_bien.cantidad_vida_util = data['cantidad_vida_util']
+                        catalogo_bien.valor_residual = data['valor_residual']
+                        catalogo_bien.id_marca = id_marca
+                        catalogo_bien.maneja_hoja_vida = data['maneja_hoja_vida']
+                        catalogo_bien.visible_solicitudes = data['visible_solicitudes']
+                        catalogo_bien.descripcion = data['descripcion']
+                    case 'C':
+                        catalogo_bien.nombre = data['nombre']
+                        catalogo_bien.cod_metodo_valoracion = data['cod_metodo_valoracion']
+                        catalogo_bien.descripcion = data['descripcion']
+                        catalogo_bien.id_unidad_medida = id_unidad_medida
+                        catalogo_bien.id_porcentaje_iva = id_porcentaje_iva
+                        catalogo_bien.stock_minimo = data['stock_minimo']
+                        catalogo_bien.stock_maximo = data['stock_maximo']
+                        catalogo_bien.solicitable_vivero = data['solicitable_vivero']
+                        catalogo_bien.visible_solicitudes = data['visible_solicitudes']
+                    case _:
+                        return Response({'success':False, 'detail':'No hay ningun bien referente al id_bien enviado'}, status=status.HTTP_400_BAD_REQUEST)    
             else:
                 return Response({'success':False, 'detail':'No hay ningun bien referente al id_bien enviado'}, status=status.HTTP_400_BAD_REQUEST)
         #Create
