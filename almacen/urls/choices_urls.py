@@ -16,5 +16,7 @@ urlpatterns = [
     path('metodo-valoracion-articulo/', views.MetodoValoracionChoices.as_view(), name='metodo-valoracion-articulo'),
     path('tipo-activo/', views.TipoActivoChoices.as_view(), name='tipo-activo'),
     path('tipo-depreciacion-activo/', views.TipoDepreciacionActivos.as_view(), name='tipo-depreciacion-activos'),
+    path('estado-aprobacion/', views.EstadoAprobacionChoices.as_view(), name='estado-aprobacion'),
+
     
 ]
