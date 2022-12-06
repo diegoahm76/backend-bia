@@ -9,5 +9,8 @@ urlpatterns = [
     path('catalogo-bienes/create/', views.CreateCatalogoDeBienes.as_view(), name='catalogo-bienes-create'),
     path('catalogo-bienes/search-bienes/', views.SearchArticulos.as_view(), name='catalogo-bienes-search-bienes'),
     path('catalogo-bienes/get-by-codigo/', views.GetCatalogoBienesByCodigo.as_view(), name='catalogo-bienes-codigo-get'),
+    
+    #Entradas
+    path('entradas/create/', views.CreateUpdateEntrada.as_view(), name='entrada-create'),
 
 ]

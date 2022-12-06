@@ -2,18 +2,23 @@ from almacen.models.bienes_models import CatalogoBienes
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from almacen.serializers.bienes_serializers import (
-    CatalogoBienesSerializer
+    CatalogoBienesSerializer,
+    EntradaCreateSerializer,
+    EntradaUpdateSerializer
 )
 from almacen.models.inventario_models import (
     Inventario,
 ) 
 from almacen.models.generics_models import UnidadesMedida , PorcentajesIVA 
-
+from almacen.models.bienes_models import EntradasAlmacen
 from seguridad.utils import Util  
 from django.db.models import Q
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticated
+from datetime import datetime
 
+#Creación y actualización de Catalogo de Bienes
 
 class CreateCatalogoDeBienes(generics.UpdateAPIView):
     serializer_class = CatalogoBienesSerializer
@@ -434,3 +439,50 @@ class GetCatalogoBienesByCodigo(generics.ListAPIView):
             return Response({'success':True, 'detail':'Busqueda exitosa', 'data':bien_serializer.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success':False, 'detail':'No se encontraron resultados', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
+
+
+class CreateUpdateEntrada(generics.RetrieveUpdateAPIView):
+    serializer_class = EntradaCreateSerializer
+    queryset = EntradasAlmacen.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        request.data['id_creador'] = request.user.persona.id_persona
+        data = request.data
+        id_entrada = data.get('id_entrada_almacen')
+        
+        if id_entrada != None:
+            request.data['id_persona_ult_act_dif_creador'] = None
+            request.data['fecha_ultima_actualizacion_diferente_creador'] = None
+            entrada = EntradasAlmacen.objects.filter(id_entrada_almacen=id_entrada).first()
+            if not entrada:
+                return Response({'success': False, 'detail': 'No existe ninguna entrada con el id_entrada enviado'}, status=status.HTTP_404_NOT_FOUND)
+            
+            if request.user.persona.id_persona != entrada.id_creador.id_persona:
+                request.data['id_persona_ult_act_dif_creador'] = request.user.persona.id_persona
+                request.data['fecha_ultima_actualizacion_diferente_creador'] = datetime.now()
+
+            serializer = EntradaUpdateSerializer(entrada, data=request.data, many=False)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response({'success':True, 'detail':'Se ha actualizado la entrada', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+        
+        else:
+            numero_entrada = data.get('numero_entrada_almacen')
+            print('numero entrada:', numero_entrada)
+            numero_entrada_exist = EntradasAlmacen.objects.filter(numero_entrada_almacen=numero_entrada).first()
+            print('instancia:', numero_entrada_exist)
+            if numero_entrada_exist:
+                entradas = EntradasAlmacen.objects.all().order_by('-numero_entrada_almacen').first()
+                print('entrada maxima:', entradas.numero_entrada_almacen)
+                data['numero_entrada_almacen'] = entradas.numero_entrada_almacen + 1
+
+
+            serializer = self.serializer_class(data=data, many=False)
+            serializer.is_valid(raise_exception=True)
+                
+
+            serializer.save()
+            return Response({'success':True, 'detail':'Se creó la entrada', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+        
+                
