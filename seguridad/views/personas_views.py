@@ -37,7 +37,11 @@ from seguridad.models import (
     HistoricoDireccion,
     ClasesTercero,
     ClasesTerceroPersona,
+<<<<<<< Updated upstream
     Cargos
+=======
+    User
+>>>>>>> Stashed changes
 )
 
 from rest_framework import filters
@@ -70,7 +74,11 @@ from seguridad.serializers.personas_serializers import (
     ClasesTerceroPersonaSerializer,
     ClasesTerceroPersonapostSerializer,
     GetPersonaJuridicaByRepresentanteLegalSerializer,
+<<<<<<< Updated upstream
     CargosSerializer
+=======
+    HistoricoUnidadesOrgPersonapostSerializer
+>>>>>>> Stashed changes
 )
 
 # Views for Estado Civil
@@ -463,16 +471,39 @@ class UpdatePersonaNaturalExternoBySelf(generics.RetrieveUpdateAPIView):
 class UpdatePersonaNaturalByUserWithPermissions(generics.RetrieveUpdateAPIView):
     http_method_names= ['patch']
     serializer_class = PersonaNaturalUpdateUserPermissionsSerializer
+    serializer_historico = HistoricoUnidadesOrgPersonapostSerializer
     permission_classes = [IsAuthenticated, PermisoActualizarPersona]
     queryset = Personas.objects.all()
 
     def patch(self, request, tipodocumento, numerodocumento):
+        datos_historico_unidad = {}
+        datos_ingresados = request.data
         try: 
+            bandera = False
             persona_por_actualizar = Personas.objects.get(Q(tipo_documento=tipodocumento) & Q(numero_documento=numerodocumento) & Q(tipo_persona='N'))
-            previous_persona = copy.copy(persona_por_actualizar)
+
+            usuario = User.objects.filter(persona = persona_por_actualizar.id_persona).first()
             
-            persona_serializada = self.serializer_class(persona_por_actualizar, data=request.data, many=False)
-            try:    
+            previous_persona = copy.copy(persona_por_actualizar)
+           
+            if datos_ingresados['id_unidad_organizacional_actual'] and usuario.tipo_usuario != 'I':
+                return Response({'success': False, 'detail': 'No se puede asignar una unidad organizacional a un usuario que no sea interno'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if persona_por_actualizar.id_unidad_organizacional_actual:
+                bandera = True
+                #print("323234234234234234")
+                datos_historico_unidad['id_persona'] = persona_por_actualizar.id_persona
+                datos_historico_unidad['id_unidad_organizacional'] = persona_por_actualizar.id_unidad_organizacional_actual.id_unidad_organizacional
+                datos_historico_unidad['justificacion_cambio'] = datos_ingresados['justificacion_cambio']
+                datos_historico_unidad['fecha_inicio'] = persona_por_actualizar.fecha_asignacion_unidad
+                datos_historico_unidad['fecha_final'] = datos_ingresados['fecha_asignacion_unidad']
+                
+            datos_ingresados['es_unidad_organizacional_actual'] = True
+            datos_ingresados.pop('justificacion_cambio')
+            
+            persona_serializada = self.serializer_class(persona_por_actualizar, data=datos_ingresados, many=False)
+
+            try:
                 persona_serializada.is_valid(raise_exception=True)
                 try:
                     #Marcar estado civil como item ya usado
@@ -506,7 +537,10 @@ class UpdatePersonaNaturalByUserWithPermissions(generics.RetrieveUpdateAPIView):
                         return Response({'success':False,'detail': 'Ya existe una persona con este email asociado como email principal o secundario'}, status=status.HTTP_400_BAD_REQUEST)
                     else:
                         serializador = persona_serializada.save()
-                        
+                        if bandera:
+                            historico_serializado = self.serializer_historico(data=datos_historico_unidad, many=False)
+                            historico_serializado.is_valid(raise_exception=True)
+                            historico_serializado.save()
                         # auditoria actualizar persona
                         usuario = request.user.id_usuario
                         direccion=Util.get_client_ip(request)
