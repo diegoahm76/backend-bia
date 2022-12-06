@@ -8,5 +8,6 @@ urlpatterns = [
     path('catalogo-bienes/get-element-by-nodo/<str:id_nodo>/',views.GetElementosByIdNodo.as_view(),name='catalogo-bienes-get-element-by-nodo'),
     path('catalogo-bienes/create/', views.CreateCatalogoDeBienes.as_view(), name='catalogo-bienes-create'),
     path('catalogo-bienes/search-bienes/', views.SearchArticulos.as_view(), name='catalogo-bienes-search-bienes'),
+    path('catalogo-bienes/get-by-codigo/', views.GetCatalogoBienesByCodigo.as_view(), name='catalogo-bienes-codigo-get'),
 
 ]

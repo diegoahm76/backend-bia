@@ -395,7 +395,6 @@ class GetElementosByIdNodo(generics.ListAPIView):
             return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': elementos_serializer.data})
         else:
             return Response({'success': False, 'detail': 'No se encontró ningún elemento con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
-        
 
 class SearchArticulos(generics.ListAPIView):
     serializer_class=CatalogoBienesSerializer
@@ -415,9 +414,23 @@ class SearchArticulos(generics.ListAPIView):
             return Response({'success':True,'detail':'se encontró elementos','data':serializador.data},status=status.HTTP_200_OK)
         return Response({'success':True,'detail':'no se econtrò elementos','data':bien},status=status.HTTP_404_NOT_FOUND)
     
-    
-        
+class GetCatalogoBienesByCodigo(generics.ListAPIView):
+    serializer_class = CatalogoBienesSerializer
+    queryset = CatalogoBienes.objects.all()
 
-            
-            
+    def get(self, request):
+        if not request.query_params.items():
+            return Response({'success': False, 'detail': 'Debe ingresar un parámetro de búsqueda', 'data':[]}, status=status.HTTP_404_NOT_FOUND) 
         
+        filters = {}
+        filters['codigo_bien'] = request.query_params.get('codigo_bien') 
+        filters['nivel_jerarquico'] = 5
+        filters['nro_elemento_bien'] = None
+        
+        bien = CatalogoBienes.objects.filter(**filters).first()
+        bien_serializer = self.serializer_class(bien)
+        
+        if bien:
+            return Response({'success':True, 'detail':'Busqueda exitosa', 'data':bien_serializer.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success':False, 'detail':'No se encontraron resultados', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
