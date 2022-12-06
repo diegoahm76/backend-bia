@@ -395,3 +395,28 @@ class GetElementosByIdNodo(generics.ListAPIView):
             return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': elementos_serializer.data})
         else:
             return Response({'success': False, 'detail': 'No se encontró ningún elemento con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+class GetList(generics.ListAPIView):
+    serializer_class=CatalogoBienesSerializer
+    queryset=CatalogoBienes.objects.all()
+    def get(self,request):
+        filter={}
+        for key,value in request.query_params.items():
+            if key in ['nombre','codigo_bien','cod_tipo_activo']:
+                if key != 'cod_tipo_activo':
+                    filter[key+'__icontains']=value
+                else:filter[key]=value
+        filter['nro_elemento_bien']=None
+        filter['nivel_jerarquico']=5    
+        bien=CatalogoBienes.objects.filter(**filter).values()
+        if bien:
+            return Response({'success':True,'detail':'se encontró elementos','data':bien},status=status.HTTP_200_OK)
+        return Response({'success':True,'detail':'no se econtrò elementos','data':bien},status=status.HTTP_404_NOT_FOUND)
+    
+    
+        
+
+            
+            
+        
