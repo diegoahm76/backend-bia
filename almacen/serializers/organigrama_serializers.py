@@ -4,8 +4,7 @@ from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from almacen.models.organigrama_models import (
     Organigramas,
     NivelesOrganigrama,
-    UnidadesOrganizacionales,
-    Cargos
+    UnidadesOrganizacionales
 )
 
 class NivelesGetSerializer(serializers.ModelSerializer):

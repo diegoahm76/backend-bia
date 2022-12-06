@@ -12,7 +12,8 @@ from seguridad.models import (
     HistoricoEmails,
     HistoricoDireccion,
     ClasesTercero,
-    ClasesTerceroPersona
+    ClasesTerceroPersona,
+    Cargos
 )
 
 
@@ -619,3 +620,14 @@ class ClasesTerceroPersonapostSerializer(serializers.ModelSerializer):
                 'id_persona': {'required': True},
                 'id_clase_tercero': {'required': True},
             }
+        
+class CargosSerializer(serializers.ModelSerializer):
+    nombre = serializers.CharField(max_length=50, validators=[UniqueValidator(queryset=Cargos.objects.all(), message='El nombre del cargo debe ser único')])
+
+    class Meta:
+        model = Cargos
+        fields = ['id_cargo', 'nombre', 'activo']
+        extra_kwargs = {
+            'nombre': {'required': True},
+            'id_cargo': {'read_only': True}
+        }

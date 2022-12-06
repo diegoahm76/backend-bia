@@ -13,7 +13,6 @@ from seguridad.choices.subsistemas_choices import subsistemas_CHOICES
 from seguridad.choices.tipo_usuario_choices import tipo_usuario_CHOICES
 from seguridad.choices.opciones_usuario_choices import opciones_usuario_CHOICES
 from almacen.models.organigrama_models import (
-    Cargos,
     UnidadesOrganizacionales
 )
 
@@ -108,6 +107,19 @@ class EstadoCivil(models.Model):
         verbose_name = 'Estado civil'
         verbose_name_plural = 'Estados civiles'
 
+class Cargos(models.Model):
+    id_cargo = models.AutoField(primary_key=True, editable=False, db_column='T009IdCargo')
+    nombre = models.CharField(max_length=50, unique=True, db_column='T009nombre')
+    activo = models.BooleanField(default=True, db_column='T009activo')
+    item_usado = models.BooleanField(default=False, db_column='T009itemYaUsado')
+    
+    def __str__(self):
+        return str(self.nombre)
+        
+    class Meta:
+        db_table = 'T009Cargos'
+        verbose_name = 'Cargo'
+        verbose_name_plural = 'Cargos'
 
 class Personas(models.Model):
     id_persona = models.AutoField(primary_key=True, editable=False, db_column='T010IdPersona')
@@ -547,4 +559,4 @@ class Shortener(models.Model):
             # We pass the model instance that is being saved
             self.short_url = random_code
 
-        super().save(*args, **kwargs)        
+        super().save(*args, **kwargs)

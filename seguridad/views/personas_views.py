@@ -36,7 +36,8 @@ from seguridad.models import (
     HistoricoEmails,
     HistoricoDireccion,
     ClasesTercero,
-    ClasesTerceroPersona
+    ClasesTerceroPersona,
+    Cargos
 )
 
 from rest_framework import filters
@@ -68,7 +69,8 @@ from seguridad.serializers.personas_serializers import (
     ClasesTerceroSerializer,
     ClasesTerceroPersonaSerializer,
     ClasesTerceroPersonapostSerializer,
-    GetPersonaJuridicaByRepresentanteLegalSerializer
+    GetPersonaJuridicaByRepresentanteLegalSerializer,
+    CargosSerializer
 )
 
 # Views for Estado Civil
@@ -1151,7 +1153,62 @@ class GetHistoricoDirecciones(generics.ListAPIView):
     queryset = HistoricoDireccion.objects.all()
     serializer_class = HistoricoDireccionSerializer
 
-    
+class GetCargosList(generics.ListAPIView):
+    serializer_class = CargosSerializer
+    queryset = Cargos.objects.all()
+
+    def get(self, request):
+        cargos = Cargos.objects.filter(activo=True)
+        serializador = self.serializer_class(cargos, many=True)
+        if cargos:
+            return Response({'success':True, 'detail':'Se encontraron cargos', 'data':serializador.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success':False, 'detail':'No se encontró ningún cargo', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
+
+class RegisterCargos(generics.CreateAPIView):
+    serializer_class =  CargosSerializer
+    queryset = Cargos.objects.all()
+
+    def post(self, request):
+        data = request.data
+        serializador = self.serializer_class(data=data)
+        serializador.is_valid(raise_exception=True)
+        serializador.save()
+        return Response({'success':True, 'detail':'Se ha creado el cargo', 'data':serializador.data}, status=status.HTTP_201_CREATED)
+
+class UpdateCargos(generics.UpdateAPIView):
+    serializer_class = CargosSerializer
+    queryset = Cargos.objects.all()
+
+    def put(self, request, pk):
+        cargo = Cargos.objects.filter(id_cargo=pk).first()
+
+        if cargo:
+            if not cargo.item_usado:
+                serializer = self.serializer_class(cargo, data=request.data)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                return Response({'success':True, 'detail':'Registro actualizado exitosamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+            else:
+                return Response({'success':False, 'detail':'Este cargo ya está siendo usado, por lo cual no es actualizable'}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            return Response({'success': False, 'detail': 'No existe el cargo'}, status=status.HTTP_404_NOT_FOUND)
+
+class DeleteCargo(generics.DestroyAPIView):
+    serializer_class = CargosSerializer
+    queryset = Cargos.objects.all()
+
+    def delete(self, request, pk):
+        cargo = Cargos.objects.filter(id_cargo=pk).first()
+        if cargo:
+            if not cargo.item_usado:
+                cargo.delete()
+                return Response({'success': True, 'detail': 'El cargo ha sido eliminado exitosamente'}, status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response({'success':False, 'detail':'Este cargo ya está siendo usado, no se pudo eliminar. Intente desactivar'}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            return Response({'success': False, 'detail':'No existe el cargo'}, status=status.HTTP_404_NOT_FOUND)
+
 """    
 # Views for Clases Tercero
 

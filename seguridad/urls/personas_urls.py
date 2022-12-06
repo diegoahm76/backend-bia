@@ -58,6 +58,12 @@ urlpatterns = [
     
     # Historico Direcciones
     path('historico-direcciones/get-list/', views.GetHistoricoDirecciones.as_view(), name="historico-direcciones-get"),
+    
+    # Cargos
+    path('cargos/get-list/', views.GetCargosList.as_view(), name="cargos-get"),
+    path('cargos/create/', views.RegisterCargos.as_view(), name='cargos-register'),
+    path('cargos/update/<str:pk>/', views.UpdateCargos.as_view(), name='cargos-update'),
+    path('cargos/delete/<str:pk>/', views.DeleteCargo.as_view(), name='cargos-delete'),
       
     # Clases Tercero
     # path('clases-tercero/get-list/', views.getClasesTercero.as_view(), name="clases-tercero-get"),
