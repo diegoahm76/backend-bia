@@ -8,6 +8,7 @@ from seguridad.utils import Util
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import api_view, permission_classes
+from seguridad.models import Personas
 from gestion_documental.serializers.trd_serializers import (
     TRDSerializer,
     FormatosTiposMedioSerializer
@@ -20,7 +21,9 @@ from gestion_documental.models.ccd_models import (
     CuadrosClasificacionDocumental,
 )
 from almacen.models.organigrama_models import (
-    Organigramas
+    Organigramas,
+    UnidadesOrganizacionales
+    
 )
 from gestion_documental.models.trd_models import (
     TablaRetencionDocumental,
@@ -77,6 +80,7 @@ class Activar(generics.UpdateAPIView):
             return Response({'success': False, 'detail': 'Ingrese justificación'}, status=status.HTTP_400_BAD_REQUEST)
         if json_recibido['archivo'] == '' or json_recibido['archivo'] == None:
             return Response({'success': False, 'detail': 'Ingrese archivo'}, status=status.HTTP_400_BAD_REQUEST)
+    
         #VALIDAR LA EXISTENCIA DE LOS DATOS
         organigrama = Organigramas.objects.filter(~Q(fecha_terminado=None) & Q(fecha_retiro_produccion=None)).filter(id_organigrama = json_recibido['id_organigrama']).first()
         if not organigrama:
@@ -116,7 +120,15 @@ class Activar(generics.UpdateAPIView):
                 tipologias_sin_usar = TipologiasDocumentales.objects.filter(~Q(id_tipologia_documental__in = id_tipologias_usadas)).filter(id_trd=trd_a_remplazar.id_trd)
                 if tipologias_sin_usar:
                     tipologias_sin_usar.delete()
-                   
+                
+                #unidades de personas desactivar
+                unidades_utilizadas=UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama_a_remplazar)
+                unidades_list=[id.id_unidad_organizacional for id in unidades_utilizadas]
+                persona_organigrama_a_remplazar=Personas.objects.filter(id_unidad_organizacional_actual__in=unidades_list)
+                for object in persona_organigrama_a_remplazar:
+                    object.es_unidad_organizacional_actual=False
+                    object.save()
+                    
                 organigrama_a_remplazar.actual =  False
                 organigrama.actual = True
                 ccd_a_remplazar.actual = False
