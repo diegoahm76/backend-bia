@@ -12,6 +12,10 @@ from seguridad.choices.tipo_direccion_choices import tipo_direccion_CHOICES
 from seguridad.choices.subsistemas_choices import subsistemas_CHOICES
 from seguridad.choices.tipo_usuario_choices import tipo_usuario_CHOICES
 from seguridad.choices.opciones_usuario_choices import opciones_usuario_CHOICES
+from almacen.models.organigrama_models import (
+    Cargos,
+    UnidadesOrganizacionales
+)
 
 from django.conf import settings
 from random import choice, choices
@@ -128,6 +132,10 @@ class Personas(models.Model):
     fecha_nacimiento = models.DateField(blank=True,null=True, db_column='T010FechaNacimiento')
     sexo = models.CharField(max_length=1, null=True, blank=True, choices=sexo_CHOICES, db_column='T010Cod_Sexo')
     estado_civil = models.ForeignKey(EstadoCivil, related_name="estado_civil", on_delete=models.SET_NULL, null=True, blank=True, db_column='T010Cod_EstadoCivil')
+    id_cargo = models.ForeignKey(Cargos, on_delete=models.SET_NULL, null=True, blank=True, db_column='T010Id_Cargo')
+    id_unidad_organizacional_actual = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.SET_NULL, null=True, blank=True, db_column='T010Id_UnidadOrganizacionalActual')
+    fecha_asignacion_unidad = models.DateTimeField(null=True, blank=True, db_column='T010fechaAsignacionUnidadOrg')
+    es_unidad_organizacional_actual = models.BooleanField(null=True, blank=True, db_column='T010esUnidadDeOrganigramaActual')
     representante_legal = models.ForeignKey('self', on_delete=models.SET_NULL, null=True,blank=True, db_column='T010Id_PersonaRepLegal')
     email = models.EmailField(max_length=255, unique=True, db_column='T010emailNotificación')
     email_empresarial = models.EmailField(max_length=255, null=True, blank=True, db_column='T010emailEmpresarial')
@@ -153,6 +161,22 @@ class Personas(models.Model):
         unique_together = ['tipo_documento', 'numero_documento']
 
 # Tablas producidas a partir de Persona
+
+class HistoricoUnidadesOrgPersona(models.Model):
+    id_historico_unidad_persona = models.AutoField(primary_key=True, editable=False, db_column='T020IdHistoUnidad_Persona')
+    id_persona = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T020Id_Persona')
+    id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T020Id_UnidadOrganizativa')
+    justificacion_cambio = models.CharField(max_length=255, db_column='T020justificacionDelCambio')
+    fecha_inicio = models.DateTimeField(db_column='T020fechaInicio')
+    fecha_final = models.DateTimeField(db_column='T020fechaFinal')
+
+    def __str__(self):
+        return str(self.id_historico_unidad_persona)
+
+    class Meta:
+        db_table = 'T020HistoricoUnidadesOrg_Persona'
+        verbose_name = 'Historico Unidad Org Persona'
+        verbose_name_plural = 'Historicos Unidades org Personas'
 
 
 class HistoricoDireccion(models.Model):

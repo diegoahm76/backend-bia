@@ -2,7 +2,7 @@ from django.db import models
 from seguridad.choices.municipios_choices import municipios_CHOICES
 from almacen.choices.magnitudes_choices import magnitudes_CHOICES
 from almacen.choices.tipo_doc_ultimo_choices import tipo_doc_ultimo_CHOICES
-from seguridad.models import Personas
+# from seguridad.models import Personas
 from almacen.models.bienes_models import (
     CatalogoBienes,
     EstadosArticulo
@@ -32,7 +32,7 @@ class Inventario(models.Model):
     id_bodega = models.ForeignKey(Bodegas, on_delete=models.CASCADE, db_column='T062Id_Bodega')
     cod_tipo_entrada = models.ForeignKey(TiposEntradas, on_delete=models.SET_NULL, null=True, blank=True, db_column='T062Cod_TipoEntrada')
     fecha_ingreso = models.DateField(null=True, blank=True, db_column='T062fechaIngreso')
-    id_persona_origen = models.ForeignKey(Personas, related_name='persona_origen', on_delete=models.SET_NULL, null=True, blank=True, db_column='T062Id_PersonaOrigen')
+    id_persona_origen = models.ForeignKey('seguridad.Personas', related_name='persona_origen', on_delete=models.SET_NULL, null=True, blank=True, db_column='T062Id_PersonaOrigen')
     numero_doc_origen = models.CharField(max_length=30, null=True, blank=True, db_column='T062numeroDocOrigen')
     valor_ingreso = models.FloatField(null=True, blank=True, db_column='T062valorAlIngreso')
     realizo_baja = models.BooleanField(null=True, blank=True, db_column='T062realizoBaja')
@@ -40,7 +40,7 @@ class Inventario(models.Model):
     ubicacion_en_bodega = models.BooleanField(null=True, blank=True, db_column='T062ubicacionEnBodega')
     ubicacion_asignado = models.BooleanField(null=True, blank=True, db_column='T062ubicacionAsignado')
     ubicacion_prestado = models.BooleanField(null=True, blank=True, db_column='T062ubicacionPrestado')
-    id_persona_responsable = models.ForeignKey(Personas, related_name='persona_responsable', on_delete=models.SET_NULL, null=True, blank=True, db_column='T062Id_PersonaResponsable')
+    id_persona_responsable = models.ForeignKey('seguridad.Personas', related_name='persona_responsable', on_delete=models.SET_NULL, null=True, blank=True, db_column='T062Id_PersonaResponsable')
     cod_estado_activo = models.ForeignKey(EstadosArticulo, on_delete=models.SET_NULL, null=True, blank=True, db_column='T062Cod_EstadoDelActivo')
     fecha_ultimo_movimiento = models.DateTimeField(null=True, blank=True, db_column='T062fechaUltimoMov')
     tipo_doc_ultimo_movimiento = models.CharField(max_length=5,choices=tipo_doc_ultimo_CHOICES,null=True, blank=True, db_column='T062tipoDocUltimoMov')

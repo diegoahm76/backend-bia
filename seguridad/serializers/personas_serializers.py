@@ -465,6 +465,9 @@ class PersonaNaturalUpdateUserPermissionsSerializer(serializers.ModelSerializer)
             'pais_nacimiento',
             'sexo',
             'estado_civil',
+            'id_cargo',
+            'id_unidad_organizacional_actual',
+            'fecha_asignacion_unidad',
             'acepta_notificacion_sms',
             'acepta_notificacion_email',
             'acepta_tratamiento_datos'

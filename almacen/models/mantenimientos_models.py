@@ -1,6 +1,6 @@
 from django.db import models
 from almacen.choices.tipo_mantenimiento_choices import tipo_mantenimiento_CHOICES
-from seguridad.models import Personas
+# from seguridad.models import Personas
 from almacen.models.bienes_models import CatalogoBienes, EstadosArticulo
 
 class ProgramacionMantenimientos(models.Model):
@@ -12,11 +12,11 @@ class ProgramacionMantenimientos(models.Model):
     fecha_programada = models.DateField(db_column='T069fechaProgramada')
     motivo_mantenimiento = models.CharField(max_length=255, db_column='T069motivoMantenimiento')
     observaciones = models.CharField(max_length=255, db_column='T069observaciones', blank=True, null=True)
-    id_persona_solicita = models.ForeignKey(Personas, on_delete=models.SET_NULL, db_column='T069Id_PersonaSolicita', blank=True, null=True, related_name='persona_solicita')
+    id_persona_solicita = models.ForeignKey('seguridad.Personas', on_delete=models.SET_NULL, db_column='T069Id_PersonaSolicita', blank=True, null=True, related_name='persona_solicita')
     fecha_solicitud = models.DateField(db_column='T069fechaSolicitud', blank=True, null=True)
     fecha_anulacion = models.DateTimeField(db_column='T069fechaAnulacion', blank=True, null=True)
     justificacion_anulacion = models.CharField(max_length=255, db_column='T069justificacionAnulacion', blank=True, null=True)
-    id_persona_anula = models.ForeignKey(Personas, on_delete=models.SET_NULL, db_column='T069Id_PersonaAnula', blank=True, null=True, related_name='persona_anula')
+    id_persona_anula = models.ForeignKey('seguridad.Personas', on_delete=models.SET_NULL, db_column='T069Id_PersonaAnula', blank=True, null=True, related_name='persona_anula')
     ejecutado = models.BooleanField(db_column='T069ejecutado', default=False)
     
     def __str__(self):
@@ -40,8 +40,8 @@ class RegistroMantenimientos(models.Model):
     id_programacion_mtto = models.ForeignKey(ProgramacionMantenimientos, on_delete=models.SET_NULL, db_column='T070Id_ProgramacionMtto', blank=True, null=True)
     valor_mantenimiento = models.FloatField(db_column='T070valorMantenimiento', blank=True, null=True)
     contrato_mantenimiento = models.CharField(max_length=20, db_column='T070contratoMantenimiento', blank=True, null=True)
-    id_persona_realiza = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T070Id_PersonaRealiza', related_name='id_persona_realiza')
-    id_persona_diligencia = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T070Id_PersonaDiligencia', related_name='id_persona_diligencia')
+    id_persona_realiza = models.ForeignKey('seguridad.Personas', on_delete=models.CASCADE, db_column='T070Id_PersonaRealiza', related_name='id_persona_realiza')
+    id_persona_diligencia = models.ForeignKey('seguridad.Personas', on_delete=models.CASCADE, db_column='T070Id_PersonaDiligencia', related_name='id_persona_diligencia')
     ruta_documentos_soporte = models.FileField(db_column='T070rutaDocumentoSoporte', blank=True, null=True)
     cod_estado_anterior = models.ForeignKey(EstadosArticulo, db_column='T070codEstadoAnterior', on_delete=models.CASCADE, related_name='cod_estado_anterior')
     fecha_estado_anterior = models.DateTimeField(db_column='T070fechaAnteriorMov')
