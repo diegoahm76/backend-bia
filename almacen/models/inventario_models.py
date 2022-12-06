@@ -31,7 +31,7 @@ class Inventario(models.Model):
     id_bien = models.ForeignKey(CatalogoBienes, on_delete=models.CASCADE, db_column='T062Id_Bien')
     id_bodega = models.ForeignKey(Bodegas, on_delete=models.CASCADE, db_column='T062Id_Bodega')
     cod_tipo_entrada = models.ForeignKey(TiposEntradas, on_delete=models.SET_NULL, null=True, blank=True, db_column='T062Cod_TipoEntrada')
-    fecha_ingreso = models.DateField(null=True, blank=True, db_column='T062fechaIngreso')
+    fecha_ingreso = models.DateTimeField(null=True, blank=True, db_column='T062fechaIngreso')
     id_persona_origen = models.ForeignKey('seguridad.Personas', related_name='persona_origen', on_delete=models.SET_NULL, null=True, blank=True, db_column='T062Id_PersonaOrigen')
     numero_doc_origen = models.CharField(max_length=30, null=True, blank=True, db_column='T062numeroDocOrigen')
     valor_ingreso = models.FloatField(null=True, blank=True, db_column='T062valorAlIngreso')
