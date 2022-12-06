@@ -299,6 +299,24 @@ class GetUnidadesByOrganigrama(generics.ListAPIView):
         else:
             return Response({'success':False, 'detail':'El organigrama no existe'}, status=status.HTTP_404_NOT_FOUND)
 
+
+class GetUnidadesOrganigramaActual(generics.ListAPIView):
+    serializer_class = UnidadesGetSerializer
+    queryset = UnidadesOrganizacionales.objects.all()
+
+    def get(self, request):
+        organigrama = Organigramas.objects.filter(actual=True)
+        if not organigrama:
+            return Response({'success': False, 'detail': 'No existe ningún organigrama activado'}, status=status.HTTP_404_NOT_FOUND)
+        if len(organigrama) > 1:
+            return Response({'success': False, 'detail': 'Existe más de un organigrama actual, contacte a soporte'}, status=status.HTTP_403_FORBIDDEN)
+        
+        organigrama_actual = organigrama.first()
+        unidades_organigrama_actual = UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama_actual.id_organigrama)
+        serializer = self.serializer_class(unidades_organigrama_actual, many=True)
+        return Response({'success': True, 'detail': 'Consulta Exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
 #VIEWS FOR ORGANIGRAMA
 class FinalizarOrganigrama(generics.UpdateAPIView):
     serializer_class=OrganigramaSerializer

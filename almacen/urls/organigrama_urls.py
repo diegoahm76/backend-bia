@@ -7,6 +7,8 @@ urlpatterns = [
     path('unidades/get-list/', views.GetUnidades.as_view(), name='unidades-get-list'),
     path('unidades/get-by-organigrama/<str:id_organigrama>/', views.GetUnidadesByOrganigrama.as_view(), name='unidades-get-by-organigrama'),
     path('unidades/get-sec-sub/<str:id_organigrama>/', views.GetSeccionSubsecciones.as_view(), name='unidades-get-sec-sub'),
+    path('unidades/get-list/organigrama-actual/', views.GetUnidadesOrganigramaActual.as_view(), name='unidades-get-organigrama-actual'),
+
 
     # NIVELES
     path('niveles/get-list/', views.GetNiveles.as_view(), name='get-list-niveles'),
