@@ -37,11 +37,8 @@ from seguridad.models import (
     HistoricoDireccion,
     ClasesTercero,
     ClasesTerceroPersona,
-<<<<<<< Updated upstream
-    Cargos
-=======
+    Cargos,
     User
->>>>>>> Stashed changes
 )
 
 from rest_framework import filters
@@ -74,11 +71,8 @@ from seguridad.serializers.personas_serializers import (
     ClasesTerceroPersonaSerializer,
     ClasesTerceroPersonapostSerializer,
     GetPersonaJuridicaByRepresentanteLegalSerializer,
-<<<<<<< Updated upstream
-    CargosSerializer
-=======
+    CargosSerializer,
     HistoricoUnidadesOrgPersonapostSerializer
->>>>>>> Stashed changes
 )
 
 # Views for Estado Civil

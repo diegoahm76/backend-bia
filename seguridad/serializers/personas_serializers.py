@@ -13,11 +13,8 @@ from seguridad.models import (
     HistoricoDireccion,
     ClasesTercero,
     ClasesTerceroPersona,
-<<<<<<< Updated upstream
-    Cargos
-=======
+    Cargos,
     HistoricoUnidadesOrgPersona
->>>>>>> Stashed changes
 )
 
 
@@ -625,7 +622,6 @@ class ClasesTerceroPersonapostSerializer(serializers.ModelSerializer):
                 'id_persona': {'required': True},
                 'id_clase_tercero': {'required': True},
             }
-<<<<<<< Updated upstream
         
 class CargosSerializer(serializers.ModelSerializer):
     nombre = serializers.CharField(max_length=50, validators=[UniqueValidator(queryset=Cargos.objects.all(), message='El nombre del cargo debe ser único')])
@@ -637,10 +633,8 @@ class CargosSerializer(serializers.ModelSerializer):
             'nombre': {'required': True},
             'id_cargo': {'read_only': True}
         }
-=======
     
 class HistoricoUnidadesOrgPersonapostSerializer(serializers.ModelSerializer):
     class Meta:
         model = HistoricoUnidadesOrgPersona
         fields = '__all__'
->>>>>>> Stashed changes
