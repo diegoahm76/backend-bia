@@ -2,6 +2,7 @@ from django.db import models
 from seguridad.choices.municipios_choices import municipios_CHOICES
 from almacen.choices.magnitudes_choices import magnitudes_CHOICES
 from almacen.choices.tipo_doc_ultimo_choices import tipo_doc_ultimo_CHOICES
+from almacen.choices.estados_articulo_choices import estados_articulo_CHOICES
 # from seguridad.models import Personas
 from almacen.models.bienes_models import (
     CatalogoBienes,
@@ -41,7 +42,7 @@ class Inventario(models.Model):
     ubicacion_asignado = models.BooleanField(null=True, blank=True, db_column='T062ubicacionAsignado')
     ubicacion_prestado = models.BooleanField(null=True, blank=True, db_column='T062ubicacionPrestado')
     id_persona_responsable = models.ForeignKey('seguridad.Personas', related_name='persona_responsable', on_delete=models.SET_NULL, null=True, blank=True, db_column='T062Id_PersonaResponsable')
-    cod_estado_activo = models.ForeignKey(EstadosArticulo, on_delete=models.SET_NULL, null=True, blank=True, db_column='T062Cod_EstadoDelActivo')
+    cod_estado_activo = models.CharField(max_length=1, choices=estados_articulo_CHOICES, null=True, blank=True, db_column='T062Cod_EstadoDelActivo')
     fecha_ultimo_movimiento = models.DateTimeField(null=True, blank=True, db_column='T062fechaUltimoMov')
     tipo_doc_ultimo_movimiento = models.CharField(max_length=5,choices=tipo_doc_ultimo_CHOICES,null=True, blank=True, db_column='T062tipoDocUltimoMov')
     id_registro_doc_ultimo_movimiento = models.PositiveIntegerField(null=True, blank=True, db_column='T062IdRegEnDocUltimoMov')

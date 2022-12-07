@@ -96,7 +96,7 @@ class TiposActivo(models.Model):
 
 class EntradasAlmacen(models.Model):
     id_entrada_almacen = models.AutoField(primary_key=True, editable=False, db_column='T063IdEntradaAlmacen')
-    numero_entrada_almacen = models.PositiveIntegerField(db_column='T063nroEntradaAlmacen')	
+    numero_entrada_almacen = models.PositiveIntegerField(unique=True, db_column='T063nroEntradaAlmacen')	
     fecha_entrada = models.DateTimeField(db_column='T063fechaEntrada')
     fecha_real_registro = models.DateTimeField(auto_now=True, db_column='T063fechaRealRegistro')
     motivo = models.CharField(max_length=255,db_column='T063motivo')
@@ -127,11 +127,11 @@ class ItemEntradaAlmacen(models.Model):
     id_bien = models.ForeignKey(CatalogoBienes, on_delete=models.CASCADE, db_column='T064Id_Bien')
     cantidad = models.PositiveIntegerField(db_column='T064cantidad')
     valor_unitario = models.DecimalField(max_digits=9,decimal_places=2,db_column='T064valorUnitario')
-    porcentaje_iva = models.DecimalField(max_digits=3,decimal_places=2,db_column='T064porcentajeIVA')
+    id_porcentaje_iva = models.ForeignKey(PorcentajesIVA, on_delete=models.CASCADE, db_column='T064IdporcentajeIVA')
     valor_iva = models.DecimalField(max_digits=9,decimal_places=2,db_column='T064valorIVA')
     valor_total_item = models.DecimalField(max_digits=9,decimal_places=2,db_column='T064valorTotalItem')
     id_bodega = models.ForeignKey(Bodegas, on_delete=models.CASCADE, db_column='T064Id_Bodega')
-    cod_estado = models.CharField(max_length=1, choices=estados_articulo_CHOICES, db_column='T064Cod_Estado')
+    cod_estado = models.CharField(max_length=1, null=True, blank=True, choices=estados_articulo_CHOICES, db_column='T064Cod_Estado')
     doc_identificador_bien= models.CharField(max_length=30, blank=True, null=True, db_column='T064docIdentificadorBien')
     cantidad_vida_util= models.PositiveSmallIntegerField(blank=True,  null=True, db_column='T064cantidadVidaUtil')
     id_unidad_medida_vida_util= models.ForeignKey(UnidadesMedida,on_delete=models.SET_NULL,blank=True,null=True,db_column='T064Id_UnidadMedidaVidaUtil')
@@ -145,4 +145,5 @@ class ItemEntradaAlmacen(models.Model):
         db_table = 'T064Items_EntradaAlmacen'
         verbose_name = 'Tipo entrada de Almacen'
         verbose_name_plural = 'Tipos de Entradas de Almacen'	
+        unique_together = ['id_entrada_almacen', 'id_bien']
 	

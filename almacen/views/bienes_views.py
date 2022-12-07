@@ -4,13 +4,23 @@ from rest_framework.views import APIView
 from almacen.serializers.bienes_serializers import (
     CatalogoBienesSerializer,
     EntradaCreateSerializer,
-    EntradaUpdateSerializer
+    EntradaUpdateSerializer,
+    CreateUpdateItemEntradaConsumoSerializer,
+    SerializerItemEntradaActivosFijos
+)
+from almacen.models.hoja_de_vida_models import (
+    HojaDeVidaComputadores,
+    HojaDeVidaVehiculos,
+    HojaDeVidaOtrosActivos
+)
+from almacen.models.generics_models import (
+    Bodegas,
 )
 from almacen.models.inventario_models import (
     Inventario,
 ) 
 from almacen.models.generics_models import UnidadesMedida , PorcentajesIVA 
-from almacen.models.bienes_models import EntradasAlmacen
+from almacen.models.bienes_models import EntradasAlmacen, ItemEntradaAlmacen
 from seguridad.utils import Util  
 from django.db.models import Q
 from rest_framework.response import Response
@@ -469,12 +479,9 @@ class CreateUpdateEntrada(generics.RetrieveUpdateAPIView):
         
         else:
             numero_entrada = data.get('numero_entrada_almacen')
-            print('numero entrada:', numero_entrada)
             numero_entrada_exist = EntradasAlmacen.objects.filter(numero_entrada_almacen=numero_entrada).first()
-            print('instancia:', numero_entrada_exist)
             if numero_entrada_exist:
                 entradas = EntradasAlmacen.objects.all().order_by('-numero_entrada_almacen').first()
-                print('entrada maxima:', entradas.numero_entrada_almacen)
                 data['numero_entrada_almacen'] = entradas.numero_entrada_almacen + 1
 
 
@@ -484,6 +491,135 @@ class CreateUpdateEntrada(generics.RetrieveUpdateAPIView):
 
             serializer.save()
             return Response({'success':True, 'detail':'Se creó la entrada', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+
+
+class CreateUpdateDeleteItemsEntrada(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = CreateUpdateItemEntradaConsumoSerializer
+    queryset = ItemEntradaAlmacen.objects.all()
+
+    def put(self, request, id_entrada):
+        entrada = EntradasAlmacen.objects.filter(id_entrada_almacen=id_entrada).first()
+        data = request.data
+        if entrada:
+            entradas_items_list = [item['id_entrada_almacen'] for item in data]
+            if len(set(entradas_items_list)) != 1:
+                return Response({'success':False, 'detail':'Debe validar que los items pertenezcan a una misma entrada'}, status=status.HTTP_400_BAD_REQUEST)
+            elif entradas_items_list[0] != int(id_entrada):
+                return Response({'success':False, 'detail':'El id entrada de la petición debe ser igual al enviado en url'}, status=status.HTTP_400_BAD_REQUEST)
+            elementos_guardados = []
+            for item in data:
+                id_item_entrada = item.get('id_item_entrada_almacen')
+                id_bien_padre = item.get('id_bien_padre')
+                doc_identificador_bien = item.get('doc_identificador_bien')
+                print(doc_identificador_bien)
+                id_porcentaje_iva = item.get('id_porcentaje_iva')
+                cantidad_vida_util = item.get('cantidad_vida_util')
+                id_unidad_medida_vida_util = item.get('id_unidad_medida_vida_util')
+                valor_residual = item.get('valor_residual')
+                tiene_hoja_vida = item.get('tiene_hoja_vida')
+                id_bodega = item.get('id_bodega')
+                valor_total_item = item.get('valor_total_item')
+                cod_estado = item.get('cod_estado')
+
+                if id_item_entrada != None:
+                    #Actualizan
+                    pass
+                else:
+                    #Crear el elemento en Catalogo de bienes
+                    if id_bien_padre:
+                        bien_padre = CatalogoBienes.objects.filter(id_bien=id_bien_padre).first()
+                        if bien_padre.cod_tipo_bien == 'A':
+                            if not bien_padre:
+                                return Response({'success': False, 'detail': 'No existe el bien padre ingresado'}, status=status.HTTP_400_BAD_REQUEST)
+                            bien_padre_serializado = CatalogoBienesSerializer(bien_padre)
+                            ultimo_numero_elemento = CatalogoBienes.objects.filter(Q(codigo_bien=bien_padre.codigo_bien) & ~Q(nro_elemento_bien=None)).order_by('-nro_elemento_bien').first()
+                            numero_elemento = 1
+                            if ultimo_numero_elemento:
+                                numero_elemento = ultimo_numero_elemento.nro_elemento_bien + 1
+
+                            data_create = bien_padre_serializado.data
+                                
+                            data_create['nro_elemento_bien'] = numero_elemento
+                            data_create['doc_identificador_nro'] = doc_identificador_bien
+                            data_create['id_porcentaje_iva'] = id_porcentaje_iva
+                            data_create['cantidad_vida_util'] = cantidad_vida_util
+                            data_create['id_unidad_medida_vida_util'] = id_unidad_medida_vida_util
+                            data_create['valor_residual'] = valor_residual
+                            data_create['tiene_hoja_vida'] = tiene_hoja_vida
+                            data_create['id_bien_padre'] = id_bien_padre
+                            del data_create['id_bien']
+                            del data_create['maneja_hoja_vida']
+                            del data_create['visible_solicitudes']
+                            
+                            serializer = CatalogoBienesSerializer(data=data_create, many=False)
+                            serializer.is_valid(raise_exception=True)
+                            elemento_creado = serializer.save()
+
+                            #Crear la entrada en inventario
+                            bodega = Bodegas.objects.filter(id_bodega=id_bodega).first()
+                            if not bodega:
+                                return Response({'success': False, 'detail': 'No existe ninguna bodega con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+                            
+                            match entrada.id_tipo_entrada.cod_tipo_entrada:
+                                case 1:
+                                    tipo_doc_ultimo_movimiento = 'E_CPR'
+                                case 2:
+                                    tipo_doc_ultimo_movimiento = 'E_DON'
+                                case 3:
+                                    tipo_doc_ultimo_movimiento = 'E_RES'
+                                case 4:
+                                    tipo_doc_ultimo_movimiento = 'E_CPS'
+                                case 5:
+                                    tipo_doc_ultimo_movimiento = 'E_CMD'
+                                case 6:
+                                    tipo_doc_ultimo_movimiento = 'E_CNV'
+                                case 7:
+                                    tipo_doc_ultimo_movimiento = 'E_EMB'
+                                case 8:
+                                    tipo_doc_ultimo_movimiento = 'E_INC'
+                                case _:
+                                    return Response({'success': True, 'detail': 'El tipo de entrada ingresado no es valido'}, status=status.HTTP_400_BAD_REQUEST)
+                            registro_inventario = Inventario.objects.create(
+                                id_bien = elemento_creado,
+                                id_bodega = bodega,
+                                cod_tipo_entrada = entrada.id_tipo_entrada,
+                                fecha_ingreso = datetime.now(),
+                                id_persona_origen = entrada.id_proveedor,
+                                numero_doc_origen = entrada.numero_entrada_almacen,
+                                valor_ingreso = valor_total_item,
+                                ubicacion_en_bodega = True,
+                                cod_estado_activo = cod_estado,
+                                fecha_ultimo_movimiento = datetime.now(),
+                                tipo_doc_ultimo_movimiento = tipo_doc_ultimo_movimiento,
+                                id_registro_doc_ultimo_movimiento = entrada.id_entrada_almacen
+                            )
+                            if tiene_hoja_vida == True:
+                                print('entro acá')
+                                match bien_padre.cod_tipo_activo:
+                                    case 'Com':
+                                        create_hoja_vida = HojaDeVidaComputadores.objects.create(
+                                            id_articulo = elemento_creado
+                                        )
+                                    case 'Veh':
+                                        create_hoja_vida = HojaDeVidaVehiculos.objects.create(
+                                            id_articulo = elemento_creado
+                                        )
+                                    case 'OAc':
+                                        create_hoja_vida = HojaDeVidaOtrosActivos.objects.create(
+                                            id_articulo = elemento_creado
+                                        )
+                                    case _:
+                                        return Response({'success': False, 'detail': 'No existe el tipo de activo seleccionado'}, status=status.HTTP_400_BAD_REQUEST) 
+                            item['id_bien'] = elemento_creado.id_bien
+                            serializador_item_entrada = SerializerItemEntradaActivosFijos(data=item, many=False)
+                            serializador_item_entrada.is_valid(raise_exception=True)
+                            serializador_item_entrada.save()
+                            elementos_guardados.append(serializador_item_entrada.data)
+                    else:
+                        return Response({'success': False, 'detail': 'Para realizar esta acción es necesario enviar el id_bien_padre'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Se guardó exitosamente', 'data': elementos_guardados})
+        else:
+            return Response({'success': False, 'detail': 'No se encontró ninguna entrada con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
         
                 
 class SearchVisibleBySolicitud(generics.ListAPIView):
