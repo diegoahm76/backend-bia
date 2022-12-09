@@ -13,8 +13,9 @@ class SearchVisibleBySolicitud(generics.ListAPIView):
                 filter[key+'__icontains']=value
         nodos=[2,3,4,5]
         filter['nivel_jerarquico__in'] = nodos
+        filter['nro_elemento_bien']=None
         bien_especial=CatalogoBienes.objects.filter(**filter)
-        filter['nivel_jerarquico__in'] = nodos
+        # filter['nivel_jerarquico__in'] = nodos
         filter['visible_solicitudes']= True
         bien_normal=CatalogoBienes.objects.filter(**filter)
         list_normal=[bien.id_bien for bien in bien_normal]
@@ -33,5 +34,5 @@ class SearchVisibleBySolicitud(generics.ListAPIView):
         bien_final=CatalogoBienes.objects.filter(id_bien__in=list_normal)
         serializador=self.serializer_class(bien_final,many=True)
         if bien_final:
-            return Response({'success':True,'detail':'se encontró elementos','data':serializador.data},status=status.HTTP_200_OK)
-        return Response({'success':True,'detail':'no se econtrò elementos','data':bien_final},status=status.HTTP_404_NOT_FOUND)
+            return Response({'success':True,'detail':'Se encontró elementos','data':serializador.data},status=status.HTTP_200_OK)
+        return Response({'success':True,'detail':'No se encontró elementos','data':bien_final},status=status.HTTP_404_NOT_FOUND)

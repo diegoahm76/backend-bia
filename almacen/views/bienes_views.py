@@ -620,20 +620,3 @@ class CreateUpdateDeleteItemsEntrada(generics.RetrieveUpdateDestroyAPIView):
             return Response({'detail': 'Se guardó exitosamente', 'data': elementos_guardados})
         else:
             return Response({'success': False, 'detail': 'No se encontró ninguna entrada con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
-        
-                
-class SearchVisibleBySolicitud(generics.ListAPIView):
-    serializer_class=CatalogoBienesSerializer
-    queryset=CatalogoBienes.objects.all()
-    def get(self,request):
-        filter={}
-        for key,value in request.query_params.items():
-            if key in ['nombre','codigo_bien']:
-                filter[key+'__icontains']=value
-        filter['nro_elemento_bien']=None
-        filter['nivel_jerarquico']={2,3,4,5}   
-        bien=CatalogoBienes.objects.filter(**filter)
-        serializador=self.serializer_class(bien,many=True)
-        if bien:
-            return Response({'success':True,'detail':'se encontró elementos','data':serializador.data},status=status.HTTP_200_OK)
-        return Response({'success':True,'detail':'no se econtrò elementos','data':bien},status=status.HTTP_404_NOT_FOUND)
