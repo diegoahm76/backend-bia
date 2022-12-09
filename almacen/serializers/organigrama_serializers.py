@@ -39,7 +39,7 @@ class NivelesUpdateSerializer(serializers.ModelSerializer):
 class UnidadesPutSerializer(serializers.ModelSerializer):
     class Meta:
         model = UnidadesOrganizacionales
-        fields = '__all__'
+        exclude = ['id_unidad_org_padre']
         validators = [
             UniqueTogetherValidator(
                 queryset=UnidadesOrganizacionales.objects.all(),

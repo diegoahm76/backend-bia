@@ -267,19 +267,44 @@ class GetPersonaJuridicaByTipoDocumentoAndNumeroDocumento(generics.GenericAPIVie
             return Response({'success': False, 'detail': 'No encontró ninguna persona con los parametros ingresados'}, status=status.HTTP_404_NOT_FOUND)
 
 
+# class GetPersonaNatural(generics.ListAPIView):
+#     serializer_class=PersonaNaturalSerializer
+#     permission_classes=[IsAuthenticated, PermisoConsultarPersona]
+#     queryset=Personas.objects.filter(tipo_persona='N')       
+#     filter_backends=[filters.SearchFilter]
+#     search_fields=['primer_nombre','primer_apellido']
+
+
 class GetPersonaNatural(generics.ListAPIView):
     serializer_class=PersonaNaturalSerializer
-    permission_classes=[IsAuthenticated, PermisoConsultarPersona]
-    queryset=Personas.objects.filter(tipo_persona='N')       
-    filter_backends=[filters.SearchFilter]
-    search_fields=['primer_nombre','primer_apellido']
-
-
+    queryset=Personas.objects.all()
+    def get(self,request):
+        filter={}
+        for key,value in request.query_params.items():
+            if key in ["primer_nombre","primer_apellido"]:
+                filter[key+"__icontains"]=value
+        filter["tipo_persona"]="N"
+        persona=Personas.objects.filter(**filter)
+        if persona:
+            serializador=self.serializer_class(persona,many=True)
+            return Response({"success":True,"detail":"Se econtraron personas","Persona":serializador.data},status=status.HTTP_200_OK)
+        return Response({"success":False,"detail":"No se encontraron personas"},status=status.HTTP_403_FORBIDDEN)
 class GetPersonaJuridica(generics.ListAPIView):
     serializer_class=PersonaJuridicaSerializer
-    queryset=Personas.objects.filter(tipo_persona='J')
-    filter_backends=[filters.SearchFilter]
-    search_fields=['razon_social','nombre_comercial']
+    queryset=Personas.objects.all()
+    def get(self,request):
+        filter={}
+        for key,value in request.query_params.items():
+            if key in ["razon_social","nombre_comercial"]:
+                filter[key+"__icontains"]=value
+        filter["tipo_persona"]="J"
+        persona=Personas.objects.filter(**filter)
+        if persona:
+            serializador=self.serializer_class(persona,many=True)
+            return Response({"success":True,"detail":"Se econtraron personas","Persona":serializador.data},status=status.HTTP_200_OK)
+        return Response({"success":False,"detail":"No se encontraron personas"},status=status.HTTP_403_FORBIDDEN)
+    
+    
     
 class GetPersonaJuridicaByRepresentanteLegal(generics.ListAPIView):
     serializer_class=GetPersonaJuridicaByRepresentanteLegalSerializer
