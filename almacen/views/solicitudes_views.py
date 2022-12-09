@@ -1,5 +1,6 @@
 from almacen.models.bienes_models import CatalogoBienes
 from almacen.serializers.bienes_serializers import CatalogoBienesSerializer
+from almacen.serializers.organigrama_serializers import UnidadesOrganizacionales, UnidadesGetSerializer
 from rest_framework import generics,status
 from rest_framework.response import Response
 from almacen.models import UnidadesOrganizacionales, NivelesOrganigrama
@@ -76,9 +77,11 @@ def id_responsable(request):
 
 @api_view(['GET'])
 def get_orgchart_tree(request,pk):
-    
-    persona = Personas.objects.get(id_persona=int(pk))
-    
+    orgchart_list=[]
+    try:
+        persona = Personas.objects.get(id_persona=int(pk))
+    except:
+        return Response({'Success':False,'Detail':'no existe la persona con el id = '+pk},status=status.HTTP_400_BAD_REQUEST)    
     try:
         user = User.objects.get(persona=pk)
     except:
@@ -86,11 +89,22 @@ def get_orgchart_tree(request,pk):
     if user.tipo_usuario != 'I':
         return Response({'Success':False,'Detail':'su tipo de usuario no corresponde con el esperado para esta consulta'},status=status.HTTP_400_BAD_REQUEST)
     try:
-        unidad_organizacional = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=persona.id_unidad_organizacional_actual)
+        print(persona.id_unidad_organizacional_actual.id_unidad_organizacional)
+        unidad_organizacional = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=persona.id_unidad_organizacional_actual.id_unidad_organizacional)
     except:
         return Response({'Success':False,'Detail':'la persona no tiene ninguna unidad organizacional asignada'})
+    orgchart_list.append(unidad_organizacional)
+    nivel = NivelesOrganigrama.objects.get(id_nivel_organigrama=unidad_organizacional.id_nivel_organigrama.id_nivel_organigrama).orden_nivel
     
-    nivel = NivelesOrganigrama.objects.get(id_nivel_organigrama=unidad_organizacional.id_nivel_organigrama).orden_nivel
-
+    
+    print(nivel)
+    while(nivel>1):
+        unidad_organizacional = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=unidad_organizacional.id_unidad_org_padre.id_unidad_organizacional)
+        orgchart_list.append(unidad_organizacional)
+        nivel = NivelesOrganigrama.objects.get(id_nivel_organigrama=unidad_organizacional.id_nivel_organigrama.id_nivel_organigrama).orden_nivel
+    
+    serializer = UnidadesGetSerializer(orgchart_list,many=True)
+    return Response(serializer.data)
+    
 
     
