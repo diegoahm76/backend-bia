@@ -83,6 +83,25 @@ class SerializerItemEntradaActivosFijos(serializers.ModelSerializer):
             'id_entrada_almacen': {'required': True},
             'cantidad': {'required': True},
             'valor_unitario': {'required': True},
+            'porcentaje_iva': {'required': True},
+            'valor_iva': {'required': True},
+            'valor_total_item': {'required': True},
+            'id_bodega': {'required': True},
+            'valor_iva': {'required': True},
+            'doc_identificador_bien': {'required': True},
+            'cantidad_vida_util': {'required': True}, 
+            'id_unidad_medida_vida_util': {'required': True}, 
+            'valor_residual': {'required': True},
+            'cod_estado': {'required': True}
+        }
+
+class SerializerUpdateItemEntradaActivosFijos(serializers.ModelSerializer):
+    class Meta:
+        model= ItemEntradaAlmacen
+        exclude = ['id_entrada_almacen', 'id_bien', 'cantidad', 'numero_posicion']
+        extra_kwargs = {
+            'id_item_entrada_almacen': {'read_only': True},
+            'valor_unitario': {'required': True},
             'id_porcentaje_iva': {'required': True},
             'valor_iva': {'required': True},
             'valor_total_item': {'required': True},
