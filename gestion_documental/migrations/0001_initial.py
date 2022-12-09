@@ -12,30 +12,44 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='CCD_Clasif_Serie_Subserie_TCA',
+            name='Cargos_Unidad_S_Ss_UndOrg_TCA',
             fields=[
-                ('id_serie_subserie_caro_permiso_GDTCA', models.AutoField(db_column='T215IdSerieSubserieCargoPermisoGDTCA', primary_key=True, serialize=False)),
-                ('fecha_registro', models.DateTimeField(db_column='T215fechaRegistro')),
-                ('ruta_archivo', models.TextField(blank=True, db_column='T215rutaArchivo', null=True)),
-                ('justificacion', models.CharField(blank=True, db_column='T215justificacion', max_length=255, null=True)),
+                ('id_cargo_unidad_s_subserie_unidad_org_tca', models.AutoField(db_column='T221IdCargo_Unidad_S_Ss_UndOrg_TCA', editable=False, primary_key=True, serialize=False)),
+                ('fecha_configuracion', models.DateTimeField(auto_now=True, db_column='T221fechaConfiguracion')),
+                ('justificacion_del_cambio', models.CharField(blank=True, db_column='T221justificacionDelCambio', max_length=255, null=True)),
+                ('ruta_archivo_cambio', models.FileField(blank=True, db_column='T221rutaArchivoCambio', null=True, upload_to='')),
             ],
             options={
-                'verbose_name': 'clasificacion serie subserie TCA',
-                'verbose_name_plural': 'clasificacion serie subseri TCA',
-                'db_table': 'T215CCD_Clasif_Serie_Subserie_TCA',
+                'verbose_name': 'Cargos unidad serie subserie unidad TCA',
+                'verbose_name_plural': 'Cargos unidad serie subserie unidad TCA',
+                'db_table': 'T221Cargos_Unidad_S_Ss_UndOrg_TCA',
             },
         ),
         migrations.CreateModel(
-            name='ClasificacionSeriesSubDoc',
+            name='CCD_Clasif_Serie_Subserie_TCA',
+            fields=[
+                ('id_clasif_serie_subserie_unidad_tca', models.AutoField(db_column='T215IdClasif_S_Ss_UndOrg_TCA', primary_key=True, serialize=False)),
+                ('fecha_registro', models.DateTimeField(db_column='T215fechaRegistro')),
+                ('justificacion_cambio', models.CharField(blank=True, db_column='T215justificacionDelCambio', max_length=255, null=True)),
+                ('ruta_archivo_cambio', models.FileField(blank=True, db_column='T215rutaArchivoCambio', null=True, upload_to='')),
+            ],
+            options={
+                'verbose_name': 'Clasificacion Serie Subserie Unidad TCA',
+                'verbose_name_plural': 'Clasificacion Serie Subserie Unidad TCA',
+                'db_table': 'T215Clasif_S_Ss_UndOrg_TCA',
+            },
+        ),
+        migrations.CreateModel(
+            name='ClasificacionExpedientes',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('cod_clas_serie_doc', models.IntegerField(db_column='T214CodClasSerieDoc')),
-                ('tipo_clasificacion', models.CharField(choices=[('P', 'Público'), ('C', 'Controlado'), ('R', 'Rerservado')], db_column='T214tipoClasificacion', max_length=20)),
+                ('cod_clas_expediente', models.CharField(choices=[('P', 'Público'), ('C', 'Controlado'), ('R', 'Rerservado')], db_column='T214CodClasificacionExp', max_length=1)),
+                ('tipo_clasificacion', models.CharField(db_column='T214tipoClasificacion', max_length=20)),
             ],
             options={
                 'verbose_name': 'Clasificacion serie sub Doc ',
                 'verbose_name_plural': 'Clasificaciones serie sub Doc',
-                'db_table': 'T214ClasificacionSeriesSubDoc',
+                'db_table': 'T214ClasificacionExpedientes',
             },
         ),
         migrations.CreateModel(
@@ -97,6 +111,36 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
+            name='Historico_Clasif_S_Ss_UndOrg_TCA',
+            fields=[
+                ('id_historico_clasif_serie_subserie_unidad_tca', models.AutoField(db_column='T220IdHistorico_Clasif_S_Ss_UndOrg_TCA', editable=False, primary_key=True, serialize=False)),
+                ('cod_clasificacion_exp', models.CharField(choices=[('P', 'Público'), ('C', 'Controlado'), ('R', 'Rerservado')], db_column='T220CodClasificacionExp', max_length=1)),
+                ('fecha_inicio', models.DateTimeField(auto_now_add=True, db_column='T220fechaInicio')),
+                ('justificacion_del_cambio', models.CharField(blank=True, db_column='T220justificacionDelCambio', max_length=255, null=True)),
+                ('ruta_archivo_cambio', models.FileField(blank=True, db_column='T220rutaArchivoCambio', null=True, upload_to='')),
+            ],
+            options={
+                'verbose_name': 'Historico_clasificacion serie subserie unidad org tca',
+                'verbose_name_plural': 'Historico_clasificacion serie subserie unidad org tca',
+                'db_table': 'T220Historico_Clasif_S_Ss_UndOrg_TCA',
+            },
+        ),
+        migrations.CreateModel(
+            name='HistoricoCargosUnidadSerieSubserieUnidadTCA',
+            fields=[
+                ('id_historico_cargos_unidad_s_ss_unidad_tca', models.AutoField(db_column='T223IdHistorico_Cargos_Unidad_S_Ss_UndOrg_TCA', editable=False, primary_key=True, serialize=False)),
+                ('fecha_inicio', models.DateTimeField(auto_now_add=True, db_column='T223FechaIncio')),
+                ('nombre_permisos', models.CharField(db_column='T223nombrePermisos', max_length=255)),
+                ('justificacion', models.CharField(blank=True, db_column='T223justificacion', max_length=255, null=True)),
+                ('ruta_archivo', models.FileField(blank=True, db_column='T223rutaArchivo', null=True, upload_to='')),
+            ],
+            options={
+                'verbose_name': 'Historico Cargo Unidad Serie Subserie Unidad TCA',
+                'verbose_name_plural': 'Historicos Cargos Unidades Series Subseries Unidades TCA',
+                'db_table': 'T223Historico_Cargos_Unidad_S_Ss_UndOrg_TCA',
+            },
+        ),
+        migrations.CreateModel(
             name='HistoricosSerieSubSeriesUnidadOrgTRD',
             fields=[
                 ('historico_serie_subs_unidadorg_trd', models.AutoField(db_column='T219Historico_Serie_SubS_UnidadOrg_TRD', editable=False, primary_key=True, serialize=False)),
@@ -113,6 +157,17 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Historicos Serie SubSeries UnidadOrg TRD',
                 'verbose_name_plural': 'Historicos Serie SubSeries UnidadOrg TRD',
                 'db_table': 'T219Historicos_Serie_SubS_UnidadOrg_TRD',
+            },
+        ),
+        migrations.CreateModel(
+            name='PermisosCargoUnidadSerieSubserieUnidadTCA',
+            fields=[
+                ('id_permiso_cargo_unidad_s_ss_unidad_tca', models.AutoField(db_column='T222IdPermiso_Cargo_Unidad_S_Ss_UndOrg_TCA', editable=False, primary_key=True, serialize=False)),
+            ],
+            options={
+                'verbose_name': 'Permiso Cargo Unidad Serie Subserie Unidad TCA',
+                'verbose_name_plural': 'Permisos Cargos Unidades Series Subseries Unidades TCA',
+                'db_table': 'T222Permisos_Cargo_Unidad_S_Ss_UndOrg_TCA',
             },
         ),
         migrations.CreateModel(
@@ -218,14 +273,14 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='TablasControlAcceso',
             fields=[
-                ('id_TCA', models.AutoField(db_column='T216IdTCA', editable=False, primary_key=True, serialize=False)),
+                ('id_tca', models.AutoField(db_column='T216IdTCA', editable=False, primary_key=True, serialize=False)),
                 ('version', models.CharField(db_column='T216version', max_length=30, unique=True)),
                 ('nombre', models.CharField(db_column='T216nombre', max_length=200, unique=True)),
                 ('fecha_terminado', models.DateTimeField(blank=True, db_column='T216fechaTerminado', null=True)),
                 ('fecha_puesta_produccion', models.DateTimeField(blank=True, db_column='T216fechaPuestaEnProduccion', null=True)),
                 ('fecha_retiro_produccion', models.DateTimeField(blank=True, db_column='T216fechaRetiroDeProduccion', null=True)),
-                ('justificacion_nueva_version', models.CharField(blank=True, db_column='T216justificacionNuevaVersion', max_length=500, null=True)),
-                ('ruta_soporte', models.CharField(blank=True, db_column='T216rutaSoporte', max_length=200, null=True)),
+                ('justificacion_nueva_version', models.CharField(blank=True, db_column='T216justificacionNuevaVersion', max_length=255, null=True)),
+                ('ruta_soporte', models.FileField(blank=True, db_column='T216rutaSoporte', null=True, upload_to='')),
                 ('actual', models.BooleanField(db_column='T216actual', default=False)),
             ],
             options={

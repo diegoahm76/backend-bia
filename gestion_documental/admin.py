@@ -18,9 +18,13 @@ from gestion_documental.models.ccd_models import (
 )
 from gestion_documental.models.tca_models import (
     TablasControlAcceso,
-    ClasificacionSeriesSubDoc,
+    ClasificacionExpedientes,
     PermisosGD,
-    CCD_Clasif_Serie_Subserie_TCA
+    CCD_Clasif_Serie_Subserie_TCA,
+    Historico_Clasif_S_Ss_UndOrg_TCA,
+    Cargos_Unidad_S_Ss_UndOrg_TCA,
+    PermisosCargoUnidadSerieSubserieUnidadTCA,
+    HistoricoCargosUnidadSerieSubserieUnidadTCA
 )
 
 #CCD
@@ -38,3 +42,13 @@ admin.site.register(FormatosTiposMedioTipoDoc),
 admin.site.register(SeriesSubSUnidadOrgTRD),
 admin.site.register(SeriesSubSUnidadOrgTRDTipologias),
 admin.site.register(HistoricosSerieSubSeriesUnidadOrgTRD)
+
+#TCA
+admin.site.register(TablasControlAcceso),
+admin.site.register(ClasificacionExpedientes),
+admin.site.register(PermisosGD),
+admin.site.register(CCD_Clasif_Serie_Subserie_TCA),
+admin.site.register(Historico_Clasif_S_Ss_UndOrg_TCA),
+admin.site.register(Cargos_Unidad_S_Ss_UndOrg_TCA),
+admin.site.register(PermisosCargoUnidadSerieSubserieUnidadTCA),
+admin.site.register(HistoricoCargosUnidadSerieSubserieUnidadTCA)
