@@ -143,11 +143,11 @@ class UpdateUnidades(generics.UpdateAPIView):
                 if data:
                     nivel_unidades = sorted(data, key=itemgetter('id_nivel_organigrama'))
                     
-                    # ELIMINACION DE UNIDADES
-                    unidades_eliminar = UnidadesOrganizacionales.objects.filter(id_organigrama=pk)
-                    unidades_eliminar.delete()
-                    
                     # VALIDACIONES
+                    
+                    # VALIDACIONES SERIALIZER
+                    unidades_serializer = self.serializer_class(data=data, many=True)
+                    unidades_serializer.is_valid(raise_exception=True)
                     
                     # VALIDACIÓN DE EXISTENCIA DE NIVELES
                     niveles_list = [unidad['id_nivel_organigrama'] for unidad in data]
@@ -228,13 +228,14 @@ class UpdateUnidades(generics.UpdateAPIView):
                                     if unidad_padre[0]['cod_agrupacion_documental'] == None or unidad_padre[0]['cod_agrupacion_documental'] == '':
                                         return Response({'success':False, 'detail':'Debe marcar las unidades padre como subsecciones'}, status=status.HTTP_400_BAD_REQUEST)
                     
+                    # ELIMINACION DE UNIDADES
+                    unidades_eliminar = UnidadesOrganizacionales.objects.filter(id_organigrama=pk)
+                    unidades_eliminar.delete()
+                    
                     # CREACION DE UNIDADES
                     for nivel, unidades in groupby(nivel_unidades, itemgetter('id_nivel_organigrama')):
                         nivel_instance = NivelesOrganigrama.objects.filter(id_nivel_organigrama=nivel).first()
                         for unidad in unidades:
-                            unidad_serializer = self.serializer_class(data=unidad)
-                            unidad_serializer.is_valid(raise_exception=True)
-                            
                             unidad_org = None
                             
                             if unidad['cod_tipo_unidad'] == 'LI':
