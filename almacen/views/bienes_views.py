@@ -592,10 +592,10 @@ class CreateUpdateDeleteItemsEntrada(generics.RetrieveUpdateDestroyAPIView):
                     #CREAR EL ELEMENTO EN CATALOGO DE BIENES
                     if id_bien_padre:
                         bien_padre = CatalogoBienes.objects.filter(id_bien=id_bien_padre).first()
+                        if not bien_padre:
+                            return Response({'success': False, 'detail': 'No existe el bien padre ingresado'}, status=status.HTTP_400_BAD_REQUEST)
                         #CREACIÓN DE UN ITEM ACTIVO FIJO EN BASE A CAMPOS HEREDADOS DEL PADRE
                         if bien_padre.cod_tipo_bien == 'A':
-                            if not bien_padre:
-                                return Response({'success': False, 'detail': 'No existe el bien padre ingresado'}, status=status.HTTP_400_BAD_REQUEST)
                             bien_padre_serializado = CatalogoBienesSerializer(bien_padre)
                             
                             #ASIGNACIÓN DEL ÚLTIMO NÚMERO DEL ELEMENTO
