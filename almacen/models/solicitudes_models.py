@@ -6,7 +6,7 @@ from almacen.choices.tipo_unidad_choices import tipo_unidad_CHOICES
 from almacen.models.generics_models import UnidadesMedida
 
 class SolicitudesConsumibles(models.Model):
-    id_solicitud_consumible = models.AutoField(primary_key=True, db_column='T081IdSolicitudConsumibles')
+    id_solicitud_consumibles = models.AutoField(primary_key=True, db_column='T081IdSolicitudConsumibles')
     es_solicitud_de_conservacion = models.BooleanField(default = False, db_column='T081esSolicitudDeConservacion')
     nro_solicitud_por_tipo = models.IntegerField(db_column='T081nroSolicitudPorTipo')
     fecha_solicitud = models.DateField(db_column='T081fechaSolicitud')
@@ -33,7 +33,7 @@ class SolicitudesConsumibles(models.Model):
     fecha_anulacion_solicitante = models.DateField(db_column='T081fechaAnulacionSolicitante', null=True, blank=True)
     
     def __str__(self):
-        return str(self.id_solicitud_consumible)
+        return str(self.id_solicitud_consumibles)
 
     class Meta:
         db_table = 'T081SolicitudesConsumibles'

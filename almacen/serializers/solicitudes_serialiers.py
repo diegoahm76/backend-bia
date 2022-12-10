@@ -12,8 +12,15 @@ class CrearSolicitudesPostSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class CrearItemsSolicitudConsumiblePostSerializer(serializers.ModelSerializer):
-    nro_posicion = serializers.IntegerField(validators=[UniqueValidator(queryset=ItemsSolicitudConsumible.objects.all())])
+    #nro_posicion = serializers.IntegerField(validators=[UniqueValidator(queryset=ItemsSolicitudConsumible.objects.all())])
     class Meta:
         model = ItemsSolicitudConsumible
         fields = '__all__'
+        validators = [
+                UniqueTogetherValidator(
+                    queryset=ItemsSolicitudConsumible.objects.all(),
+                    fields=['id_bien', 'id_solicitud_consumibles'],
+                    message='El id organigrama y el código deben ser una pareja única'
+                )
+        ]
 
