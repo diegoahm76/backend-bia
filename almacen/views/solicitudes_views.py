@@ -14,6 +14,10 @@ from almacen.models.organigrama_models import (
     UnidadesOrganizacionales,
     NivelesOrganigrama
 )
+from almacen.models.generics_models import (
+    UnidadesMedida
+)
+
 from almacen.models.solicitudes_models import (
     SolicitudesConsumibles,
     ItemsSolicitudConsumible
@@ -22,7 +26,8 @@ from django.db.models import Q
 from rest_framework.response import Response
 from datetime import datetime, date
 from almacen.serializers.solicitudes_serialiers import ( 
-    CrearSolicitudesPostSerializer
+    CrearSolicitudesPostSerializer,
+    CrearItemsSolicitudConsumiblePostSerializer
     )
 
 
@@ -130,6 +135,8 @@ class CreateSolicitud(generics.UpdateAPIView):
     serializer_class = CrearSolicitudesPostSerializer
     queryset=SolicitudesConsumibles.objects.all()
     
+    serializer_item_solicitud = CrearItemsSolicitudConsumiblePostSerializer
+    
     def put(self, request, *args, **kwargs):
         datos_ingresados = request.data
         unidades_organiacionales_misma_linea = []
@@ -146,8 +153,10 @@ class CreateSolicitud(generics.UpdateAPIView):
         aux_niveles_organigrama = NivelesOrganigrama.objects.all().values()
         
         niveles_organigrama = [i['orden_nivel'] for i in aux_niveles_organigrama]
+        unidades_iguales_y_arriba = []
         aux_unidades_mismo_nivel = user_logeado.persona.id_unidad_organizacional_actual.nombre
         unidades_organiacionales_misma_linea.append(aux_unidades_mismo_nivel)
+        unidades_iguales_y_arriba.append(aux_unidades_mismo_nivel)
         if (user_logeado.persona.id_unidad_organizacional_actual.id_nivel_organigrama.orden_nivel + 1) <= max(niveles_organigrama): 
             lista_aux_1 = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre = user_logeado.persona.id_unidad_organizacional_actual).values()
             unidades_organiacionales_misma_linea.extend([i['nombre'] for i in lista_aux_1])
@@ -172,6 +181,7 @@ class CreateSolicitud(generics.UpdateAPIView):
             aux_menor = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = aux_menor.id_unidad_org_padre.id_unidad_organizacional).first()
             if aux_menor.id_unidad_org_padre:
                 unidades_organiacionales_misma_linea.append(aux_menor.id_unidad_org_padre.nombre)
+                unidades_iguales_y_arriba.append(aux_menor.id_unidad_org_padre.nombre)
             count = count - 1
         unidades_organiacionales_misma_linea = sorted(unidades_organiacionales_misma_linea)
         
@@ -184,12 +194,28 @@ class CreateSolicitud(generics.UpdateAPIView):
         funcionario_responsable = Personas.objects.filter(id_persona = info_solicitud['id_funcionario_responsable_unidad']).first()
         info_solicitud['id_unidad_org_del_responsable'] = funcionario_responsable.id_unidad_organizacional_actual.id_unidad_organizacional
         print(funcionario_responsable.id_unidad_organizacional_actual.nombre)
-        if not funcionario_responsable.id_unidad_organizacional_actual.nombre in unidades_organiacionales_misma_linea or funcionario_responsable.id_unidad_organizacional_actual.nombre == None:
+        if not funcionario_responsable.id_unidad_organizacional_actual.nombre in unidades_iguales_y_arriba or funcionario_responsable.id_unidad_organizacional_actual.nombre == None:
             return Response({'success':False,'data':'La persona que ingresó como responsable no es ningún superior de la persona que solicita'},status=status.HTTP_404_NOT_FOUND)
         
-        serializer = self.get_serializer(data=info_solicitud)
+        serializer = self.serializer_class(data=info_solicitud)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         
-
-        return Response({'success':True,'data':items_solicitud},status=status.HTTP_200_OK)
+        for i in items_solicitud:
+            solicitud = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles = i['id_solicitud_consumibles']).first()
+            if not solicitud:
+                return Response({'success':False,'data':'El id de solicitud que ingresó no existe'},status=status.HTTP_404_NOT_FOUND)
+            bien = CatalogoBienes.objects.filter(id_bien = i['id_bien']).first
+            if not bien:
+                return Response({'success':False,'data':'El bien (' + bien.nombre + ') no existe' },status=status.HTTP_404_NOT_FOUND)
+            if not i['cantidad'].isdigit():
+                return Response({'success':False,'data':'La cantidad debe ser un número entero' },status=status.HTTP_404_NOT_FOUND)
+            if not i['nro_posicion'].isdigit():
+                return Response({'success':False,'data':'El número de posición debe ser un número entero' },status=status.HTTP_404_NOT_FOUND)
+            unidad_de_medida = UnidadesMedida.objects.filter(id_unidad_medida = i['id_unidad_medida']).first()
+            if not unidad_de_medida:
+                return Response({'success':False,'data':'La unidad de medida (' + unidad_de_medida.nombre + ') no existe' },status=status.HTTP_404_NOT_FOUND)
+            serializer = self.serializer_item_solicitud(data=info_solicitud)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        return Response({'success':True,'data':'Solicitud registrada con éxito'},status=status.HTTP_200_OK)
