@@ -474,9 +474,43 @@ class CreateUpdateEntrada(generics.RetrieveUpdateAPIView):
                 request.data['id_persona_ult_act_dif_creador'] = request.user.persona.id_persona
                 request.data['fecha_ultima_actualizacion_diferente_creador'] = datetime.now()
 
-            serializer = EntradaUpdateSerializer(entrada, data=request.data, many=False)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
+            items_entrada = ItemEntradaAlmacen.objects.filter(id_entrada_almacen=entrada.id_entrada_almacen)
+            id_items_entrada = []
+            if items_entrada:
+                for item in items_entrada:
+                    item_inventario = Inventario.objects.filter(id_bien=item.id_bien).first()
+                    if str(item_inventario.id_registro_doc_ultimo_movimiento) != str(entrada.id_entrada_almacen):
+                        return Response({'success': False, 'detail': 'No se puede actualizar una entrada si el último movimiento de todos los items no fue la entrada'}, status=status.HTTP_403_FORBIDDEN)
+                    id_items_entrada.append(item.id_bien.id_bien)
+
+                serializer = EntradaUpdateSerializer(entrada, data=request.data, many=False)
+                serializer.is_valid(raise_exception=True)
+                tipo_entrada = serializer.validated_data.get('id_tipo_entrada')
+                match tipo_entrada.cod_tipo_entrada:
+                    case 1:
+                        tipo_doc_ultimo_movimiento = 'E_CPR'
+                    case 2:
+                        tipo_doc_ultimo_movimiento = 'E_DON'
+                    case 3:
+                        tipo_doc_ultimo_movimiento = 'E_RES'
+                    case 4:
+                        tipo_doc_ultimo_movimiento = 'E_CPS'
+                    case 5:
+                        tipo_doc_ultimo_movimiento = 'E_CMD'
+                    case 6:
+                        tipo_doc_ultimo_movimiento = 'E_CNV'
+                    case 7:
+                        tipo_doc_ultimo_movimiento = 'E_EMB'
+                    case 8:
+                        tipo_doc_ultimo_movimiento = 'E_INC'
+                    case _:
+                        return Response({'success': True, 'detail': 'El tipo de entrada ingresado no es valido'}, status=status.HTTP_400_BAD_REQUEST)
+                items_en_inventario = Inventario.objects.filter(id_bien__in=id_items_entrada)
+                for item in items_en_inventario:
+                    item.cod_tipo_entrada = tipo_entrada
+                    item.tipo_doc_ultimo_movimiento = tipo_doc_ultimo_movimiento
+                    item.save()
+                serializer.save()
             return Response({'success':True, 'detail':'Se ha actualizado la entrada', 'data':serializer.data}, status=status.HTTP_201_CREATED)
         
         else:
@@ -484,16 +518,15 @@ class CreateUpdateEntrada(generics.RetrieveUpdateAPIView):
             fecha_entrada = data.get('fecha_entrada')
             if fecha_entrada > str(datetime.now()):
                 return Response({'success': False, 'detail': 'No se puede crear una entrada con una fecha superior a la actual'}, status=status.HTTP_400_BAD_REQUEST)
+            
             numero_entrada_exist = EntradasAlmacen.objects.filter(numero_entrada_almacen=numero_entrada).first()
             if numero_entrada_exist:
                 entradas = EntradasAlmacen.objects.all().order_by('-numero_entrada_almacen').first()
                 data['numero_entrada_almacen'] = entradas.numero_entrada_almacen + 1
 
-
             serializer = self.serializer_class(data=data, many=False)
             serializer.is_valid(raise_exception=True)
-                
-
+            
             serializer.save()
             return Response({'success':True, 'detail':'Se creó la entrada', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 
