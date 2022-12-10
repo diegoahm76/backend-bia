@@ -1,0 +1,74 @@
+[
+    {
+        "model": "gestion_documental.PermisosGD",
+        "pk" : 1,
+        "fields": {
+            "permisos_GD": 1,
+            "tipo_permiso": "Crear"
+        }
+    },
+    {
+        "model": "gestion_documental.PermisosGD",
+        "pk" : 2,
+        "fields": {
+            "permisos_GD": 2,
+            "tipo_permiso": "Eliminar"
+        }
+    },
+    {
+        "model": "gestion_documental.PermisosGD",
+        "pk" : 3,
+        "fields": {
+            "permisos_GD": 3,
+            "tipo_permiso": "Compartir"
+        }
+    },
+    {
+        "model": "gestion_documental.PermisosGD",
+        "pk" : 4,
+        "fields": {
+            "permisos_GD": 4,
+            "tipo_permiso": "Editar"
+        }
+    },
+    {
+        "model": "gestion_documental.PermisosGD",
+        "pk" : 5,
+        "fields": {
+            "permisos_GD": 5,
+            "tipo_permiso": "Leer"
+        }
+    },
+    {
+        "model": "gestion_documental.PermisosGD",
+        "pk" : 6,
+        "fields": {
+            "permisos_GD": 6,
+            "tipo_permiso": "Mover"
+        }
+    },
+    {
+        "model": "gestion_documental.PermisosGD",
+        "pk" : 7,
+        "fields": {
+            "permisos_GD": 7,
+            "tipo_permiso": "Descargar"
+        }
+    },
+    {
+        "model": "gestion_documental.PermisosGD",
+        "pk" : 8,
+        "fields": {
+            "permisos_GD": 8,
+            "tipo_permiso": "Renombrar"
+        }
+    },
+    {
+        "model": "gestion_documental.PermisosGD",
+        "pk" : 9,
+        "fields": {
+            "permisos_GD": 9,
+            "tipo_permiso": "Control total"
+        }
+    }
+]
