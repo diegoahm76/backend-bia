@@ -12,7 +12,7 @@ class ProgramacionMantenimientos(models.Model):
     fecha_programada = models.DateField(db_column='T069fechaProgramada')
     motivo_mantenimiento = models.CharField(max_length=255, db_column='T069motivoMantenimiento')
     observaciones = models.CharField(max_length=255, db_column='T069observaciones', blank=True, null=True)
-    id_persona_solicita = models.ForeignKey('seguridad.Personas', on_delete=models.SET_NULL, db_column='T069Id_PersonaSolicita', blank=True, null=True, related_name='persona_solicita')
+    id_persona_solicita = models.ForeignKey('seguridad.Personas', on_delete=models.SET_NULL, db_column='T069Id_PersonaSolicita', blank=True, null=True, related_name='persona_solicita_programacion')
     fecha_solicitud = models.DateField(db_column='T069fechaSolicitud', blank=True, null=True)
     fecha_anulacion = models.DateTimeField(db_column='T069fechaAnulacion', blank=True, null=True)
     justificacion_anulacion = models.CharField(max_length=255, db_column='T069justificacionAnulacion', blank=True, null=True)
