@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from almacen.serializers.organigrama_serializers import UnidadesGetSerializer
 from almacen.models.organigrama_models import UnidadesOrganizacionales
 from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
+from seguridad.serializers.personas_serializers import CargosSerializer
 from gestion_documental.serializers.tca_serializers import (
     TCASerializer,
     TCAPostSerializer,
@@ -24,6 +25,7 @@ from almacen.models.organigrama_models import (
 from gestion_documental.models.tca_models import (
     TablasControlAcceso,
 )
+from seguridad.models import Cargos,Personas
 
 class GetUnidadesbyCCD(generics.ListAPIView):
     serializer_class=UnidadesGetSerializer
@@ -35,7 +37,25 @@ class GetUnidadesbyCCD(generics.ListAPIView):
             serializador=self.serializer_class(unidades,many=True)
             return Response({'success':True,'detail':'El ccd cuenta con las siguientes unidades','unidades':serializador.data},status=status.HTTP_200_OK)
         return Response({'success':False,'detail':'El ccd no cuenta con unidades'},status=status.HTTP_403_FORBIDDEN)
-
+class GetCargosByUnidades(generics.ListAPIView):
+    serializer_class=CargosSerializer
+    queryset=Cargos.objects.all()
+    def get (self,request):
+        cargos_true=request.query_params.get('check')
+        unidad=request.query_params.get('unidad')
+        if cargos_true=='true':
+            unidad_intance=UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=unidad).first()
+            if unidad:
+                personas=Personas.objects.filter(id_unidad_organizacional_actual=unidad_intance.id_unidad_organizacional)
+                list_cargos=[cargo.id_cargo.id_cargo for cargo in personas]
+                cargos=Cargos.objects.filter(id_cargo__in=list_cargos)
+                serializador=self.serializer_class(cargos,many=True)
+                return Response ({'success':True,'detail':'Se encontraron cargos','Cargos':serializador.data},status=status.HTTP_200_OK)
+            return Response ({'success':False,'detail':'No existe unidad'},status=status.HTTP_403_FORBIDDEN)
+        else:
+            cargos=Cargos.objects.filter(activo=True).values()
+            return Response ({'success':True,'Cargos':cargos},status=status.HTTP_200_OK)
+    
 class PostTablaControlAcceso(generics.CreateAPIView):
     serializer_class = TCAPostSerializer
     queryset = TablasControlAcceso
