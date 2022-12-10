@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from almacen.models import UnidadesOrganizacionales, NivelesOrganigrama
 from seguridad.models import Personas, User
 from rest_framework.decorators import api_view
+from seguridad.utils import Util
 from seguridad.models import (
     Personas,
     User
@@ -199,7 +200,20 @@ class CreateSolicitud(generics.UpdateAPIView):
         
         serializer = self.serializer_class(data=info_solicitud)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        serializer.save()        
+        dirip = Util.get_client_ip(request)
+        descripcion = {'id_solicitud_consumible':str(i['id_solicitud_consumible']), 'fecha_solicitud':str(i['fecha_solicitud']), 'id_persona_solicita':str(i['id_persona_solicita']), 'id_unidad_org_del_solicitante':str(i['id_unidad_org_del_solicitante']), 'id_funcionario_responsable_unidad':str(i['id_funcionario_responsable_unidad']), 'id_unidad_org_del_responsable':str(i['id_unidad_org_del_responsable'])}
+        valores_actualizados= None
+        auditoria_data = {
+            'id_usuario': user_logeado,
+            'id_modulo': 23,
+            'cod_permiso': 'CR',
+            'subsistema': 'ALMA',
+            'dirip': dirip,
+            'descripcion': descripcion,
+            'valores_actualizados': valores_actualizados
+        }
+        Util.save_auditoria(auditoria_data)
         
         for i in items_solicitud:
             solicitud = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles = i['id_solicitud_consumibles']).first()
