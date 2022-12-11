@@ -145,6 +145,8 @@ class CreateSolicitud(generics.UpdateAPIView):
         items_solicitud = datos_ingresados['items_solicitud']
         
         user_logeado = request.user
+        
+        # ASIGNACIÓN DE DATOS POR DEFECTO A LA TABLA SOLICITUDES
         info_solicitud['fecha_solicitud'] = str(date.today())
         info_solicitud['id_persona_solicita'] = user_logeado.persona.id_persona
         info_solicitud['id_unidad_org_del_solicitante'] = user_logeado.persona.id_unidad_organizacional_actual.id_unidad_organizacional
@@ -152,8 +154,19 @@ class CreateSolicitud(generics.UpdateAPIView):
         info_solicitud['es_solicitud_de_conservacion'] = False
         solicitudes_existentes = SolicitudesConsumibles.objects.all()
         bienes_repetidos = [i['id_bien'] for i in items_solicitud]
+        unidad_para_la_que_solicita = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = info_solicitud['id_unidad_para_la_que_solicita']).values().first()
+        funcionario_responsable = Personas.objects.filter(id_persona = info_solicitud['id_funcionario_responsable_unidad']).first()
+        info_solicitud['id_unidad_org_del_responsable'] = funcionario_responsable.id_unidad_organizacional_actual.id_unidad_organizacional
+        
+        # VALIDACIONES PRIMARIAS
+        if str(user_logeado) == 'AnonymousUser':
+            return Response({'success':False,'data':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
+        
+        if not unidad_para_la_que_solicita:
+            return Response({'success':False,'data':'La unidad organizacional ingresada no existe'},status=status.HTTP_404_NOT_FOUND)
         if len(bienes_repetidos) != len(set(bienes_repetidos)):
             return Response({'success':False,'data':'Solo puede ingresar una vez un bien en una solicitud' },status=status.HTTP_404_NOT_FOUND)
+        # ASIGNACIÓN DEL NÚMERO DE SOLICITUD
         if solicitudes_existentes:
             numero_solicitudes_no_conservacion = [i.nro_solicitud_por_tipo for i in solicitudes_existentes if i.es_solicitud_de_conservacion == False]
             info_solicitud['nro_solicitud_por_tipo'] = max(numero_solicitudes_no_conservacion) + 1
@@ -166,15 +179,18 @@ class CreateSolicitud(generics.UpdateAPIView):
         count = 0
         # VALIDACIONES ITEMS DE LA SOLICITUD
         for i in items_solicitud:
-            bien = CatalogoBienes.objects.filter(id_bien = i['id_bien']).first
+            bien = CatalogoBienes.objects.filter(id_bien = i['id_bien']).first()
             if not bien:
-                return Response({'success':False,'data':'El bien (' + bien.nombre + ') no existe' },status=status.HTTP_404_NOT_FOUND)
+                return Response({'success':False,'data':'El bien (' + i['id_bien'] + ') no existe' },status=status.HTTP_404_NOT_FOUND)
+            if bien.nivel_jerarquico != 5:
+                return Response({'success':False,'data':'El bien (' + bien.nombre + ') no es de nivel 5' },status=status.HTTP_404_NOT_FOUND)
+            if bien.cod_tipo_bien != 'C':
+                return Response({'success':False,'data':'El bien (' + bien.nombre + ') no es de consumo' },status=status.HTTP_404_NOT_FOUND)
             if not str(i['cantidad']).isdigit():
                 return Response({'success':False,'data':'La cantidad debe ser un número entero' },status=status.HTTP_404_NOT_FOUND)
             if not str(i['nro_posicion']).isdigit():
                 return Response({'success':False,'data':'El número de posición debe ser un número entero' },status=status.HTTP_404_NOT_FOUND)
             unidad_de_medida = UnidadesMedida.objects.filter(id_unidad_medida = i['id_unidad_medida']).first()
-            print("Unidad de medida", unidad_de_medida)
             if not unidad_de_medida:
                 return Response({'success':False,'data':'La unidad de medida (' + unidad_de_medida.nombre + ') no existe' },status=status.HTTP_404_NOT_FOUND)
 
@@ -220,17 +236,9 @@ class CreateSolicitud(generics.UpdateAPIView):
             count = count - 1
         unidades_organiacionales_misma_linea = sorted(unidades_organiacionales_misma_linea)
         
-        unidad_para_la_que_solicita = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = info_solicitud['id_unidad_para_la_que_solicita']).values().first()
-        
-        if str(user_logeado) == 'AnonymousUser':
-            return Response({'success':False,'data':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
-        if not unidad_para_la_que_solicita:
-            return Response({'success':False,'data':'La unidad organizacional ingresada no existe'},status=status.HTTP_404_NOT_FOUND)
         if not unidad_para_la_que_solicita['nombre'] in unidades_organiacionales_misma_linea:
             return Response({'success':False,'data':'La unidad organizacional para la que solicita no pertenece a la linea del organigrama a la que pertenece el solicitante'},status=status.HTTP_404_NOT_FOUND)
         
-        funcionario_responsable = Personas.objects.filter(id_persona = info_solicitud['id_funcionario_responsable_unidad']).first()
-        info_solicitud['id_unidad_org_del_responsable'] = funcionario_responsable.id_unidad_organizacional_actual.id_unidad_organizacional
         if not funcionario_responsable.id_unidad_organizacional_actual.nombre in unidades_iguales_y_arriba or funcionario_responsable.id_unidad_organizacional_actual.nombre == None:
             return Response({'success':False,'data':'La persona que ingresó como responsable no es ningún superior de la persona que solicita'},status=status.HTTP_404_NOT_FOUND)
         
