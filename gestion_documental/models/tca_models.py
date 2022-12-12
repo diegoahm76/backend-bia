@@ -26,7 +26,7 @@ class TablasControlAcceso(models.Model):
         verbose_name_plural='Tablas de control de acceso'
         
 class ClasificacionExpedientes(models.Model):
-    cod_clas_expediente=models.CharField(max_length=1,db_column='T214CodClasificacionExp',choices=tipo_clasificacion_CHOICES)
+    cod_clas_expediente=models.CharField(max_length=1,db_column='T214CodClasificacionExp')
     tipo_clasificacion=models.CharField(max_length=20,db_column='T214tipoClasificacion')
     
     def __str__(self):
@@ -53,7 +53,7 @@ class Clasif_Serie_Subserie_Unidad_TCA(models.Model):
     id_clasif_serie_subserie_unidad_tca=models.AutoField(primary_key=True, db_column='T215IdClasif_S_Ss_UndOrg_TCA')
     id_tca=models.ForeignKey(TablasControlAcceso,on_delete=models.CASCADE,db_column='T215Id_TCA')
     id_serie_subserie_unidad=models.ForeignKey(SeriesSubseriesUnidadOrg,on_delete=models.CASCADE,db_column='T215Id_SerieSubserieUnidadOrg')
-    cod_clas_expediente=models.ForeignKey(ClasificacionExpedientes,on_delete=models.CASCADE,db_column='T215Cod_ClasificacionExp')
+    cod_clas_expediente=models.CharField(max_length=1,choices=tipo_clasificacion_CHOICES,db_column='T215Cod_ClasificacionExp')
     fecha_registro=models.DateTimeField(auto_now_add=True, db_column='T215fechaRegistro')
     justificacion_cambio=models.CharField(max_length=255,db_column='T215justificacionDelCambio',blank=True,null=True)
     ruta_archivo_cambio=models.FileField(db_column='T215rutaArchivoCambio',blank=True,null=True)

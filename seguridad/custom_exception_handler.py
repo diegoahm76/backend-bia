@@ -16,6 +16,7 @@ def api_exception_handler(exc, context):
                 for key, value in response.data.items():
                     if isinstance(value, list):
                         separator = ', ' if key != list(response.data)[-1] else ''
+                        key = 'Error' if key == 'non_field_errors' else key
                         for i in range(len(value)):
                             value[i] = 'El campo es requerido' if value[i] == 'This field is required.' else value[i]
                         error_message += key + ': ' + ' '.join(value) + separator

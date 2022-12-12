@@ -9,4 +9,5 @@ urlpatterns = [
     path('create/', views.PostTablaControlAcceso.as_view(),name='create-tca'),
     path('update/<str:pk>/', views.UpdateTablaControlAcceso.as_view(), name='update-tca'),
     path('serie-subserie-unidad-tca/clasificar/<str:id_tca>/',views.ClasifSerieSubserieUnidadTCA.as_view(),name='serie-subserie-unidad-tca-clasificar'),
+    path('serie-subserie-unidad-tca/update-clasif/<str:pk>/',views.UpdateClasifSerieSubserieUnidadTCA.as_view(),name='serie-subserie-unidad-tca-clasificar'),
 ]
