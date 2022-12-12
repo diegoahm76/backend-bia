@@ -74,3 +74,33 @@ class ClasifSerieSubserieUnidadTCAPutSerializer(serializers.ModelSerializer):
             'justificacion_cambio': {'read_only': True},
             'ruta_archivo_cambio': {'read_only': True}
         }
+
+class ClasifSerieSubserieUnidadTCAPutSerializer(serializers.ModelSerializer):
+    cod_clas_expediente = serializers.ChoiceField(choices=tipo_clasificacion_CHOICES)
+    class Meta:
+        model = Clasif_Serie_Subserie_Unidad_TCA
+        fields = '__all__'
+        extra_kwargs = {
+            'id_clasif_serie_subserie_unidad_tca': {'read_only': True},
+            'id_tca': {'read_only': True},
+            'id_serie_subserie_unidad': {'read_only': True},
+            'cod_clas_expediente': {'required': True},
+            'fecha_registro': {'read_only': True},
+            'justificacion_cambio': {'read_only': True},
+            'ruta_archivo_cambio': {'read_only': True}
+        }
+
+class ClasifSerieSubseriUnidadTCA_activoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Clasif_Serie_Subserie_Unidad_TCA
+        fields = ['cod_clas_expediente','justificacion_cambio','ruta_archivo_cambio']
+        extra_kwargs={
+            'id_clasif_serie_subserie_unidad_tca': {'read_only': True},
+            'id_tca': {'read_only': True},
+            'id_serie_subserie_unidad': {'read_only': True},
+            'cod_clas_expediente': {'required': True},
+            'fecha_registro': {'read_only': True},
+            'justificacion_cambio': {'required': True},
+            'ruta_archivo_cambio': {'required': True}
+        }
+    

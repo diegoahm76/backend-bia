@@ -14,7 +14,8 @@ from gestion_documental.serializers.tca_serializers import (
     TCAPostSerializer,
     TCAPutSerializer,
     ClasifSerieSubserieUnidadTCASerializer,
-    ClasifSerieSubserieUnidadTCAPutSerializer
+    ClasifSerieSubserieUnidadTCAPutSerializer,
+    ClasifSerieSubseriUnidadTCA_activoSerializer
 )
 from gestion_documental.models.ccd_models import (
     SeriesSubseriesUnidadOrg,
@@ -186,8 +187,9 @@ class UpdateClasifSerieSubserieUnidadTCA(generics.UpdateAPIView):
     serializer_class = ClasifSerieSubserieUnidadTCAPutSerializer
     queryset = Clasif_Serie_Subserie_Unidad_TCA.objects.all()
     permission_classes = [IsAuthenticated]
-
+    serializer_class_2=ClasifSerieSubseriUnidadTCA_activoSerializer
     def put(self, request, pk):
+    
         data = request.data
         clasif_s_ss_unidad_tca = Clasif_Serie_Subserie_Unidad_TCA.objects.filter(id_clasif_serie_subserie_unidad_tca=pk).first()
         if clasif_s_ss_unidad_tca:
@@ -205,7 +207,13 @@ class UpdateClasifSerieSubserieUnidadTCA(generics.UpdateAPIView):
 
                         return Response({'success': True, 'detail': 'Se actualizó la clasificación del expediente exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
                     else:
-                        return Response({'success': False,'detail': 'No puede realizar esta acción a una TCA actual'}, status=status.HTTP_403_FORBIDDEN)
+                        dict_tipo_clasificacion = dict(tipo_clasificacion_CHOICES)
+                        if data['cod_clas_expediente'] not in dict_tipo_clasificacion:
+                            return Response({'success':False, 'detail':'Debe ingresar un código de clasificación que exista'}, status=status.HTTP_400_BAD_REQUEST)
+                        serializer= self.serializer_class_2(clasif_s_ss_unidad_tca, data=data)
+                        serializer.is_valid(raise_exception=True)
+                        serializer.save() 
+                        return Response({'success': True, 'detail': 'Se actualizó la clasificación del expediente exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
                 else:
                     return Response({'success': False,'detail': 'No se puede actualizar una TCA terminada'}, status=status.HTTP_403_FORBIDDEN)
             else:
