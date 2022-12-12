@@ -280,3 +280,74 @@ class CreateSolicitud(generics.UpdateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'success':True,'data':'Solicitud registrada con éxito', 'Numero solicitud' : info_solicitud["nro_solicitud_por_tipo"]},status=status.HTTP_200_OK)
+
+class GetSolicitudesPendentesPorAprobar(generics.ListAPIView):
+# ESTA FUNCIONALIDAD PERMITE LISTAR LAS SOLICITUDES PENDIENTES DE APORVACIÓN PORL SUPERVISOR DESIGNADO
+    serializer_class = CrearSolicitudesPostSerializer
+    queryset=SolicitudesConsumibles.objects.all()
+    
+    def get(self, request, tipodocumento, numerodocumento):
+        persona_responsable = Personas.objects.get(Q(tipo_documento=tipodocumento) & Q(numero_documento=numerodocumento) & Q(tipo_persona='N'))
+        usuario = User.objects.filter(persona = persona_responsable.id_persona).first()
+        if not usuario:
+            return Response({'success':False,'data':'Debe ingresar un usuario válido'},status=status.HTTP_400_BAD_REQUEST)        
+        solicitudes_por_aprobar = SolicitudesConsumibles.objects.filter(Q(id_funcionario_responsable_unidad=persona_responsable.id_persona) & Q(revisada_responsable = False))
+        return Response({'success':True,'data':solicitudes_por_aprobar.values(), },status=status.HTTP_200_OK)
+
+class GetSolicitudesById_Solicitudes(generics.ListAPIView):
+    # ESTA FUNCIONALIDAD PERMITE CONSULTAR SOLICITUDES DE BIENES DE CONSUMO POR ID_SOLICITUDES
+    serializer_class = CrearSolicitudesPostSerializer
+    queryset=SolicitudesConsumibles.objects.all()
+    
+    def get(self, request, id_solicitud):
+        solicitud = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles=id_solicitud)
+        if not solicitud:
+            return Response({'success':False,'data':'Ingrese un ID válido'},status=status.HTTP_400_BAD_REQUEST)
+        return Response({'success':True,'data':solicitud.values(), },status=status.HTTP_200_OK)
+
+class GetNroDocumentoSolicitudesBienesConsumo(generics.ListAPIView):
+    # ESTA FUNCIONALIDAD PERMITE CONSULTAR EL ÚLTIMO NÚMERO DE DOCUMENTO DE LA CREACIÓN DE SOLICITUDES
+    serializer_class = CrearSolicitudesPostSerializer
+    queryset=SolicitudesConsumibles.objects.all()
+    
+    def get(self, request, es_conservacion):
+        if es_conservacion == 'true':
+            nro_solicitud = SolicitudesConsumibles.objects.filter(es_solicitud_de_conservacion=True).order_by('nro_solicitud_por_tipo').last()
+        elif es_conservacion == 'false':
+            nro_solicitud = SolicitudesConsumibles.objects.filter(es_solicitud_de_conservacion=False).order_by('nro_solicitud_por_tipo').last()
+            #nro_solicitud = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles = aux).first()
+        else:
+            return Response({'success':False,'data':'Ingrese una opción válida, false o true'},status=status.HTTP_400_BAD_REQUEST)
+        return Response({'success':True,'Número de solicitud':nro_solicitud.nro_solicitud_por_tipo + 1, },status=status.HTTP_200_OK)
+    
+class RevisionSolicitudBienConsumosPorSupervisor(generics.UpdateAPIView):
+    serializer_class = CrearSolicitudesPostSerializer
+    queryset=SolicitudesConsumibles.objects.all()
+    
+    serializer_item_solicitud = CrearItemsSolicitudConsumiblePostSerializer
+    
+    def put(self, request, id_solicitud,*args, **kwargs):
+        datos_ingresados = request.data
+        user_logeado = request.user
+        
+        if not str(id_solicitud).isdigit():
+            return Response({'success':False,'data':'El Id_solicitud debe ser un número entero' },status=status.HTTP_404_NOT_FOUND)
+        if datos_ingresados['estado_aprobacion_responsable'] != 'A' and datos_ingresados['estado_aprobacion_responsable'] != 'R':
+            return Response({'success':False,'data':'El estado de aprobación debe ser A o R'},status=status.HTTP_404_NOT_FOUND)
+        if len(datos_ingresados['justificacion_rechazo_responsable']) > 255:
+            return Response({'success':False,'data':'El número máximo de caracteres de la justificación es de 255'},status=status.HTTP_404_NOT_FOUND)
+        
+        instance = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles=int(id_solicitud)).first()
+        if not instance:
+            return Response({'success':False,'data':'Debe de ingresar un id de solicitud válido'},status=status.HTTP_404_NOT_FOUND)
+        if instance.revisada_responsable == True:
+            return Response({'success':False,'data':'Esta solicitud ya ha sido aprobada'},status=status.HTTP_404_NOT_FOUND)
+        if instance.id_funcionario_responsable_unidad.id_persona != user_logeado.persona.id_persona:
+            return Response({'success':False,'data':'Usted no es el funcionario responsable de esta solicitud'},status=status.HTTP_404_NOT_FOUND)
+        instance.estado_aprobacion_responsable = datos_ingresados['estado_aprobacion_responsable']
+        instance.justificacion_rechazo_responsable = datos_ingresados['justificacion_rechazo_responsable']
+        instance.revisada_responsable = True
+        instance.fecha_aprobacion_responsable = str(date.today())
+        instance.save()
+        
+        return Response({'success':True,'Número de solicitud':'Solicitud procesada con éxito', },status=status.HTTP_200_OK)
