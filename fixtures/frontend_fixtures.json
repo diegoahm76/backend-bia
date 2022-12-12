@@ -1,7 +1,7 @@
 [
     {
         "model": "seguridad.Personas",
-        "pk" : 1,
+        "pk" : 2,
         "fields" : {
             "tipo_documento": "CC",
             "estado_civil": null,
@@ -250,7 +250,7 @@
         "pk" : 2,
         "fields" : {
             "id_usuario_creador": null,
-            "persona": 1,
+            "persona": 2,
             "password": "pbkdf2_sha256$390000$Ed9eugBOEtCakdqop0qMbA$SFvOEYw8gZtmjj/H0kHzHautbhqEVYS6VkKjQVRzKG0=",
             "last_login": null,
             "nombre_de_usuario": "Martin",
@@ -273,7 +273,7 @@
         "pk" : 3,
         "fields" : {
             "id_usuario_creador": null,
-            "persona": 1,
+            "persona": 3,
             "password": "pbkdf2_sha256$390000$Ed9eugBOEtCakdqop0qMbA$SFvOEYw8gZtmjj/H0kHzHautbhqEVYS6VkKjQVRzKG0=",
             "last_login": null,
             "nombre_de_usuario": "germanR",
@@ -296,7 +296,7 @@
         "pk" : 4,
         "fields" : {
             "id_usuario_creador": null,
-            "persona": 1,
+            "persona": 4,
             "password": "pbkdf2_sha256$390000$Ed9eugBOEtCakdqop0qMbA$SFvOEYw8gZtmjj/H0kHzHautbhqEVYS6VkKjQVRzKG0=",
             "last_login": null,
             "nombre_de_usuario": "julian",
@@ -319,7 +319,7 @@
         "pk" : 5,
         "fields" : {
             "id_usuario_creador": null,
-            "persona": 1,
+            "persona": 5,
             "password": "pbkdf2_sha256$390000$Ed9eugBOEtCakdqop0qMbA$SFvOEYw8gZtmjj/H0kHzHautbhqEVYS6VkKjQVRzKG0=",
             "last_login": null,
             "nombre_de_usuario": "slorenamartinez",
@@ -342,7 +342,7 @@
         "pk" : 6,
         "fields" : {
             "id_usuario_creador": null,
-            "persona": 1,
+            "persona": 6,
             "password": "pbkdf2_sha256$390000$Ed9eugBOEtCakdqop0qMbA$SFvOEYw8gZtmjj/H0kHzHautbhqEVYS6VkKjQVRzKG0=",
             "last_login": null,
             "nombre_de_usuario": "cristian",
@@ -365,7 +365,7 @@
         "pk" : 7,
         "fields" : {
             "id_usuario_creador": null,
-            "persona": 1,
+            "persona": 7,
             "password": "pbkdf2_sha256$390000$Ed9eugBOEtCakdqop0qMbA$SFvOEYw8gZtmjj/H0kHzHautbhqEVYS6VkKjQVRzKG0=",
             "last_login": null,
             "nombre_de_usuario": "DuvanTorres",

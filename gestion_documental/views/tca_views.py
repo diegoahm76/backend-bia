@@ -13,6 +13,7 @@ from gestion_documental.serializers.tca_serializers import (
     TCASerializer,
     TCAPostSerializer,
     TCAPutSerializer,
+    ClasifSerieSubserieUnidadTCASerializer
 )
 from gestion_documental.models.ccd_models import (
     SeriesSubseriesUnidadOrg,
@@ -24,6 +25,8 @@ from almacen.models.organigrama_models import (
 )
 from gestion_documental.models.tca_models import (
     TablasControlAcceso,
+    Clasif_Serie_Subserie_Unidad_TCA,
+    ClasificacionExpedientes
 )
 from seguridad.models import Cargos,Personas
 
@@ -104,35 +107,74 @@ class UpdateTablaControlAcceso(generics.RetrieveUpdateAPIView):
     def patch(self, request, pk):
         tca = TablasControlAcceso.objects.filter(id_tca=pk).first()
         if tca:
-            if not tca.fecha_terminado:
-                previous_tca = copy.copy(tca)
+            if not tca.fecha_retiro_produccion:
+                if not tca.fecha_terminado:
+                    previous_tca = copy.copy(tca)
 
-                serializer = self.serializer_class(tca, data=request.data)
-                try:
-                    serializer.is_valid(raise_exception=True)
-                    pass
-                except:
-                    return Response({'success': False, 'detail': 'Validar data enviada, el nombre y la versión son requeridos y deben ser únicos'}, status=status.HTTP_400_BAD_REQUEST)
-                serializer.save()
+                    serializer = self.serializer_class(tca, data=request.data)
+                    try:
+                        serializer.is_valid(raise_exception=True)
+                        pass
+                    except:
+                        return Response({'success': False, 'detail': 'Validar data enviada, el nombre y la versión son requeridos y deben ser únicos'}, status=status.HTTP_400_BAD_REQUEST)
+                    serializer.save()
 
-                # AUDITORIA DE UPDATE DE TCA
-                user_logeado = request.user.id_usuario
-                dirip = Util.get_client_ip(request)
-                descripcion = {'nombre':str(previous_tca.nombre), 'version':str(previous_tca.version)}
-                valores_actualizados={'previous':previous_tca, 'current':tca}
-                auditoria_data = {
-                    'id_usuario': user_logeado,
-                    'id_modulo': 31,
-                    'cod_permiso': 'AC',
-                    'subsistema': 'GEST',
-                    'dirip': dirip,
-                    'descripcion': descripcion,
-                    'valores_actualizados': valores_actualizados
-                }
-                Util.save_auditoria(auditoria_data)
+                    # AUDITORIA DE UPDATE DE TCA
+                    user_logeado = request.user.id_usuario
+                    dirip = Util.get_client_ip(request)
+                    descripcion = {'nombre':str(previous_tca.nombre), 'version':str(previous_tca.version)}
+                    valores_actualizados={'previous':previous_tca, 'current':tca}
+                    auditoria_data = {
+                        'id_usuario': user_logeado,
+                        'id_modulo': 31,
+                        'cod_permiso': 'AC',
+                        'subsistema': 'GEST',
+                        'dirip': dirip,
+                        'descripcion': descripcion,
+                        'valores_actualizados': valores_actualizados
+                    }
+                    Util.save_auditoria(auditoria_data)
 
-                return Response({'success': True, 'detail': 'Tabla de Control de Acceso actualizado exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+                    return Response({'success': True, 'detail': 'Tabla de Control de Acceso actualizado exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+                else:
+                    return Response({'success': False,'detail': 'No se puede actualizar una TCA terminada'}, status=status.HTTP_403_FORBIDDEN)
             else:
-                return Response({'success': False,'detail': 'No se puede actualizar una TCA terminada'}, status=status.HTTP_403_FORBIDDEN)
+                return Response({'success': False,'detail': 'No puede realizar cambios a una TCA que ya fue retirada de producción'}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            return Response({'success': False, 'detail': 'No existe ninguna Tabla de Control de Acceso con los parámetros ingresados'}, status=status.HTTP_404_NOT_FOUND)
+
+class ClasifSerieSubserieUnidadTCA(generics.RetrieveUpdateAPIView):
+    serializer_class = ClasifSerieSubserieUnidadTCASerializer
+    queryset = Clasif_Serie_Subserie_Unidad_TCA.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, id_tca):
+        data = request.data
+        tca = TablasControlAcceso.objects.filter(id_tca=id_tca).first()
+        if tca:
+            if not tca.fecha_retiro_produccion:
+                if not tca.fecha_terminado:
+                    if not tca.actual:
+                        # Validar existencia de expediente
+                        expediente = SeriesSubseriesUnidadOrg.objects.filter(id_serie_subserie_doc=data['id_serie_subserie_unidad']).first()
+                        if not expediente:
+                            return Response({'success':False, 'detail':'Debe ingresar un expediente que exista', 'data':[]}, status=status.HTTP_400_BAD_REQUEST)
+                                                
+                        # Validar existencia de código clasificación
+                        cod_clasificacion = ClasificacionExpedientes.objects.filter(cod_clas_expediente=data['cod_clas_expediente']).first()
+                        if not cod_clasificacion:
+                            return Response({'success':False, 'detail':'Debe ingresar un código clasificación que exista', 'data':[]}, status=status.HTTP_400_BAD_REQUEST)
+                        
+                        serializer = self.serializer_class(data=request.data)
+                        serializer.is_valid(raise_exception=True)
+                        serializer.save()
+
+                        return Response({'success': True, 'detail': 'Tabla de Control de Acceso actualizado exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+                    else:
+                        return Response({'success': False,'detail': 'No puede realizar esta acción a una TCA actual'}, status=status.HTTP_403_FORBIDDEN)
+                else:
+                    return Response({'success': False,'detail': 'No se puede actualizar una TCA terminada'}, status=status.HTTP_403_FORBIDDEN)
+            else:
+                return Response({'success': False,'detail': 'No puede realizar cambios a una TCA que ya fue retirada de producción'}, status=status.HTTP_403_FORBIDDEN)
         else:
             return Response({'success': False, 'detail': 'No existe ninguna Tabla de Control de Acceso con los parámetros ingresados'}, status=status.HTTP_404_NOT_FOUND)
