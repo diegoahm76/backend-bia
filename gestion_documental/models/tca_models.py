@@ -54,7 +54,7 @@ class Clasif_Serie_Subserie_Unidad_TCA(models.Model):
     id_tca=models.ForeignKey(TablasControlAcceso,on_delete=models.CASCADE,db_column='T215Id_TCA')
     id_serie_subserie_unidad=models.ForeignKey(SeriesSubseriesUnidadOrg,on_delete=models.CASCADE,db_column='T215Id_SerieSubserieUnidadOrg')
     cod_clas_expediente=models.ForeignKey(ClasificacionExpedientes,on_delete=models.CASCADE,db_column='T215Cod_ClasificacionExp')
-    fecha_registro=models.DateTimeField(db_column='T215fechaRegistro')
+    fecha_registro=models.DateTimeField(auto_now_add=True, db_column='T215fechaRegistro')
     justificacion_cambio=models.CharField(max_length=255,db_column='T215justificacionDelCambio',blank=True,null=True)
     ruta_archivo_cambio=models.FileField(db_column='T215rutaArchivoCambio',blank=True,null=True)
     
