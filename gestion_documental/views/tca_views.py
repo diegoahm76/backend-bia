@@ -148,9 +148,9 @@ class ClasifSerieSubserieUnidadTCA(generics.RetrieveUpdateAPIView):
     queryset = Clasif_Serie_Subserie_Unidad_TCA.objects.all()
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, pk):
+    def post(self, request, id_tca):
         data = request.data
-        tca = TablasControlAcceso.objects.filter(id_tca=pk).first()
+        tca = TablasControlAcceso.objects.filter(id_tca=id_tca).first()
         if tca:
             if not tca.fecha_retiro_produccion:
                 if not tca.fecha_terminado:
