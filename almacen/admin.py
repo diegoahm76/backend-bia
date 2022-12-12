@@ -2,8 +2,7 @@ from django.contrib import admin
 from almacen.models.organigrama_models import (
     Organigramas,
     NivelesOrganigrama,
-    UnidadesOrganizacionales,
-    Cargos
+    UnidadesOrganizacionales
 )
 from gestion_documental.models.ccd_models import (
     CuadrosClasificacionDocumental,
@@ -42,7 +41,6 @@ from almacen.models.mantenimientos_models import (
 admin.site.register(Organigramas)
 admin.site.register(NivelesOrganigrama)
 admin.site.register(UnidadesOrganizacionales)
-admin.site.register(Cargos)
 admin.site.register(Marcas)
 admin.site.register(PorcentajesIVA)
 admin.site.register(UnidadesMedida)

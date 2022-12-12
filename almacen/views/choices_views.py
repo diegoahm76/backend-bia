@@ -11,6 +11,7 @@ from almacen.choices.tipo_doc_ultimo_choices import tipo_doc_ultimo_CHOICES
 from almacen.choices.metodos_valoracion_articulos_choices import metodos_valoracion_articulos_CHOICES
 from almacen.choices.tipos_activo_choices import tipos_activo_CHOICES
 from almacen.choices.tipos_depreciacion_activos_choices import tipos_depreciacion_activos_CHOICES
+from almacen.choices.estado_aprobacion_choices import estado_aprobacion_CHOICES
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -78,4 +79,9 @@ class TipoActivoChoices(APIView):
 class TipoDepreciacionActivos(APIView):
     def get(self,request):
         choices = tipos_depreciacion_activos_CHOICES
+        return Response(choices)
+
+class EstadoAprobacionChoices(APIView):
+    def get(self,request):
+        choices = estado_aprobacion_CHOICES
         return Response(choices)

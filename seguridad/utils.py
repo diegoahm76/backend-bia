@@ -132,7 +132,7 @@ class Util:
                 valores_actualizados = valores_actualizados
             )
             auditoria_user.save()
-            
+        
             return True
         except:
             return False

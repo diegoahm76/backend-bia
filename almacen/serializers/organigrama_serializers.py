@@ -4,8 +4,7 @@ from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from almacen.models.organigrama_models import (
     Organigramas,
     NivelesOrganigrama,
-    UnidadesOrganizacionales,
-    Cargos
+    UnidadesOrganizacionales
 )
 
 class NivelesGetSerializer(serializers.ModelSerializer):
@@ -40,7 +39,7 @@ class NivelesUpdateSerializer(serializers.ModelSerializer):
 class UnidadesPutSerializer(serializers.ModelSerializer):
     class Meta:
         model = UnidadesOrganizacionales
-        fields = '__all__'
+        exclude = ['id_unidad_org_padre']
         validators = [
             UniqueTogetherValidator(
                 queryset=UnidadesOrganizacionales.objects.all(),

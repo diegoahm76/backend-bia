@@ -12,7 +12,9 @@ from seguridad.models import (
     HistoricoEmails,
     HistoricoDireccion,
     ClasesTercero,
-    ClasesTerceroPersona
+    ClasesTerceroPersona,
+    Cargos,
+    HistoricoUnidadesOrgPersona
 )
 
 
@@ -465,9 +467,13 @@ class PersonaNaturalUpdateUserPermissionsSerializer(serializers.ModelSerializer)
             'pais_nacimiento',
             'sexo',
             'estado_civil',
+            'id_cargo',
+            'id_unidad_organizacional_actual',
+            'fecha_asignacion_unidad',
             'acepta_notificacion_sms',
             'acepta_notificacion_email',
-            'acepta_tratamiento_datos'
+            'acepta_tratamiento_datos',
+            'es_unidad_organizacional_actual'
         ]
 
 class PersonaJuridicaInternaUpdateSerializer(serializers.ModelSerializer):
@@ -616,3 +622,19 @@ class ClasesTerceroPersonapostSerializer(serializers.ModelSerializer):
                 'id_persona': {'required': True},
                 'id_clase_tercero': {'required': True},
             }
+        
+class CargosSerializer(serializers.ModelSerializer):
+    nombre = serializers.CharField(max_length=50, validators=[UniqueValidator(queryset=Cargos.objects.all(), message='El nombre del cargo debe ser único')])
+
+    class Meta:
+        model = Cargos
+        fields = ['id_cargo', 'nombre', 'activo']
+        extra_kwargs = {
+            'nombre': {'required': True},
+            'id_cargo': {'read_only': True}
+        }
+    
+class HistoricoUnidadesOrgPersonapostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HistoricoUnidadesOrgPersona
+        fields = '__all__'

@@ -2,7 +2,7 @@ from django.db import models
 from almacen.choices.tipo_documento_choices import tipo_documento_CHOICES
 from almacen.choices.tipo_vehiculo_choices import tipo_vehiculo_CHOICES
 from almacen.choices.tipo_combustible_choices import tipo_combustible_CHOICES
-from seguridad.models import Personas
+# from seguridad.models import Personas
 from almacen.models.bienes_models import CatalogoBienes
 
 class VehiculosArrendados(models.Model):
@@ -53,7 +53,7 @@ class HojaDeVidaVehiculos(models.Model):
     cilindraje = models.SmallIntegerField(db_column='T066cilindraje', blank=True, null=True)
     transmision = models.CharField(max_length=20, db_column='T066transmision', blank=True, null=True)
     dimesion_llantas = models.SmallIntegerField(db_column='T066dimensionLlantas', blank=True, null=True)
-    id_proveedor = models.ForeignKey(Personas, on_delete=models.SET_NULL, db_column='T066Id_Proveedor', blank=True, null=True)
+    id_proveedor = models.ForeignKey('seguridad.Personas', on_delete=models.SET_NULL, db_column='T066Id_Proveedor', blank=True, null=True)
     capacidad_extintor = models.SmallIntegerField(db_column='T066capacidadExtintor', blank=True, null=True)
     tarjeta_operacion = models.CharField(max_length=20, db_column='T066tarjetaOperacion', blank=True, null=True)
     observaciones_adicionales = models.CharField(max_length=255, db_column='T066observacionesAdicionales', blank=True, null=True)
@@ -93,7 +93,7 @@ class DocumentosVehiculo(models.Model):
     nro_documento = models.CharField(max_length=20, db_column='T068nroDocumento')
     fecha_inicio_vigencia = models.DateField(db_column='T068fechaInicioVigencia')
     fecha_expiracion = models.DateField(db_column='T068fechaExpiracion')
-    id_empresa_proveedora = models.ForeignKey(Personas, on_delete=models.SET_NULL, null=True, blank=True, db_column='T068Id_EmpresaProveedora')
+    id_empresa_proveedora = models.ForeignKey('seguridad.Personas', on_delete=models.SET_NULL, null=True, blank=True, db_column='T068Id_EmpresaProveedora')
     
     def __str__(self):
         return str(self.id_hoja_de_vida)

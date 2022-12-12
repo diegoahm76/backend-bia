@@ -78,15 +78,5 @@
             "descripcion": "Ingreso de bienes por motivo de una incautación",
             "titulo_persona_origen": "Incautado"
         }
-    },
-    {
-        "model": "almacen.TiposEntradas",
-        "pk" : 9,
-        "fields": {
-            "cod_tipo_entrada":9,
-            "nombre":"Apropiación",
-            "descripcion": "Ingreso de bienes por motivo de una apropiación que se hace producto de una orden de embargo o incautación definitiva",
-            "titulo_persona_origen": "Tercero"
-        }
     }
 ]

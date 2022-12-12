@@ -36,7 +36,9 @@ from seguridad.models import (
     HistoricoEmails,
     HistoricoDireccion,
     ClasesTercero,
-    ClasesTerceroPersona
+    ClasesTerceroPersona,
+    Cargos,
+    User
 )
 
 from rest_framework import filters
@@ -68,7 +70,9 @@ from seguridad.serializers.personas_serializers import (
     ClasesTerceroSerializer,
     ClasesTerceroPersonaSerializer,
     ClasesTerceroPersonapostSerializer,
-    GetPersonaJuridicaByRepresentanteLegalSerializer
+    GetPersonaJuridicaByRepresentanteLegalSerializer,
+    CargosSerializer,
+    HistoricoUnidadesOrgPersonapostSerializer
 )
 
 # Views for Estado Civil
@@ -263,19 +267,44 @@ class GetPersonaJuridicaByTipoDocumentoAndNumeroDocumento(generics.GenericAPIVie
             return Response({'success': False, 'detail': 'No encontró ninguna persona con los parametros ingresados'}, status=status.HTTP_404_NOT_FOUND)
 
 
+# class GetPersonaNatural(generics.ListAPIView):
+#     serializer_class=PersonaNaturalSerializer
+#     permission_classes=[IsAuthenticated, PermisoConsultarPersona]
+#     queryset=Personas.objects.filter(tipo_persona='N')       
+#     filter_backends=[filters.SearchFilter]
+#     search_fields=['primer_nombre','primer_apellido']
+
+
 class GetPersonaNatural(generics.ListAPIView):
     serializer_class=PersonaNaturalSerializer
-    permission_classes=[IsAuthenticated, PermisoConsultarPersona]
-    queryset=Personas.objects.filter(tipo_persona='N')       
-    filter_backends=[filters.SearchFilter]
-    search_fields=['primer_nombre','primer_apellido']
-
-
+    queryset=Personas.objects.all()
+    def get(self,request):
+        filter={}
+        for key,value in request.query_params.items():
+            if key in ["primer_nombre","primer_apellido"]:
+                filter[key+"__icontains"]=value
+        filter["tipo_persona"]="N"
+        persona=Personas.objects.filter(**filter)
+        if persona:
+            serializador=self.serializer_class(persona,many=True)
+            return Response({"success":True,"detail":"Se econtraron personas","Persona":serializador.data},status=status.HTTP_200_OK)
+        return Response({"success":False,"detail":"No se encontraron personas"},status=status.HTTP_403_FORBIDDEN)
 class GetPersonaJuridica(generics.ListAPIView):
     serializer_class=PersonaJuridicaSerializer
-    queryset=Personas.objects.filter(tipo_persona='J')
-    filter_backends=[filters.SearchFilter]
-    search_fields=['razon_social','nombre_comercial']
+    queryset=Personas.objects.all()
+    def get(self,request):
+        filter={}
+        for key,value in request.query_params.items():
+            if key in ["razon_social","nombre_comercial"]:
+                filter[key+"__icontains"]=value
+        filter["tipo_persona"]="J"
+        persona=Personas.objects.filter(**filter)
+        if persona:
+            serializador=self.serializer_class(persona,many=True)
+            return Response({"success":True,"detail":"Se econtraron personas","Persona":serializador.data},status=status.HTTP_200_OK)
+        return Response({"success":False,"detail":"No se encontraron personas"},status=status.HTTP_403_FORBIDDEN)
+    
+    
     
 class GetPersonaJuridicaByRepresentanteLegal(generics.ListAPIView):
     serializer_class=GetPersonaJuridicaByRepresentanteLegalSerializer
@@ -461,16 +490,39 @@ class UpdatePersonaNaturalExternoBySelf(generics.RetrieveUpdateAPIView):
 class UpdatePersonaNaturalByUserWithPermissions(generics.RetrieveUpdateAPIView):
     http_method_names= ['patch']
     serializer_class = PersonaNaturalUpdateUserPermissionsSerializer
+    serializer_historico = HistoricoUnidadesOrgPersonapostSerializer
     permission_classes = [IsAuthenticated, PermisoActualizarPersona]
     queryset = Personas.objects.all()
 
     def patch(self, request, tipodocumento, numerodocumento):
+        datos_historico_unidad = {}
+        datos_ingresados = request.data
         try: 
+            bandera = False
             persona_por_actualizar = Personas.objects.get(Q(tipo_documento=tipodocumento) & Q(numero_documento=numerodocumento) & Q(tipo_persona='N'))
-            previous_persona = copy.copy(persona_por_actualizar)
+
+            usuario = User.objects.filter(persona = persona_por_actualizar.id_persona).first()
             
-            persona_serializada = self.serializer_class(persona_por_actualizar, data=request.data, many=False)
-            try:    
+            previous_persona = copy.copy(persona_por_actualizar)
+           
+            if datos_ingresados['id_unidad_organizacional_actual'] and usuario.tipo_usuario != 'I':
+                return Response({'success': False, 'detail': 'No se puede asignar una unidad organizacional a un usuario que no sea interno'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if persona_por_actualizar.id_unidad_organizacional_actual:
+                bandera = True
+                #print("323234234234234234")
+                datos_historico_unidad['id_persona'] = persona_por_actualizar.id_persona
+                datos_historico_unidad['id_unidad_organizacional'] = persona_por_actualizar.id_unidad_organizacional_actual.id_unidad_organizacional
+                datos_historico_unidad['justificacion_cambio'] = datos_ingresados['justificacion_cambio']
+                datos_historico_unidad['fecha_inicio'] = persona_por_actualizar.fecha_asignacion_unidad
+                datos_historico_unidad['fecha_final'] = datos_ingresados['fecha_asignacion_unidad']
+                
+            datos_ingresados['es_unidad_organizacional_actual'] = True
+            datos_ingresados.pop('justificacion_cambio')
+            
+            persona_serializada = self.serializer_class(persona_por_actualizar, data=datos_ingresados, many=False)
+
+            try:
                 persona_serializada.is_valid(raise_exception=True)
                 try:
                     #Marcar estado civil como item ya usado
@@ -504,7 +556,10 @@ class UpdatePersonaNaturalByUserWithPermissions(generics.RetrieveUpdateAPIView):
                         return Response({'success':False,'detail': 'Ya existe una persona con este email asociado como email principal o secundario'}, status=status.HTTP_400_BAD_REQUEST)
                     else:
                         serializador = persona_serializada.save()
-                        
+                        if bandera:
+                            historico_serializado = self.serializer_historico(data=datos_historico_unidad, many=False)
+                            historico_serializado.is_valid(raise_exception=True)
+                            historico_serializado.save()
                         # auditoria actualizar persona
                         usuario = request.user.id_usuario
                         direccion=Util.get_client_ip(request)
@@ -1151,7 +1206,62 @@ class GetHistoricoDirecciones(generics.ListAPIView):
     queryset = HistoricoDireccion.objects.all()
     serializer_class = HistoricoDireccionSerializer
 
-    
+class GetCargosList(generics.ListAPIView):
+    serializer_class = CargosSerializer
+    queryset = Cargos.objects.all()
+
+    def get(self, request):
+        cargos = Cargos.objects.filter(activo=True)
+        serializador = self.serializer_class(cargos, many=True)
+        if cargos:
+            return Response({'success':True, 'detail':'Se encontraron cargos', 'data':serializador.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success':False, 'detail':'No se encontró ningún cargo', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
+
+class RegisterCargos(generics.CreateAPIView):
+    serializer_class =  CargosSerializer
+    queryset = Cargos.objects.all()
+
+    def post(self, request):
+        data = request.data
+        serializador = self.serializer_class(data=data)
+        serializador.is_valid(raise_exception=True)
+        serializador.save()
+        return Response({'success':True, 'detail':'Se ha creado el cargo', 'data':serializador.data}, status=status.HTTP_201_CREATED)
+
+class UpdateCargos(generics.UpdateAPIView):
+    serializer_class = CargosSerializer
+    queryset = Cargos.objects.all()
+
+    def put(self, request, pk):
+        cargo = Cargos.objects.filter(id_cargo=pk).first()
+
+        if cargo:
+            if not cargo.item_usado:
+                serializer = self.serializer_class(cargo, data=request.data)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                return Response({'success':True, 'detail':'Registro actualizado exitosamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+            else:
+                return Response({'success':False, 'detail':'Este cargo ya está siendo usado, por lo cual no es actualizable'}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            return Response({'success': False, 'detail': 'No existe el cargo'}, status=status.HTTP_404_NOT_FOUND)
+
+class DeleteCargo(generics.DestroyAPIView):
+    serializer_class = CargosSerializer
+    queryset = Cargos.objects.all()
+
+    def delete(self, request, pk):
+        cargo = Cargos.objects.filter(id_cargo=pk).first()
+        if cargo:
+            if not cargo.item_usado:
+                cargo.delete()
+                return Response({'success': True, 'detail': 'El cargo ha sido eliminado exitosamente'}, status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response({'success':False, 'detail':'Este cargo ya está siendo usado, no se pudo eliminar. Intente desactivar'}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            return Response({'success': False, 'detail':'No existe el cargo'}, status=status.HTTP_404_NOT_FOUND)
+
 """    
 # Views for Clases Tercero
 

@@ -194,7 +194,7 @@ class DeleteHojaDeVidaVehiculos(generics.DestroyAPIView):
         else:
             hv_a_borrar.delete()
             
-            # auditoria delete hoja de vida computadores
+            # auditoria delete hoja de vida Vehículos
             usuario = request.user.id_usuario
             descripcion = {"NombreElemento": str(articulo_existentes.nombre), "Serial": str(articulo_existentes.doc_identificador_nro)}
             direccion=Util.get_client_ip(request)
@@ -228,7 +228,7 @@ class DeleteHojaDeVidaOtrosActivos(generics.DestroyAPIView):
         else:
             hv_a_borrar.delete()
             
-            # auditoria delete hoja de vida computadores
+            # auditoria delete hoja de vida Otros activos
             usuario = request.user.id_usuario
             descripcion = {"NombreElemento": str(articulo_existentes.nombre), "Serial": str(articulo_existentes.doc_identificador_nro)}
             direccion=Util.get_client_ip(request)

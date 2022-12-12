@@ -143,11 +143,11 @@ class UpdateUnidades(generics.UpdateAPIView):
                 if data:
                     nivel_unidades = sorted(data, key=itemgetter('id_nivel_organigrama'))
                     
-                    # ELIMINACION DE UNIDADES
-                    unidades_eliminar = UnidadesOrganizacionales.objects.filter(id_organigrama=pk)
-                    unidades_eliminar.delete()
-                    
                     # VALIDACIONES
+                    
+                    # VALIDACIONES SERIALIZER
+                    unidades_serializer = self.serializer_class(data=data, many=True)
+                    unidades_serializer.is_valid(raise_exception=True)
                     
                     # VALIDACIÓN DE EXISTENCIA DE NIVELES
                     niveles_list = [unidad['id_nivel_organigrama'] for unidad in data]
@@ -228,13 +228,14 @@ class UpdateUnidades(generics.UpdateAPIView):
                                     if unidad_padre[0]['cod_agrupacion_documental'] == None or unidad_padre[0]['cod_agrupacion_documental'] == '':
                                         return Response({'success':False, 'detail':'Debe marcar las unidades padre como subsecciones'}, status=status.HTTP_400_BAD_REQUEST)
                     
+                    # ELIMINACION DE UNIDADES
+                    unidades_eliminar = UnidadesOrganizacionales.objects.filter(id_organigrama=pk)
+                    unidades_eliminar.delete()
+                    
                     # CREACION DE UNIDADES
                     for nivel, unidades in groupby(nivel_unidades, itemgetter('id_nivel_organigrama')):
                         nivel_instance = NivelesOrganigrama.objects.filter(id_nivel_organigrama=nivel).first()
                         for unidad in unidades:
-                            unidad_serializer = self.serializer_class(data=unidad)
-                            unidad_serializer.is_valid(raise_exception=True)
-                            
                             unidad_org = None
                             
                             if unidad['cod_tipo_unidad'] == 'LI':
@@ -298,6 +299,24 @@ class GetUnidadesByOrganigrama(generics.ListAPIView):
                 return Response({'success': True, 'detail': 'No se encontraron unidades para el organigrama', 'data' : unidades}, status=status.HTTP_200_OK)
         else:
             return Response({'success':False, 'detail':'El organigrama no existe'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class GetUnidadesOrganigramaActual(generics.ListAPIView):
+    serializer_class = UnidadesGetSerializer
+    queryset = UnidadesOrganizacionales.objects.all()
+
+    def get(self, request):
+        organigrama = Organigramas.objects.filter(actual=True)
+        if not organigrama:
+            return Response({'success': False, 'detail': 'No existe ningún organigrama activado'}, status=status.HTTP_404_NOT_FOUND)
+        if len(organigrama) > 1:
+            return Response({'success': False, 'detail': 'Existe más de un organigrama actual, contacte a soporte'}, status=status.HTTP_403_FORBIDDEN)
+        
+        organigrama_actual = organigrama.first()
+        unidades_organigrama_actual = UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama_actual.id_organigrama)
+        serializer = self.serializer_class(unidades_organigrama_actual, many=True)
+        return Response({'success': True, 'detail': 'Consulta Exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
+
 
 #VIEWS FOR ORGANIGRAMA
 class FinalizarOrganigrama(generics.UpdateAPIView):

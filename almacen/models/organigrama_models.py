@@ -62,24 +62,3 @@ class UnidadesOrganizacionales(models.Model):
         unique_together = ['id_organigrama', 'nombre']
         unique_together = ['id_organigrama', 'codigo']
         ordering = ['id_nivel_organigrama']
-
-class Cargos(models.Model):
-    id_cargo = models.AutoField(primary_key=True, editable=False, db_column='T009IdCargo')
-    nombre = models.CharField(max_length=50, unique=True, db_column='T009nombre')
-    activo = models.BooleanField(default=False, db_column='T009activo')
-    item_usado = models.BooleanField(default=False, db_column='T009itemYaUsado')
-    
-    def __str__(self):
-        return str(self.nombre)
-        
-    class Meta:
-        db_table = 'T009Cargos'
-        verbose_name = 'Cargo'
-        verbose_name_plural = 'Cargos'
-
-
-
-
-
-
-
