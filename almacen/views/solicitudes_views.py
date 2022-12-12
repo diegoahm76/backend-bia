@@ -114,7 +114,6 @@ def get_orgchart_tree(request,pk):
     if user.tipo_usuario != 'I':
         return Response({'Success':False,'Detail':'su tipo de usuario no corresponde con el esperado para esta consulta'},status=status.HTTP_400_BAD_REQUEST)
     try:
-        print(persona.id_unidad_organizacional_actual.id_unidad_organizacional)
         unidad_organizacional = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=persona.id_unidad_organizacional_actual.id_unidad_organizacional)
     except:
         return Response({'Success':False,'Detail':'la persona no tiene ninguna unidad organizacional asignada'})
@@ -155,9 +154,11 @@ class CreateSolicitud(generics.UpdateAPIView):
         solicitudes_existentes = SolicitudesConsumibles.objects.all()
         bienes_repetidos = [i['id_bien'] for i in items_solicitud]
         unidad_para_la_que_solicita = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = info_solicitud['id_unidad_para_la_que_solicita']).values().first()
-        funcionario_responsable = Personas.objects.filter(id_persona = info_solicitud['id_funcionario_responsable_unidad']).first()
-        info_solicitud['id_unidad_org_del_responsable'] = funcionario_responsable.id_unidad_organizacional_actual.id_unidad_organizacional
-        
+        if info_solicitud['id_funcionario_responsable_unidad'] != None and info_solicitud['id_funcionario_responsable_unidad'] != '':
+            funcionario_responsable = Personas.objects.filter(id_persona = info_solicitud['id_funcionario_responsable_unidad']).first()
+            info_solicitud['id_unidad_org_del_responsable'] = funcionario_responsable.id_unidad_organizacional_actual.id_unidad_organizacional
+        else:
+            info_solicitud['id_unidad_org_del_responsable'] = None
         # VALIDACIONES PRIMARIAS
         if str(user_logeado) == 'AnonymousUser':
             return Response({'success':False,'data':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
@@ -199,54 +200,65 @@ class CreateSolicitud(generics.UpdateAPIView):
         if len(aux_nro_posicion) != len(set(aux_nro_posicion)):
             return Response({'success':False,'data':'Los números de posición deben ser diferentes entre ellos' },status=status.HTTP_404_NOT_FOUND)
         
+        if str(user_logeado.persona.id_unidad_organizacional_actual.cod_tipo_unidad) == 'AS' or str(user_logeado.persona.id_unidad_organizacional_actual.cod_tipo_unidad) == 'AP':
+            instancia_nivel_1 = NivelesOrganigrama.objects.filter(id_nivel_organigrama = 1).first()
+            unidad_padre_de_todos = UnidadesOrganizacionales.objects.filter(id_nivel_organigrama = instancia_nivel_1).first()
+            padre_de_todos = Personas.objects.filter(id_unidad_organizacional_actual = unidad_padre_de_todos).first()
+            if user_logeado.persona.id_unidad_organizacional_actual.id_unidad_organizacional != info_solicitud['id_unidad_para_la_que_solicita']:
+                return Response({'success':False,'data':'Un usuario de una unidad de apoyo o asesor solo le puede hacer solicitudes a la misma unidad a la que pertenece' },status=status.HTTP_404_NOT_FOUND)
+
+            if (info_solicitud['id_funcionario_responsable_unidad'] != padre_de_todos.id_persona and info_solicitud['id_funcionario_responsable_unidad'] != '' and info_solicitud['id_funcionario_responsable_unidad'] != None) or info_solicitud['id_funcionario_responsable_unidad'] == user_logeado.persona.id_persona:
+                return Response({'success':False,'data':'El usuario supervisor no puede ser el mismo usuario que solicita, el funcionario supervisor solo puede ser de unidad organizacional nivel 1' },status=status.HTTP_404_NOT_FOUND)
+        
         # VALIDACIÓN DE LA LINEA DEL ORGANIGRAMA A LA QUE PERTENECE EL USUARIO SOLICITANTE Y EL USUARIO SUPERVISOR DEL SOLICITANTE
-        aux_niveles_organigrama = NivelesOrganigrama.objects.all().values()
-        
-        niveles_organigrama = [i['orden_nivel'] for i in aux_niveles_organigrama]
-        unidades_iguales_y_arriba = []
-        aux_unidades_mismo_nivel = user_logeado.persona.id_unidad_organizacional_actual.nombre
-        unidades_organiacionales_misma_linea.append(aux_unidades_mismo_nivel)
-        unidades_iguales_y_arriba.append(aux_unidades_mismo_nivel)
-        if (user_logeado.persona.id_unidad_organizacional_actual.id_nivel_organigrama.orden_nivel + 1) <= max(niveles_organigrama): 
-            lista_aux_1 = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre = user_logeado.persona.id_unidad_organizacional_actual).values()
-            unidades_organiacionales_misma_linea.extend([i['nombre'] for i in lista_aux_1])
-            count = user_logeado.persona.id_unidad_organizacional_actual.id_nivel_organigrama.orden_nivel + 2
-            while (count) <= max(niveles_organigrama):
-                aux_1 = None
-                lista_aux_2 = []
-                for i in lista_aux_1:
-                    aux_1 = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre = i['id_unidad_organizacional']).values()
-                    unidades_organiacionales_misma_linea.extend([i['nombre'] for i in aux_1])
-                    lista_aux_2.extend(aux_1)
-                lista_aux_1 = lista_aux_2
-                count += 1
-        
-        unidades_arriba = user_logeado.persona.id_unidad_organizacional_actual.id_unidad_org_padre.nombre
-        unidades_organiacionales_misma_linea.append(unidades_arriba)
-        unidades_iguales_y_arriba.append(unidades_arriba)
-        count = user_logeado.persona.id_unidad_organizacional_actual.id_unidad_org_padre.id_nivel_organigrama.orden_nivel - 1
-        aux_menor = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = user_logeado.persona.id_unidad_organizacional_actual.id_unidad_org_padre.id_unidad_organizacional).first()
-        unidades_organiacionales_misma_linea.append(aux_menor.id_unidad_org_padre.nombre)
-        unidades_iguales_y_arriba.append(aux_menor.id_unidad_org_padre.nombre)
-        while count >= 1:
-            aux_menor = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = aux_menor.id_unidad_org_padre.id_unidad_organizacional).first()
-            if aux_menor.id_unidad_org_padre:
-                unidades_organiacionales_misma_linea.append(aux_menor.id_unidad_org_padre.nombre)
-                unidades_iguales_y_arriba.append(aux_menor.id_unidad_org_padre.nombre)
-            count = count - 1
-        unidades_organiacionales_misma_linea = sorted(unidades_organiacionales_misma_linea)
-        
-        if not unidad_para_la_que_solicita['nombre'] in unidades_organiacionales_misma_linea:
-            return Response({'success':False,'data':'La unidad organizacional para la que solicita no pertenece a la linea del organigrama a la que pertenece el solicitante'},status=status.HTTP_404_NOT_FOUND)
-        
-        if not funcionario_responsable.id_unidad_organizacional_actual.nombre in unidades_iguales_y_arriba or funcionario_responsable.id_unidad_organizacional_actual.nombre == None:
-            return Response({'success':False,'data':'La persona que ingresó como responsable no es ningún superior de la persona que solicita'},status=status.HTTP_404_NOT_FOUND)
-        
+        else:
+            aux_niveles_organigrama = NivelesOrganigrama.objects.all().values()
+            
+            niveles_organigrama = [i['orden_nivel'] for i in aux_niveles_organigrama]
+            unidades_iguales_y_arriba = []
+            aux_unidades_mismo_nivel = user_logeado.persona.id_unidad_organizacional_actual.nombre
+            unidades_organiacionales_misma_linea.append(aux_unidades_mismo_nivel)
+            unidades_iguales_y_arriba.append(aux_unidades_mismo_nivel)
+            if (user_logeado.persona.id_unidad_organizacional_actual.id_nivel_organigrama.orden_nivel + 1) <= max(niveles_organigrama): 
+                lista_aux_1 = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre = user_logeado.persona.id_unidad_organizacional_actual).values()
+                unidades_organiacionales_misma_linea.extend([i['nombre'] for i in lista_aux_1])
+                count = user_logeado.persona.id_unidad_organizacional_actual.id_nivel_organigrama.orden_nivel + 2
+                while (count) <= max(niveles_organigrama):
+                    aux_1 = None
+                    lista_aux_2 = []
+                    for i in lista_aux_1:
+                        aux_1 = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre = i['id_unidad_organizacional']).values()
+                        unidades_organiacionales_misma_linea.extend([i['nombre'] for i in aux_1])
+                        lista_aux_2.extend(aux_1)
+                    lista_aux_1 = lista_aux_2
+                    count += 1
+            
+            
+            unidades_arriba = user_logeado.persona.id_unidad_organizacional_actual.id_unidad_org_padre.nombre
+            unidades_organiacionales_misma_linea.append(unidades_arriba)
+            unidades_iguales_y_arriba.append(unidades_arriba)
+            count = user_logeado.persona.id_unidad_organizacional_actual.id_unidad_org_padre.id_nivel_organigrama.orden_nivel - 1
+            aux_menor = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = user_logeado.persona.id_unidad_organizacional_actual.id_unidad_org_padre.id_unidad_organizacional).first()
+            unidades_organiacionales_misma_linea.append(aux_menor.id_unidad_org_padre.nombre)
+            unidades_iguales_y_arriba.append(aux_menor.id_unidad_org_padre.nombre)
+            while count >= 1:
+                aux_menor = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = aux_menor.id_unidad_org_padre.id_unidad_organizacional).first()
+                if aux_menor.id_unidad_org_padre:
+                    unidades_organiacionales_misma_linea.append(aux_menor.id_unidad_org_padre.nombre)
+                    unidades_iguales_y_arriba.append(aux_menor.id_unidad_org_padre.nombre)
+                count = count - 1
+            unidades_organiacionales_misma_linea = sorted(unidades_organiacionales_misma_linea)
+            
+            if not unidad_para_la_que_solicita['nombre'] in unidades_organiacionales_misma_linea:
+                return Response({'success':False,'data':'La unidad organizacional para la que solicita no pertenece a la linea del organigrama a la que pertenece el solicitante'},status=status.HTTP_404_NOT_FOUND)
+            
+            if not funcionario_responsable.id_unidad_organizacional_actual.nombre in unidades_iguales_y_arriba or funcionario_responsable.id_unidad_organizacional_actual.nombre == None:
+                return Response({'success':False,'data':'La persona que ingresó como responsable no es ningún superior de la persona que solicita'},status=status.HTTP_404_NOT_FOUND)
+            
         serializer = self.serializer_class(data=info_solicitud)
         serializer.is_valid(raise_exception=True)
         serializer.save()        
         dirip = Util.get_client_ip(request)
-        print("Id_solicitud_bienes", str(serializer.data['id_solicitud_consumibles']))
         
         descripcion = {'id_solicitud_consumibles':str(serializer.data['id_solicitud_consumibles']), 'fecha_solicitud':str(info_solicitud['fecha_solicitud']), 'id_persona_solicita':str(info_solicitud['id_persona_solicita']), 'id_unidad_org_del_solicitante':str(info_solicitud['id_unidad_org_del_solicitante']), 'id_funcionario_responsable_unidad':str(info_solicitud['id_funcionario_responsable_unidad']), 'id_unidad_org_del_responsable':str(info_solicitud['id_unidad_org_del_responsable'])}
         valores_actualizados= None
