@@ -49,11 +49,11 @@ class PermisosGD(models.Model):
         verbose_name='Permiso GD'
         verbose_name_plural='Permisos GD'
         
-class CCD_Clasif_Serie_Subserie_TCA(models.Model):
+class Clasif_Serie_Subserie_Unidad_TCA(models.Model):
     id_clasif_serie_subserie_unidad_tca=models.AutoField(primary_key=True, db_column='T215IdClasif_S_Ss_UndOrg_TCA')
     id_tca=models.ForeignKey(TablasControlAcceso,on_delete=models.CASCADE,db_column='T215Id_TCA')
     id_serie_subserie_unidad=models.ForeignKey(SeriesSubseriesUnidadOrg,on_delete=models.CASCADE,db_column='T215Id_SerieSubserieUnidadOrg')
-    cod_clas_expediente=models.ForeignKey(PermisosGD,on_delete=models.CASCADE,db_column='T215Cod_ClasificacionExp')
+    cod_clas_expediente=models.ForeignKey(ClasificacionExpedientes,on_delete=models.CASCADE,db_column='T215Cod_ClasificacionExp')
     fecha_registro=models.DateTimeField(db_column='T215fechaRegistro')
     justificacion_cambio=models.CharField(max_length=255,db_column='T215justificacionDelCambio',blank=True,null=True)
     ruta_archivo_cambio=models.FileField(db_column='T215rutaArchivoCambio',blank=True,null=True)
@@ -70,7 +70,7 @@ class CCD_Clasif_Serie_Subserie_TCA(models.Model):
 
 class Historico_Clasif_S_Ss_UndOrg_TCA(models.Model):
     id_historico_clasif_serie_subserie_unidad_tca=models.AutoField(primary_key=True,editable=False, db_column='T220IdHistorico_Clasif_S_Ss_UndOrg_TCA')
-    id_clasif_s_ss_unidad_tca=models.ForeignKey(CCD_Clasif_Serie_Subserie_TCA,on_delete=models.CASCADE,db_column='T220Id_Clasif_S_Ss_UndOrg_TCA')
+    id_clasif_s_ss_unidad_tca=models.ForeignKey(Clasif_Serie_Subserie_Unidad_TCA,on_delete=models.CASCADE,db_column='T220Id_Clasif_S_Ss_UndOrg_TCA')
     cod_clasificacion_exp=models.CharField(max_length=1,choices=tipo_clasificacion_CHOICES,db_column='T220CodClasificacionExp')
     fecha_inicio=models.DateTimeField(auto_now_add=True,db_column='T220fechaInicio')
     justificacion_del_cambio=models.CharField(max_length=255,blank=True,null=True,db_column='T220justificacionDelCambio')
@@ -87,7 +87,7 @@ class Historico_Clasif_S_Ss_UndOrg_TCA(models.Model):
 
 class Cargos_Unidad_S_Ss_UndOrg_TCA(models.Model):
     id_cargo_unidad_s_subserie_unidad_org_tca=models.AutoField(primary_key=True,editable=False,db_column='T221IdCargo_Unidad_S_Ss_UndOrg_TCA')
-    id_clasif_serie_subserie_unidad_tca=models.ForeignKey(CCD_Clasif_Serie_Subserie_TCA,on_delete=models.CASCADE,db_column='T221Id_Clasif_S_Ss_UndOrg_TCA')
+    id_clasif_serie_subserie_unidad_tca=models.ForeignKey(Clasif_Serie_Subserie_Unidad_TCA,on_delete=models.CASCADE,db_column='T221Id_Clasif_S_Ss_UndOrg_TCA')
     id_cargo_persona=models.ForeignKey(Cargos,on_delete=models.CASCADE,db_column='T221Id_CargoPersona')
     id_unidad_org_cargo=models.ForeignKey(UnidadesOrganizacionales,on_delete=models.CASCADE,db_column='T221Id_UnidadOrgCargo')
     fecha_configuracion=models.DateTimeField(auto_now=True,db_column='T221fechaConfiguracion')
