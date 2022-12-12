@@ -817,7 +817,11 @@ class LoginApiView(generics.CreateAPIView):
                         
                     representante_legal=Personas.objects.filter(representante_legal=user.persona.id_persona).values()
                     representante_legal_list=[{'id_persona':representante['id_persona'],'razon_social':representante['razon_social'],'NUIP':representante['numero_documento']}for representante in representante_legal]
-                    user_info={'userinfo':serializer.data,'permisos':permisos_list[0],'representante_legal':representante_legal_list}
+                    
+                    # DEFINIR SI UN USUARIO SI O SI DEBE TENER UN PERMISO O NO
+                    permisos_list = permisos_list[0] if permisos_list else []
+                    
+                    user_info={'userinfo':serializer.data,'permisos':permisos_list,'representante_legal':representante_legal_list}
                     sms = "Has iniciado sesion en bia cormacarena"
                     Util.send_sms(user.persona.telefono_celular, sms)
                     return Response({'userinfo':user_info}, status=status.HTTP_200_OK)
