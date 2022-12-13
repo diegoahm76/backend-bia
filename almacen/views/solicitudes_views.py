@@ -324,8 +324,6 @@ class RevisionSolicitudBienConsumosPorSupervisor(generics.UpdateAPIView):
     serializer_class = CrearSolicitudesPostSerializer
     queryset=SolicitudesConsumibles.objects.all()
     
-    serializer_item_solicitud = CrearItemsSolicitudConsumiblePostSerializer
-    
     def put(self, request, id_solicitud,*args, **kwargs):
         datos_ingresados = request.data
         user_logeado = request.user
@@ -351,3 +349,11 @@ class RevisionSolicitudBienConsumosPorSupervisor(generics.UpdateAPIView):
         instance.save()
         
         return Response({'success':True,'Número de solicitud':'Solicitud procesada con éxito', },status=status.HTTP_200_OK)
+    
+class SolicitudesPendientesDespachar(generics.ListAPIView):
+    serializer_class = CrearSolicitudesPostSerializer
+    queryset=SolicitudesConsumibles.objects.all()
+    
+    def get(self, request):
+        pendientes_por_despachar = SolicitudesConsumibles.objects.filter(Q(estado_aprobacion_responsable='A') & Q(gestionada_almacen=False)).values()
+        return Response({'success':True,'Solicitudes pendientes por despahcar':pendientes_por_despachar, },status=status.HTTP_200_OK)
