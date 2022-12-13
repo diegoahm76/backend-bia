@@ -12,7 +12,7 @@ urlpatterns = [
     #Entradas
     path('entradas/create/', views.CreateUpdateEntrada.as_view(), name='entrada-create'),
     path('entradas/search-bienes/', views.SearchArticulos.as_view(), name='catalogo-bienes-search-bienes'),
-    path('entradas/items/create/<str:id_entrada>/', views.CreateUpdateDeleteItemsEntrada.as_view(), name='item-entrada-create'),
+    path('entradas/items/create/', views.CreateUpdateDeleteItemsEntrada.as_view(), name='item-entrada-create'),
 
 
 ]

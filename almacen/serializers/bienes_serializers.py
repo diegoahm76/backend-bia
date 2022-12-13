@@ -113,3 +113,9 @@ class SerializerUpdateItemEntradaActivosFijos(serializers.ModelSerializer):
             'valor_residual': {'required': True},
             'cod_estado': {'required': True}
         }
+
+
+class ItemEntradaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model= ItemEntradaAlmacen
+        fields = '__all__'
