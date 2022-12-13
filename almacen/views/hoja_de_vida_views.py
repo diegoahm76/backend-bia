@@ -3,6 +3,7 @@ from rest_framework import generics, status
 from django.db.models import Q
 from seguridad.utils import Util
 from rest_framework.permissions import IsAuthenticated
+from almacen.serializers.bienes_serializers import CatalogoBienesSerializer
 from almacen.serializers.hoja_de_vida_serializers import (
     SerializersHojaDeVidaComputadores,
     SerializersHojaDeVidaVehiculos,
@@ -387,3 +388,20 @@ class GetHojaDeVidaOtrosActivosById(generics.RetrieveAPIView):
             return Response({'success':True, 'detail':'Se encontró la hoja de vida', 'data':serializador.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
+        
+class SearchComputadoresBySerial(generics.ListAPIView):
+    serializer_class=CatalogoBienesSerializer
+    query=CatalogoBienes.objects.all()
+    
+    def get(self,request):
+        filter={}
+        filter['doc_identificador_nro']=request.query_params.get('identificado-nro')
+        filter['cod_tipo_activo']='Com'
+        if not filter['doc_identificador_nro']:
+            return Response({'success':True,'detail':'Debe enviar el parametro de número de identificación del bien'},status=status.HTTP_404_NOT_FOUND)
+        bien=CatalogoBienes.objects.filter(**filter).first()
+        if bien:
+            serializer=self.serializer_class(bien)
+            return Response({'success':True,'detail':'Se econtraron elementos','Elementos':serializer.data},status=status.HTTP_200_OK)
+        return Response({'success':False,'detail':'No se econtró elementos','data':bien},status=status.HTTP_404_NOT_FOUND)
+                
