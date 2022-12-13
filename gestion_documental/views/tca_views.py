@@ -1,4 +1,5 @@
 from rest_framework import generics,status
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.db.models import Q
 import copy
@@ -15,12 +16,15 @@ from gestion_documental.serializers.tca_serializers import (
     TCAPutSerializer,
     ClasifSerieSubserieUnidadTCASerializer,
     ClasifSerieSubserieUnidadTCAPutSerializer,
-    ClasifSerieSubseriUnidadTCA_activoSerializer
+    ClasifSerieSubseriUnidadTCA_activoSerializer,
+    PermisosCargoUnidadSerieSubserieUnidadTCASerializer,
+    Cargos_Unidad_S_Ss_UndOrg_TCASerializer
+
 )
 from gestion_documental.models.ccd_models import (
     SeriesSubseriesUnidadOrg,
     CuadrosClasificacionDocumental,
-    SeriesDoc
+    SeriesDoc,
 )
 from almacen.models.organigrama_models import (
     Organigramas
@@ -28,7 +32,10 @@ from almacen.models.organigrama_models import (
 from gestion_documental.models.tca_models import (
     TablasControlAcceso,
     Clasif_Serie_Subserie_Unidad_TCA,
-    ClasificacionExpedientes
+    ClasificacionExpedientes,
+    Cargos_Unidad_S_Ss_UndOrg_TCA,
+    PermisosCargoUnidadSerieSubserieUnidadTCA,
+    PermisosGD
 )
 from seguridad.models import Cargos,Personas
 from gestion_documental.choices.tipo_clasificacion_choices import tipo_clasificacion_CHOICES
@@ -237,4 +244,45 @@ class ReanudarTablaControlAcceso(generics.UpdateAPIView):
             else:
                 return Response({'success': False, 'detail': 'No puede reanudar un TCA no terminado'}, status=status.HTTP_403_FORBIDDEN)
         else:
-            return Response({'success': False, 'detail': 'No se encontró ningún TCA con estos parámetros'}, status=status.HTTP_404_NOT_FOUND)    
+            return Response({'success': False, 'detail': 'No se encontró ningún TCA con estos parámetros'}, status=status.HTTP_404_NOT_FOUND) 
+
+@api_view(['POST'])
+
+def asignar_cargo_unidad_permiso_expediente(request):
+    data = request.data
+    user = request.user
+    
+    try:
+        clasif_serie_subserie_unidad_TCA= Clasif_Serie_Subserie_Unidad_TCA.objects.get(id_clasif_serie_subserie_unidad_tca=data['id_clasif_serie_subserie_unidad_tca'])
+    except:
+        return Response({'Success':False, 'Detail':'no existe expediente relacionado al id de clasificacion serie/subserie/unidad TCA'})
+    try:
+        unidad_org_persona = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=data['id_unidad_org_persona'])
+    except:
+        return Response({'Success':False, 'Detail':'no existe unidad organisacional con el id unidad organizacional persona ingresado'})
+    try:
+        cargo_persona = Cargos.objects.get(id_cargo=data['id_cargo_persona'])
+    except:
+        return Response({'Success':False, 'Detail':'no existe id cargo'})
+    
+    if not data['permisos']:
+        return Response({'Success':False, 'Detail':'el arreglo de permisos no debe estar vacio'})
+    
+    permisos_validados_list = PermisosGD.objects.filter(permisos_GD__in=data['permisos'])
+    if len(data['permisos']) != len(permisos_validados_list):
+        return Response({'Success':False, 'Detail':'uno de los permisos ingresados no existe'}, status=status.HTTP_400_BAD_REQUEST)
+    cargo_unidad_serie_subserie_undorg_tca= Cargos_Unidad_S_Ss_UndOrg_TCA.objects.create(
+        id_clasif_serie_subserie_unidad_tca = clasif_serie_subserie_unidad_TCA,
+        id_cargo_persona = cargo_persona,
+        id_unidad_org_cargo = unidad_org_persona
+    )
+    permisos_serializer_list = []
+    for permiso in permisos_validados_list:
+        permiso_cargo_unidad_s_ss_unidad_tca = PermisosCargoUnidadSerieSubserieUnidadTCA.objects.create(
+            id_cargo_unidad_s_ss_unidad_tca = cargo_unidad_serie_subserie_undorg_tca,
+            cod_permiso = permiso 
+        )
+        permisos_serializer_list.append(permiso_cargo_unidad_s_ss_unidad_tca)
+    expediente_serializer = Cargos_Unidad_S_Ss_UndOrg_TCASerializer(cargo_unidad_serie_subserie_undorg_tca,many=False)
+    permisos_serializer = PermisosCargoUnidadSerieSubserieUnidadTCASerializer(permisos_serializer_list, many=True)
+    return Response({'Success':True, 'Expediente':expediente_serializer.data, 'permisos':permisos_serializer.data},status=status.HTTP_200_OK)

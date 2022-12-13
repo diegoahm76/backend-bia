@@ -3,7 +3,9 @@ from rest_framework.serializers import ReadOnlyField
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from gestion_documental.models.tca_models import (
     TablasControlAcceso,
-    Clasif_Serie_Subserie_Unidad_TCA
+    Clasif_Serie_Subserie_Unidad_TCA,
+    Cargos_Unidad_S_Ss_UndOrg_TCA,
+    PermisosCargoUnidadSerieSubserieUnidadTCA
 )
 from gestion_documental.choices.tipo_clasificacion_choices import tipo_clasificacion_CHOICES
 
@@ -103,4 +105,13 @@ class ClasifSerieSubseriUnidadTCA_activoSerializer(serializers.ModelSerializer):
             'justificacion_cambio': {'required': True},
             'ruta_archivo_cambio': {'required': True}
         }
+
+class Cargos_Unidad_S_Ss_UndOrg_TCASerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cargos_Unidad_S_Ss_UndOrg_TCA   
+        fields = '__all__'
     
+class PermisosCargoUnidadSerieSubserieUnidadTCASerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PermisosCargoUnidadSerieSubserieUnidadTCA
+        fields = '__all__'
