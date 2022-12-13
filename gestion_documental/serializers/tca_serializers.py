@@ -91,6 +91,7 @@ class ClasifSerieSubserieUnidadTCAPutSerializer(serializers.ModelSerializer):
         }
 
 class ClasifSerieSubseriUnidadTCA_activoSerializer(serializers.ModelSerializer):
+    justificacion_cambio = serializers.CharField(max_length=255,min_length=1)
     class Meta:
         model = Clasif_Serie_Subserie_Unidad_TCA
         fields = ['cod_clas_expediente','justificacion_cambio','ruta_archivo_cambio']
@@ -101,6 +102,6 @@ class ClasifSerieSubseriUnidadTCA_activoSerializer(serializers.ModelSerializer):
             'cod_clas_expediente': {'required': True},
             'fecha_registro': {'read_only': True},
             'justificacion_cambio': {'required': True},
-            'ruta_archivo_cambio': {'required': True}
+            'ruta_archivo_cambio': {'required': True,'allow_null':False}
         }
     

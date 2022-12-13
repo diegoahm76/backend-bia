@@ -42,7 +42,7 @@ class CreateHojaDeVidaComputadores(generics.CreateAPIView):
         if articulo_existentes.cod_tipo_bien == 'C':
             return Response({'success':False,'detail':'No se puede crear una hoja de vida a un bien tipo consumo'},status=status.HTTP_403_FORBIDDEN)
         if articulo_existentes.cod_tipo_activo != 'Com':
-            return Response({'success':False,'detail':'No se puede crear una hoja de vida a este bien ya que no es computador'},status=status.HTTP_403_FORBIDDEN)
+            return Response({'success':False,'detail':'No se puede crear una hoja de vida a este bien ya que no es de la categoría computador'},status=status.HTTP_403_FORBIDDEN)
         hoja_vida_articulo=HojaDeVidaComputadores.objects.filter(id_articulo=id_articulo).first()
         if hoja_vida_articulo:
             return Response({'success':False,'detail':'El bien ingresado ya tiene hoja de vida'},status=status.HTTP_403_FORBIDDEN)
@@ -79,7 +79,7 @@ class CreateHojaDeVidaVehiculos(generics.CreateAPIView):
         if articulo_existentes.cod_tipo_bien == 'C':
             return Response({'success':False,'detail':'No se puede crear una hoja de vida a un bien tipo consumo'},status=status.HTTP_403_FORBIDDEN)
         if articulo_existentes.cod_tipo_activo != 'Veh':
-            return Response({'success':False,'detail':'No se puede crear una hoja de vida a este bien ya que no es un vehículo'},status=status.HTTP_403_FORBIDDEN)
+            return Response({'success':False,'detail':'No se puede crear una hoja de vida a este bien ya que no es de la categoría de vehículo'},status=status.HTTP_403_FORBIDDEN)
         hoja_vida_articulo=HojaDeVidaVehiculos.objects.filter(id_articulo=id_articulo)
         if hoja_vida_articulo:
             return Response({'success':False,'detail':'El bien ingresado ya tiene hoja de vida'},status=status.HTTP_403_FORBIDDEN)
