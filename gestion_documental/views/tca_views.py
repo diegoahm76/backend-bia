@@ -35,7 +35,8 @@ from gestion_documental.models.tca_models import (
     ClasificacionExpedientes,
     Cargos_Unidad_S_Ss_UndOrg_TCA,
     PermisosCargoUnidadSerieSubserieUnidadTCA,
-    PermisosGD
+    PermisosGD,
+    Historico_Clasif_S_Ss_UndOrg_TCA
 )
 from seguridad.models import Cargos,Personas
 from gestion_documental.choices.tipo_clasificacion_choices import tipo_clasificacion_CHOICES
@@ -199,6 +200,7 @@ class UpdateClasifSerieSubserieUnidadTCA(generics.UpdateAPIView):
     
         data = request.data
         clasif_s_ss_unidad_tca = Clasif_Serie_Subserie_Unidad_TCA.objects.filter(id_clasif_serie_subserie_unidad_tca=pk).first()
+        clasif__previous=copy.copy(clasif_s_ss_unidad_tca)
         if clasif_s_ss_unidad_tca:
             if not clasif_s_ss_unidad_tca.id_tca.fecha_retiro_produccion:
                 if not clasif_s_ss_unidad_tca.id_tca.fecha_terminado:
@@ -220,6 +222,28 @@ class UpdateClasifSerieSubserieUnidadTCA(generics.UpdateAPIView):
                         serializer= self.serializer_class_2(clasif_s_ss_unidad_tca, data=data)
                         serializer.is_valid(raise_exception=True)
                         serializer.save() 
+                        
+                        persona=request.user.persona.id_persona
+                        persona_intance=Personas.objects.filter(id_persona=persona).first()
+                        datos_actualizados=[]
+                        
+                        del clasif__previous.__dict__["_state"]
+                        del clasif__previous.__dict__["_django_version"]
+                        
+                        for field, value in clasif__previous.__dict__.items():
+                            new_value = getattr(clasif_s_ss_unidad_tca,field)
+                            new_value = new_value if new_value != '' else None
+                            value = value if value != '' else None
+                            if value != new_value:
+                                datos_actualizados.append({field: value})
+                        if datos_actualizados:  
+                            Historico_Clasif_S_Ss_UndOrg_TCA.objects.create(
+                                id_clasif_s_ss_unidad_tca = clasif_s_ss_unidad_tca,
+                                cod_clasificacion_exp = clasif__previous.cod_clas_expediente,
+                                justificacion_del_cambio = clasif__previous.justificacion_cambio,
+                                ruta_archivo_cambio = clasif__previous.ruta_archivo_cambio,
+                                id_persona_cambia = persona_intance
+                            )
                         return Response({'success': True, 'detail': 'Se actualizó la clasificación del expediente exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
                 else:
                     return Response({'success': False,'detail': 'No se puede actualizar una TCA terminada, intente reanudar primero'}, status=status.HTTP_403_FORBIDDEN)
