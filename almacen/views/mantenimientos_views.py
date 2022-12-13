@@ -553,7 +553,7 @@ class CreateProgramacionMantenimiento(generics.CreateAPIView):
             }
             Util.save_auditoria(auditoria_data)
         
-        return Response({'success':False, 'detail':'Mantenimiento programado con éxtio'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'success':True, 'detail':'Mantenimiento programado con éxtio'}, status=status.HTTP_200_OK)
    
    
 class CreateRegistroMantenimiento(generics.CreateAPIView):
@@ -563,6 +563,7 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
     def post(self, request, *args, **kwargs):
         datos_ingresados = request.data
         id_articulo = datos_ingresados['id_articulo']
+        articulo = CatalogoBienes.objects.filter(id_bien = id_articulo).first()
         fecha_registrado = (datetime.strptime(datos_ingresados['fecha_registrado'], '%Y-%m-%d')).date()
         fecha_ejecutado = (datetime.strptime(datos_ingresados['fecha_ejecutado'], '%Y-%m-%d')).date()
         diferencia_dias = fecha_registrado - fecha_ejecutado
@@ -607,5 +608,5 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
         serializer = self.get_serializer(data=datos_ingresados)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({'success':True, 'detail':'Mantenimiento registrado con éxito'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'success':True, 'detail':'Mantenimiento registrado con éxito'}, status=status.HTTP_200_OK)
    

@@ -327,7 +327,8 @@ class RevisionSolicitudBienConsumosPorSupervisor(generics.UpdateAPIView):
     def put(self, request, id_solicitud,*args, **kwargs):
         datos_ingresados = request.data
         user_logeado = request.user
-        
+        if str(user_logeado) == 'AnonymousUser':
+            return Response({'success':False,'data':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
         if not str(id_solicitud).isdigit():
             return Response({'success':False,'data':'El Id_solicitud debe ser un número entero' },status=status.HTTP_404_NOT_FOUND)
         if datos_ingresados['estado_aprobacion_responsable'] != 'A' and datos_ingresados['estado_aprobacion_responsable'] != 'R':
@@ -346,6 +347,9 @@ class RevisionSolicitudBienConsumosPorSupervisor(generics.UpdateAPIView):
         instance.justificacion_rechazo_responsable = datos_ingresados['justificacion_rechazo_responsable']
         instance.revisada_responsable = True
         instance.fecha_aprobacion_responsable = str(date.today())
+        if datos_ingresados['estado_aprobacion_responsable'] != 'R':
+            instance.solicitud_abierta = False
+            instance.fecha_cierre_solicitud = str(date.today())
         instance.save()
         
         return Response({'success':True,'Número de solicitud':'Solicitud procesada con éxito', },status=status.HTTP_200_OK)
@@ -357,3 +361,68 @@ class SolicitudesPendientesDespachar(generics.ListAPIView):
     def get(self, request):
         pendientes_por_despachar = SolicitudesConsumibles.objects.filter(Q(estado_aprobacion_responsable='A') & Q(gestionada_almacen=False)).values()
         return Response({'success':True,'Solicitudes pendientes por despahcar':pendientes_por_despachar, },status=status.HTTP_200_OK)
+
+class RechazoSolicitudesBienesAlmacen(generics.UpdateAPIView):
+    serializer_class = CrearSolicitudesPostSerializer
+    queryset=SolicitudesConsumibles.objects.all()
+    
+    def put(self, request, id_solicitud,*args, **kwargs):
+        datos_ingresados = request.data
+        user_logeado = request.user
+        if str(user_logeado) == 'AnonymousUser':
+            return Response({'success':False,'data':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
+        if not str(id_solicitud).isdigit():
+            return Response({'success':False,'data':'El Id_solicitud debe ser un número entero' },status=status.HTTP_404_NOT_FOUND)
+        if datos_ingresados['rechazada_almacen'] != True:
+            return Response({'success':False,'data':'La solicitud no fue rechazada, para rechazarla debe ingresar true'},status=status.HTTP_404_NOT_FOUND)
+        if len(datos_ingresados['justificacion_rechazo_almacen']) > 255:
+            return Response({'success':False,'data':'El número máximo de caracteres de la justificación es de 255'},status=status.HTTP_404_NOT_FOUND)
+        
+        instance = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles=int(id_solicitud)).first()
+        if not instance:
+            return Response({'success':False,'data':'Debe de ingresar un id de solicitud válido'},status=status.HTTP_404_NOT_FOUND)
+        if instance.revisada_responsable != True:
+            return Response({'success':False,'data':'La solicitud debe haber sido aprobada por el funcionario supervisor'},status=status.HTTP_404_NOT_FOUND)
+        if instance.gestionada_almacen == True:
+            return Response({'success':False,'data':'La solicitud ya fue procesada por almacen'},status=status.HTTP_404_NOT_FOUND)
+        
+        instance.rechazada_almacen = datos_ingresados['rechazada_almacen']
+        instance.justificacion_rechazo_almacen = datos_ingresados['justificacion_rechazo_almacen']
+        instance.gestionada_almacen = True
+        instance.fecha_rechazo_almacen = str(date.today())
+        instance.fecha_cierre_solicitud = str(date.today())
+        instance.solicitud_abierta = False
+        instance.save()
+        
+        return Response({'success':True,'Detail':'Solicitud procesada con éxito', },status=status.HTTP_200_OK)
+
+class AnularSolicitudesBienesConsumo(generics.UpdateAPIView):
+    serializer_class = CrearSolicitudesPostSerializer
+    queryset=SolicitudesConsumibles.objects.all()
+    
+    def put(self, request, id_solicitud,*args, **kwargs):
+        datos_ingresados = request.data
+        user_logeado = request.user
+        if str(user_logeado) == 'AnonymousUser':
+            return Response({'success':False,'data':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
+        if not str(id_solicitud).isdigit():
+            return Response({'success':False,'data':'El Id_solicitud debe ser un número entero' },status=status.HTTP_404_NOT_FOUND)
+        
+        instance = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles=int(id_solicitud)).first()
+        if not instance:
+            return Response({'success':False,'data':'Debe de ingresar un id de solicitud válido'},status=status.HTTP_404_NOT_FOUND)
+        if instance.id_persona_solicita.id_persona != user_logeado.persona.id_persona:
+            return Response({'success':False,'data':'La solicitud solo puede ser anulada por quien la realizó'},status=status.HTTP_404_NOT_FOUND)
+        if instance.solicitud_abierta == False:
+            return Response({'success':False,'data':'La solicitud ya fue cerrada, no es posible anularla'},status=status.HTTP_404_NOT_FOUND)
+        if datos_ingresados['solicitud_anulada_solicitante'] != True:
+            return Response({'success':False,'data':'La solicitud no fue anulada, para anularla debe ingresar true'},status=status.HTTP_404_NOT_FOUND)
+
+        instance.justificacion_anulacion_solicitante = datos_ingresados['justificacion_anulacion_solicitante']
+        instance.solicitud_anulada_solicitante = datos_ingresados['solicitud_anulada_solicitante']
+        instance.fecha_anulacion_solicitante = str(date.today())
+        instance.fecha_cierre_solicitud = str(date.today())
+        instance.solicitud_abierta = False
+        instance.save()
+        
+        return Response({'success':True,'Detail':'Solicitud procesada con éxito', },status=status.HTTP_200_OK)
