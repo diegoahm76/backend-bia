@@ -140,7 +140,7 @@ class UpdateTablaControlAcceso(generics.RetrieveUpdateAPIView):
 
                     return Response({'success': True, 'detail': 'Tabla de Control de Acceso actualizado exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
                 else:
-                    return Response({'success': False,'detail': 'No se puede actualizar una TCA terminada'}, status=status.HTTP_403_FORBIDDEN)
+                    return Response({'success': False,'detail': 'No se puede actualizar una TCA terminada, intente reanudar primero'}, status=status.HTTP_403_FORBIDDEN)
             else:
                 return Response({'success': False,'detail': 'No puede realizar cambios a una TCA que ya fue retirada de producción'}, status=status.HTTP_403_FORBIDDEN)
         else:
@@ -177,7 +177,7 @@ class ClasifSerieSubserieUnidadTCA(generics.CreateAPIView):
                     else:
                         return Response({'success': False,'detail': 'No puede realizar esta acción a una TCA actual'}, status=status.HTTP_403_FORBIDDEN)
                 else:
-                    return Response({'success': False,'detail': 'No se puede actualizar una TCA terminada'}, status=status.HTTP_403_FORBIDDEN)
+                    return Response({'success': False,'detail': 'No puede realizar cambios a una TCA terminada, intente reanudar primero'}, status=status.HTTP_403_FORBIDDEN)
             else:
                 return Response({'success': False,'detail': 'No puede realizar cambios a una TCA que ya fue retirada de producción'}, status=status.HTTP_403_FORBIDDEN)
         else:
@@ -215,8 +215,26 @@ class UpdateClasifSerieSubserieUnidadTCA(generics.UpdateAPIView):
                         serializer.save() 
                         return Response({'success': True, 'detail': 'Se actualizó la clasificación del expediente exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
                 else:
-                    return Response({'success': False,'detail': 'No se puede actualizar una TCA terminada'}, status=status.HTTP_403_FORBIDDEN)
+                    return Response({'success': False,'detail': 'No se puede actualizar una TCA terminada, intente reanudar primero'}, status=status.HTTP_403_FORBIDDEN)
             else:
                 return Response({'success': False,'detail': 'No puede realizar cambios a una TCA que ya fue retirada de producción'}, status=status.HTTP_403_FORBIDDEN)
         else:
             return Response({'success': False, 'detail': 'No existe ninguna clasificación del expediente con los parámetros ingresados'}, status=status.HTTP_404_NOT_FOUND)
+
+class ReanudarTablaControlAcceso(generics.UpdateAPIView):
+    serializer_class = TCAPostSerializer
+    queryset = TablasControlAcceso
+
+    def put(self, request, pk):
+        tca = TablasControlAcceso.objects.filter(id_tca=pk).first()
+        if tca:
+            if tca.fecha_terminado:
+                if tca.fecha_retiro_produccion:
+                    return Response({'success': False, 'detail': 'No se puede reanudar un cuadro de clasificación documental que ya fue retirado de producción'}, status=status.HTTP_403_FORBIDDEN)
+                tca.fecha_terminado = None
+                tca.save()
+                return Response({'success': True, 'detail': 'Se reanudó el TCA'}, status=status.HTTP_201_CREATED)
+            else:
+                return Response({'success': False, 'detail': 'No puede reanudar un TCA no terminado'}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            return Response({'success': False, 'detail': 'No se encontró ningún TCA con estos parámetros'}, status=status.HTTP_404_NOT_FOUND)    
