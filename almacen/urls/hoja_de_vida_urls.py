@@ -15,6 +15,4 @@ urlpatterns = [
     path('computadores/get-by-id/<str:pk>/',views.GetHojaDeVidaComputadoresById.as_view(),name='hdv-computadores-get'),
     path('vehiculos/get-by-id/<str:pk>/',views.GetHojaDeVidaVehiculosById.as_view(),name='hdv-vehiculos-get'),
     path('otros/get-by-id/<str:pk>/',views.GetHojaDeVidaOtrosActivosById.as_view(),name='hdv-otros-get'),
-    path('get-by-nro-identificador/',views.SearchArticuloByDocIdentificador.as_view(),name='get-by-nro-identificador'),
-    path('get-by-nombre-nroidentificador/',views.SearchArticulosByNombreDocIdentificador.as_view(),name='get-by-nombre-nroidentificador'),
 ]
