@@ -8,11 +8,15 @@ urlpatterns = [
     path('catalogo-bienes/get-element-by-nodo/<str:id_nodo>/',views.GetElementosByIdNodo.as_view(),name='catalogo-bienes-get-element-by-nodo'),
     path('catalogo-bienes/create/', views.CreateCatalogoDeBienes.as_view(), name='catalogo-bienes-create'),
     path('catalogo-bienes/get-by-codigo/', views.GetCatalogoBienesByCodigo.as_view(), name='catalogo-bienes-codigo-get'),
+    path('catalogo-bienes/get-by-nro-identificador/',views.SearchArticuloByDocIdentificador.as_view(),name='get-by-nro-identificador'),
+    path('catalogo-bienes/get-by-nombre-nroidentificador/',views.SearchArticulosByNombreDocIdentificador.as_view(),name='get-by-nombre-nroidentificador'),
     
     #Entradas
-    path('entradas/create/', views.CreateUpdateEntrada.as_view(), name='entrada-create'),
+    path('entradas/create/', views.CreateEntradaandItemsEntrada.as_view(), name='entrada-create'),
     path('entradas/search-bienes/', views.SearchArticulos.as_view(), name='catalogo-bienes-search-bienes'),
-    path('entradas/items/create/', views.CreateUpdateDeleteItemsEntrada.as_view(), name='item-entrada-create'),
+    # path('entradas/items/create/', views.CreateUpdateDeleteItemsEntrada.as_view(), name='item-entrada-create'),
+    path('entradas/get-numero_entrada/', views.GetNumeroEntrada.as_view(), name='get_numero_entrada'),
+
 
 
 ]

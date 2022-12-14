@@ -3,6 +3,7 @@ from rest_framework import generics, status
 from django.db.models import Q
 from seguridad.utils import Util
 from rest_framework.permissions import IsAuthenticated
+from almacen.serializers.bienes_serializers import CatalogoBienesSerializer
 from almacen.serializers.hoja_de_vida_serializers import (
     SerializersHojaDeVidaComputadores,
     SerializersHojaDeVidaVehiculos,
@@ -387,3 +388,4 @@ class GetHojaDeVidaOtrosActivosById(generics.RetrieveAPIView):
             return Response({'success':True, 'detail':'Se encontró la hoja de vida', 'data':serializador.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
+        

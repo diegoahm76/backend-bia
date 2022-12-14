@@ -119,3 +119,9 @@ class ItemEntradaSerializer(serializers.ModelSerializer):
     class Meta:
         model= ItemEntradaAlmacen
         fields = '__all__'
+
+
+class EntradaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EntradasAlmacen
+        fields = '__all__'

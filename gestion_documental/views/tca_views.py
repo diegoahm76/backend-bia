@@ -2,7 +2,7 @@ from rest_framework import generics,status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.db.models import Q
-import copy
+import copy, pytz
 from datetime import datetime
 from seguridad.utils import Util
 from rest_framework.permissions import IsAuthenticated
@@ -310,3 +310,33 @@ def asignar_cargo_unidad_permiso_expediente(request):
     expediente_serializer = Cargos_Unidad_S_Ss_UndOrg_TCASerializer(cargo_unidad_serie_subserie_undorg_tca,many=False)
     permisos_serializer = PermisosCargoUnidadSerieSubserieUnidadTCASerializer(permisos_serializer_list, many=True)
     return Response({'Success':True, 'Expediente':expediente_serializer.data, 'permisos':permisos_serializer.data},status=status.HTTP_200_OK)
+class FinalizarTablaControlAcceso(generics.UpdateAPIView):
+    serializer_class = TCAPostSerializer
+    queryset = TablasControlAcceso
+
+    def put(self, request, pk):
+        tca = TablasControlAcceso.objects.filter(id_tca=pk).first()
+        if tca:
+            #Validacion existencia del tca a finalizar
+            if not tca.fecha_terminado:
+                ccd = tca.id_ccd
+                
+                series = SeriesDoc.objects.filter(id_ccd=ccd.id_ccd)
+                series_list = [serie.id_serie_doc for serie in series]
+
+                series_subseries_unidades = SeriesSubseriesUnidadOrg.objects.filter(id_serie_doc__in=series_list)
+                series_subseries_unidades_list = [serie_subserie_unidad.id_serie_subserie_doc for serie_subserie_unidad in series_subseries_unidades]
+
+                clasif_expedientes_tca = Clasif_Serie_Subserie_Unidad_TCA.objects.filter(id_serie_subserie_unidad__in=series_subseries_unidades_list)
+                clasif_expedientes_tca_list = [clasif_expediente.id_serie_subserie_unidad.id_serie_subserie_doc for clasif_expediente in clasif_expedientes_tca]
+
+                if not set(series_subseries_unidades_list).issubset(clasif_expedientes_tca_list):
+                    return Response({'success': False, 'detail': 'Debe clasificar todos los expedientes para finalizar TCA'}, status=status.HTTP_403_FORBIDDEN)
+                    
+                tca.fecha_terminado = datetime.now(pytz.timezone('America/Bogota'))
+                tca.save()
+                return Response({'success': True, 'detail': 'Finalizado el TCA'}, status=status.HTTP_201_CREATED)
+            else:
+                return Response({'success': False, 'detail': 'Ya se encuentra finalizado este TCA'}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            return Response({'success': False, 'detail': 'No se encontró ningún TCA con estos parámetros'}, status=status.HTTP_404_NOT_FOUND)   
