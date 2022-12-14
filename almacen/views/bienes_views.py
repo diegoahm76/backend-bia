@@ -628,11 +628,11 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
             item['id_entrada_almacen'] = entrada_creada.pk
 
         #FILTRAMOS LOS ACTIVOS FIJOS Y EMPEZAMOS CREACIÓN DE ACTIVOS FIJOS
-        items_activos_fijos = list(filter(lambda item:item['id_bien_padre'] != None, items_entrada))
+        items_activos_fijos = list(filter(lambda item:item['id_bien_padre'] != None and item['id_bien'] == None, items_entrada))
+        items_activos_consumo = list(filter(lambda item:item['id_bien_padre'] == None and item['id_bien'] != None, items_entrada))
         items_activos_fijos_guardados = []
 
         for item in items_activos_fijos:
-            id_item_entrada = item.get('id_item_entrada_almacen')
             id_bien_padre = item.get('id_bien_padre')
             doc_identificador_bien = item.get('doc_identificador_bien')
             id_porcentaje_iva = item.get('porcentaje_iva')
@@ -732,7 +732,56 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
         return Response({'success': True, 'data_entrada_creada': entrada_serializada.data, 'data_items_creados': items_activos_fijos_guardados})
 
 
-# class CreateUpdateDeleteItemsEntrada(generics.RetrieveUpdateDestroyAPIView):
+class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
+    serializer_class = ItemEntradaSerializer
+    queryset = ItemEntradaAlmacen.objects.all()
+
+    def delete(self, request):
+        items_enviados = request.data
+        
+        #VALIDAR QUE TODOS LOS ID_ITEMS_ENVIADOS ENVIADOS PARA ELIMINAR EXISTAN
+        ids_items_enviados = [item['id_item_entrada_almacen'] for item in items_enviados]
+        items_existentes = ItemEntradaAlmacen.objects.filter(id_item_entrada_almacen__in=ids_items_enviados)
+        if len(set(ids_items_enviados)) != len(items_existentes):
+            return Response({'success': False, 'detail': 'Todos los id_items enviados deben existir'}, status=status.HTTP_400_BAD_REQUEST) 
+
+        #VALIDACIÓN SI LA ENTRADA FUE EL ÚLTIMO MOVIMIENTO EN INVENTARIO
+        id_bienes_enviados = [item['id_bien'] for item in items_enviados]
+        inventario_item_instance = Inventario.objects.filter(id_bien__in=id_bienes_enviados)
+        for item in inventario_item_instance:
+            print(item)
+            item_entrada_instance = ItemEntradaAlmacen.objects.filter(id_bien=item.id_bien.id_bien).first()
+            print('item entrada instance:', item_entrada_instance)
+            print('id entrada almcen:', str(item_entrada_instance.id_entrada_almacen.id_entrada_almacen))
+            print('id ultimo movimiento:', str(item.id_registro_doc_ultimo_movimiento))
+            if str(item_entrada_instance.id_entrada_almacen.id_entrada_almacen) != str(item.id_registro_doc_ultimo_movimiento):
+                return Response({'success': False, 'detail': 'No se puede eliminar este item si la entrada no fue su último movimiento'}, status=status.HTTP_403_FORBIDDEN)
+
+        # return Response({'success': False})
+        # VALIDACIÓN SI TIENE HOJA DE VIDA
+        objects_items_enviado = [item for item in items_enviados]
+        for item in objects_items_enviado:
+            item_instance = ItemEntradaAlmacen.objects.filter(id_item_entrada_almacen=item['id_item_entrada_almacen']).first()
+            
+            if item_instance.id_bien.cod_tipo_bien == 'A':
+                item_hv_comp = HojaDeVidaComputadores.objects.filter(id_articulo=item_instance.id_bien.id_bien).first()
+                item_hv_veh = HojaDeVidaVehiculos.objects.filter(id_articulo=item_instance.id_bien.id_bien).first()
+                item_hv_oac = HojaDeVidaOtrosActivos.objects.filter(id_articulo=item_instance.id_bien.id_bien).first()
+                if item_hv_comp or item_hv_veh or item_hv_oac:
+                    return Response({'success': False, 'detail': 'No se puede eliminar por que tiene hoja de vida'}, status=status.HTTP_403_FORBIDDEN)
+                item_instance_serializer = SerializerItemEntradaActivosFijos(item_instance, data=item)
+
+                bien_eliminar = CatalogoBienes.objects.filter(id_bien=item_instance.id_bien.id_bien).first()
+                inventario_item_instance_delete = Inventario.objects.filter(id_bien=item_instance.id_bien.id_bien)
+
+                #ELIMINA EL REGISTRO EN INVENTARIO, CATALOGO DE BIENES E ITEM ENTRADA
+                inventario_item_instance_delete.delete()
+                bien_eliminar.delete()
+                item_instance.delete()
+        
+        return Response({'success': True, 'detail': 'Se ha eliminado correctamente'}, status=status.HTTP_204_NO_CONTENT)
+
+# # class CreateUpdateDeleteItemsEntrada(generics.RetrieveUpdateDestroyAPIView):
 #     serializer_class = EntradaCreateSerializer
 #     queryset = ItemEntradaAlmacen.objects.all()
 
