@@ -370,6 +370,44 @@ class GetElementosByIdNodo(generics.ListAPIView):
             return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': elementos_serializer.data})
         else:
             return Response({'success': False, 'detail': 'No se encontró ningún elemento con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+class SearchArticuloByDocIdentificador(generics.ListAPIView):
+    serializer_class=CatalogoBienesSerializer
+    queryset=CatalogoBienes.objects.all()
+    
+    def get(self,request):
+        filter={}
+        for key,value in request.query_params.items():
+            if key in['cod_tipo_activo','doc_identificador_nro']:
+                filter[key]=value
+        if not filter.get('doc_identificador_nro'):
+            return Response({'success':False,'detail':'Debe enviar el parametro de número de identificación del bien'},status=status.HTTP_404_NOT_FOUND)
+        if not filter.get('cod_tipo_activo'):
+            return Response({'success':False,'detail':'Debe enviar el parametro del tipo de activo'},status=status.HTTP_404_NOT_FOUND)
+        
+        bien=CatalogoBienes.objects.filter(**filter).first()
+        if bien:
+            serializer=self.serializer_class(bien)
+            return Response({'success':True,'detail':'Se econtraron elementos','Elementos':serializer.data},status=status.HTTP_200_OK)
+        return Response({'success':False,'detail':'No se econtró elementos','data':bien},status=status.HTTP_404_NOT_FOUND)
+
+class SearchArticulosByNombreDocIdentificador(generics.ListAPIView):
+    serializer_class=CatalogoBienesSerializer
+    queryset=CatalogoBienes.objects.all()
+    
+    def get(self,request):
+        filter={}
+        for key,value in request.query_params.items():
+            if key in['cod_tipo_activo','nombre','doc_identificador_nro']:
+                if key != 'cod_tipo_activo':
+                    filter[key+'__icontains']=value
+                else:filter[key]=value
+        if not filter.get('cod_tipo_activo'):
+            return Response({'success':False,'detail':'Debe enviar el parametro del tipo de activo'},status=status.HTTP_404_NOT_FOUND)
+        bien=CatalogoBienes.objects.filter(**filter).first()
+        if bien:
+            serializer=self.serializer_class(bien)
+            return Response({'success':True,'detail':'Se econtraron elementos','Elementos':serializer.data},status=status.HTTP_200_OK)
+        return Response({'success':False,'detail':'No se econtró elementos','data':bien},status=status.HTTP_404_NOT_FOUND)
 
 class SearchArticulos(generics.ListAPIView):
     serializer_class=CatalogoBienesSerializer
@@ -387,7 +425,7 @@ class SearchArticulos(generics.ListAPIView):
         serializador=self.serializer_class(bien,many=True)
         if bien:
             return Response({'success':True,'detail':'se encontró elementos','data':serializador.data},status=status.HTTP_200_OK)
-        return Response({'success':True,'detail':'no se econtrò elementos','data':bien},status=status.HTTP_404_NOT_FOUND)
+        return Response({'success':True,'detail':'no se econtró elementos','data':bien},status=status.HTTP_404_NOT_FOUND)
     
 class GetCatalogoBienesByCodigo(generics.ListAPIView):
     serializer_class = CatalogoBienesSerializer
