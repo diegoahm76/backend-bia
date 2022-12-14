@@ -8,7 +8,8 @@ from almacen.serializers.bienes_serializers import (
     CreateUpdateItemEntradaConsumoSerializer,
     SerializerItemEntradaActivosFijos,
     SerializerUpdateItemEntradaActivosFijos,
-    ItemEntradaSerializer
+    ItemEntradaSerializer,
+    EntradaSerializer
 )
 from almacen.models.hoja_de_vida_models import (
     HojaDeVidaComputadores,
@@ -486,6 +487,19 @@ class CreateUpdateEntrada(generics.RetrieveUpdateAPIView):
             serializer.save()
             return Response({'success':True, 'detail':'Se creó la entrada', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 
+
+class GetNumeroEntrada(generics.ListAPIView):
+    serializer_class = EntradaSerializer
+    queryset = EntradasAlmacen.objects.all()
+
+    def get(self, request):
+        entrada = EntradasAlmacen.objects.all().order_by('-numero_entrada_almacen').first()
+        if not entrada:
+            numero_entrada = 1
+            return Response({'success': True, 'numero_entrada': numero_entrada})
+        numero_entrada = entrada.numero_entrada_almacen + 1
+
+        return Response({'success': True, 'numero_entrada': numero_entrada})
 
 class CreateUpdateDeleteItemsEntrada(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = EntradaCreateSerializer
