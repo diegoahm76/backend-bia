@@ -739,25 +739,32 @@ class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
     def delete(self, request):
         items_enviados = request.data
         
+
+        #VALIDAR QUE LA ENTRADA NO SE VAYA A QUEDAR SIN ITEMS
+        id_entrada = [item['id_entrada_almacen'] for item in items_enviados]
+        if len(set(id_entrada)) > 1:
+            return Response({'success': False, 'detail': 'Todos los items por eliminar deben pertenecer a la misma entrada'}, status=status.HTTP_403_FORBIDDEN)  
+
         #VALIDAR QUE TODOS LOS ID_ITEMS_ENVIADOS ENVIADOS PARA ELIMINAR EXISTAN
         ids_items_enviados = [item['id_item_entrada_almacen'] for item in items_enviados]
         items_existentes = ItemEntradaAlmacen.objects.filter(id_item_entrada_almacen__in=ids_items_enviados)
         if len(set(ids_items_enviados)) != len(items_existentes):
             return Response({'success': False, 'detail': 'Todos los id_items enviados deben existir'}, status=status.HTTP_400_BAD_REQUEST) 
 
+        #VALIDAR QUE LA ENTRADA NO SE VAYA A QUEDAR SIN ITEMS
+        items_entrada = ItemEntradaAlmacen.objects.filter(id_entrada_almacen=id_entrada[0])
+        id_items_entrada_existentes = [item.id_item_entrada_almacen for item in items_entrada]
+        if len(ids_items_enviados) == len(id_items_entrada_existentes):
+            return Response({'success': False, 'detail': 'No se puede eliminar ya que una entrada no puede quedar sin items'}, status=status.HTTP_403_FORBIDDEN)
+
         #VALIDACIÓN SI LA ENTRADA FUE EL ÚLTIMO MOVIMIENTO EN INVENTARIO
         id_bienes_enviados = [item['id_bien'] for item in items_enviados]
         inventario_item_instance = Inventario.objects.filter(id_bien__in=id_bienes_enviados)
         for item in inventario_item_instance:
-            print(item)
             item_entrada_instance = ItemEntradaAlmacen.objects.filter(id_bien=item.id_bien.id_bien).first()
-            print('item entrada instance:', item_entrada_instance)
-            print('id entrada almcen:', str(item_entrada_instance.id_entrada_almacen.id_entrada_almacen))
-            print('id ultimo movimiento:', str(item.id_registro_doc_ultimo_movimiento))
             if str(item_entrada_instance.id_entrada_almacen.id_entrada_almacen) != str(item.id_registro_doc_ultimo_movimiento):
                 return Response({'success': False, 'detail': 'No se puede eliminar este item si la entrada no fue su último movimiento'}, status=status.HTTP_403_FORBIDDEN)
 
-        # return Response({'success': False})
         # VALIDACIÓN SI TIENE HOJA DE VIDA
         objects_items_enviado = [item for item in items_enviados]
         for item in objects_items_enviado:
@@ -780,6 +787,27 @@ class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
                 item_instance.delete()
         
         return Response({'success': True, 'detail': 'Se ha eliminado correctamente'}, status=status.HTTP_204_NO_CONTENT)
+
+
+class UpdateEntrada(generics.RetrieveUpdateAPIView):
+    serializer_class = EntradaUpdateSerializer
+    queryset = EntradasAlmacen.objects.all()
+
+    def put(self, request, id_entrada):
+        data = request.data
+        entrada = EntradasAlmacen.objects.filter(id_entrada_almacen=id_entrada).first()
+        if not entrada:
+            return Response({'success': False, 'detail': 'No se encontró ninguna entrada con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+        cod_tipo_entrada = data['id_tipo_entrada']
+        if cod_tipo_entrada != entrada.id_tipo_entrada:
+            items_entrada = ItemEntradaAlmacen.objects.filter(id_entrada_almacen=entrada.id_entrada_almacen)
+            id_bien_items_list = [item.id_bien for item in items_entrada]
+            for id_bien in id_bien_items_list:
+                bien_inventario = Inventario.objects.filter(id_bien=id_bien).first()
+                if str(bien_inventario.id_registro_doc_ultimo_movimiento) != str(entrada.id_entrada_almacen):
+                    return Response({'success': False, 'detail': 'No se puede actualizar ya que los items asociados a esta entrada no tienen como último movimiento la entrada'}, status=status.HTTP_403_FORBIDDEN)
+
+
 
 # # class CreateUpdateDeleteItemsEntrada(generics.RetrieveUpdateDestroyAPIView):
 #     serializer_class = EntradaCreateSerializer
@@ -1167,38 +1195,6 @@ class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
 
 
         
-
-# # #ELIMINACIÓN DE ITEMS NO ENVIADOS PARA ACTIVOS FIJOS
-# #             items_list = [item['id_item_entrada_almacen'] for item in data]
-# #             items_entrada = ItemEntradaAlmacen.objects.filter(id_entrada_almacen=id_entrada)
-# #             items_entrada_list = [item.id_item_entrada_almacen for item in items_entrada]
-            
-# #             if not set(items_entrada_list).issubset(items_list): 
-# #                 item_difference_list = [item for item in items_entrada_list if item not in items_list]
-                
-# #                 for item in item_difference_list:
-# #                     #VALIDACIÓN SI TIENE HOJA DE VIDA
-# #                     item_instance = ItemEntradaAlmacen.objects.filter(id_item_entrada_almacen=item).first()
-# #                     #ELIMINACIÓN SI EL ITEM DE LA ENTRADA TIENE UN BIEN ACTIVO FIJO
-# #                     if item_instance.id_bien.cod_tipo_bien == 'A':
-# #                         item_hv_comp = HojaDeVidaComputadores.objects.filter(id_articulo=item_instance.id_bien.id_bien).first()
-# #                         item_hv_veh = HojaDeVidaVehiculos.objects.filter(id_articulo=item_instance.id_bien.id_bien).first()
-# #                         item_hv_oac = HojaDeVidaOtrosActivos.objects.filter(id_articulo=item_instance.id_bien.id_bien).first()
-# #                         item_instance_serializer = SerializerItemEntradaActivosFijos(item_instance, many=False)
-
-# #                         #VALIDACIÓN SI LA ENTRADA FUE EL ÚLTIMO MOVIMIENTO EN INVENTARIO
-# #                         inventario_item_instance = Inventario.objects.filter(id_bien=item_instance.id_bien.id_bien).first()
-# #                         if str(item_instance.id_entrada_almacen.id_entrada_almacen) != str(inventario_item_instance.id_registro_doc_ultimo_movimiento):
-# #                             return Response({'success': False, 'detail': 'No se puede eliminar este item si la entrada no fue su último movimiento', 'data': item_instance_serializer.data}, status=status.HTTP_403_FORBIDDEN)
-# #                         #VALIDACIÓN SI EL ELEMENTO DE LA ENTRADA TIENE HOJA DE VIDA
-# #                         if item_hv_comp or item_hv_veh or item_hv_oac:
-# #                             return Response({'success': False, 'detail': 'No se puede eliminar este item por que el elemento tiene hoja de vida', 'data': item_instance_serializer.data}, status=status.HTTP_403_FORBIDDEN)
-# #                         #SE TRAE EL BIEN DEL ITEM QUE ESTÁ EN CATALOGO
-# #                         bien_eliminar = CatalogoBienes.objects.filter(id_bien=item_instance.id_bien.id_bien).first()
-
-# #                         inventario_item_instance.delete()
-# #                         bien_eliminar.delete()
-# #                         item_instance.delete()
 
 
 # #                 #SI ENVIAN EL ID_ITEM_ENTRADA ENTONCES ACTUALIZAN
