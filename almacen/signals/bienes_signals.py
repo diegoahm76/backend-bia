@@ -6,11 +6,12 @@ from almacen.models import CatalogoBienes, Marcas
 @receiver(pre_save, sender=CatalogoBienes)
 def create_update_marcas(sender, instance, **kwargs):
     if instance.id_bien is None:
-        bien = CatalogoBienes.objects.filter(id_marca=instance.id_marca.id_marca).first()
-        marca = Marcas.objects.filter(id_marca=instance.id_marca.id_marca).first()
-        if not bien and not marca.item_ya_usado:
-            marca.item_ya_usado=True
-            marca.save()
+        if instance.id_marca:
+            bien = CatalogoBienes.objects.filter(id_marca=instance.id_marca.id_marca).first()
+            marca = Marcas.objects.filter(id_marca=instance.id_marca.id_marca).first()
+            if not bien and not marca.item_ya_usado:
+                marca.item_ya_usado=True
+                marca.save()
     else:
         current=instance
         previous=CatalogoBienes.objects.filter(id_bien=instance.id_bien).first()
