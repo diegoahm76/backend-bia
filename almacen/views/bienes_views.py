@@ -783,7 +783,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
                 id_bien = elemento_creado,
                 id_bodega = bodega,
                 cod_tipo_entrada = entrada_creada.id_tipo_entrada,
-                fecha_ingreso = datetime.now(),
+                fecha_ingreso = fecha_entrada,
                 id_persona_origen = entrada_creada.id_proveedor,
                 numero_doc_origen = entrada_creada.numero_entrada_almacen,
                 valor_ingreso = valor_total_item,
@@ -937,6 +937,34 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
         serializer.save()
         return Response({'success': False, 'detail': 'Actualización de entrada exitosa', 'data': serializer.data}, status=status.HTTP_201_CREATED)
         
+
+class GetEntradas(generics.ListAPIView):
+    serializer_class = EntradaSerializer
+    queryset = EntradasAlmacen.objects.all()
+
+    def get(self, request):
+        id_entrada = request.query_params.get('id_entrada')
+
+        #SI NO ENVIAN EL ID_ENTRADA SIGNIFICA QUE QUIEREN LISTAR TODAS LAS ENTRADAS
+        if not id_entrada:
+            entradas = EntradasAlmacen.objects.all()
+            serializer = self.serializer_class(entradas, many=True)
+            return Response({'success': True, 'detail': 'Obtenido exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        
+        #SI NO EXISTE EL ID_ENTRADA ENVIADO
+        entrada_instance = EntradasAlmacen.objects.filter(id_entrada_almacen=id_entrada).first()
+        if not entrada_instance:
+            return Response({'success': False, 'detail': 'No se encontró ninguna entrada con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+        
+        #SERIALIZAR LAS INSTANCIAS DE LOS ITEMS DE LA ENTRADA ENVIADA
+        items_entrada_instance = ItemEntradaAlmacen.objects.filter(id_entrada_almacen=entrada_instance.id_entrada_almacen)
+        serializer_items = ItemEntradaSerializer(items_entrada_instance, many=True)
+        serializer = self.serializer_class(entrada_instance)
+
+        entrada = {'info_entrada': serializer.data, 'info_items_entrada': serializer_items.data}
+        return Response({'success': False, 'detail': 'Acá vamos', 'data': entrada})
+
+
 
 
 
