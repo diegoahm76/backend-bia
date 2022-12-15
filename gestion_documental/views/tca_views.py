@@ -289,17 +289,27 @@ def asignar_cargo_unidad_permiso_expediente(request):
     except:
         return Response({'Success':False, 'Detail':'no existe id cargo'})
     
-    if not data['permisos']:
+    if not data.getlist('permisos'):
         return Response({'Success':False, 'Detail':'el arreglo de permisos no debe estar vacio'})
     
-    permisos_validados_list = PermisosGD.objects.filter(permisos_GD__in=data['permisos'])
-    if len(data['permisos']) != len(permisos_validados_list):
+    permisos_validados_list = PermisosGD.objects.filter(permisos_GD__in=data.getlist('permisos'))
+    if len(data.getlist('permisos')) != len(permisos_validados_list):
         return Response({'Success':False, 'Detail':'uno de los permisos ingresados no existe'}, status=status.HTTP_400_BAD_REQUEST)
-    cargo_unidad_serie_subserie_undorg_tca= Cargos_Unidad_S_Ss_UndOrg_TCA.objects.create(
-        id_clasif_serie_subserie_unidad_tca = clasif_serie_subserie_unidad_TCA,
-        id_cargo_persona = cargo_persona,
-        id_unidad_org_cargo = unidad_org_persona
-    )
+    
+    match clasif_serie_subserie_unidad_TCA.id_tca.actual:
+        case True:
+            cargo_unidad_serie_subserie_undorg_tca= Cargos_Unidad_S_Ss_UndOrg_TCA.objects.create(
+                id_clasif_serie_subserie_unidad_tca = clasif_serie_subserie_unidad_TCA,
+                id_cargo_persona = cargo_persona,
+                id_unidad_org_cargo = unidad_org_persona,
+                justificacion_del_cambio = data['justificacion_del_cambio'],
+                ruta_archivo_cambio = request.FILES.get('ruta_archivo_cambio'))
+        case False:
+            cargo_unidad_serie_subserie_undorg_tca= Cargos_Unidad_S_Ss_UndOrg_TCA.objects.create(
+                id_clasif_serie_subserie_unidad_tca = clasif_serie_subserie_unidad_TCA,
+                id_cargo_persona = cargo_persona,
+                id_unidad_org_cargo = unidad_org_persona
+            )
     permisos_serializer_list = []
     for permiso in permisos_validados_list:
         permiso_cargo_unidad_s_ss_unidad_tca = PermisosCargoUnidadSerieSubserieUnidadTCA.objects.create(
