@@ -686,7 +686,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
                 case 8:
                     tipo_doc_ultimo_movimiento = 'E_INC'
                 case _:
-                    return Response({'success': True, 'detail': 'El tipo de entrada ingresado no es valido'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'success': False, 'detail': 'El tipo de entrada ingresado no es valido'}, status=status.HTTP_400_BAD_REQUEST)
             
             #CREA EL BIEN CONSUMO EN INVENTARIO O MODIFICA LA CANTIDAD POR BODEGA
             bien = CatalogoBienes.objects.filter(id_bien=id_bien_).first()
@@ -694,21 +694,25 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
 
             #SUMA EL REGISTRO SI ESTABA ESE BIEN EN ESA BODEGA EN INVENTARIO
             if id_bien_inventario:
-                if id_bien_inventario.cantidad_entrante_consumo != None:
-                    suma=id_bien_inventario.cantidad_entrante_consumo + cantidad
-                    id_bien_inventario.cantidad_entrante_consumo=suma
-                    id_bien_inventario.save()
+                formatted_date1 = datetime.strptime(fecha_entrada, '%Y-%m-%d %H:%M:%S')
+                formatted_date2 = id_bien_inventario.fecha_ingreso
+                if formatted_date1 > formatted_date2:
+                    if id_bien_inventario.cantidad_entrante_consumo != None:
+                        suma=id_bien_inventario.cantidad_entrante_consumo + cantidad
+                        id_bien_inventario.cantidad_entrante_consumo=suma
+                        id_bien_inventario.save()
+                    else:
+                        id_bien_inventario.cantidad_entrante_consumo = cantidad
+                        id_bien_inventario.save()
                 else:
-                    id_bien_inventario.cantidad_entrante_consumo = cantidad
-                    id_bien_inventario.save()
-            #CREA EL REGISTRO SI NO ESTABA ESE BIEN EN ESA BODEGA EN INVENTARIO
+                    return Response({'success':False, 'detail':'la fecha de entrada tiene que ser posterior a la fecha de ingreso del bien en el inventario'})
             else:
                 registro_inventario = Inventario.objects.create(
                     id_bien = bien,
                     id_bodega = bodega,
                     cod_tipo_entrada = entrada_creada.id_tipo_entrada,
                     cantidad_entrante_consumo = cantidad,
-                    fecha_ingreso = datetime.now()
+                    fecha_ingreso = fecha_entrada
                 )
             serializador_item_entrada_consumo = SerializerItemEntradaConsumo(data=item, many=False)
             serializador_item_entrada_consumo.is_valid(raise_exception=True)
