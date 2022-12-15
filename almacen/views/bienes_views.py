@@ -711,8 +711,8 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
                     id_bien = bien,
                     id_bodega = bodega,
                     cod_tipo_entrada = entrada_creada.id_tipo_entrada,
-                    cantidad_entrante_consumo = cantidad,
-                    fecha_ingreso = fecha_entrada
+                    cantidad_entrante_consumo=cantidad,
+                    fecha_ingreso=fecha_entrada
                 )
             serializador_item_entrada_consumo = SerializerItemEntradaConsumo(data=item, many=False)
             serializador_item_entrada_consumo.is_valid(raise_exception=True)
