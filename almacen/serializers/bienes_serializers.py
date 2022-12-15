@@ -41,7 +41,6 @@ class EntradaUpdateSerializer(serializers.ModelSerializer):
             'id_persona_anula'
         )
         extra_kwargs = {
-            'fecha_entrada': {'required': True},
             'motivo': {'required': True},
             'id_proveedor': {'required': True},
             'id_tipo_entrada': {'required': True},
