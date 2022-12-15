@@ -7,3 +7,5 @@ class AlmacenConfig(AppConfig):
 
     def ready(self):
         import almacen.signals.bienes_signals
+        import almacen.signals.inventario_signals
+        import almacen.signals.solicitudes_signals
