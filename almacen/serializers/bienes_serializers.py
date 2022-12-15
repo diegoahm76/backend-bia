@@ -72,6 +72,30 @@ class CreateUpdateItemEntradaConsumoSerializer(serializers.ModelSerializer):
         }
 
 
+class SerializerItemEntradaConsumo(serializers.ModelSerializer):
+    class Meta:
+        model= ItemEntradaAlmacen
+        fields = '__all__'
+        extra_kwargs = {
+            'id_entrada_almacen': {'required': True},
+            'id_bodega': {'required': True},
+            'numero_posicion': {'required': True},
+            'id_bien': {'required': True},
+            'cantidad': {'required': True},
+            
+        
+            'valor_unitario': {'required': True},
+            'porcentaje_iva': {'required': True},
+            'valor_iva': {'required': True},
+            'valor_total_item': {'required': True},
+            'valor_iva': {'required': True},
+            'doc_identificador_bien': {'read_only': True},
+            'cantidad_vida_util': {'read_only': True}, 
+            'id_unidad_medida_vida_util': {'read_only': True}, 
+            'valor_residual': {'read_only': True},
+            'cod_estado': {'read_only': True}
+        }
+        
 class SerializerItemEntradaActivosFijos(serializers.ModelSerializer):
     id_bien_padre = serializers.IntegerField(read_only=True)
     tiene_hoja_vida = serializers.BooleanField(read_only=True)

@@ -7,6 +7,7 @@ from almacen.serializers.bienes_serializers import (
     EntradaUpdateSerializer,
     CreateUpdateItemEntradaConsumoSerializer,
     SerializerItemEntradaActivosFijos,
+    SerializerItemEntradaConsumo,
     SerializerUpdateItemEntradaActivosFijos,
     ItemEntradaSerializer,
     EntradaSerializer
@@ -558,6 +559,11 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
         entrada_data = data.get('info_entrada')
         items_entrada = data.get('info_items_entrada')
         
+        #VALIDACION QUE EN EL CAMPO CANTIDAD INGRESE POR LO MENOS UN ELEMENTO
+        cantidad_list=[item['cantidad'] for item in items_entrada if item['cantidad']== None or item['cantidad']==""]
+        if cantidad_list:
+            return Response({'success': False, 'detail': 'Debe ingresar cantidad'}, status=status.HTTP_403_FORBIDDEN)
+
         #VALIDACIÓN QUE TODAS LAS ENTRADAS DEBAN TENER UN ITEM
         if not len(items_entrada):
             return Response({'success': False, 'detail': 'No se puede guardar una entrada sin minimo un item de entrada'}, status=status.HTTP_400_BAD_REQUEST)
@@ -636,11 +642,65 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
         for item in items_entrada:
             item['id_entrada_almacen'] = entrada_creada.pk
 
-        #FILTRAMOS LOS ACTIVOS FIJOS Y EMPEZAMOS CREACIÓN DE ACTIVOS FIJOS
-        items_activos_fijos = list(filter(lambda item:item['id_bien_padre'] != None and item['id_bien'] == None, items_entrada))
-        items_activos_consumo = list(filter(lambda item:item['id_bien_padre'] == None and item['id_bien'] != None, items_entrada))
-        items_activos_fijos_guardados = []
+        #FILTRAMOS LOS ACTIVOS FIJOS Y EMPEZAMOS CREACIÓN DE ACTIVOS FIJOS y CONSUMOS
+        items_activos_fijos = list(filter(lambda item:item['id_bien_padre']!= None and item['id_bien'] == None, items_entrada))
+        items_consumo = list(filter(lambda item:item['id_bien_padre']==None and item['id_bien'] != None, items_entrada))
 
+        #CREACIÓN DE CONSUMOS
+        items_guardados = [] 
+        for item in items_consumo:
+            id_bien_ = item.get('id_bien') 
+            cantidad = item.get('cantidad') 
+            id_bodega = item.get('id_bodega')
+
+            #REGISTRAR LA ENTRADA EN INVENTARIO
+            bodega = Bodegas.objects.filter(id_bodega=id_bodega).first()
+            match entrada_creada.id_tipo_entrada.cod_tipo_entrada:
+                case 1:
+                    tipo_doc_ultimo_movimiento = 'E_CPR'
+                case 2:
+                    tipo_doc_ultimo_movimiento = 'E_DON'
+                case 3:
+                    tipo_doc_ultimo_movimiento = 'E_RES'
+                case 4:
+                    tipo_doc_ultimo_movimiento = 'E_CPS'
+                case 5:
+                    tipo_doc_ultimo_movimiento = 'E_CMD'
+                case 6:
+                    tipo_doc_ultimo_movimiento = 'E_CNV'
+                case 7:
+                    tipo_doc_ultimo_movimiento = 'E_EMB'
+                case 8:
+                    tipo_doc_ultimo_movimiento = 'E_INC'
+                case _:
+                    return Response({'success': True, 'detail': 'El tipo de entrada ingresado no es valido'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            #INVENTARIO
+            bien=CatalogoBienes.objects.filter(id_bien=id_bien_).first()
+            id_bien_inventario=Inventario.objects.filter(id_bien=bien.id_bien,id_bodega=bodega.id_bodega).first()
+        
+            if id_bien_inventario:
+                if id_bien_inventario.cantidad_entrante_consumo != None:
+                    suma=id_bien_inventario.cantidad_entrante_consumo + cantidad
+                    id_bien_inventario.cantidad_entrante_consumo=suma
+                    id_bien_inventario.save()
+                else:
+                    id_bien_inventario.cantidad_entrante_consumo = cantidad
+                    id_bien_inventario.save()
+            else:
+                registro_inventario = Inventario.objects.create(
+                    id_bien = bien,
+                    id_bodega = bodega,
+                    cod_tipo_entrada = entrada_creada.id_tipo_entrada,
+                    cantidad_entrante_consumo=cantidad,
+                    fecha_ingreso=datetime.now()
+                )
+            serializador_item_entrada_consumo = SerializerItemEntradaConsumo(data=item, many=False)
+            serializador_item_entrada_consumo.is_valid(raise_exception=True)
+            serializador_item_entrada_consumo.save()
+            items_guardados.append(serializador_item_entrada_consumo.data)
+        
+        #CREACION DE ACTIVO FIJOS
         for item in items_activos_fijos:
             id_bien_padre = item.get('id_bien_padre')
             doc_identificador_bien = item.get('doc_identificador_bien')
@@ -699,8 +759,6 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
                     tipo_doc_ultimo_movimiento = 'E_EMB'
                 case 8:
                     tipo_doc_ultimo_movimiento = 'E_INC'
-                case _:
-                    return Response({'success': True, 'detail': 'El tipo de entrada ingresado no es valido'}, status=status.HTTP_400_BAD_REQUEST)
 
             registro_inventario = Inventario.objects.create(
                 id_bien = elemento_creado,
@@ -716,7 +774,6 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
                 tipo_doc_ultimo_movimiento = tipo_doc_ultimo_movimiento,
                 id_registro_doc_ultimo_movimiento = entrada_creada.id_entrada_almacen
             )
-
             if tiene_hoja_vida == True:
                 match bien_padre.cod_tipo_activo:
                     case 'Com':
@@ -737,8 +794,8 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
             serializador_item_entrada = SerializerItemEntradaActivosFijos(data=item, many=False)
             serializador_item_entrada.is_valid(raise_exception=True)
             serializador_item_entrada.save()
-            items_activos_fijos_guardados.append(serializador_item_entrada.data)
-        return Response({'success': True, 'data_entrada_creada': entrada_serializada.data, 'data_items_creados': items_activos_fijos_guardados})
+            items_guardados.append(serializador_item_entrada.data)
+        return Response({'success': True, 'data_entrada_creada': entrada_serializada.data, 'data_items_creados': items_guardados})
 
 
 class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
