@@ -30,6 +30,7 @@ from almacen.serializers.solicitudes_serialiers import (
     CrearSolicitudesPostSerializer,
     CrearItemsSolicitudConsumiblePostSerializer
     )
+import copy
 
 
 class SearchVisibleBySolicitud(generics.ListAPIView):
@@ -144,13 +145,25 @@ class CreateSolicitud(generics.UpdateAPIView):
         items_solicitud = datos_ingresados['items_solicitud']
         
         user_logeado = request.user
-        
+        if str(user_logeado) == 'AnonymousUser':
+            return Response({'success':False,'data':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
+        if len(items_solicitud) <= 0:
+            return Response({'success':False,'data':'La solicitud debe tener items'},status=status.HTTP_404_NOT_FOUND)
+        if info_solicitud['id_solicitud_consumibles'] == None:
+            bandera_actualizar = False
+        else:
+            instancia_solicitud = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles=info_solicitud['id_solicitud_consumibles']).first()
+            if not instancia_solicitud:
+                return Response({'success':False,'data':'Si desea actualizar una solicitud, ingrese un id de solicitud de consumibles válido'},status=status.HTTP_404_NOT_FOUND)
+            else:
+                instancia_solicitud_previous = copy.copy(instancia_solicitud)
+                bandera_actualizar = True
+                
         # ASIGNACIÓN DE DATOS POR DEFECTO A LA TABLA SOLICITUDES
         info_solicitud['fecha_solicitud'] = str(date.today())
         info_solicitud['id_persona_solicita'] = user_logeado.persona.id_persona
         info_solicitud['id_unidad_org_del_solicitante'] = user_logeado.persona.id_unidad_organizacional_actual.id_unidad_organizacional
         info_solicitud['solicitud_abierta'] = True
-        info_solicitud['es_solicitud_de_conservacion'] = False
         solicitudes_existentes = SolicitudesConsumibles.objects.all()
         bienes_repetidos = [i['id_bien'] for i in items_solicitud]
         unidad_para_la_que_solicita = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = info_solicitud['id_unidad_para_la_que_solicita']).values().first()
@@ -159,20 +172,14 @@ class CreateSolicitud(generics.UpdateAPIView):
             info_solicitud['id_unidad_org_del_responsable'] = funcionario_responsable.id_unidad_organizacional_actual.id_unidad_organizacional
         else:
             info_solicitud['id_unidad_org_del_responsable'] = None
-        # VALIDACIONES PRIMARIAS
-        if str(user_logeado) == 'AnonymousUser':
-            return Response({'success':False,'data':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
-        
+        # VALIDACIONES PRIMARIAS        
         if not unidad_para_la_que_solicita:
             return Response({'success':False,'data':'La unidad organizacional ingresada no existe'},status=status.HTTP_404_NOT_FOUND)
         if len(bienes_repetidos) != len(set(bienes_repetidos)):
             return Response({'success':False,'data':'Solo puede ingresar una vez un bien en una solicitud' },status=status.HTTP_404_NOT_FOUND)
         # ASIGNACIÓN DEL NÚMERO DE SOLICITUD
-        if solicitudes_existentes:
-            numero_solicitudes_no_conservacion = [i.nro_solicitud_por_tipo for i in solicitudes_existentes if i.es_solicitud_de_conservacion == False]
-            info_solicitud['nro_solicitud_por_tipo'] = max(numero_solicitudes_no_conservacion) + 1
-        else:
-            info_solicitud['nro_solicitud_por_tipo'] = 1
+        if info_solicitud['es_solicitud_de_conservacion'] != False and info_solicitud['es_solicitud_de_conservacion'] != True:
+            return Response({'success':False,'data':'es_solicitud_de_conservacion debe ser true o false'},status=status.HTTP_404_NOT_FOUND)
         #numero_solicitudes_no_conservacion = [i.nro_solicitud_por_tipo for i in solicitudes_existentes if i.es_solicitud_de_conservacion == False]
         
         # SE CREAN ALGUNAS VARIABLES AUXILIARES
@@ -180,10 +187,18 @@ class CreateSolicitud(generics.UpdateAPIView):
         count = 0
         # VALIDACIONES ITEMS DE LA SOLICITUD
         for i in items_solicitud:
+            if bandera_actualizar == True:
+                if i['id_item_solicitud_consumible'] != None: 
+                    instancia_item = ItemsSolicitudConsumible.objects.filter(id_item_solicitud_consumible = i['id_item_solicitud_consumible']).first()
+                else:
+                    instancia_item = None
+                if instancia_item:
+                    if str(instancia_item.id_solicitud_consumibles) != str(info_solicitud['id_solicitud_consumibles']):
+                        return Response({'success':False,'data':'El item (' + str(instancia_item.id_item_solicitud_consumible) + ') no tiene relación con la solicitud' },status=status.HTTP_404_NOT_FOUND)
             bien = CatalogoBienes.objects.filter(id_bien = i['id_bien']).first()
             if not bien:
                 return Response({'success':False,'data':'El bien (' + i['id_bien'] + ') no existe' },status=status.HTTP_404_NOT_FOUND)
-            if bien.nivel_jerarquico != 5:
+            if bien.nivel_jerarquico > 5 or bien.nivel_jerarquico < 2:
                 return Response({'success':False,'data':'El bien (' + bien.nombre + ') no es de nivel 5' },status=status.HTTP_404_NOT_FOUND)
             if bien.cod_tipo_bien != 'C':
                 return Response({'success':False,'data':'El bien (' + bien.nombre + ') no es de consumo' },status=status.HTTP_404_NOT_FOUND)
@@ -196,7 +211,7 @@ class CreateSolicitud(generics.UpdateAPIView):
                 return Response({'success':False,'data':'La unidad de medida (' + unidad_de_medida.nombre + ') no existe' },status=status.HTTP_404_NOT_FOUND)
 
         aux_nro_posicion = [i['nro_posicion'] for i in items_solicitud]
-         
+
         if len(aux_nro_posicion) != len(set(aux_nro_posicion)):
             return Response({'success':False,'data':'Los números de posición deben ser diferentes entre ellos' },status=status.HTTP_404_NOT_FOUND)
         
@@ -248,37 +263,82 @@ class CreateSolicitud(generics.UpdateAPIView):
                     unidades_iguales_y_arriba.append(aux_menor.id_unidad_org_padre.nombre)
                 count = count - 1
             unidades_organiacionales_misma_linea = sorted(unidades_organiacionales_misma_linea)
-            
             if not unidad_para_la_que_solicita['nombre'] in unidades_organiacionales_misma_linea:
                 return Response({'success':False,'data':'La unidad organizacional para la que solicita no pertenece a la linea del organigrama a la que pertenece el solicitante'},status=status.HTTP_404_NOT_FOUND)
             
             if not funcionario_responsable.id_unidad_organizacional_actual.nombre in unidades_iguales_y_arriba or funcionario_responsable.id_unidad_organizacional_actual.nombre == None:
                 return Response({'success':False,'data':'La persona que ingresó como responsable no es ningún superior de la persona que solicita'},status=status.HTTP_404_NOT_FOUND)
+        
+        if bandera_actualizar == False:
+            if solicitudes_existentes:
+                numero_solicitudes_no_conservacion = [i.nro_solicitud_por_tipo for i in solicitudes_existentes if i.es_solicitud_de_conservacion == False]
+                info_solicitud['nro_solicitud_por_tipo'] = max(numero_solicitudes_no_conservacion) + 1
+            else:
+                info_solicitud['nro_solicitud_por_tipo'] = 1    
+            serializer = self.serializer_class(data=info_solicitud)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()        
+            dirip = Util.get_client_ip(request)
             
-        serializer = self.serializer_class(data=info_solicitud)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()        
-        dirip = Util.get_client_ip(request)
-        
-        descripcion = {'id_solicitud_consumibles':str(serializer.data['id_solicitud_consumibles']), 'fecha_solicitud':str(info_solicitud['fecha_solicitud']), 'id_persona_solicita':str(info_solicitud['id_persona_solicita']), 'id_unidad_org_del_solicitante':str(info_solicitud['id_unidad_org_del_solicitante']), 'id_funcionario_responsable_unidad':str(info_solicitud['id_funcionario_responsable_unidad']), 'id_unidad_org_del_responsable':str(info_solicitud['id_unidad_org_del_responsable'])}
-        valores_actualizados= None
-        auditoria_data = {
-            'id_usuario': user_logeado.id_usuario,
-            'id_modulo': 35,
-            'cod_permiso': 'CR',
-            'subsistema': 'ALMA',
-            'dirip': dirip,
-            'descripcion': descripcion,
-            'valores_actualizados': valores_actualizados
-        }
-        Util.save_auditoria(auditoria_data)
-        
-        for i in items_solicitud:
-           i['id_solicitud_consumibles'] = serializer.data['id_solicitud_consumibles']
-             
-        serializer = self.serializer_item_solicitud(data=items_solicitud, many=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+            descripcion = {'id_solicitud_consumibles':str(serializer.data['id_solicitud_consumibles']), 'fecha_solicitud':str(info_solicitud['fecha_solicitud']), 'id_persona_solicita':str(info_solicitud['id_persona_solicita']), 'id_unidad_org_del_solicitante':str(info_solicitud['id_unidad_org_del_solicitante']), 'id_funcionario_responsable_unidad':str(info_solicitud['id_funcionario_responsable_unidad']), 'id_unidad_org_del_responsable':str(info_solicitud['id_unidad_org_del_responsable'])}
+            valores_actualizados= None
+            auditoria_data = {
+                'id_usuario': user_logeado.id_usuario,
+                'id_modulo': 35,
+                'cod_permiso': 'CR',
+                'subsistema': 'ALMA',
+                'dirip': dirip,
+                'descripcion': descripcion,
+                'valores_actualizados': valores_actualizados
+            }
+            Util.save_auditoria(auditoria_data)
+            for i in items_solicitud:
+                i['id_solicitud_consumibles'] = serializer.data['id_solicitud_consumibles']              
+            serializer = self.serializer_item_solicitud(data=items_solicitud, many=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        elif bandera_actualizar == True:
+            info_solicitud['nro_solicitud_por_tipo'] = instancia_solicitud.nro_solicitud_por_tipo
+            serializer = self.serializer_class(instancia_solicitud, data=info_solicitud)
+            serializer.is_valid(raise_exception=True)
+            serializer.save() 
+            dirip = Util.get_client_ip(request)
+            
+            descripcion = {'es_solicitud_de_conservacion':str(serializer.data['es_solicitud_de_conservacion']),'nro_solicitud_por_tipo':str(serializer.data['nro_solicitud_por_tipo'])}
+            valores_actualizados= {'previous':instancia_solicitud_previous, 'current':instancia_solicitud}
+            auditoria_data = {
+                'id_usuario': user_logeado.id_usuario,
+                'id_modulo': 35,
+                'cod_permiso': 'AC',
+                'subsistema': 'ALMA',
+                'dirip': dirip,
+                'descripcion': descripcion,
+                'valores_actualizados': valores_actualizados
+            }
+            Util.save_auditoria(auditoria_data)
+            aux_items_enviados = [i['id_item_solicitud_consumible'] for i in items_solicitud if i['id_item_solicitud_consumible'] != None]      
+            instancia_solicitud = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles=info_solicitud['id_solicitud_consumibles']).first()
+            instancia_items_eliminar = ItemsSolicitudConsumible.objects.filter(~Q(id_item_solicitud_consumible__in=aux_items_enviados) & Q(id_solicitud_consumibles=instancia_solicitud.id_solicitud_consumibles))
+            instancia_items_eliminar.delete()
+            for j in items_solicitud:
+                print("ok")
+                j['id_solicitud_consumibles'] = serializer.data['id_solicitud_consumibles']
+                if j['id_item_solicitud_consumible'] == None:
+                    #del j['id_item_solicitud_consumible']
+                    print(j)
+                    serializer_act = self.serializer_item_solicitud(data=j, many=False)
+                    print("UUUUUUUUUUUU")
+                    serializer_act.is_valid(raise_exception=True)
+                    print("LLLLLLLLL")
+                    serializer_act.save()
+                else:
+                    instancia_item = ItemsSolicitudConsumible.objects.filter(id_item_solicitud_consumible = j['id_item_solicitud_consumible']).first()
+                    if not instancia_item:
+                        return Response({'success':False,'data':'Uno de los id de los items no es válido'},status=status.HTTP_404_NOT_FOUND)
+                    serializer_act = self.serializer_item_solicitud(instancia_item, data=j, many=False)
+                    serializer_act.is_valid(raise_exception=True)
+                    serializer_act.save()      
+            return Response({'success':True,'data':'Solicitud actualizada con éxito', 'Numero solicitud' : info_solicitud["nro_solicitud_por_tipo"]},status=status.HTTP_200_OK)
         return Response({'success':True,'data':'Solicitud registrada con éxito', 'Numero solicitud' : info_solicitud["nro_solicitud_por_tipo"]},status=status.HTTP_200_OK)
 
 class GetSolicitudesPendentesPorAprobar(generics.ListAPIView):
@@ -292,18 +352,24 @@ class GetSolicitudesPendentesPorAprobar(generics.ListAPIView):
         if not usuario:
             return Response({'success':False,'data':'Debe ingresar un usuario válido'},status=status.HTTP_400_BAD_REQUEST)        
         solicitudes_por_aprobar = SolicitudesConsumibles.objects.filter(Q(id_funcionario_responsable_unidad=persona_responsable.id_persona) & Q(revisada_responsable = False))
-        return Response({'success':True,'data':solicitudes_por_aprobar.values(), },status=status.HTTP_200_OK)
+        serializer = self.serializer_class(solicitudes_por_aprobar, many=True)
+        return Response({'success':True,'data':serializer.data, },status=status.HTTP_200_OK)
 
 class GetSolicitudesById_Solicitudes(generics.ListAPIView):
     # ESTA FUNCIONALIDAD PERMITE CONSULTAR SOLICITUDES DE BIENES DE CONSUMO POR ID_SOLICITUDES
     serializer_class = CrearSolicitudesPostSerializer
     queryset=SolicitudesConsumibles.objects.all()
+    serializer_item_solicitud = CrearItemsSolicitudConsumiblePostSerializer
     
     def get(self, request, id_solicitud):
-        solicitud = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles=id_solicitud)
-        if not solicitud:
+        intancia_solicitud = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles=id_solicitud).first()
+        if not intancia_solicitud:
             return Response({'success':False,'data':'Ingrese un ID válido'},status=status.HTTP_400_BAD_REQUEST)
-        return Response({'success':True,'data':solicitud.values(), },status=status.HTTP_200_OK)
+        info_items = ItemsSolicitudConsumible.objects.filter(id_solicitud_consumibles=intancia_solicitud.id_solicitud_consumibles)
+        serializer_info_solicitud = self.serializer_class(intancia_solicitud)
+        serializer_items_solicitud = self.serializer_item_solicitud(info_items, many=True)
+        datos_salida = {'info_solicitud' : serializer_info_solicitud.data, 'info_items' : serializer_items_solicitud.data}
+        return Response({'success':True,'data':datos_salida, },status=status.HTTP_200_OK)
 
 class GetNroDocumentoSolicitudesBienesConsumo(generics.ListAPIView):
     # ESTA FUNCIONALIDAD PERMITE CONSULTAR EL ÚLTIMO NÚMERO DE DOCUMENTO DE LA CREACIÓN DE SOLICITUDES
@@ -359,8 +425,9 @@ class SolicitudesPendientesDespachar(generics.ListAPIView):
     queryset=SolicitudesConsumibles.objects.all()
     
     def get(self, request):
-        pendientes_por_despachar = SolicitudesConsumibles.objects.filter(Q(estado_aprobacion_responsable='A') & Q(gestionada_almacen=False)).values()
-        return Response({'success':True,'Solicitudes pendientes por despahcar':pendientes_por_despachar, },status=status.HTTP_200_OK)
+        pendientes_por_despachar = SolicitudesConsumibles.objects.filter(Q(estado_aprobacion_responsable='A') & Q(gestionada_almacen=False))
+        serializer = self.serializer_class(pendientes_por_despachar, many=True)
+        return Response({'success':True,'Solicitudes pendientes por despahcar':serializer.data, },status=status.HTTP_200_OK)
 
 class RechazoSolicitudesBienesAlmacen(generics.UpdateAPIView):
     serializer_class = CrearSolicitudesPostSerializer
