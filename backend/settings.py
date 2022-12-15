@@ -151,6 +151,7 @@ DATABASES = {
         'PASSWORD': os.environ.get('BIA_DB_PASSWORD'),
         'HOST': os.environ.get('BIA_DB_HOST'),
         'PORT': os.environ.get('BIA_DB_PORT'),
+        'ATOMIC_REQUESTS': True
     }
 }
 
