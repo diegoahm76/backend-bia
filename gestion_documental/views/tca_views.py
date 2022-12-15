@@ -298,7 +298,7 @@ def asignar_cargo_unidad_permiso_expediente(request):
     
     match clasif_serie_subserie_unidad_TCA.id_tca.actual:
         case True:
-            if not data['justificacion_del_cambio'] or data['justificacion_del_cambio'] == '':
+            if not data.get('justificacion_del_cambio') or data['justificacion_del_cambio'] == '':
                 return Response({'Success':False,'Detail':'debe ingresar justificacion'}, status=status.HTTP_400_BAD_REQUEST)
             if not request.FILES.get('ruta_archivo_cambio'):
                 return Response({'Success':False, 'Detail':'debe igresar un documento'})
