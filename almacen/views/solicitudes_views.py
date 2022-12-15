@@ -178,8 +178,8 @@ class CreateSolicitud(generics.UpdateAPIView):
         if len(bienes_repetidos) != len(set(bienes_repetidos)):
             return Response({'success':False,'data':'Solo puede ingresar una vez un bien en una solicitud' },status=status.HTTP_404_NOT_FOUND)
         # ASIGNACIÓN DEL NÚMERO DE SOLICITUD
-        if info_solicitud['es_solicitud_de_conservacion'] != False and info_solicitud['es_solicitud_de_conservacion'] != True:
-            return Response({'success':False,'data':'es_solicitud_de_conservacion debe ser true o false'},status=status.HTTP_404_NOT_FOUND)
+        if info_solicitud['es_solicitud_de_conservacion'] != True:
+            return Response({'success':False,'data':'Este servicio es para crear solicitudes de bienes de consumo no para conservación'},status=status.HTTP_404_NOT_FOUND)
         #numero_solicitudes_no_conservacion = [i.nro_solicitud_por_tipo for i in solicitudes_existentes if i.es_solicitud_de_conservacion == False]
         
         # SE CREAN ALGUNAS VARIABLES AUXILIARES
