@@ -25,7 +25,7 @@ from almacen.models.inventario_models import (
 from seguridad.models import (
     Personas
 ) 
-from almacen.models.generics_models import UnidadesMedida , PorcentajesIVA 
+from almacen.models.generics_models import UnidadesMedida , PorcentajesIVA, Marcas
 from almacen.models.bienes_models import EntradasAlmacen, ItemEntradaAlmacen
 from seguridad.utils import Util  
 from django.db.models import Q
@@ -63,7 +63,7 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                 except:
                     return Response({'success':False, 'detail':'El id de unidad de medida vida util ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
                 try:
-                    id_marca = UnidadesMedida.objects.get(id_marca=data['id_marca'])
+                    id_marca = Marcas.objects.get(id_marca=data['id_marca'])
                     pass
                 except:
                     return Response({'success':False, 'detail':'El id de marca ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
@@ -172,6 +172,11 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                     pass
                                 except:
                                     return Response({'success':False, 'detail':'El id de unidad de medida vida util ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                                try:
+                                    id_marca = Marcas.objects.get(id_marca=data['id_marca'])
+                                    pass
+                                except:
+                                    return Response({'success':False, 'detail':'El id de marca ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
                                 catalogo_bien = CatalogoBienes.objects.create(
                                     id_bien=data['id_bien'],
                                     codigo_bien=data['codigo_bien'],
@@ -180,7 +185,7 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                     cod_tipo_activo=data['cod_tipo_activo'],
                                     nivel_jerarquico=data['nivel_jerarquico'],
                                     descripcion=data['descripcion'],
-                                    id_marca=data['id_marca'],
+                                    id_marca=id_marca,
                                     id_unidad_medida=id_unidad_medida,
                                     id_porcentaje_iva=id_porcentaje_iva,
                                     cod_tipo_depreciacion=data['cod_tipo_depreciacion'],
@@ -210,7 +215,11 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                 pass
                             except:
                                 return Response({'success':False, 'detail':'El id de unidad de medida vida util ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
-
+                            try:
+                                id_marca = Marcas.objects.get(id_marca=data['id_marca'])
+                                pass
+                            except:
+                                return Response({'success':False, 'detail':'El id de marca ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
                             catalogo_bien = CatalogoBienes.objects.create(
                                     id_bien=data['id_bien'],
                                     codigo_bien=data['codigo_bien'],
@@ -219,7 +228,7 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                     cod_tipo_activo=data['cod_tipo_activo'],
                                     nivel_jerarquico=data['nivel_jerarquico'],
                                     descripcion=data['descripcion'],
-                                    id_marca=data['id_marca'],
+                                    id_marca=id_marca,
                                     id_unidad_medida=id_unidad_medida,
                                     id_porcentaje_iva=id_porcentaje_iva,
                                     cod_tipo_depreciacion=data['cod_tipo_depreciacion'],
