@@ -271,7 +271,6 @@ class ReanudarTablaControlAcceso(generics.UpdateAPIView):
             return Response({'success': False, 'detail': 'No se encontró ningún TCA con estos parámetros'}, status=status.HTTP_404_NOT_FOUND) 
 
 @api_view(['POST'])
-
 def asignar_cargo_unidad_permiso_expediente(request):
     data = request.data
     user = request.user
@@ -324,6 +323,59 @@ def asignar_cargo_unidad_permiso_expediente(request):
     expediente_serializer = Cargos_Unidad_S_Ss_UndOrg_TCASerializer(cargo_unidad_serie_subserie_undorg_tca,many=False)
     permisos_serializer = PermisosCargoUnidadSerieSubserieUnidadTCASerializer(permisos_serializer_list, many=True)
     return Response({'Success':True, 'Expediente':expediente_serializer.data, 'permisos':permisos_serializer.data},status=status.HTTP_200_OK)
+
+@api_view(['PUT'])
+def actualizar_cargo_unidad_permiso_expediente(request,pk):
+    data = request.data
+    try:
+        cargo_unidad_serie_subserie_undorg_tca = Cargos_Unidad_S_Ss_UndOrg_TCA.objects.get(id_cargo_unidad_s_subserie_unidad_org_tca=pk)
+    except:
+        return Response({'Success':False,'Detail':'id de expediente invalido'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        unidad_org_persona = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=data['id_unidad_org_persona'])
+    except:
+        return Response({'Success':False, 'Detail':'no existe unidad organisacional con el id unidad organizacional persona ingresado'})
+    try:
+        cargo_persona = Cargos.objects.get(id_cargo=data['id_cargo_persona'])
+    except:
+        return Response({'Success':False, 'Detail':'no existe id cargo'})
+    
+    if not data.getlist('permisos'):
+        return Response({'Success':False, 'Detail':'el arreglo de permisos no debe estar vacio'})
+    
+    permisos_validados_list = PermisosGD.objects.filter(permisos_GD__in=data.getlist('permisos'))
+    if len(data.getlist('permisos')) != len(permisos_validados_list):
+        return Response({'Success':False, 'Detail':'uno de los permisos ingresados no existe'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    permisos_validados_list = PermisosCargoUnidadSerieSubserieUnidadTCA.objects.filter(id_cargo_unidad_s_ss_unidad_tca=cargo_unidad_serie_subserie_undorg_tca.id_cargo_unidad_s_subserie_unidad_org_tca)
+    
+    lista_permisos = [str(x.cod_permiso.permisos_GD) for x in permisos_validados_list]
+    lista_crear = list(set(data.getlist('permisos'))-set(lista_permisos))  
+    print({'lista crear': lista_crear})  
+    permisos_validados_list.exclude(cod_permiso__in= data.getlist('permisos')).delete()
+    permisos_serializer_list = []
+    for permiso in lista_crear:
+        permiso_cargo_unidad_s_ss_unidad_tca = PermisosCargoUnidadSerieSubserieUnidadTCA.objects.create(
+            id_cargo_unidad_s_ss_unidad_tca = cargo_unidad_serie_subserie_undorg_tca,
+            cod_permiso = PermisosGD.objects.get(permisos_GD=int(permiso)) 
+        )
+        permisos_serializer_list.append(permiso_cargo_unidad_s_ss_unidad_tca)
+    match cargo_unidad_serie_subserie_undorg_tca.id_clasif_serie_subserie_unidad_tca.id_tca.actual:
+        case True:
+            cargo_unidad_serie_subserie_undorg_tca.id_unidad_org_cargo = unidad_org_persona
+            cargo_unidad_serie_subserie_undorg_tca.id_cargo_persona = cargo_persona
+            cargo_unidad_serie_subserie_undorg_tca.justificacion_del_cambio = data['justificacion_del_cambio']
+            cargo_unidad_serie_subserie_undorg_tca.ruta_archivo_cambio = request.FILES.get('ruta_archivo_cambio')
+            cargo_unidad_serie_subserie_undorg_tca.save()
+
+        case False:
+            cargo_unidad_serie_subserie_undorg_tca.id_unidad_org_cargo = unidad_org_persona
+            cargo_unidad_serie_subserie_undorg_tca.id_cargo_persona = cargo_persona
+            cargo_unidad_serie_subserie_undorg_tca.save()
+        
+    expediente_serializer = Cargos_Unidad_S_Ss_UndOrg_TCASerializer(cargo_unidad_serie_subserie_undorg_tca,many=False)
+    permisos_serializer = PermisosCargoUnidadSerieSubserieUnidadTCASerializer(permisos_serializer_list, many=True)    
+    return Response({'Success':True, 'Expediente':expediente_serializer.data, 'Permisos':permisos_serializer.data})
 class FinalizarTablaControlAcceso(generics.UpdateAPIView):
     serializer_class = TCAPostSerializer
     queryset = TablasControlAcceso
