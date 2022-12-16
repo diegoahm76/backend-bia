@@ -843,7 +843,7 @@ class RegisterPersonaNatural(generics.CreateAPIView):
 
         #Validación de tipo documento
         tipo_documento = serializer.validated_data.get('tipo_documento')
-        if tipo_documento.cod_tipo_documento == 'NU':
+        if tipo_documento.cod_tipo_documento == 'NT':
             return Response({'success':False,'detail':'El tipo de documento debe ser el de una persona natural'}, status=status.HTTP_400_BAD_REQUEST)
 
         email_principal = serializer.validated_data.get('email')
@@ -923,7 +923,7 @@ class RegisterPersonaJuridica(generics.CreateAPIView):
 
         #Validación de tipo documento
         tipo_documento = serializer.validated_data.get('tipo_documento')
-        if tipo_documento.cod_tipo_documento != 'NU':
+        if tipo_documento.cod_tipo_documento != 'NT':
             return Response({'success':False,'detail':'El tipo de documento debe ser el de una persona juridica'}, status=status.HTTP_400_BAD_REQUEST)
         
         email_principal = serializer.validated_data.get('email')
@@ -1007,7 +1007,7 @@ class RegisterPersonaNaturalByUserInterno(generics.CreateAPIView):
 
         #Validación de tipo documento
         tipo_documento = serializer.validated_data.get('tipo_documento')
-        if tipo_documento.cod_tipo_documento == 'NU':
+        if tipo_documento.cod_tipo_documento == 'NT':
             return Response({'success':False,'detail':'El tipo de documento debe ser el de una persona natural'}, status=status.HTTP_400_BAD_REQUEST)
         
         #Validación emails dns

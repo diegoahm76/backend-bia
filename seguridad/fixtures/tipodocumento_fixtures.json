@@ -75,5 +75,16 @@
         "activo" : true,
         "item_ya_usado" : false
       }
+    },
+    {
+      "model": "seguridad.TipoDocumento",
+      "pk": 8,
+      "fields": {
+        "cod_tipo_documento": "NT",
+        "nombre": "NIT",
+        "precargado": true,
+        "activo" : true,
+        "item_ya_usado" : false
+      }
     }
   ]

@@ -41,6 +41,7 @@ from datetime import timezone
 
 class CreateCatalogoDeBienes(generics.UpdateAPIView):
     serializer_class = CatalogoBienesSerializer
+    permission_classes = [IsAuthenticated]
 
     def put(self, request):
         data = request.data
@@ -310,6 +311,7 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
 class GetCatalogoBienesList(generics.ListAPIView):
     serializer_class = CatalogoBienesSerializer
     queryset = CatalogoBienes.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         catalogo_bienes_nodos = CatalogoBienes.objects.filter(nro_elemento_bien=None)
@@ -321,6 +323,7 @@ class DeleteNodos(generics.RetrieveDestroyAPIView):
     serializer_class = CatalogoBienesSerializer
     queryset = CatalogoBienes.objects.all()
     lookup_field = 'id_bien'
+    permission_classes = [IsAuthenticated]
 
     def delete(self, request, id_bien):
         nodo = CatalogoBienes.objects.filter(id_bien=id_bien).first()
@@ -384,6 +387,7 @@ class GetElementosByIdNodo(generics.ListAPIView):
 class SearchArticuloByDocIdentificador(generics.ListAPIView):
     serializer_class=CatalogoBienesSerializer
     queryset=CatalogoBienes.objects.all()
+    permission_classes = [IsAuthenticated]
     
     def get(self,request):
         filter={}
@@ -404,6 +408,7 @@ class SearchArticuloByDocIdentificador(generics.ListAPIView):
 class SearchArticulosByNombreDocIdentificador(generics.ListAPIView):
     serializer_class=CatalogoBienesSerializer
     queryset=CatalogoBienes.objects.all()
+    permission_classes = [IsAuthenticated]
     
     def get(self,request):
         filter={}
@@ -423,6 +428,8 @@ class SearchArticulosByNombreDocIdentificador(generics.ListAPIView):
 class SearchArticulos(generics.ListAPIView):
     serializer_class=CatalogoBienesSerializer
     queryset=CatalogoBienes.objects.all()
+    permission_classes = [IsAuthenticated]
+
     def get(self,request):
         filter={}
         for key,value in request.query_params.items():
@@ -441,6 +448,7 @@ class SearchArticulos(generics.ListAPIView):
 class GetCatalogoBienesByCodigo(generics.ListAPIView):
     serializer_class = CatalogoBienesSerializer
     queryset = CatalogoBienes.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         if not request.query_params.items():
@@ -540,6 +548,7 @@ class CreateUpdateEntrada(generics.RetrieveUpdateAPIView):
 class GetNumeroEntrada(generics.ListAPIView):
     serializer_class = EntradaSerializer
     queryset = EntradasAlmacen.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         entrada = EntradasAlmacen.objects.all().order_by('-numero_entrada_almacen').first()
@@ -554,6 +563,7 @@ class GetNumeroEntrada(generics.ListAPIView):
 class CreateEntradaandItemsEntrada(generics.CreateAPIView):
     serializer_class = EntradaCreateSerializer
     queryset = EntradasAlmacen.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         data = request.data
@@ -818,6 +828,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
 class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
     serializer_class = ItemEntradaSerializer
     queryset = ItemEntradaAlmacen.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def delete(self, request):
         items_enviados = request.data
@@ -873,6 +884,7 @@ class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
 class UpdateEntrada(generics.RetrieveUpdateAPIView):
     serializer_class = EntradaUpdateSerializer
     queryset = EntradasAlmacen.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, id_entrada):
         data = request.data
@@ -941,6 +953,7 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
 class GetEntradas(generics.ListAPIView):
     serializer_class = EntradaSerializer
     queryset = EntradasAlmacen.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         id_entrada = request.query_params.get('id_entrada')
