@@ -495,6 +495,10 @@ class ValidarFechasProgramacion(generics.ListAPIView):
                 if not datos_ingresados['desde'].isdigit() or not datos_ingresados['hasta'].isdigit() or not datos_ingresados['cada'].isdigit():
                     return Response({'success':False, 'detail': 'En desde, cada o hasta debe ingresar un número entero'}, status=status.HTTP_400_BAD_REQUEST)
                 kilometraje_actual = HojaDeVidaVehiculos.objects.filter(id_articulo=vehiculo['id_bien']).values().first()
+                if not kilometraje_actual:
+                    return Response({'success':False, 'detail': 'El vehiculo ingresado no tiene hoja de vida registrada'}, status=status.HTTP_400_BAD_REQUEST)
+                if kilometraje_actual == None:
+                    return Response({'success':False, 'detail': 'El vehiculo ingresado no tiene kilometraje registrado'}, status=status.HTTP_400_BAD_REQUEST)
                 if int(datos_ingresados['desde']) <= int(kilometraje_actual['ultimo_kilometraje']) or int(datos_ingresados['desde']) >= (int(kilometraje_actual['ultimo_kilometraje']) + 10000) or int(datos_ingresados['hasta']) >= (int(kilometraje_actual['ultimo_kilometraje']) + 100000):
                     return Response({'success':False, 'detail': 'El kilometraje (desde) debe ser mayor al último kilometraje del equipo'}, status=status.HTTP_400_BAD_REQUEST)
                 if int(datos_ingresados['cada']) > 10001:
@@ -609,4 +613,3 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'success':True, 'detail':'Mantenimiento registrado con éxito'}, status=status.HTTP_200_OK)
-   
