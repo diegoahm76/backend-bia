@@ -44,8 +44,7 @@ class EntradaUpdateSerializer(serializers.ModelSerializer):
             'motivo': {'required': True},
             'id_proveedor': {'required': True},
             'id_tipo_entrada': {'required': True},
-            'id_bodega': {'required': True},
-            'valor_total_entrada': {'required': True}
+            'id_bodega': {'required': True}
         }
 
 
