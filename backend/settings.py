@@ -184,8 +184,9 @@ TIME_ZONE = 'America/Bogota'
 
 USE_I18N = True
 
-USE_TZ = True
-
+USE_TZ = False
+DATETIME_FORMAT="%Y-%m-%d%H:%M:%S"
+L10N=False
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/

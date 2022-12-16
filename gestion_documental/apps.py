@@ -7,3 +7,4 @@ class GestionDocumentalConfig(AppConfig):
 
     def ready(self):
         import gestion_documental.signals.trd_signals
+        import gestion_documental.signals.tca_signals

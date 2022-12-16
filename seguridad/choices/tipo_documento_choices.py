@@ -5,5 +5,6 @@ tipo_documento_CHOICES = (
     ('RC', 'Registro civil'),
     ('NU', 'NUIP'),
     ('PA', 'Pasaporte'),
-    ('PE', 'Permiso especial de permanencia')
+    ('PE', 'Permiso especial de permanencia'),
+    ('NT', 'NIT')
 )

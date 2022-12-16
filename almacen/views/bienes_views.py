@@ -7,6 +7,7 @@ from almacen.serializers.bienes_serializers import (
     EntradaUpdateSerializer,
     CreateUpdateItemEntradaConsumoSerializer,
     SerializerItemEntradaActivosFijos,
+    SerializerItemEntradaConsumo,
     SerializerUpdateItemEntradaActivosFijos,
     ItemEntradaSerializer,
     EntradaSerializer
@@ -21,6 +22,7 @@ from almacen.models.generics_models import (
 )
 from almacen.models.inventario_models import (
     Inventario,
+    TiposEntradas
 )
 from seguridad.models import (
     Personas
@@ -39,6 +41,7 @@ from datetime import timezone
 
 class CreateCatalogoDeBienes(generics.UpdateAPIView):
     serializer_class = CatalogoBienesSerializer
+    permission_classes = [IsAuthenticated]
 
     def put(self, request):
         data = request.data
@@ -308,6 +311,7 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
 class GetCatalogoBienesList(generics.ListAPIView):
     serializer_class = CatalogoBienesSerializer
     queryset = CatalogoBienes.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         catalogo_bienes_nodos = CatalogoBienes.objects.filter(nro_elemento_bien=None)
@@ -319,6 +323,7 @@ class DeleteNodos(generics.RetrieveDestroyAPIView):
     serializer_class = CatalogoBienesSerializer
     queryset = CatalogoBienes.objects.all()
     lookup_field = 'id_bien'
+    permission_classes = [IsAuthenticated]
 
     def delete(self, request, id_bien):
         nodo = CatalogoBienes.objects.filter(id_bien=id_bien).first()
@@ -382,6 +387,7 @@ class GetElementosByIdNodo(generics.ListAPIView):
 class SearchArticuloByDocIdentificador(generics.ListAPIView):
     serializer_class=CatalogoBienesSerializer
     queryset=CatalogoBienes.objects.all()
+    permission_classes = [IsAuthenticated]
     
     def get(self,request):
         filter={}
@@ -402,6 +408,7 @@ class SearchArticuloByDocIdentificador(generics.ListAPIView):
 class SearchArticulosByNombreDocIdentificador(generics.ListAPIView):
     serializer_class=CatalogoBienesSerializer
     queryset=CatalogoBienes.objects.all()
+    permission_classes = [IsAuthenticated]
     
     def get(self,request):
         filter={}
@@ -421,6 +428,8 @@ class SearchArticulosByNombreDocIdentificador(generics.ListAPIView):
 class SearchArticulos(generics.ListAPIView):
     serializer_class=CatalogoBienesSerializer
     queryset=CatalogoBienes.objects.all()
+    permission_classes = [IsAuthenticated]
+
     def get(self,request):
         filter={}
         for key,value in request.query_params.items():
@@ -439,6 +448,7 @@ class SearchArticulos(generics.ListAPIView):
 class GetCatalogoBienesByCodigo(generics.ListAPIView):
     serializer_class = CatalogoBienesSerializer
     queryset = CatalogoBienes.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         if not request.query_params.items():
@@ -457,87 +467,10 @@ class GetCatalogoBienesByCodigo(generics.ListAPIView):
         else:
             return Response({'success':False, 'detail':'No se encontraron resultados', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
 
-
-class CreateUpdateEntrada(generics.RetrieveUpdateAPIView):
-    serializer_class = EntradaCreateSerializer
-    queryset = EntradasAlmacen.objects.all()
-    permission_classes = [IsAuthenticated]
-
-    def put(self, request):
-        request.data['id_creador'] = request.user.persona.id_persona
-        data = request.data
-        id_entrada = data.get('id_entrada_almacen')
-        
-        if id_entrada != None:
-            request.data['id_persona_ult_act_dif_creador'] = None
-            request.data['fecha_ultima_actualizacion_diferente_creador'] = None
-            entrada = EntradasAlmacen.objects.filter(id_entrada_almacen=id_entrada).first()
-            if not entrada:
-                return Response({'success': False, 'detail': 'No existe ninguna entrada con el id_entrada enviado'}, status=status.HTTP_404_NOT_FOUND)
-            
-            if request.user.persona.id_persona != entrada.id_creador.id_persona:
-                request.data['id_persona_ult_act_dif_creador'] = request.user.persona.id_persona
-                request.data['fecha_ultima_actualizacion_diferente_creador'] = datetime.now()
-
-            items_entrada = ItemEntradaAlmacen.objects.filter(id_entrada_almacen=entrada.id_entrada_almacen)
-            id_items_entrada = []
-            if items_entrada:
-                for item in items_entrada:
-                    item_inventario = Inventario.objects.filter(id_bien=item.id_bien).first()
-                    if str(item_inventario.id_registro_doc_ultimo_movimiento) != str(entrada.id_entrada_almacen):
-                        return Response({'success': False, 'detail': 'No se puede actualizar una entrada si el último movimiento de todos los items no fue la entrada'}, status=status.HTTP_403_FORBIDDEN)
-                    id_items_entrada.append(item.id_bien.id_bien)
-
-                serializer = EntradaUpdateSerializer(entrada, data=request.data, many=False)
-                serializer.is_valid(raise_exception=True)
-                tipo_entrada = serializer.validated_data.get('id_tipo_entrada')
-                match tipo_entrada.cod_tipo_entrada:
-                    case 1:
-                        tipo_doc_ultimo_movimiento = 'E_CPR'
-                    case 2:
-                        tipo_doc_ultimo_movimiento = 'E_DON'
-                    case 3:
-                        tipo_doc_ultimo_movimiento = 'E_RES'
-                    case 4:
-                        tipo_doc_ultimo_movimiento = 'E_CPS'
-                    case 5:
-                        tipo_doc_ultimo_movimiento = 'E_CMD'
-                    case 6:
-                        tipo_doc_ultimo_movimiento = 'E_CNV'
-                    case 7:
-                        tipo_doc_ultimo_movimiento = 'E_EMB'
-                    case 8:
-                        tipo_doc_ultimo_movimiento = 'E_INC'
-                    case _:
-                        return Response({'success': True, 'detail': 'El tipo de entrada ingresado no es valido'}, status=status.HTTP_400_BAD_REQUEST)
-                items_en_inventario = Inventario.objects.filter(id_bien__in=id_items_entrada)
-                for item in items_en_inventario:
-                    item.cod_tipo_entrada = tipo_entrada
-                    item.tipo_doc_ultimo_movimiento = tipo_doc_ultimo_movimiento
-                    item.save()
-                serializer.save()
-            return Response({'success':True, 'detail':'Se ha actualizado la entrada', 'data':serializer.data}, status=status.HTTP_201_CREATED)
-        else:
-            numero_entrada = data.get('numero_entrada_almacen')
-            fecha_entrada = data.get('fecha_entrada')
-            if fecha_entrada > str(datetime.now()):
-                return Response({'success': False, 'detail': 'No se puede crear una entrada con una fecha superior a la actual'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            numero_entrada_exist = EntradasAlmacen.objects.filter(numero_entrada_almacen=numero_entrada).first()
-            if numero_entrada_exist:
-                entradas = EntradasAlmacen.objects.all().order_by('-numero_entrada_almacen').first()
-                data['numero_entrada_almacen'] = entradas.numero_entrada_almacen + 1
-
-            serializer = self.serializer_class(data=data, many=False)
-            serializer.is_valid(raise_exception=True)
-            
-            serializer.save()
-            return Response({'success':True, 'detail':'Se creó la entrada', 'data':serializer.data}, status=status.HTTP_201_CREATED)
-
-
 class GetNumeroEntrada(generics.ListAPIView):
     serializer_class = EntradaSerializer
     queryset = EntradasAlmacen.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         entrada = EntradasAlmacen.objects.all().order_by('-numero_entrada_almacen').first()
@@ -552,12 +485,30 @@ class GetNumeroEntrada(generics.ListAPIView):
 class CreateEntradaandItemsEntrada(generics.CreateAPIView):
     serializer_class = EntradaCreateSerializer
     queryset = EntradasAlmacen.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         data = request.data
         entrada_data = data.get('info_entrada')
         items_entrada = data.get('info_items_entrada')
-        
+
+        #VALIDACION QUE EN EL CAMPO CANTIDAD INGRESE POR LO MENOS UN ELEMENTO
+        cantidad_list = [item['cantidad'] for item in items_entrada if item['cantidad'] == None or item['cantidad'] == "" or item['cantidad'] < 1]
+        if cantidad_list:
+            return Response({'success': False, 'detail': 'Debe ingresar una cantidad en todos los items de la entrada, y debe ser mayor a cero'}, status=status.HTTP_403_FORBIDDEN)
+
+        #VALIDACIÓN QUE TODOS LOS ID_BIEN PADRES Y ID_BIEN ENVIADOS SEAN DE NIVEL 5
+        id_bienes_enviados_validar = [item['id_bien'] for item in items_entrada if item['id_bien'] != None]
+        id_bien_padre_enviados = [item['id_bien_padre'] for item in items_entrada if item['id_bien_padre'] != None]
+        bienes_nodo_cinco = CatalogoBienes.objects.filter(id_bien__in=id_bienes_enviados_validar)
+        bienes_padre_nodo_cinco = CatalogoBienes.objects.filter(id_bien__in=id_bien_padre_enviados)
+        for bien in bienes_nodo_cinco:
+            if bien.nivel_jerarquico != 5:
+                return Response({'success': False, 'detail': 'No se pueden seleccionar nodos que no sean nivel 5'}, status=status.HTTP_400_BAD_REQUEST)
+        for bien in bienes_padre_nodo_cinco:
+            if bien.nivel_jerarquico != 5:
+                return Response({'success': False, 'detail': 'No se pueden seleccionar nodos que no sean nivel 5'}, status=status.HTTP_400_BAD_REQUEST)
+
         #VALIDACIÓN QUE TODAS LAS ENTRADAS DEBAN TENER UN ITEM
         if not len(items_entrada):
             return Response({'success': False, 'detail': 'No se puede guardar una entrada sin minimo un item de entrada'}, status=status.HTTP_400_BAD_REQUEST)
@@ -601,7 +552,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
         id_porcentajes_list = [item['porcentaje_iva'] for item in items_entrada]
         porcentajes_iva = PorcentajesIVA.objects.filter(id_porcentaje_iva__in=id_porcentajes_list)
         if len(set(id_porcentajes_list)) != len(porcentajes_iva):
-            return Response({'success': False, 'detail': 'Todas los porcentajes iva enviadas deben existir'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'success': False, 'detail': 'Todas los porcentajes iva enviados deben existir'}, status=status.HTTP_400_BAD_REQUEST)
 
         #VALIDACIÓN QUE EL ID_UNIDAD_MEDIDA EXISTA
         unidad_medida_list = [item['id_unidad_medida_vida_util'] for item in items_entrada if item['id_bien_padre'] != None]
@@ -626,6 +577,11 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
         else:
             entrada_data['numero_entrada_almacen'] = 1
 
+        #SUMA DE TOTALES EN ITEMS Y ASIGNACIÓN A ENTRADA
+        valor_total_items_list = [item['valor_total_item'] for item in items_entrada]
+        valor_total_entrada = sum(valor_total_items_list)
+        entrada_data['valor_total_entrada'] = valor_total_entrada
+
         #CREACIÓN DE LA ENTRADA
         serializer = self.serializer_class(data=entrada_data, many=False)
         serializer.is_valid(raise_exception=True)
@@ -636,11 +592,71 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
         for item in items_entrada:
             item['id_entrada_almacen'] = entrada_creada.pk
 
-        #FILTRAMOS LOS ACTIVOS FIJOS Y EMPEZAMOS CREACIÓN DE ACTIVOS FIJOS
+        #FILTRAMOS LOS ACTIVOS FIJOS Y EMPEZAMOS CREACIÓN DE ACTIVOS FIJOS y CONSUMOS
         items_activos_fijos = list(filter(lambda item:item['id_bien_padre'] != None and item['id_bien'] == None, items_entrada))
-        items_activos_consumo = list(filter(lambda item:item['id_bien_padre'] == None and item['id_bien'] != None, items_entrada))
-        items_activos_fijos_guardados = []
+        items_consumo = list(filter(lambda item:item['id_bien_padre'] == None and item['id_bien'] != None, items_entrada))
 
+        #CREACIÓN DE CONSUMOS
+        items_guardados = [] 
+        for item in items_consumo:
+            id_bien_ = item.get('id_bien') 
+            cantidad = item.get('cantidad') 
+            id_bodega = item.get('id_bodega')
+
+            #REALIZAR EL GUARDADO DE LOS ITEMS TIPO BIEN CONSUMO EN INVENTARIO
+            bodega = Bodegas.objects.filter(id_bodega=id_bodega).first()
+            match entrada_creada.id_tipo_entrada.cod_tipo_entrada:
+                case 1:
+                    tipo_doc_ultimo_movimiento = 'E_CPR'
+                case 2:
+                    tipo_doc_ultimo_movimiento = 'E_DON'
+                case 3:
+                    tipo_doc_ultimo_movimiento = 'E_RES'
+                case 4:
+                    tipo_doc_ultimo_movimiento = 'E_CPS'
+                case 5:
+                    tipo_doc_ultimo_movimiento = 'E_CMD'
+                case 6:
+                    tipo_doc_ultimo_movimiento = 'E_CNV'
+                case 7:
+                    tipo_doc_ultimo_movimiento = 'E_EMB'
+                case 8:
+                    tipo_doc_ultimo_movimiento = 'E_INC'
+                case _:
+                    return Response({'success': False, 'detail': 'El tipo de entrada ingresado no es valido'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            #CREA EL BIEN CONSUMO EN INVENTARIO O MODIFICA LA CANTIDAD POR BODEGA
+            bien = CatalogoBienes.objects.filter(id_bien=id_bien_).first()
+            id_bien_inventario = Inventario.objects.filter(id_bien=bien.id_bien, id_bodega=bodega.id_bodega).first()
+
+            #SUMA EL REGISTRO SI ESTABA ESE BIEN EN ESA BODEGA EN INVENTARIO
+            if id_bien_inventario:
+                formatted_date1 = datetime.strptime(fecha_entrada, '%Y-%m-%d %H:%M:%S')
+                formatted_date2 = id_bien_inventario.fecha_ingreso
+                if formatted_date1 > formatted_date2:
+                    if id_bien_inventario.cantidad_entrante_consumo != None:
+                        suma=id_bien_inventario.cantidad_entrante_consumo + cantidad
+                        id_bien_inventario.cantidad_entrante_consumo=suma
+                        id_bien_inventario.save()
+                    else:
+                        id_bien_inventario.cantidad_entrante_consumo = cantidad
+                        id_bien_inventario.save()
+                else:
+                    return Response({'success':False, 'detail':'la fecha de entrada tiene que ser posterior a la fecha de ingreso del bien en el inventario'})
+            else:
+                registro_inventario = Inventario.objects.create(
+                    id_bien = bien,
+                    id_bodega = bodega,
+                    cod_tipo_entrada = entrada_creada.id_tipo_entrada,
+                    cantidad_entrante_consumo=cantidad,
+                    fecha_ingreso=fecha_entrada
+                )
+            serializador_item_entrada_consumo = SerializerItemEntradaConsumo(data=item, many=False)
+            serializador_item_entrada_consumo.is_valid(raise_exception=True)
+            serializador_item_entrada_consumo.save()
+            items_guardados.append(serializador_item_entrada_consumo.data)
+        
+        #CREACION DE ACTIVO FIJOS
         for item in items_activos_fijos:
             id_bien_padre = item.get('id_bien_padre')
             doc_identificador_bien = item.get('doc_identificador_bien')
@@ -699,14 +715,12 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
                     tipo_doc_ultimo_movimiento = 'E_EMB'
                 case 8:
                     tipo_doc_ultimo_movimiento = 'E_INC'
-                case _:
-                    return Response({'success': True, 'detail': 'El tipo de entrada ingresado no es valido'}, status=status.HTTP_400_BAD_REQUEST)
 
             registro_inventario = Inventario.objects.create(
                 id_bien = elemento_creado,
                 id_bodega = bodega,
                 cod_tipo_entrada = entrada_creada.id_tipo_entrada,
-                fecha_ingreso = datetime.now(),
+                fecha_ingreso = fecha_entrada,
                 id_persona_origen = entrada_creada.id_proveedor,
                 numero_doc_origen = entrada_creada.numero_entrada_almacen,
                 valor_ingreso = valor_total_item,
@@ -716,7 +730,6 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
                 tipo_doc_ultimo_movimiento = tipo_doc_ultimo_movimiento,
                 id_registro_doc_ultimo_movimiento = entrada_creada.id_entrada_almacen
             )
-
             if tiene_hoja_vida == True:
                 match bien_padre.cod_tipo_activo:
                     case 'Com':
@@ -731,25 +744,23 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
                         create_hoja_vida = HojaDeVidaOtrosActivos.objects.create(
                             id_articulo = elemento_creado
                         )
-                    case _:
-                        return Response({'success': False, 'detail': 'No existe el tipo de activo seleccionado'}, status=status.HTTP_400_BAD_REQUEST) 
             item['id_bien'] = elemento_creado.id_bien
             serializador_item_entrada = SerializerItemEntradaActivosFijos(data=item, many=False)
             serializador_item_entrada.is_valid(raise_exception=True)
             serializador_item_entrada.save()
-            items_activos_fijos_guardados.append(serializador_item_entrada.data)
-        return Response({'success': True, 'data_entrada_creada': entrada_serializada.data, 'data_items_creados': items_activos_fijos_guardados})
+            items_guardados.append(serializador_item_entrada.data)
+        return Response({'success': True, 'data_entrada_creada': entrada_serializada.data, 'data_items_creados': items_guardados})
 
 
 class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
     serializer_class = ItemEntradaSerializer
     queryset = ItemEntradaAlmacen.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def delete(self, request):
         items_enviados = request.data
-        
 
-        #VALIDAR QUE LA ENTRADA NO SE VAYA A QUEDAR SIN ITEMS
+        #VALIDAR QUE TODOS LOS ITEMS ENVIADOS DEBEN PERTENECER A LA MISMA ENTRADA
         id_entrada = [item['id_entrada_almacen'] for item in items_enviados]
         if len(set(id_entrada)) > 1:
             return Response({'success': False, 'detail': 'Todos los items por eliminar deben pertenecer a la misma entrada'}, status=status.HTTP_403_FORBIDDEN)  
@@ -758,7 +769,7 @@ class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
         ids_items_enviados = [item['id_item_entrada_almacen'] for item in items_enviados]
         items_existentes = ItemEntradaAlmacen.objects.filter(id_item_entrada_almacen__in=ids_items_enviados)
         if len(set(ids_items_enviados)) != len(items_existentes):
-            return Response({'success': False, 'detail': 'Todos los id_items enviados deben existir'}, status=status.HTTP_400_BAD_REQUEST) 
+            return Response({'success': False, 'detail': 'Todos los id_items enviados para eliminar deben existir'}, status=status.HTTP_400_BAD_REQUEST) 
 
         #VALIDAR QUE LA ENTRADA NO SE VAYA A QUEDAR SIN ITEMS
         items_entrada = ItemEntradaAlmacen.objects.filter(id_entrada_almacen=id_entrada[0])
@@ -785,7 +796,6 @@ class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
                 item_hv_oac = HojaDeVidaOtrosActivos.objects.filter(id_articulo=item_instance.id_bien.id_bien).first()
                 if item_hv_comp or item_hv_veh or item_hv_oac:
                     return Response({'success': False, 'detail': 'No se puede eliminar por que tiene hoja de vida'}, status=status.HTTP_403_FORBIDDEN)
-                item_instance_serializer = SerializerItemEntradaActivosFijos(item_instance, data=item)
 
                 bien_eliminar = CatalogoBienes.objects.filter(id_bien=item_instance.id_bien.id_bien).first()
                 inventario_item_instance_delete = Inventario.objects.filter(id_bien=item_instance.id_bien.id_bien)
@@ -801,22 +811,278 @@ class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
 class UpdateEntrada(generics.RetrieveUpdateAPIView):
     serializer_class = EntradaUpdateSerializer
     queryset = EntradasAlmacen.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, id_entrada):
         data = request.data
+    
+        #VALIDACIÓN QUE LA ENTRADA SELECCIONADA EXISTA
         entrada = EntradasAlmacen.objects.filter(id_entrada_almacen=id_entrada).first()
         if not entrada:
             return Response({'success': False, 'detail': 'No se encontró ninguna entrada con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+        
+        #VALIDACIÓN QUE EL TIPO ENTRADA ENVIADA EXISTA
         cod_tipo_entrada = data['id_tipo_entrada']
+        tipo_entrada_instance = TiposEntradas.objects.filter(cod_tipo_entrada=cod_tipo_entrada).first()
+        if not tipo_entrada_instance:
+            return Response({'success': False, 'detail': 'No se encontró ningún tipo de entrada con el parámetro ingresado'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        #VALIDACIÓN QUE EL ID PROVEEDOR ENVIADO EXISTA
+        id_proveedor = data['id_proveedor']
+        proveedor = Personas.objects.filter(id_persona=id_proveedor).first()
+        if not proveedor:
+            return Response({'success': False, 'detail': 'No existe el proveedor enviado'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+        #SI EL USUARIO ACTUALIZA EL TIPO DE ENTRADA
         if cod_tipo_entrada != entrada.id_tipo_entrada:
+            match cod_tipo_entrada:
+                case 1:
+                    tipo_doc_ultimo_movimiento = 'E_CPR'
+                case 2:
+                    tipo_doc_ultimo_movimiento = 'E_DON'
+                case 3:
+                    tipo_doc_ultimo_movimiento = 'E_RES'
+                case 4:
+                    tipo_doc_ultimo_movimiento = 'E_CPS'
+                case 5:
+                    tipo_doc_ultimo_movimiento = 'E_CMD'
+                case 6:
+                    tipo_doc_ultimo_movimiento = 'E_CNV'
+                case 7:
+                    tipo_doc_ultimo_movimiento = 'E_EMB'
+                case 8:
+                    tipo_doc_ultimo_movimiento = 'E_INC'
+            
+            #VALIDACIÓN QUE TODOS LOS ITEMS TENGAN COMO ÚLTIMO MOVIMIENTO LA ENTRADA
             items_entrada = ItemEntradaAlmacen.objects.filter(id_entrada_almacen=entrada.id_entrada_almacen)
             id_bien_items_list = [item.id_bien for item in items_entrada]
             for id_bien in id_bien_items_list:
                 bien_inventario = Inventario.objects.filter(id_bien=id_bien).first()
                 if str(bien_inventario.id_registro_doc_ultimo_movimiento) != str(entrada.id_entrada_almacen):
                     return Response({'success': False, 'detail': 'No se puede actualizar ya que los items asociados a esta entrada no tienen como último movimiento la entrada'}, status=status.HTTP_403_FORBIDDEN)
+            
+            #ACTUALIZA EL TIPO DE ENTRADA EN CADA UNO DE LOS ITEMS
+            for id_bien in id_bien_items_list:
+                bien_inventario = Inventario.objects.filter(id_bien=id_bien).first()
+                bien_inventario.cod_tipo_entrada = tipo_entrada_instance
+                bien_inventario.tipo_doc_ultimo_movimiento = tipo_doc_ultimo_movimiento
+                bien_inventario.id_persona_origen = proveedor
+                bien_inventario.save()
+        
+        #ACTUALIZACIÓN DE LA ENTRADA
+        serializer = EntradaUpdateSerializer(entrada, data=data, many=False)
+        serializer.is_valid()
+        serializer.save()
+        return Response({'success': True, 'detail': 'Actualización de entrada exitosa', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        
+
+class GetEntradas(generics.ListAPIView):
+    serializer_class = EntradaSerializer
+    queryset = EntradasAlmacen.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        id_entrada = request.query_params.get('id_entrada')
+
+        #SI NO ENVIAN EL ID_ENTRADA SIGNIFICA QUE QUIEREN LISTAR TODAS LAS ENTRADAS
+        if not id_entrada:
+            entradas = EntradasAlmacen.objects.all()
+            serializer = self.serializer_class(entradas, many=True)
+            return Response({'success': True, 'detail': 'Obtenido exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        
+        #SI NO EXISTE EL ID_ENTRADA ENVIADO
+        entrada_instance = EntradasAlmacen.objects.filter(id_entrada_almacen=id_entrada).first()
+        if not entrada_instance:
+            return Response({'success': False, 'detail': 'No se encontró ninguna entrada con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+        
+        #SERIALIZAR LAS INSTANCIAS DE LOS ITEMS DE LA ENTRADA ENVIADA
+        items_entrada_instance = ItemEntradaAlmacen.objects.filter(id_entrada_almacen=entrada_instance.id_entrada_almacen)
+        serializer_items = ItemEntradaSerializer(items_entrada_instance, many=True)
+        serializer = self.serializer_class(entrada_instance)
+
+        entrada = {'info_entrada': serializer.data, 'info_items_entrada': serializer_items.data}
+        return Response({'success': True, 'detail': 'Búsqueda exitosa', 'data': entrada}, status=status.HTTP_200_OK)
 
 
+class UpdateItemsEntrada(generics.UpdateAPIView):
+    serializer_class = ItemEntradaSerializer
+    queryset = ItemEntradaAlmacen.objects.all()
+
+    def put(self, request, id_entrada):
+        data = request.data
+        entrada_almacen = EntradasAlmacen.objects.filter(id_entrada_almacen=id_entrada).first()
+        if not entrada_almacen:
+            return Response({'success':False, 'detail':'La entrada ingresada no existe'}, status=status.HTTP_404_NOT_FOUND)
+        
+        #VALIDACIÓN DE QUE TODOS LOS ID_ITEMS ENVIADOS EXISTAN
+        items_actualizar = [item['id_item_entrada_almacen'] for item in data if item['id_item_entrada_almacen'] != None]
+        items_entrada_actualizar = ItemEntradaAlmacen.objects.filter(id_item_entrada_almacen__in=items_actualizar)
+        if len(set(items_actualizar)) != len(items_entrada_actualizar):
+            return Response({'success': False, 'detail': 'Todos los id_items enviados deben existir'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        #VALIDACIÓN QUE LAS CANTIDADES ENVIADAS DEBEN SER MAYORES A 0
+        cantidades_list = [item['cantidad'] for item in data if item['cantidad'] == None or item['cantidad'] == "" or item['cantidad'] == 0]
+        if cantidades_list:
+            return Response({'success': False, 'detail': 'Todos las cantidades enviadas deben ser mayores a cero'}, status=status.HTTP_400_BAD_REQUEST)
+
+        #VALIDACIÓN QUE EL NÚMERO DE POSICIÓN SEA ÚNICO EN LA ENTRADA
+        numero_posicion = [item['numero_posicion'] for item in data]
+        if len(numero_posicion) != len(set(numero_posicion)):
+            return Response({'success': False, 'detail': 'Todos los numero de posición deben ser únicos'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # VALIDAR QUE EL ID_ENTRADA SEA EL MISMO
+        items_entrada_id_list = [item['id_entrada_almacen'] for item in data]
+        if len(set(items_entrada_id_list)) != 1:
+            return Response({'success':False, 'detail':'Debe validar que los items de las entradas pertenezcan a una misma entrada'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            if items_entrada_id_list[0] != int(id_entrada):
+                return Response({'success':False, 'detail':'El id_entrada de los items de la petición debe ser igual al enviado en url'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # VALIDACIÓN DE EXISTENCIA DE UNIDADES MEDIDAS VIDA UTIL
+        unidades_medida_vida_util_list = [item['id_unidad_medida_vida_util'] for item in data]
+        unidades_medida_vida_util_existe = UnidadesMedida.objects.filter(id_unidad_medida__in=unidades_medida_vida_util_list)
+        if unidades_medida_vida_util_existe.count() != len(set(unidades_medida_vida_util_list)):
+            return Response({'success':False, 'detail':'Una o varias unidades de medida que está asociando en los items no existen'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # VALIDACIÓN DE EXISTENCIA DE BODEGAS
+        bodegas_list = [item['id_bodega'] for item in data]
+        bodegas_existe = Bodegas.objects.filter(id_bodega__in=bodegas_list)
+        if bodegas_existe.count() != len(set(bodegas_list)):
+            return Response({'success':False, 'detail':'Una o varias bodegas que están asociando en los items no existen'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # VALIDACIÓN DE EXISTENCIA PORCENTAJES IVA
+        porcentajes_iva_list = [item['porcentaje_iva'] for item in data]
+        porcentajes_iva_existe = PorcentajesIVA.objects.filter(id_porcentaje_iva__in=porcentajes_iva_list)
+        if porcentajes_iva_existe.count() != len(set(porcentajes_iva_list)):
+            return Response({'success':False, 'detail':'Uno o varios porcentajes iva que están asociando en los items no existen'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # VALIDACIÓN DE EXISTENCIA BIENES Y BIENES PADRE
+        bienes_list = [item['id_bien'] for item in data if item['id_bien']!=None]
+        bienes_padre_list = [item['id_bien_padre'] for item in data if item['id_bien_padre']!=None]
+        bienes_list.extend(bienes_padre_list)
+        bienes_existe = CatalogoBienes.objects.filter(id_bien__in=bienes_list)
+        if bienes_existe.count() != len(set(bienes_list)):
+            return Response({'success':False, 'detail':'Uno o varios bienes que están asociando en los items no existen'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # CONOCER LOS QUE SE VAN A CREAR
+        items_por_crear = [item for item in data if item['id_item_entrada_almacen'] == None]
+
+        #CONOCER LOS QUE EXISTEN Y NO SE VAN A ACTUALIZAR
+        items_existen_sin_actualizar = ItemEntradaAlmacen.objects.filter(id_entrada_almacen=id_entrada).exclude(id_item_entrada_almacen__in=items_actualizar)
+        
+        #VALIDACIÓN QUE EL DOC_IDENTIFICADOR SEA ÚNICO EN LA ENTRADA
+        doc_identificadores_existentes = [item.doc_identificador_bien for item in items_existen_sin_actualizar]
+        docs_identificadores_list = [item['doc_identificador_bien'] for item in data if item['doc_identificador_bien'] != None]
+        if len(docs_identificadores_list) != len(set(docs_identificadores_list)):
+            return Response({'success': False, 'detail': 'Todos los documentos identificadores deben ser únicos'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # TOTAL VALOR ENTRADA
+        valor_total_items_actualizar_list = [item.valor_total_item for item in items_entrada_actualizar]
+        valor_total_item_existen_list = [item.valor_total_item for item in items_existen_sin_actualizar]
+        valor_total_item_crear_list = [item['valor_total_item'] for item in items_por_crear]
+        valor_total_entrada = valor_total_items_actualizar_list + valor_total_item_existen_list + valor_total_item_crear_list
+        valor_total_entrada = sum(valor_total_entrada)
+
+        #SEPARAR LO QUE SE CREA EN ACTIVOS FIJOS Y DE CONSUMO
+        items_activos_fijos_crear_list = [item for item in items_por_crear if item['id_bien_padre'] != None and item['id_bien'] == None]
+        items_consumo_crear_list = [item for item in items_por_crear if item['id_bien_padre'] == None and item['id_bien'] != None]
+
+        items_guardados = []
+        for item in items_activos_fijos_crear_list:
+            id_bien_padre = item.get('id_bien_padre')
+            doc_identificador_bien = item.get('doc_identificador_bien')
+            id_porcentaje_iva = item.get('porcentaje_iva')
+            cantidad_vida_util = item.get('cantidad_vida_util')
+            id_unidad_medida_vida_util = item.get('id_unidad_medida_vida_util')
+            valor_residual = item.get('valor_residual')
+            tiene_hoja_vida = item.get('tiene_hoja_vida')
+            id_bodega = item.get('id_bodega')
+            valor_total_item = item.get('valor_total_item')
+            cod_estado = item.get('cod_estado')
+
+            #CREACIÓN DE UN ITEM ACTIVO FIJO EN BASE A CAMPOS HEREDADOS DEL PADRE
+            bien_padre = CatalogoBienes.objects.filter(id_bien=id_bien_padre).first()
+            bien_padre_serializado = CatalogoBienesSerializer(bien_padre)
+                    
+            #ASIGNACIÓN DEL ÚLTIMO NÚMERO DEL ELEMENTO
+            ultimo_numero_elemento = CatalogoBienes.objects.filter(Q(codigo_bien=bien_padre.codigo_bien) & ~Q(nro_elemento_bien=None)).order_by('-nro_elemento_bien').first()
+            numero_elemento = 1
+            if ultimo_numero_elemento:
+                numero_elemento = ultimo_numero_elemento.nro_elemento_bien + 1
+
+            #ASIGNACIÓN DE INFORMACIÓN PARA LA CREACIÓN DEL ELEMENTO
+            data_create = bien_padre_serializado.data
+            data_create['nro_elemento_bien'] = numero_elemento
+            data_create['doc_identificador_nro'] = doc_identificador_bien
+            data_create['id_porcentaje_iva'] = id_porcentaje_iva
+            data_create['cantidad_vida_util'] = cantidad_vida_util
+            data_create['id_unidad_medida_vida_util'] = id_unidad_medida_vida_util
+            data_create['valor_residual'] = valor_residual
+            data_create['tiene_hoja_vida'] = tiene_hoja_vida
+            data_create['id_bien_padre'] = id_bien_padre
+            del data_create['id_bien']
+            del data_create['maneja_hoja_vida']
+            del data_create['visible_solicitudes']
+            serializer = CatalogoBienesSerializer(data=data_create, many=False)
+            serializer.is_valid(raise_exception=True)
+            elemento_creado = serializer.save()
+
+            #REGISTRAR LA ENTRADA EN INVENTARIO
+            bodega = Bodegas.objects.filter(id_bodega=id_bodega).first()
+            match entrada_almacen.id_tipo_entrada.cod_tipo_entrada:
+                case 1:
+                    tipo_doc_ultimo_movimiento = 'E_CPR'
+                case 2:
+                    tipo_doc_ultimo_movimiento = 'E_DON'
+                case 3:
+                    tipo_doc_ultimo_movimiento = 'E_RES'
+                case 4:
+                    tipo_doc_ultimo_movimiento = 'E_CPS'
+                case 5:
+                    tipo_doc_ultimo_movimiento = 'E_CMD'
+                case 6:
+                    tipo_doc_ultimo_movimiento = 'E_CNV'
+                case 7:
+                    tipo_doc_ultimo_movimiento = 'E_EMB'
+                case 8:
+                    tipo_doc_ultimo_movimiento = 'E_INC'
+
+            registro_inventario = Inventario.objects.create(
+                id_bien = elemento_creado,
+                id_bodega = bodega,
+                cod_tipo_entrada = entrada_almacen.id_tipo_entrada,
+                fecha_ingreso = entrada_almacen.fecha_entrada,
+                id_persona_origen = entrada_almacen.id_proveedor,
+                numero_doc_origen = entrada_almacen.numero_entrada_almacen,
+                valor_ingreso = valor_total_item,
+                ubicacion_en_bodega = True,
+                cod_estado_activo = cod_estado,
+                fecha_ultimo_movimiento = datetime.now(),
+                tipo_doc_ultimo_movimiento = tipo_doc_ultimo_movimiento,
+                id_registro_doc_ultimo_movimiento = entrada_almacen.id_entrada_almacen
+            )
+            if tiene_hoja_vida == True:
+                match bien_padre.cod_tipo_activo:
+                    case 'Com':
+                        create_hoja_vida = HojaDeVidaComputadores.objects.create(
+                            id_articulo = elemento_creado
+                        )
+                    case 'Veh':
+                        create_hoja_vida = HojaDeVidaVehiculos.objects.create(
+                            id_articulo = elemento_creado
+                        )
+                    case 'OAc':
+                        create_hoja_vida = HojaDeVidaOtrosActivos.objects.create(
+                            id_articulo = elemento_creado
+                        )
+            item['id_bien'] = elemento_creado.id_bien
+            serializador_item_entrada = SerializerItemEntradaActivosFijos(data=item, many=False)
+            serializador_item_entrada.is_valid(raise_exception=True)
+            serializador_item_entrada.save()
+            items_guardados.append(serializador_item_entrada.data)
+
+        return Response({'success': True, 'detail': 'Actualizado exitosamente', 'data': items_guardados}, status=status.HTTP_201_CREATED)
 
 # # class CreateUpdateDeleteItemsEntrada(generics.RetrieveUpdateDestroyAPIView):
 #     serializer_class = EntradaCreateSerializer
