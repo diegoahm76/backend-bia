@@ -642,7 +642,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
                         id_bien_inventario.cantidad_entrante_consumo = cantidad
                         id_bien_inventario.save()
                 else:
-                    return Response({'success':False, 'detail':'la fecha de entrada tiene que ser posterior a la fecha de ingreso del bien en el inventario'})
+                    return Response({'success':False, 'detail':'la fecha de entrada tiene que ser posterior a la fecha de ingreso del bien en el inventario'}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 registro_inventario = Inventario.objects.create(
                     id_bien = bien,
@@ -940,7 +940,7 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
                 return Response({'success':False, 'detail':'El id_entrada de los items de la petición debe ser igual al enviado en url'}, status=status.HTTP_400_BAD_REQUEST)
         
         # VALIDACIÓN DE EXISTENCIA DE UNIDADES MEDIDAS VIDA UTIL
-        unidades_medida_vida_util_list = [item['id_unidad_medida_vida_util'] for item in data]
+        unidades_medida_vida_util_list = [item['id_unidad_medida_vida_util'] for item in data if item['id_unidad_medida_vida_util'] != None]
         unidades_medida_vida_util_existe = UnidadesMedida.objects.filter(id_unidad_medida__in=unidades_medida_vida_util_list)
         if unidades_medida_vida_util_existe.count() != len(set(unidades_medida_vida_util_list)):
             return Response({'success':False, 'detail':'Una o varias unidades de medida que está asociando en los items no existen'}, status=status.HTTP_400_BAD_REQUEST)
@@ -988,6 +988,27 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
         items_activos_fijos_crear_list = [item for item in items_por_crear if item['id_bien_padre'] != None and item['id_bien'] == None]
         items_consumo_crear_list = [item for item in items_por_crear if item['id_bien_padre'] == None and item['id_bien'] != None]
 
+        # OBTENER TIPO DOC ULTIMO MOVIMIENTO DE ENTRADA
+        tipo_doc_ultimo_movimiento = ''
+        match entrada_almacen.id_tipo_entrada.cod_tipo_entrada:
+            case 1:
+                tipo_doc_ultimo_movimiento = 'E_CPR'
+            case 2:
+                tipo_doc_ultimo_movimiento = 'E_DON'
+            case 3:
+                tipo_doc_ultimo_movimiento = 'E_RES'
+            case 4:
+                tipo_doc_ultimo_movimiento = 'E_CPS'
+            case 5:
+                tipo_doc_ultimo_movimiento = 'E_CMD'
+            case 6:
+                tipo_doc_ultimo_movimiento = 'E_CNV'
+            case 7:
+                tipo_doc_ultimo_movimiento = 'E_EMB'
+            case 8:
+                tipo_doc_ultimo_movimiento = 'E_INC'
+
+        # CREACIÓN ACTIVOS FIJOS
         items_guardados = []
         for item in items_activos_fijos_crear_list:
             id_bien_padre = item.get('id_bien_padre')
@@ -1030,23 +1051,6 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
 
             #REGISTRAR LA ENTRADA EN INVENTARIO
             bodega = Bodegas.objects.filter(id_bodega=id_bodega).first()
-            match entrada_almacen.id_tipo_entrada.cod_tipo_entrada:
-                case 1:
-                    tipo_doc_ultimo_movimiento = 'E_CPR'
-                case 2:
-                    tipo_doc_ultimo_movimiento = 'E_DON'
-                case 3:
-                    tipo_doc_ultimo_movimiento = 'E_RES'
-                case 4:
-                    tipo_doc_ultimo_movimiento = 'E_CPS'
-                case 5:
-                    tipo_doc_ultimo_movimiento = 'E_CMD'
-                case 6:
-                    tipo_doc_ultimo_movimiento = 'E_CNV'
-                case 7:
-                    tipo_doc_ultimo_movimiento = 'E_EMB'
-                case 8:
-                    tipo_doc_ultimo_movimiento = 'E_INC'
 
             registro_inventario = Inventario.objects.create(
                 id_bien = elemento_creado,
@@ -1081,6 +1085,56 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
             serializador_item_entrada.is_valid(raise_exception=True)
             serializador_item_entrada.save()
             items_guardados.append(serializador_item_entrada.data)
+
+        # CREACIÓN DE CONSUMO
+        for item in items_consumo_crear_list:
+            id_bien_ = item.get('id_bien') 
+            cantidad = item.get('cantidad') 
+            id_bodega = item.get('id_bodega')
+
+            #REALIZAR EL GUARDADO DE LOS ITEMS TIPO BIEN CONSUMO EN INVENTARIO
+            bodega = Bodegas.objects.filter(id_bodega=id_bodega).first()
+            
+            #CREA EL BIEN CONSUMO EN INVENTARIO O MODIFICA LA CANTIDAD POR BODEGA
+            bien = CatalogoBienes.objects.filter(id_bien=id_bien_).first()
+            id_bien_inventario = Inventario.objects.filter(id_bien=bien.id_bien, id_bodega=bodega.id_bodega).first()
+
+            #SUMA EL REGISTRO SI ESTABA ESE BIEN EN ESA BODEGA EN INVENTARIO
+            if id_bien_inventario:
+                fecha_entrada = entrada_almacen.fecha_entrada
+                fecha_existente_inventario = id_bien_inventario.fecha_ingreso
+                if fecha_entrada <= fecha_existente_inventario:
+                    return Response({'success':False, 'detail':'la fecha de entrada tiene que ser posterior a la fecha de ingreso del bien en el inventario'}, status=status.HTTP_400_BAD_REQUEST)
+                if id_bien_inventario.cantidad_entrante_consumo != None:
+                    suma=id_bien_inventario.cantidad_entrante_consumo + cantidad
+                    id_bien_inventario.cantidad_entrante_consumo=suma
+                    id_bien_inventario.save()
+                else:
+                    id_bien_inventario.cantidad_entrante_consumo = cantidad
+                    id_bien_inventario.save()
+                    
+            else:
+                registro_inventario = Inventario.objects.create(
+                    id_bien = bien,
+                    id_bodega = bodega,
+                    cod_tipo_entrada = entrada_almacen.id_tipo_entrada,
+                    cantidad_entrante_consumo=cantidad,
+                    fecha_ingreso= entrada_almacen.fecha_entrada
+                )
+            serializador_item_entrada_consumo = SerializerItemEntradaConsumo(data=item, many=False)
+            serializador_item_entrada_consumo.is_valid(raise_exception=True)
+            serializador_item_entrada_consumo.save()
+            items_guardados.append(serializador_item_entrada_consumo.data)
+
+        #SEPARAR LO QUE SE ACTUALIZA EN ACTIVOS FIJOS Y DE CONSUMO
+        items_activos_fijos_actualizar_list = [item for item in items_entrada_actualizar if item.id_bien.cod_tipo_bien == 'A']
+        items_consumo_actualizar_list = [item for item in items_entrada_actualizar if item.id_bien.cod_tipo_bien == 'C']
+        
+        items_no_actualizables = []
+
+        # ACTUALIZAR ACTIVOS FIJOS
+        items_activos_fijos_actualizar_id_list = [item.id_bien.id_bien for item in items_activos_fijos_actualizar_list]
+        inventario_fijos_actualizar = Inventario.objects.filter()
 
         return Response({'success': True, 'detail': 'Actualizado exitosamente', 'data': items_guardados}, status=status.HTTP_201_CREATED)
 
