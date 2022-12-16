@@ -341,10 +341,7 @@ class UpdatePersonaNaturalInternoBySelf(generics.RetrieveUpdateAPIView):
             if estado_civil:
                 try:
                     estado_civil_instance = EstadoCivil.objects.get(cod_estado_civil=estado_civil.cod_estado_civil)
-                    if estado_civil_instance.item_ya_usado == False:
-                        estado_civil_instance.item_ya_usado = True
-                        estado_civil_instance.save()
-                        pass
+                    pass
                 except:
                     return Response({'success': False, 'detail': 'No existe el estado civil que está ingresando'}, status=status.HTTP_400_BAD_REQUEST)
             
@@ -425,10 +422,7 @@ class UpdatePersonaNaturalExternoBySelf(generics.RetrieveUpdateAPIView):
             if estado_civil:
                 try:
                     estado_civil_instance = EstadoCivil.objects.get(cod_estado_civil=estado_civil.cod_estado_civil)
-                    if estado_civil_instance.item_ya_usado == False:
-                        estado_civil_instance.item_ya_usado = True
-                        estado_civil_instance.save()
-                        pass
+                    pass
                 except:
                     return Response({'success': False, 'detail': 'No existe el estado civil que está ingresando'}, status=status.HTTP_400_BAD_REQUEST) 
 
@@ -530,10 +524,7 @@ class UpdatePersonaNaturalByUserWithPermissions(generics.RetrieveUpdateAPIView):
                     if estado_civil:
                         try:
                             estado_civil_instance = EstadoCivil.objects.get(cod_estado_civil=estado_civil.cod_estado_civil)
-                            if estado_civil_instance.item_ya_usado == False:
-                                estado_civil_instance.item_ya_usado = True
-                                estado_civil_instance.save()
-                                pass
+                            pass
                         except:
                             return Response({'success': False, 'detail': 'No existe el estado civil que está ingresando'}, status=status.HTTP_400_BAD_REQUEST) 
 
@@ -829,10 +820,7 @@ class RegisterPersonaNatural(generics.CreateAPIView):
         tipo_documento_usado = serializer.validated_data.get('tipo_documento')
         try:
             tipo_documento_instance = TipoDocumento.objects.get(cod_tipo_documento=tipo_documento_usado.cod_tipo_documento)
-            if tipo_documento_instance.item_ya_usado == False:
-                tipo_documento_instance.item_ya_usado = True
-                tipo_documento_instance.save()
-                pass
+            pass
         except:
             return Response({'success': False, 'detail': 'No existe el tipo de documento que está ingresando'})
 
@@ -908,10 +896,7 @@ class RegisterPersonaJuridica(generics.CreateAPIView):
         tipo_documento_usado = serializer.validated_data.get('tipo_documento')
         try:
             tipo_documento_instance = TipoDocumento.objects.get(cod_tipo_documento=tipo_documento_usado.cod_tipo_documento)
-            if tipo_documento_instance.item_ya_usado == False:
-                tipo_documento_instance.item_ya_usado = True
-                tipo_documento_instance.save()
-                pass
+            pass
         except:
             return Response({'success': False, 'detail': 'No existe el tipo de documento que está ingresando'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -989,10 +974,7 @@ class RegisterPersonaNaturalByUserInterno(generics.CreateAPIView):
         tipo_documento_usado = serializer.validated_data.get('tipo_documento')
         try:
             tipo_documento_instance = TipoDocumento.objects.get(cod_tipo_documento=tipo_documento_usado.cod_tipo_documento)
-            if tipo_documento_instance.item_ya_usado == False:
-                tipo_documento_instance.item_ya_usado = True
-                tipo_documento_instance.save()
-                pass
+            pass
         except:
             return Response({'success': False, 'detail': 'No existe el tipo de documento que está ingresando'}, status=status.HTTP_400_BAD_REQUEST)
 
