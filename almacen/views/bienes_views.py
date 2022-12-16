@@ -842,7 +842,7 @@ class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
         ids_items_enviados = [item['id_item_entrada_almacen'] for item in items_enviados]
         items_existentes = ItemEntradaAlmacen.objects.filter(id_item_entrada_almacen__in=ids_items_enviados)
         if len(set(ids_items_enviados)) != len(items_existentes):
-            return Response({'success': False, 'detail': 'Todos los id_items enviados deben existir'}, status=status.HTTP_400_BAD_REQUEST) 
+            return Response({'success': False, 'detail': 'Todos los id_items enviados para eliminar deben existir'}, status=status.HTTP_400_BAD_REQUEST) 
 
         #VALIDAR QUE LA ENTRADA NO SE VAYA A QUEDAR SIN ITEMS
         items_entrada = ItemEntradaAlmacen.objects.filter(id_entrada_almacen=id_entrada[0])
@@ -947,7 +947,7 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
         serializer = EntradaUpdateSerializer(entrada, data=data, many=False)
         serializer.is_valid()
         serializer.save()
-        return Response({'success': False, 'detail': 'Actualización de entrada exitosa', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        return Response({'success': True, 'detail': 'Actualización de entrada exitosa', 'data': serializer.data}, status=status.HTTP_201_CREATED)
         
 
 class GetEntradas(generics.ListAPIView):
@@ -975,7 +975,7 @@ class GetEntradas(generics.ListAPIView):
         serializer = self.serializer_class(entrada_instance)
 
         entrada = {'info_entrada': serializer.data, 'info_items_entrada': serializer_items.data}
-        return Response({'success': False, 'detail': 'Acá vamos', 'data': entrada})
+        return Response({'success': True, 'detail': 'Búsqueda exitosa', 'data': entrada}, status=status.HTTP_200_OK)
 
 
 
