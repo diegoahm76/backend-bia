@@ -596,6 +596,18 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
         items_activos_fijos = list(filter(lambda item:item['id_bien_padre'] != None and item['id_bien'] == None, items_entrada))
         items_consumo = list(filter(lambda item:item['id_bien_padre'] == None and item['id_bien'] != None, items_entrada))
 
+        #VALIDACION QUE LA FECHA DE ENTRADA SEA POSTERIOR A LOS ITEMS QUE SE ENCUENTRAN EN INVENTARIO
+        for item in items_consumo:
+            bien = CatalogoBienes.objects.filter(id_bien=item.get('id_bien') ).first()
+            bodega = Bodegas.objects.filter(id_bodega=item['id_bodega']).first()
+            id_bien_inventario = Inventario.objects.filter(id_bien=bien.id_bien, id_bodega=bodega.id_bodega).first()
+            fecha_entrega = datetime.strptime(fecha_entrada, '%Y-%m-%d %H:%M:%S')
+            if id_bien_inventario:
+                fecha_ingreso_existente = id_bien_inventario.fecha_ingreso
+            if id_bien_inventario and fecha_ingreso_existente:
+                if fecha_entrega < fecha_ingreso_existente:
+                    return Response({'success':False, 'detail':'la fecha de entrada tiene que ser posterior a la fecha de ingreso del bien en el inventario'})
+            
         #CREACIÓN DE CONSUMOS
         items_guardados = [] 
         for item in items_consumo:
@@ -631,18 +643,13 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
 
             #SUMA EL REGISTRO SI ESTABA ESE BIEN EN ESA BODEGA EN INVENTARIO
             if id_bien_inventario:
-                formatted_date1 = datetime.strptime(fecha_entrada, '%Y-%m-%d %H:%M:%S')
-                formatted_date2 = id_bien_inventario.fecha_ingreso
-                if formatted_date1 > formatted_date2:
-                    if id_bien_inventario.cantidad_entrante_consumo != None:
-                        suma=id_bien_inventario.cantidad_entrante_consumo + cantidad
-                        id_bien_inventario.cantidad_entrante_consumo=suma
-                        id_bien_inventario.save()
-                    else:
-                        id_bien_inventario.cantidad_entrante_consumo = cantidad
-                        id_bien_inventario.save()
+                if id_bien_inventario.cantidad_entrante_consumo != None:
+                    suma=id_bien_inventario.cantidad_entrante_consumo + cantidad
+                    id_bien_inventario.cantidad_entrante_consumo=suma
+                    id_bien_inventario.save()
                 else:
-                    return Response({'success':False, 'detail':'la fecha de entrada tiene que ser posterior a la fecha de ingreso del bien en el inventario'}, status=status.HTTP_400_BAD_REQUEST)
+                    id_bien_inventario.cantidad_entrante_consumo = cantidad
+                    id_bien_inventario.save()
             else:
                 registro_inventario = Inventario.objects.create(
                     id_bien = bien,

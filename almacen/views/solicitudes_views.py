@@ -32,6 +32,21 @@ from almacen.serializers.solicitudes_serialiers import (
     )
 import copy
 
+class SearchViveros(generics.ListAPIView):
+    serializer_class=CatalogoBienesSerializer
+    queryset=CatalogoBienes.objects.all()
+    def get(self,request):
+        filter={}
+        for key,value in request.query_params.items():
+            if key in ['nombre','codigo_bien','nombre_cientifico']:
+                filter[key+'__icontains']=value
+        filter['solicitable_vivero'] = True
+        bien=CatalogoBienes.objects.filter(**filter)
+        serializador=self.serializer_class(bien,many=True)
+        if bien:
+            return Response({'success':True,'detail':'Se encontró elementos','data':serializador.data},status=status.HTTP_200_OK)
+        return Response({'success':True,'detail':'No se encontró elementos','data':bien},status=status.HTTP_404_NOT_FOUND)
+
 
 class SearchVisibleBySolicitud(generics.ListAPIView):
     serializer_class=CatalogoBienesSerializer
