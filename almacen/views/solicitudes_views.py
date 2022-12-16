@@ -178,7 +178,7 @@ class CreateSolicitud(generics.UpdateAPIView):
         if len(bienes_repetidos) != len(set(bienes_repetidos)):
             return Response({'success':False,'data':'Solo puede ingresar una vez un bien en una solicitud' },status=status.HTTP_404_NOT_FOUND)
         # ASIGNACIÓN DEL NÚMERO DE SOLICITUD
-        if info_solicitud['es_solicitud_de_conservacion'] != True:
+        if info_solicitud['es_solicitud_de_conservacion'] != False:
             return Response({'success':False,'data':'Este servicio es para crear solicitudes de bienes de consumo no para conservación'},status=status.HTTP_404_NOT_FOUND)
         #numero_solicitudes_no_conservacion = [i.nro_solicitud_por_tipo for i in solicitudes_existentes if i.es_solicitud_de_conservacion == False]
         
@@ -206,10 +206,10 @@ class CreateSolicitud(generics.UpdateAPIView):
                 return Response({'success':False,'data':'La cantidad debe ser un número entero' },status=status.HTTP_404_NOT_FOUND)
             if not str(i['nro_posicion']).isdigit():
                 return Response({'success':False,'data':'El número de posición debe ser un número entero' },status=status.HTTP_404_NOT_FOUND)
-            unidad_de_medida = UnidadesMedida.objects.filter(id_unidad_medida = i['id_unidad_medida']).first()
-            if not unidad_de_medida:
-                return Response({'success':False,'data':'La unidad de medida (' + unidad_de_medida.nombre + ') no existe' },status=status.HTTP_404_NOT_FOUND)
-
+            # unidad_de_medida = UnidadesMedida.objects.filter(id_unidad_medida = i['id_unidad_medida']).first()
+            # if not unidad_de_medida:
+            #     return Response({'success':False,'data':'La unidad de medida (' + unidad_de_medida.nombre + ') no existe' },status=status.HTTP_404_NOT_FOUND)
+            i['id_unidad_medida'] = bien.id_unidad_medida.id_unidad_medida
         aux_nro_posicion = [i['nro_posicion'] for i in items_solicitud]
 
         if len(aux_nro_posicion) != len(set(aux_nro_posicion)):
@@ -321,15 +321,11 @@ class CreateSolicitud(generics.UpdateAPIView):
             instancia_items_eliminar = ItemsSolicitudConsumible.objects.filter(~Q(id_item_solicitud_consumible__in=aux_items_enviados) & Q(id_solicitud_consumibles=instancia_solicitud.id_solicitud_consumibles))
             instancia_items_eliminar.delete()
             for j in items_solicitud:
-                print("ok")
                 j['id_solicitud_consumibles'] = serializer.data['id_solicitud_consumibles']
                 if j['id_item_solicitud_consumible'] == None:
                     #del j['id_item_solicitud_consumible']
-                    print(j)
                     serializer_act = self.serializer_item_solicitud(data=j, many=False)
-                    print("UUUUUUUUUUUU")
                     serializer_act.is_valid(raise_exception=True)
-                    print("LLLLLLLLL")
                     serializer_act.save()
                 else:
                     instancia_item = ItemsSolicitudConsumible.objects.filter(id_item_solicitud_consumible = j['id_item_solicitud_consumible']).first()
