@@ -453,7 +453,6 @@ class GetCatalogoBienesByCodigo(generics.ListAPIView):
     def get(self, request):
         if not request.query_params.items():
             return Response({'success': False, 'detail': 'Debe ingresar un parámetro de búsqueda', 'data':[]}, status=status.HTTP_404_NOT_FOUND) 
-        
         filters = {}
         filters['codigo_bien'] = request.query_params.get('codigo_bien') 
         filters['nivel_jerarquico'] = 5
@@ -604,6 +603,8 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
             fecha_entrega = datetime.strptime(fecha_entrada, '%Y-%m-%d %H:%M:%S')
             if id_bien_inventario:
                 fecha_ingreso_existente = id_bien_inventario.fecha_ingreso
+            else:
+                fecha_ingreso_existente = None
             if id_bien_inventario and fecha_ingreso_existente:
                 if fecha_entrega < fecha_ingreso_existente:
                     return Response({'success':False, 'detail':'la fecha de entrada tiene que ser posterior a la fecha de ingreso del bien en el inventario'})
