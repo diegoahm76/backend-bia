@@ -10,7 +10,8 @@ from almacen.serializers.bienes_serializers import (
     SerializerItemEntradaConsumo,
     SerializerUpdateItemEntradaActivosFijos,
     ItemEntradaSerializer,
-    EntradaSerializer
+    EntradaSerializer,
+    CatalogoBienesActivoFijoPutSerializer
 )
 from almacen.models.hoja_de_vida_models import (
     HojaDeVidaComputadores,
@@ -26,6 +27,9 @@ from almacen.models.inventario_models import (
 )
 from seguridad.models import (
     Personas
+) 
+from almacen.serializers.inventario_serializers import (
+    SerializerUpdateInventariosActivosFijos
 ) 
 from almacen.models.generics_models import UnidadesMedida , PorcentajesIVA, Marcas
 from almacen.models.bienes_models import EntradasAlmacen, ItemEntradaAlmacen
@@ -1142,6 +1146,7 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
 
         # ACTUALIZAR ACTIVOS FIJOS
         items_activos_fijos_actualizar_id_list = [item.id_bien.id_bien for item in items_activos_fijos_actualizar_list]
+        catalogo_bienes_fijos_actualizar = CatalogoBienes.objects.filter(id_bien__in=items_activos_fijos_actualizar_id_list)
         inventario_fijos_actualizar = Inventario.objects.filter(id_bien__in=items_activos_fijos_actualizar_id_list)
         items_actualizables = [inventario for inventario in inventario_fijos_actualizar if str(inventario.id_registro_doc_ultimo_movimiento) == str(entrada_almacen.id_entrada_almacen) and str(inventario.tipo_doc_ultimo_movimiento) == str(tipo_doc_ultimo_movimiento)]
         items_no_actualizables = [inventario for inventario in inventario_fijos_actualizar if str(inventario.id_registro_doc_ultimo_movimiento) != str(entrada_almacen.id_entrada_almacen) or str(inventario.tipo_doc_ultimo_movimiento) != str(tipo_doc_ultimo_movimiento)]
@@ -1149,25 +1154,30 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
         item_data_por_actualizar = [item for item in data if item['id_bien'] in id_bien_items_actualizables]
 
         for item in item_data_por_actualizar:
-            item_instance = ItemEntradaAlmacen.objects.filter(id_item_entrada_almacen=item['id_item_entrada_almacen']).first()
-            serializer = SerializerUpdateItemEntradaActivosFijos(item_instance, data=item, many=False)
-            serializer.is_valid(raise_exception=True)
+            # SE ACTUALIZA EN CATALOGO BIENES
+            catalogo_bien_instance_actualizar = catalogo_bienes_fijos_actualizar.filter(id_bien=item['id_bien']).first()
+            item['id_porcentaje_iva'] = item['porcentaje_iva']
+            serializer_catalogo_bien = CatalogoBienesActivoFijoPutSerializer(catalogo_bien_instance_actualizar, data=item)
+            serializer_catalogo_bien.is_valid(raise_exception=True)
+            serializer_catalogo_bien.save()
             
-            catalogo_instance = ''
-
-
-
-
+            # SE ACTUALIZA EN INVENTARIO
+            inventario_instance_actualizar = inventario_fijos_actualizar.filter(id_bien=item['id_bien']).first()
+            serializer_inventario = SerializerUpdateInventariosActivosFijos(inventario_instance_actualizar, data=item)
+            serializer_inventario.is_valid(raise_exception=True)
+            serializer_inventario.save()
             
-            serializer.save()
-
+            # SE ACTUALIZA ITEM ENTRADA
+            item_instance = items_entrada_actualizar.filter(id_item_entrada_almacen=item['id_item_entrada_almacen']).first()
+            serializer_item = SerializerUpdateItemEntradaActivosFijos(item_instance, data=item)
+            serializer_item.is_valid(raise_exception=True)
+            serializer_item.save()
+            
+            items_guardados.append(serializer_item.data)
         
-        
-        print(inventario_fijos_actualizar)
-        print(items_actualizables)
-        print(items_no_actualizables)
-
-        
+        # SE ACTUALIZA VALOR TOTAL ENTRADA MODIFICADO
+        entrada_almacen.valor_total_entrada = valor_total_entrada
+        entrada_almacen.save()
 
         return Response({'success': True, 'detail': 'Actualizado exitosamente', 'data': items_guardados}, status=status.HTTP_201_CREATED)
 

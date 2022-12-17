@@ -10,6 +10,12 @@ class CatalogoBienesSerializer(serializers.ModelSerializer):
         model= CatalogoBienes
         fields='__all__'
 
+class CatalogoBienesActivoFijoPutSerializer(serializers.ModelSerializer):
+    doc_identificador_bien = serializers.CharField(source='doc_identificador_nro')
+    class Meta:
+        model= CatalogoBienes
+        fields=['doc_identificador_bien', 'id_porcentaje_iva', 'cantidad_vida_util', 'id_unidad_medida_vida_util', 'valor_residual']
+        
 class EntradaCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model= EntradasAlmacen
