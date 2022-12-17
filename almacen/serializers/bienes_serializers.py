@@ -44,13 +44,15 @@ class EntradaUpdateSerializer(serializers.ModelSerializer):
             'entrada_anulada', 
             'justificacion_anulacion', 
             'fecha_anulacion', 
-            'id_persona_anula'
+            'id_persona_anula',
         )
         extra_kwargs = {
             'motivo': {'required': True},
             'id_proveedor': {'required': True},
             'id_tipo_entrada': {'required': True},
-            'id_bodega': {'required': True}
+            'id_bodega': {'required': True},
+            'fecha_ultima_actualizacion_diferente_creador':{'read_only': True},
+            "id_persona_ult_act_dif_creador":{'read_only': True},
         }
 
 

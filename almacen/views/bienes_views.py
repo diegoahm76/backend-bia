@@ -881,10 +881,16 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
                 bien_inventario.tipo_doc_ultimo_movimiento = tipo_doc_ultimo_movimiento
                 bien_inventario.id_persona_origen = proveedor
                 bien_inventario.save()
+        #VALIDACIÓN PERSONA ACTUALIZA
+        persona_actualiza=request.user.persona
+        if (persona_actualiza != entrada.id_creador.id_persona):
+            entrada.id_persona_ult_act_dif_creador=persona_actualiza
+            entrada.fecha_ultima_actualizacion_diferente_creador=datetime.now()
+            entrada.save()
         
         #ACTUALIZACIÓN DE LA ENTRADA
         serializer = EntradaUpdateSerializer(entrada, data=data, many=False)
-        serializer.is_valid()
+        serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'success': True, 'detail': 'Actualización de entrada exitosa', 'data': serializer.data}, status=status.HTTP_201_CREATED)
         
