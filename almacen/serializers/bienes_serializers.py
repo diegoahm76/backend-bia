@@ -124,11 +124,10 @@ class SerializerUpdateItemEntradaActivosFijos(serializers.ModelSerializer):
         extra_kwargs = {
             'id_item_entrada_almacen': {'read_only': True},
             'valor_unitario': {'required': True},
-            'id_porcentaje_iva': {'required': True},
+            'porcentaje_iva': {'required': True},
             'valor_iva': {'required': True},
             'valor_total_item': {'required': True},
             'id_bodega': {'required': True},
-            'valor_iva': {'required': True},
             'doc_identificador_bien': {'required': True},
             'cantidad_vida_util': {'required': True}, 
             'id_unidad_medida_vida_util': {'required': True}, 
