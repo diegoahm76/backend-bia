@@ -798,108 +798,106 @@ class LoginApiView(generics.CreateAPIView):
                 for rol in rol_id_list:
                     permisos = PermisosModuloRol.objects.filter(id_rol=rol).values()
                     permisos_list.append(permisos)
-                #try:
-                login_error = LoginErroneo.objects.filter(id_usuario=user.id_usuario).last()
-                serializer = self.serializer_class(data=request.data)
-                serializer.is_valid(raise_exception=True)
+                try:
+                    login_error = LoginErroneo.objects.filter(id_usuario=user.id_usuario).last()
+                    serializer = self.serializer_class(data=request.data)
+                    serializer.is_valid(raise_exception=True)
 
-                login = Login.objects.create(
-                    id_usuario = user,
-                    dirip = str(ip),
-                    dispositivo_conexion = device
-                )
+                    login = Login.objects.create(
+                        id_usuario = user,
+                        dirip = str(ip),
+                        dispositivo_conexion = device
+                    )
 
-                LoginPostSerializers(login, many=False)
+                    LoginPostSerializers(login, many=False)
 
-                if login_error:
-                    login_error.contador = 0
-                    login_error.save()
+                    if login_error:
+                        login_error.contador = 0
+                        login_error.save()
+                        
+                    representante_legal=Personas.objects.filter(representante_legal=user.persona.id_persona).values()
+                    representante_legal_list=[{'id_persona':representante['id_persona'],'razon_social':representante['razon_social'],'NUIP':representante['numero_documento']}for representante in representante_legal]
                     
-                representante_legal=Personas.objects.filter(representante_legal=user.persona.id_persona).values()
-                representante_legal_list=[{'id_persona':representante['id_persona'],'razon_social':representante['razon_social'],'NUIP':representante['numero_documento']}for representante in representante_legal]
-                
-                # DEFINIR SI UN USUARIO SI O SI DEBE TENER UN PERMISO O NO
-                permisos_list = permisos_list[0] if permisos_list else []
-                
-                user_info={'userinfo':serializer.data,'permisos':permisos_list,'representante_legal':representante_legal_list}
-                sms = "Has iniciado sesion en bia cormacarena"
-                Util.send_sms(user.persona.telefono_celular, sms)
-                return Response({'userinfo':user_info}, status=status.HTTP_200_OK)
-
+                    # DEFINIR SI UN USUARIO SI O SI DEBE TENER UN PERMISO O NO
+                    permisos_list = permisos_list[0] if permisos_list else []
                     
-                #except:
-                login_error = LoginErroneo.objects.filter(id_usuario=user.id_usuario).first()
-                if login_error:
-                    if login_error.contador < 3:
-                        hour_difference = datetime.utcnow().replace(tzinfo=None) - login_error.fecha_login_error.replace(tzinfo=None)
-                        hour_difference = (hour_difference.days * 24) + (hour_difference.seconds//3600)
-                        if hour_difference < 24:
-                            login_error.contador += 1
-                            login_error.restantes = 3 - login_error.contador
-                            login_error.save()
-                        else :
-                            login_error.contador = 1
-                            login_error.save()
-                        if login_error.contador == 3:
-                            user.is_blocked = True
-                            user.save()
+                    user_info={'userinfo':serializer.data,'permisos':permisos_list,'representante_legal':representante_legal_list}
+                    sms = "Has iniciado sesion en bia cormacarena"
+                    Util.send_sms(user.persona.telefono_celular, sms)
+                    return Response({'userinfo':user_info}, status=status.HTTP_200_OK)
+                except:
+                    login_error = LoginErroneo.objects.filter(id_usuario=user.id_usuario).first()
+                    if login_error:
+                        if login_error.contador < 3:
+                            hour_difference = datetime.utcnow().replace(tzinfo=None) - login_error.fecha_login_error.replace(tzinfo=None)
+                            hour_difference = (hour_difference.days * 24) + (hour_difference.seconds//3600)
+                            if hour_difference < 24:
+                                login_error.contador += 1
+                                login_error.restantes = 3 - login_error.contador
+                                login_error.save()
+                            else :
+                                login_error.contador = 1
+                                login_error.save()
+                            if login_error.contador == 3:
+                                user.is_blocked = True
+                                user.save()
 
-                            if user.persona.tipo_persona == 'N':
-                                sms = 'Usuario Cormacarena Bia bloqueado por limite de intentos, desbloquealo enviando un correo a admin@admin.com'
-                                context = {'primer_nombre': user.persona.primer_nombre}
-                                template = render_to_string(('email-blocked-user.html'), context)
-                                subject = 'Bloqueo de cuenta ' + user.persona.primer_nombre
-                                email_data = {'template': template, 'email_subject': subject, 'to_email': user.email}
-                                Util.send_email(email_data)
-                                try:
-                                    Util.send_sms(user.persona.telefono_celular, sms)
-                                except:
-                                    return Response({'success':False,'detail': 'Se bloqueó el usuario pero no pudo enviar el sms, verificar servicio o número'}, status=status.HTTP_403_FORBIDDEN)
-                                return Response({'success':False,'detail':'Su usuario ha sido bloqueado'}, status=status.HTTP_403_FORBIDDEN)
+                                if user.persona.tipo_persona == 'N':
+                                    sms = 'Usuario Cormacarena Bia bloqueado por limite de intentos, desbloquealo enviando un correo a admin@admin.com'
+                                    context = {'primer_nombre': user.persona.primer_nombre}
+                                    template = render_to_string(('email-blocked-user.html'), context)
+                                    subject = 'Bloqueo de cuenta ' + user.persona.primer_nombre
+                                    email_data = {'template': template, 'email_subject': subject, 'to_email': user.email}
+                                    Util.send_email(email_data)
+                                    try:
+                                        Util.send_sms(user.persona.telefono_celular, sms)
+                                    except:
+                                        return Response({'success':False,'detail': 'Se bloqueó el usuario pero no pudo enviar el sms, verificar servicio o número'}, status=status.HTTP_403_FORBIDDEN)
+                                    return Response({'success':False,'detail':'Su usuario ha sido bloqueado'}, status=status.HTTP_403_FORBIDDEN)
+                                else:
+                                    sms = 'Usuario Cormacarena Bia bloqueado por limite de intentos, desbloquealo enviando un correo a admin@admin.com'
+                                    context = {'razon_social': user.persona.razon_social}
+                                    template = render_to_string(('email-blocked-user.html'), context)
+                                    subject = 'Bloqueo de cuenta ' + user.persona.razon_social
+                                    email_data = {'template': template, 'email_subject': subject, 'to_email': user.email}
+                                    Util.send_email(email_data)
+                                    try:
+                                        Util.send_sms(user.persona.telefono_celular, sms)
+                                    except:
+                                        return Response({'success':False,'detail': 'Se bloqueó el usuario pero no pudo enviar el sms, verificar servicio o número'}, status=status.HTTP_403_FORBIDDEN)
+                                    return Response({'success':False,'detail':'Su usuario ha sido bloqueado'}, status=status.HTTP_403_FORBIDDEN)
+                            serializer = LoginErroneoPostSerializers(login_error, many=False)
+                            return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
+                        else:
+                            if user.is_blocked:
+                                return Response({'success':False, 'detail':'Su usuario está bloqueado, debe comunicarse con el administrador'}, status=status.HTTP_403_FORBIDDEN)
                             else:
-                                sms = 'Usuario Cormacarena Bia bloqueado por limite de intentos, desbloquealo enviando un correo a admin@admin.com'
-                                context = {'razon_social': user.persona.razon_social}
-                                template = render_to_string(('email-blocked-user.html'), context)
-                                subject = 'Bloqueo de cuenta ' + user.persona.razon_social
-                                email_data = {'template': template, 'email_subject': subject, 'to_email': user.email}
-                                Util.send_email(email_data)
-                                try:
-                                    Util.send_sms(user.persona.telefono_celular, sms)
-                                except:
-                                    return Response({'success':False,'detail': 'Se bloqueó el usuario pero no pudo enviar el sms, verificar servicio o número'}, status=status.HTTP_403_FORBIDDEN)
-                                return Response({'success':False,'detail':'Su usuario ha sido bloqueado'}, status=status.HTTP_403_FORBIDDEN)
-                        serializer = LoginErroneoPostSerializers(login_error, many=False)
-                        return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
+                                login_error.contador = 1
+                                login_error.save()
+                                serializer = LoginErroneoPostSerializers(login_error, many=False)
+                                return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
                     else:
                         if user.is_blocked:
                             return Response({'success':False, 'detail':'Su usuario está bloqueado, debe comunicarse con el administrador'}, status=status.HTTP_403_FORBIDDEN)
                         else:
-                            login_error.contador = 1
-                            login_error.save()
-                            serializer = LoginErroneoPostSerializers(login_error, many=False)
-                            return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
+                            login_error = LoginErroneo.objects.create(
+                                id_usuario = user,
+                                dirip = str(ip),
+                                dispositivo_conexion = device,
+                                contador = 1
+                            )
+                        login_error.restantes = 3 - login_error.contador
+                        serializer = LoginErroneoPostSerializers(login_error, many=False)
+                        return Response({'success':False,'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
                 else:
-                    if user.is_blocked:
-                        return Response({'success':False, 'detail':'Su usuario está bloqueado, debe comunicarse con el administrador'}, status=status.HTTP_403_FORBIDDEN)
-                    else:
-                        login_error = LoginErroneo.objects.create(
-                            id_usuario = user,
-                            dirip = str(ip),
-                            dispositivo_conexion = device,
-                            contador = 1
-                        )
-                    login_error.restantes = 3 - login_error.contador
-                    serializer = LoginErroneoPostSerializers(login_error, many=False)
-                    return Response({'success':False,'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'success':False,'detail': 'Usuario no verificado'}, status=status.HTTP_403_FORBIDDEN)
             else:
-                return Response({'success':False,'detail': 'Usuario no verificado'}, status=status.HTTP_403_FORBIDDEN)
-        else:
-            UsuarioErroneo.objects.create(
-                campo_usuario = data['email'],
-                dirip = str(ip),
-                dispositivo_conexion = device
-            )
-            return Response({'success':False,'detail':'No existe el correo ingresado'}, status=status.HTTP_400_BAD_REQUEST)
+                UsuarioErroneo.objects.create(
+                    campo_usuario = data['email'],
+                    dirip = str(ip),
+                    dispositivo_conexion = device
+                )
+                return Response({'success':False,'detail':'No existe el correo ingresado'}, status=status.HTTP_400_BAD_REQUEST)
 
 class RequestPasswordResetEmail(generics.GenericAPIView):
     serializer_class = ResetPasswordEmailRequestSerializer
