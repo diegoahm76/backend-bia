@@ -4,6 +4,7 @@ from gestion_documental.views import tca_views as views
 urlpatterns = [
     path('unidades-by-ccd/get/<str:pk>/', views.GetUnidadesbyCCD.as_view(), name='unidades-get-by-ccd'),
     path('cargos-by-unidades/get/', views.GetCargosByUnidades.as_view(), name='cargos-by-unidades-get'),
+    path('tca-list/get/', views.GetListTca.as_view(), name='tca-list-get'),
     
     # Tabla de Control de Acceso
     path('create/', views.PostTablaControlAcceso.as_view(),name='create-tca'),
@@ -14,4 +15,5 @@ urlpatterns = [
     path('serie-subserie-unidad-tca/update-clasif/<str:pk>/',views.UpdateClasifSerieSubserieUnidadTCA.as_view(),name='serie-subserie-unidad-tca-clasificar'),
     path('cargo-serie-subserie-unidad-tca/create/',views.asignar_cargo_unidad_permiso_expediente,name='cargo-serie-subserie-unidad-tca-crear'),
     path('cargo-serie-subserie-unidad-tca/update/<str:pk>/',views.actualizar_cargo_unidad_permiso_expediente,name='cargo-serie-subserie-unidad-tca-update')
+
 ]

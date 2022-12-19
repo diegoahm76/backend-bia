@@ -69,6 +69,9 @@ class GetCargosByUnidades(generics.ListAPIView):
         else:
             cargos=Cargos.objects.filter(activo=True).values()
             return Response ({'success':True,'Cargos':cargos},status=status.HTTP_200_OK)
+class GetListTca(generics.ListAPIView):
+    serializer_class=TCASerializer
+    queryset=TablasControlAcceso.objects.all()
     
 class PostTablaControlAcceso(generics.CreateAPIView):
     serializer_class = TCAPostSerializer
