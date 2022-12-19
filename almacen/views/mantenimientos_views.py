@@ -602,15 +602,9 @@ class CreateProgramacionMantenimiento(generics.CreateAPIView):
             i['fecha_generada'] = date.today()
             i['fecha_programada'] = (datetime.strptime(i['fecha_programada'], '%Y-%m-%d')).date()
             i['fecha_solicitud'] = (datetime.strptime(i['fecha_solicitud'], '%Y-%m-%d')).date()
-            print((i['fecha_generada'] > i['fecha_solicitud']))
-            print((i['fecha_generada'] > i['fecha_programada']))
-            print((i['fecha_solicitud'] > i['fecha_programada']))
             a = i['fecha_generada'] - i['fecha_programada']
             if (i['fecha_generada'] > i['fecha_solicitud']) or (i['fecha_generada'] > i['fecha_programada']) or (i['fecha_solicitud'] > i['fecha_programada']):
                 return Response({'success':False, 'detail': 'La fecha de programación y la fecha de solicitud no pueden ser menores a la fecha de hoy'}, status=status.HTTP_404_NOT_FOUND)
-            print("fecha generada: ", i['fecha_generada'])
-            print("fecha programada: ", i['fecha_programada'])
-            print("fecha solicitud: ", i['fecha_solicitud'])
             serializer = self.get_serializer(data=i)
             serializer.is_valid(raise_exception=True)
             serializer.save()
