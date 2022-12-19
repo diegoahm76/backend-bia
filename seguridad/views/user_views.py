@@ -889,15 +889,15 @@ class LoginApiView(generics.CreateAPIView):
                         login_error.restantes = 3 - login_error.contador
                         serializer = LoginErroneoPostSerializers(login_error, many=False)
                         return Response({'success':False,'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
-                else:
-                    return Response({'success':False,'detail': 'Usuario no verificado'}, status=status.HTTP_403_FORBIDDEN)
             else:
-                UsuarioErroneo.objects.create(
-                    campo_usuario = data['email'],
-                    dirip = str(ip),
-                    dispositivo_conexion = device
-                )
-                return Response({'success':False,'detail':'No existe el correo ingresado'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'success':False,'detail': 'Usuario no verificado'}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            UsuarioErroneo.objects.create(
+                campo_usuario = data['email'],
+                dirip = str(ip),
+                dispositivo_conexion = device
+            )
+            return Response({'success':False,'detail':'No existe el correo ingresado'}, status=status.HTTP_400_BAD_REQUEST)
 
 class RequestPasswordResetEmail(generics.GenericAPIView):
     serializer_class = ResetPasswordEmailRequestSerializer
