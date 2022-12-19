@@ -15,7 +15,7 @@ class CatalogoBienesActivoFijoPutSerializer(serializers.ModelSerializer):
     class Meta:
         model= CatalogoBienes
         fields=['doc_identificador_bien', 'id_porcentaje_iva', 'cantidad_vida_util', 'id_unidad_medida_vida_util', 'valor_residual']
-        
+
 class EntradaCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model= EntradasAlmacen
@@ -101,7 +101,22 @@ class SerializerItemEntradaConsumo(serializers.ModelSerializer):
             'valor_residual': {'read_only': True},
             'cod_estado': {'read_only': True}
         }
-        
+
+class SerializerItemEntradaConsumoPut(serializers.ModelSerializer):
+    class Meta:
+        model= ItemEntradaAlmacen
+        fields = '__all__'
+        extra_kwargs = {
+            'id_entrada_almacen': {'read_only': True},
+            'numero_posicion': {'read_only': True},
+            'id_bien': {'read_only': True},
+            'cod_estado': {'read_only': True},
+            'doc_identificador_bien': {'read_only': True},
+            'cantidad_vida_util': {'read_only': True}, 
+            'id_unidad_medida_vida_util': {'read_only': True}, 
+            'valor_residual': {'read_only': True}
+        }
+                
 class SerializerItemEntradaActivosFijos(serializers.ModelSerializer):
     id_bien_padre = serializers.IntegerField(read_only=True)
     tiene_hoja_vida = serializers.BooleanField(read_only=True)
@@ -128,8 +143,12 @@ class SerializerItemEntradaActivosFijos(serializers.ModelSerializer):
 class SerializerUpdateItemEntradaActivosFijos(serializers.ModelSerializer):
     class Meta:
         model= ItemEntradaAlmacen
-        exclude = ['id_entrada_almacen', 'id_bien', 'cantidad', 'numero_posicion']
+        fields = '__all__'
         extra_kwargs = {
+            'id_entrada_almacen': {'read_only': True},
+            'id_bien': {'read_only': True},
+            'cantidad': {'read_only': True},
+            'numero_posicion': {'read_only': True},
             'id_item_entrada_almacen': {'read_only': True},
             'valor_unitario': {'required': True},
             'porcentaje_iva': {'required': True},

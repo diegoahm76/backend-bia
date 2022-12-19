@@ -12,3 +12,8 @@ class SerializerUpdateInventariosActivosFijos(serializers.ModelSerializer):
     class Meta:
         model= Inventario
         fields = ['id_bodega', 'valor_total_item', 'cod_estado']
+
+class SerializerUpdateInventariosConsumo(serializers.ModelSerializer):
+    class Meta:
+        model= Inventario
+        fields = ['id_bodega', 'cantidad_entrante_consumo']

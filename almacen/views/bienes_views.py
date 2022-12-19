@@ -11,7 +11,8 @@ from almacen.serializers.bienes_serializers import (
     SerializerUpdateItemEntradaActivosFijos,
     ItemEntradaSerializer,
     EntradaSerializer,
-    CatalogoBienesActivoFijoPutSerializer
+    CatalogoBienesActivoFijoPutSerializer,
+    SerializerItemEntradaConsumoPut
 )
 from almacen.models.hoja_de_vida_models import (
     HojaDeVidaComputadores,
@@ -29,7 +30,8 @@ from seguridad.models import (
     Personas
 ) 
 from almacen.serializers.inventario_serializers import (
-    SerializerUpdateInventariosActivosFijos
+    SerializerUpdateInventariosActivosFijos,
+    SerializerUpdateInventariosConsumo
 ) 
 from almacen.models.generics_models import UnidadesMedida , PorcentajesIVA, Marcas
 from almacen.models.bienes_models import EntradasAlmacen, ItemEntradaAlmacen
@@ -883,7 +885,7 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
                 bien_inventario.save()
         #VALIDACIÓN PERSONA ACTUALIZA
         persona_actualiza=request.user.persona
-        if (persona_actualiza != entrada.id_creador.id_persona):
+        if (persona_actualiza.id_persona != entrada.id_creador.id_persona):
             entrada.id_persona_ult_act_dif_creador=persona_actualiza
             entrada.fecha_ultima_actualizacion_diferente_creador=datetime.now()
             entrada.save()
@@ -1144,11 +1146,7 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
 
         #SEPARAR LO QUE SE ACTUALIZA EN ACTIVOS FIJOS Y DE CONSUMO
         items_activos_fijos_actualizar_list = [item for item in items_entrada_actualizar if item.id_bien.cod_tipo_bien == 'A']
-        # id_items_activos_actualizar_instance_list = [item.id_item_entrada_almacen for item in items_activos_fijos_actualizar_list]
-        # id_items_activos_actualizar_list = [item['id_item_entrada_almacen'] for item in items_actualizar]
-        
-        # items_consumo_actualizar_list = [item for item in items_entrada_actualizar if item.id_bien.cod_tipo_bien == 'C']
-        
+        items_consumo_actualizar_list = [item for item in items_entrada_actualizar if item.id_bien.cod_tipo_bien == 'C']
 
         # ACTUALIZAR ACTIVOS FIJOS
         items_activos_fijos_actualizar_id_list = [item.id_bien.id_bien for item in items_activos_fijos_actualizar_list]
@@ -1180,10 +1178,49 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
             serializer_item.save()
             
             items_guardados.append(serializer_item.data)
+            
+        # ACTUALIZAR ITEMS DE CONSUMO
+        items_consumo_actualizar_id_list = [item.id_bien.id_bien for item in items_consumo_actualizar_list]
+        inventario_consumo_actualizar = Inventario.objects.filter(id_bien__in=items_consumo_actualizar_id_list)
+        item_data_por_actualizar_consumo = [item for item in data if item['id_bien'] in items_consumo_actualizar_id_list]
+        
+        for item in item_data_por_actualizar_consumo:
+            item_consumo_instance = items_entrada_actualizar.filter(id_bien = item['id_bien']).first()
+            
+            # CANTIDAD AUMENTA
+            if item['cantidad'] >= item_consumo_instance.cantidad:
+                inventario_instance_actualizar = inventario_consumo_actualizar.filter(id_bien=item['id_bien'], id_bodega=item['id_bodega']).first()
+                
+                if item['id_bodega'] == inventario_instance_actualizar.id_bodega.id_bodega:
+                    # SE ACTUALIZA EN INVENTARIO
+                    item_instance = items_entrada_actualizar.filter(id_item_entrada_almacen=item['id_item_entrada_almacen']).first()
+                    
+                    item['cantidad_entrante_consumo'] = inventario_instance_actualizar.cantidad_entrante_consumo + abs((item_instance.cantidad - item['cantidad']))
+                    serializer_inventario = SerializerUpdateInventariosConsumo(inventario_instance_actualizar, data=item)
+                    serializer_inventario.is_valid(raise_exception=True)
+                    serializer_inventario.save()
+                    
+                    # SE ACTUALIZA ITEM ENTRADA
+                    serializer_item = SerializerItemEntradaConsumoPut(item_instance, data=item)
+                    serializer_item.is_valid(raise_exception=True)
+                    serializer_item.save()
+                    
+                    items_guardados.append(serializer_item.data)
+                else:
+                    pass
+            # CANTIDAD REDUCE   
+            else:
+                pass
         
         # SE ACTUALIZA VALOR TOTAL ENTRADA MODIFICADO
         entrada_almacen.valor_total_entrada = valor_total_entrada
+        
+        #VALIDACIÓN PERSONA ACTUALIZA
+        persona_actualiza=request.user.persona
+        if (persona_actualiza.id_persona != entrada_almacen.id_creador.id_persona):
+            entrada_almacen.id_persona_ult_act_dif_creador=persona_actualiza
+            entrada_almacen.fecha_ultima_actualizacion_diferente_creador=datetime.now()
+        
         entrada_almacen.save()
 
         return Response({'success': True, 'detail': 'Actualizado exitosamente', 'data': items_guardados}, status=status.HTTP_201_CREATED)
-
