@@ -63,8 +63,10 @@ class GetCargosByUnidades(generics.ListAPIView):
                 personas=Personas.objects.filter(id_unidad_organizacional_actual=unidad_intance.id_unidad_organizacional)
                 list_cargos=[cargo.id_cargo.id_cargo for cargo in personas]
                 cargos=Cargos.objects.filter(id_cargo__in=list_cargos)
-                serializador=self.serializer_class(cargos,many=True)
-                return Response ({'success':True,'detail':'Se encontraron cargos','Cargos':serializador.data},status=status.HTTP_200_OK)
+                if cargos:
+                    serializador=self.serializer_class(cargos,many=True)
+                    return Response ({'success':True,'detail':'Se encontraron cargos','Cargos':serializador.data},status=status.HTTP_200_OK)
+                else: return Response ({'success':False,'detail':'No se encontraron cargos'},status=status.HTTP_404_NOT_FOUND)
             return Response ({'success':False,'detail':'No existe unidad'},status=status.HTTP_403_FORBIDDEN)
         else:
             cargos=Cargos.objects.filter(activo=True).values()

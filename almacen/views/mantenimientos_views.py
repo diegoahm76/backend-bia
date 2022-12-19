@@ -339,8 +339,12 @@ class ValidarFechasProgramacion(generics.ListAPIView):
                     return Response({'success':False, 'detail': 'Elija entre true o false'}, status=status.HTTP_404_NOT_FOUND)
                 if not (datos_ingresados['cada']).isdigit():
                     return Response({'success':False, 'detail': 'Debe ingresar un numero en (cada)'}, status=status.HTTP_404_NOT_FOUND)
-                aux_v_f_p = datos_ingresados['desde'].split("-")
-                aux_v_f_p_2 = datos_ingresados['hasta'].split("-")
+                try:
+                    aux_v_f_p = datos_ingresados['desde'].split("-")
+                    aux_v_f_p_2 = datos_ingresados['hasta'].split("-")
+                except:
+                    return Response({'success':False, 'detail': 'Formato de fecha no válido'}, status=status.HTTP_404_NOT_FOUND)
+        
                 if not (aux_v_f_p[0]).isdigit() or not (aux_v_f_p[1]).isdigit() or not (aux_v_f_p[2]).isdigit() or not (aux_v_f_p_2[0]).isdigit() or not (aux_v_f_p_2[1]).isdigit() or not (aux_v_f_p_2[2]).isdigit():
                     return Response({'success':False, 'detail': 'Formato de fecha no válido'}, status=status.HTTP_404_NOT_FOUND)
                 if len(aux_v_f_p) != 3 or len(aux_v_f_p_2) != 3:
@@ -550,8 +554,11 @@ class CreateProgramacionMantenimiento(generics.CreateAPIView):
                 if i['fecha_programada'] != None:
                     return Response({'success':False, 'detail':'Si eligió programación por kilometraje el campo fecha_programada debe estar en null'}, status=status.HTTP_404_NOT_FOUND)
             #VALIDACION FORMATE DE FECHAS ENTRANTES
-            aux_v_f_p = i['fecha_programada'].split("-")
-            aux_v_f_p_2 = i['fecha_solicitud'].split("-")
+            try:
+                aux_v_f_p = i['fecha_programada'].split("-")
+                aux_v_f_p_2 = i['fecha_solicitud'].split("-")
+            except:
+                return Response({'success':False, 'detail': 'Formato de fecha no válido'}, status=status.HTTP_404_NOT_FOUND)
             if not (aux_v_f_p[0]).isdigit() or not (aux_v_f_p[1]).isdigit() or not (aux_v_f_p[2]).isdigit() or not (aux_v_f_p_2[0]).isdigit() or not (aux_v_f_p_2[1]).isdigit() or not (aux_v_f_p_2[2]).isdigit():
                 return Response({'success':False, 'detail': 'Formato de fecha no válido'}, status=status.HTTP_404_NOT_FOUND)
             if len(aux_v_f_p) != 3 or len(aux_v_f_p_2) != 3:
@@ -633,31 +640,71 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
     
     def post(self, request, *args, **kwargs):
         datos_ingresados = request.data
+        #VALIDACION FORMATE DE FECHAS ENTRANTES
+        try:
+            aux_v_f_p = datos_ingresados['fecha_ejecutado'].split("-")
+        except:
+            return Response({'success':False, 'detail': 'Formato de fecha no válido'}, status=status.HTTP_404_NOT_FOUND)
+        if not (aux_v_f_p[0]).isdigit() or not (aux_v_f_p[1]).isdigit() or not (aux_v_f_p[2]).isdigit():
+            return Response({'success':False, 'detail': 'Formato de fecha no válido'}, status=status.HTTP_404_NOT_FOUND)
+        if len(aux_v_f_p) != 3:
+            return Response({'success':False, 'detail': 'Formato de fecha no válido'}, status=status.HTTP_404_NOT_FOUND)
+        a = (len(aux_v_f_p[0]) != 4)
+        b = (len(aux_v_f_p[1]) <= 2 and len(aux_v_f_p[1]) >= 1)
+        c = (len(aux_v_f_p[2]) <= 2 and len(aux_v_f_p[2]) >= 1)
+        d = (len(aux_v_f_p[0]) != 4)
+        e = (len(aux_v_f_p[1]) <= 2 and len(aux_v_f_p[1]) >= 1)
+        f = (len(aux_v_f_p[2]) <= 2 and len(aux_v_f_p[2]) >= 1)
+        
+        if a or not b or not c or d or not e or not f:
+            return Response({'success':False, 'detail': 'Formato de fecha no válido'}, status=status.HTTP_404_NOT_FOUND)
+
+        if int(aux_v_f_p[1]) <= 0 or int(aux_v_f_p[1]) >= 13 or int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 32:
+            return Response({'success':False, 'detail': 'Formato de fecha no válido, debe ingresar un mes entre 1 y 12 y un día entre 1 y 31'}, status=status.HTTP_404_NOT_FOUND)
+        mes = int(aux_v_f_p[1])
+        anio = int(aux_v_f_p[0])
+        if mes == 2:
+            if anio % 4 == 0 and (anio % 100 != 0 or anio % 400 == 0):
+                if int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 30:
+                    return Response({'success':False, 'detail': 'En año bisiesto Febrero sólo puede tener hasta 29 días'}, status=status.HTTP_404_NOT_FOUND)
+            else:
+                if int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 29:
+                    return Response({'success':False, 'detail': 'Para le año ingresado Febrero solo puede tener hasta 28 días'}, status=status.HTTP_404_NOT_FOUND)
+        if mes == 1 or mes == 3 or mes == 5 or mes == 7 or mes == 8 or mes == 10 or mes == 12:
+            if int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 32:
+                    return Response({'success':False, 'detail': 'Enero, Marzo, Mayo, Julio, Agosto, Octubre y Diciebre solo pueden tener entre 1 y 31 días'}, status=status.HTTP_404_NOT_FOUND)
+        if mes == 4 or mes == 6 or mes == 9 or mes == 11:
+            if int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 31:
+                    return Response({'success':False, 'detail': 'Abril, Junio, Septiembre y Noviembre ssolo pueden tener entre 1 y 30 días'}, status=status.HTTP_404_NOT_FOUND)
+        
         id_articulo = datos_ingresados['id_articulo']
         articulo = CatalogoBienes.objects.filter(id_bien = id_articulo).first()
-        fecha_registrado = (datetime.strptime(datos_ingresados['fecha_registrado'], '%Y-%m-%d')).date()
+        datos_ingresados['fecha_registrado'] = datetime.now()
+        fecha_registrado = datos_ingresados['fecha_registrado'].date()
         fecha_ejecutado = (datetime.strptime(datos_ingresados['fecha_ejecutado'], '%Y-%m-%d')).date()
         diferencia_dias = fecha_registrado - fecha_ejecutado
-        programacion_mantenimientos = ProgramacionMantenimientos.objects.filter(id_programacion_mtto = datos_ingresados['id_programacion_mtto']).values().first()
         cod_estado_final = EstadosArticulo.objects.filter(cod_estado=datos_ingresados['cod_estado_final'])
         persona_realiza = Personas.objects.filter(id_persona=datos_ingresados['id_persona_realiza']).values().filter()
         datos_ingresados['id_persona_diligencia'] = request.user.id_usuario
-        
         if not articulo:
             return Response({'success':False, 'detail':'Ingrese un id de articulo válido'}, status=status.HTTP_404_NOT_FOUND)
         if diferencia_dias.days < 0:
             return Response({'success':False, 'detail':'La fecha del registro del mantenimiento debe ser mayor o igual a la fecha de la ejecución del mantenimiento'}, status=status.HTTP_404_NOT_FOUND)
         if not (datos_ingresados['dias_empleados']).isdigit() or int(datos_ingresados['dias_empleados']) <= 0:
             return Response({'success':False, 'detail':'Cantidad de días debe ser un número entero mayor a cero'}, status=status.HTTP_404_NOT_FOUND)
-        if datos_ingresados['dias_empleados'] > diferencia_dias.days:
-            return Response({'success':False, 'detail':'La diferecia de fecha registrado y fecha ejecutado no puede ser mayo a la cantidad de días empleados'}, status=status.HTTP_404_NOT_FOUND)
+        if int(datos_ingresados['dias_empleados']) > diferencia_dias.days:
+            return Response({'success':False, 'detail':'La diferecia de fecha registrado y fecha ejecutado no puede ser mayor a la cantidad de días empleados'}, status=status.HTTP_404_NOT_FOUND)
         articulo = CatalogoBienes.objects.filter(id_bien=id_articulo).values().first()
         if datos_ingresados['cod_tipo_mantenimiento'] != 'P' and datos_ingresados['cod_tipo_mantenimiento'] != 'C':
             return Response({'success':False, 'detail':'El tipo de mantenimiento debe ser P (preventivo) o C (correctivo)'}, status=status.HTTP_404_NOT_FOUND)
-        if not programacion_mantenimientos:
-            return Response({'success':False, 'detail':'El id de programación de mantenimientos no existe'}, status=status.HTTP_404_NOT_FOUND)
-        if programacion_mantenimientos['id_articulo_id'] != id_articulo:
-            return Response({'success':False, 'detail':'El id de programación de mantenimientos no tiene relación con el artículo enviado'}, status=status.HTTP_404_NOT_FOUND)
+        if datos_ingresados['id_programacion_mtto'] != None and datos_ingresados['id_programacion_mtto'] != '':
+            programacion_mantenimientos = ProgramacionMantenimientos.objects.filter(id_programacion_mtto = datos_ingresados['id_programacion_mtto']).values().first() 
+            if not programacion_mantenimientos:
+                return Response({'success':False, 'detail':'El id de programación de mantenimientos no existe'}, status=status.HTTP_404_NOT_FOUND)
+            if programacion_mantenimientos['id_articulo_id'] != id_articulo:
+                return Response({'success':False, 'detail':'El id de programación de mantenimientos no tiene relación con el artículo enviado'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            programacion_mantenimientos = None
         if not cod_estado_final:
             return Response({'success':False, 'detail':'El codigo final no existe'}, status=status.HTTP_404_NOT_FOUND)
         if not persona_realiza:
@@ -669,13 +716,20 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
         inventario = Inventario.objects.filter(id_bien=datos_ingresados['id_articulo']).first()
         if inventario == None:
             return Response({'success':False, 'detail':'El id del artículo aún no se encuentra en el inventario'}, status=status.HTTP_404_NOT_FOUND)
-        aux_fecha = fecha_registrado - inventario.fecha_ultimo_movimiento
-        if aux_fecha <= 0:
+        fecha_ultimo_movimiento = inventario.fecha_ultimo_movimiento.date()
+        if inventario.fecha_ultimo_movimiento != None:
+            aux_fecha = fecha_registrado - fecha_ultimo_movimiento
+        else:
+            aux_fecha = None
+        if aux_fecha == None:
+            return Response({'El bien seleeccionado no tiene movimientos registrados'}, status=status.HTTP_404_NOT_FOUND)
+        if aux_fecha.days < 0:
             return Response({'success':False, 'detail':'No se puede registrar el mantenimiento debido a que La fecha del registro del mantenimiento debe ser POSTERIOR O IGUAL a la fecha en la cual fue actualizado el estado anterior del activo'}, status=status.HTTP_404_NOT_FOUND)
+        datos_ingresados['cod_estado_anterior'] = inventario.cod_estado_activo
+        datos_ingresados['fecha_estado_anterior'] = inventario.fecha_ultimo_movimiento
         inventario.fecha_ultimo_movimiento = datos_ingresados['fecha_registrado']
         inventario.cod_estado_activo = datos_ingresados['cod_estado_final']
         inventario.save()        
-        
         serializer = self.get_serializer(data=datos_ingresados)
         serializer.is_valid(raise_exception=True)
         serializer.save()

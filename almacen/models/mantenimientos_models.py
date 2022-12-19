@@ -45,8 +45,6 @@ class RegistroMantenimientos(models.Model):
     ruta_documentos_soporte = models.FileField(db_column='T070rutaDocumentoSoporte', blank=True, null=True)
     cod_estado_anterior = models.ForeignKey(EstadosArticulo, db_column='T070codEstadoAnterior', on_delete=models.CASCADE, related_name='cod_estado_anterior')
     fecha_estado_anterior = models.DateTimeField(db_column='T070fechaAnteriorMov')
-    tipo_doc_anterior_mov = models.CharField(max_length=5, db_column='T062tipoDocAnteriorMov')
-    id_reg_doc_anterior_mov = models.PositiveIntegerField(db_column='T062IdRegEnDocAnteriorMov')
     
     def __str__(self):
         return str(self.id_programacion_mtto)

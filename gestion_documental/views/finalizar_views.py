@@ -40,7 +40,7 @@ from gestion_documental.models.tca_models import (
 )
 
 
-class GetCCDTerminadoByPk(generics.ListAPIView):
+class GetCCDTerminadoByORG(generics.ListAPIView):
     serializer_class = CCDSerializer
     queryset = CuadrosClasificacionDocumental.objects.filter(~Q(fecha_terminado = None) & Q(fecha_retiro_produccion=None))
 
@@ -54,7 +54,7 @@ class GetCCDTerminadoByPk(generics.ListAPIView):
         ccds = CuadrosClasificacionDocumental.objects.filter(~Q(fecha_terminado = None) & Q(fecha_retiro_produccion=None)).filter(id_organigrama = int(orgamigrama.id_organigrama)).values()
         return Response({'success': True, 'detail': 'CCD', 'data': ccds},status=status.HTTP_200_OK)
 
-class GetTRDTerminadoByPk(generics.ListAPIView):
+class GetTRDTerminadoByCCD(generics.ListAPIView):
     serializer_class = TRDSerializer
     queryset = TablaRetencionDocumental.objects.filter(~Q(fecha_terminado = None) & Q(fecha_retiro_produccion=None))
 
@@ -68,7 +68,7 @@ class GetTRDTerminadoByPk(generics.ListAPIView):
         trds = TablaRetencionDocumental.objects.filter(~Q(fecha_terminado = None) & Q(fecha_retiro_produccion=None)).filter(id_ccd = int(ccd.id_ccd)).values()
         return Response({'success': True, 'detail': 'TRD', 'data': trds}, status=status.HTTP_200_OK)
     
-class GetTCATerminadoByPk(generics.ListAPIView):
+class GetTCATerminadoByCCD(generics.ListAPIView):
     serializer_class = TCASerializer
     queryset = TablasControlAcceso.objects.filter(~Q(fecha_terminado = None) & Q(fecha_retiro_produccion=None))
 
