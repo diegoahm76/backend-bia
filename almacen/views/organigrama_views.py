@@ -145,9 +145,13 @@ class UpdateUnidades(generics.UpdateAPIView):
                     
                     # VALIDACIONES
                     
+                    # ELIMINACION DE UNIDADES
+                    unidades_eliminar = UnidadesOrganizacionales.objects.filter(id_organigrama=pk)
+                    unidades_eliminar.delete()
+                    
                     # VALIDACIONES SERIALIZER
-                    unidades_serializer = self.serializer_class(data=data, many=True)
-                    unidades_serializer.is_valid(raise_exception=True)
+                    # unidades_serializer = self.serializer_class(data=unidades_crear, many=True)
+                    # unidades_serializer.is_valid(raise_exception=True)
                     
                     # VALIDACIÓN DE EXISTENCIA DE NIVELES
                     niveles_list = [unidad['id_nivel_organigrama'] for unidad in data]
@@ -159,6 +163,16 @@ class UpdateUnidades(generics.UpdateAPIView):
                     raiz_list = [unidad['unidad_raiz'] for unidad in data]
                     if raiz_list.count(True) > 1:
                         return Response({'success':False, 'detail':'No puede definir más de una unidad como raíz'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    # VALIDACIÓN DE CÓDIGO ÚNICO          
+                    codigo_list = [unidad['codigo'] for unidad in data]
+                    if len(set(codigo_list)) != len(codigo_list):
+                        return Response({'success':False, 'detail':'No puede definir más de una unidad con el mismo código'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    # VALIDACIÓN DE NOMBRE ÚNICO          
+                    nombre_list = [unidad['nombre'] for unidad in data]
+                    if len(set(nombre_list)) != len(nombre_list):
+                        return Response({'success':False, 'detail':'No puede definir más de una unidad con el mismo nombre'}, status=status.HTTP_400_BAD_REQUEST)
                     
                     # VALIDACIÓN DE EXISTENCIA UNIDAD RAÍZ Y PERTENENCIA A NIVEL UNO
                     unidad_raiz = list(filter(lambda unidad: unidad['unidad_raiz'] == True, data))
@@ -227,10 +241,6 @@ class UpdateUnidades(generics.UpdateAPIView):
                                 if unidad_padre:
                                     if unidad_padre[0]['cod_agrupacion_documental'] == None or unidad_padre[0]['cod_agrupacion_documental'] == '':
                                         return Response({'success':False, 'detail':'Debe marcar las unidades padre como subsecciones'}, status=status.HTTP_400_BAD_REQUEST)
-                    
-                    # ELIMINACION DE UNIDADES
-                    unidades_eliminar = UnidadesOrganizacionales.objects.filter(id_organigrama=pk)
-                    unidades_eliminar.delete()
                     
                     # CREACION DE UNIDADES
                     for nivel, unidades in groupby(nivel_unidades, itemgetter('id_nivel_organigrama')):

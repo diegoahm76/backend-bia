@@ -398,5 +398,35 @@
           "subsistema":"ALMA",
           "descripcion":"Lista todas las solicitudes realizadas por la empresa y que no han sido gestionadas por Almacén"
         }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 41,
+        "fields": {
+          "id_modulo": 41,
+          "nombre_modulo": "Administración de Viveros",
+          "subsistema":"CONS",
+          "descripcion":"'Permite administrar los Viveros de la entidad"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 42,
+        "fields": {
+          "id_modulo": 42,
+          "nombre_modulo": "Ingresar/Retirar de Cuarentena un Vivero",
+          "subsistema":"CONS",
+          "descripcion":"módulo que permite ingresar o sacar de cuarentena un vivero de la entidad"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 43,
+        "fields": {
+          "id_modulo": 43,
+          "nombre_modulo": "Aperturar/Cerrar un Vivero",
+          "subsistema":"ALMA",
+          "descripcion":"'módulo que permite aperturar o cerrar un vivero existente de la entidad"
+        }
       }
   ]

@@ -9,7 +9,7 @@ class ProgramacionMantenimientos(models.Model):
     cod_tipo_mantenimiento = models.CharField(max_length=1, choices=tipo_mantenimiento_CHOICES, db_column='T069codTipoMantenimiento')
     kilometraje_programado = models.IntegerField(db_column='T069kilometrajeProgramado', blank=True, null = True)
     fecha_generada = models.DateField(db_column='T069fechaGenerada')
-    fecha_programada = models.DateField(db_column='T069fechaProgramada')
+    fecha_programada = models.DateField(db_column='T069fechaProgramada', blank=True, null = True)
     motivo_mantenimiento = models.CharField(max_length=255, db_column='T069motivoMantenimiento')
     observaciones = models.CharField(max_length=255, db_column='T069observaciones', blank=True, null=True)
     id_persona_solicita = models.ForeignKey('seguridad.Personas', on_delete=models.SET_NULL, db_column='T069Id_PersonaSolicita', blank=True, null=True, related_name='persona_solicita_programacion')
@@ -45,8 +45,6 @@ class RegistroMantenimientos(models.Model):
     ruta_documentos_soporte = models.FileField(db_column='T070rutaDocumentoSoporte', blank=True, null=True)
     cod_estado_anterior = models.ForeignKey(EstadosArticulo, db_column='T070codEstadoAnterior', on_delete=models.CASCADE, related_name='cod_estado_anterior')
     fecha_estado_anterior = models.DateTimeField(db_column='T070fechaAnteriorMov')
-    tipo_doc_anterior_mov = models.CharField(max_length=5, db_column='T062tipoDocAnteriorMov')
-    id_reg_doc_anterior_mov = models.PositiveIntegerField(db_column='T062IdRegEnDocAnteriorMov')
     
     def __str__(self):
         return str(self.id_programacion_mtto)
