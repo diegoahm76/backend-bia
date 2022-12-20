@@ -207,7 +207,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 CSRF_TRUSTED_ORIGINS = ['https://web-production-7eaf.up.railway.app',
                         'https://web-production-e470.up.railway.app',
-                        'https://web-production-08ae.up.railway.app',]
+                        'https://web-production-08ae.up.railway.app','http://web-production-08ae.up.railway.app',]
 CORS_ALLOW_HEADERS = [
 'accept',
 'accept-encoding',
