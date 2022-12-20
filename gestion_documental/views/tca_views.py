@@ -340,14 +340,6 @@ def actualizar_cargo_unidad_permiso_expediente(request,pk):
 
     except:
         return Response({'Success':False,'Detail':'id de expediente invalido'}, status=status.HTTP_400_BAD_REQUEST)
-    try:
-        unidad_org_persona = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=data['id_unidad_org_persona'])
-    except:
-        return Response({'Success':False, 'Detail':'no existe unidad organisacional con el id unidad organizacional persona ingresado'})
-    try:
-        cargo_persona = Cargos.objects.get(id_cargo=data['id_cargo_persona'])
-    except:
-        return Response({'Success':False, 'Detail':'no existe id cargo'})
     
     if not data.getlist('permisos'):
         return Response({'Success':False, 'Detail':'el arreglo de permisos no debe estar vacio'})
@@ -368,19 +360,29 @@ def actualizar_cargo_unidad_permiso_expediente(request,pk):
             cod_permiso = PermisosGD.objects.get(permisos_GD=int(permiso)) 
         )
         permisos_serializer_list.append(permiso_cargo_unidad_s_ss_unidad_tca)
+        diccionario_de_permisos=PermisosCargoUnidadSerieSubserieUnidadTCA.objects.filter(id_cargo_unidad_s_ss_unidad_tca=cargo_unidad_serie_subserie_undorg_tca.id_cargo_unidad_s_subserie_unidad_org_tca)
+        lista_de_permisos = [x.cod_permiso.tipo_permiso for x in diccionario_de_permisos]
+        string_permisos= ' | '.join(lista_de_permisos)
     match cargo_unidad_serie_subserie_undorg_tca.id_clasif_serie_subserie_unidad_tca.id_tca.actual:
         case True:
-            cargo_unidad_serie_subserie_undorg_tca.id_unidad_org_cargo = unidad_org_persona
-            cargo_unidad_serie_subserie_undorg_tca.id_cargo_persona = cargo_persona
             cargo_unidad_serie_subserie_undorg_tca.justificacion_del_cambio = data['justificacion_del_cambio']
             cargo_unidad_serie_subserie_undorg_tca.ruta_archivo_cambio = request.FILES.get('ruta_archivo_cambio')
             cargo_unidad_serie_subserie_undorg_tca.save()
-            HistoricoCargosUnidadSerieSubserieUnidadTCA.objects.create()
-
+            HistoricoCargosUnidadSerieSubserieUnidadTCA.objects.create(
+                id_cargo_unidad_s_ss_unidad_tca = cargo_unidad_serie_subserie_undorg_tca,
+                nombre_permisos = string_permisos,
+                justificacion= cargo_unidad_serie_subserie_undorg_tca.justificacion_del_cambio,
+                ruta_archivo= cargo_unidad_serie_subserie_undorg_tca.ruta_archivo_cambio,
+                id_persona_cambia= request.user.persona,
+            )
         case False:
-            cargo_unidad_serie_subserie_undorg_tca.id_unidad_org_cargo = unidad_org_persona
-            cargo_unidad_serie_subserie_undorg_tca.id_cargo_persona = cargo_persona
-            cargo_unidad_serie_subserie_undorg_tca.save()
+            HistoricoCargosUnidadSerieSubserieUnidadTCA.objects.create(
+                id_cargo_unidad_s_ss_unidad_tca = cargo_unidad_serie_subserie_undorg_tca,
+                nombre_permisos = string_permisos,
+                id_persona_cambia= request.user.persona,
+            )
+
+
         
     
     expediente_serializer = Cargos_Unidad_S_Ss_UndOrg_TCASerializer(cargo_unidad_serie_subserie_undorg_tca,many=False)
