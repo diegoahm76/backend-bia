@@ -36,7 +36,8 @@ from gestion_documental.models.tca_models import (
     Cargos_Unidad_S_Ss_UndOrg_TCA,
     PermisosCargoUnidadSerieSubserieUnidadTCA,
     PermisosGD,
-    Historico_Clasif_S_Ss_UndOrg_TCA
+    Historico_Clasif_S_Ss_UndOrg_TCA, 
+    HistoricoCargosUnidadSerieSubserieUnidadTCA
 )
 from seguridad.models import Cargos,Personas
 from gestion_documental.choices.tipo_clasificacion_choices import tipo_clasificacion_CHOICES
@@ -325,10 +326,13 @@ def asignar_cargo_unidad_permiso_expediente(request):
     return Response({'Success':True, 'Expediente':expediente_serializer.data, 'permisos':permisos_serializer.data},status=status.HTTP_200_OK)
 
 @api_view(['PUT'])
+@permission_classes([IsAuthenticated])
 def actualizar_cargo_unidad_permiso_expediente(request,pk):
     data = request.data
     try:
         cargo_unidad_serie_subserie_undorg_tca = Cargos_Unidad_S_Ss_UndOrg_TCA.objects.get(id_cargo_unidad_s_subserie_unidad_org_tca=pk)
+        entry__previous=copy.copy(cargo_unidad_serie_subserie_undorg_tca)
+
     except:
         return Response({'Success':False,'Detail':'id de expediente invalido'}, status=status.HTTP_400_BAD_REQUEST)
     try:
@@ -350,8 +354,7 @@ def actualizar_cargo_unidad_permiso_expediente(request,pk):
     permisos_validados_list = PermisosCargoUnidadSerieSubserieUnidadTCA.objects.filter(id_cargo_unidad_s_ss_unidad_tca=cargo_unidad_serie_subserie_undorg_tca.id_cargo_unidad_s_subserie_unidad_org_tca)
     
     lista_permisos = [str(x.cod_permiso.permisos_GD) for x in permisos_validados_list]
-    lista_crear = list(set(data.getlist('permisos'))-set(lista_permisos))  
-    print({'lista crear': lista_crear})  
+    lista_crear = list(set(data.getlist('permisos'))-set(lista_permisos)) 
     permisos_validados_list.exclude(cod_permiso__in= data.getlist('permisos')).delete()
     permisos_serializer_list = []
     for permiso in lista_crear:
@@ -367,12 +370,14 @@ def actualizar_cargo_unidad_permiso_expediente(request,pk):
             cargo_unidad_serie_subserie_undorg_tca.justificacion_del_cambio = data['justificacion_del_cambio']
             cargo_unidad_serie_subserie_undorg_tca.ruta_archivo_cambio = request.FILES.get('ruta_archivo_cambio')
             cargo_unidad_serie_subserie_undorg_tca.save()
+            HistoricoCargosUnidadSerieSubserieUnidadTCA.objects.create()
 
         case False:
             cargo_unidad_serie_subserie_undorg_tca.id_unidad_org_cargo = unidad_org_persona
             cargo_unidad_serie_subserie_undorg_tca.id_cargo_persona = cargo_persona
             cargo_unidad_serie_subserie_undorg_tca.save()
         
+    
     expediente_serializer = Cargos_Unidad_S_Ss_UndOrg_TCASerializer(cargo_unidad_serie_subserie_undorg_tca,many=False)
     permisos_serializer = PermisosCargoUnidadSerieSubserieUnidadTCASerializer(permisos_serializer_list, many=True)    
     return Response({'Success':True, 'Expediente':expediente_serializer.data, 'Permisos':permisos_serializer.data})
