@@ -42,6 +42,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from datetime import timezone
+import copy
 
 #Creación y actualización de Catalogo de Bienes
 
@@ -1001,9 +1002,9 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
             return Response({'success': False, 'detail': 'Todos los documentos identificadores deben ser únicos'}, status=status.HTTP_400_BAD_REQUEST)
 
         # TOTAL VALOR ENTRADA
-        valor_total_items_actualizar_list = [item.valor_total_item for item in items_entrada_actualizar]
-        valor_total_item_existen_list = [item.valor_total_item for item in items_existen_sin_actualizar]
-        valor_total_item_crear_list = [item['valor_total_item'] for item in items_por_crear]
+        valor_total_items_actualizar_list = [float(item.valor_total_item) for item in items_entrada_actualizar]
+        valor_total_item_existen_list = [float(item.valor_total_item) for item in items_existen_sin_actualizar]
+        valor_total_item_crear_list = [float(item['valor_total_item']) for item in items_por_crear]
         valor_total_entrada = valor_total_items_actualizar_list + valor_total_item_existen_list + valor_total_item_crear_list
         valor_total_entrada = sum(valor_total_entrada)
 
@@ -1030,6 +1031,10 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
                 tipo_doc_ultimo_movimiento = 'E_EMB'
             case 8:
                 tipo_doc_ultimo_movimiento = 'E_INC'
+                
+        # VARIABLES AUDITORIAS
+        valores_creados_detalles=[]
+        valores_actualizados_detalles=[]
 
         # CREACIÓN ACTIVOS FIJOS
         items_guardados = []
@@ -1108,6 +1113,7 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
             serializador_item_entrada.is_valid(raise_exception=True)
             serializador_item_entrada.save()
             items_guardados.append(serializador_item_entrada.data)
+            valores_creados_detalles.append({'nombre': elemento_creado.nombre})
 
         # CREACIÓN DE CONSUMO
         for item in items_consumo_crear_list:
@@ -1143,6 +1149,8 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
             serializador_item_entrada_consumo.is_valid(raise_exception=True)
             serializador_item_entrada_consumo.save()
             items_guardados.append(serializador_item_entrada_consumo.data)
+            
+            valores_creados_detalles.append({'nombre': bien.nombre})
 
         #SEPARAR LO QUE SE ACTUALIZA EN ACTIVOS FIJOS Y DE CONSUMO
         items_activos_fijos_actualizar_list = [item for item in items_entrada_actualizar if item.id_bien.cod_tipo_bien == 'A']
@@ -1156,7 +1164,7 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
         items_no_actualizables = [inventario for inventario in inventario_fijos_actualizar if str(inventario.id_registro_doc_ultimo_movimiento) != str(entrada_almacen.id_entrada_almacen) or str(inventario.tipo_doc_ultimo_movimiento) != str(tipo_doc_ultimo_movimiento)]
         id_bien_items_actualizables = [item.id_bien.id_bien for item in items_actualizables]
         item_data_por_actualizar = [item for item in data if item['id_bien'] in id_bien_items_actualizables]
-
+        
         for item in item_data_por_actualizar:
             # SE ACTUALIZA EN CATALOGO BIENES
             catalogo_bien_instance_actualizar = catalogo_bienes_fijos_actualizar.filter(id_bien=item['id_bien']).first()
@@ -1165,11 +1173,15 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
             serializer_catalogo_bien.is_valid(raise_exception=True)
             serializer_catalogo_bien.save()
             
+            descripcion_item_actualizado = {'nombre':serializer_catalogo_bien.data['nombre']}
+            
             # SE ACTUALIZA EN INVENTARIO
             inventario_instance_actualizar = inventario_fijos_actualizar.filter(id_bien=item['id_bien']).first()
             serializer_inventario = SerializerUpdateInventariosActivosFijos(inventario_instance_actualizar, data=item)
             serializer_inventario.is_valid(raise_exception=True)
             serializer_inventario.save()
+            
+            previous_item_actualizado = copy.copy(item_instance)
             
             # SE ACTUALIZA ITEM ENTRADA
             item_instance = items_entrada_actualizar.filter(id_item_entrada_almacen=item['id_item_entrada_almacen']).first()
@@ -1178,6 +1190,8 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
             serializer_item.save()
             
             items_guardados.append(serializer_item.data)
+            
+            valores_actualizados_detalles.append({'descripcion': descripcion_item_actualizado, 'previous': previous_item_actualizado, 'current': item_instance})
             
         # ACTUALIZAR ITEMS DE CONSUMO
         items_consumo_actualizar_id_list = [item.id_bien.id_bien for item in items_consumo_actualizar_list]
@@ -1200,15 +1214,22 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
                     serializer_inventario.is_valid(raise_exception=True)
                     serializer_inventario.save()
                     
+                    bien_actualizado = bienes_existe.filter(id_bien = item['id_bien']).first()
+                    descripcion_item_actualizado = {'nombre':bien_actualizado.nombre}
+                    previous_item_actualizado = copy.copy(item_instance)
+                    
                     # SE ACTUALIZA ITEM ENTRADA
                     serializer_item = SerializerItemEntradaConsumoPut(item_instance, data=item)
                     serializer_item.is_valid(raise_exception=True)
                     serializer_item.save()
                     
                     items_guardados.append(serializer_item.data)
+                    
+                    valores_actualizados_detalles.append({'descripcion': descripcion_item_actualizado, 'previous': previous_item_actualizado, 'current': item_instance})
+            
                 else:
                     pass
-            # CANTIDAD REDUCE   
+            # CANTIDAD REDUCE
             else:
                 pass
         
@@ -1222,5 +1243,21 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
             entrada_almacen.fecha_ultima_actualizacion_diferente_creador=datetime.now()
         
         entrada_almacen.save()
+        
+        descripcion = {"numero_entrada_almacen": str(entrada_almacen.numero_entrada_almacen), "fecha_entrada": str(entrada_almacen.fecha_entrada)}
+        direccion=Util.get_client_ip(request)
+        
+        # AUDITORIAS
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 34,
+            "cod_permiso": "AC",
+            "subsistema": 'ALMA',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_actualizados_detalles": valores_actualizados_detalles,
+            "valores_creados_detalles": valores_creados_detalles
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
 
         return Response({'success': True, 'detail': 'Actualizado exitosamente', 'data': items_guardados}, status=status.HTTP_201_CREATED)
