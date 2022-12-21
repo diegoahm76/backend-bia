@@ -1321,3 +1321,52 @@ class AnularEntrada(generics.UpdateAPIView):
         instancia_inventario_eliminar.delete()
         instancia_elementos.delete()
         return Response({'success': True, 'detail': 'Solicitud anulada exitosamente'}, status=status.HTTP_201_CREATED)
+    
+class ValidacionCodigoBien(generics.ListAPIView):
+    serializer_class = CatalogoBienesSerializer
+    queryset = CatalogoBienes.objects.all()
+    
+    def get(self,request,nivel,codigo_bien):
+        if not codigo_bien.isdigit():
+            return Response({'success': False, 'detail': 'El códgio debe ser un número'}, status=status.HTTP_400_BAD_REQUEST)
+        match nivel:
+            case '1':
+                if len(codigo_bien) != 1:
+                    return Response({'success': False, 'detail': 'El nivel 1 solo puede tener un caracter'}, status=status.HTTP_400_BAD_REQUEST)
+                if int(codigo_bien) < 1 or int(codigo_bien) > 9:
+                    return Response({'success': False, 'detail': 'El nivel 1 debe ser un número entre 1 y 9'}, status=status.HTTP_400_BAD_REQUEST)
+            case '2':
+                if len(codigo_bien) != 2:
+                    return Response({'success': False, 'detail': 'El nivel 2 debe ser de 2 caracteres'}, status=status.HTTP_400_BAD_REQUEST)
+                codigo_padre = codigo_bien[0]
+                bien_padre = CatalogoBienes.objects.filter(codigo_bien=codigo_padre)
+                if not bien_padre:
+                    return Response({'success': False, 'detail': 'El padre no existe'}, status=status.HTTP_400_BAD_REQUEST)
+            case '3':
+                if len(codigo_bien) != 4:
+                    return Response({'success': False, 'detail': 'El nivel 3 debe ser de 4 caracteres'}, status=status.HTTP_400_BAD_REQUEST)
+                codigo_padre = codigo_bien[0:2]
+                bien_padre = CatalogoBienes.objects.filter(codigo_bien=codigo_padre)
+                if not bien_padre:
+                    return Response({'success': False, 'detail': 'El padre no existe'}, status=status.HTTP_400_BAD_REQUEST)
+            case '4':
+                if len(codigo_bien) != 7:
+                    return Response({'success': False, 'detail': 'El nivel 4 debe ser de 7 caracteres'}, status=status.HTTP_400_BAD_REQUEST)
+                codigo_padre = codigo_bien[0:4]
+                bien_padre = CatalogoBienes.objects.filter(codigo_bien=codigo_padre)
+                if not bien_padre:
+                    return Response({'success': False, 'detail': 'El padre no existe'}, status=status.HTTP_400_BAD_REQUEST)
+            case '5': 
+                if len(codigo_bien) != 12:
+                    return Response({'success': False, 'detail': 'El nivel 5 debe ser de 12 caracteres'}, status=status.HTTP_400_BAD_REQUEST)
+                codigo_padre = codigo_bien[0:7]
+                bien_padre = CatalogoBienes.objects.filter(codigo_bien=codigo_padre)
+                if not bien_padre:
+                    return Response({'success': False, 'detail': 'El padre no existe'}, status=status.HTTP_400_BAD_REQUEST)
+            case _:
+                return Response({'success': False, 'detail': 'Ingrese un nivel válido, un numero entre 1 y 5'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        aux_bien = CatalogoBienes.objects.filter(codigo_bien=codigo_bien)
+        if aux_bien:
+            return Response({'success': False, 'detail': 'El código ingresado ya existe'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'success': True, 'detail': 'Codigo de bien válido'}, status=status.HTTP_201_CREATED)

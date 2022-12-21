@@ -10,6 +10,7 @@ urlpatterns = [
 
     path('catalogo-bienes/get-by-nro-identificador/',views.SearchArticuloByDocIdentificador.as_view(),name='get-by-nro-identificador'),
     path('catalogo-bienes/get-by-nombre-nroidentificador/',views.SearchArticulosByNombreDocIdentificador.as_view(),name='get-by-nombre-nroidentificador'),
+    path('catalogo-bienes/validar-codigo/<str:nivel>/<str:codigo_bien>/',views.ValidacionCodigoBien.as_view(),name='validar-codigo'),
     
     #Entradas
     path('entradas/create/', views.CreateEntradaandItemsEntrada.as_view(), name='entrada-create'),
