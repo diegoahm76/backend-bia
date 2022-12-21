@@ -17,6 +17,7 @@ class TiposEntradas(models.Model):
     nombre = models.CharField(max_length=15, unique=True, db_column='T061nombre')
     descripcion = models.CharField(max_length=255, db_column='T061descripcion')
     titulo_persona_origen = models.CharField(max_length=20, db_column='T061tituloPersonaOrigen')
+    constituye_propiedad = models.BooleanField(default=False, db_column='T061constituyePropiedad')
 
     def __str__(self):
         return str(self.nombre)
