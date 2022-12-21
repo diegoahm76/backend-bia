@@ -1,6 +1,7 @@
 from almacen.models.bienes_models import CatalogoBienes
 from rest_framework import generics, status
 from rest_framework.views import APIView
+from almacen.choices.estados_articulo_choices import estados_articulo_CHOICES
 from almacen.serializers.bienes_serializers import (
     CatalogoBienesSerializer,
     EntradaCreateSerializer,
@@ -406,17 +407,21 @@ class SearchArticuloByDocIdentificador(generics.ListAPIView):
         if not filter.get('cod_tipo_activo'):
             return Response({'success':False,'detail':'Debe enviar el parametro del tipo de activo'},status=status.HTTP_404_NOT_FOUND)
         
-        bien=CatalogoBienes.objects.filter(**filter).first()
+        bien=CatalogoBienes.objects.filter(**filter).first()    
         if bien:
             serializer=self.serializer_class(bien)
-            return Response({'success':True,'detail':'Se econtraron elementos','Elementos':serializer.data},status=status.HTTP_200_OK)
+            data_serializado=serializer.data
+            inventario=Inventario.objects.filter(id_bien=bien.id_bien).first()
+            diccionario_cod_estado_activo=dict((x,y) for x,y in estados_articulo_CHOICES) # transforma un choices en un diccionario
+            estado=diccionario_cod_estado_activo[inventario.cod_estado_activo]
+            data_serializado['estado']=estado
+            return Response({'success':True,'detail':'Se econtraron elementos','Elementos':data_serializado},status=status.HTTP_200_OK)
         return Response({'success':False,'detail':'No se econtró elementos','data':bien},status=status.HTTP_404_NOT_FOUND)
 
 class SearchArticulosByNombreDocIdentificador(generics.ListAPIView):
     serializer_class=CatalogoBienesSerializer
     queryset=CatalogoBienes.objects.all()
     permission_classes = [IsAuthenticated]
-    
     def get(self,request):
         filter={}
         for key,value in request.query_params.items():
@@ -426,11 +431,21 @@ class SearchArticulosByNombreDocIdentificador(generics.ListAPIView):
                 else:filter[key]=value
         if not filter.get('cod_tipo_activo'):
             return Response({'success':False,'detail':'Debe enviar el parametro del tipo de activo'},status=status.HTTP_404_NOT_FOUND)
-        bien=CatalogoBienes.objects.filter(**filter).first()
+        bien=CatalogoBienes.objects.filter(**filter)
         if bien:
-            serializer=self.serializer_class(bien)
-            return Response({'success':True,'detail':'Se econtraron elementos','Elementos':serializer.data},status=status.HTTP_200_OK)
-        return Response({'success':False,'detail':'No se econtró elementos','data':bien},status=status.HTTP_404_NOT_FOUND)
+            serializer=self.serializer_class(bien,many=True)
+            data_serializado=serializer.data
+            id_bien_list=[item.id_bien for item in bien]
+            inventario=Inventario.objects.filter(id_bien__in=id_bien_list)
+            diccionario_cod_estado_activo=dict((x,y) for x,y in estados_articulo_CHOICES) # transforma un choices en un diccionario
+
+            for item in data_serializado:
+                inventario_instance=inventario.filter(id_bien=item['id_bien']).first()
+                estado=inventario_instance.cod_estado_activo if inventario_instance else None
+                item['estado']=diccionario_cod_estado_activo[estado] if estado else None
+        
+            return Response({'success':True,'detail':'Se econtraron elementos','Elementos':data_serializado},status=status.HTTP_200_OK)
+        return Response({'success':False,'detail':'No se encontró elementos','data':bien},status=status.HTTP_404_NOT_FOUND)
 
 class SearchArticulos(generics.ListAPIView):
     serializer_class=CatalogoBienesSerializer
@@ -450,7 +465,7 @@ class SearchArticulos(generics.ListAPIView):
         serializador=self.serializer_class(bien,many=True)
         if bien:
             return Response({'success':True,'detail':'se encontró elementos','data':serializador.data},status=status.HTTP_200_OK)
-        return Response({'success':True,'detail':'no se econtró elementos','data':bien},status=status.HTTP_404_NOT_FOUND)
+        else:return Response({'success':False,'detail':'no se encontró elementos','data':bien},status=status.HTTP_404_NOT_FOUND)
     
 class GetCatalogoBienesByCodigo(generics.ListAPIView):
     serializer_class = CatalogoBienesSerializer

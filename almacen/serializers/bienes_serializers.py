@@ -1,11 +1,13 @@
 from almacen.models.generics_models import UnidadesMedida
 from seguridad.serializers.personas_serializers import PersonasSerializer
 from almacen.models.generics_models import Magnitudes
+from almacen.models.inventario_models import Inventario
 from rest_framework import serializers
 from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, ItemEntradaAlmacen
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 
 class CatalogoBienesSerializer(serializers.ModelSerializer):
+    marca=serializers.ReadOnlyField(source='id_marca.nombre',default=None)
     class Meta:
         model= CatalogoBienes
         fields='__all__'

@@ -7,7 +7,7 @@ urlpatterns = [
     path('catalogo-bienes/delete/<str:id_bien>/',views.DeleteNodos.as_view(),name='catalogo-bienes-delete'),
     path('catalogo-bienes/get-element-by-id-nodo/<str:id_nodo>/',views.GetElementosByIdNodo.as_view(),name='catalogo-bienes-get-element-by-nodo'),
     path('catalogo-bienes/create/', views.CreateCatalogoDeBienes.as_view(), name='catalogo-bienes-create'),
-    path('catalogo-bienes/get-by-codigo/', views.GetCatalogoBienesByCodigo.as_view(), name='catalogo-bienes-codigo-get'),
+
     path('catalogo-bienes/get-by-nro-identificador/',views.SearchArticuloByDocIdentificador.as_view(),name='get-by-nro-identificador'),
     path('catalogo-bienes/get-by-nombre-nroidentificador/',views.SearchArticulosByNombreDocIdentificador.as_view(),name='get-by-nombre-nroidentificador'),
     
@@ -20,7 +20,5 @@ urlpatterns = [
     path('entradas/get-numero_entrada/', views.GetNumeroEntrada.as_view(), name='get_numero_entrada'),
     path('entradas/items/update/<str:id_entrada>/', views.UpdateItemsEntrada.as_view(), name='item-entrada-update'),
     path('entradas/anular/<str:id_entrada>/', views.AnularEntrada.as_view(), name='entrada-entrada'),
-
-
-
+    path('entradas/get-by-codigo/', views.GetCatalogoBienesByCodigo.as_view(), name='catalogo-bienes-codigo-get'),
 ]
