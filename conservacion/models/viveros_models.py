@@ -34,7 +34,7 @@ class Vivero(models.Model):
     justificacion_cuarentena = models.CharField(max_length=255, null=True, blank=True, db_column='T150justificacionCuarentena')
     ruta_archivo_creacion = models.FileField(db_column='T150rutaArchivoCreación')
     activo = models.BooleanField(default=True, db_column='T150activo')
-    item_ya_usado = models.BooleanField(default=True, db_column='T150itemYaUsado')
+    item_ya_usado = models.BooleanField(default=False, db_column='T150itemYaUsado')
     
     def __str__(self):
         return str(self.nombre)

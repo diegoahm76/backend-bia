@@ -17,36 +17,54 @@ from conservacion.models.viveros_models import (
 )
 from conservacion.serializers.viveros_serializers import (
     ViveroSerializer,
-    ActivarDesactivarSerializer,
-    ViveroPostSerializer
+    AbrirViveroSerializer,
+    CerrarViveroSerializer,
+    ViveroPostSerializer,
+    
 )
 
 class DeleteVivero(generics.RetrieveDestroyAPIView):
     serializer_class = ViveroSerializer
     queryset = Vivero.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def delete(self, request, id_vivero):
+        data = request.data
         vivero = Vivero.objects.filter(id_vivero=id_vivero).first()
         if not vivero:
             return Response({'success': False, 'detail': 'No se encontró ningún vivero con el id_vivero enviado'}, status=status.HTTP_404_NOT_FOUND)
         if vivero.en_funcionamiento != None:
             return Response({'success': False, 'detail': 'No se puede eliminar un vivero que ha tenido una apertura'}, status=status.HTTP_403_FORBIDDEN)
         vivero.delete()
+        # AUDITORIA DE CREATE DE VIVEROS
+        user_logeado = request.user.id_usuario
+        dirip = Util.get_client_ip(request)
+        descripcion = {'nombre': vivero.nombre}
+        auditoria_data = {
+            'id_usuario': user_logeado,
+            'id_modulo': 41,
+            'cod_permiso': 'BO',
+            'subsistema': 'CONS',
+            'dirip': dirip,
+            'descripcion': descripcion
+        }
+        Util.save_auditoria(auditoria_data)
         return Response({'success': True, 'detail': 'Se ha eliminado correctamente este vivero'}, status=status.HTTP_204_NO_CONTENT)
 
 class AbrirCerrarVivero(generics.RetrieveUpdateAPIView):
-    serializer_class = ActivarDesactivarSerializer
+    serializer_class = AbrirViveroSerializer
     queryset = Vivero.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, id_vivero):
         data = request.data
+        accion = data['accion']
         persona = request.user.persona.id_persona
-        print(persona)
         vivero = Vivero.objects.filter(id_vivero=id_vivero).first()
         if not vivero:
             return Response({'success': False, 'detail': 'No se encontró ningún vivero con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
        
-        match data['accion']:
+        match accion:
             case 'Abrir':
                 if vivero.en_funcionamiento == None:
                     if vivero.id_viverista_actual == None:
@@ -57,8 +75,21 @@ class AbrirCerrarVivero(generics.RetrieveUpdateAPIView):
                     data['id_persona_abre'] = persona
                     serializer = self.serializer_class(vivero, data=data, many=False)
                     serializer.is_valid(raise_exception=True)
-                    print('data validada: ',serializer.validated_data.get('justificacion'))
                     serializer.save()
+
+                    # AUDITORIA
+                    user_logeado = request.user.id_usuario
+                    dirip = Util.get_client_ip(request)
+                    descripcion = {'nombre': vivero.nombre}
+                    auditoria_data = {
+                        'id_usuario': user_logeado,
+                        'id_modulo': 43,
+                        'cod_permiso': 'CR',
+                        'subsistema': 'CONS',
+                        'dirip': dirip,
+                        'descripcion': descripcion
+                    }
+                    Util.save_auditoria(auditoria_data)
                     return Response({'success': True, 'detail': 'Acción realizada correctamente'}, status=status.HTTP_201_CREATED)
                 else:
                     if not vivero.fecha_cierre_actual:
@@ -68,18 +99,63 @@ class AbrirCerrarVivero(generics.RetrieveUpdateAPIView):
                     data['item_ya_usado'] = True
                     serializer = self.serializer_class(vivero, data=data, many=False)
                     serializer.is_valid(raise_exception=True)
+                    
+                    historial = HistorialAperturaViveros.objects.create(
+                        id_vivero = vivero,
+                        fecha_apertura_anterior = vivero.fecha_ultima_apertura,
+                        fecha_cierre_correspondiente = vivero.fecha_cierre_actual,
+                        id_persona_apertura_anterior = vivero.id_persona_abre,
+                        id_persona_cierre_correspondiente = vivero.id_persona_cierra,
+                        justificacion_apertura_anterior = vivero.justificacion_apertura,
+                        justificacion_cierre_correspondiente = vivero.justificacion_cierre
+                    )
+
                     serializer.save()
+
+                    vivero.fecha_cierre_actual = None
+                    vivero.id_persona_cierra = None
+                    vivero.justificacion_cierre = None
+                    vivero.save()
+
+                    # AUDITORIA
+                    user_logeado = request.user.id_usuario
+                    dirip = Util.get_client_ip(request)
+                    descripcion = {'nombre': vivero.nombre}
+                    auditoria_data = {
+                        'id_usuario': user_logeado,
+                        'id_modulo': 43,
+                        'cod_permiso': 'CR',
+                        'subsistema': 'CONS',
+                        'dirip': dirip,
+                        'descripcion': descripcion
+                    }
+                    Util.save_auditoria(auditoria_data)
                     return Response({'success': True, 'detail': 'Acción realizada correctamente'}, status=status.HTTP_201_CREATED)
             
             case 'Cerrar':
-                if not vivero.fecha_cierre_actual:
-                    return Response({'success': False, 'detail': 'No se puede abrir un vivero si no se encuentra actualmente cerrado'}, status=status.HTTP_400_BAD_REQUEST)
-                data['fecha_ultima_apertura'] = datetime.now()
-                data['en_funcionamiento'] = True
+                if not vivero.fecha_ultima_apertura:
+                    return Response({'success': False, 'detail': 'No se puede cerrar un vivero si no se encuentra actualmente abierto'}, status=status.HTTP_400_BAD_REQUEST)
+                data['fecha_cierre_actual'] = datetime.now()
+                data['en_funcionamiento'] = False
                 data['item_ya_usado'] = True
-                serializer = self.serializer_class(vivero, data=data, many=False)
+                data['id_persona_cierra'] = persona
+                serializer = CerrarViveroSerializer(vivero, data=data, many=False)
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
+                
+                # AUDITORIA
+                user_logeado = request.user.id_usuario
+                dirip = Util.get_client_ip(request)
+                descripcion = {'nombre': vivero.nombre}
+                auditoria_data = {
+                    'id_usuario': user_logeado,
+                    'id_modulo': 43,
+                    'cod_permiso': 'CR',
+                    'subsistema': 'CONS',
+                    'dirip': dirip,
+                    'descripcion': descripcion
+                }
+                Util.save_auditoria(auditoria_data)
                 return Response({'success': True, 'detail': 'Acción realizada correctamente'}, status=status.HTTP_201_CREATED)
             case _:
                 return Response({'success': False, 'detail': 'Debe enviar una acción válida'}, status=status.HTTP_400_BAD_REQUEST)

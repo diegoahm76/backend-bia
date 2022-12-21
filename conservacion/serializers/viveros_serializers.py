@@ -13,12 +13,21 @@ class ViveroSerializer(serializers.Serializer):
         fields = '__all__'
 
 
-class ActivarDesactivarSerializer(serializers.ModelSerializer):
+class AbrirViveroSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vivero
         fields = ['justificacion_apertura', 'fecha_ultima_apertura', 'en_funcionamiento', 'item_ya_usado', 'id_persona_abre']
         extra_kwargs = {
             'justificacion_apertura': {'required': True},
+        }
+
+
+class CerrarViveroSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Vivero
+        fields = ['justificacion_cierre', 'fecha_cierre_actual', 'en_funcionamiento', 'item_ya_usado', 'id_persona_cierra']
+        extra_kwargs = {
+            'justificacion_cierre': {'required': True},
         }
 
 class ViveroPostSerializer(serializers.ModelSerializer):
