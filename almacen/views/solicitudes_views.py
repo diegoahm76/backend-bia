@@ -204,7 +204,7 @@ class CreateSolicitud(generics.UpdateAPIView):
         datos_ingresados = request.data
         info_solicitud = datos_ingresados['info_solicitud']
         items_solicitud = datos_ingresados['items_solicitud']
-        
+        valores_creados_detalles = []
         user_logeado = request.user
         if str(user_logeado) == 'AnonymousUser':
             return Response({'success':False,'data':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
@@ -292,6 +292,8 @@ class CreateSolicitud(generics.UpdateAPIView):
             
             niveles_organigrama = [i['orden_nivel'] for i in aux_niveles_organigrama]
             unidades_iguales_y_arriba = []
+            valores_actualizados_detalles = []
+            valores_creados_detalles = []
             aux_unidades_mismo_nivel = user_logeado.persona.id_unidad_organizacional_actual.nombre
             unidades_organiacionales_misma_linea.append(aux_unidades_mismo_nivel)
             unidades_iguales_y_arriba.append(aux_unidades_mismo_nivel)
@@ -339,47 +341,38 @@ class CreateSolicitud(generics.UpdateAPIView):
             serializer = self.serializer_class(data=info_solicitud)
             serializer.is_valid(raise_exception=True)
             serializer.save()        
-            dirip = Util.get_client_ip(request)
             
-            descripcion = {'id_solicitud_consumibles':str(serializer.data['id_solicitud_consumibles']), 'fecha_solicitud':str(info_solicitud['fecha_solicitud']), 'id_persona_solicita':str(info_solicitud['id_persona_solicita']), 'id_unidad_org_del_solicitante':str(info_solicitud['id_unidad_org_del_solicitante']), 'id_funcionario_responsable_unidad':str(info_solicitud['id_funcionario_responsable_unidad']), 'id_unidad_org_del_responsable':str(info_solicitud['id_unidad_org_del_responsable'])}
-            valores_actualizados= None
-            auditoria_data = {
-                'id_usuario': user_logeado.id_usuario,
-                'id_modulo': 35,
-                'cod_permiso': 'CR',
-                'subsistema': 'ALMA',
-                'dirip': dirip,
-                'descripcion': descripcion,
-                'valores_actualizados': valores_actualizados
-            }
-            Util.save_auditoria(auditoria_data)
             for i in items_solicitud:
-                i['id_solicitud_consumibles'] = serializer.data['id_solicitud_consumibles']              
+                i['id_solicitud_consumibles'] = serializer.data['id_solicitud_consumibles']
+                aux_bien = CatalogoBienes.objects.filter(id_bien=i['id_bien']).first()
+                valores_creados_detalles.append({'nombre' : aux_bien.nombre})
             serializer = self.serializer_item_solicitud(data=items_solicitud, many=True)
             serializer.is_valid(raise_exception=True)
             serializer.save()
+            descripcion = {"numero_entrada_almacen": str(info_solicitud['nro_solicitud_por_tipo']), "fecha_solicitud": str(info_solicitud['fecha_solicitud'])}
+            direccion=Util.get_client_ip(request)
+        
+            auditoria_data = {
+                "id_usuario" : request.user.id_usuario,
+                "id_modulo" : 35,
+                "cod_permiso": "CR",
+                "subsistema": 'ALMA',
+                "dirip": direccion,
+                "descripcion": descripcion,
+                "valores_creados_detalles": valores_creados_detalles
+            }
+            Util.save_auditoria_maestro_detalle(auditoria_data)
         elif bandera_actualizar == True:
             info_solicitud['nro_solicitud_por_tipo'] = instancia_solicitud.nro_solicitud_por_tipo
             serializer = self.serializer_class(instancia_solicitud, data=info_solicitud)
             serializer.is_valid(raise_exception=True)
             serializer.save() 
             dirip = Util.get_client_ip(request)
-            
-            descripcion = {'es_solicitud_de_conservacion':str(serializer.data['es_solicitud_de_conservacion']),'nro_solicitud_por_tipo':str(serializer.data['nro_solicitud_por_tipo'])}
-            valores_actualizados= {'previous':instancia_solicitud_previous, 'current':instancia_solicitud}
-            auditoria_data = {
-                'id_usuario': user_logeado.id_usuario,
-                'id_modulo': 35,
-                'cod_permiso': 'AC',
-                'subsistema': 'ALMA',
-                'dirip': dirip,
-                'descripcion': descripcion,
-                'valores_actualizados': valores_actualizados
-            }
-            Util.save_auditoria(auditoria_data)
             aux_items_enviados = [i['id_item_solicitud_consumible'] for i in items_solicitud if i['id_item_solicitud_consumible'] != None]      
             instancia_solicitud = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles=info_solicitud['id_solicitud_consumibles']).first()
             instancia_items_eliminar = ItemsSolicitudConsumible.objects.filter(~Q(id_item_solicitud_consumible__in=aux_items_enviados) & Q(id_solicitud_consumibles=instancia_solicitud.id_solicitud_consumibles))
+            nombre_items_eliminar = [{'nombre' : i.id_bien.nombre} for i in instancia_items_eliminar]
+            valores_eliminados_detalles = nombre_items_eliminar
             instancia_items_eliminar.delete()
             for j in items_solicitud:
                 j['id_solicitud_consumibles'] = serializer.data['id_solicitud_consumibles']
@@ -388,13 +381,32 @@ class CreateSolicitud(generics.UpdateAPIView):
                     serializer_act = self.serializer_item_solicitud(data=j, many=False)
                     serializer_act.is_valid(raise_exception=True)
                     serializer_act.save()
+                    aux_bien = CatalogoBienes.objects.filter(id_bien=j['id_bien']).first()
+                    valores_creados_detalles.append({'nombre':aux_bien.nombre})
                 else:
                     instancia_item = ItemsSolicitudConsumible.objects.filter(id_item_solicitud_consumible = j['id_item_solicitud_consumible']).first()
+                    previous_instancia_item = copy.copy(instancia_item)
                     if not instancia_item:
                         return Response({'success':False,'data':'Uno de los id de los items no es válido'},status=status.HTTP_404_NOT_FOUND)
                     serializer_act = self.serializer_item_solicitud(instancia_item, data=j, many=False)
                     serializer_act.is_valid(raise_exception=True)
-                    serializer_act.save()      
+                    serializer_act.save()
+                    valores_actualizados_detalles.append({'descripcion': {'nombre':instancia_item.id_bien.nombre}, 'previous':previous_instancia_item,'current':instancia_item})
+            descripcion = {"numero_entrada_almacen": str(info_solicitud['nro_solicitud_por_tipo']), "fecha_solicitud": str(info_solicitud['fecha_solicitud'])}
+            direccion=Util.get_client_ip(request)
+            auditoria_data = {
+                "id_usuario" : request.user.id_usuario,
+                "id_modulo" : 35,
+                "cod_permiso": "AC",
+                "subsistema": 'ALMA',
+                "dirip": direccion,
+                "descripcion": descripcion,
+                "valores_eliminados_detalles": valores_eliminados_detalles,
+                "valores_creados_detalles": valores_creados_detalles,
+                "valores_actualizados_detalles": valores_actualizados_detalles
+            }
+            Util.save_auditoria_maestro_detalle(auditoria_data)
+            
             return Response({'success':True,'data':'Solicitud actualizada con éxito', 'Numero solicitud' : info_solicitud["nro_solicitud_por_tipo"]},status=status.HTTP_200_OK)
         return Response({'success':True,'data':'Solicitud registrada con éxito', 'Numero solicitud' : info_solicitud["nro_solicitud_por_tipo"]},status=status.HTTP_200_OK)
 
@@ -542,11 +554,26 @@ class AnularSolicitudesBienesConsumo(generics.UpdateAPIView):
         if datos_ingresados['solicitud_anulada_solicitante'] != True:
             return Response({'success':False,'data':'La solicitud no fue anulada, para anularla debe ingresar true'},status=status.HTTP_404_NOT_FOUND)
 
+        instancia_items_solicitud_eliminar = ItemsSolicitudConsumible.objects.filter(Q(id_solicitud_consumibles=instance.id_solicitud_consumibles))
+        
         instance.justificacion_anulacion_solicitante = datos_ingresados['justificacion_anulacion_solicitante']
         instance.solicitud_anulada_solicitante = datos_ingresados['solicitud_anulada_solicitante']
         instance.fecha_anulacion_solicitante = str(date.today())
         instance.fecha_cierre_solicitud = str(date.today())
         instance.solicitud_abierta = False
         instance.save()
-        
+        valores_eliminados_detalles = [{'nombre':i.id_bien.nombre} for i in instancia_items_solicitud_eliminar]
+        instancia_items_solicitud_eliminar.delete()
+        descripcion = {"numero_entrada_almacen": instance.nro_solicitud_por_tipo, "fecha_anulacion": instance.fecha_anulacion_solicitante}
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 35,
+            "cod_permiso": "BO",
+            "subsistema": 'ALMA',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_eliminados_detalles": valores_eliminados_detalles
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
         return Response({'success':True,'Detail':'Solicitud procesada con éxito', },status=status.HTTP_200_OK)
