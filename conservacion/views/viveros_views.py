@@ -17,6 +17,7 @@ from conservacion.models.viveros_models import (
 from conservacion.serializers.viveros_serializers import (
     ViveroSerializer,
     ActivarDesactivarSerializer,
+    ViveroPostSerializer
 )
 
 class DeleteVivero(generics.RetrieveDestroyAPIView):
@@ -81,3 +82,19 @@ class AbrirCerrarVivero(generics.RetrieveUpdateAPIView):
                 return Response({'success': True, 'detail': 'Acción realizada correctamente'}, status=status.HTTP_201_CREATED)
             case _:
                 return Response({'success': False, 'detail': 'Debe enviar una acción válida'}, status=status.HTTP_400_BAD_REQUEST)
+
+class CreateViveros(generics.CreateAPIView):
+    serializer_class = ViveroPostSerializer
+    queryset = Vivero.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        data = request.data
+        persona = request.user.persona.id_persona
+        data['id_persona_crea'] = persona
+        
+        serializador = self.serializer_class(data=data)
+        serializador.is_valid(raise_exception=True)
+        serializador.save()
+        
+        return Response({'success':True, 'detail':'Se ha creado el vivero', 'data':serializador.data}, status=status.HTTP_201_CREATED)

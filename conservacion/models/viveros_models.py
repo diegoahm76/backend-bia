@@ -75,6 +75,6 @@ class HistorialCuarentenaViveros(models.Model):
         return str(self.id_historial_cuarentena_vivero)
         
     class Meta:
-        db_table = 'T151HistorialCuarentenaViveros'
+        db_table = 'T152HistorialCuarentenaViveros'
         verbose_name = 'Historial cuarentena viveros'
         verbose_name_plural = 'Historial cuarentena viveros'
