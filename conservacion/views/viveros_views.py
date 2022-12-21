@@ -106,7 +106,22 @@ class CreateViveros(generics.CreateAPIView):
         serializador.is_valid(raise_exception=True)
         serializador.save()
         
+        # AUDITORIA DE CREATE DE VIVEROS
+        user_logeado = request.user.id_usuario
+        dirip = Util.get_client_ip(request)
+        descripcion = {'nombre':data['nombre']}
+        auditoria_data = {
+            'id_usuario': user_logeado,
+            'id_modulo': 41,
+            'cod_permiso': 'CR',
+            'subsistema': 'CONS',
+            'dirip': dirip,
+            'descripcion': descripcion
+        }
+        Util.save_auditoria(auditoria_data)
+        
         return Response({'success':True, 'detail':'Se ha creado el vivero', 'data':serializador.data}, status=status.HTTP_201_CREATED)
+
 class GetViveroByPk(generics.RetrieveAPIView):
     serializer_class=ViveroSerializer
     queryset=Vivero.objects.all()
@@ -128,7 +143,6 @@ class FilterViverosByNombreAndMunicipioForCuarentena(generics.ListAPIView):
             return Response({'success':True,'detail':'Se encontraron viveros','data':serializer.data},status=status.HTTP_200_OK)
         else: 
             return Response({'success':False,'detail':'No se encontraron viveros'},status=status.HTTP_404_NOT_FOUND)
-        
         
 class FilterViverosByNombreAndMunicipioForAperturaCierres(generics.ListAPIView):
     serializer_class=ViveroSerializer
