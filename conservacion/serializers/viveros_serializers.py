@@ -5,6 +5,7 @@ from conservacion.models.viveros_models import (
     HistorialAperturaViveros,
     HistorialCuarentenaViveros
 )
+from seguridad.choices.municipios_choices import municipios_CHOICES
 
 class ViveroSerializer(serializers.Serializer):
     class Meta:
@@ -22,13 +23,20 @@ class ActivarDesactivarSerializer(serializers.ModelSerializer):
 
 class ViveroPostSerializer(serializers.ModelSerializer):
     nombre = serializers.CharField(validators=[UniqueValidator(queryset=Vivero.objects.all(), message='El nombre del Vivero debe ser único')])
+    cod_municipio = serializers.ChoiceField(choices=municipios_CHOICES)
+    
+    def validate_cod_municipio(self, value):
+        if value == '':
+            raise serializers.ValidationError('Error, el municipio no puede ir vacío')
+        return value
+    
     class Meta:
         model = Vivero
         fields = '__all__'
         extra_kwargs = {
             'id_vivero': {'read_only': True},
             'nombre': {'required': True},
-            'cod_municipio': {'required': True},
+            'cod_municipio': {'required': True, 'allow_null':False},
             'direccion': {'required': True},
             'area_mt2': {'required': True},
             'area_propagacion_mt2': {'required': True},

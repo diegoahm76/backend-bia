@@ -9,6 +9,7 @@ from datetime import datetime
 from datetime import timezone
 import copy
 
+from seguridad.models import Personas
 from conservacion.models.viveros_models import (
     Vivero,
     HistorialAperturaViveros,
@@ -92,6 +93,14 @@ class CreateViveros(generics.CreateAPIView):
         data = request.data
         persona = request.user.persona.id_persona
         data['id_persona_crea'] = persona
+        
+        # VALIDAR ASIGNACIÓN VIVERISTA
+        viverista = data.get('id_viverista_actual')
+        if viverista:
+            viverista_existe = Personas.objects.filter(id_persona=viverista)
+            if not viverista_existe:
+                return Response({'status':False, 'detail':'Debe elegir un viverista que exista'}, status=status.HTTP_400_BAD_REQUEST)
+            data['fecha_inicio_viverista_actual'] = datetime.now()
         
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)

@@ -20,6 +20,9 @@ def api_exception_handler(exc, context):
                         for i in range(len(value)):
                             value[i] = 'El campo es requerido' if value[i] == 'This field is required.' else value[i]
                             value[i] = 'El campo debe ser único' if value[i] == 'This field must be unique.' else value[i]
+                            value[i] = 'El campo no debe ser vacío' if value[i] == 'This field may not be blank.' else value[i]
+                            value[i] = 'No es una opción válida' if 'is not a valid choice.' in value[i] else value[i]
+                            value[i] = 'El valor ingresado no existe' if 'object does not exist.' in value[i] else value[i]
                         error_message += key + ': ' + ' '.join(value) + separator
                     else:
                         error_message += value
@@ -33,6 +36,9 @@ def api_exception_handler(exc, context):
                     for i in range(len(value)):
                         value[i] = 'El campo es requerido' if value[i] == 'This field is required.' else value[i]
                         value[i] = 'El campo debe ser único' if value[i] == 'This field must be unique.' else value[i]
+                        value[i] = 'El campo no debe ser vacío' if value[i] == 'This field may not be blank.' else value[i]
+                        value[i] = 'No es una opción válida' if 'is not a valid choice.' in value[i] else value[i]
+                        value[i] = 'El valor ingresado no existe' if 'object does not exist.' in value[i] else value[i]
                     
                     separator = ', '
                     if index == len(error_message_dict)-1:
