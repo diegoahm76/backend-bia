@@ -1301,6 +1301,8 @@ class AnularEntrada(generics.UpdateAPIView):
 
         for i in activos_fijos:
             aux = Inventario.objects.filter(id_bien=i).first()
+            if not aux:
+                return Response({'success': False, 'detail': 'Uno de los items no tiene registro en iventairo'}, status=status.HTTP_400_BAD_REQUEST)
             hdv_computadores = HojaDeVidaComputadores.objects.filter(id_articulo=i).first()
             hdv_vehivulos = HojaDeVidaVehiculos.objects.filter(id_articulo=i).first()
             hdv_otro_activos = HojaDeVidaOtrosActivos.objects.filter(id_articulo=i).first()
@@ -1315,11 +1317,25 @@ class AnularEntrada(generics.UpdateAPIView):
         entrada_anular.fecha_anulacion = datetime.now()
         entrada_anular.id_persona_anula = request.user.persona
         entrada_anular.entrada_anulada = True
-
+        valores_eliminados_detalles = [{'nombre': i.nombre} for i in instancia_elementos]
         entrada_anular.save()
         instancia_items_entrada_eliminar.delete()
         instancia_inventario_eliminar.delete()
         instancia_elementos.delete()
+        
+        descripcion = {"numero_entrada_almacen": str(entrada_anular.numero_entrada_almacen), "fecha_entrada": str(entrada_anular.fecha_entrada)}
+        direccion=Util.get_client_ip(request)
+    
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 34,
+            "cod_permiso": "BO",
+            "subsistema": 'ALMA',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_eliminados_detalles": valores_eliminados_detalles
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
         return Response({'success': True, 'detail': 'Solicitud anulada exitosamente'}, status=status.HTTP_201_CREATED)
     
 class ValidacionCodigoBien(generics.ListAPIView):

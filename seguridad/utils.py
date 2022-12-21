@@ -216,7 +216,7 @@ class Util:
                         descripcion_eliminados += field + ":" + str(value)
                     descripcion_eliminados += '.'
                     descripcion_detalles += ' ' if descripcion_detalles.endswith('.') else ''
-                    descripcion_detalles = 'Se eliminó en el detalle el ítem ' + descripcion_eliminados
+                    descripcion_detalles += 'Se eliminó en el detalle el ítem ' + descripcion_eliminados
                 
             descripcion_detalles = descripcion_detalles if descripcion_detalles != '' else None
                 
