@@ -143,6 +143,6 @@ class ItemEntradaAlmacen(models.Model):
 
     class Meta:
         db_table = 'T064Items_EntradaAlmacen'
-        verbose_name = 'Tipo entrada de Almacen'
-        verbose_name_plural = 'Tipos de Entradas de Almacen'	
+        verbose_name = 'Items entrada de Almacen'
+        verbose_name_plural = 'Items de Entradas de Almacen'	
 	

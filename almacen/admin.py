@@ -21,6 +21,8 @@ from almacen.models.bienes_models import (
     TiposDepreciacionActivos,
     TiposActivo,
     CatalogoBienes,
+    EntradasAlmacen,
+    ItemEntradaAlmacen
 )
 from almacen.models.inventario_models import (
     Inventario
@@ -57,3 +59,5 @@ admin.site.register(ProgramacionMantenimientos)
 admin.site.register(RegistroMantenimientos)
 admin.site.register(CatalogoBienes)
 admin.site.register(Inventario)
+admin.site.register(EntradasAlmacen)
+admin.site.register(ItemEntradaAlmacen)

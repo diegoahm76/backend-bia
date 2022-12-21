@@ -1261,3 +1261,48 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
         Util.save_auditoria_maestro_detalle(auditoria_data)
 
         return Response({'success': True, 'detail': 'Actualizado exitosamente', 'data': items_guardados}, status=status.HTTP_201_CREATED)
+    
+class AnularEntrada(generics.UpdateAPIView):
+    serializer_class = EntradaSerializer
+    queryset = EntradasAlmacen.objects.all()
+
+    def put(self, request, id_entrada):
+        datos_ingresados = request.data
+        
+        entrada_anular = EntradasAlmacen.objects.filter(id_entrada_almacen=id_entrada).first()
+        items_entrada = ItemEntradaAlmacen.objects.filter(id_entrada_almacen=id_entrada)
+        if entrada_anular.entrada_anulada == True:
+            return Response({'success': False, 'detail': 'Esta entrada ya ha sido anulada'}, status=status.HTTP_400_BAD_REQUEST)
+        if not entrada_anular:
+            return Response({'success': False, 'detail': 'No se encontro una entrada asociada al ID que ingresó'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not items_entrada:
+            return Response({'success': False, 'detail': 'No hay items asociados a la entrada'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        activos_fijos = [i.id_bien.id_bien for i in items_entrada if i.id_bien.cod_tipo_bien == 'A']
+        bienes = CatalogoBienes.objects.filter(Q(id_bien__in=activos_fijos))
+        codigos_bienes = [i.codigo_bien for i in bienes]
+        bienes_consumo = [i.id_bien.id_bien for i in items_entrada if i.id_bien.cod_tipo_bien == 'C']
+
+        for i in activos_fijos:
+            aux = Inventario.objects.filter(id_bien=i).first()
+            hdv_computadores = HojaDeVidaComputadores.objects.filter(id_articulo=i).first()
+            hdv_vehivulos = HojaDeVidaVehiculos.objects.filter(id_articulo=i).first()
+            hdv_otro_activos = HojaDeVidaOtrosActivos.objects.filter(id_articulo=i).first()
+            if aux.id_registro_doc_ultimo_movimiento != entrada_anular.id_entrada_almacen or aux.cod_tipo_entrada != entrada_anular.id_tipo_entrada:
+                return Response({'success': False, 'detail': 'Uno de los items de la entrada a anular ya registra movimientos posteriores'}, status=status.HTTP_400_BAD_REQUEST)
+            if hdv_computadores or hdv_vehivulos or hdv_otro_activos:
+                return Response({'success': False, 'detail': 'Uno de los items de la entrada a anular ya tiene hoja de vida, no se pueden anular entradas con items que tengan hoja de vida'}, status=status.HTTP_400_BAD_REQUEST)
+        instancia_items_entrada_eliminar = ItemEntradaAlmacen.objects.filter(Q(id_bien__in=activos_fijos)&Q(id_entrada_almacen=id_entrada))
+        instancia_inventario_eliminar = Inventario.objects.filter(Q(id_bien__in=activos_fijos)&Q(id_registro_doc_ultimo_movimiento=id_entrada)&Q(cod_tipo_entrada=entrada_anular.id_tipo_entrada))
+        instancia_elementos = CatalogoBienes.objects.filter(Q(codigo_bien__in=codigos_bienes)&~Q(nro_elemento_bien=None))
+        entrada_anular.justificacion_anulacion = datos_ingresados['justificacion_anulacion']
+        entrada_anular.fecha_anulacion = datetime.now()
+        entrada_anular.id_persona_anula = request.user.persona
+        entrada_anular.entrada_anulada = True
+
+        entrada_anular.save()
+        instancia_items_entrada_eliminar.delete()
+        instancia_inventario_eliminar.delete()
+        instancia_elementos.delete()
+        return Response({'success': True, 'detail': 'Solicitud anulada exitosamente'}, status=status.HTTP_201_CREATED)

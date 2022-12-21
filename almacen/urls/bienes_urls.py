@@ -19,6 +19,7 @@ urlpatterns = [
     path('entradas/items/delete/', views.DeleteItemsEntrada.as_view(), name='item-entrada-delete'),
     path('entradas/get-numero_entrada/', views.GetNumeroEntrada.as_view(), name='get_numero_entrada'),
     path('entradas/items/update/<str:id_entrada>/', views.UpdateItemsEntrada.as_view(), name='item-entrada-update'),
+    path('entradas/anular/<str:id_entrada>/', views.AnularEntrada.as_view(), name='entrada-entrada'),
 
 
 
