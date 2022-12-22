@@ -21,6 +21,9 @@ from conservacion.serializers.viveros_serializers import (
     CerrarViveroSerializer,
     ViveroPostSerializer,
     
+    ActivarDesactivarSerializer,
+    ViveroPostSerializer,
+    ViveroPutSerializer
 )
 
 class DeleteVivero(generics.RetrieveDestroyAPIView):
@@ -238,4 +241,47 @@ class FilterViverosByNombreAndMunicipioForAperturaCierres(generics.ListAPIView):
         else: 
             return Response({'success':False,'detail':'No se encontraron viveros'},status=status.HTTP_404_NOT_FOUND)
 
+class UpdateViveros(generics.UpdateAPIView):
+    serializer_class = ViveroPutSerializer
+    queryset = Vivero.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def put(self, request, id_vivero_ingresado):
+        request.data._mutable=True
+        data = request.data
+        persona = request.user.persona.id_persona
+        data['id_persona_crea'] = persona
+        vivero_actualizar = Vivero.objects.filter(id_vivero=id_vivero_ingresado).first()
+        previous = copy.copy(vivero_actualizar)
+        # VALIDAR ASIGNACIÓN VIVERISTA
+        viverista = data.get('id_viverista_actual')
+        if viverista:
+            viverista_existe = Personas.objects.filter(id_persona=viverista).first()
+            if not viverista_existe:
+                return Response({'status':False, 'detail':'Debe elegir un viverista que exista'}, status=status.HTTP_400_BAD_REQUEST)
+            if int(viverista) != int(vivero_actualizar.id_viverista_actual.id_persona):
+                data['fecha_inicio_viverista_actual'] = datetime.now()
+        aux_vivero = Vivero.objects.filter(Q(id_viverista_actual=viverista_existe.id_persona)&~Q(id_vivero=vivero_actualizar.id_vivero))
+        if aux_vivero:
+            return Response({'status':False, 'detail':'Este viverista ya está asignado a otro vivero'}, status=status.HTTP_400_BAD_REQUEST)
+        serializador = self.serializer_class(vivero_actualizar,data=data)
+        serializador.is_valid(raise_exception=True)
+        serializador.save()
         
+        # AUDITORIA DE CREATE DE VIVEROS
+        valores_actualizados = {'previous':previous, 'current':vivero_actualizar}
+        user_logeado = request.user.id_usuario
+        dirip = Util.get_client_ip(request)
+        descripcion = {'nombre':vivero_actualizar.nombre}
+        auditoria_data = {
+            'id_usuario': user_logeado,
+            'id_modulo': 41,
+            'cod_permiso': 'AC',
+            'subsistema': 'CONS',
+            'dirip': dirip,
+            'descripcion': descripcion,
+            'valores_actualizados' : valores_actualizados
+        }
+        Util.save_auditoria(auditoria_data)
+        
+        return Response({'success':True, 'detail':'Vivero actualizado con éxito', 'data':serializador.data}, status=status.HTTP_201_CREATED)
