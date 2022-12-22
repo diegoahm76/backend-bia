@@ -21,6 +21,9 @@ from conservacion.serializers.viveros_serializers import (
     CerrarViveroSerializer,
     ViveroPostSerializer,
     
+    ActivarDesactivarSerializer,
+    ViveroPostSerializer,
+    ViveroPutSerializer
 )
 
 class DeleteVivero(generics.RetrieveDestroyAPIView):
@@ -202,6 +205,75 @@ class GetViveroByPk(generics.RetrieveAPIView):
     serializer_class=ViveroSerializer
     queryset=Vivero.objects.all()
 
+class UpdateViveroCuarentena(generics.ListAPIView):
+    serializer_class=ViveroSerializer
+    queryset=Vivero.objects.all()
+    
+    def put(self,request,id_vivero):
+        vivero=Vivero.objects.filter(id_vivero=id_vivero).first()
+        if vivero:
+            if not request.data.get('justificacion_cuarentena') or  not len(request.data.get('justificacion_cuarentena')):
+                return Response({'success':False,'detail':'Envía la justificación'},status=status.HTTP_400_BAD_REQUEST)
+            if vivero.en_funcionamiento == True and (vivero.vivero_en_cuarentena == False or vivero.vivero_en_cuarentena == None): 
+                vivero.en_funcionamiento = False
+                vivero.vivero_en_cuarentena = True
+                vivero.id_persona_cuarentena = request.user.persona
+                vivero.fecha_inicio_cuarentena = datetime.now()
+                vivero.justificacion_cuarentena = request.data['justificacion_cuarentena']
+                vivero.save()
+                
+                # AUDITORIA DE ABRIR CUARENTENA
+                user_logeado = request.user.id_usuario
+                dirip = Util.get_client_ip(request)
+                descripcion = {'nombre':vivero.nombre,'Cuarentena ':vivero.vivero_en_cuarentena}
+                auditoria_data = {
+                    'id_usuario': user_logeado,
+                    'id_modulo': 42,
+                    'cod_permiso': 'CR',
+                    'subsistema': 'CONS',
+                    'dirip': dirip,
+                    'descripcion': descripcion
+                }
+                Util.save_auditoria(auditoria_data)
+                return Response({'success':True,'detail':'Vivero ingreso en cuarentena'},status=status.HTTP_200_OK)
+            #
+            if vivero.en_funcionamiento == False and vivero.vivero_en_cuarentena == True:    
+                print("JUSTIFICACION",vivero.justificacion_cuarentena)
+                #Historial de cierre de cuarentena
+                creacion_historial=HistorialCuarentenaViveros.objects.create(
+                        id_vivero=vivero,
+                        fecha_inicio_cuarentena=vivero.fecha_inicio_cuarentena,
+                        id_persona_inicia_cuarentena=vivero.id_persona_cuarentena,
+                        justificacion_inicio_cuarentena= vivero.justificacion_cuarentena,
+                        fecha_fin_cuarentena=datetime.now(),
+                        id_persona_finaliza_cuarentena= request.user.persona,
+                        justifiacion_fin_cuarentena=request.data.get('justificacion_cuarentena')
+                )
+                vivero.en_funcionamiento = True
+                vivero.vivero_en_cuarentena = False
+                vivero.id_persona_cuarentena = None
+                vivero.fecha_inicio_cuarentena = None
+                vivero.justificacion_cuarentena = None
+                vivero.save()
+                
+                # AUDITORIA DE CERRAR CUARENTENA
+                user_logeado = request.user.id_usuario
+                dirip = Util.get_client_ip(request)
+                descripcion = {'nombre':vivero.nombre,'Cuarentena ':vivero.vivero_en_cuarentena}
+                auditoria_data = {
+                    'id_usuario': user_logeado,
+                    'id_modulo': 42,
+                    'cod_permiso': 'CR',
+                    'subsistema': 'CONS',
+                    'dirip': dirip,
+                    'descripcion': descripcion
+                }
+                Util.save_auditoria(auditoria_data)
+                return Response({'success ':True,'detail':'Vivero fuera de cuarentena '},status=status.HTTP_200_OK)
+            return Response({'success ':False,'detail':'El vivero no se encuentra en funcionamiento '},status=status.HTTP_200_OK)
+        else : 
+            return Response({'success ':False,'detail':'El vivero seleccionado no existe'},status=status.HTTP_404_NOT_FOUND)
+    
 class FilterViverosByNombreAndMunicipioForCuarentena(generics.ListAPIView):
     serializer_class=ViveroSerializer
     queryset=Vivero.objects.all()
@@ -211,11 +283,11 @@ class FilterViverosByNombreAndMunicipioForCuarentena(generics.ListAPIView):
             if key in ['nombre','cod_municipio']:
                 if key != 'cod_municipio':
                     filter[key+'__icontains']=value
-                else:
+                else: 
                     filter[key]=value
         vivero=Vivero.objects.filter(**filter).filter(Q(en_funcionamiento=True) | Q(vivero_en_cuarentena=True))
+        serializer=self.serializer_class(vivero,many=True)
         if vivero:
-            serializer=self.serializer_class(vivero,many=True)
             return Response({'success':True,'detail':'Se encontraron viveros','data':serializer.data},status=status.HTTP_200_OK)
         else: 
             return Response({'success':False,'detail':'No se encontraron viveros'},status=status.HTTP_404_NOT_FOUND)
@@ -237,5 +309,65 @@ class FilterViverosByNombreAndMunicipioForAperturaCierres(generics.ListAPIView):
             return Response({'success':True,'detail':'Se encontraron viveros','data':serializer.data},status=status.HTTP_200_OK)
         else: 
             return Response({'success':False,'detail':'No se encontraron viveros'},status=status.HTTP_404_NOT_FOUND)
+class FilterViverosByNombreAndMunicipio(generics.ListAPIView):
+    serializer_class=ViveroSerializer
+    queryset=Vivero.objects.all()
+    def get(self,request):
+        filter={}
+        for key,value in request.query_params.items():
+            if key in ['nombre','cod_municipio']:
+                if key != 'cod_municipio':
+                    filter[key+'__icontains']=value
+                else:
+                    filter[key]=value
+        vivero=Vivero.objects.filter(**filter)
+        if vivero:
+            serializer=self.serializer_class(vivero,many=True)
+            return Response({'success':True,'detail':'Se encontraron viveros','data':serializer.data},status=status.HTTP_200_OK)
+        else: 
+            return Response({'success':False,'detail':'No se encontraron viveros'},status=status.HTTP_404_NOT_FOUND)
 
+class UpdateViveros(generics.UpdateAPIView):
+    serializer_class = ViveroPutSerializer
+    queryset = Vivero.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def put(self, request, id_vivero_ingresado):
+        request.data._mutable=True
+        data = request.data
+        persona = request.user.persona.id_persona
+        data['id_persona_crea'] = persona
+        vivero_actualizar = Vivero.objects.filter(id_vivero=id_vivero_ingresado).first()
+        previous = copy.copy(vivero_actualizar)
+        # VALIDAR ASIGNACIÓN VIVERISTA
+        viverista = data.get('id_viverista_actual')
+        if viverista:
+            viverista_existe = Personas.objects.filter(id_persona=viverista).first()
+            if not viverista_existe:
+                return Response({'status':False, 'detail':'Debe elegir un viverista que exista'}, status=status.HTTP_400_BAD_REQUEST)
+            if int(viverista) != int(vivero_actualizar.id_viverista_actual.id_persona):
+                data['fecha_inicio_viverista_actual'] = datetime.now()
+        aux_vivero = Vivero.objects.filter(Q(id_viverista_actual=viverista_existe.id_persona)&~Q(id_vivero=vivero_actualizar.id_vivero))
+        if aux_vivero:
+            return Response({'status':False, 'detail':'Este viverista ya está asignado a otro vivero'}, status=status.HTTP_400_BAD_REQUEST)
+        serializador = self.serializer_class(vivero_actualizar,data=data)
+        serializador.is_valid(raise_exception=True)
+        serializador.save()
         
+        # AUDITORIA DE CREATE DE VIVEROS
+        valores_actualizados = {'previous':previous, 'current':vivero_actualizar}
+        user_logeado = request.user.id_usuario
+        dirip = Util.get_client_ip(request)
+        descripcion = {'nombre':vivero_actualizar.nombre}
+        auditoria_data = {
+            'id_usuario': user_logeado,
+            'id_modulo': 41,
+            'cod_permiso': 'AC',
+            'subsistema': 'CONS',
+            'dirip': dirip,
+            'descripcion': descripcion,
+            'valores_actualizados' : valores_actualizados
+        }
+        Util.save_auditoria(auditoria_data)
+        
+        return Response({'success':True, 'detail':'Vivero actualizado con éxito', 'data':serializador.data}, status=status.HTTP_201_CREATED)

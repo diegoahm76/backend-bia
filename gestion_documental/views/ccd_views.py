@@ -333,10 +333,14 @@ class GetSeriesDoc(generics.ListAPIView):
 class UpdateSubseriesDoc(generics.UpdateAPIView):
     serializer_class = SubseriesDocSerializer
     queryset = SubseriesDoc.objects.all()
+    permission_classes = [IsAuthenticated]
     
     def put(self, request, id_ccd):
         data = request.data
         ccd = CuadrosClasificacionDocumental.objects.filter(id_ccd=id_ccd).first()
+        usuario = request.user.id_usuario
+        descripcion = {"nombre": str(ccd.nombre), "version": str(ccd.version)}
+        direccion = Util.get_client_ip(request)
         if ccd:
             if not ccd.fecha_terminado:
                 if data:
@@ -360,6 +364,8 @@ class UpdateSubseriesDoc(generics.UpdateAPIView):
                         return Response({'success':False, 'detail':'Debe validar que los nombres de las subseries sean únicos'}, status=status.HTTP_400_BAD_REQUEST)
                     
                     # CREAR SUBSERIES
+                    valores_creados_detalles = []
+                    
                     subseries_create = list(filter(lambda subserie: subserie['id_subserie_doc'] == None, data))
                     subseries_id_create = []
                     if subseries_create:
@@ -367,16 +373,22 @@ class UpdateSubseriesDoc(generics.UpdateAPIView):
                         serializer.is_valid(raise_exception=True)
                         serializador = serializer.save()
                         subseries_id_create.extend([subserie.id_subserie_doc for subserie in serializador])
+                        valores_creados_detalles = [{'nombre':subserie['nombre'], 'codigo':subserie['codigo']} for subserie in subseries_create]
 
                     # ACTUALIZAR SUBSERIES
+                    valores_actualizados_detalles = []
+                    
                     subseries_update = list(filter(lambda subserie: subserie['id_subserie_doc'] != None, data))
                     if subseries_update:
                         for subserie in subseries_update:
                             subserie_existe = SubseriesDoc.objects.filter(id_subserie_doc=subserie['id_subserie_doc']).first()
+                            previous_subserie = copy.copy(subserie_existe)
                             if subserie_existe:
+                                descripcion_subserie = {'nombre':previous_subserie.nombre, 'codigo':previous_subserie.codigo}
                                 serializer = self.serializer_class(subserie_existe, data=subserie)
                                 serializer.is_valid(raise_exception=True)
                                 serializer.save()
+                                valores_actualizados_detalles.append({'descripcion':descripcion_subserie, 'previous':previous_subserie, 'current':subserie_existe})
 
                     # ELIMINAR SUBSERIES
                     lista_subseries_id = [subserie['id_subserie_doc'] for subserie in subseries_update]
@@ -386,11 +398,26 @@ class UpdateSubseriesDoc(generics.UpdateAPIView):
                     # VALIDAR QUE NO SE ESTÉN USANDO LAS SUBSERIES A ELIMINAR
                     subseries_eliminar_id = [subserie.id_subserie_doc for subserie in subseries_eliminar]
                     serie_subserie_unidad = SeriesSubseriesUnidadOrg.objects.filter(id_sub_serie_doc__in=subseries_eliminar_id)
-                    print(serie_subserie_unidad)
                     if serie_subserie_unidad:
                         return Response({'success':False, 'detail':'Una o varias subseries a eliminar ya están asociadas al CCD, por favor eliminar asociaciones primero'})
                     
+                    valores_eliminados_detalles = [{'nombre':subserie.nombre, 'codigo':subserie.codigo} for subserie in subseries_eliminar]
+
                     subseries_eliminar.delete()
+                    
+                    # AUDITORIA MAESTRO DETALLE
+                    auditoria_data = {
+                        "id_usuario" : usuario,
+                        "id_modulo" : 27,
+                        "cod_permiso": "AC",
+                        "subsistema": 'GEST',
+                        "dirip": direccion,
+                        "descripcion": descripcion,
+                        "valores_actualizados_detalles": valores_actualizados_detalles,
+                        "valores_creados_detalles": valores_creados_detalles,
+                        "valores_eliminados_detalles": valores_eliminados_detalles
+                    }
+                    Util.save_auditoria_maestro_detalle(auditoria_data)
                     
                     return Response({'success':True, 'detail':'Se ha realizado cambios con las subseries'}, status=status.HTTP_201_CREATED)
                 else:
@@ -401,7 +428,21 @@ class UpdateSubseriesDoc(generics.UpdateAPIView):
                     if serie_subserie_unidad:
                         return Response({'success':False, 'detail':'Una o varias subseries a eliminar ya están asociadas al CCD, por favor eliminar asociaciones primero'})
                     
+                    valores_eliminados_detalles = [{'nombre':subserie.nombre, 'codigo':subserie.codigo} for subserie in subseries_eliminar]
+                    
                     subseries_eliminar.delete()
+                    
+                    # AUDITORIA MAESTRO DETALLE
+                    auditoria_data = {
+                        "id_usuario" : usuario,
+                        "id_modulo" : 27,
+                        "cod_permiso": "AC",
+                        "subsistema": 'GEST',
+                        "dirip": direccion,
+                        "descripcion": descripcion,
+                        "valores_eliminados_detalles": valores_eliminados_detalles
+                    }
+                    Util.save_auditoria_maestro_detalle(auditoria_data)
 
                     return Response({'success':True, 'detail':'Se han eliminado todas las subseries'}, status=status.HTTP_204_NO_CONTENT)
             else:
