@@ -23,12 +23,10 @@ class CerrarViveroSerializer(serializers.ModelSerializer):
             'justificacion_cierre': {'required': True},
         }
         
-class ViveroSerializer(serializers.Serializer):
+class ViveroSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vivero
-        fields = '__all__'
-
-
+        fields = '__all__'        
 class ActivarDesactivarSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vivero

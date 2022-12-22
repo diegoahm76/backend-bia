@@ -10,4 +10,6 @@ urlpatterns = [
     path('get-by-id/<str:pk>/', views.GetViveroByPk.as_view(),name='viveros-get-by-id'),
     path('get-by-nombre-municipio/cuarentena/', views.FilterViverosByNombreAndMunicipioForCuarentena.as_view(),name='get-by-nombre-municipio-cuarentena'),
     path('get-by-nombre-municipio/apertura-cierre/', views.FilterViverosByNombreAndMunicipioForAperturaCierres.as_view(),name='get-by-nombre-municipio-apertura-cierre'),
+    path('get-by-nombre-municipio/', views.FilterViverosByNombreAndMunicipio.as_view(),name='get-by-nombre-municipio'),
+    path('update-vivero/cuarentena/<str:id_vivero>/', views.UpdateViveroCuarentena.as_view(),name='update-vivero-cuarentena')
 ]
