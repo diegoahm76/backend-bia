@@ -46,11 +46,15 @@ from gestion_documental.models.trd_models import (
 class UpdateTipologiasDocumentales(generics.UpdateAPIView):
     serializer_class = TipologiasDocumentalesPutSerializer
     queryset = TipologiasDocumentales.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, id_trd):
         data = request.data
         trd = TablaRetencionDocumental.objects.filter(id_trd=id_trd).first()
         confirm = request.query_params.get('confirm')
+        usuario = request.user.id_usuario
+        descripcion = {"nombre": str(trd.nombre), "version": str(trd.version)}
+        direccion = Util.get_client_ip(request)
         if trd:
             if not trd.fecha_terminado and not trd.fecha_retiro_produccion:
                 if data:
@@ -94,6 +98,8 @@ class UpdateTipologiasDocumentales(generics.UpdateAPIView):
                                 return Response({'success':False, 'detail':'Debe asignar formatos que correspondan al tipo medio elegido'}, status=status.HTTP_400_BAD_REQUEST)
                     
                     # CREAR TIPOLOGIAS
+                    valores_creados_detalles = []
+                    
                     tipologias_create = list(filter(lambda tipologia: tipologia['id_tipologia_documental'] == None, data))
                     tipologias_id_create = []
                     if tipologias_create:
@@ -109,16 +115,21 @@ class UpdateTipologiasDocumentales(generics.UpdateAPIView):
                                     id_tipologia_doc=serializador,
                                     id_formato_tipo_medio=formato_instance
                                 )
+                            valores_creados_detalles.append({'nombre':tipologia['nombre'], 'codigo':tipologia['codigo']})
+                        
                         # CAMBIOS POR CONFIRMAR TRUE SI ES TRD ACTUAL
                         if trd.actual:
                             trd.cambios_por_confirmar = True
                             trd.save()
 
                     # ACTUALIZAR TIPOLOGIAS
+                    valores_actualizados_detalles = []
+                    
                     tipologias_update = list(filter(lambda tipologia: tipologia['id_tipologia_documental'] != None, data))
                     if tipologias_update:
                         for tipologia in tipologias_update:
                             tipologia_existe = TipologiasDocumentales.objects.filter(id_tipologia_documental=tipologia['id_tipologia_documental']).first()
+                            previous_tipologia = copy.copy(tipologia_existe)
                             if tipologia_existe:
                                 if tipologia_existe.cod_tipo_medio_doc != tipologia['cod_tipo_medio_doc']:
                                     formato_tipologia_existe = FormatosTiposMedioTipoDoc.objects.filter(id_tipologia_doc=tipologia['id_tipologia_documental'])
@@ -141,6 +152,9 @@ class UpdateTipologiasDocumentales(generics.UpdateAPIView):
                                         )
                                     formato_tipologia_eliminar = FormatosTiposMedioTipoDoc.objects.filter(id_tipologia_doc=tipologia['id_tipologia_documental']).exclude(id_formato_tipo_medio__in=tipologia['formatos'])
                                     formato_tipologia_eliminar.delete()
+                                
+                                descripcion_tipologia = {'nombre':previous_tipologia.nombre, 'codigo':previous_tipologia.codigo}
+                                valores_actualizados_detalles.append({'descripcion':descripcion_tipologia, 'previous':previous_tipologia, 'current':tipologia_existe})
 
                     # ELIMINAR TIPOLOGIAS
                     lista_tipologia_id = [tipologia['id_tipologia_documental'] for tipologia in tipologias_update]
@@ -159,7 +173,23 @@ class UpdateTipologiasDocumentales(generics.UpdateAPIView):
                         else:
                             return Response({'success':False, 'detail':'Una o varias tipologias a eliminar ya están asociadas al TRD', 'data':serie_subserie_unidad_tipologia.values()}, status=status.HTTP_403_FORBIDDEN)
                     
+                    valores_eliminados_detalles = [{'nombre':tipologia.nombre, 'codigo':tipologia.codigo} for tipologia in tipologias_eliminar]
+                    
                     tipologias_eliminar.delete()
+                    
+                    # AUDITORIA MAESTRO DETALLE
+                    auditoria_data = {
+                        "id_usuario" : usuario,
+                        "id_modulo" : 29,
+                        "cod_permiso": "AC",
+                        "subsistema": 'GEST',
+                        "dirip": direccion,
+                        "descripcion": descripcion,
+                        "valores_creados_detalles": valores_creados_detalles,
+                        "valores_actualizados_detalles": valores_actualizados_detalles,
+                        "valores_eliminados_detalles": valores_eliminados_detalles
+                    }
+                    Util.save_auditoria_maestro_detalle(auditoria_data)
 
                     return Response({'success':True, 'detail':'Se ha realizado cambios con las tipologias'}, status=status.HTTP_201_CREATED)
                 else:
@@ -177,7 +207,21 @@ class UpdateTipologiasDocumentales(generics.UpdateAPIView):
                         else:
                             return Response({'success':False, 'detail':'Una o varias tipologias a eliminar ya están asociadas al TRD', 'data':serie_subserie_unidad_tipologia.values()}, status=status.HTTP_403_FORBIDDEN)
 
+                    valores_eliminados_detalles = [{'nombre':tipologia.nombre, 'codigo':tipologia.codigo} for tipologia in tipologias_eliminar]
+                    
                     tipologias_eliminar.delete()
+                    
+                    # AUDITORIA MAESTRO DETALLE
+                    auditoria_data = {
+                        "id_usuario" : usuario,
+                        "id_modulo" : 29,
+                        "cod_permiso": "AC",
+                        "subsistema": 'GEST',
+                        "dirip": direccion,
+                        "descripcion": descripcion,
+                        "valores_eliminados_detalles": valores_eliminados_detalles
+                    }
+                    Util.save_auditoria_maestro_detalle(auditoria_data)
 
                     return Response({'success':True, 'detail':'Se han eliminado todas las tipologias'}, status=status.HTTP_204_NO_CONTENT)
             else:
