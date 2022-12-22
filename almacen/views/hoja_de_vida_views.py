@@ -283,6 +283,9 @@ class UpdateHojaDeVidaComputadores(generics.UpdateAPIView):
             diccionario_cod_estado_activo=dict((x,y) for x,y in estados_articulo_CHOICES) # transforma un choices en un diccionario
             estado=inventario.cod_estado_activo if inventario else None
             
+            data_serializada['codigo_bien'] = bien.codigo_bien
+            data_serializada['nombre'] = bien.nombre
+            data_serializada['doc_identificador_nro'] = bien.doc_identificador_nro
             data_serializada['id_marca'] = marca
             data_serializada['marca'] = marca_existe.nombre
             data_serializada['estado'] = diccionario_cod_estado_activo[estado] if estado else None
@@ -338,6 +341,9 @@ class UpdateHojaDeVidaVehiculos(generics.UpdateAPIView):
             diccionario_cod_estado_activo=dict((x,y) for x,y in estados_articulo_CHOICES) # transforma un choices en un diccionario
             estado=inventario.cod_estado_activo if inventario else None
             
+            data_serializada['codigo_bien'] = bien.codigo_bien
+            data_serializada['nombre'] = bien.nombre
+            data_serializada['doc_identificador_nro'] = bien.doc_identificador_nro
             data_serializada['id_marca'] = marca
             data_serializada['marca'] = marca_existe.nombre
             data_serializada['estado'] = diccionario_cod_estado_activo[estado] if estado else None
@@ -373,10 +379,32 @@ class UpdateHojaDeVidaOtrosActivos(generics.UpdateAPIView):
         if hoja_vida_otros:
             hoja_vida_otros_previous = copy.copy(hoja_vida_otros)
             bien = CatalogoBienes.objects.filter(id_bien=hoja_vida_otros.id_articulo.id_bien).first()
+            inventario = Inventario.objects.filter(id_bien=hoja_vida_otros.id_articulo.id_bien).first()
+            
+            # ACTUALIZAR MARCA EN CATALOGO BIENES
+            marca = data.get('id_marca')
+            marca_existe = None
+            
+            if marca:
+                marca_existe = Marcas.objects.filter(id_marca=marca).first()
+                if marca_existe:
+                    bien.id_marca = marca_existe
+                    bien.save()
             
             serializer = self.serializer_class(hoja_vida_otros, data=data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
+            
+            data_serializada = serializer.data
+            diccionario_cod_estado_activo=dict((x,y) for x,y in estados_articulo_CHOICES) # transforma un choices en un diccionario
+            estado=inventario.cod_estado_activo if inventario else None
+            
+            data_serializada['codigo_bien'] = bien.codigo_bien
+            data_serializada['nombre'] = bien.nombre
+            data_serializada['doc_identificador_nro'] = bien.doc_identificador_nro
+            data_serializada['id_marca'] = marca
+            data_serializada['marca'] = marca_existe.nombre
+            data_serializada['estado'] = diccionario_cod_estado_activo[estado] if estado else None
             
             # Auditoria
             usuario = request.user.id_usuario
@@ -394,7 +422,7 @@ class UpdateHojaDeVidaOtrosActivos(generics.UpdateAPIView):
             }
             Util.save_auditoria(auditoria_data)
             
-            return Response({'success':True, 'detail':'Se ha actualizado la hoja de vida', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+            return Response({'success':True, 'detail':'Se ha actualizado la hoja de vida', 'data':data_serializada}, status=status.HTTP_201_CREATED)
         else:
             return Response({'success':False, 'detail':'No existe la hoja de vida ingresada'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -433,4 +461,60 @@ class GetHojaDeVidaOtrosActivosById(generics.RetrieveAPIView):
             return Response({'success':True, 'detail':'Se encontró la hoja de vida', 'data':serializador.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
-        
+
+class GetHojaDeVidaComputadoresByIdBien(generics.RetrieveAPIView):
+    serializer_class=SerializersHojaDeVidaComputadores
+    queryset=HojaDeVidaComputadores.objects.all()
+    
+    def get(self, request, id_bien):
+        hoja_vida_computador = HojaDeVidaComputadores.objects.filter(id_articulo=id_bien).first()
+        if hoja_vida_computador:
+            serializador = self.serializer_class(hoja_vida_computador)
+            inventario = Inventario.objects.filter(id_bien=hoja_vida_computador.id_articulo.id_bien).first()
+            
+            data_serializada = serializador.data
+            diccionario_cod_estado_activo=dict((x,y) for x,y in estados_articulo_CHOICES) # transforma un choices en un diccionario
+            estado=inventario.cod_estado_activo if inventario else None
+            data_serializada['estado'] = diccionario_cod_estado_activo[estado] if estado else None
+            
+            return Response({'success':True, 'detail':'Se encontró la hoja de vida', 'data':data_serializada}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
+
+class GetHojaDeVidaVehiculosByIdBien(generics.RetrieveAPIView):
+    serializer_class=SerializersHojaDeVidaVehiculos
+    queryset=HojaDeVidaVehiculos.objects.all()
+    
+    def get(self, request, id_bien):
+        hoja_vida_vehiculo = HojaDeVidaVehiculos.objects.filter(id_articulo=id_bien).first()
+        if hoja_vida_vehiculo:
+            serializador = self.serializer_class(hoja_vida_vehiculo)
+            inventario = Inventario.objects.filter(id_bien=hoja_vida_vehiculo.id_articulo.id_bien).first()
+            
+            data_serializada = serializador.data
+            diccionario_cod_estado_activo=dict((x,y) for x,y in estados_articulo_CHOICES) # transforma un choices en un diccionario
+            estado=inventario.cod_estado_activo if inventario else None
+            data_serializada['estado'] = diccionario_cod_estado_activo[estado] if estado else None
+            
+            return Response({'success':True, 'detail':'Se encontró la hoja de vida', 'data':data_serializada}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
+
+class GetHojaDeVidaOtrosActivosByIdBien(generics.RetrieveAPIView):
+    serializer_class=SerializersHojaDeVidaOtrosActivos
+    queryset=HojaDeVidaOtrosActivos.objects.all()
+    
+    def get(self, request, id_bien):
+        hoja_vida_otros = HojaDeVidaOtrosActivos.objects.filter(id_articulo=id_bien).first()
+        if hoja_vida_otros:
+            serializador = self.serializer_class(hoja_vida_otros)
+            inventario = Inventario.objects.filter(id_bien=hoja_vida_otros.id_articulo.id_bien).first()
+            
+            data_serializada = serializador.data
+            diccionario_cod_estado_activo=dict((x,y) for x,y in estados_articulo_CHOICES) # transforma un choices en un diccionario
+            estado=inventario.cod_estado_activo if inventario else None
+            data_serializada['estado'] = diccionario_cod_estado_activo[estado] if estado else None
+            
+            return Response({'success':True, 'detail':'Se encontró la hoja de vida', 'data':data_serializada}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)

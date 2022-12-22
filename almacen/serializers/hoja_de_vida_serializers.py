@@ -7,6 +7,12 @@ from almacen.models.hoja_de_vida_models import HojaDeVidaComputadores, HojaDeVid
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 
 class SerializersHojaDeVidaComputadores(serializers.ModelSerializer):
+    codigo_bien=serializers.ReadOnlyField(source='id_articulo.codigo_bien',default=None)
+    nombre=serializers.ReadOnlyField(source='id_articulo.nombre',default=None)
+    doc_identificador_nro=serializers.ReadOnlyField(source='id_articulo.doc_identificador_nro',default=None)
+    id_marca=serializers.ReadOnlyField(source='id_articulo.id_marca.id_marca',default=None)
+    marca=serializers.ReadOnlyField(source='id_articulo.id_marca.nombre',default=None)
+    
     class Meta:
         model=HojaDeVidaComputadores
         fields=('__all__')
@@ -27,11 +33,23 @@ class SerializersPutHojaDeVidaOtrosActivos(serializers.ModelSerializer):
         exclude=('id_articulo',)
         
 class SerializersHojaDeVidaVehiculos(serializers.ModelSerializer):
+    codigo_bien=serializers.ReadOnlyField(source='id_articulo.codigo_bien',default=None)
+    nombre=serializers.ReadOnlyField(source='id_articulo.nombre',default=None)
+    doc_identificador_nro=serializers.ReadOnlyField(source='id_articulo.doc_identificador_nro',default=None)
+    id_marca=serializers.ReadOnlyField(source='id_articulo.id_marca.id_marca',default=None)
+    marca=serializers.ReadOnlyField(source='id_articulo.id_marca.nombre',default=None)
+    
     class Meta:
         model=HojaDeVidaVehiculos
         fields=('__all__')
 
 class SerializersHojaDeVidaOtrosActivos(serializers.ModelSerializer):
+    codigo_bien=serializers.ReadOnlyField(source='id_articulo.codigo_bien',default=None)
+    nombre=serializers.ReadOnlyField(source='id_articulo.nombre',default=None)
+    doc_identificador_nro=serializers.ReadOnlyField(source='id_articulo.doc_identificador_nro',default=None)
+    id_marca=serializers.ReadOnlyField(source='id_articulo.id_marca.id_marca',default=None)
+    marca=serializers.ReadOnlyField(source='id_articulo.id_marca.nombre',default=None)
+    
     class Meta:
         model=HojaDeVidaOtrosActivos
         fields=('__all__')
