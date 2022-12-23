@@ -816,9 +816,13 @@ class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
                 return Response({'success': False, 'detail': 'No se puede eliminar este item si la entrada no fue su último movimiento'}, status=status.HTTP_403_FORBIDDEN)
 
         # VALIDACIÓN SI TIENE HOJA DE VIDA
+        valores_eliminados_detalles = []
+        id_entrada = 0
+        
         objects_items_enviado = [item for item in items_enviados]
         for item in objects_items_enviado:
             item_instance = ItemEntradaAlmacen.objects.filter(id_item_entrada_almacen=item['id_item_entrada_almacen']).first()
+            id_entrada = item_instance.id_entrada_almacen.id_entrada_almacen
             
             if item_instance.id_bien.cod_tipo_bien == 'A':
                 item_hv_comp = HojaDeVidaComputadores.objects.filter(id_articulo=item_instance.id_bien.id_bien).first()
@@ -832,8 +836,29 @@ class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
 
                 #ELIMINA EL REGISTRO EN INVENTARIO, CATALOGO DE BIENES E ITEM ENTRADA
                 inventario_item_instance_delete.delete()
+                
+                valores_eliminados_detalles.append({'nombre':bien_eliminar.nombre})
+                
                 bien_eliminar.delete()
                 item_instance.delete()
+        
+        entrada = EntradasAlmacen.objects.filter(id_entrada_almacen=id_entrada).first()
+        
+        usuario = request.user.id_usuario
+        descripcion = {"numero_entrada_almacen": str(entrada.numero_entrada_almacen), "fecha_entrada": str(entrada.fecha_entrada)}
+        direccion = Util.get_client_ip(request)
+        
+        # AUDITORIA MAESTRO DETALLE
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 34,
+            "cod_permiso": "AC",
+            "subsistema": 'ALMA',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_eliminados_detalles": valores_eliminados_detalles
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)    
         
         return Response({'success': True, 'detail': 'Se ha eliminado correctamente'}, status=status.HTTP_204_NO_CONTENT)
 
