@@ -150,7 +150,7 @@ def create_historico_personas(sender, instance, **kwargs):
             if previous.estado_civil:
                 if not current.estado_civil:
                     persona = Personas.objects.filter(Q(estado_civil=previous.estado_civil.cod_estado_civil) & ~Q(id_persona=previous.id_persona)).first()
-                    estado_civil = TipoDocumento.objects.filter(cod_estado_civil=previous.estado_civil.cod_estado_civil).first()
+                    estado_civil = EstadoCivil.objects.filter(cod_estado_civil=previous.estado_civil.cod_estado_civil).first()
                     if not persona:
                         estado_civil.item_ya_usado=False
                         estado_civil.save()
@@ -158,8 +158,8 @@ def create_historico_personas(sender, instance, **kwargs):
                     if previous.estado_civil.cod_estado_civil != current.estado_civil.cod_estado_civil:
                         persona_current = Personas.objects.filter(estado_civil=current.estado_civil.cod_estado_civil).first()
                         persona_previous = Personas.objects.filter(Q(estado_civil=previous.estado_civil.cod_estado_civil) & ~Q(id_persona=previous.id_persona)).first()
-                        estado_civil_current = TipoDocumento.objects.filter(estado_civil=current.estado_civil.cod_estado_civil).first()
-                        estado_civil_previous = TipoDocumento.objects.filter(estado_civil=previous.estado_civil.cod_estado_civil).first()
+                        estado_civil_current = EstadoCivil.objects.filter(cod_estado_civil=current.estado_civil.cod_estado_civil).first()
+                        estado_civil_previous = EstadoCivil.objects.filter(cod_estado_civil=previous.estado_civil.cod_estado_civil).first()
                         if not persona_current:
                             estado_civil_current.item_ya_usado=True
                             estado_civil_current.save()
@@ -169,7 +169,7 @@ def create_historico_personas(sender, instance, **kwargs):
             else:
                 if current.estado_civil:
                     persona = Personas.objects.filter(estado_civil=current.estado_civil.cod_estado_civil).first()
-                    estado_civil = TipoDocumento.objects.filter(estado_civil=current.estado_civil.cod_estado_civil).first()
+                    estado_civil = EstadoCivil.objects.filter(cod_estado_civil=current.estado_civil.cod_estado_civil).first()
                     if not persona:
                         estado_civil.item_ya_usado=True
                         estado_civil.save()
