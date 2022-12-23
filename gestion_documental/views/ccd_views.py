@@ -240,6 +240,7 @@ class GetCCDTerminado(generics.ListAPIView):
 class CreateSeriesDoc(generics.UpdateAPIView):
     serializer_class = SeriesDocPostSerializer
     queryset = SeriesDoc.objects.all()
+    permission_classes = [IsAuthenticated]
     
     def put(self, request, id_ccd):
         id_ccd_ingresada = id_ccd
@@ -251,6 +252,11 @@ class CreateSeriesDoc(generics.UpdateAPIView):
             if fecha_ccd['fecha_terminado'] != None:
                 return Response({'success':False, "detail" : "No se pueden realizar modificaciones sobre esta CCD, ya está terminado"}, status=status.HTTP_400_BAD_REQUEST)    
         ccd = CuadrosClasificacionDocumental.objects.filter(id_ccd = id_ccd_ingresada).first()
+        
+        usuario = request.user.id_usuario
+        descripcion = {"nombre": str(ccd.nombre), "version": str(ccd.version)}
+        direccion = Util.get_client_ip(request)
+        
         if ccd == None:
             return Response({'success': False, "detail" : "No se encontró esa ccd"}, status=status.HTTP_400_BAD_REQUEST)
         if request.data == []:
@@ -261,7 +267,21 @@ class CreateSeriesDoc(generics.UpdateAPIView):
             if serie_subserie_unidad:
                 return Response({'success':False, 'detail':'Una o varias series a eliminar ya están asociadas al CCD, por favor eliminar asociaciones primero'})
             
+            valores_eliminados_detalles = [{'nombre':serie.nombre, 'codigo':serie.codigo} for serie in series_eliminar]
+                    
             series_eliminar.delete()
+            
+            # AUDITORIA MAESTRO DETALLE
+            auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 27,
+                "cod_permiso": "AC",
+                "subsistema": 'GEST',
+                "dirip": direccion,
+                "descripcion": descripcion,
+                "valores_eliminados_detalles": valores_eliminados_detalles
+            }
+            Util.save_auditoria_maestro_detalle(auditoria_data)   
 
             return Response({'success':True, 'detail':'Se han eliminado todas las series'}, status=status.HTTP_204_NO_CONTENT)
            
@@ -279,22 +299,29 @@ class CreateSeriesDoc(generics.UpdateAPIView):
         series_create = list(filter(lambda serie: serie['id_serie_doc'] == None, data_ingresada))           
         
         # CREATE
+        valores_creados_detalles = []
+        
         series_id_create = []
         if series_create:
             serializer = self.serializer_class(data=series_create, many=True)
             serializer.is_valid(raise_exception=True)
             serializador = serializer.save()
             series_id_create.extend([serie.id_serie_doc for serie in serializador])
-            print(series_id_create)
+            valores_creados_detalles = [{'nombre':serie['nombre'], 'codigo':serie['codigo']} for serie in series_create]
         
         # UPDATE SERIES
+        valores_actualizados_detalles = []
+        
         if series_update:
             for i in series_update:
                 instancia = SeriesDoc.objects.filter(id_serie_doc=i['id_serie_doc']).first()
+                previous_serie = copy.copy(instancia)
                 if instancia:
+                    descripcion_subserie = {'nombre':previous_serie.nombre, 'codigo':previous_serie.codigo}
                     serializer = self.serializer_class(instancia, data=i, many=False)
                     serializer.is_valid(raise_exception=True)
                     serializer.save()
+                    valores_actualizados_detalles.append({'descripcion':descripcion_subserie, 'previous':previous_serie, 'current':instancia})
         
         # ELIMINAR SERIES
         lista_series_id = [serie['id_serie_doc'] for serie in series_update]
@@ -307,8 +334,23 @@ class CreateSeriesDoc(generics.UpdateAPIView):
         if serie_subserie_unidad:
             return Response({'success':False, 'detail':'Una o varias series a eliminar ya están asociadas al CCD, por favor eliminar asociaciones primero'})
         
+        valores_eliminados_detalles = [{'nombre':serie.nombre, 'codigo':serie.codigo} for serie in series_eliminar]
+        
         series_eliminar.delete()
-            
+        
+        # AUDITORIA MAESTRO DETALLE
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 27,
+            "cod_permiso": "AC",
+            "subsistema": 'GEST',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_actualizados_detalles": valores_actualizados_detalles,
+            "valores_creados_detalles": valores_creados_detalles,
+            "valores_eliminados_detalles": valores_eliminados_detalles
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)    
             
         return Response({'success': True, "detail" : "Datos guardados con éxito"}, status=status.HTTP_201_CREATED)
 
