@@ -343,12 +343,12 @@ class ValidarFechasProgramacion(generics.ListAPIView):
                     aux_v_f_p = datos_ingresados['desde'].split("-")
                     aux_v_f_p_2 = datos_ingresados['hasta'].split("-")
                 except:
-                    return Response({'success':False, 'detail': 'Formato de fecha no válido'}, status=status.HTTP_404_NOT_FOUND)
+                    return Response({'success':False, 'detail': 'Formato de fecha no válido_1'}, status=status.HTTP_404_NOT_FOUND)
         
                 if not (aux_v_f_p[0]).isdigit() or not (aux_v_f_p[1]).isdigit() or not (aux_v_f_p[2]).isdigit() or not (aux_v_f_p_2[0]).isdigit() or not (aux_v_f_p_2[1]).isdigit() or not (aux_v_f_p_2[2]).isdigit():
-                    return Response({'success':False, 'detail': 'Formato de fecha no válido'}, status=status.HTTP_404_NOT_FOUND)
+                    return Response({'success':False, 'detail': 'Formato de fecha no válido_2'}, status=status.HTTP_404_NOT_FOUND)
                 if len(aux_v_f_p) != 3 or len(aux_v_f_p_2) != 3:
-                    return Response({'success':False, 'detail': 'Formato de fecha no válido'}, status=status.HTTP_404_NOT_FOUND)
+                    return Response({'success':False, 'detail': 'Formato de fecha no válido_3'}, status=status.HTTP_404_NOT_FOUND)
                 a = (len(aux_v_f_p[0]) != 4)
                 b = (len(aux_v_f_p[1]) <= 2 and len(aux_v_f_p[1]) >= 1)
                 c = (len(aux_v_f_p[2]) <= 2 and len(aux_v_f_p[2]) >= 1)
@@ -357,7 +357,7 @@ class ValidarFechasProgramacion(generics.ListAPIView):
                 f = (len(aux_v_f_p[2]) <= 2 and len(aux_v_f_p[2]) >= 1)
                 
                 if a or not b or not c or d or not e or not f:
-                    return Response({'success':False, 'detail': 'Formato de fecha no válido'}, status=status.HTTP_404_NOT_FOUND)
+                    return Response({'success':False, 'detail': 'Formato de fecha no válido_4'}, status=status.HTTP_404_NOT_FOUND)
 
                 if int(aux_v_f_p[1]) <= 0 or int(aux_v_f_p[1]) >= 13 or int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 32 or int(aux_v_f_p_2[1]) <= 0 or int(aux_v_f_p_2[1]) >= 13 or int(aux_v_f_p_2[2]) <= 0 or int(aux_v_f_p_2[2]) >= 32:
                     return Response({'success':False, 'detail': 'Formato de fecha no válido, debe ingresar un mes entre 1 y 12 y un día entre 1 y 31'}, status=status.HTTP_404_NOT_FOUND)

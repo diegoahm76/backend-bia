@@ -1,5 +1,5 @@
 from asyncio import exceptions
-import datetime
+from datetime import datetime, date, timedelta
 import copy
 from signal import raise_signal
 from django.shortcuts import render
@@ -491,104 +491,96 @@ class UpdatePersonaNaturalByUserWithPermissions(generics.RetrieveUpdateAPIView):
     def patch(self, request, tipodocumento, numerodocumento):
         datos_historico_unidad = {}
         datos_ingresados = request.data
-        try: 
-            bandera = False
-            persona_por_actualizar = Personas.objects.get(Q(tipo_documento=tipodocumento) & Q(numero_documento=numerodocumento) & Q(tipo_persona='N'))
 
-            usuario = User.objects.filter(persona = persona_por_actualizar.id_persona).first()
-            
-            previous_persona = copy.copy(persona_por_actualizar)
-           
-            if datos_ingresados['id_unidad_organizacional_actual'] and usuario.tipo_usuario != 'I':
-                return Response({'success': False, 'detail': 'No se puede asignar una unidad organizacional a un usuario que no sea interno'}, status=status.HTTP_400_BAD_REQUEST)
+        bandera = False
+        persona_por_actualizar = Personas.objects.filter(Q(tipo_documento=tipodocumento) & Q(numero_documento=numerodocumento) & Q(tipo_persona='N')).first()
+        if not persona_por_actualizar:
+            return Response({'success': False, 'detail': 'No existe ningúna persona con los parámetros enviados'}, status=status.HTTP_404_NOT_FOUND)
+        datos_ingresados['fecha_asignacion_unidad'] = datetime.now()
+        usuario = User.objects.filter(persona = persona_por_actualizar.id_persona).first()
+        if not usuario:
+            return Response({'success': False, 'detail': 'Esta persona no tiene un usuario asignado'}, status=status.HTTP_404_NOT_FOUND)
+        previous_persona = copy.copy(persona_por_actualizar)
+        
+        if datos_ingresados['id_unidad_organizacional_actual'] and usuario.tipo_usuario != 'I':
+            return Response({'success': False, 'detail': 'No se puede asignar una unidad organizacional a un usuario que no sea interno'}, status=status.HTTP_400_BAD_REQUEST)
 
-            if persona_por_actualizar.id_unidad_organizacional_actual:
-                bandera = True
-                #print("323234234234234234")
-                datos_historico_unidad['id_persona'] = persona_por_actualizar.id_persona
-                datos_historico_unidad['id_unidad_organizacional'] = persona_por_actualizar.id_unidad_organizacional_actual.id_unidad_organizacional
-                datos_historico_unidad['justificacion_cambio'] = datos_ingresados['justificacion_cambio']
-                datos_historico_unidad['fecha_inicio'] = persona_por_actualizar.fecha_asignacion_unidad
-                datos_historico_unidad['fecha_final'] = datos_ingresados['fecha_asignacion_unidad']
-                
+        if persona_por_actualizar.id_unidad_organizacional_actual:
+            bandera = True
+            #print("323234234234234234")
+            datos_historico_unidad['id_persona'] = persona_por_actualizar.id_persona
+            datos_historico_unidad['id_unidad_organizacional'] = persona_por_actualizar.id_unidad_organizacional_actual.id_unidad_organizacional
+            datos_historico_unidad['justificacion_cambio'] = datos_ingresados['justificacion_cambio']
+            datos_historico_unidad['fecha_inicio'] = persona_por_actualizar.fecha_asignacion_unidad
+            datos_historico_unidad['fecha_final'] = datos_ingresados['fecha_asignacion_unidad']
+        
+        if datos_ingresados['id_unidad_organizacional_actual']:
             datos_ingresados['es_unidad_organizacional_actual'] = True
-            datos_ingresados.pop('justificacion_cambio')
+        datos_ingresados.pop('justificacion_cambio')
+        
+        persona_serializada = self.serializer_class(persona_por_actualizar, data=datos_ingresados, many=False)
+        persona_serializada.is_valid(raise_exception=True)
+        
+        estado_civil = persona_serializada.validated_data.get('estado_civil')
+        if estado_civil:
+            estado_civil_instance = EstadoCivil.objects.filter(cod_estado_civil=estado_civil.cod_estado_civil).first()
+            if not estado_civil_instance:
+                return Response({'success': False, 'detail': 'No existe el estado civil que está ingresando'}, status=status.HTTP_400_BAD_REQUEST) 
+
+        email_principal = persona_serializada.validated_data.get('email')
+        email_secundario = persona_serializada.validated_data.get('email_empresarial')
+
+        #Validación emails dns
+        validate_email = Util.validate_dns(email_principal)
+        if validate_email == False:
+            return Response({'success': False, 'detail': 'Valide que el email principal ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if email_secundario:
+            validate_second_email = Util.validate_dns(email_secundario)
+            if validate_second_email == False:
+                return Response({'success': False, 'detail': 'Valide que el email secundario ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        #Validación emails entrantes vs existentes
+        persona_email_validate = Personas.objects.filter(Q(email_empresarial=email_principal) | Q(email=email_secundario))
+        if len(persona_email_validate):
+            return Response({'success':False,'detail': 'Ya existe una persona con este email asociado como email principal o secundario'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            serializador = persona_serializada.save()
+            if bandera:
+                historico_serializado = self.serializer_historico(data=datos_historico_unidad, many=False)
+                historico_serializado.is_valid(raise_exception=True)
+                historico_serializado.save()
+            # auditoria actualizar persona
+            usuario = request.user.id_usuario
+            direccion=Util.get_client_ip(request)
+            descripcion = {"TipodeDocumentoID": str(serializador.tipo_documento), "NumeroDocumentoID": str(serializador.numero_documento), "PrimerNombre": str(serializador.primer_nombre), "PrimerApellido": str(serializador.primer_apellido)}
+            valores_actualizados = {'current': persona_por_actualizar, 'previous': previous_persona}
+
+            auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 1,
+                "cod_permiso": "AC",
+                "subsistema": 'TRSV',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+                "valores_actualizados": valores_actualizados
+            }
+            Util.save_auditoria(auditoria_data)
             
-            persona_serializada = self.serializer_class(persona_por_actualizar, data=datos_ingresados, many=False)
-
+            #SMS y EMAILS
+            persona = Personas.objects.get(email=email_principal)
+            
+            sms = 'Actualizacion exitosa de persona Natural en Cormacarena por administrador.'
+            context = {'primer_nombre': persona.primer_nombre, 'primer_apellido': persona.primer_apellido}
+            template= render_to_string(('email-update-personanatural-byuser-withpermissions.html'), context)
+            subject = 'Actualización de datos exitosa ' + persona.primer_nombre
+            data = {'template': template, 'email_subject': subject, 'to_email': persona.email}
+            Util.send_email(data)
             try:
-                persona_serializada.is_valid(raise_exception=True)
-                try:
-                    #Marcar estado civil como item ya usado
-                    estado_civil = persona_serializada.validated_data.get('estado_civil')
-                    if estado_civil:
-                        try:
-                            estado_civil_instance = EstadoCivil.objects.get(cod_estado_civil=estado_civil.cod_estado_civil)
-                            pass
-                        except:
-                            return Response({'success': False, 'detail': 'No existe el estado civil que está ingresando'}, status=status.HTTP_400_BAD_REQUEST) 
-
-                    email_principal = persona_serializada.validated_data.get('email')
-                    email_secundario = persona_serializada.validated_data.get('email_empresarial')
-
-                    #Validación emails dns
-                    validate_email = Util.validate_dns(email_principal)
-                    if validate_email == False:
-                        return Response({'success': False, 'detail': 'Valide que el email principal ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
-
-                    if email_secundario:
-                        validate_second_email = Util.validate_dns(email_secundario)
-                        if validate_second_email == False:
-                            return Response({'success': False, 'detail': 'Valide que el email secundario ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
-                    
-                    #Validación emails entrantes vs existentes
-                    persona_email_validate = Personas.objects.filter(Q(email_empresarial=email_principal) | Q(email=email_secundario))
-                    if len(persona_email_validate):
-                        return Response({'success':False,'detail': 'Ya existe una persona con este email asociado como email principal o secundario'}, status=status.HTTP_400_BAD_REQUEST)
-                    else:
-                        serializador = persona_serializada.save()
-                        if bandera:
-                            historico_serializado = self.serializer_historico(data=datos_historico_unidad, many=False)
-                            historico_serializado.is_valid(raise_exception=True)
-                            historico_serializado.save()
-                        # auditoria actualizar persona
-                        usuario = request.user.id_usuario
-                        direccion=Util.get_client_ip(request)
-                        descripcion = {"TipodeDocumentoID": str(serializador.tipo_documento), "NumeroDocumentoID": str(serializador.numero_documento), "PrimerNombre": str(serializador.primer_nombre), "PrimerApellido": str(serializador.primer_apellido)}
-                        valores_actualizados = {'current': persona_por_actualizar, 'previous': previous_persona}
-
-                        auditoria_data = {
-                            "id_usuario" : usuario,
-                            "id_modulo" : 1,
-                            "cod_permiso": "AC",
-                            "subsistema": 'TRSV',
-                            "dirip": direccion,
-                            "descripcion": descripcion, 
-                            "valores_actualizados": valores_actualizados
-                        }
-                        Util.save_auditoria(auditoria_data)
-                        
-                        #SMS y EMAILS
-                        persona = Personas.objects.get(email=email_principal)
-                        
-                        sms = 'Actualizacion exitosa de persona Natural en Cormacarena por administrador.'
-                        context = {'primer_nombre': persona.primer_nombre, 'primer_apellido': persona.primer_apellido}
-                        template= render_to_string(('email-update-personanatural-byuser-withpermissions.html'), context)
-                        subject = 'Actualización de datos exitosa ' + persona.primer_nombre
-                        data = {'template': template, 'email_subject': subject, 'to_email': persona.email}
-                        Util.send_email(data)
-                        try:
-                            Util.send_sms(persona.telefono_celular, sms)
-                        except:
-                            return Response({'success': True, 'detail': 'Se actualizó la persona pero no se pudo enviar el mensaje, verificar numero o servicio'}, status=status.HTTP_201_CREATED)
-                        return Response({'success':True,'message': 'Persona actualizada y notificada exitosamente', 'data': persona_serializada.data}, status=status.HTTP_201_CREATED)
-                except:
-                    return Response({'success':False,'detail': 'No pudo obtener el email principal y secundario que está intentando añadir'}, status=status.HTTP_400_BAD_REQUEST)
+                Util.send_sms(persona.telefono_celular, sms)
             except:
-                return Response({'success': False,'detail': 'Revisar parámetros de ingreso de información, el email debe ser único, debe tener telefono celular y ubicación georeferenciada'}, status=status.HTTP_400_BAD_REQUEST)
-        except:
-            return Response({'success':False,'detail': 'No existe ninguna persona con estos datos, por favor verificar'}, status=status.HTTP_400_BAD_REQUEST)
-
+                return Response({'success': True, 'detail': 'Se actualizó la persona pero no se pudo enviar el mensaje, verificar numero o servicio'}, status=status.HTTP_201_CREATED)
+            return Response({'success':True,'message': 'Persona actualizada y notificada exitosamente', 'data': persona_serializada.data}, status=status.HTTP_201_CREATED)
 
 class UpdatePersonaJuridicaInternoBySelf(generics.RetrieveUpdateAPIView):
     http_method_names = ['patch']
