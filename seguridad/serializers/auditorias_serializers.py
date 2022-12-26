@@ -17,7 +17,10 @@ class AuditoriasSerializers(serializers.ModelSerializer):
     cod_permiso=serializers.ReadOnlyField(source='id_cod_permiso_accion.cod_permiso',default=None)
 
     def get_nombre_completo(self, obj):
-        return '{} {} {} {}'.format(obj.id_usuario.persona.primer_nombre, obj.id_usuario.persona.segundo_nombre, obj.id_usuario.persona.primer_apellido, obj.id_usuario.persona.segundo_apellido) 
+        return '{} {} {} {}'.format(obj.id_usuario.persona.primer_nombre if obj.id_usuario else None,
+                                    obj.id_usuario.persona.segundo_nombre if obj.id_usuario else None,
+                                    obj.id_usuario.persona.primer_apellido if obj.id_usuario else None,
+                                    obj.id_usuario.persona.segundo_apellido if obj.id_usuario else None) 
 
     class Meta:
         model=Auditorias
