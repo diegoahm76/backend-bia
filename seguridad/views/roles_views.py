@@ -119,11 +119,9 @@ class DeleteRol(DestroyAPIView):
                 usuario = request.user.id_usuario
                 user = User.objects.get(id_usuario = usuario)
                 modulo = Modulos.objects.get(id_modulo = 5)
-                permiso = Permisos.objects.get(cod_permiso = 'CR')
+                permiso = Permisos.objects.get(cod_permiso = 'BO')
                 direccion_ip = Util.get_client_ip(request)
-                descripcion = "Borradito"
-                print(rol)
-                print(descripcion)
+                descripcion =  {"nombre" :  str(rol.nombre)}
                 Auditorias.objects.create(id_usuario = user, id_modulo = modulo, id_cod_permiso_accion = permiso, subsistema = "SEGU", dirip=direccion_ip, descripcion=descripcion, valores_actualizados='')  
                 
                 return Response({'success':True,'detail':'El rol fue eliminado'},status=status.HTTP_204_NO_CONTENT)
@@ -183,26 +181,3 @@ class UpdateRol(RetrieveUpdateAPIView):
                     return Response({'success':False,'detail': 'No se puede actualizar un rol precargado'},status=status.HTTP_403_FORBIDDEN)
             else:
                 return Response({'success':False,'detail':'No existe el rol ingresado'},status=status.HTTP_404_NOT_FOUND)
-
-class DeleteRol(DestroyAPIView):
-    serializer_class = RolesSerializer
-    permission_classes = [IsAuthenticated, PermisoBorrarRoles]
-    queryset = Roles.objects.all()
-    
-    
-    def delete(self, request, pk):
-        usuario_rol = UsuariosRol.objects.filter(id_rol=pk).first()
-        
-        if usuario_rol:
-            return Response({'success':False,'detail':'No puede eliminar el rol porque ya está asignado a un usuario'},status=status.HTTP_403_FORBIDDEN)
-        else:
-            rol = Roles.objects.filter(id_rol=pk).first()
-            if rol:
-                if rol.Rol_sistema == False:
-                    rol.delete()
-                    return Response({'success':True,'detail':'El rol fue eliminado'},status=status.HTTP_204_NO_CONTENT)
-                else:
-                    return Response({'success':False,'detail':'No se puede eliminar un rol precargado'},status=status.HTTP_403_FORBIDDEN)
-            else:
-                return Response({'success':False,'detail':'No existe el rol ingresado'},status=status.HTTP_404_NOT_FOUND)
-

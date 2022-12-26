@@ -23,14 +23,14 @@ def getAuditorias(request):
     subsistema = request.query_params.get('subsistema')
     #validacion de la informacion
     if rango_inicial_fecha==None or rango_final_fecha==None:
-        return Response({'success':False, 'message':'No se ingresaron parametros de fecha'})
+        return Response({'success': False, 'detail': 'No se ingresaron parametros de fecha'}, status=status.HTTP_404_NOT_FOUND)
 
     # formateando las variables de tipo fecha
     start_date=datetime(int(rango_inicial_fecha.split('-')[2]),int(rango_inicial_fecha.split('-')[1]),int(rango_inicial_fecha.split('-')[0]), tzinfo=pytz.timezone('America/Bogota'))
     end_date=datetime(int(rango_final_fecha.split('-')[2]),int(rango_final_fecha.split('-')[1]),int(rango_final_fecha.split('-')[0]),23,59,59,999, tzinfo=pytz.timezone('America/Bogota'))
 
     if (end_date-start_date).days > 8:
-        return Response({'message':'El rango de fechas es superior a 8 días'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'success': False, 'detail': 'El rango de fechas es superior a 8 días'}, status=status.HTTP_404_NOT_FOUND)
     else:
         pass
 
@@ -52,69 +52,69 @@ def getAuditorias(request):
     if tipo_documento != None and numero_documento != None and modulo != None and subsistema != None:
         if int(modulo) in Modulos.objects.values_list('id_modulo', flat=True):
             pass
-        else: 
-            return Response({'message':'El modulo ingresado NO existe'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({'success': False, 'detail': 'El modulo ingresado NO existe'}, status=status.HTTP_404_NOT_FOUND)
         if subsistema in Modulos.objects.values_list('subsistema', flat=True):
             pass
         else: 
-            return Response({'message':'El subsistema ingresado NO existe'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': False, 'detail': 'El subsistema ingresado NO existe'}, status=status.HTTP_404_NOT_FOUND)
         tipo_y_numero_id = (tipo_documento, numero_documento)
         persona = Personas.objects.values_list('tipo_documento', 'numero_documento')
         if tipo_y_numero_id in persona:
             pass
         else:
-            return Response({'message':'La persona consultada NO existe'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': False, 'detail': 'La persona consultada NO existe'}, status=status.HTTP_404_NOT_FOUND)
         try:
             id_usuario = consultaPersona(tipo_documento,numero_documento)
             auditorias = Auditorias.objects.filter(fecha_accion__range=[start_date,end_date]).filter(id_usuario=id_usuario).filter(id_modulo = modulo).filter(subsistema = subsistema)
             serializador = AuditoriasSerializers(auditorias, many=True)
             if len(auditorias) == 0:
-                return Response({'Message':"No se encontraron coincidencias con los parametros de busqueda"}, status=status.HTTP_404_NOT_FOUND)
-            return Response({"auditorias" : serializador.data}, status=status.HTTP_200_OK)             
+                return Response({'success': False, 'detail': 'No se encontraron coincidencias con los parametros de busqueda'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': True, 'detail': serializador.data}, status=status.HTTP_200_OK)            
         except:
-            return Response({'message':'Esta persona no tiene un usuario asignado'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': False, 'detail': 'Esta persona no tiene un usuario asignado'}, status=status.HTTP_404_NOT_FOUND)
     
     if tipo_documento != None and numero_documento != None and modulo != None and subsistema == None:
         if int(modulo) in Modulos.objects.values_list('id_modulo', flat=True):
             pass
-        else: 
-            return Response({'message':'El modulo ingresado NO existe'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({'success': False, 'detail': 'El modulo ingresado NO existe'}, status=status.HTTP_404_NOT_FOUND)
         tipo_y_numero_id = (tipo_documento, numero_documento)
         persona = Personas.objects.values_list('tipo_documento', 'numero_documento')
         if tipo_y_numero_id in persona:
             pass
         else:
-            return Response({'message':'La persona consultada NO existe'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': False, 'detail': 'La persona consultada NO existe'}, status=status.HTTP_404_NOT_FOUND)
         try:
             id_usuario = consultaPersona(tipo_documento,numero_documento)
             auditorias = Auditorias.objects.filter(fecha_accion__range=[start_date,end_date]).filter(id_usuario=id_usuario).filter(id_modulo = modulo)
             serializador = AuditoriasSerializers(auditorias, many=True)
             if len(auditorias) == 0:
-                return Response({'Message':"No se encontraron coincidencias con los parametros de busqueda"}, status=status.HTTP_404_NOT_FOUND)
-            return Response({"auditorias" : serializador.data}, status=status.HTTP_200_OK)              
+                return Response({'success': False, 'detail': 'No se encontraron coincidencias con los parametros de busqueda'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': True, 'detail': serializador.data}, status=status.HTTP_200_OK)                        
         except:
-            return Response({'message':'Esta persona no tiene un usuario asignado'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': False, 'detail': 'Esta persona no tiene un usuario asignado'}, status=status.HTTP_404_NOT_FOUND)
          
     if tipo_documento != None and numero_documento != None and modulo == None and subsistema != None:
         if subsistema in Modulos.objects.values_list('subsistema', flat=True):
             pass
-        else: 
-            return Response({'message':'El subsistema ingresado NO existe'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({'success': False, 'detail': 'El subsistema ingresado NO existe'}, status=status.HTTP_404_NOT_FOUND)
         tipo_y_numero_id = (tipo_documento, numero_documento)
         persona = Personas.objects.values_list('tipo_documento', 'numero_documento')
         if tipo_y_numero_id in persona:
             pass
         else:
-            return Response({'message':'La persona consultada NO existe'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': False, 'detail': 'La persona consultada NO existe'}, status=status.HTTP_404_NOT_FOUND)
         try:
             id_usuario = consultaPersona(tipo_documento,numero_documento)
             auditorias = Auditorias.objects.filter(fecha_accion__range=[start_date,end_date]).filter(id_usuario=id_usuario).filter(subsistema = subsistema)
             serializador = AuditoriasSerializers(auditorias, many=True)
             if len(auditorias) == 0:
-                return Response({'Message':"No se encontraron coincidencias con los parametros de busqueda"}, status=status.HTTP_404_NOT_FOUND)
-            return Response({"auditorias" : serializador.data}, status=status.HTTP_200_OK)                 
+                return Response({'success': False, 'detail': 'No se encontraron coincidencias con los parametros de busqueda'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': True, 'detail': serializador.data}, status=status.HTTP_200_OK)                 
         except:
-            return Response({'message':'Esta persona no tiene un usuario asignado'}, status=status.HTTP_404_NOT_FOUND) 
+            return Response({'success': False, 'detail': 'Esta persona no tiene un usuario asignado'}, status=status.HTTP_404_NOT_FOUND)
         
     if tipo_documento != None and numero_documento != None and modulo == None and subsistema == None:
         tipo_y_numero_id = (tipo_documento, numero_documento)
@@ -122,63 +122,63 @@ def getAuditorias(request):
         if tipo_y_numero_id in persona:
             pass
         else:
-            return Response({'message':'La persona consultada NO existe'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': False, 'detail': 'La persona consultada NO existe'}, status=status.HTTP_404_NOT_FOUND)
         try:
             id_usuario = consultaPersona(tipo_documento,numero_documento)
             auditorias = Auditorias.objects.filter(fecha_accion__range=[start_date,end_date]).filter(id_usuario=id_usuario)
             serializador = AuditoriasSerializers(auditorias, many=True)
             if len(auditorias) == 0:
-                return Response({'Message':"No se encontraron coincidencias con los parametros de busqueda"}, status=status.HTTP_404_NOT_FOUND)
-            return Response({"auditorias" : serializador.data}, status=status.HTTP_200_OK)                
+                return Response({'success': False, 'detail': 'No se encontraron coincidencias con los parametros de busqueda'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': True, 'detail': serializador.data}, status=status.HTTP_200_OK)              
         except: 
-                return Response({'message':'Esta persona no tiene un usuario asignado'}, status=status.HTTP_404_NOT_FOUND)  
+            return Response({'success': False, 'detail': 'Esta persona no tiene un usuario asignado'}, status=status.HTTP_404_NOT_FOUND)
     
     if tipo_documento == None and numero_documento == None and modulo != None and subsistema != None:
         if int(modulo) in Modulos.objects.values_list('id_modulo', flat=True):
             pass
-        else: 
-            return Response({'message':'El modulo ingresado NO existe'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({'success': False, 'detail': 'El modulo ingresado NO existe'}, status=status.HTTP_404_NOT_FOUND)
         if subsistema in Modulos.objects.values_list('subsistema', flat=True):
             pass
-        else: 
-            return Response({'message':'El subsistema ingresado NO existe'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({'success': False, 'detail': 'El subsistema ingresado NO existe'}, status=status.HTTP_404_NOT_FOUND)
         auditorias = Auditorias.objects.filter(fecha_accion__range=[start_date,end_date]).filter(id_modulo = modulo).filter(subsistema = subsistema)
         serializador = AuditoriasSerializers(auditorias, many=True)
         if len(auditorias) == 0:
-            return Response({'Message':"No se encontraron coincidencias con los parametros de busqueda"}, status=status.HTTP_404_NOT_FOUND)
-        return Response({"auditorias" : serializador.data}, status=status.HTTP_200_OK)  
+            return Response({'success': False, 'detail': 'No se encontraron coincidencias con los parametros de busqueda'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'success': True, 'detail': serializador.data}, status=status.HTTP_200_OK)              
     
     if tipo_documento == None and numero_documento == None and modulo != None and subsistema == None:
         if int(modulo) in Modulos.objects.values_list('id_modulo', flat=True):
             pass
-        else: 
-            return Response({'message':'El modulo ingresado NO existe'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({'success': False, 'detail': 'El modulo ingresado NO existe'}, status=status.HTTP_404_NOT_FOUND)
         auditorias = Auditorias.objects.filter(fecha_accion__range=[start_date,end_date]).filter(id_modulo = modulo)
         serializador = AuditoriasSerializers(auditorias, many=True)
         if len(auditorias) == 0:
-            return Response({'Message':"No se encontraron coincidencias con los parametros de busqueda"}, status=status.HTTP_404_NOT_FOUND)
-        return Response({"auditorias" : serializador.data}, status=status.HTTP_200_OK)
+            return Response({'success': False, 'detail': 'No se encontraron coincidencias con los parametros de busqueda'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'success': True, 'detail': serializador.data}, status=status.HTTP_200_OK)              
     
     if tipo_documento == None and numero_documento == None and modulo == None and subsistema != None:
         if subsistema in Modulos.objects.values_list('subsistema', flat=True):
             pass
-        else: 
-            return Response({'message':'El subsistema ingresado NO existe'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({'success': False, 'detail': 'El subsistema ingresado NO existe'}, status=status.HTTP_404_NOT_FOUND)
         auditorias = Auditorias.objects.filter(fecha_accion__range=[start_date,end_date]).filter(subsistema = subsistema)
         serializador = AuditoriasSerializers(auditorias, many=True)
         if len(auditorias) == 0:
-            return Response({'Message':"No se encontraron coincidencias con los parametros de busqueda"}, status=status.HTTP_404_NOT_FOUND)
-        return Response({"auditorias" : serializador.data}, status=status.HTTP_200_OK)   
+            return Response({'success': False, 'detail': 'No se encontraron coincidencias con los parametros de busqueda'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'success': True, 'detail': serializador.data}, status=status.HTTP_200_OK)              
     
     if tipo_documento == None and numero_documento == None and modulo == None and subsistema == None:
         auditorias = Auditorias.objects.filter(fecha_accion__range=[start_date,end_date])
         serializador = AuditoriasSerializers(auditorias, many=True)
         if len(auditorias) == 0:
-            return Response({'Message':"No se encontraron coincidencias con los parametros de busqueda"}, status=status.HTTP_404_NOT_FOUND)
-        return Response({"auditorias" : serializador.data}, status=status.HTTP_200_OK)
+            return Response({'success': False, 'detail': 'No se encontraron coincidencias con los parametros de busqueda'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'success': True, 'detail': serializador.data}, status=status.HTTP_200_OK)
  
     else:
-        return Response({'message':'No se encontró una auditoria con estos parámetros de búsqueda'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'success': False, 'detail': 'No se encontró una auditoria con estos parámetros de búsqueda'}, status=status.HTTP_404_NOT_FOUND)
 
 class ListApiViews(generics.ListAPIView):
     serializer_class=AuditoriasSerializers
