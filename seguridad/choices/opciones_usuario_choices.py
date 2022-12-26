@@ -1,6 +1,6 @@
 opciones_usuario_CHOICES = (
     ('A', 'Activar'),
-    ('D', 'Desactivar'),
+    ('I', 'Inactivar'),
     ('B', 'Bloquear'),
-    ('U', 'Unlock')
+    ('D', 'Desbloquear')
 )

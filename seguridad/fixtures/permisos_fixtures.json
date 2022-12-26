@@ -1,18 +1,10 @@
 [
     {
       "model": "seguridad.Permisos",
-      "pk": "AC",
+      "pk": "CR",
       "fields": {
-        "cod_permiso": "AC",
-        "nombre_permiso": "Actualizar"
-      }
-    },
-    {
-      "model": "seguridad.Permisos",
-      "pk": "AP",
-      "fields": {
-        "cod_permiso": "AP",
-        "nombre_permiso": "Aprobar"
+        "cod_permiso": "CR",
+        "nombre_permiso": "Crear"
       }
     },
     {
@@ -25,6 +17,14 @@
     },
     {
       "model": "seguridad.Permisos",
+      "pk": "AC",
+      "fields": {
+        "cod_permiso": "AC",
+        "nombre_permiso": "Actualizar"
+      }
+    },
+    {
+      "model": "seguridad.Permisos",
       "pk": "CO",
       "fields": {
         "cod_permiso": "CO",
@@ -33,18 +33,18 @@
     },
     {
       "model": "seguridad.Permisos",
-      "pk": "CR",
-      "fields": {
-        "cod_permiso": "CR",
-        "nombre_permiso": "Crear"
-      }
-    },
-    {
-      "model": "seguridad.Permisos",
       "pk": "EJ",
       "fields": {
         "cod_permiso": "EJ",
         "nombre_permiso": "Ejecutar"
+      }
+    },
+    {
+      "model": "seguridad.Permisos",
+      "pk": "AP",
+      "fields": {
+        "cod_permiso": "AP",
+        "nombre_permiso": "Aprobar"
       }
     },
     {

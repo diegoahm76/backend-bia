@@ -38,5 +38,21 @@
             "id_clase_tercero" : 5,
             "nombre": "Aseguradora"
         }
+    },
+    {
+        "model": "seguridad.ClasesTercero",
+        "pk" : 6,
+        "fields": {
+            "id_clase_tercero" : 6,
+            "nombre": "Conductor"
+        }
+    },
+    {
+        "model": "seguridad.ClasesTercero",
+        "pk" : 7,
+        "fields": {
+            "id_clase_tercero" : 7,
+            "nombre": "Conductor Externo"
+        }
     }
 ]

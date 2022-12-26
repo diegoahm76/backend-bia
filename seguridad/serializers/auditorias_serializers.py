@@ -4,13 +4,27 @@ from seguridad.serializers.user_serializers import UserSerializer
 from seguridad.serializers.permisos_serializers import PermisosSerializer, ModulosSerializers
 
 class AuditoriasSerializers(serializers.ModelSerializer):
-    id_modulo=ModulosSerializers(read_only=True)
-    id_usuario=UserSerializer(read_only=True)
-    id_cod_operacion=PermisosSerializer(read_only=True)
+    fecha_accion = serializers.DateTimeField(format="%Y-%m-%d")
+    nombre_modulo=serializers.ReadOnlyField(source='id_modulo.nombre_modulo',default=None)
+    subsistema=serializers.ReadOnlyField(source='id_modulo.subsistema',default=None)
+    nombre_de_usuario=serializers.ReadOnlyField(source='id_usuario.nombre_de_usuario',default=None)
+    nombre_completo = serializers.SerializerMethodField()
+    razon_social=serializers.ReadOnlyField(source='id_usuario.persona.razon_social',default=None)
+    cod_tipo_documento=serializers.ReadOnlyField(source='id_usuario.persona.tipo_documento.cod_tipo_documento',default=None)
+    nombre_tipo_documento=serializers.ReadOnlyField(source='id_usuario.persona.tipo_documento.nombre',default=None)
+    numero_documento=serializers.ReadOnlyField(source='id_usuario.persona.numero_documento',default=None)
+    nombre_permiso=serializers.ReadOnlyField(source='id_cod_permiso_accion.nombre_permiso',default=None)
+    cod_permiso=serializers.ReadOnlyField(source='id_cod_permiso_accion.cod_permiso',default=None)
+
+    def get_nombre_completo(self, obj):
+        return '{} {} {} {}'.format(obj.id_usuario.persona.primer_nombre, obj.id_usuario.persona.segundo_nombre, obj.id_usuario.persona.primer_apellido, obj.id_usuario.persona.segundo_apellido) 
 
     class Meta:
         model=Auditorias
-        fields= '__all__'
+        fields= ['id_auditoria', 'id_usuario', 'id_modulo', 'id_cod_permiso_accion', 'fecha_accion',
+                 'subsistema', 'dirip', 'descripcion', 'valores_actualizados', 'nombre_modulo',
+                 'subsistema', 'nombre_de_usuario', 'nombre_completo', 'razon_social', 'cod_tipo_documento',
+                 'nombre_tipo_documento', 'numero_documento', 'nombre_permiso', 'cod_permiso']
         #fields= ('id_auditoria', 'id_usuario', 'id_modulo', 'id_cod_operacion', 'fecha_accion','subsistema','dirip','descripcion','valores_actualizados')
         
 class AuditoriasPostSerializers(serializers.ModelSerializer):

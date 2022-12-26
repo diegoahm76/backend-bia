@@ -4,5 +4,6 @@ cod_permiso_CHOICES = (
     ('AC', 'Actualizar'),
     ('CO', 'Consultar'),
     ('EJ', 'Ejecutar'),
-    ('AP', 'Aprobar')
+    ('AP', 'Aprobar'),
+    ('AN', 'Anular')
 )
