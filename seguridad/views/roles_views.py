@@ -112,7 +112,7 @@ class DeleteRol(DestroyAPIView):
         if usuario_rol:
             return Response({'success':False,'detail':'No puede eliminar el rol porque ya está asignado a un usuario'},status=status.HTTP_403_FORBIDDEN)
         else:
-            rol = Roles.objects.filter(id_rol=pk)
+            rol = Roles.objects.filter(id_rol=pk).first()
             
             if rol:
                 rol.delete()
@@ -121,7 +121,7 @@ class DeleteRol(DestroyAPIView):
                 modulo = Modulos.objects.get(id_modulo = 5)
                 permiso = Permisos.objects.get(cod_permiso = 'BO')
                 direccion_ip = Util.get_client_ip(request)
-                descripcion =  {"nombre" :  str(rol.nombre)}
+                descripcion =  {"nombre" :  str(rol.nombre_rol)}
                 Auditorias.objects.create(id_usuario = user, id_modulo = modulo, id_cod_permiso_accion = permiso, subsistema = "SEGU", dirip=direccion_ip, descripcion=descripcion, valores_actualizados='')  
                 
                 return Response({'success':True,'detail':'El rol fue eliminado'},status=status.HTTP_204_NO_CONTENT)
