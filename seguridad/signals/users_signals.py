@@ -22,7 +22,7 @@ def create_historico_users(sender, instance, **kwargs):
             elif (previous.is_active != current.is_active) and (current.is_active == False):
                 historico_activacion = HistoricoActivacion.objects.create(
                     id_usuario_afectado = current,
-                    cod_operacion = 'D',
+                    cod_operacion = 'I',
                     justificacion = 'Desactivación de usuario',
                 )
                 historico_activacion.save()
@@ -38,7 +38,7 @@ def create_historico_users(sender, instance, **kwargs):
             elif (previous.is_blocked != current.is_blocked) and (current.is_blocked == False):
                 historico_activacion = HistoricoActivacion.objects.create(
                     id_usuario_afectado = current,
-                    cod_operacion = 'U',
+                    cod_operacion = 'D',
                     justificacion = 'Desbloqueo de usuario',
                 )
                 historico_activacion.save()

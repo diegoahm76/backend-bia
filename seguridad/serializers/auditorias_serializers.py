@@ -9,7 +9,6 @@ class AuditoriasSerializers(serializers.ModelSerializer):
     subsistema=serializers.ReadOnlyField(source='id_modulo.subsistema',default=None)
     nombre_de_usuario=serializers.ReadOnlyField(source='id_usuario.nombre_de_usuario',default=None)
     nombre_completo = serializers.SerializerMethodField()
-    razon_social=serializers.ReadOnlyField(source='id_usuario.persona.razon_social',default=None)
     cod_tipo_documento=serializers.ReadOnlyField(source='id_usuario.persona.tipo_documento.cod_tipo_documento',default=None)
     nombre_tipo_documento=serializers.ReadOnlyField(source='id_usuario.persona.tipo_documento.nombre',default=None)
     numero_documento=serializers.ReadOnlyField(source='id_usuario.persona.numero_documento',default=None)
@@ -17,18 +16,24 @@ class AuditoriasSerializers(serializers.ModelSerializer):
     cod_permiso=serializers.ReadOnlyField(source='id_cod_permiso_accion.cod_permiso',default=None)
 
     def get_nombre_completo(self, obj):
-        return '{} {} {} {}'.format(obj.id_usuario.persona.primer_nombre if obj.id_usuario else None,
-                                    obj.id_usuario.persona.segundo_nombre if obj.id_usuario else None,
-                                    obj.id_usuario.persona.primer_apellido if obj.id_usuario else None,
-                                    obj.id_usuario.persona.segundo_apellido if obj.id_usuario else None) 
+        nombre_completo = None
+        if obj.id_usuario:
+            if obj.id_usuario.persona:
+                if obj.id_usuario.persona.tipo_persona == 'N':
+                    nombre_list = [obj.id_usuario.persona.primer_nombre, obj.id_usuario.persona.segundo_nombre,
+                                   obj.id_usuario.persona.primer_apellido, obj.id_usuario.persona.segundo_apellido]
+                    nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+                    nombre_completo = nombre_completo if nombre_completo != "" else None
+                else:
+                    nombre_completo = obj.id_usuario.persona.razon_social
+        return nombre_completo
 
     class Meta:
         model=Auditorias
         fields= ['id_auditoria', 'id_usuario', 'id_modulo', 'id_cod_permiso_accion', 'fecha_accion',
                  'subsistema', 'dirip', 'descripcion', 'valores_actualizados', 'nombre_modulo',
-                 'subsistema', 'nombre_de_usuario', 'nombre_completo', 'razon_social', 'cod_tipo_documento',
+                 'subsistema', 'nombre_de_usuario', 'nombre_completo', 'cod_tipo_documento',
                  'nombre_tipo_documento', 'numero_documento', 'nombre_permiso', 'cod_permiso']
-        #fields= ('id_auditoria', 'id_usuario', 'id_modulo', 'id_cod_operacion', 'fecha_accion','subsistema','dirip','descripcion','valores_actualizados')
         
 class AuditoriasPostSerializers(serializers.ModelSerializer):
     class Meta:
@@ -44,15 +49,3 @@ class AuditoriasPostSerializers(serializers.ModelSerializer):
                 'dirip': {'required': True},
                 'descripcion': {'required': True},
             }
-
-
-
-
-        
-
-
-
-
-
-
-
