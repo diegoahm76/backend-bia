@@ -45,6 +45,7 @@ class CreateHojaDeVidaComputadores(generics.CreateAPIView):
         serializer = self.serializer_class(data=data)
         id_articulo=data['id_articulo']
         articulo_existentes=CatalogoBienes.objects.filter(Q(id_bien=id_articulo) & ~Q(nro_elemento_bien=None)).first()
+        print('ARTICULO',articulo_existentes)
         if not articulo_existentes:
             return Response({'success':False,'detail':'El bien ingresado no existe'},status=status.HTTP_400_BAD_REQUEST)
         if articulo_existentes.cod_tipo_bien == 'C':
@@ -55,6 +56,9 @@ class CreateHojaDeVidaComputadores(generics.CreateAPIView):
         if hoja_vida_articulo:
             return Response({'success':False,'detail':'El bien ingresado ya tiene hoja de vida'},status=status.HTTP_403_FORBIDDEN)
         
+        articulo_existentes.tiene_hoja_vida=True
+        articulo_existentes.save()
+
         # auditoria crear hoja de vida computadores
         usuario = request.user.id_usuario
         descripcion = {"NombreElemento": str(articulo_existentes.nombre), "Serial": str(articulo_existentes.doc_identificador_nro)}
@@ -91,6 +95,9 @@ class CreateHojaDeVidaVehiculos(generics.CreateAPIView):
         hoja_vida_articulo=HojaDeVidaVehiculos.objects.filter(id_articulo=id_articulo)
         if hoja_vida_articulo:
             return Response({'success':False,'detail':'El bien ingresado ya tiene hoja de vida'},status=status.HTTP_403_FORBIDDEN)
+        
+        articulo_existentes.tiene_hoja_vida=True
+        articulo_existentes.save()
         
         # auditoria crear hoja de vida vehiculos
         usuario = request.user.id_usuario
@@ -130,6 +137,8 @@ class CreateHojaDeVidaOtros(generics.CreateAPIView):
         if hoja_vida_articulo:
             return Response({'success':False,'detail':'El bien ingresado ya tiene hoja de vida'},status=status.HTTP_403_FORBIDDEN)
         
+        articulo_existentes.tiene_hoja_vida=True
+        articulo_existentes.save()
         
         # auditoria crear hoja de vida otros
         usuario = request.user.id_usuario
