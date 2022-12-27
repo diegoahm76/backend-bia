@@ -281,8 +281,8 @@ class ClasesTercero(models.Model):
 
 class ClasesTerceroPersona(models.Model):
     id_clase_tercero_persona = models.AutoField(primary_key=True, editable=False, db_column='T011IdClaseTerceroPersona')
-    id_persona = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T011IdClaseTercero')
-    id_clase_tercero = models.ForeignKey(ClasesTercero, on_delete=models.CASCADE, db_column='T011IdPersona')
+    id_persona = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T011IdPersona')
+    id_clase_tercero = models.ForeignKey(ClasesTercero, on_delete=models.CASCADE, db_column='T011IdClaseTercero')
     
     def __str__(self):
         return str(self.id_persona) + ' ' + str(self.id_clase_tercero)

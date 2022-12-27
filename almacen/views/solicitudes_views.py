@@ -7,9 +7,11 @@ from almacen.models import UnidadesOrganizacionales, NivelesOrganigrama
 from seguridad.models import Personas, User
 from rest_framework.decorators import api_view
 from seguridad.utils import Util
+from rest_framework.permissions import IsAuthenticated
 from seguridad.models import (
     Personas,
-    User
+    User,
+    ClasesTerceroPersona
 )
 from almacen.models.organigrama_models import (
     UnidadesOrganizacionales,
@@ -30,6 +32,7 @@ from almacen.serializers.solicitudes_serialiers import (
     CrearSolicitudesPostSerializer,
     CrearItemsSolicitudConsumiblePostSerializer
     )
+from seguridad.serializers.personas_serializers import PersonasSerializer
 import copy
 
 class FiltroViveros(generics.ListAPIView):
@@ -577,3 +580,32 @@ class AnularSolicitudesBienesConsumo(generics.UpdateAPIView):
         }
         Util.save_auditoria_maestro_detalle(auditoria_data)
         return Response({'success':True,'Detail':'Solicitud procesada con éxito', },status=status.HTTP_200_OK)
+
+class SearchFuncionarioResponsable(generics.ListAPIView):
+    serializer_class=PersonasSerializer
+    queryset=Personas
+    permission_classes=[IsAuthenticated]
+    
+    def get(self, request):
+        tipo_documento = request.query_params.get('tipo_documento')
+        numero_documento = request.query_params.get('numero_documento')
+        
+        if (not tipo_documento or tipo_documento=='') and (not numero_documento or numero_documento==''):
+            return Response({'success':False, 'detail':'Debe ingresar mínimo los parámetros de tipo documento y número de documento'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        filter={}
+        for key,value in request.query_params.items():
+            if key in ['tipo_documento','numero_documento','id_unidad_organizacional_actual']:
+                if value != '':
+                    filter[key]=value
+        
+        persona = Personas.objects.filter(**filter).first()
+        if not persona:
+            return Response({'success':True, 'detail':'No se encontraron resultados', 'data':{}}, status=status.HTTP_200_OK)
+        
+        funcionario_persona=ClasesTerceroPersona.objects.filter(id_persona=persona.id_persona, id_clase_tercero=2).first()
+        if funcionario_persona:
+            serializador_persona = self.serializer_class(persona)
+            return Response({'success':True, 'detail':'Se encontró el funcionario responsable', 'data':serializador_persona.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success':True, 'detail':'La persona no es un funcionario', 'data':{}}, status=status.HTTP_200_OK)
