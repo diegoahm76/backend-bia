@@ -890,7 +890,7 @@ class LoginApiView(generics.CreateAPIView):
                         serializer = LoginErroneoPostSerializers(login_error, many=False)
                         return Response({'success':False,'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
             else:
-                return Response({'success':False,'detail': 'Usuario no verificado'}, status=status.HTTP_403_FORBIDDEN)
+                return Response({'success':False,'detail': 'Usuario no verificado'}, status=status.HTTP_406_NOT_ACCEPTABLE)
         else:
             UsuarioErroneo.objects.create(
                 campo_usuario = data['email'],
