@@ -102,32 +102,67 @@ class DeleteUserRol(DestroyAPIView):
             return Response({'success':False,'detail':'No existe el rol ingresado'},status=status.HTTP_404_NOT_FOUND)
             
 #------------------------------------------------> Borrar un rol 
-class DeleteRol(DestroyAPIView):
+# class DeleteRol(DestroyAPIView):
+#     serializer_class = RolesSerializer
+#     queryset = Roles.objects.all()
+    
+#     def delete(self, request, pk):
+#         usuario_rol = UsuariosRol.objects.filter(id_rol=pk)
+        
+#         if usuario_rol:
+            
+#         else:
+#             rol = Roles.objects.filter(id_rol=pk).first()
+            
+#             if rol:
+#                 #rol.delete()
+#                 usuario = request.user.id_usuario
+#                 user = User.objects.get(id_usuario = usuario)
+#                 modulo = Modulos.objects.get(id_modulo = 5)
+#                 permiso = Permisos.objects.get(cod_permiso = 'BO')
+#                 direccion_ip = Util.get_client_ip(request)
+#                 descripcion =  {"nombre" :  str(rol.nombre_rol)}
+#                 Auditorias.objects.create(id_usuario = user, id_modulo = modulo, id_cod_permiso_accion = permiso, subsistema = "SEGU", dirip=direccion_ip, descripcion=descripcion, valores_actualizados='')  
+                
+#                 return Response({'success':True,'detail':'El rol fue eliminado'},status=status.HTTP_204_NO_CONTENT)
+#             else:
+                
+
+class DeleteRol(generics.RetrieveDestroyAPIView):
     serializer_class = RolesSerializer
     queryset = Roles.objects.all()
-    
-    def delete(self, request, pk):
-        usuario_rol = UsuariosRol.objects.filter(id_rol=pk)
-        
+
+    def delete(self, request, id_rol):
+
+        usuario_rol = UsuariosRol.objects.filter(id_rol=id_rol).first()
         if usuario_rol:
             return Response({'success':False,'detail':'No puede eliminar el rol porque ya está asignado a un usuario'},status=status.HTTP_403_FORBIDDEN)
-        else:
-            rol = Roles.objects.filter(id_rol=pk).first()
-            
-            if rol:
-                #rol.delete()
-                usuario = request.user.id_usuario
-                user = User.objects.get(id_usuario = usuario)
-                modulo = Modulos.objects.get(id_modulo = 5)
-                permiso = Permisos.objects.get(cod_permiso = 'BO')
-                direccion_ip = Util.get_client_ip(request)
-                descripcion =  {"nombre" :  str(rol.nombre_rol)}
-                Auditorias.objects.create(id_usuario = user, id_modulo = modulo, id_cod_permiso_accion = permiso, subsistema = "SEGU", dirip=direccion_ip, descripcion=descripcion, valores_actualizados='')  
-                
-                return Response({'success':True,'detail':'El rol fue eliminado'},status=status.HTTP_204_NO_CONTENT)
-            else:
-                return Response({'success':False,'detail':'No existe el rol ingresado'},status=status.HTTP_404_NOT_FOUND)
-            
+        
+        rol = Roles.objects.filter(id_rol=id_rol).first()
+        rolsito = rol
+        if not rol:
+            return Response({'success':False,'detail':'No existe el rol ingresado'},status=status.HTTP_404_NOT_FOUND)
+        
+        rol.delete()
+        
+        #Auditoria Eliminar Roles
+        usuario = request.user.id_usuario
+        descripcion = {"Nombre": str(rolsito.nombre_rol)}
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 5,
+            "cod_permiso": "BO",
+            "subsistema": 'SEGU',
+            "dirip": direccion,
+            "descripcion": descripcion, 
+        }
+        Util.save_auditoria(auditoria_data)
+        return Response({'success':True,'detail':'El rol fue eliminado'},status=status.HTTP_200_OK)
+
+
+
+
 @api_view(['GET'])
 def getRoles(request):
     roles = Roles.objects.all()
