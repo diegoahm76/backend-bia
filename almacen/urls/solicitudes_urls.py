@@ -16,4 +16,5 @@ urlpatterns = [
     path('solicitudes-pendientes-por-despachar/', views.SolicitudesPendientesDespachar.as_view(), name='solicitudes-pendientes-por-despachar'),
     path('rechazo-solicitudes-bienes-desde-almacen/<str:id_solicitud>/', views.RechazoSolicitudesBienesAlmacen.as_view(), name='rechazo-solicitudes-bienes-desde-almacen'),
     path('anular-solicitudes-bienes/<str:id_solicitud>/', views.AnularSolicitudesBienesConsumo.as_view(), name='anular-solicitudes-bienes'),
+    path('search-funcionario/', views.SearchFuncionarioResponsable.as_view(), name='search-funcionario-responsable')
 ]

@@ -115,7 +115,7 @@ class DeleteRol(DestroyAPIView):
             rol = Roles.objects.filter(id_rol=pk).first()
             
             if rol:
-                rol.delete()
+                #rol.delete()
                 usuario = request.user.id_usuario
                 user = User.objects.get(id_usuario = usuario)
                 modulo = Modulos.objects.get(id_modulo = 5)

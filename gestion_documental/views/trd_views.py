@@ -56,7 +56,7 @@ class UpdateTipologiasDocumentales(generics.UpdateAPIView):
         descripcion = {"nombre": str(trd.nombre), "version": str(trd.version)}
         direccion = Util.get_client_ip(request)
         if trd:
-            if not trd.fecha_terminado and not trd.fecha_retiro_produccion:
+            if (not trd.fecha_terminado and not trd.fecha_retiro_produccion) or (trd.actual and trd.fecha_puesta_produccion and not trd.fecha_retiro_produccion):
                 if data:
                     # VALIDAR QUE EL ID_TRD SEA EL MISMO
                     trd_list = [tipologia['id_trd'] for tipologia in data]
