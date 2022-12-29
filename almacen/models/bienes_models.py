@@ -5,6 +5,7 @@ from almacen.choices.tipos_activo_choices import tipos_activo_CHOICES
 from almacen.choices.cod_tipo_bien_choices import cod_tipo_bien_CHOICES
 from almacen.choices.metodos_valoracion_articulos_choices import metodos_valoracion_articulos_CHOICES
 from almacen.choices.tipos_depreciacion_activos_choices import tipos_depreciacion_activos_CHOICES
+from almacen.choices.cod_tipo_elemento_vivero_choices import cod_tipo_elemento_vivero_CHOICES
 # from seguridad.models import Personas
 from almacen.models import Marcas, UnidadesMedida, PorcentajesIVA, Bodegas
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -31,6 +32,8 @@ class CatalogoBienes(models.Model):
     stock_minimo = models.PositiveSmallIntegerField(null=True, blank=True, db_column='T057stockMinimo')
     stock_maximo = models.PositiveIntegerField(null=True, blank=True, db_column='T057stockMaximo')
     solicitable_vivero = models.BooleanField(default=False, db_column='T057solicitablePorVivero')
+    es_semilla_vivero = models.BooleanField(null=True, blank=True, db_column='T057esSemillaMVViero')
+    cod_tipo_elemento_vivero = models.CharField(max_length=2, choices=cod_tipo_elemento_vivero_CHOICES, null=True, blank=True, db_column='T057codTipoElementoVivero')
     tiene_hoja_vida = models.BooleanField(null=True, blank=True, db_column='T057tieneHojaDeVida')
     id_bien_padre = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, db_column='T057Id_BienPadre')
     maneja_hoja_vida = models.BooleanField(default=False, db_column='T057manejaHojaDeVida')
