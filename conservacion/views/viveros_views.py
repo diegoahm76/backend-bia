@@ -214,6 +214,7 @@ class GetViveroByPk(generics.RetrieveAPIView):
 class UpdateViveroCuarentena(generics.ListAPIView):
     serializer_class=ViveroSerializer
     queryset=Vivero.objects.all()
+    permission_classes = [IsAuthenticated]
     
     def put(self,request,id_vivero):
         vivero=Vivero.objects.filter(id_vivero=id_vivero).first()
@@ -283,6 +284,8 @@ class UpdateViveroCuarentena(generics.ListAPIView):
 class FilterViverosByNombreAndMunicipioForCuarentena(generics.ListAPIView):
     serializer_class=ViveroSerializer
     queryset=Vivero.objects.all()
+    permission_classes = [IsAuthenticated]
+
     def get(self,request):
         filter={}
         for key,value in request.query_params.items():
@@ -301,6 +304,8 @@ class FilterViverosByNombreAndMunicipioForCuarentena(generics.ListAPIView):
 class FilterViverosByNombreAndMunicipioForAperturaCierres(generics.ListAPIView):
     serializer_class=ViveroSerializer
     queryset=Vivero.objects.all()
+    permission_classes = [IsAuthenticated]
+
     def get(self,request):
         filter={}
         for key,value in request.query_params.items():
@@ -318,6 +323,8 @@ class FilterViverosByNombreAndMunicipioForAperturaCierres(generics.ListAPIView):
 class FilterViverosByNombreAndMunicipio(generics.ListAPIView):
     serializer_class=ViveroSerializer
     queryset=Vivero.objects.all()
+    permission_classes = [IsAuthenticated]
+
     def get(self,request):
         filter={}
         for key,value in request.query_params.items():
