@@ -377,3 +377,10 @@ class UpdateViveros(generics.UpdateAPIView):
         Util.save_auditoria(auditoria_data)
         
         return Response({'success':True, 'detail':'Vivero actualizado con éxito', 'data':serializador.data}, status=status.HTTP_201_CREATED)
+
+
+def desactivar_vivero(request,pk):
+    try:
+        vivero = Vivero.objects.get(id_vivero=pk)
+    except:
+        return Response({'success':False, 'detail':'no existe ningun vivero con el id proporcionado'}, status=status.HTTP_404_NOT_FOUND)
