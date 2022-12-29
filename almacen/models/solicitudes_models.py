@@ -35,7 +35,7 @@ class SolicitudesConsumibles(models.Model):
     rechazada_almacen = models.BooleanField(db_column='T081rechazadaAlmacen', null=True, blank=True)
     fecha_rechazo_almacen = models.DateField(db_column='T081fechaRechazoAlmacen', null=True, blank=True)
     justificacion_rechazo_almacen = models.CharField(max_length=255, db_column='T081justificacionRechazoAlmacen', null=True, blank=True)
-    id_persona_almacen_rechaza = models.ForeignKey(Personas, related_name='persona_rechaza_almacen', null=True, blank=True, db_column='T081Id_PersonaAlmacenRechaza')
+    id_persona_almacen_rechaza = models.ForeignKey(Personas, related_name='persona_rechaza_almacen', null=True, blank=True, on_delete=models.SET_NULL, db_column='T081Id_PersonaAlmacenRechaza')
     solicitud_anulada_solicitante = models.BooleanField(db_column='T081solicitudAnuladaSolicitante', null=True, blank=True)
     justificacion_anulacion_solicitante = models.CharField(max_length=255, db_column='T081justificacionAnulacionSolicitante', null=True, blank=True)
     fecha_anulacion_solicitante = models.DateField(db_column='T081fechaAnulacionSolicitante', null=True, blank=True)
@@ -86,7 +86,7 @@ class DespachoConsumo(models.Model):
     despacho_anulado = models.BooleanField(null=True, blank=True, db_column='T083despachoAnulado')
     justificacion_anulacion = models.CharField(max_length=255, null=True, blank=True, db_column='T083justificacionAnulacion')
     fecha_anulacion = models.DateTimeField(null=True, blank=True, db_column='T083fechaAnulacion')
-    id_persona_anula = models.ForeignKey(Personas, related_name='persona_anula', null=True, blank=True, on_delete=models.SET_NULL, db_column='T083Id_PersonaAnula')
+    id_persona_anula = models.ForeignKey(Personas, related_name='persona_anula_despacho', null=True, blank=True, on_delete=models.SET_NULL, db_column='T083Id_PersonaAnula')
     ruta_archivo_doc_con_recibido = models.FileField(db_column='T083rutaArchivoDocConRecibido')
 
     def __str__(self):
