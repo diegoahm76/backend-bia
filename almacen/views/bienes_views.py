@@ -74,7 +74,8 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                 except:
                     return Response({'success':False, 'detail':'El id de unidad de medida vida util ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
                 try:
-                    id_marca = Marcas.objects.get(id_marca=data['id_marca'])
+                    if data['id_marca']:
+                        id_marca = Marcas.objects.get(id_marca=data['id_marca'])
                     pass
                 except:
                     return Response({'success':False, 'detail':'El id de marca ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
@@ -184,7 +185,8 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                 except:
                                     return Response({'success':False, 'detail':'El id de unidad de medida vida util ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
                                 try:
-                                    id_marca = Marcas.objects.get(id_marca=data['id_marca'])
+                                    if data['id_marca']:
+                                        id_marca = Marcas.objects.get(id_marca=data['id_marca'])
                                     pass
                                 except:
                                     return Response({'success':False, 'detail':'El id de marca ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
@@ -227,7 +229,8 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                             except:
                                 return Response({'success':False, 'detail':'El id de unidad de medida vida util ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
                             try:
-                                id_marca = Marcas.objects.get(id_marca=data['id_marca'])
+                                if data['id_marca']:
+                                    id_marca = Marcas.objects.get(id_marca=data['id_marca'])
                                 pass
                             except:
                                 return Response({'success':False, 'detail':'El id de marca ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
