@@ -969,6 +969,7 @@ class GetEntradas(generics.ListAPIView):
 class UpdateItemsEntrada(generics.UpdateAPIView):
     serializer_class = ItemEntradaSerializer
     queryset = ItemEntradaAlmacen.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, id_entrada):
         data = request.data
@@ -1305,6 +1306,7 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
 class AnularEntrada(generics.UpdateAPIView):
     serializer_class = EntradaSerializer
     queryset = EntradasAlmacen.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, id_entrada):
         datos_ingresados = request.data
@@ -1366,6 +1368,7 @@ class AnularEntrada(generics.UpdateAPIView):
 class ValidacionCodigoBien(generics.ListAPIView):
     serializer_class = CatalogoBienesSerializer
     queryset = CatalogoBienes.objects.all()
+    permission_classes = [IsAuthenticated]
     
     def get(self,request,nivel,codigo_bien):
         if not codigo_bien.isdigit():
