@@ -141,16 +141,12 @@ class SearchSolicitudesAprobadasYAbiertos(generics.ListAPIView):
         
         filter['estado_aprobacion_responsable'] = "A"
         filter['solicitud_abierta'] = True
-        solicitudes=SolicitudesConsumibles.objects.filter(**filter).filter()
         fecha_despacho_strptime = datetime.strptime(
                 fecha_despacho, '%Y-%m-%d %H:%M:%S')
+        solicitudes=SolicitudesConsumibles.objects.filter(**filter).filter(fecha_aprobacion_responsable__lte=fecha_despacho_strptime)
         if solicitudes:
-            for solicitud in solicitudes:
-                if solicitud.fecha_aprobacion_responsable < fecha_despacho_strptime:
-                    serializador=self.serializer_class(solicitudes,many = True)
-                    return Response({'success':True,'detail':'Se encontraron solicitudes aprobadas y abiertas','data':serializador.data},status = status.HTTP_200_OK)
-                else:
-                    return Response({'success':False,'detail':'No se encontraron solicitudes'},status = status.HTTP_404_NOT_FOUND) 
+            serializador=self.serializer_class(solicitudes,many = True)
+            return Response({'success':True,'detail':'Se encontraron solicitudes aprobadas y abiertas','data':serializador.data},status = status.HTTP_200_OK)
         else:
             return Response({'success':False,'detail':'No se encontraron solicitudes'},status = status.HTTP_404_NOT_FOUND) 
         
