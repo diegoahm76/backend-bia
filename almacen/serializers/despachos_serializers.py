@@ -30,3 +30,16 @@ class SerializersItemsSolicitudConsumible(serializers.ModelSerializer):
     class Meta:
         model=ItemsSolicitudConsumible
         fields=('__all__')
+
+
+class CerrarSolicitudDebidoInexistenciaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SolicitudesConsumibles
+        fields = (
+            'observacion_cierre_no_dispo_alm',
+            'fecha_cierre_no_dispo_alm',
+            'id_persona_cierre_no_dispo_alm',
+            'solicitud_abierta',
+            'fecha_cierre_solicitud',
+            'gestionada_almacen'
+        )

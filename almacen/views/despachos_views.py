@@ -6,7 +6,24 @@ from rest_framework.response import Response
 from seguridad.models import Personas, User
 from rest_framework.decorators import api_view
 from seguridad.utils import Util
+from rest_framework import generics, status
+from seguridad.utils import Util  
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
+from django.db.models import Q
+from rest_framework.response import Response
+from datetime import datetime, date
+import copy
+from almacen.serializers.despachos_serializers import (
+    CerrarSolicitudDebidoInexistenciaSerializer
+)
+from almacen.models.solicitudes_models import (
+    SolicitudesConsumibles, 
+    DespachoConsumo, 
+    ItemDespachoConsumo, 
+    SolicitudesConsumibles, 
+    ItemsSolicitudConsumible
+)
 from seguridad.models import (
     Personas,
     User,
@@ -19,16 +36,11 @@ from almacen.models.organigrama_models import (
 from almacen.models.generics_models import (
     UnidadesMedida
 )
-from django.db.models import Q
-from rest_framework.response import Response
-from datetime import datetime, date
 from almacen.serializers.solicitudes_serialiers import ( 
     CrearSolicitudesPostSerializer,
     CrearItemsSolicitudConsumiblePostSerializer
     )
 from seguridad.serializers.personas_serializers import PersonasSerializer
-import copy
-from almacen.models.solicitudes_models import DespachoConsumo, ItemDespachoConsumo, SolicitudesConsumibles, ItemsSolicitudConsumible
 
 class CreateDespachoMaestro(generics.UpdateAPIView):
     serializer_class = SerializersDespachoConsumo
@@ -53,4 +65,47 @@ class CreateDespachoMaestro(generics.UpdateAPIView):
         
         #return Response({'success': False, 'detail': 'Falló'}, status=status.HTTP_400_BAD_REQUEST)
         return Response({'success': True, 'detail': datos_ingresados})
-    
+
+
+class CerrarSolicitudDebidoInexistenciaView(generics.RetrieveUpdateAPIView):
+    serializer_class = CerrarSolicitudDebidoInexistenciaSerializer
+    queryset = SolicitudesConsumibles.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, id_solicitud):
+        data = request.data
+        
+        #VALIDACIÓN SI EXISTE LA SOLICITUD ENVIADA
+        solicitud = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles=id_solicitud).first()
+        if not solicitud:
+            return Response({'success': False, 'detail': 'No se encontró ninguna solicitud con los parámetros enviados'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if solicitud.fecha_cierre_no_dispo_alm:
+            return Response({'success': False, 'detail': 'No se cerrar una solicitud que ya está cerrada'}, status=status.HTTP_403_FORBIDDEN)
+        #SUSTITUIR INFORMACIÓN A LA DATA
+        data['fecha_cierre_no_dispo_alm'] = datetime.now()
+        data['id_persona_cierre_no_dispo_alm'] = request.user.persona.id_persona
+        data['solicitud_abierta'] = False
+        data['fecha_cierre_solicitud'] = datetime.now()
+        data['gestionada_almacen'] = True
+
+        serializer = self.serializer_class(solicitud, data=data, many=False)
+        serializer.is_valid(raise_exception=True)
+        serializer.save
+        
+        #Auditoria Cerrar Solicitud
+        usuario = request.user.id_usuario
+        descripcion = {"Codigo bien": str(), "Numero elemento bien": str()}
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 18,
+            "cod_permiso": "BO",
+            "subsistema": 'ALMA',
+            "dirip": direccion,
+            "descripcion": descripcion, 
+        }
+        Util.save_auditoria(auditoria_data)
+
+        return Response({'success': False, 'detail': 'Se cerró la solicitud correctamente'}, status=status.HTTP_201_CREATED)
+        

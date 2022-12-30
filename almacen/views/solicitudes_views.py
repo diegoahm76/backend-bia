@@ -377,6 +377,7 @@ class CreateSolicitud(generics.UpdateAPIView):
                     unidades_iguales_y_arriba.append(aux_menor.id_unidad_org_padre.nombre)
                 count = count - 1
             unidades_organiacionales_misma_linea = sorted(unidades_organiacionales_misma_linea)
+            print(unidades_organiacionales_misma_linea)
             if not unidad_para_la_que_solicita['nombre'] in unidades_organiacionales_misma_linea:
                 return Response({'success':False,'data':'La unidad organizacional para la que solicita no pertenece a la linea del organigrama a la que pertenece el solicitante'},status=status.HTTP_404_NOT_FOUND)
             
@@ -631,7 +632,7 @@ class AnularSolicitudesBienesConsumo(generics.UpdateAPIView):
 
 class SearchFuncionarioResponsable(generics.ListAPIView):
     serializer_class=PersonasSerializer
-    queryset=Personas
+    queryset=Personas.objects.all()
     permission_classes=[IsAuthenticated]
     
     def get(self, request):
