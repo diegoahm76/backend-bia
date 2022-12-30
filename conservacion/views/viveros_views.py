@@ -15,6 +15,12 @@ from conservacion.models.viveros_models import (
     HistorialAperturaViveros,
     HistorialCuarentenaViveros
 )
+from almacen.models.bienes_models import (
+    CatalogoBienes,
+)
+from almacen.serializers.bienes_serializers import (
+    CatalogoBienesSerializer,
+)
 from conservacion.serializers.viveros_serializers import (
     ViveroSerializer,
     AbrirViveroSerializer,
@@ -23,7 +29,8 @@ from conservacion.serializers.viveros_serializers import (
     
     ActivarDesactivarSerializer,
     ViveroPostSerializer,
-    ViveroPutSerializer
+    ViveroPutSerializer,
+    TipificacionBienViveroSerializer
 )
 
 class DeleteVivero(generics.RetrieveDestroyAPIView):
@@ -384,3 +391,28 @@ class UpdateViveros(generics.UpdateAPIView):
         Util.save_auditoria(auditoria_data)
         
         return Response({'success':True, 'detail':'Vivero actualizado con éxito', 'data':serializador.data}, status=status.HTTP_201_CREATED)
+
+
+def desactivar_vivero(request,pk):
+    try:
+        vivero = Vivero.objects.get(id_vivero=pk)
+    except:
+        return Response({'success':False, 'detail':'no existe ningun vivero con el id proporcionado'}, status=status.HTTP_404_NOT_FOUND)
+    
+class TipificacionBienConsumoVivero(generics.UpdateAPIView):
+    serializer_class = TipificacionBienViveroSerializer
+    queryset = CatalogoBienes.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def put(self, request, id_bien):
+        data = request.data
+        bien = CatalogoBienes.objects.filter(id_bien=id_bien).first()
+        
+        if bien.cod_tipo_bien == 'C' and bien.nivel_jerarquico == 5 and bien.solicitable_vivero:
+            serializador = self.serializer_class(bien,data=data)
+            serializador.is_valid(raise_exception=True)
+            serializador.save()
+        else:
+            return Response({'success':False, 'detail':'No puede tipificar el bien ingresado'})
+        
+        return Response({'success':True, 'detail':'Bien tipificado con éxito', 'data':serializador.data}, status=status.HTTP_201_CREATED)
