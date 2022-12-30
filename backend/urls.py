@@ -66,7 +66,7 @@ urlpatterns = [
     path('api/almacen/hoja-de-vida/', include('almacen.urls.hoja_de_vida_urls')),
     path('api/almacen/bienes/', include('almacen.urls.bienes_urls')),
     path('api/almacen/solicitudes/', include('almacen.urls.solicitudes_urls')),
-    path('api/almacen/solicitudes/', include('almacen.urls.solicitudes_urls')),
+    path('api/almacen/despachos/', include('almacen.urls.despachos_urls')),
 
     # CONSERVACIÓN
 

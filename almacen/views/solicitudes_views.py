@@ -270,6 +270,8 @@ class CreateSolicitud(generics.UpdateAPIView):
         # ASIGNACIÓN DE DATOS POR DEFECTO A LA TABLA SOLICITUDES
         info_solicitud['fecha_solicitud'] = str(date.today())
         info_solicitud['id_persona_solicita'] = user_logeado.persona.id_persona
+        if user_logeado.persona.id_unidad_organizacional_actual == None:
+            return Response({'success':False,'data':'El usuario solicitante debe tener asignada una unidad organizacional' },status=status.HTTP_404_NOT_FOUND)
         info_solicitud['id_unidad_org_del_solicitante'] = user_logeado.persona.id_unidad_organizacional_actual.id_unidad_organizacional
         info_solicitud['solicitud_abierta'] = True
         solicitudes_existentes = SolicitudesConsumibles.objects.all()
@@ -277,6 +279,8 @@ class CreateSolicitud(generics.UpdateAPIView):
         unidad_para_la_que_solicita = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = info_solicitud['id_unidad_para_la_que_solicita']).values().first()
         if info_solicitud['id_funcionario_responsable_unidad'] != None and info_solicitud['id_funcionario_responsable_unidad'] != '':
             funcionario_responsable = Personas.objects.filter(id_persona = info_solicitud['id_funcionario_responsable_unidad']).first()
+            if funcionario_responsable.id_unidad_organizacional_actual == None:
+                return Response({'success':False,'data':'El funcionario responsable debe tener asignada una unidad organizacional' },status=status.HTTP_404_NOT_FOUND)
             info_solicitud['id_unidad_org_del_responsable'] = funcionario_responsable.id_unidad_organizacional_actual.id_unidad_organizacional
         else:
             info_solicitud['id_unidad_org_del_responsable'] = None
