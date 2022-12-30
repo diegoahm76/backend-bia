@@ -116,7 +116,7 @@ class TipificacionBienViveroSerializer(serializers.ModelSerializer):
     cod_tipo_elemento_vivero = serializers.ChoiceField(choices=cod_tipo_elemento_vivero_CHOICES)
     
     def validate(self, data):
-        if data['cod_tipo_elemento_vivero'] == 'MV' and not data['es_semilla_vivero']:
+        if data['cod_tipo_elemento_vivero'] == 'MV' and data['es_semilla_vivero'] == None:
             raise serializers.ValidationError("Debe indicar si es o no semilla para tipo elemento Material Vegetal")
         if data['cod_tipo_elemento_vivero'] != 'MV':
             data['es_semilla_vivero'] = False

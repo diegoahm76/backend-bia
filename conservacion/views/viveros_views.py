@@ -408,11 +408,31 @@ class TipificacionBienConsumoVivero(generics.UpdateAPIView):
         data = request.data
         bien = CatalogoBienes.objects.filter(id_bien=id_bien).first()
         
-        if bien.cod_tipo_bien == 'C' and bien.nivel_jerarquico == 5 and bien.solicitable_vivero:
-            serializador = self.serializer_class(bien,data=data)
-            serializador.is_valid(raise_exception=True)
-            serializador.save()
+        if bien:
+            previous_bien = copy.copy(bien)
+            if bien.cod_tipo_bien == 'C' and bien.nivel_jerarquico == 5 and bien.solicitable_vivero:
+                serializador = self.serializer_class(bien,data=data)
+                serializador.is_valid(raise_exception=True)
+                serializador.save()
+                
+                # AUDITORÍA TIPIFICACIÓN
+                usuario = request.user.id_usuario
+                descripcion = {"codigo_bien": str(previous_bien.codigo_bien), "nombre": str(previous_bien.nombre)}
+                direccion=Util.get_client_ip(request)
+                valores_actualizados = {'previous':previous_bien, 'current':bien}
+                auditoria_data = {
+                    "id_usuario" : usuario,
+                    "id_modulo" : 44,
+                    "cod_permiso": "AC",
+                    "subsistema": 'CONS',
+                    "dirip": direccion,
+                    "descripcion": descripcion,
+                    "valores_actualizados": valores_actualizados,
+                }
+                Util.save_auditoria(auditoria_data)
+            else:
+                return Response({'success':False, 'detail':'No puede tipificar el bien ingresado'})
+            
+            return Response({'success':True, 'detail':'Bien tipificado con éxito', 'data':serializador.data}, status=status.HTTP_201_CREATED)
         else:
-            return Response({'success':False, 'detail':'No puede tipificar el bien ingresado'})
-        
-        return Response({'success':True, 'detail':'Bien tipificado con éxito', 'data':serializador.data}, status=status.HTTP_201_CREATED)
+            return Response({'success':False, 'detail':'No existe el bien ingresado'}, status=status.HTTP_404_NOT_FOUND)
