@@ -49,24 +49,42 @@ class CreateDespachoMaestro(generics.UpdateAPIView):
     def put(self, request):
         datos_ingresados = request.data
         user_logeado = request.user
+        info_despacho = datos_ingresados['info_despacho']
+        items_despacho = datos_ingresados['items_despacho']
         #Validaciones primarias
         if str(user_logeado) == 'AnonymousUser':
             return Response({'success':False,'data':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
-        instancia_solicitud = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles=datos_ingresados['id_solicitud_consumo'])
-        if datos_ingresados['id_despacho_consumo'] == None:
-            bandera_actualizar = False
+        if info_despacho['es_despacho_conservacion'] != True and info_despacho['es_despacho_conservacion'] != False:
+            return Response({'success':False,'data':'El campo (es_despacho_conservacion) debe ser True o False'},status=status.HTTP_404_NOT_FOUND)
+        if len(info_despacho['motivo']) > 255:
+            return Response({'success':False,'data':'El motivo debe tener como máximo 255 caracteres'},status=status.HTTP_404_NOT_FOUND)
+        #Validaciones de la solicitud
+        instancia_solicitud = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles=info_despacho['id_solicitud_consumo']).first()
+        if not instancia_solicitud:
+            return Response({'success':False,'data':'Debe ingresar un id de solicitud válido'},status=status.HTTP_404_NOT_FOUND)
+        print(instancia_solicitud.estado_aprobacion_responsable)
+        print(instancia_solicitud.solicitud_abierta)
+        if instancia_solicitud.solicitud_abierta == False or instancia_solicitud.estado_aprobacion_responsable != 'A':
+            return Response({'success':False,'data':'La solicitud a despachar debe de estar aprobada por el funcionario responsable y no debe de estar cerrada'},status=status.HTTP_404_NOT_FOUND)
+        #Consulta y asignación de los campos que se repiten con solicitudes de bienes de consumo
+        info_despacho['numero_solicitud_por_tipo'] = instancia_solicitud.nro_solicitud_por_tipo
+        info_despacho['fecha_solicitud'] = instancia_solicitud.fecha_solicitud
+        info_despacho['id_persona_solicita'] = instancia_solicitud.id_persona_solicita
+        info_despacho['id_unidad_para_la_que_solicita'] = instancia_solicitud.id_unidad_para_la_que_solicita
+        info_despacho['id_funcionario_responsable_unidad'] = instancia_solicitud.id_funcionario_responsable_unidad
+        #Asignación de fecha de registro
+        info_despacho['fecha_registro'] = datetime.now()
+        #Asignación de persona que despacha
+        info_despacho['id_persona_despacha'] = user_logeado.persona.id_persona
+        #Asignacion de número de despacho
+        despachos_existentes = DespachoConsumo.objects.all()
+        if despachos_existentes:
+            numero_despachos = [i.nro_solicitud_por_tipo for i in despachos_existentes]
+            info_despacho['numero_despacho_consumo'] = max(numero_despachos) + 1
         else:
-            instancia_solicitud = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles=datos_ingresados['id_solicitud_consumibles']).first()
-            if not instancia_solicitud:
-                return Response({'success':False,'data':'Si desea actualizar una solicitud, ingrese un id de solicitud de consumibles válido'},status=status.HTTP_404_NOT_FOUND)
-            else:
-                instancia_solicitud_previous = copy.copy(instancia_solicitud)
-                bandera_actualizar = True
-        
-        #return Response({'success': False, 'detail': 'Falló'}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({'success': True, 'detail': datos_ingresados})
+            info_despacho['numero_despacho_consumo'] = 1  
 
-
+        return Response({'success':True,'data':'Despacho creado con éxito', 'Numero solicitud' : info_despacho["numero_despacho_consumo"]},status=status.HTTP_200_OK)
 class CerrarSolicitudDebidoInexistenciaView(generics.RetrieveUpdateAPIView):
     serializer_class = CerrarSolicitudDebidoInexistenciaSerializer
     queryset = SolicitudesConsumibles.objects.all()

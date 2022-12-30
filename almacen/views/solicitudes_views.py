@@ -266,7 +266,7 @@ class CreateSolicitud(generics.UpdateAPIView):
             else:
                 instancia_solicitud_previous = copy.copy(instancia_solicitud)
                 bandera_actualizar = True
-                
+        
         # ASIGNACIÓN DE DATOS POR DEFECTO A LA TABLA SOLICITUDES
         info_solicitud['fecha_solicitud'] = str(date.today())
         info_solicitud['id_persona_solicita'] = user_logeado.persona.id_persona
@@ -283,6 +283,8 @@ class CreateSolicitud(generics.UpdateAPIView):
                 return Response({'success':False,'data':'El funcionario responsable no existe' },status=status.HTTP_404_NOT_FOUND)
             if funcionario_responsable.id_unidad_organizacional_actual == None:
                 return Response({'success':False,'data':'El funcionario responsable debe tener asignada una unidad organizacional' },status=status.HTTP_404_NOT_FOUND)
+            if user_logeado.persona.id_unidad_organizacional_actual.id_unidad_organizacional == funcionario_responsable.id_unidad_organizacional_actual.id_unidad_organizacional:
+                return Response({'success':False,'data':'El funcionario responsable debe no puede ser de la misma unidad organizacional al que solicita' },status=status.HTTP_404_NOT_FOUND)
             info_solicitud['id_unidad_org_del_responsable'] = funcionario_responsable.id_unidad_organizacional_actual.id_unidad_organizacional
         else:
             info_solicitud['id_unidad_org_del_responsable'] = None
@@ -387,7 +389,7 @@ class CreateSolicitud(generics.UpdateAPIView):
             
             if not funcionario_responsable.id_unidad_organizacional_actual.nombre in unidades_iguales_y_arriba or funcionario_responsable.id_unidad_organizacional_actual.nombre == None:
                 return Response({'success':False,'data':'La persona que ingresó como responsable no es ningún superior de la persona que solicita'},status=status.HTTP_404_NOT_FOUND)
-        
+        # Creacion de solicitudes
         if bandera_actualizar == False:
             if solicitudes_existentes:
                 numero_solicitudes_no_conservacion = [i.nro_solicitud_por_tipo for i in solicitudes_existentes if i.es_solicitud_de_conservacion == False]
@@ -418,6 +420,7 @@ class CreateSolicitud(generics.UpdateAPIView):
                 "valores_creados_detalles": valores_creados_detalles
             }
             Util.save_auditoria_maestro_detalle(auditoria_data)
+        #Actualizacion solicitudes
         elif bandera_actualizar == True:
             info_solicitud['nro_solicitud_por_tipo'] = instancia_solicitud.nro_solicitud_por_tipo
             serializer = self.serializer_class(instancia_solicitud, data=info_solicitud)
@@ -538,7 +541,7 @@ class RevisionSolicitudBienConsumosPorSupervisor(generics.UpdateAPIView):
         instance.justificacion_rechazo_responsable = datos_ingresados['justificacion_rechazo_responsable']
         instance.revisada_responsable = True
         instance.fecha_aprobacion_responsable = str(date.today())
-        if datos_ingresados['estado_aprobacion_responsable'] != 'R':
+        if datos_ingresados['estado_aprobacion_responsable'] == 'R':
             instance.solicitud_abierta = False
             instance.fecha_cierre_solicitud = str(date.today())
         instance.save()
