@@ -279,6 +279,8 @@ class CreateSolicitud(generics.UpdateAPIView):
         unidad_para_la_que_solicita = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = info_solicitud['id_unidad_para_la_que_solicita']).values().first()
         if info_solicitud['id_funcionario_responsable_unidad'] != None and info_solicitud['id_funcionario_responsable_unidad'] != '':
             funcionario_responsable = Personas.objects.filter(id_persona = info_solicitud['id_funcionario_responsable_unidad']).first()
+            if not funcionario_responsable:
+                return Response({'success':False,'data':'El funcionario responsable no existe' },status=status.HTTP_404_NOT_FOUND)
             if funcionario_responsable.id_unidad_organizacional_actual == None:
                 return Response({'success':False,'data':'El funcionario responsable debe tener asignada una unidad organizacional' },status=status.HTTP_404_NOT_FOUND)
             info_solicitud['id_unidad_org_del_responsable'] = funcionario_responsable.id_unidad_organizacional_actual.id_unidad_organizacional
@@ -336,9 +338,10 @@ class CreateSolicitud(generics.UpdateAPIView):
 
             if (info_solicitud['id_funcionario_responsable_unidad'] != padre_de_todos.id_persona and info_solicitud['id_funcionario_responsable_unidad'] != '' and info_solicitud['id_funcionario_responsable_unidad'] != None) or info_solicitud['id_funcionario_responsable_unidad'] == user_logeado.persona.id_persona:
                 return Response({'success':False,'data':'El usuario supervisor no puede ser el mismo usuario que solicita, el funcionario supervisor solo puede ser de unidad organizacional nivel 1' },status=status.HTTP_404_NOT_FOUND)
-            
         # VALIDACIÓN DE LA LINEA DEL ORGANIGRAMA A LA QUE PERTENECE EL USUARIO SOLICITANTE Y EL USUARIO SUPERVISOR DEL SOLICITANTE
         else:
+            if int(info_solicitud['id_funcionario_responsable_unidad']) == user_logeado.persona.id_persona:
+                return Response({'success':False,'data':'El usuario quien solicita no puede ser el supervisor' },status=status.HTTP_404_NOT_FOUND)
             aux_niveles_organigrama = NivelesOrganigrama.objects.all().values()
             
             niveles_organigrama = [i['orden_nivel'] for i in aux_niveles_organigrama]
@@ -368,22 +371,23 @@ class CreateSolicitud(generics.UpdateAPIView):
                 unidades_iguales_y_arriba.append(unidades_arriba)
                 count = user_logeado.persona.id_unidad_organizacional_actual.id_unidad_org_padre.id_nivel_organigrama.orden_nivel - 1
                 aux_menor = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = user_logeado.persona.id_unidad_organizacional_actual.id_unidad_org_padre.id_unidad_organizacional).first()
-                if aux_menor.id_unidad_org_padre.unidad_raiz == False:
-                    unidades_organiacionales_misma_linea.append(aux_menor.id_unidad_org_padre.nombre)
-                    unidades_iguales_y_arriba.append(aux_menor.id_unidad_org_padre.nombre)
-                    while count >= 1:
-                        aux_menor = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = aux_menor.id_unidad_org_padre.id_unidad_organizacional).first()
-                        if aux_menor.id_unidad_org_padre:
-                            unidades_organiacionales_misma_linea.append(aux_menor.id_unidad_org_padre.nombre)
-                            unidades_iguales_y_arriba.append(aux_menor.id_unidad_org_padre.nombre)
-                        count = count - 1
-                    unidades_organiacionales_misma_linea = sorted(unidades_organiacionales_misma_linea)
-                if not unidad_para_la_que_solicita['nombre'] in unidades_organiacionales_misma_linea:
-                    return Response({'success':False,'data':'La unidad organizacional para la que solicita no pertenece a la linea del organigrama a la que pertenece el solicitante'},status=status.HTTP_404_NOT_FOUND)
-                
-                if not funcionario_responsable.id_unidad_organizacional_actual.nombre in unidades_iguales_y_arriba or funcionario_responsable.id_unidad_organizacional_actual.nombre == None:
-                    return Response({'success':False,'data':'La persona que ingresó como responsable no es ningún superior de la persona que solicita'},status=status.HTTP_404_NOT_FOUND)
+                if aux_menor.id_nivel_organigrama.orden_nivel >= 2:
+                    if aux_menor.id_unidad_org_padre.unidad_raiz == False:
+                        unidades_organiacionales_misma_linea.append(aux_menor.id_unidad_org_padre.nombre)
+                        unidades_iguales_y_arriba.append(aux_menor.id_unidad_org_padre.nombre)
+                        while count >= 1:
+                            aux_menor = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = aux_menor.id_unidad_org_padre.id_unidad_organizacional).first()
+                            if aux_menor.id_unidad_org_padre:
+                                unidades_organiacionales_misma_linea.append(aux_menor.id_unidad_org_padre.nombre)
+                                unidades_iguales_y_arriba.append(aux_menor.id_unidad_org_padre.nombre)
+                            count = count - 1
+                        unidades_organiacionales_misma_linea = sorted(unidades_organiacionales_misma_linea)
+            if not unidad_para_la_que_solicita['nombre'] in unidades_organiacionales_misma_linea:
+                return Response({'success':False,'data':'La unidad organizacional para la que solicita no pertenece a la linea del organigrama a la que pertenece el solicitante'},status=status.HTTP_404_NOT_FOUND)
             
+            if not funcionario_responsable.id_unidad_organizacional_actual.nombre in unidades_iguales_y_arriba or funcionario_responsable.id_unidad_organizacional_actual.nombre == None:
+                return Response({'success':False,'data':'La persona que ingresó como responsable no es ningún superior de la persona que solicita'},status=status.HTTP_404_NOT_FOUND)
+        
         if bandera_actualizar == False:
             if solicitudes_existentes:
                 numero_solicitudes_no_conservacion = [i.nro_solicitud_por_tipo for i in solicitudes_existentes if i.es_solicitud_de_conservacion == False]
