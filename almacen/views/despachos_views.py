@@ -1,21 +1,21 @@
 from almacen.models.bienes_models import CatalogoBienes
 from almacen.serializers.bienes_serializers import CatalogoBienesSerializer
-from almacen.serializers.despachos_serializers import SerializersDespachoConsumo, SerializersItemDespachoConsumo, SerializersSolicitudesConsumibles, SerializersItemsSolicitudConsumible
 from rest_framework import generics,status
 from rest_framework.response import Response
 from seguridad.models import Personas, User
 from rest_framework.decorators import api_view
 from seguridad.utils import Util
-from rest_framework import generics, status
-from seguridad.utils import Util  
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
-from rest_framework.response import Response
 from datetime import datetime, date
 import copy
 from almacen.serializers.despachos_serializers import (
-    CerrarSolicitudDebidoInexistenciaSerializer
+    CerrarSolicitudDebidoInexistenciaSerializer,
+    SerializersDespachoConsumo,
+    SerializersItemDespachoConsumo,
+    SerializersSolicitudesConsumibles,
+    SerializersItemsSolicitudConsumible
 )
 from almacen.models.solicitudes_models import (
     SolicitudesConsumibles, 
