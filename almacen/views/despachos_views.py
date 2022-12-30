@@ -109,3 +109,30 @@ class CerrarSolicitudDebidoInexistenciaView(generics.RetrieveUpdateAPIView):
 
         return Response({'success': False, 'detail': 'Se cerró la solicitud correctamente'}, status=status.HTTP_201_CREATED)
         
+    
+class SearchSolicitudesAprobadasYAbiertos(generics.ListAPIView):
+    serializer_class=SerializersSolicitudesConsumibles
+    queryset=SolicitudesConsumibles.objects.all()
+    
+    def get(self,request):
+        filter = {}
+        fecha_despacho=request.query_params.get('fecha_despacho')
+       
+        if not fecha_despacho:
+            return Response({'success':False,'detail':'Ingresa el parametro de fecha de despacho'},status=status.HTTP_400_BAD_REQUEST)
+        
+        filter['estado_aprobacion_responsable'] = "A"
+        filter['solicitud_abierta'] = True
+        solicitudes=SolicitudesConsumibles.objects.filter(**filter).filter()
+        fecha_despacho_strptime = datetime.strptime(
+                fecha_despacho, '%Y-%m-%d %H:%M:%S')
+        if solicitudes:
+            for solicitud in solicitudes:
+                if solicitud.fecha_aprobacion_responsable < fecha_despacho_strptime:
+                    serializador=self.serializer_class(solicitudes,many = True)
+                    return Response({'success':True,'detail':'Se encontraron solicitudes aprobadas y abiertas','data':serializador.data},status = status.HTTP_200_OK)
+                else:
+                    return Response({'success':False,'detail':'No se encontraron solicitudes'},status = status.HTTP_404_NOT_FOUND) 
+        else:
+            return Response({'success':False,'detail':'No se encontraron solicitudes'},status = status.HTTP_404_NOT_FOUND) 
+        

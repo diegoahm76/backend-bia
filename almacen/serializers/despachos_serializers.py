@@ -21,6 +21,28 @@ class SerializersItemDespachoConsumo(serializers.ModelSerializer):
 
 class SerializersSolicitudesConsumibles(serializers.ModelSerializer):
     #nombre = serializers.CharField(validators=[UniqueValidator(queryset=Marcas.objects.all())])
+    nombre_completo_responsable = serializers.SerializerMethodField()
+    nombre_completo_solicitante = serializers.SerializerMethodField()
+    unidad_para_la_que_solicita=serializers.ReadOnlyField(source='id_unidad_para_la_que_solicita.nombre',default=None)
+    unidad_org_del_responsable=serializers.ReadOnlyField(source='id_unidad_org_del_responsable.nombre',default=None)
+    unidad_org_del_solicitante=serializers.ReadOnlyField(source='id_unidad_org_del_solicitante.nombre',default=None)
+    def get_nombre_completo_responsable(self, obj):
+        nombre_completo_responsable = None
+        nombre_list = [obj.id_funcionario_responsable_unidad.primer_nombre, obj.id_funcionario_responsable_unidad.segundo_nombre,
+                        obj.id_funcionario_responsable_unidad.primer_apellido, obj.id_funcionario_responsable_unidad.segundo_apellido]
+        nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+        return nombre_completo_responsable
+    def get_nombre_completo_solicitante(self, obj):
+        nombre_completo_solicitante = None
+        nombre_list = [obj.id_persona_solicita.primer_nombre, obj.id_persona_solicita.segundo_nombre,
+                        obj.id_persona_solicita.primer_apellido, obj.id_persona_solicita.segundo_apellido]
+        nombre_completo_solicitante = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo_solicitante = nombre_completo_solicitante if nombre_completo_solicitante != "" else None
+        return nombre_completo_solicitante
+    
+        
+
     class Meta:
         model=SolicitudesConsumibles
         fields=('__all__')
