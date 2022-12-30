@@ -118,9 +118,9 @@ class TipificacionBienViveroSerializer(serializers.ModelSerializer):
     def validate(self, data):
         if data['cod_tipo_elemento_vivero'] == 'MV' and not data['es_semilla_vivero']:
             raise serializers.ValidationError("Debe indicar si es o no semilla para tipo elemento Material Vegetal")
-        
         if data['cod_tipo_elemento_vivero'] != 'MV':
-            data['es_semilla_vivero'] = None
+            data['es_semilla_vivero'] = False
+        return data
             
     class Meta:
         model = CatalogoBienes
