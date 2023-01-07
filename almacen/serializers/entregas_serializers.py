@@ -6,9 +6,11 @@ from almacen.models.solicitudes_models import (
 ) 
 
 class GetNumeroEntregas(serializers.ModelSerializer):
-    model = DespachoConsumo
-    fields = ['numero_despacho_consumo']
+    class Meta:
+        model = DespachoConsumo
+        fields = ['numero_despacho_consumo']
 
 class GetEntregasSerializer(serializers.ModelSerializer):
-    model = DespachoConsumo
-    fields = '__all__'
+    class Meta:
+        model = DespachoConsumo
+        fields = '__all__'
