@@ -99,6 +99,7 @@ class CreateDespachoMaestro(generics.UpdateAPIView):
 
         return Response({'success':True,'data':'Despacho creado con éxito', 'Numero solicitud' : info_despacho["numero_despacho_consumo"]},status=status.HTTP_200_OK)
     
+
 class CerrarSolicitudDebidoInexistenciaView(generics.RetrieveUpdateAPIView):
     serializer_class = CerrarSolicitudDebidoInexistenciaSerializer
     queryset = SolicitudesConsumibles.objects.all()
@@ -121,9 +122,10 @@ class CerrarSolicitudDebidoInexistenciaView(generics.RetrieveUpdateAPIView):
         data['fecha_cierre_solicitud'] = datetime.now()
         data['gestionada_almacen'] = True
 
-        serializer = self.serializer_class(solicitud, data=data, many=False)
+        serializer = self.serializer_class(solicitud, data=data)
         serializer.is_valid(raise_exception=True)
-        serializer.save
+        serializador = serializer.save()
+        print(serializador)
         
         #Auditoria Cerrar Solicitud
         usuario = request.user.id_usuario
