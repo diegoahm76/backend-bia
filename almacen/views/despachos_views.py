@@ -150,3 +150,12 @@ class SearchSolicitudesAprobadasYAbiertos(generics.ListAPIView):
         else:
             return Response({'success':False,'detail':'No se encontraron solicitudes'},status = status.HTTP_404_NOT_FOUND) 
         
+class GetDespachoByNumeroDespacho(generics.ListAPIView):
+    serializer_class= SerializersDespachoConsumo
+    queryset=DespachoConsumo.objects.all()
+    
+    def get(self,request):
+        numero_despacho_consumo=request.query_params.get('numero_despacho_consumo')
+        if not numero_despacho_consumo:
+            return Response({'success':False,'detail':'Ingresa el parametro de fecha de despacho'},status=status.HTTP_400_BAD_REQUEST)
+        
