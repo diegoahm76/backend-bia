@@ -56,24 +56,33 @@ class CreateDespachoMaestro(generics.UpdateAPIView):
             return Response({'success':False,'data':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
         if info_despacho['es_despacho_conservacion'] != True and info_despacho['es_despacho_conservacion'] != False:
             return Response({'success':False,'data':'El campo (es_despacho_conservacion) debe ser True o False'},status=status.HTTP_404_NOT_FOUND)
+        if info_despacho['es_despacho_conservacion'] == False and info_despacho['id_entrada_almacen_cv'] != None:
+            return Response({'success':False,'data':'Si ingresa (es_despacho_conservacion) en false, el campo id_entrada_almacen_cv debe ser null'},status=status.HTTP_404_NOT_FOUND)
         if len(info_despacho['motivo']) > 255:
             return Response({'success':False,'data':'El motivo debe tener como máximo 255 caracteres'},status=status.HTTP_404_NOT_FOUND)
         #Validaciones de la solicitud
         instancia_solicitud = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles=info_despacho['id_solicitud_consumo']).first()
         if not instancia_solicitud:
             return Response({'success':False,'data':'Debe ingresar un id de solicitud válido'},status=status.HTTP_404_NOT_FOUND)
-        print(instancia_solicitud.estado_aprobacion_responsable)
-        print(instancia_solicitud.solicitud_abierta)
         if instancia_solicitud.solicitud_abierta == False or instancia_solicitud.estado_aprobacion_responsable != 'A':
             return Response({'success':False,'data':'La solicitud a despachar debe de estar aprobada por el funcionario responsable y no debe de estar cerrada'},status=status.HTTP_404_NOT_FOUND)
-        #Consulta y asignación de los campos que se repiten con solicitudes de bienes de consumo
+        #Asignación de fecha de registro
+        info_despacho['fecha_registro'] = datetime.now()
+        #Se valida que la fecha de la solicitud no sea inferior a (fecha_actual - 8 días) ni superior a la actual
+        fecha_despacho = datetime.strptime(info_despacho.get('fecha_despacho'), "%Y-%m-%d %H:%M:%S")
+        aux_validacion_fechas = info_despacho['fecha_registro'] - fecha_despacho
+        if int(aux_validacion_fechas.days) > 8 or int(aux_validacion_fechas.days) < 0:
+            return Response({'success':False,'data':'La fecha ingresada no es permita dentro de los parametros existentes'},status=status.HTTP_404_NOT_FOUND)
+        #Se valida que la fecha de aprobación de la solicitud sea inferior a la fecha de despacho
+        fecha_aprobacion_solicitud = instancia_solicitud.fecha_aprobacion_responsable
+        if fecha_despacho.date() <= fecha_aprobacion_solicitud:
+            return Response({'success':False,'data':'La fecha de despacho debe ser mayor o igual a la fecha de aprobación de la solicitud'},status=status.HTTP_404_NOT_FOUND)
+        #Consulta y asignación de los campos que se repiten con solicitudes de bienes de consumos
         info_despacho['numero_solicitud_por_tipo'] = instancia_solicitud.nro_solicitud_por_tipo
         info_despacho['fecha_solicitud'] = instancia_solicitud.fecha_solicitud
         info_despacho['id_persona_solicita'] = instancia_solicitud.id_persona_solicita
         info_despacho['id_unidad_para_la_que_solicita'] = instancia_solicitud.id_unidad_para_la_que_solicita
         info_despacho['id_funcionario_responsable_unidad'] = instancia_solicitud.id_funcionario_responsable_unidad
-        #Asignación de fecha de registro
-        info_despacho['fecha_registro'] = datetime.now()
         #Asignación de persona que despacha
         info_despacho['id_persona_despacha'] = user_logeado.persona.id_persona
         #Asignacion de número de despacho
@@ -85,6 +94,7 @@ class CreateDespachoMaestro(generics.UpdateAPIView):
             info_despacho['numero_despacho_consumo'] = 1  
 
         return Response({'success':True,'data':'Despacho creado con éxito', 'Numero solicitud' : info_despacho["numero_despacho_consumo"]},status=status.HTTP_200_OK)
+    
 class CerrarSolicitudDebidoInexistenciaView(generics.RetrieveUpdateAPIView):
     serializer_class = CerrarSolicitudDebidoInexistenciaSerializer
     queryset = SolicitudesConsumibles.objects.all()

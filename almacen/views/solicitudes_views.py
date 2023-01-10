@@ -284,7 +284,7 @@ class CreateSolicitud(generics.UpdateAPIView):
             if funcionario_responsable.id_unidad_organizacional_actual == None:
                 return Response({'success':False,'data':'El funcionario responsable debe tener asignada una unidad organizacional' },status=status.HTTP_404_NOT_FOUND)
             if user_logeado.persona.id_unidad_organizacional_actual.id_unidad_organizacional == funcionario_responsable.id_unidad_organizacional_actual.id_unidad_organizacional:
-                return Response({'success':False,'data':'El funcionario responsable debe no puede ser de la misma unidad organizacional al que solicita' },status=status.HTTP_404_NOT_FOUND)
+                return Response({'success':False,'data':'El funcionario responsable no puede ser de la misma unidad organizacional del que solicita' },status=status.HTTP_404_NOT_FOUND)
             info_solicitud['id_unidad_org_del_responsable'] = funcionario_responsable.id_unidad_organizacional_actual.id_unidad_organizacional
         else:
             info_solicitud['id_unidad_org_del_responsable'] = None
