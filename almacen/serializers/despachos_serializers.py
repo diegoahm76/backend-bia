@@ -65,3 +65,12 @@ class CerrarSolicitudDebidoInexistenciaSerializer(serializers.ModelSerializer):
             'fecha_cierre_solicitud',
             'gestionada_almacen'
         )
+
+class SearchBienInventarioSerializer(serializers.ModelSerializer):
+    codigo_bien=serializers.ReadOnlyField(source='id_bien.codigo_bien',default=None)
+    nombre=serializers.ReadOnlyField(source='id_bien.nombre',default=None)
+    bodega=serializers.ReadOnlyField(source='id_bodega.nombre',default=None)
+    
+    class Meta:
+        model=Inventario
+        fields=('id_inventario', 'id_bien', 'codigo_bien', 'nombre', 'id_bodega', 'bodega')

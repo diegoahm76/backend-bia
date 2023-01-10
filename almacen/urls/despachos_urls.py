@@ -5,4 +5,6 @@ urlpatterns = [
     path('crear-despacho-bienes-de-consumo/', views.CreateDespachoMaestro.as_view(), name='crear-despacho-bienes-de-consumo'),
     path('get-solicitudes-aprobados-abiertos/', views.SearchSolicitudesAprobadasYAbiertos.as_view(), name='get-solicitudes-aprobados-abiertos'),
 
+    path('search-bien-inventario/', views.SearchBienInventario.as_view(), name='search-bien-inventario'),
+    path('search-bienes-inventario/', views.SearchBienesInventario.as_view(), name='search-bienes-inventario'),
 ]

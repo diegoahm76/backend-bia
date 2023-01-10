@@ -1,5 +1,6 @@
 from almacen.models.bienes_models import CatalogoBienes
 from almacen.serializers.bienes_serializers import CatalogoBienesSerializer
+from almacen.serializers.despachos_serializers import SerializersDespachoConsumo, SerializersItemDespachoConsumo, SerializersSolicitudesConsumibles, SerializersItemsSolicitudConsumible, SearchBienInventarioSerializer
 from rest_framework import generics,status
 from rest_framework.response import Response
 from seguridad.models import Personas, User
@@ -36,6 +37,9 @@ from almacen.models.organigrama_models import (
 from almacen.models.generics_models import (
     UnidadesMedida
 )
+from almacen.models.inventario_models import (
+    Inventario
+)
 from almacen.serializers.solicitudes_serialiers import ( 
     CrearSolicitudesPostSerializer,
     CrearItemsSolicitudConsumiblePostSerializer
@@ -44,7 +48,7 @@ from seguridad.serializers.personas_serializers import PersonasSerializer
 
 class CreateDespachoMaestro(generics.UpdateAPIView):
     serializer_class = SerializersDespachoConsumo
-    queryset = DespachoConsumo
+    queryset = DespachoConsumo.objects.all()
     
     def put(self, request):
         datos_ingresados = request.data
@@ -169,3 +173,49 @@ class GetDespachoByNumeroDespacho(generics.ListAPIView):
         if not numero_despacho_consumo:
             return Response({'success':False,'detail':'Ingresa el parametro de fecha de despacho'},status=status.HTTP_400_BAD_REQUEST)
         
+class SearchBienInventario(generics.ListAPIView):
+    serializer_class=SearchBienInventarioSerializer
+    queryset=Inventario.objects.all()
+    
+    def get(self,request):
+        codigo_bien = request.query_params.get('codigo_bien')
+        id_bodega = request.query_params.get('id_bodega')
+        fecha_despacho = request.query_params.get('fecha_despacho')
+        
+        if (not codigo_bien or codigo_bien == '') or (not id_bodega or id_bodega == '') or (not fecha_despacho or fecha_despacho == ''):
+            return Response({'success':False, 'detail':'Debe ingresar los parámetros de búsqueda'}, status=status.HTTP_400_BAD_REQUEST)
+
+        bien = CatalogoBienes.objects.filter(codigo_bien=codigo_bien, solicitable_vivero=True, cod_tipo_bien='C', nivel_jerarquico=5).first()
+        fecha_despacho_strptime = datetime.strptime(fecha_despacho, '%Y-%m-%d %H:%M:%S')
+        
+        if bien:
+            items_despachados = ItemDespachoConsumo.objects.filter(id_bien_despachado=bien.id_bien, id_despacho_consumo__fecha_despacho__gte=fecha_despacho_strptime)
+            print("ID_BIEN: ", bien.id_bien)
+            print("FECHA_DESPACHO: ", fecha_despacho_strptime)
+            print("ITEMS_DESPACHADOS: ", items_despachados)
+            if items_despachados:
+                return Response({'success':False, 'detail':'El bien tiene despachos o entregas posteriores a la fecha de despacho elegida', 'data': []}, status=status.HTTP_200_OK)
+                
+            inventario = Inventario.objects.filter(id_bien=bien.id_bien, id_bodega=id_bodega).first()
+            
+            serializador_inventario = self.serializer_class(inventario)
+            
+            return Response({'success':True, 'detail':'Se encontró el siguiente resultado', 'data': serializador_inventario.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success':False, 'detail':'El bien no existe', 'data': []}, status=status.HTTP_200_OK)
+        
+class SearchBienesInventario(generics.ListAPIView):
+    serializer_class=SearchBienInventarioSerializer
+    queryset=Inventario.objects.all()
+    
+    def get(self,request):
+        id_bien = request.query_params.get('id_bien')
+        
+        if not id_bien or id_bien == '':
+            return Response({'success':False, 'detail':'Debe ingresar el parámetro de búsqueda'}, status=status.HTTP_400_BAD_REQUEST)
+
+        inventario = Inventario.objects.filter(id_bien=id_bien)
+        
+        serializador_inventario = self.serializer_class(inventario, many=True)
+        
+        return Response({'success':True, 'detail':'Se encontraron los siguientes resultados', 'data': serializador_inventario.data}, status=status.HTTP_200_OK)
