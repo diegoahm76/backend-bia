@@ -32,6 +32,12 @@ class ViveroSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vivero
         fields = '__all__'
+
+
+class ViveroSerializerDesactivoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Vivero
+        fields = ['activo']
            
 class ActivarDesactivarSerializer(serializers.ModelSerializer):
     class Meta:
