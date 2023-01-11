@@ -147,6 +147,7 @@ class CerrarSolicitudDebidoInexistenciaView(generics.RetrieveUpdateAPIView):
 class SearchSolicitudesAprobadasYAbiertos(generics.ListAPIView):
     serializer_class=SerializersSolicitudesConsumibles
     queryset=SolicitudesConsumibles.objects.all()
+    permission_classes = [IsAuthenticated]
     
     def get(self,request):
         filter = {}
@@ -166,15 +167,41 @@ class SearchSolicitudesAprobadasYAbiertos(generics.ListAPIView):
         else:
             return Response({'success':False,'detail':'No se encontraron solicitudes'},status = status.HTTP_404_NOT_FOUND) 
         
-class GetDespachoByNumeroDespacho(generics.ListAPIView):
+class GetDespachoConsumoByNumeroDespacho(generics.ListAPIView):
     serializer_class= SerializersDespachoConsumo
     queryset=DespachoConsumo.objects.all()
+    permission_classes = [IsAuthenticated]
     
     def get(self,request):
         numero_despacho_consumo=request.query_params.get('numero_despacho_consumo')
         if not numero_despacho_consumo:
             return Response({'success':False,'detail':'Ingresa el parametro de fecha de despacho'},status=status.HTTP_400_BAD_REQUEST)
-        
+        despacho=DespachoConsumo.objects.filter(numero_despacho_consumo=numero_despacho_consumo).first()
+        if despacho:
+            serializador=self.serializer_class(despacho,many=False)
+            return Response ({'success':True,'detail':'Despacho encontrado','data':serializador.data},status=status.HTTP_200_OK)
+        else:
+            return Response ({'success':False,'detail':'No se encontraron despachos'},status=status.HTTP_404_NOT_FOUND)
+
+class FiltroDespachoConsumo(generics.ListAPIView):
+    serializer_class= SerializersDespachoConsumo
+    queryset=DespachoConsumo.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request):
+        filter={}
+        for key,value in request.query_params.items():
+            if key in ['fecha_despacho','id_unidad_para_la_que_solicita']:
+                if key != 'id_unidad_para_la_que_solicita':
+                    filter[key+"__icontains"]=value
+                else:
+                    filter[key]=value
+        despachos=DespachoConsumo.objects.filter(**filter)
+        if despachos:
+            serializador=self.serializer_class(despachos,many=True)
+            return Response ({'success':True,'detail':'Despacho encontrado','data':serializador.data},status=status.HTTP_200_OK)
+        return Response ({'success':False,'detail':'No se encontraron despachos'},status=status.HTTP_404_NOT_FOUND)
+
 class SearchBienInventario(generics.ListAPIView):
     serializer_class=SearchBienInventarioSerializer
     queryset=Inventario.objects.all()

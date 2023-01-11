@@ -8,4 +8,6 @@ urlpatterns = [
 
     path('search-bien-inventario/', views.SearchBienInventario.as_view(), name='search-bien-inventario'),
     path('search-bienes-inventario/', views.SearchBienesInventario.as_view(), name='search-bienes-inventario'),
+    path('get-despacho-consumo-by-numero-despacho/', views.GetDespachoConsumoByNumeroDespacho.as_view(), name='get-despacho-consumo-by-numero-despacho'),
+    path('filter-despacho-consumo/', views.FiltroDespachoConsumo.as_view(), name='filter-despacho-consumo'),
 ]
