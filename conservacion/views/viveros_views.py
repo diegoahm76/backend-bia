@@ -404,28 +404,49 @@ class DesactivarViveroView(generics.RetrieveUpdateAPIView):
         if not vivero:
             return Response({'success':False, 'detail':'No existe ningun vivero con el id proporcionado'}, status=status.HTTP_404_NOT_FOUND)
         if vivero.activo == False:
-            return Response({'success': False, 'detail': 'Ya se encuentra desactivado este vivero'}, status=status.HTTP_403_FORBIDDEN)
-        request.data['activo'] = False
-        serializer = self.serializer_class(vivero, data=request.data, many=False)
-        serializer.is_valid(raise_exception=True)
-        serializador = serializer.save()
+            request.data['activo'] = True
+            serializer = self.serializer_class(vivero, data=request.data, many=False)
+            serializer.is_valid(raise_exception=True)
+            serializador = serializer.save()
 
-        # AUDITORÍA DESACTIVACIÓN
-        usuario = request.user.id_usuario
-        descripcion = {"nombre": str(previous_vivero.nombre)}
-        direccion=Util.get_client_ip(request)
-        valores_actualizados = {'previous':previous_vivero, 'current':vivero}
-        auditoria_data = {
-            "id_usuario" : usuario,
-            "id_modulo" : 41,
-            "cod_permiso": "AC",
-            "subsistema": 'CONS',
-            "dirip": direccion,
-            "descripcion": descripcion,
-            "valores_actualizados": valores_actualizados,
-        }
-        Util.save_auditoria(auditoria_data)
-        return Response({'success': True, 'detail': 'Vivero desactivado exitosamente'}, status=status.HTTP_201_CREATED)
+            # AUDITORÍA DESACTIVACIÓN
+            usuario = request.user.id_usuario
+            descripcion = {"nombre": str(previous_vivero.nombre)}
+            direccion=Util.get_client_ip(request)
+            valores_actualizados = {'previous':previous_vivero, 'current':vivero}
+            auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 41,
+                "cod_permiso": "AC",
+                "subsistema": 'CONS',
+                "dirip": direccion,
+                "descripcion": descripcion,
+                "valores_actualizados": valores_actualizados,
+            }
+            Util.save_auditoria(auditoria_data)
+            return Response({'success': True, 'detail': 'Se ha activado el vivero exitosamente'}, status=status.HTTP_201_CREATED)
+        else:
+            request.data['activo'] = False
+            serializer = self.serializer_class(vivero, data=request.data, many=False)
+            serializer.is_valid(raise_exception=True)
+            serializador = serializer.save()
+
+            # AUDITORÍA DESACTIVACIÓN
+            usuario = request.user.id_usuario
+            descripcion = {"nombre": str(previous_vivero.nombre)}
+            direccion=Util.get_client_ip(request)
+            valores_actualizados = {'previous':previous_vivero, 'current':vivero}
+            auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 41,
+                "cod_permiso": "AC",
+                "subsistema": 'CONS',
+                "dirip": direccion,
+                "descripcion": descripcion,
+                "valores_actualizados": valores_actualizados,
+            }
+            Util.save_auditoria(auditoria_data)
+            return Response({'success': True, 'detail': 'Vivero desactivado exitosamente'}, status=status.HTTP_201_CREATED)
 
 class TipificacionBienConsumoVivero(generics.UpdateAPIView):
     serializer_class = TipificacionBienViveroSerializer
