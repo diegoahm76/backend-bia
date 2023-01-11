@@ -114,7 +114,8 @@ class CerrarSolicitudDebidoInexistenciaView(generics.RetrieveUpdateAPIView):
             return Response({'success': False, 'detail': 'No se encontró ninguna solicitud con los parámetros enviados'}, status=status.HTTP_404_NOT_FOUND)
         
         if solicitud.fecha_cierre_no_dispo_alm:
-            return Response({'success': False, 'detail': 'No se cerrar una solicitud que ya está cerrada'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'success': False, 'detail': 'No se puede cerrar una solicitud que ya está cerrada'}, status=status.HTTP_403_FORBIDDEN)
+        
         #SUSTITUIR INFORMACIÓN A LA DATA
         data['fecha_cierre_no_dispo_alm'] = datetime.now()
         data['id_persona_cierre_no_dispo_alm'] = request.user.persona.id_persona
@@ -129,19 +130,19 @@ class CerrarSolicitudDebidoInexistenciaView(generics.RetrieveUpdateAPIView):
         
         #Auditoria Cerrar Solicitud
         usuario = request.user.id_usuario
-        descripcion = {"Codigo bien": str(), "Numero elemento bien": str()}
+        descripcion = {"Es solicitud conservación": str(serializador.es_solicitud_de_conservacion), "Numero solicitud por tipo": str(serializador.nro_solicitud_por_tipo)}
         direccion=Util.get_client_ip(request)
         auditoria_data = {
             "id_usuario" : usuario,
-            "id_modulo" : 18,
-            "cod_permiso": "BO",
+            "id_modulo" : 47,
+            "cod_permiso": "AC",
             "subsistema": 'ALMA',
             "dirip": direccion,
             "descripcion": descripcion, 
         }
         Util.save_auditoria(auditoria_data)
 
-        return Response({'success': False, 'detail': 'Se cerró la solicitud correctamente'}, status=status.HTTP_201_CREATED)
+        return Response({'success': True, 'detail': 'Se cerró la solicitud correctamente'}, status=status.HTTP_201_CREATED)
         
     
 class SearchSolicitudesAprobadasYAbiertos(generics.ListAPIView):

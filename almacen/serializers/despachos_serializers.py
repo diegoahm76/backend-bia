@@ -65,6 +65,9 @@ class CerrarSolicitudDebidoInexistenciaSerializer(serializers.ModelSerializer):
             'fecha_cierre_solicitud',
             'gestionada_almacen'
         )
+        extra_kwargs = {
+            'observacion_cierre_no_dispo_alm': {'required': True},
+        }
 
 class SearchBienInventarioSerializer(serializers.ModelSerializer):
     codigo_bien=serializers.ReadOnlyField(source='id_bien.codigo_bien',default=None)
