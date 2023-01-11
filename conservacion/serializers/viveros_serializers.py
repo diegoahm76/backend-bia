@@ -5,7 +5,12 @@ from conservacion.models.viveros_models import (
     HistorialAperturaViveros,
     HistorialCuarentenaViveros
 )
+from almacen.models.bienes_models import (
+    CatalogoBienes,
+)
 from seguridad.choices.municipios_choices import municipios_CHOICES
+from almacen.choices.cod_tipo_elemento_vivero_choices import cod_tipo_elemento_vivero_CHOICES
+
 class AbrirViveroSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vivero
@@ -26,7 +31,8 @@ class CerrarViveroSerializer(serializers.ModelSerializer):
 class ViveroSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vivero
-        fields = '__all__'        
+        fields = '__all__'
+           
 class ActivarDesactivarSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vivero
@@ -104,4 +110,21 @@ class ViveroPutSerializer(serializers.ModelSerializer):
             'item_ya_usado': {'read_only': True},
             'nombre': {'read_only': True},
             'cod_municipio': {'read_only': True}
+        }
+
+class TipificacionBienViveroSerializer(serializers.ModelSerializer):
+    cod_tipo_elemento_vivero = serializers.ChoiceField(choices=cod_tipo_elemento_vivero_CHOICES)
+    
+    def validate(self, data):
+        if data['cod_tipo_elemento_vivero'] == 'MV' and data['es_semilla_vivero'] == None:
+            raise serializers.ValidationError("Debe indicar si es o no semilla para tipo elemento Material Vegetal")
+        if data['cod_tipo_elemento_vivero'] != 'MV':
+            data['es_semilla_vivero'] = False
+        return data
+            
+    class Meta:
+        model = CatalogoBienes
+        fields = ['nombre_cientifico', 'cod_tipo_elemento_vivero', 'es_semilla_vivero']
+        extra_kwargs = {
+            'cod_tipo_elemento_vivero': {'required': True}
         }

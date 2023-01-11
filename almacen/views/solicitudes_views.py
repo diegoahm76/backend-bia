@@ -41,14 +41,38 @@ class FiltroViveros(generics.ListAPIView):
     def get(self,request):
         filter={}
         for key,value in request.query_params.items():
-            if key in ['nombre','codigo_bien','nombre_cientifico']:
-                filter[key+'__icontains']=value
+            if key in ['nombre','codigo_bien','nombre_cientifico','cod_tipo_elemento_vivero']:
+                if key != 'cod_tipo_elemento_vivero':
+                    filter[key+'__icontains']=value
+                else: 
+                    filter[key]=value
+        nodos=[2,3,4,5]
+        filter['nivel_jerarquico__in'] = nodos
         filter['solicitable_vivero'] = True
-        bien=CatalogoBienes.objects.filter(**filter)
-        serializador=self.serializer_class(bien,many=True)
-        if bien:
+        filter['cod_tipo_bien'] = 'C'
+        bien_especial=CatalogoBienes.objects.filter(**filter)
+        filter['visible_solicitudes']= True
+        filter['nro_elemento_bien']=None
+        bien_normal=CatalogoBienes.objects.filter(**filter)
+        list_normal=[bien.id_bien for bien in bien_normal]
+        list_false=[]
+        for item in bien_especial:
+            if item.nivel_jerarquico == 5:
+                if item.visible_solicitudes == False and item.solicitable_vivero == True:
+                    bien_padre_nodo4 = CatalogoBienes.objects.filter(id_bien=item.id_bien_padre.id_bien).first()
+                    if bien_padre_nodo4.visible_solicitudes == False and bien_padre_nodo4.solicitable_vivero == True:
+                        bien_padre_nodo3 = CatalogoBienes.objects.filter(id_bien=bien_padre_nodo4.id_bien_padre.id_bien).first()
+                        if bien_padre_nodo3.visible_solicitudes == False and bien_padre_nodo3.solicitable_vivero == True:
+                            bien_padre_nodo2=CatalogoBienes.objects.filter(id_bien=bien_padre_nodo3.id_bien_padre.id_bien).first()
+                            if bien_padre_nodo2.visible_solicitudes == False and bien_padre_nodo2.solicitable_vivero == True:
+                                list_false.append(item.id_bien)
+        list_normal.extend(list_false)
+        bien_final=CatalogoBienes.objects.filter(id_bien__in=list_normal)
+        serializador=self.serializer_class(bien_final,many=True)
+        if bien_final:
             return Response({'success':True,'detail':'Se encontró elementos','data':serializador.data},status=status.HTTP_200_OK)
-        return Response({'success':True,'detail':'No se encontró elementos','data':bien},status=status.HTTP_404_NOT_FOUND)
+        return Response({'success':True,'detail':'No se encontró elementos','data':bien_final},status=status.HTTP_404_NOT_FOUND)
+    
 class GetVivero(generics.ListAPIView):
     serializer_class=CatalogoBienesSerializer
     queryset=CatalogoBienes.objects.all()
@@ -56,13 +80,33 @@ class GetVivero(generics.ListAPIView):
         if not request.query_params.items():
             return Response({'success': False, 'detail': 'Debe ingresar el parámetro de búsqueda', 'data':[]}, status=status.HTTP_404_NOT_FOUND) 
         filter={}
+        nodos=[2,3,4,5]
+        filter['nivel_jerarquico__in'] = nodos
         filter['codigo_bien']=request.query_params.get('codigo_bien')
         filter['solicitable_vivero'] = True
-        bien=CatalogoBienes.objects.filter(**filter)
-        serializador=self.serializer_class(bien,many=True)
-        if bien:
+        filter['cod_tipo_bien'] = 'C'
+        filter['nro_elemento_bien']=None
+        bien_especial=CatalogoBienes.objects.filter(**filter)
+        filter['visible_solicitudes']= True
+        bien_normal=CatalogoBienes.objects.filter(**filter)
+        list_normal=[bien.id_bien for bien in bien_normal]
+        list_false=[]
+        for item in bien_especial:
+            if item.nivel_jerarquico == 5:
+                if item.visible_solicitudes == False and item.solicitable_vivero == True:
+                    bien_padre_nodo4 = CatalogoBienes.objects.filter(id_bien=item.id_bien_padre.id_bien).first()
+                    if bien_padre_nodo4.visible_solicitudes == False and bien_padre_nodo4.solicitable_vivero == True:
+                        bien_padre_nodo3 = CatalogoBienes.objects.filter(id_bien=bien_padre_nodo4.id_bien_padre.id_bien).first()
+                        if bien_padre_nodo3.visible_solicitudes == False and bien_padre_nodo3.solicitable_vivero == True:
+                            bien_padre_nodo2=CatalogoBienes.objects.filter(id_bien=bien_padre_nodo3.id_bien_padre.id_bien).first()
+                            if bien_padre_nodo2.visible_solicitudes == False and bien_padre_nodo2.solicitable_vivero == True:
+                                list_false.append(item.id_bien)
+        list_normal.extend(list_false)
+        bien_final=CatalogoBienes.objects.filter(id_bien__in=list_normal)
+        serializador=self.serializer_class(bien_final,many=True)
+        if bien_final:
             return Response({'success':True,'detail':'Se encontró elementos','data':serializador.data},status=status.HTTP_200_OK)
-        return Response({'success':True,'detail':'No se encontró elementos','data':bien},status=status.HTTP_404_NOT_FOUND)
+        return Response({'success':True,'detail':'No se encontró elementos','data':bien_final},status=status.HTTP_404_NOT_FOUND)
     
 class FiltroVisibleBySolicitud(generics.ListAPIView):
     serializer_class=CatalogoBienesSerializer
@@ -222,10 +266,12 @@ class CreateSolicitud(generics.UpdateAPIView):
             else:
                 instancia_solicitud_previous = copy.copy(instancia_solicitud)
                 bandera_actualizar = True
-                
+        
         # ASIGNACIÓN DE DATOS POR DEFECTO A LA TABLA SOLICITUDES
         info_solicitud['fecha_solicitud'] = str(date.today())
         info_solicitud['id_persona_solicita'] = user_logeado.persona.id_persona
+        if user_logeado.persona.id_unidad_organizacional_actual == None:
+            return Response({'success':False,'data':'El usuario solicitante debe tener asignada una unidad organizacional' },status=status.HTTP_404_NOT_FOUND)
         info_solicitud['id_unidad_org_del_solicitante'] = user_logeado.persona.id_unidad_organizacional_actual.id_unidad_organizacional
         info_solicitud['solicitud_abierta'] = True
         solicitudes_existentes = SolicitudesConsumibles.objects.all()
@@ -233,6 +279,12 @@ class CreateSolicitud(generics.UpdateAPIView):
         unidad_para_la_que_solicita = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = info_solicitud['id_unidad_para_la_que_solicita']).values().first()
         if info_solicitud['id_funcionario_responsable_unidad'] != None and info_solicitud['id_funcionario_responsable_unidad'] != '':
             funcionario_responsable = Personas.objects.filter(id_persona = info_solicitud['id_funcionario_responsable_unidad']).first()
+            if not funcionario_responsable:
+                return Response({'success':False,'data':'El funcionario responsable no existe' },status=status.HTTP_404_NOT_FOUND)
+            if funcionario_responsable.id_unidad_organizacional_actual == None:
+                return Response({'success':False,'data':'El funcionario responsable debe tener asignada una unidad organizacional' },status=status.HTTP_404_NOT_FOUND)
+            if user_logeado.persona.id_unidad_organizacional_actual.id_unidad_organizacional == funcionario_responsable.id_unidad_organizacional_actual.id_unidad_organizacional:
+                return Response({'success':False,'data':'El funcionario responsable no puede ser de la misma unidad organizacional del que solicita' },status=status.HTTP_404_NOT_FOUND)
             info_solicitud['id_unidad_org_del_responsable'] = funcionario_responsable.id_unidad_organizacional_actual.id_unidad_organizacional
         else:
             info_solicitud['id_unidad_org_del_responsable'] = None
@@ -288,9 +340,10 @@ class CreateSolicitud(generics.UpdateAPIView):
 
             if (info_solicitud['id_funcionario_responsable_unidad'] != padre_de_todos.id_persona and info_solicitud['id_funcionario_responsable_unidad'] != '' and info_solicitud['id_funcionario_responsable_unidad'] != None) or info_solicitud['id_funcionario_responsable_unidad'] == user_logeado.persona.id_persona:
                 return Response({'success':False,'data':'El usuario supervisor no puede ser el mismo usuario que solicita, el funcionario supervisor solo puede ser de unidad organizacional nivel 1' },status=status.HTTP_404_NOT_FOUND)
-        
         # VALIDACIÓN DE LA LINEA DEL ORGANIGRAMA A LA QUE PERTENECE EL USUARIO SOLICITANTE Y EL USUARIO SUPERVISOR DEL SOLICITANTE
         else:
+            if int(info_solicitud['id_funcionario_responsable_unidad']) == user_logeado.persona.id_persona:
+                return Response({'success':False,'data':'El usuario quien solicita no puede ser el supervisor' },status=status.HTTP_404_NOT_FOUND)
             aux_niveles_organigrama = NivelesOrganigrama.objects.all().values()
             
             niveles_organigrama = [i['orden_nivel'] for i in aux_niveles_organigrama]
@@ -314,27 +367,29 @@ class CreateSolicitud(generics.UpdateAPIView):
                     lista_aux_1 = lista_aux_2
                     count += 1
             
-            
-            unidades_arriba = user_logeado.persona.id_unidad_organizacional_actual.id_unidad_org_padre.nombre
-            unidades_organiacionales_misma_linea.append(unidades_arriba)
-            unidades_iguales_y_arriba.append(unidades_arriba)
-            count = user_logeado.persona.id_unidad_organizacional_actual.id_unidad_org_padre.id_nivel_organigrama.orden_nivel - 1
-            aux_menor = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = user_logeado.persona.id_unidad_organizacional_actual.id_unidad_org_padre.id_unidad_organizacional).first()
-            unidades_organiacionales_misma_linea.append(aux_menor.id_unidad_org_padre.nombre)
-            unidades_iguales_y_arriba.append(aux_menor.id_unidad_org_padre.nombre)
-            while count >= 1:
-                aux_menor = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = aux_menor.id_unidad_org_padre.id_unidad_organizacional).first()
-                if aux_menor.id_unidad_org_padre:
-                    unidades_organiacionales_misma_linea.append(aux_menor.id_unidad_org_padre.nombre)
-                    unidades_iguales_y_arriba.append(aux_menor.id_unidad_org_padre.nombre)
-                count = count - 1
-            unidades_organiacionales_misma_linea = sorted(unidades_organiacionales_misma_linea)
+            if user_logeado.persona.id_unidad_organizacional_actual.unidad_raiz == False:
+                unidades_arriba = user_logeado.persona.id_unidad_organizacional_actual.id_unidad_org_padre.nombre
+                unidades_organiacionales_misma_linea.append(unidades_arriba)
+                unidades_iguales_y_arriba.append(unidades_arriba)
+                count = user_logeado.persona.id_unidad_organizacional_actual.id_unidad_org_padre.id_nivel_organigrama.orden_nivel - 1
+                aux_menor = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = user_logeado.persona.id_unidad_organizacional_actual.id_unidad_org_padre.id_unidad_organizacional).first()
+                if aux_menor.id_nivel_organigrama.orden_nivel >= 2:
+                    if aux_menor.id_unidad_org_padre.unidad_raiz == False:
+                        unidades_organiacionales_misma_linea.append(aux_menor.id_unidad_org_padre.nombre)
+                        unidades_iguales_y_arriba.append(aux_menor.id_unidad_org_padre.nombre)
+                        while count >= 1:
+                            aux_menor = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = aux_menor.id_unidad_org_padre.id_unidad_organizacional).first()
+                            if aux_menor.id_unidad_org_padre:
+                                unidades_organiacionales_misma_linea.append(aux_menor.id_unidad_org_padre.nombre)
+                                unidades_iguales_y_arriba.append(aux_menor.id_unidad_org_padre.nombre)
+                            count = count - 1
+                        unidades_organiacionales_misma_linea = sorted(unidades_organiacionales_misma_linea)
             if not unidad_para_la_que_solicita['nombre'] in unidades_organiacionales_misma_linea:
                 return Response({'success':False,'data':'La unidad organizacional para la que solicita no pertenece a la linea del organigrama a la que pertenece el solicitante'},status=status.HTTP_404_NOT_FOUND)
             
             if not funcionario_responsable.id_unidad_organizacional_actual.nombre in unidades_iguales_y_arriba or funcionario_responsable.id_unidad_organizacional_actual.nombre == None:
                 return Response({'success':False,'data':'La persona que ingresó como responsable no es ningún superior de la persona que solicita'},status=status.HTTP_404_NOT_FOUND)
-        
+        # Creacion de solicitudes
         if bandera_actualizar == False:
             if solicitudes_existentes:
                 numero_solicitudes_no_conservacion = [i.nro_solicitud_por_tipo for i in solicitudes_existentes if i.es_solicitud_de_conservacion == False]
@@ -365,6 +420,7 @@ class CreateSolicitud(generics.UpdateAPIView):
                 "valores_creados_detalles": valores_creados_detalles
             }
             Util.save_auditoria_maestro_detalle(auditoria_data)
+        #Actualizacion solicitudes
         elif bandera_actualizar == True:
             info_solicitud['nro_solicitud_por_tipo'] = instancia_solicitud.nro_solicitud_por_tipo
             serializer = self.serializer_class(instancia_solicitud, data=info_solicitud)
@@ -485,7 +541,7 @@ class RevisionSolicitudBienConsumosPorSupervisor(generics.UpdateAPIView):
         instance.justificacion_rechazo_responsable = datos_ingresados['justificacion_rechazo_responsable']
         instance.revisada_responsable = True
         instance.fecha_aprobacion_responsable = str(date.today())
-        if datos_ingresados['estado_aprobacion_responsable'] != 'R':
+        if datos_ingresados['estado_aprobacion_responsable'] == 'R':
             instance.solicitud_abierta = False
             instance.fecha_cierre_solicitud = str(date.today())
         instance.save()
@@ -583,7 +639,7 @@ class AnularSolicitudesBienesConsumo(generics.UpdateAPIView):
 
 class SearchFuncionarioResponsable(generics.ListAPIView):
     serializer_class=PersonasSerializer
-    queryset=Personas
+    queryset=Personas.objects.all()
     permission_classes=[IsAuthenticated]
     
     def get(self, request):

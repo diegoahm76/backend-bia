@@ -79,7 +79,8 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                 except:
                     return Response({'success': False, 'detail': 'El id de unidad de medida vida util ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
                 try:
-                    id_marca = Marcas.objects.get(id_marca=data['id_marca'])
+                    if data['id_marca']:
+                        id_marca = Marcas.objects.get(id_marca=data['id_marca'])
                     pass
                 except:
                     return Response({'success': False, 'detail': 'El id de marca ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
@@ -174,8 +175,52 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                         padre = CatalogoBienes.objects.get(
                             id_bien=data['id_bien_padre'])
                         nivel_padre = padre.nivel_jerarquico
-                        # Crear un catalogo bien para nivel jerarquiro 1 activo fijo
-                        if data['nivel_jerarquico'] > 1 and nivel_padre == nivel_bien_padre:
+                        #Crear un catalogo bien para nivel jerarquiro 1 activo fijo
+                        if data['nivel_jerarquico']>1 and nivel_padre==nivel_bien_padre:
+                                try:
+                                    id_unidad_medida = UnidadesMedida.objects.get(id_unidad_medida=data['id_unidad_medida'])
+                                    pass
+                                except:
+                                    return Response({'success':False, 'detail':'El id de unidad de medida ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                                try:
+                                    id_porcentaje_iva = PorcentajesIVA.objects.get(id_porcentaje_iva=data['id_porcentaje_iva'])
+                                    pass
+                                except:
+                                    return Response({'success':False, 'detail':'El id de porcentaje de iva ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                                try:
+                                    id_unidad_medida_vida_util = UnidadesMedida.objects.get(id_unidad_medida=data['id_unidad_medida_vida_util'])
+                                    pass
+                                except:
+                                    return Response({'success':False, 'detail':'El id de unidad de medida vida util ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                                try:
+                                    if data['id_marca']:
+                                        id_marca = Marcas.objects.get(id_marca=data['id_marca'])
+                                    pass
+                                except:
+                                    return Response({'success':False, 'detail':'El id de marca ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                                catalogo_bien = CatalogoBienes.objects.create(
+                                    id_bien=data['id_bien'],
+                                    codigo_bien=data['codigo_bien'],
+                                    nombre=data['nombre'],
+                                    cod_tipo_bien=data['cod_tipo_bien'],
+                                    cod_tipo_activo=data['cod_tipo_activo'],
+                                    nivel_jerarquico=data['nivel_jerarquico'],
+                                    descripcion=data['descripcion'],
+                                    id_marca=id_marca,
+                                    id_unidad_medida=id_unidad_medida,
+                                    id_porcentaje_iva=id_porcentaje_iva,
+                                    cod_tipo_depreciacion=data['cod_tipo_depreciacion'],
+                                    cantidad_vida_util=data['cantidad_vida_util'],
+                                    id_unidad_medida_vida_util=id_unidad_medida_vida_util,
+                                    valor_residual=data['valor_residual'],
+                                    maneja_hoja_vida=data['maneja_hoja_vida'],
+                                    visible_solicitudes=data['visible_solicitudes'],
+                                    id_bien_padre=padre  
+                                )
+                                serializer = self.serializer_class(catalogo_bien)
+                        else:
+                            return Response({'success':False, 'detail':'el nivel del bien badre no corresponde con el nivel anterior'})
+                    elif data['nivel_jerarquico'] == 1:
                             try:
                                 id_unidad_medida = UnidadesMedida.objects.get(
                                     id_unidad_medida=data['id_unidad_medida'])
@@ -195,8 +240,8 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                             except:
                                 return Response({'success': False, 'detail': 'El id de unidad de medida vida util ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
                             try:
-                                id_marca = Marcas.objects.get(
-                                    id_marca=data['id_marca'])
+                                if data['id_marca']:
+                                    id_marca = Marcas.objects.get(id_marca=data['id_marca'])
                                 pass
                             except:
                                 return Response({'success': False, 'detail': 'El id de marca ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
@@ -220,53 +265,6 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                 id_bien_padre=padre
                             )
                             serializer = self.serializer_class(catalogo_bien)
-                        else:
-                            return Response({'success': False, 'detail': 'el nivel del bien badre no corresponde con el nivel anterior'})
-                    elif data['nivel_jerarquico'] == 1:
-                        try:
-                            id_unidad_medida = UnidadesMedida.objects.get(
-                                id_unidad_medida=data['id_unidad_medida'])
-                            pass
-                        except:
-                            return Response({'success': False, 'detail': 'El id de unidad de medida ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
-                        try:
-                            id_porcentaje_iva = PorcentajesIVA.objects.get(
-                                id_porcentaje_iva=data['id_porcentaje_iva'])
-                            pass
-                        except:
-                            return Response({'success': False, 'detail': 'El id de porcentaje de iva ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
-                        try:
-                            id_unidad_medida_vida_util = UnidadesMedida.objects.get(
-                                id_unidad_medida=data['id_unidad_medida_vida_util'])
-                            pass
-                        except:
-                            return Response({'success': False, 'detail': 'El id de unidad de medida vida util ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
-                        try:
-                            id_marca = Marcas.objects.get(
-                                id_marca=data['id_marca'])
-                            pass
-                        except:
-                            return Response({'success': False, 'detail': 'El id de marca ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
-                        catalogo_bien = CatalogoBienes.objects.create(
-                            id_bien=data['id_bien'],
-                            codigo_bien=data['codigo_bien'],
-                            nombre=data['nombre'],
-                            cod_tipo_bien=data['cod_tipo_bien'],
-                            cod_tipo_activo=data['cod_tipo_activo'],
-                            nivel_jerarquico=data['nivel_jerarquico'],
-                            descripcion=data['descripcion'],
-                            id_marca=id_marca,
-                            id_unidad_medida=id_unidad_medida,
-                            id_porcentaje_iva=id_porcentaje_iva,
-                            cod_tipo_depreciacion=data['cod_tipo_depreciacion'],
-                            cantidad_vida_util=data['cantidad_vida_util'],
-                            id_unidad_medida_vida_util=id_unidad_medida_vida_util,
-                            valor_residual=data['valor_residual'],
-                            maneja_hoja_vida=data['maneja_hoja_vida'],
-                            visible_solicitudes=data['visible_solicitudes'],
-                            id_bien_padre=None
-                        )
-                        serializer = self.serializer_class(catalogo_bien)
                 case 'C':
                     if CatalogoBienes.objects.filter(id_bien=data['id_bien_padre']).exists():
                         padre = CatalogoBienes.objects.get(
@@ -339,127 +337,119 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
 class GetCatalogoBienesList(generics.ListAPIView):
     serializer_class = CatalogoBienesSerializer
     queryset = CatalogoBienes.objects.all()
-    permission_classes = [IsAuthenticated]
-    array_recorrido = []
-    array_total = []
-
-    def crear_niveles(self, bien, key_node, bien_nuevo):
-        contador_interno = 0
-        hijos = []
-        nodo_hijo = {}
-        existe = self.nodo_recorrido(bien)
-        if existe:
-            for bien_element in bien_nuevo:
-                if bien_element["id_bien_padre"] == bien["id_bien"]:
-                    existe_2 = self.nodo_recorrido(bien_element)
-                    if existe_2:
-                        nodo_hijo["key"] = key_node + str(contador_interno)
-                        if self.tiene_hijos(bien_element, bien_nuevo):
-                            hijo = self.crear_niveles(
-                                 bien_element, key_node, bien_nuevo)
-                            nodo_hijo["data"] = {
-                                "id_nodo": bien_element["id_bien"],
-                                "codigo": bien_element["codigo_bien"],
-                                "nombre": bien_element["nombre"] + " (" + key_node + " " + str(contador_interno)+")",
-                                "eliminar": True,
-                                "bien": bien_element,
-                            }
-                            # nodoHijo.data.id_nodo = { ...bienElement }.id_bien;
-                            nodo_hijo["data"]["id_nodo"] = bien_element["id_bien"]
-                            nodo_hijo["children"] = hijo
-                        else:
-                            nodo_hijo["data"] = {
-                                "id_nodo": bien_element["id_bien"],
-                                "codigo": bien_element["codigo_bien"],
-                                "nombre": bien_element["nombre"] + " (" + key_node + " " + str(contador_interno) + ")",
-                                "eliminar": False,
-                                "bien": bien_element,
-                            }
-                            nodo_hijo["children"] = []
-                            nodo_hijo["data"]["eliminar"] = False
-                            self.array_recorrido.append(bien_element["id_bien"])
-                            # hijos.push({ ...nodoHijo })
-                            hijos.append(nodo_hijo)
-                    contador_interno += 1
-        self.array_recorrido.append(bien["id_bien"])
-        return hijos
-
-    def tiene_hijos(self, bien, bien_nuevo):
-        bandera = 0
-        for item in bien_nuevo:
-            print("ENTRÓ FOR")
-            if bien["id_bien"] == item["id_bien_padre"]:
-                bandera += 1
-        if bandera > 0:
-            return True
-        else:
-            return False
-
-    def nodo_recorrido(self, item):
-        for number in self.array_recorrido:
-            if item['id_bien'] == number:
-                return False
-            else:
-                return True
-        if not self.array_recorrido:
-            return True
-
-    def agregar_nodos_base(self, bien_element, contador, bien_nuevo):
-        #print(bien_element)
-        hijos = [
-            {
-                "key": '',
-                "data": {},
-                "children": []
-            }
-        ]
-        key_node = str(contador)+"-"
-        nodo = {
-            "key": str(contador),
-            "data": {
-                "nombre": bien_element["nombre"]+ " (" + str(contador) + ")",
-                "codigo": bien_element["codigo_bien"],
-                "id_nodo": bien_element["id_bien"],
-                "editar": False,
-                "eliminar": False,
-                "crear": False,
-                "bien": bien_element,
-            },
-            "children": hijos,
-        }
-        existe = self.nodo_recorrido(bien_element)
-
-        print("NIVEL: ", bien_element["nivel_jerarquico"])
-        print("EXISTE: ", existe)
-
-        if (existe and bien_element["nivel_jerarquico"] == 1):
-            print("ENTRÓ")
-            if self.tiene_hijos(bien_element, bien_nuevo):
-                children = self.crear_niveles(
-                    bien_element, key_node, bien_nuevo)
-                nodo["children"] = children
-                nodo["data"]["eliminar"] = True
-                # arrayTotal.push({ ...nodo });
-                self.array_total.append(nodo)
-            else:
-                nodo["data"]["eliminar"] = False
-                # arrayTotal.push({ ...nodo });
-                self.array_total.append(nodo)
-                self.array_recorrido.append(bien_element["id_bien"])
-
-    def armar_arbol(self, bien_nuevo):
-        contador = 0
-        for item in bien_nuevo:
-            self.agregar_nodos_base(item, contador, bien_nuevo)
-            contador = len(self.array_total)
 
     def get(self, request):
-        catalogo_bienes_nodos = CatalogoBienes.objects.filter(
-            nro_elemento_bien=None)
-        serializador_catalogo = CatalogoBienesSerializer(
-            catalogo_bienes_nodos, many=True)
-        self.armar_arbol(serializador_catalogo.data)
-        return Response({'success': True, 'detail': 'Se encontró lo siguiente en almacén', 'data': serializador_catalogo.data, "array_total": self.array_total}, status=status.HTTP_200_OK)
+        # GET TODOS LOS NODOS
+        nodos_principales = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=1)
+        nodos_principales = self.serializer_class(nodos_principales, many=True).data
+        if not nodos_principales:
+            return Response({'success':True, 'detail':'No se encontró nada en almacén', 'data':nodos_principales}, status=status.HTTP_200_OK)
+        
+        data_all = []
+        cont_all = 0
+        
+        for nodo in nodos_principales:
+            data = {}
+            data['key'] = str(cont_all)
+            data['data'] = {}
+            data['data']['nombre'] = nodo['nombre']
+            data['data']['codigo'] = nodo['codigo_bien']
+            data['data']['id_nodo'] = nodo['id_bien']
+            data['data']['editar'] = True
+            
+            nodos_nivel_dos = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=2, id_bien_padre=nodo['id_bien'])
+            nodos_nivel_dos = self.serializer_class(nodos_nivel_dos, many=True).data
+            
+            data['data']['eliminar'] = True if not nodos_nivel_dos else False
+            data['data']['crear'] = True
+            data['data']['bien'] = nodo
+            data['children'] = []
+            if nodos_nivel_dos:
+                #nodo['nodos_hijos'] = nodos_nivel_dos
+                cont_dos = 0
+                for nodo_dos in nodos_nivel_dos:
+                    data_dos = {}
+                    data_dos['key'] = str(cont_all) + "-" + str(cont_dos)
+                    data_dos['data'] = {}
+                    data_dos['data']['nombre'] = nodo_dos['nombre']
+                    data_dos['data']['codigo'] = nodo_dos['codigo_bien']
+                    data_dos['data']['id_nodo'] = nodo_dos['id_bien']
+                    data_dos['data']['editar'] = True
+                    
+                    nodos_nivel_tres = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=3, id_bien_padre=nodo_dos['id_bien'])
+                    nodos_nivel_tres = self.serializer_class(nodos_nivel_tres, many=True).data
+                    
+                    data_dos['data']['eliminar'] = True if not nodos_nivel_tres else False
+                    data_dos['data']['crear'] = True
+                    data_dos['data']['bien'] = nodo_dos
+                    data_dos['children'] = []
+                    if nodos_nivel_tres:
+                        #nodo_dos['nodos_hijos'] = nodos_nivel_tres
+                        cont_tres = 0
+                        for nodo_tres in nodos_nivel_tres:
+                            data_tres = {}
+                            data_tres['key'] = str(cont_all) + "-" + str(cont_dos) + "-" + str(cont_tres)
+                            data_tres['data'] = {}
+                            data_tres['data']['nombre'] = nodo_tres['nombre']
+                            data_tres['data']['codigo'] = nodo_tres['codigo_bien']
+                            data_tres['data']['id_nodo'] = nodo_tres['id_bien']
+                            data_tres['data']['editar'] = True
+                            
+                            nodos_nivel_cuatro = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=4, id_bien_padre=nodo_tres['id_bien'])
+                            nodos_nivel_cuatro = self.serializer_class(nodos_nivel_cuatro, many=True).data
+                            
+                            data_tres['data']['eliminar'] = True if not nodos_nivel_cuatro else False
+                            data_tres['data']['crear'] = True
+                            data_tres['data']['bien'] = nodo_tres
+                            data_tres['children'] = []
+                            if nodos_nivel_cuatro:
+                                #nodo_tres['nodos_hijos'] = nodos_nivel_cuatro
+                                cont_cuatro = 0
+                                for nodo_cuatro in nodos_nivel_cuatro:
+                                    data_cuatro = {}
+                                    data_cuatro['key'] = str(cont_all) + "-" + str(cont_dos) + "-" + str(cont_tres) + "-" + str(cont_cuatro)
+                                    data_cuatro['data'] = {}
+                                    data_cuatro['data']['nombre'] = nodo_cuatro['nombre']
+                                    data_cuatro['data']['codigo'] = nodo_cuatro['codigo_bien']
+                                    data_cuatro['data']['id_nodo'] = nodo_cuatro['id_bien']
+                                    data_cuatro['data']['editar'] = True
+                                    
+                                    nodos_nivel_cinco = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=5, id_bien_padre=nodo_cuatro['id_bien'])
+                                    nodos_nivel_cinco = self.serializer_class(nodos_nivel_cinco, many=True).data
+                                    
+                                    data_cuatro['data']['eliminar'] = True if not nodos_nivel_cinco else False
+                                    data_cuatro['data']['crear'] = True
+                                    data_cuatro['data']['bien'] = nodo_cuatro
+                                    data_cuatro['children'] = []
+                                    if nodos_nivel_cinco:
+                                        #nodo_cuatro['nodos_hijos'] = nodos_nivel_cinco
+                                        cont_cinco = 0
+                                        for nodo_cinco in nodos_nivel_cinco:
+                                            data_cinco = {}
+                                            data_cinco['key'] = str(cont_all) + "-" + str(cont_dos) + "-" + str(cont_tres) + "-" + str(cont_cuatro) + "-" + str(cont_cinco)
+                                            data_cinco['data'] = {}
+                                            data_cinco['data']['nombre'] = nodo_cinco['nombre']
+                                            data_cinco['data']['codigo'] = nodo_cinco['codigo_bien']
+                                            data_cinco['data']['id_nodo'] = nodo_cinco['id_bien']
+                                            data_cinco['data']['editar'] = True
+                                            
+                                            elementos = CatalogoBienes.objects.filter(~Q(nro_elemento_bien=None) & Q(codigo_bien=nodo_cinco['codigo_bien']))
+                                            
+                                            data_cinco['data']['eliminar'] = True if not elementos else False
+                                            data_cinco['data']['crear'] = False
+                                            data_cinco['data']['bien'] = nodo_cuatro
+                                            data_cinco['children'] = []
+                                            data_cuatro['children'].append(data_cinco)
+                                            cont_cinco += 1
+                                    data_tres['children'].append(data_cuatro)
+                                    cont_cuatro += 1
+                            data_dos['children'].append(data_tres)
+                            cont_tres += 1
+                    data['children'].append(data_dos)
+                    cont_dos += 1
+            data_all.append(data)
+            cont_all += 1
+        return Response({'success':True, 'detail':'Se encontró lo siguiente en almacén', 'data':data_all}, status=status.HTTP_200_OK)
 
 
 class DeleteNodos(generics.RetrieveDestroyAPIView):
@@ -1174,6 +1164,7 @@ class GetEntradas(generics.ListAPIView):
 class UpdateItemsEntrada(generics.UpdateAPIView):
     serializer_class = ItemEntradaSerializer
     queryset = ItemEntradaAlmacen.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, id_entrada):
         data = request.data
@@ -1565,6 +1556,7 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
 class AnularEntrada(generics.UpdateAPIView):
     serializer_class = EntradaSerializer
     queryset = EntradasAlmacen.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, id_entrada):
         datos_ingresados = request.data
@@ -1639,8 +1631,9 @@ class AnularEntrada(generics.UpdateAPIView):
 class ValidacionCodigoBien(generics.ListAPIView):
     serializer_class = CatalogoBienesSerializer
     queryset = CatalogoBienes.objects.all()
-
-    def get(self, request, nivel, codigo_bien):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,nivel,codigo_bien):
         if not codigo_bien.isdigit():
             return Response({'success': False, 'detail': 'El códgio debe ser un número'}, status=status.HTTP_400_BAD_REQUEST)
         match nivel:

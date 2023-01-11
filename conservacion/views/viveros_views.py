@@ -15,6 +15,12 @@ from conservacion.models.viveros_models import (
     HistorialAperturaViveros,
     HistorialCuarentenaViveros
 )
+from almacen.models.bienes_models import (
+    CatalogoBienes,
+)
+from almacen.serializers.bienes_serializers import (
+    CatalogoBienesSerializer,
+)
 from conservacion.serializers.viveros_serializers import (
     ViveroSerializer,
     AbrirViveroSerializer,
@@ -23,7 +29,8 @@ from conservacion.serializers.viveros_serializers import (
     
     ActivarDesactivarSerializer,
     ViveroPostSerializer,
-    ViveroPutSerializer
+    ViveroPutSerializer,
+    TipificacionBienViveroSerializer
 )
 
 class DeleteVivero(generics.RetrieveDestroyAPIView):
@@ -214,6 +221,7 @@ class GetViveroByPk(generics.RetrieveAPIView):
 class UpdateViveroCuarentena(generics.ListAPIView):
     serializer_class=ViveroSerializer
     queryset=Vivero.objects.all()
+    permission_classes = [IsAuthenticated]
     
     def put(self,request,id_vivero):
         vivero=Vivero.objects.filter(id_vivero=id_vivero).first()
@@ -283,6 +291,8 @@ class UpdateViveroCuarentena(generics.ListAPIView):
 class FilterViverosByNombreAndMunicipioForCuarentena(generics.ListAPIView):
     serializer_class=ViveroSerializer
     queryset=Vivero.objects.all()
+    permission_classes = [IsAuthenticated]
+
     def get(self,request):
         filter={}
         for key,value in request.query_params.items():
@@ -301,6 +311,8 @@ class FilterViverosByNombreAndMunicipioForCuarentena(generics.ListAPIView):
 class FilterViverosByNombreAndMunicipioForAperturaCierres(generics.ListAPIView):
     serializer_class=ViveroSerializer
     queryset=Vivero.objects.all()
+    permission_classes = [IsAuthenticated]
+
     def get(self,request):
         filter={}
         for key,value in request.query_params.items():
@@ -318,6 +330,8 @@ class FilterViverosByNombreAndMunicipioForAperturaCierres(generics.ListAPIView):
 class FilterViverosByNombreAndMunicipio(generics.ListAPIView):
     serializer_class=ViveroSerializer
     queryset=Vivero.objects.all()
+    permission_classes = [IsAuthenticated]
+
     def get(self,request):
         filter={}
         for key,value in request.query_params.items():
@@ -384,3 +398,41 @@ def desactivar_vivero(request,pk):
         vivero = Vivero.objects.get(id_vivero=pk)
     except:
         return Response({'success':False, 'detail':'no existe ningun vivero con el id proporcionado'}, status=status.HTTP_404_NOT_FOUND)
+    
+class TipificacionBienConsumoVivero(generics.UpdateAPIView):
+    serializer_class = TipificacionBienViveroSerializer
+    queryset = CatalogoBienes.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def put(self, request, id_bien):
+        data = request.data
+        bien = CatalogoBienes.objects.filter(id_bien=id_bien).first()
+        
+        if bien:
+            previous_bien = copy.copy(bien)
+            if bien.cod_tipo_bien == 'C' and bien.nivel_jerarquico == 5 and bien.solicitable_vivero:
+                serializador = self.serializer_class(bien,data=data)
+                serializador.is_valid(raise_exception=True)
+                serializador.save()
+                
+                # AUDITORÍA TIPIFICACIÓN
+                usuario = request.user.id_usuario
+                descripcion = {"codigo_bien": str(previous_bien.codigo_bien), "nombre": str(previous_bien.nombre)}
+                direccion=Util.get_client_ip(request)
+                valores_actualizados = {'previous':previous_bien, 'current':bien}
+                auditoria_data = {
+                    "id_usuario" : usuario,
+                    "id_modulo" : 44,
+                    "cod_permiso": "AC",
+                    "subsistema": 'CONS',
+                    "dirip": direccion,
+                    "descripcion": descripcion,
+                    "valores_actualizados": valores_actualizados,
+                }
+                Util.save_auditoria(auditoria_data)
+            else:
+                return Response({'success':False, 'detail':'No puede tipificar el bien ingresado'})
+            
+            return Response({'success':True, 'detail':'Bien tipificado con éxito', 'data':serializador.data}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'success':False, 'detail':'No existe el bien ingresado'}, status=status.HTTP_404_NOT_FOUND)
