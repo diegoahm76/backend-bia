@@ -1,6 +1,6 @@
 from django.core.mail import EmailMessage
 from email_validator import validate_email, EmailNotValidError, EmailUndeliverableError, EmailSyntaxError
-from backend.settings import EMAIL_HOST_USER, AUTHENTICATION_360_NRS
+from backend.settings.base import EMAIL_HOST_USER, AUTHENTICATION_360_NRS
 from seguridad.models import Shortener, User, Modulos, Permisos, Auditorias
 import re, requests
 

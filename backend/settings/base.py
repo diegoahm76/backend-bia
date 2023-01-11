@@ -15,19 +15,13 @@ from datetime import timedelta
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('BIA_SECRET_KEY')
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ['*']
-
 
 # Application definition
 
@@ -140,35 +134,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'backend.wsgi.application'
 
 CORS_ORIGIN_ALLOW_ALL = True
-
-# Database
-# https://docs.djangoproject.com/en/4.1/ref/settings/#databases
-
-# LOCAL
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('BIA_DB_NAME'),
-        'USER': os.environ.get('BIA_DB_USER'),
-        'PASSWORD': os.environ.get('BIA_DB_PASSWORD'),
-        'HOST': os.environ.get('BIA_DB_HOST'),
-        'PORT': os.environ.get('BIA_DB_PORT'),
-        'ATOMIC_REQUESTS': True
-    }
-}
-
-# PRODUCTION
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': os.environ.get('BIA_DB_NAME_PR'),
-#         'USER': os.environ.get('BIA_DB_USER_PR'),
-#         'PASSWORD': os.environ.get('BIA_DB_PASSWORD_PR'),
-#         'HOST': os.environ.get('BIA_DB_HOST_PR'),
-#         'PORT': os.environ.get('BIA_DB_PORT_PR'),
-#         'ATOMIC_REQUESTS': True
-#     }
-# }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators

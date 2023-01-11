@@ -1,6 +1,6 @@
 from django.core import signing
 from holidays_co import get_colombia_holidays_by_year
-from backend.settings import FRONTEND_URL
+from backend.settings.base import FRONTEND_URL
 from django.urls import reverse
 from django.shortcuts import redirect
 from rest_framework.decorators import api_view, permission_classes
