@@ -219,7 +219,7 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                 )
                                 serializer = self.serializer_class(catalogo_bien)
                         else:
-                            return Response({'success':False, 'detail':'el nivel del bien badre no corresponde con el nivel anterior'})
+                            return Response({'success':False, 'detail':'el nivel del bien padre no corresponde con el nivel anterior'})
                     elif data['nivel_jerarquico'] == 1:
                             try:
                                 id_unidad_medida = UnidadesMedida.objects.get(
@@ -262,7 +262,7 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                 valor_residual=data['valor_residual'],
                                 maneja_hoja_vida=data['maneja_hoja_vida'],
                                 visible_solicitudes=data['visible_solicitudes'],
-                                id_bien_padre=padre
+                                id_bien_padre=None
                             )
                             serializer = self.serializer_class(catalogo_bien)
                 case 'C':
@@ -271,7 +271,7 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                             id_bien=data['id_bien_padre'])
                         nivel_padre = padre.nivel_jerarquico
                         # Crear un catalogo bien para nivel jerarquiro 1 activo fijo
-                        if data['nivel_jerarquico'] > 1 & nivel_padre == nivel_bien_padre:
+                        if data['nivel_jerarquico'] > 1 and nivel_padre == nivel_bien_padre:
                             try:
                                 id_unidad_medida = UnidadesMedida.objects.get(
                                     id_unidad_medida=data['id_unidad_medida'])
@@ -284,7 +284,7 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                 pass
                             except:
                                 return Response({'success': False, 'detail': 'El id de porcentaje de iva ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
-                            CatalogoBienes.objects.create(
+                            catalogo_bien = CatalogoBienes.objects.create(
                                 id_bien=data['id_bien'],
                                 codigo_bien=data['codigo_bien'],
                                 nombre=data['nombre'],
@@ -294,12 +294,13 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                 descripcion=data['descripcion'],
                                 id_unidad_medida=id_unidad_medida,
                                 id_porcentaje_iva=id_porcentaje_iva,
-                                metodo_de_valoracion=data['metodo_de_valoracion'],
+                                cod_metodo_valoracion=data['cod_metodo_valoracion'],
                                 stock_minimo=data['stock_minimo'],
                                 stock_maximo=data['stock_maximo'],
                                 solicitable_vivero=data['solicitable_vivero'],
                                 id_bien_padre=padre
                             )
+                            serializer = self.serializer_class(catalogo_bien)
                         elif data['nivel_jerarquico'] == 1:
                             try:
                                 id_unidad_medida = UnidadesMedida.objects.get(
@@ -314,7 +315,7 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                             except:
                                 return Response({'success': False, 'detail': 'El id de porcentaje de iva ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
 
-                            CatalogoBienes.objects.create(
+                            catalogo_bien = CatalogoBienes.objects.create(
                                 id_bien=data['id_bien'],
                                 codigo_bien=data['codigo_bien'],
                                 nombre=data['nombre'],
@@ -324,13 +325,14 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                 descripcion=data['descripcion'],
                                 id_unidad_medida=data['id_unidad_medida'],
                                 id_porcentaje_iva=data['id_porcentaje_iva'],
-                                metodo_de_valoracion=data['metodo_de_valoracion'],
+                                cod_metodo_valoracion=data['cod_metodo_valoracion'],
                                 stock_minimo=data['stock_minimo'],
                                 stock_maximo=data['stock_maximo'],
                                 solicitable_vivero=data['solicitable_vivero'],
                                 id_bien_padre=None
                             )
-
+                            serializer = self.serializer_class(catalogo_bien)
+                            
             return Response(serializer.data)
 
 
