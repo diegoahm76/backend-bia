@@ -328,8 +328,8 @@ class ValidarFechasProgramacion(generics.ListAPIView):
         datos_ingresados = request.data
         today = date.today()
         # Validacion de datos entrantes
-        if datos_ingresados['programacion'] != 'automatica' and datos_ingresados['programacion'] != 'manual' and datos_ingresados['programacion'] != 'kilometraje':
-            return Response({'success':False, 'detail': 'Elija entre manual o automatico'}, status=status.HTTP_404_NOT_FOUND)
+        if datos_ingresados['programacion'] != 'automatica' and datos_ingresados['programacion'] != 'kilometraje':
+            return Response({'success':False, 'detail': 'Elija entre automatico o kilometraje'}, status=status.HTTP_404_NOT_FOUND)
         
         match datos_ingresados['programacion']:
             case 'automatica':
@@ -488,8 +488,6 @@ class ValidarFechasProgramacion(generics.ListAPIView):
                         return Response({'success':False, 'detail':'Ingrese una unidad de cada válida', 'Opciones' : 'semanas o menses'}, status=status.HTTP_404_NOT_FOUND)
                     
                 return Response({'success':True, 'detail': fechas_return}, status=status.HTTP_200_OK)
-            case 'manual':
-                return Response({'success':True, 'detail': 'Manual'}, status=status.HTTP_200_OK)
             case 'kilometraje':
                 vehiculo = CatalogoBienes.objects.filter(id_bien=int(datos_ingresados['id_articulo'])).values().first()
                 if not vehiculo:
@@ -501,7 +499,7 @@ class ValidarFechasProgramacion(generics.ListAPIView):
                 kilometraje_actual = HojaDeVidaVehiculos.objects.filter(id_articulo=vehiculo['id_bien']).values().first()
                 if not kilometraje_actual:
                     return Response({'success':False, 'detail': 'El vehiculo ingresado no tiene hoja de vida registrada'}, status=status.HTTP_400_BAD_REQUEST)
-                if kilometraje_actual == None:
+                if not kilometraje_actual['ultimo_kilometraje']:
                     return Response({'success':False, 'detail': 'El vehiculo ingresado no tiene kilometraje registrado'}, status=status.HTTP_400_BAD_REQUEST)
                 if int(datos_ingresados['desde']) <= int(kilometraje_actual['ultimo_kilometraje']) or int(datos_ingresados['desde']) >= (int(kilometraje_actual['ultimo_kilometraje']) + 10000) or int(datos_ingresados['hasta']) >= (int(kilometraje_actual['ultimo_kilometraje']) + 100000):
                     return Response({'success':False, 'detail': 'El kilometraje (desde) debe ser mayor al último kilometraje del equipo'}, status=status.HTTP_400_BAD_REQUEST)
@@ -515,7 +513,7 @@ class ValidarFechasProgramacion(generics.ListAPIView):
                     mantenimiento_suma = mantenimiento_suma + int(datos_ingresados['cada'])
                 return Response({'success':True, 'detail': kilometros_mantenimientos}, status=status.HTTP_200_OK)
             case other:
-                return Response({'success':True, 'detail': 'Para (programacion) elija una opción entre manual o automatica'}, status=status.HTTP_200_OK)
+                return Response({'success':True, 'detail': 'Para (programacion) elija una opción entre kilometraje o automatica'}, status=status.HTTP_200_OK)
         
         
         
