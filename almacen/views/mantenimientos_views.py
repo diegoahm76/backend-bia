@@ -489,6 +489,7 @@ class ValidarFechasProgramacion(generics.CreateAPIView):
                     
                 return Response({'success':True, 'detail': fechas_return}, status=status.HTTP_200_OK)
             case 'kilometraje':
+                print("Entra")
                 vehiculo = CatalogoBienes.objects.filter(id_bien=int(datos_ingresados['id_articulo'])).values().first()
                 if not vehiculo:
                     return Response({'success':False, 'detail': 'Debe ingresar el id de un articulo existente'}, status=status.HTTP_400_BAD_REQUEST)
@@ -552,64 +553,68 @@ class CreateProgramacionMantenimiento(generics.CreateAPIView):
                 if i['fecha_programada'] != None:
                     return Response({'success':False, 'detail':'Si eligió programación por kilometraje el campo fecha_programada debe estar en null'}, status=status.HTTP_404_NOT_FOUND)
             #VALIDACION FORMATE DE FECHAS ENTRANTES
-            try:
-                aux_v_f_p = i['fecha_programada'].split("-")
-                aux_v_f_p_2 = i['fecha_solicitud'].split("-")
-            except:
-                return Response({'success':False, 'detail': 'Formato de fecha no válido'}, status=status.HTTP_404_NOT_FOUND)
-            if not (aux_v_f_p[0]).isdigit() or not (aux_v_f_p[1]).isdigit() or not (aux_v_f_p[2]).isdigit() or not (aux_v_f_p_2[0]).isdigit() or not (aux_v_f_p_2[1]).isdigit() or not (aux_v_f_p_2[2]).isdigit():
-                return Response({'success':False, 'detail': 'Formato de fecha no válido'}, status=status.HTTP_404_NOT_FOUND)
-            if len(aux_v_f_p) != 3 or len(aux_v_f_p_2) != 3:
-                return Response({'success':False, 'detail': 'Formato de fecha no válido'}, status=status.HTTP_404_NOT_FOUND)
-            a = (len(aux_v_f_p[0]) != 4)
-            b = (len(aux_v_f_p[1]) <= 2 and len(aux_v_f_p[1]) >= 1)
-            c = (len(aux_v_f_p[2]) <= 2 and len(aux_v_f_p[2]) >= 1)
-            d = (len(aux_v_f_p[0]) != 4)
-            e = (len(aux_v_f_p[1]) <= 2 and len(aux_v_f_p[1]) >= 1)
-            f = (len(aux_v_f_p[2]) <= 2 and len(aux_v_f_p[2]) >= 1)
-            
-            if a or not b or not c or d or not e or not f:
-                return Response({'success':False, 'detail': 'Formato de fecha no válido'}, status=status.HTTP_404_NOT_FOUND)
+            if i['tipo_programacion'] == 'fecha':
+                try:
+                    aux_v_f_p = i['fecha_programada'].split("-")
+                    aux_v_f_p_2 = i['fecha_solicitud'].split("-")
+                except:
+                    return Response({'success':False, 'detail': 'Formato de fecha no válido'}, status=status.HTTP_404_NOT_FOUND)
+                if not (aux_v_f_p[0]).isdigit() or not (aux_v_f_p[1]).isdigit() or not (aux_v_f_p[2]).isdigit() or not (aux_v_f_p_2[0]).isdigit() or not (aux_v_f_p_2[1]).isdigit() or not (aux_v_f_p_2[2]).isdigit():
+                    return Response({'success':False, 'detail': 'Formato de fecha no válido'}, status=status.HTTP_404_NOT_FOUND)
+                if len(aux_v_f_p) != 3 or len(aux_v_f_p_2) != 3:
+                    return Response({'success':False, 'detail': 'Formato de fecha no válido'}, status=status.HTTP_404_NOT_FOUND)
+                a = (len(aux_v_f_p[0]) != 4)
+                b = (len(aux_v_f_p[1]) <= 2 and len(aux_v_f_p[1]) >= 1)
+                c = (len(aux_v_f_p[2]) <= 2 and len(aux_v_f_p[2]) >= 1)
+                d = (len(aux_v_f_p[0]) != 4)
+                e = (len(aux_v_f_p[1]) <= 2 and len(aux_v_f_p[1]) >= 1)
+                f = (len(aux_v_f_p[2]) <= 2 and len(aux_v_f_p[2]) >= 1)
+                
+                if a or not b or not c or d or not e or not f:
+                    return Response({'success':False, 'detail': 'Formato de fecha no válido'}, status=status.HTTP_404_NOT_FOUND)
 
-            if int(aux_v_f_p[1]) <= 0 or int(aux_v_f_p[1]) >= 13 or int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 32 or int(aux_v_f_p_2[1]) <= 0 or int(aux_v_f_p_2[1]) >= 13 or int(aux_v_f_p_2[2]) <= 0 or int(aux_v_f_p_2[2]) >= 32:
-                return Response({'success':False, 'detail': 'Formato de fecha no válido, debe ingresar un mes entre 1 y 12 y un día entre 1 y 31'}, status=status.HTTP_404_NOT_FOUND)
-            mes = int(aux_v_f_p[1])
-            anio = int(aux_v_f_p[0])
-            mes_2 = int(aux_v_f_p_2[1])
-            anio_2 = int(aux_v_f_p_2[0])
-            if mes == 2:
-                if anio % 4 == 0 and (anio % 100 != 0 or anio % 400 == 0):
-                    if int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 30:
-                        return Response({'success':False, 'detail': 'En año bisiesto Febrero sólo puede tener hasta 29 días'}, status=status.HTTP_404_NOT_FOUND)
-                else:
-                    if int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 29:
-                        return Response({'success':False, 'detail': 'Para le año ingresado Febrero solo puede tener hasta 28 días'}, status=status.HTTP_404_NOT_FOUND)
-            if mes == 1 or mes == 3 or mes == 5 or mes == 7 or mes == 8 or mes == 10 or mes == 12:
-                if int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 32:
-                        return Response({'success':False, 'detail': 'Enero, Marzo, Mayo, Julio, Agosto, Octubre y Diciebre solo pueden tener entre 1 y 31 días'}, status=status.HTTP_404_NOT_FOUND)
-            if mes == 4 or mes == 6 or mes == 9 or mes == 11:
-                if int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 31:
-                        return Response({'success':False, 'detail': 'Abril, Junio, Septiembre y Noviembre ssolo pueden tener entre 1 y 30 días'}, status=status.HTTP_404_NOT_FOUND)
-            
-            if mes_2 == 2:
-                if anio_2 % 4 == 0 and (anio_2 % 100 != 0 or anio_2 % 400 == 0):
-                    if int(aux_v_f_p_2[2]) <= 0 or int(aux_v_f_p_2[2]) >= 30:
-                        return Response({'success':False, 'detail': 'En año bisiesto Febrero sólo puede tener hasta 29 días'}, status=status.HTTP_404_NOT_FOUND)
-                else:
-                    if int(aux_v_f_p_2[2]) <= 0 or int(aux_v_f_p_2[2]) >= 29:
-                        return Response({'success':False, 'detail': 'Para le año ingresado Febrero solo puede tener hasta 28 días'}, status=status.HTTP_404_NOT_FOUND)
-            if mes_2 == 1 or mes_2 == 3 or mes_2 == 5 or mes_2 == 7 or mes_2 == 8 or mes_2 == 10 or mes_2 == 12:
-                if int(aux_v_f_p_2[2]) <= 0 or int(aux_v_f_p_2[2]) >= 32:
-                        return Response({'success':False, 'detail': 'Enero, Marzo, Mayo, Julio, Agosto, Octubre y Diciebre solo pueden tener entre 1 y 31 días'}, status=status.HTTP_404_NOT_FOUND)
-            if mes_2 == 4 or mes_2 == 6 or mes_2 == 9 or mes_2 == 11:
-                if int(aux_v_f_p_2[2]) <= 0 or int(aux_v_f_p_2[2]) >= 31:
-                        return Response({'success':False, 'detail': 'Abril, Junio, Septiembre y Noviembre ssolo pueden tener entre 1 y 30 días'}, status=status.HTTP_404_NOT_FOUND)
+                if int(aux_v_f_p[1]) <= 0 or int(aux_v_f_p[1]) >= 13 or int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 32 or int(aux_v_f_p_2[1]) <= 0 or int(aux_v_f_p_2[1]) >= 13 or int(aux_v_f_p_2[2]) <= 0 or int(aux_v_f_p_2[2]) >= 32:
+                    return Response({'success':False, 'detail': 'Formato de fecha no válido, debe ingresar un mes entre 1 y 12 y un día entre 1 y 31'}, status=status.HTTP_404_NOT_FOUND)
+                mes = int(aux_v_f_p[1])
+                anio = int(aux_v_f_p[0])
+                mes_2 = int(aux_v_f_p_2[1])
+                anio_2 = int(aux_v_f_p_2[0])
+                if mes == 2:
+                    if anio % 4 == 0 and (anio % 100 != 0 or anio % 400 == 0):
+                        if int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 30:
+                            return Response({'success':False, 'detail': 'En año bisiesto Febrero sólo puede tener hasta 29 días'}, status=status.HTTP_404_NOT_FOUND)
+                    else:
+                        if int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 29:
+                            return Response({'success':False, 'detail': 'Para le año ingresado Febrero solo puede tener hasta 28 días'}, status=status.HTTP_404_NOT_FOUND)
+                if mes == 1 or mes == 3 or mes == 5 or mes == 7 or mes == 8 or mes == 10 or mes == 12:
+                    if int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 32:
+                            return Response({'success':False, 'detail': 'Enero, Marzo, Mayo, Julio, Agosto, Octubre y Diciebre solo pueden tener entre 1 y 31 días'}, status=status.HTTP_404_NOT_FOUND)
+                if mes == 4 or mes == 6 or mes == 9 or mes == 11:
+                    if int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 31:
+                            return Response({'success':False, 'detail': 'Abril, Junio, Septiembre y Noviembre ssolo pueden tener entre 1 y 30 días'}, status=status.HTTP_404_NOT_FOUND)
+                
+                if mes_2 == 2:
+                    if anio_2 % 4 == 0 and (anio_2 % 100 != 0 or anio_2 % 400 == 0):
+                        if int(aux_v_f_p_2[2]) <= 0 or int(aux_v_f_p_2[2]) >= 30:
+                            return Response({'success':False, 'detail': 'En año bisiesto Febrero sólo puede tener hasta 29 días'}, status=status.HTTP_404_NOT_FOUND)
+                    else:
+                        if int(aux_v_f_p_2[2]) <= 0 or int(aux_v_f_p_2[2]) >= 29:
+                            return Response({'success':False, 'detail': 'Para le año ingresado Febrero solo puede tener hasta 28 días'}, status=status.HTTP_404_NOT_FOUND)
+                if mes_2 == 1 or mes_2 == 3 or mes_2 == 5 or mes_2 == 7 or mes_2 == 8 or mes_2 == 10 or mes_2 == 12:
+                    if int(aux_v_f_p_2[2]) <= 0 or int(aux_v_f_p_2[2]) >= 32:
+                            return Response({'success':False, 'detail': 'Enero, Marzo, Mayo, Julio, Agosto, Octubre y Diciebre solo pueden tener entre 1 y 31 días'}, status=status.HTTP_404_NOT_FOUND)
+                if mes_2 == 4 or mes_2 == 6 or mes_2 == 9 or mes_2 == 11:
+                    if int(aux_v_f_p_2[2]) <= 0 or int(aux_v_f_p_2[2]) >= 31:
+                            return Response({'success':False, 'detail': 'Abril, Junio, Septiembre y Noviembre ssolo pueden tener entre 1 y 30 días'}, status=status.HTTP_404_NOT_FOUND)
+                i['fecha_programada'] = (datetime.strptime(i['fecha_programada'], '%Y-%m-%d')).date()
+                i['fecha_generada'] = date.today()
+                i['fecha_solicitud'] = (datetime.strptime(i['fecha_solicitud'], '%Y-%m-%d')).date()
+                a = i['fecha_generada'] - i['fecha_programada']
+                if (i['fecha_generada'] > i['fecha_solicitud']) or (i['fecha_generada'] > i['fecha_programada']) or (i['fecha_solicitud'] > i['fecha_programada']):
+                    return Response({'success':False, 'detail': 'La fecha de programación y la fecha de solicitud no pueden ser menores a la fecha de hoy'}, status=status.HTTP_404_NOT_FOUND)
+                
             i['fecha_generada'] = date.today()
-            i['fecha_programada'] = (datetime.strptime(i['fecha_programada'], '%Y-%m-%d')).date()
-            i['fecha_solicitud'] = (datetime.strptime(i['fecha_solicitud'], '%Y-%m-%d')).date()
-            a = i['fecha_generada'] - i['fecha_programada']
-            if (i['fecha_generada'] > i['fecha_solicitud']) or (i['fecha_generada'] > i['fecha_programada']) or (i['fecha_solicitud'] > i['fecha_programada']):
-                return Response({'success':False, 'detail': 'La fecha de programación y la fecha de solicitud no pueden ser menores a la fecha de hoy'}, status=status.HTTP_404_NOT_FOUND)
+            
             serializer = self.get_serializer(data=i)
             serializer.is_valid(raise_exception=True)
             serializer.save()
