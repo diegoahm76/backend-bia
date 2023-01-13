@@ -393,7 +393,7 @@ class UpdateViveros(generics.UpdateAPIView):
         
         return Response({'success':True, 'detail':'Vivero actualizado con éxito', 'data':serializador.data}, status=status.HTTP_201_CREATED)
 
-class DesactivarViveroView(generics.RetrieveUpdateAPIView):
+class DesactivarActivarViveroView(generics.RetrieveUpdateAPIView):
     serializer_class = ViveroSerializerDesactivoSerializer
     queryset = Vivero.objects.all()
     permission_classes = [IsAuthenticated]
@@ -409,7 +409,7 @@ class DesactivarViveroView(generics.RetrieveUpdateAPIView):
             serializer.is_valid(raise_exception=True)
             serializador = serializer.save()
 
-            # AUDITORÍA DESACTIVACIÓN
+            # AUDITORÍA ACTIVACIÓN VIVERO
             usuario = request.user.id_usuario
             descripcion = {"nombre": str(previous_vivero.nombre)}
             direccion=Util.get_client_ip(request)
@@ -431,7 +431,7 @@ class DesactivarViveroView(generics.RetrieveUpdateAPIView):
             serializer.is_valid(raise_exception=True)
             serializador = serializer.save()
 
-            # AUDITORÍA DESACTIVACIÓN
+            # AUDITORÍA DESACTIVACIÓN VIVERO
             usuario = request.user.id_usuario
             descripcion = {"nombre": str(previous_vivero.nombre)}
             direccion=Util.get_client_ip(request)

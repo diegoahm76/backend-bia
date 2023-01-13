@@ -663,20 +663,17 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
         items_entrada = data.get('info_items_entrada')
 
         # VALIDACION QUE EN EL CAMPO CANTIDAD INGRESE POR LO MENOS UN ELEMENTO
-        cantidad_list = [item['cantidad'] for item in items_entrada if item['cantidad']
-                         == None or item['cantidad'] == "" or item['cantidad'] < 1]
+        cantidad_list = [item['cantidad'] for item in items_entrada if item['cantidad'] == None or item['cantidad'] == "" or item['cantidad'] < 1]
         if cantidad_list:
             return Response({'success': False, 'detail': 'Debe ingresar una cantidad en todos los items de la entrada, y debe ser mayor a cero'}, status=status.HTTP_403_FORBIDDEN)
 
-        # VALIDACIÓN QUE TODOS LOS ID_BIEN PADRES Y ID_BIEN ENVIADOS SEAN DE NIVEL 5
-        id_bienes_enviados_validar = [item['id_bien']
-                                      for item in items_entrada if item['id_bien'] != None]
-        id_bien_padre_enviados = [item['id_bien_padre']
-                                  for item in items_entrada if item['id_bien_padre'] != None]
-        bienes_nodo_cinco = CatalogoBienes.objects.filter(
-            id_bien__in=id_bienes_enviados_validar)
-        bienes_padre_nodo_cinco = CatalogoBienes.objects.filter(
-            id_bien__in=id_bien_padre_enviados)
+        # VALIDACIÓN QUE TODOS LOS ID_BIEN PADRES Y ID_BIEN ENVIADOS EXISTAN Y SEAN DE NIVEL 5
+        id_bienes_enviados_validar = [item['id_bien'] for item in items_entrada if item['id_bien'] != None]
+        id_bien_padre_enviados = [item['id_bien_padre'] for item in items_entrada if item['id_bien_padre'] != None]
+        bienes_nodo_cinco = CatalogoBienes.objects.filter(id_bien__in=id_bienes_enviados_validar)
+        if len(id_bienes_enviados_validar) != len(bienes_nodo_cinco):
+            return Response({'success': False, 'detail': 'Verificar que todos los id bien enviados existan'}, status=status.HTTP_400_BAD_REQUEST)
+        bienes_padre_nodo_cinco = CatalogoBienes.objects.filter( id_bien__in=id_bien_padre_enviados)
         for bien in bienes_nodo_cinco:
             if bien.nivel_jerarquico != 5:
                 return Response({'success': False, 'detail': 'No se pueden seleccionar nodos que no sean nivel 5'}, status=status.HTTP_400_BAD_REQUEST)
@@ -709,8 +706,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
 
         # VALIDACIÓN DE EXITENCIA DE BODEGA PARA ENTRADA
         id_bodega_entrada = entrada_data['id_bodega']
-        bodega_entrada = Bodegas.objects.filter(
-            id_bodega=id_bodega_entrada).first()
+        bodega_entrada = Bodegas.objects.filter(id_bodega=id_bodega_entrada).first()
         if not bodega_entrada:
             return Response({'success': False, 'detail': 'La bodega seleccionada para la entrada no existe'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -725,44 +721,36 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
             return Response({'success': False, 'detail': 'No existe ninguna bodega con los parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
 
         # VALIDACIÓN QUE EL PORCENTAJE DE IVA EXISTA
-        id_porcentajes_list = [item['porcentaje_iva']
-                               for item in items_entrada]
-        porcentajes_iva = PorcentajesIVA.objects.filter(
-            id_porcentaje_iva__in=id_porcentajes_list)
+        id_porcentajes_list = [item['porcentaje_iva'] for item in items_entrada]
+        porcentajes_iva = PorcentajesIVA.objects.filter(id_porcentaje_iva__in=id_porcentajes_list)
         if len(set(id_porcentajes_list)) != len(porcentajes_iva):
             return Response({'success': False, 'detail': 'Todas los porcentajes iva enviados deben existir'}, status=status.HTTP_400_BAD_REQUEST)
 
         # VALIDACIÓN QUE EL ID_UNIDAD_MEDIDA EXISTA
-        unidad_medida_list = [item['id_unidad_medida_vida_util']
-                              for item in items_entrada if item['id_bien_padre'] != None]
-        unidades_medida = UnidadesMedida.objects.filter(
-            id_unidad_medida__in=unidad_medida_list)
+        unidad_medida_list = [item['id_unidad_medida_vida_util'] for item in items_entrada if item['id_bien_padre'] != None]
+        unidades_medida = UnidadesMedida.objects.filter(id_unidad_medida__in=unidad_medida_list)
         if len(set(unidad_medida_list)) != len(unidades_medida):
             return Response({'success': False, 'detail': 'Todas las unidades de medida enviadas deben existir'}, status=status.HTTP_400_BAD_REQUEST)
 
         # VALIDACIÓN QUE EL NUMERO POSICION NO VENGA REPETIDO
-        numero_posicion_list = [item['numero_posicion']
-                                for item in items_entrada]
+        numero_posicion_list = [item['numero_posicion'] for item in items_entrada]
         if len(set(numero_posicion_list)) != len(numero_posicion_list):
             return Response({'success': False, 'detail': 'Todas los numeros de posicion deben ser unicos'}, status=status.HTTP_400_BAD_REQUEST)
 
         # VALIDACION EN CAMPO TIENE HOJA DE VIDA
-        tiene_hoja_vida_list = [item['tiene_hoja_vida'] for item in items_entrada if item['id_bien_padre']
-                                != None and item['tiene_hoja_vida'] != True and item['tiene_hoja_vida'] != False]
+        tiene_hoja_vida_list = [item['tiene_hoja_vida'] for item in items_entrada if item['id_bien_padre'] != None and item['tiene_hoja_vida'] != True and item['tiene_hoja_vida'] != False]
         if tiene_hoja_vida_list:
             return Response({'success': False, 'detail': 'Debe ser enviado un valor válido en el campo tiene hoja de vida'}, status=status.HTTP_400_BAD_REQUEST)
 
         # VALIDACIÓN DEL NÚMERO DE ENTRADA
-        numero_entrada_exist = EntradasAlmacen.objects.all().order_by(
-            '-numero_entrada_almacen').first()
+        numero_entrada_exist = EntradasAlmacen.objects.all().order_by('-numero_entrada_almacen').first()
         if numero_entrada_exist:
             entrada_data['numero_entrada_almacen'] = numero_entrada_exist.numero_entrada_almacen + 1
         else:
             entrada_data['numero_entrada_almacen'] = 1
 
         # SUMA DE TOTALES EN ITEMS Y ASIGNACIÓN A ENTRADA
-        valor_total_items_list = [item['valor_total_item']
-                                  for item in items_entrada]
+        valor_total_items_list = [item['valor_total_item'] for item in items_entrada]
         valor_total_entrada = sum(valor_total_items_list)
         entrada_data['valor_total_entrada'] = valor_total_entrada
 
@@ -777,21 +765,15 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
             item['id_entrada_almacen'] = entrada_creada.pk
 
         # FILTRAMOS LOS ACTIVOS FIJOS Y EMPEZAMOS CREACIÓN DE ACTIVOS FIJOS y CONSUMOS
-        items_activos_fijos = list(filter(
-            lambda item: item['id_bien_padre'] != None and item['id_bien'] == None, items_entrada))
-        items_consumo = list(filter(
-            lambda item: item['id_bien_padre'] == None and item['id_bien'] != None, items_entrada))
+        items_activos_fijos = list(filter(lambda item: item['id_bien_padre'] != None and item['id_bien'] == None, items_entrada))
+        items_consumo = list(filter(lambda item: item['id_bien_padre'] == None and item['id_bien'] != None, items_entrada))
 
         # VALIDACION QUE LA FECHA DE ENTRADA SEA POSTERIOR A LOS ITEMS QUE SE ENCUENTRAN EN INVENTARIO
         for item in items_consumo:
-            bien = CatalogoBienes.objects.filter(
-                id_bien=item.get('id_bien')).first()
-            bodega = Bodegas.objects.filter(
-                id_bodega=item['id_bodega']).first()
-            id_bien_inventario = Inventario.objects.filter(
-                id_bien=bien.id_bien, id_bodega=bodega.id_bodega).first()
-            fecha_entrega = datetime.strptime(
-                fecha_entrada, '%Y-%m-%d %H:%M:%S')
+            bien = CatalogoBienes.objects.filter(id_bien=item.get('id_bien')).first()
+            bodega = Bodegas.objects.filter(id_bodega=item['id_bodega']).first()
+            id_bien_inventario = Inventario.objects.filter(id_bien=bien.id_bien, id_bodega=bodega.id_bodega).first()
+            fecha_entrega = datetime.strptime(fecha_entrada, '%Y-%m-%d %H:%M:%S')
             if id_bien_inventario:
                 fecha_ingreso_existente = id_bien_inventario.fecha_ingreso
             else:
@@ -831,8 +813,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
 
             # CREA EL BIEN CONSUMO EN INVENTARIO O MODIFICA LA CANTIDAD POR BODEGA
             bien = CatalogoBienes.objects.filter(id_bien=id_bien_).first()
-            id_bien_inventario = Inventario.objects.filter(
-                id_bien=bien.id_bien, id_bodega=bodega.id_bodega).first()
+            id_bien_inventario = Inventario.objects.filter(id_bien=bien.id_bien, id_bodega=bodega.id_bodega).first()
 
             # SUMA EL REGISTRO SI ESTABA ESE BIEN EN ESA BODEGA EN INVENTARIO
             if id_bien_inventario:
@@ -851,8 +832,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
                     cantidad_entrante_consumo=cantidad,
                     fecha_ingreso=fecha_entrada
                 )
-            serializador_item_entrada_consumo = SerializerItemEntradaConsumo(
-                data=item, many=False)
+            serializador_item_entrada_consumo = SerializerItemEntradaConsumo(data=item, many=False)
             serializador_item_entrada_consumo.is_valid(raise_exception=True)
             serializador_item_entrada_consumo.save()
             items_guardados.append(serializador_item_entrada_consumo.data)
@@ -871,13 +851,11 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
             cod_estado = item.get('cod_estado')
 
             # CREACIÓN DE UN ITEM ACTIVO FIJO EN BASE A CAMPOS HEREDADOS DEL PADRE
-            bien_padre = CatalogoBienes.objects.filter(
-                id_bien=id_bien_padre).first()
+            bien_padre = CatalogoBienes.objects.filter(id_bien=id_bien_padre).first()
             bien_padre_serializado = CatalogoBienesSerializer(bien_padre)
 
             # ASIGNACIÓN DEL ÚLTIMO NÚMERO DEL ELEMENTO
-            ultimo_numero_elemento = CatalogoBienes.objects.filter(Q(codigo_bien=bien_padre.codigo_bien) & ~Q(
-                nro_elemento_bien=None)).order_by('-nro_elemento_bien').first()
+            ultimo_numero_elemento = CatalogoBienes.objects.filter(Q(codigo_bien=bien_padre.codigo_bien) & ~Q(nro_elemento_bien=None)).order_by('-nro_elemento_bien').first()
             numero_elemento = 1
             if ultimo_numero_elemento:
                 numero_elemento = ultimo_numero_elemento.nro_elemento_bien + 1
@@ -948,8 +926,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
                             id_articulo=elemento_creado
                         )
             item['id_bien'] = elemento_creado.id_bien
-            serializador_item_entrada = SerializerItemEntradaActivosFijos(
-                data=item, many=False)
+            serializador_item_entrada = SerializerItemEntradaActivosFijos(data=item, many=False)
             serializador_item_entrada.is_valid(raise_exception=True)
             serializador_item_entrada.save()
             items_guardados.append(serializador_item_entrada.data)
