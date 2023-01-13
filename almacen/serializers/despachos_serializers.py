@@ -73,10 +73,11 @@ class SearchBienInventarioSerializer(serializers.ModelSerializer):
     codigo_bien=serializers.ReadOnlyField(source='id_bien.codigo_bien',default=None)
     nombre=serializers.ReadOnlyField(source='id_bien.nombre',default=None)
     bodega=serializers.ReadOnlyField(source='id_bodega.nombre',default=None)
+    cantidad_disponible = serializers.IntegerField(read_only=True, default=None)
     
     class Meta:
         model=Inventario
-        fields=('id_inventario', 'id_bien', 'codigo_bien', 'nombre', 'id_bodega', 'bodega')
+        fields=('id_inventario', 'id_bien', 'codigo_bien', 'nombre', 'id_bodega', 'bodega', 'cantidad_disponible')
 
 class AgregarBienesConsumoConservacionSerializer(serializers.ModelSerializer):
     codigo_bien=serializers.ReadOnlyField(source='id_bien.codigo_bien',default=None)

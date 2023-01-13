@@ -1,14 +1,14 @@
-from almacen.models.bienes_models import CatalogoBienes
+from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, ItemEntradaAlmacen
 from almacen.serializers.bienes_serializers import CatalogoBienesSerializer
 from almacen.serializers.despachos_serializers import SerializersDespachoConsumo, SerializersItemDespachoConsumo, SerializersSolicitudesConsumibles, SerializersItemsSolicitudConsumible, SearchBienInventarioSerializer
 from rest_framework import generics,status
 from rest_framework.response import Response
 from seguridad.models import Personas, User
 from rest_framework.decorators import api_view
-from seguridad.utils import Util
+from almacen.utils import Util
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Q
+from django.db.models import Q, Value, IntegerField, CharField
 from datetime import datetime, date
 import copy
 import json
@@ -395,14 +395,13 @@ class SearchBienInventario(generics.ListAPIView):
         
         if bien:
             items_despachados = ItemDespachoConsumo.objects.filter(id_bien_despachado=bien.id_bien, id_despacho_consumo__fecha_despacho__gte=fecha_despacho_strptime)
-            print("ID_BIEN: ", bien.id_bien)
-            print("FECHA_DESPACHO: ", fecha_despacho_strptime)
-            print("ITEMS_DESPACHADOS: ", items_despachados)
             if items_despachados:
-                return Response({'success':False, 'detail':'El bien tiene despachos o entregas posteriores a la fecha de despacho elegida', 'data': []}, status=status.HTTP_200_OK)
-                
+                return Response({'success':False, 'detail':'El bien tiene despachos o entregas posteriores a la fecha de despacho elegida', 'data': []}, status=status.HTTP_403_FORBIDDEN)
+            
             inventario = Inventario.objects.filter(id_bien=bien.id_bien, id_bodega=id_bodega).first()
             
+            cantidad_disponible = Util.get_cantidad_disponible(bien.id_bien, id_bodega, fecha_despacho_strptime)
+            inventario.cantidad_disponible=cantidad_disponible
             serializador_inventario = self.serializer_class(inventario)
             
             return Response({'success':True, 'detail':'Se encontró el siguiente resultado', 'data': serializador_inventario.data}, status=status.HTTP_200_OK)
@@ -414,16 +413,34 @@ class SearchBienesInventario(generics.ListAPIView):
     queryset=Inventario.objects.all()
     
     def get(self,request):
-        id_bien = request.query_params.get('id_bien')
+        codigo_bien = request.query_params.get('codigo_bien_solicitado')
+        fecha_despacho = request.query_params.get('fecha_despacho')
         
-        if not id_bien or id_bien == '':
-            return Response({'success':False, 'detail':'Debe ingresar el parámetro de búsqueda'}, status=status.HTTP_400_BAD_REQUEST)
+        if (not codigo_bien or codigo_bien == '')  or (not fecha_despacho or fecha_despacho == ''):
+            return Response({'success':False, 'detail':'Debe ingresar los parámetros de búsqueda'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        bienes = CatalogoBienes.objects.filter(codigo_bien__startswith=codigo_bien, cod_tipo_bien='C', nivel_jerarquico=5)
 
-        inventario = Inventario.objects.filter(id_bien=id_bien)
+        fecha_despacho_strptime = datetime.strptime(fecha_despacho, '%Y-%m-%d %H:%M:%S')
         
-        serializador_inventario = self.serializer_class(inventario, many=True)
+        if bienes:
+            bien_id_bien = [bien.id_bien for bien in bienes]
+            items_despachados = ItemDespachoConsumo.objects.filter(id_bien_despachado__in=bien_id_bien, id_despacho_consumo__fecha_despacho__gte=fecha_despacho_strptime)
+            items_despachados_list = [item.id_bien_despachado.id_bien for item in items_despachados]
+            list_bienes_end = [bien for bien in bien_id_bien if bien not in items_despachados_list]
+            bien_inventario = Inventario.objects.filter(id_bien__in=list_bienes_end)
+            
+            cantidades_disponibles = Util.get_cantidades_disponibles(list_bienes_end, fecha_despacho_strptime)
+
+            for inventario in bien_inventario:
+                cantidad_disponible = [cantidad_disponible['cantidad_disponible'] for cantidad_disponible in cantidades_disponibles if cantidad_disponible['id_bien'] == inventario.id_bien.id_bien and cantidad_disponible['id_bodega'] == inventario.id_bodega.id_bodega][0]
+                inventario.cantidad_disponible = cantidad_disponible
+            
+            serializador = self.serializer_class(bien_inventario, many=True)
         
-        return Response({'success':True, 'detail':'Se encontraron los siguientes resultados', 'data': serializador_inventario.data}, status=status.HTTP_200_OK)
+            return Response({'success':True, 'detail':'Se encontró el siguiente resultado','data':serializador.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success':True, 'detail':'El bien no existe', 'data': []}, status=status.HTTP_200_OK)
 
 class AgregarBienesConsumoConservacionByCodigoBien(generics.ListAPIView):
     serializer_class=AgregarBienesConsumoConservacionSerializer
@@ -439,18 +456,14 @@ class AgregarBienesConsumoConservacionByCodigoBien(generics.ListAPIView):
 
         bien = CatalogoBienes.objects.filter(codigo_bien=codigo_bien, solicitable_vivero=True, cod_tipo_bien='C', nivel_jerarquico=5).first()
         fecha_despacho_strptime = datetime.strptime(fecha_despacho, '%Y-%m-%d %H:%M:%S')
-        print("BIEN: ", bien)
         if bien:
             items_despachados = ItemDespachoConsumo.objects.filter(id_bien_despachado=bien.id_bien, id_despacho_consumo__fecha_despacho__gte=fecha_despacho_strptime)
-            print("ID_BIEN: ", bien.id_bien)
-            print("FECHA_DESPACHO: ", fecha_despacho_strptime)
-            print("ITEMS_DESPACHADOS: ", items_despachados)
             if items_despachados:
                 return Response({'success':False, 'detail':'El bien tiene despachos o entregas posteriores a la fecha de despacho elegida', 'data': []}, status=status.HTTP_403_FORBIDDEN)
                 
             bien_inventario = Inventario.objects.filter(id_bien=bien.id_bien, id_bodega=id_bodega).first()
             
-            cantidad_actual=bien_inventario.cantidad_entrante_consumo - bien_inventario.cantidad_saliente_consumo
+            cantidad_actual = Util.get_cantidad_disponible(bien.id_bien, id_bodega, fecha_despacho_strptime)
             bien_inventario.cantidad_disponible=cantidad_actual
             serializador=self.serializer_class(bien_inventario,many=False)
             
@@ -480,8 +493,15 @@ class AgregarBienesConsumoConservacionByLupa(generics.ListAPIView):
             items_despachados_list = [item.id_bien_despachado.id_bien for item in items_despachados]
             list_bienes_end = [bien for bien in bien_id_bien if bien not in items_despachados_list]
             bien_inventario = Inventario.objects.filter(id_bien__in=list_bienes_end)
+            
+            cantidades_disponibles = Util.get_cantidades_disponibles(list_bienes_end, fecha_despacho_strptime)
+
+            for inventario in bien_inventario:
+                cantidad_disponible = [cantidad_disponible['cantidad_disponible'] for cantidad_disponible in cantidades_disponibles if cantidad_disponible['id_bien'] == inventario.id_bien.id_bien and cantidad_disponible['id_bodega'] == inventario.id_bodega.id_bodega][0]
+                inventario.cantidad_disponible = cantidad_disponible
+            
             serializador = self.serializer_class(bien_inventario, many=True)
         
-            return Response({'success':True, 'detail':'Se encontró el siguiente resultado','data':serializador.data}, status=status.HTTP_200_OK)
+            return Response({'success':True, 'detail':'Se encontraron los siguientes resultados','data':serializador.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success':True, 'detail':'El bien no existe', 'data': []}, status=status.HTTP_200_OK)
