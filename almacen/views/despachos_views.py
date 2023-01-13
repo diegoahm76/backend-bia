@@ -5,7 +5,8 @@ from rest_framework import generics,status
 from rest_framework.response import Response
 from seguridad.models import Personas, User
 from rest_framework.decorators import api_view
-from almacen.utils import Util
+from seguridad.utils import Util
+from almacen.utils import UtilAlmacen
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q, Value, IntegerField, CharField
@@ -400,7 +401,7 @@ class SearchBienInventario(generics.ListAPIView):
             
             inventario = Inventario.objects.filter(id_bien=bien.id_bien, id_bodega=id_bodega).first()
             
-            cantidad_disponible = Util.get_cantidad_disponible(bien.id_bien, id_bodega, fecha_despacho_strptime)
+            cantidad_disponible = UtilAlmacen.get_cantidad_disponible(bien.id_bien, id_bodega, fecha_despacho_strptime)
             inventario.cantidad_disponible=cantidad_disponible
             serializador_inventario = self.serializer_class(inventario)
             
@@ -430,7 +431,7 @@ class SearchBienesInventario(generics.ListAPIView):
             list_bienes_end = [bien for bien in bien_id_bien if bien not in items_despachados_list]
             bien_inventario = Inventario.objects.filter(id_bien__in=list_bienes_end)
             
-            cantidades_disponibles = Util.get_cantidades_disponibles(list_bienes_end, fecha_despacho_strptime)
+            cantidades_disponibles = UtilAlmacen.get_cantidades_disponibles(list_bienes_end, fecha_despacho_strptime)
 
             for inventario in bien_inventario:
                 cantidad_disponible = [cantidad_disponible['cantidad_disponible'] for cantidad_disponible in cantidades_disponibles if cantidad_disponible['id_bien'] == inventario.id_bien.id_bien and cantidad_disponible['id_bodega'] == inventario.id_bodega.id_bodega][0]
@@ -463,7 +464,7 @@ class AgregarBienesConsumoConservacionByCodigoBien(generics.ListAPIView):
                 
             bien_inventario = Inventario.objects.filter(id_bien=bien.id_bien, id_bodega=id_bodega).first()
             
-            cantidad_actual = Util.get_cantidad_disponible(bien.id_bien, id_bodega, fecha_despacho_strptime)
+            cantidad_actual = UtilAlmacen.get_cantidad_disponible(bien.id_bien, id_bodega, fecha_despacho_strptime)
             bien_inventario.cantidad_disponible=cantidad_actual
             serializador=self.serializer_class(bien_inventario,many=False)
             
@@ -494,7 +495,7 @@ class AgregarBienesConsumoConservacionByLupa(generics.ListAPIView):
             list_bienes_end = [bien for bien in bien_id_bien if bien not in items_despachados_list]
             bien_inventario = Inventario.objects.filter(id_bien__in=list_bienes_end)
             
-            cantidades_disponibles = Util.get_cantidades_disponibles(list_bienes_end, fecha_despacho_strptime)
+            cantidades_disponibles = UtilAlmacen.get_cantidades_disponibles(list_bienes_end, fecha_despacho_strptime)
 
             for inventario in bien_inventario:
                 cantidad_disponible = [cantidad_disponible['cantidad_disponible'] for cantidad_disponible in cantidades_disponibles if cantidad_disponible['id_bien'] == inventario.id_bien.id_bien and cantidad_disponible['id_bodega'] == inventario.id_bodega.id_bodega][0]
