@@ -11,6 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 from datetime import datetime, date
 import copy
+import json
 from almacen.serializers.despachos_serializers import (
     CerrarSolicitudDebidoInexistenciaSerializer,
     SerializersDespachoConsumo,
@@ -35,7 +36,8 @@ from almacen.models.organigrama_models import (
     NivelesOrganigrama
 )
 from almacen.models.generics_models import (
-    UnidadesMedida
+    UnidadesMedida,
+    Bodegas
 )
 from almacen.models.inventario_models import (
     Inventario
@@ -48,20 +50,22 @@ from seguridad.serializers.personas_serializers import PersonasSerializer
 
 class CreateDespachoMaestro(generics.UpdateAPIView):
     serializer_class = SerializersDespachoConsumo
-    queryset = DespachoConsumo.objects.all()
+    queryset = DespachoConsumo
+    serializer_item_consumo = SerializersItemDespachoConsumo
     
     def put(self, request):
         datos_ingresados = request.data
         user_logeado = request.user
-        info_despacho = datos_ingresados['info_despacho']
-        items_despacho = datos_ingresados['items_despacho']
+        info_despacho = json.loads(datos_ingresados['info_despacho'])
+        items_despacho = json.loads(datos_ingresados['items_despacho'])
+        info_despacho['ruta_archivo_doc_con_recibido'] = request.FILES.get('ruta_archivo_doc_con_recibido')
         #Validaciones primarias
         if str(user_logeado) == 'AnonymousUser':
             return Response({'success':False,'data':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
-        if info_despacho['es_despacho_conservacion'] != True and info_despacho['es_despacho_conservacion'] != False:
-            return Response({'success':False,'data':'El campo (es_despacho_conservacion) debe ser True o False'},status=status.HTTP_404_NOT_FOUND)
-        if info_despacho['es_despacho_conservacion'] == False and info_despacho['id_entrada_almacen_cv'] != None:
-            return Response({'success':False,'data':'Si ingresa (es_despacho_conservacion) en false, el campo id_entrada_almacen_cv debe ser null'},status=status.HTTP_404_NOT_FOUND)
+        if info_despacho['es_despacho_conservacion'] != False:
+            return Response({'success':False,'data':'En este servicio no se pueden procesar despachos de vivero, además verfique el campo (es_despacho_conservacion) debe ser True o False'},status=status.HTTP_404_NOT_FOUND)
+        # if info_despacho['es_despacho_conservacion'] == False and info_despacho['id_entrada_almacen_cv'] != None:
+        #     return Response({'success':False,'data':'Si ingresa (es_despacho_conservacion) en false, el campo id_entrada_almacen_cv debe ser null'},status=status.HTTP_404_NOT_FOUND)
         if len(info_despacho['motivo']) > 255:
             return Response({'success':False,'data':'El motivo debe tener como máximo 255 caracteres'},status=status.HTTP_404_NOT_FOUND)
         #Validaciones de la solicitud
@@ -79,24 +83,117 @@ class CreateDespachoMaestro(generics.UpdateAPIView):
             return Response({'success':False,'data':'La fecha ingresada no es permita dentro de los parametros existentes'},status=status.HTTP_404_NOT_FOUND)
         #Se valida que la fecha de aprobación de la solicitud sea inferior a la fecha de despacho
         fecha_aprobacion_solicitud = instancia_solicitud.fecha_aprobacion_responsable
-        if fecha_despacho.date() <= fecha_aprobacion_solicitud:
+        if fecha_despacho <= fecha_aprobacion_solicitud:
             return Response({'success':False,'data':'La fecha de despacho debe ser mayor o igual a la fecha de aprobación de la solicitud'},status=status.HTTP_404_NOT_FOUND)
         #Consulta y asignación de los campos que se repiten con solicitudes de bienes de consumos
         info_despacho['numero_solicitud_por_tipo'] = instancia_solicitud.nro_solicitud_por_tipo
         info_despacho['fecha_solicitud'] = instancia_solicitud.fecha_solicitud
-        info_despacho['id_persona_solicita'] = instancia_solicitud.id_persona_solicita
-        info_despacho['id_unidad_para_la_que_solicita'] = instancia_solicitud.id_unidad_para_la_que_solicita
-        info_despacho['id_funcionario_responsable_unidad'] = instancia_solicitud.id_funcionario_responsable_unidad
+        info_despacho['id_persona_solicita'] = instancia_solicitud.id_persona_solicita.id_persona
+        info_despacho['id_unidad_para_la_que_solicita'] = instancia_solicitud.id_unidad_para_la_que_solicita.id_unidad_organizacional
+        info_despacho['id_funcionario_responsable_unidad'] = instancia_solicitud.id_funcionario_responsable_unidad.id_persona
         #Asignación de persona que despacha
         info_despacho['id_persona_despacha'] = user_logeado.persona.id_persona
         #Asignacion de número de despacho
         despachos_existentes = DespachoConsumo.objects.all()
         if despachos_existentes:
-            numero_despachos = [i.nro_solicitud_por_tipo for i in despachos_existentes]
+            numero_despachos = [i.numero_despacho_consumo for i in despachos_existentes]
             info_despacho['numero_despacho_consumo'] = max(numero_despachos) + 1
         else:
-            info_despacho['numero_despacho_consumo'] = 1  
+            info_despacho['numero_despacho_consumo'] = 1
+        # SE OBTIENEN TODOS LOS ITEMS DE LA SOLICITUD PARA LUEGO VALIDAR QUE LOS ITEMS DESPACHADOS ESTÉN DENTRO DE LA SOLICITUD
+        items_solicitud = ItemsSolicitudConsumible.objects.filter(id_solicitud_consumibles=info_despacho['id_solicitud_consumo'])
+        if not items_solicitud:
+            return Response({'success':False,'data':'La solicitud que quiere despachar no tiene items, por favor añada items a la solicitud para poderla despachar' },status=status.HTTP_404_NOT_FOUND)
+        id_items_solicitud = [i.id_bien.id_bien for i in items_solicitud]
+        # SE VALIDA QUE EL NUMERO DE POSICION SEA UNICO
+        nro_posicion_items = [i['numero_posicion_despacho'] for i in items_despacho]
+        if len(nro_posicion_items) != len(set(nro_posicion_items)):
+            return Response({'success':False,'data':'El número de posición debe ser único' },status=status.HTTP_404_NOT_FOUND)
+        # VALIDACIONES EN ITEMS DEL DESPACHO
+        aux_validacion_cantidades_totales = []
+        aux_validacion_bienes_repetidos_b = []
+        aux_validacion_bienes_repetidos = {}
+        aux_validacion_unidades_dic = {}
+        for i in items_despacho:
+            bien_solicitado = i.get('id_bien_solicitado')
+            if (bien_solicitado not in id_items_solicitud):
+                return Response({'success':False,'data':'Uno de los bienes que intenta despachar no se encuentra dentro de la solicitud, verifique que cada id_bien_solicitado se encuentre dentro de la solicitud'},status=status.HTTP_404_NOT_FOUND)
+            if bien_solicitado == None:
+                return Response({'success':False,'data':'Debe ingresar un id de un bien solicitado'},status=status.HTTP_404_NOT_FOUND)
+            bien_solicitado_instancia = CatalogoBienes.objects.filter(id_bien = i['id_bien_solicitado']).first()
+            if not bien_solicitado_instancia:
+                return Response({'success':False,'data':'El bien solicitado (' + i['id_bien_solicitado'] + ') no existe' },status=status.HTTP_404_NOT_FOUND)
+            if bien_solicitado_instancia.nivel_jerarquico > 5 or bien_solicitado_instancia.nivel_jerarquico < 2:
+                return Response({'success':False,'data':'Error en el numero_posicion (' + i['numero_posicion_despacho'] + '). El bien solicitado (' + bien_solicitado_instancia.nombre + ') no es de nivel 2 al 5' },status=status.HTTP_404_NOT_FOUND)
+            if bien_solicitado_instancia.cod_tipo_bien != 'C':
+                return Response({'success':False,'data':'El bien (' + bien_solicitado_instancia.nombre + ') no es de consumo' },status=status.HTTP_404_NOT_FOUND)
+            item_solicitado_instancia = ItemsSolicitudConsumible.objects.filter(Q(id_solicitud_consumibles=info_despacho['id_solicitud_consumo']) & Q(id_bien=i['id_bien_solicitado'])).first()
+            if item_solicitado_instancia.cantidad != i['cantidad_solicitada'] or item_solicitado_instancia.id_unidad_medida.id_unidad_medida != i['id_unidad_medida_solicitada']:
+                return Response({'success':False,'data':'Error en el numero_posicion (' + i['numero_posicion_despacho'] + ') del despacho. La cantidad solicitada o la unidad de medida solicitada no corresponde a las registrada en la solicitud' },status=status.HTTP_404_NOT_FOUND)
+            bodega_solicita = i.get('id_bodega')
+            if bodega_solicita == None:
+                return Response({'success':False,'data':'Debe ingresar un id de bodega válido'},status=status.HTTP_404_NOT_FOUND)
+            instancia_bodega_solcitud = Bodegas.objects.filter(id_bodega = i['id_bodega']).first()
+            if not instancia_bodega_solcitud:
+                return Response({'success':False,'data':'El id de bodega no existe' },status=status.HTTP_404_NOT_FOUND)
+            observaciones = i.get('observacion')
+            if observaciones == None:
+                return Response({'success':False,'data':'El JSON debe contener un campo (observaciones)' },status=status.HTTP_404_NOT_FOUND)
+            if len(observaciones) > 30:
+                return Response({'success':False,'data':'La observacion solo puede contener hasta 30 caracteres' },status=status.HTTP_404_NOT_FOUND)
+            bien_despachado = i.get('id_bien_despachado')
+            if not bien_despachado:
+                return Response({'success':False,'data':'Debe ingresar un bien despachado' },status=status.HTTP_404_NOT_FOUND)
+            bien_despachado_instancia = CatalogoBienes.objects.filter(id_bien=bien_despachado).first()
+            if not bien_despachado_instancia:
+                return Response({'success':False,'data':'Debe ingresar un id_bien válido en el bien despachado' },status=status.HTTP_404_NOT_FOUND)
+            nivel_bien_despachado = int(bien_despachado_instancia.nivel_jerarquico)
+            # SE VALIDA QUE EL BIEN DESPACHADO PERTENESCA A LA LINEA DEL BIEN SOLICITADO
+            cont = nivel_bien_despachado
+            arreglo_id_bienes_ancestros = []
+            while cont>0:
+                arreglo_id_bienes_ancestros.append(bien_despachado_instancia.id_bien)
+                if bien_despachado_instancia.nivel_jerarquico > 1:
+                    bien_despachado_instancia = CatalogoBienes.objects.filter(id_bien=bien_despachado_instancia.id_bien_padre.id_bien).first()
+                    if not bien_despachado_instancia:
+                        return Response({'success':False,'data':'Uno de los bienes no tiene padre' },status=status.HTTP_404_NOT_FOUND)
+                    nivel_bien_despachado = int(bien_despachado_instancia.nivel_jerarquico)
+                cont -= 1
+            # SE VALIDA QUE EL BIEN DESPACHADO SEA DESENDIENTE DEL BIEN SOLICITADO
+            if (bien_solicitado_instancia.id_bien_padre.id_bien not in arreglo_id_bienes_ancestros):
+                return Response({'success':False,'data':'En el número de posición (' + i['numero_posicion_despacho'] + ') el bien solicitado no es de la misma linea del bien despachado' },status=status.HTTP_404_NOT_FOUND)
+            # SECCIÓN X: SE VALIDA CREAN LAS CONDICIONES LA PARA LA VALIDACIÓN DE LA CANTIDAD DESPACHADA NO SUPERE LA SOLICITADA SI LAS UNIDADES SON IGUALES
+            aux_validacion_unidades_solicitado = ItemsSolicitudConsumible.objects.filter(Q(id_solicitud_consumibles=info_despacho['id_solicitud_consumo']) & Q(id_bien=i['id_bien_solicitado'])).first()
+            aux_validacion_unidades_despachado = CatalogoBienes.objects.filter(Q(id_bien=i['id_bien_despachado'])).first()
+            if aux_validacion_unidades_solicitado.id_bien.id_unidad_medida.nombre == aux_validacion_unidades_despachado.id_unidad_medida.nombre:
+                if i['cantidad_despachada'] > aux_validacion_unidades_solicitado.cantidad:
+                    return Response({'success':False,'data':'Una de las cantidades despahcadas supera la cantidad solicitada' },status=status.HTTP_404_NOT_FOUND)
+                if not aux_validacion_bienes_repetidos.get(str(i['id_bien_solicitado'])):
+                    aux_validacion_bienes_repetidos[str(i['id_bien_solicitado'])] = [i['cantidad_despachada']]
+                else:
+                    aux_validacion_bienes_repetidos[str(i['id_bien_solicitado'])].append(i['cantidad_despachada'])
+                aux_validacion_unidades_dic[str(i['id_bien_solicitado'])] = True
+            else:
+                aux_validacion_unidades_dic[str(i['id_bien_solicitado'])] = False
+        
+            # ESTO SE USA PARA UNA VALIDACIÓN
+            aux_validacion_cantidades_totales.append(i['id_bien_solicitado'])
 
+        # CON LAS CONDICIONES PREPARADAS EN "SECCIÓN X" SE VALIDAN LAS CANTIDADES SI TIENEN LA MISMA UNIDAD
+        for key, value in aux_validacion_bienes_repetidos.items():
+            aux_validacion_bienes_repetidos[key] = sum(value)
+            aux_local_uno = ItemsSolicitudConsumible.objects.filter(Q(id_solicitud_consumibles=info_despacho['id_solicitud_consumo']) & Q(id_bien=int(key))).first()
+            if int(aux_validacion_bienes_repetidos[key]) > aux_local_uno.cantidad:
+                return Response({'success':False,'data':'Una de las cantidades despahcadas supera la cantidad solicitada' },status=status.HTTP_404_NOT_FOUND)
+ 
+        serializer = self.serializer_class(data=info_despacho)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        
+        serializer_items = self.serializer_item_consumo(data=items_despacho, many=True)
+        serializer_items.is_valid(raise_exception=True)
+        serializer_items.save()
+        
         return Response({'success':True,'data':'Despacho creado con éxito', 'Numero solicitud' : info_despacho["numero_despacho_consumo"]},status=status.HTTP_200_OK)
     
 
