@@ -320,11 +320,11 @@ class UpdateRegistroMantenimiento(generics.UpdateAPIView):
         return Response({'success':False,'detail':'No existe el mantenimineto'},status=status.HTTP_404_NOT_FOUND)
         
     
-class ValidarFechasProgramacion(generics.ListAPIView):
+class ValidarFechasProgramacion(generics.CreateAPIView):
     serializer_class = SerializerProgramacionMantenimientosPost
     queryset = ProgramacionMantenimientos.objects.all()
     
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         datos_ingresados = request.data
         today = date.today()
         # Validacion de datos entrantes
