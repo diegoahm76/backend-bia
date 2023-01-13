@@ -17,7 +17,8 @@ from almacen.serializers.despachos_serializers import (
     SerializersDespachoConsumo,
     SerializersItemDespachoConsumo,
     SerializersSolicitudesConsumibles,
-    SerializersItemsSolicitudConsumible
+    SerializersItemsSolicitudConsumible,
+    AgregarBienesConsumoConservacionSerializer
 )
 from almacen.models.solicitudes_models import (
     SolicitudesConsumibles, 
@@ -287,18 +288,31 @@ class FiltroDespachoConsumo(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def get(self,request):
+        if (request.query_params.get('numero_solicitud_por_tipo') != None and request.query_params.get('numero_solicitud_por_tipo') != "") and (request.query_params.get('es_despacho_conservacion') == None or request.query_params.get('es_despacho_conservacion')== ""):
+            return Response ({'success':False,'detail':'No puede filtrar por un número de solicitud sin haber definido si es despacho de conservación o no.'},status=status.HTTP_403_FORBIDDEN)
+        if (request.query_params.get('es_despacho_conservacion') != None and request.query_params.get('es_despacho_conservacion') != "") and (request.query_params.get('numero_solicitud_por_tipo') == None or request.query_params.get('numero_solicitud_por_tipo')== ""):
+            return Response ({'success':False,'detail':'Debe enviar el número de solicitud'},status=status.HTTP_403_FORBIDDEN)
+
         filter={}
+        
         for key,value in request.query_params.items():
-            if key in ['fecha_despacho','id_unidad_para_la_que_solicita']:
-                if key != 'id_unidad_para_la_que_solicita':
-                    filter[key+"__icontains"]=value
+            if key in ['numero_solicitud_por_tipo', 'fecha_despacho','id_unidad_para_la_que_solicita','es_despacho_conservacion']:
+                if key != 'id_unidad_para_la_que_solicita' and key != 'es_despacho_conservacion':
+                    filter[key+"__startswith"]=value
                 else:
-                    filter[key]=value
+                    if value != '':
+                        filter[key]=value
+        
+        if filter.get('es_despacho_conservacion') == 'true':
+            filter['es_despacho_conservacion']=True
+        elif filter.get('es_despacho_conservacion') == 'false':
+            filter['es_despacho_conservacion']=False
+        
         despachos=DespachoConsumo.objects.filter(**filter)
         if despachos:
             serializador=self.serializer_class(despachos,many=True)
             return Response ({'success':True,'detail':'Despacho encontrado','data':serializador.data},status=status.HTTP_200_OK)
-        return Response ({'success':False,'detail':'No se encontraron despachos'},status=status.HTTP_404_NOT_FOUND)
+        return Response ({'success':True,'detail':'No se encontraron despachos','data':[]},status=status.HTTP_200_OK)
 
 class SearchBienInventario(generics.ListAPIView):
     serializer_class=SearchBienInventarioSerializer
@@ -312,7 +326,7 @@ class SearchBienInventario(generics.ListAPIView):
         if (not codigo_bien or codigo_bien == '') or (not id_bodega or id_bodega == '') or (not fecha_despacho or fecha_despacho == ''):
             return Response({'success':False, 'detail':'Debe ingresar los parámetros de búsqueda'}, status=status.HTTP_400_BAD_REQUEST)
 
-        bien = CatalogoBienes.objects.filter(codigo_bien=codigo_bien, solicitable_vivero=True, cod_tipo_bien='C', nivel_jerarquico=5).first()
+        bien = CatalogoBienes.objects.filter(codigo_bien=codigo_bien, cod_tipo_bien='C', nivel_jerarquico=5).first()
         fecha_despacho_strptime = datetime.strptime(fecha_despacho, '%Y-%m-%d %H:%M:%S')
         
         if bien:
@@ -346,3 +360,64 @@ class SearchBienesInventario(generics.ListAPIView):
         serializador_inventario = self.serializer_class(inventario, many=True)
         
         return Response({'success':True, 'detail':'Se encontraron los siguientes resultados', 'data': serializador_inventario.data}, status=status.HTTP_200_OK)
+
+class AgregarBienesConsumoConservacionByCodigoBien(generics.ListAPIView):
+    serializer_class=AgregarBienesConsumoConservacionSerializer
+    queryset=CatalogoBienes.objects.all()
+    
+    def get(self,request):
+        codigo_bien = request.query_params.get('codigo_bien')
+        id_bodega = request.query_params.get('id_bodega')
+        fecha_despacho = request.query_params.get('fecha_despacho')
+        
+        if (not codigo_bien or codigo_bien == '') or (not id_bodega or id_bodega == '') or (not fecha_despacho or fecha_despacho == ''):
+            return Response({'success':False, 'detail':'Debe ingresar los parámetros de búsqueda'}, status=status.HTTP_400_BAD_REQUEST)
+
+        bien = CatalogoBienes.objects.filter(codigo_bien=codigo_bien, solicitable_vivero=True, cod_tipo_bien='C', nivel_jerarquico=5).first()
+        fecha_despacho_strptime = datetime.strptime(fecha_despacho, '%Y-%m-%d %H:%M:%S')
+        print("BIEN: ", bien)
+        if bien:
+            items_despachados = ItemDespachoConsumo.objects.filter(id_bien_despachado=bien.id_bien, id_despacho_consumo__fecha_despacho__gte=fecha_despacho_strptime)
+            print("ID_BIEN: ", bien.id_bien)
+            print("FECHA_DESPACHO: ", fecha_despacho_strptime)
+            print("ITEMS_DESPACHADOS: ", items_despachados)
+            if items_despachados:
+                return Response({'success':False, 'detail':'El bien tiene despachos o entregas posteriores a la fecha de despacho elegida', 'data': []}, status=status.HTTP_403_FORBIDDEN)
+                
+            bien_inventario = Inventario.objects.filter(id_bien=bien.id_bien, id_bodega=id_bodega).first()
+            
+            cantidad_actual=bien_inventario.cantidad_entrante_consumo - bien_inventario.cantidad_saliente_consumo
+            bien_inventario.cantidad_disponible=cantidad_actual
+            serializador=self.serializer_class(bien_inventario,many=False)
+            
+            return Response({'success':True, 'detail':'Se encontró el siguiente resultado','data':serializador.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success':True, 'detail':'El bien no existe', 'data': []}, status=status.HTTP_200_OK)
+        
+
+class AgregarBienesConsumoConservacionByLupa(generics.ListAPIView):
+    serializer_class=AgregarBienesConsumoConservacionSerializer
+    queryset=CatalogoBienes.objects.all()
+    
+    def get(self,request):
+        codigo_bien = request.query_params.get('codigo_bien_solicitado')
+        fecha_despacho = request.query_params.get('fecha_despacho')
+        
+        if (not codigo_bien or codigo_bien == '')  or (not fecha_despacho or fecha_despacho == ''):
+            return Response({'success':False, 'detail':'Debe ingresar los parámetros de búsqueda'}, status=status.HTTP_400_BAD_REQUEST)
+
+        bienes = CatalogoBienes.objects.filter(codigo_bien__startswith=codigo_bien, solicitable_vivero=True, cod_tipo_bien='C', nivel_jerarquico=5)
+
+        fecha_despacho_strptime = datetime.strptime(fecha_despacho, '%Y-%m-%d %H:%M:%S')
+        
+        if bienes:
+            bien_id_bien = [bien.id_bien for bien in bienes]
+            items_despachados = ItemDespachoConsumo.objects.filter(id_bien_despachado__in=bien_id_bien, id_despacho_consumo__fecha_despacho__gte=fecha_despacho_strptime)
+            items_despachados_list = [item.id_bien_despachado.id_bien for item in items_despachados]
+            list_bienes_end = [bien for bien in bien_id_bien if bien not in items_despachados_list]
+            bien_inventario = Inventario.objects.filter(id_bien__in=list_bienes_end)
+            serializador = self.serializer_class(bien_inventario, many=True)
+        
+            return Response({'success':True, 'detail':'Se encontró el siguiente resultado','data':serializador.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success':True, 'detail':'El bien no existe', 'data': []}, status=status.HTTP_200_OK)

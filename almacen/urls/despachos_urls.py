@@ -10,4 +10,6 @@ urlpatterns = [
     path('search-bienes-inventario/', views.SearchBienesInventario.as_view(), name='search-bienes-inventario'),
     path('get-despacho-consumo-by-numero-despacho/', views.GetDespachoConsumoByNumeroDespacho.as_view(), name='get-despacho-consumo-by-numero-despacho'),
     path('filter-despacho-consumo/', views.FiltroDespachoConsumo.as_view(), name='filter-despacho-consumo'),
+    path('agregar-bienes-consumo-conservacion-by-codigo-bien/', views.AgregarBienesConsumoConservacionByCodigoBien.as_view(), name='agregar-bienes-consumo-conservacion'),
+    path('agregar-bienes-consumo-conservacion-by-lupa/', views.AgregarBienesConsumoConservacionByLupa.as_view(), name='agregar-bienes-consumo-conservacion'),
 ]
