@@ -114,6 +114,7 @@ class CreateDespachoMaestro(generics.UpdateAPIView):
         aux_validacion_bienes_despachados_repetidos = []
         aux_validacion_bienes_despachados_contra_solicitados = []
         axu_validacion_cantidades_despachadas_total = []
+        valores_creados_detalles = []
         aux_validacion_bienes_repetidos = {}
         aux_validacion_unidades_dic = {}
         for i in items_despacho:
@@ -194,7 +195,12 @@ class CreateDespachoMaestro(generics.UpdateAPIView):
                     aux_validacion_unidades_dic[str(i['id_bien_solicitado'])] = True
                 else:
                     aux_validacion_unidades_dic[str(i['id_bien_solicitado'])] = False
-
+                # VALIDACION 95:
+                instancia_inventario_auxiliar = Inventario.objects.filter(Q(id_bien=i['id_bien_despachado'])&Q(id_bodega=i['id_bodega'])).first()
+                if not instancia_inventario_auxiliar:
+                    return Response({'success':False,'data':'Por favor verifique la existencia del bien en la bodega, o la existencia del bien en la tabla inventario' },status=status.HTTP_404_NOT_FOUND)
+                valores_creados_detalles.append({'nombre' : instancia_inventario_auxiliar.id_bien.nombre})
+                
             # VALIDACION 90: SE VALIDA QUE UN BIEN DESPACHADO NO SE REPITA DENTRO DEL MISMO DESPACHO
             if [i['id_bien_solicitado'], i['id_bien_despachado'], i['id_bodega']] in aux_validacion_bienes_despachados_repetidos:
                 return Response({'success':False,'data':'Error en los bienes despachados, no se puede despachar el mismo bien varias veces dentro de un despacho, elimine los bienes despachados repetidos' },status=status.HTTP_404_NOT_FOUND)
@@ -226,17 +232,33 @@ class CreateDespachoMaestro(generics.UpdateAPIView):
         serializer_items = self.serializer_item_consumo(data=items_despacho, many=True)
         serializer_items.is_valid(raise_exception=True)
         serializer_items.save()
-        
+        # INSERT EN LA TABLA INVENTARIO
         for i in items_despacho:
-            inventaria_instancia = Inventario.objects.filter(Q(id_bien=i['id_bien_despachado'])&Q(id_bodega=i['id_bodega']))
-            
+            inventario_instancia = Inventario.objects.filter(Q(id_bien=i['id_bien_despachado'])&Q(id_bodega=i['id_bodega'])).first()
+            inventario_instancia.cantidad_saliente_consumo = i['cantidad_despachada']
+            inventario_instancia.save()
+        
+        # INSERT EN LA TABLA SOLICITUDES DE CONSUMIBLES
         despacho_creado = DespachoConsumo.objects.filter(Q(id_solicitud_consumo=info_despacho['id_solicitud_consumo']) & Q(numero_despacho_consumo=info_despacho['numero_despacho_consumo'])).first()
         instancia_solicitud.id_despacho_consumo = despacho_creado.id_despacho_consumo
         instancia_solicitud.fecha_cierre_solicitud = despacho_creado.fecha_despacho
         instancia_solicitud.gestionada_almacen = True
         instancia_solicitud.solicitud_abierta = False
-        print(despacho_creado.id_despacho_consumo)
-        print(despacho_creado.fecha_despacho)
+        instancia_solicitud.save()
+        
+        # AUDITORIA MAESTRO DETALLE DE DESPACHO
+        descripcion = {"numero_despacho_consumo": str(info_despacho['numero_despacho_consumo']), "fecha_despacho": str(info_despacho['fecha_despacho'])}
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 45,
+            "cod_permiso": "CR",
+            "subsistema": 'ALMA',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_creados_detalles": valores_creados_detalles
+            }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
         return Response({'success':True,'data':'Despacho creado con éxito', 'Numero solicitud' : info_despacho["numero_despacho_consumo"]},status=status.HTTP_200_OK)
     
 
