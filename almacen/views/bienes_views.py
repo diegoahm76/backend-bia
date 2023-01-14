@@ -301,37 +301,39 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                 id_bien_padre=padre
                             )
                             serializer = self.serializer_class(catalogo_bien)
-                        elif data['nivel_jerarquico'] == 1:
-                            try:
-                                id_unidad_medida = UnidadesMedida.objects.get(
-                                    id_unidad_medida=data['id_unidad_medida'])
-                                pass
-                            except:
-                                return Response({'success': False, 'detail': 'El id de unidad de medida ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
-                            try:
-                                id_porcentaje_iva = PorcentajesIVA.objects.get(
-                                    id_porcentaje_iva=data['id_porcentaje_iva'])
-                                pass
-                            except:
-                                return Response({'success': False, 'detail': 'El id de porcentaje de iva ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                        else:
+                            return Response({'success':False, 'detail':'el nivel del bien padre no corresponde con el nivel anterior'})
+                    elif data['nivel_jerarquico'] == 1:
+                        try:
+                            id_unidad_medida = UnidadesMedida.objects.get(
+                                id_unidad_medida=data['id_unidad_medida'])
+                            pass
+                        except:
+                            return Response({'success': False, 'detail': 'El id de unidad de medida ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                        try:
+                            id_porcentaje_iva = PorcentajesIVA.objects.get(
+                                id_porcentaje_iva=data['id_porcentaje_iva'])
+                            pass
+                        except:
+                            return Response({'success': False, 'detail': 'El id de porcentaje de iva ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
 
-                            catalogo_bien = CatalogoBienes.objects.create(
-                                id_bien=data['id_bien'],
-                                codigo_bien=data['codigo_bien'],
-                                nombre=data['nombre'],
-                                cod_tipo_bien=data['cod_tipo_bien'],
-                                nivel_jerarquico=data['nivel_jerarquico'],
-                                nombre_cientifico=data['nombre_cientifico'],
-                                descripcion=data['descripcion'],
-                                id_unidad_medida=data['id_unidad_medida'],
-                                id_porcentaje_iva=data['id_porcentaje_iva'],
-                                cod_metodo_valoracion=data['cod_metodo_valoracion'],
-                                stock_minimo=data['stock_minimo'],
-                                stock_maximo=data['stock_maximo'],
-                                solicitable_vivero=data['solicitable_vivero'],
-                                id_bien_padre=None
-                            )
-                            serializer = self.serializer_class(catalogo_bien)
+                        catalogo_bien = CatalogoBienes.objects.create(
+                            id_bien=data['id_bien'],
+                            codigo_bien=data['codigo_bien'],
+                            nombre=data['nombre'],
+                            cod_tipo_bien=data['cod_tipo_bien'],
+                            nivel_jerarquico=data['nivel_jerarquico'],
+                            nombre_cientifico=data['nombre_cientifico'],
+                            descripcion=data['descripcion'],
+                            id_unidad_medida=id_unidad_medida,
+                            id_porcentaje_iva=id_porcentaje_iva,
+                            cod_metodo_valoracion=data['cod_metodo_valoracion'],
+                            stock_minimo=data['stock_minimo'],
+                            stock_maximo=data['stock_maximo'],
+                            solicitable_vivero=data['solicitable_vivero'],
+                            id_bien_padre=None
+                        )
+                        serializer = self.serializer_class(catalogo_bien)
                             
             return Response(serializer.data)
 
