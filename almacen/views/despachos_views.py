@@ -9,8 +9,8 @@ from seguridad.utils import Util
 from almacen.utils import UtilAlmacen
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Q, Value, IntegerField, CharField
-from datetime import datetime, date
+from django.db.models import Q, Sum,F
+from datetime import datetime, date,timedelta
 import copy
 import json
 from almacen.serializers.despachos_serializers import (
@@ -19,7 +19,8 @@ from almacen.serializers.despachos_serializers import (
     SerializersItemDespachoConsumo,
     SerializersSolicitudesConsumibles,
     SerializersItemsSolicitudConsumible,
-    AgregarBienesConsumoConservacionSerializer
+    AgregarBienesConsumoConservacionSerializer,
+    GetItemOtrosOrigenesSerializers
 )
 from almacen.models.solicitudes_models import (
     SolicitudesConsumibles, 
@@ -563,9 +564,36 @@ class AgregarBienesConsumoConservacionByLupa(generics.ListAPIView):
             for inventario in bien_inventario:
                 cantidad_disponible = [cantidad_disponible['cantidad_disponible'] for cantidad_disponible in cantidades_disponibles if cantidad_disponible['id_bien'] == inventario.id_bien.id_bien and cantidad_disponible['id_bodega'] == inventario.id_bodega.id_bodega][0]
                 inventario.cantidad_disponible = cantidad_disponible
-            
+           
             serializador = self.serializer_class(bien_inventario, many=True)
         
             return Response({'success':True, 'detail':'Se encontraron los siguientes resultados','data':serializador.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success':True, 'detail':'El bien no existe', 'data': []}, status=status.HTTP_200_OK)
+
+class GetItemOtrosOrigenes(generics.ListAPIView):
+    serializer_class=GetItemOtrosOrigenesSerializers
+    queryset=EntradasAlmacen.objects.all()
+    
+    def get(self,request,id_bien):
+        fecha_hace_un_año=datetime.today()-timedelta(days=365)
+        fecha_despacho=request.query_params.get('fecha_despacho')
+        if not fecha_despacho:
+            return Response({'success':False,'detail':'Envía el parámetro de fecha de despacho del despacho'},status=status.HTTP_403_FORBIDDEN)
+        items=ItemEntradaAlmacen.objects.filter(id_bien=id_bien,id_entrada_almacen__fecha_entrada__gte=fecha_hace_un_año,
+                                                id_entrada_almacen__fecha_entrada__lte=fecha_despacho).filter(Q(id_entrada_almacen__id_tipo_entrada=2) | 
+                                                                                                              Q(id_entrada_almacen__id_tipo_entrada=3) | 
+                                                                                                              Q(id_entrada_almacen__id_tipo_entrada=4)).values('id_bien',"id_entrada_almacen",
+                                                                                                                                                               codigo_bien=F('id_bien__codigo_bien'),
+                                                                                                                                                               nombre=F('id_bien__nombre'),
+                                                                                                                                                               numero_documento=F('id_entrada_almacen__numero_entrada_almacen'),
+                                                                                                                                                               tipo_documento=F('id_entrada_almacen__id_tipo_entrada__nombre')).annotate(cantidad_total_entrada=Sum('cantidad'))
+        items_list=[item['id_entrada_almacen'] for item in items]
+        items_despachados=ItemDespachoConsumo.objects.filter(id_bien_despachado=id_bien,id_entrada_almacen_bien__in=items_list).values('id_bien_despachado','id_entrada_almacen_bien').annotate(cantidad_total_despachada=Sum('cantidad_despachada'))
+        for item in items:
+            item_despachado= [despacho for despacho in items_despachados if despacho['id_bien_despachado'] == item['id_bien'] and despacho['id_entrada_almacen_bien']==item['id_entrada_almacen']]
+            item['cantidad_por_distribuir']=item['cantidad_total_entrada']-item_despachado[0]['cantidad_total_despachada'] if item_despachado else item['cantidad_total_entrada']
+        return Response({'success':True, 'detail':'Se encontraron los siguientes resultados','data':items}, status=status.HTTP_200_OK)
+        
+        
+        

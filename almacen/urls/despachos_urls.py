@@ -14,4 +14,6 @@ urlpatterns = [
     path('filter-despacho-consumo/', views.FiltroDespachoConsumo.as_view(), name='filter-despacho-consumo'),
     path('agregar-bienes-consumo-conservacion-by-codigo-bien/', views.AgregarBienesConsumoConservacionByCodigoBien.as_view(), name='agregar-bienes-consumo-conservacion'),
     path('agregar-bienes-consumo-conservacion-by-lupa/', views.AgregarBienesConsumoConservacionByLupa.as_view(), name='agregar-bienes-consumo-conservacion'),
+    
+    path('get-items-otros-origenes/<str:id_bien>/', views.GetItemOtrosOrigenes.as_view(), name='get-items-otros-origenes'),
 ]
