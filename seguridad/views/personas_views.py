@@ -287,7 +287,7 @@ class GetPersonaNatural(generics.ListAPIView):
         persona=Personas.objects.filter(**filter)
         if persona:
             serializador=self.serializer_class(persona,many=True)
-            return Response({"success":True,"detail":"Se econtraron personas","Persona":serializador.data},status=status.HTTP_200_OK)
+            return Response({"success":True,"detail":"Se encontraron personas","Persona":serializador.data},status=status.HTTP_200_OK)
         return Response({"success":False,"detail":"No se encontraron personas"},status=status.HTTP_403_FORBIDDEN)
 class GetPersonaJuridica(generics.ListAPIView):
     serializer_class=PersonaJuridicaSerializer
@@ -301,7 +301,7 @@ class GetPersonaJuridica(generics.ListAPIView):
         persona=Personas.objects.filter(**filter)
         if persona:
             serializador=self.serializer_class(persona,many=True)
-            return Response({"success":True,"detail":"Se econtraron personas","Persona":serializador.data},status=status.HTTP_200_OK)
+            return Response({"success":True,"detail":"Se encontraron personas","Persona":serializador.data},status=status.HTTP_200_OK)
         return Response({"success":False,"detail":"No se encontraron personas"},status=status.HTTP_403_FORBIDDEN)
     
     

@@ -8,6 +8,7 @@ from almacen.models.inventario_models import (
 )
 from almacen.models.bienes_models import EntradasAlmacen, ItemEntradaAlmacen
 import re, requests
+from django.db.models import Q
 
 class UtilAlmacen:
     
@@ -54,6 +55,23 @@ class UtilAlmacen:
             saldo_actual = inventario.cantidad_entrante_consumo - (inventario.cantidad_saliente_consumo if inventario.cantidad_saliente_consumo else 0)
             
             entradas = EntradasAlmacen.objects.filter(fecha_entrada__gte=fecha_despacho, entrada_anulada=None)
+            cantidad_total_entradas = {'id_bien': inventario.id_bien.id_bien, 'id_bodega': inventario.id_bodega.id_bodega, 'cantidad_disponible': saldo_actual}
+            if entradas:
+                entradas_id = [entrada.id_entrada_almacen for entrada in entradas] if entradas else []
+                cantidad_total_entradas = ItemEntradaAlmacen.objects.filter(id_entrada_almacen__in=entradas_id, id_bien=inventario.id_bien, id_bodega = inventario.id_bodega).values('id_bien', 'id_bodega').annotate(cantidad_disponible=saldo_actual - Sum('cantidad')).first()
+            
+            cantidades_disponibles.append(cantidad_total_entradas)
+            
+        return cantidades_disponibles
+
+    @staticmethod
+    def get_cantidades_disponibles_entregas(bienes_id, fecha_despacho):
+        cantidades_disponibles = []
+        inventarios = Inventario.objects.filter(id_bien__in=bienes_id)
+        for inventario in inventarios:
+            saldo_actual = inventario.cantidad_entrante_consumo - (inventario.cantidad_saliente_consumo if inventario.cantidad_saliente_consumo else 0)
+            
+            entradas = EntradasAlmacen.objects.filter(Q(fecha_entrada__gte=fecha_despacho) & Q(entrada_anulada=None) & Q(id_tipo_entrada=2) | Q(id_tipo_entrada=3) | Q(id_tipo_entrada=4))
             cantidad_total_entradas = {'id_bien': inventario.id_bien.id_bien, 'id_bodega': inventario.id_bodega.id_bodega, 'cantidad_disponible': saldo_actual}
             if entradas:
                 entradas_id = [entrada.id_entrada_almacen for entrada in entradas] if entradas else []

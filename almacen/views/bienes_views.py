@@ -335,7 +335,7 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                         )
                         serializer = self.serializer_class(catalogo_bien)
                             
-            return Response(serializer.data)
+            return Response({'success': False, 'detail': 'Bien guardado exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
 
 
 class GetCatalogoBienesList(generics.ListAPIView):
@@ -554,8 +554,8 @@ class SearchArticuloByDocIdentificador(generics.ListAPIView):
                 (x, y) for x, y in estados_articulo_CHOICES)
             estado = diccionario_cod_estado_activo[inventario.cod_estado_activo]
             data_serializado['estado'] = estado
-            return Response({'success': True, 'detail': 'Se econtraron elementos', 'Elementos': data_serializado}, status=status.HTTP_200_OK)
-        return Response({'success': False, 'detail': 'No se econtró elementos', 'data': bien}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': True, 'detail': 'Se encontraron elementos', 'Elementos': data_serializado}, status=status.HTTP_200_OK)
+        return Response({'success': False, 'detail': 'No se encontró elementos', 'data': bien}, status=status.HTTP_404_NOT_FOUND)
 
 
 class SearchArticulosByNombreDocIdentificador(generics.ListAPIView):
@@ -589,7 +589,7 @@ class SearchArticulosByNombreDocIdentificador(generics.ListAPIView):
                 estado = inventario_instance.cod_estado_activo if inventario_instance else None
                 item['estado'] = diccionario_cod_estado_activo[estado] if estado else None
 
-            return Response({'success': True, 'detail': 'Se econtraron elementos', 'Elementos': data_serializado}, status=status.HTTP_200_OK)
+            return Response({'success': True, 'detail': 'Se encontraron elementos', 'Elementos': data_serializado}, status=status.HTTP_200_OK)
         return Response({'success': False, 'detail': 'No se encontró elementos', 'data': bien}, status=status.HTTP_404_NOT_FOUND)
 
 
@@ -673,7 +673,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
         id_bienes_enviados_validar = [item['id_bien'] for item in items_entrada if item['id_bien'] != None]
         id_bien_padre_enviados = [item['id_bien_padre'] for item in items_entrada if item['id_bien_padre'] != None]
         bienes_nodo_cinco = CatalogoBienes.objects.filter(id_bien__in=id_bienes_enviados_validar)
-        if len(id_bienes_enviados_validar) != len(bienes_nodo_cinco):
+        if len(set(id_bienes_enviados_validar)) != len(bienes_nodo_cinco):
             return Response({'success': False, 'detail': 'Verificar que todos los id bien enviados existan'}, status=status.HTTP_400_BAD_REQUEST)
         bienes_padre_nodo_cinco = CatalogoBienes.objects.filter( id_bien__in=id_bien_padre_enviados)
         for bien in bienes_nodo_cinco:
