@@ -3,6 +3,7 @@ from almacen.views import despachos_views as views
 
 urlpatterns = [
     path('crear-despacho-bienes-de-consumo/', views.CreateDespachoMaestro.as_view(), name='crear-despacho-bienes-de-consumo'),
+    path('actualizar-despacho-bienes-de-consumo/', views.ActualizarDespachoConsumo.as_view(), name='actualizar-despacho-bienes-de-consumo'),
     path('obtener-numero-despacho/', views.GetNroDocumentoDespachoBienesConsumo.as_view(), name='obtener-numero-despacho'),
     path('anular-despacho-bienes-de-consumo/<str:despacho_a_anular>/', views.AnularDespachoConsumo.as_view(), name='anular-despacho-bienes-de-consumo'),
     path('get-solicitudes-aprobados-abiertos/', views.SearchSolicitudesAprobadasYAbiertos.as_view(), name='get-solicitudes-aprobados-abiertos'),

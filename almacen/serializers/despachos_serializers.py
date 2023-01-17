@@ -12,7 +12,11 @@ class SerializersDespachoConsumo(serializers.ModelSerializer):
     class Meta:
         model=DespachoConsumo
         fields=('__all__')
-
+class SerializersDespachoConsumoActualizar(serializers.ModelSerializer):
+    #nombre = serializers.CharField(validators=[UniqueValidator(queryset=Marcas.objects.all())])
+    class Meta:
+        model=DespachoConsumo
+        exclude=('numero_despacho_consumo', 'fecha_despacho', 'id_persona_despacha',)
 class SerializersItemDespachoConsumo(serializers.ModelSerializer):
     #nombre = serializers.CharField(validators=[UniqueValidator(queryset=Marcas.objects.all())])
     class Meta:
