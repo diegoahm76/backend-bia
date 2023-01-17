@@ -73,6 +73,7 @@ urlpatterns = [
 
     path('api/conservacion/choices/', include('conservacion.urls.choices_urls')),
     path('api/conservacion/viveros/', include('conservacion.urls.viveros_urls')),
+    path('api/conservacion/despachos/', include('conservacion.urls.despachos_urls')),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

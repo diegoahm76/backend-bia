@@ -78,7 +78,7 @@ class SearchBienInventarioSerializer(serializers.ModelSerializer):
     
     class Meta:
         model=Inventario
-        fields=('id_inventario', 'id_bien', 'codigo_bien', 'nombre', 'id_bodega', 'bodega', 'cantidad_disponible','origen')
+        fields=('id_inventario', 'id_bien', 'codigo_bien', 'nombre', 'id_bodega', 'bodega', 'cantidad_disponible')
 
 class AgregarBienesConsumoConservacionSerializer(serializers.ModelSerializer):
     codigo_bien=serializers.ReadOnlyField(source='id_bien.codigo_bien',default=None)
