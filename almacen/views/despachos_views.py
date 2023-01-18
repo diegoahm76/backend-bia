@@ -534,8 +534,56 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
         Util.save_auditoria_maestro_detalle(auditoria_data)
             
         return Response({'success':True,'detail':'Despacho actualizado con éxito'},status=status.HTTP_200_OK)
-        
-    
+
+class EliminarItemsDespacho(generics.DestroyAPIView):
+    serializer_class = SerializersItemDespachoConsumo
+    queryset=ItemDespachoConsumo.objects.all()
+
+    def destroy(self, request, id_despacho_consumo):
+        datos_ingresados = request.data
+        user_logeado = request.user
+        # VALIDACION 0: SE VALIDA EL QUE EL USUARIO ESTÉ LOGUEADO
+        if str(user_logeado) == 'AnonymousUser':
+            return Response({'success':False,'detail':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
+        ids_items_a_eliminar = [i['id_item_despacho_consumo'] for i in datos_ingresados]
+        instancia_despacho = DespachoConsumo.objects.filter(id_despacho_consumo=id_despacho_consumo).first()
+        aux_instancia_items = ItemDespachoConsumo.objects.filter(id_despacho_consumo=instancia_despacho.id_despacho_consumo)
+        if len(ids_items_a_eliminar) != len(set(ids_items_a_eliminar)):
+            return Response({'success':False,'detail':'Verifique que no existan items repetidos dentro de la petición' },status=status.HTTP_404_NOT_FOUND)
+        if len(aux_instancia_items) <= len(datos_ingresados):
+            return Response({'success':False,'detail':'La cantidad de items que desea borrar es superior o igual a los que el despacho posee' },status=status.HTTP_404_NOT_FOUND)
+        # SE VALIDA QUE CADA UNO DE LOS ITEMS INGRESADOS PERTENEZCA A AL DESPACHO QUE SE INGRESÓ EN LA URL
+        for  i in datos_ingresados:
+            instance = ItemDespachoConsumo.objects.filter(Q(id_item_despacho_consumo=i['id_item_despacho_consumo']) & Q(id_despacho_consumo=instancia_despacho.id_despacho_consumo)).first()
+            if not instance:
+                return Response({'success':False,'detail':'Uno de los items que desea borrar no pertenece a la solicitud que ingresó' },status=status.HTTP_404_NOT_FOUND)
+        # INSERT EN LA TABLA INVENTARIO
+        for i in datos_ingresados:
+            instance = ItemDespachoConsumo.objects.filter(Q(id_item_despacho_consumo=i['id_item_despacho_consumo']) & Q(id_despacho_consumo=instancia_despacho.id_despacho_consumo)).first()
+            inventario_instancia = Inventario.objects.filter(Q(id_bien=instance.id_bien_despachado)&Q(id_bodega=instance.id_bodega)).first()
+            inventario_instancia.cantidad_saliente_consumo = int(inventario_instancia.cantidad_saliente_consumo) - int(instance.cantidad_despachada)
+            inventario_instancia.save()
+        # SE BORRAN LOS ITEMS DEL DESPACHO
+        valores_eliminados_detalles = []
+        for  i in datos_ingresados:
+            instance = ItemDespachoConsumo.objects.filter(Q(id_item_despacho_consumo=i['id_item_despacho_consumo']) & Q(id_despacho_consumo=instancia_despacho.id_despacho_consumo)).first()
+            valores_eliminados_detalles.append({'nombre' : instance.id_bien_despachado.nombre})
+            instance.delete()
+        print(valores_eliminados_detalles)
+        descripcion = {"numero_despacho_almacen": str(instancia_despacho.numero_despacho_consumo), "fecha_despacho": str(instancia_despacho.fecha_despacho)}
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 35,
+            "cod_permiso": "AC",
+            "subsistema": 'ALMA',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_eliminados_detalles": valores_eliminados_detalles
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
+        return Response({'success':True,'detail':'Se eliminaron los items del despacho de manera correcta'},status=status.HTTP_200_OK)
+
 class AnularDespachoConsumo(generics.UpdateAPIView):
     serializer_class = SerializersDespachoConsumo
     queryset=DespachoConsumo.objects.all()
