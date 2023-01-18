@@ -359,6 +359,8 @@ class UpdateViveros(generics.UpdateAPIView):
         persona = request.user.persona.id_persona
         data['id_persona_crea'] = persona
         vivero_actualizar = Vivero.objects.filter(id_vivero=id_vivero_ingresado).first()
+        if not vivero_actualizar:
+            return Response({'status':False, 'detail':'No se encontró ningun vivero'}, status=status.HTTP_400_BAD_REQUEST)
         previous = copy.copy(vivero_actualizar)
         # VALIDAR ASIGNACIÓN VIVERISTA
         viverista = data.get('id_viverista_actual')
@@ -368,9 +370,9 @@ class UpdateViveros(generics.UpdateAPIView):
                 return Response({'status':False, 'detail':'Debe elegir un viverista que exista'}, status=status.HTTP_400_BAD_REQUEST)
             if int(viverista) != int(vivero_actualizar.id_viverista_actual.id_persona):
                 data['fecha_inicio_viverista_actual'] = datetime.now()
-        aux_vivero = Vivero.objects.filter(Q(id_viverista_actual=viverista_existe.id_persona)&~Q(id_vivero=vivero_actualizar.id_vivero))
-        if aux_vivero:
-            return Response({'status':False, 'detail':'Este viverista ya está asignado a otro vivero'}, status=status.HTTP_400_BAD_REQUEST)
+            aux_vivero = Vivero.objects.filter(Q(id_viverista_actual=viverista_existe.id_persona)&~Q(id_vivero=vivero_actualizar.id_vivero))
+            if aux_vivero:
+                return Response({'status':False, 'detail':'Este viverista ya está asignado a otro vivero'}, status=status.HTTP_400_BAD_REQUEST)
         serializador = self.serializer_class(vivero_actualizar,data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
