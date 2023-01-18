@@ -395,9 +395,10 @@ class CreateSolicitud(generics.UpdateAPIView):
         if bandera_actualizar == False:
             if solicitudes_existentes:
                 numero_solicitudes_no_conservacion = [i.nro_solicitud_por_tipo for i in solicitudes_existentes if i.es_solicitud_de_conservacion == False]
-                info_solicitud['nro_solicitud_por_tipo'] = max(numero_solicitudes_no_conservacion) + 1
-            else:
-                info_solicitud['nro_solicitud_por_tipo'] = 1    
+                if len(numero_solicitudes_no_conservacion) > 0:
+                    info_solicitud['nro_solicitud_por_tipo'] = max(numero_solicitudes_no_conservacion) + 1
+                else:
+                    info_solicitud['nro_solicitud_por_tipo'] = 1    
             serializer = self.serializer_class(data=info_solicitud)
             serializer.is_valid(raise_exception=True)
             serializer.save()        

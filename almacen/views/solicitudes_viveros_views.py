@@ -190,9 +190,10 @@ class CreateSolicitudViveros(generics.UpdateAPIView):
         if bandera_actualizar == False:
             if solicitudes_existentes:
                 numero_solicitudes_conservacion = [i.nro_solicitud_por_tipo for i in solicitudes_existentes if i.es_solicitud_de_conservacion == True]
-                info_solicitud['nro_solicitud_por_tipo'] = max(numero_solicitudes_conservacion) + 1
-            else:
-                info_solicitud['nro_solicitud_por_tipo'] = 1    
+                if len(numero_solicitudes_conservacion) > 0:
+                    info_solicitud['nro_solicitud_por_tipo'] = max(numero_solicitudes_conservacion) + 1
+                else:
+                    info_solicitud['nro_solicitud_por_tipo'] = 1    
             serializer = self.serializer_class(data=info_solicitud)
             serializer.is_valid(raise_exception=True)
             serializer.save()        
@@ -265,3 +266,19 @@ class CreateSolicitudViveros(generics.UpdateAPIView):
             
             return Response({'success':True,'data':'Solicitud actualizada con éxito', 'Numero solicitud' : info_solicitud["nro_solicitud_por_tipo"]},status=status.HTTP_200_OK)
         return Response({'success':True,'data':'Solicitud registrada con éxito', 'Numero solicitud' : info_solicitud["nro_solicitud_por_tipo"]},status=status.HTTP_200_OK)
+    
+class GetNroDocumentoSolicitudesBienesConsumoVivero(generics.ListAPIView):
+# ESTA FUNCIONALIDAD PERMITE CONSULTAR EL ÚLTIMO NÚMERO DE DOCUMENTO DE LA CREACIÓN DE SOLICITUDES
+    serializer_class = CrearSolicitudesviverosPostSerializer
+    queryset=SolicitudesConsumibles.objects.all()
+    
+    def get(self, request, es_conservacion):
+        if es_conservacion == 'true':
+            nro_solicitud = SolicitudesConsumibles.objects.filter(es_solicitud_de_conservacion=True).order_by('nro_solicitud_por_tipo').last()
+        elif es_conservacion == 'false':
+            return Response({'success':False,'data':'En este módulo solo se pueden consultar números de solicitudes tipo vivero'},status=status.HTTP_400_BAD_REQUEST)
+            #nro_solicitud = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles = aux).first()
+        else:
+            return Response({'success':False,'data':'Ingrese una opción válida, false o true'},status=status.HTTP_400_BAD_REQUEST)
+        return Response({'success':True,'Número de solicitud':nro_solicitud.nro_solicitud_por_tipo + 1, },status=status.HTTP_200_OK)
+    
