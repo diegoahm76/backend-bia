@@ -322,6 +322,8 @@ class CreateSolicitud(generics.UpdateAPIView):
                 return Response({'success':False,'data':'La cantidad debe ser un número entero' },status=status.HTTP_404_NOT_FOUND)
             if not str(i['nro_posicion']).isdigit():
                 return Response({'success':False,'data':'El número de posición debe ser un número entero' },status=status.HTTP_404_NOT_FOUND)
+            if bien.solicitable_vivero != False:
+                return Response({'success':False,'data':'En este módulo solo se pueden despachar bienes solicitables por vivero' },status=status.HTTP_404_NOT_FOUND)
             # unidad_de_medida = UnidadesMedida.objects.filter(id_unidad_medida = i['id_unidad_medida']).first()
             # if not unidad_de_medida:
             #     return Response({'success':False,'data':'La unidad de medida (' + unidad_de_medida.nombre + ') no existe' },status=status.HTTP_404_NOT_FOUND)
