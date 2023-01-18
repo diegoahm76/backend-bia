@@ -76,6 +76,8 @@ class CreateDespachoMaestro(generics.UpdateAPIView):
             return Response({'success':False,'detail':'Debe ingresar un id de solicitud válido'},status=status.HTTP_404_NOT_FOUND)
         if instancia_solicitud.solicitud_abierta == False or instancia_solicitud.estado_aprobacion_responsable != 'A':
             return Response({'success':False,'detail':'La solicitud a despachar debe de estar aprobada por el funcionario responsable y no debe de estar cerrada'},status=status.HTTP_404_NOT_FOUND)
+        if instancia_solicitud.es_solicitud_de_conservacion != False:
+            return Response({'success':False,'detail':'En este mmódulo no se pueden despahcar solicitudes de vivero'},status=status.HTTP_404_NOT_FOUND)
         #Asignación de fecha de registro
         info_despacho['fecha_registro'] = datetime.now()
         #Se valida que la fecha de la solicitud no sea inferior a (fecha_actual - 8 días) ni superior a la actual
