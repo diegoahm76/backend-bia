@@ -68,8 +68,6 @@ class CreateDespachoMaestro(generics.UpdateAPIView):
             return Response({'success':False,'detail':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
         if info_despacho['es_despacho_conservacion'] != False:
             return Response({'success':False,'detail':'En este servicio no se pueden procesar despachos de vivero, además verfique el campo (es_despacho_conservacion) debe ser True o False'},status=status.HTTP_404_NOT_FOUND)
-        # if info_despacho['es_despacho_conservacion'] == False and info_despacho['id_entrada_almacen_cv'] != None:
-        #     return Response({'success':False,'detail':'Si ingresa (es_despacho_conservacion) en false, el campo id_entrada_almacen_cv debe ser null'},status=status.HTTP_404_NOT_FOUND)
         if len(info_despacho['motivo']) > 255:
             return Response({'success':False,'detail':'El motivo debe tener como máximo 255 caracteres'},status=status.HTTP_404_NOT_FOUND)
         #Validaciones de la solicitud
@@ -334,7 +332,7 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
         aux_validacion_bienes_repetidos = {}
         aux_validacion_unidades_dic = {}
         valores_actualizados__solicitud = []
-        aux_dic_mod_inventario = {}
+        aux_dic_mod_inventario = []
         items_a_actualizar = []
         items_a_crear = []
         valores_actualizados_detalles = []
@@ -351,7 +349,7 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
                 valores_actualizados__solicitud.append(instancia_item_a_actualizar_aux_5.id_bien_solicitado.id_bien)
                 ajuste_cantidad_despachada = i.get('cantidad_despachada') - instancia_item_a_actualizar_aux_5.cantidad_despachada    
                 # SE GUARDAN LOS DATOS NECESARIOS PARA ACTUALIZAR EL INVENTARIO          
-                aux_dic_mod_inventario[instancia_item_a_actualizar_aux_5.id_bien_despachado.id_bien] = [instancia_item_a_actualizar_aux_5.id_bodega.id_bodega, ajuste_cantidad_despachada]
+                aux_dic_mod_inventario.append([instancia_item_a_actualizar_aux_5.id_bien_despachado.id_bien, instancia_item_a_actualizar_aux_5.id_bodega.id_bodega, ajuste_cantidad_despachada])
                 # VALIDACION 94:
                 if i['cantidad_despachada'] == 0:
                     if i['id_bien_despachado'] != 0:
@@ -381,10 +379,13 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
                     i['numero_posicion_despacho'] = instancia_item_a_actualizar_aux_5.numero_posicion_despacho
                 items_a_actualizar.append(i)
                 # VALIDACION 6: SE VALIDA QUE LA CANTIDAD DESPACHADA SEA CORRECTA (EN LOS ITEMS ACTUALIZADOS)
-                aux_validacion_cantidades_fecha_despacho = UtilAlmacen.get_cantidad_disponible(i['id_bien_despachado'], i['id_bodega'], fecha_despacho)
+                aux_validacion_cantidades_fecha_despacho = UtilAlmacen.get_cantidad_posible(i['id_bien_despachado'], i['id_bodega'], despacho_maestro_instancia.id_despacho_consumo)
                 if i['cantidad_despachada'] > aux_validacion_cantidades_fecha_despacho:
-                    return Response({'success':False,'detail':'Verifique que las cantidades del bien a despachar en la bodega ingresada en la fecha de despacho sean correctas' },status=status.HTTP_404_NOT_FOUND)
+                    return Response({'success':False,'detail':'Verifique que las cantidades del bien a actualizar en el despacho, en la bodega ingresada en la fecha de despacho sean correctas' },status=status.HTTP_404_NOT_FOUND)
                 aux_validacion_bienes_despachados_repetidos.append([i['id_bien_solicitado'], i['id_bien_despachado'], i['id_bodega']])
+                # VALIDAR QUE LA CANTIDAD DESPACHADA NO SUPERE LA CANTIDAD SOLICITADA
+                if i['cantidad_despachada'] > instancia_item_a_actualizar_aux_5.cantidad_solicitada:
+                    return Response({'success':False,'detail':'La cantidad a despachar es mayor a la cantidad solicituda' },status=status.HTTP_404_NOT_FOUND)
  #---------># VALIDACIONES DE DE ITEMS CREADOS
             if not id_item_a_despachar:
                 bien_solicitado = i.get('id_bien_solicitado')
@@ -401,7 +402,7 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
                     return Response({'success':False,'detail':'El bien (' + bien_solicitado_instancia.nombre + ') no es de consumo' },status=status.HTTP_404_NOT_FOUND)
                 item_solicitado_instancia = ItemsSolicitudConsumible.objects.filter(Q(id_solicitud_consumibles=solicitud_del_despacho_instancia.id_solicitud_consumibles) & Q(id_bien=i['id_bien_solicitado'])).first()
                 if item_solicitado_instancia.cantidad != i['cantidad_solicitada'] or item_solicitado_instancia.id_unidad_medida.id_unidad_medida != i['id_unidad_medida_solicitada']:
-                    return Response({'success':False,'detail':'Error en el numero_posicion (' + i['numero_posicion_despacho'] + ') del despacho. La cantidad solicitada o la unidad de medida solicitada no corresponde a las registrada en la solicitud' },status=status.HTTP_404_NOT_FOUND)
+                    return Response({'success':False,'detail':'Error en el numero_posicion (' + str(i['numero_posicion_despacho']) + ') del despacho. La cantidad solicitada o la unidad de medida solicitada no corresponde a las registrada en la solicitud' },status=status.HTTP_404_NOT_FOUND)
                 # VALIDACION 94:
                 if i['cantidad_despachada'] == 0:
                     if i['id_bien_despachado'] != 0:
@@ -470,14 +471,9 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
                         return Response({'success':False,'detail':'Por favor verifique la existencia del bien en la bodega, o la existencia del bien en la tabla inventario' },status=status.HTTP_404_NOT_FOUND)
                     valores_creados_detalles.append({'nombre' : instancia_inventario_auxiliar.id_bien.nombre})
                     #VALIDACION 96: SE VALIDA LAS CANTIDADES POSITIVAS DEL BIEN EN LA FECHA DEL DESPACHO
-                    aux_validacion_cantidades_fecha_despacho = UtilAlmacen.get_cantidad_disponible(i['id_bien_despachado'], i['id_bodega'], fecha_despacho)
+                    aux_validacion_cantidades_fecha_despacho = UtilAlmacen.get_cantidad_posible(i['id_bien_despachado'], i['id_bodega'], despacho_maestro_instancia.id_despacho_consumo)
                     if i['cantidad_despachada'] > aux_validacion_cantidades_fecha_despacho:
                         return Response({'success':False,'detail':'Verifique que las cantidades del bien a despachar en la bodega ingresada en la fecha de despacho sean correctas' },status=status.HTTP_404_NOT_FOUND)
-                    # #VALIDACION 97: SE VALIDA QUE EL BIEN DESPACHADO NO TENGA DESPACHOS POSTERIORES A LA FECHA DE DESPACHO
-                    # items_despachados_aux_val_97 = ItemDespachoConsumo.objects.filter(id_bien_despachado=i['id_bien_despachado'], id_despacho_consumo__fecha_despacho__gte=fecha_despacho, id_bodega=i['id_bodega'])
-                    # items_despachados_aux_val_98 = ItemsDespachoCon
-                    # if items_despachados_aux_val_97:
-                    #     return Response({'success':False, 'detail':'El bien tiene despachos o entregas posteriores a la fecha de despacho elegida, o ya se encuentra despachado, de ser así en vez de tratar de crear un nuevo registro actualice el existente', 'data': []}, status=status.HTTP_403_FORBIDDEN)
                 i['id_despacho_consumo'] = despacho_maestro_instancia.id_despacho_consumo
                 # VALIDACION 90: SE VALIDA QUE UN BIEN DESPACHADO NO SE REPITA DENTRO DEL MISMO DESPACHO
                 if [i['id_bien_solicitado'], i['id_bien_despachado'], i['id_bodega']] in aux_validacion_bienes_despachados_repetidos:
@@ -513,10 +509,10 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
         for i in items_a_crear:
             inventario_instancia = Inventario.objects.filter(Q(id_bien=i['id_bien_despachado'])&Q(id_bodega=i['id_bodega'])).first()
             inventario_instancia.cantidad_saliente_consumo = int(inventario_instancia.cantidad_saliente_consumo) + int(i['cantidad_despachada'])
-            inventario_instancia.save()             
-        for key, value in aux_dic_mod_inventario.items():
-            inventario_instancia = Inventario.objects.filter(Q(id_bien=key)&Q(id_bodega=value[0])).first()
-            inventario_instancia.cantidad_saliente_consumo = int(inventario_instancia.cantidad_saliente_consumo) + value[1]
+            inventario_instancia.save()            
+        for i in aux_dic_mod_inventario:
+            inventario_instancia = Inventario.objects.filter(Q(id_bien=i[0])&Q(id_bodega=i[1])).first()
+            inventario_instancia.cantidad_saliente_consumo = int(inventario_instancia.cantidad_saliente_consumo) + i[2]
             inventario_instancia.save()   
             
         descripcion = {"numero_despacho_almacen": str(despacho_maestro_instancia.numero_despacho_consumo), "fecha_despacho": str(despacho_maestro_instancia.fecha_despacho)}
@@ -569,7 +565,6 @@ class EliminarItemsDespacho(generics.DestroyAPIView):
             instance = ItemDespachoConsumo.objects.filter(Q(id_item_despacho_consumo=i['id_item_despacho_consumo']) & Q(id_despacho_consumo=instancia_despacho.id_despacho_consumo)).first()
             valores_eliminados_detalles.append({'nombre' : instance.id_bien_despachado.nombre})
             instance.delete()
-        print(valores_eliminados_detalles)
         descripcion = {"numero_despacho_almacen": str(instancia_despacho.numero_despacho_consumo), "fecha_despacho": str(instancia_despacho.fecha_despacho)}
         direccion=Util.get_client_ip(request)
         auditoria_data = {
@@ -621,7 +616,6 @@ class AnularDespachoConsumo(generics.UpdateAPIView):
         instancia_despacho_anular.fecha_anulacion = datos_ingresados['fecha_anualacion']
         instancia_despacho_anular.id_persona_anula = persona_anula
         instancia_despacho_anular.save()
-        
         return Response({'success':True,'detail':'Despacho anulado con éxito'},status=status.HTTP_200_OK)
 
 class GetNroDocumentoDespachoBienesConsumo(generics.ListAPIView):
@@ -660,7 +654,6 @@ class CerrarSolicitudDebidoInexistenciaView(generics.RetrieveUpdateAPIView):
         serializer = self.serializer_class(solicitud, data=data)
         serializer.is_valid(raise_exception=True)
         serializador = serializer.save()
-        print(serializador)
         
         #Auditoria Cerrar Solicitud
         usuario = request.user.id_usuario
