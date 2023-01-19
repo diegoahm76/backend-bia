@@ -249,7 +249,7 @@ class UpdateViveroCuarentena(generics.ListAPIView):
                     'descripcion': descripcion
                 }
                 Util.save_auditoria(auditoria_data)
-                return Response({'success':True,'detail':'Vivero ingreso en cuarentena'},status=status.HTTP_200_OK)
+                return Response({'success':True,'detail':'El Vivero ingresó en cuarentena'},status=status.HTTP_200_OK)
             #
             if vivero.en_funcionamiento == False and vivero.vivero_en_cuarentena == True:    
                 print("JUSTIFICACION",vivero.justificacion_cuarentena)

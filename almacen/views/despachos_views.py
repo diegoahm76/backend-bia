@@ -761,15 +761,20 @@ class SearchBienInventario(generics.ListAPIView):
         fecha_despacho_strptime = datetime.strptime(fecha_despacho, '%Y-%m-%d %H:%M:%S')
         
         if bien:
-            items_despachados = ItemDespachoConsumo.objects.filter(id_bien_despachado=bien.id_bien, id_despacho_consumo__fecha_despacho__gte=fecha_despacho_strptime)
+            items_despachados = ItemDespachoConsumo.objects.filter(id_bien_despachado=bien.id_bien, id_bodega=id_bodega,id_despacho_consumo__fecha_despacho__gte=fecha_despacho_strptime)
             if items_despachados:
                 return Response({'success':False, 'detail':'El bien tiene despachos o entregas posteriores a la fecha de despacho elegida', 'data': []}, status=status.HTTP_403_FORBIDDEN)
             
             inventario = Inventario.objects.filter(id_bien=bien.id_bien, id_bodega=id_bodega).first()
             
             cantidad_disponible = UtilAlmacen.get_cantidad_disponible(bien.id_bien, id_bodega, fecha_despacho_strptime)
+            
+            if cantidad_disponible <= 0:
+                 return Response({'success':False, 'detail':'El bien seleccionado no tiene cantidad disponible'}, status=status.HTTP_400_BAD_REQUEST)
+                   
             inventario.cantidad_disponible=cantidad_disponible
             serializador_inventario = self.serializer_class(inventario)
+            
             
             return Response({'success':True, 'detail':'Se encontró el siguiente resultado', 'data': serializador_inventario.data}, status=status.HTTP_200_OK)
         else:
@@ -792,18 +797,28 @@ class SearchBienesInventario(generics.ListAPIView):
         
         if bienes:
             bien_id_bien = [bien.id_bien for bien in bienes]
-            items_despachados = ItemDespachoConsumo.objects.filter(id_bien_despachado__in=bien_id_bien, id_despacho_consumo__fecha_despacho__gte=fecha_despacho_strptime)
-            items_despachados_list = [item.id_bien_despachado.id_bien for item in items_despachados]
-            list_bienes_end = [bien for bien in bien_id_bien if bien not in items_despachados_list]
-            bien_inventario = Inventario.objects.filter(id_bien__in=list_bienes_end)
+            bien_inventario = Inventario.objects.filter(id_bien__in=bien_id_bien)
             
-            cantidades_disponibles = UtilAlmacen.get_cantidades_disponibles(list_bienes_end, fecha_despacho_strptime)
+            cantidades_disponibles = UtilAlmacen.get_cantidades_disponibles(bien_id_bien, fecha_despacho_strptime)
 
+            inventarios_disponibles = []
             for inventario in bien_inventario:
                 cantidad_disponible = [cantidad_disponible['cantidad_disponible'] for cantidad_disponible in cantidades_disponibles if cantidad_disponible['id_bien'] == inventario.id_bien.id_bien and cantidad_disponible['id_bodega'] == inventario.id_bodega.id_bodega][0]
                 inventario.cantidad_disponible = cantidad_disponible
-            
-            serializador = self.serializer_class(bien_inventario, many=True)
+                inventario.disponible=True
+                        
+                items_despachados = ItemDespachoConsumo.objects.filter(id_bien_despachado=inventario.id_bien.id_bien,id_bodega=inventario.id_bodega.id_bodega,id_despacho_consumo__fecha_despacho__gte=fecha_despacho_strptime)
+
+                if items_despachados:
+                    inventario.disponible=False
+                    inventario.cantidad_disponible=None
+                    
+                if cantidad_disponible > 0 and (inventario.disponible==True or inventario.disponible ==  False):
+                    inventarios_disponibles.append(inventario)
+                if cantidad_disponible <= 0 and inventario.disponible==False:
+                    inventarios_disponibles.append(inventario)
+                        
+            serializador = self.serializer_class(inventarios_disponibles, many=True)
         
             return Response({'success':True, 'detail':'Se encontró el siguiente resultado','data':serializador.data}, status=status.HTTP_200_OK)
         else:
@@ -824,7 +839,7 @@ class AgregarBienesConsumoConservacionByCodigoBien(generics.ListAPIView):
         bien = CatalogoBienes.objects.filter(codigo_bien=codigo_bien, solicitable_vivero=True, cod_tipo_bien='C', nivel_jerarquico=5).first()
         fecha_despacho_strptime = datetime.strptime(fecha_despacho, '%Y-%m-%d %H:%M:%S')
         if bien:
-            items_despachados = ItemDespachoConsumo.objects.filter(id_bien_despachado=bien.id_bien, id_despacho_consumo__fecha_despacho__gte=fecha_despacho_strptime)
+            items_despachados = ItemDespachoConsumo.objects.filter(id_bien_despachado=bien.id_bien,  id_bodega=id_bodega,id_despacho_consumo__fecha_despacho__gte=fecha_despacho_strptime)
             if items_despachados:
                 return Response({'success':False, 'detail':'El bien tiene despachos o entregas posteriores a la fecha de despacho elegida', 'data': []}, status=status.HTTP_403_FORBIDDEN)
                 
@@ -832,6 +847,9 @@ class AgregarBienesConsumoConservacionByCodigoBien(generics.ListAPIView):
             
             cantidad_actual = UtilAlmacen.get_cantidad_disponible(bien.id_bien, id_bodega, fecha_despacho_strptime)
             bien_inventario.cantidad_disponible=cantidad_actual
+            if cantidad_actual <= 0:
+                return Response({'success':False, 'detail':'El bien seleccionado no tiene cantidad disponible'}, status=status.HTTP_400_BAD_REQUEST)
+                    
             serializador=self.serializer_class(bien_inventario,many=False)
             
             return Response({'success':True, 'detail':'Se encontró el siguiente resultado','data':serializador.data}, status=status.HTTP_200_OK)
@@ -856,19 +874,30 @@ class AgregarBienesConsumoConservacionByLupa(generics.ListAPIView):
         
         if bienes:
             bien_id_bien = [bien.id_bien for bien in bienes]
-            items_despachados = ItemDespachoConsumo.objects.filter(id_bien_despachado__in=bien_id_bien, id_despacho_consumo__fecha_despacho__gte=fecha_despacho_strptime)
-            items_despachados_list = [item.id_bien_despachado.id_bien for item in items_despachados]
-            list_bienes_end = [bien for bien in bien_id_bien if bien not in items_despachados_list]
-            bien_inventario = Inventario.objects.filter(id_bien__in=list_bienes_end)
             
-            cantidades_disponibles = UtilAlmacen.get_cantidades_disponibles(list_bienes_end, fecha_despacho_strptime)
+            bien_inventario = Inventario.objects.filter(id_bien__in=bien_id_bien)
+            
+            cantidades_disponibles = UtilAlmacen.get_cantidades_disponibles(bien_id_bien, fecha_despacho_strptime)
+            inventarios_disponibles = []
 
             for inventario in bien_inventario:
                 cantidad_disponible = [cantidad_disponible['cantidad_disponible'] for cantidad_disponible in cantidades_disponibles if cantidad_disponible['id_bien'] == inventario.id_bien.id_bien and cantidad_disponible['id_bodega'] == inventario.id_bodega.id_bodega][0]
                 inventario.cantidad_disponible = cantidad_disponible
-           
-            serializador = self.serializer_class(bien_inventario, many=True)
-        
+                inventario.disponible=True
+
+                items_despachados = ItemDespachoConsumo.objects.filter(id_bien_despachado=inventario.id_bien.id_bien,id_bodega=inventario.id_bodega.id_bodega,id_despacho_consumo__fecha_despacho__gte=fecha_despacho_strptime)
+
+                if items_despachados:
+                    inventario.disponible=False
+                    inventario.cantidad_disponible=None
+                    
+                if cantidad_disponible > 0 and (inventario.disponible==True or inventario.disponible ==  False):
+                    inventarios_disponibles.append(inventario)
+                if cantidad_disponible <= 0 and inventario.disponible==False:
+                    inventarios_disponibles.append(inventario)
+    
+            serializador = self.serializer_class(inventarios_disponibles, many=True)
+
             return Response({'success':True, 'detail':'Se encontraron los siguientes resultados','data':serializador.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success':True, 'detail':'El bien no existe', 'data': []}, status=status.HTTP_200_OK)
@@ -882,20 +911,28 @@ class GetItemOtrosOrigenes(generics.ListAPIView):
         fecha_despacho=request.query_params.get('fecha_despacho')
         if not fecha_despacho:
             return Response({'success':False,'detail':'Envía el parámetro de fecha de despacho del despacho'},status=status.HTTP_403_FORBIDDEN)
-        items=ItemEntradaAlmacen.objects.filter(id_bien=id_bien,id_entrada_almacen__fecha_entrada__gte=fecha_hace_un_año,
-                                                id_entrada_almacen__fecha_entrada__lte=fecha_despacho).filter(Q(id_entrada_almacen__id_tipo_entrada=2) | 
-                                                                                                              Q(id_entrada_almacen__id_tipo_entrada=3) | 
-                                                                                                              Q(id_entrada_almacen__id_tipo_entrada=4)).values('id_bien',"id_entrada_almacen",
-                                                                                                                                                               codigo_bien=F('id_bien__codigo_bien'),
-                                                                                                                                                               nombre=F('id_bien__nombre'),
-                                                                                                                                                               numero_documento=F('id_entrada_almacen__numero_entrada_almacen'),
-                                                                                                                                                               tipo_documento=F('id_entrada_almacen__id_tipo_entrada__nombre')).annotate(cantidad_total_entrada=Sum('cantidad'))
+        
+        items=ItemEntradaAlmacen.objects.filter(
+            id_bien=id_bien,id_entrada_almacen__fecha_entrada__gte=fecha_hace_un_año,
+            id_entrada_almacen__fecha_entrada__lte=fecha_despacho).filter(
+                Q(id_entrada_almacen__id_tipo_entrada=2) | 
+                Q(id_entrada_almacen__id_tipo_entrada=3) | 
+                Q(id_entrada_almacen__id_tipo_entrada=4)).values(
+                    'id_bien',"id_entrada_almacen",
+                    codigo_bien=F('id_bien__codigo_bien'),
+                    nombre=F('id_bien__nombre'),
+                    numero_documento=F('id_entrada_almacen__numero_entrada_almacen'),
+                    tipo_documento=F('id_entrada_almacen__id_tipo_entrada__nombre')).annotate(cantidad_total_entrada=Sum('cantidad'))
+                
         items_list=[item['id_entrada_almacen'] for item in items]
         items_despachados=ItemDespachoConsumo.objects.filter(id_bien_despachado=id_bien,id_entrada_almacen_bien__in=items_list).values('id_bien_despachado','id_entrada_almacen_bien').annotate(cantidad_total_despachada=Sum('cantidad_despachada'))
+        items_por_distribuir=[]
         for item in items:
             item_despachado= [despacho for despacho in items_despachados if despacho['id_bien_despachado'] == item['id_bien'] and despacho['id_entrada_almacen_bien']==item['id_entrada_almacen']]
             item['cantidad_por_distribuir']=item['cantidad_total_entrada']-item_despachado[0]['cantidad_total_despachada'] if item_despachado else item['cantidad_total_entrada']
-        return Response({'success':True, 'detail':'Se encontraron los siguientes resultados','data':items}, status=status.HTTP_200_OK)
+            if item['cantidad_por_distribuir'] > 0:
+                items_por_distribuir.append(item)
+        return Response({'success':True, 'detail':'Se encontraron los siguientes resultados','data':items_por_distribuir}, status=status.HTTP_200_OK)
         
         
         

@@ -78,11 +78,11 @@ class SearchBienInventarioSerializer(serializers.ModelSerializer):
     nombre=serializers.ReadOnlyField(source='id_bien.nombre',default=None)
     bodega=serializers.ReadOnlyField(source='id_bodega.nombre',default=None)
     cantidad_disponible = serializers.IntegerField(read_only=True, default=None)
-    
-    
+    disponible= serializers.BooleanField(read_only=True,default=None)
+    unidad_medida= serializers.ReadOnlyField(source='id_bien.id_unidad_medida.abreviatura')
     class Meta:
         model=Inventario
-        fields=('id_inventario', 'id_bien', 'codigo_bien', 'nombre', 'id_bodega', 'bodega', 'cantidad_disponible')
+        fields=('id_inventario', 'id_bien', 'codigo_bien', 'nombre', 'id_bodega', 'bodega', 'cantidad_disponible','disponible','unidad_medida')
 
 class AgregarBienesConsumoConservacionSerializer(serializers.ModelSerializer):
     codigo_bien=serializers.ReadOnlyField(source='id_bien.codigo_bien',default=None)
@@ -91,9 +91,11 @@ class AgregarBienesConsumoConservacionSerializer(serializers.ModelSerializer):
     tipo_documento=serializers.CharField(default='Todos')
     cantidad_disponible=serializers.IntegerField(read_only=True,default=None)
     origen=serializers.CharField(read_only=True,default='Todos')
+    disponible= serializers.BooleanField(read_only=True,default=None)
+    unidad_medida= serializers.ReadOnlyField(source='id_bien.id_unidad_medida.abreviatura')
     class Meta:
         model=Inventario
-        fields=('id_inventario', 'id_bien', 'codigo_bien', 'nombre', 'id_bodega', 'bodega','tipo_documento','cantidad_disponible','origen')
+        fields=('id_inventario', 'id_bien', 'codigo_bien', 'nombre', 'id_bodega', 'bodega','tipo_documento','cantidad_disponible','origen','disponible','unidad_medida')
 
 class GetItemOtrosOrigenesSerializers(serializers.ModelSerializer):
     codigo_bien_desp=serializers.ReadOnlyField(source='id_bien.codigo_bien',default=None)
