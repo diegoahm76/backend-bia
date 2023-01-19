@@ -72,3 +72,16 @@ class GetItemsEntradasEntregasSerializer(serializers.ModelSerializer):
             'cantidad_disponible',
             'observaciones'
         )
+
+
+class AnularEntregaSerializer(serializers.ModelSerializer):
+    descripcion_anulacion = serializers.CharField(read_only=True)
+    class Meta:
+        model = DespachoConsumo
+        fields = (
+            'id_despacho_consumo',
+            'descripcion_anulacion',
+            'despacho_anulado',
+            'fecha_anulacion',
+            'id_persona_anula',
+        )

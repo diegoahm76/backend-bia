@@ -17,7 +17,7 @@ from almacen.models.solicitudes_models import (
 class DespachoEntrantes(models.Model):
     id_despacho_entrante=models.AutoField(primary_key=True,editable=False,db_column='T153IdDespachoEntrante')
     id_despacho_consumo_alm=models.ForeignKey(DespachoConsumo,on_delete=models.CASCADE,db_column='T153Id_DespachoConsumoAlm')
-    fecha_ingreso=models.DateTimeField(auto_now_add=True,db_column='T153fechaIngreso')
+    fecha_ingreso=models.DateTimeField(db_column='T153fechaIngreso')
     distribucion_confirmada=models.BooleanField(db_column='T153distribucionConfirmada')
     fecha_confirmacion_distribucion=models.DateTimeField(db_column='T153fechaConfirmacionDistribucion',blank=True,null=True)
     observacion_distribucion=models.CharField(max_length=255,blank=True,null=True,db_column='T153observacionDistribucion')
@@ -36,7 +36,7 @@ class ItemsDespachoEntrante(models.Model):
     id_despacho_entrante=models.ForeignKey(DespachoEntrantes,on_delete=models.CASCADE,db_column='T154Id_DespachoEntrante')
     id_bien=models.ForeignKey(CatalogoBienes,on_delete=models.CASCADE,db_column='T154Id_Bien')
     id_entrada_alm_del_bien=models.ForeignKey(EntradasAlmacen,on_delete=models.SET_NULL,blank=True,null=True,db_column='T154Id_EntradaAlmDelBien')
-    fecha_ingreso=models.DateTimeField(auto_now_add=True,db_column='T154fechaIngreso')
+    fecha_ingreso=models.DateTimeField(db_column='T154fechaIngreso')
     cantidad_entrante=models.IntegerField(db_column='T154cantidadEntrante')
     cantidad_distribuida=models.IntegerField(db_column='T154cantidadDistribuida')
     observacion=models.CharField(max_length=50,db_column='T154observacion',blank=True,null=True)

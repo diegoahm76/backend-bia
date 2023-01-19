@@ -18,6 +18,7 @@ from almacen.serializers.entregas_serializers import (
     CreateEntregaSerializer,
     GetEntradasEntregasSerializer,
     GetItemsEntradasEntregasSerializer,
+    AnularEntregaSerializer,
 )
 from almacen.models.solicitudes_models import (
     DespachoConsumo,
@@ -84,7 +85,7 @@ class CrearEntregaView(generics.CreateAPIView):
             data_entrega['numero_despacho_consumo'] = numero_entrega_existente.numero_despacho_consumo + 1
         else:
             data_entrega['numero_despacho_consumo'] = 1
-        
+
         #VALIDACIÓN DE FECHA_DESPACHO
         fecha_entrega = data_entrega.get('fecha_despacho')
         fecha_actual = datetime.now()
@@ -92,19 +93,41 @@ class CrearEntregaView(generics.CreateAPIView):
         if fecha_entrega_strptime > fecha_actual:
             return Response({'success': False, 'detail': 'La fecha de entrega seleccionada no debe ser superior a la actual'}, status=status.HTTP_400_BAD_REQUEST)
         if fecha_entrega_strptime < (fecha_actual - timedelta(days=8)):
-            return Response({'success': False, 'detail': 'Las entregas pueden tener una fecha anterior hasta 8 días calendario'}, status=status.HTTP_400_BAD_REQUEST)           
+            return Response({'success': False, 'detail': 'Las entregas pueden tener una fecha anterior hasta 8 días calendario'}, status=status.HTTP_400_BAD_REQUEST)
 
         #VALIDACIÓN DE EXISTENCIA DE LA ENTRADA SELECCIONADA
         entrada_almacen = data_entrega.get('id_entrada_almacen_cv')
         entrada_almacen_instance = EntradasAlmacen.objects.filter(id_entrada_almacen=entrada_almacen).first()
         if not entrada_almacen_instance:
-            return Response({'success': False, 'detail': 'No existe la entrada relacionada con esta entrega'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': False, 'detail': 'No existe la entrada relacionada con esta entrega'}, status=status.HTTP_404_NOT_FOUND)         
 
         #VALIDACIÓN LOS ID_BIEN ENVIADOS DEBEN ESTAR EN ALGÚN ITEM DESPACHO DE LA ENTRADA
         id_bien_list = [item['id_bien_despachado'] for item in data_items_entrega]
         if not id_bien_list:
             return Response({'success': False, 'detail': 'Debe ser enviado por lo menos un item en una entrega'}, status=status.HTTP_400_BAD_REQUEST)
 
+        #VALIDACIÓN DE QUE NO HAYAN ENTREGAS POSTERIORES DE LOS BIENES QUE SE QUIEREN ENTREGAR
+        #debo buscar el id de los bienes enviados en los items despachados por entrega
+        #debo verificar que la fecha de entrega de cada uno de esos items no sea superior a la enviada
+        
+        items_fecha_posterior_entrega_actual = []
+        items_fecha_anterior_entrega_actual = []
+        for item in data_items_entrega:
+            items_despachos_fecha = ItemDespachoConsumo.objects.filter(id_bien_despachado=item['id_bien_despachado'], id_bodega=item['id_bodega'])
+            print('items_despachos_fecha: ', items_despachos_fecha)
+            for itemsito in items_despachos_fecha:
+                print('itemsito.id_despacho_consumo.fecha_despacho: ', itemsito.id_despacho_consumo.fecha_despacho)
+                print('fecha_entrega_strptime', fecha_entrega_strptime)
+                if itemsito.id_despacho_consumo.fecha_despacho > fecha_entrega_strptime:
+                    print('entra acá')
+                    items_fecha_posterior_entrega_actual.append(item)
+                else:
+                    items_fecha_anterior_entrega_actual.append(item)
+        
+
+        if not items_fecha_anterior_entrega_actual:
+            return Response({'success': False, 'detail': 'No se puede realizar la entrega de un bien si ya se le generaron salidas posteriores en la misma bodega a la fecha de envío', 'items_fecha_posterior_entrega_actual': items_fecha_posterior_entrega_actual}, status=status.HTTP_400_BAD_REQUEST)
+    
         #VALIDACIÓN DE EXISTENCIA DE LA BODEGA ENVIADA
         bodega_entrega = data_entrega.get('id_bodega_general')
         bodega_entrega_instance = Bodegas.objects.filter(id_bodega=bodega_entrega).first()
@@ -115,23 +138,24 @@ class CrearEntregaView(generics.CreateAPIView):
         numero_entrada = [item['id_despacho_consumo'] for item in data_items_entrega if item['id_despacho_consumo'] != None]
         if numero_entrada:
             return Response({'success': False, 'detail': 'Para crear entregas el id_entrega de los items debe ser nulo'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         #VALIDACIÓN QUE LOS ID_BIEN_DESPACHADOS EXISTAN Y SEAN DE LA ENTRADA
         id_bien_despachados = [item['id_bien_despachado'] for item in data_items_entrega]
         bien_despachados_instance = CatalogoBienes.objects.filter(id_bien__in=id_bien_despachados)
         if len(set(id_bien_despachados)) != len(bien_despachados_instance):
             return Response({'success': False, 'detail': 'Todos los id_bien_despachados seleccionados deben existir'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
+        #VALIDACIÓN QUE TODOS LOS ID_BIENES DEBEN ESTAR DENTRO DE LOS ITEMS DE LA ENTRADA SELECCIONADA
         id_bien_in_bienes_despachados = [bien.id_bien for bien in bien_despachados_instance]
         bien_in_items = ItemEntradaAlmacen.objects.filter(id_entrada_almacen=entrada_almacen, id_bien__in=id_bien_in_bienes_despachados)
         id_bien_in_bienes_despachados = [bien.id_bien.id_bien for bien in bien_in_items]
         if not set(id_bien_in_bienes_despachados).issubset(id_bien_in_bienes_despachados):
             return Response({'success': False, 'detail': 'Todos los id_bienes_despachados deben pertenecer a la entrada seleccionada'}, status=status.HTTP_400_BAD_REQUEST)
 
+        #VALIDACIÓN QUE LOS BIENES_DESPACHADOS TENGAN CANTIDAD DISPONIBLE POR DESPACHAR SEGÚN LAS ENTREGAS ANTERIORES DE LA ENTRADA SELECCIONADA
         items_pasan_validacion = []
         items_no_pasan_validacion = []
 
-        #VALIDACIÓN QUE LOS BIENES_DESPACHADOS TENGAN CANTIDAD DISPONIBLE POR DESPACHAR
         for item in data_items_entrega:
             item_entrada = ItemEntradaAlmacen.objects.filter(id_bien=item['id_bien_despachado'], id_entrada_almacen=item['id_entrada_almacen_bien'])
             cantidad_entrante_sin_sumar = [item.cantidad for item in item_entrada]
@@ -141,8 +165,10 @@ class CrearEntregaView(generics.CreateAPIView):
             if item_despachado_por_entrada:
                 for item_despachado in item_despachado_por_entrada:
                     cantidad_despachada += item_despachado.cantidad_despachada
-
                 if cantidad_despachada >= cantidad_entrante_sumada:
+                    del item['cantidad_despachada']
+                    del item['id_bodega']
+                    del item['id_despacho_consumo']
                     items_no_pasan_validacion.append(item)
                 else:
                     items_pasan_validacion.append(item)
@@ -150,8 +176,8 @@ class CrearEntregaView(generics.CreateAPIView):
                 items_pasan_validacion.append(item)
 
         if not items_pasan_validacion:
-            return Response({'success': False, 'detail': 'No se puede guardar una entrega si ninguno de sus items tiene cantidades por entregar'}, status=status.HTTP_400_BAD_REQUEST)    
-        
+            return Response({'success': False, 'detail': 'No se puede guardar una entrega si ninguno de sus items tiene cantidades por entregar', 'Items totalmente entregados': items_no_pasan_validacion, 'Items con despachos posteriores en la misma bodega': items_fecha_posterior_entrega_actual}, status=status.HTTP_400_BAD_REQUEST)
+
         #VALIDACIÓN QUE EL ID_ENTRADA_ALMACEN SEA LA MISMA DEL MAESTRO Y QUE EXISTA
         id_entrada_almacen = [item['id_entrada_almacen_bien'] for item  in items_pasan_validacion]
         if len(set(id_entrada_almacen)) > 1:
@@ -172,46 +198,86 @@ class CrearEntregaView(generics.CreateAPIView):
         if len(numeros_posicion) != len(set(numeros_posicion)):
             return Response({'success': False, 'detail': 'Los números de posición de los items deben ser únicos'}, status=status.HTTP_400_BAD_REQUEST)
 
-        for item in data_items_entrega:
+
+        #VALIDACIÓN QUE EXISTA LA CANTIDAD A ENTREGAR EN LA BODEGA SELECCIONADA
+        items_con_cantidades_disponible_en_bodega = []
+        items_con_cantidad_no_disponible_en_bodega = []
+
+        for item in items_pasan_validacion:
             cantidad = UtilAlmacen.get_cantidades_disponibles_entregas(item['id_bien_despachado'], item['id_bodega'], fecha_entrega_strptime)
-            print(cantidad)
-            # if cantidad:
-            return Response({'success': False, 'detail': 'No se encuentra disponible la cantidad solicitada', 'data':[], 'cantidad_disponible': cantidad}, status=status.HTTP_400_BAD_REQUEST)
+            if int(item['cantidad_despachada']) > cantidad:
+                item['cantidad_disponible_en_bodega'] = cantidad
+                items_con_cantidad_no_disponible_en_bodega.append(item)
+            else:
+                items_con_cantidades_disponible_en_bodega.append(item)
+
+        if not items_con_cantidades_disponible_en_bodega:
+            return Response({'success': False, 'detail': 'No se puede crear una entrega si ninguno de los bienes enviados a despachar tienen cantidades disponibles', 'Items que no tienen cantidades disponibles en bodega': items_con_cantidad_no_disponible_en_bodega, 'Items con despachos posteriores en la misma bodega': items_fecha_posterior_entrega_actual}, status=status.HTTP_400_BAD_REQUEST)
 
         #CREACIÓN DE ENTREGA MAESTRO
         serializer = self.serializer_class(data=data_entrega, many=False)
         serializer.is_valid(raise_exception=True)
         serializador = serializer.save()
 
-        for item in items_pasan_validacion:
+        #CREACIÓN DE ENTREGA DETALLE
+        for item in items_con_cantidades_disponible_en_bodega:
             item['observacion'] = data_entrega['motivo']
             item['id_despacho_consumo'] = serializador.pk
 
-        #CREACIÓN DE ENTREGA DETALLE
-        items_serializer = CreateItemsEntregaSerializer(data=items_pasan_validacion, many=True)
+        items_serializer = CreateItemsEntregaSerializer(data=items_con_cantidades_disponible_en_bodega, many=True)
         items_serializer.is_valid(raise_exception=True)
         items_serializador = items_serializer.save()
-        print(items_serializador)
-        for item in items_serializador:
-            print(item.id_bien_despachado)
 
-        despacho_creado = DespachoEntrantes.objects.create(
+        #REAGRUPACIÓN PARA CONVERTIR DOS REGISTROS DE ITEMS DESPACHOS SALIENTES EN UNO SOLO PARA ITEMS DESPACHOS ENTRANTES
+
+        id_bien_items_serializador = [item.id_bien_despachado.id_bien for item in items_serializador]
+        id_bien_items_serializador_instance = ItemDespachoConsumo.objects.filter(id_bien_despachado__in=id_bien_items_serializador, id_despacho_consumo=serializador.pk).values('id_bien_despachado', 'id_entrada_almacen_bien', 'observacion').annotate(cantidad_despachada=Sum('cantidad_despachada'))
+
+        #CREACIÓN DE DESPACHO ENTRANTE
+        despacho_entrante = DespachoEntrantes.objects.create(
             id_despacho_consumo_alm = serializador,
-            distribucion_confirmada = False
+            distribucion_confirmada = False,
+            fecha_ingreso = serializador.fecha_despacho
         )
 
-        for item in items_serializador:
-            ItemsDespachoEntrante.objects.create(
-                id_despacho_entrante = despacho_creado,
-                id_bien = item.id_bien_despachado,
-                id_entrada_alm_del_bien = item.id_entrada_almacen_bien,
-                cantidad_entrante = item.cantidad_despachada,
+        #CREACIÓN DE ITEMS DESPACHO ENTRANTE
+        for id_bien in id_bien_items_serializador_instance:
+            item_despacho = ItemDespachoConsumo.objects.filter(id_bien_despachado=id_bien['id_bien_despachado'], id_despacho_consumo=serializador.pk).first()
+            item_despacho_entrante = ItemsDespachoEntrante.objects.create(
+                id_despacho_entrante = despacho_entrante,
+                id_bien = item_despacho.id_bien_despachado,
+                id_entrada_alm_del_bien = item_despacho.id_entrada_almacen_bien,
+                cantidad_entrante = int(id_bien_items_serializador_instance[0]['cantidad_despachada']),
                 cantidad_distribuida = 0,
-                observacion = item.observacion
-            )
+                observacion = item_despacho.observacion,
+                fecha_ingreso = serializador.fecha_despacho
+                )
         
-        return Response({'success': True, 'detail': 'Entrega creada exitosamente', 'data_entrega': serializer.data, 'data_items_entrega': items_serializer.data, 'items_no_pasaron_validaciones': items_no_pasan_validacion}, status=status.HTTP_200_OK)
+        #REGISTRO DEL AUMENTO DE LA CANTIDAD SALIENTE POR BIEN Y BODEGA EN INVENTARIO
+        for item in items_con_cantidades_disponible_en_bodega:
+            inventario_bien_bodega = Inventario.objects.filter(id_bien=item['id_bien_despachado'], id_bodega=item['id_bodega']).first()
+            cantidad_saliente_existente = 0
+            if inventario_bien_bodega.cantidad_saliente_consumo != None:
+                cantidad_saliente_existente = inventario_bien_bodega.cantidad_saliente_consumo
+            inventario_bien_bodega.cantidad_saliente_consumo = cantidad_saliente_existente + int(item['cantidad_despachada'])
+            inventario_bien_bodega.save()
 
+        return Response({'success': True, 'detail': 'Entrega creada exitosamente', 'Entrega creada': serializer.data, 'Items entregados': items_serializer.data, 'Items que ya fueron entregados en su totalidad anteriormente': items_no_pasan_validacion, 'Items que no tienen cantidades disponibles en bodega':items_con_cantidad_no_disponible_en_bodega, 'Items con despachos posteriores en la misma bodega': items_fecha_posterior_entrega_actual}, status=status.HTTP_200_OK)
+
+
+class AnularEntregaView(generics.RetrieveUpdateAPIView):
+    serializer_class = AnularEntregaSerializer
+    queryset = DespachoConsumo.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, id_entrega):
+        entrega_instance = DespachoConsumo.objects.filter(id_despacho_consumo=id_entrega).first()
+        if not entrega_instance:
+            return Response({'success': False, 'detail': 'No existe ningún despacho con el parámetro ingresado'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        entrega_distribuida = DespachoEntrantes.objects.filter(id_despacho_consumo_alm=entrega_instance.id_despacho_consumo)
+        
+        return Response({'success': True})
 
 class GetEntradasEntregasView(generics.ListAPIView):
     serializer_class = GetEntradasEntregasSerializer
@@ -265,7 +331,7 @@ class GetItemsEntradasEntregasView(generics.ListAPIView):
         items_entrada = ItemEntradaAlmacen.objects.filter(id_entrada_almacen=id_entrada, id_bien__solicitable_vivero=True).values('id_entrada_almacen', 'id_bien').annotate(cantidad_entrante=Sum('cantidad'))
         if not items_entrada:
             return Response({'success': True, 'detail': 'No existe ningún item de esta entrada que pueda ser entregado a viveros'}, status=status.HTTP_200_OK)
-        
+
         item_con_disponibilidad = []
         item_sin_disponibilidad = []
         for item in items_entrada:
@@ -292,5 +358,5 @@ class GetItemsEntradasEntregasView(generics.ListAPIView):
         return Response({'success': True, 'detail': 'Items encontrados exitosamente', 'data': item_con_disponibilidad}, status=status.HTTP_200_OK)
 
 
-        
+
 
