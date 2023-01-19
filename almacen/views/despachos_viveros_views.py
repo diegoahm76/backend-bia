@@ -16,7 +16,9 @@ import json
 from almacen.serializers.despachos_viveros_serializers import (
     SerializersDespachoViverosConsumo,
     SerializersDespachoConsumoViverosActualizar,
-    SerializersItemDespachoViverosConsumo
+    SerializersItemDespachoViverosConsumo,
+    SerializersDespachoEntrantes,
+    SerializersItemsDespachoEntrantes
 )
 from almacen.models.solicitudes_models import (
     SolicitudesConsumibles, 
@@ -33,6 +35,10 @@ from seguridad.models import (
 from almacen.models.organigrama_models import (
     UnidadesOrganizacionales,
     NivelesOrganigrama
+)
+from conservacion.models.despachos_models import (
+    DespachoEntrantes,
+    ItemsDespachoEntrante
 )
 from almacen.models.generics_models import (
     UnidadesMedida,
@@ -51,6 +57,8 @@ class CreateDespachoMaestroVivero(generics.UpdateAPIView):
     serializer_class = SerializersDespachoViverosConsumo
     queryset = DespachoConsumo
     serializer_item_consumo = SerializersItemDespachoViverosConsumo
+    serializer_despacho_entrante = SerializersDespachoEntrantes
+    serializer_items_despacho_entrante = SerializersItemsDespachoEntrantes
     
     def put(self, request):
         datos_ingresados = request.data
@@ -82,6 +90,8 @@ class CreateDespachoMaestroVivero(generics.UpdateAPIView):
             return Response({'success':False,'detail':'La fecha ingresada no es permita dentro de los parametros existentes'},status=status.HTTP_404_NOT_FOUND)
         #Se valida que la fecha de aprobación de la solicitud sea inferior a la fecha de despacho
         fecha_aprobacion_solicitud = instancia_solicitud.fecha_aprobacion_responsable
+        if fecha_aprobacion_solicitud == None:
+            return Response({'success':False,'detail':'La solicitud que desea despachar no tiene registrada fecha de aprobación del responsable'},status=status.HTTP_404_NOT_FOUND)
         if fecha_despacho <= fecha_aprobacion_solicitud:
             return Response({'success':False,'detail':'La fecha de despacho debe ser mayor o igual a la fecha de aprobación de la solicitud'},status=status.HTTP_404_NOT_FOUND)
         #Consulta y asignación de los campos que se repiten con solicitudes de bienes de consumos
@@ -247,7 +257,10 @@ class CreateDespachoMaestroVivero(generics.UpdateAPIView):
         # INSERT EN LA TABLA INVENTARIO
         for i in items_despacho:
             inventario_instancia = Inventario.objects.filter(Q(id_bien=i['id_bien_despachado'])&Q(id_bodega=i['id_bodega'])).first()
-            inventario_instancia.cantidad_saliente_consumo = int(inventario_instancia.cantidad_saliente_consumo) + int(i['cantidad_despachada'])
+            aux_suma = inventario_instancia.cantidad_saliente_consumo
+            if aux_suma == None:
+                aux_suma = 0
+            inventario_instancia.cantidad_saliente_consumo = int(aux_suma) + int(i['cantidad_despachada'])
             inventario_instancia.save()
         
         # INSERT EN LA TABLA SOLICITUDES DE CONSUMIBLES
@@ -258,6 +271,36 @@ class CreateDespachoMaestroVivero(generics.UpdateAPIView):
         instancia_solicitud.solicitud_abierta = False
         instancia_solicitud.save()
         
+        # INSERT EN LAS TABLAS DespachoEntrantes, ItemsDespachoEntrante
+        despacho_entrantes = {}
+        despacho_entrantes['id_despacho_consumo_alm'] = despacho_creado.id_despacho_consumo
+        despacho_entrantes['fecha_ingreso'] = despacho_creado.fecha_despacho
+        despacho_entrantes['distribucion_confirmada'] = False
+        despacho_entrantes['fecha_confirmacion_distribucion'] = None
+        despacho_entrantes['observacion_distribucion'] = None
+        despacho_entrantes['id_persona_distribuye'] = None
+
+        SerializersDespachoEntrantes = self.serializer_despacho_entrante(data=despacho_entrantes, many=False)
+        SerializersDespachoEntrantes.is_valid(raise_exception=True)
+        SerializersDespachoEntrantes.save()
+        
+        instancia_despacho_entrante = DespachoEntrantes.objects.filter(id_despacho_consumo_alm=despacho_creado.id_despacho_consumo).first()
+        items_despacho_entrante_lista = []
+        for i in items_despacho:
+            items_despacho_entrante = {}
+            items_despacho_entrante['id_despacho_entrante'] = instancia_despacho_entrante.id_despacho_entrante
+            items_despacho_entrante['id_bien'] = i['id_bien_despachado']
+            items_despacho_entrante['id_entrada_alm_del_bien'] = i['id_entrada_almacen_bien']
+            items_despacho_entrante['fecha_ingreso'] = despacho_creado.fecha_despacho
+            items_despacho_entrante['cantidad_entrante'] = i['cantidad_despachada']
+            items_despacho_entrante['cantidad_distribuida'] = 0
+            items_despacho_entrante['observacion'] = i['observacion']
+            items_despacho_entrante_lista.append(items_despacho_entrante)
+        
+        SerializersItemsDespachoEntrantes = self.serializer_items_despacho_entrante(data=items_despacho_entrante_lista, many=True)
+        SerializersItemsDespachoEntrantes.is_valid(raise_exception=True)
+        SerializersItemsDespachoEntrantes.save()
+
         # AUDITORIA MAESTRO DETALLE DE DESPACHO
         descripcion = {"numero_despacho_consumo": str(info_despacho['numero_despacho_consumo']), "fecha_despacho": str(info_despacho['fecha_despacho'])}
         direccion=Util.get_client_ip(request)
@@ -505,7 +548,10 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
         # INSERT EN LA TABLA INVENTARIO
         for i in items_a_crear:
             inventario_instancia = Inventario.objects.filter(Q(id_bien=i['id_bien_despachado'])&Q(id_bodega=i['id_bodega'])).first()
-            inventario_instancia.cantidad_saliente_consumo = int(inventario_instancia.cantidad_saliente_consumo) + int(i['cantidad_despachada'])
+            aux_suma = inventario_instancia.cantidad_saliente_consumo
+            if aux_suma == None:
+                aux_suma = 0
+            inventario_instancia.cantidad_saliente_consumo = int(aux_suma) + int(i['cantidad_despachada'])
             inventario_instancia.save()            
         for i in aux_dic_mod_inventario:
             inventario_instancia = Inventario.objects.filter(Q(id_bien=i[0])&Q(id_bodega=i[1])).first()

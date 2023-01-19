@@ -87,6 +87,8 @@ class CreateDespachoMaestro(generics.UpdateAPIView):
             return Response({'success':False,'detail':'La fecha ingresada no es permita dentro de los parametros existentes'},status=status.HTTP_404_NOT_FOUND)
         #Se valida que la fecha de aprobación de la solicitud sea inferior a la fecha de despacho
         fecha_aprobacion_solicitud = instancia_solicitud.fecha_aprobacion_responsable
+        if fecha_aprobacion_solicitud == None:
+            return Response({'success':False,'detail':'La solicitud que desea despachar no tiene registrada fecha de aprobación del responsable'},status=status.HTTP_404_NOT_FOUND)
         if fecha_despacho <= fecha_aprobacion_solicitud:
             return Response({'success':False,'detail':'La fecha de despacho debe ser mayor o igual a la fecha de aprobación de la solicitud'},status=status.HTTP_404_NOT_FOUND)
         #Consulta y asignación de los campos que se repiten con solicitudes de bienes de consumos
@@ -252,7 +254,10 @@ class CreateDespachoMaestro(generics.UpdateAPIView):
         # INSERT EN LA TABLA INVENTARIO
         for i in items_despacho:
             inventario_instancia = Inventario.objects.filter(Q(id_bien=i['id_bien_despachado'])&Q(id_bodega=i['id_bodega'])).first()
-            inventario_instancia.cantidad_saliente_consumo = int(inventario_instancia.cantidad_saliente_consumo) + int(i['cantidad_despachada'])
+            aux_suma = inventario_instancia.cantidad_saliente_consumo
+            if aux_suma == None:
+                aux_suma = 0
+            inventario_instancia.cantidad_saliente_consumo = int(aux_suma) + int(i['cantidad_despachada'])
             inventario_instancia.save()
         
         # INSERT EN LA TABLA SOLICITUDES DE CONSUMIBLES
@@ -510,11 +515,17 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
         # INSERT EN LA TABLA INVENTARIO
         for i in items_a_crear:
             inventario_instancia = Inventario.objects.filter(Q(id_bien=i['id_bien_despachado'])&Q(id_bodega=i['id_bodega'])).first()
-            inventario_instancia.cantidad_saliente_consumo = int(inventario_instancia.cantidad_saliente_consumo) + int(i['cantidad_despachada'])
+            aux_suma = inventario_instancia.cantidad_saliente_consumo
+            if aux_suma == None:
+                aux_suma = 0
+            inventario_instancia.cantidad_saliente_consumo = int(aux_suma) + int(i['cantidad_despachada'])
             inventario_instancia.save()            
         for i in aux_dic_mod_inventario:
             inventario_instancia = Inventario.objects.filter(Q(id_bien=i[0])&Q(id_bodega=i[1])).first()
-            inventario_instancia.cantidad_saliente_consumo = int(inventario_instancia.cantidad_saliente_consumo) + i[2]
+            aux_suma = inventario_instancia.cantidad_saliente_consumo
+            if aux_suma == None:
+                aux_suma = 0
+            inventario_instancia.cantidad_saliente_consumo = int(aux_suma) + i[2]
             inventario_instancia.save()   
             
         descripcion = {"numero_despacho_almacen": str(despacho_maestro_instancia.numero_despacho_consumo), "fecha_despacho": str(despacho_maestro_instancia.fecha_despacho)}
@@ -559,7 +570,10 @@ class EliminarItemsDespacho(generics.DestroyAPIView):
         for i in datos_ingresados:
             instance = ItemDespachoConsumo.objects.filter(Q(id_item_despacho_consumo=i['id_item_despacho_consumo']) & Q(id_despacho_consumo=instancia_despacho.id_despacho_consumo)).first()
             inventario_instancia = Inventario.objects.filter(Q(id_bien=instance.id_bien_despachado)&Q(id_bodega=instance.id_bodega)).first()
-            inventario_instancia.cantidad_saliente_consumo = int(inventario_instancia.cantidad_saliente_consumo) - int(instance.cantidad_despachada)
+            aux_suma = inventario_instancia.cantidad_saliente_consumo
+            if aux_suma == None:
+                aux_suma = 0
+            inventario_instancia.cantidad_saliente_consumo = int(aux_suma) - int(instance.cantidad_despachada)
             inventario_instancia.save()
         # SE BORRAN LOS ITEMS DEL DESPACHO
         valores_eliminados_detalles = []
@@ -599,7 +613,10 @@ class AnularDespachoConsumo(generics.UpdateAPIView):
         items_despacho = ItemDespachoConsumo.objects.filter(id_despacho_consumo=despacho_a_anular)
         for i in items_despacho:
             inventario_instancia = Inventario.objects.filter(Q(id_bien=i.id_bien_despachado)&Q(id_bodega=i.id_bodega)).first()
-            inventario_instancia.cantidad_saliente_consumo = int(inventario_instancia.cantidad_saliente_consumo) - int(i.cantidad_despachada)
+            aux_suma = inventario_instancia.cantidad_saliente_consumo
+            if aux_suma == None:
+                aux_suma = 0
+            inventario_instancia.cantidad_saliente_consumo = int(aux_suma) - int(i.cantidad_despachada)
             inventario_instancia.save()
             # SE BORRAN LOS ITEMS DEL DESPACHO
             items_despacho.delete()
