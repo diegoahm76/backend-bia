@@ -107,26 +107,19 @@ class CrearEntregaView(generics.CreateAPIView):
             return Response({'success': False, 'detail': 'Debe ser enviado por lo menos un item en una entrega'}, status=status.HTTP_400_BAD_REQUEST)
 
         #VALIDACIÓN DE QUE NO HAYAN ENTREGAS POSTERIORES DE LOS BIENES QUE SE QUIEREN ENTREGAR
-        #debo buscar el id de los bienes enviados en los items despachados por entrega
-        #debo verificar que la fecha de entrega de cada uno de esos items no sea superior a la enviada
-        
         items_fecha_posterior_entrega_actual = []
         items_fecha_anterior_entrega_actual = []
+
         for item in data_items_entrega:
             items_despachos_fecha = ItemDespachoConsumo.objects.filter(id_bien_despachado=item['id_bien_despachado'], id_bodega=item['id_bodega'])
-            print('items_despachos_fecha: ', items_despachos_fecha)
             for itemsito in items_despachos_fecha:
-                print('itemsito.id_despacho_consumo.fecha_despacho: ', itemsito.id_despacho_consumo.fecha_despacho)
-                print('fecha_entrega_strptime', fecha_entrega_strptime)
                 if itemsito.id_despacho_consumo.fecha_despacho > fecha_entrega_strptime:
-                    print('entra acá')
                     items_fecha_posterior_entrega_actual.append(item)
                 else:
                     items_fecha_anterior_entrega_actual.append(item)
         
-
-        if not items_fecha_anterior_entrega_actual:
-            return Response({'success': False, 'detail': 'No se puede realizar la entrega de un bien si ya se le generaron salidas posteriores en la misma bodega a la fecha de envío', 'items_fecha_posterior_entrega_actual': items_fecha_posterior_entrega_actual}, status=status.HTTP_400_BAD_REQUEST)
+        if items_fecha_posterior_entrega_actual:
+            return Response({'success': False, 'detail': 'No se puede realizar la entrega si a un bien ya se le generaron salidas posteriores en la misma bodega', 'items_fecha_posterior_entrega_actual': items_fecha_posterior_entrega_actual}, status=status.HTTP_400_BAD_REQUEST)
     
         #VALIDACIÓN DE EXISTENCIA DE LA BODEGA ENVIADA
         bodega_entrega = data_entrega.get('id_bodega_general')
@@ -175,11 +168,11 @@ class CrearEntregaView(generics.CreateAPIView):
             else:
                 items_pasan_validacion.append(item)
 
-        if not items_pasan_validacion:
-            return Response({'success': False, 'detail': 'No se puede guardar una entrega si ninguno de sus items tiene cantidades por entregar', 'Items totalmente entregados': items_no_pasan_validacion, 'Items con despachos posteriores en la misma bodega': items_fecha_posterior_entrega_actual}, status=status.HTTP_400_BAD_REQUEST)
+        if items_no_pasan_validacion:
+            return Response({'success': False, 'detail': 'No se puede realizar una entrega si alguno de sus items ya fue totalmente entregado', 'Items totalmente entregados': items_no_pasan_validacion}, status=status.HTTP_400_BAD_REQUEST)
 
         #VALIDACIÓN QUE EL ID_ENTRADA_ALMACEN SEA LA MISMA DEL MAESTRO Y QUE EXISTA
-        id_entrada_almacen = [item['id_entrada_almacen_bien'] for item  in items_pasan_validacion]
+        id_entrada_almacen = [item['id_entrada_almacen_bien'] for item  in data_items_entrega]
         if len(set(id_entrada_almacen)) > 1:
             return Response({'success': False, 'detail': 'Todos los items deben compartir la misma entrada de almacen'}, status=status.HTTP_400_BAD_REQUEST)
         if not EntradasAlmacen.objects.filter(id_entrada_almacen=id_entrada_almacen[0]).first():
@@ -188,13 +181,13 @@ class CrearEntregaView(generics.CreateAPIView):
             return Response({'success': False, 'detail': 'La entrada asociada a los items debe ser la misma que la de la tabla maestro'}, status=status.HTTP_400_BAD_REQUEST)
 
         #VALIDACIÓN QUE LOS ID_BODEGAS ENVIADOS EXISTAN
-        bodegas = [item['id_bodega']for item in items_pasan_validacion]
+        bodegas = [item['id_bodega']for item in data_items_entrega]
         bodegas_instance = Bodegas.objects.filter(id_bodega__in=bodegas)
         if len(set(bodegas)) != len(set(bodegas_instance)):
             return Response({'success': False, 'detail': 'Todas las bodegas seleccionadas desde la cúal se entregan los items de entrega deben existir'}, status=status.HTTP_400_BAD_REQUEST)
 
         #VALIDACIÓN QUE EL NÚMERO DE POSICIÓN NO SEA REPETIDO
-        numeros_posicion = [item['numero_posicion_despacho'] for item in items_pasan_validacion]
+        numeros_posicion = [item['numero_posicion_despacho'] for item in data_items_entrega]
         if len(numeros_posicion) != len(set(numeros_posicion)):
             return Response({'success': False, 'detail': 'Los números de posición de los items deben ser únicos'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -203,7 +196,7 @@ class CrearEntregaView(generics.CreateAPIView):
         items_con_cantidades_disponible_en_bodega = []
         items_con_cantidad_no_disponible_en_bodega = []
 
-        for item in items_pasan_validacion:
+        for item in data_items_entrega:
             cantidad = UtilAlmacen.get_cantidades_disponibles_entregas(item['id_bien_despachado'], item['id_bodega'], fecha_entrega_strptime)
             if int(item['cantidad_despachada']) > cantidad:
                 item['cantidad_disponible_en_bodega'] = cantidad
@@ -211,8 +204,8 @@ class CrearEntregaView(generics.CreateAPIView):
             else:
                 items_con_cantidades_disponible_en_bodega.append(item)
 
-        if not items_con_cantidades_disponible_en_bodega:
-            return Response({'success': False, 'detail': 'No se puede crear una entrega si ninguno de los bienes enviados a despachar tienen cantidades disponibles', 'Items que no tienen cantidades disponibles en bodega': items_con_cantidad_no_disponible_en_bodega, 'Items con despachos posteriores en la misma bodega': items_fecha_posterior_entrega_actual}, status=status.HTTP_400_BAD_REQUEST)
+        if items_con_cantidad_no_disponible_en_bodega:
+            return Response({'success': False, 'detail': 'No se puede realizar una entrega si alguno de los bienes enviados a despachar no tiene cantidades disponibles en bodega', 'Items que no tienen cantidades disponibles en bodega': items_con_cantidad_no_disponible_en_bodega}, status=status.HTTP_400_BAD_REQUEST)
 
         #CREACIÓN DE ENTREGA MAESTRO
         serializer = self.serializer_class(data=data_entrega, many=False)
@@ -220,11 +213,11 @@ class CrearEntregaView(generics.CreateAPIView):
         serializador = serializer.save()
 
         #CREACIÓN DE ENTREGA DETALLE
-        for item in items_con_cantidades_disponible_en_bodega:
+        for item in data_items_entrega:
             item['observacion'] = data_entrega['motivo']
             item['id_despacho_consumo'] = serializador.pk
 
-        items_serializer = CreateItemsEntregaSerializer(data=items_con_cantidades_disponible_en_bodega, many=True)
+        items_serializer = CreateItemsEntregaSerializer(data=data_items_entrega, many=True)
         items_serializer.is_valid(raise_exception=True)
         items_serializador = items_serializer.save()
 
@@ -254,7 +247,7 @@ class CrearEntregaView(generics.CreateAPIView):
                 )
         
         #REGISTRO DEL AUMENTO DE LA CANTIDAD SALIENTE POR BIEN Y BODEGA EN INVENTARIO
-        for item in items_con_cantidades_disponible_en_bodega:
+        for item in data_items_entrega:
             inventario_bien_bodega = Inventario.objects.filter(id_bien=item['id_bien_despachado'], id_bodega=item['id_bodega']).first()
             cantidad_saliente_existente = 0
             if inventario_bien_bodega.cantidad_saliente_consumo != None:
@@ -262,7 +255,7 @@ class CrearEntregaView(generics.CreateAPIView):
             inventario_bien_bodega.cantidad_saliente_consumo = cantidad_saliente_existente + int(item['cantidad_despachada'])
             inventario_bien_bodega.save()
 
-        return Response({'success': True, 'detail': 'Entrega creada exitosamente', 'Entrega creada': serializer.data, 'Items entregados': items_serializer.data, 'Items que ya fueron entregados en su totalidad anteriormente': items_no_pasan_validacion, 'Items que no tienen cantidades disponibles en bodega':items_con_cantidad_no_disponible_en_bodega, 'Items con despachos posteriores en la misma bodega': items_fecha_posterior_entrega_actual}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Entrega creada exitosamente', 'Entrega creada': serializer.data, 'Items entregados': items_serializer.data}, status=status.HTTP_200_OK)
 
 
 class AnularEntregaView(generics.RetrieveUpdateAPIView):
@@ -271,13 +264,37 @@ class AnularEntregaView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, id_entrega):
+        data = request.data
         entrega_instance = DespachoConsumo.objects.filter(id_despacho_consumo=id_entrega).first()
         if not entrega_instance:
             return Response({'success': False, 'detail': 'No existe ningún despacho con el parámetro ingresado'}, status=status.HTTP_400_BAD_REQUEST)
         
-        entrega_distribuida = DespachoEntrantes.objects.filter(id_despacho_consumo_alm=entrega_instance.id_despacho_consumo)
+        despacho_entrante = DespachoEntrantes.objects.filter(id_despacho_consumo_alm=entrega_instance.id_despacho_consumo).first()
+        if despacho_entrante.id_persona_distribuye or despacho_entrante.id_persona_distribuye == '':
+            return Response({'success': False, 'detail': 'No se puede anular una entrega que ya fue distribuida en viveros'}, status=status.HTTP_400_BAD_REQUEST)
         
-        return Response({'success': True})
+        items_entrega = ItemDespachoConsumo.objects.filter(id_despacho_consumo=id_entrega)
+        for item in items_entrega:
+            anulacion_bien = Inventario.objects.filter(id_bien=item.id_bien_despachado, id_bodega=item.id_bodega).first()
+            anulacion_bien.cantidad_saliente_consumo = anulacion_bien.cantidad_saliente_consumo - item.cantidad_despachada
+            if anulacion_bien.cantidad_saliente_consumo == 0:
+                anulacion_bien.cantidad_saliente_consumo = None
+            anulacion_bien.save()
+        
+        
+        items_entrega.delete()
+        entrega_instance.despacho_anulado = True
+        entrega_instance.justificacion_anulacion = data['descripcion_anulacion']
+        entrega_instance.fecha_anulacion = datetime.now()
+        entrega_instance.id_persona_anula = request.user.persona
+        entrega_instance.save()
+
+        items_despacho_entrante = ItemsDespachoEntrante.objects.filter(id_despacho_entrante=despacho_entrante.id_despacho_entrante)
+        items_despacho_entrante.delete()
+        
+        despacho_entrante.delete()
+
+        return Response({'success': True, 'detail': 'Se ha anulado la entrega correctamente'}, status=status.HTTP_204_NO_CONTENT)
 
 class GetEntradasEntregasView(generics.ListAPIView):
     serializer_class = GetEntradasEntregasSerializer
