@@ -1,7 +1,7 @@
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from seguridad.utils import Util  
-from django.db.models import Q
+from django.db.models import Q, F, Sum
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
@@ -15,59 +15,17 @@ from almacen.models.solicitudes_models import (
 )
 from conservacion.models.despachos_models import (
     DespachoEntrantes,
-    ItemsDespachoEntrante
+    ItemsDespachoEntrante,
+    DistribucionesItemDespachoEntrante
 )
 from conservacion.serializers.despachos_serializers import (
     DespachosEntrantesSerializer,
-    ItemsDespachosEntrantesSerializer
+    ItemsDespachosEntrantesSerializer,
+    DistribucionesItemDespachoEntranteSerializer
 )
 
-# class DitribucionDespachosViveros(generics.CreateAPIView):
-#     serializer_class = DespachosEntrantesSerializer
-#     queryset = DespachoEntrantes.objects.all()
-#     permission_classes = [IsAuthenticated]
-    
-#     def post(self, request):
-#         data = request.data
-#         persona = request.user.persona.id_persona
-#         data['id_persona_crea'] = persona
-        
-#         # VALIDAR ASIGNACIÓN VIVERISTA
-#         viverista = data.get('id_viverista_actual')
-#         if viverista:
-#             viverista_existe = Personas.objects.filter(id_persona=viverista)
-#             if not viverista_existe:
-#                 return Response({'status':False, 'detail':'Debe elegir un viverista que exista'}, status=status.HTTP_400_BAD_REQUEST)
-            
-#             viveristas_actuales = Vivero.objects.filter(id_viverista_actual = viverista)
-            
-#             if viveristas_actuales:
-#                 return Response({'status':False, 'detail':'Debe elegir un viverista que no tenga ningún vivero asignado'}, status=status.HTTP_403_FORBIDDEN)
-            
-#             data['fecha_inicio_viverista_actual'] = datetime.now()
-        
-#         serializador = self.serializer_class(data=data)
-#         serializador.is_valid(raise_exception=True)
-#         serializador.save()
-        
-#         # AUDITORIA DE CREATE DE VIVEROS
-#         user_logeado = request.user.id_usuario
-#         dirip = Util.get_client_ip(request)
-#         descripcion = {'nombre':data['nombre']}
-#         auditoria_data = {
-#             'id_usuario': user_logeado,
-#             'id_modulo': 41,
-#             'cod_permiso': 'CR',
-#             'subsistema': 'CONS',
-#             'dirip': dirip,
-#             'descripcion': descripcion
-#         }
-#         Util.save_auditoria(auditoria_data)
-        
-#         return Response({'success':True, 'detail':'Se ha creado el vivero', 'data':serializador.data}, status=status.HTTP_201_CREATED)
-
 class GetDespachosEntrantes(generics.ListAPIView):
-    serializer_class=ItemsDespachosEntrantesSerializer
+    serializer_class=DespachosEntrantesSerializer
     queryset=DespachoEntrantes.objects.all()
     permission_classes = [IsAuthenticated]
 
@@ -91,10 +49,35 @@ class GetItemsDespachosEntrantes(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self,request,pk):
-        items_despacho = ItemsDespachoEntrante.objects.filter(id_despacho_entrante=pk)
+        items_despacho = ItemsDespachoEntrante.objects.filter(id_despacho_entrante=pk).values(
+            'id_item_despacho_entrante',
+            'id_despacho_entrante',
+            'id_bien',
+            'id_entrada_alm_del_bien',
+            'fecha_ingreso',
+            'cantidad_entrante',
+            'cantidad_distribuida',
+            'observacion',
+            codigo_bien=F('id_bien__codigo_bien'),
+            nombre_bien=F('id_bien__nombre'),
+            tipo_documento=F('id_entrada_alm_del_bien__id_tipo_entrada__nombre'),
+            numero_documento=F('id_entrada_alm_del_bien__numero_entrada_almacen'),
+        ).annotate(cantidad_restante=Sum('cantidad_entrante') - Sum('cantidad_distribuida'))
         
-        serializer=self.serializer_class(items_despacho, many=True)
         if items_despacho:
-            return Response({'success':True,'detail':'Se encontraron items de despachos entrantes','data':serializer.data}, status=status.HTTP_200_OK)
+            return Response({'success':True,'detail':'Se encontraron items de despachos entrantes','data':items_despacho}, status=status.HTTP_200_OK)
         else: 
             return Response({'success':True,'detail':'No se encontraron items de despachos entrantes', 'data':[]}, status=status.HTTP_200_OK)
+        
+class GuardarDistribucionBienes(generics.ListAPIView):
+    serializer_class=DistribucionesItemDespachoEntranteSerializer
+    queryset=DistribucionesItemDespachoEntrante.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def put(self,request,id_despacho_entrante):
+        despacho_entrante=DespachoEntrantes.objects.filter(id_despacho_entrante=id_despacho_entrante).first()
+        if despacho_entrante:
+             pass
+        else:
+            return Response({'success':False, 'detail':'El despacho entrante elegido no existe'}, status=status.HTTP_404_NOT_FOUND)
+        
