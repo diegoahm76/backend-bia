@@ -132,12 +132,12 @@ class CreateDespachoMaestro(generics.UpdateAPIView):
             if not bien_solicitado_instancia:
                 return Response({'success':False,'detail':'El bien solicitado (' + i['id_bien_solicitado'] + ') no existe' },status=status.HTTP_404_NOT_FOUND)
             if bien_solicitado_instancia.nivel_jerarquico > 5 or bien_solicitado_instancia.nivel_jerarquico < 2:
-                return Response({'success':False,'detail':'Error en el numero_posicion (' + i['numero_posicion_despacho'] + '). El bien solicitado (' + bien_solicitado_instancia.nombre + ') no es de nivel 2 al 5' },status=status.HTTP_404_NOT_FOUND)
+                return Response({'success':False,'detail':'Error en el numero_posicion (' + str(i['numero_posicion_despacho']) + '). El bien solicitado (' + bien_solicitado_instancia.nombre + ') no es de nivel 2 al 5' },status=status.HTTP_404_NOT_FOUND)
             if bien_solicitado_instancia.cod_tipo_bien != 'C':
                 return Response({'success':False,'detail':'El bien (' + bien_solicitado_instancia.nombre + ') no es de consumo' },status=status.HTTP_404_NOT_FOUND)
             item_solicitado_instancia = ItemsSolicitudConsumible.objects.filter(Q(id_solicitud_consumibles=info_despacho['id_solicitud_consumo']) & Q(id_bien=i['id_bien_solicitado'])).first()
             if item_solicitado_instancia.cantidad != i['cantidad_solicitada'] or item_solicitado_instancia.id_unidad_medida.id_unidad_medida != i['id_unidad_medida_solicitada']:
-                return Response({'success':False,'detail':'Error en el numero_posicion (' + i['numero_posicion_despacho'] + ') del despacho. La cantidad solicitada o la unidad de medida solicitada no corresponde a las registrada en la solicitud' },status=status.HTTP_404_NOT_FOUND)
+                return Response({'success':False,'detail':'Error en el numero_posicion (' + str(i['numero_posicion_despacho']) + ') del despacho. La cantidad solicitada o la unidad de medida solicitada no corresponde a las registrada en la solicitud' },status=status.HTTP_404_NOT_FOUND)
             # VALIDACION 94:
             if i['cantidad_despachada'] == 0:
                 if i['id_bien_despachado'] != 0:
@@ -175,7 +175,7 @@ class CreateDespachoMaestro(generics.UpdateAPIView):
                     cont -= 1
                 # SE VALIDA QUE EL BIEN DESPACHADO SEA DESENDIENTE DEL BIEN SOLICITADO
                 if (bien_solicitado_instancia.id_bien_padre.id_bien not in arreglo_id_bienes_ancestros):
-                    return Response({'success':False,'detail':'En el número de posición (' + i['numero_posicion_despacho'] + ') el bien solicitado no es de la misma linea del bien despachado' },status=status.HTTP_404_NOT_FOUND)
+                    return Response({'success':False,'detail':'En el número de posición (' + str(i['numero_posicion_despacho']) + ') el bien solicitado no es de la misma linea del bien despachado' },status=status.HTTP_404_NOT_FOUND)
                 bodega_solicita = i.get('id_bodega')
                 if bodega_solicita == None:
                     return Response({'success':False,'detail':'Debe ingresar un id de bodega válido'},status=status.HTTP_404_NOT_FOUND)
@@ -269,7 +269,7 @@ class CreateDespachoMaestro(generics.UpdateAPIView):
         instancia_solicitud.save()
         
         # AUDITORIA MAESTRO DETALLE DE DESPACHO
-        descripcion = {"numero_despacho_consumo": str(info_despacho['numero_despacho_consumo']), "fecha_despacho": str(info_despacho['fecha_despacho'])}
+        descripcion = {"numero_despacho_consumo": str(info_despacho['numero_despacho_consumo']), "es_despacho_conservacion": "false", "fecha_despacho": str(info_despacho['fecha_despacho'])}
         direccion=Util.get_client_ip(request)
         auditoria_data = {
             "id_usuario" : request.user.id_usuario,
@@ -402,9 +402,9 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
                     return Response({'success':False,'detail':'Debe ingresar un id de un bien solicitado'},status=status.HTTP_404_NOT_FOUND)
                 bien_solicitado_instancia = CatalogoBienes.objects.filter(id_bien = i['id_bien_solicitado']).first()
                 if not bien_solicitado_instancia:
-                    return Response({'success':False,'detail':'El bien solicitado (' + i['id_bien_solicitado'] + ') no existe' },status=status.HTTP_404_NOT_FOUND)
+                    return Response({'success':False,'detail':'El bien solicitado (' + str(i['id_bien_solicitado']) + ') no existe' },status=status.HTTP_404_NOT_FOUND)
                 if bien_solicitado_instancia.nivel_jerarquico > 5 or bien_solicitado_instancia.nivel_jerarquico < 2:
-                    return Response({'success':False,'detail':'Error en el numero_posicion (' + i['numero_posicion_despacho'] + '). El bien solicitado (' + bien_solicitado_instancia.nombre + ') no es de nivel 2 al 5' },status=status.HTTP_404_NOT_FOUND)
+                    return Response({'success':False,'detail':'Error en el numero_posicion (' + str(i['numero_posicion_despacho']) + '). El bien solicitado (' + bien_solicitado_instancia.nombre + ') no es de nivel 2 al 5' },status=status.HTTP_404_NOT_FOUND)
                 if bien_solicitado_instancia.cod_tipo_bien != 'C':
                     return Response({'success':False,'detail':'El bien (' + bien_solicitado_instancia.nombre + ') no es de consumo' },status=status.HTTP_404_NOT_FOUND)
                 item_solicitado_instancia = ItemsSolicitudConsumible.objects.filter(Q(id_solicitud_consumibles=solicitud_del_despacho_instancia.id_solicitud_consumibles) & Q(id_bien=i['id_bien_solicitado'])).first()
@@ -447,7 +447,7 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
                         cont -= 1
                     # SE VALIDA QUE EL BIEN DESPACHADO SEA DESENDIENTE DEL BIEN SOLICITADO
                     if (bien_solicitado_instancia.id_bien_padre.id_bien not in arreglo_id_bienes_ancestros):
-                        return Response({'success':False,'detail':'En el número de posición (' + i['numero_posicion_despacho'] + ') el bien solicitado no es de la misma linea del bien despachado' },status=status.HTTP_404_NOT_FOUND)
+                        return Response({'success':False,'detail':'En el número de posición (' + str(i['numero_posicion_despacho']) + ') el bien solicitado no es de la misma linea del bien despachado' },status=status.HTTP_404_NOT_FOUND)
                     bodega_solicita = i.get('id_bodega')
                     if bodega_solicita == None:
                         return Response({'success':False,'detail':'Debe ingresar un id de bodega válido'},status=status.HTTP_404_NOT_FOUND)
@@ -528,7 +528,7 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
             inventario_instancia.cantidad_saliente_consumo = int(aux_suma) + i[2]
             inventario_instancia.save()   
             
-        descripcion = {"numero_despacho_almacen": str(despacho_maestro_instancia.numero_despacho_consumo), "fecha_despacho": str(despacho_maestro_instancia.fecha_despacho)}
+        descripcion = {"numero_despacho_almacen": str(despacho_maestro_instancia.numero_despacho_consumo), "es_despacho_conservacion": "false", "fecha_despacho": str(despacho_maestro_instancia.fecha_despacho)}
         direccion=Util.get_client_ip(request)
         auditoria_data = {
             "id_usuario" : request.user.id_usuario,

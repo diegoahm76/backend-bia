@@ -19,7 +19,7 @@ class SerializersDespachoConsumoViverosActualizar(serializers.ModelSerializer):
 class SerializersItemDespachoViverosConsumo(serializers.ModelSerializer):
     class Meta:
         model=ItemDespachoConsumo
-        exclude=('id_entrada_almacen_bien',)
+        fields=('__all__')
         
 class SerializersDespachoEntrantes(serializers.ModelSerializer):
     class Meta:

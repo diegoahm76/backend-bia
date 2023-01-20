@@ -127,20 +127,28 @@ class CreateDespachoMaestroVivero(generics.UpdateAPIView):
         aux_validacion_unidades_dic = {}
         for i in items_despacho:
             bien_solicitado = i.get('id_bien_solicitado')
+            instancia_entrada = EntradasAlmacen.objects.filter(id_entrada_almacen=i.get('id_entrada_almacen_bien')).first()
+            if not instancia_entrada:
+                return Response({'success':False,'detail':'En el número de posición del despacho (' + str(i['numero_posicion_despacho']) + '), no existe el id_entrada_bien ingresado'},status=status.HTTP_404_NOT_FOUND)
+            if (instancia_entrada.id_tipo_entrada.nombre != "Donación") and (instancia_entrada.id_tipo_entrada.nombre != "Resarcimiento") and (instancia_entrada.id_tipo_entrada.nombre != "Compensación"):
+                return Response({'success':False,'detail':'En el número de posición del despacho (' + str(i['numero_posicion_despacho']) + '), el tipo entrada de la entrada ingresada no es correcto para un despacho de bienes de consumo de solicitables por vivero'},status=status.HTTP_404_NOT_FOUND)
+            instancia_item_entrada_alamacen = ItemEntradaAlmacen.objects.filter(id_bien=i.get('id_bien_despachado'), id_entrada_almacen=i.get('id_entrada_almacen_bien')).first()
+            if not instancia_item_entrada_alamacen:
+                return Response({'success':False,'detail':'En el número de posición del despacho (' + str(i['numero_posicion_despacho']) + '), no existe el id_entrada_bien ingresado'},status=status.HTTP_404_NOT_FOUND)
             if (bien_solicitado not in id_items_solicitud):
-                return Response({'success':False,'detail':'Uno de los bienes que intenta despachar no se encuentra dentro de la solicitud, verifique que cada id_bien_solicitado se encuentre dentro de la solicitud'},status=status.HTTP_404_NOT_FOUND)
+                return Response({'success':False,'detail':'En el número de posición del despacho (' + str(i['numero_posicion_despacho']) + '), el bien ingresado no está dentro de la entrada seleccionada'},status=status.HTTP_404_NOT_FOUND)
             if bien_solicitado == None:
                 return Response({'success':False,'detail':'Debe ingresar un id de un bien solicitado'},status=status.HTTP_404_NOT_FOUND)
             bien_solicitado_instancia = CatalogoBienes.objects.filter(id_bien = i['id_bien_solicitado']).first()
             if not bien_solicitado_instancia:
                 return Response({'success':False,'detail':'El bien solicitado (' + i['id_bien_solicitado'] + ') no existe' },status=status.HTTP_404_NOT_FOUND)
             if bien_solicitado_instancia.nivel_jerarquico > 5 or bien_solicitado_instancia.nivel_jerarquico < 2:
-                return Response({'success':False,'detail':'Error en el numero_posicion (' + i['numero_posicion_despacho'] + '). El bien solicitado (' + bien_solicitado_instancia.nombre + ') no es de nivel 2 al 5' },status=status.HTTP_404_NOT_FOUND)
+                return Response({'success':False,'detail':'Error en el numero_posicion (' + str(i['numero_posicion_despacho']) + '). El bien solicitado (' + bien_solicitado_instancia.nombre + ') no es de nivel 2 al 5' },status=status.HTTP_404_NOT_FOUND)
             if bien_solicitado_instancia.cod_tipo_bien != 'C':
                 return Response({'success':False,'detail':'El bien (' + bien_solicitado_instancia.nombre + ') no es de consumo' },status=status.HTTP_404_NOT_FOUND)
             item_solicitado_instancia = ItemsSolicitudConsumible.objects.filter(Q(id_solicitud_consumibles=info_despacho['id_solicitud_consumo']) & Q(id_bien=i['id_bien_solicitado'])).first()
             if item_solicitado_instancia.cantidad != i['cantidad_solicitada'] or item_solicitado_instancia.id_unidad_medida.id_unidad_medida != i['id_unidad_medida_solicitada']:
-                return Response({'success':False,'detail':'Error en el numero_posicion (' + i['numero_posicion_despacho'] + ') del despacho. La cantidad solicitada o la unidad de medida solicitada no corresponde a las registrada en la solicitud' },status=status.HTTP_404_NOT_FOUND)
+                return Response({'success':False,'detail':'Error en el numero_posicion (' + str(i['numero_posicion_despacho']) + ') del despacho. La cantidad solicitada o la unidad de medida solicitada no corresponde a las registrada en la solicitud' },status=status.HTTP_404_NOT_FOUND)
             # VALIDACION 94:
             if i['cantidad_despachada'] == 0:
                 if i['id_bien_despachado'] != 0:
@@ -178,7 +186,7 @@ class CreateDespachoMaestroVivero(generics.UpdateAPIView):
                     cont -= 1
                 # SE VALIDA QUE EL BIEN DESPACHADO SEA DESENDIENTE DEL BIEN SOLICITADO
                 if (bien_solicitado_instancia.id_bien_padre.id_bien not in arreglo_id_bienes_ancestros):
-                    return Response({'success':False,'detail':'En el número de posición (' + i['numero_posicion_despacho'] + ') el bien solicitado no es de la misma linea del bien despachado' },status=status.HTTP_404_NOT_FOUND)
+                    return Response({'success':False,'detail':'En el número de posición (' + str(i['numero_posicion_despacho']) + ') el bien solicitado no es de la misma linea del bien despachado' },status=status.HTTP_404_NOT_FOUND)
                 bodega_solicita = i.get('id_bodega')
                 if bodega_solicita == None:
                     return Response({'success':False,'detail':'Debe ingresar un id de bodega válido'},status=status.HTTP_404_NOT_FOUND)
@@ -209,10 +217,12 @@ class CreateDespachoMaestroVivero(generics.UpdateAPIView):
                     return Response({'success':False,'detail':'Por favor verifique la existencia del bien en la bodega, o la existencia del bien en la tabla inventario' },status=status.HTTP_404_NOT_FOUND)
                 valores_creados_detalles.append({'nombre' : instancia_inventario_auxiliar.id_bien.nombre})
                 #VALIDACION 96: SE VALIDA LAS CANTIDADES POSITIVAS DEL BIEN EN LA FECHA DEL DESPACHO
-                aux_validacion_cantidades_fecha_despacho = UtilAlmacen.get_cantidad_disponible(i['id_bien_despachado'], i['id_bodega'], fecha_despacho)
-                if i['cantidad_despachada'] > aux_validacion_cantidades_fecha_despacho:
+                cantidad_disponible = UtilAlmacen.get_cantidad_disponible(i['id_bien_despachado'], i['id_bodega'], fecha_despacho)
+                if i['cantidad_despachada'] > cantidad_disponible:
                     return Response({'success':False,'detail':'Verifique que las cantidades del bien a despachar en la bodega ingresada en la fecha de despacho sean correctas' },status=status.HTTP_404_NOT_FOUND)
-                #VALIDACION 97: SE VALIDA QUE EL BIEN DESPACHADO NO TENGA DESPACHOS POSTERIORES A LA FECHA DE DESPACHO
+                cantidad_por_distribuir = UtilAlmacen.get_cantidad_por_distribuir(i['id_bien_despachado'], i['id_entrada_almacen_bien'], fecha_despacho)
+                if i['cantidad_despachada'] > cantidad_por_distribuir:
+                    return Response({'success':False,'detail':'La cantidad por distribuir de la entrada que intenta despachar es insuficiente en el nro posición (' + str(i['numero_posicion_despacho']) + ')' },status=status.HTTP_404_NOT_FOUND)
                 items_despachados_aux_val_97 = ItemDespachoConsumo.objects.filter(id_bien_despachado=i['id_bien_despachado'], id_despacho_consumo__fecha_despacho__gte=info_despacho['fecha_despacho'])
                 if items_despachados_aux_val_97:
                     return Response({'success':False, 'detail':'El bien tiene despachos o entregas posteriores a la fecha de despacho elegida', 'data': []}, status=status.HTTP_403_FORBIDDEN)
@@ -286,23 +296,38 @@ class CreateDespachoMaestroVivero(generics.UpdateAPIView):
         
         instancia_despacho_entrante = DespachoEntrantes.objects.filter(id_despacho_consumo_alm=despacho_creado.id_despacho_consumo).first()
         items_despacho_entrante_lista = []
+        aux_validacion = []
+        repetidos_items_despacho_entrante_lista = []
+        carry_items_despacho_entrante_lista = []
+        cont = 0
         for i in items_despacho:
             items_despacho_entrante = {}
-            items_despacho_entrante['id_despacho_entrante'] = instancia_despacho_entrante.id_despacho_entrante
-            items_despacho_entrante['id_bien'] = i['id_bien_despachado']
-            items_despacho_entrante['id_entrada_alm_del_bien'] = i['id_entrada_almacen_bien']
-            items_despacho_entrante['fecha_ingreso'] = despacho_creado.fecha_despacho
-            items_despacho_entrante['cantidad_entrante'] = i['cantidad_despachada']
-            items_despacho_entrante['cantidad_distribuida'] = 0
-            items_despacho_entrante['observacion'] = i['observacion']
-            items_despacho_entrante_lista.append(items_despacho_entrante)
-        
+            aux_validacion = [i['id_bien_despachado'], i['id_entrada_almacen_bien']]
+            if aux_validacion in repetidos_items_despacho_entrante_lista:
+                carry_items_despacho_entrante_lista.append([i['id_bien_despachado'], i['id_entrada_almacen_bien'], i['cantidad_despachada'], cont])
+                cont = cont + 1
+            else:
+                items_despacho_entrante['id_despacho_entrante'] = instancia_despacho_entrante.id_despacho_entrante
+                items_despacho_entrante['id_bien'] = i['id_bien_despachado']
+                items_despacho_entrante['id_entrada_alm_del_bien'] = i['id_entrada_almacen_bien']
+                items_despacho_entrante['fecha_ingreso'] = despacho_creado.fecha_despacho
+                items_despacho_entrante['cantidad_entrante'] = i['cantidad_despachada']
+                items_despacho_entrante['cantidad_distribuida'] = 0
+                items_despacho_entrante['observacion'] = i['observacion']
+                items_despacho_entrante_lista.append(items_despacho_entrante)
+                repetidos_items_despacho_entrante_lista.append([i['id_bien_despachado'], i['id_entrada_almacen_bien']])
+                
         SerializersItemsDespachoEntrantes = self.serializer_items_despacho_entrante(data=items_despacho_entrante_lista, many=True)
         SerializersItemsDespachoEntrantes.is_valid(raise_exception=True)
         SerializersItemsDespachoEntrantes.save()
-
+        
+        for i in carry_items_despacho_entrante_lista:
+            instancia_items_despacho_entrante = ItemsDespachoEntrante.objects.filter(id_bien=i[0], id_entrada_alm_del_bien=i[1],id_despacho_entrante=instancia_despacho_entrante.id_despacho_entrante).first()
+            instancia_items_despacho_entrante.cantidad_entrante = instancia_items_despacho_entrante.cantidad_entrante + i[2]
+            instancia_items_despacho_entrante.save()
+            
         # AUDITORIA MAESTRO DETALLE DE DESPACHO
-        descripcion = {"numero_despacho_consumo": str(info_despacho['numero_despacho_consumo']), "fecha_despacho": str(info_despacho['fecha_despacho'])}
+        descripcion = {"numero_despacho_consumo": str(info_despacho['numero_despacho_consumo']), "es_despacho_conservacion": "true", "fecha_despacho": str(info_despacho['fecha_despacho'])}
         direccion=Util.get_client_ip(request)
         auditoria_data = {
             "id_usuario" : request.user.id_usuario,
@@ -437,7 +462,7 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
                 if not bien_solicitado_instancia:
                     return Response({'success':False,'detail':'El bien solicitado (' + i['id_bien_solicitado'] + ') no existe' },status=status.HTTP_404_NOT_FOUND)
                 if bien_solicitado_instancia.nivel_jerarquico > 5 or bien_solicitado_instancia.nivel_jerarquico < 2:
-                    return Response({'success':False,'detail':'Error en el numero_posicion (' + i['numero_posicion_despacho'] + '). El bien solicitado (' + bien_solicitado_instancia.nombre + ') no es de nivel 2 al 5' },status=status.HTTP_404_NOT_FOUND)
+                    return Response({'success':False,'detail':'Error en el numero_posicion (' + str(i['numero_posicion_despacho']) + '). El bien solicitado (' + bien_solicitado_instancia.nombre + ') no es de nivel 2 al 5' },status=status.HTTP_404_NOT_FOUND)
                 if bien_solicitado_instancia.cod_tipo_bien != 'C':
                     return Response({'success':False,'detail':'El bien (' + bien_solicitado_instancia.nombre + ') no es de consumo' },status=status.HTTP_404_NOT_FOUND)
                 item_solicitado_instancia = ItemsSolicitudConsumible.objects.filter(Q(id_solicitud_consumibles=solicitud_del_despacho_instancia.id_solicitud_consumibles) & Q(id_bien=i['id_bien_solicitado'])).first()
@@ -480,7 +505,7 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
                         cont -= 1
                     # SE VALIDA QUE EL BIEN DESPACHADO SEA DESENDIENTE DEL BIEN SOLICITADO
                     if (bien_solicitado_instancia.id_bien_padre.id_bien not in arreglo_id_bienes_ancestros):
-                        return Response({'success':False,'detail':'En el número de posición (' + i['numero_posicion_despacho'] + ') el bien solicitado no es de la misma linea del bien despachado' },status=status.HTTP_404_NOT_FOUND)
+                        return Response({'success':False,'detail':'En el número de posición (' + str(i['numero_posicion_despacho']) + ') el bien solicitado no es de la misma linea del bien despachado' },status=status.HTTP_404_NOT_FOUND)
                     bodega_solicita = i.get('id_bodega')
                     if bodega_solicita == None:
                         return Response({'success':False,'detail':'Debe ingresar un id de bodega válido'},status=status.HTTP_404_NOT_FOUND)
@@ -558,7 +583,7 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
             inventario_instancia.cantidad_saliente_consumo = int(inventario_instancia.cantidad_saliente_consumo) + i[2]
             inventario_instancia.save()   
             
-        descripcion = {"numero_despacho_almacen": str(despacho_maestro_instancia.numero_despacho_consumo), "fecha_despacho": str(despacho_maestro_instancia.fecha_despacho)}
+        descripcion = {"numero_despacho_consumo": str(info_despacho['numero_despacho_consumo']), "es_despacho_conservacion": "true", "fecha_despacho": str(info_despacho['fecha_despacho'])}
         direccion=Util.get_client_ip(request)
         auditoria_data = {
             "id_usuario" : request.user.id_usuario,
