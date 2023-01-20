@@ -97,9 +97,14 @@ class UtilAlmacen:
                     codigo_bien=F('id_bien__codigo_bien'),
                     nombre=F('id_bien__nombre'),
                     numero_documento=F('id_entrada_almacen__numero_entrada_almacen'),
-                    tipo_documento=F('id_entrada_almacen__id_tipo_entrada__nombre')).annotate(cantidad_total_entrada=Sum('cantidad'))
+                    tipo_documento=F('id_entrada_almacen__id_tipo_entrada__nombre')).annotate(
+                        cantidad_total_entrada=Sum('cantidad'))
         
-        item_despachado=ItemDespachoConsumo.objects.filter(id_bien_despachado=id_bien,id_entrada_almacen_bien=id_entrada).values('id_bien_despachado','id_entrada_almacen_bien').annotate(cantidad_total_despachada=Sum('cantidad_despachada'))
+        item_despachado=ItemDespachoConsumo.objects.filter(
+            id_bien_despachado=id_bien,
+            id_entrada_almacen_bien=id_entrada).values(
+                'id_bien_despachado','id_entrada_almacen_bien').annotate(
+                    cantidad_total_despachada=Sum('cantidad_despachada'))
         
         cantidad_por_distribuir=item_entrada[0]['cantidad_total_entrada'] - item_despachado[0]['cantidad_total_despachada'] if item_despachado and item_despachado[0]['cantidad_total_despachada'] else item_entrada[0]['cantidad_total_entrada']
         
@@ -107,7 +112,7 @@ class UtilAlmacen:
     
     @staticmethod
     def get_valor_minimo_entradas(id_bien, id_bodega, id_entrada):
-        # HALLAR SALDO PREVIO
+        # HALLAR CANTIDAD TOTAL DE ENTRADAS ANTERIORES
         entrada = EntradasAlmacen.objects.filter(id_entrada_almacen=id_entrada).first()
         entradas_anteriores = EntradasAlmacen.objects.filter(fecha_entrada__lte=entrada.fecha_entrada, entrada_anulada=None)
         entradas_anteriores_id = [entrada_anterior.id_entrada_almacen for entrada_anterior in entradas_anteriores]
@@ -116,6 +121,7 @@ class UtilAlmacen:
         cantidad_entradas_anteriores = ItemEntradaAlmacen.objects.filter(id_entrada_almacen__in=entradas_anteriores_id, id_bien=id_bien, id_bodega=id_bodega).values('id_bien', 'id_bodega').annotate(cantidad_entradas=Sum('cantidad'))
         cantidad_entradas_anteriores = cantidad_entradas_anteriores[0]['cantidad_entradas'] if cantidad_entradas_anteriores else 0
         
+        # HALLAR CANTIDAD TOTAL DE SALIDAS ANTERIORES Y EL SALDO
         salidas_anteriores = DespachoConsumo.objects.filter(fecha_despacho__lte=entrada.fecha_entrada, despacho_anulado=None)
         salidas_anteriores_id = [salida_anterior.id_despacho_consumo for salida_anterior in salidas_anteriores]
         
@@ -124,7 +130,7 @@ class UtilAlmacen:
         
         saldo = cantidad_entradas_anteriores - cantidad_salidas_anteriores
         
-        # HALLAR REGISTROS POSTERIORES
+        # HALLAR REGISTROS DE ENTRADAS POSTERIORES
         entradas_posteriores = EntradasAlmacen.objects.filter(fecha_entrada__gte=entrada.fecha_entrada, entrada_anulada=None)
         entradas_posteriores_id = [entrada_posterior.id_entrada_almacen for entrada_posterior in entradas_posteriores]
         entradas_posteriores_id.remove(entrada.id_entrada_almacen)
@@ -134,6 +140,7 @@ class UtilAlmacen:
         for registro in registros_entradas_posteriores:
             registro['tipo'] = 'E'
         
+        # HALLAR REGISTROS DE SALIDAS POSTERIORES
         salidas_posteriores = DespachoConsumo.objects.filter(fecha_despacho__gte=entrada.fecha_entrada, despacho_anulado=None)
         salidas_posteriores_id = [salida_posterior.id_despacho_consumo for salida_posterior in salidas_posteriores]
         
@@ -168,24 +175,25 @@ class UtilAlmacen:
     
     @staticmethod
     def get_valor_maximo_despacho(id_bien, id_bodega, id_despacho):
-        # HALLAR SALDO PREVIO
+        # HALLAR CANTIDAD TOTAL DE SALIDAS ANTERIORES
         salida = DespachoConsumo.objects.filter(id_despacho_consumo=id_despacho).first()
         salidas_anteriores = DespachoConsumo.objects.filter(fecha_despacho__lte=salida.fecha_despacho, despacho_anulado=None)
         salidas_anteriores_id = [salida_anterior.id_despacho_consumo for salida_anterior in salidas_anteriores]
         salidas_anteriores_id.remove(salida.id_despacho_consumo)
         
+        cantidad_salidas_anteriores = ItemDespachoConsumo.objects.filter(id_despacho_consumo__in=salidas_anteriores_id, id_bien_despachado=id_bien, id_bodega=id_bodega).values('id_bien_despachado', 'id_bodega').annotate(cantidad_salidas=Sum('cantidad_despachada'))
+        cantidad_salidas_anteriores = cantidad_salidas_anteriores[0]['cantidad_salidas'] if cantidad_salidas_anteriores else 0
+        
+        # HALLAR CANTIDAD TOTAL DE ENTRADAS ANTERIORES Y EL SALDO
         entradas_anteriores = EntradasAlmacen.objects.filter(fecha_entrada__lte=salida.fecha_despacho, entrada_anulada=None)
         entradas_anteriores_id = [entrada_anterior.id_entrada_almacen for entrada_anterior in entradas_anteriores]
         
         cantidad_entradas_anteriores = ItemEntradaAlmacen.objects.filter(id_entrada_almacen__in=entradas_anteriores_id, id_bien=id_bien, id_bodega=id_bodega).values('id_bien', 'id_bodega').annotate(cantidad_entradas=Sum('cantidad'))
         cantidad_entradas_anteriores = cantidad_entradas_anteriores[0]['cantidad_entradas'] if cantidad_entradas_anteriores else 0
         
-        cantidad_salidas_anteriores = ItemDespachoConsumo.objects.filter(id_despacho_consumo__in=salidas_anteriores_id, id_bien_despachado=id_bien, id_bodega=id_bodega).values('id_bien_despachado', 'id_bodega').annotate(cantidad_salidas=Sum('cantidad_despachada'))
-        cantidad_salidas_anteriores = cantidad_salidas_anteriores[0]['cantidad_salidas'] if cantidad_salidas_anteriores else 0
-        
         saldo = cantidad_entradas_anteriores - cantidad_salidas_anteriores
         
-        # HALLAR REGISTROS POSTERIORES
+        # HALLAR REGISTROS DE ENTRADAS POSTERIORES
         entradas_posteriores = EntradasAlmacen.objects.filter(fecha_entrada__gte=salida.fecha_despacho, entrada_anulada=None)
         entradas_posteriores_id = [entrada_posterior.id_entrada_almacen for entrada_posterior in entradas_posteriores]
         
@@ -198,6 +206,7 @@ class UtilAlmacen:
         salidas_posteriores_id = [salida_posterior.id_despacho_consumo for salida_posterior in salidas_posteriores]
         salidas_posteriores_id.remove(salida.id_despacho_consumo)
         
+        # HALLAR REGISTROS DE SALIDAS POSTERIORES
         registros_salidas_posteriores = ItemDespachoConsumo.objects.filter(id_despacho_consumo__in=salidas_posteriores_id, id_bien_despachado=id_bien, id_bodega=id_bodega).values(cantidad=F('cantidad_despachada'), fecha=F('id_despacho_consumo__fecha_despacho'))
         
         for registro in registros_salidas_posteriores:
