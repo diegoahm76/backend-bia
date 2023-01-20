@@ -219,7 +219,7 @@ class CreateDespachoMaestroVivero(generics.UpdateAPIView):
                 #VALIDACION 96: SE VALIDA LAS CANTIDADES POSITIVAS DEL BIEN EN LA FECHA DEL DESPACHO
                 cantidad_disponible = UtilAlmacen.get_cantidad_disponible(i['id_bien_despachado'], i['id_bodega'], fecha_despacho)
                 if i['cantidad_despachada'] > cantidad_disponible:
-                    return Response({'success':False,'detail':'Verifique que las cantidades del bien a despachar en la bodega ingresada en la fecha de despacho sean correctas' },status=status.HTTP_404_NOT_FOUND)
+                    return Response({'success':False,'detail':'La cantidad disponible del bien (' + bien_despachado_instancia.nombre + ') es inferior a la cantidad a despachar' },status=status.HTTP_404_NOT_FOUND)
                 cantidad_por_distribuir = UtilAlmacen.get_cantidad_por_distribuir(i['id_bien_despachado'], i['id_entrada_almacen_bien'], fecha_despacho)
                 if i['cantidad_despachada'] > cantidad_por_distribuir:
                     return Response({'success':False,'detail':'La cantidad por distribuir de la entrada que intenta despachar es insuficiente en el nro posición (' + str(i['numero_posicion_despacho']) + ')' },status=status.HTTP_404_NOT_FOUND)
@@ -346,6 +346,7 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
     serializer_class = SerializersDespachoConsumoViverosActualizar
     queryset=DespachoConsumo.objects.all()
     serializer_item_consumo = SerializersItemDespachoViverosConsumo
+    serializer_items_despacho_entrante = SerializersItemsDespachoEntrantes
     
     def put(self, request):
         datos_ingresados = request.data
@@ -374,7 +375,9 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
         items_solcitud_instancia = ItemsSolicitudConsumible.objects.filter(id_solicitud_consumibles=solicitud_del_despacho_instancia.id_solicitud_consumibles)
         if not items_solcitud_instancia:
             return Response({'success':False,'detail':'La solicitud que quiere despachar no tiene items, por favor añada items a la solicitud para poderla despachar' },status=status.HTTP_404_NOT_FOUND)
-        
+        despacho_entrante_instancia = DespachoEntrantes.objects.filter(id_despacho_consumo_alm=despacho_maestro_instancia.id_despacho_consumo).first()
+        if despacho_entrante_instancia.id_persona_distribuye != None:
+            return Response({'success':False,'detail':'Este despacho no se puede actualizar debido a que ya tiene distribuciones de vivero' },status=status.HTTP_404_NOT_FOUND)
         # VALIDACION 2: SE VALIDA QUE LA ACTUALIZACIÓN NO SE REALIZA EN UNA FECHA POSTERIOR A 45 DÍAS DESPUES DEL DESPACHO
         #Se valida que la fecha de la solicitud no sea inferior a (fecha_actual - 8 días) ni superior a la actual
         fecha_despacho = despacho_maestro_instancia.fecha_despacho
@@ -445,13 +448,13 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
                     i['numero_posicion_despacho'] = instancia_item_a_actualizar_aux_5.numero_posicion_despacho
                 items_a_actualizar.append(i)
                 # VALIDACION 6: SE VALIDA QUE LA CANTIDAD DESPACHADA SEA CORRECTA (EN LOS ITEMS ACTUALIZADOS)
-                aux_validacion_cantidades_fecha_despacho = UtilAlmacen.get_cantidad_posible(i['id_bien_despachado'], i['id_bodega'], despacho_maestro_instancia.id_despacho_consumo)
+                aux_validacion_cantidades_fecha_despacho = UtilAlmacen.get_valor_maximo_despacho(i['id_bien_despachado'], i['id_bodega'], despacho_maestro_instancia.id_despacho_consumo)
                 if i['cantidad_despachada'] > aux_validacion_cantidades_fecha_despacho:
-                    return Response({'success':False,'detail':'Verifique que las cantidades del bien a actualizar en el despacho, en la bodega ingresada en la fecha de despacho sean correctas' },status=status.HTTP_404_NOT_FOUND)
+                    return Response({'success':False,'detail':'La cantidad disponible del bien (' + instancia_item_a_actualizar_aux_5.id_bien_despachado.nombre + ') es inferior a la cantidad a despachar' },status=status.HTTP_404_NOT_FOUND)
                 aux_validacion_bienes_despachados_repetidos.append([i['id_bien_solicitado'], i['id_bien_despachado'], i['id_bodega']])
                 # VALIDAR QUE LA CANTIDAD DESPACHADA NO SUPERE LA CANTIDAD SOLICITADA
                 if i['cantidad_despachada'] > instancia_item_a_actualizar_aux_5.cantidad_solicitada:
-                    return Response({'success':False,'detail':'La cantidad a despachar es mayor a la cantidad solicituda' },status=status.HTTP_404_NOT_FOUND)
+                    return Response({'success':False,'detail':'La cantidad a despachar del bien (' + instancia_item_a_actualizar_aux_5.id_bien_despachado.nombre + ') es mayor a la cantidad solicituda' },status=status.HTTP_404_NOT_FOUND)
  #---------># VALIDACIONES DE DE ITEMS CREADOS
             if not id_item_a_despachar:
                 bien_solicitado = i.get('id_bien_solicitado')
@@ -537,9 +540,9 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
                         return Response({'success':False,'detail':'Por favor verifique la existencia del bien en la bodega, o la existencia del bien en la tabla inventario' },status=status.HTTP_404_NOT_FOUND)
                     valores_creados_detalles.append({'nombre' : instancia_inventario_auxiliar.id_bien.nombre})
                     #VALIDACION 96: SE VALIDA LAS CANTIDADES POSITIVAS DEL BIEN EN LA FECHA DEL DESPACHO
-                    aux_validacion_cantidades_fecha_despacho = UtilAlmacen.get_cantidad_posible(i['id_bien_despachado'], i['id_bodega'], despacho_maestro_instancia.id_despacho_consumo)
+                    aux_validacion_cantidades_fecha_despacho = UtilAlmacen.get_valor_maximo_despacho(i['id_bien_despachado'], i['id_bodega'], despacho_maestro_instancia.id_despacho_consumo)
                     if i['cantidad_despachada'] > aux_validacion_cantidades_fecha_despacho:
-                        return Response({'success':False,'detail':'Verifique que las cantidades del bien a despachar en la bodega ingresada en la fecha de despacho sean correctas' },status=status.HTTP_404_NOT_FOUND)
+                        return Response({'success':False,'detail':'La cantidad disponible del bien (' + instancia_item_a_actualizar_aux_5.id_bien_despachado.nombre + ') es inferior a la cantidad a despachar' },status=status.HTTP_404_NOT_FOUND)
                 i['id_despacho_consumo'] = despacho_maestro_instancia.id_despacho_consumo
                 # VALIDACION 90: SE VALIDA QUE UN BIEN DESPACHADO NO SE REPITA DENTRO DEL MISMO DESPACHO
                 if [i['id_bien_solicitado'], i['id_bien_despachado'], i['id_bodega']] in aux_validacion_bienes_despachados_repetidos:
@@ -551,22 +554,27 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
         # VALIDACION 93: SE VALIDAN LAS CANTIDADES SI TIENEN LA MISMA UNIDAD
         for key, value in aux_validacion_bienes_repetidos.items():
             aux_validacion_bienes_repetidos[key] = sum(value)
-            aux_local_uno = ItemsSolicitudConsumible.objects.filter(Q(id_solicitud_consumibles=info_despacho['id_solicitud_consumo']) & Q(id_bien=int(key))).first()
+            aux_local_uno = ItemsSolicitudConsumible.objects.filter(Q(id_solicitud_consumibles=solicitud_del_despacho_instancia.id_solicitud_consumibles) & Q(id_bien=int(key))).first()
             if int(aux_validacion_bienes_repetidos[key]) > aux_local_uno.cantidad:
                 return Response({'success':False,'detail':'Una de las cantidades despachadas supera la cantidad solicitada' },status=status.HTTP_404_NOT_FOUND)
 
+        # SE ACTUALIZA EL MAESTRO (DESPACHO)
         serializer = self.serializer_class(despacho_maestro_instancia, data=info_despacho)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         
+        # ACTUALIZACIÓN DE ITEMS
         for i in items_a_actualizar:
             items_despacho_instancia = ItemDespachoConsumo.objects.filter(id_item_despacho_consumo=i['id_item_despacho_consumo']).first()
+            i['id_entrada_almacen_bien'] = items_despacho_instancia.id_entrada_almacen_bien.id_entrada_almacen
+            print(items_despacho_instancia.id_entrada_almacen_bien)
             previous_instancia_item = copy.copy(items_despacho_instancia)
             serializer_items = self.serializer_item_consumo(items_despacho_instancia, data=i)
             serializer_items.is_valid(raise_exception=True)
             serializer_items.save()
             valores_actualizados_detalles.append({'descripcion': {'nombre':items_despacho_instancia.id_bien_despachado.nombre}, 'previous':previous_instancia_item,'current':items_despacho_instancia})
         
+        # CREACIÓN DE ITEMS
         serializer_items = self.serializer_item_consumo(data=items_a_crear, many=True)
         serializer_items.is_valid(raise_exception=True)
         serializer_items.save()
@@ -583,6 +591,51 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
             inventario_instancia = Inventario.objects.filter(Q(id_bien=i[0])&Q(id_bodega=i[1])).first()
             inventario_instancia.cantidad_saliente_consumo = int(inventario_instancia.cantidad_saliente_consumo) + i[2]
             inventario_instancia.save()   
+        
+        # INSERT EN LAS TABLAS DespachoEntrantes, ItemsDespachoEntrante
+        instancia_despacho_entrante = DespachoEntrantes.objects.filter(id_despacho_consumo_alm=despacho_maestro_instancia.id_despacho_consumo).first()
+  
+        items_despacho_entrante_lista = []
+        aux_validacion = []
+        repetidos_items_despacho_entrante_lista = []
+        carry_items_despacho_entrante_lista = []
+        cont = 0
+        print(items_a_crear)
+        
+        for i in items_a_actualizar:
+            items_despacho_instancia = ItemDespachoConsumo.objects.filter(id_item_despacho_consumo=i['id_item_despacho_consumo']).first()
+            instancia_items_despacho_entrante = ItemsDespachoEntrante.objects.filter(id_bien=items_despacho_instancia.id_bien_despachado.id_bien, 
+                                                                                        id_entrada_alm_del_bien=items_despacho_instancia.id_entrada_almacen_bien.id_entrada_almacen,
+                                                                                        id_despacho_entrante=instancia_despacho_entrante.id_despacho_entrante).first()
+            instancia_items_despacho_entrante.cantidad_entrante = items_despacho_instancia.cantidad_despachada
+            instancia_items_despacho_entrante.save()
+            
+        for i in items_a_crear:
+            items_despacho_entrante = {}
+            aux_validacion = [i['id_bien_despachado'], i['id_entrada_almacen_bien']]
+            instancia_validacion_existencia_item = ItemsDespachoEntrante.objects.filter(id_despacho_entrante=instancia_despacho_entrante.id_despacho_entrante, id_bien=i['id_bien_despachado']).first()
+            if aux_validacion in repetidos_items_despacho_entrante_lista or instancia_validacion_existencia_item:
+                carry_items_despacho_entrante_lista.append([i['id_bien_despachado'], i['id_entrada_almacen_bien'], i['cantidad_despachada'], cont])
+                cont = cont + 1
+            else:
+                items_despacho_entrante['id_despacho_entrante'] = instancia_despacho_entrante.id_despacho_entrante
+                items_despacho_entrante['id_bien'] = i['id_bien_despachado']
+                items_despacho_entrante['id_entrada_alm_del_bien'] = i['id_entrada_almacen_bien']
+                items_despacho_entrante['fecha_ingreso'] = despacho_maestro_instancia.fecha_despacho
+                items_despacho_entrante['cantidad_entrante'] = i['cantidad_despachada']
+                items_despacho_entrante['cantidad_distribuida'] = 0
+                items_despacho_entrante['observacion'] = i['observacion']
+                items_despacho_entrante_lista.append(items_despacho_entrante)
+                repetidos_items_despacho_entrante_lista.append([i['id_bien_despachado'], i['id_entrada_almacen_bien']])
+                
+        SerializersItemsDespachoEntrantes = self.serializer_items_despacho_entrante(data=items_despacho_entrante_lista, many=True)
+        SerializersItemsDespachoEntrantes.is_valid(raise_exception=True)
+        SerializersItemsDespachoEntrantes.save()
+        
+        for i in carry_items_despacho_entrante_lista:
+            instancia_items_despacho_entrante = ItemsDespachoEntrante.objects.filter(id_bien=i[0], id_entrada_alm_del_bien=i[1],id_despacho_entrante=instancia_despacho_entrante.id_despacho_entrante).first()
+            instancia_items_despacho_entrante.cantidad_entrante = instancia_items_despacho_entrante.cantidad_entrante + i[2]
+            instancia_items_despacho_entrante.save()
             
         descripcion = {"numero_despacho_almacen": str(despacho_maestro_instancia.numero_despacho_consumo), "fecha_despacho": str(despacho_maestro_instancia.fecha_despacho)}
         direccion=Util.get_client_ip(request)

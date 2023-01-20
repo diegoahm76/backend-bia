@@ -478,7 +478,7 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
                         return Response({'success':False,'detail':'Por favor verifique la existencia del bien en la bodega, o la existencia del bien en la tabla inventario' },status=status.HTTP_404_NOT_FOUND)
                     valores_creados_detalles.append({'nombre' : instancia_inventario_auxiliar.id_bien.nombre})
                     #VALIDACION 96: SE VALIDA LAS CANTIDADES POSITIVAS DEL BIEN EN LA FECHA DEL DESPACHO
-                    aux_validacion_cantidades_fecha_despacho = UtilAlmacen.get_cantidad_posible(i['id_bien_despachado'], i['id_bodega'], despacho_maestro_instancia.id_despacho_consumo)
+                    aux_validacion_cantidades_fecha_despacho = UtilAlmacen.get_valor_maximo_despacho(i['id_bien_despachado'], i['id_bodega'], despacho_maestro_instancia.id_despacho_consumo)
                     if i['cantidad_despachada'] > aux_validacion_cantidades_fecha_despacho:
                         return Response({'success':False,'detail':'Verifique que las cantidades del bien a despachar en la bodega ingresada en la fecha de despacho sean correctas' },status=status.HTTP_404_NOT_FOUND)
                 i['id_despacho_consumo'] = despacho_maestro_instancia.id_despacho_consumo
@@ -492,7 +492,7 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
         # VALIDACION 93: SE VALIDAN LAS CANTIDADES SI TIENEN LA MISMA UNIDAD
         for key, value in aux_validacion_bienes_repetidos.items():
             aux_validacion_bienes_repetidos[key] = sum(value)
-            aux_local_uno = ItemsSolicitudConsumible.objects.filter(Q(id_solicitud_consumibles=info_despacho['id_solicitud_consumo']) & Q(id_bien=int(key))).first()
+            aux_local_uno = ItemsSolicitudConsumible.objects.filter(Q(id_solicitud_consumibles=solicitud_del_despacho_instancia.id_solicitud_consumibles) & Q(id_bien=int(key))).first()
             if int(aux_validacion_bienes_repetidos[key]) > aux_local_uno.cantidad:
                 return Response({'success':False,'detail':'Una de las cantidades despachadas supera la cantidad solicitada' },status=status.HTTP_404_NOT_FOUND)
 
