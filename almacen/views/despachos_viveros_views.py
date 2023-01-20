@@ -303,6 +303,7 @@ class CreateDespachoMaestroVivero(generics.UpdateAPIView):
         for i in items_despacho:
             items_despacho_entrante = {}
             aux_validacion = [i['id_bien_despachado'], i['id_entrada_almacen_bien']]
+
             if aux_validacion in repetidos_items_despacho_entrante_lista:
                 carry_items_despacho_entrante_lista.append([i['id_bien_despachado'], i['id_entrada_almacen_bien'], i['cantidad_despachada'], cont])
                 cont = cont + 1
@@ -583,7 +584,7 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
             inventario_instancia.cantidad_saliente_consumo = int(inventario_instancia.cantidad_saliente_consumo) + i[2]
             inventario_instancia.save()   
             
-        descripcion = {"numero_despacho_consumo": str(info_despacho['numero_despacho_consumo']), "es_despacho_conservacion": "true", "fecha_despacho": str(info_despacho['fecha_despacho'])}
+        descripcion = {"numero_despacho_almacen": str(despacho_maestro_instancia.numero_despacho_consumo), "fecha_despacho": str(despacho_maestro_instancia.fecha_despacho)}
         direccion=Util.get_client_ip(request)
         auditoria_data = {
             "id_usuario" : request.user.id_usuario,
@@ -633,7 +634,7 @@ class EliminarItemsDespacho(generics.DestroyAPIView):
             instance = ItemDespachoConsumo.objects.filter(Q(id_item_despacho_consumo=i['id_item_despacho_consumo']) & Q(id_despacho_consumo=instancia_despacho.id_despacho_consumo)).first()
             valores_eliminados_detalles.append({'nombre' : instance.id_bien_despachado.nombre})
             instance.delete()
-        descripcion = {"numero_despacho_almacen": str(instancia_despacho.numero_despacho_consumo), "fecha_despacho": str(instancia_despacho.fecha_despacho)}
+        descripcion = {"numero_despacho_almacen": str(instancia_despacho.numero_despacho_consumo), "es_despacho_conservacion": "true", "fecha_despacho": str(instancia_despacho.fecha_despacho)}
         direccion=Util.get_client_ip(request)
         auditoria_data = {
             "id_usuario" : request.user.id_usuario,
