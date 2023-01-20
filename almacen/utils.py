@@ -81,50 +81,6 @@ class UtilAlmacen:
             
         return cantidad_disponible
 
-    
-    @staticmethod
-    def get_cantidad_posible(id_bien, id_bodega, id_despacho):
-        inventario = Inventario.objects.filter(id_bien=id_bien, id_bodega=id_bodega).first()
-        saldo_actual = inventario.cantidad_entrante_consumo - (inventario.cantidad_saliente_consumo if inventario.cantidad_saliente_consumo else 0)
-        
-        despacho = DespachoConsumo.objects.filter(id_despacho_consumo=id_despacho).first()
-        
-        entradas = EntradasAlmacen.objects.filter(fecha_entrada__gte=despacho.fecha_despacho, entrada_anulada=None)
-        cantidad_disponible = saldo_actual
-        cantidad_total_entradas = 0
-        cantidad_posible = 0
-        
-        # HALLAR CANTIDAD DISPONIBLE
-        
-        if entradas:
-            entradas_id = [entrada.id_entrada_almacen for entrada in entradas] if entradas else []
-            cantidad_total_entradas = ItemEntradaAlmacen.objects.filter(id_entrada_almacen__in=entradas_id, id_bien=id_bien, id_bodega=id_bodega).aggregate(cantidad=Sum('cantidad'))
-            cantidad_total_entradas = cantidad_total_entradas['cantidad'] if cantidad_total_entradas else 0
-            
-            cantidad_disponible = saldo_actual - (cantidad_total_entradas if cantidad_total_entradas else 0)
-        
-        despachos = DespachoConsumo.objects.filter(fecha_despacho__gte=despacho.fecha_despacho, despacho_anulado=None)
-        
-        if despachos:
-            despachos_id = [despacho.id_despacho_consumo for despacho in despachos] if despachos else []
-            
-            cantidad_total_despachos = ItemDespachoConsumo.objects.filter(id_despacho_consumo__in=despachos_id, id_bien_despachado=id_bien, id_bodega=id_bodega).aggregate(cantidad=Sum('cantidad_despachada'))
-            
-            cantidad_disponible = cantidad_disponible + (cantidad_total_despachos['cantidad'] if cantidad_total_despachos and cantidad_total_despachos['cantidad'] else 0)
-            
-            # HALLAR CANTIDAD POSIBLE
-            
-            despachos_id.remove(despacho.id_despacho_consumo)
-            
-            if despachos_id:
-                cantidad_total_despachos_except = ItemDespachoConsumo.objects.filter(id_despacho_consumo__in=despachos_id, id_bien_despachado=id_bien, id_bodega=id_bodega).aggregate(cantidad=Sum('cantidad_despachada'))
-                
-                cantidad_posible = cantidad_disponible - (cantidad_total_despachos_except['cantidad'] if cantidad_total_despachos_except['cantidad'] else 0) + cantidad_total_entradas
-            else:
-                cantidad_posible = cantidad_disponible
-            
-        return cantidad_posible
-
     @staticmethod
     def get_cantidad_por_distribuir(id_bien, id_entrada, fecha_despacho):
         fecha_hace_un_año=datetime.today()-timedelta(days=365)
@@ -148,3 +104,125 @@ class UtilAlmacen:
         cantidad_por_distribuir=item_entrada[0]['cantidad_total_entrada'] - item_despachado[0]['cantidad_total_despachada'] if item_despachado and item_despachado[0]['cantidad_total_despachada'] else item_entrada[0]['cantidad_total_entrada']
         
         return cantidad_por_distribuir
+    
+    @staticmethod
+    def get_valor_minimo_entradas(id_bien, id_bodega, id_entrada):
+        # HALLAR SALDO PREVIO
+        entrada = EntradasAlmacen.objects.filter(id_entrada_almacen=id_entrada).first()
+        entradas_anteriores = EntradasAlmacen.objects.filter(fecha_entrada__lte=entrada.fecha_entrada, entrada_anulada=None)
+        entradas_anteriores_id = [entrada_anterior.id_entrada_almacen for entrada_anterior in entradas_anteriores]
+        entradas_anteriores_id.remove(entrada.id_entrada_almacen)
+        
+        cantidad_entradas_anteriores = ItemEntradaAlmacen.objects.filter(id_entrada_almacen__in=entradas_anteriores_id, id_bien=id_bien, id_bodega=id_bodega).values('id_bien', 'id_bodega').annotate(cantidad_entradas=Sum('cantidad'))
+        cantidad_entradas_anteriores = cantidad_entradas_anteriores[0]['cantidad_entradas'] if cantidad_entradas_anteriores else 0
+        
+        salidas_anteriores = DespachoConsumo.objects.filter(fecha_despacho__lte=entrada.fecha_entrada, despacho_anulado=None)
+        salidas_anteriores_id = [salida_anterior.id_despacho_consumo for salida_anterior in salidas_anteriores]
+        
+        cantidad_salidas_anteriores = ItemDespachoConsumo.objects.filter(id_despacho_consumo__in=salidas_anteriores_id, id_bien_despachado=id_bien, id_bodega=id_bodega).values('id_bien_despachado', 'id_bodega').annotate(cantidad_salidas=Sum('cantidad_despachada'))
+        cantidad_salidas_anteriores = cantidad_salidas_anteriores[0]['cantidad_salidas'] if cantidad_salidas_anteriores else 0
+        
+        saldo = cantidad_entradas_anteriores - cantidad_salidas_anteriores
+        
+        # HALLAR REGISTROS POSTERIORES
+        entradas_posteriores = EntradasAlmacen.objects.filter(fecha_entrada__gte=entrada.fecha_entrada, entrada_anulada=None)
+        entradas_posteriores_id = [entrada_posterior.id_entrada_almacen for entrada_posterior in entradas_posteriores]
+        entradas_posteriores_id.remove(entrada.id_entrada_almacen)
+        
+        registros_entradas_posteriores = ItemEntradaAlmacen.objects.filter(id_entrada_almacen__in=entradas_posteriores_id, id_bien=id_bien, id_bodega=id_bodega).values('cantidad', fecha=F('id_entrada_almacen__fecha_entrada'))
+        
+        for registro in registros_entradas_posteriores:
+            registro['tipo'] = 'E'
+        
+        salidas_posteriores = DespachoConsumo.objects.filter(fecha_despacho__gte=entrada.fecha_entrada, despacho_anulado=None)
+        salidas_posteriores_id = [salida_posterior.id_despacho_consumo for salida_posterior in salidas_posteriores]
+        
+        registros_salidas_posteriores = ItemDespachoConsumo.objects.filter(id_despacho_consumo__in=salidas_posteriores_id, id_bien_despachado=id_bien, id_bodega=id_bodega).values(cantidad=F('cantidad_despachada'), fecha=F('id_despacho_consumo__fecha_despacho'))
+        
+        for registro in registros_salidas_posteriores:
+            registro['tipo'] = 'S'
+        
+        registros_posteriores = list(registros_entradas_posteriores) + list(registros_salidas_posteriores)
+        registros_posteriores = sorted(registros_posteriores, key=lambda x: x["fecha"], reverse=True)
+        
+        # ALGORITMO OBTENER ACUMULADO
+        acum = 0
+        valor_ciclo = 0
+        salidas = 0
+        
+        for registro in registros_posteriores:
+            if registro['tipo'] == 'S':
+                salidas = salidas + registro['cantidad']
+            else:
+                valor_ciclo = registro['cantidad'] - salidas
+                acum = acum + valor_ciclo
+                if(valor_ciclo > 0):
+                   acum = 0
+                salidas = 0
+        
+        # HALLAR VALOR MINIMO ACTUALIZABLE DE LA ENTRADA
+        valor_requerido = salidas - acum
+        valor_minimo = valor_requerido - saldo
+        
+        return valor_minimo
+    
+    @staticmethod
+    def get_valor_maximo_despacho(id_bien, id_bodega, id_despacho):
+        # HALLAR SALDO PREVIO
+        salida = DespachoConsumo.objects.filter(id_despacho_consumo=id_despacho).first()
+        salidas_anteriores = DespachoConsumo.objects.filter(fecha_despacho__lte=salida.fecha_despacho, despacho_anulado=None)
+        salidas_anteriores_id = [salida_anterior.id_despacho_consumo for salida_anterior in salidas_anteriores]
+        salidas_anteriores_id.remove(salida.id_despacho_consumo)
+        
+        entradas_anteriores = EntradasAlmacen.objects.filter(fecha_entrada__lte=salida.fecha_despacho, entrada_anulada=None)
+        entradas_anteriores_id = [entrada_anterior.id_entrada_almacen for entrada_anterior in entradas_anteriores]
+        
+        cantidad_entradas_anteriores = ItemEntradaAlmacen.objects.filter(id_entrada_almacen__in=entradas_anteriores_id, id_bien=id_bien, id_bodega=id_bodega).values('id_bien', 'id_bodega').annotate(cantidad_entradas=Sum('cantidad'))
+        cantidad_entradas_anteriores = cantidad_entradas_anteriores[0]['cantidad_entradas'] if cantidad_entradas_anteriores else 0
+        
+        cantidad_salidas_anteriores = ItemDespachoConsumo.objects.filter(id_despacho_consumo__in=salidas_anteriores_id, id_bien_despachado=id_bien, id_bodega=id_bodega).values('id_bien_despachado', 'id_bodega').annotate(cantidad_salidas=Sum('cantidad_despachada'))
+        cantidad_salidas_anteriores = cantidad_salidas_anteriores[0]['cantidad_salidas'] if cantidad_salidas_anteriores else 0
+        
+        saldo = cantidad_entradas_anteriores - cantidad_salidas_anteriores
+        
+        # HALLAR REGISTROS POSTERIORES
+        entradas_posteriores = EntradasAlmacen.objects.filter(fecha_entrada__gte=salida.fecha_despacho, entrada_anulada=None)
+        entradas_posteriores_id = [entrada_posterior.id_entrada_almacen for entrada_posterior in entradas_posteriores]
+        
+        registros_entradas_posteriores = ItemEntradaAlmacen.objects.filter(id_entrada_almacen__in=entradas_posteriores_id, id_bien=id_bien, id_bodega=id_bodega).values('cantidad', fecha=F('id_entrada_almacen__fecha_entrada'))
+        
+        for registro in registros_entradas_posteriores:
+            registro['tipo'] = 'E'
+        
+        salidas_posteriores = DespachoConsumo.objects.filter(fecha_despacho__gte=salida.fecha_despacho, despacho_anulado=None)
+        salidas_posteriores_id = [salida_posterior.id_despacho_consumo for salida_posterior in salidas_posteriores]
+        salidas_posteriores_id.remove(salida.id_despacho_consumo)
+        
+        registros_salidas_posteriores = ItemDespachoConsumo.objects.filter(id_despacho_consumo__in=salidas_posteriores_id, id_bien_despachado=id_bien, id_bodega=id_bodega).values(cantidad=F('cantidad_despachada'), fecha=F('id_despacho_consumo__fecha_despacho'))
+        
+        for registro in registros_salidas_posteriores:
+            registro['tipo'] = 'S'
+        
+        registros_posteriores = list(registros_entradas_posteriores) + list(registros_salidas_posteriores)
+        registros_posteriores = sorted(registros_posteriores, key=lambda x: x["fecha"], reverse=True)
+        
+        # ALGORITMO OBTENER ACUMULADO
+        acum = 0
+        valor_ciclo = 0
+        salidas = 0
+        
+        for registro in registros_posteriores:
+            if registro['tipo'] == 'S':
+                salidas = salidas + registro['cantidad']
+            else:
+                valor_ciclo = registro['cantidad'] - salidas
+                acum = acum + valor_ciclo
+                if(valor_ciclo > 0):
+                   acum = 0
+                salidas = 0
+        
+        # HALLAR VALOR MAXIMO ACTUALIZABLE DEL DESPACHO
+        valor_requerido = salidas + acum
+        valor_maximo = valor_requerido + saldo
+        
+        return valor_maximo
