@@ -19,6 +19,8 @@ from almacen.serializers.entregas_serializers import (
     GetEntradasEntregasSerializer,
     GetItemsEntradasEntregasSerializer,
     AnularEntregaSerializer,
+    ActualizarEntregaSerializer,
+    GetItemsEntregaSerializer
 )
 from almacen.models.solicitudes_models import (
     DespachoConsumo,
@@ -63,6 +65,27 @@ class GetEntregasView(generics.ListAPIView):
         entregas = DespachoConsumo.objects.filter(Q(id_solicitud_consumo=None) & ~Q(id_entrada_almacen_cv=None))
         serializer = self.serializer_class(entregas, many=True)
         return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+class GetItemsEntregaView(generics.ListAPIView):
+    serializer_class = GetItemsEntregaSerializer
+    queryset = ItemDespachoConsumo.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_entrega):
+        entrega = DespachoConsumo.objects.filter(id_despacho_consumo=id_entrega).first()
+        if not entrega:
+            return Response({'success': False, 'detail': 'No se encontró ningún item con el parámetro enviado'}, status=status.HTTP_404_NOT_FOUND)
+        if entrega.despacho_anulado == True:
+            return Response({'success': False, 'detail': 'Una entrega anulada no tiene detalle'}, status=status.HTTP_400_BAD_REQUEST)
+
+        
+        items_entregas = ItemDespachoConsumo.objects.filter(id_despacho_consumo=id_entrega)
+        if not items_entregas:
+            return Response({'success': False, 'detail': 'No se encontró ningún item con el parámetro enviado'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.serializer_class(items_entregas, many=True)
+        return Response({'success': True, 'detail': 'Búsqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
+            
 
 
 class CrearEntregaView(generics.CreateAPIView):
@@ -214,7 +237,6 @@ class CrearEntregaView(generics.CreateAPIView):
 
         #CREACIÓN DE ENTREGA DETALLE
         for item in data_items_entrega:
-            item['observacion'] = data_entrega['motivo']
             item['id_despacho_consumo'] = serializador.pk
 
         items_serializer = CreateItemsEntregaSerializer(data=data_items_entrega, many=True)
@@ -222,9 +244,8 @@ class CrearEntregaView(generics.CreateAPIView):
         items_serializador = items_serializer.save()
 
         #REAGRUPACIÓN PARA CONVERTIR DOS REGISTROS DE ITEMS DESPACHOS SALIENTES EN UNO SOLO PARA ITEMS DESPACHOS ENTRANTES
-
         id_bien_items_serializador = [item.id_bien_despachado.id_bien for item in items_serializador]
-        id_bien_items_serializador_instance = ItemDespachoConsumo.objects.filter(id_bien_despachado__in=id_bien_items_serializador, id_despacho_consumo=serializador.pk).values('id_bien_despachado', 'id_entrada_almacen_bien', 'observacion').annotate(cantidad_despachada=Sum('cantidad_despachada'))
+        id_bien_items_serializador_instance = ItemDespachoConsumo.objects.filter(id_bien_despachado__in=id_bien_items_serializador, id_despacho_consumo=serializador.pk).values('id_bien_despachado', 'id_entrada_almacen_bien').annotate(cantidad_despachada=Sum('cantidad_despachada'))
 
         #CREACIÓN DE DESPACHO ENTRANTE
         despacho_entrante = DespachoEntrantes.objects.create(
@@ -242,7 +263,6 @@ class CrearEntregaView(generics.CreateAPIView):
                 id_entrada_alm_del_bien = item_despacho.id_entrada_almacen_bien,
                 cantidad_entrante = int(id_bien_items_serializador_instance[0]['cantidad_despachada']),
                 cantidad_distribuida = 0,
-                observacion = item_despacho.observacion,
                 fecha_ingreso = serializador.fecha_despacho
                 )
         
@@ -254,6 +274,24 @@ class CrearEntregaView(generics.CreateAPIView):
                 cantidad_saliente_existente = inventario_bien_bodega.cantidad_saliente_consumo
             inventario_bien_bodega.cantidad_saliente_consumo = cantidad_saliente_existente + int(item['cantidad_despachada'])
             inventario_bien_bodega.save()
+
+        # AUDITORIA MAESTRO DETALLE DE ENTREGA
+        valores_creados_detalles = []
+        for item in items_serializador:
+            valores_creados_detalles.append({'nombre':item.id_bien_despachado.nombre})
+            
+        descripcion = {"numero_despacho_consumo": str(serializador.numero_despacho_consumo),"es_despacho_conservacion": str(serializador.es_despacho_conservacion),"fecha_despacho": str(serializador.fecha_despacho)}
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 46,
+            "cod_permiso": "CR",
+            "subsistema": 'ALMA',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_creados_detalles": valores_creados_detalles
+            }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
 
         return Response({'success': True, 'detail': 'Entrega creada exitosamente', 'Entrega creada': serializer.data, 'Items entregados': items_serializer.data}, status=status.HTTP_200_OK)
 
@@ -281,7 +319,6 @@ class AnularEntregaView(generics.RetrieveUpdateAPIView):
                 anulacion_bien.cantidad_saliente_consumo = None
             anulacion_bien.save()
         
-        
         items_entrega.delete()
         entrega_instance.despacho_anulado = True
         entrega_instance.justificacion_anulacion = data['descripcion_anulacion']
@@ -293,6 +330,24 @@ class AnularEntregaView(generics.RetrieveUpdateAPIView):
         items_despacho_entrante.delete()
         
         despacho_entrante.delete()
+
+        # AUDITORIA MAESTRO DETALLE DE ENTREGA
+        valores_creados_detalles = []
+        for item in items_entrega:
+            valores_creados_detalles.append({'nombre':item.id_bien_despachado.nombre})
+            
+        descripcion = {"numero_despacho_consumo": str(entrega_instance.numero_despacho_consumo),"es_despacho_conservacion": str(entrega_instance.es_despacho_conservacion),"fecha_despacho": str(entrega_instance.fecha_despacho)}
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 46,
+            "cod_permiso": "AN",
+            "subsistema": 'ALMA',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_creados_detalles": valores_creados_detalles
+            }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
 
         return Response({'success': True, 'detail': 'Se ha anulado la entrega correctamente'}, status=status.HTTP_204_NO_CONTENT)
 
@@ -338,6 +393,21 @@ class GetEntradasEntregasView(generics.ListAPIView):
         serializer = self.serializer_class(set(entrada_con_items_disponibles), many=True)
         return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+class ActualizarEntregaView(generics.RetrieveUpdateAPIView):
+    serializer_class = ActualizarEntregaSerializer
+    queryset = DespachoConsumo.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, id_entrega):
+        entrega = DespachoConsumo.objects.filter(id_despacho_consumo=id_entrega).first()
+        if not entrega:
+            return Response({'success': False, 'detail': 'No se encontró ninguna entrega con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+        if entrega.despacho_anulado == True:
+            return Response({'success': False, 'detail': 'No se puede actualizar una entrega que fue anulada'}, status=status.HTTP_403_FORBIDDEN)
+        
+        data_entrega = 1
+
+        return Response({'success': True, 'detail': 'Entrega actualizada correctamente'}, status=status.HTTP_201_CREATED)
 
 class GetItemsEntradasEntregasView(generics.ListAPIView):
     serializer_class = GetItemsEntradasEntregasSerializer
