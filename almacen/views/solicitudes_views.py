@@ -35,7 +35,7 @@ from almacen.serializers.solicitudes_serialiers import (
 from seguridad.serializers.personas_serializers import PersonasSerializer
 import copy
 
-class FiltroViveros(generics.ListAPIView):
+class FiltroBienSolicitableVivero(generics.ListAPIView):
     serializer_class=CatalogoBienesSerializer
     queryset=CatalogoBienes.objects.all()
     def get(self,request):
@@ -73,7 +73,7 @@ class FiltroViveros(generics.ListAPIView):
             return Response({'success':True,'detail':'Se encontró elementos','data':serializador.data},status=status.HTTP_200_OK)
         return Response({'success':True,'detail':'No se encontró elementos','data':bien_final},status=status.HTTP_404_NOT_FOUND)
     
-class GetVivero(generics.ListAPIView):
+class GetBienSolicitableVivero(generics.ListAPIView):
     serializer_class=CatalogoBienesSerializer
     queryset=CatalogoBienes.objects.all()
     def get(self,request):
