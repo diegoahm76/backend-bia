@@ -85,3 +85,15 @@ class AnularEntregaSerializer(serializers.ModelSerializer):
             'fecha_anulacion',
             'id_persona_anula',
         )
+
+class ActualizarEntregaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DespachoConsumo
+        fields = (
+            'motivo',
+        )
+
+class GetItemsEntregaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ItemDespachoConsumo
+        fields = '__all__'
