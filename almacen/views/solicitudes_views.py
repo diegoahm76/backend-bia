@@ -322,6 +322,8 @@ class CreateSolicitud(generics.UpdateAPIView):
                 return Response({'success':False,'data':'La cantidad debe ser un número entero' },status=status.HTTP_404_NOT_FOUND)
             if not str(i['nro_posicion']).isdigit():
                 return Response({'success':False,'data':'El número de posición debe ser un número entero' },status=status.HTTP_404_NOT_FOUND)
+            if bien.solicitable_vivero != False:
+                return Response({'success':False,'data':'En este módulo solo se pueden despachar bienes solicitables por vivero' },status=status.HTTP_404_NOT_FOUND)
             # unidad_de_medida = UnidadesMedida.objects.filter(id_unidad_medida = i['id_unidad_medida']).first()
             # if not unidad_de_medida:
             #     return Response({'success':False,'data':'La unidad de medida (' + unidad_de_medida.nombre + ') no existe' },status=status.HTTP_404_NOT_FOUND)
@@ -393,9 +395,10 @@ class CreateSolicitud(generics.UpdateAPIView):
         if bandera_actualizar == False:
             if solicitudes_existentes:
                 numero_solicitudes_no_conservacion = [i.nro_solicitud_por_tipo for i in solicitudes_existentes if i.es_solicitud_de_conservacion == False]
-                info_solicitud['nro_solicitud_por_tipo'] = max(numero_solicitudes_no_conservacion) + 1
-            else:
-                info_solicitud['nro_solicitud_por_tipo'] = 1    
+                if len(numero_solicitudes_no_conservacion) > 0:
+                    info_solicitud['nro_solicitud_por_tipo'] = max(numero_solicitudes_no_conservacion) + 1
+                else:
+                    info_solicitud['nro_solicitud_por_tipo'] = 1    
             serializer = self.serializer_class(data=info_solicitud)
             serializer.is_valid(raise_exception=True)
             serializer.save()        

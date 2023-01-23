@@ -4,10 +4,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from itertools import groupby
 from seguridad.utils import Util
-from django.db.models import Q
+from django.db.models import Q, F
 from datetime import datetime
 import copy
-from django.db.models import Q
 from operator import itemgetter
 from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
 from almacen.serializers.organigrama_serializers import ( 
@@ -490,3 +489,50 @@ class GetSeccionSubsecciones(generics.ListAPIView):
 class GetOrganigramasTerminados(generics.ListAPIView):
     serializer_class = OrganigramaSerializer
     queryset = Organigramas.objects.filter(~Q(fecha_terminado=None) & Q(fecha_retiro_produccion=None))  
+
+class GetUnidadesJerarquizadas(generics.ListAPIView):
+    serializer_class = UnidadesGetSerializer
+    queryset = UnidadesOrganizacionales.objects.filter()
+        
+    def get(self, request, id_organigrama):
+        organigrama = Organigramas.objects.filter(id_organigrama=id_organigrama).first()
+        if organigrama:
+            unidades = UnidadesOrganizacionales.objects.filter(id_organigrama=id_organigrama)
+            if unidades:
+                unidades_linea = unidades.filter(cod_tipo_unidad='LI').values(
+                    'id_unidad_organizacional',
+                    'id_organigrama',
+                    'id_nivel_organigrama',
+                    'nombre',
+                    'codigo',
+                    'cod_tipo_unidad',
+                    'cod_agrupacion_documental',
+                    'unidad_raiz', 
+                    'id_unidad_org_padre',
+                    orden_nivel=F('id_nivel_organigrama__orden_nivel')
+                )
+                unidades_staff = unidades.filter(~Q(cod_tipo_unidad='LI')).values(
+                    'id_unidad_organizacional',
+                    'id_organigrama',
+                    'id_nivel_organigrama',
+                    'nombre',
+                    'codigo',
+                    'cod_tipo_unidad',
+                    'cod_agrupacion_documental',
+                    'unidad_raiz', 
+                    'id_unidad_org_padre',
+                    orden_nivel=F('id_nivel_organigrama__orden_nivel')
+                )
+                unidades_linea = sorted(unidades_linea, key=itemgetter('orden_nivel'))
+                unidades_jerarquia = []
+                for unidad in unidades_linea:
+                    unidad['hijos'] = [hijo for hijo in unidades_linea if hijo['id_unidad_org_padre']==unidad['id_unidad_organizacional']]
+                    if unidad['unidad_raiz']:
+                        unidad['unidades_staff'] = unidades_staff
+                        unidades_jerarquia.append(unidad)
+                        
+                return Response({'success': True, 'detail': 'Se encontraron unidades para el organigrama', 'data' : unidades_jerarquia}, status=status.HTTP_200_OK)
+            else:
+                return Response({'success': True, 'detail': 'No se encontraron unidades para el organigrama', 'data' : unidades}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success':False, 'detail':'El organigrama no existe'}, status=status.HTTP_404_NOT_FOUND)
