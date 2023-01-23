@@ -561,6 +561,14 @@ class EliminarItemsDespacho(generics.DestroyAPIView):
             return Response({'success':False,'detail':'Verifique que no existan items repetidos dentro de la petición' },status=status.HTTP_404_NOT_FOUND)
         if len(aux_instancia_items) <= len(datos_ingresados):
             return Response({'success':False,'detail':'La cantidad de items que desea borrar es superior o igual a los que el despacho posee' },status=status.HTTP_404_NOT_FOUND)
+        # SE VALDIA QUE EL DESPACHO NO SEA DE VIVERO
+        if instancia_despacho.es_despacho_conservacion != False:
+            return Response({'success':False,'detail':'En este módulo solo se pueden elimanar items de despachos de consumo que no sean de viveros' },status=status.HTTP_404_NOT_FOUND)
+        # VALIDACION 2: SE VALIDA QUE LA ACTUALIZACIÓN NO SE REALIZA EN UNA FECHA POSTERIOR A 45 DÍAS DESPUES DEL DESPACHO
+        fecha_despacho = instancia_despacho.fecha_despacho
+        aux_validacion_fechas = datetime.now() - fecha_despacho
+        if int(aux_validacion_fechas.days) > 45:
+            return Response({'success':False,'detail':'No pueden eliminar los items de un despacho con fecha anterior a 45 días respecto a la actual'},status=status.HTTP_404_NOT_FOUND)
         # SE VALIDA QUE CADA UNO DE LOS ITEMS INGRESADOS PERTENEZCA A AL DESPACHO QUE SE INGRESÓ EN LA URL
         for  i in datos_ingresados:
             instance = ItemDespachoConsumo.objects.filter(Q(id_item_despacho_consumo=i['id_item_despacho_consumo']) & Q(id_despacho_consumo=instancia_despacho.id_despacho_consumo)).first()
@@ -603,12 +611,14 @@ class AnularDespachoConsumo(generics.UpdateAPIView):
         # SE CAPTURAN LOS DATOS Y SE ADQUIERE EL DATO DE LA FECHA DE ANULACIÓN
         datos_ingresados = request.data
         datos_ingresados['fecha_anualacion'] = datetime.now()
-        
         # VALIDACION DE USUARIO LOGUEADO
         user_logeado = request.user
+        instancia_despacho_anular = DespachoConsumo.objects.filter(id_despacho_consumo=despacho_a_anular).first()
         if str(user_logeado) == 'AnonymousUser':
             return Response({'success':False,'detail':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
-
+        # SE VALDIA QUE EL DESPACHO NO SEA DE VIVERO
+        if instancia_despacho_anular.es_despacho_conservacion != False:
+            return Response({'success':False,'detail':'En este módulo solo se pueden anular despachos de bienes de consumo que no sean de viveros' },status=status.HTTP_404_NOT_FOUND)
         # SE RESTA DEL INVENTARIO LAS CANTIDADES DESPACHAS DEL DESPACHO QUE SE ESTÁ ANULANDO
         items_despacho = ItemDespachoConsumo.objects.filter(id_despacho_consumo=despacho_a_anular)
         for i in items_despacho:
@@ -621,7 +631,6 @@ class AnularDespachoConsumo(generics.UpdateAPIView):
             # SE BORRAN LOS ITEMS DEL DESPACHO
             items_despacho.delete()
         # INSERT EN LA TABLA SOLICITUDES DE CONSUMIBLES
-        instancia_despacho_anular = DespachoConsumo.objects.filter(id_despacho_consumo=despacho_a_anular).first()
         instancia_solicitud = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles=instancia_despacho_anular.id_solicitud_consumo.id_solicitud_consumibles).first()
         instancia_solicitud.id_despacho_consumo = None
         instancia_solicitud.fecha_cierre_solicitud = None

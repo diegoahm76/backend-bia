@@ -379,7 +379,6 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
         if despacho_entrante_instancia.id_persona_distribuye != None:
             return Response({'success':False,'detail':'Este despacho no se puede actualizar debido a que ya tiene distribuciones de vivero' },status=status.HTTP_404_NOT_FOUND)
         # VALIDACION 2: SE VALIDA QUE LA ACTUALIZACIÓN NO SE REALIZA EN UNA FECHA POSTERIOR A 45 DÍAS DESPUES DEL DESPACHO
-        #Se valida que la fecha de la solicitud no sea inferior a (fecha_actual - 8 días) ni superior a la actual
         fecha_despacho = despacho_maestro_instancia.fecha_despacho
         aux_validacion_fechas = datetime.now() - fecha_despacho
         if int(aux_validacion_fechas.days) > 45:
@@ -653,8 +652,8 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
             
         return Response({'success':True,'detail':'Despacho actualizado con éxito'},status=status.HTTP_200_OK)
 
-class EliminarItemsDespacho(generics.DestroyAPIView):
-    serializer_class = SerializersItemDespachoConsumo
+class EliminarItemsDespachoVivero(generics.DestroyAPIView):
+    serializer_class = SerializersItemDespachoViverosConsumo
     queryset=ItemDespachoConsumo.objects.all()
 
     def destroy(self, request, id_despacho_consumo):
@@ -665,17 +664,41 @@ class EliminarItemsDespacho(generics.DestroyAPIView):
             return Response({'success':False,'detail':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
         ids_items_a_eliminar = [i['id_item_despacho_consumo'] for i in datos_ingresados]
         instancia_despacho = DespachoConsumo.objects.filter(id_despacho_consumo=id_despacho_consumo).first()
+        instancia_despacho_entrante = DespachoEntrantes.objects.filter(id_despacho_consumo_alm=instancia_despacho.id_despacho_consumo).first()
         aux_instancia_items = ItemDespachoConsumo.objects.filter(id_despacho_consumo=instancia_despacho.id_despacho_consumo)
+        # SE VALDIA QUE EL DESPACHO SEA DE VIVERO
+        if instancia_despacho.es_despacho_conservacion != True:
+            return Response({'success':False,'detail':'En este módulo solo se pueden elimanar items de despachos de viveros' },status=status.HTTP_404_NOT_FOUND)
         if len(ids_items_a_eliminar) != len(set(ids_items_a_eliminar)):
             return Response({'success':False,'detail':'Verifique que no existan items repetidos dentro de la petición' },status=status.HTTP_404_NOT_FOUND)
         if len(aux_instancia_items) <= len(datos_ingresados):
             return Response({'success':False,'detail':'La cantidad de items que desea borrar es superior o igual a los que el despacho posee' },status=status.HTTP_404_NOT_FOUND)
+        # SE VALIDA QUE EL DESPACHO NO TENGA DISTRIBUCIONES EN DESPACHO_ENTRANTES
+        if instancia_despacho_entrante.id_persona_distribuye != None:
+            return Response({'success':False,'detail':'No se pueden eliminar items de este despahco debido a que los items ya se fueron distribuidos en el vivero' },status=status.HTTP_404_NOT_FOUND)
+        # VALIDACION 2: SE VALIDA QUE LA ACTUALIZACIÓN NO SE REALIZA EN UNA FECHA POSTERIOR A 45 DÍAS DESPUES DEL DESPACHO
+        fecha_despacho = instancia_despacho.fecha_despacho
+        aux_validacion_fechas = datetime.now() - fecha_despacho
+        if int(aux_validacion_fechas.days) > 45:
+            return Response({'success':False,'detail':'No pueden eliminar los items de un despacho con fecha anterior a 45 días respecto a la actual'},status=status.HTTP_404_NOT_FOUND)
         # SE VALIDA QUE CADA UNO DE LOS ITEMS INGRESADOS PERTENEZCA A AL DESPACHO QUE SE INGRESÓ EN LA URL
         for  i in datos_ingresados:
             instance = ItemDespachoConsumo.objects.filter(Q(id_item_despacho_consumo=i['id_item_despacho_consumo']) & Q(id_despacho_consumo=instancia_despacho.id_despacho_consumo)).first()
             if not instance:
                 return Response({'success':False,'detail':'Uno de los items que desea borrar no pertenece a la solicitud que ingresó' },status=status.HTTP_404_NOT_FOUND)
-        # INSERT EN LA TABLA INVENTARIO
+        # SE BORRAN LOS ITEMS DE LA TABLA DESPACHO_ENTRANTE
+        for i in datos_ingresados:
+            instancia_item_despacho = ItemDespachoConsumo.objects.filter(Q(id_item_despacho_consumo=i['id_item_despacho_consumo']) & Q(id_despacho_consumo=instancia_despacho.id_despacho_consumo)).first()
+            instancia_item_despacho_entrante = ItemsDespachoEntrante.objects.filter(Q(id_despacho_entrante=instancia_despacho_entrante.id_despacho_entrante) 
+                                                                                    & Q(id_bien=instancia_item_despacho.id_bien_despachado.id_bien)
+                                                                                    & Q(id_entrada_alm_del_bien=instancia_item_despacho.id_entrada_almacen_bien.id_entrada_almacen)).first()
+            if instancia_item_despacho.cantidad_despachada == instancia_item_despacho_entrante.cantidad_entrante:
+                instancia_item_despacho_entrante.delete()
+            else:
+                instancia_item_despacho_entrante.cantidad_entrante = instancia_item_despacho_entrante.cantidad_entrante - instancia_item_despacho.cantidad_despachada
+                instancia_item_despacho_entrante.save()
+                
+        # INSERT EN LA TABLA INVENTARIO, SE RESTRAN CANTIDADES A LA CANTIDAD DEDSPACHADA
         for i in datos_ingresados:
             instance = ItemDespachoConsumo.objects.filter(Q(id_item_despacho_consumo=i['id_item_despacho_consumo']) & Q(id_despacho_consumo=instancia_despacho.id_despacho_consumo)).first()
             inventario_instancia = Inventario.objects.filter(Q(id_bien=instance.id_bien_despachado)&Q(id_bodega=instance.id_bodega)).first()
@@ -701,8 +724,8 @@ class EliminarItemsDespacho(generics.DestroyAPIView):
         Util.save_auditoria_maestro_detalle(auditoria_data)
         return Response({'success':True,'detail':'Se eliminaron los items del despacho de manera correcta'},status=status.HTTP_200_OK)
 
-class AnularDespachoConsumo(generics.UpdateAPIView):
-    serializer_class = SerializersDespachoConsumo
+class AnularDespachoConsumoVivero(generics.UpdateAPIView):
+    serializer_class = SerializersDespachoViverosConsumo
     queryset=DespachoConsumo.objects.all()
     
     def put(self, request, despacho_a_anular):
@@ -714,9 +737,22 @@ class AnularDespachoConsumo(generics.UpdateAPIView):
         user_logeado = request.user
         if str(user_logeado) == 'AnonymousUser':
             return Response({'success':False,'detail':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
-
-        # SE RESTA DEL INVENTARIO LAS CANTIDADES DESPACHAS DEL DESPACHO QUE SE ESTÁ ANULANDO
+        instancia_despacho_anular = DespachoConsumo.objects.filter(id_despacho_consumo=despacho_a_anular).first()
+        instancia_despacho_entrante = DespachoEntrantes.objects.filter(id_despacho_consumo_alm=instancia_despacho_anular.id_despacho_consumo).first()
         items_despacho = ItemDespachoConsumo.objects.filter(id_despacho_consumo=despacho_a_anular)
+        items_despacho_entrante_instancia = ItemsDespachoEntrante.objects.filter(Q(id_despacho_entrante=instancia_despacho_entrante.id_despacho_entrante))
+        # SE VALDIA QUE EL DESPACHO SEA DE VIVERO
+        if instancia_despacho_anular.es_despacho_conservacion != True:
+            return Response({'success':False,'detail':'En este módulo solo se pueden anular despachos de viveros' },status=status.HTTP_404_NOT_FOUND)
+        # SE VALDIA QUE EL DESPACHO NO TENGA DISTRIBUCIONES
+        if instancia_despacho_entrante.id_persona_distribuye != None:
+            return Response({'success':False,'detail':'No se puede aanular este despahco debido a que los items ya se fueron distribuidos en el vivero' },status=status.HTTP_404_NOT_FOUND)
+        # SE BORRAN LOS ITEMS DE LA TABLA DESPACHO_ENTRANTE
+        items_despacho_entrante_instancia.delete()
+        # SE BORRAR EL REGISTRO DEL DESPACHO ENTRNATE
+        print(instancia_despacho_entrante)
+        instancia_despacho_entrante.delete()
+        # SE RESTA DEL INVENTARIO LAS CANTIDADES DESPACHAS DEL DESPACHO QUE SE ESTÁ ANULANDO
         for i in items_despacho:
             inventario_instancia = Inventario.objects.filter(Q(id_bien=i.id_bien_despachado)&Q(id_bodega=i.id_bodega)).first()
             inventario_instancia.cantidad_saliente_consumo = int(inventario_instancia.cantidad_saliente_consumo) - int(i.cantidad_despachada)
@@ -739,12 +775,3 @@ class AnularDespachoConsumo(generics.UpdateAPIView):
         instancia_despacho_anular.id_persona_anula = persona_anula
         instancia_despacho_anular.save()
         return Response({'success':True,'detail':'Despacho anulado con éxito'},status=status.HTTP_200_OK)
-
-class GetNroDocumentoDespachoBienesConsumo(generics.ListAPIView):
-    # ESTA FUNCIONALIDAD PERMITE CONSULTAR EL ÚLTIMO NÚMERO DE DOCUMENTO DE LA CREACIÓN DE DESPACHO
-    serializer_class = SerializersDespachoConsumo
-    queryset=DespachoConsumo.objects.all()
-    
-    def get(self, request):
-        nro_solicitud = DespachoConsumo.objects.all().order_by('numero_despacho_consumo').last() 
-        return Response({'success':True,'detail':nro_solicitud.numero_despacho_consumo + 1, },status=status.HTTP_200_OK)
