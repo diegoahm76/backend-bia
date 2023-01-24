@@ -46,7 +46,7 @@ def getAuditorias(request):
     if numero_documento == '':
         numero_documento = None
     if modulo == '':
-        modulo = 0
+        modulo = None
     if subsistema == '':
         subsistema = None
     if tipo_documento != None and numero_documento != None and modulo != None and subsistema != None:
