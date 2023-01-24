@@ -588,11 +588,11 @@ class ActualizarEntregaView(generics.RetrieveUpdateAPIView):
         
         """
           
-        # for item in items_entrega_actualizar:
-        #     item_instance = ItemDespachoConsumo.objects.filter(id_item_despacho_consumo=item['id_item_despacho_consumo']).first()
-        #     cantidad_maxima_despachar = UtilAlmacen.get_valor_maximo_despacho(item_instance.id_bien_despachado.id_bien, item_instance.id_bodega.id_bodega, item_instance.id_despacho_consumo.id_despacho_consumo)
-        #     if int(item['cantidad_despachada']) > cantidad_maxima_despachar:
-        #         return Response({'success': False, 'detail': 'No se puede despachar una cantidad superior a la disponible en esa fecha'}, status=status.HTTP_403_FORBIDDEN)
+        for item in items_entrega_actualizar:
+            item_instance = ItemDespachoConsumo.objects.filter(id_item_despacho_consumo=item['id_item_despacho_consumo']).first()
+            cantidad_maxima_despachar = UtilAlmacen.get_valor_maximo_despacho(item_instance.id_bien_despachado.id_bien, item_instance.id_bodega.id_bodega, item_instance.id_despacho_consumo.id_despacho_consumo)
+            if int(item['cantidad_despachada']) > cantidad_maxima_despachar:
+                return Response({'success': False, 'detail': 'No se puede despachar una cantidad superior a la disponible en esa fecha'}, status=status.HTTP_403_FORBIDDEN)
         
         items_actualizados = []
 
