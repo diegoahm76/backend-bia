@@ -191,9 +191,11 @@ class Util:
                         for field, value in data_descripcion_detalle.items():
                             description += '' if not description else '|'
                             description += field + ":" + str(value)
-                    
-                    del data_previous.__dict__["_state"]
-                    del data_previous.__dict__["_django_version"]
+
+                    if data_previous.__dict__.get("_state"):
+                        del data_previous.__dict__["_state"]
+                    if data_previous.__dict__.get("_django_version"):
+                        del data_previous.__dict__["_django_version"]
                     
                     for field, value in data_previous.__dict__.items():
                         new_value = getattr(data_current,field)

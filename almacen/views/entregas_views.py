@@ -490,6 +490,7 @@ class ActualizarEntregaView(generics.RetrieveUpdateAPIView):
         #VALIDACIÓN QUE EXISTA LA CANTIDAD A ENTREGAR EN LA BODEGA SELECCIONADA
         items_con_cantidades_disponible_en_bodega = []
         items_con_cantidad_no_disponible_en_bodega = []
+        data = []
 
         for item in items_entrega_crear:
             cantidad = UtilAlmacen.get_cantidades_disponibles_entregas(item['id_bien_despachado'], item['id_bodega'], entrega.fecha_despacho)
@@ -505,9 +506,7 @@ class ActualizarEntregaView(generics.RetrieveUpdateAPIView):
         #VALIDACIÓN QUE EL NÚMERO DE POSICIÓN NO SEA REPETIDO
         items_entrega_number = ItemDespachoConsumo.objects.filter(id_despacho_consumo=id_entrega)
         numeros_posicion = [item.numero_posicion_despacho for item in items_entrega_number]
-        print(numeros_posicion)
         numeros_posicion_items = [item['numero_posicion_despacho'] for item in items_entrega_crear]
-        print(numeros_posicion_items)
         if len(numeros_posicion) != len(set(numeros_posicion)):
             return Response({'success': False, 'detail': 'Los números de posición de los items deben ser únicos'}, status=status.HTTP_400_BAD_REQUEST)
         for numero in numeros_posicion_items:
@@ -528,14 +527,36 @@ class ActualizarEntregaView(generics.RetrieveUpdateAPIView):
         items_serializer = CreateItemsEntregaSerializer(data=items_entrega_crear, many=True)
         items_serializer.is_valid(raise_exception=True)
         items_serializador = items_serializer.save()
+        items_serializer_data = items_serializer.data
+
+        for item in items_serializer_data:
+            data.append(item)
+        
+        #INICIA CREACIÓN O ACTUALIZACIÓN DE ITEMS DESPACHOS ENTRANTES
+        despacho_entrante_instance = DespachoEntrantes.objects.filter(id_despacho_consumo_alm=entrega.id_despacho_consumo).first()
+
+        #VALIDACIÓN SI ESE BIEN YA ESTABA DESPACHADO EN ITEMS ENTRANTES
+        bienes_existen_in_items_entrantes = []
+        bienes_no_existen_in_items_entrantes = []
+        for item in items_serializador:
+            item_in_despachos_entrantes = ItemsDespachoEntrante.objects.filter(id_bien=item.id_bien_despachado.id_bien).first()
+            if item_in_despachos_entrantes:
+                print('entró por acá')
+                bienes_existen_in_items_entrantes.append(item)
+            else:
+                bienes_no_existen_in_items_entrantes.append(item)
 
         #REAGRUPACIÓN PARA CONVERTIR DOS REGISTROS DE ITEMS DESPACHOS SALIENTES EN UNO SOLO PARA ITEMS DESPACHOS ENTRANTE
-        #Falta validar si agregan otro bien y ese ya existia en items entrantes
-        id_bien_items_serializador = [item.id_bien_despachado.id_bien for item in items_serializador]
+        id_bien_items_serializador = [item.id_bien_despachado.id_bien for item in bienes_no_existen_in_items_entrantes]
         id_bien_items_serializador_instance = ItemDespachoConsumo.objects.filter(id_bien_despachado__in=id_bien_items_serializador, id_despacho_consumo=entrega.id_despacho_consumo).values('id_bien_despachado', 'id_entrada_almacen_bien').annotate(cantidad_despachada=Sum('cantidad_despachada'))
         
-        #CREACIÓN DE ITEMS DESPACHO ENTRANTE
-        despacho_entrante_instance = DespachoEntrantes.objects.filter(id_despacho_consumo_alm=entrega.id_despacho_consumo).first()
+        #ACTUALIZACIÓN DE ITEM DESPACHO ENTRANTE SI EL BIEN NO ESTABA EN ITEMS
+        for item in bienes_existen_in_items_entrantes:
+            item_in_despachos_entrantes = ItemsDespachoEntrante.objects.filter(id_bien=item.id_bien_despachado.id_bien, id_despacho_entrante=despacho_entrante_instance, id_entrada_alm_del_bien=entrega.id_entrada_almacen_cv.id_entrada_almacen).first()
+            item_in_despachos_entrantes.cantidad_entrante += item.cantidad_despachada
+            item_in_despachos_entrantes.save()
+
+        #CREACIÓN DE ITEMS DESPACHO ENTRANTE SI EL BIEN NO ESTABA EN ITEMS DESPACHO ENTRANTE ANTES
         for id_bien in id_bien_items_serializador_instance:
             item_despacho = ItemDespachoConsumo.objects.filter(id_bien_despachado=id_bien['id_bien_despachado'], id_despacho_consumo=entrega.id_despacho_consumo).first()
             item_despacho_entrante = ItemsDespachoEntrante.objects.create(
@@ -569,10 +590,10 @@ class ActualizarEntregaView(generics.RetrieveUpdateAPIView):
         #         return Response({'success': False, 'detail': 'No se puede despachar una cantidad superior a la disponible en esa fecha'}, status=status.HTTP_403_FORBIDDEN)
         
         items_actualizados = []
-        data = []
 
         for item in items_entrega_actualizar:
             item_instance = ItemDespachoConsumo.objects.filter(id_item_despacho_consumo=item['id_item_despacho_consumo']).first()
+            item_previous = copy.copy(item_instance)
             if int(item['cantidad_despachada']) < item_instance.cantidad_despachada and int(item['cantidad_despachada']) > 0:
                 cantidad_anterior = item_instance.cantidad_despachada
                 item_instance.cantidad_despachada = item['cantidad_despachada']
@@ -580,11 +601,15 @@ class ActualizarEntregaView(generics.RetrieveUpdateAPIView):
                 item_instance.save()
                 serializer = GetItemsEntregaSerializer(item_instance, many=False)
                 data.append(serializer.data)
-                items_actualizados.append({'nombre': item_instance.id_bien_despachado.nombre})
+                items_actualizados.append({'descripcion': {'nombre':item_instance.id_bien_despachado.nombre}, 'previous':item_previous,'current':item_instance})
 
                 item_in_inventario = Inventario.objects.filter(id_bien=item_instance.id_bien_despachado, id_bodega=item_instance.id_bodega).first()
                 item_in_inventario.cantidad_saliente_consumo = item_in_inventario.cantidad_saliente_consumo - (cantidad_anterior - int(item['cantidad_despachada']))
                 item_in_inventario.save()
+
+                item_in_despachos_entrantes = ItemsDespachoEntrante.objects.filter(id_bien=item['id_bien_despachado'], id_despacho_entrante=despacho_entrante_instance.id_despacho_entrante, id_entrada_alm_del_bien=entrega.id_entrada_almacen_cv.id_entrada_almacen).first()
+                item_in_despachos_entrantes.cantidad_entrante = item_in_despachos_entrantes.cantidad_entrante - (cantidad_anterior - int(item['cantidad_despachada']))
+                item_in_despachos_entrantes.save()
                 
             if int(item['cantidad_despachada']) > item_instance.cantidad_despachada:
                 cantidad_anterior = item_instance.cantidad_despachada
@@ -593,19 +618,22 @@ class ActualizarEntregaView(generics.RetrieveUpdateAPIView):
                 item_instance.save()
                 serializer = GetItemsEntregaSerializer(item_instance, many=False)
                 data.append(serializer.data)
-                items_actualizados.append({'nombre': item_instance.id_bien_despachado.nombre})
+                items_actualizados.append({'descripcion': {'nombre':item_instance.id_bien_despachado.nombre}, 'previous':item_previous,'current':item_instance})
                 
                 item_in_inventario = Inventario.objects.filter(id_bien=item_instance.id_bien_despachado, id_bodega=item_instance.id_bodega).first()
                 item_in_inventario.cantidad_saliente_consumo = item_in_inventario.cantidad_saliente_consumo + (int(item['cantidad_despachada']) - cantidad_anterior)
                 item_in_inventario.save()
+
+                item_in_despachos_entrantes = ItemsDespachoEntrante.objects.filter(id_bien=item['id_bien_despachado'], id_despacho_entrante=despacho_entrante_instance.id_despacho_entrante, id_entrada_alm_del_bien=entrega.id_entrada_almacen_cv.id_entrada_almacen).first()
+                item_in_despachos_entrantes.cantidad_entrante = item_in_despachos_entrantes.cantidad_entrante + (int(item['cantidad_despachada']) - cantidad_anterior)
+                item_in_despachos_entrantes.save()
             
-            else:
+            elif int(item['cantidad_despachada']) == item_previous.cantidad_despachada:
                 item_instance.observacion = item['observacion']
                 item_instance.save()
                 serializer = GetItemsEntregaSerializer(item_instance, many=False)
                 data.append(serializer.data)
-                items_actualizados.append({'nombre': item_instance.id_bien_despachado.nombre})
-
+                items_actualizados.append({'descripcion': {'nombre':item_instance.id_bien_despachado.nombre}, 'previous':item_previous,'current':item_instance})
         
         # AUDITORIA MAESTRO DETALLE DE ENTREGA
         valores_creados_detalles = []
@@ -617,7 +645,7 @@ class ActualizarEntregaView(generics.RetrieveUpdateAPIView):
         auditoria_data = {
             "id_usuario" : request.user.id_usuario,
             "id_modulo" : 46,
-            "cod_permiso": "CR",
+            "cod_permiso": "AC",
             "subsistema": 'ALMA',
             "dirip": direccion,
             "descripcion": descripcion,
