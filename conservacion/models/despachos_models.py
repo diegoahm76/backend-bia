@@ -56,7 +56,7 @@ class DistribucionesItemDespachoEntrante(models.Model):
     id_vivero = models.ForeignKey(Vivero, on_delete=models.CASCADE, db_column='T155Id_Vivero')
     cantidad_asignada = models.PositiveIntegerField(db_column='T155cantidadAsignada')
     cod_etapa_lote_al_ingresar = models.CharField(max_length=1, choices=cod_etapa_lote_CHOICES, null=True, blank=True, db_column='T155codEtapaAIngresarMV')
-    fecha_distribucion = models.DateTimeField(auto_now_add=True, db_column='T155fechaDistribucion')
+    fecha_distribucion = models.DateTimeField(auto_now=True, db_column='T155fechaDistribucion')
     
     def __str__(self):
         return str(self.id_distribucion_item_despacho_entrante)

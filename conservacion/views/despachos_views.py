@@ -27,6 +27,7 @@ from conservacion.serializers.despachos_serializers import (
     ItemsDespachosEntrantesSerializer,
     DistribucionesItemDespachoEntranteSerializer
 )
+from conservacion.utils import UtilConservacion
 
 class GetDespachosEntrantes(generics.ListAPIView):
     serializer_class=DespachosEntrantesSerializer
@@ -79,63 +80,5 @@ class GuardarDistribucionBienes(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def put(self,request,id_despacho_entrante):
-        despacho_entrante=DespachoEntrantes.objects.filter(id_despacho_entrante=id_despacho_entrante).first()
-        if despacho_entrante:
-            data = request.data
-            user = request.user.persona
-            observacion_distribucion = request.query_params.get('observaciones_distribucion')
-            
-            # VALIDAR EXISTENCIA DE ITEMS
-            items_id_list = [item['id_item_despacho_entrante'] for item in data]
-            items_despacho_entrante = ItemsDespachoEntrante.objects.filter(id_item_despacho_entrante__in=items_id_list)
-            if len(items_id_list) != len(items_despacho_entrante):
-                return Response({'success':True, 'detail':'Debe elegir items de despacho entrante existentes'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            # VALIDAR EXISTENCIA DE VIVEROS
-            viveros_id_list = [item['id_vivero'] for item in data]
-            viveros = Vivero.objects.filter(id_vivero__in=viveros_id_list)
-            if len(viveros_id_list) != len(viveros):
-                return Response({'success':False, 'detail':'Debe elegir viveros existentes'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            # VALIDAR CANTIDADES MAYOR A CERO
-            cantidades = [item['cantidad_asignada'] for item in data]
-            if cantidades.count(0) > 0:
-                return Response({'success':False, 'detail':'Debe distribuir cantidades mayores a cero'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            # VALIDAR CODIGOS ETAPA LOTE
-            dict_cod_etapa_lote = [x for x,y in cod_etapa_lote_CHOICES]
-            cod_etapa_lote_list = [item['cod_etapa_lote_al_ingresar'] for item in data]
-            if not set(cod_etapa_lote_list).issubset(dict_cod_etapa_lote):
-                return Response({'success':False, 'detail':'Debe seleccionar códigos de etapa lote existentes'}, status=status.HTTP_400_BAD_REQUEST)
-
-            # ACTUALIZAR EN DESPACHO ENTRANTE
-            despacho_entrante.observacion_distribucion = observacion_distribucion
-            despacho_entrante.id_persona_distribuye = user
-            
-            items_create = []
-            
-            # ACTUALIZAR ITEMS DESPACHO ENTRANTE
-            for item in data:
-                item_despacho_entrante = ItemsDespachoEntrante.objects.filter(id_item_despacho_entrante=item['id_item_despacho_entrante']).first()
-                item_despacho_entrante.cantidad_distribuida = item['cantidad_asignada']
-                item_despacho_entrante.save()
-                
-                distribucion_item = DistribucionesItemDespachoEntrante.objects.filter(id_item_despacho_entrante=item['id_item_despacho_entrante']).first()
-                if distribucion_item:
-                    serializer_update = self.serializer_class(distribucion_item, data=item)
-                    serializer_update.is_valid(raise_exception=True)
-                    serializer_update.save()
-                else:
-                    items_create.append(item)
-            
-            # CREAR ITEMS DESPACHO ENTRANTE
-            if items_create:
-                serializer_create = self.serializer_class(data=items_create, many=True)
-                serializer_create.is_valid(raise_exception=True)
-                serializer_create.save()
-            
-            return Response({'success':True, 'detail':'Se realizó el guardado de las distribuciones correctamente'}, status=status.HTTP_201_CREATED)
-            
-        else:
-            return Response({'success':False, 'detail':'El despacho entrante elegido no existe'}, status=status.HTTP_404_NOT_FOUND)
-        
+        response_dict = UtilConservacion.guardar_distribuciones(id_despacho_entrante, request, self.queryset.all())
+        return Response({'success':response_dict['success'], 'detail':response_dict['detail']}, status=response_dict['status'])
