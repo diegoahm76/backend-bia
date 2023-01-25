@@ -1,4 +1,6 @@
 from django.urls import path
-from conservacion.views import viveros_views as views
+from conservacion.views import camas_siembras_views as views
 
-urlpatterns = []
+urlpatterns = [
+    path('crear-camas/', views.CrearCamasGerminacion.as_view(), name='tipo-vivero'),
+]
