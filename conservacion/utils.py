@@ -1,4 +1,5 @@
 from rest_framework import status
+from seguridad.utils import Util
 from conservacion.models.viveros_models import (
     Vivero
 )
@@ -81,6 +82,7 @@ class UtilConservacion:
             # ACTUALIZAR EN DESPACHO ENTRANTE
             despacho_entrante.observacion_distribucion = observacion_distribucion
             despacho_entrante.id_persona_distribuye = user
+            despacho_entrante.save()
             
             items_create = []
             
@@ -132,6 +134,23 @@ class UtilConservacion:
                 serializer_create.save()
             
             response_dict['detail'] = 'Se realizó el guardado de las distribuciones correctamente'
+            
+            # AUDITORIA MAESTRO DETALLE
+            # descripcion = {"numero_despacho_consumo": str(info_despacho['id_despacho_consumo_alm']), "es_despacho_conservacion": "false", "fecha_despacho": str(info_despacho['fecha_despacho'])}
+            # direccion=Util.get_client_ip(request)
+            # auditoria_data = {
+            #     "id_usuario": request.user.id_usuario,
+            #     "id_modulo": 48,
+            #     "cod_permiso": 'AC',
+            #     "subsistema": 'CONS',
+            #     "dirip": direccion,
+            #     "descripcion": descripcion,
+            #     "valores_creados_detalles": valores_eliminados_detalles,
+            #     "valores_actualizados_detalles": valores_eliminados_detalles,
+            #     "valores_eliminados_detalles": valores_eliminados_detalles
+            # }
+            # Util.save_auditoria_maestro_detalle(auditoria_data)
+            
             return response_dict
         else:
             response_dict['success'] = False
