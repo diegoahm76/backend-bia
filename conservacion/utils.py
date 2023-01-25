@@ -12,11 +12,12 @@ from conservacion.serializers.despachos_serializers import (
     DistribucionesItemDespachoEntranteSerializer
 )
 from conservacion.choices.cod_etapa_lote import cod_etapa_lote_CHOICES
+import copy
 
 class UtilConservacion:
     
     @staticmethod
-    def guardar_distribuciones(id_despacho_entrante, request, distribuciones_items):
+    def guardar_distribuciones(id_despacho_entrante, request, distribuciones_items, confirmacion=False):
         response_dict = {'success':True, 'detail':'', 'status':status.HTTP_201_CREATED}
         despacho_entrante=DespachoEntrantes.objects.filter(id_despacho_entrante=id_despacho_entrante).first()
         if despacho_entrante:
@@ -80,6 +81,7 @@ class UtilConservacion:
                     return response_dict
             
             # ACTUALIZAR EN DESPACHO ENTRANTE
+            despacho_entrante_previous = copy.copy(despacho_entrante)
             despacho_entrante.observacion_distribucion = observacion_distribucion
             despacho_entrante.id_persona_distribuye = user
             despacho_entrante.save()
@@ -101,6 +103,20 @@ class UtilConservacion:
                 if cantidad_total_item > item.cantidad_entrante:
                     response_dict['success'] = False
                     response_dict['detail'] = 'La cantidad distribuida del bien ' + item.id_bien.nombre + ' no puede superar la cantidad entrante de ' + str(item.cantidad_entrante)
+                    response_dict['status'] = status.HTTP_400_BAD_REQUEST
+                    return response_dict
+                
+                # VALIDACION PARA CONFIRMACION CUANDO NO TIENE TODAS LAS UNIDADES DISTRIBUIDAS
+                if confirmacion and (cantidad_total_item != item.cantidad_entrante):
+                    response_dict['success'] = False
+                    response_dict['detail'] = 'El bien ' + item.id_bien.nombre + ' no tiene todas las unidades pre-distribuidas'
+                    response_dict['status'] = status.HTTP_400_BAD_REQUEST
+                    return response_dict
+                
+                # VALIDACION PARA CONFIRMACION CUANDO NO EL ITEM NO ESTÁ CORRECTAMENTE TIPIFICADO
+                if confirmacion and (item.id_bien.es_semilla_vivero == None or item.id_bien.cod_tipo_elemento_vivero == None):
+                    response_dict['success'] = False
+                    response_dict['detail'] = 'El bien ' + item.id_bien.nombre + ' no está correctamente tipificado'
                     response_dict['status'] = status.HTTP_400_BAD_REQUEST
                     return response_dict
                 
@@ -135,8 +151,29 @@ class UtilConservacion:
             
             response_dict['detail'] = 'Se realizó el guardado de las distribuciones correctamente'
             
+            # AUDITORIA MAESTRO
+            descripcion_maestro = {
+                "numero_despacho_consumo": str(despacho_entrante_previous.id_despacho_consumo_alm.numero_despacho_consumo),
+                "fecha_ingreso": str(despacho_entrante_previous.fecha_ingreso),
+                "distribucion_confirmada": str(despacho_entrante_previous.distribucion_confirmada),
+                "fecha_confirmacion_distribucion": str(despacho_entrante_previous.fecha_confirmacion_distribucion),
+                "observacion_distribucion": str(despacho_entrante_previous.observacion_distribucion),
+                "persona_distribuye": str(despacho_entrante_previous.id_persona_distribuye.primer_nombre + ' ' + despacho_entrante_previous.id_persona_distribuye.primer_apellido if despacho_entrante_previous.id_persona_distribuye.tipo_persona=='N' else despacho_entrante_previous.id_persona_distribuye.razon_social)
+            }
+            valores_actualizados={'previous':despacho_entrante_previous, 'current':despacho_entrante}
+            direccion=Util.get_client_ip(request)
+            auditoria_data = {
+                "id_usuario": request.user.id_usuario,
+                "id_modulo": 48,
+                "cod_permiso": 'AC',
+                "subsistema": 'CONS',
+                "dirip": direccion,
+                "descripcion": descripcion_maestro,
+                "valores_actualizados": valores_actualizados
+            }
+            Util.save_auditoria(auditoria_data)
+            
             # AUDITORIA MAESTRO DETALLE
-            # descripcion = {"numero_despacho_consumo": str(info_despacho['id_despacho_consumo_alm']), "es_despacho_conservacion": "false", "fecha_despacho": str(info_despacho['fecha_despacho'])}
             # direccion=Util.get_client_ip(request)
             # auditoria_data = {
             #     "id_usuario": request.user.id_usuario,
@@ -144,7 +181,7 @@ class UtilConservacion:
             #     "cod_permiso": 'AC',
             #     "subsistema": 'CONS',
             #     "dirip": direccion,
-            #     "descripcion": descripcion,
+            #     "descripcion": descripcion_maestro,
             #     "valores_creados_detalles": valores_eliminados_detalles,
             #     "valores_actualizados_detalles": valores_eliminados_detalles,
             #     "valores_eliminados_detalles": valores_eliminados_detalles

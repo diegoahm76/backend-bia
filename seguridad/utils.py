@@ -121,17 +121,27 @@ class Util:
                     valores_actualizados = None
                 else:
                     valores_actualizados += '.'
-            
-            auditoria_user = Auditorias.objects.create(
-                id_usuario = usuario,
-                id_modulo = modulo,
-                id_cod_permiso_accion = permiso,
-                subsistema = data.get('subsistema'),
-                dirip = data.get('dirip'),
-                descripcion = descripcion,
-                valores_actualizados = valores_actualizados
-            )
-            auditoria_user.save()
+                    auditoria_user = Auditorias.objects.create(
+                        id_usuario = usuario,
+                        id_modulo = modulo,
+                        id_cod_permiso_accion = permiso,
+                        subsistema = data.get('subsistema'),
+                        dirip = data.get('dirip'),
+                        descripcion = descripcion,
+                        valores_actualizados = valores_actualizados
+                    )
+                    auditoria_user.save()
+            else:
+                auditoria_user = Auditorias.objects.create(
+                    id_usuario = usuario,
+                    id_modulo = modulo,
+                    id_cod_permiso_accion = permiso,
+                    subsistema = data.get('subsistema'),
+                    dirip = data.get('dirip'),
+                    descripcion = descripcion,
+                    valores_actualizados = valores_actualizados
+                )
+                auditoria_user.save()
         
             return True
         except:
