@@ -5,6 +5,7 @@ from conservacion.models.despachos_models import (
     ItemsDespachoEntrante,
     DistribucionesItemDespachoEntrante
 )
+from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 
 class DespachosEntrantesSerializer(serializers.ModelSerializer):
     numero_despacho_consumo = serializers.ReadOnlyField(source='id_despacho_consumo_alm.numero_despacho_consumo', default=None)
@@ -27,3 +28,10 @@ class DistribucionesItemDespachoEntranteSerializer(serializers.ModelSerializer):
     class Meta:
         model = DistribucionesItemDespachoEntrante
         fields = '__all__'
+        validators = [
+            UniqueTogetherValidator(
+                queryset=DistribucionesItemDespachoEntrante.objects.all(),
+                fields=['id_item_despacho_entrante', 'id_vivero'],
+                message='El item despacho entrante y el vivero deben ser una pareja única'
+            )
+        ]

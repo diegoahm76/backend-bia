@@ -35,7 +35,7 @@ from almacen.serializers.solicitudes_serialiers import (
 from seguridad.serializers.personas_serializers import PersonasSerializer
 import copy
 
-class FiltroViveros(generics.ListAPIView):
+class FiltroBienSolicitableVivero(generics.ListAPIView):
     serializer_class=CatalogoBienesSerializer
     queryset=CatalogoBienes.objects.all()
     def get(self,request):
@@ -73,7 +73,7 @@ class FiltroViveros(generics.ListAPIView):
             return Response({'success':True,'detail':'Se encontró elementos','data':serializador.data},status=status.HTTP_200_OK)
         return Response({'success':True,'detail':'No se encontró elementos','data':bien_final},status=status.HTTP_404_NOT_FOUND)
     
-class GetVivero(generics.ListAPIView):
+class GetBienSolicitableVivero(generics.ListAPIView):
     serializer_class=CatalogoBienesSerializer
     queryset=CatalogoBienes.objects.all()
     def get(self,request):
@@ -322,8 +322,6 @@ class CreateSolicitud(generics.UpdateAPIView):
                 return Response({'success':False,'data':'La cantidad debe ser un número entero' },status=status.HTTP_404_NOT_FOUND)
             if not str(i['nro_posicion']).isdigit():
                 return Response({'success':False,'data':'El número de posición debe ser un número entero' },status=status.HTTP_404_NOT_FOUND)
-            if bien.solicitable_vivero != False:
-                return Response({'success':False,'data':'En este módulo solo se pueden despachar bienes solicitables por vivero' },status=status.HTTP_404_NOT_FOUND)
             # unidad_de_medida = UnidadesMedida.objects.filter(id_unidad_medida = i['id_unidad_medida']).first()
             # if not unidad_de_medida:
             #     return Response({'success':False,'data':'La unidad de medida (' + unidad_de_medida.nombre + ') no existe' },status=status.HTTP_404_NOT_FOUND)

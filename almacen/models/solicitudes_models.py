@@ -87,7 +87,7 @@ class DespachoConsumo(models.Model):
     justificacion_anulacion = models.CharField(max_length=255, null=True, blank=True, db_column='T083justificacionAnulacion')
     fecha_anulacion = models.DateTimeField(null=True, blank=True, db_column='T083fechaAnulacion')
     id_persona_anula = models.ForeignKey(Personas, related_name='persona_anula_despacho', null=True, blank=True, on_delete=models.SET_NULL, db_column='T083Id_PersonaAnula')
-    ruta_archivo_doc_con_recibido = models.FileField(db_column='T083rutaArchivoDocConRecibido')
+    ruta_archivo_doc_con_recibido = models.FileField(db_column='T083rutaArchivoDocConRecibido', null=True, blank=True)
 
     def __str__(self):
         return str(self.numero_despacho_consumo)

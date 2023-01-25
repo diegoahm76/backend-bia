@@ -97,3 +97,8 @@ class GetItemsEntregaSerializer(serializers.ModelSerializer):
     class Meta:
         model = ItemDespachoConsumo
         fields = '__all__'
+
+class DeleteItemsEntregaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ItemDespachoConsumo
+        fields = '__all__'

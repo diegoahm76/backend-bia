@@ -103,6 +103,7 @@ class GetItemOtrosOrigenesSerializers(serializers.ModelSerializer):
     tipo_documento=serializers.CharField(read_only=True,default=None)
     cantidad_por_distribuir=serializers.IntegerField(read_only=True,default=None)
     numero_documento=serializers.CharField(read_only=True,default=None)
+    unidad_medida= serializers.ReadOnlyField(source='id_bien.id_unidad_medida.abreviatura')
     class Meta:
         model=ItemEntradaAlmacen
-        fields=('id_bien', 'nombre','tipo_documento','numero_documento','cantidad_por_distribuir','codigo_bien_desp')
+        fields=('id_bien', 'nombre','tipo_documento','numero_documento','cantidad_por_distribuir','codigo_bien_desp','unidad_medida')

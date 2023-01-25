@@ -4,8 +4,8 @@ from almacen.views import solicitudes_views as views
 urlpatterns = [
     path('crear-solicitud-bienes-de-consumo/', views.CreateSolicitud.as_view(), name='crear-solicitud-bienes-de-consumo'),
     path('filtro-bienes-solicitud/', views.FiltroVisibleBySolicitud.as_view(), name='filtro-bienes-solicitud'),
-    path('filtro-viveros/', views.FiltroViveros.as_view(), name='search-viveros'),
-    path('get-vivero-codigo-bien/', views.GetVivero.as_view(), name='search-viveros'),
+    path('filtro-bienes-solicitable-vivero/', views.FiltroBienSolicitableVivero.as_view(), name='search-viveros'),
+    path('get-bien-solicitable-vivero/', views.GetBienSolicitableVivero.as_view(), name='search-viveros'),
     path('get-bienes-solicitud/', views.GetVisibleBySolicitud.as_view(), name='search-viveros'),
     path('get-orgchart-tree/<str:pk>/', views.get_orgchart_tree, name='get-orgchart-tree'),
     path('get-solicitudes-pendientes-por-aprobar/<str:tipodocumento>/<str:numerodocumento>/', views.GetSolicitudesPendentesPorAprobar.as_view(), name='get-solicitudes-pendientes-por-aprobar'),

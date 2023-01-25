@@ -121,17 +121,27 @@ class Util:
                     valores_actualizados = None
                 else:
                     valores_actualizados += '.'
-            
-            auditoria_user = Auditorias.objects.create(
-                id_usuario = usuario,
-                id_modulo = modulo,
-                id_cod_permiso_accion = permiso,
-                subsistema = data.get('subsistema'),
-                dirip = data.get('dirip'),
-                descripcion = descripcion,
-                valores_actualizados = valores_actualizados
-            )
-            auditoria_user.save()
+                    auditoria_user = Auditorias.objects.create(
+                        id_usuario = usuario,
+                        id_modulo = modulo,
+                        id_cod_permiso_accion = permiso,
+                        subsistema = data.get('subsistema'),
+                        dirip = data.get('dirip'),
+                        descripcion = descripcion,
+                        valores_actualizados = valores_actualizados
+                    )
+                    auditoria_user.save()
+            else:
+                auditoria_user = Auditorias.objects.create(
+                    id_usuario = usuario,
+                    id_modulo = modulo,
+                    id_cod_permiso_accion = permiso,
+                    subsistema = data.get('subsistema'),
+                    dirip = data.get('dirip'),
+                    descripcion = descripcion,
+                    valores_actualizados = valores_actualizados
+                )
+                auditoria_user.save()
         
             return True
         except:
@@ -191,9 +201,11 @@ class Util:
                         for field, value in data_descripcion_detalle.items():
                             description += '' if not description else '|'
                             description += field + ":" + str(value)
-                    
-                    del data_previous.__dict__["_state"]
-                    del data_previous.__dict__["_django_version"]
+
+                    if data_previous.__dict__.get("_state"):
+                        del data_previous.__dict__["_state"]
+                    if data_previous.__dict__.get("_django_version"):
+                        del data_previous.__dict__["_django_version"]
                     
                     for field, value in data_previous.__dict__.items():
                         new_value = getattr(data_current,field)
