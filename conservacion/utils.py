@@ -25,6 +25,13 @@ class UtilConservacion:
             user = request.user.persona
             observacion_distribucion = request.query_params.get('observaciones_distribucion')
             
+            # VALIDAR SI DESPACHO YA HA SIDO CONFIRMADO
+            if  despacho_entrante.distribucion_confirmada == True:
+                response_dict['success'] = False
+                response_dict['detail'] = 'El despacho ya ha sido confirmado'
+                response_dict['status'] = status.HTTP_403_FORBIDDEN
+                return response_dict
+                
             # VALIDAR EXISTENCIA DE ITEMS
             items_id_list = [item['id_item_despacho_entrante'] for item in data]
             items_despacho_entrante = ItemsDespachoEntrante.objects.filter(id_item_despacho_entrante__in=items_id_list)
@@ -134,17 +141,18 @@ class UtilConservacion:
                     items_create.append(item)
             
             # VALIDACION PARA CONFIRMACION CUANDO NO SE HA DISTRIBUIDO TODAS LAS UNIDADES DE UN ITEM
+            items_no_distribuidos = ItemsDespachoEntrante.objects.filter(id_despacho_entrante=id_despacho_entrante).exclude(id_item_despacho_entrante__in=items_id_list)
+            items_no_distribuidos_id = [item_no_distribuido.id_item_despacho_entrante for item_no_distribuido in items_no_distribuidos]
             if confirmacion:
-                distribuciones_items_no_distribuidos = distribuciones_items.exclude(id_item_despacho_entrante__in=items_id_list)
-                distribuciones_items_no_distribuidos_id = [distribucion_item.id_item_despacho_entrante.id_item_despacho_entrante for distribucion_item in distribuciones_items_no_distribuidos]
-                for distribucion_item in set(distribuciones_items_no_distribuidos_id):
+                for item_no_distribuido in set(items_no_distribuidos_id):
+                    bien = items_no_distribuidos.filter(id_item_despacho_entrante=item_no_distribuido).first()
                     response_dict['success'] = False
-                    response_dict['detail'] = 'Le falta distribuir todas las unidades del ' + item.id_bien.nombre
+                    response_dict['detail'] = 'Le falta distribuir todas las unidades del ' + bien.id_bien.nombre
                     response_dict['status'] = status.HTTP_400_BAD_REQUEST
                     return response_dict
             
             # ELIMINAR ITEMS DESPACHO ENTRANTE
-            distribuciones_items_eliminar = distribuciones_items.exclude(id_item_despacho_entrante__in=items_id_list)
+            distribuciones_items_eliminar = distribuciones_items.filter(id_item_despacho_entrante__in=items_no_distribuidos)
             distribuciones_items_eliminar_id = [distribucion_item.id_item_despacho_entrante.id_item_despacho_entrante for distribucion_item in distribuciones_items_eliminar]
             for distribucion_item in set(distribuciones_items_eliminar_id):
                 item_despacho_entrante = ItemsDespachoEntrante.objects.filter(id_item_despacho_entrante=distribucion_item).first()
@@ -160,28 +168,6 @@ class UtilConservacion:
                 serializer_create.save()
             
             response_dict['detail'] = 'Se realizó el guardado de las distribuciones correctamente'
-            
-            # AUDITORIA MAESTRO
-            descripcion_maestro = {
-                "numero_despacho_consumo": str(despacho_entrante_previous.id_despacho_consumo_alm.numero_despacho_consumo),
-                "fecha_ingreso": str(despacho_entrante_previous.fecha_ingreso),
-                "distribucion_confirmada": str(despacho_entrante_previous.distribucion_confirmada),
-                "fecha_confirmacion_distribucion": str(despacho_entrante_previous.fecha_confirmacion_distribucion),
-                "observacion_distribucion": str(despacho_entrante_previous.observacion_distribucion),
-                "persona_distribuye": str(despacho_entrante_previous.id_persona_distribuye.primer_nombre + ' ' + despacho_entrante_previous.id_persona_distribuye.primer_apellido if despacho_entrante_previous.id_persona_distribuye.tipo_persona=='N' else despacho_entrante_previous.id_persona_distribuye.razon_social)
-            }
-            valores_actualizados={'previous':despacho_entrante_previous, 'current':despacho_entrante}
-            direccion=Util.get_client_ip(request)
-            auditoria_data = {
-                "id_usuario": request.user.id_usuario,
-                "id_modulo": 48,
-                "cod_permiso": 'AC',
-                "subsistema": 'CONS',
-                "dirip": direccion,
-                "descripcion": descripcion_maestro,
-                "valores_actualizados": valores_actualizados
-            }
-            Util.save_auditoria(auditoria_data)
             
             # AUDITORIA MAESTRO DETALLE
             # direccion=Util.get_client_ip(request)
