@@ -134,13 +134,14 @@ class UtilConservacion:
                     items_create.append(item)
             
             # VALIDACION PARA CONFIRMACION CUANDO NO SE HA DISTRIBUIDO TODAS LAS UNIDADES DE UN ITEM
-            distribuciones_items_no_distribuidos = distribuciones_items.exclude(id_item_despacho_entrante__in=items_id_list)
-            distribuciones_items_no_distribuidos_id = [distribucion_item.id_item_despacho_entrante.id_item_despacho_entrante for distribucion_item in distribuciones_items_no_distribuidos]
-            for distribucion_item in set(distribuciones_items_no_distribuidos_id):
-                response_dict['success'] = False
-                response_dict['detail'] = 'Le falta distribuir todas las unidades del ' + item.id_bien.nombre
-                response_dict['status'] = status.HTTP_400_BAD_REQUEST
-                return response_dict
+            if confirmacion:
+                distribuciones_items_no_distribuidos = distribuciones_items.exclude(id_item_despacho_entrante__in=items_id_list)
+                distribuciones_items_no_distribuidos_id = [distribucion_item.id_item_despacho_entrante.id_item_despacho_entrante for distribucion_item in distribuciones_items_no_distribuidos]
+                for distribucion_item in set(distribuciones_items_no_distribuidos_id):
+                    response_dict['success'] = False
+                    response_dict['detail'] = 'Le falta distribuir todas las unidades del ' + item.id_bien.nombre
+                    response_dict['status'] = status.HTTP_400_BAD_REQUEST
+                    return response_dict
             
             # ELIMINAR ITEMS DESPACHO ENTRANTE
             distribuciones_items_eliminar = distribuciones_items.exclude(id_item_despacho_entrante__in=items_id_list)
