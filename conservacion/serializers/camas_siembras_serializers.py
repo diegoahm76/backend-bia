@@ -13,3 +13,13 @@ class CamasGerminacionPost(serializers.ModelSerializer):
     class Meta:
         model = CamasGerminacionVivero
         fields = '__all__'
+
+class CreateSiembrasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CamasGerminacionVivero
+        fields = '__all__'
+
+class GetNumeroLoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Siembras
+        fields = 'nro_lote'

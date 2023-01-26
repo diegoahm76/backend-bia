@@ -298,6 +298,8 @@ class CreateSeriesDoc(generics.UpdateAPIView):
         series_update = list(filter(lambda serie: serie['id_serie_doc'] != None, data_ingresada))
         series_create = list(filter(lambda serie: serie['id_serie_doc'] == None, data_ingresada))           
         
+        data = []
+
         # CREATE
         valores_creados_detalles = []
         
@@ -308,7 +310,9 @@ class CreateSeriesDoc(generics.UpdateAPIView):
             serializador = serializer.save()
             series_id_create.extend([serie.id_serie_doc for serie in serializador])
             valores_creados_detalles = [{'nombre':serie['nombre'], 'codigo':serie['codigo']} for serie in series_create]
-        
+            for serie in serializer.data:
+                data.append(serie)
+
         # UPDATE SERIES
         valores_actualizados_detalles = []
         
@@ -317,12 +321,14 @@ class CreateSeriesDoc(generics.UpdateAPIView):
                 instancia = SeriesDoc.objects.filter(id_serie_doc=i['id_serie_doc']).first()
                 previous_serie = copy.copy(instancia)
                 if instancia:
+                    for serie in series_update:
+                        data.append(serie)
                     descripcion_subserie = {'nombre':previous_serie.nombre, 'codigo':previous_serie.codigo}
                     serializer = self.serializer_class(instancia, data=i, many=False)
                     serializer.is_valid(raise_exception=True)
-                    serializer.save()
+                    serializador = serializer.save()
                     valores_actualizados_detalles.append({'descripcion':descripcion_subserie, 'previous':previous_serie, 'current':instancia})
-        
+
         # ELIMINAR SERIES
         lista_series_id = [serie['id_serie_doc'] for serie in series_update]
         lista_series_id.extend(series_id_create)
@@ -352,7 +358,7 @@ class CreateSeriesDoc(generics.UpdateAPIView):
         }
         Util.save_auditoria_maestro_detalle(auditoria_data)    
             
-        return Response({'success': True, "detail" : "Datos guardados con éxito"}, status=status.HTTP_201_CREATED)
+        return Response({'success': True, "detail" : "Datos guardados con éxito", 'data': data}, status=status.HTTP_201_CREATED)
 
 class GetSeriesDoc(generics.ListAPIView):
     serializer_class = SeriesDocSerializer
@@ -383,9 +389,11 @@ class UpdateSubseriesDoc(generics.UpdateAPIView):
         usuario = request.user.id_usuario
         descripcion = {"nombre": str(ccd.nombre), "version": str(ccd.version)}
         direccion = Util.get_client_ip(request)
+        print('entró por aquiiii')
         if ccd:
             if not ccd.fecha_terminado:
                 if data:
+                    print('entró por aquiiii')
                     # VALIDAR QUE EL ID_CCD SEA EL MISMO
                     ccd_list = [subserie['id_ccd'] for subserie in data]
                     if len(set(ccd_list)) != 1:
@@ -404,18 +412,25 @@ class UpdateSubseriesDoc(generics.UpdateAPIView):
                     nombres_list = [subserie['nombre'] for subserie in data]
                     if len(nombres_list) != len(set(nombres_list)):
                         return Response({'success':False, 'detail':'Debe validar que los nombres de las subseries sean únicos'}, status=status.HTTP_400_BAD_REQUEST)
-                    
+                    print('entró por acaaaaaa')
+                    subseries_modificadas = []
+
                     # CREAR SUBSERIES
                     valores_creados_detalles = []
                     
                     subseries_create = list(filter(lambda subserie: subserie['id_subserie_doc'] == None, data))
                     subseries_id_create = []
+                    print(subseries_create)
                     if subseries_create:
+                        print('entra acá')
                         serializer = self.serializer_class(data=subseries_create, many=True)
                         serializer.is_valid(raise_exception=True)
                         serializador = serializer.save()
                         subseries_id_create.extend([subserie.id_subserie_doc for subserie in serializador])
                         valores_creados_detalles = [{'nombre':subserie['nombre'], 'codigo':subserie['codigo']} for subserie in subseries_create]
+                        print(serializer.data)
+                        for subserie in serializer.data:
+                            subseries_modificadas.append(subserie)
 
                     # ACTUALIZAR SUBSERIES
                     valores_actualizados_detalles = []
@@ -426,6 +441,8 @@ class UpdateSubseriesDoc(generics.UpdateAPIView):
                             subserie_existe = SubseriesDoc.objects.filter(id_subserie_doc=subserie['id_subserie_doc']).first()
                             previous_subserie = copy.copy(subserie_existe)
                             if subserie_existe:
+                                for subserie in subseries_update:
+                                    subseries_modificadas.append(subserie)
                                 descripcion_subserie = {'nombre':previous_subserie.nombre, 'codigo':previous_subserie.codigo}
                                 serializer = self.serializer_class(subserie_existe, data=subserie)
                                 serializer.is_valid(raise_exception=True)
@@ -461,7 +478,7 @@ class UpdateSubseriesDoc(generics.UpdateAPIView):
                     }
                     Util.save_auditoria_maestro_detalle(auditoria_data)
                     
-                    return Response({'success':True, 'detail':'Se ha realizado cambios con las subseries'}, status=status.HTTP_201_CREATED)
+                    return Response({'success':True, 'detail':'Se ha realizado cambios con las subseries', 'data': data}, status=status.HTTP_201_CREATED)
                 else:
                     # VALIDAR QUE NO SE ESTÉN USANDO LAS SUBSERIES A ELIMINAR
                     subseries_eliminar = SubseriesDoc.objects.filter(id_ccd=id_ccd)
