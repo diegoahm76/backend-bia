@@ -22,6 +22,3 @@ class FiltroMaterialVegetal(generics.ListAPIView):
         
         serializador=self.serializer_class(inventario_vivero,many=True)    
         return Response ({'success':True,'detail':'Se encontraron las siguientes coincidencias','data':serializador.data},status=status.HTTP_200_OK)
-        
-                    
- 
