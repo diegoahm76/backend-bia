@@ -78,7 +78,6 @@ class UtilConservacion:
             # VALIDAR UNICIDAD ITEM DESPACHO Y VIVERO
             items_viveros = [{'id_item_despacho_entrante': item['id_item_despacho_entrante'], 'id_vivero': item['id_vivero']} for item in data]
             items_viveros = [dict(t) for t in {tuple(d.items()) for d in items_viveros}]
-            print("ITEMS_VIVEROS: ", items_viveros)
             for item_vivero in items_viveros:
                 duplicados = [item for item in data if item['id_item_despacho_entrante'] == item_vivero['id_item_despacho_entrante'] and item['id_vivero'] == item_vivero['id_vivero']]
                 if len(duplicados) > 1:
@@ -88,12 +87,14 @@ class UtilConservacion:
                     return response_dict
             
             # ACTUALIZAR EN DESPACHO ENTRANTE
-            despacho_entrante_previous = copy.copy(despacho_entrante)
             despacho_entrante.observacion_distribucion = observacion_distribucion
             despacho_entrante.id_persona_distribuye = user
             despacho_entrante.save()
             
             items_create = []
+            
+            valores_actualizados_detalles = []
+            valores_eliminados_detalles = []
             
             for item in items_despacho_entrante:
                 # ELIMINAR ITEMS DESPACHO ENTRANTE
@@ -101,6 +102,7 @@ class UtilConservacion:
                 viveros_id = [obj['id_vivero'] for obj in items_viveros if obj['id_item_despacho_entrante']==item.id_item_despacho_entrante]
             
                 distribuciones_items_eliminar = distribuciones_item_despacho.exclude(id_vivero__in=viveros_id)
+                valores_eliminados_detalles = [{'nombre_bien': item_eliminar.id_item_despacho_entrante.id_bien.nombre} for item_eliminar in distribuciones_items_eliminar]
                 distribuciones_items_eliminar.delete()
 
                 # ACTUALIZAR ITEMS DESPACHO ENTRANTE
@@ -133,7 +135,10 @@ class UtilConservacion:
             
             for item in data:
                 distribucion_item = DistribucionesItemDespachoEntrante.objects.filter(id_item_despacho_entrante=item['id_item_despacho_entrante'], id_vivero=item['id_vivero']).first()
+                distribucion_item_previous = copy.copy(distribucion_item)
+                
                 if distribucion_item:
+                    valores_actualizados_detalles.append({'descripcion': {'nombre_bien':distribucion_item.id_item_despacho_entrante.id_bien.nombre}, 'previous':distribucion_item_previous,'current':distribucion_item})
                     serializer_update = DistribucionesItemDespachoEntranteSerializer(distribucion_item, data=item)
                     serializer_update.is_valid(raise_exception=True)
                     serializer_update.save()
@@ -154,15 +159,25 @@ class UtilConservacion:
             # ELIMINAR ITEMS DESPACHO ENTRANTE
             distribuciones_items_eliminar = distribuciones_items.filter(id_item_despacho_entrante__in=items_no_distribuidos)
             distribuciones_items_eliminar_id = [distribucion_item.id_item_despacho_entrante.id_item_despacho_entrante for distribucion_item in distribuciones_items_eliminar]
-            for distribucion_item in set(distribuciones_items_eliminar_id):
-                item_despacho_entrante = ItemsDespachoEntrante.objects.filter(id_item_despacho_entrante=distribucion_item).first()
-                item_despacho_entrante.cantidad_distribuida = 0
-                item_despacho_entrante.save()
-                
-            distribuciones_items_eliminar.delete()
+            if distribuciones_items_eliminar_id:
+                for distribucion_item in set(distribuciones_items_eliminar_id):
+                    item_despacho_entrante = ItemsDespachoEntrante.objects.filter(id_item_despacho_entrante=distribucion_item).first()
+                    item_despacho_entrante.cantidad_distribuida = 0
+                    item_despacho_entrante.save()
+                valores_eliminados_detalles.extend([{'nombre_bien': item_eliminar.id_item_despacho_entrante.id_bien.nombre} for item_eliminar in distribuciones_items_eliminar])
+                distribuciones_items_eliminar.delete()
+            
+            valores_creados_detalles = []
             
             # CREAR ITEMS DESPACHO ENTRANTE
             if items_create:
+                items_create_id = [item_create['id_item_despacho_entrante'] for item_create in items_create]
+                items_despacho_entrante_create = items_despacho_entrante.filter(id_item_despacho_entrante__in=items_create_id)
+                for item_create in items_create:
+                    item_despacho_entrante_create = items_despacho_entrante_create.filter(id_item_despacho_entrante=item_create['id_item_despacho_entrante']).first()
+                    item_create['nombre_bien'] = item_despacho_entrante_create.id_bien.nombre
+                valores_creados_detalles = [{'nombre_bien': item_create['nombre_bien']} for item_create in items_create]
+                
                 serializer_create = DistribucionesItemDespachoEntranteSerializer(data=items_create, many=True)
                 serializer_create.is_valid(raise_exception=True)
                 serializer_create.save()
@@ -170,19 +185,27 @@ class UtilConservacion:
             response_dict['detail'] = 'Se realizó el guardado de las distribuciones correctamente'
             
             # AUDITORIA MAESTRO DETALLE
-            # direccion=Util.get_client_ip(request)
-            # auditoria_data = {
-            #     "id_usuario": request.user.id_usuario,
-            #     "id_modulo": 48,
-            #     "cod_permiso": 'AC',
-            #     "subsistema": 'CONS',
-            #     "dirip": direccion,
-            #     "descripcion": descripcion_maestro,
-            #     "valores_creados_detalles": valores_eliminados_detalles,
-            #     "valores_actualizados_detalles": valores_eliminados_detalles,
-            #     "valores_eliminados_detalles": valores_eliminados_detalles
-            # }
-            # Util.save_auditoria_maestro_detalle(auditoria_data)
+            descripcion_maestro = {
+                "numero_despacho_consumo": str(despacho_entrante.id_despacho_consumo_alm.numero_despacho_consumo),
+                "fecha_ingreso": str(despacho_entrante.fecha_ingreso),
+                "distribucion_confirmada": str(despacho_entrante.distribucion_confirmada),
+                "fecha_confirmacion_distribucion": str(despacho_entrante.fecha_confirmacion_distribucion),
+                "observacion_distribucion": str(despacho_entrante.observacion_distribucion),
+                "persona_distribuye": str(despacho_entrante.id_persona_distribuye.primer_nombre + ' ' + despacho_entrante.id_persona_distribuye.primer_apellido if despacho_entrante.id_persona_distribuye.tipo_persona=='N' else despacho_entrante.id_persona_distribuye.razon_social)
+            }
+            direccion=Util.get_client_ip(request)
+            auditoria_data = {
+                "id_usuario": request.user.id_usuario,
+                "id_modulo": 48,
+                "cod_permiso": 'AC',
+                "subsistema": 'CONS',
+                "dirip": direccion,
+                "descripcion": descripcion_maestro,
+                "valores_creados_detalles": valores_creados_detalles,
+                "valores_actualizados_detalles": valores_actualizados_detalles,
+                "valores_eliminados_detalles": valores_eliminados_detalles
+            }
+            Util.save_auditoria_maestro_detalle(auditoria_data)
             
             return response_dict
         else:

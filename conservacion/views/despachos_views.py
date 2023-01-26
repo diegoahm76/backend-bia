@@ -70,8 +70,9 @@ class GetItemsDespachosEntrantes(generics.ListAPIView):
             'observacion',
             codigo_bien=F('id_bien__codigo_bien'),
             nombre_bien=F('id_bien__nombre'),
+            unidad_medida=F('id_bien__id_unidad_medida__abreviatura'),
             tipo_documento=F('id_entrada_alm_del_bien__id_tipo_entrada__nombre'),
-            numero_documento=F('id_entrada_alm_del_bien__numero_entrada_almacen'),
+            numero_documento=F('id_entrada_alm_del_bien__numero_entrada_almacen')
         ).annotate(cantidad_restante=Sum('cantidad_entrante') - Sum('cantidad_distribuida'))
         
         if items_despacho:
@@ -85,7 +86,34 @@ class GuardarDistribucionBienes(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def put(self,request,id_despacho_entrante):
+        despacho_entrante=DespachoEntrantes.objects.filter(id_despacho_entrante=id_despacho_entrante).first()
+        despacho_entrante_previous = copy.copy(despacho_entrante)
+        
         response_dict = UtilConservacion.guardar_distribuciones(id_despacho_entrante, request, self.queryset.all())
+        despacho_entrante=DespachoEntrantes.objects.filter(id_despacho_entrante=id_despacho_entrante).first()
+        
+        # AUDITORIA MAESTRO
+        descripcion_maestro = {
+            "numero_despacho_consumo": str(despacho_entrante_previous.id_despacho_consumo_alm.numero_despacho_consumo),
+            "fecha_ingreso": str(despacho_entrante_previous.fecha_ingreso),
+            "distribucion_confirmada": str(despacho_entrante_previous.distribucion_confirmada),
+            "fecha_confirmacion_distribucion": str(despacho_entrante_previous.fecha_confirmacion_distribucion),
+            "observacion_distribucion": str(despacho_entrante_previous.observacion_distribucion),
+            "persona_distribuye": str(despacho_entrante_previous.id_persona_distribuye.primer_nombre + ' ' + despacho_entrante_previous.id_persona_distribuye.primer_apellido if despacho_entrante_previous.id_persona_distribuye.tipo_persona=='N' else despacho_entrante_previous.id_persona_distribuye.razon_social)
+        }
+        valores_actualizados={'previous':despacho_entrante_previous, 'current':despacho_entrante}
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario": request.user.id_usuario,
+            "id_modulo": 48,
+            "cod_permiso": 'AC',
+            "subsistema": 'CONS',
+            "dirip": direccion,
+            "descripcion": descripcion_maestro,
+            "valores_actualizados": valores_actualizados
+        }
+        Util.save_auditoria(auditoria_data)
+        
         return Response({'success':response_dict['success'], 'detail':response_dict['detail']}, status=response_dict['status'])     
        
 class ConfirmarDistribucion(generics.UpdateAPIView):
