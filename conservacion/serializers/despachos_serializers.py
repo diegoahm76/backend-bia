@@ -35,3 +35,15 @@ class DistribucionesItemDespachoEntranteSerializer(serializers.ModelSerializer):
                 message='El item despacho entrante y el vivero deben ser una pareja única'
             )
         ]
+        
+class DistribucionesItemPreDistribuidoSerializer(serializers.ModelSerializer):
+    vivero_nombre=serializers.ReadOnlyField(source='id_vivero.nombre', default=None)
+    nombre_bien=serializers.ReadOnlyField(source='id_item_despacho_entrante.id_bien.nombre', default=None)
+    codigo_bien=serializers.ReadOnlyField(source='id_item_despacho_entrante.id_bien.codigo_bien', default=None)
+    unidad_medida=serializers.ReadOnlyField(source='id_item_despacho_entrante.id_bien.id_unidad_medida.abreviatura', default=None)
+    id_bien=serializers.ReadOnlyField(source='id_item_despacho_entrante.id_bien.id_bien', default=None)
+    
+    class Meta:
+        model = DistribucionesItemDespachoEntrante
+        fields = ['id_distribucion_item_despacho_entrante','id_vivero','id_bien','cantidad_asignada','cod_etapa_lote_al_ingresar','id_item_despacho_entrante','vivero_nombre','unidad_medida','codigo_bien','nombre_bien']
+      

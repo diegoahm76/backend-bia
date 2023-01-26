@@ -30,7 +30,8 @@ from conservacion.models.despachos_models import (
 from conservacion.serializers.despachos_serializers import (
     DespachosEntrantesSerializer,
     ItemsDespachosEntrantesSerializer,
-    DistribucionesItemDespachoEntranteSerializer
+    DistribucionesItemDespachoEntranteSerializer,
+    DistribucionesItemPreDistribuidoSerializer
 )
 from conservacion.utils import UtilConservacion
 
@@ -200,3 +201,19 @@ class ConfirmarDistribucion(generics.UpdateAPIView):
             Util.save_auditoria(auditoria_data)
                        
             return Response({'success':True, 'detail':'Confirmación exitosa'}, status=status.HTTP_200_OK)
+
+class GetItemsPredistribuidos(generics.ListAPIView):
+    serializer_class=DistribucionesItemPreDistribuidoSerializer
+    queryset=DistribucionesItemDespachoEntrante
+    
+    def get(self,request,pk):
+        despacho_entrante=DespachoEntrantes.objects.filter(id_despacho_entrante=pk).first()
+        if despacho_entrante:
+            item_despacho_entrante= ItemsDespachoEntrante.objects.filter(id_despacho_entrante=despacho_entrante.id_despacho_entrante)
+            list_item_despacho = [item.id_item_despacho_entrante for item in item_despacho_entrante ]
+            distribuciones_item_despacho = DistribucionesItemDespachoEntrante.objects.filter(id_item_despacho_entrante__in = list_item_despacho)
+            
+            serializador=self.serializer_class(distribuciones_item_despacho,many=True)
+            return Response ({'success':True,'detail':'Se encontraron items pre-distribuidos: ','data':serializador.data},status=status.HTTP_200_OK)
+            
+        
