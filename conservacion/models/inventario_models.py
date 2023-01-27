@@ -30,6 +30,7 @@ class InventarioViveros(models.Model):
     cantidad_traslados_lote_produccion_distribucion = models.PositiveIntegerField(null=True, blank=True, db_column='T156cantidadTrasladosLoteProdADistri')
     cantidad_salidas = models.PositiveIntegerField(null=True, blank=True, db_column='T156cantidadSalidas')
     cantidad_lote_cuarentena = models.PositiveIntegerField(null=True, blank=True, db_column='T156cantidadLoteEnCuarentena')
+    id_mezcla = models.PositiveSmallIntegerField(null=True, blank=True, db_column='T156Id_Mezcla')
     
     def __str__(self):
         return str(self.id_inventario_vivero)
@@ -38,4 +39,4 @@ class InventarioViveros(models.Model):
         db_table = 'T156InventarioViveros'
         verbose_name = 'Inventario Vivero'
         verbose_name_plural = 'Inventario Viveros'
-        unique_together = ['id_vivero', 'id_bien', 'agno_lote', 'nro_lote', 'cod_etapa_lote']
+        unique_together = ['id_vivero', 'id_bien', 'agno_lote', 'nro_lote', 'cod_etapa_lote', 'id_mezcla']

@@ -5,7 +5,7 @@ from conservacion.models.siembras_models import (
     ConsumosSiembra,
     CamasGerminacionVivero,
     CamasGerminacionViveroSiembra,
-    CambiosDeEstapa
+    CambiosDeEtapa
 )
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 

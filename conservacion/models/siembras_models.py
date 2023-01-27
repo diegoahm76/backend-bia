@@ -35,9 +35,10 @@ class Siembras(models.Model):
 class ConsumosSiembra(models.Model):
     id_consumo_siembra = models.AutoField(primary_key=True, editable=False, db_column='T158IdConsumoSiembra')
     id_siembra = models.ForeignKey(Siembras, on_delete=models.CASCADE, db_column='T158Id_Siembra')
-    id_bien_consumido = models.ForeignKey(CatalogoBienes, on_delete=models.CASCADE, db_column='T158Id_BienConsumido')
+    id_bien_consumido = models.ForeignKey(CatalogoBienes, null=True, blank=True, on_delete=models.SET_NULL, db_column='T158Id_BienConsumido')
     cantidad = models.PositiveSmallIntegerField(db_column='T158cantidad')
     observaciones = models.CharField(max_length=255, null=True, blank=True, db_column='T158observaciones')
+    id_mezcla_consumida = models.PositiveSmallIntegerField(db_column='T158Id_MezclaConsumida')
     
     def __str__(self):
         return str(self.id_consumo_siembra)
@@ -46,6 +47,7 @@ class ConsumosSiembra(models.Model):
         db_table = 'T158Consumos_Siembra'
         verbose_name = 'Consumos siembra'
         verbose_name_plural = 'Consumos siembra'
+        unique_together = ['id_siembra', 'id_bien_consumido', 'id_mezcla_consumida']
         
 class CamasGerminacionVivero(models.Model):
     id_cama_germinacion_vivero = models.AutoField(primary_key=True, editable=False, db_column='T159IdCamaGerminacion_Vivero')
@@ -77,7 +79,7 @@ class CamasGerminacionViveroSiembra(models.Model):
         verbose_name = 'Cama de germinacion vivero siembra'
         verbose_name_plural = 'Camas de germinacion vivero siembra'
 
-class CambiosDeEstapa(models.Model):
+class CambiosDeEtapa(models.Model):
     id_cambio_de_etapa = models.AutoField(primary_key=True, editable=False, db_column='T161IdCambioDeEtapa')
     id_vivero = models.ForeignKey(Vivero, on_delete=models.CASCADE, db_column='T161Id_Vivero')
     id_bien = models.ForeignKey(CatalogoBienes, on_delete=models.CASCADE, db_column='T161Id_Bien')
