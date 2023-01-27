@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from conservacion.models.inventario_models import InventarioViveros
+from conservacion.models.siembras_models import CambiosDeEtapa
 
 
 class InventarioViverosSerializer(serializers.ModelSerializer):
@@ -18,19 +19,27 @@ class InventarioViverosSerializer(serializers.ModelSerializer):
             
         return etapa_lote
     
-    # def get_cantidad_disponible(self,obj):
-    #     cantidad_entrante = obj.cantidad_entrante if obj.cantidad_entrante else 0
-    #     cantidad_bajas = obj.cantidad_bajas if obj.cantidadjas else 0
-    #     cantidad_traslados = obj.cantidad_traslados_lote_produccion_distribucion if obj.cantidad_traslados_lote_produccion_distribucion else 0
-    #     cantidad_salidas = obj.cantidad_salidas if obj.cantidad_salidas else 0
-    #     cantidad_lote_cuarentena = obj.cantidad_lote_cuarentena if obj.cantidad_lote_cuarentena else 0
-    #     cantidad_disponible = cantidad_entrante - cantidad_bajas - cantidad_traslados - cantidad_salidas - cantidad_lote_cuarentena
-            
-    #     return cantidad_disponible
-    
     class Meta:
         model =  InventarioViveros
         fields = ['id_inventario_vivero','id_bien','codigo_bien','nombre','agno_lote','nro_lote','cod_etapa_lote','etapa_lote','cantidad_disponible']
-        
-        9446003564
-        336.700
+
+class GuardarCambioEtapaSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  CambiosDeEtapa
+        fields = ['id_bien', 'agno_lote', 'nro_lote', 'cod_etapa_lote_origen', 'fecha_cambio',
+                  'cantidad_disponible_al_crear', 'cantidad_movida', 'altura_lote_en_cms', 'observaciones',
+                  'id_persona_cambia', 'ruta_archivo_soporte']
+        extra_kwargs = {
+            'id_bien': {'required': True},
+            'agno_lote': {'required': True},
+            'nro_lote':  {'required': True},
+            'cod_etapa_lote_origen': {'required': True},
+            'fecha_cambio': {'required': True},
+            'cantidad_disponible_al_crear': {'required': True},
+            'cantidad_movida': {'required': True},
+            'altura_lote_en_cms': {'required': True},
+            'observaciones': {'required': True},
+            'id_persona_cambia': {'required': True},
+            'ruta_archivo_soporte': {'required': True}
+        }

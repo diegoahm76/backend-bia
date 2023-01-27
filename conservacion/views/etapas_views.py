@@ -1,9 +1,11 @@
 from rest_framework.response import Response
 from rest_framework import generics,status
 from django.db.models import Q
-from conservacion.serializers.etapas_serializers import InventarioViverosSerializer
+from conservacion.serializers.etapas_serializers import InventarioViverosSerializer, GuardarCambioEtapaSerializer
 from conservacion.models.inventario_models import InventarioViveros
+from conservacion.models.siembras_models import CambiosDeEtapa
 from conservacion.choices.cod_etapa_lote import cod_etapa_lote_CHOICES
+from datetime import datetime, timedelta
 
 class FiltroMaterialVegetal(generics.ListAPIView):
     serializer_class=InventarioViverosSerializer
@@ -36,3 +38,26 @@ class FiltroMaterialVegetal(generics.ListAPIView):
                     
         serializador=self.serializer_class(list_items,many=True)    
         return Response ({'success':True,'detail':'Se encontraron las siguientes coincidencias','data':serializador.data},status=status.HTTP_200_OK)
+    
+class GuardarCambioEtapa(generics.UpdateAPIView):
+    serializer_class=GuardarCambioEtapaSerializer
+    queryset=CambiosDeEtapa.objects.all()
+    
+    def put(self,request):
+        data = request.data
+        
+        # VALIDAR ANTIGUEDAD POSIBLE DE FECHA CAMBIO
+        fecha_cambio = datetime.strptime(data['fecha_cambio'], '%Y-%m-%d %H:%M:%S')
+        if fecha_cambio < datetime.today()-timedelta(days=30):
+            return Response({'success':False, 'detail':'La fecha de cambio no puede superar 30 días de antiguedad'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # VALIDACIONES FECHA CAMBIO SI ETAPA LOTE ES GERMINACIÓN
+        if data['cod_etapa_lote_origen'] == 'G':
+            if fecha_cambio < datetime.today()-timedelta(days=30):
+                return Response({'success':False, 'detail':'La fecha de cambio no puede superar 30 días de antiguedad'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # serializador = self.serializer_class(data=data)
+        # serializador.is_valid(raise_exception=True)
+        # serializador.save()
+        
+        return Response ({'success':True,'detail':'Se realizó el cambio de etapa correctamente','data':[]},status=status.HTTP_200_OK)

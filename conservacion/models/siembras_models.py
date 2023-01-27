@@ -38,7 +38,7 @@ class ConsumosSiembra(models.Model):
     id_bien_consumido = models.ForeignKey(CatalogoBienes, null=True, blank=True, on_delete=models.SET_NULL, db_column='T158Id_BienConsumido')
     cantidad = models.PositiveSmallIntegerField(db_column='T158cantidad')
     observaciones = models.CharField(max_length=255, null=True, blank=True, db_column='T158observaciones')
-    id_mezcla_consumida = models.PositiveSmallIntegerField(db_column='T158Id_MezclaConsumida')
+    id_mezcla_consumida = models.PositiveSmallIntegerField(null=True, blank=True, db_column='T158Id_MezclaConsumida')
     
     def __str__(self):
         return str(self.id_consumo_siembra)
