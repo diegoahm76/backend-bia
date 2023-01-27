@@ -7,6 +7,9 @@ from almacen.models import (
     CatalogoBienes,
     TiposEntradas
 )
+from conservacion.models.siembras_models import (
+    Siembras
+)
 
 class InventarioViveros(models.Model):
     id_inventario_vivero = models.AutoField(primary_key=True, editable=False, db_column='T156IdInventarioViveros')
@@ -22,7 +25,7 @@ class InventarioViveros(models.Model):
     ult_altura_lote = models.PositiveSmallIntegerField(null=True, blank=True, db_column='T156ultAlturaLote')
     fecha_ult_altura_lote = models.DateTimeField(null=True, blank=True, db_column='T156fechaUltAlturaLote')
     porc_cuarentena_lote_germinacion = models.PositiveSmallIntegerField(null=True, blank=True, db_column='T156porcCuarentenaLoteGerminacion')
-    id_siembra_lote_germinacion = models.PositiveIntegerField(null=True, blank=True, db_column='T156Id_SiembraLoteGerminacion')
+    id_siembra_lote_germinacion =  models.ForeignKey(Siembras, null=True, blank=True, on_delete=models.SET_NULL, db_column='T156Id_SiembraLoteGerminacion')
     siembra_lote_cerrada = models.BooleanField(null=True, blank=True, db_column='T156siembraLoteCerrada')
     cantidad_entrante = models.PositiveIntegerField(null=True, blank=True, db_column='T156cantidadEntrante')
     cantidad_bajas = models.PositiveIntegerField(null=True, blank=True, db_column='T156cantidadBajas')
