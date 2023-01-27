@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from conservacion.models.inventario_models import InventarioViveros
 from conservacion.models.siembras_models import CambiosDeEtapa
+from conservacion.choices.cod_etapa_lote import cod_etapa_lote_CHOICES
 
 
 class InventarioViverosSerializer(serializers.ModelSerializer):
@@ -24,14 +25,15 @@ class InventarioViverosSerializer(serializers.ModelSerializer):
         fields = ['id_inventario_vivero','id_bien','codigo_bien','nombre','agno_lote','nro_lote','cod_etapa_lote','etapa_lote','cantidad_disponible']
 
 class GuardarCambioEtapaSerializer(serializers.ModelSerializer):
-    
+    cod_etapa_lote_origen = serializers.ChoiceField(choices=cod_etapa_lote_CHOICES)
     class Meta:
         model =  CambiosDeEtapa
-        fields = ['id_bien', 'agno_lote', 'nro_lote', 'cod_etapa_lote_origen', 'fecha_cambio',
+        fields = ['id_bien', 'id_vivero', 'agno_lote', 'nro_lote', 'cod_etapa_lote_origen', 'fecha_cambio',
                   'cantidad_disponible_al_crear', 'cantidad_movida', 'altura_lote_en_cms', 'observaciones',
                   'id_persona_cambia', 'ruta_archivo_soporte']
         extra_kwargs = {
             'id_bien': {'required': True},
+            'id_vivero': {'required': True},
             'agno_lote': {'required': True},
             'nro_lote':  {'required': True},
             'cod_etapa_lote_origen': {'required': True},

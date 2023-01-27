@@ -88,7 +88,7 @@ class CambiosDeEtapa(models.Model):
     cod_etapa_lote_origen = models.CharField(max_length=1, null=True, blank=True, choices=cod_etapa_lote_CHOICES, db_column='T161codEtapaLoteOrigen')
     consec_por_lote_etapa = models.PositiveIntegerField(db_column='T161consecPorLoteEtapa')
     fecha_cambio = models.DateTimeField(db_column='T161fechaCambio')
-    fecha_registro = models.DateTimeField(db_column='T161fechaRegistro')
+    fecha_registro = models.DateTimeField(auto_now_add=True, db_column='T161fechaRegistro')
     cantidad_movida = models.PositiveIntegerField(db_column='T161cantidadMovida')
     cantidad_disponible_al_crear = models.PositiveIntegerField(db_column='T161cantidadDispoAlCrear')
     altura_lote_en_cms = models.PositiveSmallIntegerField(db_column='T161alturaLoteEnCms')
