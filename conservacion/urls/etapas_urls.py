@@ -3,5 +3,5 @@ from conservacion.views import etapas_views as views
 
 
 urlpatterns = [
-    path('filtro-material-vegetal/',views.FiltroMaterialVegetal.as_view(),name='filtro-material-vegetal')
+    path('filtro-material-vegetal/<str:id_vivero>/',views.FiltroMaterialVegetal.as_view(),name='filtro-material-vegetal')
 ]
