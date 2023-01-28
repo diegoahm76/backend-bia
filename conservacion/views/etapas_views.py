@@ -6,6 +6,7 @@ from conservacion.models.inventario_models import InventarioViveros
 from conservacion.models.siembras_models import CambiosDeEtapa
 from conservacion.models.viveros_models import Vivero
 from datetime import datetime, timedelta
+from conservacion.utils import UtilConservacion
 
 class FiltroMaterialVegetal(generics.ListAPIView):
     serializer_class=InventarioViverosSerializer
@@ -28,12 +29,7 @@ class FiltroMaterialVegetal(generics.ListAPIView):
         list_items=[]
         for item in inventario_vivero:
             if item.cod_etapa_lote == "P":
-                cantidad_entrante = item.cantidad_entrante if item.cantidad_entrante else 0
-                cantidad_bajas = item.cantidad_bajas if item.cantidad_bajas else 0
-                cantidad_traslados = item.cantidad_traslados_lote_produccion_distribucion if item.cantidad_traslados_lote_produccion_distribucion else 0
-                cantidad_salidas = item.cantidad_salidas if item.cantidad_salidas else 0
-                cantidad_lote_cuarentena = item.cantidad_lote_cuarentena if item.cantidad_lote_cuarentena else 0
-                item.cantidad_disponible = cantidad_entrante - cantidad_bajas - cantidad_traslados - cantidad_salidas - cantidad_lote_cuarentena
+                item.cantidad_disponible = UtilConservacion.get_cantidad_disponible_etapa(item)
                 if item.cantidad_disponible > 0:
                     list_items.append(item)
             else:
@@ -76,11 +72,21 @@ class GuardarCambioEtapa(generics.UpdateAPIView):
                 cambio_etapa=CambiosDeEtapa.objects.filter(id_bien=inventario_vivero.id_bien.id_bien,id_vivero=inventario_vivero.id_vivero.id_vivero,agno_lote=inventario_vivero.agno_lote,nro_lote=inventario_vivero.nro_lote,cambio_anulado=False).last()
                 if cambio_etapa:
                     if  fecha_cambio < cambio_etapa.fecha_cambio:
-                        return Response({'success':False,'detail':'la fecha elegida para el Cambio debe ser posterior a la fecha de cambio del último cambio de etapa'},status=status.HTTP_403_FORBIDDEN)
+                        return Response({'success':False,'detail':'La fecha elegida para el cambio debe ser posterior a la fecha del último cambio de etapa'},status=status.HTTP_403_FORBIDDEN)
             else:
-                if fecha_cambio > inventario_vivero.fecha_ingreso_lote_etapa:
+                if fecha_cambio < inventario_vivero.fecha_ingreso_lote_etapa:
                     return Response({'success':False,'detail':'la fecha elegida para el Cambio debe ser posterior a la fecha de ingreso del lote'},status=status.HTTP_403_FORBIDDEN)
-                        
+        
+        #VALIDACIÓN DE CANTIDAD DISPONIBLE
+        cantidad_disponible=UtilConservacion.get_cantidad_disponible_etapa(inventario_vivero)
+        if data['cod_etapa_lote_origen'] == 'P':
+            if cantidad_disponible != int(data['cantidad_disponible_al_crear']):
+                if int(data['cantidad_movida']) > cantidad_disponible:
+                    return Response ({'success':False,'detail':'La cantidad disponible cambió, por favor cambiar la cantidad movida'},status=status.HTTP_400_BAD_REQUEST)
+            else:
+                if int(data['cantidad_movida']) > cantidad_disponible:
+                        return Response ({'success':False,'detail':'La cantidad movida no puede superar la cantidad disponible actual'},status=status.HTTP_400_BAD_REQUEST)
+            
         # serializador.save()
         
         return Response ({'success':True,'detail':'Se realizó el cambio de etapa correctamente','data':[]},status=status.HTTP_200_OK)
