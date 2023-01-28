@@ -26,7 +26,7 @@ class CreateSiembrasSerializer(serializers.ModelSerializer):
     class Meta:
         model = Siembras
         exclude = (
-            'id_cama_germinacion_vivero',
+            'id_siembra',
         )
 
 class GetNumeroLoteSerializer(serializers.ModelSerializer):
