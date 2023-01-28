@@ -47,7 +47,7 @@ class CCDPutSerializer(serializers.ModelSerializer):
     nombre = serializers.CharField(validators=[UniqueValidator(queryset=CuadrosClasificacionDocumental.objects.all(), message='El nombre del Cuadro de Clasificación Documental debe ser único')])
     class Meta:
         model = CuadrosClasificacionDocumental
-        fields = ['version', 'nombre', 'ruta_soporte']
+        fields = ['version', 'nombre']
         extra_kwargs = {
             'version': {'required': True},
             'nombre': {'required': True}

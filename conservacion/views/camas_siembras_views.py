@@ -5,9 +5,10 @@ from django.db.models import Q, F, Sum
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
-from datetime import datetime
+from datetime import datetime, time, timedelta
 from datetime import timezone
 import copy
+import json
 
 from seguridad.models import Personas
 from conservacion.choices.cod_etapa_lote import cod_etapa_lote_CHOICES
@@ -24,7 +25,15 @@ from conservacion.serializers.viveros_serializers import (
 from conservacion.serializers.camas_siembras_serializers import (
     CamasGerminacionPost,
     CreateSiembrasSerializer,
-    GetNumeroLoteSerializer
+    GetNumeroLoteSerializer,
+    GetBienSembradoSerializer,
+    GetCamasGerminacionSerializer
+)
+from almacen.models.bienes_models import (
+    CatalogoBienes
+)
+from conservacion.models.inventario_models import (
+    InventarioViveros
 )
 from conservacion.utils import UtilConservacion
 
@@ -49,7 +58,6 @@ class CamasGerminacion(generics.UpdateAPIView):
             camas_existentes.delete()
             return Response({'success':True,'detail':'Camas de germinación elimanadas con éxito'},status=status.HTTP_200_OK)
         else:
-            i['id_vivero'] = id_vivero_procesar
             # SE OBTIENEN LAS CAMAS QUE SE QUIEREN ELIMINAR
             camas_existentes = CamasGerminacionVivero.objects.filter(id_vivero=instancia_vivero_ingresado.id_vivero)
             id_camas_existentes = [i.id_cama_germinacion_vivero for i in camas_existentes]
@@ -64,6 +72,7 @@ class CamasGerminacion(generics.UpdateAPIView):
             lista_elementos_crear = []
             lista_elementos_actualizar = []
             for i in datos_ingresados:
+                i['id_vivero'] = id_vivero_procesar
                 # Se valida cual se quiere actualizar y cual se quiere crear
                 if i['id_cama_germinacion_vivero'] == None:
                     lista_elementos_crear.append(i)
@@ -87,6 +96,15 @@ class CamasGerminacion(generics.UpdateAPIView):
             instancia_elementos_eliminar = CamasGerminacionVivero.objects.filter(id_cama_germinacion_vivero__in = lista_elementos_eliminar)
             instancia_elementos_eliminar.delete()
             return Response({'success':True,'detail':'Camas de germinación creadas o actualizadas con éxito'},status=status.HTTP_200_OK)
+        
+class GetCamasGerminaciones(generics.ListAPIView):
+    serializer_class = GetCamasGerminacionSerializer
+    queryset = CamasGerminacionVivero.objects.all()
+
+    def get(self, request):
+        data = self.get_queryset()
+        serializer = self.serializer_class(data, many=True)
+        return Response({'success':True, 'detail':'Busqueda exitosa', 'data': serializer.data},status=status.HTTP_200_OK)
 
 class FilterViverosByNombreAndMunicipio(generics.ListAPIView):
     serializer_class = ViveroSerializer
@@ -111,9 +129,84 @@ class FilterViverosByNombreAndMunicipio(generics.ListAPIView):
 class CreateSiembraView(generics.CreateAPIView):
     serializer_class = CreateSiembrasSerializer
     queryset = Siembras.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        siembra_data = request.data
+        data_siembra = json.loads(request.data['data_siembra'])
+        data_siembra['ruta_archivo_soporte'] = request.FILES.get('ruta_archivo_soporte')
+        
+        #VALIDAR QUE NO SEA UNA FECHA SUPERIOR A HOY
+        fecha_siembra = data_siembra.get('fecha_siembra')
+        fecha_actual = datetime.now()
+        fecha_siembra_strptime = datetime.strptime(fecha_siembra, '%Y-%m-%d %H:%M:%S')
+        if fecha_siembra_strptime > fecha_actual:
+            return Response({'success': False, 'detail': 'La fecha de siembra no puede ser superior a la actual'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        print(fecha_siembra_strptime.year)
+        
+        #ASIGNACIÓN NÚMERO LOTE
+        lote = Siembras.objects.filter(id_bien_sembrado=data_siembra['material_vegetal'], id_vivero=data_siembra['id_vivero'], agno_lote=fecha_siembra_strptime.year).order_by('-nro_lote').first()
+        contador = 0
+        if lote:
+            contador = lote.nro_lote
+        numero_lote = contador + 1
+        data_siembra['nro_lote'] = numero_lote
+        
+        
+        #VALIDACIÓN QUE NO SEA UNA FECHA SUPERIOR A 30 DÍAS
+        if fecha_siembra_strptime < (fecha_actual - timedelta(days=30)):
+            return Response({'success': False, 'detail': 'No se puede crear una siembra con antiguedad mayor a 30 días'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        #VALIDAR FECHA DISPONIBLE PARA SIEMBRA
+        lote_busqueda = InventarioViveros.objects.filter(id_bien=data_siembra['material_vegetal'], id_vivero=data_siembra['id_vivero'], agno_lote=data_siembra['agno_lote']).order_by('-nro_lote').first()
+        if lote_busqueda:
+            lote_instance = InventarioViveros.objects.filter(nro_lote=lote_busqueda.nro_lote, id_bien=lote_busqueda.id_bien.id_bien, id_vivero=lote_busqueda.id_vivero.id_vivero, agno_lote=lote_busqueda.agno_lote).filter(cod_etapa_lote='G').first()
+            print(lote_instance)
+            if fecha_siembra_strptime < lote_instance.fecha_ingreso_lote_etapa:
+                return Response({'success': False, 'detail': 'No se puede crear una siembra con una fecha anterior a la última siembra registrada'})
         
 
+        
+
+
+        #VALIDAR QUE EL VIVERO ESTÉ DISPONIBLE PARA SELECCIONAR
+        vivero = Vivero.objects.filter(id_vivero=data_siembra['id_vivero']).filter(~Q(fecha_ultima_apertura=None) & (Q(vivero_en_cuarentena=False) | Q(vivero_en_cuarentena=None)) & Q(fecha_cierre_actual=None)).first()
+        if not vivero:
+            return Response({'success': False, 'detail': 'El vivero seleccionado no cumple los requisitos para que la siembra pueda ser creada'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        #VALIDAR QUE EL MATERIAL VEGETAL SEA UN BIEN CON LOS REQUISITOS
+        bien = CatalogoBienes.objects.filter(id_bien=data_siembra['material_vegetal']).first()
+        print('bien: ', bien)
+        print('bien.cod_tipo_elemento_vivero: ', bien.cod_tipo_elemento_vivero)
+        if not bien.cod_tipo_elemento_vivero =='MV' and not bien.solicitable_vivero == True and not  bien.es_semilla_vivero == False and not bien.nivel_jerarquico == '5':
+            return Response({'success': False, 'detail': 'El bien seleccionado no cumple los requisitos para que la siembra pueda ser creada'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        #VALIDAR QUE LA CAMA DE GERMINACIÓN EXISTA
+        if not len(data_siembra['cama_germinacion']):
+            return Response({'success': False, 'detail': 'No se puede crear una siembra sin una cama de germinación'}, status=status.HTTP_400_BAD_REQUEST)
+        cama = CamasGerminacionVivero.objects.filter(id_cama_germinacion_vivero__in=data_siembra['cama_germinacion'])
+        if len(set(data_siembra['cama_germinacion'])) != len(cama):
+            return Response({'success': False, 'detail': 'No se encontró ninguna cama de germinación con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+        
+        
+        
+        
+
+        
+
+
+        
+        
+
+
         return Response({'success': True, 'detail': 'Siembra creada exitosamente'}, status=status.HTTP_201_CREATED)
+
+
+class GetBienSembradoView(generics.ListAPIView):
+    serializer_class = GetBienSembradoSerializer
+    queryset = CatalogoBienes.objects.all()
+
+    def get(self, request):
+        bien = CatalogoBienes.objects.filter(cod_tipo_elemento_vivero='MV', solicitable_vivero=True, es_semilla_vivero=False, nivel_jerarquico='5')
+        serializer = self.serializer_class(bien, many=True)
+        return Response({'success': True, 'detail': 'Búsqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
