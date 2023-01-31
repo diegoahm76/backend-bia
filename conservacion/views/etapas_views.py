@@ -5,7 +5,7 @@ from conservacion.serializers.etapas_serializers import InventarioViverosSeriali
 from conservacion.models.inventario_models import InventarioViveros
 from conservacion.models.siembras_models import CambiosDeEtapa
 from conservacion.models.viveros_models import Vivero
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta,date
 from conservacion.utils import UtilConservacion
 
 class FiltroMaterialVegetal(generics.ListAPIView):
@@ -57,26 +57,38 @@ class GuardarCambioEtapa(generics.UpdateAPIView):
         ).first()
         
         # VALIDAR ANTIGUEDAD POSIBLE DE FECHA CAMBIO
-        fecha_cambio = datetime.strptime(data['fecha_cambio'], '%Y-%m-%d %H:%M:%S')
+        fecha_cambio = datetime.strptime(data['fecha_cambio'], '%Y-%m-%d')
         if fecha_cambio < datetime.today()-timedelta(days=30):
             return Response({'success':False, 'detail':'La fecha de cambio no puede superar 30 días de antiguedad'}, status=status.HTTP_400_BAD_REQUEST)
         
-        # VALIDACIONES FECHA CAMBIO SI ETAPA LOTE ES GERMINACIÓN
-        if data['cod_etapa_lote_origen'] == 'G':
-            if fecha_cambio < inventario_vivero.fecha_ingreso_lote_etapa or fecha_cambio < inventario_vivero.fecha_ult_altura_lote:
-                return Response({'success':False, 'detail':'La fecha de cambio debe ser posterior a la fecha de ingreso al lote y posterior a la fecha de la última altura del material elegido'}, status=status.HTTP_400_BAD_REQUEST)
         
-        #VALIDACION DE FECHA CAMBIO PARA LA ETAPA LOTE DE PRODUCCIÓN 
-        if data['cod_etapa_lote_origen'] == 'P':
-            if inventario_vivero.cantidad_traslados_lote_produccion_distribucion > 0:
-                cambio_etapa=CambiosDeEtapa.objects.filter(id_bien=inventario_vivero.id_bien.id_bien,id_vivero=inventario_vivero.id_vivero.id_vivero,agno_lote=inventario_vivero.agno_lote,nro_lote=inventario_vivero.nro_lote,cambio_anulado=False).last()
-                if cambio_etapa:
-                    if  fecha_cambio < cambio_etapa.fecha_cambio:
-                        return Response({'success':False,'detail':'La fecha elegida para el cambio debe ser posterior a la fecha del último cambio de etapa'},status=status.HTTP_403_FORBIDDEN)
-            else:
-                if fecha_cambio < inventario_vivero.fecha_ingreso_lote_etapa:
-                    return Response({'success':False,'detail':'la fecha elegida para el Cambio debe ser posterior a la fecha de ingreso del lote'},status=status.HTTP_403_FORBIDDEN)
-        
+        if fecha_cambio.date() != datetime.now().date():
+            
+            # VALIDACIONES FECHA CAMBIO SI ETAPA LOTE ES GERMINACIÓN
+            if data['cod_etapa_lote_origen'] == 'G':
+                data['cantidad_disponible_al_crear'] = None
+                if fecha_cambio < inventario_vivero.fecha_ingreso_lote_etapa or fecha_cambio < inventario_vivero.fecha_ult_altura_lote:
+                    return Response({'success':False, 'detail':'La fecha de cambio debe ser posterior a la fecha de ingreso al lote y posterior a la fecha de la última altura del material elegido'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            #VALIDACION DE FECHA CAMBIO PARA LA ETAPA LOTE DE PRODUCCIÓN 
+            if data['cod_etapa_lote_origen'] == 'P':
+                if inventario_vivero.cantidad_traslados_lote_produccion_distribucion > 0:
+                    cambio_etapa=CambiosDeEtapa.objects.filter(id_bien=inventario_vivero.id_bien.id_bien,id_vivero=inventario_vivero.id_vivero.id_vivero,agno_lote=inventario_vivero.agno_lote,nro_lote=inventario_vivero.nro_lote,cambio_anulado=False).last()
+                    if cambio_etapa:
+                        if  fecha_cambio < cambio_etapa.fecha_cambio:
+                            return Response({'success':False,'detail':'La fecha elegida para el cambio debe ser posterior a la fecha del último cambio de etapa'},status=status.HTTP_403_FORBIDDEN)
+                else:
+                    if fecha_cambio < inventario_vivero.fecha_ingreso_lote_etapa:
+                        return Response({'success':False,'detail':'la fecha elegida para el Cambio debe ser posterior a la fecha de ingreso del lote'},status=status.HTTP_403_FORBIDDEN)
+            
+                #VALIDACIÓN DE FECHA DE ACTUALIZACIÓN CUANDO SE MUEVE TODA LA CANTIDAD
+                if int(data['cantidad_movida']) ==  int(data['cantidad_disponible_al_crear']) and (inventario_vivero.cantidad_lote_cuarentena == 0 or inventario_vivero.cantidad_lote_cuarentena == None):
+                    print('fecha_altura',inventario_vivero.fecha_ult_altura_lote)
+                    print('fecha_cambio',fecha_cambio)
+                    if inventario_vivero.fecha_ult_altura_lote > fecha_cambio:
+                        print('Entró')
+                        return Response({'succes':False,'detail':'La fecha de cambio debe ser mayor a la ultima fecha de actualización que fue: ' + str(inventario_vivero.fecha_ult_altura_lote)},status=status.HTTP_403_FORBIDDEN)
+                
         #VALIDACIÓN DE CANTIDAD DISPONIBLE
         cantidad_disponible=UtilConservacion.get_cantidad_disponible_etapa(inventario_vivero)
         if data['cod_etapa_lote_origen'] == 'P':
@@ -86,7 +98,8 @@ class GuardarCambioEtapa(generics.UpdateAPIView):
             else:
                 if int(data['cantidad_movida']) > cantidad_disponible:
                         return Response ({'success':False,'detail':'La cantidad movida no puede superar la cantidad disponible actual'},status=status.HTTP_400_BAD_REQUEST)
-            
+       
+        
         # serializador.save()
         
         return Response ({'success':True,'detail':'Se realizó el cambio de etapa correctamente','data':[]},status=status.HTTP_200_OK)
