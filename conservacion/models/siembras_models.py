@@ -18,7 +18,7 @@ class Siembras(models.Model):
     agno_lote = models.PositiveSmallIntegerField(db_column='T157agnoLote')
     nro_lote = models.PositiveIntegerField(db_column='T157nroLote')
     fecha_siembra = models.DateTimeField(db_column='T157fechaSiembra')
-    fecha_registro = models.DateTimeField(db_column='T157fechaRegistro')
+    fecha_registro = models.DateTimeField(auto_now_add=True, db_column='T157fechaRegistro')
     observaciones = models.CharField(max_length=255, null=True, blank=True, db_column='T157observaciones')
     distancia_entre_semillas = models.PositiveSmallIntegerField(db_column='T157distanciaEntreSemillas')
     id_persona_siembra = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T157Id_PersonaSiembra')

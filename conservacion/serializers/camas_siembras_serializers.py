@@ -10,7 +10,11 @@ from conservacion.models.siembras_models import (
 from almacen.models.bienes_models import (
     CatalogoBienes
 )
+from conservacion.models.inventario_models import (
+    InventarioViveros
+)
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
+
 
 class CamasGerminacionPost(serializers.ModelSerializer):
     class Meta:
@@ -27,6 +31,20 @@ class CreateSiembrasSerializer(serializers.ModelSerializer):
         model = Siembras
         exclude = (
             'id_siembra',
+        )
+    
+class CreateSiembraInventarioViveroSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InventarioViveros
+        fields = (
+            'id_vivero',
+            'id_bien',
+            'agno_lote',
+            'cod_etapa_lote',
+            'es_produccion_propia_lote',
+            'fecha_ingreso_lote_etapa',
+            'id_siembra_lote_germinacion',
+            'siembra_lote_cerrada',
         )
 
 class GetNumeroLoteSerializer(serializers.ModelSerializer):
