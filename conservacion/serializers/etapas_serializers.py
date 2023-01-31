@@ -30,7 +30,7 @@ class GuardarCambioEtapaSerializer(serializers.ModelSerializer):
         model =  CambiosDeEtapa
         fields = ['id_bien', 'id_vivero', 'agno_lote', 'nro_lote', 'cod_etapa_lote_origen', 'fecha_cambio',
                   'cantidad_disponible_al_crear', 'cantidad_movida', 'altura_lote_en_cms', 'observaciones',
-                  'id_persona_cambia', 'ruta_archivo_soporte']
+                  'id_persona_cambia', 'ruta_archivo_soporte', 'consec_por_lote_etapa']
         extra_kwargs = {
             'id_bien': {'required': True},
             'id_vivero': {'required': True},

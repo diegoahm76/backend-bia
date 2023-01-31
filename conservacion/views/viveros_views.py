@@ -185,12 +185,12 @@ class CreateViveros(generics.CreateAPIView):
         if viverista:
             viverista_existe = Personas.objects.filter(id_persona=viverista)
             if not viverista_existe:
-                return Response({'status':False, 'detail':'Debe elegir un viverista que exista'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'success':False, 'detail':'Debe elegir un viverista que exista'}, status=status.HTTP_400_BAD_REQUEST)
             
             viveristas_actuales = Vivero.objects.filter(id_viverista_actual = viverista)
             
             if viveristas_actuales:
-                return Response({'status':False, 'detail':'Debe elegir un viverista que no tenga ningún vivero asignado'}, status=status.HTTP_403_FORBIDDEN)
+                return Response({'success':False, 'detail':'Debe elegir un viverista que no tenga ningún vivero asignado'}, status=status.HTTP_403_FORBIDDEN)
             
             data['fecha_inicio_viverista_actual'] = datetime.now()
         
