@@ -7,6 +7,9 @@ from almacen.models import (
     CatalogoBienes,
     TiposEntradas
 )
+from conservacion.models.siembras_models import (
+    Siembras
+)
 
 class InventarioViveros(models.Model):
     id_inventario_vivero = models.AutoField(primary_key=True, editable=False, db_column='T156IdInventarioViveros')
@@ -22,7 +25,7 @@ class InventarioViveros(models.Model):
     ult_altura_lote = models.PositiveSmallIntegerField(null=True, blank=True, db_column='T156ultAlturaLote')
     fecha_ult_altura_lote = models.DateTimeField(null=True, blank=True, db_column='T156fechaUltAlturaLote')
     porc_cuarentena_lote_germinacion = models.PositiveSmallIntegerField(null=True, blank=True, db_column='T156porcCuarentenaLoteGerminacion')
-    id_siembra_lote_germinacion = models.PositiveIntegerField(null=True, blank=True, db_column='T156Id_SiembraLoteGerminacion')
+    id_siembra_lote_germinacion =  models.ForeignKey(Siembras, null=True, blank=True, on_delete=models.SET_NULL, db_column='T156Id_SiembraLoteGerminacion')
     siembra_lote_cerrada = models.BooleanField(null=True, blank=True, db_column='T156siembraLoteCerrada')
     cantidad_entrante = models.PositiveIntegerField(null=True, blank=True, db_column='T156cantidadEntrante')
     cantidad_bajas = models.PositiveIntegerField(null=True, blank=True, db_column='T156cantidadBajas')
@@ -30,6 +33,7 @@ class InventarioViveros(models.Model):
     cantidad_traslados_lote_produccion_distribucion = models.PositiveIntegerField(null=True, blank=True, db_column='T156cantidadTrasladosLoteProdADistri')
     cantidad_salidas = models.PositiveIntegerField(null=True, blank=True, db_column='T156cantidadSalidas')
     cantidad_lote_cuarentena = models.PositiveIntegerField(null=True, blank=True, db_column='T156cantidadLoteEnCuarentena')
+    id_mezcla = models.PositiveSmallIntegerField(null=True, blank=True, db_column='T156Id_Mezcla')
     
     def __str__(self):
         return str(self.id_inventario_vivero)
@@ -38,4 +42,4 @@ class InventarioViveros(models.Model):
         db_table = 'T156InventarioViveros'
         verbose_name = 'Inventario Vivero'
         verbose_name_plural = 'Inventario Viveros'
-        unique_together = ['id_vivero', 'id_bien', 'agno_lote', 'nro_lote', 'cod_etapa_lote']
+        unique_together = ['id_vivero', 'id_bien', 'agno_lote', 'nro_lote', 'cod_etapa_lote', 'id_mezcla']

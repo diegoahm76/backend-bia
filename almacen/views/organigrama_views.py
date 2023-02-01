@@ -93,7 +93,7 @@ class UpdateNiveles(generics.UpdateAPIView):
         lista_niveles_id.extend(niveles_id_create)
         niveles_total = NivelesOrganigrama.objects.filter(id_organigrama=id_organigrama).exclude(id_nivel_organigrama__in=lista_niveles_id)
         
-        #Validacion NO PODER ELIMINAR eliminar un nivel que ya está siendo usado
+        #Validacion NO PODER ELIMINAR un nivel que ya está siendo usado
         niveles_eliminar_list = [nivel.id_nivel_organigrama for nivel in niveles_total]
         if UnidadesOrganizacionales.objects.filter(id_nivel_organigrama__in=niveles_eliminar_list).exists():
             return Response({'success': False, 'detail': 'El nivel que intenta eliminar ya se encuentra relacionado con una unidad organizacional'}, status=status.HTTP_400_BAD_REQUEST)
@@ -189,13 +189,13 @@ class UpdateUnidades(generics.UpdateAPIView):
                         if nivel_instance.orden_nivel != 1:
                             return Response({'success':False, 'detail':'La sección solo puede pertenecer a la unidad raíz'}, status=status.HTTP_400_BAD_REQUEST)
                     
-                    # VALIDACIÓN QUE UNIDADES STAFF SEAN DE NIVEL DOS
+                    # VALIDACIÓN QUE UNIDADES STAFF SEAN DE NIVEL SUPERIOR AL UNO
                     staff_unidades = list(filter(lambda unidad: unidad['cod_tipo_unidad'] != 'LI', data))
                     for unidad in staff_unidades:
                         nivel_instance = NivelesOrganigrama.objects.filter(id_nivel_organigrama=unidad['id_nivel_organigrama']).first()
-                        if nivel_instance.orden_nivel != 2:
-                            return Response({'success':False, 'detail':'Las unidades de staff solo pueden pertenecer al nivel dos'}, status=status.HTTP_400_BAD_REQUEST)
-                    
+                        if nivel_instance.orden_nivel < 2:
+                            return Response({'success':False, 'detail':'Las unidades de staff deben tener un nivel superior al uno'}, status=status.HTTP_400_BAD_REQUEST)
+
                     # VALIDACIÓN DE EXISTENCIA DE SECCIÓN Y UNA SOLA SECCIÓN
                     seccion_list = [unidad['cod_agrupacion_documental'] for unidad in data]
                     if seccion_list:
@@ -207,10 +207,12 @@ class UpdateUnidades(generics.UpdateAPIView):
                     # VALIDACIÓN DE EXISTENCIA DE UNIDADES PADRE
                     unidades_codigo_list = [unidad['codigo'] for unidad in data]
                     unidades_padre_list = [unidad['cod_unidad_org_padre'] for unidad in data if unidad['cod_unidad_org_padre'] is not None]
+                    
                     if not set(unidades_padre_list).issubset(unidades_codigo_list):
                         return Response({'success':False, 'detail':'Debe asociar unidades padre que existan'}, status=status.HTTP_400_BAD_REQUEST)          
-                            
+                    
                     # VALIDACIÓN DE UNA UNIDAD EN NIVEL UNO
+                    padre_unidad_list = []
                     current_cod_unidades = []
                     for nivel, unidades in groupby(nivel_unidades, itemgetter('id_nivel_organigrama')):
                         nivel_instance = NivelesOrganigrama.objects.filter(id_nivel_organigrama=nivel).first()
@@ -221,7 +223,7 @@ class UpdateUnidades(generics.UpdateAPIView):
                         current_cod_unidades.extend(unidades_codigo_list)
                         unidades_padre_list = [unidad['cod_unidad_org_padre'] for unidad in unidades_list if unidad['cod_unidad_org_padre'] is not None]
                         if not set(unidades_padre_list).issubset(current_cod_unidades):
-                            return Response({'success':False, 'detail':'Debe asociar unidades padre de línea y superiores a unidades hijos'}, status=status.HTTP_400_BAD_REQUEST)   
+                            return Response({'success':False, 'detail':'Debe asociar unidades padre de línea superiores a unidades hijos'}, status=status.HTTP_400_BAD_REQUEST)   
                         
                         # VALIDACIÓN DE UNA UNIDAD EN NIVEL UNO
                         if nivel_instance.orden_nivel == 1 and (len(unidades_list) > 1):
@@ -229,9 +231,9 @@ class UpdateUnidades(generics.UpdateAPIView):
                         if nivel_instance.orden_nivel != 1:
                             
                             # VALIDACIÓN DEFINIR PADRES EN TODAS LOS NIVELES MENOS EL UNO
-                            unidades_org = list(filter(lambda unidad: (unidad['cod_unidad_org_padre'] == None or unidad['cod_unidad_org_padre'] == '') and (unidad['cod_tipo_unidad'] == 'LI'), unidades_list))
+                            unidades_org = list(filter(lambda unidad: unidad['cod_unidad_org_padre'] == None or unidad['cod_unidad_org_padre'] == '', unidades_list))
                             if unidades_org:
-                                return Response({'success':False, 'detail':'Debe definir el padre en todas las unidades de línea que no sea la raíz'}, status=status.HTTP_400_BAD_REQUEST)                
+                                return Response({'success':False, 'detail':'Debe definir el padre en todas las unidades distintas a la raiz'}, status=status.HTTP_400_BAD_REQUEST)                
                             
                             # VALIDACIÓN QUE EL PADRE DE SUBSECCIÓN ESTÉ MARCADO COMO SUBSECCIÓN
                             unidades_sub = list(filter(lambda unidad: unidad['cod_agrupacion_documental'] == 'SUB', unidades_list))
@@ -240,17 +242,22 @@ class UpdateUnidades(generics.UpdateAPIView):
                                 if unidad_padre:
                                     if unidad_padre[0]['cod_agrupacion_documental'] == None or unidad_padre[0]['cod_agrupacion_documental'] == '':
                                         return Response({'success':False, 'detail':'Debe marcar las unidades padre como subsecciones'}, status=status.HTTP_400_BAD_REQUEST)
-                    
+                        #VALIDACIÓN QUE CUANDO ES UNA UNIDAD DE APOYO O SOPORTE EL PADRE DEBE SER DE NIVEL INMEDIATAMENTE ANTERIOR
+                        unidades_padre_staff_list = [unidad['cod_unidad_org_padre'] for unidad in unidades_list if unidad['cod_tipo_unidad'] != 'LI']
+
+                        if not set(unidades_padre_staff_list).issubset(padre_unidad_list):
+                            return Response({'success':False, 'detail':'Debe asociar unidades padre de línea inmediatamente anteriores para las unidades staff'}, status=status.HTTP_400_BAD_REQUEST) 
+                            
+                        padre_unidad_list = unidades_codigo_list
+
                     # CREACION DE UNIDADES
                     for nivel, unidades in groupby(nivel_unidades, itemgetter('id_nivel_organigrama')):
                         nivel_instance = NivelesOrganigrama.objects.filter(id_nivel_organigrama=nivel).first()
                         for unidad in unidades:
-                            unidad_org = None
-                            
-                            if unidad['cod_tipo_unidad'] == 'LI':
-                                unidad_org = UnidadesOrganizacionales.objects.filter(codigo=unidad['cod_unidad_org_padre']).first()
-                                unidad_org = unidad_org if unidad_org else None
-                            else:
+                            unidad_org = UnidadesOrganizacionales.objects.filter(codigo=unidad['cod_unidad_org_padre'], id_organigrama=pk).first()
+                            unidad_org = unidad_org if unidad_org else None
+
+                            if unidad['cod_tipo_unidad'] != 'LI': 
                                 unidad['cod_agrupacion_documental'] = None
                             
                             UnidadesOrganizacionales.objects.create(
@@ -499,7 +506,7 @@ class GetUnidadesJerarquizadas(generics.ListAPIView):
         if organigrama:
             unidades = UnidadesOrganizacionales.objects.filter(id_organigrama=id_organigrama)
             if unidades:
-                unidades_linea = unidades.filter(cod_tipo_unidad='LI').values(
+                unidades_linea = unidades.values(
                     'id_unidad_organizacional',
                     'id_organigrama',
                     'id_nivel_organigrama',
@@ -511,24 +518,24 @@ class GetUnidadesJerarquizadas(generics.ListAPIView):
                     'id_unidad_org_padre',
                     orden_nivel=F('id_nivel_organigrama__orden_nivel')
                 )
-                unidades_staff = unidades.filter(~Q(cod_tipo_unidad='LI')).values(
-                    'id_unidad_organizacional',
-                    'id_organigrama',
-                    'id_nivel_organigrama',
-                    'nombre',
-                    'codigo',
-                    'cod_tipo_unidad',
-                    'cod_agrupacion_documental',
-                    'unidad_raiz', 
-                    'id_unidad_org_padre',
-                    orden_nivel=F('id_nivel_organigrama__orden_nivel')
-                )
+                # unidades_staff = unidades.filter(~Q(cod_tipo_unidad='LI')).values(
+                #     'id_unidad_organizacional',
+                #     'id_organigrama',
+                #     'id_nivel_organigrama',
+                #     'nombre',
+                #     'codigo',
+                #     'cod_tipo_unidad',
+                #     'cod_agrupacion_documental',
+                #     'unidad_raiz', 
+                #     'id_unidad_org_padre',
+                #     orden_nivel=F('id_nivel_organigrama__orden_nivel')
+                # )
                 unidades_linea = sorted(unidades_linea, key=itemgetter('orden_nivel'))
                 unidades_jerarquia = []
                 for unidad in unidades_linea:
                     unidad['hijos'] = [hijo for hijo in unidades_linea if hijo['id_unidad_org_padre']==unidad['id_unidad_organizacional']]
                     if unidad['unidad_raiz']:
-                        unidad['unidades_staff'] = unidades_staff
+                        # unidad['unidades_staff'] = unidades_staff
                         unidades_jerarquia.append(unidad)
                         
                 return Response({'success': True, 'detail': 'Se encontraron unidades para el organigrama', 'data' : unidades_jerarquia}, status=status.HTTP_200_OK)

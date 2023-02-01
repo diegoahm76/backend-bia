@@ -14,8 +14,13 @@ from conservacion.choices.cod_etapa_lote import cod_etapa_lote_CHOICES
 from almacen.models.solicitudes_models import (
     DespachoConsumo
 )
+from almacen.models.bienes_models import CatalogoBienes
+
 from conservacion.models.viveros_models import (
     Vivero
+)
+from conservacion.models.inventario_models import (
+    InventarioViveros
 )
 from conservacion.models.despachos_models import (
     DespachoEntrantes,
@@ -25,7 +30,8 @@ from conservacion.models.despachos_models import (
 from conservacion.serializers.despachos_serializers import (
     DespachosEntrantesSerializer,
     ItemsDespachosEntrantesSerializer,
-    DistribucionesItemDespachoEntranteSerializer
+    DistribucionesItemDespachoEntranteSerializer,
+    DistribucionesItemPreDistribuidoSerializer
 )
 from conservacion.utils import UtilConservacion
 
@@ -65,8 +71,9 @@ class GetItemsDespachosEntrantes(generics.ListAPIView):
             'observacion',
             codigo_bien=F('id_bien__codigo_bien'),
             nombre_bien=F('id_bien__nombre'),
+            unidad_medida=F('id_bien__id_unidad_medida__abreviatura'),
             tipo_documento=F('id_entrada_alm_del_bien__id_tipo_entrada__nombre'),
-            numero_documento=F('id_entrada_alm_del_bien__numero_entrada_almacen'),
+            numero_documento=F('id_entrada_alm_del_bien__numero_entrada_almacen')
         ).annotate(cantidad_restante=Sum('cantidad_entrante') - Sum('cantidad_distribuida'))
         
         if items_despacho:
@@ -80,5 +87,133 @@ class GuardarDistribucionBienes(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def put(self,request,id_despacho_entrante):
+        despacho_entrante=DespachoEntrantes.objects.filter(id_despacho_entrante=id_despacho_entrante).first()
+        despacho_entrante_previous = copy.copy(despacho_entrante)
+        
         response_dict = UtilConservacion.guardar_distribuciones(id_despacho_entrante, request, self.queryset.all())
-        return Response({'success':response_dict['success'], 'detail':response_dict['detail']}, status=response_dict['status'])
+        despacho_entrante=DespachoEntrantes.objects.filter(id_despacho_entrante=id_despacho_entrante).first()
+        
+        # AUDITORIA MAESTRO
+        descripcion_maestro = {
+            "numero_despacho_consumo": str(despacho_entrante_previous.id_despacho_consumo_alm.numero_despacho_consumo),
+            "fecha_ingreso": str(despacho_entrante_previous.fecha_ingreso),
+            "distribucion_confirmada": str(despacho_entrante_previous.distribucion_confirmada),
+            "fecha_confirmacion_distribucion": str(despacho_entrante_previous.fecha_confirmacion_distribucion),
+            "observacion_distribucion": str(despacho_entrante_previous.observacion_distribucion),
+            "persona_distribuye": str(despacho_entrante_previous.id_persona_distribuye.primer_nombre + ' ' + despacho_entrante_previous.id_persona_distribuye.primer_apellido if despacho_entrante_previous.id_persona_distribuye.tipo_persona=='N' else despacho_entrante_previous.id_persona_distribuye.razon_social)
+        }
+        valores_actualizados={'previous':despacho_entrante_previous, 'current':despacho_entrante}
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario": request.user.id_usuario,
+            "id_modulo": 48,
+            "cod_permiso": 'AC',
+            "subsistema": 'CONS',
+            "dirip": direccion,
+            "descripcion": descripcion_maestro,
+            "valores_actualizados": valores_actualizados
+        }
+        Util.save_auditoria(auditoria_data)
+        
+        return Response({'success':response_dict['success'], 'detail':response_dict['detail']}, status=response_dict['status'])     
+       
+class ConfirmarDistribucion(generics.UpdateAPIView):
+    serializer_class=DistribucionesItemDespachoEntranteSerializer
+    queryset=DistribucionesItemDespachoEntrante.objects.all()
+    
+    def put(self,request,id_despacho_entrante):
+        
+        despacho_entrante=DespachoEntrantes.objects.filter(id_despacho_entrante=id_despacho_entrante).first()
+        
+        if despacho_entrante:
+            
+            despacho_entrante_previous=copy.copy(despacho_entrante)
+            response_dict = UtilConservacion.guardar_distribuciones(id_despacho_entrante, request, self.queryset.all(),True)
+            
+            if response_dict['success'] != True:
+                return Response({'success':response_dict['success'], 'detail':response_dict['detail']}, status=response_dict['status'])
+
+            despacho_entrante.fecha_confirmacion_distribucion = datetime.now()
+            despacho_entrante.observacion_distribucion=despacho_entrante.observacion_distribucion
+            despacho_entrante.id_persona_distribuye=request.user.persona
+            despacho_entrante.distribucion_confirmada=True
+            despacho_entrante.save()
+        
+            data = request.data
+            
+            for item in data:
+                item_despacho_entrante = ItemsDespachoEntrante.objects.filter(id_item_despacho_entrante=item['id_item_despacho_entrante']).first()
+                vivero=Vivero.objects.filter(id_vivero=item['id_vivero']).first()
+                bien=CatalogoBienes.objects.filter(id_bien=item_despacho_entrante.id_bien.id_bien).first()
+                if despacho_entrante.distribucion_confirmada == True:
+                    if item_despacho_entrante.id_bien.cod_tipo_elemento_vivero == "HE" or item_despacho_entrante.id_bien.cod_tipo_elemento_vivero == "IN" or (item_despacho_entrante.id_bien.cod_tipo_elemento_vivero == "MV" and item_despacho_entrante.id_bien.es_semilla_vivero == True):
+                        
+                        vivero_destino=InventarioViveros.objects.filter(id_vivero=item['id_vivero'],id_bien=item_despacho_entrante.id_bien.id_bien).first()
+                        if vivero_destino:
+                            vivero_destino.cantidad_entrante += item['cantidad_asignada']
+                            vivero_destino.save()
+                            
+                        else:
+                            InventarioViveros.objects.create(
+                                id_vivero = vivero,
+                                id_bien = bien,
+                                cantidad_entrante = item['cantidad_asignada']
+                            )
+                            
+                    elif item_despacho_entrante.id_bien.cod_tipo_elemento_vivero == "MV" and item_despacho_entrante.id_bien.es_semilla_vivero == False:
+                            vivero_destino=InventarioViveros.objects.filter(id_vivero=item['id_vivero'],id_bien=item_despacho_entrante.id_bien.id_bien).last()
+                            nro_lote = 1
+                            if vivero_destino:
+                                nro_lote = vivero_destino.nro_lote + 1
+                                
+                            InventarioViveros.objects.create(
+                                id_vivero = vivero,
+                                id_bien = bien,
+                                cantidad_entrante = item['cantidad_asignada'],
+                                agno_lote = datetime.now().year,
+                                nro_lote = nro_lote,
+                                cod_etapa_lote = item["cod_etapa_lote_al_ingresar"],
+                                es_produccion_propia_lote = False,
+                                cod_tipo_entrada_alm_lote = item_despacho_entrante.id_entrada_alm_del_bien.id_tipo_entrada if item_despacho_entrante.id_entrada_alm_del_bien else None,
+                                nro_entrada_alm_lote =  item_despacho_entrante.id_entrada_alm_del_bien.numero_entrada_almacen if item_despacho_entrante.id_entrada_alm_del_bien else None,
+                                fecha_ingreso_lote_etapa= datetime.now(),
+                            )  
+            # AUDITORIA MAESTRO
+            descripcion_maestro = {
+                "numero_despacho_consumo": str(despacho_entrante_previous.id_despacho_consumo_alm.numero_despacho_consumo),
+                "fecha_ingreso": str(despacho_entrante_previous.fecha_ingreso),
+                "distribucion_confirmada": str(despacho_entrante_previous.distribucion_confirmada),
+                "fecha_confirmacion_distribucion": str(despacho_entrante_previous.fecha_confirmacion_distribucion),
+                "observacion_distribucion": str(despacho_entrante_previous.observacion_distribucion),
+                "persona_distribuye": str(despacho_entrante_previous.id_persona_distribuye.primer_nombre + ' ' + despacho_entrante_previous.id_persona_distribuye.primer_apellido if despacho_entrante_previous.id_persona_distribuye.tipo_persona=='N' else despacho_entrante_previous.id_persona_distribuye.razon_social)
+            }
+            valores_actualizados={'previous':despacho_entrante_previous, 'current':despacho_entrante}
+            direccion=Util.get_client_ip(request)
+            auditoria_data = {
+                "id_usuario": request.user.id_usuario,
+                "id_modulo": 48,
+                "cod_permiso": 'AC',
+                "subsistema": 'CONS',
+                "dirip": direccion,
+                "descripcion": descripcion_maestro,
+                "valores_actualizados": valores_actualizados
+            }
+            Util.save_auditoria(auditoria_data)
+                       
+            return Response({'success':True, 'detail':'Confirmación exitosa'}, status=status.HTTP_200_OK)
+
+class GetItemsPredistribuidos(generics.ListAPIView):
+    serializer_class=DistribucionesItemPreDistribuidoSerializer
+    queryset=DistribucionesItemDespachoEntrante
+    
+    def get(self,request,pk):
+        despacho_entrante=DespachoEntrantes.objects.filter(id_despacho_entrante=pk).first()
+        if despacho_entrante:
+            item_despacho_entrante= ItemsDespachoEntrante.objects.filter(id_despacho_entrante=despacho_entrante.id_despacho_entrante)
+            list_item_despacho = [item.id_item_despacho_entrante for item in item_despacho_entrante ]
+            distribuciones_item_despacho = DistribucionesItemDespachoEntrante.objects.filter(id_item_despacho_entrante__in = list_item_despacho)
+            
+            serializador=self.serializer_class(distribuciones_item_despacho,many=True)
+            return Response ({'success':True,'detail':'Se encontraron items pre-distribuidos: ','data':serializador.data},status=status.HTTP_200_OK)
+            
+        

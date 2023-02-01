@@ -175,10 +175,10 @@ class CrearEntregaView(generics.CreateAPIView):
         items_no_pasan_validacion = []
 
         for item in data_items_entrega:
-            item_entrada = ItemEntradaAlmacen.objects.filter(id_bien=item['id_bien_despachado'], id_entrada_almacen=item['id_entrada_almacen_bien'])
+            item_entrada = ItemEntradaAlmacen.objects.filter(id_bien=item['id_bien_despachado'], id_entrada_almacen=item['id_entrada_almacen_bien'], id_bodega=item['id_bodega'])
             cantidad_entrante_sin_sumar = [item.cantidad for item in item_entrada]
             cantidad_entrante_sumada = sum(cantidad_entrante_sin_sumar)
-            item_despachado_por_entrada = ItemDespachoConsumo.objects.filter(id_entrada_almacen_bien=item['id_entrada_almacen_bien'], id_bien_despachado=item['id_bien_despachado'])
+            item_despachado_por_entrada = ItemDespachoConsumo.objects.filter(id_entrada_almacen_bien=item['id_entrada_almacen_bien'], id_bien_despachado=item['id_bien_despachado'], id_bodega=item['id_bodega'])
             cantidad_despachada = 0
             if item_despachado_por_entrada:
                 for item_despachado in item_despachado_por_entrada:
@@ -191,8 +191,11 @@ class CrearEntregaView(generics.CreateAPIView):
                 else:
                     items_pasan_validacion.append(item)
             else:
-                items_pasan_validacion.append(item)
-
+                if int(item['cantidad_despachada']) > cantidad_entrante_sumada:
+                    items_no_pasan_validacion.append(item)
+                    return Response({'success': False, 'detail': 'No se puede despachar una cantidad mayor a la que se recibió en la entrada', 'data': item}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    items_pasan_validacion.append(item)
         if items_no_pasan_validacion:
             return Response({'success': False, 'detail': 'No se puede realizar una entrega si alguno de sus items ya fue totalmente entregado', 'Items totalmente entregados': items_no_pasan_validacion}, status=status.HTTP_400_BAD_REQUEST)
 
