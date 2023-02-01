@@ -1,7 +1,7 @@
 from rest_framework.response import Response
 from rest_framework import generics,status
 from django.db.models import Q
-from conservacion.serializers.etapas_serializers import InventarioViverosSerializer, GuardarCambioEtapaSerializer
+from conservacion.serializers.etapas_serializers import InventarioViverosSerializer, GuardarCambioEtapaSerializer, ActualizarCambioEtapaSerializer
 from conservacion.models.inventario_models import InventarioViveros
 from conservacion.models.siembras_models import CambiosDeEtapa
 from conservacion.models.viveros_models import Vivero
@@ -174,4 +174,94 @@ class GuardarCambioEtapa(generics.CreateAPIView):
                     cantidad_entrante = data['cantidad_movida']
                 )
                 
-        return Response ({'success':True,'detail':'Se realizó el cambio de etapa correctamente','data':[]},status=status.HTTP_200_OK)
+        return Response ({'success':True,'detail':'Se realizó el cambio de etapa correctamente','data':serializador.data},status=status.HTTP_200_OK)
+
+class ActualizarCambioEtapa(generics.UpdateAPIView):
+    serializer_class=ActualizarCambioEtapaSerializer
+    queryset=CambiosDeEtapa.objects.all()
+    
+    def put(self,request,pk):
+        data = request.data
+        cambio_etapa = CambiosDeEtapa.objects.filter(id_cambio_de_etapa=pk).first()
+        if cambio_etapa:
+            # VALIDAR ANTIGUEDAD POSIBLE DE FECHA CAMBIO
+            if cambio_etapa.fecha_cambio.date() < date.today()-timedelta(days=30):
+                return Response({'success':False, 'detail':'No puede actualizar porque la fecha de cambio supera los 30 días de antiguedad'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            cod_nueva_etapa = 'P' if cambio_etapa.cod_etapa_lote_origen == 'G' else 'D'
+            
+            # VALIDAR ALTURA LOTE
+            inventario_vivero = InventarioViveros.objects.filter(
+                id_vivero=cambio_etapa.id_vivero.id_vivero,
+                id_bien=cambio_etapa.id_bien.id_bien,
+                agno_lote=cambio_etapa.agno_lote,
+                nro_lote=cambio_etapa.nro_lote
+            )
+            inventario_vivero_etapa_nueva = inventario_vivero.filter(cod_etapa_lote=cod_nueva_etapa).first()
+            inventario_vivero_etapa_origen = inventario_vivero.filter(cod_etapa_lote=cambio_etapa.cod_etapa_lote_origen).first()
+            
+            if int(data['altura_lote_en_cms']) <= 0:
+                return Response({'success':False, 'detail':'La altura del lote debe ser mayor a cero'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if inventario_vivero_etapa_nueva.fecha_ult_altura_lote.date() != cambio_etapa.fecha_cambio.date():
+                return Response({'success':False, 'detail':'No se puede actualizar la altura del lote debido a que la fecha de la última altura ('+str(inventario_vivero_etapa_nueva.fecha_ult_altura_lote.date())+') es distinta a la fecha del cambio de etapa ('+str(cambio_etapa.fecha_cambio.date())+')'}, status=status.HTTP_403_FORBIDDEN)
+            
+            if cambio_etapa.cod_etapa_lote_origen == 'G':
+                if int(data['cantidad_movida']) > cambio_etapa.cantidad_movida:
+                    inventario_vivero_etapa_nueva.cantidad_entrante = inventario_vivero_etapa_nueva.cantidad_entrante + (int(data['cantidad_movida']) - cambio_etapa.cantidad_movida) if inventario_vivero_etapa_nueva.cantidad_entrante else int(data['cantidad_movida'])
+                    inventario_vivero_etapa_nueva.save()
+                elif int(data['cantidad_movida']) < cambio_etapa.cantidad_movida:
+                    cantidad_entrante_disminuida = inventario_vivero_etapa_nueva.cantidad_entrante - (cambio_etapa.cantidad_movida - int(data['cantidad_movida']))
+                    
+                    cantidad_bajas = inventario_vivero_etapa_nueva.cantidad_bajas if inventario_vivero_etapa_nueva.cantidad_bajas else 0
+                    cantidad_traslados = inventario_vivero_etapa_nueva.cantidad_traslados_lote_produccion_distribucion if inventario_vivero_etapa_nueva.cantidad_traslados_lote_produccion_distribucion else 0
+                    cantidad_salidas = inventario_vivero_etapa_nueva.cantidad_salidas if inventario_vivero_etapa_nueva.cantidad_salidas else 0
+                    cantidad_lote_cuarentena = inventario_vivero_etapa_nueva.cantidad_lote_cuarentena if inventario_vivero_etapa_nueva.cantidad_lote_cuarentena else 0
+                    
+                    suma_cantidades = cantidad_bajas + cantidad_traslados + cantidad_salidas + cantidad_lote_cuarentena
+                    
+                    if cantidad_entrante_disminuida < suma_cantidades:
+                        return Response({'success':False, 'detail':'No puede realizar la actualización de la cantidad movida, aumente el valor de la cantidad movida'}, status=status.HTTP_400_BAD_REQUEST)
+
+                    inventario_vivero_etapa_nueva.cantidad_entrante = cantidad_entrante_disminuida
+                    inventario_vivero_etapa_nueva.save()
+            else:
+                if int(data['cantidad_movida']) > cambio_etapa.cantidad_movida:
+                    saldo_disponible = UtilConservacion.get_cantidad_disponible_etapa(inventario_vivero_etapa_origen)
+                    
+                    if (int(data['cantidad_movida']) - cambio_etapa.cantidad_movida) > saldo_disponible:
+                        return Response({'success':False, 'detail':'No puede realizar la actualización de la cantidad movida ya que supera la cantidad disponible'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    cantidad_aumentada = int(data['cantidad_movida']) - cambio_etapa.cantidad_movida
+                    
+                    inventario_vivero_etapa_origen.cantidad_traslados_lote_produccion_distribucion = inventario_vivero_etapa_origen.cantidad_traslados_lote_produccion_distribucion + cantidad_aumentada if inventario_vivero_etapa_origen.cantidad_traslados_lote_produccion_distribucion else cantidad_aumentada
+                    inventario_vivero_etapa_origen.save()
+                    
+                    inventario_vivero_etapa_nueva.cantidad_entrante = inventario_vivero_etapa_nueva.cantidad_entrante + cantidad_aumentada if inventario_vivero_etapa_nueva.cantidad_entrante else cantidad_aumentada
+                    inventario_vivero_etapa_nueva.save()
+                elif int(data['cantidad_movida']) < cambio_etapa.cantidad_movida:
+                    cantidad_entrante_disminuida = inventario_vivero_etapa_nueva.cantidad_entrante - (cambio_etapa.cantidad_movida - int(data['cantidad_movida']))
+                    
+                    cantidad_bajas = inventario_vivero_etapa_nueva.cantidad_bajas if inventario_vivero_etapa_nueva.cantidad_bajas else 0
+                    cantidad_salidas = inventario_vivero_etapa_nueva.cantidad_salidas if inventario_vivero_etapa_nueva.cantidad_salidas else 0
+                    cantidad_lote_cuarentena = inventario_vivero_etapa_nueva.cantidad_lote_cuarentena if inventario_vivero_etapa_nueva.cantidad_lote_cuarentena else 0
+                    
+                    suma_cantidades = cantidad_bajas + cantidad_salidas + cantidad_lote_cuarentena
+                    
+                    if cantidad_entrante_disminuida < suma_cantidades:
+                        return Response({'success':False, 'detail':'No puede realizar la actualización de la cantidad movida, aumente el valor de la cantidad movida'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    cantidad_disminuida = cambio_etapa.cantidad_movida - int(data['cantidad_movida']) 
+                    
+                    inventario_vivero_etapa_origen.cantidad_traslados_lote_produccion_distribucion = inventario_vivero_etapa_origen.cantidad_traslados_lote_produccion_distribucion - cantidad_disminuida if inventario_vivero_etapa_origen.cantidad_traslados_lote_produccion_distribucion else 0
+                    inventario_vivero_etapa_origen.save()
+                    
+                    inventario_vivero_etapa_nueva.cantidad_entrante = inventario_vivero_etapa_nueva.cantidad_entrante - cantidad_disminuida if inventario_vivero_etapa_nueva.cantidad_entrante else 0
+                    inventario_vivero_etapa_nueva.save()
+            
+            serializador = self.serializer_class(cambio_etapa, data=data)
+            serializador.is_valid(raise_exception=True)
+            serializador.save()
+            return Response({'success':True, 'detail':'Se realizó la actualización de manera exitosa', 'data':serializador.data}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'success':False, 'detail':'No existe el cambio de etapa que desea actualizar'}, status=status.HTTP_404_NOT_FOUND)

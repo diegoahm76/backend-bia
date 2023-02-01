@@ -45,3 +45,9 @@ class GuardarCambioEtapaSerializer(serializers.ModelSerializer):
             'id_persona_cambia': {'required': True},
             'ruta_archivo_soporte': {'required': True}
         }
+
+class ActualizarCambioEtapaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  CambiosDeEtapa
+        fields = ['cantidad_movida', 'altura_lote_en_cms', 'observaciones',
+                  'id_persona_cambia', 'ruta_archivo_soporte']
