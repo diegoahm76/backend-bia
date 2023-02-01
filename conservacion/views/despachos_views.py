@@ -164,7 +164,7 @@ class ConfirmarDistribucion(generics.UpdateAPIView):
                             vivero_destino=InventarioViveros.objects.filter(id_vivero=item['id_vivero'],id_bien=item_despacho_entrante.id_bien.id_bien).last()
                             nro_lote = 1
                             if vivero_destino:
-                                nro_lote = vivero_destino.nro_lote + 1
+                                nro_lote = vivero_destino.nro_lote + 1 if vivero_destino.nro_lote else 1
                                 
                             InventarioViveros.objects.create(
                                 id_vivero = vivero,
@@ -201,6 +201,8 @@ class ConfirmarDistribucion(generics.UpdateAPIView):
             Util.save_auditoria(auditoria_data)
                        
             return Response({'success':True, 'detail':'Confirmación exitosa'}, status=status.HTTP_200_OK)
+        
+        return Response({'success':False, 'detail':'El despacho entrante elegido no existe'}, status=status.HTTP_404_NOT_FOUND)
 
 class GetItemsPredistribuidos(generics.ListAPIView):
     serializer_class=DistribucionesItemPreDistribuidoSerializer
