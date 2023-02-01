@@ -46,7 +46,7 @@ class GetDespachosEntrantes(generics.ListAPIView):
         
         if numero_despacho_consumo:
             despacho_consumo = DespachoConsumo.objects.filter(numero_despacho_consumo=numero_despacho_consumo).first()
-            despachos_entrantes = despachos_entrantes.filter(id_despacho_consumo_alm=despacho_consumo.id_despacho_consumo)
+            despachos_entrantes = despachos_entrantes.filter(id_despacho_consumo_alm=despacho_consumo.id_despacho_consumo) if despacho_consumo else None
         
         serializer=self.serializer_class(despachos_entrantes, many=True)
         if despachos_entrantes:
