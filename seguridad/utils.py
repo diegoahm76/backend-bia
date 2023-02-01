@@ -3,6 +3,8 @@ from email_validator import validate_email, EmailNotValidError, EmailUndeliverab
 from backend.settings.base import EMAIL_HOST_USER, AUTHENTICATION_360_NRS
 from seguridad.models import Shortener, User, Modulos, Permisos, Auditorias
 import re, requests
+from twilio.rest import Client
+import os
 
 class Util:
     
@@ -42,6 +44,19 @@ class Util:
         'Content-Type': 'application/json', 
         'Authorization': 'Basic ' + AUTHENTICATION_360_NRS
         }
+        
+        account_sid = os.environ['TWILIO_ACCOUNT_SID']
+        auth_token = os.environ['TWILIO_AUTH_TOKEN']    
+        client = Client(account_sid, auth_token)
+        # this is the Twilio sandbox testing number
+        from_whatsapp_number='whatsapp:+14155238886'
+        # replace this number with your own WhatsApp Messaging number
+        to_whatsapp_number='whatsapp:+' + telefono
+
+        client.messages.create(body='Ingresó en Cormacarena-bia',
+                            from_=from_whatsapp_number,
+                            to=to_whatsapp_number)
+
 
         response = requests.request("POST", url, headers=headers, data=payload)
 
