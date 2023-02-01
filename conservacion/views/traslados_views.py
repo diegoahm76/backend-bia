@@ -205,3 +205,47 @@ class GetItemsInventarioVivero(generics.ListAPIView):
                 else:
                     modal = False
         return Response({'success':True,'detail':'OK', 'modal':modal, 'data':serializer.data}, status=status.HTTP_200_OK)
+
+class GetTrasladosByIdTraslados(generics.ListAPIView):
+    serializer_class = TrasladosViverosSerializers
+    queryset = TrasladosViveros
+    serializer_item_class = ItemsTrasladosViverosSerielizers
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, nro_traslado_entrante):
+        instancia_traslado = TrasladosViveros.objects.filter(nro_traslado=nro_traslado_entrante).first()
+        instancia_items_traslado = ItemsTrasladoViveros.objects.filter(id_traslado=instancia_traslado)
+        salida = {}
+        if not instancia_traslado:
+            return Response({'success':False, 'detail':'La búsqueda no arrojó resultados'}, status=status.HTTP_400_BAD_REQUEST)
+        if not instancia_items_traslado:
+            return Response({'success':False, 'detail':'Este traslado no tiene items registrados'}, status=status.HTTP_400_BAD_REQUEST)
+        serializador = self.serializer_class(instancia_traslado, many=False)
+        serializador_items = self.serializer_item_class(instancia_items_traslado, many=True)
+        salida['info_traslado'] = serializador.data
+        salida['items_traslado'] = serializador_items.data
+        return Response({'success':True, 'detail':'Ok', 'data':salida}, status=status.HTTP_200_OK)
+
+class GetAvanzadoTraslados(generics.ListAPIView):
+    serializer_class = TrasladosViverosSerializers
+    queryset = TrasladosViveros
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        fecha_desde = request.query_params.get('fecha_desde')
+        fecha_hasta = request.query_params.get('fecha_hasta')
+        vivero_origen = request.query_params.get('vivero_origen')
+        vivero_destino = request.query_params.get('vivero_destino')
+        
+        if not fecha_desde:
+            fecha_desde = datetime.now() - 30
+            print(fecha_desde)
+        # filter = {}
+        
+        # filter[key]=request.query_params.get('fecha_desde')
+        # filter[key]=request.query_params.get('fecha_hasta')
+        # if 
+        # for key,value in request.query_params.items():
+        #     if key in ['vivero_origen', 'vivero_destino']:
+        #         #auditorias = Auditorias.objects.filter(fecha_accion__range=[fecha_desde,fecha_hasta])
+        return Response({'success':True, 'detail':'Ok', 'data':'datos'}, status=status.HTTP_200_OK)
