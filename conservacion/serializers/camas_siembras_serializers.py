@@ -47,6 +47,11 @@ class CreateSiembraInventarioViveroSerializer(serializers.ModelSerializer):
             'siembra_lote_cerrada',
         )
 
+class CreateBienesConsumidosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CamasGerminacionVivero
+        fields = '__all__'
+
 class GetNumeroLoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Siembras

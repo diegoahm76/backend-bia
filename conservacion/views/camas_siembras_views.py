@@ -29,7 +29,8 @@ from conservacion.serializers.camas_siembras_serializers import (
     GetNumeroLoteSerializer,
     GetBienSembradoSerializer,
     GetCamasGerminacionSerializer,
-    CreateSiembraInventarioViveroSerializer
+    CreateSiembraInventarioViveroSerializer,
+    CreateBienesConsumidosSerializer
 )
 from almacen.models.bienes_models import (
     CatalogoBienes
@@ -112,6 +113,7 @@ class CamasGerminacion(generics.UpdateAPIView):
 class GetCamasGerminaciones(generics.ListAPIView):
     serializer_class = GetCamasGerminacionSerializer
     queryset = CamasGerminacionVivero.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         data = self.get_queryset()
@@ -241,7 +243,7 @@ class CreateSiembraView(generics.CreateAPIView):
         direccion=Util.get_client_ip(request)
         auditoria_data = {
             "id_usuario" : request.user.id_usuario,
-            "id_modulo" : 46,
+            "id_modulo" : 50,
             "cod_permiso": "CR",
             "subsistema": 'ALMA',
             "dirip": direccion,
@@ -249,17 +251,17 @@ class CreateSiembraView(generics.CreateAPIView):
         }
         Util.save_auditoria(auditoria_data)
         
+        return Response({'success': True, 'detail': 'Siembra creada exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
 
 
-
-
-
-
-        return Response({'success': True, 'detail': 'Siembra creada exitosamente'}, status=status.HTTP_201_CREATED)
-
+class CreateBienesConsumidosView(generics.CreateAPIView):
+    serializer_class = CreateBienesConsumidosSerializer
+    queryset = CamasGerminacionVivero.objects.all()
+    permission_classes = [IsAuthenticated]
 
 class GetBienSembradoView(generics.ListAPIView):
     serializer_class = GetBienSembradoSerializer
+    permission_classes = [IsAuthenticated]
     queryset = CatalogoBienes.objects.all()
 
     def get(self, request):
