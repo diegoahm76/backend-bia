@@ -1,16 +1,23 @@
 from rest_framework.response import Response
 from rest_framework import generics,status
 from django.db.models import Q
-from conservacion.serializers.etapas_serializers import InventarioViverosSerializer, GuardarCambioEtapaSerializer, ActualizarCambioEtapaSerializer
+from conservacion.serializers.etapas_serializers import (
+    InventarioViverosSerializer,
+    GuardarCambioEtapaSerializer,
+    ActualizarCambioEtapaSerializer,
+    GetCambioEtapasSerializer
+)
 from conservacion.models.inventario_models import InventarioViveros
 from conservacion.models.siembras_models import CambiosDeEtapa
 from conservacion.models.viveros_models import Vivero
 from datetime import datetime, timedelta,date
 from conservacion.utils import UtilConservacion
+from rest_framework.permissions import IsAuthenticated
 
 class FiltroMaterialVegetal(generics.ListAPIView):
     serializer_class=InventarioViverosSerializer
-    queryset=InventarioViveros
+    queryset=InventarioViveros.objects.all()
+    permission_classes=[IsAuthenticated]
     
     def get(self,request,id_vivero):
         filter={}
@@ -41,6 +48,7 @@ class FiltroMaterialVegetal(generics.ListAPIView):
 class GuardarCambioEtapa(generics.CreateAPIView):
     serializer_class=GuardarCambioEtapaSerializer
     queryset=CambiosDeEtapa.objects.all()
+    permission_classes=[IsAuthenticated]
     
     def post(self,request):
         data = request.data
@@ -179,10 +187,11 @@ class GuardarCambioEtapa(generics.CreateAPIView):
 class ActualizarCambioEtapa(generics.UpdateAPIView):
     serializer_class=ActualizarCambioEtapaSerializer
     queryset=CambiosDeEtapa.objects.all()
+    permission_classes=[IsAuthenticated]
     
     def put(self,request,pk):
         data = request.data
-        cambio_etapa = CambiosDeEtapa.objects.filter(id_cambio_de_etapa=pk).first()
+        cambio_etapa = self.queryset.all().filter(id_cambio_de_etapa=pk).first()
         if cambio_etapa:
             # VALIDAR ANTIGUEDAD POSIBLE DE FECHA CAMBIO
             if cambio_etapa.fecha_cambio.date() < date.today()-timedelta(days=30):
@@ -265,3 +274,28 @@ class ActualizarCambioEtapa(generics.UpdateAPIView):
             return Response({'success':True, 'detail':'Se realizó la actualización de manera exitosa', 'data':serializador.data}, status=status.HTTP_201_CREATED)
         else:
             return Response({'success':False, 'detail':'No existe el cambio de etapa que desea actualizar'}, status=status.HTTP_404_NOT_FOUND)
+        
+        
+class FiltroCambioEtapa(generics.ListAPIView):
+    serializer_class=GetCambioEtapasSerializer
+    queryset=CambiosDeEtapa.objects.all()
+    permission_classes=[IsAuthenticated]
+    
+    def get(self,request,id_vivero):
+        filter={}
+        for key,value in request.query_params.items():
+            if key in ['codigo_bien','nombre','cod_etapa_lote_origen','agno_lote']:
+                if key != "cod_etapa_lote_origen" and key != 'agno_lote':
+                    filter['id_bien__'+key+'__icontains'] = value
+                else:
+                    filter[key] = value
+                    
+        vivero=Vivero.objects.filter(id_vivero=id_vivero).first()
+        
+        if not vivero:
+            return Response({'success':False,'detail':'El Vivero seleccionado no existe'},status=status.HTTP_404_NOT_FOUND)
+        
+        cambio_etapa=CambiosDeEtapa.objects.filter(**filter).filter(id_vivero=id_vivero)
+        serializador=self.serializer_class(cambio_etapa,many=True)    
+        return Response ({'success':True,'detail':'Se encontraron las siguientes coincidencias','data':serializador.data},status=status.HTTP_200_OK)
+    

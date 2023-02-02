@@ -51,3 +51,27 @@ class ActualizarCambioEtapaSerializer(serializers.ModelSerializer):
         model =  CambiosDeEtapa
         fields = ['cantidad_movida', 'altura_lote_en_cms', 'observaciones',
                   'id_persona_cambia', 'ruta_archivo_soporte']
+        
+class GetCambioEtapasSerializer(serializers.ModelSerializer):
+    codigo = serializers.ReadOnlyField(source='id_bien.codigo_bien',default=None)
+    nombre = serializers.ReadOnlyField(source='id_bien.nombre',default=None)
+    cod_etapa_lote_destino = serializers.SerializerMethodField()
+    desc_etapa_lote_origen = serializers.SerializerMethodField()
+    desc_etapa_lote_destino = serializers.SerializerMethodField()
+    
+    def get_cod_etapa_lote_destino(self,obj):
+        cod_etapa_lote_destino= 'P' if obj.cod_etapa_lote_origen == 'G' else 'D'
+        return cod_etapa_lote_destino
+    
+    def get_desc_etapa_lote_origen(self,obj):
+        desc_etapa_lote_origen= 'Camas de Germinación' if obj.cod_etapa_lote_origen == 'G' else 'Producción'
+        return desc_etapa_lote_origen
+    
+    def get_desc_etapa_lote_destino (self,obj):
+        desc_etapa_lote_destino= 'Produccion' if obj.cod_etapa_lote_origen == 'P' else 'Distribución'
+        return desc_etapa_lote_destino
+    
+    class Meta:
+        
+        model = CambiosDeEtapa
+        fields = ['codigo','nombre','agno_lote','nro_lote','consec_por_lote_etapa','cod_etapa_lote_origen', 'cod_etapa_lote_destino', 'desc_etapa_lote_origen', 'desc_etapa_lote_destino']
