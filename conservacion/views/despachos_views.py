@@ -120,6 +120,7 @@ class GuardarDistribucionBienes(generics.ListAPIView):
 class ConfirmarDistribucion(generics.UpdateAPIView):
     serializer_class=DistribucionesItemDespachoEntranteSerializer
     queryset=DistribucionesItemDespachoEntrante.objects.all()
+    permission_classes = [IsAuthenticated]
     
     def put(self,request,id_despacho_entrante):
         
@@ -185,7 +186,7 @@ class ConfirmarDistribucion(generics.UpdateAPIView):
                 "distribucion_confirmada": str(despacho_entrante_previous.distribucion_confirmada),
                 "fecha_confirmacion_distribucion": str(despacho_entrante_previous.fecha_confirmacion_distribucion),
                 "observacion_distribucion": str(despacho_entrante_previous.observacion_distribucion),
-                "persona_distribuye": str(despacho_entrante_previous.id_persona_distribuye.primer_nombre + ' ' + despacho_entrante_previous.id_persona_distribuye.primer_apellido if despacho_entrante_previous.id_persona_distribuye.tipo_persona=='N' else despacho_entrante_previous.id_persona_distribuye.razon_social)
+                "persona_distribuye": (str(despacho_entrante_previous.id_persona_distribuye.primer_nombre + ' ' + despacho_entrante_previous.id_persona_distribuye.primer_apellido if despacho_entrante_previous.id_persona_distribuye.tipo_persona=='N' else despacho_entrante_previous.id_persona_distribuye.razon_social)) if despacho_entrante_previous.id_persona_distribuye else None
             }
             valores_actualizados={'previous':despacho_entrante_previous, 'current':despacho_entrante}
             direccion=Util.get_client_ip(request)
@@ -207,6 +208,7 @@ class ConfirmarDistribucion(generics.UpdateAPIView):
 class GetItemsPredistribuidos(generics.ListAPIView):
     serializer_class=DistribucionesItemPreDistribuidoSerializer
     queryset=DistribucionesItemDespachoEntrante
+    permission_classes = [IsAuthenticated]
     
     def get(self,request,pk):
         despacho_entrante=DespachoEntrantes.objects.filter(id_despacho_entrante=pk).first()

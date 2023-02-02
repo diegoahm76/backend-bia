@@ -68,10 +68,18 @@ class GetCambioEtapasSerializer(serializers.ModelSerializer):
         return desc_etapa_lote_origen
     
     def get_desc_etapa_lote_destino (self,obj):
-        desc_etapa_lote_destino= 'Produccion' if obj.cod_etapa_lote_origen == 'P' else 'Distribución'
+        desc_etapa_lote_destino= 'Produccion' if obj.cod_etapa_lote_origen == 'G' else 'Distribución'
         return desc_etapa_lote_destino
     
     class Meta:
         
         model = CambiosDeEtapa
         fields = ['codigo','nombre','agno_lote','nro_lote','consec_por_lote_etapa','cod_etapa_lote_origen', 'cod_etapa_lote_destino', 'desc_etapa_lote_origen', 'desc_etapa_lote_destino']
+        
+class AnularCambioEtapaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  CambiosDeEtapa
+        fields = ['id_persona_anula', 'cambio_anulado', 'fecha_anulacion', 'justificacion_anulacion']
+        extra_kwargs = {
+            'justificacion_anulacion': {'required': True}
+        }

@@ -7,4 +7,5 @@ urlpatterns = [
     path('guardar-cambio-etapa/',views.GuardarCambioEtapa.as_view(),name='guardar-cambio-etapa'),
     path('actualizar-cambio-etapa/<str:pk>/',views.ActualizarCambioEtapa.as_view(),name='actualizar-cambio-etapa'),
     path('filtro-cambio-etapa/<str:id_vivero>/',views.FiltroCambioEtapa.as_view(),name='filtro-cambio-etapa'),
+    path('anular-cambio-etapa/<str:pk>/',views.AnularCambioEtapa.as_view(),name='anular-cambio-etapa')
 ]
