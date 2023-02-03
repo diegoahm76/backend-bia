@@ -508,5 +508,15 @@
           "subsistema":"CONS",
           "descripcion":"Permite realizar el cambio de etapa de unidades de material vegetal de un lote específico"
         }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 52,
+        "fields": {
+          "id_modulo": 52,
+          "nombre_modulo": "Traslados entre viveros",
+          "subsistema":"CONS",
+          "descripcion":"Permite trasladar bienes entre viveros"
+        }
       }
   ]
