@@ -6,6 +6,7 @@ from conservacion.models.inventario_models import InventarioViveros
 from conservacion.models.viveros_models import Vivero
 from conservacion.models.traslados_models import TrasladosViveros, ItemsTrasladoViveros
 from almacen.models.bienes_models import CatalogoBienes
+from seguridad.models import Personas, User
 from conservacion.models.siembras_models import CambiosDeEtapa
 from conservacion.choices.cod_etapa_lote import cod_etapa_lote_CHOICES
 from datetime import datetime, timedelta
@@ -604,3 +605,98 @@ class TrasladosActualizar(generics.UpdateAPIView):
         }
         Util.save_auditoria_maestro_detalle(auditoria_data)
         return Response({'success':True, 'detail':'Traslado actualizado con éxito'}, status=status.HTTP_200_OK)
+
+class TrasladosAnular(generics.UpdateAPIView):
+    serializer_class = TrasladosViverosSerializers
+    queryset = TrasladosViveros.objects.all()
+    permission_classes = [IsAuthenticated]
+    serializer_items_traslado = ItemsTrasladosViverosSerielizers
+    
+    def put(self, request, id_traslado_a_anular):
+        datos_ingresados = request.data
+        instancia_traslado = TrasladosViveros.objects.filter(id_traslado=id_traslado_a_anular).first()
+        if not instancia_traslado:
+            return Response({'success':False,'detail':'No existe el traslado que desea anular.'}, status=status.HTTP_400_BAD_REQUEST)
+        if instancia_traslado.traslado_anulado == True:
+            return Response({'success':False,'detail':'Este traslado ya fue anulado.'}, status=status.HTTP_400_BAD_REQUEST)
+        items_del_traslado = ItemsTrasladoViveros.objects.filter(id_traslado=instancia_traslado.id_traslado)
+        if not items_del_traslado:
+            return Response({'success':False,'detail':'Este traslado no tiene items asociados o ya fue anulado.'}, status=status.HTTP_400_BAD_REQUEST)
+        valores_eliminados_detalles = []
+        for i in items_del_traslado:
+            aux_validaciones_items = ItemsTrasladoViveros.objects.filter(id_item_traslado_viveros=i.id_item_traslado_viveros).first()
+            if not aux_validaciones_items:
+                return Response({'success':False,'detail':'No se encontró el item a eliminar'}, status=status.HTTP_404_NOT_FOUND)
+            aux_bien = CatalogoBienes.objects.filter(id_bien=aux_validaciones_items.id_bien_origen.id_bien).first()
+            if not aux_bien:
+                return Response({'success':False,'detail':'No se encontró el bien a eliminar'}, status=status.HTTP_404_NOT_FOUND)
+            # SE INSTANCIAN LOS VIVEROS
+            if (aux_bien.cod_tipo_elemento_vivero == 'IN' or aux_bien.cod_tipo_elemento_vivero == 'HE' or (aux_bien.cod_tipo_elemento_vivero == 'MV' and aux_bien.es_semilla_vivero == True)):
+                instancia_inventario_vivero_origen = InventarioViveros.objects.filter(id_vivero=instancia_traslado.id_vivero_origen.id_vivero,id_bien=aux_bien.id_bien).first()
+                instancia_inventario_vivero_destino = InventarioViveros.objects.filter(id_vivero=instancia_traslado.id_vivero_destino.id_vivero,id_bien=aux_bien.id_bien).first()
+            if (aux_bien.cod_tipo_elemento_vivero == 'MV' and aux_bien.es_semilla_vivero == False):
+                instancia_inventario_vivero_origen = InventarioViveros.objects.filter(id_vivero=instancia_traslado.id_vivero_origen.id_vivero,id_bien=aux_bien.id_bien,agno_lote=aux_validaciones_items.agno_lote_origen,nro_lote=aux_validaciones_items.nro_lote_origen,cod_etapa_lote=aux_validaciones_items.cod_etapa_lote_origen).first()
+                instancia_inventario_vivero_destino = InventarioViveros.objects.filter(id_vivero=instancia_traslado.id_vivero_destino.id_vivero,id_bien=aux_bien.id_bien,agno_lote=aux_validaciones_items.agno_lote_destino_MV,nro_lote=aux_validaciones_items.nro_lote_destino_MV,cod_etapa_lote=aux_validaciones_items.cod_etapa_lote_destino_MV).first()
+            if not instancia_inventario_vivero_origen or not instancia_inventario_vivero_destino:
+                return Response({'success':False,'detail':'No se encontró el registro en el inventario a eliminar'}, status=status.HTTP_404_NOT_FOUND)
+            # SE VALIDA QUE LAS CANTIDADES SEAN MAYORES A CERO
+            if ((instancia_inventario_vivero_destino.cantidad_bajas != 0 and instancia_inventario_vivero_destino.cantidad_bajas != None) or (instancia_inventario_vivero_destino.cantidad_consumos_internos != 0 and instancia_inventario_vivero_destino.cantidad_consumos_internos != None) or (instancia_inventario_vivero_destino.cantidad_salidas != 0 and instancia_inventario_vivero_destino.cantidad_salidas != None) 
+                or (instancia_inventario_vivero_destino.cantidad_lote_cuarentena != 0 and instancia_inventario_vivero_destino.cantidad_lote_cuarentena != None) or (instancia_inventario_vivero_destino.cantidad_traslados_lote_produccion_distribucion != 0 and instancia_inventario_vivero_destino.cantidad_traslados_lote_produccion_distribucion != None)):
+                instancia_inventario_vivero_destino.cantidad_entrante = instancia_inventario_vivero_destino.cantidad_entrante - aux_validaciones_items.cantidad_a_trasladar
+                if (aux_bien.cod_tipo_elemento_vivero == 'IN' or aux_bien.cod_tipo_elemento_vivero == 'HE' or (aux_bien.cod_tipo_elemento_vivero == 'MV' and aux_bien.es_semilla_vivero == True)):
+                    if (aux_bien.cod_tipo_elemento_vivero == 'MV'and aux_bien.es_semilla_vivero == True) or aux_bien.cod_tipo_elemento_vivero == 'IN':
+                        saldo_disponible = instancia_inventario_vivero_destino.cantidad_entrante - instancia_inventario_vivero_destino.cantidad_bajas - instancia_inventario_vivero_destino.cantidad_consumos_internos - instancia_inventario_vivero_destino.cantidad_salidas
+                    elif aux_bien.cod_tipo_elemento_vivero == 'HE':
+                        saldo_disponible = instancia_inventario_vivero_destino.cantidad_entrante - instancia_inventario_vivero_destino.cantidad_bajas - instancia_inventario_vivero_destino.cantidad_salidas
+                elif (aux_bien.cod_tipo_elemento_vivero == 'MV' and aux_bien.es_semilla_vivero == False):
+                    if instancia_inventario_vivero_origen.cantidad_entrante == None:
+                        return Response({'success':False,'detail':'En el item nro: (' + str(aux_validaciones_items.nro_posicion) + '). El bien en el vivero no tiene catidad de entrada'}, status=status.HTTP_404_NOT_FOUND)
+                    if instancia_inventario_vivero_destino.cod_etapa_lote == 'P':
+                        return Response({'success':False,'detail':'En el item nro: (' + str(aux_validaciones_items.nro_posicion) + '). El bien no puede borrarse del traslado porque ya tiene salidas, consumos, distribuciones o está en cuarentena'}, status=status.HTTP_404_NOT_FOUND)
+                    if instancia_inventario_vivero_destino.cod_etapa_lote == 'D':
+                        return Response({'success':False,'detail':'En el item nro: (' + str(aux_validaciones_items.nro_posicion) + '). El bien no puede borrarse del traslado porque ya tiene salidas, consumos, distribuciones o está en cuarentena'}, status=status.HTTP_404_NOT_FOUND)
+                if saldo_disponible < 0:
+                    return Response({'success':False,'detail':'Error en el item nro: (' + str(aux_validaciones_items.nro_posicion) + '). No es posible actualizar la cantidad debido a que si se ejectua la operación quedaría un saldo negativo en la actualidad.'}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    instancia_inventario_vivero_origen.cantidad_salidas = instancia_inventario_vivero_origen.cantidad_salidas - aux_validaciones_items.cantidad_a_trasladar
+                aux_validaciones_items.delete()
+            else:
+                if (aux_bien.cod_tipo_elemento_vivero == 'MV' and aux_bien.es_semilla_vivero == False):
+                    if instancia_inventario_vivero_destino.cod_etapa_lote == 'P' or instancia_inventario_vivero_destino.cod_etapa_lote == 'D':
+                        if instancia_inventario_vivero_destino.fecha_ingreso_lote_etapa != instancia_inventario_vivero_destino.fecha_ult_altura_lote:
+                            return Response({'success':False,'detail':'En el item nro: (' + str(aux_validaciones_items.nro_posicion) + '). El bien no puede borrarse debido a que tiene registros de altura posteriores a la fecha de creación del traslado.'}, status=status.HTTP_404_NOT_FOUND)
+                        else:
+                            instancia_inventario_vivero_origen.cantidad_salidas = instancia_inventario_vivero_origen.cantidad_salidas - aux_validaciones_items.cantidad_a_trasladar
+                            instancia_inventario_vivero_destino.delete()
+                            aux_validaciones_items.delete()
+                if (aux_bien.cod_tipo_elemento_vivero == 'IN' or aux_bien.cod_tipo_elemento_vivero == 'HE' or (aux_bien.cod_tipo_elemento_vivero == 'MV' and aux_bien.es_semilla_vivero == True)):
+                    if (instancia_inventario_vivero_destino.cantidad_entrante - aux_validaciones_items.cantidad_a_trasladar) != 0:
+                        instancia_inventario_vivero_origen.cantidad_salidas = instancia_inventario_vivero_origen.cantidad_salidas - aux_validaciones_items.cantidad_a_trasladar
+                        instancia_inventario_vivero_destino.cantidad_entrante = instancia_inventario_vivero_destino.cantidad_entrante - aux_validaciones_items.cantidad_a_trasladar
+                        aux_validaciones_items.delete()
+                    else:
+                        instancia_inventario_vivero_origen.cantidad_salidas = instancia_inventario_vivero_origen.cantidad_salidas - aux_validaciones_items.cantidad_a_trasladar
+                        instancia_inventario_vivero_destino.delete()
+                        aux_validaciones_items.delete()
+            valores_eliminados_detalles.append({'nombre' : aux_bien.nombre})
+        persona_anula = Personas.objects.filter(id_persona=request.user.persona.id_persona).first()
+        instancia_traslado.justificacion_anulacion = datos_ingresados['justificacion_anulacion']
+        instancia_traslado.fecha_anulado = datetime.now()
+        instancia_traslado.id_persona_anula = persona_anula
+        instancia_traslado.traslado_anulado = True
+        instancia_traslado.save()
+        
+        descripcion = {"numero_traslado": str(instancia_traslado.nro_traslado), "fecha_traslado": str(instancia_traslado.fecha_traslado)}
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 52,
+            "cod_permiso": "AC",
+            "subsistema": 'CONS',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_eliminados_detalles": valores_eliminados_detalles
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
+        
+        return Response({'success':True, 'detail':'Traslado anulado con éxito'}, status=status.HTTP_200_OK)
