@@ -48,7 +48,7 @@ class TrasladosCreate(generics.UpdateAPIView):
             (instancia_vivero_destino.fecha_ultima_apertura == None) or (instancia_vivero_destino.fecha_cierre_actual != None) or 
             (instancia_vivero_origen.fecha_ultima_apertura == None) or (instancia_vivero_origen.fecha_cierre_actual != None)):
             return Response({'success':False,'detail':'Unos de los dos viveros está cerrado o no se encuentran activos'}, status=status.HTTP_400_BAD_REQUEST)
-        # SE VALDIA QUE AL MENOS INGRESEN UN BIEN PARA EJECUTAR EL TRASLADO
+        # SE VALIDA QUE AL MENOS INGRESEN UN BIEN PARA EJECUTAR EL TRASLADO
         if items_traslado == []:
             return Response({'success':False,'detail':'Debe ingresar al menos un bien para ejecutar un traslado'}, status=status.HTTP_400_BAD_REQUEST)
         # SE VALIDA QUE EXISTE AL MENOS UNA CANTIDAD MAYOR A CERO
@@ -99,10 +99,11 @@ class TrasladosCreate(generics.UpdateAPIView):
             # SE ASIGNA EL AÑO DEL LOTE Y EL NÚMERO DEL LOTE
             i['agno_lote_destino_MV'] = info_traslado['fecha_traslado'].year
             aux_get_ultimo_nro_lote_by_agno = InventarioViveros.objects.filter(id_bien=i['id_bien_origen'],agno_lote=i['agno_lote_destino_MV']).order_by('nro_lote').last()
-            if not aux_get_ultimo_nro_lote_by_agno:
-                i['nro_lote_destino_MV'] = 1
-            else:
-                i['nro_lote_destino_MV'] = aux_get_ultimo_nro_lote_by_agno.nro_lote + 1 
+            if instancia_bien.cod_tipo_elemento_vivero == 'MV'and instancia_bien.es_semilla_vivero == False:
+                if not aux_get_ultimo_nro_lote_by_agno:
+                    i['nro_lote_destino_MV'] = 1
+                else:
+                    i['nro_lote_destino_MV'] = aux_get_ultimo_nro_lote_by_agno.nro_lote + 1 
             if i['nro_posicion'] in aux_nro_posicion:
                 return Response({'success':False,'detail':'Error en el item nro: (' + str(i['nro_posicion']) + '). El número d eposición debe ser único'}, status=status.HTTP_400_BAD_REQUEST)
             aux_nro_posicion.append(i['nro_posicion'])
@@ -419,10 +420,11 @@ class TrasladosActualizar(generics.UpdateAPIView):
                 # SE ASIGNA EL AÑO DEL LOTE Y EL NÚMERO DEL LOTE
                 i['agno_lote_destino_MV'] = instancia_traslado.fecha_traslado.year
                 aux_get_ultimo_nro_lote_by_agno = InventarioViveros.objects.filter(id_bien=i['id_bien_origen'],agno_lote=i['agno_lote_destino_MV']).order_by('nro_lote').last()
-                if not aux_get_ultimo_nro_lote_by_agno:
-                    i['nro_lote_destino_MV'] = 1
-                else:
-                    i['nro_lote_destino_MV'] = aux_get_ultimo_nro_lote_by_agno.nro_lote + 1 
+                if instancia_bien.cod_tipo_elemento_vivero == 'MV'and instancia_bien.es_semilla_vivero == False:
+                    if not aux_get_ultimo_nro_lote_by_agno:
+                        i['nro_lote_destino_MV'] = 1
+                    else:
+                        i['nro_lote_destino_MV'] = aux_get_ultimo_nro_lote_by_agno.nro_lote + 1 
                 if i['nro_posicion'] in aux_nro_posicion:
                     return Response({'success':False,'detail':'Error en el item nro: (' + str(i['nro_posicion']) + '). El número d eposición debe ser único'}, status=status.HTTP_400_BAD_REQUEST)
                 i['id_traslado'] = instancia_traslado.id_traslado
