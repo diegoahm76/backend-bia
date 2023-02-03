@@ -1,6 +1,7 @@
 from seguridad.serializers.roles_serializers import RolesSerializer
 from rest_framework.validators import UniqueTogetherValidator
 from rest_framework import serializers
+from seguridad.choices.subsistemas_choices import subsistemas_CHOICES
 from seguridad.models import (
     Permisos, 
     PermisosModulo, 
@@ -37,6 +38,37 @@ class PermisosModuloRolSerializer(serializers.ModelSerializer):
     class Meta:
         model = PermisosModuloRol
         fields = '__all__'
+
+class GetPermisosRolSerializer(serializers.ModelSerializer):
+    id_permiso_modulo = serializers.ReadOnlyField(source='id_permiso_modulo.id_permisos_modulo', default=None)
+    cod_permiso = serializers.ReadOnlyField(source='id_permiso_modulo.cod_permiso.cod_permiso', default=None)
+    nombre_permiso = serializers.ReadOnlyField(source='id_permiso_modulo.cod_permiso.nombre_permiso', default=None)
+    
+    class Meta:
+        model = PermisosModuloRol
+        fields = ['id_permiso_modulo', 'cod_permiso', 'nombre_permiso']
+        
+class ModulosRolSerializer(serializers.ModelSerializer):
+    desc_subsistema = serializers.SerializerMethodField()
+    permisos = serializers.SerializerMethodField()
+    
+    def get_permisos(self, obj):
+        id_rol = self.context.get("id_rol")
+        permisos_modulo_rol = PermisosModuloRol.objects.filter(id_permiso_modulo__id_modulo=obj.id_modulo, id_rol=id_rol)
+        permisos = GetPermisosRolSerializer(permisos_modulo_rol, many=True)
+        return permisos.data
+    
+    def get_desc_subsistema(self, obj):
+        desc_subsistema = None
+        
+        diccionario_subsistemas = dict((x,y) for x,y in subsistemas_CHOICES) # transforma un choices en un diccionario
+        desc_subsistema = diccionario_subsistemas[obj.subsistema] if obj.subsistema else None
+        
+        return desc_subsistema
+    
+    class Meta:
+        model = Modulos
+        fields = ['id_modulo', 'nombre_modulo', 'descripcion', 'subsistema', 'desc_subsistema', 'permisos']
 
 class PermisosModuloRolSerializerHyper(serializers.HyperlinkedModelSerializer):
     class Meta:
