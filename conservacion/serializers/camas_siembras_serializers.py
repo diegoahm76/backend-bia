@@ -64,7 +64,19 @@ class GetBienSembradoSerializer(serializers.ModelSerializer):
 class GetSiembraSerializer(serializers.ModelSerializer):
     class Meta:
         model = Siembras
-        fields = '__all__'
+        fields = (
+            'id_siembra',
+            'id_vivero',
+            'id_bien_sembrado',
+            'agno_lote',
+            'nro_lote',
+            'fecha_siembra',
+            'fecha_registro',
+            'observaciones',
+            'distancia_entre_semillas',
+            'id_persona_siembra',
+            'ruta_archivo_soporte'
+        )
 
 
 class GetBienesPorConsumirSerializer(serializers.ModelSerializer):
@@ -86,4 +98,15 @@ class GetBienesPorConsumirSerializer(serializers.ModelSerializer):
             'tipo_bien',
             'cantidad_disponible_bien',
             'unidad_disponible'
+        )
+
+
+class UpdateSiembraSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Siembras
+        fields = (
+            'observaciones',
+            'distancia_entre_semillas',
+            'id_persona_siembra',
+            'cama_germinacion'
         )

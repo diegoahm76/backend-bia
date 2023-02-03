@@ -149,8 +149,9 @@ class ConfirmarDistribucion(generics.UpdateAPIView):
                 if despacho_entrante.distribucion_confirmada == True:
                     if item_despacho_entrante.id_bien.cod_tipo_elemento_vivero == "HE" or item_despacho_entrante.id_bien.cod_tipo_elemento_vivero == "IN" or (item_despacho_entrante.id_bien.cod_tipo_elemento_vivero == "MV" and item_despacho_entrante.id_bien.es_semilla_vivero == True):
                         
-                        vivero_destino=InventarioViveros.objects.filter(id_vivero=item['id_vivero'],id_bien=item_despacho_entrante.id_bien.id_bien).first()
+                        vivero_destino=InventarioViveros.objects.filter(id_vivero=item['id_vivero'],id_bien=item_despacho_entrante.id_bien.id_bien, id_siembra_lote_germinacion=None).first()
                         if vivero_destino:
+                            vivero_destino.cantidad_entrante = vivero_destino.cantidad_entrante if vivero_destino.cantidad_entrante else 0
                             vivero_destino.cantidad_entrante += item['cantidad_asignada']
                             vivero_destino.save()
                             

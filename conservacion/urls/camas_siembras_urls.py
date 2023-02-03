@@ -7,6 +7,7 @@ urlpatterns = [
     
     #SIEMBRAS
     path('siembra/create/', views.CreateSiembraView.as_view(), name='crear-siembra'),
+    path('siembra/update/<str:id_siembra>/', views.UpdateSiembraView.as_view(), name='update-siembra'),
     path('siembra/get-viveros/', views.FilterViverosByNombreAndMunicipioView.as_view(), name='get-numero-lote'),
     path('siembra/get-material-vegetal/', views.GetBienSembradoView.as_view(), name='get-material-vegetal'),
     path('siembra/get-camas-germinacion/', views.GetCamasGerminacionesView.as_view(), name='get-camas-germinacion'),
