@@ -195,7 +195,14 @@ class CreateSiembraView(generics.CreateAPIView):
             return Response({'success': False, 'detail': 'No se puede crear una siembra sin una cama de germinación'}, status=status.HTTP_400_BAD_REQUEST)
         cama = CamasGerminacionVivero.objects.filter(id_cama_germinacion_vivero__in=data_siembra['cama_germinacion'])
         if len(set(data_siembra['cama_germinacion'])) != len(cama):
-            return Response({'success': False, 'detail': 'No se encontró ninguna cama de germinación con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': False, 'detail': 'Todas las camas seleccionadas deben existir'}, status=status.HTTP_404_NOT_FOUND)
+        
+        #VALIDACIÓN QUE TODAS LAS CAMAS ENVIADAS PERTENEZCAN AL VIVERO DE LA SIEMBRA
+        id_viveros_camas_list = [camita.id_vivero.id_vivero for camita in cama] 
+        if len(set(id_viveros_camas_list)) > 1:
+            return Response({'success': False, 'detail': 'Las camas seleccionadas deben estar relacionadas a solo un vivero'}, status=status.HTTP_400_BAD_REQUEST)
+        if int(id_viveros_camas_list[0]) != int(data_siembra['id_vivero']):
+            return Response({'success': False, 'detail': 'Las camas seleccionadas deben estar relacionadas al mismo vivero que la siembra'}, status=status.HTTP_400_BAD_REQUEST)
 
         #CREACIÓN SIEMBRA
         siembra_dict = {
@@ -361,7 +368,6 @@ class UpdateSiembraView(generics.RetrieveUpdateAPIView):
             return Response({'success': False, 'detail': 'Todas las camas seleccionadas deben existir'}, status=status.HTTP_400_BAD_REQUEST)
         
         #VALIDACIÓN QUE TODAS LAS CAMAS ENVIADAS PERTENEZCAN AL VIVERO DE LA SIEMBRA
-        
         id_viveros_camas_list = [cama.id_vivero.id_vivero for cama in camas_list] 
         if len(set(id_viveros_camas_list)) > 1:
             return Response({'success': False, 'detail': 'Las camas seleccionadas deben estar relacionadas a solo un vivero'}, status=status.HTTP_400_BAD_REQUEST)

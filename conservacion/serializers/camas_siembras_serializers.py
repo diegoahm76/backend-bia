@@ -107,6 +107,5 @@ class UpdateSiembraSerializer(serializers.ModelSerializer):
         fields = (
             'observaciones',
             'distancia_entre_semillas',
-            'id_persona_siembra',
-            'cama_germinacion'
+            'id_persona_siembra'
         )
