@@ -14,7 +14,7 @@ from conservacion.models.siembras_models import (
 class InventarioViveros(models.Model):
     id_inventario_vivero = models.AutoField(primary_key=True, editable=False, db_column='T156IdInventarioViveros')
     id_vivero = models.ForeignKey(Vivero, on_delete=models.CASCADE, db_column='T156Id_Vivero')
-    id_bien = models.ForeignKey(CatalogoBienes, on_delete=models.CASCADE, db_column='T156Id_Bien')
+    id_bien = models.ForeignKey(CatalogoBienes, on_delete=models.SET_NULL, null=True, blank=True, db_column='T156Id_Bien')
     agno_lote = models.PositiveSmallIntegerField(null=True, blank=True, db_column='T156agnoLote')
     nro_lote = models.PositiveIntegerField(null=True, blank=True, db_column='T156nroLote')
     cod_etapa_lote = models.CharField(max_length=1, choices=cod_etapa_lote_CHOICES, null=True, blank=True, db_column='T156codEtapaLote')
