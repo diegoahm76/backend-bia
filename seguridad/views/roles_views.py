@@ -1,9 +1,9 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from seguridad.models import Roles, User,UsuariosRol, Auditorias, Permisos, Modulos
-from rest_framework import status,viewsets,mixins
-from seguridad.serializers.roles_serializers import RolesSerializer, UsuarioRolesSerializers
+from seguridad.models import Roles, UsuariosRol,User, Personas, UsuariosRol
+from rest_framework import status
+from seguridad.serializers.roles_serializers import RolesSerializer, UsuarioRolesSerializers,RolesByIdUsuarioSerializer
 from seguridad.serializers.user_serializers import UsuarioRolesLookSerializers
 from django.db.models import Q
 from rest_framework.permissions import IsAuthenticated
@@ -11,9 +11,8 @@ from seguridad.permissions.permissions_roles import PermisoActualizarRoles,Permi
 from rest_framework.response import Response    
 from rest_framework.generics import ListAPIView, CreateAPIView , RetrieveAPIView, DestroyAPIView, UpdateAPIView, RetrieveUpdateAPIView
 from rest_framework import generics
-from datetime import datetime
 from seguridad.utils import Util
-   
+
 class GetRolesByUser(ListAPIView):
     serializer_class = UsuarioRolesLookSerializers
     def get_queryset(self):
@@ -190,9 +189,6 @@ def registerRol(request):
         message = {'detail': ''}
         return Response(message, status=status.HTTP_400_BAD_REQUEST)
 
-
-    
-
 class UpdateRol(RetrieveUpdateAPIView):
     queryset=Roles.objects.all()
     permission_classes = [IsAuthenticated, PermisoActualizarRoles]
@@ -216,3 +212,34 @@ class UpdateRol(RetrieveUpdateAPIView):
                     return Response({'success':False,'detail': 'No se puede actualizar un rol precargado'},status=status.HTTP_403_FORBIDDEN)
             else:
                 return Response({'success':False,'detail':'No existe el rol ingresado'},status=status.HTTP_404_NOT_FOUND)
+            
+
+class GetRolesByIdPersona(generics.ListAPIView):
+    serializer_class = RolesByIdUsuarioSerializer
+    queryset= Roles.objects.all()    
+    
+    def get(self,request,id_usuario):
+        
+        usuario=User.objects.filter(persona = id_usuario).first()
+        
+        representante_legal=Personas.objects.filter(representante_legal=usuario.persona.id_persona)
+        list_representante_legal=[representante.id_persona for representante in representante_legal]
+        
+        usuarios=User.objects.filter(persona__in=list_representante_legal)
+        
+        list_usuarios=[usuario.id_usuario for usuario in usuarios]
+        list_usuarios_representante_legal=list_usuarios.copy()
+        list_usuarios.append(usuario.id_usuario)
+
+        usuario_rol = UsuariosRol.objects.filter(id_usuario__in=list_usuarios)
+        
+        roles=[]
+        for rol in usuario_rol:
+            rol_usuario = rol.id_rol
+            if rol.id_usuario.id_usuario in list_usuarios_representante_legal:
+                rol_usuario.representante_legal = True
+                rol_usuario.nombre_empresa = rol.id_usuario.persona.razon_social
+            roles.append(rol_usuario)
+        serializador= self.serializer_class(roles, many= True)
+            
+        return Response({'success':True,'detail':'Correcto','data':serializador.data},status=status.HTTP_200_OK)
