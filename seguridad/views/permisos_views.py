@@ -7,10 +7,20 @@ from rest_framework.response import Response
 from seguridad.models import Permisos, PermisosModulo, PermisosModuloRol, Modulos, User, Auditorias, Roles
 from rest_framework import status,viewsets,mixins
 from rest_framework import status
-from seguridad.serializers.permisos_serializers import PermisosSerializer, PermisosModuloSerializer, PermisosModuloPostSerializer, PermisosModuloRolPostSerializer, PermisosModuloRolSerializer, ModulosSerializers, PermisosModuloRolSerializerHyper
+from seguridad.serializers.permisos_serializers import (
+    PermisosSerializer,
+    PermisosModuloSerializer,
+    PermisosModuloPostSerializer,
+    PermisosModuloRolPostSerializer,
+    PermisosModuloRolSerializer,
+    ModulosSerializers,
+    PermisosModuloRolSerializerHyper,
+    GetPermisosRolSerializer,
+    ModulosRolSerializer
+)
 from rest_framework.generics import ListAPIView, CreateAPIView , RetrieveAPIView, DestroyAPIView, UpdateAPIView, RetrieveUpdateAPIView
 from seguridad.utils import Util
-import datetime
+import datetime, operator, itertools
 
 class ListarPermisos(ListAPIView):
     serializer_class = PermisosSerializer
@@ -144,7 +154,36 @@ class ListarPermisosModuloRolByRol(ListAPIView):
         permisos_modulo_rol = PermisosModuloRol.objects.filter(id_rol=pk)
         serializer = self.serializer_class(permisos_modulo_rol, many=True)
         return Response({'success':True,'data':serializer.data}, status=status.HTTP_200_OK)
-    
+
+class GetPermisosRolByRol(ListAPIView):
+    serializer_class = GetPermisosRolSerializer
+    queryset = PermisosModuloRol.objects.all()
+    def get(self, request, id_rol):
+        permisos_modulo_rol = self.queryset.all().filter(id_rol=id_rol)
+        modulos_list = [permiso_modulo_rol.id_permiso_modulo.id_modulo.id_modulo for permiso_modulo_rol in permisos_modulo_rol]
+        modulos = Modulos.objects.filter(id_modulo__in=modulos_list)
+        serializer_modulos = ModulosRolSerializer(modulos, many=True, context={'id_rol': id_rol})
+        modulos_data = serializer_modulos.data
+        
+        modulos_data = sorted(modulos_data, key=operator.itemgetter("subsistema", "desc_subsistema"))
+        outputList = []
+        
+        for subsistema, info_modulos in itertools.groupby(modulos_data, key=operator.itemgetter("subsistema", "desc_subsistema")):
+            modulos = list(info_modulos)
+            
+            for modulo in modulos:
+                del modulo['subsistema']
+                del modulo['desc_subsistema']
+                
+            subsistema_data = {
+                "subsistema": subsistema[0],
+                "desc_subsistema": subsistema[1],
+                "modulos": modulos
+            }
+            outputList.append(subsistema_data)
+            
+        return Response({'success':True,'detail':'El rol ingresado tiene acceso a lo siguiente', 'data':outputList}, status=status.HTTP_200_OK)
+
 #----------------------------------------------------->Tabla Modulos
 
 class ListarModulo(ListAPIView):

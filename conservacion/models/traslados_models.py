@@ -43,8 +43,9 @@ class ItemsTrasladoViveros(models.Model):
     agno_lote_destino_MV = models.PositiveSmallIntegerField(null=True, blank=True, db_column='T163agnoLoteDestinoMV')
     nro_lote_destino_MV = models.PositiveIntegerField(null=True, blank=True, db_column='T163nroLoteDestinoMV')
     cod_etapa_lote_destino_MV = models.CharField(max_length=1, null=True, blank=True, choices=cod_etapa_lote_CHOICES, db_column='T163codEtapaLoteDestinoMV')
-    cantidad_a_atrasladar = models.PositiveIntegerField(db_column='T163cantidadATrasladar')
-    altura_lote_destion_en_cms = models.PositiveSmallIntegerField(db_column='T163alturaLoteDestinoEnCms')
+    cantidad_a_trasladar = models.PositiveIntegerField(db_column='T163cantidadATrasladar')
+    altura_lote_destion_en_cms = models.PositiveSmallIntegerField(null=True, blank=True, db_column='T163alturaLoteDestinoEnCms')
+    nro_posicion = models.PositiveSmallIntegerField(db_column='T163nroPosicion')
     
     def __str__(self):
         return str(self.id_consumo_siembra)

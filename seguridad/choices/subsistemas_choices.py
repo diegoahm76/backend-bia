@@ -7,5 +7,5 @@ subsistemas_CHOICES = (
     ('PLAN', 'Seguimiento a Planes'),
     ('RECA', 'Recaudo'),
     ('SEGU', 'Seguridad'),
-    ('TRNV', 'Transversal')
+    ('TRSV', 'Transversal')
 )

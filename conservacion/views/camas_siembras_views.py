@@ -16,6 +16,7 @@ from conservacion.models.siembras_models import (
     CamasGerminacionVivero,
     Siembras,
     CamasGerminacionViveroSiembra,
+    ConsumosSiembra,
 )
 from conservacion.models.viveros_models import (
     Vivero,
@@ -30,7 +31,10 @@ from conservacion.serializers.camas_siembras_serializers import (
     GetBienSembradoSerializer,
     GetCamasGerminacionSerializer,
     CreateSiembraInventarioViveroSerializer,
-    CreateBienesConsumidosSerializer
+    CreateBienesConsumidosSerializer,
+    GetSiembraSerializer,
+    GetBienesPorConsumirSerializer,
+    UpdateSiembraSerializer
 )
 from almacen.models.bienes_models import (
     CatalogoBienes
@@ -110,7 +114,7 @@ class CamasGerminacion(generics.UpdateAPIView):
 
             return Response({'success':True,'detail':'Camas de germinación creadas o actualizadas con éxito'},status=status.HTTP_200_OK)
         
-class GetCamasGerminaciones(generics.ListAPIView):
+class GetCamasGerminacionesView(generics.ListAPIView):
     serializer_class = GetCamasGerminacionSerializer
     queryset = CamasGerminacionVivero.objects.all()
     permission_classes = [IsAuthenticated]
@@ -120,7 +124,7 @@ class GetCamasGerminaciones(generics.ListAPIView):
         serializer = self.serializer_class(data, many=True)
         return Response({'success':True, 'detail':'Busqueda exitosa', 'data': serializer.data},status=status.HTTP_200_OK)
 
-class FilterViverosByNombreAndMunicipio(generics.ListAPIView):
+class FilterViverosByNombreAndMunicipioView(generics.ListAPIView):
     serializer_class = ViveroSerializer
     queryset = Vivero.objects.all()
     permission_classes = [IsAuthenticated]
@@ -191,7 +195,14 @@ class CreateSiembraView(generics.CreateAPIView):
             return Response({'success': False, 'detail': 'No se puede crear una siembra sin una cama de germinación'}, status=status.HTTP_400_BAD_REQUEST)
         cama = CamasGerminacionVivero.objects.filter(id_cama_germinacion_vivero__in=data_siembra['cama_germinacion'])
         if len(set(data_siembra['cama_germinacion'])) != len(cama):
-            return Response({'success': False, 'detail': 'No se encontró ninguna cama de germinación con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': False, 'detail': 'Todas las camas seleccionadas deben existir'}, status=status.HTTP_404_NOT_FOUND)
+        
+        #VALIDACIÓN QUE TODAS LAS CAMAS ENVIADAS PERTENEZCAN AL VIVERO DE LA SIEMBRA
+        id_viveros_camas_list = [camita.id_vivero.id_vivero for camita in cama] 
+        if len(set(id_viveros_camas_list)) > 1:
+            return Response({'success': False, 'detail': 'Las camas seleccionadas deben estar relacionadas a solo un vivero'}, status=status.HTTP_400_BAD_REQUEST)
+        if int(id_viveros_camas_list[0]) != int(data_siembra['id_vivero']):
+            return Response({'success': False, 'detail': 'Las camas seleccionadas deben estar relacionadas al mismo vivero que la siembra'}, status=status.HTTP_400_BAD_REQUEST)
 
         #CREACIÓN SIEMBRA
         siembra_dict = {
@@ -256,15 +267,226 @@ class CreateSiembraView(generics.CreateAPIView):
 
 class CreateBienesConsumidosView(generics.CreateAPIView):
     serializer_class = CreateBienesConsumidosSerializer
-    queryset = CamasGerminacionVivero.objects.all()
+    queryset = ConsumosSiembra.objects.all()
     permission_classes = [IsAuthenticated]
+
+    def post(self, request, id_siembra):
+        data_bienes_consumidos = request.data
+        siembra = Siembras.objects.filter(id_siembra=id_siembra).first()
+        if not siembra:
+            return Response({'success': False, 'detail': 'No se encontró ninguna siembra con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+
+        #VALIDACIÓN QUE TODOS LOS ITEMS TENGAN UNA SOLA SIEMBRA Y SEA LA MISMA ENVIADA EN LA URL
+        id_siembra_list = [bien['id_siembra'] for bien in data_bienes_consumidos]
+        if len(set(id_siembra_list)) > 1:
+            return Response({'success': False, 'detail': 'Todos los bienes consumidos deben pertenecer a una siembra'}, status=status.HTTP_400_BAD_REQUEST)
+        if int(id_siembra_list[0]) != int(id_siembra):
+            return Response({'success': False, 'detail': 'Todos los bienes consumidos deben asociarse a la siembra seleccionada'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        #VALIDACIÓN QUE EL ID_BIEN ENVIADO EXISTA EN INVENTARIO VIVERO
+        id_bien = [bien['id_bien_consumido'] for bien in data_bienes_consumidos]
+        bien_in_inventario_viveros = InventarioViveros.objects.filter(id_bien__in=id_bien, id_siembra_lote_germinacion=None, id_vivero=siembra.id_vivero.id_vivero)
+        if len(set(id_bien)) != len(bien_in_inventario_viveros):
+            return Response({'success': False, 'detail': 'Todos los bienes enviados deben existir'}, status=status.HTTP_404_NOT_FOUND)
+
+        #VALIDACIÓN QUE EN LOS BIENES ENVIADOS SOLO HAYA UNA SEMILLA
+        bienes_semilla = []
+        for bien in bien_in_inventario_viveros:
+            if bien.id_bien.es_semilla_vivero == True:
+                bienes_semilla.append(bien)
+        
+        if len(bienes_semilla) > 1:
+            return Response({'success': False, 'detail': 'No se puede guardar los bienes consumidos por que tiene más de una semilla'}, status=status.HTTP_403_FORBIDDEN)
+
+        #VALIDACIÓN QUE SI TENGA LA CANTIDAD ENVIADA COMO DISPONIBLE POR CONSUMIR
+        for one_bien in data_bienes_consumidos:
+            bien = InventarioViveros.objects.filter(id_bien=one_bien['id_bien_consumido'], id_siembra_lote_germinacion=None, id_vivero=siembra.id_vivero.id_vivero).first()
+            if bien.id_bien.cod_tipo_elemento_vivero == 'MV' or bien.id_bien.cod_tipo_elemento_vivero == 'IN':
+                bien.cantidad_disponible_bien = UtilConservacion.get_cantidad_disponible_consumir(bien)
+                if one_bien['cantidad'] > int(bien.cantidad_disponible_bien):
+                    one_bien['cantidad_disponible'] = bien.cantidad_disponible_bien
+                    return Response({'success': False, 'detail': 'No se puede despachar un bien que no tiene cantidades disponibles', 'data': one_bien}, status=status.HTTP_400_BAD_REQUEST)
+
+        # #VALIDACIÓN QUE NO VENGA ID BIEN Y ID MEZCLA CONSUMIDA POR EL MISMO BIEN
+        #     if one_bien['id_bien_consumido'] and one_bien['id_mezcla_consumida']:
+        #         return Response({'success': True, 'detail': 'En un registro de bienes consumidos no se puede agregar una mezcla y un bien al mismo tiempo'}, status=status.HTTP_403_FORBIDDEN)
+
+        #CREACIÓN DE BIENES CONSUMIDOS
+        bienes_consumidos_no_existentes = []
+        for bien in data_bienes_consumidos:
+            bien_consumido = ConsumosSiembra.objects.filter(id_siembra=bien['id_siembra'], id_bien_consumido=bien['id_bien_consumido'], id_mezcla_consumida=bien['id_mezcla_consumida']).first()
+            if bien_consumido:
+                bien_consumido.cantidad = bien_consumido.cantidad if bien_consumido.cantidad else 0
+                bien_consumido.cantidad = bien_consumido.cantidad + bien['cantidad']
+                bien_consumido.save()
+            else:
+                bienes_consumidos_no_existentes.append(bien)
+
+        serializer = self.serializer_class(data=bienes_consumidos_no_existentes, many=True)
+        serializer.is_valid(raise_exception=True)
+        serializador = serializer.save()
+
+        for bien in serializador:
+            bien_in_inventario_viveros_serializador = InventarioViveros.objects.filter(id_bien=bien.id_bien_consumido.id_bien, id_vivero=siembra.id_vivero.id_vivero, id_siembra_lote_germinacion=None).first()
+            cantidad_existente_consumida = bien_in_inventario_viveros_serializador.cantidad_consumos_internos if bien_in_inventario_viveros_serializador.cantidad_consumos_internos else 0
+            bien_in_inventario_viveros_serializador.cantidad_consumos_internos = cantidad_existente_consumida + bien.cantidad
+            bien_in_inventario_viveros_serializador.save()
+
+        return Response({'success': True, 'detail': 'Bienes consumidos guardados exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+
+
+class UpdateSiembraView(generics.RetrieveUpdateAPIView):
+    serializer_class = UpdateSiembraSerializer
+    queryset = Siembras.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, id_siembra):
+        data_siembra = request.data
+        
+        #VALIDACIÓN QUE LA SIEMBRA EXISTA
+        siembra = Siembras.objects.filter(id_siembra=id_siembra).first()
+        if not siembra:
+            return Response({'success':False, 'detail': 'No se encontró ninguna siembra con el parámetro ingresado'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        #VALIDACIÓN QUE LA PERSONA QUE SIEMBRA EXISTA
+        persona = Personas.objects.filter(id_persona=data_siembra['id_persona_siembra']).first()
+        if not persona:
+            return Response({'success': False, 'detail': 'No existe ninguna persona con el parámetro ingresado'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        #OBTENGO CAMAS ACTUALES RELACIONADAS A LA SIEMBRA Y LAS NUEVAS QUE ME ENVÍAN
+        camas = CamasGerminacionViveroSiembra.objects.filter(id_siembra=id_siembra)       
+        id_camas_list = [cama.id_cama_germinacion_vivero.id_cama_germinacion_vivero for cama in camas]
+        id_camas_enviadas = data_siembra['cama_germinacion']
+        
+        #VALIDACIÓN QUE UNA SIEMBRA NO SE QUEDE SIN CAMAS DE GERMINACIÓN
+        if not id_camas_enviadas:
+            return Response({'success': False, 'detail': 'Una siembra debe tener por lo menos una cama de germinación'}, status=status.HTTP_403_FORBIDDEN)
+
+        #VALIDACIÓN QUE TODAS LAS CAMAS ENVIADAS EXISTAN
+        camas_list = CamasGerminacionVivero.objects.filter(id_cama_germinacion_vivero__in=id_camas_enviadas)
+        if len(set(id_camas_enviadas)) != len(camas_list):
+            return Response({'success': False, 'detail': 'Todas las camas seleccionadas deben existir'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        #VALIDACIÓN QUE TODAS LAS CAMAS ENVIADAS PERTENEZCAN AL VIVERO DE LA SIEMBRA
+        id_viveros_camas_list = [cama.id_vivero.id_vivero for cama in camas_list] 
+        if len(set(id_viveros_camas_list)) > 1:
+            return Response({'success': False, 'detail': 'Las camas seleccionadas deben estar relacionadas a solo un vivero'}, status=status.HTTP_400_BAD_REQUEST)
+        if int(id_viveros_camas_list[0]) != int(siembra.id_vivero.id_vivero):
+            return Response({'success': False, 'detail': 'Las camas seleccionadas deben estar relacionadas al mismo vivero que la siembra'}, status=status.HTTP_400_BAD_REQUEST)
+
+        #CREACIÓN DE NUEVAS CAMAS RELACIONADAS A LA SIEMBRA
+        for cama in id_camas_enviadas:
+            cama_instance = CamasGerminacionVivero.objects.filter(id_cama_germinacion_vivero=cama).first()
+            if cama not in id_camas_list:
+                CamasGerminacionViveroSiembra.objects.create(
+                    id_siembra = siembra,
+                    id_cama_germinacion_vivero = cama_instance
+                )
+
+        #ELIMINACIÓN DE CAMAS NO ENVIADAS AL ACTUALIZAR        
+        for cama_existente in id_camas_list:
+            if cama_existente not in id_camas_enviadas:
+                cama_existente_instance = CamasGerminacionViveroSiembra.objects.filter(id_siembra=id_siembra, id_cama_germinacion_vivero=cama_existente).first()
+                cama_existente_instance.delete()
+
+        return Response({'success': True, 'detail': 'Actualización exitosa'}, status=status.HTTP_201_CREATED)
+
 
 class GetBienSembradoView(generics.ListAPIView):
     serializer_class = GetBienSembradoSerializer
-    permission_classes = [IsAuthenticated]
     queryset = CatalogoBienes.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         bien = CatalogoBienes.objects.filter(cod_tipo_elemento_vivero='MV', solicitable_vivero=True, es_semilla_vivero=False, nivel_jerarquico='5')
         serializer = self.serializer_class(bien, many=True)
         return Response({'success': True, 'detail': 'Búsqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+class GetSiembrasView(generics.RetrieveAPIView):
+    serializer_class = GetSiembraSerializer
+    queryset = Siembras.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_siembra):
+        siembra = Siembras.objects.filter(id_siembra=id_siembra).first()
+        if not siembra:
+            return Response({'success':False, 'detail': 'No se encontró ninguna siembra con el parámetro ingresado'}, status=status.HTTP_400_BAD_REQUEST)
+        camas_germinacion = CamasGerminacionViveroSiembra.objects.filter(id_siembra=id_siembra)
+       
+        serializer = self.serializer_class(siembra, many=False)
+        data = serializer.data
+
+        data['camas_germinacion'] = []
+        for cama in camas_germinacion:
+            data_cama = {'id_cama': cama.id_cama_germinacion_vivero.id_cama_germinacion_vivero, 'nombre_cama': cama.id_cama_germinacion_vivero.nombre}
+            data['camas_germinacion'].append(data_cama)
+
+        return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': data}, status=status.HTTP_200_OK)
+
+
+class GetBienesPorConsumirView(generics.ListAPIView):
+    serializer_class = GetBienesPorConsumirSerializer
+    queryset = InventarioViveros.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_vivero, codigo_bien):
+        
+        #VALIDACIÓN SI EXISTE VIVERO
+        vivero = Vivero.objects.filter(id_vivero=id_vivero).first()
+        if not vivero:
+            return Response({'success':False, 'detail': 'No se encontró ninguna siembra con el parámetro ingresado'}, status=status.HTTP_400_BAD_REQUEST)
+
+        #VALIDACIÓN SI EXISTE EL CODIGO BIEN EN INVENTARIO VIVERO
+        bien_in_inventario = InventarioViveros.objects.filter(Q(id_bien__codigo_bien=codigo_bien) & Q(id_vivero=id_vivero) & Q(id_bien__nivel_jerarquico=5)).first()
+        if not bien_in_inventario:
+            return Response({'success':False, 'detail': 'No existe el bien por consumir en el vivero seleccionado'}, status=status.HTTP_400_BAD_REQUEST)
+        if bien_in_inventario.id_bien.cod_tipo_elemento_vivero != 'IN' and bien_in_inventario.id_bien.cod_tipo_elemento_vivero != 'MV':
+            return Response({'success': True, 'detail': 'El bien seleccionado debe ser de tipo insumo o material vegetal'}, status=status.HTTP_403_FORBIDDEN)
+
+        if bien_in_inventario.id_bien.cod_tipo_elemento_vivero == 'MV':
+            if bien_in_inventario.id_bien.es_semilla_vivero != True:
+                return Response({'success': False, 'detail': 'El bien seleccionado debe ser material vegetal de tipo semilla'}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = self.serializer_class(bien_in_inventario, many=False)
+
+        return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+class GetBusquedaBienesConsumidos(generics.ListAPIView):
+    serializer_class = GetBienesPorConsumirSerializer
+    queryset = InventarioViveros.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_vivero):
+        vivero = Vivero.objects.filter(id_vivero=id_vivero).first()
+        if not vivero:
+            return Response({'success': False, 'detail': 'No se encontró ningún vivero con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+        
+        #CREACIÓN DE FILTROS SEGÚN QUERYPARAMS
+        filter = {}
+        for key, value in request.query_params.items():
+            if key in ['cod_tipo_elemento_vivero', 'codigo_bien', 'nombre']:
+                if key != 'cod_tipo_elemento_vivero':
+                    filter['id_bien__' + key + '__icontains'] = value
+                else:
+                    filter['id_bien__' + key] = value
+
+        bienes_por_consumir = InventarioViveros.objects.filter(id_vivero=id_vivero, id_siembra_lote_germinacion=None)
+        bienes_filtrados = bienes_por_consumir.filter(**filter).exclude(id_bien__cod_tipo_elemento_vivero='HE').exclude(id_bien__cod_tipo_elemento_vivero='MV', id_bien__es_semilla_vivero=False)
+        if not bienes_filtrados:
+            return Response({'success': False, 'detail': 'No existe ningún bien que se pueda consumir'}, status=status.HTTP_400_BAD_REQUEST)
+    
+        #CAMBIAR VALORES EN CANTIDAD DISPONIBLE BIEN
+        bien_con_cantidades = []
+        for bien in bienes_filtrados:
+            if bien.id_bien.cod_tipo_elemento_vivero == 'MV' or bien.id_bien.cod_tipo_elemento_vivero == 'IN':
+                bien.cantidad_disponible_bien = UtilConservacion.get_cantidad_disponible_consumir(bien)
+                
+                #VALIDACIÓN QUE LA CANTIDAD DISPONIBLE SEA MAYOR A 0
+                if bien.cantidad_disponible_bien > 0:
+                    bien_con_cantidades.append(bien)
+
+        serializer = self.serializer_class(bien_con_cantidades, many=True)
+
+        return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)

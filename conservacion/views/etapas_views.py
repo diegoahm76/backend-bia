@@ -1,16 +1,24 @@
 from rest_framework.response import Response
 from rest_framework import generics,status
 from django.db.models import Q
-from conservacion.serializers.etapas_serializers import InventarioViverosSerializer, GuardarCambioEtapaSerializer
+from conservacion.serializers.etapas_serializers import (
+    InventarioViverosSerializer,
+    GuardarCambioEtapaSerializer,
+    ActualizarCambioEtapaSerializer,
+    GetCambioEtapasSerializer,
+    AnularCambioEtapaSerializer
+)
 from conservacion.models.inventario_models import InventarioViveros
 from conservacion.models.siembras_models import CambiosDeEtapa
 from conservacion.models.viveros_models import Vivero
 from datetime import datetime, timedelta,date
 from conservacion.utils import UtilConservacion
+from rest_framework.permissions import IsAuthenticated
 
 class FiltroMaterialVegetal(generics.ListAPIView):
     serializer_class=InventarioViverosSerializer
-    queryset=InventarioViveros
+    queryset=InventarioViveros.objects.all()
+    permission_classes=[IsAuthenticated]
     
     def get(self,request,id_vivero):
         filter={}
@@ -20,7 +28,9 @@ class FiltroMaterialVegetal(generics.ListAPIView):
                 if key != "cod_etapa_lote" and key != 'agno_lote':
                     filter['id_bien__'+key+'__icontains'] = value
                 else:
-                    filter[key] = value
+                    if value != '':
+                        filter[key]=value
+                        
         vivero=Vivero.objects.filter(id_vivero=id_vivero).first()
         if not vivero:
             return Response({'success':False,'detail':'El Vivero seleccionado no existe'},status=status.HTTP_404_NOT_FOUND)
@@ -41,6 +51,7 @@ class FiltroMaterialVegetal(generics.ListAPIView):
 class GuardarCambioEtapa(generics.CreateAPIView):
     serializer_class=GuardarCambioEtapaSerializer
     queryset=CambiosDeEtapa.objects.all()
+    permission_classes=[IsAuthenticated]
     
     def post(self,request):
         data = request.data
@@ -174,4 +185,259 @@ class GuardarCambioEtapa(generics.CreateAPIView):
                     cantidad_entrante = data['cantidad_movida']
                 )
                 
-        return Response ({'success':True,'detail':'Se realizó el cambio de etapa correctamente','data':[]},status=status.HTTP_200_OK)
+        return Response ({'success':True,'detail':'Se realizó el cambio de etapa correctamente','data':serializador.data},status=status.HTTP_200_OK)
+
+class ActualizarCambioEtapa(generics.UpdateAPIView):
+    serializer_class=ActualizarCambioEtapaSerializer
+    queryset=CambiosDeEtapa.objects.all()
+    permission_classes=[IsAuthenticated]
+    
+    def put(self,request,pk):
+        data = request.data
+        cambio_etapa = self.queryset.all().filter(id_cambio_de_etapa=pk).first()
+        if cambio_etapa:
+            # VALIDAR ANTIGUEDAD POSIBLE DE FECHA CAMBIO
+            if cambio_etapa.fecha_cambio.date() < date.today()-timedelta(days=30):
+                return Response({'success':False, 'detail':'No puede actualizar porque la fecha de cambio supera los 30 días de antiguedad'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            cod_nueva_etapa = 'P' if cambio_etapa.cod_etapa_lote_origen == 'G' else 'D'
+            
+            # VALIDAR ALTURA LOTE
+            inventario_vivero = InventarioViveros.objects.filter(
+                id_vivero=cambio_etapa.id_vivero.id_vivero,
+                id_bien=cambio_etapa.id_bien.id_bien,
+                agno_lote=cambio_etapa.agno_lote,
+                nro_lote=cambio_etapa.nro_lote
+            )
+            inventario_vivero_etapa_nueva = inventario_vivero.filter(cod_etapa_lote=cod_nueva_etapa).first()
+            inventario_vivero_etapa_origen = inventario_vivero.filter(cod_etapa_lote=cambio_etapa.cod_etapa_lote_origen).first()
+            
+            if int(data['altura_lote_en_cms']) <= 0:
+                return Response({'success':False, 'detail':'La altura del lote debe ser mayor a cero'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if inventario_vivero_etapa_nueva.fecha_ult_altura_lote.date() != cambio_etapa.fecha_cambio.date():
+                return Response({'success':False, 'detail':'No se puede actualizar la altura del lote debido a que la fecha de la última altura ('+str(inventario_vivero_etapa_nueva.fecha_ult_altura_lote.date())+') es distinta a la fecha del cambio de etapa ('+str(cambio_etapa.fecha_cambio.date())+')'}, status=status.HTTP_403_FORBIDDEN)
+            
+            if cambio_etapa.cod_etapa_lote_origen == 'G':
+                if int(data['cantidad_movida']) > cambio_etapa.cantidad_movida:
+                    inventario_vivero_etapa_nueva.cantidad_entrante = inventario_vivero_etapa_nueva.cantidad_entrante + (int(data['cantidad_movida']) - cambio_etapa.cantidad_movida) if inventario_vivero_etapa_nueva.cantidad_entrante else int(data['cantidad_movida'])
+                    inventario_vivero_etapa_nueva.save()
+                elif int(data['cantidad_movida']) < cambio_etapa.cantidad_movida:
+                    cantidad_entrante_disminuida = inventario_vivero_etapa_nueva.cantidad_entrante - (cambio_etapa.cantidad_movida - int(data['cantidad_movida']))
+                    
+                    cantidad_bajas = inventario_vivero_etapa_nueva.cantidad_bajas if inventario_vivero_etapa_nueva.cantidad_bajas else 0
+                    cantidad_traslados = inventario_vivero_etapa_nueva.cantidad_traslados_lote_produccion_distribucion if inventario_vivero_etapa_nueva.cantidad_traslados_lote_produccion_distribucion else 0
+                    cantidad_salidas = inventario_vivero_etapa_nueva.cantidad_salidas if inventario_vivero_etapa_nueva.cantidad_salidas else 0
+                    cantidad_lote_cuarentena = inventario_vivero_etapa_nueva.cantidad_lote_cuarentena if inventario_vivero_etapa_nueva.cantidad_lote_cuarentena else 0
+                    
+                    suma_cantidades = cantidad_bajas + cantidad_traslados + cantidad_salidas + cantidad_lote_cuarentena
+                    
+                    if cantidad_entrante_disminuida < suma_cantidades:
+                        return Response({'success':False, 'detail':'No puede realizar la actualización de la cantidad movida, aumente el valor de la cantidad movida'}, status=status.HTTP_400_BAD_REQUEST)
+
+                    inventario_vivero_etapa_nueva.cantidad_entrante = cantidad_entrante_disminuida
+                    inventario_vivero_etapa_nueva.save()
+            else:
+                if int(data['cantidad_movida']) > cambio_etapa.cantidad_movida:
+                    saldo_disponible = UtilConservacion.get_cantidad_disponible_etapa(inventario_vivero_etapa_origen)
+                    
+                    if (int(data['cantidad_movida']) - cambio_etapa.cantidad_movida) > saldo_disponible:
+                        return Response({'success':False, 'detail':'No puede realizar la actualización de la cantidad movida ya que supera la cantidad disponible'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    cantidad_aumentada = int(data['cantidad_movida']) - cambio_etapa.cantidad_movida
+                    
+                    inventario_vivero_etapa_origen.cantidad_traslados_lote_produccion_distribucion = inventario_vivero_etapa_origen.cantidad_traslados_lote_produccion_distribucion + cantidad_aumentada if inventario_vivero_etapa_origen.cantidad_traslados_lote_produccion_distribucion else cantidad_aumentada
+                    inventario_vivero_etapa_origen.save()
+                    
+                    inventario_vivero_etapa_nueva.cantidad_entrante = inventario_vivero_etapa_nueva.cantidad_entrante + cantidad_aumentada if inventario_vivero_etapa_nueva.cantidad_entrante else cantidad_aumentada
+                    inventario_vivero_etapa_nueva.save()
+                elif int(data['cantidad_movida']) < cambio_etapa.cantidad_movida:
+                    cantidad_entrante_disminuida = inventario_vivero_etapa_nueva.cantidad_entrante - (cambio_etapa.cantidad_movida - int(data['cantidad_movida']))
+                    
+                    cantidad_bajas = inventario_vivero_etapa_nueva.cantidad_bajas if inventario_vivero_etapa_nueva.cantidad_bajas else 0
+                    cantidad_salidas = inventario_vivero_etapa_nueva.cantidad_salidas if inventario_vivero_etapa_nueva.cantidad_salidas else 0
+                    cantidad_lote_cuarentena = inventario_vivero_etapa_nueva.cantidad_lote_cuarentena if inventario_vivero_etapa_nueva.cantidad_lote_cuarentena else 0
+                    
+                    suma_cantidades = cantidad_bajas + cantidad_salidas + cantidad_lote_cuarentena
+                    
+                    if cantidad_entrante_disminuida < suma_cantidades:
+                        return Response({'success':False, 'detail':'No puede realizar la actualización de la cantidad movida, aumente el valor de la cantidad movida'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    cantidad_disminuida = cambio_etapa.cantidad_movida - int(data['cantidad_movida']) 
+                    
+                    inventario_vivero_etapa_origen.cantidad_traslados_lote_produccion_distribucion = inventario_vivero_etapa_origen.cantidad_traslados_lote_produccion_distribucion - cantidad_disminuida if inventario_vivero_etapa_origen.cantidad_traslados_lote_produccion_distribucion else 0
+                    inventario_vivero_etapa_origen.save()
+                    
+                    inventario_vivero_etapa_nueva.cantidad_entrante = inventario_vivero_etapa_nueva.cantidad_entrante - cantidad_disminuida if inventario_vivero_etapa_nueva.cantidad_entrante else 0
+                    inventario_vivero_etapa_nueva.save()
+            
+            serializador = self.serializer_class(cambio_etapa, data=data)
+            serializador.is_valid(raise_exception=True)
+            serializador.save()
+            return Response({'success':True, 'detail':'Se realizó la actualización de manera exitosa', 'data':serializador.data}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'success':False, 'detail':'No existe el cambio de etapa que desea actualizar'}, status=status.HTTP_404_NOT_FOUND)
+        
+        
+class FiltroCambioEtapa(generics.ListAPIView):
+    serializer_class=GetCambioEtapasSerializer
+    queryset=CambiosDeEtapa.objects.all()
+    permission_classes=[IsAuthenticated]
+    
+    def get(self,request,id_vivero):
+        filter={}
+        for key,value in request.query_params.items():
+            if key in ['codigo_bien','nombre','cod_etapa_lote_origen','agno_lote']:
+                if key != "cod_etapa_lote_origen" and key != 'agno_lote':
+                    filter['id_bien__'+key+'__icontains'] = value
+                else:
+                    if value != '':
+                        filter[key]=value
+                    
+        vivero=Vivero.objects.filter(id_vivero=id_vivero).first()
+        
+        if not vivero:
+            return Response({'success':False,'detail':'El Vivero seleccionado no existe'},status=status.HTTP_404_NOT_FOUND)
+        
+        cambio_etapa=CambiosDeEtapa.objects.filter(**filter).filter(id_vivero=id_vivero)
+        serializador=self.serializer_class(cambio_etapa,many=True)    
+        return Response ({'success':True,'detail':'Se encontraron las siguientes coincidencias','data':serializador.data},status=status.HTTP_200_OK)
+    
+class AnularCambioEtapa(generics.UpdateAPIView):
+    serializer_class = AnularCambioEtapaSerializer
+    queryset = CambiosDeEtapa.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def put(self,request,pk):
+        data = request.data
+        persona = request.user.persona.id_persona
+        cambio_etapa = self.queryset.all().filter(id_cambio_de_etapa=pk).first()
+        if cambio_etapa:
+            # VALIDAR ANTIGUEDAD POSIBLE DE FECHA CAMBIO
+            if cambio_etapa.fecha_cambio.date() < date.today()-timedelta(days=30):
+                return Response({'success':False, 'detail':'No puede actualizar porque la fecha de cambio supera los 30 días de antiguedad'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            cod_nueva_etapa = 'P' if cambio_etapa.cod_etapa_lote_origen == 'G' else 'D'
+            
+            inventario_vivero = InventarioViveros.objects.filter(
+                id_vivero=cambio_etapa.id_vivero.id_vivero,
+                id_bien=cambio_etapa.id_bien.id_bien,
+                agno_lote=cambio_etapa.agno_lote,
+                nro_lote=cambio_etapa.nro_lote
+            )
+            inventario_vivero_etapa_nueva = inventario_vivero.filter(cod_etapa_lote=cod_nueva_etapa).first()
+            inventario_vivero_etapa_origen = inventario_vivero.filter(cod_etapa_lote=cambio_etapa.cod_etapa_lote_origen).first()
+            
+            if cambio_etapa.cod_etapa_lote_origen == 'G':
+                if inventario_vivero_etapa_nueva.fecha_ult_altura_lote < inventario_vivero_etapa_nueva.fecha_ingreso_lote_etapa:
+                    return Response({'success':False, 'detail':'No se puede anular el cambio de etapa porque hubo una actualización a la altura del lote en Producción'}, status=status.HTTP_403_FORBIDDEN)
+                
+                if inventario_vivero_etapa_nueva.cantidad_bajas and inventario_vivero_etapa_nueva.cantidad_bajas > 0:
+                    return Response({'success':False, 'detail':'No se puede anular el cambio de etapa porque tiene registros de bajas'}, status=status.HTTP_403_FORBIDDEN)
+                
+                if inventario_vivero_etapa_nueva.cantidad_traslados_lote_produccion_distribucion and inventario_vivero_etapa_nueva.cantidad_traslados_lote_produccion_distribucion > 0:
+                    return Response({'success':False, 'detail':'No se puede anular el cambio de etapa porque tiene traslados a la etapa de Distribución'}, status=status.HTTP_403_FORBIDDEN)
+                
+                if inventario_vivero_etapa_nueva.cantidad_salidas and inventario_vivero_etapa_nueva.cantidad_salidas > 0:
+                    return Response({'success':False, 'detail':'No se puede anular el cambio de etapa porque tiene salidas a otros viveros'}, status=status.HTTP_403_FORBIDDEN)
+
+                if inventario_vivero_etapa_nueva.cantidad_lote_cuarentena and inventario_vivero_etapa_nueva.cantidad_lote_cuarentena > 0:
+                    return Response({'success':False, 'detail':'No se puede anular el cambio de etapa porque tiene unidades del lote en cuarentena'}, status=status.HTTP_403_FORBIDDEN)
+                
+                # PENDIENTE VALIDACIÓN QUE NO SE PUEDA ANULAR SI EXISTEN REGISTROS DE LOTE-ETAPA EN T164
+                
+                # PENDIENTE VALIDACIÓN QUE NO SE PUEDA ANULAR SI EXISTEN REGISTROS DE LOTE-ETAPA EN TABLAS DE SEGUIMIENTO
+                
+                # SE ELIMINA EL REGISTRO DEL CAMBIO DE ETAPA EN INVENTARIO VIVERO
+                inventario_vivero_etapa_nueva.delete()
+                
+                # SE REABRE LA SIEMBRA
+                inventario_vivero_etapa_origen.siembra_lote_cerrada = False
+                inventario_vivero_etapa_origen.save()
+                
+                # SE ANULA CAMBIO DE ETAPA
+                data['id_persona_anula'] = persona
+                data['cambio_anulado'] = True
+                data['fecha_anulacion'] = datetime.now()
+                
+                serializer = self.serializer_class(cambio_etapa, data=data)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                
+                return Response({'success':True, 'detail':'Se anuló correctamente el cambio de etapa', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+            else:
+                cantidad_entrante = inventario_vivero_etapa_nueva.cantidad_entrante if inventario_vivero_etapa_nueva.cantidad_entrante else 0
+                cantidad_bajas = inventario_vivero_etapa_nueva.cantidad_bajas if inventario_vivero_etapa_nueva.cantidad_bajas else 0
+                cantidad_salidas = inventario_vivero_etapa_nueva.cantidad_salidas if inventario_vivero_etapa_nueva.cantidad_salidas else 0
+                cantidad_lote_cuarentena = inventario_vivero_etapa_nueva.cantidad_lote_cuarentena if inventario_vivero_etapa_nueva.cantidad_lote_cuarentena else 0
+                    
+                saldo_disponible = cantidad_entrante - cantidad_bajas - cantidad_salidas - cantidad_lote_cuarentena
+                
+                if cambio_etapa.cantidad_movida == inventario_vivero_etapa_nueva.cantidad_entrante:
+                    if inventario_vivero_etapa_nueva.fecha_ult_altura_lote < inventario_vivero_etapa_nueva.fecha_ingreso_lote_etapa:
+                        return Response({'success':False, 'detail':'No se puede anular el cambio de etapa porque hubo una actualización a la altura del lote en Producción'}, status=status.HTTP_403_FORBIDDEN)
+                    
+                    if cambio_etapa.cantidad_movida != saldo_disponible:
+                        return Response({'success':False, 'detail':'No se puede anular el cambio de etapa porque la cantidad movida (' + str(cambio_etapa.cantidad_movida) + ') no es igual al saldo disponible (' + str(saldo_disponible) + ')'}, status=status.HTTP_403_FORBIDDEN)
+
+                    # PENDIENTE VALIDACIÓN QUE NO SE PUEDA ANULAR SI EXISTEN REGISTROS DE LOTE-ETAPA EN T164
+                    
+                    # PENDIENTE VALIDACIÓN QUE NO SE PUEDA ANULAR SI EXISTEN REGISTROS DE LOTE-ETAPA EN TABLAS DE SEGUIMIENTO
+
+                    # ------------------------ ALGO PASA ACA -------------------------
+                    
+                    if saldo_disponible < cambio_etapa.cantidad_movida:
+                        return Response({'success':False, 'detail':'No se puede anular el cambio de etapa porque el saldo disponible (' + str(saldo_disponible) + ') es menor a la cantidad movida (' + str(cambio_etapa.cantidad_movida) + ')'}, status=status.HTTP_403_FORBIDDEN)
+                    
+                    ultimo_cambio_etapa = self.queryset.all().filter(id_bien=cambio_etapa.id_bien, id_vivero=cambio_etapa.id_vivero, agno_lote=cambio_etapa.agno_lote, nro_lote=cambio_etapa.nro_lote, cod_etapa_lote_origen=cambio_etapa.cod_etapa_lote_origen, cambio_anulado=None).last()
+                    
+                    if cambio_etapa.consec_por_lote_etapa != ultimo_cambio_etapa.consec_por_lote_etapa:
+                        return Response({'success':False, 'detail':'No se puede anular el cambio de etapa debido a que no es el último cambio de etapa para dicho lote-etapa de Producción'}, status=status.HTTP_403_FORBIDDEN)
+                    
+                    # PENDIENTE VALIDACIÓN QUE NO SE PUEDA ANULAR SI EXISTEN REGISTROS DE LOTE-ETAPA EN T164
+                    
+                    # PENDIENTE VALIDACIÓN QUE NO SE PUEDA ANULAR SI EXISTEN REGISTROS DE LOTE-ETAPA EN TABLAS DE SEGUIMIENTO
+                    
+                    if cambio_etapa.consec_por_lote_etapa == 1:
+                        # SE ELIMINA EL REGISTRO DEL CAMBIO DE ETAPA EN INVENTARIO VIVERO
+                        inventario_vivero_etapa_nueva.delete()
+                        
+                        # SE ACTUALIZA EL REGISTRO ETAPA ORIGEN
+                        inventario_vivero_etapa_origen.cantidad_traslados_lote_produccion_distribucion = inventario_vivero_etapa_origen.cantidad_traslados_lote_produccion_distribucion - cambio_etapa.cantidad_movida if inventario_vivero_etapa_origen.cantidad_traslados_lote_produccion_distribucion else 0
+                        inventario_vivero_etapa_origen.save()
+                        
+                        # SE ANULA CAMBIO DE ETAPA  
+                        data['id_persona_anula'] = persona
+                        data['cambio_anulado'] = True
+                        data['fecha_anulacion'] = datetime.now()
+                        
+                        serializer = self.serializer_class(cambio_etapa, data=data)
+                        serializer.is_valid(raise_exception=True)
+                        serializer.save()
+                        
+                        return Response({'success':True, 'detail':'Se anuló correctamente el cambio de etapa', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+                    else:
+                        # VALIDACIÓN SI FECHA ULTIMA ALTURA Y FECHA CAMBIO SON IGUALES - PENDIENTE
+                        if inventario_vivero_etapa_nueva.fecha_ult_altura_lote == cambio_etapa.fecha_cambio:
+                            return Response({'success':False, 'detail':'La fecha con la que quedó el lote-destino fue registrada por el cambio de etapa que se está anulando, se le recomienda ir a verificar que sea correcta y actualizar de ser necesario'}, status=status.HTTP_403_FORBIDDEN)
+                        
+                        # SE ACTUALIZA EL REGISTRO ETAPA DESTINO
+                        inventario_vivero_etapa_nueva.cantidad_entrante = inventario_vivero_etapa_nueva.cantidad_entrante - cambio_etapa.cantidad_movida if inventario_vivero_etapa_nueva.cantidad_entrante else 0
+                        inventario_vivero_etapa_nueva.save()
+                        
+                        # SE ACTUALIZA EL REGISTRO ETAPA ORIGEN
+                        inventario_vivero_etapa_origen.cantidad_traslados_lote_produccion_distribucion = inventario_vivero_etapa_origen.cantidad_traslados_lote_produccion_distribucion - cambio_etapa.cantidad_movida if inventario_vivero_etapa_origen.cantidad_traslados_lote_produccion_distribucion else 0
+                        inventario_vivero_etapa_origen.save()
+                        
+                        # SE ANULA CAMBIO DE ETAPA  
+                        data['id_persona_anula'] = persona
+                        data['cambio_anulado'] = True
+                        data['fecha_anulacion'] = datetime.now()
+                        
+                        serializer = self.serializer_class(cambio_etapa, data=data)
+                        serializer.is_valid(raise_exception=True)
+                        serializer.save()
+                        
+                        return Response({'success':True, 'detail':'Se anuló correctamente el cambio de etapa', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'success':False, 'detail':'No existe el cambio de etapa que desea actualizar'}, status=status.HTTP_404_NOT_FOUND)

@@ -224,3 +224,13 @@ class UtilConservacion:
         cantidad_disponible = cantidad_entrante - cantidad_bajas - cantidad_traslados - cantidad_salidas - cantidad_lote_cuarentena
         
         return cantidad_disponible
+    
+    @staticmethod
+    def get_cantidad_disponible_consumir(bien):
+        cantidad_entrante = bien.cantidad_entrante if bien.cantidad_entrante else 0
+        cantidad_bajas = bien.cantidad_bajas if bien.cantidad_bajas else 0
+        cantidad_consumos_internos = bien.cantidad_consumos_internos if bien.cantidad_consumos_internos else 0
+        cantidad_salidas = bien.cantidad_salidas if bien.cantidad_salidas else 0
+        cantidad_disponible = cantidad_entrante - cantidad_bajas - cantidad_consumos_internos - cantidad_salidas
+        
+        return cantidad_disponible

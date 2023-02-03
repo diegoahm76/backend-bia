@@ -46,7 +46,7 @@ class GetDespachosEntrantes(generics.ListAPIView):
         
         if numero_despacho_consumo:
             despacho_consumo = DespachoConsumo.objects.filter(numero_despacho_consumo=numero_despacho_consumo).first()
-            despachos_entrantes = despachos_entrantes.filter(id_despacho_consumo_alm=despacho_consumo.id_despacho_consumo)
+            despachos_entrantes = despachos_entrantes.filter(id_despacho_consumo_alm=despacho_consumo.id_despacho_consumo) if despacho_consumo else None
         
         serializer=self.serializer_class(despachos_entrantes, many=True)
         if despachos_entrantes:
@@ -120,6 +120,7 @@ class GuardarDistribucionBienes(generics.ListAPIView):
 class ConfirmarDistribucion(generics.UpdateAPIView):
     serializer_class=DistribucionesItemDespachoEntranteSerializer
     queryset=DistribucionesItemDespachoEntrante.objects.all()
+    permission_classes = [IsAuthenticated]
     
     def put(self,request,id_despacho_entrante):
         
@@ -148,8 +149,9 @@ class ConfirmarDistribucion(generics.UpdateAPIView):
                 if despacho_entrante.distribucion_confirmada == True:
                     if item_despacho_entrante.id_bien.cod_tipo_elemento_vivero == "HE" or item_despacho_entrante.id_bien.cod_tipo_elemento_vivero == "IN" or (item_despacho_entrante.id_bien.cod_tipo_elemento_vivero == "MV" and item_despacho_entrante.id_bien.es_semilla_vivero == True):
                         
-                        vivero_destino=InventarioViveros.objects.filter(id_vivero=item['id_vivero'],id_bien=item_despacho_entrante.id_bien.id_bien).first()
+                        vivero_destino=InventarioViveros.objects.filter(id_vivero=item['id_vivero'],id_bien=item_despacho_entrante.id_bien.id_bien, id_siembra_lote_germinacion=None).first()
                         if vivero_destino:
+                            vivero_destino.cantidad_entrante = vivero_destino.cantidad_entrante if vivero_destino.cantidad_entrante else 0
                             vivero_destino.cantidad_entrante += item['cantidad_asignada']
                             vivero_destino.save()
                             
@@ -164,7 +166,7 @@ class ConfirmarDistribucion(generics.UpdateAPIView):
                             vivero_destino=InventarioViveros.objects.filter(id_vivero=item['id_vivero'],id_bien=item_despacho_entrante.id_bien.id_bien).last()
                             nro_lote = 1
                             if vivero_destino:
-                                nro_lote = vivero_destino.nro_lote + 1
+                                nro_lote = vivero_destino.nro_lote + 1 if vivero_destino.nro_lote else 1
                                 
                             InventarioViveros.objects.create(
                                 id_vivero = vivero,
@@ -185,7 +187,7 @@ class ConfirmarDistribucion(generics.UpdateAPIView):
                 "distribucion_confirmada": str(despacho_entrante_previous.distribucion_confirmada),
                 "fecha_confirmacion_distribucion": str(despacho_entrante_previous.fecha_confirmacion_distribucion),
                 "observacion_distribucion": str(despacho_entrante_previous.observacion_distribucion),
-                "persona_distribuye": str(despacho_entrante_previous.id_persona_distribuye.primer_nombre + ' ' + despacho_entrante_previous.id_persona_distribuye.primer_apellido if despacho_entrante_previous.id_persona_distribuye.tipo_persona=='N' else despacho_entrante_previous.id_persona_distribuye.razon_social)
+                "persona_distribuye": (str(despacho_entrante_previous.id_persona_distribuye.primer_nombre + ' ' + despacho_entrante_previous.id_persona_distribuye.primer_apellido if despacho_entrante_previous.id_persona_distribuye.tipo_persona=='N' else despacho_entrante_previous.id_persona_distribuye.razon_social)) if despacho_entrante_previous.id_persona_distribuye else None
             }
             valores_actualizados={'previous':despacho_entrante_previous, 'current':despacho_entrante}
             direccion=Util.get_client_ip(request)
@@ -201,10 +203,13 @@ class ConfirmarDistribucion(generics.UpdateAPIView):
             Util.save_auditoria(auditoria_data)
                        
             return Response({'success':True, 'detail':'Confirmación exitosa'}, status=status.HTTP_200_OK)
+        
+        return Response({'success':False, 'detail':'El despacho entrante elegido no existe'}, status=status.HTTP_404_NOT_FOUND)
 
 class GetItemsPredistribuidos(generics.ListAPIView):
     serializer_class=DistribucionesItemPreDistribuidoSerializer
     queryset=DistribucionesItemDespachoEntrante
+    permission_classes = [IsAuthenticated]
     
     def get(self,request,pk):
         despacho_entrante=DespachoEntrantes.objects.filter(id_despacho_entrante=pk).first()
