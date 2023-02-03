@@ -29,9 +29,7 @@ class GetCamasGerminacionSerializer(serializers.ModelSerializer):
 class CreateSiembrasSerializer(serializers.ModelSerializer):
     class Meta:
         model = Siembras
-        exclude = (
-            'id_siembra',
-        )
+        fields = '__all__'
     
 class CreateSiembraInventarioViveroSerializer(serializers.ModelSerializer):
     class Meta:
@@ -49,7 +47,7 @@ class CreateSiembraInventarioViveroSerializer(serializers.ModelSerializer):
 
 class CreateBienesConsumidosSerializer(serializers.ModelSerializer):
     class Meta:
-        model = CamasGerminacionVivero
+        model = ConsumosSiembra
         fields = '__all__'
 
 class GetNumeroLoteSerializer(serializers.ModelSerializer):
@@ -61,3 +59,31 @@ class GetBienSembradoSerializer(serializers.ModelSerializer):
     class Meta:
         model = CatalogoBienes
         fields = '__all__'
+
+
+class GetSiembraSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Siembras
+        fields = '__all__'
+
+
+class GetBienesPorConsumirSerializer(serializers.ModelSerializer):
+    codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
+    tipo_bien = serializers.ReadOnlyField(source='id_bien.cod_tipo_elemento_vivero', default=None)
+    unidad_disponible = serializers.ReadOnlyField(source='id_bien.id_unidad_medida.nombre', default=None)
+    cantidad_disponible_bien = serializers.IntegerField(default=None)
+
+    class Meta:
+        model = InventarioViveros
+        fields =(
+            'id_inventario_vivero',
+            'cantidad_entrante',
+            'id_vivero',
+            'id_bien',
+            'codigo_bien',
+            'nombre_bien',
+            'tipo_bien',
+            'cantidad_disponible_bien',
+            'unidad_disponible'
+        )
