@@ -142,16 +142,26 @@ class TrasladosCreate(generics.UpdateAPIView):
             instancia_item_origen.save()
             # SE GUARDAN LOS DATOS EN EL INVENTARIO VIVERO DESTINO
             if (instancia_bien.cod_tipo_elemento_vivero == 'MV'and instancia_bien.es_semilla_vivero == True) or instancia_bien.cod_tipo_elemento_vivero == 'HE' or instancia_bien.cod_tipo_elemento_vivero == 'IN':
-                instancia_item_despacho = InventarioViveros.objects.filter(id_vivero=info_traslado['id_vivero_origen'],id_bien=i['id_bien_origen']).first()
+                instancia_item_despacho = InventarioViveros.objects.filter(id_vivero=info_traslado['id_vivero_destino'],id_bien=i['id_bien_origen']).first()
                 if instancia_item_despacho:
                     instancia_item_despacho.cantidad_entrante = instancia_item_despacho.cantidad_entrante if instancia_item_despacho.cantidad_entrante else 0
                     instancia_item_despacho.cantidad_entrante = instancia_item_despacho.cantidad_entrante + i['cantidad_a_trasladar']
                     instancia_item_despacho.save()
                 else:
                     inventario_vivero_dict = {
-                                            "id_vivero": info_traslado['id_vivero'],
+                                            "id_vivero": info_traslado['id_vivero_destino'],
                                             "id_bien": i['id_bien_origen'],
-                                            "cantidad_entrante" : i['cantidad_a_trasladar']
+                                            "agno_lote" : None,
+                                            "nro_lote" : None,
+                                            "cod_etapa_lote" : None,
+                                            "es_produccion_propia_lote" : None,
+                                            "cod_tipo_entrada_alm_lote" : None,
+                                            "nro_entrada_alm_lote" : None,
+                                            "fecha_ingreso_lote_etapa" : None,
+                                            "ult_altura_lote" : None,
+                                            "fecha_ult_altura_lote" : None,
+                                            "cantidad_entrante" : i['cantidad_a_trasladar'],
+                                            "id_mezcla" : None
                                             }
                     serializer_inventario = CreateSiembraInventarioViveroSerializer(data=inventario_vivero_dict, many=False)
                     serializer_inventario.is_valid(raise_exception=True)
@@ -232,20 +242,167 @@ class GetAvanzadoTraslados(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
+        filter = {}
         fecha_desde = request.query_params.get('fecha_desde')
         fecha_hasta = request.query_params.get('fecha_hasta')
-        vivero_origen = request.query_params.get('vivero_origen')
-        vivero_destino = request.query_params.get('vivero_destino')
+        vivero_origen = request.query_params.get('id_vivero_origen')
+        vivero_destino = request.query_params.get('id_vivero_destino')
+        if fecha_desde != '':
+            fecha_desde = datetime.strptime(fecha_desde, '%Y-%m-%d')
+        if fecha_hasta != '':    
+            fecha_hasta = datetime.strptime(fecha_hasta, '%Y-%m-%d')
         
-        if not fecha_desde:
-            fecha_desde = datetime.now() - 30
-            print(fecha_desde)
-        # filter = {}
+        if not fecha_desde or fecha_desde == '':
+            fecha_desde = datetime.today() - timedelta(30)
+        if not fecha_hasta or fecha_hasta == '':
+            fecha_hasta = datetime.today() + timedelta(1)
+        else:
+            fecha_hasta = fecha_hasta + timedelta(1)
+        primer_filtro = TrasladosViveros.objects.filter(fecha_traslado__range=[fecha_desde,fecha_hasta])
+        if not vivero_origen:
+            if not vivero_destino:
+                return Response({'success':False, 'detail':'Debe ingresar vivero origen o vivero destino, no puede hacer la busqueda sin enviar estos dos datos'}, status=status.HTTP_400_BAD_REQUEST)
+        for key, value in request.query_params.items():
+            if key in ['id_vivero_origen', 'id_vivero_destino']:
+                if value != '':
+                    filter[key]=value
+        segundo_filtro = primer_filtro.filter(**filter)
+        serializer = self.serializer_class(segundo_filtro, many=True)
+        return Response({'success':True, 'detail':'Ok', 'data':serializer.data}, status=status.HTTP_200_OK)
+
+class GetItemsTrasladoByIdTraslado(generics.ListAPIView):
+    serializer_class = ItemsTrasladosViverosSerielizers
+    queryset = ItemsTrasladoViveros
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_traslado_entrante):
+        instancia_items_traslado = ItemsTrasladoViveros.objects.filter(id_traslado=id_traslado_entrante)
+        if not instancia_items_traslado:
+            return Response({'success':False, 'detail':'El traslado no existe o no no tiene items registrados'}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = self.serializer_class(instancia_items_traslado, many=True)
+        return Response({'success':True, 'detail':'Ok', 'data':serializer.data}, status=status.HTTP_200_OK)
+
+class TrasladosActualizar(generics.UpdateAPIView):
+    serializer_class = TrasladosViverosSerializers
+    queryset = TrasladosViveros.objects.all()
+    permission_classes = [IsAuthenticated]
+    serializer_items_traslado = ItemsTrasladosViverosSerielizers
+    
+    def put(self, request):
+        datos_ingresados = request.data
+        user_logeado = request.user
+        info_traslado = json.loads(datos_ingresados['info_traslado'])
+        items_traslado = json.loads(datos_ingresados['items_traslado'])
         
-        # filter[key]=request.query_params.get('fecha_desde')
-        # filter[key]=request.query_params.get('fecha_hasta')
-        # if 
-        # for key,value in request.query_params.items():
-        #     if key in ['vivero_origen', 'vivero_destino']:
-        #         #auditorias = Auditorias.objects.filter(fecha_accion__range=[fecha_desde,fecha_hasta])
-        return Response({'success':True, 'detail':'Ok', 'data':'datos'}, status=status.HTTP_200_OK)
+        instancia_traslado = TrasladosViveros.objects.filter(id_traslado=info_traslado['id_traslado']).first()
+        if not instancia_traslado:
+            return Response({'success':False, 'detail':'El traslado ingresado no existe.'}, status=status.HTTP_400_BAD_REQUEST)
+        aux_nro_posicion = []
+        # VALIDACIONES DE LOS ITEMS
+        for i in items_traslado:
+            aux_validaciones_items = ItemsTrasladoViveros.objects.filter(id_traslado=info_traslado['id_traslado'],id_item_traslado_viveros=i['id_item_traslado_viveros']).first()
+            if not aux_validaciones_items:
+                return Response({'success':False,'detail':'Error en el item nro: (' + str(i['nro_posicion']) + '). No se encuentra el item que desea actualizar.'}, status=status.HTTP_400_BAD_REQUEST)
+            aux_bien = CatalogoBienes.objects.filter(id_bien=aux_validaciones_items.id_bien_origen.id_bien).first()
+            if not aux_bien:
+                return Response({'success':False,'detail':'Error en el item nro: (' + str(i['nro_posicion']) + '). No existe el bien.'}, status=status.HTTP_400_BAD_REQUEST)
+            altura_ingresada_item = i.get('altura_lote_destion_en_cms')
+            if altura_ingresada_item != None and ((aux_bien.cod_tipo_elemento_vivero != 'MV' and aux_bien.es_semilla_vivero != False) or (aux_bien.cod_tipo_elemento_vivero == 'MV' and aux_bien.es_semilla_vivero != False)):
+                return Response({'success':False,'detail':'Error en el item nro: (' + str(i['nro_posicion']) + '). Una bien diferente a una planta no debería tener altura.'}, status=status.HTTP_400_BAD_REQUEST)
+            if i['nro_posicion'] in aux_nro_posicion:
+                return Response({'success':False,'detail':'Error en el item nro: (' + str(i['nro_posicion']) + '). El número d eposición debe ser único'}, status=status.HTTP_400_BAD_REQUEST)
+            aux_nro_posicion.append(i['nro_posicion'])
+        # SE GUARDAN LAS MODIFICACIONES EN LA TABLA TRASLADOS
+        instancia_traslado.observaciones = info_traslado['observaciones']
+        for i in items_traslado:
+            aux_validaciones_items = ItemsTrasladoViveros.objects.filter(id_item_traslado_viveros=i['id_item_traslado_viveros']).first()
+            aux_bien = CatalogoBienes.objects.filter(id_bien=aux_validaciones_items.id_bien_origen.id_bien).first()            
+            # SE INSTANCIAN LOS VIVEROS
+            if (aux_bien.cod_tipo_elemento_vivero == 'IN' or aux_bien.cod_tipo_elemento_vivero == 'HE' or (aux_bien.cod_tipo_elemento_vivero == 'MV' and aux_bien.es_semilla_vivero == True)):
+                instancia_inventario_vivero_origen = InventarioViveros.objects.filter(id_vivero=instancia_traslado.id_vivero_origen,id_bien=aux_bien.id_bien).first()
+                instancia_inventario_vivero_destino = InventarioViveros.objects.filter(id_vivero=instancia_traslado.id_vivero_destino,id_bien=aux_bien.id_bien).first()
+            if (aux_bien.cod_tipo_elemento_vivero == 'MV' and aux_bien.es_semilla_vivero == False):
+                instancia_inventario_vivero_origen = InventarioViveros.objects.filter(id_vivero=instancia_traslado.id_vivero_origen,id_bien=aux_bien.id_bien,agno_lote=aux_validaciones_items.agno_lote_origen,nro_lote=aux_validaciones_items.nro_lote_origen,cod_etapa_lote=aux_validaciones_items.cod_etapa_lote_origen).first()
+                instancia_inventario_vivero_destino = InventarioViveros.objects.filter(id_vivero=instancia_traslado.id_vivero_destino,id_bien=aux_bien.id_bien,agno_lote=aux_validaciones_items.agno_lote_destino_MV,nro_lote=aux_validaciones_items.nro_lote_destino_MV,cod_etapa_lote=aux_validaciones_items.cod_etapa_lote_destino_MV).first()
+            print(instancia_traslado.id_vivero_destino)
+            print(aux_bien.id_bien)
+            print(instancia_inventario_vivero_origen)
+            print(instancia_inventario_vivero_destino)
+            # SE PONE EL CERO EN LAS VARIABLES QUE GUARDAN CANTIDAD SI SON NONE DEL VIVERO ORIGEN
+            instancia_inventario_vivero_origen.cantidad_traslados_lote_produccion_distribucion = instancia_inventario_vivero_origen.cantidad_traslados_lote_produccion_distribucion if instancia_inventario_vivero_origen.cantidad_traslados_lote_produccion_distribucion else 0
+            instancia_inventario_vivero_origen.cantidad_salidas = instancia_inventario_vivero_origen.cantidad_salidas if instancia_inventario_vivero_origen.cantidad_salidas else 0
+            instancia_inventario_vivero_origen.cantidad_lote_cuarentena = instancia_inventario_vivero_origen.cantidad_lote_cuarentena if instancia_inventario_vivero_origen.cantidad_lote_cuarentena else 0
+            instancia_inventario_vivero_origen.cantidad_bajas = instancia_inventario_vivero_origen.cantidad_bajas if instancia_inventario_vivero_origen.cantidad_bajas else 0
+            instancia_inventario_vivero_origen.cantidad_consumos_internos = instancia_inventario_vivero_origen.cantidad_consumos_internos if instancia_inventario_vivero_origen.cantidad_consumos_internos else 0
+            # SE PONE EL CERO EN LAS VARIABLES QUE GUARDAN CANTIDAD SI SON NONE DEL VIVERO DESPACHO
+            instancia_inventario_vivero_destino.cantidad_traslados_lote_produccion_distribucion = instancia_inventario_vivero_destino.cantidad_traslados_lote_produccion_distribucion if instancia_inventario_vivero_destino.cantidad_traslados_lote_produccion_distribucion else 0
+            instancia_inventario_vivero_destino.cantidad_salidas = instancia_inventario_vivero_destino.cantidad_salidas if instancia_inventario_vivero_destino.cantidad_salidas else 0
+            instancia_inventario_vivero_destino.cantidad_lote_cuarentena = instancia_inventario_vivero_destino.cantidad_lote_cuarentena if instancia_inventario_vivero_destino.cantidad_lote_cuarentena else 0
+            instancia_inventario_vivero_destino.cantidad_bajas = instancia_inventario_vivero_destino.cantidad_bajas if instancia_inventario_vivero_destino.cantidad_bajas else 0
+            instancia_inventario_vivero_destino.cantidad_consumos_internos = instancia_inventario_vivero_destino.cantidad_consumos_internos if instancia_inventario_vivero_destino.cantidad_consumos_internos else 0
+            # SE ACTUALIZA LA ALTURA DE LAS PLANTAS
+            aux_validaciones_items.altura_lote_destion_en_cms = i['altura_lote_destion_en_cms']
+            if (aux_bien.cod_tipo_elemento_vivero == 'MV' and aux_bien.es_semilla_vivero == False):
+                fecha_actual = datetime.now()
+                if fecha_actual.day != instancia_traslado.fecha_traslado.day:
+                    instancia_inventario_vivero_destino.ult_altura_lote = i['altura_lote_destion_en_cms']
+                    instancia_inventario_vivero_destino.fecha_ult_altura_lote = fecha_actual
+                else:
+                    instancia_inventario_vivero_origen.ult_altura_lote = i['altura_lote_destion_en_cms']
+                    instancia_inventario_vivero_destino.ult_altura_lote = i['altura_lote_destion_en_cms']
+                    instancia_inventario_vivero_origen.fecha_ult_altura_lote = fecha_actual
+                    instancia_inventario_vivero_destino.fecha_ult_altura_lote = fecha_actual
+            # SE VALDIA QUE LA CANTIDAD NO SE ACTUALICE MÁS DE UN DÍA DESPUÉS DEL TRASLADO
+            if aux_validaciones_items.cantidad_a_trasladar != i['cantidad_a_trasladar']:
+                fecha_actual = datetime.now()
+                aux_fecha = int((fecha_actual-instancia_traslado.fecha_traslado).days)
+                print((fecha_actual-instancia_traslado.fecha_traslado).days)
+                if aux_fecha > int(1):
+                    return Response({'success':False,'detail':'No es posible actualizar las cantidades de un traslado mas de un día después de ejecutarlo.'}, status=status.HTTP_400_BAD_REQUEST)
+            # EN CASO DE AUMENTAR LA CANTIDAD TRASLADADA
+            if aux_validaciones_items.cantidad_a_trasladar < i['cantidad_a_trasladar']:
+                print("++++++++++++++++++++ENTROOOOOOOOOOOOOOO")
+                if (aux_bien.cod_tipo_elemento_vivero == 'IN' or aux_bien.cod_tipo_elemento_vivero == 'HE' or (aux_bien.cod_tipo_elemento_vivero == 'MV' and aux_bien.es_semilla_vivero == True)):
+                    if (aux_bien.cod_tipo_elemento_vivero == 'MV'and aux_bien.es_semilla_vivero == True) or aux_bien.cod_tipo_elemento_vivero == 'IN':
+                        saldo_disponible = instancia_inventario_vivero_origen.cantidad_entrante - instancia_inventario_vivero_origen.cantidad_bajas - instancia_inventario_vivero_origen.cantidad_consumos_internos - instancia_inventario_vivero_origen.cantidad_salidas
+                    elif aux_bien.cod_tipo_elemento_vivero == 'HE':
+                        saldo_disponible = instancia_inventario_vivero_origen.cantidad_entrante - instancia_inventario_vivero_origen.cantidad_bajas - instancia_inventario_vivero_origen.cantidad_salidas
+                elif (aux_bien.cod_tipo_elemento_vivero == 'MV' and aux_bien.es_semilla_vivero == False):
+                    if instancia_inventario_vivero_origen.cantidad_entrante == None:
+                        return Response({'success':False,'detail':'En el item nro: (' + str(i['nro_posicion']) + '). El bien en el vivero no tiene catidad de entrada'}, status=status.HTTP_404_NOT_FOUND)
+                    if instancia_inventario_vivero_origen.cod_etapa_lote == 'P':
+                        saldo_disponible = instancia_inventario_vivero_origen.cantidad_entrante - instancia_inventario_vivero_origen.cantidad_bajas - instancia_inventario_vivero_origen.cantidad_traslados_lote_produccion_distribucion - instancia_inventario_vivero_origen.cantidad_salidas - instancia_inventario_vivero_origen.cantidad_lote_cuarentena
+                    if instancia_inventario_vivero_origen.cod_etapa_lote == 'D':
+                        saldo_disponible = instancia_inventario_vivero_origen.cantidad_entrante - instancia_inventario_vivero_origen.cantidad_bajas - instancia_inventario_vivero_origen.cantidad_salidas - instancia_inventario_vivero_origen.cantidad_lote_cuarentena
+                if i['cantidad_a_trasladar'] > saldo_disponible:
+                    return Response({'success':False,'detail':'Error en el item nro: (' + str(i['nro_posicion']) + '). La cantidad que desea actualizar es superior al saldo disponible'}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    instancia_inventario_vivero_origen.cantidad_salidas = instancia_inventario_vivero_origen.cantidad_salidas + (i['cantidad_a_trasladar'] - aux_validaciones_items.cantidad_a_trasladar)
+                    instancia_inventario_vivero_destino.cantidad_entrante = instancia_inventario_vivero_destino.cantidad_entrante + (i['cantidad_a_trasladar'] - aux_validaciones_items.cantidad_a_trasladar)
+                    aux_validaciones_items.cantidad_a_trasladar = i['cantidad_a_trasladar']
+            # EN CASO DE DISMINUIR LA CANTIDAD TRASLADADA          
+            elif aux_validaciones_items.cantidad_a_trasladar > i['cantidad_a_trasladar']:
+                print("---------------------ENTROOOOOOOOOOOOOOO")
+                if i['cantidad_a_trasladar'] <= 0:
+                    return Response({'success':False,'detail':'Error en el item nro: (' + str(i['nro_posicion']) + '). La cantidad debe ser mayor a cero'}, status=status.HTTP_400_BAD_REQUEST)
+                instancia_inventario_vivero_destino.cantidad_entrante = instancia_inventario_vivero_destino.cantidad_entrante - (aux_validaciones_items.cantidad_a_trasladar - i['cantidad_a_trasladar'])
+                if (aux_bien.cod_tipo_elemento_vivero == 'IN' or aux_bien.cod_tipo_elemento_vivero == 'HE' or (aux_bien.cod_tipo_elemento_vivero == 'MV' and aux_bien.es_semilla_vivero == True)):
+                    if (aux_bien.cod_tipo_elemento_vivero == 'MV'and aux_bien.es_semilla_vivero == True) or aux_bien.cod_tipo_elemento_vivero == 'IN':
+                        saldo_disponible = instancia_inventario_vivero_destino.cantidad_entrante - instancia_inventario_vivero_destino.cantidad_bajas - instancia_inventario_vivero_destino.cantidad_consumos_internos - instancia_inventario_vivero_destino.cantidad_salidas
+                    elif aux_bien.cod_tipo_elemento_vivero == 'HE':
+                        saldo_disponible = instancia_inventario_vivero_destino.cantidad_entrante - instancia_inventario_vivero_destino.cantidad_bajas - instancia_inventario_vivero_destino.cantidad_salidas
+                elif (aux_bien.cod_tipo_elemento_vivero == 'MV' and aux_bien.es_semilla_vivero == False):
+                    if instancia_inventario_vivero_origen.cantidad_entrante == None:
+                        return Response({'success':False,'detail':'En el item nro: (' + str(i['nro_posicion']) + '). El bien en el vivero no tiene catidad de entrada'}, status=status.HTTP_404_NOT_FOUND)
+                    if instancia_inventario_vivero_destino.cod_etapa_lote == 'P':
+                        saldo_disponible = instancia_inventario_vivero_destino.cantidad_entrante - instancia_inventario_vivero_destino.cantidad_bajas - instancia_inventario_vivero_destino.cantidad_traslados_lote_produccion_distribucion - instancia_inventario_vivero_destino.cantidad_salidas - instancia_inventario_vivero_destino.cantidad_lote_cuarentena
+                    if instancia_inventario_vivero_destino.cod_etapa_lote == 'D':
+                        saldo_disponible = instancia_inventario_vivero_destino.cantidad_entrante - instancia_inventario_vivero_destino.cantidad_bajas - instancia_inventario_vivero_destino.cantidad_salidas - instancia_inventario_vivero_destino.cantidad_lote_cuarentena
+                if saldo_disponible <= 0:
+                    return Response({'success':False,'detail':'Error en el item nro: (' + str(i['nro_posicion']) + '). No es posible actualizar la cantidad debido a que si se ejectua la operación quedaría un saldo negativo en la actualidad.'}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    instancia_inventario_vivero_origen.cantidad_salidas = instancia_inventario_vivero_origen.cantidad_salidas - (aux_validaciones_items.cantidad_a_trasladar - (i['cantidad_a_trasladar']))
+                    instancia_inventario_vivero_destino.cantidad_entrante = instancia_inventario_vivero_destino.cantidad_entrante - (aux_validaciones_items.cantidad_a_trasladar - (i['cantidad_a_trasladar']))
+                    aux_validaciones_items.cantidad_a_trasladar = i['cantidad_a_trasladar']
+            
+        return Response({'success':True, 'detail':'Ok', 'data':'daticos'}, status=status.HTTP_200_OK)
