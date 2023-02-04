@@ -55,12 +55,16 @@ class TrasladosCreate(generics.UpdateAPIView):
         aux_validacion_cantidades = [i['cantidad_a_trasladar'] for i in items_traslado if i['cantidad_a_trasladar']>0]
         if aux_validacion_cantidades == []:
             return Response({'success':False,'detail':'Las cantidades deben ser mayores a cero'}, status=status.HTTP_400_BAD_REQUEST)
-        if len(set(aux_validacion_cantidades)) != len(items_traslado):
+        if len(aux_validacion_cantidades) != len(items_traslado):
             return Response({'success':False,'detail':'Una de las cantidades es igual a cero, o ingresó un bien repetido'}, status=status.HTTP_400_BAD_REQUEST)
         # VALIDACIONES DE LOS ITEMS DEL TRASLADO
         aux_nro_posicion = []
+        aux_valores_repetidos = []
         valores_creados_detalles = []
         for i in items_traslado:
+            aux_local = [i['id_bien_origen'], i['agno_lote_origen'], i['nro_lote_origen']]
+            if aux_local in aux_valores_repetidos:
+                return Response({'success':False,'detail':'Error en el item nro: (' + str(i['nro_posicion']) + '). El bien ya existe en este traslado'}, status=status.HTTP_400_BAD_REQUEST)
             instancia_bien = CatalogoBienes.objects.filter(id_bien=i['id_bien_origen']).first()
             if not instancia_bien:
                 return Response({'success':False,'detail':'El bien seleccionado no existe'}, status=status.HTTP_400_BAD_REQUEST)
@@ -108,6 +112,7 @@ class TrasladosCreate(generics.UpdateAPIView):
                 return Response({'success':False,'detail':'Error en el item nro: (' + str(i['nro_posicion']) + '). El número d eposición debe ser único'}, status=status.HTTP_400_BAD_REQUEST)
             aux_nro_posicion.append(i['nro_posicion'])
             valores_creados_detalles.append({'nombre' : instancia_bien.nombre})
+            aux_valores_repetidos.append([i['id_bien_origen'], i['agno_lote_origen'], i['nro_lote_origen']])
         # SE CREA EL REGISTRO EN LA TABLA TRASLADOS
         serializer_crear = self.serializer_class(data=info_traslado, many=False)
         serializer_crear.is_valid(raise_exception=True)
@@ -193,6 +198,7 @@ class TrasladosCreate(generics.UpdateAPIView):
                 instancia_vivero_destino.save()
             instancia_item_origen.cantidad_salidas = instancia_item_origen.cantidad_salidas if instancia_item_origen.cantidad_salidas else 0
             instancia_item_origen.cantidad_salidas = instancia_item_origen.cantidad_salidas + i['cantidad_a_trasladar']
+            
             
         return Response({'success':True,'detail':'Traslado creado con éxito','data':serializer_crear_items.data}, status=status.HTTP_200_OK)
 
@@ -294,6 +300,7 @@ class TrasladosActualizar(generics.UpdateAPIView):
     def put(self, request):
         datos_ingresados = request.data
         user_logeado = request.user
+        aux_valores_repetidos = []
         info_traslado = json.loads(datos_ingresados['info_traslado'])
         items_traslado = json.loads(datos_ingresados['items_traslado'])
         instancia_traslado = TrasladosViveros.objects.filter(id_traslado=info_traslado['id_traslado']).first()
@@ -311,9 +318,19 @@ class TrasladosActualizar(generics.UpdateAPIView):
           # SE VALIDA QUE NO SE BORREN TODOS LOS ITEMS, AL MENOS DEBE QUEDAR UNO
         if len(items_traslado) < 1:
             return Response({'success':False, 'detail':'No se pueden borrar todos los items de un traslado. Si lo desea hacer diríjase al módulo de anulación de traslados'}, status=status.HTTP_400_BAD_REQUEST)
+        # SE VALIDA QUE EXISTE AL MENOS UNA CANTIDAD MAYOR A CERO
+        aux_validacion_cantidades = [i['cantidad_a_trasladar'] for i in items_traslado if i['cantidad_a_trasladar']>0]
+        if aux_validacion_cantidades == []:
+            return Response({'success':False,'detail':'Las cantidades deben ser mayores a cero'}, status=status.HTTP_400_BAD_REQUEST)
+        if len(aux_validacion_cantidades) != len(items_traslado):
+            return Response({'success':False,'detail':'Una de las cantidades es igual a cero, o ingresó un bien repetido'}, status=status.HTTP_400_BAD_REQUEST)
         # SE EVALUAN LOS ITEMS QUE SE VAN A ELIMINAR
         ids_items_entrantes = [i['id_item_traslado_viveros'] for i in items_traslado if i['id_item_traslado_viveros'] != None]
         aux_items_existentes = ItemsTrasladoViveros.objects.filter(id_traslado=info_traslado['id_traslado'])
+        # SE TOMA EL UNIQUE TOGETHER DE LOS ITEMS EXISTENTES 
+        aux_valores_repetidos = [[i.id_bien_origen.id_bien, i.agno_lote_origen, i.nro_lote_origen] for i in aux_items_existentes]
+        print(aux_valores_repetidos)
+        # SE TOMAN LOS IDS DE LOS ITEMS A ELIMINAR
         ids_items_existentes = [i.id_item_traslado_viveros for i in aux_items_existentes]
         items_a_eliminar = [i for i in ids_items_existentes if i not in ids_items_entrantes]
 #-----------> ELIMINACIÓN DE LOS ITEMS<--------------------------------------------------------------------------------------------#
@@ -382,15 +399,18 @@ class TrasladosActualizar(generics.UpdateAPIView):
         for i in items_traslado:
 #-----------> CREACIÓN DE NUEVOS ITEMS<--------------------------------------------------------------------------------------------#
             if i['id_item_traslado_viveros'] == None:
+                aux_local = [i['id_bien_origen'], i['agno_lote_origen'], i['nro_lote_origen']]
+                if aux_local in aux_valores_repetidos:
+                    return Response({'success':False,'detail':'Error en el item nro: (' + str(i['nro_posicion']) + '). El bien ya existe en este traslado', 'data' : i}, status=status.HTTP_400_BAD_REQUEST)
                 instancia_bien = CatalogoBienes.objects.filter(id_bien=i['id_bien_origen']).first()
                 if not instancia_bien:
                     return Response({'success':False,'detail':'El bien seleccionado no existe'}, status=status.HTTP_400_BAD_REQUEST)
                 instancia_item = InventarioViveros.objects.filter(id_vivero=instancia_traslado.id_vivero_origen.id_vivero,id_bien=i['id_bien_origen'],agno_lote=i['agno_lote_origen'],nro_lote=i['nro_lote_origen'],cod_etapa_lote=i['cod_etapa_lote_origen']).first()
                 if not instancia_item:
-                    return Response({'success':False,'detail':'Error en el item nro: (' + str(i['nro_posicion']) + '). No se encuentra el item que desea trasladar'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'success':False,'detail':'Error en el item nro: (' + str(i['nro_posicion']) + '). No se encuentra el item que desea trasladar', 'data' : i}, status=status.HTTP_400_BAD_REQUEST)
                 # SE VALIDA QUE EL BIEN A TRASLADAR NO ESTÉ EN ETAPA DE GERMINACIÓN
                 if i['cod_etapa_lote_origen'] == 'G':
-                    return Response({'success':False,'detail':'Error en el item nro: (' + str(i['nro_posicion']) + '). No se pueden trasladar bienes que estén en etapa de germinación'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'success':False,'detail':'Error en el item nro: (' + str(i['nro_posicion']) + '). No se pueden trasladar bienes que estén en etapa de germinación', 'data' : i}, status=status.HTTP_400_BAD_REQUEST)
                 # SE VALIDA LA CANTIDAD DISPONIBLE DEL BIEN A TRASLADAR
                 instancia_item.cantidad_traslados_lote_produccion_distribucion = instancia_item.cantidad_traslados_lote_produccion_distribucion if instancia_item.cantidad_traslados_lote_produccion_distribucion else 0
                 instancia_item.cantidad_salidas = instancia_item.cantidad_salidas if instancia_item.cantidad_salidas else 0
@@ -399,7 +419,7 @@ class TrasladosActualizar(generics.UpdateAPIView):
                 instancia_item.cantidad_consumos_internos = instancia_item.cantidad_consumos_internos if instancia_item.cantidad_consumos_internos else 0
                 if instancia_bien.cod_tipo_elemento_vivero == 'MV'and instancia_bien.es_semilla_vivero == False:
                     if instancia_item.cantidad_entrante == None:
-                        return Response({'success':False,'detail':'En el item nro: (' + str(i['nro_posicion']) + '). El bien en el vivero no tiene catidad de entrada'}, status=status.HTTP_404_NOT_FOUND)
+                        return Response({'success':False,'detail':'En el item nro: (' + str(i['nro_posicion']) + '). El bien en el vivero no tiene catidad de entrada', 'data' : i}, status=status.HTTP_404_NOT_FOUND)
                     if instancia_item.cod_etapa_lote == 'P':
                         saldo_disponible = instancia_item.cantidad_entrante - instancia_item.cantidad_bajas - instancia_item.cantidad_traslados_lote_produccion_distribucion - instancia_item.cantidad_salidas - instancia_item.cantidad_lote_cuarentena
                     if instancia_item.cod_etapa_lote == 'D':
@@ -407,16 +427,16 @@ class TrasladosActualizar(generics.UpdateAPIView):
                 elif (instancia_bien.cod_tipo_elemento_vivero == 'MV'and instancia_bien.es_semilla_vivero == True) or instancia_bien.cod_tipo_elemento_vivero == 'IN':
                     saldo_disponible = instancia_item.cantidad_entrante - instancia_item.cantidad_bajas - instancia_item.cantidad_consumos_internos - instancia_item.cantidad_salidas
                     if i['altura_lote_destion_en_cms'] != None:
-                        return Response({'success':False,'detail':'Error en el item nro: (' + str(i['nro_posicion']) + '). Si el bien no es una planta, altura del lote debería ingresar como nula'}, status=status.HTTP_404_NOT_FOUND)
+                        return Response({'success':False,'detail':'Error en el item nro: (' + str(i['nro_posicion']) + '). Si el bien no es una planta, altura del lote debería ingresar como nula', 'data' : i}, status=status.HTTP_404_NOT_FOUND)
                 elif instancia_bien.cod_tipo_elemento_vivero == 'HE':
                     if i['altura_lote_destion_en_cms'] != None:
-                        return Response({'success':False,'detail':'Error en el item nro: (' + str(i['nro_posicion']) + '). Si el bien no es una planta, altura del lote debería ingresar como nula'}, status=status.HTTP_404_NOT_FOUND)
+                        return Response({'success':False,'detail':'Error en el item nro: (' + str(i['nro_posicion']) + '). Si el bien no es una planta, altura del lote debería ingresar como nula', 'data' : i}, status=status.HTTP_404_NOT_FOUND)
                     saldo_disponible = instancia_item.cantidad_entrante - instancia_item.cantidad_bajas - instancia_item.cantidad_salidas
                 if i['cantidad_a_trasladar'] > saldo_disponible:
-                    return Response({'success':False,'detail':'Error en el item nro: (' + str(i['nro_posicion']) + '). La cantidad que desea trasladar es superior al saldo disponible'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'success':False,'detail':'Error en el item nro: (' + str(i['nro_posicion']) + '). La cantidad que desea trasladar es superior al saldo disponible', 'data' : i}, status=status.HTTP_400_BAD_REQUEST)
                 # SE VALIDA QUE LA ETAPA DE DESTINO SEA DIFERENTE DE GERMINACIÓN
                 if i['cod_etapa_lote_destino_MV'] == 'G':
-                    return Response({'success':False,'detail':'Error en el item nro: (' + str(i['nro_posicion']) + '). La etapa de destino no puede ser germinación'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'success':False,'detail':'Error en el item nro: (' + str(i['nro_posicion']) + '). La etapa de destino no puede ser germinación', 'data' : i}, status=status.HTTP_400_BAD_REQUEST)
                 # SE ASIGNA EL AÑO DEL LOTE Y EL NÚMERO DEL LOTE
                 i['agno_lote_destino_MV'] = instancia_traslado.fecha_traslado.year
                 aux_get_ultimo_nro_lote_by_agno = InventarioViveros.objects.filter(id_bien=i['id_bien_origen'],agno_lote=i['agno_lote_destino_MV']).order_by('nro_lote').last()
@@ -492,6 +512,7 @@ class TrasladosActualizar(generics.UpdateAPIView):
                     # SE ACTUALIZA EL CAMPO ITEM YA USADO EN EL VIVERO DESTINO
                     instancia_vivero_destino.item_ya_usado = True if instancia_vivero_destino.item_ya_usado == False else instancia_vivero_destino.item_ya_usado
                     instancia_vivero_destino.save()
+                    aux_valores_repetidos.append([i['id_bien_origen'], i['agno_lote_origen'], i['nro_lote_origen']])
 #-----------> ACTUALIZACIÓN DE LOS ITEMS<--------------------------------------------------------------------------------------------#
             elif i['id_item_traslado_viveros'] != None:
                 aux_validaciones_items = ItemsTrasladoViveros.objects.filter(id_traslado=info_traslado['id_traslado'],id_item_traslado_viveros=i['id_item_traslado_viveros']).first()
