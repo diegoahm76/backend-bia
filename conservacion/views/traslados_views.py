@@ -382,6 +382,7 @@ class TrasladosActualizar(generics.UpdateAPIView):
             if ((instancia_inventario_vivero_destino.cantidad_bajas != 0 and instancia_inventario_vivero_destino.cantidad_bajas != None) or (instancia_inventario_vivero_destino.cantidad_consumos_internos != 0 and instancia_inventario_vivero_destino.cantidad_consumos_internos != None) or (instancia_inventario_vivero_destino.cantidad_salidas != 0 and instancia_inventario_vivero_destino.cantidad_salidas != None) 
                 or (instancia_inventario_vivero_destino.cantidad_lote_cuarentena != 0 and instancia_inventario_vivero_destino.cantidad_lote_cuarentena != None) or (instancia_inventario_vivero_destino.cantidad_traslados_lote_produccion_distribucion != 0 and instancia_inventario_vivero_destino.cantidad_traslados_lote_produccion_distribucion != None)):
                 instancia_inventario_vivero_destino.cantidad_entrante = instancia_inventario_vivero_destino.cantidad_entrante - aux_validaciones_items.cantidad_a_trasladar
+                
                 if (aux_bien.cod_tipo_elemento_vivero == 'IN' or aux_bien.cod_tipo_elemento_vivero == 'HE' or (aux_bien.cod_tipo_elemento_vivero == 'MV' and aux_bien.es_semilla_vivero == True)):
                     if (aux_bien.cod_tipo_elemento_vivero == 'MV'and aux_bien.es_semilla_vivero == True) or aux_bien.cod_tipo_elemento_vivero == 'IN':
                         saldo_disponible = instancia_inventario_vivero_destino.cantidad_entrante - instancia_inventario_vivero_destino.cantidad_bajas - instancia_inventario_vivero_destino.cantidad_consumos_internos - instancia_inventario_vivero_destino.cantidad_salidas
@@ -394,6 +395,7 @@ class TrasladosActualizar(generics.UpdateAPIView):
                         return Response({'success':False,'detail':'El bien' + str(aux_validaciones_items.id_bien_origen.nombre) + ' no puede borrarse del traslado porque ya tiene salidas, consumos, distribuciones o está en cuarentena'}, status=status.HTTP_404_NOT_FOUND)
                     if instancia_inventario_vivero_destino.cod_etapa_lote == 'D':
                         return Response({'success':False,'detail':'El bien' + str(aux_validaciones_items.id_bien_origen.nombre) + ' no puede borrarse del traslado porque ya tiene salidas, consumos, distribuciones o está en cuarentena'}, status=status.HTTP_404_NOT_FOUND)
+                    
                 if saldo_disponible < 0:
                     return Response({'success':False,'detail':'En el bien' + str(aux_validaciones_items.id_bien_origen.nombre) + ' no se puede actualizar la cantidad debido a que si se ejectua la operación quedaría un saldo negativo en la actualidad.'}, status=status.HTTP_400_BAD_REQUEST)
                 else:
@@ -732,13 +734,13 @@ class TrasladosAnular(generics.UpdateAPIView):
                         saldo_disponible = instancia_inventario_vivero_destino.cantidad_entrante - instancia_inventario_vivero_destino.cantidad_bajas - instancia_inventario_vivero_destino.cantidad_salidas
                 elif (aux_bien.cod_tipo_elemento_vivero == 'MV' and aux_bien.es_semilla_vivero == False):
                     if instancia_inventario_vivero_origen.cantidad_entrante == None:
-                        return Response({'success':False,'detail':'En el item nro: (' + str(aux_validaciones_items.nro_posicion) + '). El bien en el vivero no tiene catidad de entrada'}, status=status.HTTP_404_NOT_FOUND)
+                        return Response({'success':False,'detail':'El bien' + str(aux_validaciones_items.id_bien_origen.nombre) + ' no tiene catidad de entrada en el vivero origen.'}, status=status.HTTP_404_NOT_FOUND)
                     if instancia_inventario_vivero_destino.cod_etapa_lote == 'P':
-                        return Response({'success':False,'detail':'En el item nro: (' + str(aux_validaciones_items.nro_posicion) + '). El bien no puede borrarse del traslado porque ya tiene salidas, consumos, distribuciones o está en cuarentena'}, status=status.HTTP_404_NOT_FOUND)
+                        return Response({'success':False,'detail':'El bien' + str(aux_validaciones_items.id_bien_origen.nombre) + ' no puede borrarse del traslado porque ya tiene salidas, consumos, distribuciones o está en cuarentena'}, status=status.HTTP_404_NOT_FOUND)
                     if instancia_inventario_vivero_destino.cod_etapa_lote == 'D':
-                        return Response({'success':False,'detail':'En el item nro: (' + str(aux_validaciones_items.nro_posicion) + '). El bien no puede borrarse del traslado porque ya tiene salidas, consumos, distribuciones o está en cuarentena'}, status=status.HTTP_404_NOT_FOUND)
+                        return Response({'success':False,'detail':'El bien' + str(aux_validaciones_items.id_bien_origen.nombre) + ' no puede borrarse del traslado porque ya tiene salidas, consumos, distribuciones o está en cuarentena'}, status=status.HTTP_404_NOT_FOUND)
                 if saldo_disponible < 0:
-                    return Response({'success':False,'detail':'Error en el item nro: (' + str(aux_validaciones_items.nro_posicion) + '). No es posible actualizar la cantidad debido a que si se ejectua la operación quedaría un saldo negativo en la actualidad.'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'success':False,'detail':'En el bien' + str(aux_validaciones_items.id_bien_origen.nombre) + ' no se puede actualizar la cantidad debido a que si se ejectua la operación quedaría un saldo negativo en la actualidad.'}, status=status.HTTP_400_BAD_REQUEST)
                 else:
                     instancia_inventario_vivero_origen.cantidad_salidas = instancia_inventario_vivero_origen.cantidad_salidas - aux_validaciones_items.cantidad_a_trasladar
                 aux_validaciones_items.delete()
@@ -746,7 +748,7 @@ class TrasladosAnular(generics.UpdateAPIView):
                 if (aux_bien.cod_tipo_elemento_vivero == 'MV' and aux_bien.es_semilla_vivero == False):
                     if instancia_inventario_vivero_destino.cod_etapa_lote == 'P' or instancia_inventario_vivero_destino.cod_etapa_lote == 'D':
                         if instancia_inventario_vivero_destino.fecha_ingreso_lote_etapa != instancia_inventario_vivero_destino.fecha_ult_altura_lote:
-                            return Response({'success':False,'detail':'En el item nro: (' + str(aux_validaciones_items.nro_posicion) + '). El bien no puede borrarse debido a que tiene registros de altura posteriores a la fecha de creación del traslado.'}, status=status.HTTP_404_NOT_FOUND)
+                            return Response({'success':False,'detail':'El bien' + str(aux_validaciones_items.id_bien_origen.nombre) + ' no puede borrarse debido a que tiene registros de altura posteriores a la fecha de creación del traslado.'}, status=status.HTTP_404_NOT_FOUND)
                         else:
                             instancia_inventario_vivero_origen.cantidad_salidas = instancia_inventario_vivero_origen.cantidad_salidas - aux_validaciones_items.cantidad_a_trasladar
                             instancia_inventario_vivero_destino.delete()
