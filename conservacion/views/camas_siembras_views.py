@@ -60,6 +60,8 @@ class CamasGerminacion(generics.UpdateAPIView):
         # SE VALIDA QUE EL DATO COMÚN SEA CORRECTO EN TODOS LOS ELEMENTOS (SE HAYA PUESTO EL MISMO VIVERO QUE CADA CAMA)
         if datos_ingresados == []:
             camas_existentes = CamasGerminacionVivero.objects.filter(id_vivero=id_vivero_procesar)
+            if not camas_existentes:
+                return Response({'success':False,'detail':'Este vivero no tiene camas de germinación asociadas'},status=status.HTTP_400_BAD_REQUEST)
             for i in camas_existentes:
                 if ((i.item_activo != False) or (i.item_activo != False)):
                     return Response({'success':False,'detail':'No es posible eliminar una cama si está activa o si ya ha sido usada'},status=status.HTTP_400_BAD_REQUEST)
