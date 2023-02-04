@@ -507,7 +507,6 @@ class GetUnidadesJerarquizadas(generics.ListAPIView):
             unidades = UnidadesOrganizacionales.objects.filter(id_organigrama=id_organigrama)
             if unidades:
                 unidades_linea = unidades.values(
-                    'id_unidad_organizacional',
                     'id_organigrama',
                     'id_nivel_organigrama',
                     'codigo',
@@ -516,12 +515,13 @@ class GetUnidadesJerarquizadas(generics.ListAPIView):
                     'unidad_raiz', 
                     'id_unidad_org_padre',
                     orden_nivel=F('id_nivel_organigrama__orden_nivel'),
-                    title=F('nombre')
+                    title=F('nombre'),
+                    id=F('id_unidad_organizacional')
                 )
                 unidades_linea = sorted(unidades_linea, key=itemgetter('orden_nivel'))
                 unidades_jerarquia = []
                 for unidad in unidades_linea:
-                    unidad['children'] = [hijo for hijo in unidades_linea if hijo['id_unidad_org_padre']==unidad['id_unidad_organizacional']]
+                    unidad['children'] = [hijo for hijo in unidades_linea if hijo['id_unidad_org_padre']==unidad['id']]
                     if unidad['unidad_raiz']:
                         unidades_jerarquia.append(unidad)
                         
