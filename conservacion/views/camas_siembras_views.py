@@ -250,7 +250,7 @@ class CreateSiembraView(generics.CreateAPIView):
             serializer_inventario.save()
         
         # AUDITORIA ELIMINACIÓN DE ITEMS ENTREGA
-        descripcion = {"nombre_bien_sembrado": str(siembra.id_bien_sembrado.nombre), "id_vivero": str(siembra.id_vivero.id_vivero), "año": str(siembra.agno_lote), "nro_lote": str(siembra.nro_lote)}
+        descripcion = {"nombre_bien_sembrado": str(siembra.id_bien_sembrado.nombre), "id_vivero": str(siembra.id_vivero.id_vivero), "agno": str(siembra.agno_lote), "nro_lote": str(siembra.nro_lote)}
         direccion=Util.get_client_ip(request)
         auditoria_data = {
             "id_usuario" : request.user.id_usuario,
@@ -313,12 +313,21 @@ class CreateBienesConsumidosView(generics.CreateAPIView):
 
         #CREACIÓN DE BIENES CONSUMIDOS
         bienes_consumidos_no_existentes = []
+        valores_creados_detalles = []
         for bien in data_bienes_consumidos:
             bien_consumido = ConsumosSiembra.objects.filter(id_siembra=bien['id_siembra'], id_bien_consumido=bien['id_bien_consumido'], id_mezcla_consumida=bien['id_mezcla_consumida']).first()
             if bien_consumido:
                 bien_consumido.cantidad = bien_consumido.cantidad if bien_consumido.cantidad else 0
                 bien_consumido.cantidad = bien_consumido.cantidad + bien['cantidad']
                 bien_consumido.save()
+
+                #SE AFECTA CANTIDAD CONSUMO INTERNO EN INVENTARIO VIVEROS
+                bien_in_inventario_viveros_serializador = InventarioViveros.objects.filter(id_bien=bien['id_bien_consumido'], id_vivero=siembra.id_vivero.id_vivero, id_siembra_lote_germinacion=None).first()
+                cantidad_existente_consumida = bien_in_inventario_viveros_serializador.cantidad_consumos_internos if bien_in_inventario_viveros_serializador.cantidad_consumos_internos else 0
+                bien_in_inventario_viveros_serializador.cantidad_consumos_internos = cantidad_existente_consumida + bien['cantidad']
+                bien_in_inventario_viveros_serializador.save()
+
+                valores_creados_detalles.append({'nombre_bien_consumido': bien_consumido.id_bien_consumido.nombre})
             else:
                 bienes_consumidos_no_existentes.append(bien)
 
@@ -326,13 +335,31 @@ class CreateBienesConsumidosView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializador = serializer.save()
 
+        #SE AFECTA LA CANTIDAD DISPONIBLE EN INVENTARIO VIVEROS
         for bien in serializador:
             bien_in_inventario_viveros_serializador = InventarioViveros.objects.filter(id_bien=bien.id_bien_consumido.id_bien, id_vivero=siembra.id_vivero.id_vivero, id_siembra_lote_germinacion=None).first()
             cantidad_existente_consumida = bien_in_inventario_viveros_serializador.cantidad_consumos_internos if bien_in_inventario_viveros_serializador.cantidad_consumos_internos else 0
             bien_in_inventario_viveros_serializador.cantidad_consumos_internos = cantidad_existente_consumida + bien.cantidad
             bien_in_inventario_viveros_serializador.save()
 
-        return Response({'success': True, 'detail': 'Bienes consumidos guardados exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        # AUDITORIA BIENES CONSUMIDOS DETALLE SIEMBRAS
+        for bien in serializer.data:
+            valores_creados_detalles.append({'nombre_bien_consumido': bien.id_bien_consumido.nombre})
+
+        descripcion = {"nombre_bien_sembrado": str(siembra.id_bien_sembrado.nombre), "vivero": str(siembra.id_vivero.id_vivero),"agno": str(siembra.agno_lote), "nro_lote": str(siembra.nro_lote)}
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 50,
+            "cod_permiso": "CR",
+            "subsistema": 'CONS',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_creados_detalles": valores_creados_detalles
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
+
+        return Response({'success': True, 'detail': 'Bienes consumidos guardados exitosamente', 'data': serializer.data if serializer.data else data_bienes_consumidos}, status=status.HTTP_201_CREATED)
 
 
 class UpdateSiembraView(generics.RetrieveUpdateAPIView):
@@ -345,6 +372,7 @@ class UpdateSiembraView(generics.RetrieveUpdateAPIView):
         
         #VALIDACIÓN QUE LA SIEMBRA EXISTA
         siembra = Siembras.objects.filter(id_siembra=id_siembra).first()
+        copy_siembra = copy.copy(siembra)
         if not siembra:
             return Response({'success':False, 'detail': 'No se encontró ninguna siembra con el parámetro ingresado'}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -389,7 +417,38 @@ class UpdateSiembraView(generics.RetrieveUpdateAPIView):
                 cama_existente_instance = CamasGerminacionViveroSiembra.objects.filter(id_siembra=id_siembra, id_cama_germinacion_vivero=cama_existente).first()
                 cama_existente_instance.delete()
 
-        return Response({'success': True, 'detail': 'Actualización exitosa'}, status=status.HTTP_201_CREATED)
+        #ACTUALIZACIÓN DE SIEMBRA
+        serializador_siembra = self.serializer_class(siembra, data=data_siembra, many=False)
+        serializador_siembra.is_valid(raise_exception=True)
+        serializador_siembra_instancia = serializador_siembra.save()
+
+        #SE GENERAN LOS CAMPOS PARA LA AUDITORIA
+        serializer = GetSiembraSerializer(siembra, many=False)
+        data = serializer.data
+        camas_actualizadas = CamasGerminacionViveroSiembra.objects.filter(id_siembra=id_siembra)
+        data['camas_germinacion'] = []
+        valores_actualizados_detalles = []
+
+        for cama in camas_actualizadas:
+            data_cama = {'id_cama': cama.id_cama_germinacion_vivero.id_cama_germinacion_vivero, 'nombre_cama': cama.id_cama_germinacion_vivero.nombre}
+            data['camas_germinacion'].append(data_cama)
+            valores_actualizados_detalles.append({'descripcion': {'nombre': cama.id_cama_germinacion_vivero.nombre}, 'previous': copy_siembra, 'current': serializador_siembra_instancia})
+
+        # AUDITORIA ACTUALIZAR SIEMBRA Y CAMAS DE GERMINACIÓN
+        descripcion = {"nombre_bien_sembrado": str(siembra.id_bien_sembrado.nombre), "vivero": str(siembra.id_vivero.id_vivero), "agno": str(siembra.agno_lote), "nro_lote": str(siembra.nro_lote)}
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 50,
+            "cod_permiso": "AC",
+            "subsistema": 'CONS',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_actualizados_detalles": valores_actualizados_detalles
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
+
+        return Response({'success': True, 'detail': 'Actualización exitosa', 'data': data}, status=status.HTTP_201_CREATED)
 
 
 class GetBienSembradoView(generics.ListAPIView):
