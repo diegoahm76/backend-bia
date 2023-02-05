@@ -383,9 +383,26 @@ class AnularCambioEtapa(generics.UpdateAPIView):
                     # PENDIENTE VALIDACIÓN QUE NO SE PUEDA ANULAR SI EXISTEN REGISTROS DE LOTE-ETAPA EN T164
                     
                     # PENDIENTE VALIDACIÓN QUE NO SE PUEDA ANULAR SI EXISTEN REGISTROS DE LOTE-ETAPA EN TABLAS DE SEGUIMIENTO
-
-                    # ------------------------ ALGO PASA ACA -------------------------
                     
+                    # SE ELIMINA EL REGISTRO DEL CAMBIO DE ETAPA EN INVENTARIO VIVERO
+                    inventario_vivero_etapa_nueva.delete()
+                    
+                    # SE ACTUALIZA EL REGISTRO ETAPA ORIGEN
+                    inventario_vivero_etapa_origen.cantidad_traslados_lote_produccion_distribucion = inventario_vivero_etapa_origen.cantidad_traslados_lote_produccion_distribucion - cambio_etapa.cantidad_movida if inventario_vivero_etapa_origen.cantidad_traslados_lote_produccion_distribucion else 0
+                    inventario_vivero_etapa_origen.save()
+                    
+                    # SE ANULA CAMBIO DE ETAPA  
+                    data['id_persona_anula'] = persona
+                    data['cambio_anulado'] = True
+                    data['fecha_anulacion'] = datetime.now()
+                    
+                    serializer = self.serializer_class(cambio_etapa, data=data)
+                    serializer.is_valid(raise_exception=True)
+                    serializer.save()
+                    
+                    return Response({'success':True, 'detail':'Se anuló correctamente el cambio de etapa', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+                
+                else:
                     if saldo_disponible < cambio_etapa.cantidad_movida:
                         return Response({'success':False, 'detail':'No se puede anular el cambio de etapa porque el saldo disponible (' + str(saldo_disponible) + ') es menor a la cantidad movida (' + str(cambio_etapa.cantidad_movida) + ')'}, status=status.HTTP_403_FORBIDDEN)
                     
@@ -417,10 +434,6 @@ class AnularCambioEtapa(generics.UpdateAPIView):
                         
                         return Response({'success':True, 'detail':'Se anuló correctamente el cambio de etapa', 'data':serializer.data}, status=status.HTTP_201_CREATED)
                     else:
-                        # VALIDACIÓN SI FECHA ULTIMA ALTURA Y FECHA CAMBIO SON IGUALES - PENDIENTE
-                        if inventario_vivero_etapa_nueva.fecha_ult_altura_lote == cambio_etapa.fecha_cambio:
-                            return Response({'success':False, 'detail':'La fecha con la que quedó el lote-destino fue registrada por el cambio de etapa que se está anulando, se le recomienda ir a verificar que sea correcta y actualizar de ser necesario'}, status=status.HTTP_403_FORBIDDEN)
-                        
                         # SE ACTUALIZA EL REGISTRO ETAPA DESTINO
                         inventario_vivero_etapa_nueva.cantidad_entrante = inventario_vivero_etapa_nueva.cantidad_entrante - cambio_etapa.cantidad_movida if inventario_vivero_etapa_nueva.cantidad_entrante else 0
                         inventario_vivero_etapa_nueva.save()
@@ -437,6 +450,10 @@ class AnularCambioEtapa(generics.UpdateAPIView):
                         serializer = self.serializer_class(cambio_etapa, data=data)
                         serializer.is_valid(raise_exception=True)
                         serializer.save()
+                        
+                        # VALIDACIÓN SI FECHA ULTIMA ALTURA Y FECHA CAMBIO SON IGUALES - PENDIENTE
+                        if inventario_vivero_etapa_nueva.fecha_ult_altura_lote == cambio_etapa.fecha_cambio:
+                            return Response({'success':True, 'detail':'Se realizó la anulación, pero la altura con la que quedó el lote-destino fue registrada por el cambio de etapa que se está anulando, se le recomienda ir a verificar que sea correcta y actualizar de ser necesario'}, status=status.HTTP_201_CREATED)
                         
                         return Response({'success':True, 'detail':'Se anuló correctamente el cambio de etapa', 'data':serializer.data}, status=status.HTTP_201_CREATED)
         else:

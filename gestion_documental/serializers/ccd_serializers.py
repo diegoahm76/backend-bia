@@ -25,10 +25,53 @@ class SubseriesDocSerializer(serializers.ModelSerializer):
            )
         ]
 
+class SeriesDocPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SeriesDoc
+        fields = '__all__'
+        validators = [
+            UniqueTogetherValidator(
+                queryset=SeriesDoc.objects.all(),
+                fields = ['id_ccd', 'codigo'],
+                message='El id_ccd y el codigo deben ser una pareja única'
+            ),
+            UniqueTogetherValidator(
+                queryset=SeriesDoc.objects.all(),
+                fields = ['id_ccd', 'nombre'],
+                message='El id_ccd y nombre deben ser una pareja única'
+            )
+            ]  
+
 class CCDSerializer(serializers.ModelSerializer):
+    series = serializers.SerializerMethodField()
+    subseries = serializers.SerializerMethodField()
+    
+    def get_series(self,obj):
+        series = SeriesDoc.objects.filter(id_ccd=obj.id_ccd)
+        serializer_series = SeriesDocPostSerializer(series, many=True)
+        return serializer_series.data
+    
+    def get_subseries(self,obj):
+        subseries = SubseriesDoc.objects.filter(id_ccd=obj.id_ccd)
+        serializer_subseries = SubseriesDocSerializer(subseries, many=True)
+        return serializer_subseries.data
+    
     class Meta:
         model = CuadrosClasificacionDocumental
-        fields = '__all__'
+        fields = (
+            'id_ccd',
+            'id_organigrama',
+            'version',
+            'nombre',
+            'fecha_terminado',
+            'fecha_puesta_produccion',
+            'fecha_retiro_produccion',
+            'justificacion',
+            'ruta_soporte',
+            'actual',
+            'series',
+            'subseries',
+        )
 
 class CCDPostSerializer(serializers.ModelSerializer):
     version = serializers.CharField(validators=[UniqueValidator(queryset=CuadrosClasificacionDocumental.objects.all(), message='La versión del Cuadro de Clasificación Documental debe ser único')])
@@ -60,25 +103,6 @@ class CCDActivarSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'fecha_terminado': {'read_only': True}
         }
-
-    
-class SeriesDocPostSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = SeriesDoc
-        fields = '__all__'
-        validators = [
-            UniqueTogetherValidator(
-                queryset=SeriesDoc.objects.all(),
-                fields = ['id_ccd', 'codigo'],
-                message='El id_ccd y el codigo deben ser una pareja única'
-            ),
-            UniqueTogetherValidator(
-                queryset=SeriesDoc.objects.all(),
-                fields = ['id_ccd', 'nombre'],
-                message='El id_ccd y nombre deben ser una pareja única'
-            )
-            ]  
 
 class SeriesDocSerializer(serializers.ModelSerializer):
     id_ccd = CCDSerializer(read_only=True)
