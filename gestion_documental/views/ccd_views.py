@@ -123,6 +123,7 @@ class UpdateCuadroClasificacionDocumental(generics.RetrieveUpdateAPIView):
 class FinalizarCuadroClasificacionDocumental(generics.RetrieveUpdateAPIView):
     serializer_class = CCDActivarSerializer
     queryset = CuadrosClasificacionDocumental
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
         ccd = CuadrosClasificacionDocumental.objects.filter(id_ccd=pk).first()
@@ -209,6 +210,7 @@ class FinalizarCuadroClasificacionDocumental(generics.RetrieveUpdateAPIView):
 class GetCuadroClasificacionDocumental(generics.ListAPIView):
     serializer_class = CCDSerializer  
     queryset = CuadrosClasificacionDocumental.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         consulta = request.query_params.get('pk')
@@ -234,6 +236,7 @@ class GetCuadroClasificacionDocumental(generics.ListAPIView):
 class GetCCDTerminado(generics.ListAPIView):
     serializer_class = CCDSerializer  
     queryset = CuadrosClasificacionDocumental.objects.filter(~Q(fecha_terminado = None) & Q(fecha_retiro_produccion=None))
+    permission_classes = [IsAuthenticated]
 
 #Crear Series documentales
 class CreateSeriesDoc(generics.UpdateAPIView):
@@ -360,21 +363,18 @@ class CreateSeriesDoc(generics.UpdateAPIView):
         return Response({'success': True, "detail" : "Datos guardados con éxito", 'data': data}, status=status.HTTP_201_CREATED)
 
 class GetSeriesDoc(generics.ListAPIView):
-    serializer_class = SeriesDocSerializer
+    serializer_class = SeriesDocPostSerializer
+    queryset = SubseriesDoc.objects.all()
+    permission_classes = [IsAuthenticated]
     
     def get(self, request, id_ccd):
-        dato_buscado = id_ccd
-        if dato_buscado == None:
-            series_doc = SeriesDoc.objects.all().values()
-            if len(series_doc) == 0:
-                return Response({'success': False, "detail" : 'Aún no hay series documentales registradas'}, status=status.HTTP_404_NOT_FOUND)
-            return Response({'Series documentales' : series_doc}, status=status.HTTP_200_OK) 
-        series_doc = SeriesDoc.objects.filter(id_ccd=int(dato_buscado)).values()
-        if len(series_doc) == 0:
-            return Response({'success': False, "detail" : 'No se encontró la serie documental ingresada'}, status=status.HTTP_404_NOT_FOUND)
-        ccd = CuadrosClasificacionDocumental.objects.filter(id_ccd = dato_buscado).values()
-        datos_finales = {"CCD" : ccd, "Series documentales" : series_doc}
-        return Response({'success': True, "detail" : datos_finales}, status=status.HTTP_200_OK)
+        ccd = CuadrosClasificacionDocumental.objects.filter(id_ccd=id_ccd).first()
+        if ccd:
+            subseries = SeriesDoc.objects.filter(id_ccd=id_ccd)
+            serializer = self.serializer_class(subseries, many=True)
+            return Response({'success':True, 'detail':'El CCD ingresado tiene las siguientes series registradas', 'data':serializer.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success':False, 'detail':'Debe consultar por un CCD válido'}, status=status.HTTP_404_NOT_FOUND)
 
 
 class UpdateSubseriesDoc(generics.UpdateAPIView):
@@ -508,18 +508,21 @@ class UpdateSubseriesDoc(generics.UpdateAPIView):
 class GetSubseries(generics.ListAPIView):
     serializer_class = SubseriesDocSerializer
     queryset = SubseriesDoc.objects.all()
+    permission_classes = [IsAuthenticated]
     
     def get(self, request, id_ccd):
         ccd = CuadrosClasificacionDocumental.objects.filter(id_ccd=id_ccd).first()
         if ccd:
             subseries = SubseriesDoc.objects.filter(id_ccd=id_ccd)
             serializer = self.serializer_class(subseries, many=True)
-            return Response({'success':True, 'detail':serializer.data}, status=status.HTTP_200_OK)
+            return Response({'success':True, 'detail':'El CCD ingresado tiene las siguientes subseries registradas', 'data':serializer.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success':False, 'detail':'Debe consultar por un CCD válido'}, status=status.HTTP_404_NOT_FOUND)
         
 class AsignarSeriesYSubseriesAUnidades(generics.UpdateAPIView):
     serializer_class = SeriesSubseriesUnidadOrgSerializer
+    queryset = SeriesSubseriesUnidadOrg.objects.all()
+    permission_classes = [IsAuthenticated]
     
     def put(self, request, id_ccd):
         id_ccd_ingresado = id_ccd
@@ -582,6 +585,8 @@ class AsignarSeriesYSubseriesAUnidades(generics.UpdateAPIView):
     
 class GetAsignaciones(generics.ListAPIView):
     serializer_class = SeriesSubseriesUnidadOrgSerializer
+    queryset = SeriesSubseriesUnidadOrg.objects.all()
+    permission_classes = [IsAuthenticated]
     
     def get(self, request, id_ccd):
         dato_consultado = id_ccd
@@ -640,6 +645,7 @@ class GetAsignaciones(generics.ListAPIView):
 class ReanudarCuadroClasificacionDocumental(generics.UpdateAPIView):
     serializer_class = CCDActivarSerializer
     queryset = CuadrosClasificacionDocumental
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
         ccd = CuadrosClasificacionDocumental.objects.filter(id_ccd=pk).first()
