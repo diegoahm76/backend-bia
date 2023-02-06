@@ -53,7 +53,7 @@ class ItemsSolicitudConsumible(models.Model):
     id_item_solicitud_consumible = models.AutoField(primary_key=True, db_column='T082IdItem_SolicitudConsumible')
     id_solicitud_consumibles = models.ForeignKey(SolicitudesConsumibles, on_delete=models.CASCADE, db_column='T082Id_SolicitudConsumibles')
     id_bien = models.ForeignKey(CatalogoBienes, on_delete=models.CASCADE, db_column='T082Id_Bien')
-    cantidad = models.SmallIntegerField(db_column='T082cantidad')
+    cantidad = models.IntegerField(db_column='T082cantidad')
     id_unidad_medida = models.ForeignKey(UnidadesMedida, on_delete=models.CASCADE, db_column='T082Id_UnidadMedida')
     observaciones = models.CharField(max_length=30, db_column='T082observaciones', null=True, blank=True)
     nro_posicion = models.SmallIntegerField(db_column='T082nroPosicion')
