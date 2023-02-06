@@ -74,15 +74,16 @@ class TrasladosCreate(generics.UpdateAPIView):
             instancia_bien = CatalogoBienes.objects.filter(id_bien=i['id_bien_origen']).first()
             if not instancia_bien:
                 return Response({'success':False,'detail':'En el número de posición: ' + str(i['nro_posicion']) + ', el bien seleccionado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # SE VALIDA QUE EL BIEN A TRASLADAR NO ESTÉ EN ETAPA DE GERMINACIÓN
+            if i['cod_etapa_lote_origen'] == 'G':
+                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ', no se pueden trasladar porque está en etapa de germinación.'}, status=status.HTTP_400_BAD_REQUEST)
+            
             if aux_local in aux_valores_repetidos:
                 return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ', ya existe en este traslado.'}, status=status.HTTP_400_BAD_REQUEST)
             instancia_item = InventarioViveros.objects.filter(id_vivero=info_traslado['id_vivero_origen'],id_bien=i['id_bien_origen'],agno_lote=i['agno_lote_origen'],nro_lote=i['nro_lote_origen'],cod_etapa_lote=i['cod_etapa_lote_origen']).first()
             if not instancia_item:
                 return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ', no se encuentra registrado en el inventario del vivero.'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            # SE VALIDA QUE EL BIEN A TRASLADAR NO ESTÉ EN ETAPA DE GERMINACIÓN
-            if i['cod_etapa_lote_origen'] == 'G':
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ', no se pueden trasladar porque está en etapa de germinación.'}, status=status.HTTP_400_BAD_REQUEST)
             
             # SE VALIDA LA CANTIDAD DISPONIBLE DEL BIEN A TRASLADAR
             instancia_item.cantidad_traslados_lote_produccion_distribucion = instancia_item.cantidad_traslados_lote_produccion_distribucion if instancia_item.cantidad_traslados_lote_produccion_distribucion else 0
@@ -353,7 +354,13 @@ class TrasladosActualizar(generics.UpdateAPIView):
         
         # SE TOMA EL UNIQUE TOGETHER DE LOS ITEMS EXISTENTES 
         aux_valores_repetidos = [[i.id_bien_origen.id_bien, i.agno_lote_origen, i.nro_lote_origen] for i in aux_items_existentes]
- 
+        for i in items_traslado:
+            if i['id_item_traslado_viveros'] == None:
+                aux_local = [i['id_bien_origen'], i['agno_lote_origen'], i['nro_lote_origen']]
+                if aux_local in aux_valores_repetidos:
+                    return Response({'success':False,'detail':'El bien con id ' + str(i['id_bien_origen']) + ' con número de posición ' + str(i['nro_posicion']) + ' ya existe en este traslado'}, status=status.HTTP_400_BAD_REQUEST)
+                aux_valores_repetidos.append([i['id_bien_origen'], i['agno_lote_origen'], i['nro_lote_origen']])
+        
         # SE TOMAN LOS IDS DE LOS ITEMS A ELIMINAR
         ids_items_existentes = [i.id_item_traslado_viveros for i in aux_items_existentes]
         items_a_eliminar = [i for i in ids_items_existentes if i not in ids_items_entrantes]
@@ -431,15 +438,11 @@ class TrasladosActualizar(generics.UpdateAPIView):
         for i in items_traslado:
 #-----------> CREACIÓN DE NUEVOS ITEMS<--------------------------------------------------------------------------------------------#
             if i['id_item_traslado_viveros'] == None:
-                aux_local = [i['id_bien_origen'], i['agno_lote_origen'], i['nro_lote_origen']]
                 instancia_bien = CatalogoBienes.objects.filter(id_bien=i['id_bien_origen']).first()
                 
                 if not instancia_bien:
                     return Response({'success':False,'detail':'El bien seleccionado no existe'}, status=status.HTTP_400_BAD_REQUEST)
-                
-                if aux_local in aux_valores_repetidos:
-                    return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' ya existe en este traslado'}, status=status.HTTP_400_BAD_REQUEST)
-                
+               
                 instancia_item = InventarioViveros.objects.filter(id_vivero=instancia_traslado.id_vivero_origen.id_vivero,id_bien=i['id_bien_origen'],agno_lote=i['agno_lote_origen'],nro_lote=i['nro_lote_origen'],cod_etapa_lote=i['cod_etapa_lote_origen']).first()
                 if not instancia_item:
                     return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' no existe en el inventario del vivero origen.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -558,7 +561,7 @@ class TrasladosActualizar(generics.UpdateAPIView):
                     # SE ACTUALIZA EL CAMPO ITEM YA USADO EN EL VIVERO DESTINO
                     instancia_vivero_destino.item_ya_usado = True if instancia_vivero_destino.item_ya_usado == False else instancia_vivero_destino.item_ya_usado
                     instancia_vivero_destino.save()
-                    aux_valores_repetidos.append([i['id_bien_origen'], i['agno_lote_origen'], i['nro_lote_origen']])
+                    
                     
 #-----------> ACTUALIZACIÓN DE LOS ITEMS<--------------------------------------------------------------------------------------------#
             elif i['id_item_traslado_viveros'] != None:
@@ -704,6 +707,11 @@ class TrasladosAnular(generics.UpdateAPIView):
         items_del_traslado = ItemsTrasladoViveros.objects.filter(id_traslado=instancia_traslado.id_traslado)
         if not items_del_traslado:
             return Response({'success':False,'detail':'Este traslado no tiene items asociados o ya fue anulado.'}, status=status.HTTP_400_BAD_REQUEST)
+        fecha_traslado = instancia_traslado.fecha_traslado
+        aux_validacion_fechas = datetime.now() - fecha_traslado
+        if int(aux_validacion_fechas.days) > 30:
+            return Response({'success':False,'detail':'No puede anular un despacho con fecha anterior a 30 días respecto a la actual'},status=status.HTTP_404_NOT_FOUND)
+        
         valores_eliminados_detalles = []
         for i in items_del_traslado:
             aux_validaciones_items = ItemsTrasladoViveros.objects.filter(id_item_traslado_viveros=i.id_item_traslado_viveros).first()
