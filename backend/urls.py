@@ -79,8 +79,10 @@ urlpatterns = [
     path('api/conservacion/etapas/', include('conservacion.urls.etapas_urls')),
     path('api/conservacion/camas-siembras/', include('conservacion.urls.camas_siembras_urls')),
     path('api/conservacion/traslados/', include('conservacion.urls.traslados_urls')),
-    path('api/conservacion/cuarentena/', include('conservacion.urls.cuarentena_urls')),
-    path('api/conservacion/bajas/', include('conservacion.urls.bajas_urls'))
+    path('api/conservacion/ingreso-cuarentena/', include('conservacion.urls.ingreso_cuarentena_urls')),
+    path('api/conservacion/levantamiento-cuarentena/', include('conservacion.urls.levantamiento_cuarentena_urls')),
+    path('api/conservacion/bajas/', include('conservacion.urls.bajas_urls')),
+    path('api/conservacion/mortalidad/', include('conservacion.urls.mortalidad_urls'))
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
