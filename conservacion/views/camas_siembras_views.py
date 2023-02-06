@@ -28,13 +28,16 @@ from conservacion.serializers.camas_siembras_serializers import (
     CamasGerminacionPost,
     CreateSiembrasSerializer,
     GetNumeroLoteSerializer,
-    GetBienSembradoSerializer,
     GetCamasGerminacionSerializer,
     CreateSiembraInventarioViveroSerializer,
     CreateBienesConsumidosSerializer,
     GetSiembraSerializer,
     GetBienesPorConsumirSerializer,
-    UpdateSiembraSerializer
+    UpdateSiembraSerializer,
+    UpdateBienesConsumidosSerializer,
+    DeleteSiembraSerializer,
+    GetBienesConsumidosSiembraSerializer,
+    GetBienSembradoSerializer
 )
 from almacen.models.bienes_models import (
     CatalogoBienes
@@ -121,8 +124,8 @@ class GetCamasGerminacionesView(generics.ListAPIView):
     queryset = CamasGerminacionVivero.objects.all()
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        data = self.get_queryset()
+    def get(self, request, id_vivero):
+        data = self.queryset.all().filter(item_activo=True, id_vivero=id_vivero)
         serializer = self.serializer_class(data, many=True)
         return Response({'success':True, 'detail':'Busqueda exitosa', 'data': serializer.data},status=status.HTTP_200_OK)
 
@@ -222,6 +225,10 @@ class CreateSiembraView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         siembra = serializer.save()
 
+        data_serializada = serializer.data
+        data_serializada['cama_germinacion'] = []
+
+
         #CREACIÓN DE ASOCIACIÓN ENTRE SIEMBRA Y CAMAS
         camas_guardadas_list = []
 
@@ -231,6 +238,8 @@ class CreateSiembraView(generics.CreateAPIView):
                 id_siembra = siembra,
                 id_cama_germinacion_vivero = cama_instance  
             )
+            data_cama = {'id_cama': camas_guardadas.id_cama_germinacion_vivero.id_cama_germinacion_vivero, 'nombre_cama': camas_guardadas.id_cama_germinacion_vivero.nombre}
+            data_serializada['cama_germinacion'].append(data_cama)
             camas_guardadas_list.append(camas_guardadas)
             cama_instance.item_ya_usado = True
             cama_instance.save()
@@ -264,7 +273,7 @@ class CreateSiembraView(generics.CreateAPIView):
         }
         Util.save_auditoria(auditoria_data)
         
-        return Response({'success': True, 'detail': 'Siembra creada exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        return Response({'success': True, 'detail': 'Siembra creada exitosamente', 'data': data_serializada}, status=status.HTTP_201_CREATED)
 
 
 class CreateBienesConsumidosView(generics.CreateAPIView):
@@ -345,7 +354,7 @@ class CreateBienesConsumidosView(generics.CreateAPIView):
             bien_in_inventario_viveros_serializador.save()
 
         # AUDITORIA BIENES CONSUMIDOS DETALLE SIEMBRAS
-        for bien in serializer.data:
+        for bien in serializador:
             valores_creados_detalles.append({'nombre_bien_consumido': bien.id_bien_consumido.nombre})
 
         descripcion = {"nombre_bien_sembrado": str(siembra.id_bien_sembrado.nombre), "vivero": str(siembra.id_vivero.id_vivero),"agno": str(siembra.agno_lote), "nro_lote": str(siembra.nro_lote)}
@@ -451,17 +460,6 @@ class UpdateSiembraView(generics.RetrieveUpdateAPIView):
         Util.save_auditoria_maestro_detalle(auditoria_data)
 
         return Response({'success': True, 'detail': 'Actualización exitosa', 'data': data}, status=status.HTTP_201_CREATED)
-
-
-class GetBienSembradoView(generics.ListAPIView):
-    serializer_class = GetBienSembradoSerializer
-    queryset = CatalogoBienes.objects.all()
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        bien = CatalogoBienes.objects.filter(cod_tipo_elemento_vivero='MV', solicitable_vivero=True, es_semilla_vivero=False, nivel_jerarquico='5')
-        serializer = self.serializer_class(bien, many=True)
-        return Response({'success': True, 'detail': 'Búsqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 
 class GetSiembrasView(generics.RetrieveAPIView):
@@ -509,10 +507,24 @@ class GetBienesPorConsumirView(generics.ListAPIView):
             if bien_in_inventario.id_bien.es_semilla_vivero != True:
                 return Response({'success': False, 'detail': 'El bien seleccionado debe ser material vegetal de tipo semilla'}, status=status.HTTP_403_FORBIDDEN)
 
+        bien_in_inventario.cantidad_disponible_bien = UtilConservacion.get_cantidad_disponible_consumir(bien_in_inventario)
+        if bien_in_inventario.cantidad_disponible_bien < 1:
+            return Response({'success': False, 'detail': 'El bien seleccionado no tiene cantidades disponibles para consumir'}, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = self.serializer_class(bien_in_inventario, many=False)
 
         return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
     
+
+class GetBienSembradoView(generics.ListAPIView):
+    serializer_class = GetBienSembradoSerializer
+    queryset = CatalogoBienes.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        bien = CatalogoBienes.objects.filter(cod_tipo_elemento_vivero='MV', solicitable_vivero=True, es_semilla_vivero=False, nivel_jerarquico='5')
+        serializer = self.serializer_class(bien, many=True)
+        return Response({'success': True, 'detail': 'Búsqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 class GetBusquedaBienesConsumidos(generics.ListAPIView):
     serializer_class = GetBienesPorConsumirSerializer
@@ -551,3 +563,64 @@ class GetBusquedaBienesConsumidos(generics.ListAPIView):
         serializer = self.serializer_class(bien_con_cantidades, many=True)
 
         return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+class GetBienesConsumidosSiembraView(generics.ListAPIView):
+    serializer_class = GetBienesConsumidosSiembraSerializer
+    queryset = ConsumosSiembra.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_siembra):
+
+        #VALIDACIÓN QUE LA SIEMBRA EXISTA
+        siembra = Siembras.objects.filter(id_siembra=id_siembra).first()
+        if not siembra:
+            return Response({'success':False, 'detail': 'No se encontró ninguna siembra con el parámetro ingresado'}, status=status.HTTP_400_BAD_REQUEST)
+
+        bienes_consumidos = ConsumosSiembra.objects.filter(id_siembra=id_siembra)
+        serializer = self.serializer_class(bienes_consumidos, many=True)
+        return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+class UpdateBienConsumido(generics.RetrieveUpdateAPIView):
+    serializer_class = UpdateBienesConsumidosSerializer
+    queryset = ConsumosSiembra.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, id_siembra):
+        data_siembra = request.data
+        
+        #VALIDACIÓN QUE LA SIEMBRA EXISTA
+        siembra = Siembras.objects.filter(id_siembra=id_siembra).first()
+        if not siembra:
+            return Response({'success':False, 'detail': 'No se encontró ninguna siembra con el parámetro ingresado'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        #SEPARO ENTRE LO QUE SE CREA Y LO QUE SE ACTUALIZA
+        bienes_actualizar = [bien for bien in data_siembra if bien['id_consumo_siembra'] != None]
+        bienes_crear = [bien for bien in data_siembra if bien['id_consumo_siembra'] == None]
+
+        #VALIDACIÓN QUE LOS BIENES CONSUMIDOS POR ACTUALIZAR EXISTAN
+        bienes_actualizar_id = [bien['id_consumo_siembra'] for bien in bienes_actualizar]
+        bienes_actualizar_instance = ConsumosSiembra.objects.filter(id_consumo_siembra__in=bienes_actualizar_id)
+        if len(set(bienes_actualizar_id)) != len(bienes_actualizar_instance):
+            return Response({'success': False, 'detail': 'Todos los bienes consumidos por actualizar deben existir'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+        data = []
+        return Response({'success': True, 'detail': 'Actualización exitosa', 'data': data}, status=status.HTTP_201_CREATED)
+
+class DeleteBienConsumido(generics.RetrieveUpdateAPIView):
+    serializer_class = UpdateBienesConsumidosSerializer
+    queryset = ConsumosSiembra.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, id_siembra):
+        pass
+
+
+class DeleteSiembra(generics.RetrieveDestroyAPIView):
+    serializer_class = DeleteSiembraSerializer
+    queryset = Siembras.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, id_siembra):
+        pass
+
