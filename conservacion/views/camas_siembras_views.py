@@ -38,7 +38,8 @@ from conservacion.serializers.camas_siembras_serializers import (
     DeleteSiembraSerializer,
     GetBienesConsumidosSiembraSerializer,
     GetBienSembradoSerializer,
-    DeleteBienesConsumidosSerializer
+    DeleteBienesConsumidosSerializer,
+    GetSiembrasSerializer
 )
 from almacen.models.bienes_models import (
     CatalogoBienes
@@ -864,3 +865,12 @@ class DeleteSiembraView(generics.RetrieveDestroyAPIView):
 
         return Response({'success': True, 'detail': 'Siembra eliminada exitosamente'}, status=status.HTTP_204_NO_CONTENT)
 
+class GetSiembrasView(generics.ListAPIView):
+    serializer_class = GetSiembrasSerializer
+    queryset = Siembras.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        data = self.queryset.all()
+        serializer = self.serializer_class(data, many=True)
+        return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)

@@ -145,3 +145,9 @@ class GetBienesConsumidosSiembraSerializer(serializers.ModelSerializer):
             'nombre_bien',
             'tipo_bien'
         )
+
+
+class GetSiembrasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Siembras
+        fields = '__all__'

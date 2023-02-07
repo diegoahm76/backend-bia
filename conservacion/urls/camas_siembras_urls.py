@@ -14,6 +14,7 @@ urlpatterns = [
     path('siembra/bienes-consumidos/delete/<str:id_siembra>/', views.DeleteBienesConsumidosView.as_view(), name='delete-bienes-consumidos-siembra'),
 
     path('siembra/get-viveros/', views.FilterViverosByNombreAndMunicipioView.as_view(), name='get-numero-lote'),
+    path('siembra/get/', views.GetSiembrasView.as_view(), name='get-siembras'),
     path('siembra/get-material-vegetal/', views.GetBienSembradoView.as_view(), name='get-bien-sembrado'),
     path('siembra/get-bienes-consumidos/<str:id_siembra>/', views.GetBienesConsumidosSiembraView.as_view(), name='get-bienes-consumidos-siembra'),
     path('siembra/get-camas-germinacion/<str:id_vivero>/', views.GetCamasGerminacionesView.as_view(), name='get-camas-germinacion'),
