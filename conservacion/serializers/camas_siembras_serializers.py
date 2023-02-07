@@ -37,6 +37,7 @@ class CreateSiembraInventarioViveroSerializer(serializers.ModelSerializer):
         fields = (
             'id_vivero',
             'id_bien',
+            'nro_lote',
             'agno_lote',
             'cod_etapa_lote',
             'es_produccion_propia_lote',
@@ -117,6 +118,12 @@ class UpdateBienesConsumidosSerializer(serializers.ModelSerializer):
 
 
 class DeleteSiembraSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Siembras
+        fields = '__all__'
+
+
+class DeleteBienesConsumidosSerializer(serializers.ModelSerializer):
     class Meta:
         model = Siembras
         fields = '__all__'
