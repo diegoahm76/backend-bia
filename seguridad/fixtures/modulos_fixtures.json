@@ -518,5 +518,45 @@
           "subsistema":"CONS",
           "descripcion":"Permite trasladar bienes entre viveros"
         }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 53,
+        "fields": {
+          "id_modulo": 53,
+          "nombre_modulo": "Ingreso a Cuarentena de Material Vegetal",
+          "subsistema":"CONS",
+          "descripcion":"Permite registrar el ingreso de plantas y plántulas de un lote de un vivero a cuarentena"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 54,
+        "fields": {
+          "id_modulo": 54,
+          "nombre_modulo": "Levantamiento de Cuarentena de Material Vegetal",
+          "subsistema":"CONS",
+          "descripcion":"Permite registrar el levantamiento de cuarentena de plantas y plántulas de un lote de un vivero que está en cuarentena"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 55,
+        "fields": {
+          "id_modulo": 55,
+          "nombre_modulo": "Bajas de Herramientas, Insumos y Semillas",
+          "subsistema":"CONS",
+          "descripcion":"Permite dar de baja elementos del tipo Herramientas, Insumos y Semillas del inventario de un vivero"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 56,
+        "fields": {
+          "id_modulo": 56,
+          "nombre_modulo": "Mortalidad de Plantas y Plántulas",
+          "subsistema":"CONS",
+          "descripcion":"Permite registrar la mortalidad de plantas y plántulas de un vivero"
+        }
       }
   ]

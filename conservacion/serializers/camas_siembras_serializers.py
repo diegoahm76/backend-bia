@@ -109,3 +109,32 @@ class UpdateSiembraSerializer(serializers.ModelSerializer):
             'distancia_entre_semillas',
             'id_persona_siembra'
         )
+
+class UpdateBienesConsumidosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConsumosSiembra
+        fields = '__all__'
+
+
+class DeleteSiembraSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Siembras
+        fields = '__all__'
+
+class GetBienesConsumidosSiembraSerializer(serializers.ModelSerializer):
+    codigo_bien = serializers.ReadOnlyField(source='id_bien_consumido.codigo_bien', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_bien_consumido.nombre', default=None)
+    tipo_bien = serializers.ReadOnlyField(source='id_bien_consumido.cod_tipo_elemento_vivero', default=None)
+    class Meta:
+        model = ConsumosSiembra
+        fields = (
+            'id_consumo_siembra',
+            'id_siembra',
+            'id_bien_consumido',
+            'cantidad',
+            'observaciones',
+            'id_mezcla_consumida',
+            'codigo_bien',
+            'nombre_bien',
+            'tipo_bien'
+        )
