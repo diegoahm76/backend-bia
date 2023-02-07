@@ -37,7 +37,9 @@ from conservacion.serializers.camas_siembras_serializers import (
     UpdateBienesConsumidosSerializer,
     DeleteSiembraSerializer,
     GetBienesConsumidosSiembraSerializer,
-    GetBienSembradoSerializer
+    GetBienSembradoSerializer,
+    DeleteBienesConsumidosSerializer,
+    GetSiembrasSerializer
 )
 from almacen.models.bienes_models import (
     CatalogoBienes
@@ -45,7 +47,13 @@ from almacen.models.bienes_models import (
 from conservacion.models.inventario_models import (
     InventarioViveros
 )
+from conservacion.models.cuarentena_models import (
+    CuarentenaMatVegetal,
+    ItemsLevantaCuarentena,
+    BajasVivero
+)
 from conservacion.utils import UtilConservacion
+
 
 class CamasGerminacion(generics.UpdateAPIView):
     serializer_class = CamasGerminacionPost
@@ -248,6 +256,7 @@ class CreateSiembraView(generics.CreateAPIView):
         inventario_vivero_dict = {
             "id_vivero": data_siembra['id_vivero'],
             "id_bien": data_siembra['id_bien_sembrado'],
+            "nro_lote": siembra.nro_lote,
             "agno_lote": siembra.agno_lote,
             "cod_etapa_lote": 'G',
             "es_produccion_propia_lote": True,
@@ -525,7 +534,7 @@ class GetBienSembradoView(generics.ListAPIView):
         serializer = self.serializer_class(bien, many=True)
         return Response({'success': True, 'detail': 'Búsqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
 
-class GetBusquedaBienesConsumidos(generics.ListAPIView):
+class GetBusquedaBienesConsumidosView(generics.ListAPIView):
     serializer_class = GetBienesPorConsumirSerializer
     queryset = InventarioViveros.objects.all()
     permission_classes = [IsAuthenticated]
@@ -579,7 +588,7 @@ class GetBienesConsumidosSiembraView(generics.ListAPIView):
         serializer = self.serializer_class(bienes_consumidos, many=True)
         return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
 
-class UpdateBienConsumido(generics.RetrieveUpdateAPIView):
+class UpdateBienConsumidoView(generics.RetrieveUpdateAPIView):
     serializer_class = UpdateBienesConsumidosSerializer
     queryset = ConsumosSiembra.objects.all()
     permission_classes = [IsAuthenticated]
@@ -645,6 +654,7 @@ class UpdateBienConsumido(generics.RetrieveUpdateAPIView):
         Inicia el proceso de actualización
         
         """
+
         valores_actualizados_detalles = []
 
         for bien_actualizar in bienes_actualizar:
@@ -737,20 +747,130 @@ class UpdateBienConsumido(generics.RetrieveUpdateAPIView):
         serializer = self.serializer_class(data, many=True)
         return Response({'success': True, 'detail': 'Actualización exitosa', 'data': serializer.data}, status=status.HTTP_201_CREATED)
 
-class DeleteBienConsumido(generics.RetrieveUpdateAPIView):
-    serializer_class = UpdateBienesConsumidosSerializer
+class DeleteBienesConsumidosView(generics.RetrieveDestroyAPIView):
+    serializer_class = DeleteBienesConsumidosSerializer
     queryset = ConsumosSiembra.objects.all()
     permission_classes = [IsAuthenticated]
 
-    def put(self, request, id_siembra):
-        pass
+    def delete(self, request, id_siembra):
+        data_siembra = request.data
+        
+        #VALIDACIÓN QUE LA SIEMBRA EXISTA
+        siembra = Siembras.objects.filter(id_siembra=id_siembra).first()
+        if not siembra:
+            return Response({'success':False, 'detail': 'No se encontró ninguna siembra con el parámetro ingresado'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        #VALIDACIÓN QUE TODOS LOS ITEMS TENGAN UNA SOLA SIEMBRA Y SEA LA MISMA ENVIADA EN LA URL
+        id_siembra_list = [bien['id_siembra'] for bien in data_siembra]
+        if len(set(id_siembra_list)) > 1:
+            return Response({'success': False, 'detail': 'Todos los bienes consumidos deben pertenecer a solo una siembra'}, status=status.HTTP_400_BAD_REQUEST)
+        if int(id_siembra_list[0]) != int(id_siembra):
+            return Response({'success': False, 'detail': 'Todos los bienes consumidos deben asociarse a la siembra seleccionada'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        #VALIDACIÓN QUE EL ID_BIEN ENVIADO EXISTA EN INVENTARIO VIVERO
+        id_bien = [bien['id_bien_consumido'] for bien in data_siembra]
+        bien_in_inventario_viveros = InventarioViveros.objects.filter(id_bien__in=id_bien, id_siembra_lote_germinacion=None, id_vivero=siembra.id_vivero.id_vivero)
+        if len(set(id_bien)) != len(bien_in_inventario_viveros):
+            return Response({'success': False, 'detail': 'Todos los bienes por consumir deben existir'}, status=status.HTTP_404_NOT_FOUND)
+
+        valores_eliminados_detalles = []
+
+        #INICIA PROCESO DE ELIMINACIÓN
+        for bien in data_siembra:
+            bien_in_consumos = ConsumosSiembra.objects.filter(id_siembra=bien['id_siembra'],  id_bien_consumido=bien['id_bien_consumido'], id_mezcla_consumida=bien['id_mezcla_consumida']).first()
+            bien_in_inventario = InventarioViveros.objects.filter(id_bien=bien['id_bien_consumido'], id_siembra_lote_germinacion=None, id_vivero=siembra.id_vivero.id_vivero).first()
+            
+            bien_in_inventario.cantidad_consumos_internos = bien_in_inventario.cantidad_consumos_internos - bien_in_consumos.cantidad
+            bien_in_inventario.save()
+            valores_eliminados_detalles.append({'nombre_bien_consumido': bien_in_consumos.id_bien_consumido.nombre})
+            bien_in_consumos.delete()
+
+        # AUDITORIA BIENES CONSUMIDOS DETALLE SIEMBRAS
+        descripcion = {"nombre_bien_sembrado": str(siembra.id_bien_sembrado.nombre), "vivero": str(siembra.id_vivero.id_vivero),"agno": str(siembra.agno_lote), "nro_lote": str(siembra.nro_lote)}
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 50,
+            "cod_permiso": "BO",
+            "subsistema": 'CONS',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_eliminados_detalles": valores_eliminados_detalles
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
+        
+        data = ConsumosSiembra.objects.filter(id_siembra=id_siembra)
+        serializer = self.serializer_class(data, many=True)
+        return Response({'success': True, 'detail': 'Eliminación exitosa', 'data': serializer.data}, status=status.HTTP_204_NO_CONTENT)
 
 
-class DeleteSiembra(generics.RetrieveDestroyAPIView):
+class DeleteSiembraView(generics.RetrieveDestroyAPIView):
     serializer_class = DeleteSiembraSerializer
     queryset = Siembras.objects.all()
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, id_siembra):
-        pass
+        data_siembra = request.data
+        
+        #VALIDACIÓN QUE LA SIEMBRA EXISTA
+        siembra = Siembras.objects.filter(id_siembra=id_siembra).first()
+        if not siembra:
+            return Response({'success':False, 'detail': 'No se encontró ninguna siembra con el parámetro ingresado'}, status=status.HTTP_400_BAD_REQUEST)
 
+        #VALIDACIÓN QUE NO SE PUEDA ELIMINAR UNA SIEMBRA QUE TIENE CAMBIOS DE ETAPAS
+        siembra_in_inventario = InventarioViveros.objects.filter(id_siembra_lote_germinacion=id_siembra, cod_etapa_lote='G', id_vivero=siembra.id_vivero.id_vivero, id_bien=siembra.id_bien_sembrado.id_bien).first()
+        if siembra_in_inventario.fecha_ult_altura_lote or siembra_in_inventario.siembra_lote_cerrada == True:
+            return Response({'success': False, 'detail': 'No se puede eliminar una siembra que tiene cambios de etapa'}, status=status.HTTP_403_FORBIDDEN)
+
+        #VALIDACIÓN QUE NO SE PUEDA ELIMINAR UNA SIEMBRA QUE TIENE REGISTROS EN CUARENTENA
+        siembra_cuarentena = CuarentenaMatVegetal.objects.filter(id_vivero=siembra.id_vivero.id_vivero, id_bien=siembra.id_bien_sembrado.id_bien, agno_lote=siembra.agno_lote, nro_lote=siembra.nro_lote).first()
+        if siembra_cuarentena:
+            return Response({'success': False, 'detail': 'No se puede cerrar una siembra que se encuentra en cuarentena'}, status=status.HTTP_403_FORBIDDEN)
+
+        camas_siembra = CamasGerminacionViveroSiembra.objects.filter(id_siembra=id_siembra)
+        
+        consumos_siembra = ConsumosSiembra.objects.filter(id_siembra=id_siembra)
+        for bien_consumido in consumos_siembra:
+            bien_in_inventario_viveros_serializador = InventarioViveros.objects.filter(id_bien=bien_consumido.id_bien_consumido.id_bien, id_vivero=siembra.id_vivero.id_vivero, id_siembra_lote_germinacion=None).first()
+            cantidad_existente = bien_in_inventario_viveros_serializador.cantidad_consumos_internos if bien_in_inventario_viveros_serializador.cantidad_consumos_internos else 0
+            bien_in_inventario_viveros_serializador.cantidad_consumos_internos = cantidad_existente - bien_consumido.cantidad
+            bien_in_inventario_viveros_serializador.save()
+
+
+        # AUDITORIA BIENES CONSUMIDOS DETALLE SIEMBRAS
+        valores_eliminados_detalles = []
+        for bien in consumos_siembra:
+            valores_eliminados_detalles.append({'nombre_bien_consumido': bien.id_bien_consumido.nombre})
+        
+        for cama in camas_siembra:
+            valores_eliminados_detalles.append({'nombre_cama': cama.id_cama_germinacion_vivero.nombre})
+            
+        descripcion = {"nombre_bien_sembrado": str(siembra.id_bien_sembrado.nombre), "vivero": str(siembra.id_vivero.id_vivero),"agno": str(siembra.agno_lote), "nro_lote": str(siembra.nro_lote)}
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 50,
+            "cod_permiso": "BO",
+            "subsistema": 'CONS',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_eliminados_detalles": valores_eliminados_detalles
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
+
+        consumos_siembra.delete()
+        siembra_in_inventario.delete()
+        camas_siembra.delete()
+        siembra.delete()
+
+        return Response({'success': True, 'detail': 'Siembra eliminada exitosamente'}, status=status.HTTP_204_NO_CONTENT)
+
+class GetSiembrasView(generics.ListAPIView):
+    serializer_class = GetSiembrasSerializer
+    queryset = Siembras.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        data = self.queryset.all()
+        serializer = self.serializer_class(data, many=True)
+        return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)

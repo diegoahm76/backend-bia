@@ -37,6 +37,7 @@ class CreateSiembraInventarioViveroSerializer(serializers.ModelSerializer):
         fields = (
             'id_vivero',
             'id_bien',
+            'nro_lote',
             'agno_lote',
             'cod_etapa_lote',
             'es_produccion_propia_lote',
@@ -121,6 +122,12 @@ class DeleteSiembraSerializer(serializers.ModelSerializer):
         model = Siembras
         fields = '__all__'
 
+
+class DeleteBienesConsumidosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Siembras
+        fields = '__all__'
+
 class GetBienesConsumidosSiembraSerializer(serializers.ModelSerializer):
     codigo_bien = serializers.ReadOnlyField(source='id_bien_consumido.codigo_bien', default=None)
     nombre_bien = serializers.ReadOnlyField(source='id_bien_consumido.nombre', default=None)
@@ -138,3 +145,9 @@ class GetBienesConsumidosSiembraSerializer(serializers.ModelSerializer):
             'nombre_bien',
             'tipo_bien'
         )
+
+
+class GetSiembrasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Siembras
+        fields = '__all__'
