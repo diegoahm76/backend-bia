@@ -14,7 +14,8 @@ from gestion_documental.serializers.ccd_serializers import (
     CCDSerializer,
     SeriesDocPostSerializer,
     SeriesDocSerializer,
-    SeriesSubseriesUnidadOrgSerializer
+    SeriesSubseriesUnidadOrgSerializer,
+    AsignacionesOrgSerializer
 )
 from almacen.models.organigrama_models import Organigramas
 from operator import itemgetter
@@ -530,7 +531,7 @@ class GetSubseries(generics.ListAPIView):
             return Response({'success':False, 'detail':'Debe consultar por un CCD válido'}, status=status.HTTP_404_NOT_FOUND)
         
 class AsignarSeriesYSubseriesAUnidades(generics.UpdateAPIView):
-    serializer_class = SeriesSubseriesUnidadOrgSerializer
+    serializer_class = AsignacionesOrgSerializer
     queryset = SeriesSubseriesUnidadOrg.objects.all()
     permission_classes = [IsAuthenticated]
     
