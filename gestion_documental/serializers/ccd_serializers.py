@@ -7,6 +7,9 @@ from gestion_documental.models.ccd_models import (
     SubseriesDoc,
     SeriesSubseriesUnidadOrg
 )
+from almacen.models.organigrama_models import (
+    UnidadesOrganizacionales
+)
 
 class SubseriesDocSerializer(serializers.ModelSerializer):
     class Meta:
@@ -25,6 +28,15 @@ class SubseriesDocSerializer(serializers.ModelSerializer):
            )
         ]
 
+class SubseriesAsignacionesSerializer(serializers.ModelSerializer):
+    label = serializers.ReadOnlyField(source='nombre')
+    value = serializers.ReadOnlyField(source='id_subserie_doc')
+    id_serie_subserie_doc = serializers.IntegerField(default=None)
+    
+    class Meta:
+        model = SubseriesDoc
+        fields = ['label', 'value', 'codigo', 'id_serie_subserie_doc']
+
 class SeriesDocPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = SeriesDoc
@@ -40,7 +52,7 @@ class SeriesDocPostSerializer(serializers.ModelSerializer):
                 fields = ['id_ccd', 'nombre'],
                 message='El id_ccd y nombre deben ser una pareja única'
             )
-            ]  
+        ]  
 
 class CCDSerializer(serializers.ModelSerializer):
     series = serializers.SerializerMethodField()
@@ -112,14 +124,48 @@ class SeriesDocSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class SeriesSubseriesUnidadOrgSerializer(serializers.ModelSerializer):
-    #id_unidad_organizacional = serializers.IntegerField()
+    id_ccd = serializers.ReadOnlyField(source='id_serie_doc.id_ccd.id_ccd', default=None)
+    seccion = serializers.SerializerMethodField()
+    subseccion = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
+    nombre_serie = serializers.ReadOnlyField(source='id_serie_doc.nombre', default=None)
+    codigo_serie = serializers.ReadOnlyField(source='id_serie_doc.codigo', default=None)
+    id_serie_subserie_doc = serializers.SerializerMethodField()
+    subseries = serializers.SerializerMethodField()
+    subseries_nombres = serializers.SerializerMethodField()
+    
+    def get_seccion(self, obj):
+        seccion = UnidadesOrganizacionales.objects.filter(id_organigrama=obj.id_unidad_organizacional.id_organigrama.id_organigrama, cod_agrupacion_documental='SEC').first()
+        if not seccion:
+            seccion = None
+        return seccion.nombre
+    
+    def get_subseries(self, obj):
+        serie_subseries_instances = SeriesSubseriesUnidadOrg.objects.filter(id_unidad_organizacional=obj.id_unidad_organizacional.id_unidad_organizacional, id_serie_doc=obj.id_serie_doc.id_serie_doc).exclude(id_sub_serie_doc=None)
+        subseries_instances = [serie_subserie.id_sub_serie_doc for serie_subserie in serie_subseries_instances]
+        for subserie in subseries_instances:
+            subserie.id_serie_subserie_doc = serie_subseries_instances.filter(id_sub_serie_doc=subserie.id_subserie_doc).first().id_serie_subserie_doc
+        subseries = SubseriesAsignacionesSerializer(subseries_instances, many=True)
+        return subseries.data
+    
+    def get_subseries_nombres(self, obj):
+        subseries_instances = SeriesSubseriesUnidadOrg.objects.filter(id_unidad_organizacional=obj.id_unidad_organizacional.id_unidad_organizacional, id_serie_doc=obj.id_serie_doc.id_serie_doc).exclude(id_sub_serie_doc=None)
+        subseries_names = [subserie.id_sub_serie_doc.nombre for subserie in subseries_instances]
+        return subseries_names
+    
+    def get_id_serie_subserie_doc(self, obj):
+        subseries_instances = SeriesSubseriesUnidadOrg.objects.filter(id_unidad_organizacional=obj.id_unidad_organizacional.id_unidad_organizacional, id_serie_doc=obj.id_serie_doc.id_serie_doc).exclude(id_sub_serie_doc=None)
+        id_serie_subserie_doc = None
+        if not subseries_instances:
+            id_serie_subserie_doc = obj.id_serie_subserie_doc
+        return id_serie_subserie_doc
+    
     class Meta:
         model = SeriesSubseriesUnidadOrg
-        fields = '__all__'      
+        fields = ['id_ccd', 'id_unidad_organizacional', 'seccion', 'subseccion', 'id_serie_doc', 'nombre_serie', 'codigo_serie', 'id_serie_subserie_doc', 'subseries_nombres', 'subseries']
         validators = [
             UniqueTogetherValidator(
                 queryset=SeriesSubseriesUnidadOrg.objects.all(),
                 fields = ['id_serie_doc', 'id_unidad_organizacional'],
                 message='La combinación serie documental y unidad organizacional debe ser única'
             )
-            ]  
+        ]

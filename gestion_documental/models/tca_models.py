@@ -100,7 +100,7 @@ class Cargos_Unidad_S_Ss_UndOrg_TCA(models.Model):
         db_table='T221Cargos_Unidad_S_Ss_UndOrg_TCA'
         verbose_name='Cargos unidad serie subserie unidad TCA'
         verbose_name_plural='Cargos unidad serie subserie unidad TCA'
-        unique_together=['id_unidad_org_cargo','id_cargo_persona']
+        unique_together=['id_unidad_org_cargo','id_cargo_persona','id_clasif_serie_subserie_unidad_tca']
 
 class PermisosCargoUnidadSerieSubserieUnidadTCA(models.Model):
     id_permiso_cargo_unidad_s_ss_unidad_tca = models.AutoField(primary_key=True, editable=False, db_column='T222IdPermiso_Cargo_Unidad_S_Ss_UndOrg_TCA')

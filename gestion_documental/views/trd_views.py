@@ -162,7 +162,7 @@ class UpdateTipologiasDocumentales(generics.UpdateAPIView):
                     tipologias_eliminar = TipologiasDocumentales.objects.filter(id_trd=id_trd).exclude(id_tipologia_documental__in=lista_tipologia_id)
                     
                     if tipologias_eliminar and trd.actual:
-                        return Response({'success':False, 'detail':'No puede eliminar tipologias para una TRD actual. Intente desactivar'})
+                        return Response({'success':False, 'detail':'No puede eliminar tipologias para una TRD actual. Intente desactivar'}, status=status.HTTP_403_FORBIDDEN)
                     
                     # VALIDAR QUE NO SE ESTÉN USANDO LAS TIPOLOGIAS A ELIMINAR
                     tipologias_eliminar_id = [tipologia.id_tipologia_documental for tipologia in tipologias_eliminar]
@@ -455,7 +455,7 @@ class DeleteSerieSubserieUnidadTRD(generics.RetrieveDestroyAPIView):
         serie_ss_uniorg_trd = SeriesSubSUnidadOrgTRD.objects.filter(id_serie_subs_unidadorg_trd=id_ssuorg_trd).first()
         if serie_ss_uniorg_trd:
             if serie_ss_uniorg_trd.id_trd.actual == True:
-                return Response({'success': False, 'detail': 'No se pueden realizar acciones sobre las Series'})
+                return Response({'success': False, 'detail': 'No se pueden realizar acciones sobre las Series'}, status=status.HTTP_403_FORBIDDEN)
             serie_ss_uniorg_trd_tipologias = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_serie_subserie_unidadorg_trd=serie_ss_uniorg_trd)
             serie_ss_uniorg_trd_tipologias.delete()
             serie_ss_uniorg_trd.delete()
@@ -609,7 +609,7 @@ class GetFormatosTiposMedioByCodTipoMedio(generics.ListAPIView):
 
         serializador = self.serializer_class(formatos_tipos_medio, many=True)
         if serializador:
-            return Response({'success':True, 'detail':serializador.data}, status=status.HTTP_200_OK)
+            return Response({'success':True, 'detail':'Se encontró la siguiente información', 'data':serializador.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success':False, 'detail':'No se encontró ningún resultado'}, status=status.HTTP_404_NOT_FOUND)
 

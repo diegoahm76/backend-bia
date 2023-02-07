@@ -45,16 +45,21 @@ from gestion_documental.choices.tipo_clasificacion_choices import tipo_clasifica
 class GetUnidadesbyCCD(generics.ListAPIView):
     serializer_class=UnidadesGetSerializer
     queryset=UnidadesOrganizacionales.objects.all()
+    permission_classes = [IsAuthenticated]
+    
     def get(self,request,pk):
         ccd=CuadrosClasificacionDocumental.objects.filter(id_ccd=pk).first()
         if ccd: 
             unidades=UnidadesOrganizacionales.objects.filter(id_organigrama=ccd.id_organigrama.id_organigrama)
             serializador=self.serializer_class(unidades,many=True)
-            return Response({'success':True,'detail':'El ccd cuenta con las siguientes unidades','unidades':serializador.data},status=status.HTTP_200_OK)
+            return Response({'success':True,'detail':'El ccd cuenta con las siguientes unidades','data':serializador.data},status=status.HTTP_200_OK)
         return Response({'success':False,'detail':'El ccd no cuenta con unidades'},status=status.HTTP_403_FORBIDDEN)
+    
 class GetCargosByUnidades(generics.ListAPIView):
     serializer_class=CargosSerializer
     queryset=Cargos.objects.all()
+    permission_classes = [IsAuthenticated]
+    
     def get (self,request):
         cargos_true=request.query_params.get('check')
         unidad=request.query_params.get('unidad')
@@ -66,15 +71,17 @@ class GetCargosByUnidades(generics.ListAPIView):
                 cargos=Cargos.objects.filter(id_cargo__in=list_cargos)
                 if cargos:
                     serializador=self.serializer_class(cargos,many=True)
-                    return Response ({'success':True,'detail':'Se encontraron cargos','Cargos':serializador.data},status=status.HTTP_200_OK)
+                    return Response ({'success':True,'detail':'Se encontraron cargos','data':serializador.data},status=status.HTTP_200_OK)
                 else: return Response ({'success':False,'detail':'No se encontraron cargos'},status=status.HTTP_404_NOT_FOUND)
             return Response ({'success':False,'detail':'No existe unidad'},status=status.HTTP_403_FORBIDDEN)
         else:
             cargos=Cargos.objects.filter(activo=True).values()
-            return Response ({'success':True,'Cargos':cargos},status=status.HTTP_200_OK)
+            return Response ({'success':True, 'detail':'Se encontraron cargos', 'data':cargos},status=status.HTTP_200_OK)
+        
 class GetListTca(generics.ListAPIView):
     serializer_class=TCASerializer
     queryset=TablasControlAcceso.objects.all()
+    permission_classes = [IsAuthenticated]
     
 class PostTablaControlAcceso(generics.CreateAPIView):
     serializer_class = TCAPostSerializer
@@ -261,6 +268,7 @@ class UpdateClasifSerieSubserieUnidadTCA(generics.UpdateAPIView):
 class ReanudarTablaControlAcceso(generics.UpdateAPIView):
     serializer_class = TCAPostSerializer
     queryset = TablasControlAcceso
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
         tca = TablasControlAcceso.objects.filter(id_tca=pk).first()
@@ -284,29 +292,29 @@ def asignar_cargo_unidad_permiso_expediente(request):
     try:
         clasif_serie_subserie_unidad_TCA= Clasif_Serie_Subserie_Unidad_TCA.objects.get(id_clasif_serie_subserie_unidad_tca=data['id_clasif_serie_subserie_unidad_tca'])
     except:
-        return Response({'Success':False, 'Detail':'no existe expediente relacionado al id de clasificacion serie/subserie/unidad TCA'})
+        return Response({'success':False, 'detail':'No existe expediente relacionado al id de clasificacion serie/subserie/unidad TCA'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         unidad_org_persona = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=data['id_unidad_org_persona'])
     except:
-        return Response({'Success':False, 'Detail':'no existe unidad organisacional con el id unidad organizacional persona ingresado'})
+        return Response({'success':False, 'detail':'No existe unidad organisacional con el id unidad organizacional persona ingresado'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         cargo_persona = Cargos.objects.get(id_cargo=data['id_cargo_persona'])
     except:
-        return Response({'Success':False, 'Detail':'no existe id cargo'})
+        return Response({'success':False, 'detail':'No existe id cargo'}, status=status.HTTP_400_BAD_REQUEST)
     
     if not data.getlist('permisos'):
-        return Response({'Success':False, 'Detail':'el arreglo de permisos no debe estar vacio'})
+        return Response({'success':False, 'detail':'Debe asignar por lo menos un permiso'}, status=status.HTTP_400_BAD_REQUEST)
     
     permisos_validados_list = PermisosGD.objects.filter(permisos_GD__in=data.getlist('permisos'))
     if len(data.getlist('permisos')) != len(permisos_validados_list):
-        return Response({'Success':False, 'Detail':'uno de los permisos ingresados no existe'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'success':False, 'detail':'Uno de los permisos ingresados no existe'}, status=status.HTTP_400_BAD_REQUEST)
     
     match clasif_serie_subserie_unidad_TCA.id_tca.actual:
         case True:
             if not data.get('justificacion_del_cambio') or data['justificacion_del_cambio'] == '':
-                return Response({'Success':False,'Detail':'debe ingresar justificacion'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'success':False, 'detail':'Debe ingresar justificación'}, status=status.HTTP_400_BAD_REQUEST)
             if not request.FILES.get('ruta_archivo_cambio'):
-                return Response({'Success':False, 'Detail':'debe igresar un documento'})
+                return Response({'success':False, 'detail':'Debe ingresar un documento'}, status=status.HTTP_400_BAD_REQUEST)
             cargo_unidad_serie_subserie_undorg_tca= Cargos_Unidad_S_Ss_UndOrg_TCA.objects.create(
                 id_clasif_serie_subserie_unidad_tca = clasif_serie_subserie_unidad_TCA,
                 id_cargo_persona = cargo_persona,
@@ -328,7 +336,9 @@ def asignar_cargo_unidad_permiso_expediente(request):
         permisos_serializer_list.append(permiso_cargo_unidad_s_ss_unidad_tca)
     expediente_serializer = Cargos_Unidad_S_Ss_UndOrg_TCASerializer(cargo_unidad_serie_subserie_undorg_tca,many=False)
     permisos_serializer = PermisosCargoUnidadSerieSubserieUnidadTCASerializer(permisos_serializer_list, many=True)
-    return Response({'Success':True, 'Expediente':expediente_serializer.data, 'permisos':permisos_serializer.data},status=status.HTTP_200_OK)
+    serializer_data = expediente_serializer.data
+    serializer_data['permisos'] = permisos_serializer.data
+    return Response({'success':True, 'detail':'Se asignaron correctamente los permisos al expediente clasificado', 'data':serializer_data},status=status.HTTP_201_CREATED)
 
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
@@ -339,30 +349,31 @@ def actualizar_cargo_unidad_permiso_expediente(request,pk):
         entry__previous=copy.copy(cargo_unidad_serie_subserie_undorg_tca)
 
     except:
-        return Response({'Success':False,'Detail':'id de expediente invalido'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'success':False,'detail':'El expediente elegido es invalido'}, status=status.HTTP_400_BAD_REQUEST)
     
     if not data.getlist('permisos'):
-        return Response({'Success':False, 'Detail':'el arreglo de permisos no debe estar vacio'})
+        return Response({'success':False, 'detail':'Debe elegir por lo menos un permiso'}, status=status.HTTP_400_BAD_REQUEST)
     
     permisos_validados_list = PermisosGD.objects.filter(permisos_GD__in=data.getlist('permisos'))
     if len(data.getlist('permisos')) != len(permisos_validados_list):
-        return Response({'Success':False, 'Detail':'uno de los permisos ingresados no existe'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'success':False, 'detail':'Uno de los permisos ingresados no existe'}, status=status.HTTP_400_BAD_REQUEST)
     
     permisos_validados_list = PermisosCargoUnidadSerieSubserieUnidadTCA.objects.filter(id_cargo_unidad_s_ss_unidad_tca=cargo_unidad_serie_subserie_undorg_tca.id_cargo_unidad_s_subserie_unidad_org_tca)
+    lista_de_permisos = [x.cod_permiso.tipo_permiso for x in permisos_validados_list]
+    string_permisos = ' | '.join(lista_de_permisos)
     
     lista_permisos = [str(x.cod_permiso.permisos_GD) for x in permisos_validados_list]
     lista_crear = list(set(data.getlist('permisos'))-set(lista_permisos)) 
     permisos_validados_list.exclude(cod_permiso__in= data.getlist('permisos')).delete()
     permisos_serializer_list = []
+    
     for permiso in lista_crear:
         permiso_cargo_unidad_s_ss_unidad_tca = PermisosCargoUnidadSerieSubserieUnidadTCA.objects.create(
             id_cargo_unidad_s_ss_unidad_tca = cargo_unidad_serie_subserie_undorg_tca,
             cod_permiso = PermisosGD.objects.get(permisos_GD=int(permiso)) 
         )
         permisos_serializer_list.append(permiso_cargo_unidad_s_ss_unidad_tca)
-        diccionario_de_permisos=PermisosCargoUnidadSerieSubserieUnidadTCA.objects.filter(id_cargo_unidad_s_ss_unidad_tca=cargo_unidad_serie_subserie_undorg_tca.id_cargo_unidad_s_subserie_unidad_org_tca)
-        lista_de_permisos = [x.cod_permiso.tipo_permiso for x in diccionario_de_permisos]
-        string_permisos= ' | '.join(lista_de_permisos)
+        
     match cargo_unidad_serie_subserie_undorg_tca.id_clasif_serie_subserie_unidad_tca.id_tca.actual:
         case True:
             cargo_unidad_serie_subserie_undorg_tca.justificacion_del_cambio = data['justificacion_del_cambio']
@@ -375,22 +386,38 @@ def actualizar_cargo_unidad_permiso_expediente(request,pk):
                 ruta_archivo= cargo_unidad_serie_subserie_undorg_tca.ruta_archivo_cambio,
                 id_persona_cambia= request.user.persona,
             )
-        case False:
-            HistoricoCargosUnidadSerieSubserieUnidadTCA.objects.create(
-                id_cargo_unidad_s_ss_unidad_tca = cargo_unidad_serie_subserie_undorg_tca,
-                nombre_permisos = string_permisos,
-                id_persona_cambia= request.user.persona,
-            )
+        # case False:
+        #     HistoricoCargosUnidadSerieSubserieUnidadTCA.objects.create(
+        #         id_cargo_unidad_s_ss_unidad_tca = cargo_unidad_serie_subserie_undorg_tca,
+        #         nombre_permisos = string_permisos,
+        #         id_persona_cambia= request.user.persona,
+        #     )
 
-
-        
-    
     expediente_serializer = Cargos_Unidad_S_Ss_UndOrg_TCASerializer(cargo_unidad_serie_subserie_undorg_tca,many=False)
     permisos_serializer = PermisosCargoUnidadSerieSubserieUnidadTCASerializer(permisos_serializer_list, many=True)    
-    return Response({'Success':True, 'Expediente':expediente_serializer.data, 'Permisos':permisos_serializer.data})
+    
+    serializer_data = expediente_serializer.data
+    serializer_data['permisos'] = permisos_serializer.data
+    
+    return Response({'success':True, 'detail':'Se actualizaron correctamente los permisos al expediente clasificado', 'data':serializer_data}, status=status.HTTP_201_CREATED)
+
+class EliminarCargoUnidadPermisoExp(generics.DestroyAPIView):
+    serializer_class = Cargos_Unidad_S_Ss_UndOrg_TCASerializer
+    queryset = Cargos_Unidad_S_Ss_UndOrg_TCA.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self, request, pk):
+        cargo_unidad_exp = self.queryset.all().filter(id_cargo_unidad_s_subserie_unidad_org_tca=pk, id_clasif_serie_subserie_unidad_tca__id_tca__fecha_retiro_produccion=None, id_clasif_serie_subserie_unidad_tca__id_tca__actual=False).first()
+        if cargo_unidad_exp:
+            cargo_unidad_exp.delete()
+            return Response({'success':True, 'detail':'Se ha eliminado la relacion del cargo, unidad y los permisos asignados del expediente elegido'}, status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response({'success':False, 'detail':'No se puede ejecutar la acción con el registro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+
 class FinalizarTablaControlAcceso(generics.UpdateAPIView):
     serializer_class = TCAPostSerializer
     queryset = TablasControlAcceso
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
         tca = TablasControlAcceso.objects.filter(id_tca=pk).first()
