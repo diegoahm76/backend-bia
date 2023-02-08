@@ -514,7 +514,6 @@ class GetUnidadesJerarquizadas(generics.ListAPIView):
                     'cod_agrupacion_documental',
                     'unidad_raiz', 
                     'id_unidad_org_padre',
-                    'classname',
                     classname = F('id_nivel_organigrama__nombre'),
                     orden_nivel=F('id_nivel_organigrama__orden_nivel'),
                     title=F('nombre'),
@@ -523,6 +522,7 @@ class GetUnidadesJerarquizadas(generics.ListAPIView):
                 unidades_linea = sorted(unidades_linea, key=itemgetter('orden_nivel'))
                 unidades_jerarquia = []
                 for unidad in unidades_linea:
+                    unidad['classname'] = str(unidad['classname']).replace(' ', '-')
                     unidad['children'] = [hijo for hijo in unidades_linea if hijo['id_unidad_org_padre']==unidad['id']]
                     if unidad['unidad_raiz']:
                         unidades_jerarquia.append(unidad)
