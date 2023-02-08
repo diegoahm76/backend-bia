@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'recurso_hidrico.apps.RecursoHidricoConfig',
     'seguimiento_planes.apps.SeguimientoPlanesConfig',
     'tramites.apps.TramitesConfig',
+    'estaciones.apps.EstacionesConfig'
 ]
 
 SWAGGER_SETTINGS = {
