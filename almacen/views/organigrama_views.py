@@ -514,6 +514,8 @@ class GetUnidadesJerarquizadas(generics.ListAPIView):
                     'cod_agrupacion_documental',
                     'unidad_raiz', 
                     'id_unidad_org_padre',
+                    'classname',
+                    classname = F('id_nivel_organigrama__nombre'),
                     orden_nivel=F('id_nivel_organigrama__orden_nivel'),
                     title=F('nombre'),
                     id=F('id_unidad_organizacional')

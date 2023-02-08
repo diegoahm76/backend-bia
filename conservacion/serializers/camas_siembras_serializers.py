@@ -83,13 +83,22 @@ class GetSiembraSerializer(serializers.ModelSerializer):
 class GetBienesPorConsumirSerializer(serializers.ModelSerializer):
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
     nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
-    tipo_bien = serializers.ReadOnlyField(source='id_bien.cod_tipo_elemento_vivero', default=None)
+    tipo_bien = serializers.SerializerMethodField()
     unidad_disponible = serializers.ReadOnlyField(source='id_bien.id_unidad_medida.nombre', default=None)
     cantidad_disponible_bien = serializers.IntegerField(default=None)
 
+    def get_tipo_bien(self, obj):
+        if obj.id_bien.cod_tipo_elemento_vivero == 'HE':
+            cod_tipo_elemento_vivero = 'Herramienta'
+        elif obj.id_bien.cod_tipo_elemento_vivero == 'IN':
+            cod_tipo_elemento_vivero = 'Insumo'
+        elif obj.id_bien.cod_tipo_elemento_vivero == 'MV' and obj.id_bien.es_semilla_vivero == True:
+            cod_tipo_elemento_vivero = 'Semillas'
+        return cod_tipo_elemento_vivero
+
     class Meta:
         model = InventarioViveros
-        fields =(
+        fields = (
             'id_inventario_vivero',
             'cantidad_entrante',
             'id_vivero',
