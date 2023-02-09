@@ -16,6 +16,21 @@ from conservacion.models.inventario_models import (
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 
 class GetLotesEtapaSerializer(serializers.ModelSerializer):
+    saldo_disponible = serializers.IntegerField(default=0)
+    codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
     class Meta:
         model = InventarioViveros
-        fields = '__all__'
+        fields = (
+            'id_inventario_vivero',
+            'id_vivero',
+            'id_bien',
+            'agno_lote',
+            'nro_lote',
+            'cod_etapa_lote',
+            'id_siembra_lote_germinacion',
+            'id_mezcla',
+            'saldo_disponible',
+            'codigo_bien',
+            'nombre_bien'
+        )

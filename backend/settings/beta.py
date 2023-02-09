@@ -20,6 +20,3 @@ DATABASES = {
         'ATOMIC_REQUESTS': True
     }
 }
-
-if os.getcwd() == '/app':
-    DEBUG = False
