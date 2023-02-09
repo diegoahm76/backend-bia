@@ -1,7 +1,7 @@
 from .base import *
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -20,6 +20,3 @@ DATABASES = {
         'ATOMIC_REQUESTS': True
     }
 }
-
-if os.getcwd() == '/app':
-    DEBUG = False
