@@ -7,6 +7,9 @@ from conservacion.models.siembras_models import (
     CamasGerminacionViveroSiembra,
     CambiosDeEtapa
 )
+from conservacion.models.cuarentena_models import (
+    CuarentenaMatVegetal
+)
 from almacen.models.bienes_models import (
     CatalogoBienes
 )
@@ -34,3 +37,9 @@ class GetLotesEtapaSerializer(serializers.ModelSerializer):
             'codigo_bien',
             'nombre_bien'
         )
+
+
+class CreateIngresoCuarentenaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CuarentenaMatVegetal
+        fields = '__all__'

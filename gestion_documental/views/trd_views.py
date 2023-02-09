@@ -19,7 +19,9 @@ from gestion_documental.serializers.trd_serializers import (
     SeriesSubSeriesUnidadesOrgTRDSerializer,
     SeriesSubSeriesUnidadesOrgTRDPutSerializer,
     TipologiasDocumentalesPutSerializer,
-    GetSeriesSubSUnidadOrgTRDSerializer
+    GetSeriesSubSUnidadOrgTRDSerializer,
+    GetSeriesSubSUnidadOrgTRDTipologiasSerializer,
+    GetTipologiasDocumentalesSerializer
 )
 from gestion_documental.serializers.ccd_serializers import (
     CCDSerializer
@@ -705,22 +707,27 @@ class GetSeriesSubSUnidadOrgTRD(generics.ListAPIView):
     serializer_class = GetSeriesSubSUnidadOrgTRDSerializer
     queryset = SeriesSubSUnidadOrgTRD.objects.all()
     
-    def get(self, request, pk):
-        id_trd_a_consultar1 = pk
-        series_subseries_unidad_org_trd = SeriesSubSUnidadOrgTRD.objects.filter(id_trd = id_trd_a_consultar1).values()
+    def get(self, request, id_trd):
+        
+        #VALIDACIÓN SI EXISTE LA TRD ENVIADA
+        series_subseries_unidad_org_trd = SeriesSubSUnidadOrgTRD.objects.filter(id_trd=id_trd)
         if not series_subseries_unidad_org_trd:
             return Response({'success': False, 'detail': 'No se encontró la TRD'}, status=status.HTTP_403_FORBIDDEN)
         
-        ids_serie_subs_unidad_org_trd = [i['id_serie_subs_unidadorg_trd'] for i in series_subseries_unidad_org_trd]
-        #print(ids_serie_subs_unidad_org_trd)
+        ids_serie_subs_unidad_org_trd = [i.id_serie_subs_unidadorg_trd for i in series_subseries_unidad_org_trd]
         result = []
         for i in ids_serie_subs_unidad_org_trd:
-            main_detail = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_serie_subserie_unidadorg_trd = i).values().first()
-            detalle_serie_subs_unidad_org_trd = SeriesSubSUnidadOrgTRD.objects.filter(id_serie_subs_unidadorg_trd = main_detail['id_serie_subserie_unidadorg_trd_id']).values().first()
-            detalle_tipologias = TipologiasDocumentales.objects.filter(id_tipologia_documental = main_detail['id_tipologia_doc_id']).values().first()
-            main_detail['id_serie_subserie_unidadorg_trd_id'] = detalle_serie_subs_unidad_org_trd
-            main_detail['id_tipologia_doc_id'] = detalle_tipologias
-            result.append(main_detail)
+            main_detail = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_serie_subserie_unidadorg_trd = i).first()
+            serializer_ssutrdtipo = GetSeriesSubSUnidadOrgTRDTipologiasSerializer(main_detail, many=False)
+            detalle_serie_subs_unidad_org_trd = SeriesSubSUnidadOrgTRD.objects.filter(id_serie_subs_unidadorg_trd = serializer_ssutrdtipo.data['id_serie_subserie_unidadorg_trd']).first()
+            serializer_ssutrd = GetSeriesSubSUnidadOrgTRDSerializer(detalle_serie_subs_unidad_org_trd, many=False)
+            detalle_tipologias = TipologiasDocumentales.objects.filter(id_tipologia_documental = serializer_ssutrdtipo.data['id_tipologia_doc']).first()
+            serializer_tipologias = GetTipologiasDocumentalesSerializer(detalle_tipologias, many=False)
+
+            data = serializer_ssutrdtipo.data
+            data['id_serie_subserie_unidadorg_trd'] = serializer_ssutrd.data
+            data['id_tipologia_doc'] = serializer_tipologias.data
+            result.append(data)
             
             
         return Response({'success': True, 'Tabla': result}, status=status.HTTP_204_NO_CONTENT)
@@ -731,20 +738,28 @@ class GetSeriesSubSUnidadOrgTRDByPk(generics.ListAPIView):
     
     def get(self, request, pk):
         pk_a_consultar1 = pk
-        serie_subseries_unidad_org = SeriesSubSUnidadOrgTRD.objects.filter(id_serie_subs_unidadorg_trd = pk_a_consultar1).values()
+        serie_subseries_unidad_org = SeriesSubSUnidadOrgTRD.objects.filter(id_serie_subs_unidadorg_trd = pk_a_consultar1)
         if not serie_subseries_unidad_org:
             return Response({'success': False, 'detail': 'No se encontró información relacionada a ese id'}, status=status.HTTP_403_FORBIDDEN)
         
-        ids_serie_subs_unidad_org_trd = [i['id_serie_subs_unidadorg_trd'] for i in serie_subseries_unidad_org]
-        #print(ids_serie_subs_unidad_org_trd)
+        ids_serie_subs_unidad_org_trd = [i.id_serie_subs_unidadorg_trd for i in serie_subseries_unidad_org]
         result = []
         for i in ids_serie_subs_unidad_org_trd:
-            main_detail = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_serie_subserie_unidadorg_trd = i).values().first()
-            detalle_serie_subs_unidad_org_trd = SeriesSubSUnidadOrgTRD.objects.filter(id_serie_subs_unidadorg_trd = main_detail['id_serie_subserie_unidadorg_trd_id']).values().first()
-            detalle_tipologias = TipologiasDocumentales.objects.filter(id_tipologia_documental = main_detail['id_tipologia_doc_id']).values().first()
-            main_detail['id_serie_subserie_unidadorg_trd_id'] = detalle_serie_subs_unidad_org_trd
-            main_detail['id_tipologia_doc_id'] = detalle_tipologias
-            result.append(main_detail)
+            main_detail = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_serie_subserie_unidadorg_trd = i).first()
+            serializer_ssutrdtipo = GetSeriesSubSUnidadOrgTRDTipologiasSerializer(main_detail, many=False)
+            if not main_detail:
+                data = [{'id_serie_subserie_tipologia': None, 'id_serie_subserie_unidadorg_trd': None, 'id_tipologia_doc': None}]
+                return Response({'success': True, 'detail': 'Esta Serie Sub Serie Unidad no tiene asociada ninguna tipologia', 'data': data})
+
+            detalle_serie_subs_unidad_org_trd = SeriesSubSUnidadOrgTRD.objects.filter(id_serie_subs_unidadorg_trd = serializer_ssutrdtipo.data['id_serie_subserie_unidadorg_trd']).first()
+            serializer_ssutrd = GetSeriesSubSUnidadOrgTRDSerializer(detalle_serie_subs_unidad_org_trd, many=False)
+            detalle_tipologias = TipologiasDocumentales.objects.filter(id_tipologia_documental = serializer_ssutrdtipo.data['id_tipologia_doc']).first()
+            serializer_tipologias = GetTipologiasDocumentalesSerializer(detalle_tipologias, many=False)
+            
+            data = serializer_ssutrdtipo.data
+            data['id_serie_subserie_unidadorg_trd'] = serializer_ssutrd.data
+            data['id_tipologia_doc'] = serializer_tipologias.data
+            result.append(data)
             
             
         return Response({'success': True, 'Tabla': result}, status=status.HTTP_204_NO_CONTENT)

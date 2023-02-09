@@ -485,7 +485,7 @@ class UpdateSubseriesDoc(generics.UpdateAPIView):
                     }
                     Util.save_auditoria_maestro_detalle(auditoria_data)
                     
-                    return Response({'success':True, 'detail':'Se ha realizado cambios con las subseries', 'data': data}, status=status.HTTP_201_CREATED)
+                    return Response({'success':True, 'detail':'Se ha realizado cambios con las subseries', 'data': serializer.data}, status=status.HTTP_201_CREATED)
                 else:
                     # VALIDAR QUE NO SE ESTÉN USANDO LAS SUBSERIES A ELIMINAR
                     subseries_eliminar = SubseriesDoc.objects.filter(id_ccd=id_ccd)

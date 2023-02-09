@@ -15,7 +15,7 @@ class CuarentenaMatVegetal(models.Model):
     cod_etapa_lote = models.CharField(max_length=1,choices=cod_etapa_lote_CHOICES,db_column='T164codEtapaLote')
     consec_cueren_por_lote_etapa = models.SmallIntegerField(db_column='T164consecCuarenPorLoteEtapa')
     fecha_cuarentena = models.DateTimeField(db_column='T164fechaCuarentena')
-    fecha_registro = models.DateTimeField(auto_now=True,db_column='T164fechaRegistro')
+    fecha_registro = models.DateTimeField(auto_now_add=True,db_column='T164fechaRegistro')
     cantidad_cuarentena = models.IntegerField(db_column='T164cantidadCuarentena')
     descrip_corta_diferenciable = models.CharField(max_length=30,db_column='T164descripCortaDiferenciable')
     motivo = models.CharField(max_length=255,db_column='T164motivo')

@@ -28,6 +28,6 @@ urlpatterns = [
     path('formatos/delete/<str:pk>/', views.DeleteFormatosTiposMedio.as_view(), name='formatos-delete'),
     
     # GetSeriesSubSUnidadOrgTRD 
-    path('get-serie-subserie-unidad-org-TRD/<str:pk>/', views.GetSeriesSubSUnidadOrgTRD.as_view(), name='get-serie-subserie-unidad-org-TRD'),
+    path('get-serie-subserie-unidad-org-TRD/<str:id_trd>/', views.GetSeriesSubSUnidadOrgTRD.as_view(), name='get-serie-subserie-unidad-org-TRD'),
     path('get-una-serie-subserie-unidad-org-TRD/<str:pk>/', views.GetSeriesSubSUnidadOrgTRDByPk.as_view(), name='get-serie-subserie-unidad-org-TRD')
 ]

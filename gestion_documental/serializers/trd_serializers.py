@@ -5,7 +5,8 @@ from gestion_documental.models.trd_models import (
     TipologiasDocumentales,
     TablaRetencionDocumental,
     FormatosTiposMedio,
-    SeriesSubSUnidadOrgTRD
+    SeriesSubSUnidadOrgTRD,
+    SeriesSubSUnidadOrgTRDTipologias
 )
 from gestion_documental.choices.tipos_medios_formato_choices import tipos_medios_formato_CHOICES
 
@@ -156,4 +157,17 @@ class GetSeriesSubSUnidadOrgTRDSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = SeriesSubSUnidadOrgTRD
+        fields = '__all__'
+
+
+class GetSeriesSubSUnidadOrgTRDTipologiasSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = SeriesSubSUnidadOrgTRDTipologias
+        fields = '__all__'
+
+
+class GetTipologiasDocumentalesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipologiasDocumentales
         fields = '__all__'
