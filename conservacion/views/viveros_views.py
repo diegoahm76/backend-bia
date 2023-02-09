@@ -33,19 +33,23 @@ from conservacion.serializers.viveros_serializers import (
     TipificacionBienViveroSerializer
 )
 
-class DeleteVivero(generics.RetrieveDestroyAPIView):
+class DeleteVivero(generics.DestroyAPIView):
     serializer_class = ViveroSerializer
     queryset = Vivero.objects.all()
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, id_vivero):
-        data = request.data
-        vivero = Vivero.objects.filter(id_vivero=id_vivero).first()
+        
+        vivero = Vivero.objects.filter(id_vivero=int(id_vivero)).first()
+        
         if not vivero:
             return Response({'success': False, 'detail': 'No se encontró ningún vivero con el id_vivero enviado'}, status=status.HTTP_404_NOT_FOUND)
+        
         if vivero.en_funcionamiento != None:
             return Response({'success': False, 'detail': 'No se puede eliminar un vivero que ha tenido una apertura'}, status=status.HTTP_403_FORBIDDEN)
+        
         vivero.delete()
+        
         # AUDITORIA DE CREATE DE VIVEROS
         user_logeado = request.user.id_usuario
         dirip = Util.get_client_ip(request)
@@ -59,6 +63,7 @@ class DeleteVivero(generics.RetrieveDestroyAPIView):
             'descripcion': descripcion
         }
         Util.save_auditoria(auditoria_data)
+        
         return Response({'success': True, 'detail': 'Se ha eliminado correctamente este vivero'}, status=status.HTTP_204_NO_CONTENT)
 
 class AbrirCerrarVivero(generics.RetrieveUpdateAPIView):
