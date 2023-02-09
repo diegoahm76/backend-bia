@@ -130,6 +130,7 @@ class DeleteUserRol(DestroyAPIView):
 class DeleteRol(generics.RetrieveDestroyAPIView):
     serializer_class = RolesSerializer
     queryset = Roles.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def delete(self, request, id_rol):
 
