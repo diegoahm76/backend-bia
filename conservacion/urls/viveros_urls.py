@@ -5,7 +5,7 @@ urlpatterns = [
     # Viveros
     path('create/', views.CreateViveros.as_view(), name='vivero-create'),
     path('update/<str:id_vivero_ingresado>/', views.UpdateViveros.as_view(), name='vivero-update'),
-    path('delete/<str:id_vivero>/', views.DeleteVivero.as_view(), name='delete-vivero'),
+    path('delete/<int:id_vivero>/', views.DeleteVivero.as_view(), name='delete-vivero'),
     path('abrir-cerrar/<str:id_vivero>/', views.AbrirCerrarVivero.as_view(), name='abrir-cerrar-vivero'),
     path('cuarentena/<str:id_vivero>/', views.UpdateViveroCuarentena.as_view(),name='update-vivero-cuarentena'),
     path('desactivar/<str:id_vivero>/', views.DesactivarActivarViveroView.as_view(),name='desactivar-vivero'),

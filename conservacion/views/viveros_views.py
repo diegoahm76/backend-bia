@@ -38,9 +38,10 @@ class DeleteVivero(generics.DestroyAPIView):
     queryset = Vivero.objects.all()
     permission_classes = [IsAuthenticated]
 
-    def destroy(self, request, id_vivero):
+    def delete(self, request, id_vivero):
         
-        vivero = Vivero.objects.filter(id_vivero=int(id_vivero)).first()
+        vivero = Vivero.objects.filter(id_vivero=id_vivero).first()
+        vivero_eliminar = vivero
         
         if not vivero:
             return Response({'success': False, 'detail': 'No se encontró ningún vivero con el id_vivero enviado'}, status=status.HTTP_404_NOT_FOUND)
@@ -53,7 +54,7 @@ class DeleteVivero(generics.DestroyAPIView):
         # AUDITORIA DE CREATE DE VIVEROS
         user_logeado = request.user.id_usuario
         dirip = Util.get_client_ip(request)
-        descripcion = {'nombre': vivero.nombre}
+        descripcion = {'nombre': str(vivero_eliminar.nombre)}
         auditoria_data = {
             'id_usuario': user_logeado,
             'id_modulo': 41,
