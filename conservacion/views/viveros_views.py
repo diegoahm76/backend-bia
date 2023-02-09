@@ -38,7 +38,7 @@ class DeleteVivero(generics.DestroyAPIView):
     queryset = Vivero.objects.all()
     permission_classes = [IsAuthenticated]
 
-    def delete(self, request, id_vivero):
+    def destroy(self, request, id_vivero):
         
         vivero = Vivero.objects.filter(id_vivero=int(id_vivero)).first()
         
