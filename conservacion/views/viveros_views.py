@@ -65,7 +65,7 @@ class DeleteVivero(generics.DestroyAPIView):
         }
         Util.save_auditoria(auditoria_data)
         
-        return Response({'success': True, 'detail': 'Se ha eliminado correctamente este vivero'}, status=status.HTTP_204_NO_CONTENT)
+        return Response({'success': True, 'detail': 'Se ha eliminado correctamente este vivero'}, status=status.HTTP_200_OK)
 
 class AbrirCerrarVivero(generics.RetrieveUpdateAPIView):
     serializer_class = AbrirViveroSerializer
