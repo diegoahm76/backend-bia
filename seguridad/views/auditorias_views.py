@@ -26,8 +26,8 @@ def getAuditorias(request):
         return Response({'success': False, 'detail': 'No se ingresaron parametros de fecha'}, status=status.HTTP_404_NOT_FOUND)
 
     # formateando las variables de tipo fecha
-    start_date = datetime.strptime(rango_inicial_fecha, '%Y-%m-%d')
-    end_date = datetime.strptime(rango_final_fecha, '%Y-%m-%d')
+    start_date = datetime.strptime(rango_inicial_fecha, '%Y-%m-%d').replace(hour=00, minute=00, second=00, microsecond=00)
+    end_date = datetime.strptime(rango_final_fecha, '%Y-%m-%d').replace(hour=23, minute=59, second=59, microsecond=59)
 
    
     if (end_date-start_date).days > 8:
