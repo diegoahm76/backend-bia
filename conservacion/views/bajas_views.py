@@ -23,7 +23,7 @@ from conservacion.serializers.bajas_serializers import (
     BajasViveroPostSerializer,
     ItemsBajasViveroPostSerializer,
     ViveroSerializer,
-    CatalogoBienesSerializer,
+    CatalogoBienesBajasSerializer,
     CatalogoBienesSerializerBusquedaAvanzada,
     ItemsBajasActualizarViveroPostSerializer,
     GetBajaByNumeroSerializer
@@ -410,7 +410,7 @@ class GetVivero(generics.ListAPIView):
         return Response({'succes':True, 'detail':'Ok', 'data':serializer.data}, status=status.HTTP_200_OK)
 
 class GetBienesBajas(generics.ListAPIView):
-    serializer_class = CatalogoBienesSerializer
+    serializer_class = CatalogoBienesBajasSerializer
     queryset = InventarioViveros.objects.all()
     permission_classes = [IsAuthenticated]
     
