@@ -62,7 +62,7 @@ class TipologiasDocumentales(models.Model):
     id_tipologia_documental = models.AutoField(editable=False, primary_key=True, db_column='T208IdTipologiaDoc_TRD')
     id_trd = models.ForeignKey(TablaRetencionDocumental, on_delete=models.CASCADE, db_column='T208Id_TRD')
     nombre = models.CharField(max_length=10, db_column='T208nombre')
-    codigo = models.PositiveSmallIntegerField(db_column='T208codigo')
+    codigo = models.CharField(max_length=200,db_column='T208codigo')
     cod_tipo_medio_doc = models.CharField(max_length=1, choices=tipos_medios_doc_CHOICES, db_column='T208Cod_TipoMedioDoc')
     activo = models.BooleanField(default=True, db_column='T208activo')
     justificacion_desactivacion = models.CharField(null=True, blank=True, max_length=255, db_column='T208justificacionDesactivacion')

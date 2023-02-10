@@ -26,6 +26,7 @@ from conservacion.serializers.viveros_serializers import (
 )
 from conservacion.serializers.ingreso_cuarentena_serializers import (
     GetLotesEtapaSerializer,
+    CreateIngresoCuarentenaSerializer
 )
 from conservacion.serializers.camas_siembras_serializers import (
     CamasGerminacionPost,
@@ -115,3 +116,90 @@ class GetLotesEtapaView(generics.ListAPIView):
 
         serializer = self.serializer_class(etapas_lotes_in_vivero, many=True)
         return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+class GetLotesEtapaLupaView(generics.ListAPIView):
+    serializer_class = GetLotesEtapaSerializer
+    queryset = InventarioViveros.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_vivero):
+
+        #VALIDACIÓN QUE EL VIVERO SELECCIONADO EXISTA
+        vivero = Vivero.objects.filter(id_vivero=id_vivero).first()
+        if not vivero:
+            return Response({'success': False, 'detail': 'No existe ningún vivero con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+
+        #CREACIÓN DE FILTROS SEGÚN QUERYPARAMS
+        filter = {}
+        for key, value in request.query_params.items():
+            if key in ['codigo_bien', 'nombre', 'agno_lote', 'cod_etapa_lote']:
+                if key == 'codigo_bien' or key == 'nombre':
+                    filter['id_bien__' + key + '__icontains'] = value
+                else:
+                    filter[key] = value
+
+        #VALIDACIÓN QUE EL CODIGO ENVIADO EXISTA EN ALGÚN BIEN EN INVENTARIO VIVEROS
+        etapas_lotes_in_vivero = InventarioViveros.objects.filter(id_vivero=id_vivero, id_siembra_lote_germinacion=None).exclude(~Q(id_bien__cod_tipo_elemento_vivero='MV')).exclude(id_bien__cod_tipo_elemento_vivero='MV', id_bien__es_semilla_vivero=True).filter(**filter)
+        if not etapas_lotes_in_vivero:
+            return Response({'success': False, 'detail': 'No se encontró ningún material vegetal disponible'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        #VALIDAR CANTIDADES DISPONIBLES
+        for etapa_lote in etapas_lotes_in_vivero:
+            porc_cuarentena_lote_germinacion = etapa_lote.porc_cuarentena_lote_germinacion if etapa_lote.porc_cuarentena_lote_germinacion else 0
+            cantidad_entrante = etapa_lote.cantidad_entrante if etapa_lote.cantidad_entrante else 0
+            cantidad_bajas = etapa_lote.cantidad_bajas if etapa_lote.cantidad_bajas else 0
+            cantidad_traslados_lote_produccion_distribucion = etapa_lote.cantidad_traslados_lote_produccion_distribucion if etapa_lote.cantidad_traslados_lote_produccion_distribucion else 0
+            cantidad_salidas = etapa_lote.cantidad_salidas if etapa_lote.cantidad_salidas else 0
+            cantidad_lote_cuarentena = etapa_lote.cantidad_lote_cuarentena if etapa_lote.cantidad_lote_cuarentena else 0
+
+
+            if etapa_lote.cod_etapa_lote == 'G':
+                etapa_lote.cod_etapa_lote = 'Germinación'
+                etapa_lote.saldo_disponible = 100 - porc_cuarentena_lote_germinacion
+            if etapa_lote.cod_etapa_lote == 'P':
+                etapa_lote.cod_etapa_lote = 'Producción'
+                etapa_lote.saldo_disponible = cantidad_entrante - cantidad_bajas - cantidad_traslados_lote_produccion_distribucion - cantidad_salidas - cantidad_lote_cuarentena
+            if etapa_lote.cod_etapa_lote == 'D':
+                etapa_lote.cod_etapa_lote = 'Distribución'
+                etapa_lote.saldo_disponible = cantidad_entrante - cantidad_bajas - cantidad_salidas - cantidad_lote_cuarentena
+
+
+        serializer = self.serializer_class(etapas_lotes_in_vivero, many=True)
+        return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+class CreateIngresoCuarentenaView(generics.CreateAPIView):
+    serializer_class = CreateIngresoCuarentenaSerializer
+    queryset = CuarentenaMatVegetal.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data = request.data
+
+        #VALIDACIÓN QUE EL VIVERO ENVIADO EXISTA
+        vivero = Vivero.objects.filter(id_vivero=data['id_vivero'], activo=True).first()
+        if not vivero:
+            return Response({'success': False, 'detail': 'El vivero seleccionado no existe'})
+        
+        #VALIDACIÓN QUE EL ID BIEN SELECCIONADO EXISTA
+        bien = CatalogoBienes.objects.filter(id_bien=data['id_bien']).first()
+        if not bien:
+            return Response({'success': False, 'detail': 'El bien seleccionado no existe'}, status=status.HTTP_404_NOT_FOUND)
+        
+        #VALIDACIÓN QUE EL CODIGO ENVIADO PERTENEZCA A UN BIEN MATERIAL VEGETAL QUE NO SEA SEMILLA
+        if bien.cod_tipo_elemento_vivero != 'MV':
+            return Response({'success': False, 'detail': 'El código debe pertenecer a un bien de tipo material vegetal'}, status=status.HTTP_403_FORBIDDEN)            
+        if bien.cod_tipo_elemento_vivero == 'MV' and bien.es_semilla_vivero != False:
+            return Response({'success': False, 'detail': 'El código debe pertenecer a un material vegetal que no sea semilla'}, status=status.HTTP_403_FORBIDDEN)
+
+        #VALIDACIÓN DE FECHA CUARENTENA
+        fecha_cuarentena = data['fecha_cuarentena']
+        fecha_strptime = datetime.strptime(fecha_cuarentena, '%Y-%m-%d %H:%M:%S')
+        if fecha_strptime < (datetime.now() - timedelta(hours=24)):
+            return Response({'success': False, 'detail': 'No se puede realizar un ingreso a cuarentena con más de 24 horas de anterioridad'}, status=status.HTTP_400_BAD_REQUEST)
+
+        
+
+
+
+        return Response({'success': True, 'detail': 'Ingreso a cuarentena creado correctamente'}, status=status.HTTP_201_CREATED)

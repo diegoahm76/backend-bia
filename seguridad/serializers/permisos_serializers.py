@@ -56,7 +56,11 @@ class ModulosRolSerializer(serializers.ModelSerializer):
         id_rol = self.context.get("id_rol")
         permisos_modulo_rol = PermisosModuloRol.objects.filter(id_permiso_modulo__id_modulo=obj.id_modulo, id_rol=id_rol)
         permisos = GetPermisosRolSerializer(permisos_modulo_rol, many=True)
-        return permisos.data
+        permisos_actions = {}
+        for permiso in permisos.data:
+            nombre_permiso = str(permiso['nombre_permiso'])
+            permisos_actions[nombre_permiso.lower()] = True
+        return permisos_actions
     
     def get_desc_subsistema(self, obj):
         desc_subsistema = None

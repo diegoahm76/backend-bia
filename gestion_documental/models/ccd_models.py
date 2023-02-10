@@ -24,7 +24,7 @@ class CuadrosClasificacionDocumental(models.Model):
 class SubseriesDoc(models.Model):
     id_subserie_doc = models.AutoField(primary_key=True, editable=False, db_column='T204IdSubserieDocCCD')
     nombre = models.CharField(max_length=200, db_column='T204nombre')
-    codigo = models.PositiveBigIntegerField(db_column='T204codigo')
+    codigo = models.CharField(max_length=200,db_column='T204codigo')
     id_ccd = models.ForeignKey(CuadrosClasificacionDocumental, on_delete=models.CASCADE, db_column='T204Id_CCD')
 
     def __str__(self):
@@ -41,7 +41,7 @@ class SubseriesDoc(models.Model):
 class SeriesDoc(models.Model):
     id_serie_doc = models.AutoField(primary_key=True, editable=False, db_column='T203IdSerieDocCCD')
     nombre = models.CharField(max_length=200,db_column='T203nombre')
-    codigo = models.PositiveBigIntegerField(db_column='T203codigo')
+    codigo = models.CharField(max_length=200,db_column='T203codigo')
     id_ccd = models.ForeignKey(CuadrosClasificacionDocumental, on_delete=models.CASCADE, db_column='T203Id_CCD')
 
     def __str__(self):
