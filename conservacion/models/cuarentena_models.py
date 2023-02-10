@@ -27,7 +27,7 @@ class CuarentenaMatVegetal(models.Model):
     justificacion_anulacion = models.CharField(max_length=255,blank=True,null=True,db_column='T164justificacionAnulacion')
     fecha_anulacion = models.DateTimeField(db_column='T164fechaAnulacion', blank=True,null=True)
     id_persona_anula = models.ForeignKey(Personas,on_delete=models.SET_NULL,related_name='persona_anula_cuarentena',blank=True,null=True,db_column='T164Id_PersonaAnula')
-    ruta_archivo_soporte = models.CharField(max_length=255,db_column='T164rutaArchivoSoporte',blank=True,null=True)
+    ruta_archivo_soporte = models.FileField(max_length=255,db_column='T164rutaArchivoSoporte',blank=True,null=True)
     
     def __str__(self):  
         return str(self.id_cuarentena_mat_vegetal)

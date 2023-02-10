@@ -4,7 +4,7 @@ from seguridad.serializers.user_serializers import UserSerializer
 from seguridad.serializers.permisos_serializers import PermisosSerializer, ModulosSerializers
 
 class AuditoriasSerializers(serializers.ModelSerializer):
-    fecha_accion = serializers.DateTimeField(format="%Y-%m-%d")
+    fecha_accion = serializers.DateTimeField()
     nombre_modulo=serializers.ReadOnlyField(source='id_modulo.nombre_modulo',default=None)
     subsistema=serializers.ReadOnlyField(source='id_modulo.subsistema',default=None)
     nombre_de_usuario=serializers.ReadOnlyField(source='id_usuario.nombre_de_usuario',default=None)
