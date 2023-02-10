@@ -6,7 +6,9 @@
         "id_modulo": 1,
         "nombre_modulo": "Personas",
         "subsistema":"TRSV",
-        "descripcion":"Permite alimentar la información básica de las personas"
+        "descripcion":"Permite alimentar la información básica de las personas",
+        "ruta_formulario":"/test",
+        "nombre_icono":"test"
       }
     },
     {
@@ -16,7 +18,9 @@
         "id_modulo": 2,
         "nombre_modulo": "Usuarios",
         "subsistema":"SEGU",
-        "descripcion":"Permite administrar los usuarios del sistema"
+        "descripcion":"Permite administrar los usuarios del sistema",
+        "ruta_formulario":"/test",
+        "nombre_icono":"test"
       }
     },
     {
@@ -26,7 +30,9 @@
         "id_modulo": 3,
         "nombre_modulo": "Actualizacion de Datos Usuario",
         "subsistema":"SEGU",
-        "descripcion":"Permite administrar a una persona que tiene un usuario interno, los datos de su usuario desde el sistema-Sóo para usuarios internos"
+        "descripcion":"Permite administrar a una persona que tiene un usuario interno, los datos de su usuario desde el sistema-Sóo para usuarios internos",
+        "ruta_formulario":"/test",
+        "nombre_icono":"test"
       }
     },
     {
@@ -36,7 +42,9 @@
         "id_modulo": 4,
         "nombre_modulo": "Actualizacion Datos Usuario Externo",
         "subsistema":"SEGU",
-        "descripcion":"Permite administrar a una persona que tiene un usuario externo, los datos de su usuario desde el portal web-Sólo para usuarios externos"
+        "descripcion":"Permite administrar a una persona que tiene un usuario externo, los datos de su usuario desde el portal web-Sólo para usuarios externos",
+        "ruta_formulario":"/test",
+        "nombre_icono":"test"
       }
     },
     {
@@ -46,7 +54,9 @@
         "id_modulo": 5,
         "nombre_modulo": "Roles",
         "subsistema":"SEGU",
-        "descripcion":"Permite administrar los roles del sistema"
+        "descripcion":"Permite administrar los roles del sistema",
+        "ruta_formulario":"/test",
+        "nombre_icono":"test"
       }
     },
     {
@@ -56,7 +66,9 @@
         "id_modulo": 6,
         "nombre_modulo": "Estado Civil",
         "subsistema":"TRSV",
-        "descripcion":"Permite administrar la información básica de los Estados Civiles del sistema"
+        "descripcion":"Permite administrar la información básica de los Estados Civiles del sistema",
+        "ruta_formulario":"/test",
+        "nombre_icono":"test"
       }
     },
     {
@@ -66,7 +78,9 @@
           "id_modulo": 7,
           "nombre_modulo": "Tipo de Documento de ID",
           "subsistema":"TRSV",
-          "descripcion":"Permite administrar los tipos de documentos de identificación"
+          "descripcion":"Permite administrar los tipos de documentos de identificación",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -76,7 +90,9 @@
           "id_modulo": 8,
           "nombre_modulo": "Delegación del Rol de SuperUsuario",
           "subsistema":"SEGU",
-          "descripcion":"Proceso que permite a un SuperUsuario delegar dicha función a otra persona"
+          "descripcion":"Proceso que permite a un SuperUsuario delegar dicha función a otra persona",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -86,7 +102,9 @@
           "id_modulo": 9,
           "nombre_modulo": "Creación Persona Vía Portal",
           "subsistema":"SEGU",
-          "descripcion":"Permite crear una persona vía Portal"
+          "descripcion":"Permite crear una persona vía Portal",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -96,7 +114,9 @@
           "id_modulo": 10,
           "nombre_modulo": "Creación Usuario Vía Portal",
           "subsistema":"SEGU",
-          "descripcion":"Permite crear un usuario vía Portal"
+          "descripcion":"Permite crear un usuario vía Portal",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -106,7 +126,9 @@
           "id_modulo": 11,
           "nombre_modulo": "Marcas",
           "subsistema":"ALMA",
-          "descripcion":"Permite administrar la información básica de las Marcas de artículos activos fijos"
+          "descripcion":"Permite administrar la información básica de las Marcas de artículos activos fijos",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -116,7 +138,9 @@
           "id_modulo": 12,
           "nombre_modulo": "Bodegas",
           "subsistema":"ALMA",
-          "descripcion":"Permite administrar las bodegas del Almacén creadas en el sistema"
+          "descripcion":"Permite administrar las bodegas del Almacén creadas en el sistema",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -126,7 +150,9 @@
           "id_modulo": 13,
           "nombre_modulo": "Porcentajes de IVA",
           "subsistema":"ALMA",
-          "descripcion":"Permite administrar la información básica de los porcentajes de IVA que manejará el sistema"
+          "descripcion":"Permite administrar la información básica de los porcentajes de IVA que manejará el sistema",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -136,7 +162,9 @@
           "id_modulo": 14,
           "nombre_modulo": "Unidades de Medida",
           "subsistema":"ALMA",
-          "descripcion":"Permite administrar la información básica de las unidades de medida que manejará el sistema"
+          "descripcion":"Permite administrar la información básica de las unidades de medida que manejará el sistema",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -146,7 +174,9 @@
           "id_modulo": 15,
           "nombre_modulo": "Organigramas",
           "subsistema":"TRSV",
-          "descripcion":"Permite administrar los organigramas del sistema"
+          "descripcion":"Permite administrar los organigramas del sistema",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -156,7 +186,9 @@
           "id_modulo": 16,
           "nombre_modulo": "Cambio de Organigrama Actual",
           "subsistema":"TRSV",
-          "descripcion":"Permite adoptar un nuevo organigrama de la entidad en el sistema"
+          "descripcion":"Permite adoptar un nuevo organigrama de la entidad en el sistema",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -166,7 +198,9 @@
           "id_modulo": 17,
           "nombre_modulo": "Cargos",
           "subsistema":"TRSV",
-          "descripcion":"Permite administrar los cargos disponibles en el sistema"
+          "descripcion":"Permite administrar los cargos disponibles en el sistema",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -176,7 +210,9 @@
           "id_modulo": 18,
           "nombre_modulo": "Hoja de Vida Computadores",
           "subsistema":"ALMA",
-          "descripcion":"Permite administrar la información de las hojas de vidas de los computadores"
+          "descripcion":"Permite administrar la información de las hojas de vidas de los computadores",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -186,7 +222,9 @@
           "id_modulo": 19,
           "nombre_modulo": "Hoja de Vida Vehículos",
           "subsistema":"ALMA",
-          "descripcion":"Permite administrar la información de las hojas de vidas de los vehículos"
+          "descripcion":"Permite administrar la información de las hojas de vidas de los vehículos",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -196,7 +234,9 @@
           "id_modulo": 20,
           "nombre_modulo": "Hoja de Vida Otros Activos",
           "subsistema":"ALMA",
-          "descripcion":"Permite administrar la información de las hojas de vidas de otros activos"
+          "descripcion":"Permite administrar la información de las hojas de vidas de otros activos",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -206,7 +246,9 @@
           "id_modulo": 21,
           "nombre_modulo": "Programación de Mantenimiento de Computadores",
           "subsistema":"ALMA",
-          "descripcion":"Permite administrar la información de las programaciones de mantenimiento de computadores"
+          "descripcion":"Permite administrar la información de las programaciones de mantenimiento de computadores",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -216,7 +258,9 @@
           "id_modulo": 22,
           "nombre_modulo": "Programación de Mantenimiento de Vehículos",
           "subsistema":"ALMA",
-          "descripcion":"Permite administrar la información de las programaciones de mantenimiento de vehículos"
+          "descripcion":"Permite administrar la información de las programaciones de mantenimiento de vehículos",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -226,7 +270,9 @@
           "id_modulo": 23,
           "nombre_modulo": "Programación de Mantenimiento de Otros activos",
           "subsistema":"ALMA",
-          "descripcion":"Permite administrar la información de las programaciones de mantenimiento de otros activos"
+          "descripcion":"Permite administrar la información de las programaciones de mantenimiento de otros activos",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -236,7 +282,9 @@
           "id_modulo": 24,
           "nombre_modulo": "Ejecución de Mantenimiento de Computadores",
           "subsistema":"ALMA",
-          "descripcion":"Permite administrar la información de las ejecuciones de mantenimiento de computadores"
+          "descripcion":"Permite administrar la información de las ejecuciones de mantenimiento de computadores",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -246,7 +294,9 @@
           "id_modulo": 25,
           "nombre_modulo": "Ejecución de Mantenimiento de Vehículos",
           "subsistema":"ALMA",
-          "descripcion":"Permite administrar la información de las ejecuciones de mantenimiento de vehículos"
+          "descripcion":"Permite administrar la información de las ejecuciones de mantenimiento de vehículos",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -256,7 +306,9 @@
           "id_modulo": 26,
           "nombre_modulo": "Ejecución de Mantenimiento de Otros activos",
           "subsistema":"ALMA",
-          "descripcion":"Permite administrar la información de las ejecuciones de mantenimiento de otros activos"
+          "descripcion":"Permite administrar la información de las ejecuciones de mantenimiento de otros activos",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -266,7 +318,9 @@
           "id_modulo": 27,
           "nombre_modulo": "Cuadro de clasificación documental",
           "subsistema":"GEST",
-          "descripcion":"Permite administrar los Cuadros de Clasificación Documental de la entidad en el sistema"
+          "descripcion":"Permite administrar los Cuadros de Clasificación Documental de la entidad en el sistema",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -276,7 +330,9 @@
           "id_modulo": 28,
           "nombre_modulo": "Cambio de Cuadro de Clasificación Documental Actual",
           "subsistema":"GEST",
-          "descripcion":"Permite adoptar un nuevo Cuadro de Clasificación Documental de la entidad en el sistema"
+          "descripcion":"Permite adoptar un nuevo Cuadro de Clasificación Documental de la entidad en el sistema",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -286,7 +342,9 @@
           "id_modulo": 29,
           "nombre_modulo": "Tabla de Retención Documental",
           "subsistema":"GEST",
-          "descripcion":"Permite administrar las Tablas de Retención Documental de la entidad en el sistema"
+          "descripcion":"Permite administrar las Tablas de Retención Documental de la entidad en el sistema",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -296,7 +354,9 @@
           "id_modulo": 30,
           "nombre_modulo": "Cambio de Tabla de Retención Documental Actual",
           "subsistema":"GEST",
-          "descripcion":"Permite adoptar una nueva Tabla de Retención Documental de la entidad en el sistema"
+          "descripcion":"Permite adoptar una nueva Tabla de Retención Documental de la entidad en el sistema",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -306,7 +366,9 @@
           "id_modulo": 31,
           "nombre_modulo": "Tabla de Control de Acceso",
           "subsistema":"GEST",
-          "descripcion":"Permite administrar las Tablas de Control de Acceso de la entidad en el sistema"
+          "descripcion":"Permite administrar las Tablas de Control de Acceso de la entidad en el sistema",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -316,7 +378,9 @@
           "id_modulo": 32,
           "nombre_modulo": "Cambio de Tabla de Control de Acceso Actual",
           "subsistema":"GEST",
-          "descripcion":"Permite adoptar una nueva Tabla de Control de Acceso de la entidad en el sistema"
+          "descripcion":"Permite adoptar una nueva Tabla de Control de Acceso de la entidad en el sistema",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -326,7 +390,9 @@
           "id_modulo": 33,
           "nombre_modulo": "Catálogo de Bienes",
           "subsistema":"ALMA",
-          "descripcion":"Permite administrar el catálogo de los bienes de la entidad a manejar en el subsistema de Almacén"
+          "descripcion":"Permite administrar el catálogo de los bienes de la entidad a manejar en el subsistema de Almacén",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -336,7 +402,9 @@
           "id_modulo": 34,
           "nombre_modulo": "Entrada de Bienes de Almacén",
           "subsistema":"ALMA",
-          "descripcion":"Permite ingresar bienes al Almacén de la entidad para su control"
+          "descripcion":"Permite ingresar bienes al Almacén de la entidad para su control",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -346,7 +414,9 @@
           "id_modulo": 35,
           "nombre_modulo": "Solicitud de Bienes de Consumo",
           "subsistema":"ALMA",
-          "descripcion":"Permite solicitar bienes de consumo por parte de la entidad al almacén de la misma"
+          "descripcion":"Permite solicitar bienes de consumo por parte de la entidad al almacén de la misma",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -356,7 +426,9 @@
           "id_modulo": 36,
           "nombre_modulo": "Solicitud de Bienes de Consumo para Viveros",
           "subsistema":"ALMA",
-          "descripcion":"Permite solicitar bienes de consumo para uso en la actividad misional de Viveros por parte del personal de Viveros al Almacén de la entidad"
+          "descripcion":"Permite solicitar bienes de consumo para uso en la actividad misional de Viveros por parte del personal de Viveros al Almacén de la entidad",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -366,7 +438,9 @@
           "id_modulo": 37,
           "nombre_modulo": "Aprobación de Solicitudes de Bienes",
           "subsistema":"ALMA",
-          "descripcion":"Permite aprobar o rechazar solicitudes de bienes de las cuales se le elijió como responsable por parte del solicitante"
+          "descripcion":"Permite aprobar o rechazar solicitudes de bienes de las cuales se le elijió como responsable por parte del solicitante",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -376,7 +450,9 @@
           "id_modulo": 38,
           "nombre_modulo": "Aprobación de Solicitudes de Consumo para Vivero",
           "subsistema":"ALMA",
-          "descripcion":"Permite aprobar o rechazar solicitudes de bienes de Consumo para la actividad misional de Vivero y sobre las cuales se le elijió como responsable por parte del solicitante"
+          "descripcion":"Permite aprobar o rechazar solicitudes de bienes de Consumo para la actividad misional de Vivero y sobre las cuales se le elijió como responsable por parte del solicitante",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -386,7 +462,9 @@
           "id_modulo": 39,
           "nombre_modulo": "Rechazo de Solicitudes de Bienes desde Almacén",
           "subsistema":"ALMA",
-          "descripcion":"Permite rechazar por parte de Almacén, solicitudes de bienes realizadas por las diferentes áreas de la entidad"
+          "descripcion":"Permite rechazar por parte de Almacén, solicitudes de bienes realizadas por las diferentes áreas de la entidad",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -396,7 +474,9 @@
           "id_modulo": 40,
           "nombre_modulo": "Listado de Solicitudes de Bienes Pendientes por Despachar",
           "subsistema":"ALMA",
-          "descripcion":"Lista todas las solicitudes realizadas por la empresa y que no han sido gestionadas por Almacén"
+          "descripcion":"Lista todas las solicitudes realizadas por la empresa y que no han sido gestionadas por Almacén",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -406,7 +486,9 @@
           "id_modulo": 41,
           "nombre_modulo": "Administración de Viveros",
           "subsistema":"CONS",
-          "descripcion":"Permite administrar los Viveros de la entidad"
+          "descripcion":"Permite administrar los Viveros de la entidad",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -416,7 +498,9 @@
           "id_modulo": 42,
           "nombre_modulo": "Ingresar/Retirar de Cuarentena un Vivero",
           "subsistema":"CONS",
-          "descripcion":"módulo que permite ingresar o sacar de cuarentena un vivero de la entidad"
+          "descripcion":"módulo que permite ingresar o sacar de cuarentena un vivero de la entidad",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -426,7 +510,9 @@
           "id_modulo": 43,
           "nombre_modulo": "Aperturar/Cerrar un Vivero",
           "subsistema":"CONS",
-          "descripcion":"módulo que permite aperturar o cerrar un vivero existente de la entidad"
+          "descripcion":"módulo que permite aperturar o cerrar un vivero existente de la entidad",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -436,7 +522,9 @@
           "id_modulo": 44,
           "nombre_modulo": "Tipificación de Bienes de Consumo de Viveros",
           "subsistema":"CONS",
-          "descripcion":"Permite tipificar los bienes de consumo utilizables en viveros para la producción"
+          "descripcion":"Permite tipificar los bienes de consumo utilizables en viveros para la producción",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -446,7 +534,9 @@
           "id_modulo": 45,
           "nombre_modulo": "Despacho de Bienes de Consumo",
           "subsistema":"ALMA",
-          "descripcion":"Permite a Almacén despachar los bienes de consumo de la entidad basados en una solicitud"
+          "descripcion":"Permite a Almacén despachar los bienes de consumo de la entidad basados en una solicitud",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -456,7 +546,9 @@
           "id_modulo": 46,
           "nombre_modulo": "Entrega de Donaciones, Resarcimientos y Compensaciones a Viveros",
           "subsistema":"ALMA",
-          "descripcion":"permite a Almacén entregar los bienes de consumo de Viveros que ingresaron a la entidad mediante una Donación, Resarcimiento o Compensación"
+          "descripcion":"permite a Almacén entregar los bienes de consumo de Viveros que ingresaron a la entidad mediante una Donación, Resarcimiento o Compensación",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -466,7 +558,9 @@
           "id_modulo": 47,
           "nombre_modulo": "Cierre de Solicitudes de Bienes por No Disponibilidad",
           "subsistema":"ALMA",
-          "descripcion":"Permite cerrar por parte de Almacén una solicitud de bienes por no tener disponibilidad de ninguno de los items solicitados"
+          "descripcion":"Permite cerrar por parte de Almacén una solicitud de bienes por no tener disponibilidad de ninguno de los items solicitados",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -476,7 +570,9 @@
           "id_modulo": 48,
           "nombre_modulo": "Recepción y Distribución de Despachos Entrantes a Vivero",
           "subsistema":"CONS",
-          "descripcion":"Permite Distribuir las entradas de bienes de consumo de Viveros en los diferentes viveros de la entidad"
+          "descripcion":"Permite Distribuir las entradas de bienes de consumo de Viveros en los diferentes viveros de la entidad",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -486,7 +582,9 @@
           "id_modulo": 49,
           "nombre_modulo": "Administración de Camas de Germinación",
           "subsistema":"CONS",
-          "descripcion":"Permite administrar las camas de germinación para los diferntes viveros de la entidad"
+          "descripcion":"Permite administrar las camas de germinación para los diferntes viveros de la entidad",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -496,7 +594,9 @@
           "id_modulo": 50,
           "nombre_modulo": "Siembra de Semillas",
           "subsistema":"CONS",
-          "descripcion":"Permite crear y administrar las siembras de semillas de material vegetal realizadas en los diferentes viveros de la entidad"
+          "descripcion":"Permite crear y administrar las siembras de semillas de material vegetal realizadas en los diferentes viveros de la entidad",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -506,7 +606,9 @@
           "id_modulo": 51,
           "nombre_modulo": "Cambio de Etapa del Material Vegetal",
           "subsistema":"CONS",
-          "descripcion":"Permite realizar el cambio de etapa de unidades de material vegetal de un lote específico"
+          "descripcion":"Permite realizar el cambio de etapa de unidades de material vegetal de un lote específico",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -516,7 +618,9 @@
           "id_modulo": 52,
           "nombre_modulo": "Traslados entre viveros",
           "subsistema":"CONS",
-          "descripcion":"Permite trasladar bienes entre viveros"
+          "descripcion":"Permite trasladar bienes entre viveros",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -526,7 +630,9 @@
           "id_modulo": 53,
           "nombre_modulo": "Ingreso a Cuarentena de Material Vegetal",
           "subsistema":"CONS",
-          "descripcion":"Permite registrar el ingreso de plantas y plántulas de un lote de un vivero a cuarentena"
+          "descripcion":"Permite registrar el ingreso de plantas y plántulas de un lote de un vivero a cuarentena",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -536,7 +642,9 @@
           "id_modulo": 54,
           "nombre_modulo": "Levantamiento de Cuarentena de Material Vegetal",
           "subsistema":"CONS",
-          "descripcion":"Permite registrar el levantamiento de cuarentena de plantas y plántulas de un lote de un vivero que está en cuarentena"
+          "descripcion":"Permite registrar el levantamiento de cuarentena de plantas y plántulas de un lote de un vivero que está en cuarentena",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -546,7 +654,9 @@
           "id_modulo": 55,
           "nombre_modulo": "Bajas de Herramientas, Insumos y Semillas",
           "subsistema":"CONS",
-          "descripcion":"Permite dar de baja elementos del tipo Herramientas, Insumos y Semillas del inventario de un vivero"
+          "descripcion":"Permite dar de baja elementos del tipo Herramientas, Insumos y Semillas del inventario de un vivero",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       },
       {
@@ -556,7 +666,9 @@
           "id_modulo": 56,
           "nombre_modulo": "Mortalidad de Plantas y Plántulas",
           "subsistema":"CONS",
-          "descripcion":"Permite registrar la mortalidad de plantas y plántulas de un vivero"
+          "descripcion":"Permite registrar la mortalidad de plantas y plántulas de un vivero",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
         }
       }
   ]
