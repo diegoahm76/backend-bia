@@ -342,8 +342,8 @@ class Modulos(models.Model):
     nombre_modulo = models.CharField(max_length=70, db_column='Tznombre')
     subsistema = models.CharField(max_length=4, choices=subsistemas_CHOICES, db_column='Tzsubsistema')
     descripcion = models.CharField(max_length=255, db_column='Tzdescripcion')
-    ruta_formulario = models.CharField(max_length=255, db_column='TzrutaFormulario')
-    nombre_icono = models.CharField(max_length=30, db_column='TznombreIcono')
+    ruta_formulario = models.CharField(default='/test', max_length=255, db_column='TzrutaFormulario')
+    nombre_icono = models.CharField(default='test', max_length=30, db_column='TznombreIcono')
     
     def __str__(self):
         return str(self.nombre_modulo)
