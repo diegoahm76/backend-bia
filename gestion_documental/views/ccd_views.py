@@ -154,7 +154,6 @@ class FinalizarCuadroClasificacionDocumental(generics.RetrieveUpdateAPIView):
                         unidades_difference_list = [unidad for unidad in unidades_list if unidad not in unidades_asignacion_list]
                         unidades_difference_instance = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional__in=unidades_difference_list)
                         unidades_names = [unidad.nombre for unidad in unidades_difference_instance]
-                        print('Unidades sin usar: ', unidades_difference_instance)
                         return Response({'success': False, 'detail': 'Debe asociar todas las unidades', 'data': unidades_names, 'delete':False}, status=status.HTTP_400_BAD_REQUEST)
 
                     if not set(series_list).issubset(series_asignacion_list):
@@ -182,20 +181,23 @@ class FinalizarCuadroClasificacionDocumental(generics.RetrieveUpdateAPIView):
                         #Mostrar las series sin asignar
                         series_difference_list = [serie for serie in series_list if serie not in series_asignacion_list]
                         series_difference_instance = SeriesDoc.objects.filter(id_serie_doc__in=series_difference_list)
+                        series_difference_instance.delete()
                         #return Response({'success': False, 'detail': 'Debe asociar todas las series', 'Series sin asignar': series_difference_instance}, status=status.HTTP_400_BAD_REQUEST)
 
                     #Agregar validación para cuando una lista viene vacia
                     if subseries_list and not subseries_asignacion_list:
                         subseries_difference_list = [subserie for subserie in subseries_list if subserie not in subseries_asignacion_list]
                         subseries_difference_instance = SubseriesDoc.objects.filter(id_subserie_doc__in=subseries_difference_list)
+                        subseries_difference_instance.delete()
                         #return Response({'success': False, 'detail': 'Debe asociar todas las subseries creadas, no hay ninguna asignada', 'Subseries sin asignar': subseries_difference_instance}, status=status.HTTP_400_BAD_REQUEST)
                     if not set(subseries_list).issubset(set(subseries_asignacion_list)):
                         subseries_difference_list = [subserie for subserie in subseries_list if subserie not in subseries_asignacion_list]
                         subseries_difference_instance = SubseriesDoc.objects.filter(id_subserie_doc__in=subseries_difference_list)
+                        subseries_difference_instance.delete()
                         #return Response({'success': False, 'detail': 'Debe asociar todas las subseries creadas', 'Subseries sin asignar': subseries_difference_instance}, status=status.HTTP_400_BAD_REQUEST)
 
-                    series_difference_instance.delete()
-                    subseries_difference_instance.delete()
+                    # series_difference_instance.delete()
+                    # subseries_difference_instance.delete()
                     
                 ccd.fecha_terminado = datetime.now()
                 ccd.save()
@@ -554,7 +556,7 @@ class AsignarSeriesYSubseriesAUnidades(generics.UpdateAPIView):
         filtrados = SeriesDoc.objects.filter(id_ccd=id_ccd_ingresado).filter(id_serie_doc__in=series_id).values()
         series_id_filtrados = set([i['id_serie_doc'] for i in filtrados])
         if len(series_id) != len(series_id_filtrados):
-             return Response({'success':False, "detail" : "1. Ingresó una serie documental que no corresponde a la ccd sobre la que se está trabajando"}, status=status.HTTP_400_BAD_REQUEST)
+             return Response({'success':False, "detail" : "Ingresó una serie documental que no corresponde a la ccd sobre la que se está trabajando"}, status=status.HTTP_400_BAD_REQUEST)
         else:
             pass
         # Guardar y actualizar asignaciones
