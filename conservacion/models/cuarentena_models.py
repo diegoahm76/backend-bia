@@ -75,9 +75,9 @@ class BajasVivero(models.Model):
     id_persona_baja = models.ForeignKey(Personas,on_delete=models.CASCADE,db_column='T166Id_PersonaBaja')
     baja_anulado = models.BooleanField(default=False,db_column='T166bajaAnulado')
     justificacion_anulacion = models.CharField(max_length=255,blank=True,null=True,db_column='T166justificacionAnulacion')
-    fecha_anulacion = models.DateTimeField(db_column='T166fechaAnulacion')
+    fecha_anulacion = models.DateTimeField(db_column='T166fechaAnulacion',blank=True,null=True)
     id_persona_anula = models.ForeignKey(Personas,on_delete=models.SET_NULL,blank=True,null=True,related_name='persona_anula_bajas',db_column='T166Id_PersonaAnula')
-    ruta_archivo_soporte = models.CharField(max_length=255,db_column='T166rutaArchivoSoporte')
+    ruta_archivo_soporte = models.FileField(null=True, blank=True,db_column='T166rutaArchivoSoporte')
     
     def __str__(self):
         return str(self.id_baja)
