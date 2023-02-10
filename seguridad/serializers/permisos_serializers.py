@@ -72,7 +72,7 @@ class ModulosRolSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Modulos
-        fields = ['id_modulo', 'nombre_modulo', 'descripcion', 'subsistema', 'desc_subsistema', 'permisos']
+        fields = ['id_modulo', 'nombre_modulo', 'descripcion', 'subsistema', 'desc_subsistema', 'ruta_formulario', 'nombre_icono', 'permisos']
 
 class PermisosModuloRolSerializerHyper(serializers.HyperlinkedModelSerializer):
     class Meta:
