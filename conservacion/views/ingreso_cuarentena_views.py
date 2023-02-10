@@ -270,6 +270,17 @@ class CreateIngresoCuarentenaView(generics.CreateAPIView):
             lote_etapa_inventario.cantidad_lote_cuarentena = cantidad_actual + serializador.cantidad_cuarentena
             lote_etapa_inventario.save()
 
-        
+        # AUDITORIA ELIMINACIÓN DE ITEMS ENTREGA
+        descripcion = {"nombre_vivero": str(serializador.id_bien.nombre), "nombre_bien": str(serializador.id_vivero.id_vivero), "agno": str(serializador.agno_lote), "nro_lote": str(serializador.nro_lote), "etapa_lote": str(serializador.cod_etapa_lote), "fecha_hora_cuarentena": str(serializador.fecha_cuarentena)}
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 53,
+            "cod_permiso": "CR",
+            "subsistema": 'CONS',
+            "dirip": direccion,
+            "descripcion": descripcion
+        }
+        Util.save_auditoria(auditoria_data)
 
         return Response({'success': True, 'detail': 'Ingreso a cuarentena creado correctamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
