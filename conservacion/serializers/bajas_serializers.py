@@ -47,7 +47,7 @@ class ViveroSerializer(serializers.ModelSerializer):
             'nombre',
         )
 
-class CatalogoBienesSerializer(serializers.ModelSerializer):
+class CatalogoBienesBajasSerializer(serializers.ModelSerializer):
     class Meta:
         model = CatalogoBienes
         fields = (
