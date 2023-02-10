@@ -43,3 +43,8 @@ class CreateIngresoCuarentenaSerializer(serializers.ModelSerializer):
     class Meta:
         model = CuarentenaMatVegetal
         fields = '__all__'
+
+class AnularIngresoCuarentenaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CuarentenaMatVegetal
+        fields = '__all__'

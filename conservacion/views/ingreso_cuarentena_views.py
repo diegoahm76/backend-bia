@@ -26,7 +26,8 @@ from conservacion.serializers.viveros_serializers import (
 )
 from conservacion.serializers.ingreso_cuarentena_serializers import (
     GetLotesEtapaSerializer,
-    CreateIngresoCuarentenaSerializer
+    CreateIngresoCuarentenaSerializer,
+    AnularIngresoCuarentenaSerializer
 )
 from conservacion.serializers.camas_siembras_serializers import (
     CamasGerminacionPost,
@@ -284,3 +285,16 @@ class CreateIngresoCuarentenaView(generics.CreateAPIView):
         Util.save_auditoria(auditoria_data)
 
         return Response({'success': True, 'detail': 'Ingreso a cuarentena creado correctamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+    
+
+class AnularIngresoCuarentenaView(generics.RetrieveUpdateAPIView):
+    serializer_class = AnularIngresoCuarentenaSerializer
+    queryset = CuarentenaMatVegetal.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, id_ingreso_cuarentena):
+        cuarentena = CuarentenaMatVegetal.objects.filter(id_cuarentena_mat_vegetal=id_ingreso_cuarentena).first()
+        if not cuarentena:
+            return Response({'success': False, 'detail': 'No existe ninguna cuarentena con el parámetro ingresado'}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response('holis')
