@@ -12,6 +12,12 @@ from conservacion.serializers.despachos_serializers import (
     DistribucionesItemDespachoEntranteSerializer
 )
 from conservacion.choices.cod_etapa_lote import cod_etapa_lote_CHOICES
+from almacen.models.bienes_models import (
+    CatalogoBienes
+)
+from conservacion.models.inventario_models import (
+    InventarioViveros
+)
 import copy
 
 class UtilConservacion:
@@ -234,3 +240,23 @@ class UtilConservacion:
         cantidad_disponible = cantidad_entrante - cantidad_bajas - cantidad_consumos_internos - cantidad_salidas
         
         return cantidad_disponible
+    
+    @staticmethod
+    def get_cantidad_disponible_F(instancia_bien, instancia_bien_vivero):
+        instancia_bien_vivero.cantidad_traslados_lote_produccion_distribucion = instancia_bien_vivero.cantidad_traslados_lote_produccion_distribucion if instancia_bien_vivero.cantidad_traslados_lote_produccion_distribucion else 0
+        instancia_bien_vivero.cantidad_salidas = instancia_bien_vivero.cantidad_salidas if instancia_bien_vivero.cantidad_salidas else 0
+        instancia_bien_vivero.cantidad_lote_cuarentena = instancia_bien_vivero.cantidad_lote_cuarentena if instancia_bien_vivero.cantidad_lote_cuarentena else 0
+        instancia_bien_vivero.cantidad_bajas = instancia_bien_vivero.cantidad_bajas if instancia_bien_vivero.cantidad_bajas else 0
+        instancia_bien_vivero.cantidad_consumos_internos = instancia_bien_vivero.cantidad_consumos_internos if instancia_bien_vivero.cantidad_consumos_internos else 0
+        
+        if instancia_bien.cod_tipo_elemento_vivero == 'MV'and instancia_bien.es_semilla_vivero == False:
+            if instancia_bien_vivero.cod_etapa_lote == 'P':
+                saldo_disponible = instancia_bien_vivero.cantidad_entrante - instancia_bien_vivero.cantidad_bajas - instancia_bien_vivero.cantidad_traslados_lote_produccion_distribucion - instancia_bien_vivero.cantidad_salidas - instancia_bien_vivero.cantidad_lote_cuarentena
+            if instancia_bien_vivero.cod_etapa_lote == 'D':
+                saldo_disponible = instancia_bien_vivero.cantidad_entrante - instancia_bien_vivero.cantidad_bajas - instancia_bien_vivero.cantidad_salidas - instancia_bien_vivero.cantidad_lote_cuarentena
+        elif (instancia_bien.cod_tipo_elemento_vivero == 'MV'and instancia_bien.es_semilla_vivero == True) or instancia_bien.cod_tipo_elemento_vivero == 'IN':
+            saldo_disponible = instancia_bien_vivero.cantidad_entrante - instancia_bien_vivero.cantidad_bajas - instancia_bien_vivero.cantidad_consumos_internos - instancia_bien_vivero.cantidad_salidas
+        elif instancia_bien.cod_tipo_elemento_vivero == 'HE':
+            saldo_disponible = instancia_bien_vivero.cantidad_entrante - instancia_bien_vivero.cantidad_bajas - instancia_bien_vivero.cantidad_salidas
+    
+        return saldo_disponible

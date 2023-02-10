@@ -268,7 +268,7 @@ class CreateSiembraView(generics.CreateAPIView):
         serializer_inventario.is_valid(raise_exception=True)
         serializer_inventario.save()
         
-        # AUDITORIA ELIMINACIÓN DE ITEMS ENTREGA
+        # AUDITORIA ELIMINACIÓN DE SIEMBRA MAESTRO SIN DETALLE
         descripcion = {"nombre_bien_sembrado": str(siembra.id_bien_sembrado.nombre), "id_vivero": str(siembra.id_vivero.id_vivero), "agno": str(siembra.agno_lote), "nro_lote": str(siembra.nro_lote)}
         direccion=Util.get_client_ip(request)
         auditoria_data = {
