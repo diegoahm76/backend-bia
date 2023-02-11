@@ -74,6 +74,32 @@ class ModulosRolSerializer(serializers.ModelSerializer):
         model = Modulos
         fields = ['id_modulo', 'nombre_modulo', 'descripcion', 'subsistema', 'desc_subsistema', 'ruta_formulario', 'nombre_icono', 'permisos']
 
+class ModulosRolEntornoSerializer(serializers.ModelSerializer):
+    desc_subsistema = serializers.SerializerMethodField()
+    permisos = serializers.SerializerMethodField()
+    
+    def get_permisos(self, obj):
+        roles_list = self.context.get("roles_list")
+        permisos_modulo_rol = PermisosModuloRol.objects.filter(id_permiso_modulo__id_modulo=obj.id_modulo, id_rol__in=roles_list)
+        permisos = GetPermisosRolSerializer(permisos_modulo_rol, many=True)
+        permisos_actions = {}
+        for permiso in permisos.data:
+            nombre_permiso = str(permiso['nombre_permiso'])
+            permisos_actions[nombre_permiso.lower()] = True
+        return permisos_actions
+    
+    def get_desc_subsistema(self, obj):
+        desc_subsistema = None
+        
+        diccionario_subsistemas = dict((x,y) for x,y in subsistemas_CHOICES) # transforma un choices en un diccionario
+        desc_subsistema = diccionario_subsistemas[obj.subsistema] if obj.subsistema else None
+        
+        return desc_subsistema
+    
+    class Meta:
+        model = Modulos
+        fields = ['id_modulo', 'nombre_modulo', 'descripcion', 'subsistema', 'desc_subsistema', 'ruta_formulario', 'nombre_icono', 'permisos']
+
 class PermisosModuloRolSerializerHyper(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = PermisosModuloRol
