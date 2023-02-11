@@ -22,7 +22,7 @@ from conservacion.models.viveros_models import (
 from conservacion.serializers.bajas_serializers import (
     BajasViveroPostSerializer,
     ItemsBajasViveroPostSerializer,
-    ViveroSerializer,
+    ViveroBajasSerializer,
     CatalogoBienesBajasSerializer,
     CatalogoBienesSerializerBusquedaAvanzada,
     ItemsBajasActualizarViveroPostSerializer,
@@ -399,7 +399,7 @@ class AnularBajasVivero(generics.UpdateAPIView):
         return Response({'succes' : True, 'detail' : 'Baja anualada con éxito'}, status=status.HTTP_200_OK)
         
 class GetVivero(generics.ListAPIView):
-    serializer_class = ViveroSerializer
+    serializer_class = ViveroBajasSerializer
     queryset = Vivero.objects.all()
     permission_classes = [IsAuthenticated]
     
