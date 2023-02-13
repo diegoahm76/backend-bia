@@ -25,4 +25,5 @@ urlpatterns = [
     path('permisos-modulos-rol/get-by-id/<pk>/', views.DetailPermisosModuloRol.as_view(), name='permisos-modulo-rol-ver'),
     path('permisos-modulos-rol/get-by-rol/<pk>/', views.ListarPermisosModuloRolByRol.as_view(), name='permisos-modulo-rol-by-rol'),
     path('permisos-rol/get-by-rol/<str:id_rol>/', views.GetPermisosRolByRol.as_view(), name='permisos-rol-by-rol'),
+    path('permisos-rol/get-by-entorno/', views.GetPermisosRolByEntorno.as_view(), name='permisos-rol-by-entorno'),
 ]

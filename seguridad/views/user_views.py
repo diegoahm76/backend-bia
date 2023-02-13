@@ -800,7 +800,8 @@ class LoginApiView(generics.CreateAPIView):
                     permisos_list.append(permisos)
                 try:
                     login_error = LoginErroneo.objects.filter(id_usuario=user.id_usuario).last()
-                    serializer = self.serializer_class(data=request.data)
+                    
+                    serializer = self.serializer_class(data=data)
                     serializer.is_valid(raise_exception=True)
 
                     login = Login.objects.create(
@@ -821,7 +822,14 @@ class LoginApiView(generics.CreateAPIView):
                     # DEFINIR SI UN USUARIO SI O SI DEBE TENER UN PERMISO O NO
                     permisos_list = permisos_list[0] if permisos_list else []
                     
-                    user_info={'userinfo':serializer.data,'permisos':permisos_list,'representante_legal':representante_legal_list}
+                    serializer_data = serializer.data
+                    
+                    # AÑADIR INFO PERSONA
+                    serializer_data['tipo_usuario'] = user.tipo_usuario
+                    serializer_data['id_persona'] = user.persona.id_persona
+                    serializer_data['tipo_persona'] = user.persona.tipo_persona
+                    
+                    user_info={'userinfo':serializer_data,'permisos':permisos_list,'representante_legal':representante_legal_list}
                     sms = "Has iniciado sesion en bia cormacarena"
                     Util.send_sms(user.persona.telefono_celular, sms)
                     return Response({'userinfo':user_info}, status=status.HTTP_200_OK)

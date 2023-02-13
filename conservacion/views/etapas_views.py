@@ -69,8 +69,9 @@ class GuardarCambioEtapa(generics.CreateAPIView):
         ).first()
         
         # VALIDAR ANTIGUEDAD POSIBLE DE FECHA CAMBIO
-        fecha_cambio = datetime.strptime(data['fecha_cambio'], '%Y-%m-%d')
-        if fecha_cambio < datetime.today()-timedelta(days=30):
+        fecha_cambio = datetime.strptime(data['fecha_cambio'], '%Y-%m-%d %H:%M:%S')
+        fecha_cambio = fecha_cambio.replace(minute=0, second=0, microsecond=0)
+        if fecha_cambio < datetime.now()-timedelta(days=30):
             return Response({'success':False, 'detail':'La fecha de cambio no puede superar 30 días de antiguedad'}, status=status.HTTP_400_BAD_REQUEST)
         
         # VALIDAR EXISTENCIA DE CAMBIO DE ETAPA DE MV GERMINACION
@@ -83,7 +84,7 @@ class GuardarCambioEtapa(generics.CreateAPIView):
                 return Response({'success':False, 'detail':'Ya se realizó un cambio de etapa de germinación a producción del material vegetal elegido'}, status=status.HTTP_403_FORBIDDEN)
         
         
-        if fecha_cambio.date() != datetime.now().date():
+        if fecha_cambio != datetime.now().replace(minute=0, second=0, microsecond=0):
             
             # VALIDACIONES FECHA CAMBIO SI ETAPA LOTE ES GERMINACIÓN
             if data['cod_etapa_lote_origen'] == 'G':
@@ -103,10 +104,7 @@ class GuardarCambioEtapa(generics.CreateAPIView):
             
                 #VALIDACIÓN DE FECHA DE ACTUALIZACIÓN CUANDO SE MUEVE TODA LA CANTIDAD
                 if int(data['cantidad_movida']) ==  int(data['cantidad_disponible_al_crear']) and (inventario_vivero.cantidad_lote_cuarentena == 0 or inventario_vivero.cantidad_lote_cuarentena == None):
-                    print('fecha_altura',inventario_vivero.fecha_ult_altura_lote)
-                    print('fecha_cambio',fecha_cambio)
                     if inventario_vivero.fecha_ult_altura_lote > fecha_cambio:
-                        print('Entró')
                         return Response({'succes':False,'detail':'La fecha de cambio debe ser mayor a la ultima fecha de actualización que fue: ' + str(inventario_vivero.fecha_ult_altura_lote)},status=status.HTTP_403_FORBIDDEN)
                 
         #VALIDACIÓN DE CANTIDAD DISPONIBLE
@@ -197,7 +195,7 @@ class ActualizarCambioEtapa(generics.UpdateAPIView):
         cambio_etapa = self.queryset.all().filter(id_cambio_de_etapa=pk).first()
         if cambio_etapa:
             # VALIDAR ANTIGUEDAD POSIBLE DE FECHA CAMBIO
-            if cambio_etapa.fecha_cambio.date() < date.today()-timedelta(days=30):
+            if cambio_etapa.fecha_cambio < datetime.now() - timedelta(days=30):
                 return Response({'success':False, 'detail':'No puede actualizar porque la fecha de cambio supera los 30 días de antiguedad'}, status=status.HTTP_400_BAD_REQUEST)
             
             cod_nueva_etapa = 'P' if cambio_etapa.cod_etapa_lote_origen == 'G' else 'D'
@@ -215,8 +213,8 @@ class ActualizarCambioEtapa(generics.UpdateAPIView):
             if int(data['altura_lote_en_cms']) <= 0:
                 return Response({'success':False, 'detail':'La altura del lote debe ser mayor a cero'}, status=status.HTTP_400_BAD_REQUEST)
             
-            if inventario_vivero_etapa_nueva.fecha_ult_altura_lote.date() != cambio_etapa.fecha_cambio.date():
-                return Response({'success':False, 'detail':'No se puede actualizar la altura del lote debido a que la fecha de la última altura ('+str(inventario_vivero_etapa_nueva.fecha_ult_altura_lote.date())+') es distinta a la fecha del cambio de etapa ('+str(cambio_etapa.fecha_cambio.date())+')'}, status=status.HTTP_403_FORBIDDEN)
+            if inventario_vivero_etapa_nueva.fecha_ult_altura_lote.replace(minute=0, second=0, microsecond=0) != cambio_etapa.fecha_cambio.replace(minute=0, second=0, microsecond=0):
+                return Response({'success':False, 'detail':'No se puede actualizar la altura del lote debido a que la fecha de la última altura ('+str(inventario_vivero_etapa_nueva.fecha_ult_altura_lote.replace(minute=0, second=0, microsecond=0))+') es distinta a la fecha del cambio de etapa ('+str(cambio_etapa.fecha_cambio.replace(minute=0, second=0, microsecond=0))+')'}, status=status.HTTP_403_FORBIDDEN)
             
             if cambio_etapa.cod_etapa_lote_origen == 'G':
                 if int(data['cantidad_movida']) > cambio_etapa.cantidad_movida:
@@ -314,7 +312,7 @@ class AnularCambioEtapa(generics.UpdateAPIView):
         cambio_etapa = self.queryset.all().filter(id_cambio_de_etapa=pk).first()
         if cambio_etapa:
             # VALIDAR ANTIGUEDAD POSIBLE DE FECHA CAMBIO
-            if cambio_etapa.fecha_cambio.date() < date.today()-timedelta(days=30):
+            if cambio_etapa.fecha_cambio.replace(minute=0, second=0, microsecond=0) < datetime.now()-timedelta(days=30):
                 return Response({'success':False, 'detail':'No puede actualizar porque la fecha de cambio supera los 30 días de antiguedad'}, status=status.HTTP_400_BAD_REQUEST)
             
             cod_nueva_etapa = 'P' if cambio_etapa.cod_etapa_lote_origen == 'G' else 'D'
@@ -452,7 +450,7 @@ class AnularCambioEtapa(generics.UpdateAPIView):
                         serializer.save()
                         
                         # VALIDACIÓN SI FECHA ULTIMA ALTURA Y FECHA CAMBIO SON IGUALES - PENDIENTE
-                        if inventario_vivero_etapa_nueva.fecha_ult_altura_lote == cambio_etapa.fecha_cambio:
+                        if inventario_vivero_etapa_nueva.fecha_ult_altura_lote.replace(minute=0, second=0, microsecond=0) == cambio_etapa.fecha_cambio.replace(minute=0, second=0, microsecond=0):
                             return Response({'success':True, 'detail':'Se realizó la anulación, pero la altura con la que quedó el lote-destino fue registrada por el cambio de etapa que se está anulando, se le recomienda ir a verificar que sea correcta y actualizar de ser necesario'}, status=status.HTTP_201_CREATED)
                         
                         return Response({'success':True, 'detail':'Se anuló correctamente el cambio de etapa', 'data':serializer.data}, status=status.HTTP_201_CREATED)

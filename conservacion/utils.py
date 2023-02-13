@@ -232,6 +232,27 @@ class UtilConservacion:
         return cantidad_disponible
     
     @staticmethod
+    def get_cantidad_disponible_etapa_produccion(inventario_vivero):
+        cantidad_entrante = inventario_vivero.cantidad_entrante if inventario_vivero.cantidad_entrante else 0
+        cantidad_bajas = inventario_vivero.cantidad_bajas if inventario_vivero.cantidad_bajas else 0
+        cantidad_salidas = inventario_vivero.cantidad_salidas if inventario_vivero.cantidad_salidas else 0
+        cantidad_lote_cuarentena = inventario_vivero.cantidad_lote_cuarentena if inventario_vivero.cantidad_lote_cuarentena else 0
+        cantidad_disponible = cantidad_entrante - cantidad_bajas - cantidad_salidas - cantidad_lote_cuarentena
+        
+        return cantidad_disponible
+    
+    @staticmethod
+    def get_saldo_por_levantar(cuarentena):
+        cantidad_cuarentena = cuarentena.cantidad_cuarentena if cuarentena.cantidad_cuarentena else 0
+        cantidad_bajas = cuarentena.cantidad_bajas if cuarentena.cantidad_bajas else 0
+        cantidad_levantadas = cuarentena.cantidad_levantada if cuarentena.cantidad_levantada else 0
+        saldo_por_levantar = None
+        
+        saldo_por_levantar = cantidad_cuarentena-cantidad_bajas-cantidad_levantadas
+        
+        return saldo_por_levantar
+    
+    @staticmethod
     def get_cantidad_disponible_consumir(bien):
         cantidad_entrante = bien.cantidad_entrante if bien.cantidad_entrante else 0
         cantidad_bajas = bien.cantidad_bajas if bien.cantidad_bajas else 0

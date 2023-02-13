@@ -39,7 +39,7 @@ class ItemsBajasViveroPostSerializer(serializers.ModelSerializer):
             'consec_cuaren_por_lote_etapa'
             )
 
-class ViveroSerializer(serializers.ModelSerializer):
+class ViveroBajasSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vivero
         fields = (

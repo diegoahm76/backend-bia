@@ -4,7 +4,7 @@ from django.shortcuts import render
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from seguridad.models import Permisos, PermisosModulo, PermisosModuloRol, Modulos, User, Auditorias, Roles
+from seguridad.models import Permisos, PermisosModulo, PermisosModuloRol, Modulos, User, Auditorias, Roles, UsuariosRol
 from rest_framework import status,viewsets,mixins
 from rest_framework import status
 from seguridad.serializers.permisos_serializers import (
@@ -16,7 +16,8 @@ from seguridad.serializers.permisos_serializers import (
     ModulosSerializers,
     PermisosModuloRolSerializerHyper,
     GetPermisosRolSerializer,
-    ModulosRolSerializer
+    ModulosRolSerializer,
+    ModulosRolEntornoSerializer
 )
 from rest_framework.generics import ListAPIView, CreateAPIView , RetrieveAPIView, DestroyAPIView, UpdateAPIView, RetrieveUpdateAPIView
 from seguridad.utils import Util
@@ -184,6 +185,67 @@ class GetPermisosRolByRol(ListAPIView):
             
         return Response({'success':True,'detail':'El rol ingresado tiene acceso a lo siguiente', 'data':outputList}, status=status.HTTP_200_OK)
 
+class GetPermisosRolByEntorno(ListAPIView):
+    serializer_class = GetPermisosRolSerializer
+    queryset = PermisosModuloRol.objects.all()
+    def get(self, request):
+        id_usuario = request.query_params.get('id_usuario')
+        tipo_entorno = request.query_params.get('tipo_entorno')
+        
+        if not id_usuario and not tipo_entorno:
+            return Response({'success':False, 'detail':'Debe enviar los parámetros de búsqueda'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        usuario_instance = User.objects.filter(id_usuario=id_usuario).first()
+        tipos_entorno = ['L','C']
+            
+        roles_list = UsuariosRol.objects.filter(id_usuario=id_usuario)
+        
+        if not usuario_instance:
+            return Response({'success':False, 'detail':'Debe ingresar un usuario que exista'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            if usuario_instance.is_superuser:
+                roles_list = roles_list.filter(id_rol=1)
+                tipo_entorno = None
+            else:
+                if not tipo_entorno or tipo_entorno == '':
+                    return Response({'success':False, 'detail':'Debe indicar el tipo de entorno'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if tipo_entorno:
+            if tipo_entorno not in tipos_entorno:
+                return Response({'success':False, 'detail':'Debe ingresar un tipo de entorno valido'}, status=status.HTTP_400_BAD_REQUEST)
+        
+            if tipo_entorno == 'C':
+                roles_list = roles_list.filter(id_rol=2)
+            elif tipo_entorno == 'L':
+                roles_list = roles_list.exclude(id_rol=2)
+        
+        roles_list = [rol.id_rol for rol in roles_list]
+        
+        permisos_modulo_rol = self.queryset.all().filter(id_rol__in=roles_list)
+        modulos_list = [permiso_modulo_rol.id_permiso_modulo.id_modulo.id_modulo for permiso_modulo_rol in permisos_modulo_rol]
+        modulos = Modulos.objects.filter(id_modulo__in=modulos_list)
+        serializer_modulos = ModulosRolEntornoSerializer(modulos, many=True, context={'roles_list': roles_list})
+        modulos_data = serializer_modulos.data
+        
+        modulos_data = sorted(modulos_data, key=operator.itemgetter("subsistema", "desc_subsistema"))
+        outputList = []
+        
+        for subsistema, info_modulos in itertools.groupby(modulos_data, key=operator.itemgetter("subsistema", "desc_subsistema")):
+            modulos = list(info_modulos)
+            
+            for modulo in modulos:
+                del modulo['subsistema']
+                del modulo['desc_subsistema']
+                
+            subsistema_data = {
+                "subsistema": subsistema[0],
+                "desc_subsistema": subsistema[1],
+                "modulos": modulos
+            }
+            outputList.append(subsistema_data)
+            
+        return Response({'success':True,'detail':'El rol ingresado tiene acceso a lo siguiente', 'data':outputList}, status=status.HTTP_200_OK)
+    
 #----------------------------------------------------->Tabla Modulos
 
 class ListarModulo(ListAPIView):
