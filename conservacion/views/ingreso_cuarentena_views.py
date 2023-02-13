@@ -12,12 +12,6 @@ import json
 
 from seguridad.models import Personas
 from conservacion.choices.cod_etapa_lote import cod_etapa_lote_CHOICES
-from conservacion.models.siembras_models import (
-    CamasGerminacionVivero,
-    Siembras,
-    CamasGerminacionViveroSiembra,
-    ConsumosSiembra,
-)
 from conservacion.models.viveros_models import (
     Vivero,
 )
@@ -27,24 +21,8 @@ from conservacion.serializers.viveros_serializers import (
 from conservacion.serializers.ingreso_cuarentena_serializers import (
     GetLotesEtapaSerializer,
     CreateIngresoCuarentenaSerializer,
-    AnularIngresoCuarentenaSerializer
-)
-from conservacion.serializers.camas_siembras_serializers import (
-    CamasGerminacionPost,
-    CreateSiembrasSerializer,
-    GetNumeroLoteSerializer,
-    GetCamasGerminacionSerializer,
-    CreateSiembraInventarioViveroSerializer,
-    CreateBienesConsumidosSerializer,
-    GetSiembraSerializer,
-    GetBienesPorConsumirSerializer,
-    UpdateSiembraSerializer,
-    UpdateBienesConsumidosSerializer,
-    DeleteSiembraSerializer,
-    GetBienesConsumidosSiembraSerializer,
-    GetBienSembradoSerializer,
-    DeleteBienesConsumidosSerializer,
-    GetSiembrasSerializer
+    AnularIngresoCuarentenaSerializer,
+    UpdateIngresoCuarentenaSerializer
 )
 from almacen.models.bienes_models import (
     CatalogoBienes
@@ -54,8 +32,6 @@ from conservacion.models.inventario_models import (
 )
 from conservacion.models.cuarentena_models import (
     CuarentenaMatVegetal,
-    ItemsLevantaCuarentena,
-    BajasVivero
 )
 from conservacion.utils import UtilConservacion
 
@@ -273,7 +249,7 @@ class CreateIngresoCuarentenaView(generics.CreateAPIView):
             lote_etapa_inventario.cantidad_lote_cuarentena = cantidad_actual + serializador.cantidad_cuarentena
             lote_etapa_inventario.save()
 
-        # AUDITORIA ELIMINACIÓN DE ITEMS ENTREGA
+        # AUDITORIA ELIMINACIÓN DE CREAR CUARENTENA
         descripcion = {"nombre_vivero": str(serializador.id_bien.nombre), "nombre_bien": str(serializador.id_vivero.id_vivero), "agno": str(serializador.agno_lote), "nro_lote": str(serializador.nro_lote), "etapa_lote": str(serializador.cod_etapa_lote), "fecha_hora_cuarentena": str(serializador.fecha_cuarentena)}
         direccion=Util.get_client_ip(request)
         auditoria_data = {
@@ -338,7 +314,7 @@ class AnularIngresoCuarentenaView(generics.RetrieveUpdateAPIView):
             lote_etapa_in_inventario.cantidad_lote_cuarentena = cantidad_actual - cuarentena.cantidad_cuarentena
             lote_etapa_in_inventario.save()
 
-        # AUDITORIA ELIMINACIÓN DE ITEMS ENTREGA
+        # AUDITORIA ELIMINACIÓN DE ANULAR CUARENTENA
         descripcion = {"nombre_vivero": str(cuarentena.id_bien.nombre), "nombre_bien": str(cuarentena.id_vivero.id_vivero), "agno": str(cuarentena.agno_lote), "nro_lote": str(cuarentena.nro_lote), "etapa_lote": str(cuarentena.cod_etapa_lote), "fecha_hora_cuarentena": str(cuarentena.fecha_cuarentena)}
         direccion=Util.get_client_ip(request)
         auditoria_data = {
@@ -353,3 +329,101 @@ class AnularIngresoCuarentenaView(generics.RetrieveUpdateAPIView):
 
         return Response({'success': True, 'detail': 'Ingreso a cuarentena anulado exitosamente'}, status=status.HTTP_201_CREATED)
 
+class UpdateIngresoCuarentenaView(generics.RetrieveUpdateAPIView):
+    serializer_class = UpdateIngresoCuarentenaSerializer
+    queryset = CuarentenaMatVegetal.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def put(self, request, id_ingreso_cuarentena):
+
+        data = json.loads(request.data['data'])
+        data['ruta_archivo_soporte'] = request.FILES.get('ruta_archivo_soporte')
+        data['fecha_actualizacion'] = datetime.now()
+
+        #VALIDACIÓN SI EXISTE LA CUARENTENA SELECCIONADA
+        cuarentena = CuarentenaMatVegetal.objects.filter(id_cuarentena_mat_vegetal=id_ingreso_cuarentena).first()
+        cuarentena_copy = copy.copy(cuarentena)
+        if not cuarentena:
+            return Response({'success': False, 'detail': 'No existe ninguna cuarentena con el parámetro ingresado'}, status=status.HTTP_400_BAD_REQUEST)
+
+        #VALIDACIÓN SI LA CUARENTENA YA HA SIDO ANULADA
+        if cuarentena.cuarentena_anulada != False:
+            return Response({'success': False, 'detail': 'No se puede actualizar una entrada que ya ha sido anulada'}, status=status.HTTP_400_BAD_REQUEST)
+
+        #VALIDACIÓN SI LA CUARENTENA HA TENIDO LEVANTAMIENTOS
+        if cuarentena.cantidad_levantada != 0:
+            return Response({'success': False, 'detail': 'No se puede actualizar un ingreso a cuarentena que ha tenido levantamientos'}, status=status.HTTP_403_FORBIDDEN)
+        
+        #VALIDACIÓN SI LA CUARENTENA HA TENIDO MORTALIDAD
+        if cuarentena.cantidad_bajas != 0:
+            return Response({'success': False, 'detail': 'No se puede actualizar un ingreso a cuarentena si ha tenido mortalidad'}, status=status.HTTP_403_FORBIDDEN)
+        
+        #VALIDACIÓN SI ACTUALIZAN CANTIDADES O NO
+        lote_etapa_in_inventario_viveros = InventarioViveros.objects.filter(id_vivero=cuarentena.id_vivero.id_vivero, id_bien=cuarentena.id_bien.id_bien, agno_lote=cuarentena.agno_lote, nro_lote=cuarentena.nro_lote, id_siembra_lote_germinacion=None).first()
+        if data['cantidad_cuarentena'] != cuarentena.cantidad_cuarentena:
+            if data['fecha_actualizacion'] > (cuarentena.fecha_cuarentena + timedelta(hours=48)):
+                return Response({'success': False, 'detail': 'La cantidad en cuarentena solo se puede modificar hasta 48 horas despues de la creación'}, status=status.HTTP_400_BAD_REQUEST)
+                
+            if data['cantidad_cuarentena'] > cuarentena.cantidad_cuarentena:
+                if cuarentena.cod_etapa_lote == 'G':
+                    if data['cantidad_cuarentena'] > 100:
+                        return Response({'success': False, 'detail': f'La cantidad actualizada debe ser maximo del 100% de la cuarentena'}, status=status.HTTP_400_BAD_REQUEST)
+                    if (data['cantidad_cuarentena'] + lote_etapa_in_inventario_viveros.porc_cuarentena_lote_germinacion - cuarentena.cantidad_cuarentena) > 100:
+                        return Response({'success': False, 'detail': f'La cantidad actualizada debe ser maximo del 100% de la cuarentena'}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    if data['cantidad_cuarentena'] > lote_etapa_in_inventario_viveros.cantidad_entrante:
+                        return Response({'success': False, 'detail': 'La cantidad actualizada debe ser menor a la disponible por ingresar en cuarentena'}, status=status.HTTP_400_BAD_REQUEST)
+        
+            else:
+                if data['cantidad_cuarentena'] < 1:
+                    return Response({'success': False, 'detail': 'No se puede actualizar un ingreso a cuarentena con 0 cantidades o porcentaje'}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            if data['fecha_actualizacion'] > (cuarentena.fecha_cuarentena + timedelta(days=30)):
+                return Response({'success': False, 'detail': 'Estos datos solo se pueden modificar hasta 30 días despues del ingreso en cuarentena'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+        if data['cantidad_cuarentena'] != cuarentena.cantidad_cuarentena:
+            if data['cantidad_cuarentena'] > cuarentena.cantidad_cuarentena:
+                if cuarentena.cod_etapa_lote == 'G':
+                    cantidad_existente = lote_etapa_in_inventario_viveros.porc_cuarentena_lote_germinacion if lote_etapa_in_inventario_viveros.porc_cuarentena_lote_germinacion else 0
+                    lote_etapa_in_inventario_viveros.porc_cuarentena_lote_germinacion = cantidad_existente - cuarentena.cantidad_cuarentena + data['cantidad_cuarentena']
+                    lote_etapa_in_inventario_viveros.save()
+                else:
+                    cantidad_existente = lote_etapa_in_inventario_viveros.cantidad_lote_cuarentena if lote_etapa_in_inventario_viveros.cantidad_lote_cuarentena else 0
+                    lote_etapa_in_inventario_viveros.cantidad_lote_cuarentena = cantidad_existente - cuarentena.cantidad_cuarentena + data['cantidad_cuarentena']
+                    lote_etapa_in_inventario_viveros.save()
+
+            elif data['cantidad_cuarentena'] < cuarentena.cantidad_cuarentena:
+                if cuarentena.cod_etapa_lote == 'G':
+                    cantidad_existente = lote_etapa_in_inventario_viveros.porc_cuarentena_lote_germinacion if lote_etapa_in_inventario_viveros.porc_cuarentena_lote_germinacion else 0
+                    lote_etapa_in_inventario_viveros.porc_cuarentena_lote_germinacion = cantidad_existente - cuarentena.cantidad_cuarentena + data['cantidad_cuarentena']
+                    lote_etapa_in_inventario_viveros.save()
+                else:
+                    cantidad_existente = lote_etapa_in_inventario_viveros.cantidad_lote_cuarentena if lote_etapa_in_inventario_viveros.cantidad_lote_cuarentena else 0
+                    lote_etapa_in_inventario_viveros.cantidad_lote_cuarentena = cantidad_existente - cuarentena.cantidad_cuarentena + data['cantidad_cuarentena']
+                    lote_etapa_in_inventario_viveros.save()
+            serializer = self.serializer_class(cuarentena, data=data, many=False)
+            serializer.is_valid(raise_exception=True)
+            serializador = serializer.save()
+        else:
+            serializer = self.serializer_class(cuarentena, data=data, many=False)
+            serializer.is_valid(raise_exception=True)
+            serializador = serializer.save()
+
+        # AUDITORIA ELIMINACIÓN DE ANULAR CUARENTENA
+        valores_actualizados = {'previous': cuarentena_copy,'current': serializador}
+        descripcion = {"nombre_vivero": str(cuarentena.id_bien.nombre), "nombre_bien": str(cuarentena.id_vivero.id_vivero), "agno": str(cuarentena.agno_lote), "nro_lote": str(cuarentena.nro_lote), "etapa_lote": str(cuarentena.cod_etapa_lote), "fecha_hora_cuarentena": str(cuarentena.fecha_cuarentena)}
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 53,
+            "cod_permiso": "AC",
+            "subsistema": 'CONS',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_actualizados": valores_actualizados
+        }
+        Util.save_auditoria(auditoria_data)
+
+        return Response({'success': True, 'detail': 'Ingreso a cuarentena actualizado exitosamente'}, status=status.HTTP_201_CREATED)
