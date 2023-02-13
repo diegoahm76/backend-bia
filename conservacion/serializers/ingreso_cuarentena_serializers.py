@@ -47,4 +47,11 @@ class CreateIngresoCuarentenaSerializer(serializers.ModelSerializer):
 class AnularIngresoCuarentenaSerializer(serializers.ModelSerializer):
     class Meta:
         model = CuarentenaMatVegetal
-        fields = '__all__'
+        fields = (
+            'cuarentena_abierta',
+            'cuarentena_anulada',
+            'justificacion_anulacion',
+            'fecha_anulacion',
+            'cuarentena_abierta',
+            'id_persona_anula'
+        )
