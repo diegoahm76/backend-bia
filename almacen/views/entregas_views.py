@@ -359,7 +359,7 @@ class AnularEntregaView(generics.RetrieveUpdateAPIView):
             }
         Util.save_auditoria_maestro_detalle(auditoria_data)
 
-        return Response({'success': True, 'detail': 'Se ha anulado la entrega correctamente'}, status=status.HTTP_204_NO_CONTENT)
+        return Response({'success': True, 'detail': 'Se ha anulado la entrega correctamente'}, status=status.HTTP_200_OK)
 
 class GetEntradasEntregasView(generics.ListAPIView):
     serializer_class = GetEntradasEntregasSerializer
@@ -784,4 +784,4 @@ class DeleteItemsEntregaView(generics.RetrieveDestroyAPIView):
         }
         Util.save_auditoria_maestro_detalle(auditoria_data)
 
-        return Response({'success': True, 'detail': 'Items Eliminados Exitosamente'}, status=status.HTTP_204_NO_CONTENT)
+        return Response({'success': True, 'detail': 'Items Eliminados Exitosamente'}, status=status.HTTP_200_OK)

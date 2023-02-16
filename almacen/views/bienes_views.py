@@ -486,7 +486,7 @@ class DeleteNodos(generics.RetrieveDestroyAPIView):
                     "descripcion": descripcion,
                 }
                 Util.save_auditoria(auditoria_data)
-                return Response({'success': True, 'detail': 'Eliminado el elemento'}, status=status.HTTP_204_NO_CONTENT)
+                return Response({'success': True, 'detail': 'Eliminado el elemento'}, status=status.HTTP_200_OK)
 
             hijos = CatalogoBienes.objects.filter(id_bien_padre=nodo.id_bien)
             if hijos:
@@ -1028,7 +1028,7 @@ class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
         }
         Util.save_auditoria_maestro_detalle(auditoria_data)
 
-        return Response({'success': True, 'detail': 'Se ha eliminado correctamente'}, status=status.HTTP_204_NO_CONTENT)
+        return Response({'success': True, 'detail': 'Se ha eliminado correctamente'}, status=status.HTTP_200_OK)
 
 
 class UpdateEntrada(generics.RetrieveUpdateAPIView):

@@ -133,11 +133,11 @@ class UpdatePermisoModuloRol(RetrieveUpdateAPIView):
                         id_permiso_modulo = permiso_modulo_instance
                     )
                 else:
-                    return Response({'success': False, 'detail':'No existe uno de los permisos, verifique'}, status=status.HTTP_204_NO_CONTENT)
+                    return Response({'success': False, 'detail':'No existe uno de los permisos, verifique'}, status=status.HTTP_400_BAD_REQUEST)
                 
             return Response({'success': True, 'detail':'Se actualizaron los permisos del rol'}, status=status.HTTP_200_OK)     
         else:
-            return Response({'success': False, 'detail':'No se encontró el rol'}, status=status.HTTP_204_NO_CONTENT)
+            return Response({'success': False, 'detail':'No se encontró el rol'}, status=status.HTTP_404_NOT_FOUND)
 
 class ListarPermisosModuloRol(ListAPIView):
     serializer_class = PermisosModuloRolSerializer

@@ -263,7 +263,7 @@ class DeleteRegistroMantenimiento(generics.DestroyAPIView):
                 }
                 Util.save_auditoria(auditoria_data)
                 
-                return Response({'success': True, 'detail': 'Eliminado exitosamente'}, status=status.HTTP_204_NO_CONTENT)
+                return Response({'success': True, 'detail': 'Eliminado exitosamente'}, status=status.HTTP_200_OK)
             else:
                 return Response({'success': False, 'detail': 'No puede eliminar el mantenimiento porque no es el último movimiento'})
         else:

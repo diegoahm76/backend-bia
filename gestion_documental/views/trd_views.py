@@ -225,7 +225,7 @@ class UpdateTipologiasDocumentales(generics.UpdateAPIView):
                     }
                     Util.save_auditoria_maestro_detalle(auditoria_data)
 
-                    return Response({'success':True, 'detail':'Se han eliminado todas las tipologias'}, status=status.HTTP_204_NO_CONTENT)
+                    return Response({'success':True, 'detail':'Se han eliminado todas las tipologias'}, status=status.HTTP_200_OK)
             else:
                 return Response({'success':False, 'detail':'El TRD ya está terminado o fue retirado de producción, por lo cual no es posible realizar acciones sobre las tipologias'}, status=status.HTTP_403_FORBIDDEN)
         else:
@@ -464,7 +464,7 @@ class DeleteSerieSubserieUnidadTRD(generics.RetrieveDestroyAPIView):
             serie_ss_uniorg_trd_tipologias = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_serie_subserie_unidadorg_trd=serie_ss_uniorg_trd)
             serie_ss_uniorg_trd_tipologias.delete()
             serie_ss_uniorg_trd.delete()
-            return Response({'success': True, 'detail': 'Eliminado exitosamente'}, status=status.HTTP_204_NO_CONTENT)
+            return Response({'success': True, 'detail': 'Eliminado exitosamente'}, status=status.HTTP_200_OK)
         else:
             return Response({'success': False, 'detail': 'No se encontró ninguna Serie Subserie Unidad TRD con el parámetro ingresado'}, status.HTTP_404_NOT_FOUND)
 
@@ -670,7 +670,7 @@ class DeleteFormatosTiposMedio(generics.DestroyAPIView):
                     return Response({'success':False, 'detail':'Este formato tipo medio ya está siendo usado, no se pudo eliminar'}, status=status.HTTP_403_FORBIDDEN)
 
                 formato_tipo_medio.delete()
-                return Response({'success': True, 'detail': 'Este formato tipo medio ha sido eliminado exitosamente'}, status=status.HTTP_204_NO_CONTENT)
+                return Response({'success': True, 'detail': 'Este formato tipo medio ha sido eliminado exitosamente'}, status=status.HTTP_200_OK)
             else:
                 return Response({'success': False, 'detail': 'No puedes eliminar un formato tipo medio precargado'}, status=status.HTTP_403_FORBIDDEN)
         else:

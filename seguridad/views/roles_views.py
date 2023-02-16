@@ -96,7 +96,7 @@ class DeleteUserRol(DestroyAPIView):
             
             Util.save_auditoria(auditoria_data)
             
-            return Response({'success':True,'detail':'El rol fue eliminado'},status=status.HTTP_204_NO_CONTENT)
+            return Response({'success':True,'detail':'El rol fue eliminado'},status=status.HTTP_200_OK)
         else:
             return Response({'success':False,'detail':'No existe el rol ingresado'},status=status.HTTP_404_NOT_FOUND)
             
@@ -123,7 +123,7 @@ class DeleteUserRol(DestroyAPIView):
 #                 descripcion =  {"nombre" :  str(rol.nombre_rol)}
 #                 Auditorias.objects.create(id_usuario = user, id_modulo = modulo, id_cod_permiso_accion = permiso, subsistema = "SEGU", dirip=direccion_ip, descripcion=descripcion, valores_actualizados='')  
                 
-#                 return Response({'success':True,'detail':'El rol fue eliminado'},status=status.HTTP_204_NO_CONTENT)
+#                 return Response({'success':True,'detail':'El rol fue eliminado'},status=status.HTTP_200_OK)
 #             else:
                 
 

@@ -410,7 +410,7 @@ class EliminarCargoUnidadPermisoExp(generics.DestroyAPIView):
         cargo_unidad_exp = self.queryset.all().filter(id_cargo_unidad_s_subserie_unidad_org_tca=pk, id_clasif_serie_subserie_unidad_tca__id_tca__fecha_retiro_produccion=None, id_clasif_serie_subserie_unidad_tca__id_tca__actual=False).first()
         if cargo_unidad_exp:
             cargo_unidad_exp.delete()
-            return Response({'success':True, 'detail':'Se ha eliminado la relacion del cargo, unidad y los permisos asignados del expediente elegido'}, status=status.HTTP_204_NO_CONTENT)
+            return Response({'success':True, 'detail':'Se ha eliminado la relacion del cargo, unidad y los permisos asignados del expediente elegido'}, status=status.HTTP_200_OK)
         else:
             return Response({'success':False, 'detail':'No se puede ejecutar la acción con el registro ingresado'}, status=status.HTTP_404_NOT_FOUND)
 
