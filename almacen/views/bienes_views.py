@@ -507,7 +507,7 @@ class DeleteNodos(generics.RetrieveDestroyAPIView):
                 "descripcion": descripcion,
             }
             Util.save_auditoria(auditoria_data)
-            return Response({'success': True, 'detail': 'Se ha eliminado el bien correctamente'}, status=status.HTTP_204_NO_CONTENT)
+            return Response({'success': True, 'detail': 'Se ha eliminado el bien correctamente'}, status=status.HTTP_200_OK)
         else:
             return Response({'success': False, 'detail': 'No se encontró ningún nodo con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
 
