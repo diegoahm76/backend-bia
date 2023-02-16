@@ -1,3 +1,4 @@
+import copy
 from django.urls import path
 from rest_framework.response import Response
 from conservacion.views import mortalidad_views as views
@@ -26,6 +27,7 @@ from conservacion.serializers.mortalidad_serializers import (
     GetHistorialMortalidadSerializer
 )
 from conservacion.utils import UtilConservacion
+from seguridad.utils import Util
 import json
 
 class GetMaterialVegetalByCodigo(generics.ListAPIView):
@@ -256,7 +258,19 @@ class RegistrarMortalidad(generics.CreateAPIView):
         # REGISTRO DETALLES
         serializador_detalle = RegistrarItemsMortalidadSerializer(data=data_items_mortalidad, many=True)
         serializador_detalle.is_valid(raise_exception=True)
-        serializador_detalle.save()
+        items_serializados = serializador_detalle.save()
+        
+        # GUARDAR DESCRIPCIONES DE LOS DETALLES PARA AUDITORIA
+        valores_creados_detalles = []
+        for detalle in items_serializados:
+            descripcion = {
+                'nombre_bien':detalle.id_bien.nombre,
+                'agno_lote':detalle.agno_lote,
+                'nro_lote':detalle.nro_lote,
+                'cod_etapa_lote':detalle.cod_etapa_lote,
+                'consec_cuaren_por_lote_etapa':detalle.consec_cuaren_por_lote_etapa
+            }
+            valores_creados_detalles.append(descripcion)
         
         # ACTUALIZACIÓN DE CANTIDADES EN DETALLES
         for item in data_items_mortalidad:
@@ -286,6 +300,20 @@ class RegistrarMortalidad(generics.CreateAPIView):
                 item_cuarentena.save()
                 
             inventario_vivero.save()
+        
+        # AUDITORIA MAESTRO DETALLE DE MORTALIDAD
+        descripcion = {"tipo_baja": 'M', "nro_baja_por_tipo": nro_baja, "fecha_baja": data_mortalidad['fecha_baja']}
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 56,
+            "cod_permiso": "CR",
+            "subsistema": 'CONS',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_creados_detalles": valores_creados_detalles
+            }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
         
         return Response({'success':True, 'detail':'Se realizó el registro de mortalidad correctamente'}, status=status.HTTP_201_CREATED)
 
@@ -432,6 +460,8 @@ class ActualizarMortalidad(generics.UpdateAPIView):
                 serializer_maestro.save()
             
             # ACTUALIZAR DETALLES
+            valores_actualizados_detalles = []
+            
             if items_cambios_actualizar:
                 for item in items_cambios_actualizar:
                     item_actual = items_mortalidad_actual.filter(id_item_baja_viveros=item['id_item_baja_viveros']).first()
@@ -441,6 +471,16 @@ class ActualizarMortalidad(generics.UpdateAPIView):
                         nro_lote = item_actual.nro_lote,
                         cod_etapa_lote = item_actual.cod_etapa_lote
                     ).first()
+                    
+                    # DESCRIPCION Y PREVIOUS PARA LA AUDITORIA
+                    item_actual_previous = copy.copy(item_actual)
+                    descripcion = {
+                        'nombre_bien':item_actual.id_bien.nombre,
+                        'agno_lote':item_actual.agno_lote,
+                        'nro_lote':item_actual.nro_lote,
+                        'cod_etapa_lote':item_actual.cod_etapa_lote,
+                        'consec_cuaren_por_lote_etapa':item_actual.consec_cuaren_por_lote_etapa
+                    }
                     
                     if item['cantidad_baja'] < item_actual.cantidad_baja:
                         cantidad_disminuida = item_actual.cantidad_baja - item['cantidad_baja']
@@ -481,13 +521,55 @@ class ActualizarMortalidad(generics.UpdateAPIView):
                     serializer_detalle = ActualizarItemsMortalidadSerializer(item_actual, data=item)
                     serializer_detalle.is_valid(raise_exception=True)
                     serializer_detalle.save()
+                    
+                    valores_actualizados_detalles.append({'previous':item_actual_previous, 'current':item_actual, 'descripcion':descripcion})
+            
+            # ELIMINACIÓN DE ITEMS MORTALIDAD
+            valores_eliminados_detalles = []
+            items_mortalidad_eliminar = items_mortalidad_actual.exclude(id_item_baja_viveros__in=items_detalle_list)
+            
+            if items_mortalidad_eliminar:
+                for item in items_mortalidad_eliminar:
+                    inventario_vivero = inventarios_viveros.filter(
+                        id_bien = item.id_bien.id_bien,
+                        agno_lote = item.agno_lote,
+                        nro_lote = item.nro_lote,
+                        cod_etapa_lote = item.cod_etapa_lote
+                    ).first()
+                    inventario_vivero.cantidad_bajas = inventario_vivero.cantidad_bajas - item.cantidad_baja if inventario_vivero.cantidad_bajas else 0
+                    
+                    # DESCRIPCION PARA LA AUDITORIA
+                    descripcion = {
+                        'nombre_bien':item.id_bien.nombre,
+                        'agno_lote':item.agno_lote,
+                        'nro_lote':item.nro_lote,
+                        'cod_etapa_lote':item.cod_etapa_lote,
+                        'consec_cuaren_por_lote_etapa':item.consec_cuaren_por_lote_etapa
+                    }
+                    valores_eliminados_detalles.append(descripcion)
+                    
+                    if item.consec_cuaren_por_lote_etapa:
+                        inventario_vivero.cantidad_lote_cuarentena = inventario_vivero.cantidad_lote_cuarentena + item.cantidad_baja if inventario_vivero.cantidad_lote_cuarentena else item.cantidad_baja
+                        item_cuarentena = cuarentenas.filter(
+                            id_bien = item.id_bien,
+                            agno_lote = item.agno_lote,
+                            nro_lote = item.nro_lote,
+                            cod_etapa_lote = item.cod_etapa_lote,
+                            consec_cueren_por_lote_etapa = item.consec_cuaren_por_lote_etapa
+                        ).first()
+                        item_cuarentena.cantidad_bajas = item_cuarentena.cantidad_bajas - item.cantidad_baja if item_cuarentena.cantidad_bajas else 0
+                        item_cuarentena.save()
+                    inventario_vivero.save()
+                items_mortalidad_eliminar.delete()
+            
+            response_serializer_create = []
             
             # CREAR DETALLES
             if items_crear:
                 serializer_detalle_crear = RegistrarItemsMortalidadSerializer(data=items_crear, many=True)
                 serializer_detalle_crear.is_valid(raise_exception=True)
                 response_serializer_create = serializer_detalle_crear.save()
-                items_detalle_list.extend([item_creado.pk for item_creado in response_serializer_create])
+                # items_detalle_list.extend([item_creado.pk for item_creado in response_serializer_create])
                 
                 # ACTUALIZACIÓN DE CANTIDADES EN DETALLES CREATE
                 for item in items_crear:
@@ -516,31 +598,34 @@ class ActualizarMortalidad(generics.UpdateAPIView):
                         
                     inventario_vivero.save()
             
-            # ELIMINACIÓN DE ITEMS MORTALIDAD
-            items_mortalidad_eliminar = items_mortalidad_actual.exclude(id_item_baja_viveros__in=items_detalle_list)
-            if items_mortalidad_eliminar:
-                for item in items_mortalidad_eliminar:
-                    inventario_vivero = inventarios_viveros.filter(
-                        id_bien = item.id_bien.id_bien,
-                        agno_lote = item.agno_lote,
-                        nro_lote = item.nro_lote,
-                        cod_etapa_lote = item.cod_etapa_lote
-                    ).first()
-                    inventario_vivero.cantidad_bajas = inventario_vivero.cantidad_bajas - item.cantidad_baja if inventario_vivero.cantidad_bajas else 0
-                    
-                    if item.consec_cuaren_por_lote_etapa:
-                        inventario_vivero.cantidad_lote_cuarentena = inventario_vivero.cantidad_lote_cuarentena + item.cantidad_baja if inventario_vivero.cantidad_lote_cuarentena else item.cantidad_baja
-                        item_cuarentena = cuarentenas.filter(
-                            id_bien = item.id_bien,
-                            agno_lote = item.agno_lote,
-                            nro_lote = item.nro_lote,
-                            cod_etapa_lote = item.cod_etapa_lote,
-                            consec_cueren_por_lote_etapa = item.consec_cuaren_por_lote_etapa
-                        ).first()
-                        item_cuarentena.cantidad_bajas = item_cuarentena.cantidad_bajas - item.cantidad_baja if item_cuarentena.cantidad_bajas else 0
-                        item_cuarentena.save()
-                    inventario_vivero.save()
-                items_mortalidad_eliminar.delete()
+            # GUARDAR DESCRIPCIONES DE LOS DETALLES PARA AUDITORIA
+            valores_creados_detalles = []
+            
+            for detalle in response_serializer_create:
+                descripcion = {
+                    'nombre_bien':detalle.id_bien.nombre,
+                    'agno_lote':detalle.agno_lote,
+                    'nro_lote':detalle.nro_lote,
+                    'cod_etapa_lote':detalle.cod_etapa_lote,
+                    'consec_cuaren_por_lote_etapa':detalle.consec_cuaren_por_lote_etapa
+                }
+                valores_creados_detalles.append(descripcion)
+            
+            # AUDITORIA MAESTRO DETALLE DE MORTALIDAD
+            descripcion = {"tipo_baja": baja.tipo_baja, "nro_baja_por_tipo": str(baja.nro_baja_por_tipo), "fecha_baja": str(baja.fecha_baja)}
+            direccion=Util.get_client_ip(request)
+            auditoria_data = {
+                "id_usuario" : request.user.id_usuario,
+                "id_modulo" : 56,
+                "cod_permiso": "AC",
+                "subsistema": 'CONS',
+                "dirip": direccion,
+                "descripcion": descripcion,
+                "valores_creados_detalles": valores_creados_detalles,
+                "valores_actualizados_detalles": valores_actualizados_detalles,
+                "valores_eliminados_detalles": valores_eliminados_detalles
+            }
+            Util.save_auditoria_maestro_detalle(auditoria_data)
             
             return Response({'success':True, 'detail':'Se realizó la actualizacón del registro de mortalidad correctamente'}, status=status.HTTP_201_CREATED)
         else:
@@ -571,6 +656,8 @@ class AnularMortalidad(generics.UpdateAPIView):
             inventarios_viveros = InventarioViveros.objects.filter(id_vivero=baja.id_vivero)
             cuarentenas = CuarentenaMatVegetal.objects.filter(id_vivero=baja.id_vivero)
             
+            valores_eliminados_detalles = []
+            
             for item in items_mortalidad:
                 inventario_vivero = inventarios_viveros.filter(
                     id_bien = item.id_bien.id_bien,
@@ -579,6 +666,16 @@ class AnularMortalidad(generics.UpdateAPIView):
                     cod_etapa_lote = item.cod_etapa_lote
                 ).first()
                 inventario_vivero.cantidad_bajas = inventario_vivero.cantidad_bajas - item.cantidad_baja if inventario_vivero.cantidad_bajas else 0
+                
+                # DESCRIPCION PARA LA AUDITORIA
+                descripcion = {
+                    'nombre_bien':item.id_bien.nombre,
+                    'agno_lote':item.agno_lote,
+                    'nro_lote':item.nro_lote,
+                    'cod_etapa_lote':item.cod_etapa_lote,
+                    'consec_cuaren_por_lote_etapa':item.consec_cuaren_por_lote_etapa
+                }
+                valores_eliminados_detalles.append(descripcion)
                 
                 if item.consec_cuaren_por_lote_etapa:
                     inventario_vivero.cantidad_lote_cuarentena = inventario_vivero.cantidad_lote_cuarentena + item.cantidad_baja if inventario_vivero.cantidad_lote_cuarentena else item.cantidad_baja
@@ -604,6 +701,20 @@ class AnularMortalidad(generics.UpdateAPIView):
             serializer = self.serializer_class(baja, data=data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
+            
+            # AUDITORIA MAESTRO DETALLE DE MORTALIDAD
+            descripcion = {"tipo_baja": baja.tipo_baja, "nro_baja_por_tipo": str(baja.nro_baja_por_tipo), "fecha_baja": str(baja.fecha_baja)}
+            direccion=Util.get_client_ip(request)
+            auditoria_data = {
+                "id_usuario" : request.user.id_usuario,
+                "id_modulo" : 56,
+                "cod_permiso": "AN",
+                "subsistema": 'CONS',
+                "dirip": direccion,
+                "descripcion": descripcion,
+                "valores_eliminados_detalles": valores_eliminados_detalles
+            }
+            Util.save_auditoria_maestro_detalle(auditoria_data)
             
             return Response({'success':True, 'detail':'Se realizó la anulación del registro de mortalidad correctamente'}, status=status.HTTP_201_CREATED)
         else:
