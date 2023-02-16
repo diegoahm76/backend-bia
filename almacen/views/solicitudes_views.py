@@ -183,19 +183,19 @@ def id_responsable(request):
     try:
         responsable = Personas.objects.get(id_persona=id_responsable)   
     except:
-        return Response({'Success':False,'detail':'no existe ninguna persona correspondiente al id del funcionario responsable de la unidad'})
+        return Response({'success':False,'detail':'No existe ninguna persona correspondiente al id del funcionario responsable de la unidad'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         unidad_org_responsable = UnidadesOrganizacionales.objects.get(id_unidad_org=responsable.id_unidad_org)
     except:
-        return Response({'Success':False, 'Detail':'la persona responsable no tiene esta unidad organizacional asignada'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'success':False, 'detail':'La persona responsable no tiene esta unidad organizacional asignada'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         solicitante = Personas.objects.get(id_persona=data['id_PersonaSolicita'])   
     except:
-        return Response({'Success':False,'detail':'no existe ninguna persona correspondiente al id del funcionario solicitante de la unidad'})
+        return Response({'success':False,'detail':'No existe ninguna persona correspondiente al id del funcionario solicitante de la unidad'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         unidad_org_solicitante = UnidadesOrganizacionales.objects.get(id_unidad_org=solicitante.id_unidad_org)
     except:
-        return Response({'Success':False, 'Detail':'la persona solicitante no tiene esta unidad organizacional asignada'},status=status.HTTP_400_BAD_REQUEST)
+        return Response({'success':False, 'detail':'La persona solicitante no tiene esta unidad organizacional asignada'},status=status.HTTP_400_BAD_REQUEST)
     if unidad_org_responsable.id_nivel_organigrama < unidad_org_solicitante.id_nivel_organigrama:
         pass
         lista_de_jerarquia = []
@@ -206,7 +206,7 @@ def id_responsable(request):
           
 
     else:
-        return Response({'Success':False,'Detail':'el nivel de organigrama del responsable es mayor o igual el solicitante'})
+        return Response({'success':False,'detail':'El nivel de organigrama del responsable es mayor o igual el solicitante'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
@@ -215,17 +215,17 @@ def get_orgchart_tree(request,pk):
     try:
         persona = Personas.objects.get(id_persona=int(pk))
     except:
-        return Response({'Success':False,'Detail':'no existe la persona con el id = '+pk},status=status.HTTP_400_BAD_REQUEST)    
+        return Response({'success':False,'detail':'No existe la persona con el id = '+pk},status=status.HTTP_400_BAD_REQUEST)    
     try:
         user = User.objects.get(persona=pk)
     except:
-        return Response({'Success':False,'Detail':'no existe usuario asignado a esta persona'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'success':False,'detail':'No existe usuario asignado a esta persona'}, status=status.HTTP_400_BAD_REQUEST)
     if user.tipo_usuario != 'I':
-        return Response({'Success':False,'Detail':'su tipo de usuario no corresponde con el esperado para esta consulta'},status=status.HTTP_400_BAD_REQUEST)
+        return Response({'success':False,'detail':'Su tipo de usuario no corresponde con el esperado para esta consulta'},status=status.HTTP_400_BAD_REQUEST)
     try:
         unidad_organizacional = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=persona.id_unidad_organizacional_actual.id_unidad_organizacional)
     except:
-        return Response({'Success':False,'Detail':'la persona no tiene ninguna unidad organizacional asignada'})
+        return Response({'success':False,'detail':'La persona no tiene ninguna unidad organizacional asignada'},status=status.HTTP_400_BAD_REQUEST)
     orgchart_list.append(unidad_organizacional)
     nivel = NivelesOrganigrama.objects.get(id_nivel_organigrama=unidad_organizacional.id_nivel_organigrama.id_nivel_organigrama).orden_nivel
     
@@ -582,7 +582,7 @@ class RechazoSolicitudesBienesAlmacen(generics.UpdateAPIView):
         instance.solicitud_abierta = False
         instance.save()
         
-        return Response({'success':True,'Detail':'Solicitud procesada con éxito', },status=status.HTTP_200_OK)
+        return Response({'success':True,'detail':'Solicitud procesada con éxito', },status=status.HTTP_200_OK)
 
 class AnularSolicitudesBienesConsumo(generics.UpdateAPIView):
     serializer_class = CrearSolicitudesPostSerializer
@@ -628,7 +628,7 @@ class AnularSolicitudesBienesConsumo(generics.UpdateAPIView):
             "valores_eliminados_detalles": valores_eliminados_detalles
         }
         Util.save_auditoria_maestro_detalle(auditoria_data)
-        return Response({'success':True,'Detail':'Solicitud procesada con éxito', },status=status.HTTP_200_OK)
+        return Response({'success':True,'detail':'Solicitud procesada con éxito', },status=status.HTTP_200_OK)
 
 class SearchFuncionarioResponsable(generics.ListAPIView):
     serializer_class=PersonasSerializer
