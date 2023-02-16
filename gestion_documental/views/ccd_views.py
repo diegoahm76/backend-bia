@@ -289,7 +289,7 @@ class CreateSeriesDoc(generics.UpdateAPIView):
             }
             Util.save_auditoria_maestro_detalle(auditoria_data)   
 
-            return Response({'success':True, 'detail':'Se han eliminado todas las series'}, status=status.HTTP_204_NO_CONTENT)
+            return Response({'success':True, 'detail':'Se han eliminado todas las series'}, status=status.HTTP_200_OK)
            
         ccd_list = [subserie['id_ccd'] for subserie in data_ingresada]
 
@@ -512,7 +512,7 @@ class UpdateSubseriesDoc(generics.UpdateAPIView):
                     }
                     Util.save_auditoria_maestro_detalle(auditoria_data)
 
-                    return Response({'success':True, 'detail':'Se han eliminado todas las subseries'}, status=status.HTTP_204_NO_CONTENT)
+                    return Response({'success':True, 'detail':'Se han eliminado todas las subseries'}, status=status.HTTP_200_OK)
             else:
                 return Response({'success':False, 'detail':'El CCD ya está terminado, por lo cual no es posible realizar acciones sobre las subseries'}, status=status.HTTP_403_FORBIDDEN)
         else:

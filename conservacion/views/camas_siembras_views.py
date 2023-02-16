@@ -801,7 +801,7 @@ class DeleteBienesConsumidosView(generics.RetrieveDestroyAPIView):
         
         data = ConsumosSiembra.objects.filter(id_siembra=id_siembra)
         serializer = self.serializer_class(data, many=True)
-        return Response({'success': True, 'detail': 'Eliminación exitosa', 'data': serializer.data}, status=status.HTTP_204_NO_CONTENT)
+        return Response({'success': True, 'detail': 'Eliminación exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
 class DeleteSiembraView(generics.RetrieveDestroyAPIView):
@@ -863,7 +863,7 @@ class DeleteSiembraView(generics.RetrieveDestroyAPIView):
         camas_siembra.delete()
         siembra.delete()
 
-        return Response({'success': True, 'detail': 'Siembra eliminada exitosamente'}, status=status.HTTP_204_NO_CONTENT)
+        return Response({'success': True, 'detail': 'Siembra eliminada exitosamente'}, status=status.HTTP_200_OK)
 
 class GetSiembrasView(generics.ListAPIView):
     serializer_class = GetSiembrasSerializer

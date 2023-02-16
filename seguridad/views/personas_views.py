@@ -103,7 +103,7 @@ class DeleteEstadoCivil(generics.RetrieveDestroyAPIView):
                     return Response({'success': False,'detail': 'Este estado civil ya está siendo usado, por lo cúal no es eliminable'}, status=status.HTTP_403_FORBIDDEN)   
   
                 estado_civil.delete()    
-                return Response({'success': True, 'detail': 'Este estado civil ha sido eliminado exitosamente'}, status=status.HTTP_204_NO_CONTENT)
+                return Response({'success': True, 'detail': 'Este estado civil ha sido eliminado exitosamente'}, status=status.HTTP_200_OK)
             else:
                 return Response({'success': False, 'detail': 'No puedes eliminar un estado civil precargado'}, status=status.HTTP_403_FORBIDDEN)
         else:
@@ -166,7 +166,7 @@ class DeleteTipoDocumento(generics.RetrieveDestroyAPIView):
                     return Response({'success': False,'detail': 'Este tipo de documento ya está siendo usado, por lo cúal no es eliminable'}, status=status.HTTP_403_FORBIDDEN)   
                 
                 tipo_documento.delete()    
-                return Response({'success': True,'detail': 'Este tipo de documento ha sido eliminado exitosamente'}, status=status.HTTP_204_NO_CONTENT)
+                return Response({'success': True,'detail': 'Este tipo de documento ha sido eliminado exitosamente'}, status=status.HTTP_200_OK)
             else:
                 return Response({'success': False,'detail': 'No puedes eliminar un tipo de documento precargado'}, status=status.HTTP_403_FORBIDDEN)
         else:
@@ -1098,7 +1098,7 @@ class deleteSucursalEmpresa(generics.DestroyAPIView):
             
             Util.save_auditoria(auditoria_data)
 
-            return Response({'success':True,'detail':'la sucursal empresa fue eliminada'}, status=status.HTTP_204_NO_CONTENT)
+            return Response({'success':True,'detail':'La sucursal empresa fue eliminada'}, status=status.HTTP_200_OK)
         else:
             return Response({'success':False,'detail':'No existe sucursal'}, status=status.HTTP_400_BAD_REQUEST)
             
@@ -1230,7 +1230,7 @@ class DeleteCargo(generics.DestroyAPIView):
         if cargo:
             if not cargo.item_usado:
                 cargo.delete()
-                return Response({'success': True, 'detail': 'El cargo ha sido eliminado exitosamente'}, status=status.HTTP_204_NO_CONTENT)
+                return Response({'success': True, 'detail': 'El cargo ha sido eliminado exitosamente'}, status=status.HTTP_200_OK)
             else:
                 return Response({'success':False, 'detail':'Este cargo ya está siendo usado, no se pudo eliminar. Intente desactivar'}, status=status.HTTP_403_FORBIDDEN)
         else:
