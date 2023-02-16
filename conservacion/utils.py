@@ -232,7 +232,7 @@ class UtilConservacion:
         return cantidad_disponible
     
     @staticmethod
-    def get_cantidad_disponible_etapa_produccion(inventario_vivero):
+    def get_cantidad_disponible_levantamiento_mortalidad(inventario_vivero):
         cantidad_entrante = inventario_vivero.cantidad_entrante if inventario_vivero.cantidad_entrante else 0
         cantidad_bajas = inventario_vivero.cantidad_bajas if inventario_vivero.cantidad_bajas else 0
         cantidad_salidas = inventario_vivero.cantidad_salidas if inventario_vivero.cantidad_salidas else 0

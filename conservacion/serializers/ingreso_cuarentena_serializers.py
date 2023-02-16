@@ -47,4 +47,27 @@ class CreateIngresoCuarentenaSerializer(serializers.ModelSerializer):
 class AnularIngresoCuarentenaSerializer(serializers.ModelSerializer):
     class Meta:
         model = CuarentenaMatVegetal
-        fields = '__all__'
+        fields = (
+            'cuarentena_abierta',
+            'cuarentena_anulada',
+            'justificacion_anulacion',
+            'fecha_anulacion',
+            'cuarentena_abierta',
+            'id_persona_anula'
+        )
+        extra_kwargs = {
+            'justificacion_anulacion': {'required': True},
+            'cuarentena_abierta': {'required': True},
+            'cuarentena_anulada': {'required': True}
+        }
+
+
+class UpdateIngresoCuarentenaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CuarentenaMatVegetal
+        fields = (
+            'cantidad_cuarentena',
+            'descrip_corta_diferenciable',
+            'motivo',
+            'ruta_archivo_soporte'
+        )

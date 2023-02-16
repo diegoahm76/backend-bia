@@ -43,6 +43,15 @@ class ActualizarItemsMortalidadSerializer(serializers.ModelSerializer):
         model = ItemsBajasVivero
         fields = ['cantidad_baja', 'observaciones']
 
+class AnularMortalidadSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = BajasVivero
+        fields = ['baja_anulado', 'justificacion_anulacion', 'fecha_anulacion', 'id_persona_anula']
+        extra_kwargs = {
+            'justificacion_anulacion': {'required': True},
+        }
+
 class RegistrosCuarentenaSerializer(serializers.ModelSerializer):
     saldo_por_levantar = serializers.SerializerMethodField()
     
@@ -112,4 +121,97 @@ class MortalidadMaterialVegetalSerializer(serializers.ModelSerializer):
             'saldo_disponible',
             'unidad_medida',
             'registros_cuarentena'
+        ]
+
+class GetItemsMortalidadSerializer(serializers.ModelSerializer):
+    codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
+    unidad_medida = serializers.ReadOnlyField(source='id_bien.id_unidad_medida.abreviatura', default=None)
+    desc_etapa_lote = serializers.SerializerMethodField()
+    
+    def get_desc_etapa_lote(self,obj):
+        desc_etapa_lote = 'Produccion' if obj.cod_etapa_lote == 'P' else 'Distribución'
+        return desc_etapa_lote
+    
+    class Meta:
+        model = ItemsBajasVivero
+        fields = '__all__'
+
+class GetMortalidadSerializer(serializers.ModelSerializer):
+    nombre_vivero = serializers.ReadOnlyField(source='id_vivero.nombre', default=None)
+    persona_baja = serializers.SerializerMethodField()
+    persona_anula = serializers.SerializerMethodField()
+    items_mortalidad = serializers.SerializerMethodField()
+    
+    def get_persona_baja(self,obj):
+        primer_nombre = obj.id_persona_baja.primer_nombre
+        primer_apellido = obj.id_persona_baja.primer_apellido
+        
+        persona_baja = str(primer_nombre) + ' ' + str(primer_apellido)
+        
+        return persona_baja
+    
+    def get_persona_anula(self,obj):
+        persona_anula = None
+        if obj.id_persona_anula:
+            primer_nombre = obj.id_persona_anula.primer_nombre
+            primer_apellido = obj.id_persona_anula.primer_apellido
+            
+            persona_anula = str(primer_nombre)+' '+str(primer_apellido)
+        
+        return persona_anula
+    
+    def get_items_mortalidad(self,obj):
+        items_mortalidad = ItemsBajasVivero.objects.filter(
+            id_baja=obj.id_baja
+        ).order_by('nro_posicion')
+        items_mortalidad_serializer = GetItemsMortalidadSerializer(items_mortalidad, many=True)
+        
+        return items_mortalidad_serializer.data
+    
+    class Meta:
+        model = BajasVivero
+        fields = [
+            'id_baja',
+            'tipo_baja',
+            'nro_baja_por_tipo',
+            'fecha_baja',
+            'fecha_registro',
+            'motivo',
+            'baja_anulado',
+            'justificacion_anulacion',
+            'fecha_anulacion',
+            'ruta_archivo_soporte',
+            'id_vivero',
+            'nombre_vivero',
+            'id_persona_baja',
+            'persona_baja',
+            'id_persona_anula',
+            'persona_anula',
+            'items_mortalidad'
+        ]
+        
+class GetHistorialMortalidadSerializer(serializers.ModelSerializer):
+    consecutivo_mortalidad = serializers.ReadOnlyField(source='id_baja.nro_baja_por_tipo', default=None)
+    fecha_mortalidad = serializers.ReadOnlyField(source='id_baja.fecha_baja', default=None)
+    cantidad_mortalidad = serializers.ReadOnlyField(source='cantidad_baja', default=None)
+    realizado_por = serializers.SerializerMethodField()
+    
+    def get_realizado_por(self,obj):
+        primer_nombre = obj.id_baja.id_persona_baja.primer_nombre
+        primer_apellido = obj.id_baja.id_persona_baja.primer_apellido
+        
+        persona_baja = str(primer_nombre) + ' ' + str(primer_apellido)
+        
+        return persona_baja
+    
+    class Meta:
+        model = ItemsBajasVivero
+        fields = [
+            'id_item_baja_viveros',
+            'consecutivo_mortalidad',
+            'fecha_mortalidad',
+            'cantidad_mortalidad',
+            'observaciones',
+            'realizado_por'
         ]

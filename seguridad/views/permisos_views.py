@@ -244,7 +244,7 @@ class GetPermisosRolByEntorno(ListAPIView):
             }
             outputList.append(subsistema_data)
             
-        return Response({'success':True,'detail':'El rol ingresado tiene acceso a lo siguiente', 'data':outputList}, status=status.HTTP_200_OK)
+        return Response({'success':True,'detail':'El tipo de entorno ingresado tiene acceso a lo siguiente', 'data':outputList}, status=status.HTTP_200_OK)
     
 #----------------------------------------------------->Tabla Modulos
 
