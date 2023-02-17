@@ -439,17 +439,7 @@ class GetIngresoCuarentenaView(generics.ListAPIView):
         cuarentenas = self.queryset.all()
         serializer = self.serializer_class(cuarentenas, many=True)
         return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
-    
 
-class GetIngresoCuarentenaByIdView(generics.ListAPIView):
-    serializer_class = GetIngresoCuarentenaSerializer
-    queryset = CuarentenaMatVegetal.objects.all()
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, id_ingreso_cuarentena):
-        cuarentenas = self.queryset.filter(id_cuarentena_mat_vegetal=id_ingreso_cuarentena).first()
-        serializer = self.serializer_class(cuarentenas, many=False)
-        return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 class GetCuarentenasByLoteEtapa(generics.ListAPIView):
     serializer_class = GetIngresoCuarentenaSerializer

@@ -8,7 +8,6 @@ urlpatterns = [
 
     path('get-viveros/', views.GetViveroView.as_view(), name='get-viveros'),
     path('get-ingresos-cuarentena/', views.GetIngresoCuarentenaView.as_view(), name='get-ingresos-cuarentena'),
-    path('get-ingreso-cuarentena/<str:id_ingreso_cuarentena>/', views.GetIngresoCuarentenaByIdView.as_view(), name='get-ingresos-cuarentena-by-id'),
     path('get-ingreso-cuarentena/', views.GetCuarentenasByLoteEtapa.as_view(), name='get-ingresos-cuarentena-by-lote-etapa'),
     path('get-lotes-etapa/<str:id_vivero>/<str:id_codigo>/', views.GetLotesEtapaView.as_view(), name='get-etapas-lote'),
     path('get-lotes-etapa/<str:id_vivero>/', views.GetLotesEtapaLupaView.as_view(), name='get-etapas-lote-lupa'),
