@@ -7,6 +7,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime, time, timedelta
 from datetime import timezone
+from conservacion.utils import UtilConservacion
 import copy
 import json
 
@@ -22,7 +23,8 @@ from conservacion.serializers.ingreso_cuarentena_serializers import (
     GetLotesEtapaSerializer,
     CreateIngresoCuarentenaSerializer,
     AnularIngresoCuarentenaSerializer,
-    UpdateIngresoCuarentenaSerializer
+    UpdateIngresoCuarentenaSerializer,
+    GetIngresoCuarentenaSerializer
 )
 from almacen.models.bienes_models import (
     CatalogoBienes
@@ -33,7 +35,6 @@ from conservacion.models.inventario_models import (
 from conservacion.models.cuarentena_models import (
     CuarentenaMatVegetal,
 )
-from conservacion.utils import UtilConservacion
 
 class GetViveroView(generics.ListAPIView):
     serializer_class = ViveroSerializer
@@ -427,3 +428,48 @@ class UpdateIngresoCuarentenaView(generics.RetrieveUpdateAPIView):
         Util.save_auditoria(auditoria_data)
 
         return Response({'success': True, 'detail': 'Ingreso a cuarentena actualizado exitosamente'}, status=status.HTTP_201_CREATED)
+    
+
+class GetIngresoCuarentenaView(generics.ListAPIView):
+    serializer_class = GetIngresoCuarentenaSerializer
+    queryset = CuarentenaMatVegetal.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        cuarentenas = self.queryset.all()
+        serializer = self.serializer_class(cuarentenas, many=True)
+        return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+class GetIngresoCuarentenaByIdView(generics.ListAPIView):
+    serializer_class = GetIngresoCuarentenaSerializer
+    queryset = CuarentenaMatVegetal.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_ingreso_cuarentena):
+        cuarentenas = self.queryset.filter(id_cuarentena_mat_vegetal=id_ingreso_cuarentena).first()
+        serializer = self.serializer_class(cuarentenas, many=False)
+        return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+class GetCuarentenasByLoteEtapa(generics.ListAPIView):
+    serializer_class = GetIngresoCuarentenaSerializer
+    queryset = CuarentenaMatVegetal.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        filter = {}
+        for key, value in request.query_params.items():
+            if key in ['codigo_bien','agno_lote', 'cod_etapa_lote', 'nombre']:
+                if key == 'codigo_bien' or key == 'nombre':
+                    filter[key + '__icontains'] = value
+                else:
+                    filter[key] = value
+        cuarentenas = self.queryset.all().filter().filter(**filter)
+        if cuarentenas: 
+            serializer = self.serializer_class(cuarentenas, many=True)
+            data = serializer.data
+        else:
+            data = []
+        return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': data}, status=status.HTTP_200_OK)
+
+        

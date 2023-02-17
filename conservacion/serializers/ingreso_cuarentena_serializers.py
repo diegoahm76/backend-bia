@@ -71,3 +71,8 @@ class UpdateIngresoCuarentenaSerializer(serializers.ModelSerializer):
             'motivo',
             'ruta_archivo_soporte'
         )
+
+class GetIngresoCuarentenaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CuarentenaMatVegetal
+        fields = '__all__'
