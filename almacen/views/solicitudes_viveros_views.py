@@ -287,9 +287,7 @@ class RevisionSolicitudBienConsumosViveroPorSupervisor(generics.UpdateAPIView):
             return Response({'success':False,'detail':'El Id_solicitud debe ser un número entero' },status=status.HTTP_404_NOT_FOUND)
         if datos_ingresados['estado_aprobacion_responsable'] != 'A' and datos_ingresados['estado_aprobacion_responsable'] != 'R':
             return Response({'success':False,'detail':'El estado de aprobación debe ser A o R'},status=status.HTTP_404_NOT_FOUND)
-        if len(datos_ingresados['justificacion_rechazo_responsable']) > 255:
-            return Response({'success':False,'detail':'El número máximo de caracteres de la justificación es de 255'},status=status.HTTP_404_NOT_FOUND)
-        
+
         instance = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles=int(id_solicitud)).first()
         if instance.es_solicitud_de_conservacion != True:
             return Response({'success':False,'detail':'La solicitud que ingresó no es de vivero'},status=status.HTTP_404_NOT_FOUND)

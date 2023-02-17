@@ -559,10 +559,15 @@ class AsignarSeriesYSubseriesAUnidades(generics.UpdateAPIView):
              return Response({'success':False, "detail" : "Ingresó una serie documental que no corresponde a la ccd sobre la que se está trabajando"}, status=status.HTTP_400_BAD_REQUEST)
         else:
             pass
+        # SE EVALÚAN LAS SERIES Y UNIDADES REPETIDAS
+        series_unidades_repetidas = []
+
         # Guardar y actualizar asignaciones
         total_datos_guardados = []
         datos = []
         for i in datos_ingresados:
+            if [i['id_serie_doc'],i['id_unidad_organizacional']] in series_unidades_repetidas:
+                return Response({'success':False, "detail" : "La combinación de serie documental y unidad organizacional, solo se puede enviar una vez dentro del registro."}, status=status.HTTP_400_BAD_REQUEST)
             if not isinstance(i['id_unidad_organizacional'], int):
                 return Response({'success':False, "detail" : "Unidad organizacional debe ser un número entero"}, status=status.HTTP_400_BAD_REQUEST)
             if not isinstance(i['id_serie_doc'], int):
@@ -578,6 +583,10 @@ class AsignarSeriesYSubseriesAUnidades(generics.UpdateAPIView):
             subseries = i['subseries']
             if subseries == []:
                 datos.append({"id_unidad_organizacional" : unidad_organizacional.id_unidad_organizacional, "id_serie_doc" : serie.id_serie_doc, "id_sub_serie_doc" : None})
+                
+            # SE EVALÚAN LAS SERIES Y UNIDADES REPETIDAS
+            series_unidades_repetidas.append([i['id_serie_doc'],i['id_unidad_organizacional']])
+            
             for i in subseries:
                 if  (not (isinstance(i, int)) or (i == None)):
                     return Response({'success':False, "detail" : "Las subseries documentales deben ser un número entero", "data" : i}, status=status.HTTP_400_BAD_REQUEST)
@@ -585,6 +594,7 @@ class AsignarSeriesYSubseriesAUnidades(generics.UpdateAPIView):
                 if not subserie:
                         return Response({'success':False, "detail" : "Una de las subseries documentales no existe", "data" : i}, status=status.HTTP_400_BAD_REQUEST)
                 datos.append({"id_unidad_organizacional" : unidad_organizacional.id_unidad_organizacional, "id_serie_doc" : serie.id_serie_doc, "id_sub_serie_doc" : subserie.id_subserie_doc})
+            
             # Borrar asignaciones
         for i in series:
             elmentos_a_borrar = SeriesSubseriesUnidadOrg.objects.filter(id_serie_doc=i['id_serie_doc'])

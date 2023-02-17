@@ -68,8 +68,7 @@ class CreateDespachoMaestro(generics.UpdateAPIView):
             return Response({'success':False,'detail':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
         if info_despacho['es_despacho_conservacion'] != False:
             return Response({'success':False,'detail':'En este servicio no se pueden procesar despachos de vivero, además verfique el campo (es_despacho_conservacion) debe ser True o False'},status=status.HTTP_404_NOT_FOUND)
-        if len(info_despacho['motivo']) > 255:
-            return Response({'success':False,'detail':'El motivo debe tener como máximo 255 caracteres'},status=status.HTTP_404_NOT_FOUND)
+        
         #Validaciones de la solicitud
         instancia_solicitud = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles=info_despacho['id_solicitud_consumo']).first()
         if not instancia_solicitud:
@@ -298,10 +297,7 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
         # VALIDACION 0: SE VALIDA EL QUE EL USUARIO ESTÉ LOGUEADO
         if str(user_logeado) == 'AnonymousUser':
             return Response({'success':False,'detail':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
-        # VALIDACION 1: SE VALIDA LA LONGITUD DE LA CADENA 'MOTIVO'
-        if len(info_despacho['motivo']) > 255:
-            return Response({'success':False,'detail':'El motivo debe tener como máximo 255 caracteres'},status=status.HTTP_404_NOT_FOUND)
-        
+    
         # SE INSTANCIAN ALGUNAS TABLAS QUE SE VAN A TOCAR
         despacho_maestro_instancia = DespachoConsumo.objects.filter(id_despacho_consumo=info_despacho['id_despacho_consumo']).first()
         if not despacho_maestro_instancia:
@@ -614,6 +610,8 @@ class AnularDespachoConsumo(generics.UpdateAPIView):
         # VALIDACION DE USUARIO LOGUEADO
         user_logeado = request.user
         instancia_despacho_anular = DespachoConsumo.objects.filter(id_despacho_consumo=despacho_a_anular).first()
+        if not instancia_despacho_anular:
+            return Response({'success':False,'detail':'No se encontró el despacho que quiere anular'},status=status.HTTP_404_NOT_FOUND)
         if str(user_logeado) == 'AnonymousUser':
             return Response({'success':False,'detail':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
         # SE VALDIA QUE EL DESPACHO NO SEA DE VIVERO
