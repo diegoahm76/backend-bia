@@ -232,12 +232,33 @@ class UtilConservacion:
         return cantidad_disponible
     
     @staticmethod
-    def get_cantidad_disponible_levantamiento_mortalidad(inventario_vivero):
+    def get_cantidad_disponible_levantamiento(inventario_vivero):
         cantidad_entrante = inventario_vivero.cantidad_entrante if inventario_vivero.cantidad_entrante else 0
         cantidad_bajas = inventario_vivero.cantidad_bajas if inventario_vivero.cantidad_bajas else 0
         cantidad_salidas = inventario_vivero.cantidad_salidas if inventario_vivero.cantidad_salidas else 0
         cantidad_lote_cuarentena = inventario_vivero.cantidad_lote_cuarentena if inventario_vivero.cantidad_lote_cuarentena else 0
         cantidad_disponible = cantidad_entrante - cantidad_bajas - cantidad_salidas - cantidad_lote_cuarentena
+        
+        return cantidad_disponible
+    
+    @staticmethod
+    def get_cantidad_disponible_produccion(inventario_vivero):
+        cantidad_entrante = inventario_vivero.cantidad_entrante if inventario_vivero.cantidad_entrante else 0
+        cantidad_bajas = inventario_vivero.cantidad_bajas if inventario_vivero.cantidad_bajas else 0
+        cantidad_traslados = inventario_vivero.cantidad_traslados_lote_produccion_distribucion if inventario_vivero.cantidad_traslados_lote_produccion_distribucion else 0
+        cantidad_salidas = inventario_vivero.cantidad_salidas if inventario_vivero.cantidad_salidas else 0
+        
+        cantidad_disponible = cantidad_entrante - cantidad_bajas - cantidad_traslados - cantidad_salidas
+        
+        return cantidad_disponible
+    
+    @staticmethod
+    def get_cantidad_disponible_distribucion(inventario_vivero):
+        cantidad_entrante = inventario_vivero.cantidad_entrante if inventario_vivero.cantidad_entrante else 0
+        cantidad_bajas = inventario_vivero.cantidad_bajas if inventario_vivero.cantidad_bajas else 0
+        cantidad_salidas = inventario_vivero.cantidad_salidas if inventario_vivero.cantidad_salidas else 0
+        
+        cantidad_disponible = cantidad_entrante - cantidad_bajas - cantidad_salidas
         
         return cantidad_disponible
     
