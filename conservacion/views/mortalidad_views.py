@@ -240,9 +240,9 @@ class RegistrarMortalidad(generics.CreateAPIView):
                 ).first()
                 
                 if item['cod_etapa_lote'] == 'P':
-                    saldo_disponible = UtilConservacion.get_cantidad_disponible_levantamiento_mortalidad(inventario_vivero)
+                    saldo_disponible = UtilConservacion.get_cantidad_disponible_produccion(inventario_vivero)
                 else:
-                    saldo_disponible = UtilConservacion.get_cantidad_disponible_etapa(inventario_vivero)
+                    saldo_disponible = UtilConservacion.get_cantidad_disponible_distribucion(inventario_vivero)
                 
             if item['cantidad_baja'] > saldo_disponible:
                 return Response({'success':False, 'detail':'La cantidad a registrar de mortalidad del item en la posición ' + str(item['nro_posicion']) + ' no puede superar el saldo disponible (' + str(saldo_disponible) + ')'})
@@ -446,9 +446,9 @@ class ActualizarMortalidad(generics.UpdateAPIView):
                     ).first()
                     
                     if item['cod_etapa_lote'] == 'P':
-                        saldo_disponible = UtilConservacion.get_cantidad_disponible_levantamiento_mortalidad(inventario_vivero)
+                        saldo_disponible = UtilConservacion.get_cantidad_disponible_produccion(inventario_vivero)
                     else:
-                        saldo_disponible = UtilConservacion.get_cantidad_disponible_etapa(inventario_vivero)
+                        saldo_disponible = UtilConservacion.get_cantidad_disponible_distribucion(inventario_vivero)
                     
                 if item['cantidad_baja'] > saldo_disponible:
                     return Response({'success':False, 'detail':'La cantidad a registrar de mortalidad del item en la posición ' + str(item['nro_posicion']) + ' no puede superar el saldo disponible (' + str(saldo_disponible) + ')'})

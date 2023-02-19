@@ -461,7 +461,7 @@ class AnularLevantamientoCuarentena (generics.UpdateAPIView):
         elif items_levanta_cuarentena.id_cuarentena_mat_vegetal.cod_etapa_lote == 'P':
             saldo_disponible = UtilConservacion.get_cantidad_disponible_etapa(inventario_vivero)
         else:
-            saldo_disponible = UtilConservacion.get_cantidad_disponible_levantamiento_mortalidad(inventario_vivero)
+            saldo_disponible = UtilConservacion.get_cantidad_disponible_levantamiento(inventario_vivero)
         
         #VALIDACIÓN DE CANTIDAD A LEVANTAR CON CANTIDAD DISPONIBLE
         
