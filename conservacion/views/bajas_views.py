@@ -99,7 +99,7 @@ class CreateBajasVivero(generics.UpdateAPIView):
             
             # SE VALIDA LA EXISTENCIA DEL BIEN
             if not instancia_bien:
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +  'no existe.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'success':False,'detail':'El bien  con número de posición ' + str(i['nro_posicion']) +  'no existe.'}, status=status.HTTP_400_BAD_REQUEST)
             if not instancia_bien_vivero:
                 return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +  'no tiene registros en el inventario del vivero.'}, status=status.HTTP_400_BAD_REQUEST)
             
@@ -157,6 +157,7 @@ class CreateBajasVivero(generics.UpdateAPIView):
         for i in items_baja:
             instancia_bien = CatalogoBienes.objects.filter(id_bien=i['id_bien']).first()
             instancia_bien_vivero = InventarioViveros.objects.filter(id_bien=i['id_bien'],id_vivero=info_baja['id_vivero']).first()
+            instancia_bien_vivero.cantidad_bajas = instancia_bien_vivero.cantidad_bajas if instancia_bien_vivero.cantidad_bajas else 0
             instancia_bien_vivero.cantidad_bajas = instancia_bien_vivero.cantidad_bajas + i['cantidad_baja']
             instancia_bien_vivero.save()
         
@@ -277,26 +278,30 @@ class ActualizarBajasVivero(generics.UpdateAPIView):
         # SE RESTAN LAS CANTIDADES AL INVENTARIO VIVERO DE LOS ITEMS ELIMINADOS
         for i in items_eliminar:
             instancia_bien_vivero = InventarioViveros.objects.filter(id_bien=i.id_bien,id_vivero=instancia_baja.id_vivero).first()
+            instancia_bien_vivero.cantidad_bajas = instancia_bien_vivero.cantidad_bajas if instancia_bien_vivero.cantidad_bajas else 0
             instancia_bien_vivero.cantidad_bajas = instancia_bien_vivero.cantidad_bajas - i.cantidad_baja
             instancia_bien_vivero.save()
             
-        # SE GUARDAN LOS DATOS EN EL INVENTARIO VIVERO
+        # SE ACTUALIZAN LAS CANTIDADES DE BAJA EN EL INVENTARIO VIVERO
         for i in items_baja:
             if i['id_item_baja_viveros'] == None:
                 instancia_bien = CatalogoBienes.objects.filter(id_bien=i['id_bien']).first()
                 instancia_bien_vivero = InventarioViveros.objects.filter(id_bien=i['id_bien'],id_vivero=instancia_baja.id_vivero).first()
+                instancia_bien_vivero.cantidad_bajas = instancia_bien_vivero.cantidad_bajas if instancia_bien_vivero.cantidad_bajas else 0
                 instancia_bien_vivero.cantidad_bajas = instancia_bien_vivero.cantidad_bajas + i['cantidad_baja']
                 instancia_bien_vivero.save()
             elif i['id_item_baja_viveros'] != None:
                 instancia_item_baja = ItemsBajasVivero.objects.filter(id_item_baja_viveros=i['id_item_baja_viveros']).first()
                 instancia_bien = CatalogoBienes.objects.filter(id_bien=instancia_item_baja.id_bien.id_bien).first()
                 instancia_bien_vivero = InventarioViveros.objects.filter(id_bien=instancia_item_baja.id_bien,id_vivero=instancia_baja.id_vivero).first()
+                instancia_bien_vivero.cantidad_bajas = instancia_bien_vivero.cantidad_bajas if instancia_bien_vivero.cantidad_bajas else 0
                 aux_cantidad = i['cantidad_baja'] - instancia_item_baja.cantidad_baja
                 instancia_bien_vivero.cantidad_bajas = instancia_bien_vivero.cantidad_bajas + aux_cantidad
                 instancia_bien_vivero.save()
         
         # SE BOORRAN LOS ITEMS A ELIMINAR
         items_eliminar.delete()
+        
         # SE ACTUALIZAN LOS ITEMS A ACTUALIZAR
         for i in items_actualizar:
             instancia_item_baja = ItemsBajasVivero.objects.filter(id_item_baja_viveros=i['id_item_baja_viveros']).first()
@@ -347,7 +352,7 @@ class AnularBajasVivero(generics.UpdateAPIView):
         datos_ingresados = request.data
         valores_eliminados_detalles = []
         
-        baja_a_anular = queryset.filter(nro_baja_por_tipo=id_baja_anular).first()
+        baja_a_anular = queryset.filter(id_baja=id_baja_anular).first()
                 
         if not baja_a_anular:
             return Response({'success':False,'detail':'No se encontró ninguna baja de insumos, herramientas y semillas con el número que ingresó'}, status=status.HTTP_400_BAD_REQUEST)
@@ -370,6 +375,7 @@ class AnularBajasVivero(generics.UpdateAPIView):
             instancia_inventario_vivero = InventarioViveros.objects.filter(id_bien=i.id_bien.id_bien, id_vivero=baja_a_anular.id_vivero).first()
             if not instancia_inventario_vivero:
                 return Response({'success':False,'detail':'El bien con número de posición ' + str(i.nro_posicion) +  'no tiene registro en el inventario del vivero.'}, status=status.HTTP_400_BAD_REQUEST)
+            instancia_inventario_vivero.cantidad_bajas = instancia_inventario_vivero.cantidad_bajas if instancia_inventario_vivero.cantidad_bajas else 0
             instancia_inventario_vivero.cantidad_bajas = instancia_inventario_vivero.cantidad_bajas - i.cantidad_baja
             instancia_inventario_vivero.save()
         
