@@ -8,6 +8,12 @@ from conservacion.serializers.etapas_serializers import (
     GetCambioEtapasSerializer,
     AnularCambioEtapaSerializer
 )
+from conservacion.models.cuarentena_models import(
+    CuarentenaMatVegetal
+)
+from conservacion.models.incidencias_models import(
+    IncidenciasMatVegetal
+)
 from conservacion.models.inventario_models import InventarioViveros
 from conservacion.models.siembras_models import CambiosDeEtapa
 from conservacion.models.viveros_models import Vivero
@@ -90,6 +96,36 @@ class GuardarCambioEtapa(generics.CreateAPIView):
             if data['cod_etapa_lote_origen'] == 'G':
                 if fecha_cambio < inventario_vivero.fecha_ingreso_lote_etapa or fecha_cambio < inventario_vivero.fecha_ult_altura_lote:
                     return Response({'success':False, 'detail':'La fecha de cambio debe ser posterior a la fecha de ingreso al lote y posterior a la fecha de la última altura del material elegido'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                if fecha_cambio < inventario_vivero.fecha_ingreso_lote_etapa or fecha_cambio < inventario_vivero.fecha_ult_altura_lote:
+                    return Response({'success':False, 'detail':'La fecha de cambio debe ser posterior a la fecha de ingreso'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                # VALIDAR QUE LA FECHA DE CAMBIO NO SEA INFERIOR A NINGÚN REGISTRO DE CUARENTENA
+                cuarentenas = CuarentenaMatVegetal.objects.filter(
+                    id_vivero=data['id_vivero'],
+                    id_bien=data['id_bien'],
+                    agno_lote=data['agno_lote'],
+                    nro_lote=data['nro_lote'],
+                    cod_etapa_lote=data['cod_etapa_lote_origen'],
+                    cuarentena_anulada=False,
+                    fecha_registro__lt=fecha_cambio
+                ).last()
+                
+                if cuarentenas:
+                    return Response({'success':False, 'detail':'La fecha de cambio debe ser superior a la cuarentena con fecha ' + str(cuarentenas.fecha_registro)}, status=status.HTTP_403_FORBIDDEN)
+
+                # VALIDAR QUE LA FECHA DE CAMBIO NO SEA INFERIOR A NINGÚN REGISTRO DE CUARENTENA
+                incidencias = IncidenciasMatVegetal.objects.filter(
+                    id_vivero=data['id_vivero'],
+                    id_bien=data['id_bien'],
+                    agno_lote=data['agno_lote'],
+                    nro_lote=data['nro_lote'],
+                    cod_etapa_lote=data['cod_etapa_lote_origen'],
+                    fecha_registro__lte=fecha_cambio
+                ).last()
+                
+                if incidencias:
+                    return Response({'success':False, 'detail':'La fecha de cambio debe ser superior a la incidencia con fecha ' +  str(incidencias.fecha_registro)}, status=status.HTTP_403_FORBIDDEN)
             
             #VALIDACION DE FECHA CAMBIO PARA LA ETAPA LOTE DE PRODUCCIÓN
             cambio_etapa=cambio_etapa.filter(cod_etapa_lote_origen='P').last()
@@ -101,7 +137,22 @@ class GuardarCambioEtapa(generics.CreateAPIView):
                 else:
                     if fecha_cambio < inventario_vivero.fecha_ingreso_lote_etapa:
                         return Response({'success':False,'detail':'la fecha elegida para el Cambio debe ser posterior a la fecha de ingreso del lote'},status=status.HTTP_403_FORBIDDEN)
-            
+
+                # VALIDAR QUE LA FECHA DE CAMBIO NO SEA INFERIOR A NINGÚN REGISTRO DE CUARENTENA
+                cuarentenas = CuarentenaMatVegetal.objects.filter(
+                    id_vivero=data['id_vivero'],
+                    id_bien=data['id_bien'],
+                    agno_lote=data['agno_lote'],
+                    nro_lote=data['nro_lote'],
+                    cod_etapa_lote=data['cod_etapa_lote_origen'],
+                    cuarentena_anulada=False,
+                    cuarentena_abierta=False,
+                    fecha_registro__lt=fecha_cambio
+                ).last()
+                
+                if cuarentenas:
+                    return Response({'success':False, 'detail':'La fecha de cambio debe ser superior a la cuarentena con fecha ' + str(cuarentenas.fecha_registro)}, status=status.HTTP_403_FORBIDDEN)
+                
                 #VALIDACIÓN DE FECHA DE ACTUALIZACIÓN CUANDO SE MUEVE TODA LA CANTIDAD
                 if int(data['cantidad_movida']) ==  int(data['cantidad_disponible_al_crear']) and (inventario_vivero.cantidad_lote_cuarentena == 0 or inventario_vivero.cantidad_lote_cuarentena == None):
                     if inventario_vivero.fecha_ult_altura_lote > fecha_cambio:
@@ -342,10 +393,30 @@ class AnularCambioEtapa(generics.UpdateAPIView):
                 if inventario_vivero_etapa_nueva.cantidad_lote_cuarentena and inventario_vivero_etapa_nueva.cantidad_lote_cuarentena > 0:
                     return Response({'success':False, 'detail':'No se puede anular el cambio de etapa porque tiene unidades del lote en cuarentena'}, status=status.HTTP_403_FORBIDDEN)
                 
-                # PENDIENTE VALIDACIÓN QUE NO SE PUEDA ANULAR SI EXISTEN REGISTROS DE LOTE-ETAPA EN T164
+                # VALIDAR QUE NO HAYAN REGISTROS DE CUARENTENA EN MISMO LOTE-ETAPA
+                cuarentenas = CuarentenaMatVegetal.objects.filter(
+                    id_vivero=data['id_vivero'],
+                    id_bien=data['id_bien'],
+                    agno_lote=data['agno_lote'],
+                    nro_lote=data['nro_lote'],
+                    cod_etapa_lote=data['cod_etapa_lote_origen']
+                )
                 
-                # PENDIENTE VALIDACIÓN QUE NO SE PUEDA ANULAR SI EXISTEN REGISTROS DE LOTE-ETAPA EN TABLAS DE SEGUIMIENTO
+                if cuarentenas:
+                    return Response({'success':False, 'detail':'No se puede anular el cambio de etapa porque existen registros de cuarentena para el mismo lote-etapa'}, status=status.HTTP_403_FORBIDDEN)
                 
+                # VALIDAR QUE NO HAYAN REGISTROS DE INCIDENCIAS EN MISMO LOTE-ETAPA
+                incidencias = IncidenciasMatVegetal.objects.filter(
+                    id_vivero=data['id_vivero'],
+                    id_bien=data['id_bien'],
+                    agno_lote=data['agno_lote'],
+                    nro_lote=data['nro_lote'],
+                    cod_etapa_lote=data['cod_etapa_lote_origen']
+                )
+                
+                if incidencias:
+                    return Response({'success':False, 'detail':'No se puede anular el cambio de etapa porque existen registros de incidencias para el mismo lote-etapa'}, status=status.HTTP_403_FORBIDDEN)
+            
                 # SE ELIMINA EL REGISTRO DEL CAMBIO DE ETAPA EN INVENTARIO VIVERO
                 inventario_vivero_etapa_nueva.delete()
                 
@@ -378,10 +449,31 @@ class AnularCambioEtapa(generics.UpdateAPIView):
                     if cambio_etapa.cantidad_movida != saldo_disponible:
                         return Response({'success':False, 'detail':'No se puede anular el cambio de etapa porque la cantidad movida (' + str(cambio_etapa.cantidad_movida) + ') no es igual al saldo disponible (' + str(saldo_disponible) + ')'}, status=status.HTTP_403_FORBIDDEN)
 
-                    # PENDIENTE VALIDACIÓN QUE NO SE PUEDA ANULAR SI EXISTEN REGISTROS DE LOTE-ETAPA EN T164
+                    # VALIDAR QUE NO HAYAN REGISTROS DE CUARENTENA EN MISMO LOTE-ETAPA
+                    cuarentenas = CuarentenaMatVegetal.objects.filter(
+                        id_vivero=data['id_vivero'],
+                        id_bien=data['id_bien'],
+                        agno_lote=data['agno_lote'],
+                        nro_lote=data['nro_lote'],
+                        cod_etapa_lote=data['cod_etapa_lote_origen'],
+                        cuarentena_anulada=False
+                    )
                     
-                    # PENDIENTE VALIDACIÓN QUE NO SE PUEDA ANULAR SI EXISTEN REGISTROS DE LOTE-ETAPA EN TABLAS DE SEGUIMIENTO
+                    if cuarentenas:
+                        return Response({'success':False, 'detail':'No se puede anular el cambio de etapa porque existen registros de cuarentena para el mismo lote-etapa'}, status=status.HTTP_403_FORBIDDEN)
                     
+                    # VALIDAR QUE NO HAYAN REGISTROS DE INCIDENCIAS EN MISMO LOTE-ETAPA
+                    incidencias = IncidenciasMatVegetal.objects.filter(
+                        id_vivero=data['id_vivero'],
+                        id_bien=data['id_bien'],
+                        agno_lote=data['agno_lote'],
+                        nro_lote=data['nro_lote'],
+                        cod_etapa_lote=data['cod_etapa_lote_origen']
+                    )
+                    
+                    if incidencias:
+                        return Response({'success':False, 'detail':'No se puede anular el cambio de etapa porque existen registros de incidencias para el mismo lote-etapa'}, status=status.HTTP_403_FORBIDDEN)
+            
                     # SE ELIMINA EL REGISTRO DEL CAMBIO DE ETAPA EN INVENTARIO VIVERO
                     inventario_vivero_etapa_nueva.delete()
                     
@@ -409,9 +501,21 @@ class AnularCambioEtapa(generics.UpdateAPIView):
                     if cambio_etapa.consec_por_lote_etapa != ultimo_cambio_etapa.consec_por_lote_etapa:
                         return Response({'success':False, 'detail':'No se puede anular el cambio de etapa debido a que no es el último cambio de etapa para dicho lote-etapa de Producción'}, status=status.HTTP_403_FORBIDDEN)
                     
-                    # PENDIENTE VALIDACIÓN QUE NO SE PUEDA ANULAR SI EXISTEN REGISTROS DE LOTE-ETAPA EN T164
+                    # VALIDAR QUE NO HAYAN REGISTROS DE CUARENTENA EN MISMO LOTE-ETAPA
+                    cantidad_entrante_resta = inventario_vivero_etapa_nueva.cantidad_entrante - cambio_etapa.cantidad_movida if inventario_vivero_etapa_nueva.cantidad_entrante else 0
                     
-                    # PENDIENTE VALIDACIÓN QUE NO SE PUEDA ANULAR SI EXISTEN REGISTROS DE LOTE-ETAPA EN TABLAS DE SEGUIMIENTO
+                    cuarentenas = CuarentenaMatVegetal.objects.filter(
+                        id_vivero=data['id_vivero'],
+                        id_bien=data['id_bien'],
+                        agno_lote=data['agno_lote'],
+                        nro_lote=data['nro_lote'],
+                        cod_etapa_lote=data['cod_etapa_lote_origen'],
+                        cuarentena_anulada=False,
+                        cantidad_cuarentena__gt=cantidad_entrante_resta
+                    )
+                    
+                    if cuarentenas:
+                        return Response({'success':False, 'detail':'No se puede anular el cambio de etapa porque hay registros de cuarentena que contaron con unidades pertenecientes a este cambio de etapa'}, status=status.HTTP_403_FORBIDDEN)
                     
                     if cambio_etapa.consec_por_lote_etapa == 1:
                         # SE ELIMINA EL REGISTRO DEL CAMBIO DE ETAPA EN INVENTARIO VIVERO

@@ -71,8 +71,7 @@ class CreateDespachoMaestroVivero(generics.UpdateAPIView):
             return Response({'success':False,'detail':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
         if info_despacho['es_despacho_conservacion'] != True:
             return Response({'success':False,'detail':'En este servicio no se pueden procesar despachos que no sean de vivero, además verfique el campo (es_despacho_conservacion), este debe ser True o False'},status=status.HTTP_404_NOT_FOUND)
-        if len(info_despacho['motivo']) > 255:
-            return Response({'success':False,'detail':'El motivo debe tener como máximo 255 caracteres'},status=status.HTTP_404_NOT_FOUND)
+        
         #Validaciones de la solicitud
         instancia_solicitud = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles=info_despacho['id_solicitud_consumo']).first()
         if not instancia_solicitud:
@@ -358,9 +357,6 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
         # VALIDACION 0: SE VALIDA EL QUE EL USUARIO ESTÉ LOGUEADO
         if str(user_logeado) == 'AnonymousUser':
             return Response({'success':False,'detail':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
-        # VALIDACION 1: SE VALIDA LA LONGITUD DE LA CADENA 'MOTIVO'
-        if len(info_despacho['motivo']) > 255:
-            return Response({'success':False,'detail':'El motivo debe tener como máximo 255 caracteres'},status=status.HTTP_404_NOT_FOUND)
         
         # SE INSTANCIAN ALGUNAS TABLAS QUE SE VAN A TOCAR
         despacho_maestro_instancia = DespachoConsumo.objects.filter(id_despacho_consumo=info_despacho['id_despacho_consumo']).first()

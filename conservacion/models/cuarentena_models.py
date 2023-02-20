@@ -40,7 +40,7 @@ class CuarentenaMatVegetal(models.Model):
     
 class ItemsLevantaCuarentena(models.Model):
     id_item_levanta_cuarentena = models.AutoField(primary_key=True,db_column='T165IdItem_LevantaCuarentena')
-    id_cuarentena_mat_material = models.ForeignKey(CuarentenaMatVegetal,on_delete=models.CASCADE,db_column='T165Id_CuarentenaMatVegetal')
+    id_cuarentena_mat_vegetal = models.ForeignKey(CuarentenaMatVegetal,on_delete=models.CASCADE,db_column='T165Id_CuarentenaMatVegetal')
     consec_levan_por_cuaren = models.SmallIntegerField(db_column='T165consecLevanPorCuaren')
     fecha_levantamiento = models.DateTimeField(db_column='T165fechaLevantamiento')
     fecha_registro = models.DateTimeField(auto_now_add=True,db_column='T165fechaRegistro')
@@ -59,7 +59,7 @@ class ItemsLevantaCuarentena(models.Model):
         db_table = 'T165Items_LevantaCuarentena'
         verbose_name = 'item levanta cuarentena'
         verbose_name_plural = 'items levanta cuarentena'
-        unique_together = ['id_item_levanta_cuarentena','id_cuarentena_mat_material']
+        unique_together = ['id_item_levanta_cuarentena','id_cuarentena_mat_vegetal']
     
     
         

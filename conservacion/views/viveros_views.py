@@ -290,7 +290,7 @@ class UpdateViveroCuarentena(generics.ListAPIView):
                 }
                 Util.save_auditoria(auditoria_data)
                 return Response({'success ':True,'detail':'Vivero fuera de cuarentena '},status=status.HTTP_200_OK)
-            return Response({'success ':False,'detail':'El vivero no se encuentra en funcionamiento '},status=status.HTTP_200_OK)
+            return Response({'success ':False,'detail':'El vivero no se encuentra en funcionamiento '},status=status.HTTP_403_FORBIDDEN)
         else : 
             return Response({'success ':False,'detail':'El vivero seleccionado no existe'},status=status.HTTP_404_NOT_FOUND)
     

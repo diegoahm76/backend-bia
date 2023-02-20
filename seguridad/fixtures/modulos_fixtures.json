@@ -670,5 +670,53 @@
           "ruta_formulario":"/test",
           "nombre_icono":"test"
         }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 57,
+        "fields": {
+          "id_modulo": 57,
+          "nombre_modulo": "Mezclas",
+          "subsistema":"CONS",
+          "descripcion":"Permite administrar los nombres de las mezclas que se podrán crear en el sistema",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 58,
+        "fields": {
+          "id_modulo": 58,
+          "nombre_modulo": "Preparación para mezclas",
+          "subsistema":"CONS",
+          "descripcion":"Permite registrar la preparación de mezclas a utilizar en un vivero",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 59,
+        "fields": {
+          "id_modulo": 59,
+          "nombre_modulo": "Registrar Incidencias de Material Vegetal",
+          "subsistema":"CONS",
+          "descripcion":"'Permite registrar incidencias que se realicen o presenten sobre un lote de material vegetal de unvivero",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 60,
+        "fields": {
+          "id_modulo": 60,
+          "nombre_modulo": "Solicitudes de Plantas e Insumos a Viveros",
+          "subsistema":"CONS",
+          "descripcion":"Permite registrar las solicitudes de Plantas e Insumos a un Vivero determinado",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
+        }
       }
   ]

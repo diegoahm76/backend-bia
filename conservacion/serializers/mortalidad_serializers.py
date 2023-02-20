@@ -81,9 +81,9 @@ class MortalidadMaterialVegetalSerializer(serializers.ModelSerializer):
         saldo_disponible = 0
         
         if obj.cod_etapa_lote == 'P':
-            saldo_disponible = UtilConservacion.get_cantidad_disponible_etapa_produccion(obj)
+            saldo_disponible = UtilConservacion.get_cantidad_disponible_produccion(obj)
         else:
-            saldo_disponible = UtilConservacion.get_cantidad_disponible_etapa(obj)
+            saldo_disponible = UtilConservacion.get_cantidad_disponible_distribucion(obj)
         
         if saldo_disponible < 0:
             saldo_disponible = 0

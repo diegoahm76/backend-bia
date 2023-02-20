@@ -4,3 +4,6 @@ from .siembras_models import *
 from .despachos_models import *
 from .traslados_models import *
 from .cuarentena_models import *
+from .incidencias_models import *
+from .mezclas_models import *
+from .solicitudes_models import *
