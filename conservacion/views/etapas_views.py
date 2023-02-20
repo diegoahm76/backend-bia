@@ -114,7 +114,7 @@ class GuardarCambioEtapa(generics.CreateAPIView):
                 if cuarentenas:
                     return Response({'success':False, 'detail':'La fecha de cambio debe ser superior a la cuarentena con fecha ' + str(cuarentenas.fecha_registro)}, status=status.HTTP_403_FORBIDDEN)
 
-                # VALIDAR QUE LA FECHA DE CAMBIO NO SEA INFERIOR A NINGÚN REGISTRO DE CUARENTENA
+                # VALIDAR QUE LA FECHA DE CAMBIO NO SEA INFERIOR A NINGÚN REGISTRO DE INCIDENCIAS
                 incidencias = IncidenciasMatVegetal.objects.filter(
                     id_vivero=data['id_vivero'],
                     id_bien=data['id_bien'],

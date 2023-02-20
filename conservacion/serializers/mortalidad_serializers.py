@@ -69,26 +69,26 @@ class MortalidadMaterialVegetalSerializer(serializers.ModelSerializer):
     nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
     unidad_medida = serializers.ReadOnlyField(source='id_bien.id_unidad_medida.abreviatura', default=None)
     desc_etapa_lote = serializers.SerializerMethodField()
-    saldo_disponible = serializers.SerializerMethodField()
+    saldo_disponible_busqueda = serializers.SerializerMethodField()
     registros_cuarentena = serializers.SerializerMethodField()
     
     def get_desc_etapa_lote(self,obj):
         desc_etapa_lote = 'Produccion' if obj.cod_etapa_lote == 'P' else 'Distribución'
         return desc_etapa_lote
     
-    def get_saldo_disponible(self,obj):
+    def get_saldo_disponible_busqueda(self,obj):
         
-        saldo_disponible = 0
+        saldo_disponible_busqueda = 0
         
         if obj.cod_etapa_lote == 'P':
-            saldo_disponible = UtilConservacion.get_cantidad_disponible_produccion(obj)
+            saldo_disponible_busqueda = UtilConservacion.get_cantidad_disponible_produccion(obj)
         else:
-            saldo_disponible = UtilConservacion.get_cantidad_disponible_distribucion(obj)
+            saldo_disponible_busqueda = UtilConservacion.get_cantidad_disponible_distribucion(obj)
         
-        if saldo_disponible < 0:
-            saldo_disponible = 0
+        if saldo_disponible_busqueda < 0:
+            saldo_disponible_busqueda = 0
         
-        return saldo_disponible
+        return saldo_disponible_busqueda
     
     def get_registros_cuarentena(self,obj):
         registros_cuarentena = CuarentenaMatVegetal.objects.filter(
@@ -118,7 +118,7 @@ class MortalidadMaterialVegetalSerializer(serializers.ModelSerializer):
             'nro_lote',
             'cod_etapa_lote',
             'desc_etapa_lote',
-            'saldo_disponible',
+            'saldo_disponible_busqueda',
             'unidad_medida',
             'registros_cuarentena'
         ]

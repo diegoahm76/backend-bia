@@ -86,8 +86,10 @@ class GetCuarentenaMaterialVegetalByLupa(generics.ListAPIView):
         filtro = {}
         for key,value in request.query_params.items():
             if key in ['codigo_bien','nombre','cod_etapa_lote','agno_lote']:
-                if key != 'cod_etapa_lote' and key != 'agno_lote':
+                if key == 'codigo_bien':
                     filtro["id_bien__"+key+"__startswith"] = value
+                elif key == 'nombre':
+                    filtro["id_bien__"+key+"__icontains"] = value
                 else: 
                     filtro[key] = value
                     
