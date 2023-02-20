@@ -8,6 +8,7 @@ from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 
 class CatalogoBienesSerializer(serializers.ModelSerializer):
     marca=serializers.ReadOnlyField(source='id_marca.nombre',default=None)
+    nombre_padre=serializers.ReadOnlyField(source='id_bien_padre.nombre',default=None)
     class Meta:
         model= CatalogoBienes
         fields='__all__'
