@@ -228,7 +228,7 @@ class GetPersonasByTipoDocumentoAndNumeroDocumento(generics.GenericAPIView):
             persona_serializer = self.serializer_class(queryset)
             return Response({'success': True,'data': persona_serializer.data}, status=status.HTTP_200_OK)
         except:
-            return Response({'success': False, 'detail': 'No encontró ninguna persona con los parametros ingresados'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': False, 'detail': 'No existe una persona con los parametros ingresados'}, status=status.HTTP_404_NOT_FOUND)
 
 
 class GetPersonasByID(generics.GenericAPIView):
