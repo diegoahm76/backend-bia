@@ -1,11 +1,8 @@
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
 from conservacion.models.siembras_models import (
     Siembras,
     ConsumosSiembra,
-    CamasGerminacionVivero,
-    CamasGerminacionViveroSiembra,
-    CambiosDeEtapa
+    CamasGerminacionVivero
 )
 from almacen.models.bienes_models import (
     CatalogoBienes
@@ -13,7 +10,6 @@ from almacen.models.bienes_models import (
 from conservacion.models.inventario_models import (
     InventarioViveros
 )
-from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 
 
 class CamasGerminacionPost(serializers.ModelSerializer):
