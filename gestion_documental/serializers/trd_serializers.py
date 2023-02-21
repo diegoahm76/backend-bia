@@ -87,6 +87,11 @@ class TRDFinalizarSerializer(serializers.ModelSerializer):
         }
 
 class FormatosTiposMedioSerializer(serializers.ModelSerializer):
+    tipo_medio_doc = serializers.SerializerMethodField()
+    
+    def get_tipo_medio_doc(self, obj):
+        tipo_medio_doc = 'Electrónico' if obj.cod_tipo_medio_doc == 'E' else 'Físico'
+        return tipo_medio_doc
     
     class Meta:
         model = FormatosTiposMedio

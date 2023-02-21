@@ -581,29 +581,24 @@ class GetFormatosTiposMedioByParams(generics.ListAPIView):
         if not cod_tipo_medio and not nombre:
             return Response({'success':False, 'detail':'Debe ingresar los parámetros de búsqueda'}, status=status.HTTP_404_NOT_FOUND)
 
-        if cod_tipo_medio and nombre:
-            formatos_tipos_medio = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc=cod_tipo_medio, nombre__icontains=nombre, activo=True)
-            serializador = self.serializer_class(formatos_tipos_medio, many=True)
-            if formatos_tipos_medio:
-                return Response({'success':True, 'detail':serializador.data}, status=status.HTTP_200_OK)
-            else:
-                return Response({'success':False, 'detail':'No se encontró ningún resultado'}, status=status.HTTP_404_NOT_FOUND)
-
-        if cod_tipo_medio and not nombre:
-            formatos_tipos_medio = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc=cod_tipo_medio, activo=True)
-            serializador = self.serializer_class(formatos_tipos_medio, many=True)
-            if formatos_tipos_medio:
-                return Response({'success':True, 'detail':serializador.data}, status=status.HTTP_200_OK)
-            else:
-                return Response({'success':False, 'detail':'No se encontró ningún resultado'}, status=status.HTTP_404_NOT_FOUND)
-
-        if not cod_tipo_medio and nombre:
-            formatos_tipos_medio = FormatosTiposMedio.objects.filter(nombre__icontains=nombre, activo=True)
-            serializador = self.serializer_class(formatos_tipos_medio, many=True)
-            if formatos_tipos_medio:
-                return Response({'success':True, 'detail':serializador.data}, status=status.HTTP_200_OK)
-            else:
-                return Response({'success':False, 'detail':'No se encontró ningún resultado'}, status=status.HTTP_404_NOT_FOUND)
+        filter={}
+        
+        for key,value in request.query_params.items():
+            if key in ['cod-tipo-medio','nombre']:
+                if key == 'nombre':
+                    filter[key+'__icontains'] = value
+                elif key == 'cod-tipo-medio':
+                    filter['cod_tipo_medio_doc'] = value
+                else:
+                    if value != '':
+                        filter[key]=value
+        
+        formatos_tipos_medio = FormatosTiposMedio.objects.filter(**filter).filter(activo=True)
+        serializador = self.serializer_class(formatos_tipos_medio, many=True)
+        if formatos_tipos_medio:
+            return Response({'success':True, 'detail':'Se encontró la siguiente información', 'data':serializador.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success':False, 'detail':'No se encontró ningún resultado'}, status=status.HTTP_404_NOT_FOUND)
 
 class GetFormatosTiposMedioByCodTipoMedio(generics.ListAPIView):
     serializer_class = FormatosTiposMedioSerializer
