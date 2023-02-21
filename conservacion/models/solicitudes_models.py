@@ -27,7 +27,7 @@ class SolicitudesViveros(models.Model):
     id_unidad_org_del_responsable = models.ForeignKey(UnidadesOrganizacionales,on_delete=models.CASCADE,db_column='T173Id_UnidadOrgDelResponsable',related_name='id_unidad_org_del_responsable_viveros')
     solicitud_abierta = models.BooleanField(default=True,db_column='T173solicitudAbierta')
     fecha_cierra_solicitud = models.DateTimeField(blank=True,null=True,db_column='T173fechaCierreSolicitud')
-    revisada_responsable = models.BooleanField(db_column='T173revisadaResponsable')
+    revisada_responsable = models.BooleanField(default=False, db_column='T173revisadaResponsable')
     estado_aprobacion_responsable = models.CharField(max_length=1,choices=estado_aprobacion_CHOICES,null=True,blank=True,db_column='T173estadoAprobacionResponsable')
     justificacion_aprobacion_responsable = models.CharField(max_length=255,blank=True,null=True,db_column='T173justificacionAprobacionResponsable')
     fecha_aprobacion_responsable = models.DateTimeField(null=True,blank=True,db_column='T173fechaAprobacionResponsable')
