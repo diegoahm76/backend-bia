@@ -53,3 +53,13 @@ class ItemsPreparacionMezclaActualizarSerializer(serializers.ModelSerializer):
             'cantidad_usada',
             'nro_posicion'
         )
+
+class MezclasSerializador(serializers.ModelSerializer):
+    class Meta:
+        fields = ['nombre','id_unidad_medida']
+        model = Mezclas
+        extra_kwargs = {
+        'nombre': {'required': True},
+        'id_unidad_medida': {'required': True}
+        }
+        
