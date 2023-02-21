@@ -25,7 +25,8 @@ from conservacion.models.viveros_models import (
     Vivero
 )
 from almacen.models.organigrama_models import (
-    UnidadesOrganizacionales
+    UnidadesOrganizacionales,
+    NivelesOrganigrama
 )
 from seguridad.serializers.personas_serializers import (
     PersonasSerializer
@@ -71,9 +72,47 @@ class GetUnidadOrganizacionalView(generics.RetrieveAPIView):
 
     def get(self, request):
         persona_logeada = request.user.persona
-        nombre = request.query_params['nombre']
-        unidades = self.queryset.all().filter(id_organigrama__actual=True).filter(nombre__icontains=nombre)
-        serializer = self.serializer_class(unidades, many=True)
+        
+        #ITERACIÓN PARA CONOCER LINEA JERARQUICA SUPERIOR
+        unidad = persona_logeada.id_unidad_organizacional_actual
+        lista_padres = []
+        padre_existe = True
+
+        while padre_existe == True:
+            if unidad.id_unidad_org_padre:
+                unidad_padre = unidad.id_unidad_org_padre
+                lista_padres.append(unidad_padre)
+                unidad = unidad_padre
+            else:
+                padre_existe = False
+
+        #ITERACIÓN PARA CONOCER JERARQUIA INFERIOR
+        niveles_organigrama = NivelesOrganigrama.objects.filter(id_organigrama__actual=True)
+        niveles_id_list = [nivel.id_nivel_organigrama for nivel in niveles_organigrama]
+        unidad = persona_logeada.id_unidad_organizacional_actual
+        
+        lista_hijas = []
+        contador = persona_logeada.id_unidad_organizacional_actual.id_nivel_organigrama.orden_nivel + 1
+        lista_auxiliar_1 = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre=unidad)
+        lista_hijas.extend(lista_auxiliar_1)
+
+        while contador <= max(niveles_id_list):
+            aux_1 = None
+            lista_auxiliar_2 = []
+            for auxiliar in lista_auxiliar_1:
+                aux_1 = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre=auxiliar.id_unidad_organizacional)
+                lista_hijas.extend(aux_1)
+                lista_auxiliar_2.extend(aux_1)
+            lista_auxiliar_1 = lista_auxiliar_2
+            contador += 1
+
+        #VALIDACIÓN DE MISMA LINEA JERARQUICA
+        lista_unidades_permitidas = []
+        lista_unidades_permitidas.extend(lista_padres)
+        lista_unidades_permitidas.append(persona_logeada.id_unidad_organizacional_actual)
+        lista_unidades_permitidas.extend(lista_hijas)
+        
+        serializer = self.serializer_class(lista_unidades_permitidas, many=True)
         return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
