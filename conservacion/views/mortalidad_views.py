@@ -13,7 +13,8 @@ from conservacion.models import (
     ItemsBajasVivero,
     InventarioViveros,
     Vivero,
-    CuarentenaMatVegetal
+    CuarentenaMatVegetal,
+    IncidenciasMatVegetal
 )
 from conservacion.serializers.mortalidad_serializers import (
     RegistrarMortalidadSerializer,
@@ -59,13 +60,19 @@ class GetMaterialVegetalByCodigo(generics.ListAPIView):
         serializador = self.serializer_class(inventarios_viveros, many=True)
         
         data_serializada = serializador.data
-        saldos_disponibles = [data['saldo_disponible'] for data in data_serializada]
+        saldos_disponibles_principal = [data['saldo_disponible_busqueda'] for data in data_serializada]
         
         if data_serializada:
-            if len(set(saldos_disponibles)) == 1 and list(set(saldos_disponibles))[0] == 0:
+            if len(set(saldos_disponibles_principal)) == 1 and list(set(saldos_disponibles_principal))[0] == 0:
                 return Response({'success':False, 'detail':'El código ingresado es de una planta que no tiene saldo disponible en ningún lote-etapa'}, status=status.HTTP_403_FORBIDDEN)
         
-        data_serializada = [data for data in data_serializada if data['saldo_disponible'] != 0]
+        data_serializada = [data for data in data_serializada if data['saldo_disponible_busqueda'] != 0]
+        
+        for item in data_serializada:
+            saldos_disponibles_cuarentena = [data['saldo_por_levantar'] for data in item['registros_cuarentena']] if item['registros_cuarentena'] else [0]
+            saldos_disponibles_cuarentena = sum(saldos_disponibles_cuarentena)
+            
+            item['saldo_disponible_registro'] = item['saldo_disponible_busqueda'] - saldos_disponibles_cuarentena
         
         return Response ({'success':True, 'detail':'Se encontraron los siguientes resultados', 'data':data_serializada}, status=status.HTTP_200_OK)
 
@@ -96,7 +103,13 @@ class GetMaterialVegetalByLupa(generics.ListAPIView):
         serializador = self.serializer_class(inventarios_viveros, many=True)
         
         data_serializada = serializador.data
-        data_serializada = [data for data in data_serializada if data['saldo_disponible'] >= 1]
+        data_serializada = [data for data in data_serializada if data['saldo_disponible_busqueda'] >= 1]
+        
+        for item in data_serializada:
+            saldos_disponibles_cuarentena = [data['saldo_por_levantar'] for data in item['registros_cuarentena']] if item['registros_cuarentena'] else [0]
+            saldos_disponibles_cuarentena = sum(saldos_disponibles_cuarentena)
+            
+            item['saldo_disponible_registro'] = item['saldo_disponible_busqueda'] - saldos_disponibles_cuarentena
         
         return Response ({'success':True, 'detail':'Se encontraron los siguientes resultados', 'data':data_serializada}, status=status.HTTP_200_OK)
 
@@ -187,6 +200,9 @@ class RegistrarMortalidad(generics.CreateAPIView):
         
         fecha_baja = datetime.strptime(data_mortalidad['fecha_baja'], "%Y-%m-%d %H:%M:%S")
         fecha_posible = datetime.now() - timedelta(days=1)
+    
+        cuarentenas = CuarentenaMatVegetal.objects.filter(id_vivero=data_mortalidad['id_vivero'])
+        incidencias = IncidenciasMatVegetal.objects.filter(id_vivero=data_mortalidad['id_vivero'])
         
         # VALIDACIONES MAESTRO
         serializador_maestro = self.serializer_class(data=data_mortalidad)
@@ -220,8 +236,7 @@ class RegistrarMortalidad(generics.CreateAPIView):
             saldo_disponible = 0
             
             if item['consec_cuaren_por_lote_etapa']:
-                item_cuarentena = CuarentenaMatVegetal.objects.filter(
-                    id_vivero = data_mortalidad['id_vivero'],
+                item_cuarentena = cuarentenas.filter(
                     id_bien = item['id_bien'],
                     agno_lote = item['agno_lote'],
                     nro_lote = item['nro_lote'],
@@ -247,7 +262,18 @@ class RegistrarMortalidad(generics.CreateAPIView):
             if item['cantidad_baja'] > saldo_disponible:
                 return Response({'success':False, 'detail':'La cantidad a registrar de mortalidad del item en la posición ' + str(item['nro_posicion']) + ' no puede superar el saldo disponible (' + str(saldo_disponible) + ')'})
             
-        # PENDIENTE VALIDACION DETALLES CON FECHA_INCIDENCIA EN T171
+            # VALIDACION DETALLES CON FECHA_INCIDENCIA
+            item_incidencia = incidencias.filter(
+                id_bien = item['id_bien'],
+                agno_lote = item['agno_lote'],
+                nro_lote = item['nro_lote'],
+                cod_etapa_lote = item['cod_etapa_lote'],
+                fecha_incidencia__gt = fecha_baja
+            ).last()
+            
+            if item_incidencia:
+                if item['cantidad_baja'] == saldo_disponible:
+                    return Response({'success':False, 'detail':'No es posible marcar mortalidad de todo el saldo disponible del registro lote-etapa en la posición ' + str(item['nro_posicion']) + ', ya que tiene un registro de incidencia posterior a la fecha de este registro de mortalidad'}, status=status.HTTP_400_BAD_REQUEST)
         
         # REGISTRO MAESTRO
         response_maestro = serializador_maestro.save()
@@ -285,8 +311,7 @@ class RegistrarMortalidad(generics.CreateAPIView):
             inventario_vivero.cantidad_bajas = inventario_vivero.cantidad_bajas + item['cantidad_baja'] if inventario_vivero.cantidad_bajas else item['cantidad_baja']
             
             if item['consec_cuaren_por_lote_etapa']:
-                item_cuarentena = CuarentenaMatVegetal.objects.filter(
-                    id_vivero = data_mortalidad['id_vivero'],
+                item_cuarentena = cuarentenas.filter(
                     id_bien = item['id_bien'],
                     agno_lote = item['agno_lote'],
                     nro_lote = item['nro_lote'],
@@ -339,6 +364,7 @@ class ActualizarMortalidad(generics.UpdateAPIView):
             
             inventarios_viveros = InventarioViveros.objects.filter(id_vivero=baja.id_vivero)
             cuarentenas = CuarentenaMatVegetal.objects.filter(id_vivero=baja.id_vivero)
+            incidencias = IncidenciasMatVegetal.objects.filter(id_vivero=baja.id_vivero)
             
             if not data_items_mortalidad:
                 return Response({'success':False, 'detail':'No puede eliminar todos los items, debe dejar por lo menos uno'}, status=status.HTTP_403_FORBIDDEN)
@@ -393,16 +419,18 @@ class ActualizarMortalidad(generics.UpdateAPIView):
                 if item_actual.cantidad_baja != item['cantidad_baja']:
                     if fecha_actual > fecha_maxima_detalle_cantidad:
                         return Response({'success':False, 'detail':'No puede actualizar la cantidad de los items porque ha superado las 48 horas'}, status=status.HTTP_403_FORBIDDEN)
-
+                    
                     if item['cantidad_baja'] > item_actual.cantidad_baja:
                         cantidad_aumentada = item['cantidad_baja'] - item_actual.cantidad_baja
+                        saldo_disponible = 0
+                        
                         if not item_actual.consec_cuaren_por_lote_etapa:
                             if item_actual.cod_etapa_lote == 'P':
-                                saldo_disponible = UtilConservacion.get_cantidad_disponible_levantamiento_mortalidad(inventario_vivero)
+                                saldo_disponible = UtilConservacion.get_cantidad_disponible_produccion(inventario_vivero)
                                 if cantidad_aumentada > saldo_disponible:
                                     return Response({'success':False, 'detail':'La cantidad aumentada del item en la posición ' + str(item_actual.nro_posicion) + ' no puede ser mayor al saldo disponible (' + str(saldo_disponible) + ')'}, status=status.HTTP_400_BAD_REQUEST)
                             else:
-                                saldo_disponible = UtilConservacion.get_cantidad_disponible_etapa(inventario_vivero)
+                                saldo_disponible = UtilConservacion.get_cantidad_disponible_distribucion(inventario_vivero)
                                 if cantidad_aumentada > saldo_disponible:
                                     return Response({'success':False, 'detail':'La cantidad aumentada del item en la posición ' + str(item_actual.nro_posicion) + ' no puede ser mayor al saldo disponible (' + str(saldo_disponible) + ')'}, status=status.HTTP_400_BAD_REQUEST)
                         else:
@@ -416,7 +444,20 @@ class ActualizarMortalidad(generics.UpdateAPIView):
                             saldo_disponible = UtilConservacion.get_saldo_por_levantar(item_cuarentena)
                             if cantidad_aumentada > saldo_disponible:
                                 return Response({'success':False, 'detail':'La cantidad aumentada del item en la posición ' + str(item_actual.nro_posicion) + ' no puede ser mayor al saldo disponible (' + str(saldo_disponible) + ')'})
-                
+
+                        # VALIDACION DETALLES CON FECHA_INCIDENCIA
+                        item_incidencia = incidencias.filter(
+                            id_bien = item['id_bien'],
+                            agno_lote = item['agno_lote'],
+                            nro_lote = item['nro_lote'],
+                            cod_etapa_lote = item['cod_etapa_lote'],
+                            fecha_incidencia__gt = baja.fecha_baja
+                        ).last()
+                        
+                        if item_incidencia:
+                            if item['cantidad_baja'] == saldo_disponible:
+                                return Response({'success':False, 'detail':'No es posible marcar mortalidad de todo el saldo disponible del registro lote-etapa en la posición ' + str(item['nro_posicion']) + ', ya que tiene un registro de incidencia posterior a la fecha de este registro de mortalidad'}, status=status.HTTP_400_BAD_REQUEST)
+                    
                 if item_actual.observaciones != item['observaciones']:
                     if fecha_actual > fecha_maxima_detalle_observaciones:
                         return Response({'success':False, 'detail':'No puede actualizar la observación de los items porque ha superado los 30 días'}, status=status.HTTP_403_FORBIDDEN)
@@ -452,7 +493,20 @@ class ActualizarMortalidad(generics.UpdateAPIView):
                     
                 if item['cantidad_baja'] > saldo_disponible:
                     return Response({'success':False, 'detail':'La cantidad a registrar de mortalidad del item en la posición ' + str(item['nro_posicion']) + ' no puede superar el saldo disponible (' + str(saldo_disponible) + ')'})
-            
+
+                # VALIDACION DETALLES CON FECHA_INCIDENCIA
+                item_incidencia = incidencias.filter(
+                    id_bien = item['id_bien'],
+                    agno_lote = item['agno_lote'],
+                    nro_lote = item['nro_lote'],
+                    cod_etapa_lote = item['cod_etapa_lote'],
+                    fecha_incidencia__gt = baja.fecha_baja
+                ).last()
+                
+                if item_incidencia:
+                    if item['cantidad_baja'] == saldo_disponible:
+                        return Response({'success':False, 'detail':'No es posible marcar mortalidad de todo el saldo disponible del registro lote-etapa en la posición ' + str(item['nro_posicion']) + ', ya que tiene un registro de incidencia posterior a la fecha de este registro de mortalidad'}, status=status.HTTP_400_BAD_REQUEST)
+        
             # ACTUALIZAR MAESTRO
             if baja.motivo != data_mortalidad['motivo'] or baja.ruta_archivo_soporte != data_mortalidad['ruta_archivo_soporte']:
                 serializer_maestro = self.serializer_class(baja, data=data_mortalidad)

@@ -608,12 +608,12 @@ class SearchArticulos(generics.ListAPIView):
                     filter[key] = value
         filter['nro_elemento_bien'] = None
         filter['nivel_jerarquico'] = 5
-        bien = CatalogoBienes.objects.filter(**filter)
+        bien = CatalogoBienes.objects.filter(**filter).filter(Q(cod_tipo_activo__in=['Com','Veh','OAc']) | Q(cod_tipo_activo=None))
         serializador = self.serializer_class(bien, many=True)
         if bien:
-            return Response({'success': True, 'detail': 'se encontró elementos', 'data': serializador.data}, status=status.HTTP_200_OK)
+            return Response({'success': True, 'detail': 'Se encontró los elementos', 'data': serializador.data}, status=status.HTTP_200_OK)
         else:
-            return Response({'success': False, 'detail': 'no se encontró elementos', 'data': bien}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': False, 'detail': 'No se encontró elementos', 'data': bien}, status=status.HTTP_404_NOT_FOUND)
 
 
 class GetCatalogoBienesByCodigo(generics.ListAPIView):
@@ -629,7 +629,7 @@ class GetCatalogoBienesByCodigo(generics.ListAPIView):
         filters['nivel_jerarquico'] = 5
         filters['nro_elemento_bien'] = None
 
-        bien = CatalogoBienes.objects.filter(**filters).first()
+        bien = CatalogoBienes.objects.filter(**filters).filter(Q(cod_tipo_activo__in=['Com','Veh','OAc']) | Q(cod_tipo_activo=None)).first()
         bien_serializer = self.serializer_class(bien)
 
         if bien:

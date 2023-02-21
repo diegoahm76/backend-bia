@@ -19,7 +19,7 @@ class SolicitudesViveros(models.Model):
     nombre_predio_destino = models.CharField(max_length=255,db_column='T173nombrePredioDestino')
     fecha_retiro_material = models.DateField(db_column='T173fechaRetiroMaterial')
     nro_info_tecnico = models.CharField(max_length=30,db_column='T173nroInfoTecnico')
-    ruta_archivo_info_tecnico = models.CharField(max_length=255,blank=True,null=True,db_column='T173rutaArchivoInfoTecnico')
+    ruta_archivo_info_tecnico = models.FileField(blank=True,null=True,db_column='T173rutaArchivoInfoTecnico')
     id_persona_solicita = models.ForeignKey(Personas,on_delete=models.CASCADE,db_column='T173Id_PersonaSolicita',related_name='id_persona_solicita_viveros')
     id_unidad_org_del_solicitante = models.ForeignKey(UnidadesOrganizacionales,on_delete=models.CASCADE,db_column='T173Id_UnidadOrgDelSolicitante',related_name='id_unidad_org_del_solicitante_viveros')
     id_unidad_para_la_que_solicita = models.ForeignKey(UnidadesOrganizacionales,on_delete=models.CASCADE,db_column='T173Id_UnidadParaLaQueSolicita',related_name='id_unidad_para_la_que_solicita_viveros') 

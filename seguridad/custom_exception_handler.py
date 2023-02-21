@@ -24,6 +24,7 @@ def api_exception_handler(exc, context):
                             value[i] = 'No es una opción válida' if 'is not a valid choice.' in value[i] else value[i]
                             value[i] = 'El valor ingresado no existe' if 'object does not exist.' in value[i] else value[i]
                             value[i] = 'Debe adjuntar un archivo' if value[i] == 'No file was submitted.' else value[i]
+                            value[i] = 'Ya existe un registro con el valor ingresado' if 'with this nombre already exists.' in value[i] else value[i]
                         error_message += key + ': ' + ' '.join(value) + separator
                     else:
                         error_message += value
