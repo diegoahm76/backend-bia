@@ -1,3 +1,4 @@
+from conservacion.models.mezclas_models import Mezclas
 from django.db import models
 from conservacion.choices.cod_etapa_lote import cod_etapa_lote_CHOICES
 from conservacion.models import (
@@ -33,7 +34,7 @@ class InventarioViveros(models.Model):
     cantidad_traslados_lote_produccion_distribucion = models.PositiveIntegerField(null=True, blank=True, db_column='T156cantidadTrasladosLoteProdADistri')
     cantidad_salidas = models.PositiveIntegerField(null=True, blank=True, db_column='T156cantidadSalidas')
     cantidad_lote_cuarentena = models.PositiveIntegerField(null=True, blank=True, db_column='T156cantidadLoteEnCuarentena')
-    id_mezcla = models.PositiveSmallIntegerField(null=True, blank=True, db_column='T156Id_Mezcla')
+    id_mezcla = models.ForeignKey(Mezclas,on_delete=models.SET_NULL,null=True, blank=True, db_column='T156Id_Mezcla')
     
     def __str__(self):
         return str(self.id_inventario_vivero)
