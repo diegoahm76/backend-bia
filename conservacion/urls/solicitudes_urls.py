@@ -5,6 +5,6 @@ urlpatterns = [
     path('get-numero-consecutivo/', views.GetNumeroConsecutivoSolicitudView.as_view(), name='get-numero-consecutivo'),
     path('get-solicitud-by-numero-consecutivo/<str:nro_solicitud>/', views.GetSolicitudByNumeroSolicitudView.as_view(), name='get-solicitud-by-numero-consecutivo'),
     path('get-unidad-organizacional/', views.GetUnidadOrganizacionalView.as_view(), name='get-unidad-organizacional'),
-    path('get-funcionario-responsable/<str:tipodocumento>/<str:numerodocumento>/', views.GetFuncionarioResponsableView.as_view(), name='get-funcionario-responsable'),
-    path('create/', views.GetFuncionarioResponsableView.as_view(), name='create-solicitud-viveros'),
+    path('get-funcionario-responsable/<str:id_unidad_organizacional>/<str:tipodocumento>/<str:numerodocumento>/', views.GetFuncionarioResponsableView.as_view(), name='get-funcionario-responsable'),
+    path('create/', views.CreateSolicitudViverosView.as_view(), name='create-solicitud-viveros'),
 ]

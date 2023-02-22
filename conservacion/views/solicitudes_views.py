@@ -72,60 +72,21 @@ class GetUnidadOrganizacionalView(generics.RetrieveAPIView):
 
     def get(self, request):
         persona_logeada = request.user.persona
-        
-        #ITERACIÓN PARA CONOCER LINEA JERARQUICA SUPERIOR
-        unidad = persona_logeada.id_unidad_organizacional_actual
-        lista_padres = []
-        padre_existe = True
-
-        while padre_existe == True:
-            if unidad.id_unidad_org_padre:
-                unidad_padre = unidad.id_unidad_org_padre
-                lista_padres.append(unidad_padre)
-                unidad = unidad_padre
-            else:
-                padre_existe = False
-
-        #ITERACIÓN PARA CONOCER JERARQUIA INFERIOR
-        niveles_organigrama = NivelesOrganigrama.objects.filter(id_organigrama__actual=True)
-        niveles_id_list = [nivel.id_nivel_organigrama for nivel in niveles_organigrama]
-        unidad = persona_logeada.id_unidad_organizacional_actual
-        
-        lista_hijas = []
-        contador = persona_logeada.id_unidad_organizacional_actual.id_nivel_organigrama.orden_nivel + 1
-        lista_auxiliar_1 = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre=unidad)
-        lista_hijas.extend(lista_auxiliar_1)
-
-        while contador <= max(niveles_id_list):
-            aux_1 = None
-            lista_auxiliar_2 = []
-            for auxiliar in lista_auxiliar_1:
-                aux_1 = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre=auxiliar.id_unidad_organizacional)
-                lista_hijas.extend(aux_1)
-                lista_auxiliar_2.extend(aux_1)
-            lista_auxiliar_1 = lista_auxiliar_2
-            contador += 1
-
-        #VALIDACIÓN DE MISMA LINEA JERARQUICA
-        lista_unidades_permitidas = []
-        lista_unidades_permitidas.extend(lista_padres)
-        lista_unidades_permitidas.append(persona_logeada.id_unidad_organizacional_actual)
-        lista_unidades_permitidas.extend(lista_hijas)
-        
-        serializer = self.serializer_class(lista_unidades_permitidas, many=True)
+        linea_jerarquica = UtilConservacion.get_linea_jerarquica(persona_logeada)
+        serializer = self.serializer_class(linea_jerarquica, many=True)
         return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
 class GetFuncionarioResponsableView(generics.GenericAPIView):
     serializer_class = PersonasSerializer
     
-    def get(self, request, tipodocumento, numerodocumento):
+    def get(self, request, id_unidad_organizacional, tipodocumento, numerodocumento):
         persona_logeada = request.user.persona
 
         #VALIDACIÓN SI EXISTE LA PERSONA ENVIADA
         user = User.objects.filter(persona__tipo_documento=tipodocumento, persona__numero_documento=numerodocumento).first()
         if not user:
-            return Response({'success': False, 'detail': 'No existe el funcionario responsable seleccionado o no tiene usuario creado'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': False, 'detail': 'No existe o no tiene usuario creado el funcionario responsable seleccionado'}, status=status.HTTP_404_NOT_FOUND)
         
         #VALIDACIÓN QUE EL USUARIO SEA INTERNO
         if user.tipo_usuario != 'I':
@@ -139,26 +100,15 @@ class GetFuncionarioResponsableView(generics.GenericAPIView):
         if user.persona.id_unidad_organizacional_actual.id_organigrama.actual != True:
             return Response({'success': False, 'detail': 'El responsable seleccionado no pertenece a un organigrama actual'}, status=status.HTTP_400_BAD_REQUEST)
 
-        #ITERACCIÓN PARA CONOCER LAS UNIDADES PADRE
-        unidad = persona_logeada.id_unidad_organizacional_actual
-        lista_padres = []
-        padre_existe = False
+        #VALIDACIÓN DE LINEA JERARQUICA SUPERIOR O IGUAL
+        linea_jerarquica = UtilConservacion.get_linea_jerarquica_superior(persona_logeada)
+        print(linea_jerarquica)
 
-        while padre_existe == False:
-            if unidad.id_unidad_org_padre:
-                unidad_padre = unidad.id_unidad_org_padre
-                lista_padres.append(unidad_padre.id_unidad_organizacional)
-                unidad = unidad_padre
-            else:
-                padre_existe = True
-
-        #VALIDACIÓN DE MISMA LINEA JERARQUICA
-        lista_unidades_permitidas = []
-        lista_unidades_permitidas.extend(lista_padres)
-        lista_unidades_permitidas.append(persona_logeada.id_unidad_organizacional_actual.id_unidad_organizacional)
+        lista_unidades_permitidas = [unidad.id_unidad_organizacional for unidad in linea_jerarquica]
+        print(lista_unidades_permitidas)
 
         if user.persona.id_unidad_organizacional_actual.id_unidad_organizacional not in lista_unidades_permitidas:
-            return Response({'success': False, 'detail': 'No se puede seleccionar una persona que no sea de la misma linea jerarquica igual o ascendente'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'success': False, 'detail': 'No se puede seleccionar una persona que no esté al mismo nivel o superior en la linea jerarquica'}, status=status.HTTP_403_FORBIDDEN)
 
         persona_serializer = self.serializer_class(user.persona, many=False)
         return Response({'success': True,'data': persona_serializer.data}, status=status.HTTP_200_OK)
@@ -169,4 +119,75 @@ class CreateSolicitudViverosView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        pass
+        persona_logeada = request.user.persona
+
+        #ASIGNACIÓN DE INFORMACIÓN EN JSON Y EN VARIABLES CORRESPONDIENTES
+        data_solicitud = json.loads(request.data['data_solicitud'])
+        data_items_solicitud = json.loads(request.data['data_items_solicitados'])
+        data_solicitud['ruta_archivo_info_tecnico'] = request.FILES.get('ruta_archivo_tecnico')
+        data_solicitud['id_persona_solicita'] = persona_logeada.id_persona
+        data_solicitud['id_unidad_org_del_solicitante'] = persona_logeada.id_unidad_organizacional_actual.id_unidad_organizacional
+        data_solicitud['fecha_solicitud'] = datetime.now()
+
+        #VALIDACIÓN QUE LA PERSONA QUE HACE LA SOLICITUD ESTÉ ASOCIADA A UNA UNIDAD Y QUE SEA ACTUAL
+        if not persona_logeada.id_unidad_organizacional_actual:
+            return Response({'succcess': False, 'detail': 'La persona que hace la solicitud debe pertenecer a una unidad organizacional'}, status=status.HTTP_400_BAD_REQUEST)
+        if persona_logeada.id_unidad_organizacional_actual.id_organigrama.actual != True:
+            return Response({'succcess': False, 'detail': 'La unidad organizacional de la persona que hace la solicitud debe pertenecer a un organigrama actual'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        #ASIGNACIÓN NÚMERO CONSECUTIVO
+        ultima_solicitud = SolicitudesViveros.objects.all().order_by('-nro_solicitud').first()
+        auxiliar = 0
+        if ultima_solicitud:
+            auxiliar = ultima_solicitud.nro_solicitud
+        consecutivo = auxiliar + 1
+        data_solicitud['nro_solicitud'] = consecutivo
+
+        #VALIDACIÓN QUE EL VIVERO SELECCIONADO EXISTA
+        vivero = Vivero.objects.filter(id_vivero=data_solicitud['id_vivero_solicitud']).first()
+        if not vivero:
+            return Response({'success': False, 'detail': 'El vivero seleccionado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+        if vivero.fecha_cierre_actual != None:
+            return Response({'success': False, 'detail': 'El vivero seleccionado no puede estar cerrado'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        #VALIDACIÓN QUE LA UNIDAD PARA LA QUE SOLICITA ESTÉ DENTRO DE LA LINEA JERARQUICA DE LA PERSONA LOGEADA
+        linea_jerarquica = UtilConservacion.get_linea_jerarquica(persona_logeada)
+        linea_jerarquica_id = [unidad.id_unidad_organizacional for unidad in linea_jerarquica]
+        if data_solicitud['id_unidad_para_la_que_solicita'] not in linea_jerarquica_id:
+            return Response({'success': False, 'detail': 'La unidad seleccionada debe hacer parte de su linea jerarquica'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        #VALIDACIÓN PARA QUE LA UNIDAD DEL RESPONSABLE SEA DE MISMA O SUPERIOR NIVEL EN LA LINEA JERARQUICA
+        linea_jerarquica = UtilConservacion.get_linea_jerarquica_superior(persona_logeada)
+        linea_jerarquica_id = [unidad.id_unidad_organizacional for unidad in linea_jerarquica]
+        if data_solicitud['id_unidad_org_del_responsable'] not in linea_jerarquica_id:
+            return Response({'success': False, 'detail': 'La unidad del responsable debe hacer parte de su linea jerarquica superior o igual'}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.serializer_class(data=data_solicitud, many=False)
+        serializer.is_valid(raise_exception=True)
+        solicitud_maestro = serializer.save()
+
+        for item in data_items_solicitud:
+            item['id_solicitud_viveros'] = solicitud_maestro.id_solicitud_vivero
+
+        # AUDITORIA SOLICITUDES A VIVEROS
+        valores_creados_detalles = []
+        for bien in data_items_solicitud:
+            valores_creados_detalles.append({'':''})
+
+        descripcion = {"nombre_bien_sembrado": str(solicitud_maestro.nro_solicitud)}
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 60,
+            "cod_permiso": "CR",
+            "subsistema": 'CONS',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_creados_detalles": valores_creados_detalles
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
+
+        return Response({'success': True, 'detail': 'Creación de solicitud exitosa', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+    
+
+

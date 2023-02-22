@@ -9,6 +9,10 @@ from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 class CatalogoBienesSerializer(serializers.ModelSerializer):
     marca=serializers.ReadOnlyField(source='id_marca.nombre',default=None)
     nombre_padre=serializers.ReadOnlyField(source='id_bien_padre.nombre',default=None)
+    unidad_medida=serializers.ReadOnlyField(source='id_unidad_medida.abreviatura',default=None)
+    unidad_medida_vida_util=serializers.ReadOnlyField(source='id_unidad_medida_vida_util.abreviatura',default=None)
+    porcentaje_iva=serializers.ReadOnlyField(source='id_porcentaje_iva.porcentaje',default=None)
+    
     class Meta:
         model= CatalogoBienes
         fields='__all__'
