@@ -86,6 +86,7 @@ urlpatterns = [
 
     #Estaciones
     path("api/estaciones/",include('estaciones.urls.estaciones_urls')),
+    path("api/estaciones/personas/",include('estaciones.urls.personas_estaciones_urls')),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

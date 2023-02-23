@@ -8,6 +8,4 @@ urlpatterns=[
     path('actualizar-estaciones/<str:pk>/',views.ActualizarEstacion.as_view(),name='actualizarestaciones'),
     path('eliminar-estaciones/<str:pk>/',views.EliminarEstacion.as_view(),name='eliminarestaciones'),
     path('consultar-estaciones-id/<str:pk>/',views.ConsultarEstacionId.as_view(),name='consultarestacionesid'),
-    #PersonasEstaciones
-    
 ]
