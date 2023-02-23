@@ -40,6 +40,8 @@ from almacen.models.mantenimientos_models import (
     RegistroMantenimientos,
 )
 from almacen.models.solicitudes_models import (
+    SolicitudesConsumibles,
+    ItemsSolicitudConsumible,
     DespachoConsumo,
     ItemDespachoConsumo,
 )
@@ -65,5 +67,7 @@ admin.site.register(CatalogoBienes)
 admin.site.register(Inventario)
 admin.site.register(EntradasAlmacen)
 admin.site.register(ItemEntradaAlmacen)
+admin.site.register(SolicitudesConsumibles)
+admin.site.register(ItemsSolicitudConsumible)
 admin.site.register(DespachoConsumo)
 admin.site.register(ItemDespachoConsumo)
