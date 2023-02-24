@@ -13,7 +13,7 @@ class Estaciones(models.Model):
     cod_municipio = models.CharField(max_length=5, null=True, blank=True, db_column='T900Cod_Municipio')
     indicaciones_ubicacion = models.CharField(max_length=255, null=True, blank=True, db_column='T900indicacionesUbicacion')
     fecha_modificacion_coordenadas = models.DateTimeField(null=True, blank=True, db_column='T900fechaModificacionCoord')
-    id_persona_modifica = models.IntegerField(null=True, blank=True, db_column='T900Id_PersonaModifica')
+    id_persona_modifica = models.IntegerField(null=True, blank=True, db_column='T900id_PersonaModifica')
 
     def __str__(self):
         return str(self.nombre_estacion)
@@ -109,6 +109,7 @@ class PersonasEstaciones(models.Model):
     email_notificacion = models.EmailField(db_column='T904emailNotificacion')
     nro_celular_notificacion = models.CharField(max_length=15, db_column='T904nroCelularNotificacion')
     observacion = models.CharField(max_length=255, null=True, blank=True, db_column='T904observacion')
+    id_estacion = models.ForeignKey(Estaciones, on_delete=models.CASCADE, db_column='T904Id_Estacion')
 
     def __str__(self):
         return str(self.id_persona)

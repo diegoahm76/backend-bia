@@ -19,7 +19,6 @@ class ConsultarPersonaEstacion(generics.ListAPIView):
 
 # Craer persona
 
-
 class CrearPersonaEstacion(generics.CreateAPIView):
     serializer_class = PersonasEstacionesCreateSerializer
     queryset = PersonasEstaciones.objects.all().using("bia-estaciones")
