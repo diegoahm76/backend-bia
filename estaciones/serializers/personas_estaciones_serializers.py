@@ -1,7 +1,8 @@
 from estaciones.models.estaciones_models import PersonasEstaciones
 from rest_framework import serializers
 
-class PersonasEstacionesCreateSerializer(serializers.ModelSerializer):
+class PersonasEstacionesSerializer(serializers.ModelSerializer):
+    
     def create(self, validated_data):
         Modelclass= PersonasEstaciones
         try:
@@ -13,6 +14,20 @@ class PersonasEstacionesCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model=PersonasEstaciones
         fields='__all__'
+
+class PersonasEstacionesCreateSerializer(serializers.ModelSerializer):
+    
+    def create(self, validated_data):
+        Modelclass = PersonasEstaciones
+        try:
+            instance = Modelclass.objects.using('bia-estaciones').create(**validated_data)
+        except TypeError:
+            raise TypeError()
+        return instance
+
+    class Meta:
+        model = PersonasEstaciones
+        fields = ['id_persona', 'cod_tipo_documento_id', 'numero_documento_id', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'entidad', 'cargo', 'email_notificacion', 'nro_celular_notificacion', 'observacion']
 
 class PersonasEstacionesUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):

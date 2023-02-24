@@ -2,6 +2,8 @@ from django.db import models
 from estaciones.choices.estaciones_choices import (
     cod_tipo_estacion_choices
 )
+from seguridad.choices.municipios_choices import municipios_CHOICES
+from seguridad.choices.tipo_documento_choices import tipo_documento_CHOICES
 
 class Estaciones(models.Model):
     id_estacion = models.AutoField(primary_key=True, editable=False, db_column='T900IdEstacion')
@@ -10,7 +12,7 @@ class Estaciones(models.Model):
     cod_tipo_estacion = models.CharField(max_length=2, choices=cod_tipo_estacion_choices, null=True, blank=True, db_column='T900codTipoEstacion')
     latitud = models.DecimalField(max_digits=15, decimal_places=13, db_column='T900latitud')
     longitud = models.DecimalField(max_digits=15, decimal_places=13, db_column='T900longitud')
-    cod_municipio = models.CharField(max_length=5, null=True, blank=True, db_column='T900Cod_Municipio')
+    cod_municipio = models.CharField(max_length=5, choices=municipios_CHOICES, null=True, blank=True, db_column='T900Cod_Municipio')
     indicaciones_ubicacion = models.CharField(max_length=255, null=True, blank=True, db_column='T900indicacionesUbicacion')
     fecha_modificacion_coordenadas = models.DateTimeField(null=True, blank=True, db_column='T900fechaModificacionCoord')
     id_persona_modifica = models.IntegerField(null=True, blank=True, db_column='T900id_PersonaModifica')
@@ -98,7 +100,7 @@ class AlertasEquipoEstacion(models.Model):
 
 class PersonasEstaciones(models.Model):
     id_persona = models.AutoField(primary_key=True, editable=False, db_column='T904IdPersonaEstaciones')
-    cod_tipo_documento_id = models.CharField(max_length=2, db_column='T904Cod_TipoDocumentoID')
+    cod_tipo_documento_id = models.CharField(max_length=2, choices=tipo_documento_CHOICES, db_column='T904Cod_TipoDocumentoID')
     numero_documento_id = models.CharField(max_length=20, db_column='T904nrodocumentoID')
     primer_nombre = models.CharField(max_length=30, db_column='T904primerNombre')
     segundo_nombre = models.CharField(max_length=30, null=True, blank=True, db_column='T904segundoNombre')
@@ -109,11 +111,10 @@ class PersonasEstaciones(models.Model):
     email_notificacion = models.EmailField(db_column='T904emailNotificacion')
     nro_celular_notificacion = models.CharField(max_length=15, db_column='T904nroCelularNotificacion')
     observacion = models.CharField(max_length=255, null=True, blank=True, db_column='T904observacion')
-    id_estacion = models.ForeignKey(Estaciones, on_delete=models.CASCADE, db_column='T904Id_Estacion')
 
     def __str__(self):
         return str(self.id_persona)
-    
+
     class Meta:
         db_table = 'T904PersonasEstaciones'
         verbose_name = 'Persona Estacion'

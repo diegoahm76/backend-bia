@@ -2,13 +2,13 @@ from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
-from estaciones.serializers.personas_estaciones_serializers import PersonasEstacionesCreateSerializer ,PersonasEstacionesUpdateSerializer
+from estaciones.serializers.personas_estaciones_serializers import PersonasEstacionesCreateSerializer ,PersonasEstacionesUpdateSerializer, PersonasEstacionesSerializer
 from estaciones.models.estaciones_models import PersonasEstaciones
 
 # Listar persona
 
 class ConsultarPersonaEstacion(generics.ListAPIView):
-    serializer_class = PersonasEstacionesCreateSerializer
+    serializer_class = PersonasEstacionesSerializer
     queryset = PersonasEstaciones.objects.all().using("bia-estaciones")
     permission_classes = [IsAuthenticated]
 
@@ -52,7 +52,7 @@ class ActualizarPersonaEstacion(generics.UpdateAPIView):
 #Eliminar persona
 
 class EliminarPersonaEstacion(generics.DestroyAPIView):
-    serializer_class = PersonasEstacionesCreateSerializer
+    serializer_class = PersonasEstacionesSerializer
     queryset = PersonasEstaciones.objects.all().using("bia-estaciones")
     permission_classes = [IsAuthenticated]
 
@@ -66,7 +66,7 @@ class EliminarPersonaEstacion(generics.DestroyAPIView):
         
 #Consultar Persona Id
 class ConsultarPersonaEstacionId(generics.ListAPIView):
-    serializer_class = PersonasEstacionesCreateSerializer
+    serializer_class = PersonasEstacionesSerializer
     queryset = PersonasEstaciones.objects.all().using("bia-estaciones")
     permission_classes = [IsAuthenticated]
 
