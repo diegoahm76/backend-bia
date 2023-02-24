@@ -375,3 +375,25 @@ class UtilConservacion:
         lista_unidades_permitidas.sort(key=attrgetter('id_unidad_organizacional'))
 
         return lista_unidades_permitidas
+    
+    @staticmethod
+    def get_saldo_disponible_solicitud_viveros(bien):
+        cantidad_entrante = bien.cantidad_entrante if bien.cantidad_entrante else 0
+        cantidad_bajas = bien.cantidad_bajas if bien.cantidad_bajas else 0
+        cantidad_consumos_internos = bien.cantidad_consumos_internos if bien.cantidad_consumos_internos else 0
+        cantidad_salidas = bien.cantidad_salidas if bien.cantidad_salidas else 0
+
+        saldo_disponible = cantidad_entrante - cantidad_bajas - cantidad_consumos_internos - cantidad_salidas
+
+        return saldo_disponible
+    
+    @staticmethod
+    def get_saldo_disponible_solicitud_viveros_dict(bien):
+        cantidad_entrante = bien['cantidad_entrante'] if bien['cantidad_entrante'] else 0
+        cantidad_bajas = bien['cantidad_bajas'] if bien['cantidad_bajas'] else 0
+        cantidad_consumos_internos = bien['cantidad_consumos_internos'] if bien['cantidad_consumos_internos'] else 0
+        cantidad_salidas = bien['cantidad_salidas'] if bien['cantidad_salidas'] else 0
+
+        saldo_disponible = cantidad_entrante - cantidad_bajas - cantidad_consumos_internos - cantidad_salidas
+
+        return saldo_disponible

@@ -10,19 +10,30 @@ from datetime import datetime, time, timedelta
 from datetime import timezone
 import copy
 import json
+import operator
+import operator, itertools
 
 from conservacion.models.solicitudes_models import (
     SolicitudesViveros,
     ItemSolicitudViveros
 )
+from conservacion.models.inventario_models import (
+    InventarioViveros
+)
 from conservacion.serializers.solicitudes_serializers import (
     GetNumeroConsecutivoSolicitudSerializer,
     GetSolicitudByNumeroSolicitudSerializer,
     GetUnidadOrganizacionalSerializer,
-    CreateSolicitudViverosSerializer
+    CreateSolicitudViverosSerializer,
+    GetBienByCodigoViveroSerializer,
+    GetBienByFilterSerializer,
+    DeleteItemsSolicitudSerializer
 )
 from conservacion.models.viveros_models import (
     Vivero
+)
+from almacen.models.bienes_models import (
+    CatalogoBienes
 )
 from almacen.models.organigrama_models import (
     UnidadesOrganizacionales,
@@ -79,7 +90,8 @@ class GetUnidadOrganizacionalView(generics.RetrieveAPIView):
 
 class GetFuncionarioResponsableView(generics.GenericAPIView):
     serializer_class = PersonasSerializer
-    
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, id_unidad_organizacional, tipodocumento, numerodocumento):
         persona_logeada = request.user.persona
 
@@ -189,5 +201,189 @@ class CreateSolicitudViverosView(generics.CreateAPIView):
 
         return Response({'success': True, 'detail': 'Creación de solicitud exitosa', 'data': serializer.data}, status=status.HTTP_201_CREATED)
     
+class GetBienByCodigoViveroView(generics.ListAPIView):
+    serializer_class = GetBienByCodigoViveroSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = ['id_vivero', 'codigito_bien']
 
+    def get(self, request, id_vivero, codigito_bien):
+        #VALIDACIONES SOBRE LA EXISTENCIA DEL BIEN Y EL TIPO DE BIEN ENVIADO
+        bienes = InventarioViveros.objects.filter(id_bien__codigo_bien=codigito_bien, id_vivero=id_vivero)
+        if not bienes:
+            return Response({'success': False, 'detail': 'El bien seleccionado no se encuentra relacionado al vivero seleccionado'}, status=status.HTTP_403_FORBIDDEN)
+             
+        if bienes[0].id_bien.solicitable_vivero != True:
+            return Response({'success': False, 'detail': 'El bien seleccionado no es solicitable por vivero'}, status=status.HTTP_403_FORBIDDEN)
+        
+        if bienes[0].id_bien.cod_tipo_bien != 'C':
+            return Response({'success': False, 'detail': 'El bien seleccionado no es consumible'}, status=status.HTTP_403_FORBIDDEN)
+            
+        if bienes[0].id_bien.cod_tipo_elemento_vivero == 'HE':
+            return Response({'success': False, 'detail': 'El bien seleccionado debe ser de tipo insumo o material vegetal'}, status=status.HTTP_403_FORBIDDEN)
 
+        if bienes[0].id_bien.cod_tipo_elemento_vivero=='MV' and bienes[0].id_bien.es_semilla_vivero==True:
+            return Response({'success': False, 'detail': 'El bien seleccionado debe ser material vegetal que no sea semilla'}, status=status.HTTP_403_FORBIDDEN)
+
+        if bienes[0].id_bien.cod_tipo_elemento_vivero == 'MV':
+
+            #VALIDACIÓN QUE LOS BIENES ESTÉN EN ALGUN LOTE ETAPA DE DISTRIBUCIÓN O PRODUCCIÓN
+            bien_in_inventario_no_germinacion = []
+            for bien in bienes:
+                if bien.cod_etapa_lote != 'G':
+                    bien_in_inventario_no_germinacion.append(bien)
+
+            if not bien_in_inventario_no_germinacion:
+                return Response({'success': False, 'detail': 'El bien seleccionado no tiene lotes que cumplan las condiciones para ser solicitado'}, status=status.HTTP_403_FORBIDDEN) 
+
+            #VALIDACIÓN QUE EL BIEN EN ALGÚN LOTE TENGA SALDO DISPONIBLE
+            saldo_disponible = False
+            for bien in bien_in_inventario_no_germinacion:
+                bien.id_bien.saldo_disponible = UtilConservacion.get_saldo_disponible_solicitud_viveros(bien)
+                if bien.id_bien.saldo_disponible > 0:
+                    saldo_disponible = True
+                    pass
+            
+            if saldo_disponible == False:
+                return Response({'success': False, 'detail': 'El bien seleccionado no tiene ningun saldo disponible en viveros'}, status=status.HTTP_403_FORBIDDEN)
+            
+            bien = bien_in_inventario_no_germinacion[0].id_bien
+        
+        elif bienes[0].id_bien.cod_tipo_elemento_vivero == 'IN':
+
+            #VALIDACIÓN QUE EL BIEN TENGA SALDO DISPONIBLE
+            bien_in_inventario = bienes.first()
+            bien = bien_in_inventario.id_bien
+            bien.saldo_disponible = UtilConservacion.get_saldo_disponible_solicitud_viveros(bien_in_inventario)    
+            if not bien.saldo_disponible > 0:
+                return Response({'success': False, 'detail': 'El bien de tipo insumo no tiene cantidades disponibles para solicitar'}, status=status.HTTP_403_FORBIDDEN)
+                         
+        serializer = self.serializer_class(bien, many=False)
+        data = serializer.data
+
+        #ASIGNACIÓN DE NUEVOS NOMBRES
+        if data['cod_tipo_elemento_vivero'] == 'IN':
+            data['cod_tipo_elemento_vivero'] = 'Insumo'
+        else:
+            data['cod_tipo_elemento_vivero'] = 'Material Vegetal'
+        return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': data}, status=status.HTTP_200_OK)
+    
+
+class GetBienByFiltrosView(generics.ListAPIView):
+    serializer_class =  GetBienByFilterSerializer
+    queryset = InventarioViveros.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_vivero):
+        vivero = Vivero.objects.filter(id_vivero=id_vivero).first()
+        if not vivero:
+            return Response({'success': False, 'detail': 'No se encontró ningún vivero con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+        
+        #CREACIÓN DE FILTROS SEGÚN QUERYPARAMS
+        query_param = request.query_params.get('cod_tipo_elemento_vivero')
+        if not query_param:
+            return Response({'success': False, 'detail': 'Es obligatorio seleccionar un tipo de bien'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if query_param == 'IN':
+            #CREACIÓN DE FILTRO
+            filter = {}
+            for key, value in request.query_params.items():
+                if key in ['cod_tipo_elemento_vivero', 'codigo_bien', 'nombre']:
+                    if key != 'cod_tipo_elemento_vivero':
+                        filter[key + '__icontains'] = value
+                    else:
+                        filter[key] = value
+
+            bienes_por_consumir = CatalogoBienes.objects.filter(cod_tipo_bien='C', nivel_jerarquico=5, solicitable_vivero=True, cod_tipo_elemento_vivero='IN')
+            bienes_filtrados = bienes_por_consumir.filter(**filter)
+
+            #ASIGNACIÓN DE INFORMACIÓN SI EL TIPO DE BIEN ES DE TIPO INSUMO
+            for bien in bienes_filtrados:
+                bien_in_inventario = InventarioViveros.objects.filter(id_bien=bien.id_bien, id_vivero=id_vivero).first()
+                if bien_in_inventario:
+                    bien.saldo_disponible = UtilConservacion.get_saldo_disponible_solicitud_viveros(bien_in_inventario)
+
+            serializer = self.serializer_class(bienes_filtrados, many=True)
+            outputList = serializer.data
+
+        else:
+            #CREACIÓN DE FILTRO
+            filter = {}
+            for key, value in request.query_params.items():
+                if key in ['cod_tipo_elemento_vivero', 'codigo_bien', 'nombre']:
+                    if key != 'cod_tipo_elemento_vivero':
+                        filter['id_bien__' + key + '__icontains'] = value
+                    else:
+                        filter['id_bien__' + key] = value
+
+            #VALIDACIÓN DE FILTROS AL INTERIOR DE INVENTARIO VIVEROS
+            bienes_por_consumir = InventarioViveros.objects.filter(id_vivero=id_vivero)
+            bienes_filtrados_pre = bienes_por_consumir.filter(**filter).exclude(id_bien__cod_tipo_elemento_vivero='MV', id_bien__es_semilla_vivero=True).exclude(cod_etapa_lote='G')
+            if not bienes_filtrados_pre:
+                return Response({'success': False, 'detail': 'No existe ningún bien que se pueda consumir'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            #UNIÓN DE TODOS LOS RESULTADOS QUE TENGAN EL MISMO ID_VIVERO, ID_BIEN Y COD_ETAPA_LOTE
+            bienes_filtrados = bienes_filtrados_pre.values('id_vivero', 'id_bien', 'cod_etapa_lote').annotate(cantidad_entrante=Sum('cantidad_entrante'), cantidad_bajas=Sum('cantidad_bajas'), cantidad_consumos_internos=Sum('cantidad_consumos_internos'), cantidad_salidas=Sum('cantidad_salidas'))
+
+            #ASIGNACIÓN DE NUEVOS VALORES Y ELIMINACIÓN DE DATA YA NO USADA
+            for bien in bienes_filtrados:
+                if bien['cod_etapa_lote'] == 'P':
+                    bien['saldo_total_produccion'] = UtilConservacion.get_saldo_disponible_solicitud_viveros_dict(bien)
+                    del bien['cantidad_entrante']
+                    del bien['cantidad_bajas']
+                    del bien['cantidad_consumos_internos']
+                    del bien['cantidad_salidas']
+                    del bien['cod_etapa_lote']
+                else: 
+                    bien['saldo_total_distribucion'] = UtilConservacion.get_saldo_disponible_solicitud_viveros_dict(bien)
+                    del bien['cantidad_entrante']
+                    del bien['cantidad_bajas']
+                    del bien['cantidad_consumos_internos']
+                    del bien['cantidad_salidas']
+                    del bien['cod_etapa_lote']
+
+            #AGRUPAR LAS DOS ETAPAS DE LOS LOTES EN UN SOLO REGISTRO DEL BIEN 
+            bienes_data = sorted(bienes_filtrados, key=operator.itemgetter("id_bien", "id_vivero"))
+            outputList = []
+
+            for bien_vivero, resto_de_campos in itertools.groupby(bienes_data, key=operator.itemgetter("id_bien", "id_vivero")):
+                dict_auxiliar = {}
+                for campo in resto_de_campos:
+                    dict_auxiliar.update(campo)
+                
+                outputList.append(dict_auxiliar)
+
+            #ASIGNACIÓN DE NUEVA INFORMACIÓN NECESARIA PARA SER PINTADA EN FRONTEND
+            for bien in outputList:
+                bien_in_catalogo = CatalogoBienes.objects.filter(id_bien=bien['id_bien']).first()
+                bien['codigo_bien'] = bien_in_catalogo.codigo_bien
+                bien['nombre'] = bien_in_catalogo.nombre
+                bien['nombre_cientifico'] = bien_in_catalogo.nombre_cientifico
+                bien['unidad_medida'] = bien_in_catalogo.id_unidad_medida.nombre
+
+                solicitudes = ItemSolicitudViveros.objects.filter(id_solicitud_viveros__solicitud_abierta=True, id_solicitud_viveros__estado_aprobacion_coord_viveros='A', id_solicitud_viveros__id_vivero_solicitud=bien['id_vivero']).filter(id_bien=bien['id_bien'])
+                cantidad = 0
+                if solicitudes:
+                    for solicitud in solicitudes:
+                        cantidad += solicitud.cantidad
+                
+                bien['saldo_total_apartado'] = cantidad
+
+                bien['saldo_total_produccion'] = bien.get('saldo_total_produccion') if bien.get('saldo_total_produccion') else 0
+                bien['saldo_total_distribucion'] = bien.get('saldo_total_distribucion') if bien.get('saldo_total_distribucion') else 0
+
+        return Response({'success': False, 'detail': 'Busqueda exitosa', 'data': outputList})
+
+class DeleteItemsSolicitudView(generics.RetrieveDestroyAPIView):
+    serializer_class = DeleteItemsSolicitudSerializer
+    queryset = ItemSolicitudViveros.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, id_vivero):
+        data_items = request.data
+        vivero = Vivero.objects.filter(id_vivero=id_vivero).first()
+        if not vivero:
+            return Response({'success': False, 'detail': 'No se encontró ningún vivero con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+
+        
+
+        return Response({'success': True, 'detail': 'Items eliminados exitosamente'}, status=status.HTTP_200_OK)
