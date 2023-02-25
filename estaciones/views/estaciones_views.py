@@ -13,7 +13,7 @@ class ConsultarEstacion(generics.ListAPIView):
     queryset = Estaciones.objects.all().using("bia-estaciones")
     permission_classes = [IsAuthenticated]
 
-    def get(self, requet):
+    def get(self, request):
         estaciones = self.queryset.all()
         serializador = self.serializer_class(estaciones, many=True)
         return Response({'success': True, 'detail': 'Se encontraron las siguientes estaciones', 'data': serializador.data}, status=status.HTTP_200_OK)
