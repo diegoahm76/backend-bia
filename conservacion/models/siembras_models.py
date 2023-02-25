@@ -22,6 +22,7 @@ class Siembras(models.Model):
     observaciones = models.CharField(max_length=255, null=True, blank=True, db_column='T157observaciones')
     distancia_entre_semillas = models.PositiveSmallIntegerField(db_column='T157distanciaEntreSemillas')
     id_persona_siembra = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T157Id_PersonaSiembra')
+    siembra_abierta = models.BooleanField(default=True, db_column='T157siembraAbierta')
     ruta_archivo_soporte = models.FileField(null=True, blank=True, db_column='T157rutaArchivoSoporte')
     
     def __str__(self):
@@ -31,6 +32,7 @@ class Siembras(models.Model):
         db_table = 'T157Siembras'
         verbose_name = 'Siembras vivero'
         verbose_name_plural = 'Siembras vivero'
+        unique_together = ['id_vivero', 'id_bien_sembrado', 'agno_lote', 'nro_lote']
         
 class ConsumosSiembra(models.Model):
     id_consumo_siembra = models.AutoField(primary_key=True, editable=False, db_column='T158IdConsumoSiembra')

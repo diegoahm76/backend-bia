@@ -18,5 +18,14 @@ DATABASES = {
         'HOST': os.environ.get('BIA_DB_HOST_BT'),
         'PORT': os.environ.get('BIA_DB_PORT_BT'),
         'ATOMIC_REQUESTS': True
+    },
+    'bia-estaciones': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('BIA_ESTACIONES_NAME'),
+        'USER': os.environ.get('BIA_ESTACIONES_USER'),
+        'PASSWORD': os.environ.get('BIA_ESTACIONES_PASSWORD'),
+        'HOST': os.environ.get('BIA_ESTACIONES_HOST'),
+        'PORT': os.environ.get('BIA_ESTACIONES_PORT'),
+        'ATOMIC_REQUESTS': True
     }
 }

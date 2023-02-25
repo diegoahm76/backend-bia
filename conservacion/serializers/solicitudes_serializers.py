@@ -7,7 +7,12 @@ from conservacion.models.solicitudes_models import (
 from almacen.models.organigrama_models import (
     UnidadesOrganizacionales
 )
-
+from conservacion.models.inventario_models import (
+    InventarioViveros
+)
+from almacen.models.bienes_models import (
+    CatalogoBienes
+)
 
 class GetNumeroConsecutivoSolicitudSerializer(serializers.ModelSerializer):
     class Meta:
@@ -66,3 +71,34 @@ class CreateSolicitudViverosSerializer(serializers.ModelSerializer):
             'id_persona_solicita': {'required': True},
             'id_unidad_org_del_solicitante': {'required': True},
         }
+
+
+class GetBienByCodigoViveroSerializer(serializers.ModelSerializer):
+    saldo_disponible = serializers.IntegerField(default=0)
+    class Meta:
+        model = CatalogoBienes
+        fields = (
+            'id_bien',
+            'codigo_bien',
+            'nombre',
+            'cod_tipo_elemento_vivero',
+            'saldo_disponible',
+        )
+
+class GetBienByFilterSerializer(serializers.ModelSerializer):
+    saldo_disponible = serializers.IntegerField(default=0)
+    class Meta:
+        model = CatalogoBienes
+        fields = (
+            'id_bien',
+            'codigo_bien',
+            'nombre',
+            'cod_tipo_elemento_vivero',
+            'saldo_disponible',
+        )
+
+
+class DeleteItemsSolicitudSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ItemSolicitudViveros
+        fields = '__all__'

@@ -7,4 +7,6 @@ urlpatterns = [
     path('get-unidad-organizacional/', views.GetUnidadOrganizacionalView.as_view(), name='get-unidad-organizacional'),
     path('get-funcionario-responsable/<str:id_unidad_organizacional>/<str:tipodocumento>/<str:numerodocumento>/', views.GetFuncionarioResponsableView.as_view(), name='get-funcionario-responsable'),
     path('create/', views.CreateSolicitudViverosView.as_view(), name='create-solicitud-viveros'),
+    path('get-bien-by-codigo/<str:id_vivero>/<str:codigito_bien>/', views.GetBienByCodigoViveroView.as_view(), name='get-bien-by-codigo-solicitud-vivero'),
+    path('get-bien-by-codigo/<str:id_vivero>/', views.GetBienByFiltrosView.as_view(), name='get-bien-by-filters'),
 ]

@@ -85,7 +85,13 @@ urlpatterns = [
     path('api/conservacion/mortalidad/', include('conservacion.urls.mortalidad_urls')),
     path('api/conservacion/incidencias/', include('conservacion.urls.incidencia_urls')),
     path('api/conservacion/solicitudes/', include('conservacion.urls.solicitudes_urls')),
-    path('api/conservacion/mezclas/', include('conservacion.urls.mezclas_urls'))
+    path('api/conservacion/mezclas/', include('conservacion.urls.mezclas_urls')),
+
+    #Estaciones
+    path("api/estaciones/",include('estaciones.urls.estaciones_urls')),
+    path("api/estaciones/personas/",include('estaciones.urls.personas_estaciones_urls')),
+    path("api/estaciones/configuracion/alertas/",include('estaciones.urls.configuracion_alertas_estaciones_urls')),
+    path("api/estaciones/datos/", include("estaciones.urls.datos_urls"))
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
