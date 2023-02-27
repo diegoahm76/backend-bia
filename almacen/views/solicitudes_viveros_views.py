@@ -191,7 +191,10 @@ class CreateSolicitudViveros(generics.UpdateAPIView):
                 if len(numero_solicitudes_conservacion) > 0:
                     info_solicitud['nro_solicitud_por_tipo'] = max(numero_solicitudes_conservacion) + 1
                 else:
-                    info_solicitud['nro_solicitud_por_tipo'] = 1    
+                    info_solicitud['nro_solicitud_por_tipo'] = 1
+            else:
+                info_solicitud['nro_solicitud_por_tipo'] = 1   
+            
             serializer = self.serializer_class(data=info_solicitud)
             serializer.is_valid(raise_exception=True)
             serializer.save()        
