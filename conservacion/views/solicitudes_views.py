@@ -378,12 +378,50 @@ class DeleteItemsSolicitudView(generics.RetrieveDestroyAPIView):
     queryset = ItemSolicitudViveros.objects.all()
     permission_classes = [IsAuthenticated]
 
-    def delete(self, request, id_vivero):
+    def delete(self, request, id_solicitud):
         data_items = request.data
-        vivero = Vivero.objects.filter(id_vivero=id_vivero).first()
-        if not vivero:
+
+        #VALIDACIÓN QUE LA SOLICITUD ENVIADA EXISTA
+        solicitud = SolicitudesViveros.objects.filter(id_solicitud_vivero=id_solicitud).first()
+        if not solicitud:
             return Response({'success': False, 'detail': 'No se encontró ningún vivero con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
 
+        #VALIDACIÓN QUE TODOS LOS ID DE LOS ITEMS ENVIADOS EXISTAN
+        id_items_list = [item['id_item_solicitud_viveros'] for item in data_items]
+        id_items_list_instance = ItemSolicitudViveros.objects.filter(id_item_solicitud_viveros__in=id_items_list)
+        if len(set(id_items_list)) != len(id_items_list_instance):
+            return Response({'success': False, 'detail': 'Los items seleccionados para eliminar deben existir'}, status=status.HTTP_400_BAD_REQUEST)
+
+        #VALIDACIÓN QUE TODOS LOS ITEMS ENVIADOS PERTENEZCAN A LA SOLICITUD ENVIADA
+        id_solicitud_list = [item.id_solicitud_viveros.id_solicitud_vivero for item in id_items_list_instance]
+        if len(set(id_solicitud_list)) > 1:
+            return Response({'success': False, 'detail': 'Todos los items seleccionados deben pertenecer a una sola solicitud'}, status=status.HTTP_400_BAD_REQUEST)
+        if id_solicitud_list[0] != int(id_solicitud):
+            return Response({'success': False, 'detail': 'Todos los items por eliminar deben pertenecer a la solicitud seleccionada'}, status=status.HTTP_400_BAD_REQUEST)
         
+        #VALIDACIÓN QUE NO ELIMINE TODOS LOS ITEMS DE LA SOLICITUD ENVIADOS
+        items_solicitud = ItemSolicitudViveros.objects.filter(id_solicitud_viveros=id_solicitud)
+        if len(items_solicitud) == len(id_items_list):
+            return Response({'success': False, 'detail': 'No se pueden eliminar todos los items de una solicitud'}, status=status.HTTP_403_FORBIDDEN)
+        
+        #ELIMINACION DE TODOS LOS ITEMS ENVIADOS
+        valores_eliminados_detalles = []
+        for item in id_items_list_instance:
+            valores_eliminados_detalles.append({'nombre' : item.id_bien.nombre})
+            item.delete()
+
+        # AUDITORIA ELIMINACIÓN DE ITEMS SOLICITUD
+        descripcion = ({"numero_despacho_almacen": str(solicitud.nro_solicitud)})
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 60,
+            "cod_permiso": "AC",
+            "subsistema": 'ALMA',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_eliminados_detalles": valores_eliminados_detalles
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
 
         return Response({'success': True, 'detail': 'Items eliminados exitosamente'}, status=status.HTTP_200_OK)
