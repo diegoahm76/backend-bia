@@ -1,7 +1,16 @@
-from estaciones.models.estaciones_models import Estaciones
+from estaciones.models.estaciones_models import Estaciones, PersonasEstacionesEstacion
 from rest_framework import serializers
+from estaciones.serializers.personas_estaciones_serializers import PersonasEstacionesSerializer
 
 class EstacionesSerializer(serializers.ModelSerializer):
+    personas = serializers.SerializerMethodField()
+
+    def get_personas(self, obj):
+        personas = PersonasEstacionesEstacion.objects.filter(id_estacion=obj.id_estacion).using('bia-estaciones')
+        personas_instancias = [persona.id_persona_estaciones for persona in personas]
+        serializador = PersonasEstacionesSerializer(personas_instancias, many=True)
+        return serializador.data
+
     def create(self, validated_data):
         Modelclass= Estaciones
         try:
