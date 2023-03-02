@@ -836,8 +836,8 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
                 )
             serializador_item_entrada_consumo = SerializerItemEntradaConsumo(data=item, many=False)
             serializador_item_entrada_consumo.is_valid(raise_exception=True)
-            serializador_item_entrada_consumo.save()
-            items_guardados.append(serializador_item_entrada_consumo.data)
+            item_guardado = serializador_item_entrada_consumo.save()
+            items_guardados.append(item_guardado)
 
         # CREACION DE ACTIVO FIJOS
         for item in items_activos_fijos:
