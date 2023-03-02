@@ -178,6 +178,8 @@ class CreateDespachoMaestroVivero(generics.UpdateAPIView):
                 while cont>0:
                     arreglo_id_bienes_ancestros.append(bien_despachado_instancia.id_bien)
                     if bien_despachado_instancia.nivel_jerarquico > 1:
+                        print("BIEN_DESPACHADO: ", bien_despachado_instancia)
+                        print("BIEN_DESPACHADO_BIEN_PADRE: ", bien_despachado_instancia.id_bien_padre)
                         bien_despachado_instancia = CatalogoBienes.objects.filter(id_bien=bien_despachado_instancia.id_bien_padre.id_bien).first()
                         if not bien_despachado_instancia:
                             return Response({'success':False,'detail':'Uno de los bienes no tiene padre' },status=status.HTTP_404_NOT_FOUND)
