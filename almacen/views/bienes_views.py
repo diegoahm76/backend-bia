@@ -769,7 +769,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
         # FILTRAMOS LOS ACTIVOS FIJOS Y EMPEZAMOS CREACIÓN DE ACTIVOS FIJOS y CONSUMOS
         items_activos_fijos = list(filter(lambda item: item['id_bien_padre'] != None and item['id_bien'] == None, items_entrada))
         items_consumo = list(filter(lambda item: item['id_bien_padre'] == None and item['id_bien'] != None, items_entrada))
-
+    
         # VALIDACION QUE LA FECHA DE ENTRADA SEA POSTERIOR A LOS ITEMS QUE SE ENCUENTRAN EN INVENTARIO
         for item in items_consumo:
             bien = CatalogoBienes.objects.filter(id_bien=item.get('id_bien')).first()
@@ -783,7 +783,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
             if id_bien_inventario and fecha_ingreso_existente:
                 if fecha_entrega < fecha_ingreso_existente:
                     return Response({'success': False, 'detail': 'la fecha de entrada tiene que ser posterior a la fecha de ingreso del bien en el inventario'})
-
+                
         # CREACIÓN DE CONSUMOS
         items_guardados = []
         for item in items_consumo:
@@ -936,6 +936,24 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
             serializador_item_entrada.is_valid(raise_exception=True)
             serializador_item_entrada.save()
             items_guardados.append(serializador_item_entrada.data)
+    
+        # AUDITORIA SOLICITUDES A VIVEROS
+        valores_creados_detalles = []
+        for item in items_guardados:
+            valores_creados_detalles.append({'nombre_bien':str(item.id_bien.nombre)})
+
+        descripcion = {"nro_entrada": str(entrada_creada.numero_entrada_almacen),"fecha_entrada":str(entrada_creada.fecha_entrada)}
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 34,
+            "cod_permiso": "CR",
+            "subsistema": 'ALMA',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_creados_detalles": valores_creados_detalles
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
         return Response({'success': True, 'data_entrada_creada': entrada_serializada.data, 'data_items_creados': items_guardados})
 
 
