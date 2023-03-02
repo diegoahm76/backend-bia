@@ -934,10 +934,10 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
             item['id_bien'] = elemento_creado.id_bien
             serializador_item_entrada = SerializerItemEntradaActivosFijos(data=item, many=False)
             serializador_item_entrada.is_valid(raise_exception=True)
-            serializador_item_entrada.save()
-            items_guardados.append(serializador_item_entrada.data)
+            item_guardado = serializador_item_entrada.save()
+            items_guardados.append(item_guardado)
     
-        # AUDITORIA SOLICITUDES A VIVEROS
+        # AUDITORIA CREATE ENTRADA
         valores_creados_detalles = []
         for item in items_guardados:
             valores_creados_detalles.append({'nombre_bien':str(item.id_bien.nombre)})
