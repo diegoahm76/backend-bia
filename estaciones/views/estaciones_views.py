@@ -41,15 +41,18 @@ class ActualizarEstacion(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
-        data=request.data
+        data = request.data
+        persona_logeada = request.user.persona.id_persona
+        data['id_persona_modifica'] = persona_logeada
+
         estacion=self.queryset.all().filter(id_estacion=pk).first()
-        if estacion:
-            serializador=self.serializer_class(estacion, data=data)
-            serializador.is_valid(raise_exception=True)
-            serializador.save()
-            return Response({'success': True, 'detail': 'Se Actualizo la estación de manera exitosa', 'data': serializador.data}, status=status.HTTP_201_CREATED)
-        else:
+        if not estacion:
             return Response({'success': False, 'detail': 'La estación ingresada no existe'}, status=status.HTTP_404_NOT_FOUND)
+        serializador=self.serializer_class(estacion, data=data)
+        serializador.is_valid(raise_exception=True)
+        serializador.save()
+        return Response({'success': True, 'detail': 'Se Actualizo la estación de manera exitosa', 'data': serializador.data}, status=status.HTTP_201_CREATED)
+            
         
 #Eliminar estación
 

@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
 from estaciones.serializers.personas_estaciones_serializers import PersonasEstacionesCreateSerializer ,PersonasEstacionesUpdateSerializer, PersonasEstacionesSerializer
-from estaciones.models.estaciones_models import PersonasEstaciones
+from estaciones.models.estaciones_models import PersonasEstaciones, PersonasEstacionesEstacion, Estaciones
 
 # Listar persona
 
@@ -26,9 +26,23 @@ class CrearPersonaEstacion(generics.CreateAPIView):
 
     def post(self, request):
         data=request.data
-        serializador=self.serializer_class(data=data)
+        
+        # CREAR ASOCIACIO CON ESTACION
+        estacion = Estaciones.objects.filter(id_estacion=data['id_estacion']).using("bia-estaciones").first()
+        if not estacion:
+            return Response({'success': False, 'detail': 'La estación elegida no existe'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        del data['id_estacion']
+        
+        serializador=self.serializer_class(data=data, many=False)
         serializador.is_valid(raise_exception=True)
-        serializador.save()
+        guardar = serializador.save()
+        
+        PersonasEstacionesEstacion.objects.using("bia-estaciones").create(
+            id_estacion = estacion,
+            id_persona_estaciones = guardar
+        )
+
         return Response({'success': True, 'detail': 'Se creo la persona de manera exitosa', 'data': serializador.data}, status=status.HTTP_201_CREATED)
         
 
