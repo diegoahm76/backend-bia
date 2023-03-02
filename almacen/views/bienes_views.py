@@ -752,7 +752,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
             entrada_data['numero_entrada_almacen'] = 1
 
         # SUMA DE TOTALES EN ITEMS Y ASIGNACIÓN A ENTRADA
-        valor_total_items_list = [item['valor_total_item'] for item in items_entrada]
+        valor_total_items_list = [int(item['valor_total_item']) for item in items_entrada]
         valor_total_entrada = sum(valor_total_items_list)
         entrada_data['valor_total_entrada'] = valor_total_entrada
 
@@ -769,7 +769,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
         # FILTRAMOS LOS ACTIVOS FIJOS Y EMPEZAMOS CREACIÓN DE ACTIVOS FIJOS y CONSUMOS
         items_activos_fijos = list(filter(lambda item: item['id_bien_padre'] != None and item['id_bien'] == None, items_entrada))
         items_consumo = list(filter(lambda item: item['id_bien_padre'] == None and item['id_bien'] != None, items_entrada))
-
+    
         # VALIDACION QUE LA FECHA DE ENTRADA SEA POSTERIOR A LOS ITEMS QUE SE ENCUENTRAN EN INVENTARIO
         for item in items_consumo:
             bien = CatalogoBienes.objects.filter(id_bien=item.get('id_bien')).first()
@@ -783,7 +783,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
             if id_bien_inventario and fecha_ingreso_existente:
                 if fecha_entrega < fecha_ingreso_existente:
                     return Response({'success': False, 'detail': 'la fecha de entrada tiene que ser posterior a la fecha de ingreso del bien en el inventario'})
-
+                
         # CREACIÓN DE CONSUMOS
         items_guardados = []
         for item in items_consumo:
@@ -854,8 +854,12 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
 
             # CREACIÓN DE UN ITEM ACTIVO FIJO EN BASE A CAMPOS HEREDADOS DEL PADRE
             bien_padre = CatalogoBienes.objects.filter(id_bien=id_bien_padre).first()
+            
+            if not bien_padre:
+                return Response({'success':False, 'detail':'El bien padre ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+            
             bien_padre_serializado = CatalogoBienesSerializer(bien_padre)
-
+            
             # ASIGNACIÓN DEL ÚLTIMO NÚMERO DEL ELEMENTO
             ultimo_numero_elemento = CatalogoBienes.objects.filter(Q(codigo_bien=bien_padre.codigo_bien) & ~Q(nro_elemento_bien=None)).order_by('-nro_elemento_bien').first()
             numero_elemento = 1
@@ -932,6 +936,24 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
             serializador_item_entrada.is_valid(raise_exception=True)
             serializador_item_entrada.save()
             items_guardados.append(serializador_item_entrada.data)
+    
+        # AUDITORIA SOLICITUDES A VIVEROS
+        valores_creados_detalles = []
+        for item in items_guardados:
+            valores_creados_detalles.append({'nombre_bien':str(item.id_bien.nombre)})
+
+        descripcion = {"nro_entrada": str(entrada_creada.numero_entrada_almacen),"fecha_entrada":str(entrada_creada.fecha_entrada)}
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 34,
+            "cod_permiso": "CR",
+            "subsistema": 'ALMA',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_creados_detalles": valores_creados_detalles
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
         return Response({'success': True, 'data_entrada_creada': entrada_serializada.data, 'data_items_creados': items_guardados})
 
 

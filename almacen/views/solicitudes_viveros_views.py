@@ -106,7 +106,7 @@ class CreateSolicitudViveros(generics.UpdateAPIView):
                         return Response({'success':False,'detail':'El item (' + str(instancia_item.id_item_solicitud_consumible) + ') no tiene relación con la solicitud' },status=status.HTTP_404_NOT_FOUND)
             bien = CatalogoBienes.objects.filter(id_bien = i['id_bien']).first()
             if not bien:
-                return Response({'success':False,'detail':'El bien (' + i['id_bien'] + ') no existe' },status=status.HTTP_404_NOT_FOUND)
+                return Response({'success':False,'detail':'El bien (' + str(i['id_bien']) + ') no existe' },status=status.HTTP_404_NOT_FOUND)
             if bien.nivel_jerarquico > 5 or bien.nivel_jerarquico < 2:
                 return Response({'success':False,'detail':'El bien (' + bien.nombre + ') no es de nivel 5' },status=status.HTTP_404_NOT_FOUND)
             if bien.cod_tipo_bien != 'C':
