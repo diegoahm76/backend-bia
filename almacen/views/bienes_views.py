@@ -786,6 +786,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
                 
         # CREACIÓN DE CONSUMOS
         items_guardados = []
+        items_guardados_data = []
         for item in items_consumo:
             id_bien_ = item.get('id_bien')
             cantidad = item.get('cantidad')
@@ -838,6 +839,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
             serializador_item_entrada_consumo.is_valid(raise_exception=True)
             item_guardado = serializador_item_entrada_consumo.save()
             items_guardados.append(item_guardado)
+            items_guardados_data.append(serializador_item_entrada_consumo.data)
 
         # CREACION DE ACTIVO FIJOS
         for item in items_activos_fijos:
@@ -936,6 +938,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
             serializador_item_entrada.is_valid(raise_exception=True)
             item_guardado = serializador_item_entrada.save()
             items_guardados.append(item_guardado)
+            items_guardados_data.append(serializador_item_entrada.data)
     
         # AUDITORIA CREATE ENTRADA
         valores_creados_detalles = []
@@ -954,7 +957,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
             "valores_creados_detalles": valores_creados_detalles
         }
         Util.save_auditoria_maestro_detalle(auditoria_data)
-        return Response({'success': True, 'data_entrada_creada': entrada_serializada.data, 'data_items_creados': items_guardados})
+        return Response({'success': True, 'data_entrada_creada': entrada_serializada.data, 'data_items_creados': items_guardados_data})
 
 
 class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
