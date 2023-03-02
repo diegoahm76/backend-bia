@@ -752,7 +752,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
             entrada_data['numero_entrada_almacen'] = 1
 
         # SUMA DE TOTALES EN ITEMS Y ASIGNACIÓN A ENTRADA
-        valor_total_items_list = [item['valor_total_item'] for item in items_entrada]
+        valor_total_items_list = [int(item['valor_total_item']) for item in items_entrada]
         valor_total_entrada = sum(valor_total_items_list)
         entrada_data['valor_total_entrada'] = valor_total_entrada
 
@@ -854,8 +854,12 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
 
             # CREACIÓN DE UN ITEM ACTIVO FIJO EN BASE A CAMPOS HEREDADOS DEL PADRE
             bien_padre = CatalogoBienes.objects.filter(id_bien=id_bien_padre).first()
+            
+            if not bien_padre:
+                return Response({'success':False, 'detail':'El bien padre ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+            
             bien_padre_serializado = CatalogoBienesSerializer(bien_padre)
-
+            
             # ASIGNACIÓN DEL ÚLTIMO NÚMERO DEL ELEMENTO
             ultimo_numero_elemento = CatalogoBienes.objects.filter(Q(codigo_bien=bien_padre.codigo_bien) & ~Q(nro_elemento_bien=None)).order_by('-nro_elemento_bien').first()
             numero_elemento = 1
