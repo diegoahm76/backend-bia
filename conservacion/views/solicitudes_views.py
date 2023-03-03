@@ -92,7 +92,7 @@ class GetFuncionarioResponsableView(generics.GenericAPIView):
     serializer_class = PersonasSerializer
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, id_unidad_organizacional, tipodocumento, numerodocumento):
+    def get(self, request, tipodocumento, numerodocumento):
         persona_logeada = request.user.persona
 
         #VALIDACIÓN SI EXISTE LA PERSONA ENVIADA
@@ -114,16 +114,55 @@ class GetFuncionarioResponsableView(generics.GenericAPIView):
 
         #VALIDACIÓN DE LINEA JERARQUICA SUPERIOR O IGUAL
         linea_jerarquica = UtilConservacion.get_linea_jerarquica_superior(persona_logeada)
-        print(linea_jerarquica)
 
         lista_unidades_permitidas = [unidad.id_unidad_organizacional for unidad in linea_jerarquica]
-        print(lista_unidades_permitidas)
 
         if user.persona.id_unidad_organizacional_actual.id_unidad_organizacional not in lista_unidades_permitidas:
             return Response({'success': False, 'detail': 'No se puede seleccionar una persona que no esté al mismo nivel o superior en la linea jerarquica'}, status=status.HTTP_403_FORBIDDEN)
 
         persona_serializer = self.serializer_class(user.persona, many=False)
         return Response({'success': True,'data': persona_serializer.data}, status=status.HTTP_200_OK)
+
+
+class GetFuncionarioByFiltersView(generics.ListAPIView):
+    serializer_class = PersonasSerializer
+    queryset = User.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        #VALIDACIÓN QUE LA PERSONA QUE HACE LA SOLICITUD TENGA UNIDAD ORGANIZACIONAL
+        persona_logeada = request.user.persona
+        if not persona_logeada.id_unidad_organizacional_actual:
+            return Response({'success': False, 'detail': 'La persona que realiza la busqueda debe estar asociada a una unidad organizacional'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        #ELABORACIÓN DE FILTRO PARA EL QUERY
+        filter = {}
+        for key, value in request.query_params.items():
+            if key in ['primer_nombre', 'primer_apellido', 'numero_documento']:
+                if key != 'numero_documento':
+                    filter['persona__' +key + '__icontains'] = value
+                else:
+                    filter['persona__' + key] = value
+
+        query_personas = self.queryset.all().filter(**filter)
+
+        #VALIDACIÓN QUE LOS USUARIOS DEBEN SER INTERNOS
+        usuarios_filtrados = query_personas.exclude(~Q(tipo_usuario='I'))
+        
+        #VALIDACIÓN SOBRE CUALIDADES DE LAS PERSONAS EN TORNO A LA LINEA JERARQUICA
+        persona_pasa_validaciones = []
+        for usuario in usuarios_filtrados:
+            if usuario.persona.id_unidad_organizacional_actual:
+                if usuario.persona.id_unidad_organizacional_actual.id_organigrama.actual == True:
+                    if usuario:
+                        linea_jerarquica = UtilConservacion.get_linea_jerarquica_superior(persona_logeada)
+                        lista_unidades_permitidas = [unidad.id_unidad_organizacional for unidad in linea_jerarquica]
+                        if usuario.persona.id_unidad_organizacional_actual.id_unidad_organizacional in lista_unidades_permitidas:
+                            persona_pasa_validaciones.append(usuario.persona)
+
+        serializer = self.serializer_class(persona_pasa_validaciones, many=True)
+        return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
+
 
 class CreateSolicitudViverosView(generics.CreateAPIView):
     serializer_class = CreateSolicitudViverosSerializer
