@@ -27,7 +27,10 @@ from conservacion.serializers.solicitudes_serializers import (
     CreateSolicitudViverosSerializer,
     GetBienByCodigoViveroSerializer,
     GetBienByFilterSerializer,
-    DeleteItemsSolicitudSerializer
+    DeleteItemsSolicitudSerializer,
+    GetSolicitudesViverosSerializer,
+    ItemSolicitudViverosSerializer,
+    ListarSolicitudIDSerializer
 )
 from conservacion.models.viveros_models import (
     Vivero
@@ -411,6 +414,33 @@ class GetBienByFiltrosView(generics.ListAPIView):
                 bien['saldo_total_distribucion'] = bien.get('saldo_total_distribucion') if bien.get('saldo_total_distribucion') else 0
 
         return Response({'success': False, 'detail': 'Busqueda exitosa', 'data': outputList})
+
+# LISTAR SOLICITUDES
+class GetSolicitudesView(generics.ListAPIView):
+    serializer_class = GetSolicitudesViverosSerializer
+    queryset = SolicitudesViveros.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        solicitudes = self.queryset.all()
+        serializer = self.serializer_class(solicitudes, many=True)
+        return Response({'success': True, 'detail': 'Obtenido exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+
+# RECIBE ID SOLICITUD Y MUESTRA LOS ITEMS DE ESA SOLICITUD 
+class GetListarSolicitudIDView(generics.ListAPIView):
+    serializer_class = ListarSolicitudIDSerializer
+    queryset = ItemSolicitudViveros.objects.all()
+
+    def get(self, request, id_solicitud):
+        solicitud = SolicitudesViveros.objects.filter(id_solicitud_vivero=id_solicitud).first()
+        if not solicitud:
+            return Response({'success':False, 'detail':'La solicitud seleccionada no existe'}, status=status.HTTP_404_NOT_FOUND)
+        if solicitud.solicitud_anulada_solicitante==True:
+            return Response({'success':False, 'detail':'La solicitud seleccionada se encuentra anulada'}, status=status.HTTP_400_BAD_REQUEST)    
+        solicitudid = self.queryset.all().filter(id_solicitud=id_solicitud) 
+    
+        serializador = self.serializer_class (solicitudid, many=True)
+        return Response({'sucess':True, 'detail':'Busqueda exitosa','data': serializador.data}, status=status.HTTP_200_OK)
 
 class DeleteItemsSolicitudView(generics.RetrieveDestroyAPIView):
     serializer_class = DeleteItemsSolicitudSerializer

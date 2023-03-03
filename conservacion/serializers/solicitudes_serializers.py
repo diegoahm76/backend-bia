@@ -30,6 +30,20 @@ class GetUnidadOrganizacionalSerializer(serializers.ModelSerializer):
         model = UnidadesOrganizacionales
         fields = '__all__'
 
+class GetSolicitudesViverosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SolicitudesViveros
+        fields = '__all__'
+
+class ItemSolicitudViverosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model= ItemSolicitudViveros
+        fields = '__all__'
+
+class ListarSolicitudIDSerializer(serializers.ModelSerializer):
+    class Meta:
+        model= SolicitudesViveros
+        fields = '__all__'
 
 class CreateSolicitudViverosSerializer(serializers.ModelSerializer):
     class Meta:
