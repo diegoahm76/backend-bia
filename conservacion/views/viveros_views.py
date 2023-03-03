@@ -18,6 +18,9 @@ from conservacion.models.viveros_models import (
 from almacen.models.bienes_models import (
     CatalogoBienes,
 )
+from conservacion.models.inventario_models import (
+    InventarioViveros
+)
 from almacen.serializers.bienes_serializers import (
     CatalogoBienesSerializer,
 )
@@ -466,6 +469,12 @@ class TipificacionBienConsumoVivero(generics.UpdateAPIView):
         bien = CatalogoBienes.objects.filter(id_bien=id_bien).first()
         
         if bien:
+            # VALIDAR QUE EL BIEN NO EXISTA EN INVENTARIO VIVERO
+            inventario_vivero = InventarioViveros.objects.filter(id_bien=bien.id_bien)
+            
+            if inventario_vivero:
+                return Response({'success':False, 'detail':'No puede realizar la tipificación porque este bien ya fue distribuido'}, status=status.HTTP_403_FORBIDDEN)
+            
             previous_bien = copy.copy(bien)
             if bien.cod_tipo_bien == 'C' and bien.nivel_jerarquico == 5 and bien.solicitable_vivero:
                 serializador = self.serializer_class(bien,data=data)
@@ -488,7 +497,7 @@ class TipificacionBienConsumoVivero(generics.UpdateAPIView):
                 }
                 Util.save_auditoria(auditoria_data)
             else:
-                return Response({'success':False, 'detail':'No puede tipificar el bien ingresado'})
+                return Response({'success':False, 'detail':'No puede tipificar el bien ingresado'}, status=status.HTTP_403_FORBIDDEN)
             
             return Response({'success':True, 'detail':'Bien tipificado con éxito', 'data':serializador.data}, status=status.HTTP_201_CREATED)
         else:
