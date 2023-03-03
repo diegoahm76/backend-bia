@@ -1,4 +1,6 @@
 import copy
+
+from conservacion.models.incidencias_models import IncidenciasMatVegetal
 from conservacion.models.cuarentena_models import ItemsLevantaCuarentena, CuarentenaMatVegetal
 from conservacion.models.inventario_models import InventarioViveros
 from conservacion.serializers.levantamiento_cuarentena_serializers import (
@@ -183,6 +185,19 @@ class GuardarLevantamientoCuarentena(generics.CreateAPIView):
         
         cantidad_por_levantar = UtilConservacion.get_saldo_por_levantar(cuarentena)
         
+        # VALIDACION DETALLES CON FECHA_INCIDENCIA
+        item_incidencia = IncidenciasMatVegetal.objects.filter(
+            id_bien = cuarentena.id_bien,
+            agno_lote = cuarentena.agno_lote,
+            nro_lote = cuarentena.nro_lote,
+            cod_etapa_lote = cuarentena.cod_etapa_lote,
+            fecha_incidencia__gt = fecha_levantamiento_strptime
+        ).last()
+        
+        if item_incidencia:
+            if int(data['cantidad_a_levantar']) == cantidad_por_levantar :
+                return Response({'success':False, 'detail':'No se puede levantar la totalidad ya que tiene un registro de incidencia posterior a la fecha del registro de cuarentena a la cual se le quiere hacer el levantamiento'}, status=status.HTTP_400_BAD_REQUEST)
+        
         if int(data['cantidad_a_levantar']) <= 0:
             return Response({'success':False,'detail':'La cantidad a levantar debe ser mayor a cero'},status=status.HTTP_403_FORBIDDEN)
         if int(data['cantidad_a_levantar']) > cantidad_por_levantar:
@@ -217,7 +232,6 @@ class GuardarLevantamientoCuarentena(generics.CreateAPIView):
             cuarentena.cuarentena_abierta = False
             cuarentena.save()
             
-
         #AUDITORIA DEL SERVICIO DE GUARDADO
         descripcion = {"nombre_vivero": cuarentena.id_vivero.nombre,
                        'nombre_bien': cuarentena.id_bien.nombre,
@@ -306,10 +320,15 @@ class UpdateLevantamientoCuarentena (generics.UpdateAPIView):
         
         data = request.data
         
-        item_levantamiento_cuarentena = self.queryset.all().filter(id_item_levanta_cuarentena=id_item_levanta_cuarentena,levantamiento_anulado=False).last()
+        item_levantamiento_cuarentena = self.queryset.all().filter(id_item_levanta_cuarentena=id_item_levanta_cuarentena,levantamiento_anulado=False).first()
+        ultimo_item_levatamiento = self.queryset.all().filter(id_cuarentena_mat_vegetal = item_levantamiento_cuarentena.id_cuarentena_mat_vegetal).last()
+        
         
         if not item_levantamiento_cuarentena:
-            return Response ({'success':False,'detail':'No existe el levantamiento de cuarentena enviado'},status=status.HTTP_403_FORBIDDEN)
+            return Response ({'success':False,'detail':'No existe el levantamiento de cuarentena enviado o está anulado'},status=status.HTTP_403_FORBIDDEN)
+        
+        if item_levantamiento_cuarentena != ultimo_item_levatamiento:
+            return Response ({'success':False,'detail':'No se puede actualizar este registro debido a que no es el último levantamiento sobre la cuarentena ligada'},status=status.HTTP_403_FORBIDDEN)
         
         item_levantamiento_cuarentena_previous=copy.copy(item_levantamiento_cuarentena)
         
@@ -381,6 +400,24 @@ class UpdateLevantamientoCuarentena (generics.UpdateAPIView):
                 ## VALIDACIÓN PENDIENTE INCIDENCIAS
                 
                 if cantidad_aumentada == valor_por_levantar:
+                    
+                    print('entró')
+
+                    # VALIDACION DETALLES CON FECHA_INCIDENCIA
+                    item_incidencia = IncidenciasMatVegetal.objects.filter(
+                        id_bien =  item_levantamiento_cuarentena.id_cuarentena_mat_vegetal.id_bien,
+                        agno_lote =  item_levantamiento_cuarentena.id_cuarentena_mat_vegetal.agno_lote,
+                        nro_lote =  item_levantamiento_cuarentena.id_cuarentena_mat_vegetal.nro_lote,
+                        cod_etapa_lote =  item_levantamiento_cuarentena.id_cuarentena_mat_vegetal.cod_etapa_lote,
+                        fecha_incidencia__gt =  item_levantamiento_cuarentena.fecha_levantamiento
+                    ).last()
+                    
+                    print('LLEGÓ ACÁ',item_incidencia)
+                    
+                    if item_incidencia:
+                        return Response({'success':False, 'detail':'No se puede levantar la totalidad ya que tiene un registro de incidencia posterior a la fecha del levantamiento'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                            
                     item_levantamiento_cuarentena.id_cuarentena_mat_vegetal.cuarentena_abierta = False
                 
                 #AUMENTO DE CANTIDAD A LEVANTAR

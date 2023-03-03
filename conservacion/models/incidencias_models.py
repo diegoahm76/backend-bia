@@ -42,7 +42,7 @@ class ConsumosIncidenciasMV(models.Model):
     id_incidencia_mat_vegetal = models.ForeignKey(IncidenciasMatVegetal,on_delete=models.CASCADE,db_column='T172Id_IncidenciaMatVegetal')
     id_bien = models.ForeignKey(CatalogoBienes,on_delete=models.SET_NULL,blank=True,null=True,db_column='T172Id_Bien')
     id_mezcla = models.ForeignKey(Mezclas,on_delete=models.SET_NULL,blank=True,null=True,db_column='T172Id_Mezcla')
-    cantidad_consumidad = models.IntegerField(db_column='T172cantidadConsumida')
+    cantidad_consumida = models.IntegerField(db_column='T172cantidadConsumida')
     observaciones = models.CharField(max_length=30,db_column='T172observaciones',blank=True,null=True)
     nro_posicion = models.SmallIntegerField(db_column='T172nroPosicion')
     
