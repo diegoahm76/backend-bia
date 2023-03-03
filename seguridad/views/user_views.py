@@ -37,6 +37,7 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils import encoding, http
 import copy
 from django.http import HttpResponsePermanentRedirect
+from django.contrib.sessions.models import Session
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -771,6 +772,26 @@ class LoginConsultarApiViews(generics.RetrieveAPIView):
 class LoginListApiViews(generics.ListAPIView):
     serializer_class=LoginSerializers
     queryset = Login.objects.all()
+
+class DeactivateUsers(generics.ListAPIView):
+    serializer_class=LoginSerializers
+    queryset = User.objects.all()
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    
+    def post(self, request, id_persona):
+        usuario = self.queryset.all().filter(persona__id_persona = id_persona).first()
+        sesiones = Session.objects.all()
+        
+        if usuario:
+            for sesion in sesiones:
+                if sesion.get_decoded().get('_auth_user_id') == usuario.id_usuario:
+                    sesion.delete()
+            usuario.is_active = False
+            usuario.save()
+            
+            return Response({'success':True, 'detail':'Se eliminó la sesión del usuario elegido'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success':False, 'detail':'No se encontró el usuario para la persona ingresada'}, status=status.HTTP_400_BAD_REQUEST)
 
 #__________________LoginErroneo
 
