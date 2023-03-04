@@ -3,6 +3,7 @@ from seguridad.models import UsuariosRol, PermisosModuloRol
 from django.db.models import Q
 
 class PermisoActualizarUsuarios(BasePermission):
+    message = 'No tiene permiso para actualizar usuarios'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -15,6 +16,7 @@ class PermisoActualizarUsuarios(BasePermission):
         return False
 
 class PermisoConsultarUsuarios(BasePermission):
+    message = 'No tiene permiso para consultar usuarios'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -27,6 +29,7 @@ class PermisoConsultarUsuarios(BasePermission):
         return False
 
 class PermisoCrearUsuarios(BasePermission):
+    message = 'No tiene permiso para crear usuarios'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -39,6 +42,7 @@ class PermisoCrearUsuarios(BasePermission):
         return False
 
 class PermisoActualizarInterno(BasePermission):
+    message = 'No tiene permiso para actualizar los datos de un usuario interno'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -51,6 +55,7 @@ class PermisoActualizarInterno(BasePermission):
         return False
 
 class PermisoConsultarInterno(BasePermission):
+    message = 'No tiene permiso para consultar los datos de un usuario interno'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -63,6 +68,7 @@ class PermisoConsultarInterno(BasePermission):
         return False
 
 class PermisoActualizarExterno(BasePermission):
+    message = 'No tiene permiso para actualizar los datos de un usuario externo'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -75,6 +81,7 @@ class PermisoActualizarExterno(BasePermission):
         return False
 
 class PermisoConsultarExterno(BasePermission):
+    message = 'No tiene permiso para consultar los datos de un usuario externo'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)

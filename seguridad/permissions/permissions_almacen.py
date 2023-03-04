@@ -4,7 +4,8 @@ from seguridad.models import UsuariosRol, PermisosModuloRol
 from django.db.models import Q
 
 
-class PermisoActualizarMarcas(BasePermission):
+class PermisoCrearMarcas(BasePermission):
+    message = 'No tiene permiso para crear marcas'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -17,6 +18,7 @@ class PermisoActualizarMarcas(BasePermission):
         return False
 
 class PermisoActualizarMarcas(BasePermission):
+    message = 'No tiene permiso para actualizar marcas'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -28,6 +30,7 @@ class PermisoActualizarMarcas(BasePermission):
 
         return False
 class PermisoConsultarMarcas(BasePermission):
+    message = 'No tiene permiso para consultar marcas'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -40,6 +43,7 @@ class PermisoConsultarMarcas(BasePermission):
         return False
     
 class PermisoBorrarMarcas(BasePermission):
+    message = 'No tiene permiso para borrar marcas'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -52,6 +56,7 @@ class PermisoBorrarMarcas(BasePermission):
         return False
     
 class PermisoCrearBodegas(BasePermission):
+    message = 'No tiene permiso para crear bodegas'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -64,6 +69,7 @@ class PermisoCrearBodegas(BasePermission):
         return False
 
 class PermisoActualizarBodegas(BasePermission):
+    message = 'No tiene permiso para actualizar bodegas'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -75,6 +81,7 @@ class PermisoActualizarBodegas(BasePermission):
 
         return False
 class PermisoConsultarBodegas(BasePermission):
+    message = 'No tiene permiso para consultar bodegas'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -87,6 +94,7 @@ class PermisoConsultarBodegas(BasePermission):
         return False
     
 class PermisoBorrarBodegas(BasePermission):
+    message = 'No tiene permiso para borrar bodegas'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -99,6 +107,7 @@ class PermisoBorrarBodegas(BasePermission):
         return False
 
 class PermisoCrearPorcentajeIva(BasePermission):
+    message = 'No tiene permiso para crear porcentajes IVA'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -111,6 +120,7 @@ class PermisoCrearPorcentajeIva(BasePermission):
         return False
 
 class PermisoActualizarPorcentajeIva(BasePermission):
+    message = 'No tiene permiso para actualizar porcentajes IVA'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -122,6 +132,7 @@ class PermisoActualizarPorcentajeIva(BasePermission):
 
         return False
 class PermisoConsultarPorcentajeIva(BasePermission):
+    message = 'No tiene permiso para consultar porcentajes IVA'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -134,6 +145,7 @@ class PermisoConsultarPorcentajeIva(BasePermission):
         return False
     
 class PermisoBorrarPorcentajeIva(BasePermission):
+    message = 'No tiene permiso para borrar porcentajes IVA'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -146,6 +158,7 @@ class PermisoBorrarPorcentajeIva(BasePermission):
     
     
 class PermisoCrearUnidadesMedida(BasePermission):
+    message = 'No tiene permiso para crear unidades de medida'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -158,6 +171,7 @@ class PermisoCrearUnidadesMedida(BasePermission):
         return False
 
 class PermisoActualizarUnidadesMedida(BasePermission):
+    message = 'No tiene permiso para actualizar unidades de medida'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -170,6 +184,7 @@ class PermisoActualizarUnidadesMedida(BasePermission):
         return False
     
 class PermisoConsultarUnidadesMedida(BasePermission):
+    message = 'No tiene permiso para consultar unidades de medida'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -182,6 +197,7 @@ class PermisoConsultarUnidadesMedida(BasePermission):
         return False
     
 class PermisoBorrarUnidadesMedida(BasePermission):
+    message = 'No tiene permiso para borrar unidades de medida'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)

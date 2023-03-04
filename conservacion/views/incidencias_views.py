@@ -105,7 +105,7 @@ class GetMaterialVegetalByLupa(generics.ListAPIView):
         return Response({'success':True,'detail':'se encontraron elementos','data':data_serializada},status=status.HTTP_200_OK)
 
 class GuardarIncidencia(generics.CreateAPIView):
-    serializer_class_incidencia = IncidenciaSerializer
+    serializer_class = IncidenciaSerializer
     serializer_class_items = ConsumosIncidenciasMVSerializer
     queryset = IncidenciasMatVegetal.objects.all()
     permission_classes = [IsAuthenticated]
@@ -224,7 +224,7 @@ class GuardarIncidencia(generics.CreateAPIView):
             nombre = 'Distribución'
         
         #GUARDADO DE INCIDENCIA
-        serializador = self.serializer_class_incidencia(data=data_incidencia,many = False)
+        serializador = self.serializer_class(data=data_incidencia,many = False)
         serializador.is_valid(raise_exception=True)
         response_incidencia = serializador.save()
         

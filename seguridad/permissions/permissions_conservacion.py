@@ -3,6 +3,7 @@ from seguridad.models import UsuariosRol, PermisosModuloRol
 from django.db.models import Q
 
 class PermisoCrearAdministrarViveros(BasePermission):
+    message = 'No tiene permiso para crear viveros'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -15,6 +16,7 @@ class PermisoCrearAdministrarViveros(BasePermission):
         return False
 
 class PermisoConsultarAdministrarViveros(BasePermission):
+    message = 'No tiene permiso para consultar viveros'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -27,6 +29,7 @@ class PermisoConsultarAdministrarViveros(BasePermission):
         return False
     
 class PermisoActualizarAdministrarViveros(BasePermission):
+    message = 'No tiene permiso para actualizar viveros'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -39,6 +42,7 @@ class PermisoActualizarAdministrarViveros(BasePermission):
         return False
     
 class PermisoBorrarAdministrarViveros(BasePermission):
+    message = 'No tiene permiso para borrar viveros'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -51,6 +55,7 @@ class PermisoBorrarAdministrarViveros(BasePermission):
         return False
     
 class PermisoIngresoRetiroCuarentena(BasePermission):
+    message = 'No tiene permiso para ingresar o retirar viveros de cuarentena'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -63,6 +68,7 @@ class PermisoIngresoRetiroCuarentena(BasePermission):
         return False
 
 class PermisoAperturaCierreVivero(BasePermission):
+    message = 'No tiene permiso para abrir o cerrar viveros'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
