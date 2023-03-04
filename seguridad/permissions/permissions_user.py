@@ -96,11 +96,9 @@ class PermisoConsultarExterno(BasePermission):
 class PermisoUnidadOrgActual(BasePermission):
     message = 'No tiene asignado una unidad organizacional de un organigrama actual'
     def has_permission(self, request, view):
-        unidad_org = request.user.persona.id_unidad_organizacional_actual
+        unidad_org_actual = request.user.persona.es_unidad_organizacional_actual
         
-        if unidad_org:
-            org_actual = unidad_org.id_organigrama.actual
-            if org_actual:
-                return True
+        if unidad_org_actual:
+            return True
         
         return False

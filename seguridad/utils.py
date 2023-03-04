@@ -2,6 +2,8 @@ from django.core.mail import EmailMessage
 from email_validator import validate_email, EmailNotValidError, EmailUndeliverableError, EmailSyntaxError
 from backend.settings.base import EMAIL_HOST_USER, AUTHENTICATION_360_NRS
 from seguridad.models import Shortener, User, Modulos, Permisos, Auditorias
+from rest_framework_simplejwt.tokens import RefreshToken
+from datetime import timedelta
 import re, requests
 from twilio.rest import Client
 import os
@@ -93,6 +95,16 @@ class Util:
             return new_url
         except:
             return url
+        
+    @staticmethod
+    def change_token_expire_externo(user):
+        token = RefreshToken.for_user(user)
+        access_token = token.access_token
+        access_token.set_exp(lifetime=timedelta(minutes=30))
+        return {
+            "refresh": str(token),
+            "access": str(access_token),
+        }
         
     @staticmethod
     def save_auditoria(data):

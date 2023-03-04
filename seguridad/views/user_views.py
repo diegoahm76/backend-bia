@@ -853,6 +853,7 @@ class LoginApiView(generics.CreateAPIView):
                     user_info={'userinfo':serializer_data,'permisos':permisos_list,'representante_legal':representante_legal_list}
                     sms = "Has iniciado sesion en bia cormacarena"
                     Util.send_sms(user.persona.telefono_celular, sms)
+                    
                     return Response({'userinfo':user_info}, status=status.HTTP_200_OK)
                 except:
                     login_error = LoginErroneo.objects.filter(id_usuario=user.id_usuario).first()
