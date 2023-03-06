@@ -148,7 +148,7 @@ class Personas(models.Model):
     id_unidad_organizacional_actual = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.SET_NULL, null=True, blank=True, db_column='T010Id_UnidadOrganizacionalActual')
     fecha_asignacion_unidad = models.DateTimeField(null=True, blank=True, db_column='T010fechaAsignacionUnidadOrg')
     es_unidad_organizacional_actual = models.BooleanField(null=True, blank=True, db_column='T010esUnidadDeOrganigramaActual')
-    representante_legal = models.ForeignKey('self', on_delete=models.SET_NULL, null=True,blank=True, db_column='T010Id_PersonaRepLegal')
+    representante_legal = models.ForeignKey('self', on_delete=models.SET_NULL, null=True,blank=True, db_column='T010Id_PersonaRepLegal',related_name='rep_legal')
     email = models.EmailField(max_length=255, unique=True, db_column='T010emailNotificación')
     email_empresarial = models.EmailField(max_length=255, null=True, blank=True, db_column='T010emailEmpresarial')
     telefono_fijo_residencial = models.CharField(max_length=15, null=True, blank=True, db_column='T010telFijoResidencial')
@@ -165,6 +165,18 @@ class Personas(models.Model):
     cod_municipio_expedicion_id = models.ForeignKey(Municipio, on_delete=models.SET_NULL, null=True, db_column='T010Cod_MunicipioExpID')
     cod_naturaleza_empresa = models.CharField(max_length=1, null=True, blank=True, db_column='T010codNaturalezaEmpresa')
     direccion_notificacion_referencia = models.CharField(max_length=255, null=True, blank=True, db_column='T010dirNotificacionNalReferencia')
+<<<<<<< Updated upstream
+    fecha_cambio_representante_legal = models.DateTimeField(auto_now=True, null=True, blank=True, db_column='T010fechaCambioRepLegal')
+    fecha_inicio_cargo_rep_legal = models.DateTimeField(null=True, blank=True, db_column='T010fechaInicioCargoRepLegal')
+    fecha_inicio_cargo_actual = models.DateTimeField(null=True, blank=True, auto_now=True, db_column='T010fechaInicioCargoActual')
+    fecha_a_finalizar_cargo_actual = models.DateTimeField(null=True, blank=True, db_column='T010fechaAFinalizarCargoActual')
+    observaciones_vinculacion_cargo_actual = models.CharField(max_length=100, null=True, blank=True, db_column='T010observacionesVincuCargoActual')
+    fecha_ultim_actualizacion_autorizaciones = models.DateTimeField(auto_now=True, null=True, blank=True, db_column='T010fechaUltActuaAutorizaciones')
+    fecha_creacion = models.DateTimeField(auto_now=True, db_column='T010fechaCreacion')
+    id_persona_crea = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, db_column='T010Id_PersonaCrea',related_name='persona_crea')
+    id_persona_ultim_actualiz_diferente_crea = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, db_column='T010Id_PersonaUltActuaDifCrea',related_name='persona_ult_act_dif')
+    fecha_ultim_actualiz_diferente_crea = models.DateTimeField(auto_now=True, null=True, blank=True, db_column='T010fechaUltActuaDifCrea')
+=======
     fecha_cambio_representante_legal = models.DateTimeField(auto_now=True, db_column='T010fechaCambioRepLegal')
     fecha_inicio_cargo_rep_legal = models.DateTimeField(db_column='T010fechaInicioCargoRepLegal')
     fecha_inicio_cargo_actual = models.DateTimeField(auto_now=True, db_column='T010fechaInicioCargoActual')
@@ -175,6 +187,7 @@ class Personas(models.Model):
     id_persona_crea = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, db_column='T010Id_PersonaCrea')
     id_persona_ultim_actualiz_diferente_crea = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, db_column='T010Id_PersonaUltActuaDifCrea')
     fecha_ultim_actualiz_diferente_crea = models.DateTimeField(auto_now=True, db_column='T010fechaUltActuaDifCrea')
+>>>>>>> Stashed changes
 
     def __str__(self):
         return str(self.primer_nombre) + ' ' + str(self.primer_apellido)
@@ -594,11 +607,11 @@ class HistoricoAutirzacionesNotis(models.Model):
 
 class HistoricoRepresentLegales(models.Model):
     id_historico_represent_legal = models.AutoField(primary_key=True, editable=False, db_column='T022IdHistoricoRepLegal')
-    id_persona_empresa = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T022Id_PersonaEmpresa')
+    id_persona_empresa = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T022Id_PersonaEmpresa', related_name='persona_empresa_historico')
     consec_representacion = models.PositiveSmallIntegerField(db_column='T022consecRepresentacion')
-    id_persona_represent_legal = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T022Id_PersonaRepLegal')
+    id_persona_represent_legal = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T022Id_PersonaRepLegal', related_name='rep_legal_historico')
     fecha_cambio_sistema = models.DateTimeField(db_column='T022fechaCambioEnSistema')
-    fecha_inicio_cargo = models.DateTimeField(db_column='T022fechaInicioCargo', null=True, blank=True)
+    fecha_inicio_cargo = models.DateTimeField(db_column='T022fechaInicioCargo')
 
     def __str__(self):
         return str(self.id_persona_empresa + ' ' + str(self.consec_representacion))
@@ -616,11 +629,11 @@ class HistoricoCargosUndOrgPersona(models.Model):
     id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T023Id_UnidadOrganizacional')
     fecha_inicial_historico = models.DateTimeField(db_column='T023fechaInicialHisto')
     fecha_final_historico = models.DateTimeField(db_column='T023fechaFinalHisto')
-    observaciones_vinculni_cargo = models.CharField(max_length=100, choices=subsistemas_CHOICES, db_column='T023observacionesVinculniCargo')
-    justificacion_cambio_und_org = models.CharField(max_length=100, choices=subsistemas_CHOICES, db_column='T023justificacionCambioUndOrg')
+    observaciones_vinculni_cargo = models.CharField(max_length=100, choices=subsistemas_CHOICES, null=True, blank=True, db_column='T023observacionesVinculniCargo')
+    justificacion_cambio_und_org = models.CharField(max_length=100, choices=subsistemas_CHOICES, null=True, blank=True, db_column='T023justificacionCambioUndOrg')
     desvinculado = models.BooleanField(default=True, db_column='T023desvinculado')
-    fecha_desvinculacion = models.DateTimeField(db_column='T023fechaDesvinculacion')
-    observaciones_desvinculacion = models.CharField(max_length=100, choices=subsistemas_CHOICES, db_column='T023observacionesDesvincu')
+    fecha_desvinculacion = models.DateTimeField(null=True, blank=True, db_column='T023fechaDesvinculacion')
+    observaciones_desvinculacion = models.CharField(max_length=100, choices=subsistemas_CHOICES, null=True, blank=True, db_column='T023observacionesDesvincu')
     
     def __str__(self):
         return str(self.id_historico_cargo_und_org_persona) 
