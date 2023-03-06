@@ -121,9 +121,9 @@ class Activar(generics.UpdateAPIView):
         if ccd.id_organigrama.id_organigrama != organigrama.id_organigrama:
             return Response({'success': False, 'detail': 'El organigrama ingresado no tiene relación con el CCD ingresado'}, status=status.HTTP_400_BAD_REQUEST)
         if trd.id_ccd.id_ccd != ccd.id_ccd:
-            return Response({'success': False, 'detail': 'El ccd ingresado no tiene relación con la TRD ingresada'}, status=status.HTTP_400_BAD_REQUEST)        
+            return Response({'success': False, 'detail': 'El CCD ingresado no tiene relación con la TRD ingresada'}, status=status.HTTP_400_BAD_REQUEST)        
         if tca.id_ccd.id_ccd != ccd.id_ccd:
-            return Response({'success': False, 'detail': 'El ccd ingresado no tiene relación con la TCA ingresada'}, status=status.HTTP_400_BAD_REQUEST)        
+            return Response({'success': False, 'detail': 'El CCD ingresado no tiene relación con la TCA ingresada'}, status=status.HTTP_400_BAD_REQUEST)        
         #CONSULTAR LA PREEXISTENCIA DE DE TABLAS ACTIVADAS
         tca_a_remplazar=TablasControlAcceso.objects.filter(actual=True).first()
         trd_a_remplazar=TablaRetencionDocumental.objects.filter(actual=True).first()

@@ -1,73 +1,73 @@
 [
     {
         "model": "gestion_documental.PermisosGD",
-        "pk" : 1,
+        "pk" : "CR",
         "fields": {
-            "permisos_GD": 1,
+            "cod_permiso_gd": "CR",
             "tipo_permiso": "Crear"
         }
     },
     {
         "model": "gestion_documental.PermisosGD",
-        "pk" : 2,
+        "pk" : "EL",
         "fields": {
-            "permisos_GD": 2,
+            "cod_permiso_gd": "EL",
             "tipo_permiso": "Eliminar"
         }
     },
     {
         "model": "gestion_documental.PermisosGD",
-        "pk" : 3,
+        "pk" : "CO",
         "fields": {
-            "permisos_GD": 3,
+            "cod_permiso_gd": "CO",
             "tipo_permiso": "Compartir"
         }
     },
     {
         "model": "gestion_documental.PermisosGD",
-        "pk" : 4,
+        "pk" : "ED",
         "fields": {
-            "permisos_GD": 4,
+            "cod_permiso_gd": "ED",
             "tipo_permiso": "Editar"
         }
     },
     {
         "model": "gestion_documental.PermisosGD",
-        "pk" : 5,
+        "pk" : "LE",
         "fields": {
-            "permisos_GD": 5,
+            "cod_permiso_gd": "LE",
             "tipo_permiso": "Leer"
         }
     },
     {
         "model": "gestion_documental.PermisosGD",
-        "pk" : 6,
+        "pk" : "MO",
         "fields": {
-            "permisos_GD": 6,
+            "cod_permiso_gd": "MO",
             "tipo_permiso": "Mover"
         }
     },
     {
         "model": "gestion_documental.PermisosGD",
-        "pk" : 7,
+        "pk" : "DE",
         "fields": {
-            "permisos_GD": 7,
+            "cod_permiso_gd": "DE",
             "tipo_permiso": "Descargar"
         }
     },
     {
         "model": "gestion_documental.PermisosGD",
-        "pk" : 8,
+        "pk" : "RE",
         "fields": {
-            "permisos_GD": 8,
+            "cod_permiso_gd": "RE",
             "tipo_permiso": "Renombrar"
         }
     },
     {
         "model": "gestion_documental.PermisosGD",
-        "pk" : 9,
+        "pk" : "CT",
         "fields": {
-            "permisos_GD": 9,
+            "cod_permiso_gd": "CT",
             "tipo_permiso": "Control total"
         }
     }

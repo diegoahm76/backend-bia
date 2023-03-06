@@ -38,11 +38,11 @@ class ClasificacionExpedientes(models.Model):
         verbose_name_plural='Clasificaciones serie sub Doc'
 
 class PermisosGD(models.Model):
-    permisos_GD=models.AutoField(primary_key=True, editable=False,db_column='T213IdPermisosGD')
+    cod_permiso_gd=models.CharField(primary_key=True, max_length=2, editable=False,db_column='T213CodPermisoGD')
     tipo_permiso=models.CharField(max_length=20,db_column='T213tipoPermiso')
     
     def __str__(self):
-        return str(self.permisos_GD)
+        return str(self.cod_permiso_gd)
     
     class Meta:
         db_table='T213PermisosGD'
