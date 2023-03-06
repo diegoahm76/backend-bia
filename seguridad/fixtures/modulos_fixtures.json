@@ -718,5 +718,53 @@
           "ruta_formulario":"/test",
           "nombre_icono":"test"
         }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 69,
+        "fields": {
+          "id_modulo": 69,
+          "nombre_modulo": "Autorización de Notificaciones Cuenta Propia",
+          "subsistema":"SEGU",
+          "descripcion":"Permite administrar a una persona sus autorizaciones acerca de las notificaciones de la entidad",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 70,
+        "fields": {
+          "id_modulo": 70,
+          "nombre_modulo": "Autorización de Notificaciones Otras Cuentas",
+          "subsistema":"SEGU",
+          "descripcion":"Permite administrar a una persona las autorizaciones de las personas acerca de las notificaciones de la entidad",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 71,
+        "fields": {
+          "id_modulo": 71,
+          "nombre_modulo": "Creación de Personas desde Ventanilla",
+          "subsistema":"GEST",
+          "descripcion":"Permite crear personas que van a solicitar desde la ventanilla algún servicio a la entidad",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 72,
+        "fields": {
+          "id_modulo": 72,
+          "nombre_modulo": "Vinculación de Colaboradores",
+          "subsistema":"GEST",
+          "descripcion":"Permite vincular o desvincular personas como colaboradores de la entidad en el sistema",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
+        }
       }
   ]
