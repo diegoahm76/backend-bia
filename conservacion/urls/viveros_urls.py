@@ -14,5 +14,10 @@ urlpatterns = [
     path('get-by-nombre-municipio/cuarentena/', views.FilterViverosByNombreAndMunicipioForCuarentena.as_view(),name='get-by-nombre-municipio-cuarentena'),
     path('get-by-nombre-municipio/apertura-cierre/', views.FilterViverosByNombreAndMunicipioForAperturaCierres.as_view(),name='get-by-nombre-municipio-apertura-cierre'),
     path('get-by-nombre-municipio/', views.FilterViverosByNombreAndMunicipio.as_view(),name='get-by-nombre-municipio'),
+    path('historial-viverista-by-vivero/<str:id_vivero>/',views.HistorialViveristaByVivero.as_view(),name='historial-viverista-by-vivero'),
+    path('viverista-actual-by-id-vivero/<str:id_vivero>/',views.GetViveristaActual.as_view(),name='viverista-actual-by-id-vivero'),
+    path('get-persona-viverista-nuevo-lupa/',views.GetPersonaFiltro.as_view(),name='get-persona-viverista-nuevo-lupa'),
+    path('get-persona-viverista-nuevo-by-numero-documento/',views.GetPersonaByNumeroDocumento.as_view(),name='get-persona-viverista-nuevo-by-numero-documento'),
+    path('asignacion-viverista/<str:id_vivero>/',views.GuardarAsignacionViverista.as_view(),name='asignacion-viverista')
     
 ]

@@ -721,6 +721,18 @@
       },
       {
         "model": "seguridad.Modulos",
+        "pk": 68,
+        "fields": {
+          "id_modulo": 68,
+          "nombre_modulo": "Responsables de Viveros",
+          "subsistema":"CONS",
+          "descripcion":"Permite configurar los responsables de cada vivero en la entidad",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
         "pk": 69,
         "fields": {
           "id_modulo": 69,

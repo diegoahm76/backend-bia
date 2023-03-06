@@ -1,5 +1,8 @@
+from conservacion.serializers.viveros_serializers import PersonasAsignacionViveroSerializer
+from conservacion.serializers.viveros_serializers import ViveristaActualSerializers
+from conservacion.models.viveros_models import HistoricoResponsableVivero
+from conservacion.serializers.viveros_serializers import HistorialViveristaByViveroSerializers
 from rest_framework import generics, status
-from rest_framework.views import APIView
 from seguridad.utils import Util  
 from django.db.models import Q
 from rest_framework.response import Response
@@ -7,6 +10,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from datetime import timezone
+from django.db.models.functions import Concat
 import copy
 
 from seguridad.models import Personas
@@ -188,21 +192,7 @@ class CreateViveros(generics.CreateAPIView):
         data = request.data
         persona = request.user.persona.id_persona
         data['id_persona_crea'] = persona
-        
-        # VALIDAR ASIGNACIÓN VIVERISTA
-        viverista = data.get('id_viverista_actual')
-        if viverista:
-            viverista_existe = Personas.objects.filter(id_persona=viverista)
-            if not viverista_existe:
-                return Response({'success':False, 'detail':'Debe elegir un viverista que exista'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            viveristas_actuales = Vivero.objects.filter(id_viverista_actual = viverista)
-            
-            if viveristas_actuales:
-                return Response({'success':False, 'detail':'Debe elegir un viverista que no tenga ningún vivero asignado'}, status=status.HTTP_403_FORBIDDEN)
-            
-            data['fecha_inicio_viverista_actual'] = datetime.now()
-        
+    
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -317,6 +307,7 @@ class FilterViverosByNombreAndMunicipioForCuarentena(generics.ListAPIView):
         else: 
             return Response({'success':False,'detail':'No se encontraron viveros'},status=status.HTTP_404_NOT_FOUND)
         
+        
 class FilterViverosByNombreAndMunicipioForAperturaCierres(generics.ListAPIView):
     serializer_class=ViveroSerializer
     queryset=Vivero.objects.all()
@@ -336,6 +327,7 @@ class FilterViverosByNombreAndMunicipioForAperturaCierres(generics.ListAPIView):
             return Response({'success':True,'detail':'Se encontraron viveros','data':serializer.data},status=status.HTTP_200_OK)
         else: 
             return Response({'success':False,'detail':'No se encontraron viveros'},status=status.HTTP_404_NOT_FOUND)
+        
 
 class FilterViverosByNombreAndMunicipio(generics.ListAPIView):
     serializer_class=ViveroSerializer
@@ -356,6 +348,7 @@ class FilterViverosByNombreAndMunicipio(generics.ListAPIView):
             return Response({'success':True,'detail':'Se encontraron viveros','data':serializer.data},status=status.HTTP_200_OK)
         else: 
             return Response({'success':False,'detail':'No se encontraron viveros'},status=status.HTTP_404_NOT_FOUND)
+        
 
 class UpdateViveros(generics.UpdateAPIView):
     serializer_class = ViveroPutSerializer
@@ -371,17 +364,7 @@ class UpdateViveros(generics.UpdateAPIView):
         if not vivero_actualizar:
             return Response({'status':False, 'detail':'No se encontró ningun vivero'}, status=status.HTTP_400_BAD_REQUEST)
         previous = copy.copy(vivero_actualizar)
-        # VALIDAR ASIGNACIÓN VIVERISTA
-        viverista = data.get('id_viverista_actual')
-        if viverista:
-            viverista_existe = Personas.objects.filter(id_persona=viverista).first()
-            if not viverista_existe:
-                return Response({'status':False, 'detail':'Debe elegir un viverista que exista'}, status=status.HTTP_400_BAD_REQUEST)
-            if int(viverista) != int(vivero_actualizar.id_viverista_actual.id_persona):
-                data['fecha_inicio_viverista_actual'] = datetime.now()
-            aux_vivero = Vivero.objects.filter(Q(id_viverista_actual=viverista_existe.id_persona)&~Q(id_vivero=vivero_actualizar.id_vivero))
-            if aux_vivero:
-                return Response({'status':False, 'detail':'Este viverista ya está asignado a otro vivero'}, status=status.HTTP_400_BAD_REQUEST)
+        
         serializador = self.serializer_class(vivero_actualizar,data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -502,3 +485,166 @@ class TipificacionBienConsumoVivero(generics.UpdateAPIView):
             return Response({'success':True, 'detail':'Bien tipificado con éxito', 'data':serializador.data}, status=status.HTTP_201_CREATED)
         else:
             return Response({'success':False, 'detail':'No existe el bien ingresado'}, status=status.HTTP_404_NOT_FOUND)
+        
+        
+class HistorialViveristaByVivero (generics.ListAPIView):
+
+    serializer_class = HistorialViveristaByViveroSerializers
+    queryset = HistoricoResponsableVivero.objects.all()
+    
+    def get(self,request,id_vivero):
+        
+        vivero = Vivero.objects.filter(id_vivero=id_vivero,activo=True).first()
+        
+        if not vivero:
+            return Response ({'success':False,'detail':'No existe el vivero o está desactivado'},status=status.HTTP_404_NOT_FOUND)
+        
+        viveristas = self.queryset.all().filter(id_vivero=vivero.id_vivero)
+        
+        if viveristas:
+            
+            serializador = self.serializer_class(viveristas,many=True)
+            
+            return Response ({'success':True,'detail':'Se encontraron registros','data':serializador.data},status=status.HTTP_200_OK)
+        else:
+            return Response ({'success':False,'detail':'No se encontraron registros'},status=status.HTTP_200_OK)
+        
+    
+class GetViveristaActual(generics.ListAPIView):
+    
+    serializer_class = ViveristaActualSerializers
+    queryset = Vivero.objects.all()
+    
+    def get (self,request,id_vivero):
+        
+        vivero = self.queryset.all().filter(id_vivero = id_vivero,activo=True).first()
+        if vivero:
+            
+            if vivero.id_viverista_actual:
+                        
+                serializador = self.serializer_class(vivero,many=False)
+                
+                return Response ({'success':True,'detail':'El vivero ingresado tiene viverista actualmente','data':serializador.data},status=status.HTTP_200_OK)
+            else:
+                return Response ({'success':True,'detail':'El vivero ingresado no tiene viverista actual'},status=status.HTTP_200_OK)
+        
+        else:
+            return Response ({'success':False,'detail':'El vivero no existe o no está activo'},status=status.HTTP_404_NOT_FOUND)
+           
+        
+class GetPersonaFiltro (generics.ListAPIView):
+    
+    serializer_class = PersonasAsignacionViveroSerializer
+    queryset = Personas.objects.all()
+    
+    def get(self,request):
+        
+        filter={}
+            
+        for key,value in request.query_params.items():
+            if key in ['tipo_documento','numero_documento','primer_nombre','segundo_nombre','primer_apellido','segundo_apellido']:
+                if key == 'numero_documento':
+                    filter[key+'__startswith']=value
+                elif key == 'tipo_documento':
+                    if value != '':
+                        filter[key]=value
+                else:
+                    filter[key+'__icontains']=value
+                
+        persona = self.queryset.all().filter(**filter).filter(~Q(id_cargo=None) & ~Q(id_unidad_organizacional_actual=None) & Q(es_unidad_organizacional_actual=True))
+
+        print('PERSONA',persona)
+        if persona: 
+            
+            serializador = self.serializer_class(persona,many=True)
+            
+            return Response ({'success':True,'detail':'Se encontraron personas: ','data':serializador.data},status=status.HTTP_200_OK) 
+        
+        else:
+            return Response ({'success':True,'detail':'No se encontraron personas','data':[]},status=status.HTTP_200_OK) 
+            
+ 
+class GetPersonaByNumeroDocumento(generics.ListAPIView):
+    
+    serializer_class = PersonasAsignacionViveroSerializer
+    queryset = Personas.objects.all()
+    
+    def get(self,request):
+        filter = {}
+        numero_documento = request.query_params.get('numero_documento')
+        tipo_documento = request.query_params.get('tipo_documento')
+        
+        if not numero_documento or not tipo_documento:
+            return Response ({'success':False,'detail':'Debe de seleccionar el tipo de documento'},status=status.HTTP_403_FORBIDDEN)
+
+        for key,value in request.query_params.items():
+            if key in ['tipo_documento','numero_documento']:
+                filter[key]=value
+        
+        persona = Personas.objects.filter(**filter).filter(~Q(id_cargo=None) and ~Q(id_unidad_organizacional_actual=None) and Q(es_unidad_organizacional_actual=True))
+
+        if persona: 
+            
+            serializador = self.serializer_class(persona,many=True)
+            
+            return Response ({'success':True,'detail':'Se encontraron personas: ','data':serializador.data},status=status.HTTP_200_OK) 
+        
+        else:
+            return Response ({'success':True,'detail':'No existe la persona, o no está en una unidad organizacional actual','data':[]},status=status.HTTP_200_OK) 
+        
+
+class GuardarAsignacionViverista(generics.CreateAPIView):
+    
+    serializer_class = ViveroSerializer
+    queryset = Vivero.objects.all()
+    
+    def post(self,request,id_vivero):
+        
+        data = request.data
+        
+        vivero = Vivero.objects.filter(id_vivero = id_vivero).first()
+        persona = Personas.objects.filter(id_persona = data['id_persona']).filter(~Q(id_cargo=None) and ~Q(id_unidad_organizacional_actual=None) and Q(es_unidad_organizacional_actual=True)).first()
+
+        if vivero:
+            
+            if vivero.id_viverista_actual == persona:
+                return Response({'success':False,'detail':'La persona seleccionada ya es el viverista de este vivero'},status=status.HTTP_403_FORBIDDEN)
+            
+            if vivero.id_viverista_actual == None and vivero.fecha_inicio_viverista_actual == None:
+                
+                vivero.id_viverista_actual = persona
+                vivero.fecha_inicio_viverista_actual = datetime.now()
+            
+            else:
+                
+                historico = HistoricoResponsableVivero.objects.filter(id_vivero=vivero.id_vivero, id_persona=vivero.id_viverista_actual).last()
+                
+                consecutivo = 1
+                
+                if historico:
+                    consecutivo = historico.consec_asignacion + 1
+                
+                HistoricoResponsableVivero.objects.create(
+                    id_vivero = vivero,
+                    id_persona = vivero.id_viverista_actual,
+                    consec_asignacion = consecutivo,
+                    fecha_inicio_periodo = vivero.fecha_inicio_viverista_actual,
+                    fecha_fin_periodo = datetime.now(),
+                    observaciones = data['observaciones'],
+                    id_persona_cambia = request.user.persona,
+                    )
+
+                vivero.id_viverista_actual = persona
+                vivero.fecha_inicio_viverista_actual = datetime.now()
+            
+            vivero.save()
+            
+            return Response({'success':True,'detail':'La asignación del viverista fue exitosa'},status=status.HTTP_200_OK)
+        else:
+            return Response({'succes':False,'detail':'El vivero no existe'},status=status.HTTP_404_NOT_FOUND)      
+                    
+        
+
+            
+        
+        

@@ -1747,6 +1747,24 @@
     },
     {
       "model": "seguridad.PermisosModulo",
+      "pk": 217,
+      "fields": {
+        "id_permisos_modulo":217,
+        "id_modulo": 68,
+        "cod_permiso": "CR"
+      }
+    },
+    {
+      "model": "seguridad.PermisosModulo",
+      "pk": 218,
+      "fields": {
+        "id_permisos_modulo":218,
+        "id_modulo": 68,
+        "cod_permiso": "CO"
+      }
+    },
+    {
+      "model": "seguridad.PermisosModulo",
       "pk": 219,
       "fields": {
         "id_permisos_modulo":219,
