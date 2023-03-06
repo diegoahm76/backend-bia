@@ -562,3 +562,57 @@ class Shortener(models.Model):
             self.short_url = random_code
 
         super().save(*args, **kwargs)
+
+class HistoricoAutirzacionesNotis(models.Model):
+    id_historico_autoriza_noti = models.AutoField(primary_key=True, editable=False, db_column='T021IdHistoricoAutorizaNoti')
+    id_persona = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T021Id_Persona')
+    respueta_autorizacion_sms = models.BooleanField(default=True, db_column='T021rtaAutorizacionSMS')
+    respuesta_autorizacion_mail = models.BooleanField(default=True, db_column='T021rtaAutorizacionMail')
+    fecha_inicio = models.DateTimeField(auto_now=True, db_column='T021fechaInicio')
+    fecha_fin = models.DateTimeField(auto_now=True, db_column='T021fechaFin')
+
+    def __str__(self):
+        return str(self.id_historico_autoriza_noti) 
+    
+    class Meta:
+        db_table = 'T021HistoricoAutorizaNotis'  
+        verbose_name = 'Histórico de autorización de notificación'
+        verbose_name_plural = 'Histórico de autorizaciones de notificaciones'
+
+class HistoricoRepresentLegales(models.Model):
+    id_historico_represent_legal = models.AutoField(primary_key=True, editable=False, db_column='T022IdHistoricoRepLegal')
+    id_persona_empresa = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T022Id_PersonaEmpresa')
+    consec_representacion = models.PositiveSmallIntegerField(db_column='T022consecRepresentacion')
+    id_persona_represent_legal = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T022Id_PersonaRepLegal')
+    fecha_cambio_sistema = models.DateTimeField(db_column='T022fechaCambioEnSistema')
+    fecha_inicio_cargo = models.DateTimeField(db_column='T022fechaInicioCargo', null=True, blank=True)
+
+    def __str__(self):
+        return str(self.id_persona_empresa + ' ' + str(self.consec_representacion))
+    
+    class Meta:
+        db_table = 'T022HistoricoRepLegales' 
+        constraints = [models.UniqueConstraint(fields=['id_persona_empresa', 'consec_representacion'], name='representante_legal')]
+        verbose_name = 'Histórico de representante legal'
+        verbose_name_plural = 'Histórico de representantes legales'
+
+class HistoricoCargosUndOrgPersona(models.Model):
+    id_historico_cargo_und_org_persona = models.AutoField(primary_key=True, editable=False, db_column='T023IdHistoCargoUndOrg_Persona')
+    id_persona = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T023Id_Persona')
+    id_cargo =  models.ForeignKey(Cargos, on_delete=models.CASCADE, db_column='T023Id_Cargo')
+    id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T023Id_UnidadOrganizacional')
+    fecha_inicial_historico = models.DateTimeField(db_column='T023fechaInicialHisto')
+    fecha_final_historico = models.DateTimeField(db_column='T023fechaFinalHisto')
+    observaciones_vinculni_cargo = models.CharField(max_length=100, choices=subsistemas_CHOICES, db_column='T023observacionesVinculniCargo')
+    justificacion_cambio_und_org = models.CharField(max_length=100, choices=subsistemas_CHOICES, db_column='T023justificacionCambioUndOrg')
+    desvinculado = models.BooleanField(default=True, db_column='T023desvinculado')
+    fecha_desvinculacion = models.DateTimeField(db_column='T023fechaDesvinculacion')
+    observaciones_desvinculacion = models.CharField(max_length=100, choices=subsistemas_CHOICES, db_column='T023observacionesDesvincu')
+    
+    def __str__(self):
+        return str(self.id_historico_cargo_und_org_persona) 
+    
+    class Meta:
+        db_table = 'T023HistoricoCargosUndOrg_Persona'  
+        verbose_name = 'Histórico de cargo de unidad organizacional'
+        verbose_name_plural = 'Histórico de cargos de unidades organizacionales'
