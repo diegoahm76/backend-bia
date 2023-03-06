@@ -144,7 +144,7 @@ class Personas(models.Model):
     fecha_nacimiento = models.DateField(blank=True,null=True, db_column='T010FechaNacimiento')
     sexo = models.CharField(max_length=1, null=True, blank=True, choices=sexo_CHOICES, db_column='T010Cod_Sexo')
     estado_civil = models.ForeignKey(EstadoCivil, related_name="estado_civil", on_delete=models.SET_NULL, null=True, blank=True, db_column='T010Cod_EstadoCivil')
-    id_cargo = models.ForeignKey(Cargos, on_delete=models.SET_NULL, null=True, blank=True, db_column='T010Id_Cargo')
+    id_cargo = models.ForeignKey(Cargos, on_delete=models.SET_NULL, null=True, blank=True, db_column='T010Id_CargoActual')
     id_unidad_organizacional_actual = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.SET_NULL, null=True, blank=True, db_column='T010Id_UnidadOrganizacionalActual')
     fecha_asignacion_unidad = models.DateTimeField(null=True, blank=True, db_column='T010fechaAsignacionUnidadOrg')
     es_unidad_organizacional_actual = models.BooleanField(null=True, blank=True, db_column='T010esUnidadDeOrganigramaActual')
@@ -162,7 +162,20 @@ class Personas(models.Model):
     acepta_notificacion_sms = models.BooleanField(default=True, db_column='T010aceptaNotificacionSMS')
     acepta_notificacion_email = models.BooleanField(default=True, db_column='T010aceptaNotificacionEmail')
     acepta_tratamiento_datos = models.BooleanField(default=True, db_column='T010aceptaTratamientoDeDatos')
-    
+    cod_municipio_expedicion_id = models.ForeignKey(Municipio, on_delete=models.SET_NULL, null=True, db_column='T010Cod_MunicipioExpID')
+    cod_naturaleza_empresa = models.CharField(max_length=1, null=True, blank=True, db_column='T010codNaturalezaEmpresa')
+    direccion_notificacion_referencia = models.CharField(max_length=255, null=True, blank=True, db_column='T010dirNotificacionNalReferencia')
+    fecha_cambio_representante_legal = models.DateTimeField(auto_now=True, db_column='T010fechaCambioRepLegal')
+    fecha_inicio_cargo_rep_legal = models.DateTimeField(db_column='T010fechaInicioCargoRepLegal')
+    fecha_inicio_cargo_actual = models.DateTimeField(auto_now=True, db_column='T010fechaInicioCargoActual')
+    fecha_a_finalizar_cargo_actual = models.DateTimeField(db_column='T010fechaAFinalizarCargoActual')
+    observaciones_vinculacion_cargo_actual = models.CharField(max_length=100, null=True, blank=True, db_column='T010observacionesVincuCargoActual')
+    fecha_ultim_actualizacion_autorizaciones = models.DateTimeField(auto_now=True, db_column='T010fechaUltActuaAutorizaciones')
+    fecha_creacion = models.DateTimeField(auto_now=True, db_column='T010fechaCreacion')
+    id_persona_crea = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, db_column='T010Id_PersonaCrea')
+    id_persona_ultim_actualiz_diferente_crea = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, db_column='T010Id_PersonaUltActuaDifCrea')
+    fecha_ultim_actualiz_diferente_crea = models.DateTimeField(auto_now=True, db_column='T010fechaUltActuaDifCrea')
+
     def __str__(self):
         return str(self.primer_nombre) + ' ' + str(self.primer_apellido)
     
