@@ -30,7 +30,9 @@ from conservacion.serializers.solicitudes_serializers import (
     DeleteItemsSolicitudSerializer,
     GetSolicitudesViverosSerializer,
     ItemSolicitudViverosSerializer,
-    ListarSolicitudIDSerializer
+    ListarSolicitudIDSerializer,
+    DeleteAnulacionSolicitudesPISerializer,
+    UpdateSolicitudesPIViewSerializer,
 )
 from conservacion.models.viveros_models import (
     Vivero
@@ -430,6 +432,7 @@ class GetSolicitudesView(generics.ListAPIView):
 class GetListarSolicitudIDView(generics.ListAPIView):
     serializer_class = ListarSolicitudIDSerializer
     queryset = ItemSolicitudViveros.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, id_solicitud):
         solicitud = SolicitudesViveros.objects.filter(id_solicitud_vivero=id_solicitud).first()
@@ -441,6 +444,103 @@ class GetListarSolicitudIDView(generics.ListAPIView):
     
         serializador = self.serializer_class (solicitudid, many=True)
         return Response({'sucess':True, 'detail':'Busqueda exitosa','data': serializador.data}, status=status.HTTP_200_OK)
+
+# ACTUALIZACIÓN DE SOLICITUDES DE PLANTAS E INSUMOS A VIVEROS 
+class UpdateSolicitudesPIView(generics.UpdateAPIView):
+    serializer_class = UpdateSolicitudesPIViewSerializer
+    queryset = SolicitudesViveros.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, id_solicitud):
+        data_solicitud = json.loads(request.data['data_solicitud'])
+        data_solicitud['ruta_archivo_info_tecnico'] = request.FILES.get('ruta_archivo_info_tecnico')
+
+        #VALIDACIÓN QUE LA PERSONA QUE HACE LA SOLICITUD TENGA UNIDAD ORGANIZACIONAL Y SEA USUARIO INTERNO
+        usuario_logeado = request.user
+        persona_logeada = request.user.persona
+        
+        if not persona_logeada.id_unidad_organizacional_actual:
+            return Response({'success': False, 'detail': 'La persona que realiza la busqueda debe estar asociada a una unidad organizacional'}, status=status.HTTP_400_BAD_REQUEST)
+        if usuario_logeado.tipo_usuario != "I":
+            return Response({'success': False, 'detail': 'La persona que realiza la busqueda debe ser usuario interno'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # VALIDACIÓN QUE LA SOLICITUD SELECCIONADA EXISTA
+        solicitud_act = SolicitudesViveros.objects.filter(id_solicitud_vivero=id_solicitud).first()
+        if not solicitud_act:
+            return Response({'success':False, 'detail':'La solicitud seleccionada no existe'}, status=status.HTTP_400_BAD_REQUEST) 
+           
+        # VALIDACIÓN QUE LA PERSONA QUE ACTUALIZA ES LA MISMA QUE CREÓ LA SOLICITUD
+        if solicitud_act.id_persona_solicita.id_persona != persona_logeada.id_persona:
+            return Response({'success':False, 'detail':'Solo la persona que realizó el registro de solicitud puede realizar actualizaciones'}, status=status.HTTP_403_FORBIDDEN) 
+        
+        # VALIDACIÓN QUE LA ACTUALIZACIÓN NO SE HAGA EN UN TIEMPO SUPERIOR A DOS DIAS
+        if  datetime.now() > (solicitud_act.fecha_solicitud + timedelta(hours=48)):
+            return Response({'success':False, 'detail':'No se pueden realizar actualizaciones en solicitudes que tienen más de 2 días de haber sido creadas'}, status=status.HTTP_403_FORBIDDEN) 
+        
+        # VALIDACIÓN ESTADO DE LA APROBACIÓN DEL RESPONSABLE DE LA UNIDAD
+        if solicitud_act.revisada_responsable != False:
+            return Response({'success':False, 'detail':'No se pueden realizar actualizaciones en solicitudes que ya fueron aprobadas o rechazadas por el responsable de la unidad'}, status=status.HTTP_403_FORBIDDEN) 
+        
+        # VALIDACIÓN QUE EL FUNCIONARIO ENVIADO EXISTA
+        persona_instance = Personas.objects.filter(id_persona=data_solicitud['id_funcionario_responsable_und_destino']).first()
+        if not persona_instance:
+            return Response({'success':False, 'detail':'El funcionario no existe'}, status=status.HTTP_400_BAD_REQUEST) 
+           
+        # VALIDACIÓN DE LINEA JERARQUICA SUPERIOR O IGUAL
+        linea_jerarquica = UtilConservacion.get_linea_jerarquica_superior(persona_logeada)
+        lista_unidades_permitidas = [unidad.id_unidad_organizacional for unidad in linea_jerarquica]
+
+        if persona_instance.id_unidad_organizacional_actual.id_unidad_organizacional not in lista_unidades_permitidas:
+            return Response({'success': False, 'detail': 'No se puede seleccionar una persona que no esté al mismo nivel o superior en la linea jerarquica'}, status=status.HTTP_403_FORBIDDEN)
+
+        # VALIDACIÓN QUE LA FECHA SELECCIONADA SEA SUPERIOR A LA EXISTENTE
+        fecha_strp = datetime.strptime(data_solicitud['fecha_retiro_material'], '%Y-%m-%d')
+        if solicitud_act.fecha_solicitud <= fecha_strp:
+            return Response({'success': False, 'detail': 'La fecha seleccionada no es superior a la existente'}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = self.serializer_class(solicitud_act, data=data_solicitud, many=False)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+       # AUDITORIA ACTUALIZAR PERSONA 
+        usuario = request.user.id_persona
+        direccion = Util.get_client_ip(request)
+        descripcion = {"TipodeDocumentoID": str(serializer.tipo_documento), "NumeroDocumentoID": str(serializer.numero_documento), "PrimerNombre": str(serializer.primer_nombre), "PrimerApellido": str(serializer.primer_apellido)}
+        valores_actualizados = {'current': data_solicitud, 'previous': persona_instance}
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 60,
+            "cod_permiso": "AC",
+            "subsistema": 'TRSV',
+            "dirip": direccion,
+            "descripcion": descripcion, 
+            "valores_actualizados": valores_actualizados
+        }
+        Util.save_auditoria(auditoria_data)
+
+        return Response({'success':True, 'detail':'Actualización exitosa'}, status=status.HTTP_200_OK) 
+
+# ANULACIÓN SOLICITUDES DE PLANTAS E INSUMOS VIVEROS 
+class DeleteAnulacionSolicitudesPIView(generics.UpdateAPIView):
+    serializer_class = DeleteAnulacionSolicitudesPISerializer
+    queryset = SolicitudesViveros.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def delete(request, id_solicitud):               
+        solicitud_anular = SolicitudesViveros.objects.filter(id=id_solicitud).first()
+        if solicitud_anular.solicitud_abierta and not solicitud_anular.gestionada_viveros:
+            solicitud_anular.solicitud_anulada_solicitante = True
+            solicitud_anular.justificacion_anulacion_solicitante = request.data['justificación']
+            solicitud_anular.fecha_anulacion_solicitante = datetime.now()
+            solicitud_anular.solicitud_abierta = False
+            solicitud_anular.save()
+
+            items_anul = ItemSolicitudViveros.objects.filter(solicitud_anular=solicitud_anular)
+            for item in items_anul:
+                item.delete  
+            return Response({'success':False, 'detail':'La solicitud ha sido anulada con éxito'}, status=status.HTTP_200_OK) #preguntar si va ese http
+        else:                 
+            return Response({'success':False, 'detail':'La solicitud ya ha sido gestionada por viveros y no puede ser anulada'}, status=status.HTTP_200_OK)
 
 class DeleteItemsSolicitudView(generics.RetrieveDestroyAPIView):
     serializer_class = DeleteItemsSolicitudSerializer
