@@ -32,10 +32,11 @@ class SubseriesAsignacionesSerializer(serializers.ModelSerializer):
     label = serializers.ReadOnlyField(source='nombre')
     value = serializers.ReadOnlyField(source='id_subserie_doc')
     id_serie_subserie_doc = serializers.IntegerField(default=None)
+    clasificacion = serializers.DictField(default=None)
     
     class Meta:
         model = SubseriesDoc
-        fields = ['label', 'value', 'codigo', 'id_serie_subserie_doc']
+        fields = ['label', 'value', 'codigo', 'id_serie_subserie_doc', 'clasificacion']
 
 class SeriesDocPostSerializer(serializers.ModelSerializer):
     class Meta:

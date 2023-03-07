@@ -18,7 +18,8 @@ from gestion_documental.serializers.tca_serializers import (
     ClasifSerieSubserieUnidadTCAPutSerializer,
     ClasifSerieSubseriUnidadTCA_activoSerializer,
     PermisosCargoUnidadSerieSubserieUnidadTCASerializer,
-    Cargos_Unidad_S_Ss_UndOrg_TCASerializer
+    Cargos_Unidad_S_Ss_UndOrg_TCASerializer,
+    ClasifSeriesSubseriesUnidadOrgSerializer
 
 )
 from gestion_documental.models.ccd_models import (
@@ -466,3 +467,18 @@ class FinalizarTablaControlAcceso(generics.UpdateAPIView):
                 return Response({'success': False, 'detail': 'Ya se encuentra finalizado este TCA'}, status=status.HTTP_403_FORBIDDEN)
         else:
             return Response({'success': False, 'detail': 'No se encontró ningún TCA con estos parámetros'}, status=status.HTTP_404_NOT_FOUND)   
+
+class GetClasifCargoUnidadPermisos(generics.ListAPIView):
+    serializer_class = ClasifSeriesSubseriesUnidadOrgSerializer
+    queryset = TablasControlAcceso.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_tca):
+        tca = self.queryset.all().filter(id_tca=id_tca).first()
+        if tca:
+            serie_subserie_unidad = SeriesSubseriesUnidadOrg.objects.filter(id_serie_doc__id_ccd = tca.id_ccd.id_ccd).distinct('id_unidad_organizacional', 'id_serie_doc')
+            serie_subserie_unidad = [ssu for ssu in serie_subserie_unidad if ssu.clasif_serie_subserie_unidad_tca_set.all()]
+            serializer = self.serializer_class(serie_subserie_unidad, many=True, context={'id_tca': id_tca})
+            return Response({'success':True, 'detail':'Se encontraron las siguientes clasificaciones', 'data':serializer.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success':False, 'detail':'No existe la TCA ingresada'}, status=status.HTTP_404_NOT_FOUND)
