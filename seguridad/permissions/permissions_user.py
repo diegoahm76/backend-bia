@@ -102,3 +102,57 @@ class PermisoUnidadOrgActual(BasePermission):
             return True
         
         return False
+
+class PermisoConsultarAutorizaciónNotificacionesCuentaPropia(BasePermission):
+    message = 'No tiene permiso para consultar las autorizaciones de una persona acerca de las notificaciones de la entidad'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=219))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoActualizarAutorizaciónNotificacionesCuentaPropia(BasePermission):
+    message = 'No tiene permiso para actualizar las autorizaciones de una persona acerca de las notificaciones de la entidad'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=220))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+    
+class PermisoConsultarAutorizaciónNotificacionesOtrasCuentas(BasePermission):
+    message = 'No tiene permiso para consultar las autorizaciones de las personas acerca de las notificaciones de la entidad'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=221))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+    
+class PermisoActualizarAutorizaciónNotificacionesOtrasCuentas(BasePermission):
+    message = 'No tiene permiso para actualizar las autorizaciones de las personas acerca de las notificaciones de la entidad'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=222))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+

@@ -313,3 +313,69 @@ class PermisoConsultarCambioTCA(BasePermission):
                 return True
 
         return False
+
+class PermisoCreaciónPersonasDesdeVentanilla(BasePermission):
+    message = 'No tiene permiso para crear personas que van a solicitar desde la ventanilla algún servicio a la entidad'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=223))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoConsultarPersonasDesdeVentanilla(BasePermission):
+    message = 'No tiene permiso para consultar personas que van a solicitar desde la ventanilla algún servicio a la entidad'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=224))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoActualizarPersonasDesdeVentanilla(BasePermission):
+    message = 'No tiene permiso para actualizar personas que van a solicitar desde la ventanilla algún servicio a la entidad'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=225))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoConsultarVinculaciónColaboradores(BasePermission):
+    message = 'No tiene permiso para consultar vinculación o desvinculación de personas como colaboradores de la entidad en el sistema'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=226))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoActualizarVinculaciónColaboradores(BasePermission):
+    message = 'No tiene permiso para actualizar vinculación o desvinculación de personas como colaboradores de la entidad en el sistema'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=227))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
