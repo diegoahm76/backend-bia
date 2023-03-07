@@ -13,4 +13,5 @@ urlpatterns = [
     path('get-listar-solicitudes/', views.GetSolicitudesView.as_view(), name='get-listar-solicitudes'),
     path('get-listar-solicitudes-id/<str:id_solicitud>/', views.GetItemsSolicitudView.as_view(), name='get-listar-solicitudes-id'),
     path('update-solicitud/<str:id_solicitud>/', views.UpdateSolicitudesView.as_view(), name='update-solicitud'),
+    path('anular-solicitud/<str:solicitudsita>/', views.AnulacionSolicitudesView.as_view(), name='anulacion-solicitud'),
 ]

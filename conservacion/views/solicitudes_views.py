@@ -596,26 +596,30 @@ class UpdateSolicitudesView(generics.UpdateAPIView):
         return Response({'success':True, 'detail':'Actualización exitosa', 'data': serializador_post_save.data}, status=status.HTTP_201_CREATED) 
 
 
-class AnulacionSolicitudesView(generics.UpdateAPIView):
+class AnulacionSolicitudesView(generics.RetrieveUpdateAPIView):
     serializer_class = AnulacionSolicitudesSerializer
     queryset = SolicitudesViveros.objects.all()
     permission_classes = [IsAuthenticated]
 
-    def delete(request, id_solicitud):               
-        solicitud_anular = SolicitudesViveros.objects.filter(id=id_solicitud).first()
-        if solicitud_anular.solicitud_abierta and not solicitud_anular.gestionada_viveros:
-            solicitud_anular.solicitud_anulada_solicitante = True
-            solicitud_anular.justificacion_anulacion_solicitante = request.data['justificación']
-            solicitud_anular.fecha_anulacion_solicitante = datetime.now()
-            solicitud_anular.solicitud_abierta = False
-            solicitud_anular.save()
-
-            items_anul = ItemSolicitudViveros.objects.filter(solicitud_anular=solicitud_anular)
-            for item in items_anul:
-                item.delete  
-            return Response({'success':False, 'detail':'La solicitud ha sido anulada con éxito'}, status=status.HTTP_200_OK) #preguntar si va ese http
-        else:                 
+    def put(self, request, solicitudsita):   
+        #VALIDACIÓN QUE LA SOLICITUD SELECCIONADA EXISTA            
+        solicitud_anular = SolicitudesViveros.objects.filter(id_solicitud_vivero=solicitudsita).first()
+        if not solicitud_anular.solicitud_abierta == True and not solicitud_anular.gestionada_viveros == False:
             return Response({'success':False, 'detail':'La solicitud ya ha sido gestionada por viveros y no puede ser anulada'}, status=status.HTTP_200_OK)
+        
+        # ASIGNACIÓN DE INFORMACIÓN A SOLICITUD
+        solicitud_anular.solicitud_anulada_solicitante = True
+        solicitud_anular.justificacion_anulacion_solicitante = request.data['justificacion']
+        solicitud_anular.fecha_anulacion_solicitante = datetime.now()
+        solicitud_anular.solicitud_abierta = False
+        solicitud_anular.save()
+
+        # ELIMINACIÓN DE ITEMS DE SOLICITUD
+        items_anulacion = ItemSolicitudViveros.objects.filter(id_solicitud_viveros=solicitud_anular)
+        items_anulacion.delete()  
+
+        return Response({'success':True, 'detail':'La solicitud ha sido anulada con éxito'}, status=status.HTTP_200_OK)             
+            
 
 class DeleteItemsSolicitudView(generics.RetrieveDestroyAPIView):
     serializer_class = DeleteItemsSolicitudSerializer
