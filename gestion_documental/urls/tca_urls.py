@@ -16,5 +16,5 @@ urlpatterns = [
     path('cargo-serie-subserie-unidad-tca/create/',views.asignar_cargo_unidad_permiso_expediente,name='cargo-serie-subserie-unidad-tca-crear'),
     path('cargo-serie-subserie-unidad-tca/update/<str:pk>/',views.actualizar_cargo_unidad_permiso_expediente,name='cargo-serie-subserie-unidad-tca-update'),
     path('cargo-serie-subserie-unidad-tca/delete/<str:pk>/',views.EliminarCargoUnidadPermisoExp.as_view(),name='cargo-serie-subserie-unidad-tca-delete'),
-
+    path('cargo-serie-subserie-unidad-tca/get/<str:id_tca>/',views.GetClasifCargoUnidadPermisos.as_view(),name='cargo-serie-subserie-unidad-tca-get'),
 ]

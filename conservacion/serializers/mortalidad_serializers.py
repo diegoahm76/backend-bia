@@ -73,7 +73,8 @@ class MortalidadMaterialVegetalSerializer(serializers.ModelSerializer):
     registros_cuarentena = serializers.SerializerMethodField()
     
     def get_desc_etapa_lote(self,obj):
-        desc_etapa_lote = 'Produccion' if obj.cod_etapa_lote == 'P' else 'Distribución'
+        desc_etapa_lotes = {'G':'Camas de Germinación', 'P':'Producción', 'D':'Distribución'}
+        desc_etapa_lote = desc_etapa_lotes[obj.cod_etapa_lote]
         return desc_etapa_lote
     
     def get_saldo_disponible_busqueda(self,obj):
@@ -82,11 +83,14 @@ class MortalidadMaterialVegetalSerializer(serializers.ModelSerializer):
         
         if obj.cod_etapa_lote == 'P':
             saldo_disponible_busqueda = UtilConservacion.get_cantidad_disponible_produccion(obj)
-        else:
+        elif obj.cod_etapa_lote == 'D':
             saldo_disponible_busqueda = UtilConservacion.get_cantidad_disponible_distribucion(obj)
+        else:
+            saldo_disponible_busqueda = None
         
-        if saldo_disponible_busqueda < 0:
-            saldo_disponible_busqueda = 0
+        if saldo_disponible_busqueda != None:
+            if saldo_disponible_busqueda < 0:
+                saldo_disponible_busqueda = 0
         
         return saldo_disponible_busqueda
     

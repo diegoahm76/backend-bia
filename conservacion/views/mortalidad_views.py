@@ -14,7 +14,8 @@ from conservacion.models import (
     InventarioViveros,
     Vivero,
     CuarentenaMatVegetal,
-    IncidenciasMatVegetal
+    IncidenciasMatVegetal,
+    Siembras
 )
 from conservacion.serializers.mortalidad_serializers import (
     RegistrarMortalidadSerializer,
@@ -56,11 +57,11 @@ class GetMaterialVegetalByCodigo(generics.ListAPIView):
         else:
             return Response({'success':False, 'detail':'El código ingresado no es de consumo o no se encuentra tipificado'}, status=status.HTTP_400_BAD_REQUEST)
            
-        inventarios_viveros = InventarioViveros.objects.filter(id_bien__codigo_bien=codigo_bien, id_bien__cod_tipo_elemento_vivero='MV', id_bien__es_semilla_vivero=False).exclude(cod_etapa_lote='G')
+        inventarios_viveros = InventarioViveros.objects.filter(id_bien__codigo_bien=codigo_bien, id_bien__cod_tipo_elemento_vivero='MV', id_bien__es_semilla_vivero=False, id_vivero=id_vivero)
         serializador = self.serializer_class(inventarios_viveros, many=True)
         
         data_serializada = serializador.data
-        saldos_disponibles_principal = [data['saldo_disponible_busqueda'] for data in data_serializada]
+        saldos_disponibles_principal = [data['saldo_disponible_busqueda'] for data in data_serializada if data['saldo_disponible_busqueda']]
         
         if data_serializada:
             if len(set(saldos_disponibles_principal)) == 1 and list(set(saldos_disponibles_principal))[0] == 0:
@@ -72,7 +73,7 @@ class GetMaterialVegetalByCodigo(generics.ListAPIView):
             saldos_disponibles_cuarentena = [data['saldo_por_levantar'] for data in item['registros_cuarentena']] if item['registros_cuarentena'] else [0]
             saldos_disponibles_cuarentena = sum(saldos_disponibles_cuarentena)
             
-            item['saldo_disponible_registro'] = item['saldo_disponible_busqueda'] - saldos_disponibles_cuarentena
+            item['saldo_disponible_registro'] = item['saldo_disponible_busqueda'] - saldos_disponibles_cuarentena if item['saldo_disponible_busqueda'] else None
         
         return Response ({'success':True, 'detail':'Se encontraron los siguientes resultados', 'data':data_serializada}, status=status.HTTP_200_OK)
 
@@ -103,13 +104,13 @@ class GetMaterialVegetalByLupa(generics.ListAPIView):
         serializador = self.serializer_class(inventarios_viveros, many=True)
         
         data_serializada = serializador.data
-        data_serializada = [data for data in data_serializada if data['saldo_disponible_busqueda'] >= 1]
+        data_serializada = [data for data in data_serializada if data['saldo_disponible_busqueda'] != 0]
         
         for item in data_serializada:
             saldos_disponibles_cuarentena = [data['saldo_por_levantar'] for data in item['registros_cuarentena']] if item['registros_cuarentena'] else [0]
             saldos_disponibles_cuarentena = sum(saldos_disponibles_cuarentena)
             
-            item['saldo_disponible_registro'] = item['saldo_disponible_busqueda'] - saldos_disponibles_cuarentena
+            item['saldo_disponible_registro'] = item['saldo_disponible_busqueda'] - saldos_disponibles_cuarentena if item['saldo_disponible_busqueda'] else (100 - saldos_disponibles_cuarentena)
         
         return Response ({'success':True, 'detail':'Se encontraron los siguientes resultados', 'data':data_serializada}, status=status.HTTP_200_OK)
 
@@ -203,6 +204,7 @@ class RegistrarMortalidad(generics.CreateAPIView):
     
         cuarentenas = CuarentenaMatVegetal.objects.filter(id_vivero=data_mortalidad['id_vivero'])
         incidencias = IncidenciasMatVegetal.objects.filter(id_vivero=data_mortalidad['id_vivero'])
+        siembras = Siembras.objects.filter(id_vivero=data_mortalidad['id_vivero'])
         
         # VALIDACIONES MAESTRO
         serializador_maestro = self.serializer_class(data=data_mortalidad)
@@ -220,60 +222,71 @@ class RegistrarMortalidad(generics.CreateAPIView):
             return Response({'success':False, 'detail':'No puede guardar un registro de mortalidad sin haber agregado por lo menos un ítem'}, status=status.HTTP_400_BAD_REQUEST)
             
         for item in data_items_mortalidad:
-            if item['cantidad_baja'] <= 0:
-                return Response({'success':False, 'detail':'Debe ingresar una cantidad de mortalidad mayor a cero en el item de la posición ' + str(item['nro_posicion'])})
-                
+            # VALIDAR SI ENVIAN ITEMS REPETIDOS
             items_repetidos = [item_data for item_data in data_items_mortalidad if
-                               item_data['id_bien']==item['id_bien'] and
-                               item_data['agno_lote']==item['agno_lote'] and
-                               item_data['nro_lote']==item['nro_lote'] and
-                               item_data['cod_etapa_lote']==item['cod_etapa_lote'] and
-                               item_data['consec_cuaren_por_lote_etapa']==item['consec_cuaren_por_lote_etapa']]
-            
+                                item_data['id_bien']==item['id_bien'] and
+                                item_data['agno_lote']==item['agno_lote'] and
+                                item_data['nro_lote']==item['nro_lote'] and
+                                item_data['cod_etapa_lote']==item['cod_etapa_lote'] and
+                                item_data['consec_cuaren_por_lote_etapa']==item['consec_cuaren_por_lote_etapa']]
+                
             if len(items_repetidos) > 1:
                 return Response({'success':False, 'detail':'El item de la posición ' + str(item['nro_posicion']) + ' ha sido agregado más de una vez en los registros. Si desea actualizar la cantidad a registrar de mortalidad de dicho material vegetal, debe borrar el registro y agregarlo nuevamente'}, status=status.HTTP_400_BAD_REQUEST)
             
-            saldo_disponible = 0
+            # VALIDAR QUE EL ITEM DE GERMINACION SEA EL PRINCIPAL
+            if item['cod_etapa_lote'] == 'G' and item['consec_cuaren_por_lote_etapa']:
+                return Response({'success':False, 'detail':'No puede seleccionar un registro de cuarentena para registrar una mortalidad a una germinación'}, status=status.HTTP_400_BAD_REQUEST)
             
-            if item['consec_cuaren_por_lote_etapa']:
-                item_cuarentena = cuarentenas.filter(
-                    id_bien = item['id_bien'],
-                    agno_lote = item['agno_lote'],
-                    nro_lote = item['nro_lote'],
-                    cod_etapa_lote = item['cod_etapa_lote'],
-                    consec_cueren_por_lote_etapa = item['consec_cuaren_por_lote_etapa']
-                ).first()
+            # VALIDACIONES DE CANTIDAD_BAJA (P,D)
+            if item['cod_etapa_lote'] != 'G':
+                if item['cantidad_baja'] <= 0:
+                    return Response({'success':False, 'detail':'Debe ingresar una cantidad de mortalidad mayor a cero en el item de la posición ' + str(item['nro_posicion'])})
+                    
+                saldo_disponible = 0
                 
-                saldo_disponible = UtilConservacion.get_saldo_por_levantar(item_cuarentena)
-            else:
-                inventario_vivero = self.queryset.all().filter(
-                    id_vivero = data_mortalidad['id_vivero'],
-                    id_bien = item['id_bien'],
-                    agno_lote = item['agno_lote'],
-                    nro_lote = item['nro_lote'],
-                    cod_etapa_lote = item['cod_etapa_lote']
-                ).first()
-                
-                if item['cod_etapa_lote'] == 'P':
-                    saldo_disponible = UtilConservacion.get_cantidad_disponible_produccion(inventario_vivero)
+                if item['consec_cuaren_por_lote_etapa']:
+                    item_cuarentena = cuarentenas.filter(
+                        id_bien = item['id_bien'],
+                        agno_lote = item['agno_lote'],
+                        nro_lote = item['nro_lote'],
+                        cod_etapa_lote = item['cod_etapa_lote'],
+                        consec_cueren_por_lote_etapa = item['consec_cuaren_por_lote_etapa']
+                    ).first()
+                    
+                    saldo_disponible = UtilConservacion.get_saldo_por_levantar(item_cuarentena)
                 else:
-                    saldo_disponible = UtilConservacion.get_cantidad_disponible_distribucion(inventario_vivero)
+                    inventario_vivero = self.queryset.all().filter(
+                        id_vivero = data_mortalidad['id_vivero'],
+                        id_bien = item['id_bien'],
+                        agno_lote = item['agno_lote'],
+                        nro_lote = item['nro_lote'],
+                        cod_etapa_lote = item['cod_etapa_lote']
+                    ).first()
+                    
+                    if item['cod_etapa_lote'] == 'P':
+                        saldo_disponible = UtilConservacion.get_cantidad_disponible_produccion(inventario_vivero)
+                    else:
+                        saldo_disponible = UtilConservacion.get_cantidad_disponible_distribucion(inventario_vivero)
+                    
+                if item['cantidad_baja'] > saldo_disponible:
+                    return Response({'success':False, 'detail':'La cantidad a registrar de mortalidad del item en la posición ' + str(item['nro_posicion']) + ' no puede superar el saldo disponible (' + str(saldo_disponible) + ')'})
                 
-            if item['cantidad_baja'] > saldo_disponible:
-                return Response({'success':False, 'detail':'La cantidad a registrar de mortalidad del item en la posición ' + str(item['nro_posicion']) + ' no puede superar el saldo disponible (' + str(saldo_disponible) + ')'})
-            
-            # VALIDACION DETALLES CON FECHA_INCIDENCIA
-            item_incidencia = incidencias.filter(
-                id_bien = item['id_bien'],
-                agno_lote = item['agno_lote'],
-                nro_lote = item['nro_lote'],
-                cod_etapa_lote = item['cod_etapa_lote'],
-                fecha_incidencia__gt = fecha_baja
-            ).last()
-            
-            if item_incidencia:
-                if item['cantidad_baja'] == saldo_disponible:
-                    return Response({'success':False, 'detail':'No es posible marcar mortalidad de todo el saldo disponible del registro lote-etapa en la posición ' + str(item['nro_posicion']) + ', ya que tiene un registro de incidencia posterior a la fecha de este registro de mortalidad'}, status=status.HTTP_400_BAD_REQUEST)
+                # VALIDACION DETALLES CON FECHA_INCIDENCIA
+                item_incidencia = incidencias.filter(
+                    id_bien_sembrado = item['id_bien'],
+                    agno_lote = item['agno_lote'],
+                    nro_lote = item['nro_lote'],
+                    fecha_incidencia__gt = fecha_baja
+                ).last()
+                
+                if item_incidencia:
+                    if item['cantidad_baja'] == saldo_disponible:
+                        return Response({'success':False, 'detail':'No es posible marcar mortalidad de todo el saldo disponible del registro lote-etapa en la posición ' + str(item['nro_posicion']) + ', ya que tiene un registro de incidencia posterior a la fecha de este registro de mortalidad'}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                if item['consec_cuaren_por_lote_etapa']:
+                    return Response({'success':False, 'detail':'No puede elegir un registro de cuarentena para registrar mortalidad de germinación'}, status=status.HTTP_403_FORBIDDEN)
+                else:
+                    item['cantidad_baja'] = 100
         
         # REGISTRO MAESTRO
         response_maestro = serializador_maestro.save()
@@ -308,21 +321,33 @@ class RegistrarMortalidad(generics.CreateAPIView):
                 cod_etapa_lote = item['cod_etapa_lote']
             ).first()
             
-            inventario_vivero.cantidad_bajas = inventario_vivero.cantidad_bajas + item['cantidad_baja'] if inventario_vivero.cantidad_bajas else item['cantidad_baja']
-            
-            if item['consec_cuaren_por_lote_etapa']:
-                item_cuarentena = cuarentenas.filter(
-                    id_bien = item['id_bien'],
+            if item['cod_etapa_lote'] != 'G':
+                inventario_vivero.cantidad_bajas = inventario_vivero.cantidad_bajas + item['cantidad_baja'] if inventario_vivero.cantidad_bajas else item['cantidad_baja']
+                
+                if item['consec_cuaren_por_lote_etapa']:
+                    item_cuarentena = cuarentenas.filter(
+                        id_bien = item['id_bien'],
+                        agno_lote = item['agno_lote'],
+                        nro_lote = item['nro_lote'],
+                        cod_etapa_lote = item['cod_etapa_lote'],
+                        consec_cueren_por_lote_etapa = item['consec_cuaren_por_lote_etapa']
+                    ).first()
+                    
+                    inventario_vivero.cantidad_lote_cuarentena = inventario_vivero.cantidad_lote_cuarentena - item['cantidad_baja'] if inventario_vivero.cantidad_lote_cuarentena else 0
+                    
+                    item_cuarentena.cantidad_bajas = item_cuarentena.cantidad_bajas + item['cantidad_baja'] if item_cuarentena.cantidad_bajas else item['cantidad_baja']
+                    item_cuarentena.save()
+            else:
+                siembra = siembras.filter(
+                    id_bien_sembrado = item['id_bien'],
                     agno_lote = item['agno_lote'],
-                    nro_lote = item['nro_lote'],
-                    cod_etapa_lote = item['cod_etapa_lote'],
-                    consec_cueren_por_lote_etapa = item['consec_cuaren_por_lote_etapa']
+                    nro_lote = item['nro_lote']
                 ).first()
-                
-                inventario_vivero.cantidad_lote_cuarentena = inventario_vivero.cantidad_lote_cuarentena - item['cantidad_baja'] if inventario_vivero.cantidad_lote_cuarentena else 0
-                
-                item_cuarentena.cantidad_bajas = item_cuarentena.cantidad_bajas + item['cantidad_baja'] if item_cuarentena.cantidad_bajas else item['cantidad_baja']
-                item_cuarentena.save()
+                inventario_vivero.cantidad_bajas = item['cantidad_baja']
+                inventario_vivero.siembra_lote_cerrada = True
+                if siembra:
+                    siembra.siembra_abierta = False
+                    siembra.save()
                 
             inventario_vivero.save()
         
@@ -365,6 +390,7 @@ class ActualizarMortalidad(generics.UpdateAPIView):
             inventarios_viveros = InventarioViveros.objects.filter(id_vivero=baja.id_vivero)
             cuarentenas = CuarentenaMatVegetal.objects.filter(id_vivero=baja.id_vivero)
             incidencias = IncidenciasMatVegetal.objects.filter(id_vivero=baja.id_vivero)
+            siembras = Siembras.objects.filter(id_vivero=baja.id_vivero)
             
             if not data_items_mortalidad:
                 return Response({'success':False, 'detail':'No puede eliminar todos los items, debe dejar por lo menos uno'}, status=status.HTTP_403_FORBIDDEN)
@@ -414,7 +440,7 @@ class ActualizarMortalidad(generics.UpdateAPIView):
                     nro_lote = item_actual.nro_lote,
                     cod_etapa_lote = item_actual.cod_etapa_lote
                 ).first()
-                
+                item['cantidad_baja'] = item_actual.cantidad_baja if item_actual.cod_etapa_lote == 'G' else item['cantidad_baja']
                 # VALIDAR SI ACTUALIZARON CANTIDAD_BAJA U OBSERVACIONES
                 if item_actual.cantidad_baja != item['cantidad_baja']:
                     if fecha_actual > fecha_maxima_detalle_cantidad:
@@ -455,7 +481,7 @@ class ActualizarMortalidad(generics.UpdateAPIView):
                         ).last()
                         
                         if item_incidencia:
-                            if item['cantidad_baja'] == saldo_disponible:
+                            if cantidad_aumentada == saldo_disponible:
                                 return Response({'success':False, 'detail':'No es posible marcar mortalidad de todo el saldo disponible del registro lote-etapa en la posición ' + str(item['nro_posicion']) + ', ya que tiene un registro de incidencia posterior a la fecha de este registro de mortalidad'}, status=status.HTTP_400_BAD_REQUEST)
                     
                 if item_actual.observaciones != item['observaciones']:
@@ -467,33 +493,39 @@ class ActualizarMortalidad(generics.UpdateAPIView):
 
             # VALIDACIONES CREACIÓN DE ITEMS
             for item in items_crear:
-                saldo_disponible = 0
-                if item['consec_cuaren_por_lote_etapa']:
-                    item_cuarentena = cuarentenas.filter(
-                        id_bien = item['id_bien'],
-                        agno_lote = item['agno_lote'],
-                        nro_lote = item['nro_lote'],
-                        cod_etapa_lote = item['cod_etapa_lote'],
-                        consec_cueren_por_lote_etapa = item['consec_cuaren_por_lote_etapa']
-                    ).first()
-                    
-                    saldo_disponible = UtilConservacion.get_saldo_por_levantar(item_cuarentena)
-                else:
-                    inventario_vivero = inventarios_viveros.filter(
-                        id_bien = item['id_bien'],
-                        agno_lote = item['agno_lote'],
-                        nro_lote = item['nro_lote'],
-                        cod_etapa_lote = item['cod_etapa_lote']
-                    ).first()
-                    
-                    if item['cod_etapa_lote'] == 'P':
-                        saldo_disponible = UtilConservacion.get_cantidad_disponible_produccion(inventario_vivero)
+                if item['cod_etapa_lote'] != 'G':
+                    saldo_disponible = 0
+                    if item['consec_cuaren_por_lote_etapa']:
+                        item_cuarentena = cuarentenas.filter(
+                            id_bien = item['id_bien'],
+                            agno_lote = item['agno_lote'],
+                            nro_lote = item['nro_lote'],
+                            cod_etapa_lote = item['cod_etapa_lote'],
+                            consec_cueren_por_lote_etapa = item['consec_cuaren_por_lote_etapa']
+                        ).first()
+                        
+                        saldo_disponible = UtilConservacion.get_saldo_por_levantar(item_cuarentena)
                     else:
-                        saldo_disponible = UtilConservacion.get_cantidad_disponible_distribucion(inventario_vivero)
+                        inventario_vivero = inventarios_viveros.filter(
+                            id_bien = item['id_bien'],
+                            agno_lote = item['agno_lote'],
+                            nro_lote = item['nro_lote'],
+                            cod_etapa_lote = item['cod_etapa_lote']
+                        ).first()
+                        
+                        if item['cod_etapa_lote'] == 'P':
+                            saldo_disponible = UtilConservacion.get_cantidad_disponible_produccion(inventario_vivero)
+                        else:
+                            saldo_disponible = UtilConservacion.get_cantidad_disponible_distribucion(inventario_vivero)
+                        
+                    if item['cantidad_baja'] > saldo_disponible:
+                        return Response({'success':False, 'detail':'La cantidad a registrar de mortalidad del item en la posición ' + str(item['nro_posicion']) + ' no puede superar el saldo disponible (' + str(saldo_disponible) + ')'})
+                else:
+                    if item['consec_cuaren_por_lote_etapa']:
+                        return Response({'success':False, 'detail':'No puede elegir un registro de cuarentena para registrar mortalidad de germinación'}, status=status.HTTP_403_FORBIDDEN)
+                    else:
+                        item['cantidad_baja'] = 100
                     
-                if item['cantidad_baja'] > saldo_disponible:
-                    return Response({'success':False, 'detail':'La cantidad a registrar de mortalidad del item en la posición ' + str(item['nro_posicion']) + ' no puede superar el saldo disponible (' + str(saldo_disponible) + ')'})
-
                 # VALIDACION DETALLES CON FECHA_INCIDENCIA
                 item_incidencia = incidencias.filter(
                     id_bien = item['id_bien'],
@@ -518,59 +550,71 @@ class ActualizarMortalidad(generics.UpdateAPIView):
             
             if items_cambios_actualizar:
                 for item in items_cambios_actualizar:
-                    item_actual = items_mortalidad_actual.filter(id_item_baja_viveros=item['id_item_baja_viveros']).first()
-                    inventario_vivero = inventarios_viveros.filter(
-                        id_bien = item_actual.id_bien.id_bien,
-                        agno_lote = item_actual.agno_lote,
-                        nro_lote = item_actual.nro_lote,
-                        cod_etapa_lote = item_actual.cod_etapa_lote
-                    ).first()
-                    
-                    # DESCRIPCION Y PREVIOUS PARA LA AUDITORIA
-                    item_actual_previous = copy.copy(item_actual)
-                    descripcion = {
-                        'nombre_bien':item_actual.id_bien.nombre,
-                        'agno_lote':item_actual.agno_lote,
-                        'nro_lote':item_actual.nro_lote,
-                        'cod_etapa_lote':item_actual.cod_etapa_lote,
-                        'consec_cuaren_por_lote_etapa':item_actual.consec_cuaren_por_lote_etapa
-                    }
-                    
-                    if item['cantidad_baja'] < item_actual.cantidad_baja:
-                        cantidad_disminuida = item_actual.cantidad_baja - item['cantidad_baja']
-                        inventario_vivero.cantidad_bajas = inventario_vivero.cantidad_bajas - cantidad_disminuida if inventario_vivero.cantidad_bajas else 0
-                        if item_actual.consec_cuaren_por_lote_etapa:
-                            item_cuarentena = cuarentenas.filter(
-                                id_bien = item_actual.id_bien,
-                                agno_lote = item_actual.agno_lote,
-                                nro_lote = item_actual.nro_lote,
-                                cod_etapa_lote = item_actual.cod_etapa_lote,
-                                consec_cueren_por_lote_etapa = item_actual.consec_cuaren_por_lote_etapa
-                            ).first()
-                            
-                            inventario_vivero.cantidad_lote_cuarentena = inventario_vivero.cantidad_lote_cuarentena - cantidad_disminuida if inventario_vivero.cantidad_lote_cuarentena else 0
-                            
-                            item_cuarentena.cantidad_bajas = item_cuarentena.cantidad_bajas - cantidad_disminuida if item_cuarentena.cantidad_bajas else 0
-                            item_cuarentena.save()
-                        inventario_vivero.save()
-                    elif item['cantidad_baja'] > item_actual.cantidad_baja:
-                        cantidad_aumentada = item['cantidad_baja'] - item_actual.cantidad_baja
-                        inventario_vivero.cantidad_bajas = inventario_vivero.cantidad_bajas + cantidad_aumentada if inventario_vivero.cantidad_bajas else cantidad_aumentada
-                        if item_actual.consec_cuaren_por_lote_etapa:
-                            item_cuarentena = cuarentenas.filter(
-                                id_bien = item_actual.id_bien,
-                                agno_lote = item_actual.agno_lote,
-                                nro_lote = item_actual.nro_lote,
-                                cod_etapa_lote = item_actual.cod_etapa_lote,
-                                consec_cueren_por_lote_etapa = item_actual.consec_cuaren_por_lote_etapa
-                            ).first()
-                            
-                            saldo_disponible = UtilConservacion.get_saldo_por_levantar(item_cuarentena)
-                            if cantidad_aumentada == saldo_disponible:
-                                item_cuarentena.cuarentena_abierta = False
-                            item_cuarentena.cantidad_bajas = item_cuarentena.cantidad_bajas + cantidad_aumentada if item_cuarentena.cantidad_bajas else cantidad_aumentada
-                            item_cuarentena.save()
-                        inventario_vivero.save()
+                    if item['cod_etapa_lote'] != 'G':
+                        item_actual = items_mortalidad_actual.filter(id_item_baja_viveros=item['id_item_baja_viveros']).first()
+                        inventario_vivero = inventarios_viveros.filter(
+                            id_bien = item_actual.id_bien.id_bien,
+                            agno_lote = item_actual.agno_lote,
+                            nro_lote = item_actual.nro_lote,
+                            cod_etapa_lote = item_actual.cod_etapa_lote
+                        ).first()
+                        
+                        # DESCRIPCION Y PREVIOUS PARA LA AUDITORIA
+                        item_actual_previous = copy.copy(item_actual)
+                        descripcion = {
+                            'nombre_bien':item_actual.id_bien.nombre,
+                            'agno_lote':item_actual.agno_lote,
+                            'nro_lote':item_actual.nro_lote,
+                            'cod_etapa_lote':item_actual.cod_etapa_lote,
+                            'consec_cuaren_por_lote_etapa':item_actual.consec_cuaren_por_lote_etapa
+                        }
+                        
+                        if item['cantidad_baja'] < item_actual.cantidad_baja:
+                            cantidad_disminuida = item_actual.cantidad_baja - item['cantidad_baja']
+                            inventario_vivero.cantidad_bajas = inventario_vivero.cantidad_bajas - cantidad_disminuida if inventario_vivero.cantidad_bajas else 0
+                            if item_actual.consec_cuaren_por_lote_etapa:
+                                item_cuarentena = cuarentenas.filter(
+                                    id_bien = item_actual.id_bien,
+                                    agno_lote = item_actual.agno_lote,
+                                    nro_lote = item_actual.nro_lote,
+                                    cod_etapa_lote = item_actual.cod_etapa_lote,
+                                    consec_cueren_por_lote_etapa = item_actual.consec_cuaren_por_lote_etapa
+                                ).first()
+                                
+                                inventario_vivero.cantidad_lote_cuarentena = inventario_vivero.cantidad_lote_cuarentena - cantidad_disminuida if inventario_vivero.cantidad_lote_cuarentena else 0
+                                
+                                item_cuarentena.cantidad_bajas = item_cuarentena.cantidad_bajas - cantidad_disminuida if item_cuarentena.cantidad_bajas else 0
+                                item_cuarentena.save()
+                            inventario_vivero.save()
+                        elif item['cantidad_baja'] > item_actual.cantidad_baja:
+                            cantidad_aumentada = item['cantidad_baja'] - item_actual.cantidad_baja
+                            inventario_vivero.cantidad_bajas = inventario_vivero.cantidad_bajas + cantidad_aumentada if inventario_vivero.cantidad_bajas else cantidad_aumentada
+                            if item_actual.consec_cuaren_por_lote_etapa:
+                                item_cuarentena = cuarentenas.filter(
+                                    id_bien = item_actual.id_bien,
+                                    agno_lote = item_actual.agno_lote,
+                                    nro_lote = item_actual.nro_lote,
+                                    cod_etapa_lote = item_actual.cod_etapa_lote,
+                                    consec_cueren_por_lote_etapa = item_actual.consec_cuaren_por_lote_etapa
+                                ).first()
+                                
+                                saldo_disponible = UtilConservacion.get_saldo_por_levantar(item_cuarentena)
+                                if cantidad_aumentada == saldo_disponible:
+                                    item_cuarentena.cuarentena_abierta = False
+                                item_cuarentena.cantidad_bajas = item_cuarentena.cantidad_bajas + cantidad_aumentada if item_cuarentena.cantidad_bajas else cantidad_aumentada
+                                item_cuarentena.save()
+                            inventario_vivero.save()
+                    else:
+                        siembra = siembras.filter(
+                            id_bien_sembrado = item['id_bien'],
+                            agno_lote = item['agno_lote'],
+                            nro_lote = item['nro_lote']
+                        ).first()
+                        inventario_vivero.cantidad_bajas = item['cantidad_baja']
+                        inventario_vivero.siembra_lote_cerrada = True
+                        if siembra:
+                            siembra.siembra_abierta = False
+                            siembra.save()
                     
                     serializer_detalle = ActualizarItemsMortalidadSerializer(item_actual, data=item)
                     serializer_detalle.is_valid(raise_exception=True)
@@ -613,7 +657,20 @@ class ActualizarMortalidad(generics.UpdateAPIView):
                         ).first()
                         item_cuarentena.cantidad_bajas = item_cuarentena.cantidad_bajas - item.cantidad_baja if item_cuarentena.cantidad_bajas else 0
                         item_cuarentena.save()
+                    
+                    if item.cod_etapa_lote == 'G':
+                        siembra = siembras.filter(
+                            id_bien_sembrado = item.id_bien,
+                            agno_lote = item.agno_lote,
+                            nro_lote = item.nro_lote
+                        ).first()
+                        inventario_vivero.siembra_lote_cerrada = False
+                        if siembra:
+                            siembra.siembra_abierta = True
+                            siembra.save()
+                    
                     inventario_vivero.save()
+                    
                 items_mortalidad_eliminar.delete()
             
             response_serializer_create = []
@@ -742,6 +799,19 @@ class AnularMortalidad(generics.UpdateAPIView):
                     ).first()
                     item_cuarentena.cantidad_bajas = item_cuarentena.cantidad_bajas - item.cantidad_baja if item_cuarentena.cantidad_bajas else 0
                     item_cuarentena.save()
+                    
+                if item.cod_etapa_lote == 'G':
+                    siembra = Siembras.objects.filter(
+                        id_bien_sembrado = item.id_bien,
+                        agno_lote = item.agno_lote,
+                        nro_lote = item.nro_lote,
+                        id_vivero = baja.id_vivero
+                    ).first()
+                    inventario_vivero.siembra_lote_cerrada = False
+                    if siembra:
+                        siembra.siembra_abierta = True
+                        siembra.save()
+                
                 inventario_vivero.save()
             
             # ELIMINAR REGISTROS DE ITEMS

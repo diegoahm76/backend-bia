@@ -1,5 +1,7 @@
 from conservacion.models.mezclas_models import Mezclas
 from django.db import models
+from django.db.models import Q
+from django.db.models.constraints import UniqueConstraint
 from conservacion.choices.cod_etapa_lote import cod_etapa_lote_CHOICES
 from conservacion.models import (
     Vivero,
@@ -43,4 +45,10 @@ class InventarioViveros(models.Model):
         db_table = 'T156InventarioViveros'
         verbose_name = 'Inventario Vivero'
         verbose_name_plural = 'Inventario Viveros'
-        unique_together = ['id_vivero', 'id_bien', 'agno_lote', 'nro_lote', 'cod_etapa_lote', 'id_mezcla']
+        constraints = [
+            UniqueConstraint(fields=['id_vivero', 'id_bien', 'agno_lote', 'nro_lote', 'cod_etapa_lote', 'id_mezcla'],
+                             name='unique_with_optional'),
+            UniqueConstraint(fields=['id_vivero', 'id_bien', 'agno_lote', 'nro_lote', 'cod_etapa_lote'],
+                             condition=Q(id_mezcla=None),
+                             name='unique_without_optional'),
+        ]

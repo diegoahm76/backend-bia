@@ -167,7 +167,10 @@ class ConfirmarDistribucion(generics.UpdateAPIView):
                             nro_lote = 1
                             if vivero_destino:
                                 nro_lote = vivero_destino.nro_lote + 1 if vivero_destino.nro_lote else 1
-                                
+                            
+                            if item["cod_etapa_lote_al_ingresar"] == 'G':
+                                return Response({'success':False, 'detail':'No puede distribuir un material vegetal no semilla a germinación'}, status=status.HTTP_400_BAD_REQUEST)
+                            
                             InventarioViveros.objects.create(
                                 id_vivero = vivero,
                                 id_bien = bien,

@@ -173,16 +173,23 @@ class LoginSerializer(serializers.ModelSerializer):
         email = attrs.get('email', '')
         password = attrs.get('password', '')
         user= auth.authenticate(email=email, password=password)
+        tokens = None
 
         if not user:
             raise AuthenticationFailed('Credenciales invalidas intenta de nuevo')
         
         if not user.is_active:
             raise AuthenticationFailed('Cuenta no verificada')
+        
         if user.is_blocked:
             raise AuthenticationFailed('Tu cuenta ha sido bloqueada, contacta un Admin')
+        
+        if user.tipo_usuario == 'E':
+            tokens = Util.change_token_expire_externo(user)
+        else:
+            tokens = user.tokens()
 
-        return {'email': user.email, 'nombre_de_usuario': user.nombre_de_usuario, 'tokens': user.tokens(), 'is_superuser': user.is_superuser, 'id_usuario': user.id_usuario}
+        return {'email': user.email, 'nombre_de_usuario': user.nombre_de_usuario, 'tokens': tokens, 'is_superuser': user.is_superuser, 'id_usuario': user.id_usuario}
  
 class LoginPostSerializers(serializers.ModelSerializer):
     class Meta:

@@ -1,3 +1,5 @@
+from seguridad.models import Personas
+from conservacion.models.viveros_models import HistoricoResponsableVivero
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from conservacion.models.viveros_models import (
@@ -28,7 +30,7 @@ class CerrarViveroSerializer(serializers.ModelSerializer):
             'justificacion_cierre': {'required': True},
         }
         
-class ViveroSerializer(serializers.ModelSerializer):
+class ViveroSerializer(serializers.ModelSerializer):    
     class Meta:
         model = Vivero
         fields = '__all__'
@@ -118,6 +120,7 @@ class ViveroPutSerializer(serializers.ModelSerializer):
             'cod_municipio': {'read_only': True}
         }
 
+
 class TipificacionBienViveroSerializer(serializers.ModelSerializer):
     cod_tipo_elemento_vivero = serializers.ChoiceField(choices=cod_tipo_elemento_vivero_CHOICES)
     
@@ -127,10 +130,51 @@ class TipificacionBienViveroSerializer(serializers.ModelSerializer):
         if data['cod_tipo_elemento_vivero'] != 'MV':
             data['es_semilla_vivero'] = False
         return data
-            
     class Meta:
         model = CatalogoBienes
         fields = ['nombre_cientifico', 'cod_tipo_elemento_vivero', 'es_semilla_vivero']
         extra_kwargs = {
             'cod_tipo_elemento_vivero': {'required': True}
-        }
+        }   
+        
+        
+class HistorialViveristaByViveroSerializers(serializers.ModelSerializer):
+    nombre = serializers.SerializerMethodField()
+    tipo_documento = serializers.ReadOnlyField(source='id_persona.tipo_documento.cod_tipo_documento',default=None)
+    numero_documento = serializers.ReadOnlyField(source='id_persona.numero_documento',default=None)
+
+    def get_nombre(slef,obj):
+        
+        nombre = obj.id_persona.primer_nombre + obj.id_persona.primer_apellido
+        
+        return nombre
+    class Meta:
+        
+        fields = ['id_histo_responsable_vivero','nombre','tipo_documento','numero_documento','fecha_fin_periodo']
+        model = HistoricoResponsableVivero
+        
+
+class ViveristaActualSerializers(serializers.ModelSerializer):
+    nombre = serializers.SerializerMethodField()
+    tipo_documento = serializers.ReadOnlyField(source='id_viverista_actual.tipo_documento.cod_tipo_documento',default=None)
+    numero_documento = serializers.ReadOnlyField(source='id_viverista_actual.numero_documento',default=None)
+
+    def get_nombre(slef,obj):
+        
+        nombre = None
+        
+        if obj.id_viverista_actual:
+            nombre = obj.id_viverista_actual.primer_nombre + obj.id_viverista_actual.primer_apellido
+        
+        return nombre
+    class Meta:
+        
+        fields = ['id_vivero','id_viverista_actual','nombre','tipo_documento','numero_documento','fecha_inicio_viverista_actual']
+        model = Vivero
+        
+class PersonasAsignacionViveroSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        fields = '__all__'
+        model = Personas
+    

@@ -160,5 +160,23 @@
           "id_rol": 2,
           "id_permiso_modulo": 10
         }
+      },
+      {
+        "model": "seguridad.PermisosModuloRol",
+        "pk": 19,
+        "fields": {
+          "id_permiso_modulo_rol":19,
+          "id_rol": 2,
+          "id_permiso_modulo": 219
+        }
+      },
+      {
+        "model": "seguridad.PermisosModuloRol",
+        "pk": 20,
+        "fields": {
+          "id_permiso_modulo_rol":20,
+          "id_rol": 2,
+          "id_permiso_modulo": 220
+        }
       }
   ]

@@ -3,6 +3,7 @@ from seguridad.models import UsuariosRol, PermisosModuloRol
 from django.db.models import Q
 
 class PermisoCrearOrganigramas(BasePermission):
+    message = 'No tiene permiso para crear organigramas'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -15,6 +16,7 @@ class PermisoCrearOrganigramas(BasePermission):
         return False
 
 class PermisoActualizarOrganigramas(BasePermission):
+    message = 'No tiene permiso para actualizar organigramas'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -27,6 +29,7 @@ class PermisoActualizarOrganigramas(BasePermission):
         return False
 
 class PermisoConsultarOrganigramas(BasePermission):
+    message = 'No tiene permiso para consultar organigramas'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -39,6 +42,7 @@ class PermisoConsultarOrganigramas(BasePermission):
         return False
 
 class PermisoCambiarOrganigrama(BasePermission):
+    message = 'No tiene permiso para cambiar un organigrama actual'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -51,6 +55,7 @@ class PermisoCambiarOrganigrama(BasePermission):
         return False
 
 class PermisoConsultarCambioOrg(BasePermission):
+    message = 'No tiene permiso para consultar el cambio de un organigrama actual'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -63,6 +68,7 @@ class PermisoConsultarCambioOrg(BasePermission):
         return False
 
 class PermisoCrearCargos(BasePermission):
+    message = 'No tiene permiso para crear cargos'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -75,6 +81,7 @@ class PermisoCrearCargos(BasePermission):
         return False
 
 class PermisoActualizarCargos(BasePermission):
+    message = 'No tiene permiso para actualizar cargos'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -87,6 +94,7 @@ class PermisoActualizarCargos(BasePermission):
         return False
 
 class PermisoConsultarCargos(BasePermission):
+    message = 'No tiene permiso para consultar cargos'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -99,6 +107,7 @@ class PermisoConsultarCargos(BasePermission):
         return False
 
 class PermisoBorrarCargos(BasePermission):
+    message = 'No tiene permiso para borrar cargos'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -111,6 +120,7 @@ class PermisoBorrarCargos(BasePermission):
         return False
 
 class PermisoCrearCCD(BasePermission):
+    message = 'No tiene permiso para crear un CCD'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -123,6 +133,7 @@ class PermisoCrearCCD(BasePermission):
         return False
 
 class PermisoActualizarCCD(BasePermission):
+    message = 'No tiene permiso para actualizar un CCD'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -135,6 +146,7 @@ class PermisoActualizarCCD(BasePermission):
         return False
 
 class PermisoConsultarCCD(BasePermission):
+    message = 'No tiene permiso para consultar un CCD'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -147,6 +159,7 @@ class PermisoConsultarCCD(BasePermission):
         return False
 
 class PermisoCambioCCD(BasePermission):
+    message = 'No tiene permiso para cambiar un CCD actual'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -159,6 +172,7 @@ class PermisoCambioCCD(BasePermission):
         return False
 
 class PermisoConsultarCambioCCD(BasePermission):
+    message = 'No tiene permiso para consultar el cambio de un CCD actual'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -171,6 +185,7 @@ class PermisoConsultarCambioCCD(BasePermission):
         return False
 
 class PermisoCrearTRD(BasePermission):
+    message = 'No tiene permiso para crear una TRD'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -183,6 +198,7 @@ class PermisoCrearTRD(BasePermission):
         return False
 
 class PermisoActualizarTRD(BasePermission):
+    message = 'No tiene permiso para actualizar una TRD'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -195,6 +211,7 @@ class PermisoActualizarTRD(BasePermission):
         return False
 
 class PermisoConsultarTRD(BasePermission):
+    message = 'No tiene permiso para consultar una TRD'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -207,6 +224,7 @@ class PermisoConsultarTRD(BasePermission):
         return False
 
 class PermisoCambioTRD(BasePermission):
+    message = 'No tiene permiso para cambiar una TRD actual'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -219,6 +237,7 @@ class PermisoCambioTRD(BasePermission):
         return False
 
 class PermisoConsultarCambioTRD(BasePermission):
+    message = 'No tiene permiso para consultar el cambio de una TRD actual'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -231,6 +250,7 @@ class PermisoConsultarCambioTRD(BasePermission):
         return False
 
 class PermisoCrearTCA(BasePermission):
+    message = 'No tiene permiso para crear una TCA'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -243,6 +263,7 @@ class PermisoCrearTCA(BasePermission):
         return False
 
 class PermisoActualizarTCA(BasePermission):
+    message = 'No tiene permiso para actualizar una TCA'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -255,6 +276,7 @@ class PermisoActualizarTCA(BasePermission):
         return False
 
 class PermisoConsultarTCA(BasePermission):
+    message = 'No tiene permiso para consultar una TCA'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -267,6 +289,7 @@ class PermisoConsultarTCA(BasePermission):
         return False
 
 class PermisoCambioTCA(BasePermission):
+    message = 'No tiene permiso para cambiar una TCA actual'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -279,6 +302,7 @@ class PermisoCambioTCA(BasePermission):
         return False
 
 class PermisoConsultarCambioTCA(BasePermission):
+    message = 'No tiene permiso para consultar el cambio de una TCA actual'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -289,3 +313,69 @@ class PermisoConsultarCambioTCA(BasePermission):
                 return True
 
         return False
+
+class PermisoCreaciónPersonasDesdeVentanilla(BasePermission):
+    message = 'No tiene permiso para crear personas que van a solicitar desde la ventanilla algún servicio a la entidad'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=223))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoConsultarPersonasDesdeVentanilla(BasePermission):
+    message = 'No tiene permiso para consultar personas que van a solicitar desde la ventanilla algún servicio a la entidad'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=224))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoActualizarPersonasDesdeVentanilla(BasePermission):
+    message = 'No tiene permiso para actualizar personas que van a solicitar desde la ventanilla algún servicio a la entidad'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=225))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoConsultarVinculaciónColaboradores(BasePermission):
+    message = 'No tiene permiso para consultar vinculación o desvinculación de personas como colaboradores de la entidad en el sistema'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=226))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoActualizarVinculaciónColaboradores(BasePermission):
+    message = 'No tiene permiso para actualizar vinculación o desvinculación de personas como colaboradores de la entidad en el sistema'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=227))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+

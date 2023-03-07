@@ -37,7 +37,8 @@
             "cod_pais_nacionalidad_empresa": null,
             "acepta_notificacion_sms": true,
             "acepta_notificacion_email": true,
-            "acepta_tratamiento_datos": true
+            "acepta_tratamiento_datos": true,
+            "fecha_creacion": "2023-03-06"
         }
     },
     {
@@ -78,7 +79,8 @@
             "cod_pais_nacionalidad_empresa": null,
             "acepta_notificacion_sms": true,
             "acepta_notificacion_email": true,
-            "acepta_tratamiento_datos": true
+            "acepta_tratamiento_datos": true,
+            "fecha_creacion": "2023-03-06"
         }
     },
     {
@@ -119,7 +121,8 @@
             "cod_pais_nacionalidad_empresa": null,
             "acepta_notificacion_sms": true,
             "acepta_notificacion_email": true,
-            "acepta_tratamiento_datos": true
+            "acepta_tratamiento_datos": true,
+            "fecha_creacion": "2023-03-06"
         }
     },
     {
@@ -160,7 +163,8 @@
             "cod_pais_nacionalidad_empresa": null,
             "acepta_notificacion_sms": true,
             "acepta_notificacion_email": true,
-            "acepta_tratamiento_datos": true
+            "acepta_tratamiento_datos": true,
+            "fecha_creacion": "2023-03-06"
         }
     },
     {
@@ -201,7 +205,8 @@
             "cod_pais_nacionalidad_empresa": null,
             "acepta_notificacion_sms": true,
             "acepta_notificacion_email": true,
-            "acepta_tratamiento_datos": true
+            "acepta_tratamiento_datos": true,
+            "fecha_creacion": "2023-03-06"
         }
     },
     {
@@ -242,7 +247,8 @@
             "cod_pais_nacionalidad_empresa": null,
             "acepta_notificacion_sms": true,
             "acepta_notificacion_email": true,
-            "acepta_tratamiento_datos": true
+            "acepta_tratamiento_datos": true,
+            "fecha_creacion": "2023-03-06"
         }
     },
     {

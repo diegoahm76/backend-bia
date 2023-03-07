@@ -79,3 +79,24 @@ class HistorialCuarentenaViveros(models.Model):
         db_table = 'T152HistorialCuarentenaViveros'
         verbose_name = 'Historial cuarentena viveros'
         verbose_name_plural = 'Historial cuarentena viveros'
+
+
+class HistoricoResponsableVivero(models.Model):
+    
+    id_histo_responsable_vivero = models.AutoField(primary_key=True,editable=False,db_column='T177IdHistoResponsable_Vivero')
+    id_vivero = models.ForeignKey(Vivero,on_delete=models.CASCADE,db_column='T177Id_Vivero')
+    id_persona = models.ForeignKey(Personas,on_delete=models.CASCADE,db_column='T177Id_Persona',related_name='id_persona_historico_responsable')
+    consec_asignacion = models.IntegerField(db_column='T177consecAsignacion')
+    fecha_inicio_periodo = models.DateTimeField(db_column='T177fechaInicioPeriodo')
+    fecha_fin_periodo = models.DateTimeField(db_column='T177fechaFinPeriodo')
+    observaciones = models.CharField(max_length=255,db_column='T177observaciones')
+    id_persona_cambia = models.ForeignKey(Personas,on_delete=models.CASCADE,db_column='T177Id_PersonaCambia',related_name='id_persona_cambia_historico_responsable')
+    
+    def __str__(self):
+        return str(self.id_histo_responsable_vivero)
+    
+    class Meta:
+        db_table = 'T177HistoricoResponsable_Vivero'
+        verbose_name = 'Historico responsable vivero'
+        verbose_name_plural =' Historicos responsable vivero'
+        unique_together = ['id_vivero', 'id_persona','consec_asignacion']
