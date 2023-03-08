@@ -11,5 +11,7 @@ urlpatterns = [
     path('get-bien-by-codigo/<str:id_vivero>/<str:codigito_bien>/', views.GetBienByCodigoViveroView.as_view(), name='get-bien-by-codigo-solicitud-vivero'),
     path('get-bien-by-codigo/<str:id_vivero>/', views.GetBienByFiltrosView.as_view(), name='get-bien-by-filters'),
     path('get-listar-solicitudes/', views.GetSolicitudesView.as_view(), name='get-listar-solicitudes'),
-    path('get-listar-solicitudes-id/<str:id_solicitud>/', views.GetListarSolicitudIDView.as_view(), name='get-listar-solicitudes-id'),
+    path('get-listar-solicitudes-id/<str:id_solicitud>/', views.GetItemsSolicitudView.as_view(), name='get-listar-solicitudes-id'),
+    path('update-solicitud/<str:id_solicitud>/', views.UpdateSolicitudesView.as_view(), name='update-solicitud'),
+    path('anular-solicitud/<str:solicitudsita>/', views.AnulacionSolicitudesView.as_view(), name='anulacion-solicitud'),
 ]

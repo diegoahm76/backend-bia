@@ -30,7 +30,10 @@ from conservacion.serializers.solicitudes_serializers import (
     DeleteItemsSolicitudSerializer,
     GetSolicitudesViverosSerializer,
     ItemSolicitudViverosSerializer,
-    ListarSolicitudIDSerializer
+    ListarSolicitudIDSerializer,
+    AnulacionSolicitudesSerializer,
+    UpdateSolicitudesSerializer,
+    CreateItemsSolicitudSerializer
 )
 from conservacion.models.viveros_models import (
     Vivero
@@ -216,17 +219,80 @@ class CreateSolicitudViverosView(generics.CreateAPIView):
         if data_solicitud['id_unidad_org_del_responsable'] not in linea_jerarquica_id:
             return Response({'success': False, 'detail': 'La unidad del responsable debe hacer parte de su linea jerarquica superior o igual'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # VALIDACIÓN QUE EL ID BIEN ENVIADO CUMPLA CON LAS CONDICIONES DADAS POR EL EQUIPO DE MODELADO
+        id_bienes = [bien['codigo_bien'] for bien in data_items_solicitud]
+        id_bienes_instance = CatalogoBienes.objects.filter(codigo_bien__in=id_bienes)
+        if len(set(id_bienes)) != len(id_bienes_instance):
+            return Response({'success': False, 'detail': 'Todos los bienes seleccionados deben existir'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        #VALIDACIÓN QUE EL NUMERO DE SOLICITUD SEA ÚNICO POR ITEM
+        nro_posicion_list = [bien['nro_posicion'] for bien in data_items_solicitud]
+        if len(nro_posicion_list) != len(set(nro_posicion_list)):
+            return Response({'success': False, 'detail': 'El numero de posición debe ser único para todos los items solicitados'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        for bien in data_items_solicitud:
+            bien = InventarioViveros.objects.filter(id_bien__codigo_bien=bien['codigo_bien'], id_vivero=vivero.id_vivero)
+            if not bien:
+                return Response({'success': False, 'detail': 'El bien seleccionado no se encuentra relacionado al vivero seleccionado'}, status=status.HTTP_403_FORBIDDEN)
+             
+            if bien[0].id_bien.solicitable_vivero != True:
+                return Response({'success': False, 'detail': 'El bien seleccionado no es solicitable por vivero'}, status=status.HTTP_403_FORBIDDEN)
+            
+            if bien[0].id_bien.cod_tipo_bien != 'C':
+                return Response({'success': False, 'detail': 'El bien seleccionado no es consumible'}, status=status.HTTP_403_FORBIDDEN)
+                
+            if bien[0].id_bien.cod_tipo_elemento_vivero == 'HE':
+                return Response({'success': False, 'detail': 'El bien seleccionado debe ser de tipo insumo o material vegetal'}, status=status.HTTP_403_FORBIDDEN)
+
+            if bien[0].id_bien.cod_tipo_elemento_vivero == 'MV' and bien[0].id_bien.es_semilla_vivero == True:
+                return Response({'success': False, 'detail': 'El bien seleccionado debe ser material vegetal que no sea semilla'}, status=status.HTTP_403_FORBIDDEN)
+
+            if bien[0].id_bien.cod_tipo_elemento_vivero == 'MV':
+
+                #VALIDACIÓN QUE LOS BIENES ESTÉN EN ALGUN LOTE ETAPA DE DISTRIBUCIÓN O PRODUCCIÓN
+                bien_in_inventario_no_germinacion = []
+                for biensito in bien:
+                    if biensito.cod_etapa_lote != 'G':
+                        bien_in_inventario_no_germinacion.append(biensito)
+
+                if not bien_in_inventario_no_germinacion:
+                    return Response({'success': False, 'detail': 'El bien seleccionado no tiene lotes que cumplan las condiciones para ser solicitado'}, status=status.HTTP_403_FORBIDDEN) 
+
+                #VALIDACIÓN QUE EL BIEN EN ALGÚN LOTE TENGA SALDO DISPONIBLE
+                saldo_disponible = False
+                for bien in bien_in_inventario_no_germinacion:
+                    bien.id_bien.saldo_disponible = UtilConservacion.get_saldo_disponible_solicitud_viveros(bien)
+                    if bien.id_bien.saldo_disponible > 0:
+                        saldo_disponible = True
+                        pass
+                
+                if saldo_disponible == False:
+                    return Response({'success': False, 'detail': 'El bien seleccionado no tiene ningun saldo disponible en viveros'}, status=status.HTTP_403_FORBIDDEN)
+        
+            elif bien[0].id_bien.cod_tipo_elemento_vivero == 'IN':
+
+                #VALIDACIÓN QUE EL BIEN TENGA SALDO DISPONIBLE
+                bien_in_inventario = bien.first()
+                bien = bien_in_inventario.id_bien
+                bien.saldo_disponible = UtilConservacion.get_saldo_disponible_solicitud_viveros(bien_in_inventario)    
+                if not bien.saldo_disponible > 0:
+                    return Response({'success': False, 'detail': f'El bien {bien.nombre} de tipo insumo no tiene cantidades disponibles para solicitar'}, status=status.HTTP_403_FORBIDDEN)
+
         serializer = self.serializer_class(data=data_solicitud, many=False)
         serializer.is_valid(raise_exception=True)
         solicitud_maestro = serializer.save()
 
         for item in data_items_solicitud:
             item['id_solicitud_viveros'] = solicitud_maestro.id_solicitud_vivero
-
+        
+        serializador_items = CreateItemsSolicitudSerializer(data=data_items_solicitud, many=True)
+        serializador_items.is_valid(raise_exception=True)
+        items_guardados = serializador_items.save()
+        
         # AUDITORIA SOLICITUDES A VIVEROS
         valores_creados_detalles = []
-        for bien in data_items_solicitud:
-            valores_creados_detalles.append({'':''})
+        for bien in items_guardados:
+            valores_creados_detalles.append({'nombre_bien': bien.id_bien.nombre})
 
         descripcion = {"nombre_bien_sembrado": str(solicitud_maestro.nro_solicitud)}
         direccion=Util.get_client_ip(request)
@@ -241,7 +307,7 @@ class CreateSolicitudViverosView(generics.CreateAPIView):
         }
         Util.save_auditoria_maestro_detalle(auditoria_data)
 
-        return Response({'success': True, 'detail': 'Creación de solicitud exitosa', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        return Response({'success': True, 'detail': 'Creación de solicitud exitosa', 'data_maestro': serializer.data, 'data_items': serializador_items.data}, status=status.HTTP_201_CREATED)
     
 class GetBienByCodigoViveroView(generics.ListAPIView):
     serializer_class = GetBienByCodigoViveroSerializer
@@ -339,12 +405,16 @@ class GetBienByFiltrosView(generics.ListAPIView):
             bienes_filtrados = bienes_por_consumir.filter(**filter)
 
             #ASIGNACIÓN DE INFORMACIÓN SI EL TIPO DE BIEN ES DE TIPO INSUMO
+            bienes_con_cantidades = []
             for bien in bienes_filtrados:
                 bien_in_inventario = InventarioViveros.objects.filter(id_bien=bien.id_bien, id_vivero=id_vivero).first()
                 if bien_in_inventario:
                     bien.saldo_disponible = UtilConservacion.get_saldo_disponible_solicitud_viveros(bien_in_inventario)
+                    bien.cod_tipo_elemento_vivero = 'Insumo'
+                    if bien.saldo_disponible > 0:
+                        bienes_con_cantidades.append(bien)
 
-            serializer = self.serializer_class(bienes_filtrados, many=True)
+            serializer = self.serializer_class(bienes_con_cantidades, many=True)
             outputList = serializer.data
 
         else:
@@ -409,13 +479,13 @@ class GetBienByFiltrosView(generics.ListAPIView):
                         cantidad += solicitud.cantidad
                 
                 bien['saldo_total_apartado'] = cantidad
-
+                bien['cod_tipo_elemento_vivero'] = 'Material Vegetal'
                 bien['saldo_total_produccion'] = bien.get('saldo_total_produccion') if bien.get('saldo_total_produccion') else 0
                 bien['saldo_total_distribucion'] = bien.get('saldo_total_distribucion') if bien.get('saldo_total_distribucion') else 0
 
         return Response({'success': False, 'detail': 'Busqueda exitosa', 'data': outputList})
 
-# LISTAR SOLICITUDES
+
 class GetSolicitudesView(generics.ListAPIView):
     serializer_class = GetSolicitudesViverosSerializer
     queryset = SolicitudesViveros.objects.all()
@@ -426,21 +496,130 @@ class GetSolicitudesView(generics.ListAPIView):
         serializer = self.serializer_class(solicitudes, many=True)
         return Response({'success': True, 'detail': 'Obtenido exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
 
-# RECIBE ID SOLICITUD Y MUESTRA LOS ITEMS DE ESA SOLICITUD 
-class GetListarSolicitudIDView(generics.ListAPIView):
+
+class GetItemsSolicitudView(generics.ListAPIView):
     serializer_class = ListarSolicitudIDSerializer
     queryset = ItemSolicitudViveros.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, id_solicitud):
+        # VALIDACIÓN QUE LA SOLICITUD SELECCIONADA EXISTA
         solicitud = SolicitudesViveros.objects.filter(id_solicitud_vivero=id_solicitud).first()
         if not solicitud:
             return Response({'success':False, 'detail':'La solicitud seleccionada no existe'}, status=status.HTTP_404_NOT_FOUND)
+        #VALIDACIÓN QUE LA SOLICITUD SELECCIONADA NO ESTÉ ANULADA
         if solicitud.solicitud_anulada_solicitante==True:
             return Response({'success':False, 'detail':'La solicitud seleccionada se encuentra anulada'}, status=status.HTTP_400_BAD_REQUEST)    
-        solicitudid = self.queryset.all().filter(id_solicitud=id_solicitud) 
+        
+        #BUSCAR LOS ITEMS DE ESA SOLICITUD
+        solicitudid = self.queryset.all().filter(id_solicitud_viveros=id_solicitud) 
     
         serializador = self.serializer_class (solicitudid, many=True)
         return Response({'sucess':True, 'detail':'Busqueda exitosa','data': serializador.data}, status=status.HTTP_200_OK)
+
+class UpdateSolicitudesView(generics.UpdateAPIView):
+    serializer_class = UpdateSolicitudesSerializer
+    queryset = SolicitudesViveros.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, id_solicitud):
+        data_solicitud = json.loads(request.data['data_solicitud'])
+        data_solicitud['ruta_archivo_info_tecnico'] = request.FILES.get('ruta_archivo_info_tecnico')
+
+        #VALIDACIÓN QUE LA PERSONA QUE HACE LA SOLICITUD TENGA UNIDAD ORGANIZACIONAL Y SEA USUARIO INTERNO
+        usuario_logeado = request.user
+        persona_logeada = request.user.persona
+        
+        if not persona_logeada.id_unidad_organizacional_actual:
+            return Response({'success': False, 'detail': 'La persona que realiza la busqueda debe estar asociada a una unidad organizacional'}, status=status.HTTP_400_BAD_REQUEST)
+        if usuario_logeado.tipo_usuario != "I":
+            return Response({'success': False, 'detail': 'La persona que realiza la busqueda debe ser usuario interno'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # VALIDACIÓN QUE LA SOLICITUD SELECCIONADA EXISTA
+        solicitud_act = SolicitudesViveros.objects.filter(id_solicitud_vivero=id_solicitud).first()
+        if not solicitud_act:
+            return Response({'success':False, 'detail':'La solicitud seleccionada no existe'}, status=status.HTTP_400_BAD_REQUEST) 
+        solicitud_copy = copy.copy(solicitud_act)
+
+        # VALIDACIÓN QUE LA PERSONA QUE ACTUALIZA ES LA MISMA QUE CREÓ LA SOLICITUD
+        if solicitud_act.id_persona_solicita.id_persona != persona_logeada.id_persona:
+            return Response({'success':False, 'detail':'Solo la persona que realizó el registro de solicitud puede realizar actualizaciones'}, status=status.HTTP_403_FORBIDDEN) 
+        
+        # VALIDACIÓN QUE LA ACTUALIZACIÓN NO SE HAGA EN UN TIEMPO SUPERIOR A DOS DIAS
+        if  datetime.now() > (solicitud_act.fecha_solicitud + timedelta(hours=48)):
+            return Response({'success':False, 'detail':'No se pueden realizar actualizaciones en solicitudes que tienen más de 2 días de haber sido creadas'}, status=status.HTTP_403_FORBIDDEN) 
+        
+        # VALIDACIÓN ESTADO DE LA APROBACIÓN DEL RESPONSABLE DE LA UNIDAD
+        if solicitud_act.revisada_responsable != False:
+            return Response({'success':False, 'detail':'No se pueden realizar actualizaciones en solicitudes que ya fueron aprobadas o rechazadas por el responsable de la unidad'}, status=status.HTTP_403_FORBIDDEN) 
+        
+        # VALIDACIÓN QUE EL FUNCIONARIO ENVIADO EXISTA
+        persona_instance = Personas.objects.filter(id_persona=data_solicitud['id_funcionario_responsable_und_destino']).first()
+        if not persona_instance:
+            return Response({'success':False, 'detail':'El funcionario no existe'}, status=status.HTTP_400_BAD_REQUEST) 
+           
+        # VALIDACIÓN DE LINEA JERARQUICA SUPERIOR O IGUAL
+        linea_jerarquica = UtilConservacion.get_linea_jerarquica_superior(persona_logeada)
+        lista_unidades_permitidas = [unidad.id_unidad_organizacional for unidad in linea_jerarquica]
+
+        if persona_instance.id_unidad_organizacional_actual.id_unidad_organizacional not in lista_unidades_permitidas:
+            return Response({'success': False, 'detail': 'No se puede seleccionar una persona que no esté al mismo nivel o superior en la linea jerarquica'}, status=status.HTTP_403_FORBIDDEN)
+
+        # VALIDACIÓN QUE LA FECHA SELECCIONADA SEA SUPERIOR A LA EXISTENTE
+        fecha_strp = datetime.strptime(data_solicitud['fecha_retiro_material'], '%Y-%m-%d')
+        if solicitud_act.fecha_solicitud <= fecha_strp:
+            return Response({'success': False, 'detail': 'La fecha seleccionada no es superior a la existente'}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = self.serializer_class(solicitud_act, data=data_solicitud, many=False)
+        serializer.is_valid(raise_exception=True)
+        serializador = serializer.save()
+
+        instancia_post_save = SolicitudesViveros.objects.filter(id_solicitud_vivero=serializador.id_solicitud_vivero).first()
+        serializador_post_save = GetSolicitudesViverosSerializer(instancia_post_save, many=False)
+
+       # AUDITORIA ACTUALIZAR SOLICITUD
+        usuario = request.user.id_usuario
+        direccion = Util.get_client_ip(request)
+        descripcion = {"nro_solicitud": str(instancia_post_save.nro_solicitud)}
+        valores_actualizados = {'current': serializador, 'previous': solicitud_copy}
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 60,
+            "cod_permiso": "AC",
+            "subsistema": 'CONS',
+            "dirip": direccion,
+            "descripcion": descripcion, 
+            "valores_actualizados": valores_actualizados
+        }
+        Util.save_auditoria(auditoria_data)
+
+        return Response({'success':True, 'detail':'Actualización exitosa', 'data': serializador_post_save.data}, status=status.HTTP_201_CREATED) 
+
+
+class AnulacionSolicitudesView(generics.RetrieveUpdateAPIView):
+    serializer_class = AnulacionSolicitudesSerializer
+    queryset = SolicitudesViveros.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, solicitudsita):   
+        #VALIDACIÓN QUE LA SOLICITUD SELECCIONADA EXISTA            
+        solicitud_anular = SolicitudesViveros.objects.filter(id_solicitud_vivero=solicitudsita).first()
+        if not solicitud_anular.solicitud_abierta == True and not solicitud_anular.gestionada_viveros == False:
+            return Response({'success':False, 'detail':'La solicitud ya ha sido gestionada por viveros y no puede ser anulada'}, status=status.HTTP_200_OK)
+        
+        # ASIGNACIÓN DE INFORMACIÓN A SOLICITUD
+        solicitud_anular.solicitud_anulada_solicitante = True
+        solicitud_anular.justificacion_anulacion_solicitante = request.data['justificacion']
+        solicitud_anular.fecha_anulacion_solicitante = datetime.now()
+        solicitud_anular.solicitud_abierta = False
+        solicitud_anular.save()
+
+        # ELIMINACIÓN DE ITEMS DE SOLICITUD
+        items_anulacion = ItemSolicitudViveros.objects.filter(id_solicitud_viveros=solicitud_anular)
+        items_anulacion.delete()  
+
+        return Response({'success':True, 'detail':'La solicitud ha sido anulada con éxito'}, status=status.HTTP_200_OK)             
+            
 
 class DeleteItemsSolicitudView(generics.RetrieveDestroyAPIView):
     serializer_class = DeleteItemsSolicitudSerializer

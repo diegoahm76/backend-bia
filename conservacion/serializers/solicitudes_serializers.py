@@ -116,3 +116,42 @@ class DeleteItemsSolicitudSerializer(serializers.ModelSerializer):
     class Meta:
         model = ItemSolicitudViveros
         fields = '__all__'
+
+class AnulacionSolicitudesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SolicitudesViveros
+        fields = '__all__'
+
+
+class UpdateSolicitudesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SolicitudesViveros
+        fields = (
+            'id_solicitud_vivero',
+            'motivo',
+            'observaciones',
+            'nombre_predio_destino',
+            'direccion_destino',
+            'con_municipio_destino',
+            'fecha_retiro_material',
+            'nro_info_tecnico',
+            'ruta_archivo_info_tecnico',
+            'id_funcionario_responsable_und_destino'
+        )
+
+
+class CreateItemsSolicitudSerializer(serializers.ModelSerializer):
+    cod_tipo_elemento_vivero = serializers.ReadOnlyField(source='id_bien.cod_tipo_elemento_vivero', default=None)
+    codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
+    class Meta:
+        model = ItemSolicitudViveros
+        fields = (
+            'id_item_solicitud_viveros',
+            'id_solicitud_viveros',
+            'id_bien',
+            'cantidad',
+            'observaciones',
+            'nro_posicion',
+            'cod_tipo_elemento_vivero',
+            'codigo_bien'
+        )
