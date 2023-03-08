@@ -8,9 +8,8 @@ def api_exception_handler(exc, context):
     # Now add the HTTP status code to the response.
     if response is not None:
         # Using the description's of the HTTPStatus class as error message.
-        
         error_message = ""
-        
+    
         try:
             if isinstance(response.data, dict):
                 for key, value in response.data.items():
@@ -27,7 +26,7 @@ def api_exception_handler(exc, context):
                             value[i] = 'Ya existe un registro con el valor ingresado' if 'with this nombre already exists.' in value[i] else value[i]
                             value[i] = 'El campo no debe ser nulo' if value[i] == 'This field may not be null.' else value[i]
                             value[i] = 'Debe enviar un archivo válido' if value[i] == 'The submitted data was not a file. Check the encoding type on the form.' else value[i]
-                        error_message += key + ': ' + ' '.join(value) + separator
+                        error_message += key.replace('_',' ').title() + ' : ' + ','.join(value) + separator
                     else:
                         error_message += value
             elif isinstance(response.data, list):
@@ -48,7 +47,7 @@ def api_exception_handler(exc, context):
                     if index == len(error_message_dict)-1:
                         separator = ''
                         
-                    error_message += key + ': ' + ', '.join(value) + separator
+                    error_message += key.replace('_',' ').title() + ' : ' + ','.join(value) + separator
             else:
                 error_message = response.data
         except:
