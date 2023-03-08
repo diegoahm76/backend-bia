@@ -153,9 +153,9 @@ class LoginSerializers(serializers.ModelSerializer):
 
 class LoginSerializer(serializers.ModelSerializer):
 
-    email = serializers.CharField(max_length=255, min_length=3)
+    email = serializers.CharField(max_length=255, min_length=3,read_only=True)
     password= serializers.CharField(max_length=68, min_length=6, write_only=True)
-    nombre_de_usuario = serializers.CharField(max_length=68, min_length=6, read_only=True)
+    nombre_de_usuario = serializers.CharField(max_length=68, min_length=6)
     tokens = serializers.DictField(read_only=True)
     is_superuser = serializers.BooleanField(read_only=True, default=False)
     id_usuario = serializers.IntegerField(read_only=True)
@@ -170,9 +170,9 @@ class LoginSerializer(serializers.ModelSerializer):
         fields= ['email', 'password', 'nombre_de_usuario', 'tokens', 'is_superuser', 'id_usuario', 'tipo_usuario', 'id_persona', 'tipo_persona', 'permisos', 'representante_legal']
     
     def validate(self, attrs):
-        email = attrs.get('email', '')
+        nombre_de_usuario = attrs.get('nombre_de_usuario', '')
         password = attrs.get('password', '')
-        user= auth.authenticate(email=email, password=password)
+        user= auth.authenticate(nombre_de_usuario=nombre_de_usuario, password=password)
         tokens = None
 
         if not user:
