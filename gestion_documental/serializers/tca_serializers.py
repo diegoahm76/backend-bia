@@ -99,7 +99,7 @@ class ClasifSerieSubserieUnidadTCAPutSerializer(serializers.ModelSerializer):
             'ruta_archivo_cambio': {'read_only': True}
         }
 
-class ClasifSeriesSubseriesUnidadOrgSerializer(serializers.ModelSerializer):
+class SeriesSubseriesUnidadOrgClasifSerializer(serializers.ModelSerializer):
     seccion = serializers.SerializerMethodField()
     subseccion = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
     nombre_serie = serializers.ReadOnlyField(source='id_serie_doc.nombre', default=None)
@@ -122,7 +122,7 @@ class ClasifSeriesSubseriesUnidadOrgSerializer(serializers.ModelSerializer):
             subserie.id_serie_subserie_doc = serie_subseries_instances.filter(id_sub_serie_doc=subserie.id_subserie_doc).first().id_serie_subserie_doc
             clasificacion = serie_subseries_instances.filter(id_sub_serie_doc=subserie.id_subserie_doc).first().clasif_serie_subserie_unidad_tca_set.all().first()
             if clasificacion:
-                serializer_clasificacion = ClasifSerieSubserieUnidadTCAGetSerializer(clasificacion)
+                serializer_clasificacion = ClasifExpedientesSerializer(clasificacion)
                 subserie.clasificacion = serializer_clasificacion.data
         subseries_instances = [serie_subserie.id_sub_serie_doc for serie_subserie in serie_subseries_instances if serie_subserie.clasif_serie_subserie_unidad_tca_set.all()]
         subseries = SubseriesAsignacionesSerializer(subseries_instances, many=True)
@@ -146,7 +146,7 @@ class ClasifSeriesSubseriesUnidadOrgSerializer(serializers.ModelSerializer):
         clasificacion = None
         if not subseries_instances:
             clasificaciones_instances = Clasif_Serie_Subserie_Unidad_TCA.objects.filter(id_serie_subserie_unidad=obj.id_serie_subserie_doc, id_tca=id_tca).first()
-            clasificacion = ClasifSerieSubserieUnidadTCAGetSerializer(clasificaciones_instances).data
+            clasificacion = ClasifExpedientesSerializer(clasificaciones_instances).data
         return clasificacion
     
     class Meta:
@@ -159,13 +159,109 @@ class ClasifSeriesSubseriesUnidadOrgSerializer(serializers.ModelSerializer):
                 message='La combinación serie documental y unidad organizacional debe ser única'
             )
         ]
-        
-class ClasifSerieSubserieUnidadTCAGetSerializer(serializers.ModelSerializer):
+
+class ClasifExpedientesSerializer(serializers.ModelSerializer):
+    clas_expediente = serializers.SerializerMethodField()
+    
+    def get_clas_expediente(self, obj):
+        clas_expediente = None
+        if obj.cod_clas_expediente == 'P':
+            clas_expediente = 'Público'
+        elif obj.cod_clas_expediente == 'C':
+            clas_expediente = 'Controlado'
+        elif obj.cod_clas_expediente == 'R':
+            clas_expediente = 'Rerservado'
+        return clas_expediente
+    
+    class Meta:
+        model = Clasif_Serie_Subserie_Unidad_TCA
+        fields = [
+            'id_clasif_serie_subserie_unidad_tca',
+            'cod_clas_expediente',
+            'clas_expediente',
+            'fecha_registro',
+            'justificacion_cambio',
+            'ruta_archivo_cambio'
+        ]
+
+class SeriesSubseriesUnidadOrgClasifPermisosSerializer(serializers.ModelSerializer):
+    seccion = serializers.SerializerMethodField()
+    subseccion = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
+    nombre_serie = serializers.ReadOnlyField(source='id_serie_doc.nombre', default=None)
+    codigo_serie = serializers.ReadOnlyField(source='id_serie_doc.codigo', default=None)
+    id_serie_subserie_doc = serializers.SerializerMethodField()
+    subseries = serializers.SerializerMethodField()
+    subseries_nombres = serializers.SerializerMethodField()
+    clasificacion = serializers.SerializerMethodField()
+    
+    def get_seccion(self, obj):
+        seccion = UnidadesOrganizacionales.objects.filter(id_organigrama=obj.id_unidad_organizacional.id_organigrama.id_organigrama, cod_agrupacion_documental='SEC').first()
+        if not seccion:
+            seccion = None
+        return seccion.nombre
+    
+    def get_subseries(self, obj):
+        serie_subseries_instances = SeriesSubseriesUnidadOrg.objects.filter(id_unidad_organizacional=obj.id_unidad_organizacional.id_unidad_organizacional, id_serie_doc=obj.id_serie_doc.id_serie_doc).exclude(id_sub_serie_doc=None)
+        subseries_instances = [serie_subserie.id_sub_serie_doc for serie_subserie in serie_subseries_instances]
+        for subserie in subseries_instances:
+            subserie.id_serie_subserie_doc = serie_subseries_instances.filter(id_sub_serie_doc=subserie.id_subserie_doc).first().id_serie_subserie_doc
+            clasificacion = serie_subseries_instances.filter(id_sub_serie_doc=subserie.id_subserie_doc).first().clasif_serie_subserie_unidad_tca_set.all().first()
+            if clasificacion:
+                serializer_clasificacion = ClasifCargoUnidadPermisosSerializer(clasificacion)
+                subserie.clasificacion = serializer_clasificacion.data
+        subseries_instances = [serie_subserie.id_sub_serie_doc for serie_subserie in serie_subseries_instances if serie_subserie.clasif_serie_subserie_unidad_tca_set.all()]
+        subseries_instances = [serie_subserie.id_sub_serie_doc for serie_subserie in serie_subseries_instances if serie_subserie.clasif_serie_subserie_unidad_tca_set.all().first().cargos_unidad_s_ss_undorg_tca_set.all()]
+        subseries = SubseriesAsignacionesSerializer(subseries_instances, many=True)
+        return subseries.data
+    
+    def get_subseries_nombres(self, obj):
+        subseries_instances = SeriesSubseriesUnidadOrg.objects.filter(id_unidad_organizacional=obj.id_unidad_organizacional.id_unidad_organizacional, id_serie_doc=obj.id_serie_doc.id_serie_doc).exclude(id_sub_serie_doc=None)
+        subseries_names = [subserie.id_sub_serie_doc.nombre for subserie in subseries_instances]
+        return subseries_names
+    
+    def get_id_serie_subserie_doc(self, obj):
+        subseries_instances = SeriesSubseriesUnidadOrg.objects.filter(id_unidad_organizacional=obj.id_unidad_organizacional.id_unidad_organizacional, id_serie_doc=obj.id_serie_doc.id_serie_doc).exclude(id_sub_serie_doc=None)
+        id_serie_subserie_doc = None
+        if not subseries_instances:
+            id_serie_subserie_doc = obj.id_serie_subserie_doc
+        return id_serie_subserie_doc
+    
+    def get_clasificacion(self, obj):
+        id_tca = self.context.get("id_tca")
+        subseries_instances = SeriesSubseriesUnidadOrg.objects.filter(id_unidad_organizacional=obj.id_unidad_organizacional.id_unidad_organizacional, id_serie_doc=obj.id_serie_doc.id_serie_doc).exclude(id_sub_serie_doc=None)
+        clasificacion = None
+        if not subseries_instances:
+            clasificaciones_instances = Clasif_Serie_Subserie_Unidad_TCA.objects.filter(id_serie_subserie_unidad=obj.id_serie_subserie_doc, id_tca=id_tca).first()
+            clasificacion = ClasifCargoUnidadPermisosSerializer(clasificaciones_instances).data
+        return clasificacion
+    
+    class Meta:
+        model = SeriesSubseriesUnidadOrg
+        fields = ['id_unidad_organizacional', 'seccion', 'subseccion', 'id_serie_doc', 'nombre_serie', 'codigo_serie', 'id_serie_subserie_doc', 'subseries_nombres', 'subseries', 'clasificacion']
+        validators = [
+            UniqueTogetherValidator(
+                queryset=SeriesSubseriesUnidadOrg.objects.all(),
+                fields = ['id_serie_doc', 'id_unidad_organizacional'],
+                message='La combinación serie documental y unidad organizacional debe ser única'
+            )
+        ]
+
+class ClasifCargoUnidadPermisosSerializer(ClasifExpedientesSerializer):
     id_cargo_persona = serializers.SerializerMethodField()
     nombre_cargo_persona = serializers.SerializerMethodField()
     id_unidad_org_cargo = serializers.SerializerMethodField()
     nombre_unidad_org_cargo = serializers.SerializerMethodField()
     permisos = serializers.SerializerMethodField()
+    
+    def get_clas_expediente(self, obj):
+        clas_expediente = None
+        if obj.cod_clas_expediente == 'P':
+            clas_expediente = 'Público'
+        elif obj.cod_clas_expediente == 'C':
+            clas_expediente = 'Controlado'
+        elif obj.cod_clas_expediente == 'R':
+            clas_expediente = 'Rerservado'
+        return clas_expediente
     
     def get_id_cargo_persona(self, obj):
         cargo_unidad = obj.cargos_unidad_s_ss_undorg_tca_set.all().first()
@@ -206,7 +302,7 @@ class ClasifSerieSubserieUnidadTCAGetSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Clasif_Serie_Subserie_Unidad_TCA
-        fields = '__all__'
+        fields = ClasifExpedientesSerializer.Meta.fields + ['id_cargo_persona', 'nombre_cargo_persona', 'id_unidad_org_cargo', 'nombre_unidad_org_cargo', 'permisos']
 
 class ClasifSerieSubseriUnidadTCA_activoSerializer(serializers.ModelSerializer):
     justificacion_cambio = serializers.CharField(max_length=255,min_length=1)
