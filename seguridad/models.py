@@ -152,7 +152,7 @@ class Personas(models.Model):
     email = models.EmailField(max_length=255, unique=True, db_column='T010emailNotificación')
     email_empresarial = models.EmailField(max_length=255, null=True, blank=True, db_column='T010emailEmpresarial')
     telefono_fijo_residencial = models.CharField(max_length=15, null=True, blank=True, db_column='T010telFijoResidencial')
-    telefono_celular = models.CharField(max_length=15, db_column='T010telCelularPersona')
+    telefono_celular = models.CharField(max_length=15, null=True, blank=True, db_column='T010telCelularPersona')
     telefono_empresa = models.CharField(max_length=15, null=True, blank=True, db_column='T010telEmpresa')
     cod_municipio_laboral_nal = models.CharField(max_length=5, choices=municipios_CHOICES, null=True, blank=True, db_column='T010Cod_MunicipioLaboralNal')
     cod_municipio_notificacion_nal = models.CharField(max_length=5, choices=municipios_CHOICES, null=True, blank=True, db_column='T010Cod_MunicipioNotificacionNal')
