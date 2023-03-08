@@ -563,7 +563,7 @@ class GetPersonaFiltro (generics.ListAPIView):
         else:
             return Response ({'success':True,'detail':'No se encontraron personas','data':[]},status=status.HTTP_200_OK) 
             
- 
+
 class GetPersonaByNumeroDocumento(generics.ListAPIView):
     
     serializer_class = PersonasAsignacionViveroSerializer
@@ -575,7 +575,7 @@ class GetPersonaByNumeroDocumento(generics.ListAPIView):
         tipo_documento = request.query_params.get('tipo_documento')
         
         if not numero_documento or not tipo_documento:
-            return Response ({'success':False,'detail':'Debe de seleccionar el tipo de documento'},status=status.HTTP_403_FORBIDDEN)
+            return Response ({'success':False,'detail':'Debe de seleccionar el tipo de documento y digitar el número de documento'},status=status.HTTP_403_FORBIDDEN)
 
         for key,value in request.query_params.items():
             if key in ['tipo_documento','numero_documento']:

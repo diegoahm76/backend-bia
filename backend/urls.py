@@ -40,7 +40,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', TemplateView.as_view(template_name='index.html')),
 
-    
+    #USUARIOS
     path('api/users/', include('seguridad.urls.user_urls')),
     path('api/auditorias/', include('seguridad.urls.auditoria_urls')),
     path('api/roles/', include('seguridad.urls.roles_urls')),
@@ -54,15 +54,15 @@ urlpatterns = [
     
     path('short/', include('seguridad.urls.shortener_urls')),
 
-    #Almacen
-    path('api/almacen/organigrama/', include('almacen.urls.organigrama_urls')),
+    #GESTOR DOCUMENTAL
     path('api/gestor/ccd/', include('gestion_documental.urls.ccd_urls')),
     path('api/gestor/activar/', include('gestion_documental.urls.finalizar_urls')),
-    path('api/almacen/choices/', include('almacen.urls.choices_urls')),
-    path('api/almacen/mantenimientos/', include('almacen.urls.mantenimientos_urls')),
     path('api/gestor/trd/', include('gestion_documental.urls.trd_urls')),
     path('api/gestor/tca/', include('gestion_documental.urls.tca_urls')),
     path('api/gestor/choices/', include('gestion_documental.urls.choices_urls')),
+    path('api/gestor/ventanilla/',include('gestion_documental.urls.ventanilla_urls')),
+    
+    #ALMACEN
     path('api/almacen/hoja-de-vida/', include('almacen.urls.hoja_de_vida_urls')),
     path('api/almacen/bienes/', include('almacen.urls.bienes_urls')),
     path('api/almacen/solicitudes/', include('almacen.urls.solicitudes_urls')),
@@ -70,9 +70,11 @@ urlpatterns = [
     path('api/almacen/despachos-vivero/', include('almacen.urls.despachos_viveros_urls')),
     path('api/almacen/despachos/', include('almacen.urls.despachos_urls')),
     path('api/almacen/entregas/', include('almacen.urls.entregas_urls')),
-
+    path('api/almacen/choices/', include('almacen.urls.choices_urls')),
+    path('api/almacen/mantenimientos/', include('almacen.urls.mantenimientos_urls')),
+    path('api/almacen/organigrama/', include('almacen.urls.organigrama_urls')),
+    
     # CONSERVACIÓN
-
     path('api/conservacion/choices/', include('conservacion.urls.choices_urls')),
     path('api/conservacion/viveros/', include('conservacion.urls.viveros_urls')),
     path('api/conservacion/despachos/', include('conservacion.urls.despachos_urls')),

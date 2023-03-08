@@ -414,13 +414,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     profile_img = models.ImageField(null=True, blank=True, default='/placeholder.png', db_column='tzrutaFoto') #Juan Camilo Text Choices
     email = models.EmailField(unique=True, db_column='TzemailUsuario') #Añadido por Juan
     
-    USERNAME_FIELD = 'email'
+    USERNAME_FIELD = 'nombre_de_usuario'
     REQUIRED_FIELDS = []
     
     objects = CustomUserManager()
 
     def __str__(self):
-        return str(self.email)
+        return str(self.nombre_de_usuario)
     
     def tokens(self):
         refresh = RefreshToken.for_user(self)

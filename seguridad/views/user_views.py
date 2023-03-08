@@ -807,7 +807,9 @@ class LoginApiView(generics.CreateAPIView):
     serializer_class=LoginSerializer
     def post(self, request):
         data = request.data
-        user = User.objects.filter(email=data['email']).first()
+        user = User.objects.filter(nombre_de_usuario=data['nombre_de_usuario']).first()
+        
+        print('USUARIO',user)
         
         ip = Util.get_client_ip(request)
         device = Util.get_client_device(request)
@@ -819,6 +821,7 @@ class LoginApiView(generics.CreateAPIView):
                 for rol in rol_id_list:
                     permisos = PermisosModuloRol.objects.filter(id_rol=rol).values()
                     permisos_list.append(permisos)
+               
                 try:
                     login_error = LoginErroneo.objects.filter(id_usuario=user.id_usuario).last()
                     
@@ -923,11 +926,11 @@ class LoginApiView(generics.CreateAPIView):
                 return Response({'success':False,'detail': 'Usuario no verificado'}, status=status.HTTP_406_NOT_ACCEPTABLE)
         else:
             UsuarioErroneo.objects.create(
-                campo_usuario = data['email'],
+                campo_usuario = data['nombre_de_usuario'],
                 dirip = str(ip),
                 dispositivo_conexion = device
             )
-            return Response({'success':False,'detail':'No existe el correo ingresado'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'success':False,'detail':'No existe el nombre de usuario ingresado'}, status=status.HTTP_400_BAD_REQUEST)
 
 class RequestPasswordResetEmail(generics.GenericAPIView):
     serializer_class = ResetPasswordEmailRequestSerializer
