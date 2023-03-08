@@ -345,20 +345,21 @@ class UpdatePersonaNaturalInternoBySelf(generics.RetrieveUpdateAPIView):
                 except:
                     return Response({'success': False, 'detail': 'No existe el estado civil que está ingresando'}, status=status.HTTP_400_BAD_REQUEST)
             
-            email_principal = persona_serializada.validated_data.get('email')
+            # validacion email diferentes 
             email_secundario = persona_serializada.validated_data.get('email_empresarial')
-
-            #Validación emails dns
-            validate_email = Util.validate_dns(email_principal)
-            if validate_email == False:
-                return Response({'success': False, 'detail': 'Valide que el email principal ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
-
             if email_secundario:
                 validate_second_email = Util.validate_dns(email_secundario)
                 if validate_second_email == False:
                     return Response({'success': False, 'detail': 'Valide que el email secundario ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
-
-            #Validación emails entrantes vs existentes            
+            
+            email_principal = persona_serializada.validated_data.get('email')
+            validate_email = Util.validate_dns(email_principal)
+            if validate_email == False:
+                return Response({'success': False, 'detail': 'Valide que el email principal ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if email_principal == email_secundario:
+                return Response({'success': False, 'detail': 'El correo de notificaciones y el secundario deben ser diferentes'}, status=status.HTTP_400_BAD_REQUEST)
+            
             persona_email_validate = Personas.objects.filter(Q(email_empresarial=email_principal) | Q(email=email_secundario))
             if len(persona_email_validate):
                 return Response({'success': False, 'detail': 'Ya existe una persona con este email asociado como email principal o secundario'}, status=status.HTTP_400_BAD_REQUEST)
@@ -429,20 +430,22 @@ class UpdatePersonaNaturalExternoBySelf(generics.RetrieveUpdateAPIView):
             email_principal = persona_serializada.validated_data.get('email')
             email_secundario = persona_serializada.validated_data.get('email_empresarial')
             
-             #Validación emails dns
-            validate_email = Util.validate_dns(email_principal)
-            if validate_email == False:
-                return Response({'success': False, 'detail': 'Valide que el email principal ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
-
+            #Validacion email diferentes 
             if email_secundario:
                 validate_second_email = Util.validate_dns(email_secundario)
                 if validate_second_email == False:
                     return Response({'success': False, 'detail': 'Valide que el email secundario ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
             
-            # Validación emails entrantes vs existentes
+            validate_email = Util.validate_dns(email_principal)
+            if validate_email == False:
+                return Response({'success': False, 'detail': 'Valide que el email principal ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if email_principal == email_secundario:
+                return Response({'success': False, 'detail': 'El correo de notificaciones y el secundario deben ser diferentes'}, status=status.HTTP_400_BAD_REQUEST)
+            
             persona_email_validate = Personas.objects.filter(Q(email_empresarial=email_principal) | Q(email=email_secundario))
             if len(persona_email_validate):
-                return Response({'success': False,'detail': 'Ya existe una persona con este email asociado como email principal o secundario'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'success': False, 'detail': 'Ya existe una persona con este email asociado como email principal o secundario'}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 serializador = persona_serializada.save()
 
@@ -527,29 +530,32 @@ class UpdatePersonaNaturalByUserWithPermissions(generics.RetrieveUpdateAPIView):
             if not estado_civil_instance:
                 return Response({'success': False, 'detail': 'No existe el estado civil que está ingresando'}, status=status.HTTP_400_BAD_REQUEST) 
 
-        email_principal = persona_serializada.validated_data.get('email')
-        email_secundario = persona_serializada.validated_data.get('email_empresarial')
-
-        #Validación emails dns
-        validate_email = Util.validate_dns(email_principal)
-        if validate_email == False:
-            return Response({'success': False, 'detail': 'Valide que el email principal ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
-
-        if email_secundario:
-            validate_second_email = Util.validate_dns(email_secundario)
-            if validate_second_email == False:
-                return Response({'success': False, 'detail': 'Valide que el email secundario ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        #Validación emails entrantes vs existentes
-        persona_email_validate = Personas.objects.filter(Q(email_empresarial=email_principal) | Q(email=email_secundario))
-        if len(persona_email_validate):
-            return Response({'success':False,'detail': 'Ya existe una persona con este email asociado como email principal o secundario'}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            serializador = persona_serializada.save()
+                # validacion email diferentes 
+            email_secundario = persona_serializada.validated_data.get('email_empresarial')
+            if email_secundario:
+                validate_second_email = Util.validate_dns(email_secundario)
+                if validate_second_email == False:
+                    return Response({'success': False, 'detail': 'Valide que el email secundario ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            email_principal = persona_serializada.validated_data.get('email')
+            validate_email = Util.validate_dns(email_principal)
+            if validate_email == False:
+                return Response({'success': False, 'detail': 'Valide que el email principal ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            persona_email_validate = Personas.objects.filter(Q(email_empresarial=email_principal) | Q(email=email_secundario))
+            if len(persona_email_validate):
+                return Response({'success': False, 'detail': 'Ya existe una persona con este email asociado como email principal o secundario'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+            if email_principal == email_secundario:
+                return Response({'success': False, 'detail': 'El correo de notificaciones y el secundario deben ser diferentes'}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                serializador = persona_serializada.save()
+                
             if bandera:
                 historico_serializado = self.serializer_historico(data=datos_historico_unidad, many=False)
                 historico_serializado.is_valid(raise_exception=True)
                 historico_serializado.save()
+                
             # auditoria actualizar persona
             usuario = request.user.id_usuario
             direccion=Util.get_client_ip(request)
@@ -599,58 +605,65 @@ class UpdatePersonaJuridicaInternoBySelf(generics.RetrieveUpdateAPIView):
             persona_serializada = self.serializer_class(persona_por_actualizar, data=request.data, many=False)
             persona_serializada.is_valid(raise_exception=True)
 
-                    
             email_principal = persona_serializada.validated_data.get('email')
             email_secundario = persona_serializada.validated_data.get('email_empresarial')
 
-            #Validación emails dns
-            validate_email = Util.validate_dns(email_principal)
-            if validate_email == False:
-                return Response({'success':False,'detail': 'Valide que el email principal ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
-
-            if email_secundario:
-                validate_second_email = Util.validate_dns(email_secundario)
-                if validate_second_email == False:
-                    return Response({'success':False,'detail': 'Valide que el email secundario ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
-
-            #Verificación emails entrantes vs salientes
+            # validacion email diferentes 
+            if email_principal and email_secundario and email_principal == email_secundario:
+                return Response({'success': False, 'detail': 'El correo de notificaciones y el secundario deben ser diferentes'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if email_principal:
+                validate_email = Util.validate_dns(email_principal)
+                if validate_email == False:
+                    return Response({'success': False, 'detail': 'Valide que el email principal ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                persona_email_validate = Personas.objects.filter(Q(email_empresarial=email_principal))
+                if persona_email_validate.exists():
+                    return Response({'success':False, 'detail':'Ya existe una persona con este email asociado como email empresarial'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if email_secundario :
+                validate_secundario_email = Util.validate_dns(email_secundario)
+                if not validate_secundario_email:
+                    return Response({'success': False, 'detail': 'Valide que el email secundario ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
+            
             persona_email_validate = Personas.objects.filter(Q(email_empresarial=email_principal) | Q(email=email_secundario))
-            if len(persona_email_validate):    
-                return Response({'success':False,'detail': 'Ya existe una persona con este email asociado como email principal o secundario'}, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                serializador = persona_serializada.save()
+            if persona_email_validate.exists():
+                return Response({'success': False, 'detail': 'Ya existe una persona con este email asociado como email principal o secundario'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+            
+            serializador = persona_serializada.save()
 
                 # auditoria actualizar persona
-                usuario = request.user.id_usuario
-                direccion=Util.get_client_ip(request)
-                descripcion = {"TipodeDocumentoID": str(serializador.tipo_documento), "NumeroDocumentoID": str(serializador.numero_documento), "RazonSocial": str(serializador.razon_social), "NombreComercial": str(serializador.nombre_comercial)}
-                valores_actualizados = {'current': persona_por_actualizar, 'previous': previous_persona}
+            usuario = request.user.id_usuario
+            direccion=Util.get_client_ip(request)
+            descripcion = {"TipodeDocumentoID": str(serializador.tipo_documento), "NumeroDocumentoID": str(serializador.numero_documento), "RazonSocial": str(serializador.razon_social), "NombreComercial": str(serializador.nombre_comercial)}
+            valores_actualizados = {'current': persona_por_actualizar, 'previous': previous_persona}
 
-                auditoria_data = {
-                    "id_usuario" : usuario,
-                    "id_modulo" : 1,
-                    "cod_permiso": "AC",
-                    "subsistema": 'TRSV',
-                    "dirip": direccion,
-                    "descripcion": descripcion, 
-                    "valores_actualizados": valores_actualizados
-                }
-                Util.save_auditoria(auditoria_data)
+            auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 1,
+                "cod_permiso": "AC",
+                "subsistema": 'TRSV',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+                "valores_actualizados": valores_actualizados
+            }
+            Util.save_auditoria(auditoria_data)
 
                 #Envío sms y email
-                persona = Personas.objects.get(email=email_principal)
+            persona = Personas.objects.get(email=email_principal)
 
-                sms = 'Actualizacion exitosa de persona Juridica en Cormacarena.'
-                context = {'razon_social': persona.razon_social}
-                template = render_to_string(('email-update-personajuridica-interno.html'), context)
-                subject = 'Actualización de datos exitosa ' + persona.razon_social
-                data = {'template': template, 'email_subject': subject, 'to_email': persona.email} 
-                Util.send_email(data)
-                try:
-                    Util.send_sms(persona.telefono_celular_empresa, sms)
-                except:
-                    return Response({'success':True,'detail': 'Se actualizó la persona pero no se pudo enviar el mensaje, verificar numero o servicio'}, status=status.HTTP_201_CREATED)
-                return Response({'success':True,'detail': 'Persona actualizada y notificada correctamente', 'data': persona_serializada.data}, status=status.HTTP_201_CREATED)
+            sms = 'Actualizacion exitosa de persona Juridica en Cormacarena.'
+            context = {'razon_social': persona.razon_social}
+            template = render_to_string(('email-update-personajuridica-interno.html'), context)
+            subject = 'Actualización de datos exitosa ' + persona.razon_social
+            data = {'template': template, 'email_subject': subject, 'to_email': persona.email} 
+            Util.send_email(data)
+            try:
+                Util.send_sms(persona.telefono_celular_empresa, sms)
+            except:
+                return Response({'success':True,'detail': 'Se actualizó la persona pero no se pudo enviar el mensaje, verificar numero o servicio'}, status=status.HTTP_201_CREATED)
+            return Response({'success':True,'detail': 'Persona actualizada y notificada correctamente', 'data': persona_serializada.data}, status=status.HTTP_201_CREATED)
         else:
             return Response({'success':False,'detail': 'No se encontró ninguna persona'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -675,57 +688,64 @@ class UpdatePersonaJuridicaExternoBySelf(generics.RetrieveUpdateAPIView):
             email_principal = persona_serializada.validated_data.get('email')
             email_secundario = persona_serializada.validated_data.get('email_empresarial')
 
-            #Validación emails dns
-            validate_email = Util.validate_dns(email_principal)
-            if validate_email == False:
-                return Response({'success':False,'detail': 'Valide que el email principal ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
-
-            if email_secundario:
-                validate_second_email = Util.validate_dns(email_secundario)
-                if validate_second_email == False:
-                    return Response({'success':False,'detail': 'Valide que el email secundario ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
-
-            #Verificacion emails entrantes vs existentes
+            # validacion email diferentes 
+            if email_principal and email_secundario and email_principal == email_secundario:
+                return Response({'success': False, 'detail': 'El correo de notificaciones y el secundario deben ser diferentes'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if email_principal:
+                validate_email = Util.validate_dns(email_principal)
+                if validate_email == False:
+                    return Response({'success': False, 'detail': 'Valide que el email principal ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                persona_email_validate = Personas.objects.filter(Q(email_empresarial=email_principal))
+                if persona_email_validate.exists():
+                    return Response({'success':False, 'detail':'Ya existe una persona con este email asociado como email empresarial'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if email_secundario :
+                validate_secundario_email = Util.validate_dns(email_secundario)
+                if not validate_secundario_email:
+                    return Response({'success': False, 'detail': 'Valide que el email secundario ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
+            
             persona_email_validate = Personas.objects.filter(Q(email_empresarial=email_principal) | Q(email=email_secundario))
-            if len(persona_email_validate):
-                return Response({'success':False,'detail': 'Ya existe una persona con este email asociado como email principal o secundario'}, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                serializador = persona_serializada.save()
-                
+            if persona_email_validate.exists():
+                return Response({'success': False, 'detail': 'Ya existe una persona con este email asociado como email principal o secundario'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+            
+            serializador = persona_serializada.save()
+
                 # auditoria actualizar persona
-                usuario = request.user.id_usuario
-                direccion=Util.get_client_ip(request)
-                descripcion = {"TipodeDocumentoID": str(serializador.tipo_documento), "NumeroDocumentoID": str(serializador.numero_documento), "RazonSocial": str(serializador.razon_social), "NombreComercial": str(serializador.nombre_comercial)}
-                valores_actualizados = {'current': persona_por_actualizar, 'previous': previous_persona}
+            usuario = request.user.id_usuario
+            direccion=Util.get_client_ip(request)
+            descripcion = {"TipodeDocumentoID": str(serializador.tipo_documento), "NumeroDocumentoID": str(serializador.numero_documento), "RazonSocial": str(serializador.razon_social), "NombreComercial": str(serializador.nombre_comercial)}
+            valores_actualizados = {'current': persona_por_actualizar, 'previous': previous_persona}
 
-                auditoria_data = {
-                    "id_usuario" : usuario,
-                    "id_modulo" : 1,
-                    "cod_permiso": "AC",
-                    "subsistema": 'TRSV',
-                    "dirip": direccion,
-                    "descripcion": descripcion, 
-                    "valores_actualizados": valores_actualizados
-                }
-                Util.save_auditoria(auditoria_data)
+            auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 1,
+                "cod_permiso": "AC",
+                "subsistema": 'TRSV',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+                "valores_actualizados": valores_actualizados
+            }
+            Util.save_auditoria(auditoria_data)
 
-                #Envío sms y emails
-                persona = Personas.objects.get(email=email_principal)
-                
-                sms = 'Actualizacion exitosa de persona Juridica en Cormacarena.'
-                context = {'razon_social': persona.razon_social}
-                template = render_to_string(('email-update-personajuridica-externo.html'), context)
-                subject = 'Actualización de datos exitosa ' + persona.razon_social
-                data = {'template': template, 'email_subject': subject, 'to_email': persona.email} 
-                Util.send_email(data)
-                try:
-                    Util.send_sms(persona.telefono_celular_empresa, sms)
-                except:
-                    return Response({'success':True,'detail': 'Se actualizó la persona pero no se pudo enviar el mensaje, verificar numero o servicio'}, status=status.HTTP_201_CREATED)
-                return Response({'success':True,'detail': 'Persona actualizada y notificada correctamente', 'data': persona_serializada.data}, status=status.HTTP_201_CREATED)
+            #Envío sms y emails
+            persona = Personas.objects.get(email=email_principal)
+            sms = 'Actualizacion exitosa de persona Juridica en Cormacarena.'
+            context = {'razon_social': persona.razon_social}
+            print("context:", context)
+            template = render_to_string(('email-update-personajuridica-interno.html'), context)
+            subject = 'Actualización de datos exitosa ' + persona.razon_social
+            data = {'template': template, 'email_subject': subject, 'to_email': persona.email} 
+            Util.send_email(data)
+            try:
+                Util.send_sms(persona.telefono_celular_empresa, sms)
+            except:
+                return Response({'success':True,'detail': 'Se actualizó la persona pero no se pudo enviar el mensaje, verificar numero o servicio'}, status=status.HTTP_201_CREATED)
+            return Response({'success':True,'detail': 'Persona actualizada y notificada correctamente', 'data': persona_serializada.data}, status=status.HTTP_201_CREATED)
         else:
             return Response({'success':False,'detail': 'No se encontró ninguna persona'}, status=status.HTTP_400_BAD_REQUEST)
-
 
 class UpdatePersonaJuridicaByUserWithPermissions(generics.RetrieveUpdateAPIView):
     http_method_names = ['patch']
@@ -744,20 +764,22 @@ class UpdatePersonaJuridicaByUserWithPermissions(generics.RetrieveUpdateAPIView)
                     email_principal = persona_serializada.validated_data.get('email')
                     email_secundario = persona_serializada.validated_data.get('email_empresarial')
 
-                    #Validación emails dns
-                    validate_email = Util.validate_dns(email_principal)
-                    if validate_email == False:
-                        return Response({'success':False,'detail': 'Valide que el email principal ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
-
+                    # validacion email diferentes 
                     if email_secundario:
                         validate_second_email = Util.validate_dns(email_secundario)
                         if validate_second_email == False:
-                            return Response({'success':False,'detail': 'Valide que el email secundario ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
-
-                    #Verificacion emails entrantes vs existentes
+                            return Response({'success': False, 'detail': 'Valide que el email secundario ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
+        
+                    validate_email = Util.validate_dns(email_principal)
+                    if validate_email == False:
+                        return Response({'success': False, 'detail': 'Valide que el email principal ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
+            
                     persona_email_validate = Personas.objects.filter(Q(email_empresarial=email_principal) | Q(email=email_secundario))
                     if len(persona_email_validate):
-                        return Response({'success':False,'detail': 'Ya existe una persona con este email asociado como email principal o secundario'}, status=status.HTTP_400_BAD_REQUEST)
+                        return Response({'success': False, 'detail': 'Ya existe una persona con este email asociado como email principal o secundario'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    if email_principal == email_secundario:
+                        return Response({'success': False, 'detail': 'El correo de notificaciones y el secundario deben ser diferentes'}, status=status.HTTP_400_BAD_REQUEST)
                     else:
                         serializador = persona_serializada.save()
 
@@ -843,6 +865,8 @@ class RegisterPersonaNatural(generics.CreateAPIView):
         persona_email_validate = Personas.objects.filter(Q(email_empresarial=email_principal) | Q(email=email_secundario))
         if len(persona_email_validate):
             return Response({'success':False,'detail': 'Ya existe una persona con este email asociado como email principal o secundario'}, status=status.HTTP_400_BAD_REQUEST)
+        if email_principal == email_secundario:
+            return Response({'success': False, 'detail': 'El correo de notificaciones y el secundario deben ser diferentes'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             serializador = serializer.save()
 

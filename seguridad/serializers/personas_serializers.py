@@ -404,7 +404,13 @@ class PersonaNaturalInternoUpdateSerializer(serializers.ModelSerializer):
             'acepta_notificacion_email',
             'acepta_tratamiento_datos'
         ]
-
+    
+    def validate(self, data):
+        email_principal = data.get('email')
+        email_secundario = data.get('email_empresarial')
+        if email_principal and email_secundario and email_principal == email_secundario:
+            raise serializers.ValidationError('El correo electrónico principal y secundario deben ser diferentes')
+        return data
 
 class PersonaNaturalExternoUpdateSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(validators=[UniqueValidator(queryset=Personas.objects.all())])
