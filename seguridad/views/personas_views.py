@@ -358,7 +358,10 @@ class UpdatePersonaNaturalInternoBySelf(generics.RetrieveUpdateAPIView):
             
             if email_principal == email_secundario:
                 return Response({'success': False, 'detail': 'El correo de notificaciones y el secundario deben ser diferentes'}, status=status.HTTP_400_BAD_REQUEST)
-            
+            # validación correo principal obligatorio 
+            if not email_principal:
+                return Response({'success':False,'detail': 'El email de notificaciones es obligatorio'}, status=status.HTTP_400_BAD_REQUEST)
+        
             persona_email_validate = Personas.objects.filter(Q(email_empresarial=email_principal) | Q(email=email_secundario))
             if len(persona_email_validate):
                 return Response({'success': False, 'detail': 'Ya existe una persona con este email asociado como email principal o secundario'}, status=status.HTTP_400_BAD_REQUEST)
@@ -441,7 +444,10 @@ class UpdatePersonaNaturalExternoBySelf(generics.RetrieveUpdateAPIView):
             
             if email_principal == email_secundario:
                 return Response({'success': False, 'detail': 'El correo de notificaciones y el secundario deben ser diferentes'}, status=status.HTTP_400_BAD_REQUEST)
-            
+            # validación correo principal obligatorio 
+            if not email_principal:
+                return Response({'success':False,'detail': 'El email de notificaciones es obligatorio'}, status=status.HTTP_400_BAD_REQUEST)
+        
             persona_email_validate = Personas.objects.filter(Q(email_empresarial=email_principal) | Q(email=email_secundario))
             if len(persona_email_validate):
                 return Response({'success': False, 'detail': 'Ya existe una persona con este email asociado como email principal o secundario'}, status=status.HTTP_400_BAD_REQUEST)
@@ -549,7 +555,10 @@ class UpdatePersonaNaturalByUserWithPermissions(generics.RetrieveUpdateAPIView):
                 return Response({'success': False, 'detail': 'El correo de notificaciones y el secundario deben ser diferentes'}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 serializador = persona_serializada.save()
-                
+            # validación correo principal obligatorio 
+            if not email_principal:
+                return Response({'success':False,'detail': 'El email de notificaciones es obligatorio'}, status=status.HTTP_400_BAD_REQUEST)
+         
             if bandera:
                 historico_serializado = self.serializer_historico(data=datos_historico_unidad, many=False)
                 historico_serializado.is_valid(raise_exception=True)
@@ -611,6 +620,10 @@ class UpdatePersonaJuridicaInternoBySelf(generics.RetrieveUpdateAPIView):
             if email_principal and email_secundario and email_principal == email_secundario:
                 return Response({'success': False, 'detail': 'El correo de notificaciones y el secundario deben ser diferentes'}, status=status.HTTP_400_BAD_REQUEST)
             
+            # validación correo principal obligatorio 
+            if not email_principal:
+                return Response({'success':False,'detail': 'El email de notificaciones es obligatorio'}, status=status.HTTP_400_BAD_REQUEST)
+    
             if email_principal:
                 validate_email = Util.validate_dns(email_principal)
                 if validate_email == False:
@@ -695,7 +708,10 @@ class UpdatePersonaJuridicaExternoBySelf(generics.RetrieveUpdateAPIView):
                 validate_email = Util.validate_dns(email_principal)
                 if validate_email == False:
                     return Response({'success': False, 'detail': 'Valide que el email principal ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
-                
+            # validación correo principal obligatorio 
+            if not email_principal:
+                return Response({'success':False,'detail': 'El email de notificaciones es obligatorio'}, status=status.HTTP_400_BAD_REQUEST)
+           
                 persona_email_validate = Personas.objects.filter(Q(email_empresarial=email_principal))
                 if persona_email_validate.exists():
                     return Response({'success':False, 'detail':'Ya existe una persona con este email asociado como email empresarial'}, status=status.HTTP_400_BAD_REQUEST)
@@ -777,6 +793,10 @@ class UpdatePersonaJuridicaByUserWithPermissions(generics.RetrieveUpdateAPIView)
                     if len(persona_email_validate):
                         return Response({'success': False, 'detail': 'Ya existe una persona con este email asociado como email principal o secundario'}, status=status.HTTP_400_BAD_REQUEST)
                     
+                    # validación correo principal obligatorio 
+                    if not email_principal:
+                        return Response({'success':False,'detail': 'El email de notificaciones es obligatorio'}, status=status.HTTP_400_BAD_REQUEST)
+        
                     if email_principal == email_secundario:
                         return Response({'success': False, 'detail': 'El correo de notificaciones y el secundario deben ser diferentes'}, status=status.HTTP_400_BAD_REQUEST)
                     else:

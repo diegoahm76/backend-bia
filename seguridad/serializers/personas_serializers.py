@@ -20,6 +20,7 @@ from seguridad.models import (
 
 class EstadoCivilSerializer(serializers.ModelSerializer):
     cod_estado_civil = serializers.CharField(max_length=1, validators=[UniqueValidator(queryset=EstadoCivil.objects.all(), message='El cod_estado_civil debe ser único')])
+
     class Meta:
         model = EstadoCivil
         fields = '__all__'
@@ -73,7 +74,6 @@ class TipoDocumentoPostSerializer(serializers.ModelSerializer):
             'nombre': {'required': True}
         }
 
-
 class TipoDocumentoPutSerializer(serializers.ModelSerializer):
     class Meta:
         model = TipoDocumento
@@ -94,7 +94,11 @@ class PersonasSerializer(serializers.ModelSerializer):
     estado_civil = EstadoCivilSerializer(read_only=True)
     representante_legal = RepresentanteLegalSerializer(read_only=True)
     nombre_unidad_organizacional_actual=serializers.ReadOnlyField(source='id_unidad_organizacional_actual.nombre',default=None)
-        
+    tiene_usuario = serializers.SerializerMethodField()
+    
+    def get_tiene_usuario(self, obj):
+        return obj.usuario_set.filter(usuario__isnull=False).exists()
+    
     class Meta:
         model = Personas
         fields = '__all__'
@@ -102,9 +106,11 @@ class PersonasSerializer(serializers.ModelSerializer):
 
 class PersonaNaturalSerializer(serializers.ModelSerializer):
     tipo_documento = TipoDocumentoSerializer(read_only=True)
-    
     estado_civil = EstadoCivilSerializer(read_only=True)
-          
+    tiene_usuario = serializers.SerializerMethodField()
+    
+    def get_tiene_usuario(self, obj):
+        return obj.usuario_set.filter(usuario__isnull=False).exists()
     class Meta:
         model = Personas
         fields = [
@@ -145,7 +151,11 @@ class PersonaNaturalSerializer(serializers.ModelSerializer):
     
 class PersonaJuridicaSerializer(serializers.ModelSerializer):
     tipo_documento = TipoDocumentoSerializer(read_only=True)
-           
+    tiene_usuario = serializers.SerializerMethodField()
+
+    def get_tiene_usuario(self, obj):
+        return obj.usuario_set.filter(usuario__isnull=False).exists()  
+         
     class Meta:
         model = Personas
         fields = [
