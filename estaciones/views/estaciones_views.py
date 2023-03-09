@@ -26,6 +26,12 @@ class CrearEstacion(generics.CreateAPIView):
 
     def post(self, request):
         data=request.data
+        print('PASOOOOOOOO')
+        estaciones = self.queryset.all().filter(nombre_estacion=data["nombre_estacion"]).first()
+        print('ESTACIONESSS', estaciones)
+        if estaciones:
+            return Response({'success': False, 'detail': 'La estacion ya existe'},status=status.HTTP_403_FORBIDDEN) 
+        
         serializador=self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
