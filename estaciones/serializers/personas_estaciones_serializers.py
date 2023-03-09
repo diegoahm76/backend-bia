@@ -50,4 +50,4 @@ class PersonasEstacionesUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model=PersonasEstaciones
-        fields=['primer_nombre', 'primer_apellido', 'entidad', 'email_notificacion', 'nro_celular_notificacion','observacion']
+        fields=['primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'entidad', 'cargo', 'email_notificacion', 'nro_celular_notificacion','observacion']
