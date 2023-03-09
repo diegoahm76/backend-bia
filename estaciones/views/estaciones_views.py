@@ -7,7 +7,6 @@ from estaciones.models.estaciones_models import Estaciones
 
 # Listar Estaciones
 
-
 class ConsultarEstacion(generics.ListAPIView):
     serializer_class = EstacionesSerializer
     queryset = Estaciones.objects.all().using("bia-estaciones")
@@ -19,7 +18,6 @@ class ConsultarEstacion(generics.ListAPIView):
         return Response({'success': True, 'detail': 'Se encontraron las siguientes estaciones', 'data': serializador.data}, status=status.HTTP_200_OK)
 
 # Craer estacioens
-
 
 class CrearEstacion(generics.CreateAPIView):
     serializer_class = EstacionesSerializer
@@ -35,6 +33,7 @@ class CrearEstacion(generics.CreateAPIView):
         
 
 #Actualziar estaciones
+
 class ActualizarEstacion(generics.UpdateAPIView):
     serializer_class = EstacionesSerializer
     queryset = Estaciones.objects.all().using("bia-estaciones")
