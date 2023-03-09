@@ -88,7 +88,6 @@ class GetEstadoCivilById(generics.RetrieveAPIView):
     serializer_class = EstadoCivilSerializer
     queryset = EstadoCivil.objects.all()
 
-
 class DeleteEstadoCivil(generics.RetrieveDestroyAPIView):
     serializer_class = EstadoCivilSerializer
     permission_classes = [IsAuthenticated, PermisoBorrarEstadoCivil]
@@ -860,11 +859,15 @@ class RegisterPersonaNatural(generics.CreateAPIView):
             validate_second_email = Util.validate_dns(email_secundario)
             if validate_second_email == False:
                 return Response({'success':False,'detail': 'Valide que el email secundario ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
-
+        
+        # validación correo principal obligatorio 
+        if not email_principal:
+            return Response({'success':False,'detail': 'El email de notificaciones es obligatorio'}, status=status.HTTP_400_BAD_REQUEST)
+        
         # validacion de email entrante vs existente
-        persona_email_validate = Personas.objects.filter(Q(email_empresarial=email_principal) | Q(email=email_secundario))
+        persona_email_validate = Personas.objects.filter(email=email_secundario)
         if len(persona_email_validate):
-            return Response({'success':False,'detail': 'Ya existe una persona con este email asociado como email principal o secundario'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'success':False,'detail': 'Ya existe una persona con este email asociado como email secundario'}, status=status.HTTP_400_BAD_REQUEST)
         if email_principal == email_secundario:
             return Response({'success': False, 'detail': 'El correo de notificaciones y el secundario deben ser diferentes'}, status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -884,8 +887,8 @@ class RegisterPersonaNatural(generics.CreateAPIView):
             Util.save_auditoria(auditoria_data)
     
             # envio de emails y sms
-            persona = Personas.objects.get(email = email_principal)
-    
+            persona = Personas.objects.filter(tipo_documento=persona['tipo_documento'],numero_documento=persona['numero_documento']).first()    
+            
             sms = 'Registro exitoso como persona en Cormacarena. Continue aqui: ' + 'http://127.0.0.1:8000/api/personas/persona-natural/create/'  
             context = {'primer_nombre': persona.primer_nombre, 'primer_apellido':  persona.primer_apellido}
             template = render_to_string(('email-register-personanatural.html'), context)
@@ -939,11 +942,15 @@ class RegisterPersonaJuridica(generics.CreateAPIView):
             validate_second_email = Util.validate_dns(email_secundario)
             if validate_second_email == False:
                 return Response({'success':False,'detail': 'Valide que el email secundario ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
-
+        
+        # validación correo principal obligatorio 
+        if not email_principal:
+            return Response({'success':False,'detail': 'El email de notificaciones es obligatorio'}, status=status.HTTP_400_BAD_REQUEST)
+        
         #Verificación emails entrantes vs salientes
-        persona_email_validate = Personas.objects.filter(Q(email_empresarial=email_principal) | Q(email=email_secundario))
+        persona_email_validate = Personas.objects.filter(Q(email=email_secundario))
         if len(persona_email_validate):
-            return Response({'success':False,'detail': 'Ya existe una persona con este email asociado como email principal o secundario'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'success':False,'detail': 'Ya existe una persona con este email asociado como email secundario'}, status=status.HTTP_400_BAD_REQUEST)
         else: 
             serializador = serializer.save()
             
@@ -961,8 +968,8 @@ class RegisterPersonaJuridica(generics.CreateAPIView):
             Util.save_auditoria(auditoria_data)
 
             #Envio SMS y EMAIL
-            persona = Personas.objects.get(email=email_principal)
-
+            persona = Personas.objects.filter(tipo_documento=persona['tipo_documento'],numero_documento=persona['numero_documento']).first()
+            
             sms = 'Registro exitoso como persona Juridica en Cormacarena. Continue aqui: ' + 'http://127.0.0.1:8000/api/personas/persona-natural/create/'
             context = {'razon_social': persona.razon_social, 'nombre_comercial':  persona.nombre_comercial}
             template = render_to_string(('email-register-personajuridica.html'), context)
@@ -1017,11 +1024,15 @@ class RegisterPersonaNaturalByUserInterno(generics.CreateAPIView):
             validate_second_email = Util.validate_dns(email_secundario)
             if validate_second_email == False:
                 return Response({'success':False,'detail': 'Valide que el email secundario ingresado exista'}, status=status.HTTP_400_BAD_REQUEST)
-
+       
+        # validación correo principal obligatorio 
+        if not email_principal:
+            return Response({'success':False,'detail': 'El email de notificaciones es obligatorio'}, status=status.HTTP_400_BAD_REQUEST)
+        
         # validacion de email entrante vs existente
-        persona_email_validate = Personas.objects.filter(Q(email_empresarial=email_principal) | Q(email=email_secundario))
+        persona_email_validate = Personas.objects.filter(Q(email=email_secundario))
         if len(persona_email_validate):
-            return Response({'success':False,'detail': 'Ya existe una persona con este email asociado como email principal o secundario'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'success':False,'detail': 'Ya existe una persona con este email asociado como email secundario'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             serializador = serializer.save()
             
@@ -1041,7 +1052,7 @@ class RegisterPersonaNaturalByUserInterno(generics.CreateAPIView):
             Util.save_auditoria(auditoria_data)
 
             # envio de emails y sms
-            persona = Personas.objects.get(email = email_principal)
+            persona = Personas.objects.filter(tipo_documento=persona['tipo_documento'],numero_documento=persona['numero_documento']).first()
     
             sms = 'Hola '+ persona.primer_nombre + ' ' + persona.primer_apellido + ' te informamos que has sido registrado como PERSONA NATURAL en el portal Bia Cormacarena \n Ahora puedes crear tu usuario, hazlo en el siguiente link' + 'url'  
             context = {'primer_nombre': persona.primer_nombre, 'primer_apellido':  persona.primer_apellido}
