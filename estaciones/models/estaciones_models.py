@@ -2,6 +2,7 @@ from django.db import models
 from estaciones.choices.estaciones_choices import (
     cod_tipo_estacion_choices
 )
+from estaciones.choices.variable_climatica_choices import variable_climatica_CHOICES
 from seguridad.choices.municipios_choices import municipios_CHOICES
 from seguridad.choices.tipo_documento_choices import tipo_documento_CHOICES
 
@@ -137,7 +138,7 @@ class PersonasEstacionesEstacion(models.Model):
 
 class ConfiguracionAlertaPersonas(models.Model):
     id_confi_alerta_persona = models.AutoField(primary_key=True, editable=False, db_column='T906IdConfiAlertaPersona')
-    nombre_variable_alarma = models.CharField(max_length=30, db_column='T906nombreVariableAlarma')
+    nombre_variable_alarma = models.CharField(choices=variable_climatica_CHOICES, max_length=3, db_column='T906nombreVariableAlarma')
     mensaje_alarma_maximo = models.CharField(max_length=255, db_column='T906mensajeAlarmaMaximo')
     mensaje_alarma_minimo = models.CharField(max_length=255, db_column='T906mensajeAlarmaMinimo')
     mensaje_no_alarma = models.CharField(max_length=255, db_column='T906mensajeNoAlarma')
