@@ -27,12 +27,12 @@ class NivelesUpdateSerializer(serializers.ModelSerializer):
            UniqueTogetherValidator(
                queryset=NivelesOrganigrama.objects.all(),
                fields = ['id_organigrama', 'orden_nivel'],
-               message='El id_organigrama y orden de nivel deben ser una pareja única'
+               message='No puede existir más de un nivel con el mismo orden en el organigrama ingresado'
            ),
            UniqueTogetherValidator(
                queryset=NivelesOrganigrama.objects.all(),
                fields = ['id_organigrama', 'nombre'],
-               message='El id_organigrama y nombre deben ser una pareja única'
+               message='Ya existe un nivel con el mismo nombre en el organigrama elegido'
            )
         ]
         
@@ -44,12 +44,12 @@ class UnidadesPutSerializer(serializers.ModelSerializer):
             UniqueTogetherValidator(
                 queryset=UnidadesOrganizacionales.objects.all(),
                 fields=['id_organigrama', 'codigo'],
-                message='El id organigrama y el código deben ser una pareja única'
+                message='Ya existe una unidad con el mismo código en el organigrama elegido'
             ),
             UniqueTogetherValidator(
                 queryset=UnidadesOrganizacionales.objects.all(),
                 fields=['id_organigrama', 'nombre'],
-                message='El id organigrama y el nombre deben ser una pareja única'
+                message='Ya existe una unidad con el mismo nombre en el organigrama elegido'
             )
         ]
         extra_kwargs = {"cod_tipo_unidad": {"error_messages": {"required": "El campo de cod_tipo_unidad es requerido"}}}

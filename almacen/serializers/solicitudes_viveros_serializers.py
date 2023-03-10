@@ -20,6 +20,6 @@ class CrearItemsSolicitudViveroPostSerializer(serializers.ModelSerializer):
                 UniqueTogetherValidator(
                     queryset=ItemsSolicitudConsumible.objects.all(),
                     fields=['id_bien', 'id_solicitud_consumibles'],
-                    message='El id organigrama y el código deben ser una pareja única'
+                    message='No puede solicitar más de una vez el mismo bien en esta solicitud'
                 )
         ]
