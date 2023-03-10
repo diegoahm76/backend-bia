@@ -5,6 +5,7 @@ from rest_framework.serializers import ReadOnlyField
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from seguridad.models import (
     Personas, 
+    User,
     TipoDocumento, 
     EstadoCivil,
     ApoderadoPersona,
@@ -97,7 +98,7 @@ class PersonasSerializer(serializers.ModelSerializer):
     tiene_usuario = serializers.SerializerMethodField()
     
     def get_tiene_usuario(self, obj):
-        persona = Personas.objects.filter(tipo_documento=obj.tipo_documento, numero_documento=obj.numero_documento).first()   
+        persona = User.objects.filter(tipo_documento=obj.tipo_documento, numero_documento=obj.numero_documento).first()   
         return persona is not None
     
     class Meta:
@@ -111,7 +112,7 @@ class PersonaNaturalSerializer(serializers.ModelSerializer):
     tiene_usuario = serializers.SerializerMethodField()
     
     def get_tiene_usuario(self, obj):
-        persona = Personas.objects.filter(tipo_documento=obj.tipo_documento, numero_documento=obj.numero_documento).first()   
+        persona = User.objects.filter(tipo_documento=obj.tipo_documento, numero_documento=obj.numero_documento).first()   
         return persona is not None
     
     class Meta:
@@ -156,7 +157,7 @@ class PersonaJuridicaSerializer(serializers.ModelSerializer):
     tiene_usuario = serializers.SerializerMethodField()
     
     def get_tiene_usuario(self, obj):
-        persona = Personas.objects.filter(tipo_documento=obj.tipo_documento, numero_documento=obj.numero_documento).first()   
+        persona = User.objects.filter(tipo_documento=obj.tipo_documento, numero_documento=obj.numero_documento).first()   
         return persona is not None
     
     class Meta:

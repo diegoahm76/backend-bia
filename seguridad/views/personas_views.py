@@ -1,6 +1,7 @@
 from asyncio import exceptions
 from datetime import datetime, date, timedelta
 import copy
+import datetime as dt
 from signal import raise_signal
 from django.shortcuts import render
 from rest_framework import generics
@@ -640,11 +641,10 @@ class UpdatePersonaJuridicaInternoBySelf(generics.RetrieveUpdateAPIView):
             persona_email_validate = Personas.objects.filter(Q(email_empresarial=email_principal) | Q(email=email_secundario))
             if persona_email_validate.exists():
                 return Response({'success': False, 'detail': 'Ya existe una persona con este email asociado como email principal o secundario'}, status=status.HTTP_400_BAD_REQUEST)
-                    
-            
+
             serializador = persona_serializada.save()
 
-                # auditoria actualizar persona
+            # auditoria actualizar persona
             usuario = request.user.id_usuario
             direccion=Util.get_client_ip(request)
             descripcion = {"TipodeDocumentoID": str(serializador.tipo_documento), "NumeroDocumentoID": str(serializador.numero_documento), "RazonSocial": str(serializador.razon_social), "NombreComercial": str(serializador.nombre_comercial)}
@@ -661,13 +661,13 @@ class UpdatePersonaJuridicaInternoBySelf(generics.RetrieveUpdateAPIView):
             }
             Util.save_auditoria(auditoria_data)
 
-                #Envío sms y email
+            #Envío sms y email
             persona = Personas.objects.get(email=email_principal)
 
             sms = 'Actualizacion exitosa de persona Juridica en Cormacarena.'
             context = {'razon_social': persona.razon_social}
             template = render_to_string(('email-update-personajuridica-interno.html'), context)
-            subject = 'Actualización de datos exitosa ' + persona.razon_social
+            subject = 'Actualización de datos exitosa ' + (persona.razon_social or '')
             data = {'template': template, 'email_subject': subject, 'to_email': persona.email} 
             Util.send_email(data)
             try:
@@ -727,7 +727,7 @@ class UpdatePersonaJuridicaExternoBySelf(generics.RetrieveUpdateAPIView):
             
             serializador = persona_serializada.save()
 
-                # auditoria actualizar persona
+            # auditoria actualizar persona
             usuario = request.user.id_usuario
             direccion=Util.get_client_ip(request)
             descripcion = {"TipodeDocumentoID": str(serializador.tipo_documento), "NumeroDocumentoID": str(serializador.numero_documento), "RazonSocial": str(serializador.razon_social), "NombreComercial": str(serializador.nombre_comercial)}
@@ -748,9 +748,8 @@ class UpdatePersonaJuridicaExternoBySelf(generics.RetrieveUpdateAPIView):
             persona = Personas.objects.get(email=email_principal)
             sms = 'Actualizacion exitosa de persona Juridica en Cormacarena.'
             context = {'razon_social': persona.razon_social}
-            print("context:", context)
             template = render_to_string(('email-update-personajuridica-interno.html'), context)
-            subject = 'Actualización de datos exitosa ' + persona.razon_social
+            subject = 'Actualización de datos exitosa ' + (persona.razon_social or '')
             data = {'template': template, 'email_subject': subject, 'to_email': persona.email} 
             Util.send_email(data)
             try:
