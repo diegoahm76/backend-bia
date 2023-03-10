@@ -20,5 +20,19 @@ class ConsultarDatos(generics.ListAPIView):
             return Response({'success': True, 'detail': 'Se encontraron los siguentes datos', 'data': serializador.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success': True, 'detail': 'No se encontraron datos'}, status=status.HTTP_404_NOT_FOUND)
+        
 
-# Craer estacioens
+    #PRUEBA
+
+class ConsultarDatosId(generics.ListAPIView):
+    serializer_class = DatosSerializer
+    queryset = Datos.objects.all().using("bia-estaciones")
+    permission_classes = [IsAuthenticated]
+
+    def get(self, requet, pk=3):
+        estaciones=self.queryset.filter(id_estacion=pk)
+        if estaciones:
+            serializador = self.serializer_class(estaciones, many=True)
+            return Response({'success': True, 'detail': 'Se encontró', 'data': serializador.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success': False, 'detail': 'error'}, status=status.HTTP_404_NOT_FOUND)
