@@ -97,7 +97,8 @@ class PersonasSerializer(serializers.ModelSerializer):
     tiene_usuario = serializers.SerializerMethodField()
     
     def get_tiene_usuario(self, obj):
-        return obj.usuario_set.filter(usuario__isnull=False).exists()
+        persona = Personas.objects.filter(tipo_documento=obj.tipo_documento, numero_documento=obj.numero_documento).first()   
+        return persona is not None
     
     class Meta:
         model = Personas
@@ -110,7 +111,9 @@ class PersonaNaturalSerializer(serializers.ModelSerializer):
     tiene_usuario = serializers.SerializerMethodField()
     
     def get_tiene_usuario(self, obj):
-        return obj.usuario_set.filter(usuario__isnull=False).exists()
+        persona = Personas.objects.filter(tipo_documento=obj.tipo_documento, numero_documento=obj.numero_documento).first()   
+        return persona is not None
+    
     class Meta:
         model = Personas
         fields = [
@@ -144,18 +147,18 @@ class PersonaNaturalSerializer(serializers.ModelSerializer):
             'estado_civil',
             'acepta_notificacion_sms',
             'acepta_notificacion_email',
-            'acepta_tratamiento_datos'
-        ]
-        
-         
+            'acepta_tratamiento_datos',
+            'tiene_usuario'
+        ]     
     
 class PersonaJuridicaSerializer(serializers.ModelSerializer):
     tipo_documento = TipoDocumentoSerializer(read_only=True)
     tiene_usuario = serializers.SerializerMethodField()
-
+    
     def get_tiene_usuario(self, obj):
-        return obj.usuario_set.filter(usuario__isnull=False).exists()  
-         
+        persona = Personas.objects.filter(tipo_documento=obj.tipo_documento, numero_documento=obj.numero_documento).first()   
+        return persona is not None
+    
     class Meta:
         model = Personas
         fields = [
@@ -180,9 +183,9 @@ class PersonaJuridicaSerializer(serializers.ModelSerializer):
             'telefono_empresa',
             'acepta_notificacion_sms',
             'acepta_notificacion_email',
-            'acepta_tratamiento_datos'
-        ]
-            
+            'acepta_tratamiento_datos',
+            'tiene_usuario'
+        ]          
     
 class PersonaNaturalPostSerializer(serializers.ModelSerializer):
     numero_documento = serializers.CharField(max_length=20, min_length=5)
@@ -249,6 +252,7 @@ class PersonaJuridicaPostSerializer(serializers.ModelSerializer):
     telefono_celular_empresa = serializers.CharField(max_length=15, min_length=10)
     direccion_notificaciones = serializers.CharField(max_length=255, min_length=5)
     digito_verificacion = serializers.CharField(max_length=1)
+    fecha_inicio_cargo_rep_legal = serializers.DateTimeField(required=True)
 
     class Meta:
         model = Personas
@@ -270,7 +274,9 @@ class PersonaJuridicaPostSerializer(serializers.ModelSerializer):
             'representante_legal',
             'acepta_notificacion_sms',
             'acepta_notificacion_email',
-            'acepta_tratamiento_datos'
+            'acepta_tratamiento_datos',
+            'representante_legal',
+            'fecha_inicio_cargo_rep_legal'
         ]
         validators = [
            UniqueTogetherValidator(
@@ -290,6 +296,8 @@ class PersonaJuridicaPostSerializer(serializers.ModelSerializer):
                 'telefono_celular_empresa': {'required': True},
                 'direccion_notificaciones': {'required': True},
                 'municipio_residencia': {'required': True},
+                'representante_legal': {'required':True},
+                'fecha_inicio_cargo_rep_legal': {'required':True}
             }
         
 class GetPersonaJuridicaByRepresentanteLegalSerializer(serializers.ModelSerializer):

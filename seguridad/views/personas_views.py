@@ -222,12 +222,13 @@ class GetPersonasByTipoDocumentoAndNumeroDocumento(generics.GenericAPIView):
     serializer_class = PersonasSerializer
     
     def get(self, request, tipodocumento, numerodocumento):
-        try:
-            queryset = Personas.objects.get(Q(tipo_documento = tipodocumento) & Q(numero_documento=numerodocumento))  
-            persona_serializer = self.serializer_class(queryset)
-            return Response({'success': True,'data': persona_serializer.data}, status=status.HTTP_200_OK)
-        except:
-            return Response({'success': False, 'detail': 'No existe una persona con los parametros ingresados'}, status=status.HTTP_404_NOT_FOUND)
+        # try:
+        queryset = Personas.objects.filter(Q(tipo_documento = tipodocumento) & Q(numero_documento=numerodocumento)).first()
+        print("QUERYSET: ", queryset)
+        persona_serializer = self.serializer_class(queryset)
+        return Response({'success': True,'data': persona_serializer.data}, status=status.HTTP_200_OK)
+        # except:
+        #     return Response({'success': False, 'detail': 'No existe una persona con los parametros ingresados'}, status=status.HTTP_404_NOT_FOUND)
 
 
 class GetPersonasByID(generics.GenericAPIView):
@@ -302,8 +303,6 @@ class GetPersonaJuridica(generics.ListAPIView):
             serializador=self.serializer_class(persona,many=True)
             return Response({"success":True,"detail":"Se encontraron personas","Persona":serializador.data},status=status.HTTP_200_OK)
         return Response({"success":False,"detail":"No se encontraron personas"},status=status.HTTP_403_FORBIDDEN)
-    
-    
     
 class GetPersonaJuridicaByRepresentanteLegal(generics.ListAPIView):
     serializer_class=GetPersonaJuridicaByRepresentanteLegalSerializer
