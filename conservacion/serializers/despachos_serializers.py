@@ -32,7 +32,7 @@ class DistribucionesItemDespachoEntranteSerializer(serializers.ModelSerializer):
             UniqueTogetherValidator(
                 queryset=DistribucionesItemDespachoEntrante.objects.all(),
                 fields=['id_item_despacho_entrante', 'id_vivero'],
-                message='El item despacho entrante y el vivero deben ser una pareja única'
+                message='No se puede distribuir más de una vez el mismo bien al mismo vivero'
             )
         ]
         
