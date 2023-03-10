@@ -644,6 +644,13 @@ class UpdatePersonaJuridicaInternoBySelf(generics.RetrieveUpdateAPIView):
 
             serializador = persona_serializada.save()
 
+            if persona_por_actualizar.representante_legal == previous_persona.representante_legal:
+                fecha_actual = persona_por_actualizar.fecha_cambio_representante_legal
+            else:
+                fecha_actual = dt.datetime.now()  
+                persona_por_actualizar.fecha_cambio_representante_legal = fecha_actual
+            persona_por_actualizar.save()
+
             # auditoria actualizar persona
             usuario = request.user.id_usuario
             direccion=Util.get_client_ip(request)
@@ -727,6 +734,13 @@ class UpdatePersonaJuridicaExternoBySelf(generics.RetrieveUpdateAPIView):
             
             serializador = persona_serializada.save()
 
+            if persona_por_actualizar.representante_legal == previous_persona.representante_legal:
+                fecha_actual = persona_por_actualizar.fecha_cambio_representante_legal
+            else:
+                fecha_actual = dt.datetime.now()  
+                persona_por_actualizar.fecha_cambio_representante_legal = fecha_actual
+            persona_por_actualizar.save()
+            
             # auditoria actualizar persona
             usuario = request.user.id_usuario
             direccion=Util.get_client_ip(request)
@@ -799,38 +813,45 @@ class UpdatePersonaJuridicaByUserWithPermissions(generics.RetrieveUpdateAPIView)
                         return Response({'success': False, 'detail': 'El correo de notificaciones y el secundario deben ser diferentes'}, status=status.HTTP_400_BAD_REQUEST)
                     else:
                         serializador = persona_serializada.save()
+                    
+                    if persona_por_actualizar.representante_legal == previous_persona.representante_legal:
+                        fecha_actual = persona_por_actualizar.fecha_cambio_representante_legal
+                    else:
+                        fecha_actual = dt.datetime.now()  
+                        persona_por_actualizar.fecha_cambio_representante_legal = fecha_actual
+                    persona_por_actualizar.save()
+                    
+                    # auditoria actualizar persona
+                    usuario = request.user.id_usuario
+                    direccion=Util.get_client_ip(request)
+                    descripcion = {"TipodeDocumentoID": str(serializador.tipo_documento), "NumeroDocumentoID": str(serializador.numero_documento), "RazonSocial": str(serializador.razon_social), "NombreComercial": str(serializador.nombre_comercial)}
+                    valores_actualizados = {'current': persona_por_actualizar, 'previous': previous_persona}
 
-                        # auditoria actualizar persona
-                        usuario = request.user.id_usuario
-                        direccion=Util.get_client_ip(request)
-                        descripcion = {"TipodeDocumentoID": str(serializador.tipo_documento), "NumeroDocumentoID": str(serializador.numero_documento), "RazonSocial": str(serializador.razon_social), "NombreComercial": str(serializador.nombre_comercial)}
-                        valores_actualizados = {'current': persona_por_actualizar, 'previous': previous_persona}
-
-                        auditoria_data = {
-                            "id_usuario" : usuario,
-                            "id_modulo" : 1,
-                            "cod_permiso": "AC",
-                            "subsistema": 'TRSV',
-                            "dirip": direccion,
-                            "descripcion": descripcion, 
-                            "valores_actualizados": valores_actualizados
-                        }
-                        Util.save_auditoria(auditoria_data)    
+                    auditoria_data = {
+                        "id_usuario" : usuario,
+                        "id_modulo" : 1,
+                        "cod_permiso": "AC",
+                        "subsistema": 'TRSV',
+                        "dirip": direccion,
+                        "descripcion": descripcion, 
+                        "valores_actualizados": valores_actualizados
+                    }
+                    Util.save_auditoria(auditoria_data)    
                         
-                        #SMS y EMAILS
-                        persona = Personas.objects.get(email=email_principal)
+                    #SMS y EMAILS
+                    persona = Personas.objects.get(email=email_principal)
 
-                        sms = 'Hola ' + str(persona.razon_social) + ' te informamos que ha sido exitosa la actualización de tus datos como PERSONA JURIDICA'
-                        context = {'razon_social': persona.razon_social}
-                        template = render_to_string(('email-update-personajuridica-byuser-withpermissions.html'), context)
-                        subject = 'Actualización de datos exitosa ' + str(persona.razon_social)
-                        data = {'template': template, 'email_subject': subject, 'to_email': persona.email} 
-                        Util.send_email(data)
-                        try:
-                            Util.send_sms(persona.telefono_celular_empresa, sms)
-                        except:
-                            return Response({'success':True,'detail': 'Se actualizó la persona pero no se pudo enviar el mensaje, verificar numero o servicio'}, status=status.HTTP_201_CREATED)
-                        return Response({'success':True,'detail': 'Persona actualizada y notificada exitosamente', 'data': persona_serializada.data}, status=status.HTTP_201_CREATED)
+                    sms = 'Hola ' + str(persona.razon_social) + ' te informamos que ha sido exitosa la actualización de tus datos como PERSONA JURIDICA'
+                    context = {'razon_social': persona.razon_social}
+                    template = render_to_string(('email-update-personajuridica-byuser-withpermissions.html'), context)
+                    subject = 'Actualización de datos exitosa ' + str(persona.razon_social)
+                    data = {'template': template, 'email_subject': subject, 'to_email': persona.email} 
+                    Util.send_email(data)
+                    try:
+                        Util.send_sms(persona.telefono_celular_empresa, sms)
+                    except:
+                        return Response({'success':True,'detail': 'Se actualizó la persona pero no se pudo enviar el mensaje, verificar numero o servicio'}, status=status.HTTP_201_CREATED)
+                    return Response({'success':True,'detail': 'Persona actualizada y notificada exitosamente', 'data': persona_serializada.data}, status=status.HTTP_201_CREATED)
                 except:
                     return Response({'success':False,'detail': 'No pudo obtener el email principal y/o secundario'}, status=status.HTTP_400_BAD_REQUEST)
             except:

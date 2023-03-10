@@ -98,8 +98,8 @@ class PersonasSerializer(serializers.ModelSerializer):
     tiene_usuario = serializers.SerializerMethodField()
     
     def get_tiene_usuario(self, obj):
-        persona = User.objects.filter(tipo_documento=obj.tipo_documento, numero_documento=obj.numero_documento).first()   
-        return persona is not None
+        usuario = User.objects.filter(persona=obj.id_persona).exists()   
+        return usuario
     
     class Meta:
         model = Personas
@@ -112,8 +112,8 @@ class PersonaNaturalSerializer(serializers.ModelSerializer):
     tiene_usuario = serializers.SerializerMethodField()
     
     def get_tiene_usuario(self, obj):
-        persona = User.objects.filter(tipo_documento=obj.tipo_documento, numero_documento=obj.numero_documento).first()   
-        return persona is not None
+        usuario = User.objects.filter(persona=obj.id_persona).exists()   
+        return usuario
     
     class Meta:
         model = Personas
@@ -157,8 +157,8 @@ class PersonaJuridicaSerializer(serializers.ModelSerializer):
     tiene_usuario = serializers.SerializerMethodField()
     
     def get_tiene_usuario(self, obj):
-        persona = User.objects.filter(tipo_documento=obj.tipo_documento, numero_documento=obj.numero_documento).first()   
-        return persona is not None
+        usuario = User.objects.filter(persona=obj.id_persona).exists()   
+        return usuario
     
     class Meta:
         model = Personas
@@ -517,7 +517,8 @@ class PersonaJuridicaInternaUpdateSerializer(serializers.ModelSerializer):
             'cod_pais_nacionalidad_empresa',
             'acepta_notificacion_sms',
             'acepta_notificacion_email',
-            'acepta_tratamiento_datos'
+            'acepta_tratamiento_datos',
+            'representante_legal'
         ]
 
 

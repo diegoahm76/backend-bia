@@ -165,7 +165,7 @@ class Personas(models.Model):
     cod_municipio_expedicion_id = models.ForeignKey(Municipio, on_delete=models.SET_NULL, null=True, blank=True, db_column='T010Cod_MunicipioExpID')
     cod_naturaleza_empresa = models.CharField(max_length=1, null=True, blank=True, db_column='T010codNaturalezaEmpresa')
     direccion_notificacion_referencia = models.CharField(max_length=255, null=True, blank=True, db_column='T010dirNotificacionNalReferencia')
-    fecha_cambio_representante_legal = models.DateTimeField(auto_now=True, null=True, blank=True, db_column='T010fechaCambioRepLegal')
+    fecha_cambio_representante_legal = models.DateTimeField(null=True, blank=True, db_column='T010fechaCambioRepLegal')
     fecha_inicio_cargo_rep_legal = models.DateTimeField(null=True, blank=True, db_column='T010fechaInicioCargoRepLegal')
     fecha_inicio_cargo_actual = models.DateTimeField(null=True, blank=True, auto_now=True, db_column='T010fechaInicioCargoActual')
     fecha_a_finalizar_cargo_actual = models.DateTimeField(null=True, blank=True, db_column='T010fechaAFinalizarCargoActual')
