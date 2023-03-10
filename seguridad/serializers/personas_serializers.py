@@ -231,7 +231,8 @@ class PersonaNaturalPostSerializer(serializers.ModelSerializer):
         validators = [
             UniqueTogetherValidator(
                 queryset = Personas.objects.all(),
-                fields = ['tipo_documento', 'numero_documento']
+                fields = ['tipo_documento', 'numero_documento'],
+                message = 'Ya existe un registro con el tipo de documento y el número de documento ingresado'
             )
         ]
         extra_kwargs = {

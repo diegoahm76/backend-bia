@@ -94,7 +94,7 @@ class UtilConservacion:
                 duplicados = [item for item in data if item['id_item_despacho_entrante'] == item_vivero['id_item_despacho_entrante'] and item['id_vivero'] == item_vivero['id_vivero']]
                 if len(duplicados) > 1:
                     response_dict['success'] = False
-                    response_dict['detail'] = 'El item despacho entrante y el vivero deben ser una pareja única'
+                    response_dict['detail'] = 'No se puede distribuir más de una vez el mismo bien al mismo vivero'
                     response_dict['status'] = status.HTTP_400_BAD_REQUEST
                     return response_dict
             
