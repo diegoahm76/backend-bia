@@ -73,7 +73,8 @@ from seguridad.serializers.personas_serializers import (
     ClasesTerceroPersonapostSerializer,
     GetPersonaJuridicaByRepresentanteLegalSerializer,
     CargosSerializer,
-    HistoricoUnidadesOrgPersonapostSerializer
+    HistoricoUnidadesOrgPersonapostSerializer,
+    FiltrarPersonaSerializer
 )
 
 # Views for Estado Civil
@@ -1309,6 +1310,33 @@ class DeleteCargo(generics.DestroyAPIView):
                 return Response({'success':False, 'detail':'Este cargo ya está siendo usado, no se pudo eliminar. Intente desactivar'}, status=status.HTTP_403_FORBIDDEN)
         else:
             return Response({'success': False, 'detail':'No existe el cargo'}, status=status.HTTP_404_NOT_FOUND)
+
+class FiltrarPersonaView(generics.ListAPIView):
+    serializer_class = FiltrarPersonaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        tipo_documento = request.GET.get('tipo_documento')
+        numero_documento = request.GET.get('numero_documento')
+        primer_nombre = request.GET.get('primer_nombre')
+        primer_apellido = request.GET.get('primer_apellido')
+
+        personas = Personas.objects.all()
+        if tipo_documento:
+            personas = personas.filter(tipo_documento=tipo_documento)
+        if numero_documento:
+            personas = personas.filter(numero_documento=numero_documento)
+        if primer_nombre:
+            personas = personas.filter(primer_nombre=primer_nombre)
+        if primer_apellido:
+            personas = personas.filter(primer_apellido=primer_apellido)
+        
+        if personas.exists():
+            serializer = self.serializer_class(personas, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response({'success': False, 'detail': 'No se encontraron personas que coincidan con los criterios de búsqueda.'}, status=status.HTTP_404_NOT_FOUND)
+
 
 """    
 # Views for Clases Tercero

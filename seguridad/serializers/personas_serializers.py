@@ -501,7 +501,6 @@ class PersonaNaturalUpdateUserPermissionsSerializer(serializers.ModelSerializer)
         ]
 
 class PersonaJuridicaInternaUpdateSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(validators=[UniqueValidator(queryset=Personas.objects.all())])
     telefono_celular_empresa = serializers.CharField(max_length=15, min_length=10)
 
 
@@ -524,7 +523,6 @@ class PersonaJuridicaInternaUpdateSerializer(serializers.ModelSerializer):
 
 
 class PersonaJuridicaExternaUpdateSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(validators=[UniqueValidator(queryset=Personas.objects.all())])
     telefono_celular_empresa = serializers.CharField(max_length=15, min_length=10)
 
     class Meta:
@@ -545,7 +543,6 @@ class PersonaJuridicaExternaUpdateSerializer(serializers.ModelSerializer):
 
 
 class PersonaJuridicaUpdateUserPermissionsSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(validators=[UniqueValidator(queryset=Personas.objects.all())])
     telefono_celular_empresa = serializers.CharField(max_length=15, min_length=10)
 
     class Meta:
@@ -663,3 +660,8 @@ class HistoricoUnidadesOrgPersonapostSerializer(serializers.ModelSerializer):
     class Meta:
         model = HistoricoUnidadesOrgPersona
         fields = '__all__'
+
+class FiltrarPersonaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Personas
+        fields = ['tipo_documento','numero_documento','primer_nombre','primer_apellido']
