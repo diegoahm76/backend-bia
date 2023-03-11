@@ -74,7 +74,8 @@ from seguridad.serializers.personas_serializers import (
     GetPersonaJuridicaByRepresentanteLegalSerializer,
     CargosSerializer,
     HistoricoUnidadesOrgPersonapostSerializer,
-    FiltrarPersonaSerializer
+    BusquedaPersonaNaturalSerializer,
+    BusquedaPersonaJuridicaSerializer
 )
 
 # Views for Estado Civil
@@ -1311,8 +1312,8 @@ class DeleteCargo(generics.DestroyAPIView):
         else:
             return Response({'success': False, 'detail':'No existe el cargo'}, status=status.HTTP_404_NOT_FOUND)
 
-class FiltrarPersonaView(generics.ListAPIView):
-    serializer_class = FiltrarPersonaSerializer
+class BusquedaPersonaNaturalView(generics.ListAPIView):
+    serializer_class = BusquedaPersonaNaturalSerializer
     permission_classes = [IsAuthenticated]
 
     def get(self,request):
@@ -1337,7 +1338,31 @@ class FiltrarPersonaView(generics.ListAPIView):
         else:
             return Response({'success': False, 'detail': 'No se encontraron personas que coincidan con los criterios de búsqueda.'}, status=status.HTTP_404_NOT_FOUND)
 
+class BusquedaPersonaJuridicaView(generics.ListAPIView):
+    serializer_class = BusquedaPersonaJuridicaSerializer
+    permission_classes = [IsAuthenticated]
 
+    def get(self,request):
+        tipo_persona = request.GET.get('tipo_persona')
+        numero_documento = request.GET.get('numero_documento')
+        razon_social = request.GET.get('razon_social')
+        nombre_comercial = request.GET.get('nombre_comercial')
+
+        personas = Personas.objects.all()
+        if tipo_persona:
+            personas = personas.filter(tipo_persona=tipo_persona)
+        if numero_documento:
+            personas = personas.filter(numero_documento=numero_documento)
+        if razon_social:
+            personas = personas.filter(razon_social=razon_social)
+        if nombre_comercial:
+            personas = personas.filter(nombre_comercial=nombre_comercial)
+        
+        if personas.exists():
+            serializer = self.serializer_class(personas, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response({'success': False, 'detail': 'No se encontraron personas que coincidan con los criterios de búsqueda.'}, status=status.HTTP_404_NOT_FOUND)
 """    
 # Views for Clases Tercero
 

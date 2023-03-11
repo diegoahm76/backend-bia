@@ -661,7 +661,12 @@ class HistoricoUnidadesOrgPersonapostSerializer(serializers.ModelSerializer):
         model = HistoricoUnidadesOrgPersona
         fields = '__all__'
 
-class FiltrarPersonaSerializer(serializers.ModelSerializer):
+class BusquedaPersonaNaturalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Personas
         fields = ['tipo_documento','numero_documento','primer_nombre','primer_apellido']
+
+class BusquedaPersonaJuridicaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Personas
+        fields = ['tipo_persona','numero_documento','razon_social','nombre_comercial']

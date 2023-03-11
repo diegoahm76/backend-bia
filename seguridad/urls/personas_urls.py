@@ -38,7 +38,8 @@ urlpatterns = [
     path('persona-natural/create/', views.RegisterPersonaNatural.as_view(), name='persona-natural-register'),
     path('persona-natural/create-by-user-interno/', views.RegisterPersonaNaturalByUserInterno.as_view(), name='persona-natural-register-by-user-interno'),
     path('persona-juridica/create/', views.RegisterPersonaJuridica.as_view(), name='persona-juridica-register'),
-    path('filtrar-persona/', views.FiltrarPersonaView.as_view(), name='filtrar_persona'),
+    path('buscar-persona-natural/', views.BusquedaPersonaNaturalView.as_view(), name='buscar-persona-natural'),
+    path('buscar-persona-juridica/', views.BusquedaPersonaJuridicaView.as_view(), name='buscar-persona-juridica'),
     
     # Apoderados Personas
     #path('apoderados-personas/get-list/', views.getApoderadosPersona.as_view(), name="apoderados-personas-get"),
