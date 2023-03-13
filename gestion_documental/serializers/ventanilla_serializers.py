@@ -22,4 +22,4 @@ class ActualizarAutorizacionesPersonaSerializer(serializers.ModelSerializer):
 class AutorizacionNotificacionesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Personas
-        fields = ['id_personas', 'tipo_persona','acepta_notificacion_sms','acepta_notificacion_email']
+        fields = ['id_persona', 'tipo_persona','acepta_notificacion_sms','acepta_notificacion_email']
