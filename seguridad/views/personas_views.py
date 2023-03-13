@@ -1334,7 +1334,7 @@ class BusquedaPersonaNaturalView(generics.ListAPIView):
         
         if personas.exists():
             serializer = self.serializer_class(personas, many=True)
-            return Response({'success':True, 'detail':'Se encontró la persona de esos criterios de búsqueda', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+            return Response({'success':True, 'detail':'Se encontraron personas que coinciden con los criterios de búsqueda', 'data':serializer.data}, status=status.HTTP_201_CREATED)
         
         else:
             return Response({'success': False, 'detail': 'No se encontraron personas que coincidan con los criterios de búsqueda.'}, status=status.HTTP_404_NOT_FOUND)
@@ -1361,7 +1361,7 @@ class BusquedaPersonaJuridicaView(generics.ListAPIView):
         
         if personas.exists():
             serializer = self.serializer_class(personas, many=True)
-            return Response({'success':True, 'detail':'Se encontró la persona de esos criterios de búsqueda', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+            return Response({'success':True, 'detail':'Se encontraron personas que coinciden con los criterios de búsqueda', 'data':serializer.data}, status=status.HTTP_201_CREATED)
         else:
             return Response({'success': False, 'detail': 'No se encontraron personas que coincidan con los criterios de búsqueda.'}, status=status.HTTP_404_NOT_FOUND)
 """    
