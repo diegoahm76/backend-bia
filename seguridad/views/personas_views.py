@@ -73,7 +73,7 @@ from seguridad.serializers.personas_serializers import (
     ClasesTerceroPersonapostSerializer,
     GetPersonaJuridicaByRepresentanteLegalSerializer,
     CargosSerializer,
-    HistoricoUnidadesOrgPersonapostSerializer,
+    HistoricoCargosUndOrgPersonapostSerializer,
     BusquedaPersonaNaturalSerializer,
     BusquedaPersonaJuridicaSerializer
 )
@@ -494,7 +494,7 @@ class UpdatePersonaNaturalExternoBySelf(generics.RetrieveUpdateAPIView):
 class UpdatePersonaNaturalByUserWithPermissions(generics.RetrieveUpdateAPIView):
     http_method_names= ['patch']
     serializer_class = PersonaNaturalUpdateUserPermissionsSerializer
-    serializer_historico = HistoricoUnidadesOrgPersonapostSerializer
+    serializer_historico = HistoricoCargosUndOrgPersonapostSerializer
     permission_classes = [IsAuthenticated, PermisoActualizarPersona]
     queryset = Personas.objects.all()
 
@@ -517,16 +517,17 @@ class UpdatePersonaNaturalByUserWithPermissions(generics.RetrieveUpdateAPIView):
 
         if persona_por_actualizar.id_unidad_organizacional_actual:
             bandera = True
-            #print("323234234234234234")
+
             datos_historico_unidad['id_persona'] = persona_por_actualizar.id_persona
+            datos_historico_unidad['id_cargo'] = persona_por_actualizar.id_cargo.id_cargo
             datos_historico_unidad['id_unidad_organizacional'] = persona_por_actualizar.id_unidad_organizacional_actual.id_unidad_organizacional
-            datos_historico_unidad['justificacion_cambio'] = datos_ingresados['justificacion_cambio']
-            datos_historico_unidad['fecha_inicio'] = persona_por_actualizar.fecha_asignacion_unidad
-            datos_historico_unidad['fecha_final'] = datos_ingresados['fecha_asignacion_unidad']
+            datos_historico_unidad['justificacion_cambio_und_org'] = datos_ingresados['justificacion_cambio_und_org']
+            datos_historico_unidad['fecha_inicial_historico'] = datetime.now()
+            datos_historico_unidad['fecha_final_historico'] = datetime.now()
         
         if datos_ingresados['id_unidad_organizacional_actual']:
             datos_ingresados['es_unidad_organizacional_actual'] = True
-        datos_ingresados.pop('justificacion_cambio')
+        datos_ingresados.pop('justificacion_cambio_und_org')
         
         persona_serializada = self.serializer_class(persona_por_actualizar, data=datos_ingresados, many=False)
         persona_serializada.is_valid(raise_exception=True)

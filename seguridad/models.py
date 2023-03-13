@@ -185,23 +185,21 @@ class Personas(models.Model):
         verbose_name_plural = 'Personas'
         unique_together = ['tipo_documento', 'numero_documento']
 
-# Tablas producidas a partir de Persona
+# class HistoricoUnidadesOrgPersona(models.Model):
+#     id_historico_unidad_persona = models.AutoField(primary_key=True, editable=False, db_column='T020IdHistoUnidad_Persona')
+#     id_persona = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T020Id_Persona')
+#     id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T020Id_UnidadOrganizativa')
+#     justificacion_cambio = models.CharField(max_length=255, db_column='T020justificacionDelCambio')
+#     fecha_inicio = models.DateTimeField(db_column='T020fechaInicio')
+#     fecha_final = models.DateTimeField(db_column='T020fechaFinal')
 
-class HistoricoUnidadesOrgPersona(models.Model):
-    id_historico_unidad_persona = models.AutoField(primary_key=True, editable=False, db_column='T020IdHistoUnidad_Persona')
-    id_persona = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T020Id_Persona')
-    id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T020Id_UnidadOrganizativa')
-    justificacion_cambio = models.CharField(max_length=255, db_column='T020justificacionDelCambio')
-    fecha_inicio = models.DateTimeField(db_column='T020fechaInicio')
-    fecha_final = models.DateTimeField(db_column='T020fechaFinal')
+#     def __str__(self):
+#         return str(self.id_historico_unidad_persona)
 
-    def __str__(self):
-        return str(self.id_historico_unidad_persona)
-
-    class Meta:
-        db_table = 'T020HistoricoUnidadesOrg_Persona'
-        verbose_name = 'Historico Unidad Org Persona'
-        verbose_name_plural = 'Historicos Unidades org Personas'
+#     class Meta:
+#         db_table = 'T020HistoricoUnidadesOrg_Persona'
+#         verbose_name = 'Historico Unidad Org Persona'
+#         verbose_name_plural = 'Historicos Unidades org Personas'
 
 
 class HistoricoDireccion(models.Model):
@@ -617,7 +615,7 @@ class HistoricoCargosUndOrgPersona(models.Model):
     fecha_inicial_historico = models.DateTimeField(db_column='T023fechaInicialHisto')
     fecha_final_historico = models.DateTimeField(db_column='T023fechaFinalHisto')
     observaciones_vinculni_cargo = models.CharField(max_length=100, choices=subsistemas_CHOICES, null=True, blank=True, db_column='T023observacionesVinculniCargo')
-    justificacion_cambio_und_org = models.CharField(max_length=100, choices=subsistemas_CHOICES, null=True, blank=True, db_column='T023justificacionCambioUndOrg')
+    justificacion_cambio_und_org = models.CharField(max_length=100, null=True, blank=True, db_column='T023justificacionCambioUndOrg')
     desvinculado = models.BooleanField(default=True, db_column='T023desvinculado')
     fecha_desvinculacion = models.DateTimeField(null=True, blank=True, db_column='T023fechaDesvinculacion')
     observaciones_desvinculacion = models.CharField(max_length=100, choices=subsistemas_CHOICES, null=True, blank=True, db_column='T023observacionesDesvincu')
@@ -629,3 +627,20 @@ class HistoricoCargosUndOrgPersona(models.Model):
         db_table = 'T023HistoricoCargosUndOrg_Persona'  
         verbose_name = 'Histórico de cargo de unidad organizacional'
         verbose_name_plural = 'Histórico de cargos de unidades organizacionales'
+
+class HistoricoCambiosIDPersonas (models.Model):
+    historico_cambio_id_persona = models.AutoField(primary_key=True, editable=False, db_column='T024HistoricoCambioId_Persona')
+    id_persona = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T024Id_Persona')
+    nombre_campo_cambiado = models.CharField(max_length=255, db_column='T024nombreCampoCambiado')
+    valor_campo_cambiado = models.CharField(max_length=255, db_column='T024valorCampoCambiado')
+    ruta_archivo_soporte = models.FileField(db_column='T024rutaArchivoSoporte')
+    fecha_cambio = models.DateTimeField(auto_now=True, db_column='T024fechaCambio')
+    justificacion_cambio = models.CharField(max_length=255, db_column='T024justificacionCambio') 
+
+    def __str__(self):
+        return str(self.historico_cambio_id_persona) 
+    
+    class Meta:
+        db_table = 'T024HistoricoCambiosId_Personas'  
+        verbose_name = 'Histórico de cambio id persona'
+        verbose_name_plural = 'Histórico de cambios id personas'

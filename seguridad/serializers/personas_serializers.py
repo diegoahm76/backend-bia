@@ -15,7 +15,7 @@ from seguridad.models import (
     ClasesTercero,
     ClasesTerceroPersona,
     Cargos,
-    HistoricoUnidadesOrgPersona
+    HistoricoCargosUndOrgPersona
 )
 
 
@@ -656,10 +656,14 @@ class CargosSerializer(serializers.ModelSerializer):
             'id_cargo': {'read_only': True}
         }
     
-class HistoricoUnidadesOrgPersonapostSerializer(serializers.ModelSerializer):
+class HistoricoCargosUndOrgPersonapostSerializer(serializers.ModelSerializer):
     class Meta:
-        model = HistoricoUnidadesOrgPersona
+        model = HistoricoCargosUndOrgPersona
         fields = '__all__'
+        # extra_kwargs = {
+            # 'id_cargo': {'read_only': True}
+        # }
+    
 
 class BusquedaPersonaNaturalSerializer(serializers.ModelSerializer):
     class Meta:
