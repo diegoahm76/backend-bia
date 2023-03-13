@@ -1328,13 +1328,14 @@ class BusquedaPersonaNaturalView(generics.ListAPIView):
         if numero_documento:
             personas = personas.filter(numero_documento=numero_documento)
         if primer_nombre:
-            personas = personas.filter(primer_nombre=primer_nombre)
+            personas = personas.filter(primer_nombre__icontains=primer_nombre)
         if primer_apellido:
-            personas = personas.filter(primer_apellido=primer_apellido)
+            personas = personas.filter(primer_apellido__icontains=primer_apellido)
         
         if personas.exists():
             serializer = self.serializer_class(personas, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response({'success':True, 'detail':'Se encontró la persona de esos criterios de búsqueda', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+        
         else:
             return Response({'success': False, 'detail': 'No se encontraron personas que coincidan con los criterios de búsqueda.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -1354,13 +1355,13 @@ class BusquedaPersonaJuridicaView(generics.ListAPIView):
         if numero_documento:
             personas = personas.filter(numero_documento=numero_documento)
         if razon_social:
-            personas = personas.filter(razon_social=razon_social)
+            personas = personas.filter(razon_social__icontains=razon_social)
         if nombre_comercial:
-            personas = personas.filter(nombre_comercial=nombre_comercial)
+            personas = personas.filter(nombre_comercial__icontains=nombre_comercial)
         
         if personas.exists():
             serializer = self.serializer_class(personas, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response({'success':True, 'detail':'Se encontró la persona de esos criterios de búsqueda', 'data':serializer.data}, status=status.HTTP_201_CREATED)
         else:
             return Response({'success': False, 'detail': 'No se encontraron personas que coincidan con los criterios de búsqueda.'}, status=status.HTTP_404_NOT_FOUND)
 """    
