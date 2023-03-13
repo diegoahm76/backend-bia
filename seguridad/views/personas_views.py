@@ -73,7 +73,9 @@ from seguridad.serializers.personas_serializers import (
     ClasesTerceroPersonapostSerializer,
     GetPersonaJuridicaByRepresentanteLegalSerializer,
     CargosSerializer,
-    HistoricoUnidadesOrgPersonapostSerializer
+    HistoricoCargosUndOrgPersonapostSerializer,
+    BusquedaPersonaNaturalSerializer,
+    BusquedaPersonaJuridicaSerializer
 )
 
 # Views for Estado Civil
@@ -492,7 +494,7 @@ class UpdatePersonaNaturalExternoBySelf(generics.RetrieveUpdateAPIView):
 class UpdatePersonaNaturalByUserWithPermissions(generics.RetrieveUpdateAPIView):
     http_method_names= ['patch']
     serializer_class = PersonaNaturalUpdateUserPermissionsSerializer
-    serializer_historico = HistoricoUnidadesOrgPersonapostSerializer
+    serializer_historico = HistoricoCargosUndOrgPersonapostSerializer
     permission_classes = [IsAuthenticated, PermisoActualizarPersona]
     queryset = Personas.objects.all()
 
@@ -515,16 +517,17 @@ class UpdatePersonaNaturalByUserWithPermissions(generics.RetrieveUpdateAPIView):
 
         if persona_por_actualizar.id_unidad_organizacional_actual:
             bandera = True
-            #print("323234234234234234")
+
             datos_historico_unidad['id_persona'] = persona_por_actualizar.id_persona
+            datos_historico_unidad['id_cargo'] = persona_por_actualizar.id_cargo.id_cargo
             datos_historico_unidad['id_unidad_organizacional'] = persona_por_actualizar.id_unidad_organizacional_actual.id_unidad_organizacional
-            datos_historico_unidad['justificacion_cambio'] = datos_ingresados['justificacion_cambio']
-            datos_historico_unidad['fecha_inicio'] = persona_por_actualizar.fecha_asignacion_unidad
-            datos_historico_unidad['fecha_final'] = datos_ingresados['fecha_asignacion_unidad']
+            datos_historico_unidad['justificacion_cambio_und_org'] = datos_ingresados['justificacion_cambio_und_org']
+            datos_historico_unidad['fecha_inicial_historico'] = datetime.now()
+            datos_historico_unidad['fecha_final_historico'] = datetime.now()
         
         if datos_ingresados['id_unidad_organizacional_actual']:
             datos_ingresados['es_unidad_organizacional_actual'] = True
-        datos_ingresados.pop('justificacion_cambio')
+        datos_ingresados.pop('justificacion_cambio_und_org')
         
         persona_serializada = self.serializer_class(persona_por_actualizar, data=datos_ingresados, many=False)
         persona_serializada.is_valid(raise_exception=True)
@@ -644,6 +647,13 @@ class UpdatePersonaJuridicaInternoBySelf(generics.RetrieveUpdateAPIView):
 
             serializador = persona_serializada.save()
 
+            if persona_por_actualizar.representante_legal == previous_persona.representante_legal:
+                fecha_actual = persona_por_actualizar.fecha_cambio_representante_legal
+            else:
+                fecha_actual = dt.datetime.now()  
+                persona_por_actualizar.fecha_cambio_representante_legal = fecha_actual
+            persona_por_actualizar.save()
+
             # auditoria actualizar persona
             usuario = request.user.id_usuario
             direccion=Util.get_client_ip(request)
@@ -727,6 +737,13 @@ class UpdatePersonaJuridicaExternoBySelf(generics.RetrieveUpdateAPIView):
             
             serializador = persona_serializada.save()
 
+            if persona_por_actualizar.representante_legal == previous_persona.representante_legal:
+                fecha_actual = persona_por_actualizar.fecha_cambio_representante_legal
+            else:
+                fecha_actual = dt.datetime.now()  
+                persona_por_actualizar.fecha_cambio_representante_legal = fecha_actual
+            persona_por_actualizar.save()
+            
             # auditoria actualizar persona
             usuario = request.user.id_usuario
             direccion=Util.get_client_ip(request)
@@ -799,38 +816,45 @@ class UpdatePersonaJuridicaByUserWithPermissions(generics.RetrieveUpdateAPIView)
                         return Response({'success': False, 'detail': 'El correo de notificaciones y el secundario deben ser diferentes'}, status=status.HTTP_400_BAD_REQUEST)
                     else:
                         serializador = persona_serializada.save()
+                    
+                    if persona_por_actualizar.representante_legal == previous_persona.representante_legal:
+                        fecha_actual = persona_por_actualizar.fecha_cambio_representante_legal
+                    else:
+                        fecha_actual = dt.datetime.now()  
+                        persona_por_actualizar.fecha_cambio_representante_legal = fecha_actual
+                    persona_por_actualizar.save()
+                    
+                    # auditoria actualizar persona
+                    usuario = request.user.id_usuario
+                    direccion=Util.get_client_ip(request)
+                    descripcion = {"TipodeDocumentoID": str(serializador.tipo_documento), "NumeroDocumentoID": str(serializador.numero_documento), "RazonSocial": str(serializador.razon_social), "NombreComercial": str(serializador.nombre_comercial)}
+                    valores_actualizados = {'current': persona_por_actualizar, 'previous': previous_persona}
 
-                        # auditoria actualizar persona
-                        usuario = request.user.id_usuario
-                        direccion=Util.get_client_ip(request)
-                        descripcion = {"TipodeDocumentoID": str(serializador.tipo_documento), "NumeroDocumentoID": str(serializador.numero_documento), "RazonSocial": str(serializador.razon_social), "NombreComercial": str(serializador.nombre_comercial)}
-                        valores_actualizados = {'current': persona_por_actualizar, 'previous': previous_persona}
-
-                        auditoria_data = {
-                            "id_usuario" : usuario,
-                            "id_modulo" : 1,
-                            "cod_permiso": "AC",
-                            "subsistema": 'TRSV',
-                            "dirip": direccion,
-                            "descripcion": descripcion, 
-                            "valores_actualizados": valores_actualizados
-                        }
-                        Util.save_auditoria(auditoria_data)    
+                    auditoria_data = {
+                        "id_usuario" : usuario,
+                        "id_modulo" : 1,
+                        "cod_permiso": "AC",
+                        "subsistema": 'TRSV',
+                        "dirip": direccion,
+                        "descripcion": descripcion, 
+                        "valores_actualizados": valores_actualizados
+                    }
+                    Util.save_auditoria(auditoria_data)    
                         
-                        #SMS y EMAILS
-                        persona = Personas.objects.get(email=email_principal)
+                    #SMS y EMAILS
+                    persona = Personas.objects.get(email=email_principal)
 
-                        sms = 'Hola ' + str(persona.razon_social) + ' te informamos que ha sido exitosa la actualización de tus datos como PERSONA JURIDICA'
-                        context = {'razon_social': persona.razon_social}
-                        template = render_to_string(('email-update-personajuridica-byuser-withpermissions.html'), context)
-                        subject = 'Actualización de datos exitosa ' + str(persona.razon_social)
-                        data = {'template': template, 'email_subject': subject, 'to_email': persona.email} 
-                        Util.send_email(data)
-                        try:
-                            Util.send_sms(persona.telefono_celular_empresa, sms)
-                        except:
-                            return Response({'success':True,'detail': 'Se actualizó la persona pero no se pudo enviar el mensaje, verificar numero o servicio'}, status=status.HTTP_201_CREATED)
-                        return Response({'success':True,'detail': 'Persona actualizada y notificada exitosamente', 'data': persona_serializada.data}, status=status.HTTP_201_CREATED)
+                    sms = 'Hola ' + str(persona.razon_social) + ' te informamos que ha sido exitosa la actualización de tus datos como PERSONA JURIDICA'
+                    context = {'razon_social': persona.razon_social}
+                    template = render_to_string(('email-update-personajuridica-byuser-withpermissions.html'), context)
+                    subject = 'Actualización de datos exitosa ' + str(persona.razon_social)
+                    data = {'template': template, 'email_subject': subject, 'to_email': persona.email} 
+                    Util.send_email(data)
+                    try:
+                        Util.send_sms(persona.telefono_celular_empresa, sms)
+                    except:
+                        return Response({'success':True,'detail': 'Se actualizó la persona pero no se pudo enviar el mensaje, verificar numero o servicio'}, status=status.HTTP_201_CREATED)
+                    return Response({'success':True,'detail': 'Persona actualizada y notificada exitosamente', 'data': persona_serializada.data}, status=status.HTTP_201_CREATED)
                 except:
                     return Response({'success':False,'detail': 'No pudo obtener el email principal y/o secundario'}, status=status.HTTP_400_BAD_REQUEST)
             except:
@@ -1289,6 +1313,58 @@ class DeleteCargo(generics.DestroyAPIView):
         else:
             return Response({'success': False, 'detail':'No existe el cargo'}, status=status.HTTP_404_NOT_FOUND)
 
+class BusquedaPersonaNaturalView(generics.ListAPIView):
+    serializer_class = BusquedaPersonaNaturalSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        tipo_documento = request.GET.get('tipo_documento')
+        numero_documento = request.GET.get('numero_documento')
+        primer_nombre = request.GET.get('primer_nombre')
+        primer_apellido = request.GET.get('primer_apellido')
+
+        personas = Personas.objects.all()
+        if tipo_documento:
+            personas = personas.filter(tipo_documento=tipo_documento)
+        if numero_documento:
+            personas = personas.filter(numero_documento=numero_documento)
+        if primer_nombre:
+            personas = personas.filter(primer_nombre__icontains=primer_nombre)
+        if primer_apellido:
+            personas = personas.filter(primer_apellido__icontains=primer_apellido)
+        
+        if personas.exists():
+            serializer = self.serializer_class(personas, many=True)
+            return Response({'success':True, 'detail':'Se encontraron personas que coinciden con los criterios de búsqueda', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+        
+        else:
+            return Response({'success': False, 'detail': 'No se encontraron personas que coincidan con los criterios de búsqueda.'}, status=status.HTTP_404_NOT_FOUND)
+
+class BusquedaPersonaJuridicaView(generics.ListAPIView):
+    serializer_class = BusquedaPersonaJuridicaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        tipo_persona = request.GET.get('tipo_persona')
+        numero_documento = request.GET.get('numero_documento')
+        razon_social = request.GET.get('razon_social')
+        nombre_comercial = request.GET.get('nombre_comercial')
+
+        personas = Personas.objects.all()
+        if tipo_persona:
+            personas = personas.filter(tipo_persona=tipo_persona)
+        if numero_documento:
+            personas = personas.filter(numero_documento=numero_documento)
+        if razon_social:
+            personas = personas.filter(razon_social__icontains=razon_social)
+        if nombre_comercial:
+            personas = personas.filter(nombre_comercial__icontains=nombre_comercial)
+        
+        if personas.exists():
+            serializer = self.serializer_class(personas, many=True)
+            return Response({'success':True, 'detail':'Se encontraron personas que coinciden con los criterios de búsqueda', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'success': False, 'detail': 'No se encontraron personas que coincidan con los criterios de búsqueda.'}, status=status.HTTP_404_NOT_FOUND)
 """    
 # Views for Clases Tercero
 

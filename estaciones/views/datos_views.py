@@ -5,7 +5,7 @@ from rest_framework import generics, status
 from estaciones.serializers.datos_serializers import DatosSerializer
 from estaciones.models.estaciones_models import Datos
 
-# Listar Estaciones
+# Listar Datos
 
 
 class ConsultarDatos(generics.ListAPIView):
@@ -21,4 +21,66 @@ class ConsultarDatos(generics.ListAPIView):
         else:
             return Response({'success': True, 'detail': 'No se encontraron datos'}, status=status.HTTP_404_NOT_FOUND)
 
-# Craer estacioens
+# Listar Datos
+
+class ConsultarDatosOptimizado(generics.ListAPIView):
+    serializer_class = DatosSerializer
+    queryset = Datos.objects.all().using("bia-estaciones")
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Obtener los primeros 100 datos
+        datos = self.queryset.order_by('-fecha_registro')[:100]
+        serializador = self.serializer_class(datos, many=True)
+        response_data = {'success': True, 'detail': 'Se encontraron los siguientes datos', 'data': serializador.data}
+
+        # Obtener todos los datos restantes y agregarlos a la respuesta
+        datos_restantes = self.queryset.order_by('-fecha_registro')[100:]
+        serializador_restante = self.serializer_class(datos_restantes, many=True)
+        response_data['data'] += serializador_restante.data
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+
+# consultar datos por el id estacion
+
+class ConsultarDatosId(generics.ListAPIView):
+    serializer_class = DatosSerializer
+    queryset = Datos.objects.all().using("bia-estaciones")
+    permission_classes = [IsAuthenticated]
+
+    def get(self, requet, pk):
+        estaciones = self.queryset.filter(id_estacion=pk)
+        if estaciones:
+            serializador = self.serializer_class(estaciones, many=True)
+            return Response({'success': True, 'detail': 'Se encontró', 'data': serializador.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success': False, 'detail': 'error'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class ConsultarDatosFecha(generics.ListAPIView):
+    serializer_class = DatosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = Datos.objects.all().using("bia-estaciones")
+
+        # Obtener los parámetros de consulta de la URL
+        fecha_inicial = self.kwargs.get('fecha_inicial')
+        fecha_final = self.kwargs.get('fecha_final')
+
+        # Filtrar los datos por fecha si se especificaron los parámetros de consulta
+        if fecha_inicial and fecha_final:
+            queryset = queryset.filter(
+                fecha_registro__range=[fecha_inicial, fecha_final])
+
+        return queryset
+
+    def get(self, request, fecha_inicial, fecha_final):
+        queryset = self.get_queryset()
+
+        if queryset:
+            serializador = self.serializer_class(queryset, many=True)
+            return Response({'success': True, 'detail': 'Se encontraron los siguentes datos', 'data': serializador.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success': True, 'detail': 'No se encontraron datos'}, status=status.HTTP_404_NOT_FOUND)

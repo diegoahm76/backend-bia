@@ -165,16 +165,16 @@ class Personas(models.Model):
     cod_municipio_expedicion_id = models.ForeignKey(Municipio, on_delete=models.SET_NULL, null=True, blank=True, db_column='T010Cod_MunicipioExpID')
     cod_naturaleza_empresa = models.CharField(max_length=1, null=True, blank=True, db_column='T010codNaturalezaEmpresa')
     direccion_notificacion_referencia = models.CharField(max_length=255, null=True, blank=True, db_column='T010dirNotificacionNalReferencia')
-    fecha_cambio_representante_legal = models.DateTimeField(auto_now=True, null=True, blank=True, db_column='T010fechaCambioRepLegal')
+    fecha_cambio_representante_legal = models.DateTimeField(null=True, blank=True, db_column='T010fechaCambioRepLegal')
     fecha_inicio_cargo_rep_legal = models.DateTimeField(null=True, blank=True, db_column='T010fechaInicioCargoRepLegal')
     fecha_inicio_cargo_actual = models.DateTimeField(null=True, blank=True, auto_now=True, db_column='T010fechaInicioCargoActual')
     fecha_a_finalizar_cargo_actual = models.DateTimeField(null=True, blank=True, db_column='T010fechaAFinalizarCargoActual')
     observaciones_vinculacion_cargo_actual = models.CharField(max_length=100, null=True, blank=True, db_column='T010observacionesVincuCargoActual')
-    fecha_ultim_actualizacion_autorizaciones = models.DateTimeField(auto_now=True, null=True, blank=True, db_column='T010fechaUltActuaAutorizaciones')
-    fecha_creacion = models.DateTimeField(auto_now=True, db_column='T010fechaCreacion')
+    fecha_ultim_actualizacion_autorizaciones = models.DateTimeField(null=True, blank=True, db_column='T010fechaUltActuaAutorizaciones')
+    fecha_creacion = models.DateTimeField(auto_now_add=True, db_column='T010fechaCreacion')
     id_persona_crea = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, db_column='T010Id_PersonaCrea',related_name='persona_crea')
     id_persona_ultim_actualiz_diferente_crea = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, db_column='T010Id_PersonaUltActuaDifCrea',related_name='persona_ult_act_dif')
-    fecha_ultim_actualiz_diferente_crea = models.DateTimeField(auto_now=True, null=True, blank=True, db_column='T010fechaUltActuaDifCrea')
+    fecha_ultim_actualiz_diferente_crea = models.DateTimeField(null=True, blank=True, db_column='T010fechaUltActuaDifCrea')
 
     def __str__(self):
         return str(self.primer_nombre) + ' ' + str(self.primer_apellido)
@@ -185,23 +185,21 @@ class Personas(models.Model):
         verbose_name_plural = 'Personas'
         unique_together = ['tipo_documento', 'numero_documento']
 
-# Tablas producidas a partir de Persona
+# class HistoricoUnidadesOrgPersona(models.Model):
+#     id_historico_unidad_persona = models.AutoField(primary_key=True, editable=False, db_column='T020IdHistoUnidad_Persona')
+#     id_persona = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T020Id_Persona')
+#     id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T020Id_UnidadOrganizativa')
+#     justificacion_cambio = models.CharField(max_length=255, db_column='T020justificacionDelCambio')
+#     fecha_inicio = models.DateTimeField(db_column='T020fechaInicio')
+#     fecha_final = models.DateTimeField(db_column='T020fechaFinal')
 
-class HistoricoUnidadesOrgPersona(models.Model):
-    id_historico_unidad_persona = models.AutoField(primary_key=True, editable=False, db_column='T020IdHistoUnidad_Persona')
-    id_persona = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T020Id_Persona')
-    id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T020Id_UnidadOrganizativa')
-    justificacion_cambio = models.CharField(max_length=255, db_column='T020justificacionDelCambio')
-    fecha_inicio = models.DateTimeField(db_column='T020fechaInicio')
-    fecha_final = models.DateTimeField(db_column='T020fechaFinal')
+#     def __str__(self):
+#         return str(self.id_historico_unidad_persona)
 
-    def __str__(self):
-        return str(self.id_historico_unidad_persona)
-
-    class Meta:
-        db_table = 'T020HistoricoUnidadesOrg_Persona'
-        verbose_name = 'Historico Unidad Org Persona'
-        verbose_name_plural = 'Historicos Unidades org Personas'
+#     class Meta:
+#         db_table = 'T020HistoricoUnidadesOrg_Persona'
+#         verbose_name = 'Historico Unidad Org Persona'
+#         verbose_name_plural = 'Historicos Unidades org Personas'
 
 
 class HistoricoDireccion(models.Model):
@@ -400,7 +398,7 @@ class PermisosModuloRol(models.Model):
 class User(AbstractBaseUser, PermissionsMixin):   
     id_usuario = models.AutoField(primary_key=True, editable=False, db_column='TzIdUsuario')
     nombre_de_usuario = models.CharField(max_length=30, unique=True, db_column='TznombreUsuario')
-    persona = models.OneToOneField(Personas, on_delete=models.CASCADE, db_column='TzId_Persona')
+    persona = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='TzId_Persona')
     is_active = models.BooleanField(max_length=1, default=False, db_column='Tzactivo')
     is_staff = models.BooleanField(default=False, db_column='Tzstaff')#Añadido por Juan
     is_superuser = models.BooleanField(default=False, db_column='TzsuperUser')  #Añadido por Juan
@@ -412,7 +410,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_creado_por_portal= models.BooleanField(default=True, db_column='TZcreadoPorPortal')
     tipo_usuario = models.CharField(max_length=1, default='E', null=True, choices=tipo_usuario_CHOICES, db_column='TztipoUsuario')
     profile_img = models.ImageField(null=True, blank=True, default='/placeholder.png', db_column='tzrutaFoto') #Juan Camilo Text Choices
-    email = models.EmailField(unique=True, db_column='TzemailUsuario') #Añadido por Juan
+    # email = models.EmailField(blank=True,null=True db_column='TzemailUsuario') #Añadido por Juan
     
     USERNAME_FIELD = 'nombre_de_usuario'
     REQUIRED_FIELDS = []
@@ -581,7 +579,7 @@ class HistoricoAutirzacionesNotis(models.Model):
     id_persona = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T021Id_Persona')
     respueta_autorizacion_sms = models.BooleanField(default=True, db_column='T021rtaAutorizacionSMS')
     respuesta_autorizacion_mail = models.BooleanField(default=True, db_column='T021rtaAutorizacionMail')
-    fecha_inicio = models.DateTimeField(auto_now=True, db_column='T021fechaInicio')
+    fecha_inicio = models.DateTimeField(db_column='T021fechaInicio')
     fecha_fin = models.DateTimeField(auto_now=True, db_column='T021fechaFin')
 
     def __str__(self):
@@ -617,7 +615,7 @@ class HistoricoCargosUndOrgPersona(models.Model):
     fecha_inicial_historico = models.DateTimeField(db_column='T023fechaInicialHisto')
     fecha_final_historico = models.DateTimeField(db_column='T023fechaFinalHisto')
     observaciones_vinculni_cargo = models.CharField(max_length=100, choices=subsistemas_CHOICES, null=True, blank=True, db_column='T023observacionesVinculniCargo')
-    justificacion_cambio_und_org = models.CharField(max_length=100, choices=subsistemas_CHOICES, null=True, blank=True, db_column='T023justificacionCambioUndOrg')
+    justificacion_cambio_und_org = models.CharField(max_length=100, null=True, blank=True, db_column='T023justificacionCambioUndOrg')
     desvinculado = models.BooleanField(default=True, db_column='T023desvinculado')
     fecha_desvinculacion = models.DateTimeField(null=True, blank=True, db_column='T023fechaDesvinculacion')
     observaciones_desvinculacion = models.CharField(max_length=100, choices=subsistemas_CHOICES, null=True, blank=True, db_column='T023observacionesDesvincu')
@@ -629,3 +627,20 @@ class HistoricoCargosUndOrgPersona(models.Model):
         db_table = 'T023HistoricoCargosUndOrg_Persona'  
         verbose_name = 'Histórico de cargo de unidad organizacional'
         verbose_name_plural = 'Histórico de cargos de unidades organizacionales'
+
+class HistoricoCambiosIDPersonas (models.Model):
+    historico_cambio_id_persona = models.AutoField(primary_key=True, editable=False, db_column='T024HistoricoCambioId_Persona')
+    id_persona = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T024Id_Persona')
+    nombre_campo_cambiado = models.CharField(max_length=255, db_column='T024nombreCampoCambiado')
+    valor_campo_cambiado = models.CharField(max_length=255, db_column='T024valorCampoCambiado')
+    ruta_archivo_soporte = models.FileField(db_column='T024rutaArchivoSoporte')
+    fecha_cambio = models.DateTimeField(auto_now=True, db_column='T024fechaCambio')
+    justificacion_cambio = models.CharField(max_length=255, db_column='T024justificacionCambio') 
+
+    def __str__(self):
+        return str(self.historico_cambio_id_persona) 
+    
+    class Meta:
+        db_table = 'T024HistoricoCambiosId_Personas'  
+        verbose_name = 'Histórico de cambio id persona'
+        verbose_name_plural = 'Histórico de cambios id personas'

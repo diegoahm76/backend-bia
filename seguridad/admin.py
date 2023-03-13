@@ -162,11 +162,10 @@ class ClasesTerceroPersonaAdmin(admin.ModelAdmin):
     
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('persona','email', 'nombre_de_usuario', 'id_usuario_creador', 'tipo_usuario', 'created_at', 'is_active',)
+    list_display = ('persona', 'nombre_de_usuario', 'id_usuario_creador', 'tipo_usuario', 'created_at', 'is_active',)
     list_display_links = list_display
     search_fields = (
         'nombre_de_usuario',
-        'email',
     )
     list_filter = (
         'is_active',

@@ -1,6 +1,4 @@
-
-from gestion_documental.serializers.ventanilla_serializers import ActualizarAutorizacionesPersona
-from gestion_documental.serializers.ventanilla_serializers import PersonasSerializer
+from gestion_documental.serializers.ventanilla_serializers import PersonasSerializer, ActualizarAutorizacionesPersonaSerializer, AutorizacionNotificacionesSerializer
 from seguridad.models import Personas,HistoricoEmails,HistoricoDireccion
 from rest_framework import generics,status
 from rest_framework.response import Response
@@ -62,7 +60,7 @@ class ActualizacionPersonaNatural(generics.UpdateAPIView):
 
 class ActualizacionAutorizaciones(generics.UpdateAPIView):
     
-    serializer_class = ActualizarAutorizacionesPersona
+    serializer_class = ActualizarAutorizacionesPersonaSerializer
     queryset = Personas.objects.all()
     
     def put(self,request,id_persona):
@@ -72,17 +70,35 @@ class ActualizacionAutorizaciones(generics.UpdateAPIView):
         if not persona:
             return Response({'success':False,'detail':'No existe la persona'},status=status.HTTP_404_NOT_FOUND)
        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+class AutorizacionNotificaciones(generics.RetrieveUpdateAPIView):
+    serializer_class = AutorizacionNotificacionesSerializer
+    queryset = Personas.objects.all()
+
+    def put(self, request, id_persona):
+        persona = Personas.objects.filter(id_persona=id_persona).first()
+        data = request.data
+
+        if persona is not None:
+            if 'acepta_autorizacion_email' in data and 'acepta_autorizacion_sms' in data:
+                acepta_autorizacion_email = data['acepta_autorizacion_email']
+                acepta_autorizacion_sms = data['acepta_autorizacion_sms']
+
+                persona.acepta_notificacion_email = acepta_autorizacion_email
+                persona.acepta_notificacion_sms = acepta_autorizacion_sms
+                persona.save()
+
+                if acepta_autorizacion_email and acepta_autorizacion_sms:
+                    return Response({'success': True, 'detail': 'Autorización por correo electrónico y teléfono aceptada'}, status=status.HTTP_200_OK)
+                elif acepta_autorizacion_email:
+                    return Response({'success': True, 'detail': 'Autorización por correo electrónico aceptada'}, status=status.HTTP_200_OK)
+                elif acepta_autorizacion_sms:
+                    return Response({'success': True, 'detail': 'Autorización por teléfono aceptada'}, status=status.HTTP_200_OK)
+                else:
+                    return Response({'success': False, 'detail': 'Autorización no aceptada'}, status=status.HTTP_200_OK)
+            else: 
+                return Response({'success': False, 'detail': 'Autorización no aceptada'}, status=status.HTTP_200_OK) 
+        else:
+            return Response({'success': False, 'detail': 'La persona no existe'}, status=status.HTTP_404_NOT_FOUND)
         # if persona.tipo_persona == 'N':
             
         #     if data['email'] != persona.email:
