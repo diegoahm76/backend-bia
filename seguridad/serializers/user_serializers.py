@@ -102,10 +102,9 @@ class RegisterSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ["email", 'nombre_de_usuario', 'persona', 'password', 'id_usuario_creador', 'tipo_usuario', 'is_active', 'is_blocked', 'roles']
+        fields = ['nombre_de_usuario', 'persona', 'password', 'id_usuario_creador', 'tipo_usuario', 'is_active', 'is_blocked', 'roles']
 
     def validate(self, attrs):
-        email= attrs.get('email', '')
         nombre_de_usuario=attrs.get('nombre_de_usuario', '')
         if not nombre_de_usuario.isalnum():
             raise serializers.ValidationError("El Nombre de usuario solo debe tener caracteres alfanumericos")
@@ -119,13 +118,12 @@ class RegisterExternoSerializer(serializers.ModelSerializer):
     redirect_url=serializers.CharField(max_length=500, read_only=True)
     class Meta:
         model = User
-        fields = ["email", 'nombre_de_usuario', 'persona', 'password','redirect_url']
+        fields = ['nombre_de_usuario', 'persona', 'password','redirect_url']
 
 
     def validate(self, attrs):
-        email= attrs.get('email', '')
         nombre_de_usuario=attrs.get('nombre_de_usuario', '')
-        redirect_url=attrs.get('redirect_url','')
+        # redirect_url=attrs.get('redirect_url','')
         if not nombre_de_usuario.isalnum():
             raise serializers.ValidationError("El Nombre de usuario solo debe tener caracteres alfanumericos")
         return attrs
@@ -189,7 +187,7 @@ class LoginSerializer(serializers.ModelSerializer):
         else:
             tokens = user.tokens()
 
-        return {'email': user.email, 'nombre_de_usuario': user.nombre_de_usuario, 'tokens': tokens, 'is_superuser': user.is_superuser, 'id_usuario': user.id_usuario}
+        return {'email': user.persona.email, 'nombre_de_usuario': user.nombre_de_usuario, 'tokens': tokens, 'is_superuser': user.is_superuser, 'id_usuario': user.id_usuario}
  
 class LoginPostSerializers(serializers.ModelSerializer):
     class Meta:

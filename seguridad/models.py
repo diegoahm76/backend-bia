@@ -170,11 +170,11 @@ class Personas(models.Model):
     fecha_inicio_cargo_actual = models.DateTimeField(null=True, blank=True, auto_now=True, db_column='T010fechaInicioCargoActual')
     fecha_a_finalizar_cargo_actual = models.DateTimeField(null=True, blank=True, db_column='T010fechaAFinalizarCargoActual')
     observaciones_vinculacion_cargo_actual = models.CharField(max_length=100, null=True, blank=True, db_column='T010observacionesVincuCargoActual')
-    fecha_ultim_actualizacion_autorizaciones = models.DateTimeField(auto_now=True, null=True, blank=True, db_column='T010fechaUltActuaAutorizaciones')
-    fecha_creacion = models.DateTimeField(auto_now=True, db_column='T010fechaCreacion')
+    fecha_ultim_actualizacion_autorizaciones = models.DateTimeField(null=True, blank=True, db_column='T010fechaUltActuaAutorizaciones')
+    fecha_creacion = models.DateTimeField(auto_now_add=True, db_column='T010fechaCreacion')
     id_persona_crea = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, db_column='T010Id_PersonaCrea',related_name='persona_crea')
     id_persona_ultim_actualiz_diferente_crea = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, db_column='T010Id_PersonaUltActuaDifCrea',related_name='persona_ult_act_dif')
-    fecha_ultim_actualiz_diferente_crea = models.DateTimeField(auto_now=True, null=True, blank=True, db_column='T010fechaUltActuaDifCrea')
+    fecha_ultim_actualiz_diferente_crea = models.DateTimeField(null=True, blank=True, db_column='T010fechaUltActuaDifCrea')
 
     def __str__(self):
         return str(self.primer_nombre) + ' ' + str(self.primer_apellido)
@@ -400,7 +400,7 @@ class PermisosModuloRol(models.Model):
 class User(AbstractBaseUser, PermissionsMixin):   
     id_usuario = models.AutoField(primary_key=True, editable=False, db_column='TzIdUsuario')
     nombre_de_usuario = models.CharField(max_length=30, unique=True, db_column='TznombreUsuario')
-    persona = models.OneToOneField(Personas, on_delete=models.CASCADE, db_column='TzId_Persona')
+    persona = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='TzId_Persona')
     is_active = models.BooleanField(max_length=1, default=False, db_column='Tzactivo')
     is_staff = models.BooleanField(default=False, db_column='Tzstaff')#Añadido por Juan
     is_superuser = models.BooleanField(default=False, db_column='TzsuperUser')  #Añadido por Juan
@@ -412,7 +412,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_creado_por_portal= models.BooleanField(default=True, db_column='TZcreadoPorPortal')
     tipo_usuario = models.CharField(max_length=1, default='E', null=True, choices=tipo_usuario_CHOICES, db_column='TztipoUsuario')
     profile_img = models.ImageField(null=True, blank=True, default='/placeholder.png', db_column='tzrutaFoto') #Juan Camilo Text Choices
-    email = models.EmailField(unique=True, db_column='TzemailUsuario') #Añadido por Juan
+    # email = models.EmailField(blank=True,null=True db_column='TzemailUsuario') #Añadido por Juan
     
     USERNAME_FIELD = 'nombre_de_usuario'
     REQUIRED_FIELDS = []
@@ -581,7 +581,7 @@ class HistoricoAutirzacionesNotis(models.Model):
     id_persona = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T021Id_Persona')
     respueta_autorizacion_sms = models.BooleanField(default=True, db_column='T021rtaAutorizacionSMS')
     respuesta_autorizacion_mail = models.BooleanField(default=True, db_column='T021rtaAutorizacionMail')
-    fecha_inicio = models.DateTimeField(auto_now=True, db_column='T021fechaInicio')
+    fecha_inicio = models.DateTimeField(db_column='T021fechaInicio')
     fecha_fin = models.DateTimeField(auto_now=True, db_column='T021fechaFin')
 
     def __str__(self):
