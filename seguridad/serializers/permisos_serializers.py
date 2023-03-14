@@ -117,6 +117,7 @@ class PermisosModuloRolPostSerializer(serializers.ModelSerializer):
         validators = [
            UniqueTogetherValidator(
                queryset=PermisosModuloRol.objects.all(),
-               fields = ['id_rol', 'id_permiso_modulo']
+               fields = ['id_rol', 'id_permiso_modulo'],
+               message='No puede asignar el mismo permiso para el rol elegido'
            )
         ]
