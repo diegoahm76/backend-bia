@@ -24,7 +24,7 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import status
 import jwt
 from django.conf import settings
-from seguridad.serializers.user_serializers import EmailVerificationSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserPutAdminSerializer, UserPutSerializerExterno, UserPutSerializerInterno, UserSerializer, UserSerializerWithToken, UserRolesSerializer, RegisterSerializer  ,LoginSerializer, DesbloquearUserSerializer, SetNewPasswordUnblockUserSerializer
+from seguridad.serializers.user_serializers import EmailVerificationSerializer, GetNuevoSuperUsuarioSerializer, GetSuperUsuarioSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserPutAdminSerializer, UserPutSerializerExterno, UserPutSerializerInterno, UserSerializer, UserSerializerWithToken, UserRolesSerializer, RegisterSerializer  ,LoginSerializer, DesbloquearUserSerializer, SetNewPasswordUnblockUserSerializer
 from rest_framework.generics import RetrieveUpdateAPIView
 from django.contrib.auth.hashers import make_password
 from rest_framework import status
@@ -346,106 +346,75 @@ def updateUserAdmin(request, pk):
 class AsignarRolSuperUsuario(generics.CreateAPIView):
     serializer_class = UsuarioRolesSerializers
     queryset = UsuariosRol.objects.all()
-    permission_classes = [IsAuthenticated, PermisoDelegarRolSuperUsuario, PermisoConsultarDelegacionSuperUsuario]
+    permission_classes = [IsAuthenticated, IsAdminUser]
 
-    def post(self, request, pk):
+    def post(self, request, id_persona):
         user_logeado = request.user.id_usuario
-        rol_superusuario = Roles.objects.get(id_rol=1)
-        rol_interno = Roles.objects.get(id_rol=3)
+        #validar si es necesario esta linea con el "id_rol=3"
+        # rol_interno = Roles.objects.get(id_rol=3)
 
         #Validaciones
-        try:
-            usuario_delegado = User.objects.get(id_usuario=pk)
-            pass
-        except:
-            return Response({'success':False,'detail': 'No existe este usuario'}, status=status.HTTP_404_NOT_FOUND)
-
-        if usuario_delegado.tipo_usuario == 'I':
-            pass
-        else:
-            return Response({'success':False,'detail': 'Este usuario no es usuario interno, por lo tanto no puede asignarle este rol'}, status=status.HTTP_403_FORBIDDEN)
         
-        #Delegación
-        try:
-            creacion_delegacion = UsuariosRol.objects.create(
-            id_rol = rol_superusuario,
-            id_usuario = usuario_delegado
-            )
-            try:
-                usuario_delegante = User.objects.get(id_usuario=user_logeado)
-                print(usuario_delegante)
+        persona = Personas.objects.filter(id_persona=id_persona).first()
+        
+        if not persona:
+            return Response({'success':False,'detail': 'No existe la persona'}, status=status.HTTP_404_NOT_FOUND)
 
-                usuario_rol_delegante = UsuariosRol.objects.get(Q(id_rol=1) & Q(id_usuario=user_logeado))
-                print(usuario_rol_delegante)
-                usuario_rol_delegante.delete()
+        usuario_delegado = User.objects.filter(persona=persona.id_persona).first()
+        
+        if not usuario_delegado or usuario_delegado.tipo_usuario != 'I': 
+            return Response({'success':False,'detail': 'Esta persona no tiene un usuario interno, por lo tanto no puede asignarle este rol'}, status=status.HTTP_403_FORBIDDEN)
+        
+       #Delegación del super usuario       
+    
+        usuario_delegante = User.objects.filter(id_usuario=user_logeado).first()
+        previous_usuario_delegante = copy.copy(usuario_delegante)
+        usuario_delegante.persona = persona
+        usuario_delegante.save()
+        print(usuario_delegante)
 
-                #Auditoria Delegación de Rol Super Usuario
-                descripcion = 'nombre_de_usuario:'+ str(usuario_delegado.nombre_de_usuario)+ '|' + 'Rol:'+ str(rol_superusuario)+ '.'
-                valores_actualizados = 'Se agregó en el detalle el rol ' + str(rol_superusuario) + '.'
-                modulo = Modulos.objects.get(id_modulo=8)
-                permiso = Permisos.objects.get(cod_permiso= 'AC')
-                dirip = Util.get_client_ip(request)
-                
-                Auditorias.objects.create(
-                    id_usuario = usuario_delegante,
-                    id_modulo = modulo,
-                    id_cod_permiso_accion = permiso,
-                    subsistema = 'SEGU',
-                    dirip = dirip,
-                    descripcion = descripcion,
-                    valores_actualizados = str(valores_actualizados)
-                )
-
-                #Auditoria Eliminación de Rol Super Usuario
-                descripcion = 'nombre_de_usuario:'+ str(usuario_delegante.nombre_de_usuario)+ '.'
-                valores_actualizados = 'Se eliminó en el detalle el rol ' + str(rol_superusuario) + '.'
-                modulo = Modulos.objects.get(id_modulo=8)
-                permiso = Permisos.objects.get(cod_permiso= 'AC')
-                dirip = Util.get_client_ip(request)
-                
-                Auditorias.objects.create(
-                    id_usuario = usuario_delegante,
-                    id_modulo = modulo,
-                    id_cod_permiso_accion = permiso,
-                    subsistema = 'SEGU',
-                    dirip = dirip,
-                    descripcion = descripcion,
-                    valores_actualizados = str(valores_actualizados)
-                )
-
-                pass
-            except:
-                return Response({'success':False,'detail':'No se pudo terminar el proceso de asignación, verificar base de datos'}, status=status.HTTP_400_BAD_REQUEST)
-        except:
-            return Response({'success':False,'detail': 'No se puede asignar dos veces el mismo a un usuario'}, status=status.HTTP_403_FORBIDDEN)        
+        #Auditoria Delegación de Rol Super Usuario
+        valores_actualizados = {'previous':previous_usuario_delegante,'current':usuario_delegante}
+        dirip = Util.get_client_ip(request)
+        descripcion = {'nombre_de_usuario': usuario_delegante.nombre_de_usuario}
+        auditoria_data = {
+            'id_usuario': user_logeado,
+            'id_modulo': 8,
+            'cod_permiso': 'EJ',
+            'subsistema': 'SEGU',
+            'dirip': dirip,
+            'descripcion': descripcion,
+            'valores_actualizados': valores_actualizados
+        }
+        Util.save_auditoria(auditoria_data)
         
         #SMS y EMAIL para DELEGANTE
         persona_delegante = Personas.objects.get(id_persona = usuario_delegante.persona.id_persona)
-        sms = 'Te informamos que has delegado tu rol super usuario exitosamente'
+        #sms = 'Te informamos que has delegado tu rol super usuario exitosamente'
         context = {'primer_nombre': persona_delegante.primer_nombre, 'primer_apellido': persona_delegante.primer_apellido}
         template = render_to_string(('email-delegate-superuser.html'), context)
         subject = 'Delegación de rol exitosa ' + str(persona_delegante.primer_nombre)
         data = {'template': template, 'email_subject': subject, 'to_email': persona_delegante.email}
         Util.send_email(data)
-        try:
-            Util.send_sms(persona_delegante.telefono_celular, sms)
-            pass
-        except:
-            return Response({'success':True,'detail':'Se realizó la asignación sin problema pero no se pudo enviar sms de confirmación'}, status=status.HTTP_200_OK)
+        #try:
+         #   Util.send_sms(persona_delegante.telefono_celular, sms)
+          #  pass
+        #except:
+         #   return Response({'success':True,'detail':'Se realizó la asignación sin problema pero no se pudo enviar sms de confirmación'}, status=status.HTTP_200_OK)
         
         #SMS y EMAIL para DELEGADO
         persona_delegado = Personas.objects.get(id_persona = usuario_delegado.persona.id_persona)
-        sms = 'Te informamos que has sido delegado para tener el rol super usuario '
+        #sms = 'Te informamos que has sido delegado para tener el rol super usuario '
         context = {'primer_nombre': persona_delegado.primer_nombre, 'primer_apellido': persona_delegado.primer_apellido}
         template = render_to_string(('email-delegate-superuser.html'), context)
         subject = 'Delegación de rol exitosa ' + str(persona_delegado.primer_nombre)
         data = {'template': template, 'email_subject': subject, 'to_email': persona_delegado.email}
         Util.send_email(data)
-        try:
-            Util.send_sms(persona_delegado.telefono_celular, sms)
-            pass
-        except:
-            return Response({'success':True,'detail':'Se realizó la asignación sin problema pero no se pudo enviar sms de confirmación'}, status=status.HTTP_200_OK)
+        #try:
+         #   Util.send_sms(persona_delegado.telefono_celular, sms)
+          #  pass
+        #except:
+         #   return Response({'success':True,'detail':'Se realizó la asignación sin problema pero no se pudo enviar sms de confirmación'}, status=status.HTTP_200_OK)
         
         return Response({'success':True,'detail': 'Delegación y notificación exitosa'}, status=status.HTTP_200_OK)
 
@@ -1010,3 +979,72 @@ def uploadImage(request):
     user.save()
 
     return Response('Image was uploaded')
+
+#MOSTRAR EL NOMBRE DEL SUPER USUARIO
+class GetNombreSuperUsuario(generics.RetrieveAPIView):
+    
+    serializer_class = GetSuperUsuarioSerializer
+    queryset = User.objects.all()
+    
+    def get (self,request):
+        
+        user = request.user
+        
+        serializador = self.serializer_class(user)
+        
+        return Response({'success':True,'detail':'Petición exitosa','data':serializador.data},status=status.HTTP_200_OK)
+    
+# CONSULTAR NUEVO SUPER USUARIO FECHA ACTUAL
+
+class GetNuevoSuperUsuario(generics.RetrieveAPIView):
+    
+    serializer_class = GetNuevoSuperUsuarioSerializer
+    queryset = User.objects.all()
+    
+    def get (self,request):
+        
+        tipo_documento = request.query_params.get('tipo_documento')
+        numero_documentos = request.query_params.get('numero_documento')
+        fecha_sistema = datetime.now()
+        
+                
+        nuevo_super_usuario = Personas.objects.filter(tipo_documento=tipo_documento,numero_documento=numero_documentos,fecha_a_finalizar_cargo_actual__gt=fecha_sistema).filter(~Q(id_cargo = None)).first()
+        
+        if nuevo_super_usuario:
+            serializador = self.serializer_class(nuevo_super_usuario)
+            return Response({'succes':True, 'detail':'Los datos coincidieron con la busqueda realizada.','data':serializador.data},status=status.HTTP_200_OK)
+        
+        else: 
+            return Response({'succes':True, 'detail':'La persona no existe o no tiene cargo actual.'},status=status.HTTP_200_OK)
+
+#BUSQUEDA AVANZADA PARA LA TABLA PERSONAS
+
+class Busqueda_Avanzada(generics.ListAPIView):
+    serializer_class = GetNuevoSuperUsuarioSerializer
+    queryset = Personas.objects.all()
+    
+    def get(self,request):
+    
+        filter={}
+        for key, value in request.query_params.items():
+            if key in ['primer_nombre','primer_apellido','tipo_documento','numero_documento']:
+                if key == 'primer_nombre'or key== 'primer_apellido':
+                    filter[key+'__icontains'] = value
+                elif key == 'numero_documento':
+                    filter[key+'__startswith'] = value
+                else:
+                    filter[key] = value
+                    
+        fecha_sistema =  datetime.now()           
+        filter['fecha_a_finalizar_cargo_actual__gt'] = fecha_sistema
+                    
+        persona = self.queryset.all().filter(**filter).filter(~Q(id_cargo = None))
+        
+        if persona:
+            serializador = self.serializer_class(persona,many=True)
+            return Response({'succes':True, 'detail':'Se encontraron las siguientes personas.','data':serializador.data},status=status.HTTP_200_OK)
+        else: 
+             return Response({'succes':False, 'detail':'La persona no se encontro.'},status=status.HTTP_200_OK)
+
+
+                    

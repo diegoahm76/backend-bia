@@ -6,7 +6,7 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils import encoding, http
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
-from seguridad.models import User, UsuariosRol, HistoricoActivacion,Login,LoginErroneo,PermisosModuloRol,UsuarioErroneo
+from seguridad.models import Personas, User, UsuariosRol, HistoricoActivacion,Login,LoginErroneo,PermisosModuloRol,UsuarioErroneo
 from seguridad.serializers.personas_serializers import PersonasSerializer
 from seguridad.serializers.permisos_serializers import PermisosModuloRolSerializer
 from rest_framework.validators import UniqueValidator
@@ -303,3 +303,32 @@ class SetNewPasswordUnblockUserSerializer(serializers.Serializer):
 
             return user
         
+        #MOSTRAR EL NOMBRE DEL SUPER USUARIO
+        
+class GetSuperUsuarioSerializer(serializers.ModelSerializer):
+    nombre_persona = serializers.SerializerMethodField()
+    
+    def get_nombre_persona(self,obj):
+        
+        nombre_persona2 = obj.persona.primer_nombre + ' ' + obj.persona.primer_apellido
+        
+        return nombre_persona2
+    
+    class Meta:
+        fields = ['id_usuario','persona','nombre_persona']
+        model = User
+        
+# CONSULTAR NUEVO SUPER USUARIO FECHA ACTUAL
+
+class GetNuevoSuperUsuarioSerializer(serializers.ModelSerializer):
+    nombre_completo = serializers.SerializerMethodField() #para hacer una funcion, para la variable 'nombre_completo'
+    
+    def get_nombre_completo(self, obj): #la funcion para cada variable se debe de conectar todo pegado
+        nombre_completo2 = obj.primer_nombre + ' ' + obj.primer_apellido
+        return nombre_completo2
+        
+    class Meta:
+        fields = ['id_persona','tipo_documento','numero_documento','nombre_completo']
+        model = Personas
+        
+
