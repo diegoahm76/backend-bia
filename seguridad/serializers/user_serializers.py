@@ -118,7 +118,7 @@ class RegisterExternoSerializer(serializers.ModelSerializer):
     redirect_url=serializers.CharField(max_length=500, read_only=True)
     class Meta:
         model = User
-        fields = ['nombre_de_usuario', 'persona', 'password','redirect_url']
+        fields = ['nombre_de_usuario', 'persona', 'password','redirect_url','creado_por_portal']
 
 
     def validate(self, attrs):
