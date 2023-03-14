@@ -764,11 +764,6 @@ class LoginApiView(generics.CreateAPIView):
                     
                     serializer_data = serializer.data
                     
-                    # AÑADIR INFO PERSONA
-                    serializer_data['tipo_usuario'] = user.tipo_usuario
-                    serializer_data['id_persona'] = user.persona.id_persona
-                    serializer_data['tipo_persona'] = user.persona.tipo_persona
-                    
                     user_info={'userinfo':serializer_data,'permisos':permisos_list,'representante_legal':representante_legal_list}
                     sms = "Has iniciado sesion en bia cormacarena"
                     Util.send_sms(user.persona.telefono_celular, sms)
