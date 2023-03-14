@@ -18,12 +18,12 @@ class TipologiasDocumentalesSerializer(serializers.ModelSerializer):
            UniqueTogetherValidator(
                queryset=TipologiasDocumentales.objects.all(),
                fields = ['id_trd', 'codigo'],
-               message='El id_ccd y el codigo deben ser una pareja única'
+               message='No puede registrar más de una tipología con el mismo código para esta TRD'
            ),
            UniqueTogetherValidator(
                queryset=TipologiasDocumentales.objects.all(),
                fields = ['id_trd', 'nombre'],
-               message='El id_ccd y nombre deben ser una pareja única'
+               message='No puede registrar más de una tipología con el mismo nombre para esta TRD'
            )
         ]
 
@@ -36,12 +36,12 @@ class TipologiasDocumentalesPutSerializer(serializers.ModelSerializer):
            UniqueTogetherValidator(
                queryset=TipologiasDocumentales.objects.all(),
                fields = ['id_trd', 'codigo'],
-               message='El id_trd y el codigo deben ser una pareja única'
+               message='No puede registrar más de una tipología con el mismo código para esta TRD'
            ),
            UniqueTogetherValidator(
                queryset=TipologiasDocumentales.objects.all(),
                fields = ['id_trd', 'nombre'],
-               message='El id_trd y nombre deben ser una pareja única'
+               message='No puede registrar más de una tipología con el mismo nombre para esta TRD'
            )
         ]
 
@@ -112,7 +112,7 @@ class FormatosTiposMedioPostSerializer(serializers.ModelSerializer):
            UniqueTogetherValidator(
                queryset=FormatosTiposMedio.objects.all(),
                fields = ['cod_tipo_medio_doc', 'nombre'],
-               message='El tipo medio y el nombre deben ser una pareja única'
+               message='No puede registrar un tipo de medio más de una vez con el mismo nombre'
            )
         ]
 
@@ -137,7 +137,7 @@ class SeriesSubSeriesUnidadesOrgTRDSerializer(serializers.ModelSerializer):
         validators = [UniqueTogetherValidator(
                queryset=SeriesSubSUnidadOrgTRD.objects.all(),
                fields = ['id_trd', 'id_serie_subserie_doc'],
-               message='El id_trd y el id_serie_subserie_doc deben ser una pareja única'
+               message='No puede relacionar un mismo expediente más de una vez con esta TRD'
            )]
 
             

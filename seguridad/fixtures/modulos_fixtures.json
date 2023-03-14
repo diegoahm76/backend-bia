@@ -16,7 +16,7 @@
       "pk": 2,
       "fields": {
         "id_modulo": 2,
-        "nombre_modulo": "Administración de Credenciales de Acceso",
+        "nombre_modulo": "Administración de Usuarios",
         "subsistema":"SEGU",
         "descripcion":"Permite administrar las credenciales de acceso de las personas al sistema",
         "ruta_formulario":"/test",

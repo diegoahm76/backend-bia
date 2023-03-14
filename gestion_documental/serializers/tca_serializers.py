@@ -65,7 +65,7 @@ class ClasifSerieSubserieUnidadTCASerializer(serializers.ModelSerializer):
            UniqueTogetherValidator(
                queryset=Clasif_Serie_Subserie_Unidad_TCA.objects.all(),
                fields = ['id_tca', 'id_serie_subserie_unidad'],
-               message='El TCA y la serie subserie unidad deben ser una pareja única'
+               message='No puede existir más de una clasificación para el mismo expediente'
            )
         ]     
 

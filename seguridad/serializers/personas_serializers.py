@@ -281,10 +281,11 @@ class PersonaJuridicaPostSerializer(serializers.ModelSerializer):
             'fecha_inicio_cargo_rep_legal'
         ]
         validators = [
-           UniqueTogetherValidator(
-               queryset=Personas.objects.all(),
-               fields = ['tipo_documento', 'numero_documento']
-           )
+            UniqueTogetherValidator(
+                queryset=Personas.objects.all(),
+                fields = ['tipo_documento', 'numero_documento'],
+                message = 'Ya existe un registro con el tipo de documento y el número de documento ingresado'
+            )
         ]
         
         extra_kwargs = {
@@ -374,7 +375,9 @@ class PersonaNaturalPostByUserSerializer(serializers.ModelSerializer):
         validators = [
             UniqueTogetherValidator(
                 queryset = Personas.objects.all(),
-                fields = ['tipo_documento', 'numero_documento']
+                fields = ['tipo_documento', 'numero_documento'],
+                message = 'Ya existe un registro con el tipo de documento y el número de documento ingresado'
+                
             )
         ]
         extra_kwargs = {
