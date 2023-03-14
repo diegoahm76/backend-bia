@@ -11,7 +11,7 @@ from seguridad.serializers.personas_serializers import PersonasSerializer
 from seguridad.serializers.permisos_serializers import PermisosModuloRolSerializer
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.password_validation import validate_password
-
+import re
 from seguridad.utils import Util
 
 class HistoricoActivacionSerializers(serializers.ModelSerializer):
@@ -70,17 +70,36 @@ class UserSerializer(serializers.ModelSerializer):
             User.objects.create(user=user_instance,**user)
         return user_instance
 
-class UserPutSerializerInterno(serializers.ModelSerializer):
-    nombre_de_usuario = serializers.CharField(max_length=30, min_length=6, validators=[UniqueValidator(queryset=User.objects.all())])
-    class Meta:
-        model = User
-        fields = ['nombre_de_usuario']
+class UserPutSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(required=True)
+    profile_img = serializers.ImageField(required=False)
 
-class UserPutSerializerExterno(serializers.ModelSerializer):
-    nombre_de_usuario = serializers.CharField(max_length=30, min_length=6, validators=[UniqueValidator(queryset=User.objects.all())])
+    def validate_password(self, value):
+        if not re.search(r'[A-Z]', value):
+            raise serializers.ValidationError('La contraseña debe contener al menos una letra mayúscula.')
+        if not re.search(r'\d', value):
+            raise serializers.ValidationError('La contraseña debe contener al menos un número.')
+        if not re.search(r'[^A-Za-z0-9]', value):
+            raise serializers.ValidationError('La contraseña debe contener al menos un caracter especial.')
+        return value
+    
+    def validate(self, data):
+        password = data.get('password')
+        data['password'] = make_password(password)
+        return data
+    
+    def update(self, instance, validated_data):
+        profile_img = validated_data.pop('profile_img', None)
+        instance = super().update(instance, validated_data)
+
+        if profile_img:
+            instance.profile_img = profile_img
+            instance.save()
+        return instance
+    
     class Meta:
         model = User
-        fields = ['nombre_de_usuario']
+        fields =['password','profile_img']
 
 class UserPutAdminSerializer(serializers.ModelSerializer):
     nombre_de_usuario = serializers.CharField(max_length=30, min_length=6, validators=[UniqueValidator(queryset=User.objects.all())])

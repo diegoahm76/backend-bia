@@ -12,8 +12,7 @@ urlpatterns = [
     path('update/<str:pk>/', views.UpdateUser.as_view(), name='register-users'),
     
     path('profile/', views.getUserProfile, name="users-profile"),
-    path('profile/update-interno/', views.UpdateUserProfileInterno.as_view(), name="profile-update-interno"), 
-    path('profile/update-externo/', views.UpdateUserProfileExterno.as_view(), name="profile-update-externo"), 
+    path('profile/update/', views.UpdateUserProfile.as_view(), name="profile-update"),
    
     path('roles/', views.roles, name='roles'),
     path("get/", views.getUsers, name="get-users"),

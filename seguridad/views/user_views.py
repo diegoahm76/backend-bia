@@ -24,7 +24,7 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import status
 import jwt
 from django.conf import settings
-from seguridad.serializers.user_serializers import EmailVerificationSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserPutAdminSerializer, UserPutSerializerExterno, UserPutSerializerInterno, UserSerializer, UserSerializerWithToken, UserRolesSerializer, RegisterSerializer  ,LoginSerializer, DesbloquearUserSerializer, SetNewPasswordUnblockUserSerializer
+from seguridad.serializers.user_serializers import EmailVerificationSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserPutAdminSerializer,  UserPutSerializer, UserSerializer, UserSerializerWithToken, UserRolesSerializer, RegisterSerializer  ,LoginSerializer, DesbloquearUserSerializer, SetNewPasswordUnblockUserSerializer
 from rest_framework.generics import RetrieveUpdateAPIView
 from django.contrib.auth.hashers import make_password
 from rest_framework import status
@@ -35,7 +35,7 @@ from datetime import datetime
 from django.contrib import auth
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils import encoding, http
-import copy
+import copy, re
 from django.http import HttpResponsePermanentRedirect
 from django.contrib.sessions.models import Session
 
@@ -54,9 +54,8 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
-class UpdateUserProfileInterno(generics.RetrieveUpdateAPIView):
-    http_method_names = ["patch"]
-    serializer_class = UserPutSerializerInterno
+class UpdateUserProfile(generics.UpdateAPIView):
+    serializer_class = UserPutSerializer
     queryset = User.objects.all()
     permission_classes = [IsAuthenticated, PermisoActualizarInterno]
 
@@ -64,6 +63,7 @@ class UpdateUserProfileInterno(generics.RetrieveUpdateAPIView):
         user_loggedin = self.request.user.id_usuario
         user = User.objects.filter(id_usuario = user_loggedin).first()
         previous_user = copy.copy(user)
+        
         if user:
             user_serializer = self.serializer_class(user, data=request.data)
             user_serializer.is_valid(raise_exception=True)
@@ -77,7 +77,7 @@ class UpdateUserProfileInterno(generics.RetrieveUpdateAPIView):
 
             auditoria_data = {
                 'id_usuario': user_loggedin,
-                'id_modulo': 3,
+                'id_modulo': 2,
                 'cod_permiso': 'AC',
                 'subsistema': 'SEGU',
                 'dirip': dirip,
@@ -87,43 +87,7 @@ class UpdateUserProfileInterno(generics.RetrieveUpdateAPIView):
 
             Util.save_auditoria(auditoria_data)
 
-            return Response({'success': True,'data': user_serializer.data}, status=status.HTTP_200_OK)
-
-
-class UpdateUserProfileExterno(generics.RetrieveUpdateAPIView):
-    http_method_names = ["patch"]
-    serializer_class = UserPutSerializerExterno
-    queryset = User.objects.all()
-    permission_classes = [IsAuthenticated, PermisoActualizarExterno]
-
-    def patch(self, request):
-        user_loggedin = self.request.user.id_usuario
-        user = User.objects.filter(id_usuario = user_loggedin).first()
-        previous_user = copy.copy(user)
-        if user:
-            user_serializer = self.serializer_class(user, data=request.data)
-            user_serializer.is_valid(raise_exception=True)
-            user_serializer.save()
-
-            # AUDITORIA AL ACTUALIZAR USUARIO PROPIO
-
-            dirip = Util.get_client_ip(request)
-            descripcion = {'nombre_de_usuario': user.nombre_de_usuario}
-            valores_actualizados = {'current': user, 'previous': previous_user}
-
-            auditoria_data = {
-                'id_usuario': user_loggedin,
-                'id_modulo': 4,
-                'cod_permiso': 'AC',
-                'subsistema': 'SEGU',
-                'dirip': dirip,
-                'descripcion': descripcion,
-                'valores_actualizados': valores_actualizados
-            }
-
-            Util.save_auditoria(auditoria_data)
-
-            return Response({'success': True,'data': user_serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success': True,'data': user_serializer.data}, status=status.HTTP_200_OK)
 
 
 class UpdateUser(generics.RetrieveUpdateAPIView):
