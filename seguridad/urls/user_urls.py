@@ -38,6 +38,7 @@ urlpatterns = [
     path('login-erroneo/get-list/', views.LoginErroneoListApiViews.as_view(),name='login-erroneo-get'),
     path('login-erroneo/get-by-id/<str:pk>/', views.LoginErroneoConsultarApiViews.as_view(),name='login-erroneo-id-get'),
     path('deactivate/<str:id_persona>/', views.DeactivateUsers.as_view(),name='deactivate-user'),
+    path('historico-activacion/<str:id_usuario_afectado>/', views.BusquedaHistoricoActivacion.as_view(),name='historico-activacion'),
 
     
 ]

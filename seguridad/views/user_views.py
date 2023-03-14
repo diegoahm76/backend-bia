@@ -24,7 +24,7 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import status
 import jwt
 from django.conf import settings
-from seguridad.serializers.user_serializers import EmailVerificationSerializer, GetNuevoSuperUsuarioSerializer, GetSuperUsuarioSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserPutAdminSerializer,  UserPutSerializer, UserSerializer, UserSerializerWithToken, UserRolesSerializer, RegisterSerializer  ,LoginSerializer, DesbloquearUserSerializer, SetNewPasswordUnblockUserSerializer
+from seguridad.serializers.user_serializers import EmailVerificationSerializer, GetNuevoSuperUsuarioSerializer, GetSuperUsuarioSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserPutAdminSerializer,  UserPutSerializer, UserSerializer, UserSerializerWithToken, UserRolesSerializer, RegisterSerializer  ,LoginSerializer, DesbloquearUserSerializer, SetNewPasswordUnblockUserSerializer, HistoricoActivacionSerializers
 from rest_framework.generics import RetrieveUpdateAPIView
 from django.contrib.auth.hashers import make_password
 from rest_framework import status
@@ -1019,5 +1019,20 @@ class Busqueda_Avanzada(generics.ListAPIView):
         else: 
              return Response({'succes':False, 'detail':'La persona no se encontro.'},status=status.HTTP_200_OK)
 
+class BusquedaHistoricoActivacion(generics.ListAPIView):
+    serializer_class = HistoricoActivacionSerializers
+    queryset = HistoricoActivacion.objects.all()
 
-                    
+    def get_queryset(self):
+        id_usuario = self.kwargs['id_usuario_afectado']
+        queryset = HistoricoActivacion.objects.filter(id_usuario_afectado=id_usuario)
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if queryset.exists():
+            serializer = self.get_serializer(queryset, many=True)
+            return Response({'success': True, 'detail': 'Se encontró el siguiente historico de activación para ese usuario', 'data': serializer.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success': False, 'detail': 'No se encontro historico de activación para ese usuario'}, status=status.HTTP_404_NOT_FOUND)
+       
