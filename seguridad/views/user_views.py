@@ -1032,7 +1032,13 @@ class BusquedaHistoricoActivacion(generics.ListAPIView):
         queryset = self.get_queryset()
         if queryset.exists():
             serializer = self.get_serializer(queryset, many=True)
-            return Response({'success': True, 'detail': 'Se encontró el siguiente historico de activación para ese usuario', 'data': serializer.data}, status=status.HTTP_200_OK)
+            data = serializer.data
+            for item in data:
+                id_usuario_operador = item['usuario_operador']
+                user = User.objects.get(id_usuario=id_usuario_operador)
+                persona = user.persona
+                item['primer_nombre'] = persona.primer_nombre
+                item['primer_apellido'] = persona.primer_apellido
+            return Response({'success': True, 'detail': 'Se encontró el siguiente historico de activación para ese usuario', 'data': data}, status=status.HTTP_200_OK)
         else:
             return Response({'success': False, 'detail': 'No se encontro historico de activación para ese usuario'}, status=status.HTTP_404_NOT_FOUND)
-       
