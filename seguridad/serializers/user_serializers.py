@@ -173,18 +173,21 @@ class LoginSerializer(serializers.ModelSerializer):
     email = serializers.CharField(max_length=255, min_length=3,read_only=True)
     password= serializers.CharField(max_length=68, min_length=6, write_only=True)
     nombre_de_usuario = serializers.CharField(max_length=68, min_length=6)
+    nombre = serializers.CharField(read_only=True)
     tokens = serializers.DictField(read_only=True)
     is_superuser = serializers.BooleanField(read_only=True, default=False)
     id_usuario = serializers.IntegerField(read_only=True)
     tipo_usuario = serializers.CharField(read_only=True)
     id_persona = serializers.IntegerField(read_only=True)
     tipo_persona = serializers.CharField(read_only=True)
+    activated_at = serializers.DateTimeField(read_only=True)
+    profile_img = serializers.CharField(read_only=True)
     permisos = serializers.DictField(read_only=True)
     representante_legal =serializers.DictField(read_only=True)
     
     class Meta:
         model=Login
-        fields= ['email', 'password', 'nombre_de_usuario', 'tokens', 'is_superuser', 'id_usuario', 'tipo_usuario', 'id_persona', 'tipo_persona', 'permisos', 'representante_legal']
+        fields= ['email', 'password', 'nombre_de_usuario', 'nombre', 'tokens', 'is_superuser', 'id_usuario', 'tipo_usuario', 'id_persona', 'tipo_persona', 'activated_at', 'profile_img', 'permisos', 'representante_legal']
     
     def validate(self, attrs):
         nombre_de_usuario = attrs.get('nombre_de_usuario', '')
@@ -205,8 +208,28 @@ class LoginSerializer(serializers.ModelSerializer):
             tokens = Util.change_token_expire_externo(user)
         else:
             tokens = user.tokens()
+            
+        if user.persona.tipo_persona == 'N':
+            nombre_list = [user.persona.primer_nombre, user.persona.segundo_nombre,
+                            user.persona.primer_apellido, user.persona.segundo_apellido]
+            nombre = ' '.join(item for item in nombre_list if item is not None)
+            nombre = nombre if nombre != "" else None
+        else:
+            nombre = user.persona.razon_social
 
-        return {'email': user.persona.email, 'nombre_de_usuario': user.nombre_de_usuario, 'tokens': tokens, 'is_superuser': user.is_superuser, 'id_usuario': user.id_usuario}
+        return {
+            'email': user.persona.email,
+            'nombre_de_usuario': user.nombre_de_usuario,
+            'nombre':nombre,
+            'tokens': tokens,
+            'is_superuser': user.is_superuser,
+            'id_usuario': user.id_usuario,
+            'tipo_usuario': user.tipo_usuario,
+            'id_persona': user.persona.id_persona,
+            'tipo_persona': user.persona.tipo_persona,
+            'activated_at': user.activated_at,
+            'profile_img': user.profile_img
+        }
  
 class LoginPostSerializers(serializers.ModelSerializer):
     class Meta:
