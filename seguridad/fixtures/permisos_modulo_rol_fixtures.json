@@ -178,5 +178,41 @@
           "id_rol": 2,
           "id_permiso_modulo": 220
         }
+      },
+      {
+        "model": "seguridad.PermisosModuloRol",
+        "pk": 21,
+        "fields": {
+          "id_permiso_modulo_rol":21,
+          "id_rol": 1,
+          "id_permiso_modulo": 221
+        }
+      },
+      {
+        "model": "seguridad.PermisosModuloRol",
+        "pk": 22,
+        "fields": {
+          "id_permiso_modulo_rol":22,
+          "id_rol": 1,
+          "id_permiso_modulo": 222
+        }
+      },
+      {
+        "model": "seguridad.PermisosModuloRol",
+        "pk": 23,
+        "fields": {
+          "id_permiso_modulo_rol":23,
+          "id_rol": 1,
+          "id_permiso_modulo": 228
+        }
+      },
+      {
+        "model": "seguridad.PermisosModuloRol",
+        "pk": 24,
+        "fields": {
+          "id_permiso_modulo_rol":24,
+          "id_rol": 1,
+          "id_permiso_modulo": 229
+        }
       }
   ]

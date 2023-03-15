@@ -35,11 +35,15 @@ urlpatterns = [
     path('persona-juridica/usuario-interno/self/update/', views.UpdatePersonaJuridicaInternoBySelf.as_view(), name='persona-juridica-interna-update-by-self'),
     path('persona-juridica/usuario-externo/self/update/', views.UpdatePersonaJuridicaExternoBySelf.as_view(), name='persona-juridica-externa-update-by-self'),
     path('persona-juridica/user-with-permissions/update/<str:tipodocumento>/<str:numerodocumento>/', views.UpdatePersonaJuridicaByUserWithPermissions.as_view(), name='persona-natural-update-by-user-with-permissions'),
+    # path('persona-natural-and-usuario/create/', views.CreatePersonaNaturalAndUsuario.as_view(), name='persona-natural-and-usuario-create'),
+    # path('persona-juridica-and-usuario/create/', views.CreatePersonaJuridicaAndUsuario.as_view(), name='persona-juridica-and-usuario-create'),
     path('persona-natural/create/', views.RegisterPersonaNatural.as_view(), name='persona-natural-register'),
     path('persona-natural/create-by-user-interno/', views.RegisterPersonaNaturalByUserInterno.as_view(), name='persona-natural-register-by-user-interno'),
     path('persona-juridica/create/', views.RegisterPersonaJuridica.as_view(), name='persona-juridica-register'),
     path('buscar-persona-natural/', views.BusquedaPersonaNaturalView.as_view(), name='buscar-persona-natural'),
     path('buscar-persona-juridica/', views.BusquedaPersonaJuridicaView.as_view(), name='buscar-persona-juridica'),
+    
+    #Creacion de persona y usuario por portal
     
     # Apoderados Personas
     #path('apoderados-personas/get-list/', views.getApoderadosPersona.as_view(), name="apoderados-personas-get"),

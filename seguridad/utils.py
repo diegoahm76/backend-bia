@@ -4,8 +4,10 @@ from backend.settings.base import EMAIL_HOST_USER, AUTHENTICATION_360_NRS
 from seguridad.models import Shortener, User, Modulos, Permisos, Auditorias
 from rest_framework_simplejwt.tokens import RefreshToken
 from datetime import timedelta
+from rest_framework import status
 import re, requests
 from twilio.rest import Client
+from django.template.loader import render_to_string
 import os
 
 class Util:
@@ -15,10 +17,37 @@ class Util:
         email = EmailMessage(subject= data['email_subject'], body=data['template'], to=[data['to_email']], from_email=EMAIL_HOST_USER)
         
         email.content_subtype ='html'
-        response = email.send(fail_silently=True)
+        response = email.send(fail_silently=False)
         print(response)
         return response
+
+        # url = "https://dashboard.360nrs.com/api/rest/mailing"
+
+        # # payload = {
+        # #     "to":[data['to_email']],
+        # #     "fromName": "Info",
+        # #     "fromEmail": "info@360nrs.com",
+        # #     "body": data['template'],
+        # #     "replyTo": "replyto@example.com",
+        # #     "subject": data['email_subject']
+        # # }
+        # # payload = "{ \"to\": [\"test@example.com\"], \"fromName\": \"Info\", \"fromEmail\": \"info@360nrs.com\", \"body\": \"<html><head><title>TEST</title></head><body><a href=\\\"https://example.com\\\">link</a></body></html>\", \"replyTo\": \"replyto@example.com\", \"subject\": \"TEST\" }"
+        # # print("PAYLOAD 1: ", payload)
        
+       
+        # payload = "{ \"to\": [\"%s\"], \"fromName\": \"Info\", \"fromEmail\": \"info@360nrs.com\", \"body\": \"%s\", \"replyTo\": \"replyto@example.com\", \"subject\": \"%s\" }" % (data['to_email'],data['template'],data['email_subject'])
+        # print("PAYLOAD 2: ", payload)
+        # headers = {
+        # 'Content-Type': 'application/json',
+        # 'Authorization': 'Basic ' + AUTHENTICATION_360_NRS
+        # }
+
+        # response = requests.request("POST", url, headers=headers, data=str(payload))
+
+
+        # print(response.text)
+        # return response
+            
 
     @staticmethod
     def validate_dns(email):
@@ -273,3 +302,120 @@ class Util:
             return True
         except:
             return False
+        
+    @staticmethod
+    def guardar_persona(data):
+        
+        if data['tipo_persona'] == "N":
+                
+            #Validación de tipo documento
+            tipo_documento = data.get('tipo_documento')
+            print(tipo_documento)
+            if tipo_documento == 'NT':
+                return {'success':False,'detail':'El tipo de documento debe ser el de una persona natural', 'status':status.HTTP_400_BAD_REQUEST}
+
+            email_principal = data.get('email')
+            email_secundario = data.get('email_empresarial')
+
+            #Validación emails dns
+            validate_email = Util.validate_dns(email_principal)
+            if validate_email == False:
+                return {'success':False,'detail':'Valide que el email principal ingresado exista', 'status':status.HTTP_400_BAD_REQUEST}
+
+            if email_secundario:
+                validate_second_email = Util.validate_dns(email_secundario)
+                if validate_second_email == False:
+                    return {'success':False,'detail':'Valide que el email secundario ingresado exista', 'status':status.HTTP_400_BAD_REQUEST}
+
+            if email_principal == email_secundario:
+                return {'success':False,'detail':'El email principal no puede ser el mismo email empresarial', 'status':status.HTTP_400_BAD_REQUEST}
+
+            return ({'success':True})
+        
+        else:
+            
+            #Validación de tipo documento
+            tipo_documento = data.get('tipo_documento')
+            
+            if tipo_documento  != 'NT':
+                return {'success':False,'detail':'El tipo de documento debe ser el de una persona juridica', 'status':status.HTTP_400_BAD_REQUEST}
+
+            email_principal = data.get('email')
+            email_secundario = data.get('email_empresarial')
+
+            #Validación emails dns
+            validate_email = Util.validate_dns(email_principal)
+            if validate_email == False:
+                return {'success':False,'detail':'Valide que el email principal ingresado exista', 'status':status.HTTP_400_BAD_REQUEST}
+
+            if email_secundario:
+                validate_second_email = Util.validate_dns(email_secundario)
+                if validate_second_email == False:
+                    return {'success':False,'detail':'Valide que el email secundario ingresado exista', 'status':status.HTTP_400_BAD_REQUEST}
+
+            if email_principal == email_secundario:
+                return {'success':False,'detail':'El email principal no puede ser el mismo email empresarial', 'status':status.HTTP_400_BAD_REQUEST}
+
+            return ({'success':True})
+        
+    @staticmethod
+    def enviar_notificacion_verificacion(instance,absurl):
+        
+        if instance.tipo_persona == 'N':
+            # sms = 'Verifica tu usuario de Cormarena-Bia aqui: ' + short_url
+            context = {'primer_nombre': instance.primer_nombre, 'primer_apellido': instance.primer_apellido, 'absurl': absurl}
+            template = render_to_string(('email-verification.html'), context)
+            subject = 'Verifica tu usuario ' + instance.primer_nombre
+            data = {'template': template, 'email_subject': subject, 'to_email': instance.email}
+            Util.send_email(data)
+            # try:
+            #     Util.send_sms(serializer_response.persona.telefono_celular, sms)
+            # except:
+            #     return Response({'success':True, 'detail':'No se pudo enviar sms de confirmacion'}, status=status.HTTP_201_CREATED)
+
+        else:
+            # sms = 'Verifica tu usuario de Cormarena-Bia aqui: ' + short_url
+            context = {'razon_social': instance.razon_social, 'absurl': absurl}
+            template = render_to_string(('email-verification.html'), context)
+            subject = 'Verifica tu usuario ' + instance.razon_social
+            data = {'template': template, 'email_subject': subject, 'to_email': instance.email}
+            Util.send_email(data)
+            # try:
+            #     Util.send_sms(serializer_response.persona.telefono_celular, sms)
+            # except:
+            #     return Response({'success':True, 'message':'No se pudo enviar sms de confirmacion'}, status=status.HTTP_201_CREATED)
+            
+        
+        return True
+    
+    @staticmethod
+    def notificacion_creacion_persona(intance):
+    
+        if intance.tipo_persona == "J":
+        
+            # sms = 'Registro exitoso como persona Juridica en Cormacarena. Continue aqui: ' + 'http://127.0.0.1:8000/api/personas/persona-natural/create/'
+            context = {'razon_social': intance.razon_social, 'nombre_comercial':  intance.nombre_comercial}
+            template = render_to_string(('email-register-personajuridica.html'), context)
+            subject = 'Registro exitoso ' + intance.razon_social
+            data = {'template': template, 'email_subject': subject, 'to_email': intance.email}
+            Util.send_email(data)
+            # try:
+            #     Util.send_sms(intance.telefono_celular_empresa, sms)
+            # except:
+            #     return Response({'success':True,'detail':'Se guardo la persona pero no se pudo enviar el sms, verificar numero', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        
+        else:
+            
+            #sms = 'Registro exitoso como persona en Cormacarena. Continue aqui: ' + 'http://127.0.0.1:8000/api/personas/persona-natural/create/'  
+            context = {'primer_nombre': intance.primer_nombre, 'primer_apellido':  intance.primer_apellido}
+            template = render_to_string(('plantilla-mensaje.html'), context)
+            subject = 'Registro exitoso ' + intance.primer_nombre
+            data = {'template': template, 'email_subject': subject, 'to_email': intance.email}
+            Util.send_email(data)
+            
+            # try:
+            #     Util.send_sms(serializador.telefono_celular, sms)
+            # except:
+            #     return Response({'success':True,'detail': 'Se guardo la persona pero no se pudo enviar el sms, verificar numero'}, status=status.HTTP_201_CREATED)
+        
+        return True

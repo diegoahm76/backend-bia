@@ -19,12 +19,12 @@ class SubseriesDocSerializer(serializers.ModelSerializer):
            UniqueTogetherValidator(
                queryset=SubseriesDoc.objects.all(),
                fields = ['id_ccd', 'codigo'],
-               message='El id_ccd y el codigo deben ser una pareja única'
+               message='No puede existir más de una subserie con el mismo código para este CCD'
            ),
            UniqueTogetherValidator(
                queryset=SubseriesDoc.objects.all(),
                fields = ['id_ccd', 'nombre'],
-               message='El id_ccd y nombre deben ser una pareja única'
+               message='No puede existir más de una subserie con el mismo nombre para este CCD'
            )
         ]
 
@@ -46,12 +46,12 @@ class SeriesDocPostSerializer(serializers.ModelSerializer):
             UniqueTogetherValidator(
                 queryset=SeriesDoc.objects.all(),
                 fields = ['id_ccd', 'codigo'],
-                message='El id_ccd y el codigo deben ser una pareja única'
+                message='No puede existir más de una serie con el mismo código para este CCD'
             ),
             UniqueTogetherValidator(
                 queryset=SeriesDoc.objects.all(),
                 fields = ['id_ccd', 'nombre'],
-                message='El id_ccd y nombre deben ser una pareja única'
+                message='No puede existir más de una serie con el mismo nombre para este CCD'
             )
         ]  
 

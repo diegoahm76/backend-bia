@@ -47,6 +47,7 @@ urlpatterns = [
     path('api/personas/', include('seguridad.urls.personas_urls')), 
     path('api/permisos/', include('seguridad.urls.permisos_urls')),
     path('api/choices/', include('seguridad.urls.choices_urls')),
+    path('api/listas/', include('seguridad.urls.listas_urls')),
 
     path('api/almacen/',include('almacen.urls.generics_urls')),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

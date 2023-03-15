@@ -50,7 +50,7 @@ class Paises(models.Model):
 
 
 class Departamento(models.Model):
-    nombre = models.CharField(max_length=30, db_column='T002nombre')
+    nombre = models.CharField(max_length=50, db_column='T002nombre')
     pais = models.CharField(max_length=2, choices=paises_CHOICES, db_column='T002Cod_Pais')
     cod_departamento = models.CharField(primary_key=True, max_length=2, db_column='T002CodDepartamento')
 
@@ -65,7 +65,7 @@ class Departamento(models.Model):
 
 class Municipio(models.Model):
     nombre = models.CharField(max_length=30, db_column='T001nombre')
-    cod_departamento = models.CharField(max_length=2, choices=departamentos_CHOICES, db_column='T001Cod_Departamentos')
+    cod_departamento = models.CharField(max_length=2, choices=departamentos_CHOICES, db_column='T001Cod_Departamento')
     cod_municipio = models.CharField(primary_key=True, max_length=5, db_column='T001CodMunicipio')
 
     def __str__(self):
@@ -90,7 +90,6 @@ class TipoDocumento(models.Model):
         db_table = 'T006TiposDocumentoID'
         verbose_name = 'Tipo de documento'
         verbose_name_plural = 'Tipos de documentos'
-
 
 class EstadoCivil(models.Model):
     cod_estado_civil = models.CharField(max_length=1, primary_key=True, unique=True, db_column='T005CodEstadoCivil')
@@ -407,7 +406,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     id_usuario_creador = models.ForeignKey('self', on_delete=models.SET_NULL,null=True, blank=True ,db_column="TzId_UsuarioCreador")
     created_at = models.DateTimeField(auto_now_add=True, db_column='TzfechaCreacion')
     activated_at = models.DateTimeField(null=True, db_column='TzfechaActivacionInicial')
-    is_creado_por_portal= models.BooleanField(default=True, db_column='TZcreadoPorPortal')
     tipo_usuario = models.CharField(max_length=1, default='E', null=True, choices=tipo_usuario_CHOICES, db_column='TztipoUsuario')
     profile_img = models.ImageField(null=True, blank=True, default='/placeholder.png', db_column='tzrutaFoto') #Juan Camilo Text Choices
     # email = models.EmailField(blank=True,null=True db_column='TzemailUsuario') #Añadido por Juan

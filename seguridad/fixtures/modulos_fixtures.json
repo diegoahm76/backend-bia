@@ -16,7 +16,7 @@
       "pk": 2,
       "fields": {
         "id_modulo": 2,
-        "nombre_modulo": "Administración de Credenciales de Acceso",
+        "nombre_modulo": "Administración de Usuarios",
         "subsistema":"SEGU",
         "descripcion":"Permite administrar las credenciales de acceso de las personas al sistema",
         "ruta_formulario":"/test",
@@ -28,9 +28,9 @@
       "pk": 3,
       "fields": {
         "id_modulo": 3,
-        "nombre_modulo": "Actualizacion de Datos Usuario",
+        "nombre_modulo": "Administración de Datos Cuenta Propia Usuario Interno",
         "subsistema":"SEGU",
-        "descripcion":"Permite administrar a una persona que tiene un usuario interno, los datos de su usuario desde el sistema-Sóo para usuarios internos",
+        "descripcion":"Permite administrar a una persona que tiene un usuario interno, los datos de su usuario y datos personales desde el sistema - Sólo para usuarios internos",
         "ruta_formulario":"/test",
         "nombre_icono":"test"
       }
@@ -40,9 +40,9 @@
       "pk": 4,
       "fields": {
         "id_modulo": 4,
-        "nombre_modulo": "Actualizacion Datos Usuario Externo",
+        "nombre_modulo": "Administración de Datos Cuenta Propia Usuario Externo",
         "subsistema":"SEGU",
-        "descripcion":"Permite administrar a una persona que tiene un usuario externo, los datos de su usuario desde el portal web-Sólo para usuarios externos",
+        "descripcion":"Permite administrar a una persona que tiene un usuario externo, los datos de su usuario y datos personales desde el portal web - Sólo para usuarios externos",
         "ruta_formulario":"/test",
         "nombre_icono":"test"
       }
@@ -775,6 +775,18 @@
           "nombre_modulo": "Vinculación de Colaboradores",
           "subsistema":"GEST",
           "descripcion":"Permite vincular o desvincular personas como colaboradores de la entidad en el sistema",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 73,
+        "fields": {
+          "id_modulo": 73,
+          "nombre_modulo": "Datos Personales de Modificación Restringida",
+          "subsistema":"TRSV",
+          "descripcion":"Permite actualizar los Datos Personales de modificación restringida en el sistema a cualquier persona creada en el mismo",
           "ruta_formulario":"/test",
           "nombre_icono":"test"
         }

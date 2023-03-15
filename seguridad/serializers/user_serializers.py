@@ -6,12 +6,12 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils import encoding, http
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
-from seguridad.models import User, UsuariosRol, HistoricoActivacion,Login,LoginErroneo,PermisosModuloRol,UsuarioErroneo
+from seguridad.models import Personas, User, UsuariosRol, HistoricoActivacion,Login,LoginErroneo,PermisosModuloRol,UsuarioErroneo
 from seguridad.serializers.personas_serializers import PersonasSerializer
 from seguridad.serializers.permisos_serializers import PermisosModuloRolSerializer
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.password_validation import validate_password
-
+import re
 from seguridad.utils import Util
 
 class HistoricoActivacionSerializers(serializers.ModelSerializer):
@@ -70,17 +70,36 @@ class UserSerializer(serializers.ModelSerializer):
             User.objects.create(user=user_instance,**user)
         return user_instance
 
-class UserPutSerializerInterno(serializers.ModelSerializer):
-    nombre_de_usuario = serializers.CharField(max_length=30, min_length=6, validators=[UniqueValidator(queryset=User.objects.all())])
-    class Meta:
-        model = User
-        fields = ['nombre_de_usuario']
+class UserPutSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(required=True)
+    profile_img = serializers.ImageField(required=False)
 
-class UserPutSerializerExterno(serializers.ModelSerializer):
-    nombre_de_usuario = serializers.CharField(max_length=30, min_length=6, validators=[UniqueValidator(queryset=User.objects.all())])
+    def validate_password(self, value):
+        if not re.search(r'[A-Z]', value):
+            raise serializers.ValidationError('La contraseña debe contener al menos una letra mayúscula.')
+        if not re.search(r'\d', value):
+            raise serializers.ValidationError('La contraseña debe contener al menos un número.')
+        if not re.search(r'[^A-Za-z0-9]', value):
+            raise serializers.ValidationError('La contraseña debe contener al menos un caracter especial.')
+        return value
+    
+    def validate(self, data):
+        password = data.get('password')
+        data['password'] = make_password(password)
+        return data
+    
+    def update(self, instance, validated_data):
+        profile_img = validated_data.pop('profile_img', None)
+        instance = super().update(instance, validated_data)
+
+        if profile_img:
+            instance.profile_img = profile_img
+            instance.save()
+        return instance
+    
     class Meta:
         model = User
-        fields = ['nombre_de_usuario']
+        fields =['password','profile_img']
 
 class UserPutAdminSerializer(serializers.ModelSerializer):
     nombre_de_usuario = serializers.CharField(max_length=30, min_length=6, validators=[UniqueValidator(queryset=User.objects.all())])
@@ -118,7 +137,7 @@ class RegisterExternoSerializer(serializers.ModelSerializer):
     redirect_url=serializers.CharField(max_length=500, read_only=True)
     class Meta:
         model = User
-        fields = ['nombre_de_usuario', 'persona', 'password','redirect_url']
+        fields = ['nombre_de_usuario', 'persona', 'password','redirect_url','creado_por_portal']
 
 
     def validate(self, attrs):
@@ -154,18 +173,21 @@ class LoginSerializer(serializers.ModelSerializer):
     email = serializers.CharField(max_length=255, min_length=3,read_only=True)
     password= serializers.CharField(max_length=68, min_length=6, write_only=True)
     nombre_de_usuario = serializers.CharField(max_length=68, min_length=6)
+    nombre = serializers.CharField(read_only=True)
     tokens = serializers.DictField(read_only=True)
     is_superuser = serializers.BooleanField(read_only=True, default=False)
     id_usuario = serializers.IntegerField(read_only=True)
     tipo_usuario = serializers.CharField(read_only=True)
     id_persona = serializers.IntegerField(read_only=True)
     tipo_persona = serializers.CharField(read_only=True)
+    activated_at = serializers.DateTimeField(read_only=True)
+    profile_img = serializers.CharField(read_only=True)
     permisos = serializers.DictField(read_only=True)
     representante_legal =serializers.DictField(read_only=True)
     
     class Meta:
         model=Login
-        fields= ['email', 'password', 'nombre_de_usuario', 'tokens', 'is_superuser', 'id_usuario', 'tipo_usuario', 'id_persona', 'tipo_persona', 'permisos', 'representante_legal']
+        fields= ['email', 'password', 'nombre_de_usuario', 'nombre', 'tokens', 'is_superuser', 'id_usuario', 'tipo_usuario', 'id_persona', 'tipo_persona', 'activated_at', 'profile_img', 'permisos', 'representante_legal']
     
     def validate(self, attrs):
         nombre_de_usuario = attrs.get('nombre_de_usuario', '')
@@ -186,8 +208,28 @@ class LoginSerializer(serializers.ModelSerializer):
             tokens = Util.change_token_expire_externo(user)
         else:
             tokens = user.tokens()
+            
+        if user.persona.tipo_persona == 'N':
+            nombre_list = [user.persona.primer_nombre, user.persona.segundo_nombre,
+                            user.persona.primer_apellido, user.persona.segundo_apellido]
+            nombre = ' '.join(item for item in nombre_list if item is not None)
+            nombre = nombre if nombre != "" else None
+        else:
+            nombre = user.persona.razon_social
 
-        return {'email': user.persona.email, 'nombre_de_usuario': user.nombre_de_usuario, 'tokens': tokens, 'is_superuser': user.is_superuser, 'id_usuario': user.id_usuario}
+        return {
+            'email': user.persona.email,
+            'nombre_de_usuario': user.nombre_de_usuario,
+            'nombre':nombre,
+            'tokens': tokens,
+            'is_superuser': user.is_superuser,
+            'id_usuario': user.id_usuario,
+            'tipo_usuario': user.tipo_usuario,
+            'id_persona': user.persona.id_persona,
+            'tipo_persona': user.persona.tipo_persona,
+            'activated_at': user.activated_at,
+            'profile_img': user.profile_img
+        }
  
 class LoginPostSerializers(serializers.ModelSerializer):
     class Meta:
@@ -303,3 +345,32 @@ class SetNewPasswordUnblockUserSerializer(serializers.Serializer):
 
             return user
         
+        #MOSTRAR EL NOMBRE DEL SUPER USUARIO
+        
+class GetSuperUsuarioSerializer(serializers.ModelSerializer):
+    nombre_persona = serializers.SerializerMethodField()
+    
+    def get_nombre_persona(self,obj):
+        
+        nombre_persona2 = obj.persona.primer_nombre + ' ' + obj.persona.primer_apellido
+        
+        return nombre_persona2
+    
+    class Meta:
+        fields = ['id_usuario','persona','nombre_persona']
+        model = User
+        
+# CONSULTAR NUEVO SUPER USUARIO FECHA ACTUAL
+
+class GetNuevoSuperUsuarioSerializer(serializers.ModelSerializer):
+    nombre_completo = serializers.SerializerMethodField() #para hacer una funcion, para la variable 'nombre_completo'
+    
+    def get_nombre_completo(self, obj): #la funcion para cada variable se debe de conectar todo pegado
+        nombre_completo2 = obj.primer_nombre + ' ' + obj.primer_apellido
+        return nombre_completo2
+        
+    class Meta:
+        fields = ['id_persona','tipo_documento','numero_documento','nombre_completo']
+        model = Personas
+        
+

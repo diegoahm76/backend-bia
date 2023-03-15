@@ -12,8 +12,7 @@ urlpatterns = [
     path('update/<str:pk>/', views.UpdateUser.as_view(), name='register-users'),
     
     path('profile/', views.getUserProfile, name="users-profile"),
-    path('profile/update-interno/', views.UpdateUserProfileInterno.as_view(), name="profile-update-interno"), 
-    path('profile/update-externo/', views.UpdateUserProfileExterno.as_view(), name="profile-update-externo"), 
+    path('profile/update/', views.UpdateUserProfile.as_view(), name="profile-update"),
    
     path('roles/', views.roles, name='roles'),
     path("get/", views.getUsers, name="get-users"),
@@ -25,7 +24,10 @@ urlpatterns = [
     path('password-reset/<str:uidb64>/<token>/', views.PasswordTokenCheckApi.as_view(), name='password-reset-confirm'),
     path('request-reset-email/', views.RequestPasswordResetEmail.as_view(),name='request-reset-email'),
     path('pasword-reset-complete', views.SetNewPasswordApiView.as_view(),name='pasword-reset-complete'), 
-    path('delegate-rol-super-usuario/<str:pk>/', views.AsignarRolSuperUsuario.as_view(), name='delegar-rol-super-usuario'),
+    path('delegate-rol-super-usuario/<str:id_persona>/', views.AsignarRolSuperUsuario.as_view(), name='delegar-rol-super-usuario'),
+    path('get-nombre-super-usuario/', views.GetNombreSuperUsuario.as_view(), name='get-nombre-super-usuario'), #creado
+    path('get-nuevo-super-usuario/', views.GetNuevoSuperUsuario.as_view(), name='get-nuevo-super-usuario'), #creado2
+    path('get-busqueda-avanzada/', views.Busqueda_Avanzada.as_view(),name='get-busqueda-avanzada'), #creado3
     path('unblock/', views.UnblockUser.as_view(), name='unblock-user'),
     path('password-unblock-complete/', views.UnBlockUserPassword.as_view(), name='password-unblock-complete'),
 
@@ -36,4 +38,7 @@ urlpatterns = [
     path('login-erroneo/get-list/', views.LoginErroneoListApiViews.as_view(),name='login-erroneo-get'),
     path('login-erroneo/get-by-id/<str:pk>/', views.LoginErroneoConsultarApiViews.as_view(),name='login-erroneo-id-get'),
     path('deactivate/<str:id_persona>/', views.DeactivateUsers.as_view(),name='deactivate-user'),
+    path('historico-activacion/<str:id_usuario_afectado>/', views.BusquedaHistoricoActivacion.as_view(),name='historico-activacion'),
+
+    
 ]
