@@ -3,6 +3,8 @@ from seguridad.models import Personas,HistoricoEmails,HistoricoDireccion
 from rest_framework import generics,status
 from rest_framework.response import Response
 import datetime
+import copy
+from seguridad.utils import Util
 
 
 class BusquedaPersonaParaRegistro(generics.RetrieveAPIView):
@@ -75,8 +77,10 @@ class AutorizacionNotificaciones(generics.RetrieveUpdateAPIView):
     queryset = Personas.objects.all()
 
     def put(self, request, id_persona):
+        persona_ = self.request.user.id_usuario
         persona = Personas.objects.filter(id_persona=id_persona).first()
         data = request.data
+        previous_user = copy.copy(persona)
 
         if persona is not None:
             if 'acepta_autorizacion_email' in data and 'acepta_autorizacion_sms' in data:
@@ -86,6 +90,23 @@ class AutorizacionNotificaciones(generics.RetrieveUpdateAPIView):
                 persona.acepta_notificacion_email = acepta_autorizacion_email
                 persona.acepta_notificacion_sms = acepta_autorizacion_sms
                 persona.save()
+
+                # AUDITORIA AUTORIZACION NOTIFICACIONES
+                dirip = Util.get_client_ip(request)
+                descripcion = {'tipo_documento': persona.tipo_documento, 'numero_documento':persona.numero_documento}
+                valores_actualizados = {'current': persona, 'previous': previous_user}
+
+                auditoria_data = {
+                    'id_usuario': persona_,
+                    'id_modulo': 69,
+                    'cod_permiso': 'AC',
+                    'subsistema': 'SEG',
+                    'dirip': dirip,
+                    'descripcion': descripcion,
+                    'valores_actualizados': valores_actualizados
+                }
+
+                Util.save_auditoria(auditoria_data)
 
                 if acepta_autorizacion_email and acepta_autorizacion_sms:
                     return Response({'success': True, 'detail': 'Autorización por correo electrónico y teléfono aceptada'}, status=status.HTTP_200_OK)
