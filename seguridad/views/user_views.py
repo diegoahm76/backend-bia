@@ -24,7 +24,7 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import status
 import jwt
 from django.conf import settings
-from seguridad.serializers.user_serializers import EmailVerificationSerializer, GetNuevoSuperUsuarioSerializer, GetSuperUsuarioSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserPutAdminSerializer,  UserPutSerializer, UserSerializer, UserSerializerWithToken, UserRolesSerializer, RegisterSerializer  ,LoginSerializer, DesbloquearUserSerializer, SetNewPasswordUnblockUserSerializer, HistoricoActivacionSerializers, UsuarioInternoAExternoSerializers
+from seguridad.serializers.user_serializers import EmailVerificationSerializer, GetNuevoSuperUsuarioSerializer, GetSuperUsuarioSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserPutAdminSerializer,  UserPutSerializer, UserSerializer, UserSerializerWithToken, UserRolesSerializer, RegisterSerializer  ,LoginSerializer, DesbloquearUserSerializer, SetNewPasswordUnblockUserSerializer, HistoricoActivacionSerializers, UsuarioInternoAExternoSerializers, GetBusquedaNombreUsuario
 from rest_framework.generics import RetrieveUpdateAPIView
 from django.contrib.auth.hashers import make_password
 from rest_framework import status
@@ -1060,3 +1060,22 @@ class UsuarioInternoAExterno(generics.UpdateAPIView):
             return Response({'success': True, 'detail': 'Se activo como usuario externo', 'data': serializador.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success': False, 'detail': 'El usuario no existe o no cumple con los requisitos para ser convertido en usuario externo'}, status=status.HTTP_400_BAD_REQUEST)
+#BUSQUEDA DE USUARIOS ENTREGA 18 UD.11
+
+class BusquedaNombreUsuario(generics.ListAPIView):
+    serializer_class = GetBusquedaNombreUsuario
+    queryset = User.objects.all()
+        
+    def get(self,request):
+        
+        nombre_de_usuario = request.query_params.get('nombre_de_usuario')
+        
+        busqueda_usuario = User.objects.filter(nombre_de_usuario__icontains=nombre_de_usuario)
+        
+        if busqueda_usuario:
+            serializador = self.serializer_class(busqueda_usuario,many=True)
+            return Response({'succes':True,'detail':'Se encontraron los siguientes usuarios.','data':serializador.data},status=status.HTTP_200_OK)
+        
+        else:
+            return Response({'succes':False,'detail':'No se encontro ningun resultado con los criterios de busqueda.'},status=status.HTTP_200_OK)
+

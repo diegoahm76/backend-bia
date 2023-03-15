@@ -379,3 +379,25 @@ class UsuarioInternoAExternoSerializers(serializers.ModelSerializer):
         fields = ['is_active','tipo_usuario']
         
 
+#BUSQUEDA USUARIO
+
+class GetBusquedaNombreUsuario(serializers.ModelSerializer):
+    numero_documento = serializers.ReadOnlyField(source='persona.numero_documento',default=None)
+    primer_nombre = serializers.ReadOnlyField(source='persona.primer_nombre',default=None)
+    segundo_nombre = serializers.ReadOnlyField(source='personaa.segundo_nombre',default=None)
+    primer_apellido = serializers.ReadOnlyField(source='persona.primer_apellido',default=None)
+    seguno_apellido = serializers.ReadOnlyField(source='persona.segundo_apellido',default=None)
+    razon_social = serializers.ReadOnlyField(source='persona.razon_social',default=None)
+    tipo_persona = serializers.ReadOnlyField(source='persona.tipo_persona', default=None)
+    nombre_completo = serializers.SerializerMethodField()
+    
+    def get_nombre_completo(self, obj):
+        nombre_completo2 = obj.persona.primer_nombre + ' ' +obj.persona.segundo_nombre +' ' + obj.persona.primer_apellido + ' ' + obj.persona.segundo_apellido
+        return nombre_completo2
+    
+    class Meta:
+        fields = '__all__'
+        model = User
+    
+    
+
