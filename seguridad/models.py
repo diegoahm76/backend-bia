@@ -50,7 +50,7 @@ class Paises(models.Model):
 
 
 class Departamento(models.Model):
-    nombre = models.CharField(max_length=30, db_column='T002nombre')
+    nombre = models.CharField(max_length=50, db_column='T002nombre')
     pais = models.CharField(max_length=2, choices=paises_CHOICES, db_column='T002Cod_Pais')
     cod_departamento = models.CharField(primary_key=True, max_length=2, db_column='T002CodDepartamento')
 
@@ -65,7 +65,7 @@ class Departamento(models.Model):
 
 class Municipio(models.Model):
     nombre = models.CharField(max_length=30, db_column='T001nombre')
-    cod_departamento = models.CharField(max_length=2, choices=departamentos_CHOICES, db_column='T001Cod_Departamentos')
+    cod_departamento = models.CharField(max_length=2, choices=departamentos_CHOICES, db_column='T001Cod_Departamento')
     cod_municipio = models.CharField(primary_key=True, max_length=5, db_column='T001CodMunicipio')
 
     def __str__(self):
