@@ -372,5 +372,10 @@ class GetNuevoSuperUsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ['id_persona','tipo_documento','numero_documento','nombre_completo']
         model = Personas
+
+class UsuarioInternoAExternoSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['is_active','tipo_usuario']
         
 

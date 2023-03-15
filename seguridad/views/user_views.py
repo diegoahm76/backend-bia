@@ -24,7 +24,7 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import status
 import jwt
 from django.conf import settings
-from seguridad.serializers.user_serializers import EmailVerificationSerializer, GetNuevoSuperUsuarioSerializer, GetSuperUsuarioSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserPutAdminSerializer,  UserPutSerializer, UserSerializer, UserSerializerWithToken, UserRolesSerializer, RegisterSerializer  ,LoginSerializer, DesbloquearUserSerializer, SetNewPasswordUnblockUserSerializer, HistoricoActivacionSerializers
+from seguridad.serializers.user_serializers import EmailVerificationSerializer, GetNuevoSuperUsuarioSerializer, GetSuperUsuarioSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserPutAdminSerializer,  UserPutSerializer, UserSerializer, UserSerializerWithToken, UserRolesSerializer, RegisterSerializer  ,LoginSerializer, DesbloquearUserSerializer, SetNewPasswordUnblockUserSerializer, HistoricoActivacionSerializers, UsuarioInternoAExternoSerializers
 from rest_framework.generics import RetrieveUpdateAPIView
 from django.contrib.auth.hashers import make_password
 from rest_framework import status
@@ -1037,3 +1037,26 @@ class BusquedaHistoricoActivacion(generics.ListAPIView):
             return Response({'success': True, 'detail': 'Se encontró el siguiente historico de activación para ese usuario', 'data': data}, status=status.HTTP_200_OK)
         else:
             return Response({'success': False, 'detail': 'No se encontro historico de activación para ese usuario'}, status=status.HTTP_404_NOT_FOUND)
+
+class UsuarioInternoAExterno(generics.UpdateAPIView):
+    serializer_class = UsuarioInternoAExternoSerializers
+    queryset = User.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, id_usuario):
+        user_loggedin = request.user
+        serializador = self.serializer_class(user_loggedin)
+        usuario = User.objects.filter(id_usuario=id_usuario, tipo_usuario='I', is_active=False).first()
+        if usuario:
+            usuario.tipo_usuario = 'E'
+            usuario.is_active = True
+            usuario.save()
+            HistoricoActivacion.objects.create(
+                id_usuario_afectado=usuario,
+                justificacion='Usuario interno desactivado y convertido en externo activo',
+                usuario_operador=user_loggedin,
+                cod_operacion='A'
+            )
+            return Response({'success': True, 'detail': 'Se activo como usuario externo', 'data': serializador.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success': False, 'detail': 'El usuario no existe o no cumple con los requisitos para ser convertido en usuario externo'}, status=status.HTTP_400_BAD_REQUEST)
