@@ -15,7 +15,8 @@ from seguridad.models import (
     ClasesTercero,
     ClasesTerceroPersona,
     Cargos,
-    HistoricoCargosUndOrgPersona
+    HistoricoCargosUndOrgPersona,
+    HistoricoCambiosIDPersonas
 )
 
 
@@ -677,3 +678,8 @@ class BusquedaPersonaJuridicaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Personas
         fields = ['tipo_persona','numero_documento','razon_social','nombre_comercial']
+
+class BusquedaHistoricoCambiosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HistoricoCambiosIDPersonas
+        fields = '__all__'
