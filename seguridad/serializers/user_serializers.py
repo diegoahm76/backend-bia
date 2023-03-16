@@ -6,7 +6,8 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils import encoding, http
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
-from seguridad.models import Personas, User, UsuariosRol, HistoricoActivacion,Login,LoginErroneo,PermisosModuloRol,UsuarioErroneo
+from seguridad.models import Personas, Cargos, User, UsuariosRol, HistoricoActivacion,Login,LoginErroneo,PermisosModuloRol,UsuarioErroneo, HistoricoCargosUndOrgPersona
+from almacen.models import UnidadesOrganizacionales
 from seguridad.serializers.personas_serializers import PersonasSerializer
 from seguridad.serializers.permisos_serializers import PermisosModuloRolSerializer
 from rest_framework.validators import UniqueValidator
@@ -372,5 +373,37 @@ class GetNuevoSuperUsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ['id_persona','tipo_documento','numero_documento','nombre_completo']
         model = Personas
+
+class UsuarioInternoAExternoSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['is_active','tipo_usuario']
         
 
+#BUSQUEDA USUARIO
+
+class GetBusquedaNombreUsuario(serializers.ModelSerializer):
+    numero_documento = serializers.ReadOnlyField(source='persona.numero_documento',default=None)
+    primer_nombre = serializers.ReadOnlyField(source='persona.primer_nombre',default=None)
+    segundo_nombre = serializers.ReadOnlyField(source='personaa.segundo_nombre',default=None)
+    primer_apellido = serializers.ReadOnlyField(source='persona.primer_apellido',default=None)
+    seguno_apellido = serializers.ReadOnlyField(source='persona.segundo_apellido',default=None)
+    razon_social = serializers.ReadOnlyField(source='persona.razon_social',default=None)
+    tipo_persona = serializers.ReadOnlyField(source='persona.tipo_persona', default=None)
+    nombre_completo = serializers.SerializerMethodField()
+    
+    def get_nombre_completo(self, obj):
+        nombre_completo2 = obj.persona.primer_nombre + ' ' +obj.persona.segundo_nombre +' ' + obj.persona.primer_apellido + ' ' + obj.persona.segundo_apellido
+        return nombre_completo2
+    
+    class Meta:
+        fields = '__all__'
+        model = User
+    
+class BusquedaHistoricoCargoUndSerializer(serializers.ModelSerializer):
+    nombre_cargo = serializers.CharField(source='id_cargo.nombre', read_only=True)
+    nombre_unidad_organizacional = serializers.CharField(source='id_unidad_organizacional.nombre', read_only=True)
+
+    class Meta:
+        model = HistoricoCargosUndOrgPersona
+        fields = ['nombre_cargo', 'nombre_unidad_organizacional', 'fecha_inicial_historico', 'fecha_final_historico', 'observaciones_vinculni_cargo', 'justificacion_cambio_und_org']
