@@ -6,7 +6,8 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils import encoding, http
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
-from seguridad.models import Personas, User, UsuariosRol, HistoricoActivacion,Login,LoginErroneo,PermisosModuloRol,UsuarioErroneo
+from seguridad.models import Personas, Cargos, User, UsuariosRol, HistoricoActivacion,Login,LoginErroneo,PermisosModuloRol,UsuarioErroneo, HistoricoCargosUndOrgPersona
+from almacen.models import UnidadesOrganizacionales
 from seguridad.serializers.personas_serializers import PersonasSerializer
 from seguridad.serializers.permisos_serializers import PermisosModuloRolSerializer
 from rest_framework.validators import UniqueValidator
@@ -399,5 +400,10 @@ class GetBusquedaNombreUsuario(serializers.ModelSerializer):
         fields = '__all__'
         model = User
     
-    
+class BusquedaHistoricoCargoUndSerializer(serializers.ModelSerializer):
+    nombre_cargo = serializers.CharField(source='id_cargo.nombre', read_only=True)
+    nombre_unidad_organizacional = serializers.CharField(source='id_unidad_organizacional.nombre', read_only=True)
 
+    class Meta:
+        model = HistoricoCargosUndOrgPersona
+        fields = ['nombre_cargo', 'nombre_unidad_organizacional', 'fecha_inicial_historico', 'fecha_final_historico', 'observaciones_vinculni_cargo', 'justificacion_cambio_und_org']

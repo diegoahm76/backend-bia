@@ -31,7 +31,7 @@ urlpatterns = [
     path('get-user-by-nombre-de-usuario/',views.BusquedaNombreUsuario.as_view(),name='get-user-by-nombre-de-usuario'),#creado4
     path('unblock/', views.UnblockUser.as_view(), name='unblock-user'),
     path('password-unblock-complete/', views.UnBlockUserPassword.as_view(), name='password-unblock-complete'),
-
+    path('get-historico-cargo-und/<str:id_persona>/', views.BusquedaHistoricoCargoUnd.as_view(), name='historico_cargos_und'),
     #Login
     path('login/get-list/', views.LoginListApiViews.as_view(),name='login-get'),
     path('login/get-by-id/<str:pk>/', views.LoginConsultarApiViews.as_view(),name='login-id-get'),
