@@ -5,4 +5,5 @@ from rest_framework_simplejwt.views import (TokenRefreshView)
 urlpatterns = [
     path('departamentos/', views.GetListDepartamentos.as_view(), name='get-list-departamentos'),
     path('municipios/', views.GetListMunicipios.as_view(), name='get-list-municipios'),
+    path('tipo-persona/', views.GetListTipoPersona.as_view(), name='get-list-tipo-persona'),
 ]
