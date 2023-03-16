@@ -28,9 +28,10 @@ urlpatterns = [
     path('get-nombre-super-usuario/', views.GetNombreSuperUsuario.as_view(), name='get-nombre-super-usuario'), #creado
     path('get-nuevo-super-usuario/', views.GetNuevoSuperUsuario.as_view(), name='get-nuevo-super-usuario'), #creado2
     path('get-busqueda-avanzada/', views.Busqueda_Avanzada.as_view(),name='get-busqueda-avanzada'), #creado3
+    path('get-user-by-nombre-de-usuario/',views.BusquedaNombreUsuario.as_view(),name='get-user-by-nombre-de-usuario'),#creado4
     path('unblock/', views.UnblockUser.as_view(), name='unblock-user'),
     path('password-unblock-complete/', views.UnBlockUserPassword.as_view(), name='password-unblock-complete'),
-
+    path('get-historico-cargo-und/<str:id_persona>/', views.BusquedaHistoricoCargoUnd.as_view(), name='historico_cargos_und'),
     #Login
     path('login/get-list/', views.LoginListApiViews.as_view(),name='login-get'),
     path('login/get-by-id/<str:pk>/', views.LoginConsultarApiViews.as_view(),name='login-id-get'),
@@ -39,6 +40,7 @@ urlpatterns = [
     path('login-erroneo/get-by-id/<str:pk>/', views.LoginErroneoConsultarApiViews.as_view(),name='login-erroneo-id-get'),
     path('deactivate/<str:id_persona>/', views.DeactivateUsers.as_view(),name='deactivate-user'),
     path('historico-activacion/<str:id_usuario_afectado>/', views.BusquedaHistoricoActivacion.as_view(),name='historico-activacion'),
+    path('usuario/interno-a-externo/<str:id_usuario>/', views.UsuarioInternoAExterno.as_view(), name='usuario-interno-a-externo'),
 
     
 ]
