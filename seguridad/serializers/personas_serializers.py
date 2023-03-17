@@ -683,3 +683,77 @@ class BusquedaHistoricoCambiosSerializer(serializers.ModelSerializer):
     class Meta:
         model = HistoricoCambiosIDPersonas
         fields = '__all__'
+
+class UpdatePersonasNaturalesSerializer(serializers.ModelSerializer):
+    justificacion = serializers.CharField(required=True)
+
+    class Meta:
+        model = Personas
+        fields = ('id_persona', 'tipo_documento', 'numero_documento', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'justificacion')
+
+
+        validators = [
+                UniqueTogetherValidator(
+                    queryset = Personas.objects.all(),
+                    fields = ['tipo_documento', 'numero_documento'],
+                    message = 'Ya existe un registro con el tipo de documento y el número de documento ingresado'
+                    
+                )
+            ]
+    
+class UpdatePersonasJuridicasSerializer(serializers.ModelSerializer):
+    justificacion = serializers.CharField(required=True)
+
+    class Meta:
+        model = Personas
+        fields = ('id_persona', 'numero_documento', 'razon_social', 'nombre_comercial', 'cod_naturaleza_empresa','justificacion')
+
+
+        validators = [
+                UniqueTogetherValidator(
+                    queryset = Personas.objects.all(),
+                    fields = ['numero_documento'],
+                    message = 'Ya existe un registro con ese número de documento ingresado'
+                    
+                )
+            ]
+
+    # def update(self, instance, validated_data):
+    #     # Obtener el valor de justificacion y eliminarlo del diccionario de datos validados
+    #     justificacion = validated_data.pop('justificacion', None)
+
+    #     # Verificar si se han realizado cambios en los campos restringidos
+    #     cambios_restringidos = False
+    #     for campo in ('tipo_documento', 'numero_documento', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido'):
+    #         if campo in validated_data:
+    #             cambios_restringidos = True
+    #             break
+
+    #     # Actualizar los campos de la instancia de Personas
+    #     if cambios_restringidos:
+    #         # Verificar si se ha proporcionado justificacion
+    #         if not justificacion:
+    #             raise serializers.ValidationError({'justificacion': 'Se requiere una justificación para realizar cambios en los campos restringidos.'})
+
+    #         # Registrar cambios en T024HistoricoCambiosId_Personas
+    #         for campo, valor_anterior in self.get_cambios(validated_data).items():
+    #             historico_cambio = HistoricoCambiosIDPersonas(
+    #                 id_persona=instance.id,
+    #                 nombre_campo_cambiado=campo,
+    #                 valor_anterior=valor_anterior,
+    #                 valor_nuevo=validated_data.get(campo, None)
+    #             )
+    #             historico_cambio.save()
+
+    #         # Actualizar campos restringidos
+    #         instance.tipo_documento = validated_data.get('tipo_documento', instance.tipo_documento)
+    #         instance.numero_documento = validated_data.get('numero_documento', instance.numero_documento)
+    #         instance.primer_nombre = validated_data.get('primer_nombre', instance.primer_nombre)
+    #         instance.segundo_nombre = validated_data.get('segundo_nombre', instance.segundo_nombre)
+    #         instance.primer_apellido = validated_data.get('primer_apellido', instance.primer_apellido)
+    #         instance.segundo_apellido = validated_data.get('segundo_apellido', instance.segundo_apellido)
+
+    #     # Guardar la instancia de Personas
+    #     instance.save()
+
+    #     return instance

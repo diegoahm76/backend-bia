@@ -130,8 +130,8 @@ def create_historico_personas(sender, instance, **kwargs):
                     if previous.tipo_documento.cod_tipo_documento != current.tipo_documento.cod_tipo_documento:
                         persona_current = Personas.objects.filter(tipo_documento=current.tipo_documento.cod_tipo_documento).first()
                         persona_previous = Personas.objects.filter(Q(tipo_documento=previous.tipo_documento.cod_tipo_documento) & ~Q(id_persona=previous.id_persona)).first()
-                        tipo_documento_current = TipoDocumento.objects.filter(tipo_documento=current.tipo_documento.cod_tipo_documento).first()
-                        tipo_documento_previous = TipoDocumento.objects.filter(tipo_documento=previous.tipo_documento.cod_tipo_documento).first()
+                        tipo_documento_current = TipoDocumento.objects.filter(cod_tipo_documento=current.tipo_documento.cod_tipo_documento).first()
+                        tipo_documento_previous = TipoDocumento.objects.filter(cod_tipo_documento=previous.tipo_documento.cod_tipo_documento).first()
                         if not persona_current:
                             tipo_documento_current.item_ya_usado=True
                             tipo_documento_current.save()

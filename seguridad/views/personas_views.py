@@ -1,4 +1,6 @@
 from asyncio import exceptions
+from django.forms import ValidationError
+from rest_framework.exceptions import APIException
 from datetime import datetime, date, timedelta
 import copy
 import datetime as dt
@@ -77,7 +79,9 @@ from seguridad.serializers.personas_serializers import (
     HistoricoCargosUndOrgPersonapostSerializer,
     BusquedaPersonaNaturalSerializer,
     BusquedaPersonaJuridicaSerializer,
-    BusquedaHistoricoCambiosSerializer
+    BusquedaHistoricoCambiosSerializer,
+    UpdatePersonasNaturalesSerializer,
+    UpdatePersonasJuridicasSerializer
 )
 
 # Views for Estado Civil
@@ -1380,7 +1384,130 @@ class BusquedaHistoricoCambios(generics.ListAPIView):
         cambios_persona = HistoricoCambiosIDPersonas.objects.filter(id_persona=id_persona)
         serializador = self.serializer_class(cambios_persona, many=True)
         return Response({'success':True, 'detail': 'La persona con el id proporcionado tiene un historico asociado', 'data':serializador.data}, status=status.HTTP_200_OK)
-"""    
+
+class ActualizarPersonasNatCamposRestringidosView(generics.UpdateAPIView):
+    serializer_class = UpdatePersonasNaturalesSerializer
+    queryset = Personas.objects.filter(tipo_persona='N')
+
+    def put(self, request, id_persona):
+
+        data = request.data
+        persona = self.queryset.all().filter(id_persona=id_persona).first()
+        if persona:
+            previous_persona = copy.copy(persona)
+
+            serializer = self.serializer_class(persona, data=data)
+            serializer.is_valid(raise_exception=True)
+
+            if data['tipo_documento'] == "NT":
+                return Response({'success': False, 'detail': "El tipo de documento no se puede actualizar a NIT"})
+
+            historicos_creados = []
+
+            if previous_persona == persona:
+                return Response({'success': False, 'detail': 'No se actualizó ningún campo'}, status=status.HTTP_400_BAD_REQUEST)
+
+            ##HISTORICO
+            for field, value in request.data.items():
+                
+                if field != 'ruta_archivo_soporte' and field != "justificacion":
+                    valor_previous= getattr(persona,field)
+                    valor_previous = valor_previous.cod_tipo_documento if field == 'tipo_documento' else valor_previous
+
+                    if value != valor_previous:
+                        historico = HistoricoCambiosIDPersonas.objects.create(
+                            id_persona=persona,
+                            nombre_campo_cambiado=field,
+                            valor_campo_cambiado=valor_previous,
+                            ruta_archivo_soporte=request.data.get('ruta_archivo_soporte', ''),
+                            justificacion_cambio=request.data.get('justificacion', ''),
+                        )
+                        historicos_creados.append(historico)
+
+            #ACTUALIZACIÓN GUARDADA
+            serializer.save()
+
+            #AUDITORÍA
+            usuario = request.user.id_usuario
+            direccion=Util.get_client_ip(request)
+            descripcion = {"TipodeDocumentoID": str(previous_persona.tipo_documento), "NumeroDocumentoID": str(previous_persona.numero_documento), "PrimerNombre": str(previous_persona.primer_nombre), "PrimerApellido": str(previous_persona.primer_apellido)}
+            valores_actualizados = {'current': persona, 'previous': previous_persona}
+
+            auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 1,
+                "cod_permiso": "AC",
+                "subsistema": 'TRSV',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+                "valores_actualizados": valores_actualizados
+            }
+            Util.save_auditoria(auditoria_data)
+
+            return Response({'success': True, 'detail':'Se actualizó los datos de la persona natural','data':serializer.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success': False, 'detail': 'La persona no existe o es una persona jurídica'}, status=status.HTTP_404_NOT_FOUND)
+   
+class ActualizarPersonasJurCamposRestringidosView(generics.UpdateAPIView):
+    serializer_class = UpdatePersonasJuridicasSerializer
+    queryset = Personas.objects.filter(tipo_persona='J')
+
+    def put(self, request, id_persona):
+
+        data = request.data
+        persona = self.queryset.all().filter(id_persona=id_persona).first()
+        if persona:
+            previous_persona = copy.copy(persona)
+
+            serializer = self.serializer_class(persona, data=data)
+            serializer.is_valid(raise_exception=True)
+
+            historicos_creados = []
+
+            if previous_persona == persona:
+                return Response({'success': False, 'detail': 'No se actualizó ningún campo'}, status=status.HTTP_400_BAD_REQUEST)
+
+            ##HISTORICO
+            for field, value in request.data.items():
+                
+                if field != 'ruta_archivo_soporte' and field != "justificacion":
+                    valor_previous= getattr(persona,field)
+                    if value != valor_previous:
+                        historico = HistoricoCambiosIDPersonas.objects.create(
+                            id_persona=persona,
+                            nombre_campo_cambiado=field,
+                            valor_campo_cambiado=valor_previous,
+                            ruta_archivo_soporte=request.data.get('ruta_archivo_soporte', ''),
+                            justificacion_cambio=request.data.get('justificacion', ''),
+                        )
+                        historicos_creados.append(historico)
+
+            #ACTUALIZACIÓN GUARDADA
+            serializer.save()
+
+            #AUDITORÍA
+            usuario = request.user.id_usuario
+            direccion=Util.get_client_ip(request)
+            descripcion = {"NumeroDocumentoID": str(previous_persona.numero_documento), "RazonSocial": str(previous_persona.razon_social), "NombreComercial": str(previous_persona.nombre_comercial), "NaturalezaEmpresa":str(previous_persona.cod_naturaleza_empresa)}
+            valores_actualizados = {'current': persona, 'previous': previous_persona}
+
+            auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 1,
+                "cod_permiso": "AC",
+                "subsistema": 'TRSV',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+                "valores_actualizados": valores_actualizados
+            }
+            Util.save_auditoria(auditoria_data)
+
+            return Response({'success': True, 'detail': 'Se actualizó los datos de la persona jurídica','data':serializer.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success': False, 'detail': 'La persona no existe o es una persona natural'}, status=status.HTTP_404_NOT_FOUND)
+
+   
+"""     
 # Views for Clases Tercero
 
 

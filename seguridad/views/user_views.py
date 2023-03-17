@@ -1030,10 +1030,15 @@ class BusquedaHistoricoActivacion(generics.ListAPIView):
             data = serializer.data
             for item in data:
                 id_usuario_operador = item['usuario_operador']
-                user = User.objects.get(id_usuario=id_usuario_operador)
-                persona = user.persona
-                item['primer_nombre'] = persona.primer_nombre
-                item['primer_apellido'] = persona.primer_apellido
+                try:
+                    user = User.objects.get(id_usuario=id_usuario_operador)
+                    persona = user.persona
+                    item['primer_nombre'] = persona.primer_nombre
+                    item['primer_apellido'] = persona.primer_apellido
+                except User.DoesNotExist:
+                    # Si el usuario no existe, se asignan valores vacíos
+                    item['primer_nombre'] = ''
+                    item['primer_apellido'] = ''
             return Response({'success': True, 'detail': 'Se encontró el siguiente historico de activación para ese usuario', 'data': data}, status=status.HTTP_200_OK)
         else:
             return Response({'success': False, 'detail': 'No se encontro historico de activación para ese usuario'}, status=status.HTTP_404_NOT_FOUND)

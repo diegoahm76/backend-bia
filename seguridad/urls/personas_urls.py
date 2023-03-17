@@ -43,7 +43,8 @@ urlpatterns = [
     path('buscar-persona-natural/', views.BusquedaPersonaNaturalView.as_view(), name='buscar-persona-natural'),
     path('buscar-persona-juridica/', views.BusquedaPersonaJuridicaView.as_view(), name='buscar-persona-juridica'),
     path('buscar-historico-cambios/<str:id_persona>/', views.BusquedaHistoricoCambios.as_view(), name='buscar-historico-cambios'),
-    
+    path('update-personas-naturales-restringidos/<str:id_persona>/', views.ActualizarPersonasNatCamposRestringidosView.as_view(), name='buscar-historico-cambios'),    
+    path('update-personas-juridicas-restringidos/<str:id_persona>/', views.ActualizarPersonasJurCamposRestringidosView.as_view(), name='buscar-historico-cambios'),
     #Creacion de persona y usuario por portal
     
     # Apoderados Personas
