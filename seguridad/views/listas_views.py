@@ -12,7 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 # IMPORT LISTS
 from seguridad.lists.tipo_persona_list import tipo_persona_LIST
 from seguridad.lists.tipo_documento_list import tipo_documento_LIST
-
+from seguridad.lists.tipo_usuario_list import tipo_usuario_LIST
 
 class GetListMunicipios(generics.ListAPIView):
     serializer_class = MunicipiosSerializer
@@ -53,11 +53,16 @@ class GetListPaises(generics.ListAPIView):
         return Response({'success': True, 'detail': 'Se encontraron los siguientes paises', 'data': serializador.data}, status=status.HTTP_200_OK)
 
 
-class GetListTipoDocumento(generics.ListAPIView):
+class GetListTipoDocumento(APIView):
     def get(self, request):
-        return Response({'success': True, 'detail': 'Los tipos de persona son los siguientes', 'data': tipo_documento_LIST}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Los tipos de documento son los siguientes', 'data': tipo_documento_LIST}, status=status.HTTP_200_OK)
 
 
 class GetListTipoPersona(APIView):
     def get(self, request):
         return Response({'success': True, 'detail': 'Los tipos de persona son los siguientes', 'data': tipo_persona_LIST}, status=status.HTTP_200_OK)
+    
+class GetListTipoUsuario(APIView):
+    def get(self, request):
+        return Response({'success': True, 'detail': 'Los tipos de usuarios son los siguientes', 'data': tipo_usuario_LIST}, status=status.HTTP_200_OK)
+

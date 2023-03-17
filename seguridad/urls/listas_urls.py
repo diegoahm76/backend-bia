@@ -8,4 +8,5 @@ urlpatterns = [
     path('tipo-persona/', views.GetListTipoPersona.as_view(), name='get-list-tipo-persona'),
     path('paises/', views.GetListPaises.as_view(), name='get-list-paises'),
     path('tipo-documento/', views.GetListTipoDocumento.as_view(), name='get-list-tipo-documento'),
+    path('tipo-usuario/', views.GetListTipoUsuario.as_view(), name='get-list-tipo-usuario'),
 ]

@@ -39,7 +39,8 @@ from seguridad.models import (
     ClasesTercero,
     ClasesTerceroPersona,
     Cargos,
-    User
+    User,
+    HistoricoCambiosIDPersonas
 )
 
 from rest_framework import filters
@@ -75,7 +76,8 @@ from seguridad.serializers.personas_serializers import (
     CargosSerializer,
     HistoricoCargosUndOrgPersonapostSerializer,
     BusquedaPersonaNaturalSerializer,
-    BusquedaPersonaJuridicaSerializer
+    BusquedaPersonaJuridicaSerializer,
+    BusquedaHistoricoCambiosSerializer
 )
 
 # Views for Estado Civil
@@ -1365,6 +1367,19 @@ class BusquedaPersonaJuridicaView(generics.ListAPIView):
             return Response({'success':True, 'detail':'Se encontraron personas que coinciden con los criterios de búsqueda', 'data':serializer.data}, status=status.HTTP_201_CREATED)
         else:
             return Response({'success': False, 'detail': 'No se encontraron personas que coincidan con los criterios de búsqueda.'}, status=status.HTTP_404_NOT_FOUND)
+
+class BusquedaHistoricoCambios(generics.ListAPIView):
+    serializer_class = BusquedaHistoricoCambiosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_persona):
+        try:
+            persona = HistoricoCambiosIDPersonas.objects.filter(id_persona=id_persona)
+        except HistoricoCambiosIDPersonas.DoesNotExist:
+            return Response({'success':False, 'detail': 'La persona con el id proporcionado no tiene un historico de cambios asociado'}, status=status.HTTP_404_NOT_FOUND)
+        cambios_persona = HistoricoCambiosIDPersonas.objects.filter(id_persona=id_persona)
+        serializador = self.serializer_class(cambios_persona, many=True)
+        return Response({'success':True, 'detail': 'La persona con el id proporcionado tiene un historico asociado', 'data':serializador.data}, status=status.HTTP_200_OK)
 """    
 # Views for Clases Tercero
 

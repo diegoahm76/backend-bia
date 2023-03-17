@@ -1,10 +1,10 @@
 tipo_persona_LIST = [
     {
-        "cod_tipo_persona": "I",
-        "tipo_persona": "Interno"
+        "cod_tipo_persona": "N",
+        "tipo_persona": "Natural"
     },
     {
-        "cod_tipo_persona": "E",
-        "tipo_persona": "Externo"
+        "cod_tipo_persona": "J",
+        "tipo_persona": "Juridica"
     }
 ]

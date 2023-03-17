@@ -42,6 +42,7 @@ urlpatterns = [
     path('persona-juridica/create/', views.RegisterPersonaJuridica.as_view(), name='persona-juridica-register'),
     path('buscar-persona-natural/', views.BusquedaPersonaNaturalView.as_view(), name='buscar-persona-natural'),
     path('buscar-persona-juridica/', views.BusquedaPersonaJuridicaView.as_view(), name='buscar-persona-juridica'),
+    path('buscar-historico-cambios/<str:id_persona>/', views.BusquedaHistoricoCambios.as_view(), name='buscar-historico-cambios'),
     
     #Creacion de persona y usuario por portal
     

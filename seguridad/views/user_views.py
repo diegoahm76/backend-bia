@@ -1086,7 +1086,7 @@ class BusquedaHistoricoCargoUnd(generics.ListAPIView):
 
     def get(self, request, id_persona):
         try:
-            persona = HistoricoCargosUndOrgPersona.objects.get(id_persona=id_persona)
+            persona = HistoricoCargosUndOrgPersona.objects.filter(id_persona=id_persona)
         except HistoricoCargosUndOrgPersona.DoesNotExist:
             return Response({'success':False, 'detail': 'La persona con el id proporcionado no tiene un historico asociado'}, status=status.HTTP_404_NOT_FOUND)
 
