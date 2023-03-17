@@ -1,10 +1,10 @@
 tipo_usuario_LIST = [
     {
-        "cod_tipo_persona": "I",
-        "tipo_persona": "Interno"
+        "cod_tipo_usuario": "I",
+        "tipo_usuario": "Interno"
     },
     {
-        "cod_tipo_persona": "E",
-        "tipo_persona": "Externo"
+        "cod_tipo_usuario": "E",
+        "tipo_usuario": "Externo"
     }
 ]

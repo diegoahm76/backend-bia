@@ -53,9 +53,9 @@ class GetListPaises(generics.ListAPIView):
         return Response({'success': True, 'detail': 'Se encontraron los siguientes paises', 'data': serializador.data}, status=status.HTTP_200_OK)
 
 
-class GetListTipoDocumento(generics.ListAPIView):
+class GetListTipoDocumento(APIView):
     def get(self, request):
-        return Response({'success': True, 'detail': 'Los tipos de persona son los siguientes', 'data': tipo_documento_LIST}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Los tipos de documento son los siguientes', 'data': tipo_documento_LIST}, status=status.HTTP_200_OK)
 
 
 class GetListTipoPersona(APIView):
