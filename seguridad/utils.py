@@ -6,7 +6,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from datetime import timedelta
 from rest_framework import status
 import re, requests
-from twilio.rest import Client
+# from twilio.rest import Client
 from django.template.loader import render_to_string
 import os
 
