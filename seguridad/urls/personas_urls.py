@@ -45,6 +45,7 @@ urlpatterns = [
     path('buscar-historico-cambios/<str:id_persona>/', views.BusquedaHistoricoCambios.as_view(), name='buscar-historico-cambios'),
     path('update-personas-naturales-restringidos/<str:id_persona>/', views.ActualizarPersonasNatCamposRestringidosView.as_view(), name='buscar-historico-cambios'),    
     path('update-personas-juridicas-restringidos/<str:id_persona>/', views.ActualizarPersonasJurCamposRestringidosView.as_view(), name='buscar-historico-cambios'),
+    path('get-vinculacion-colaboradores/<str:id_persona>/', views.ConsultaVinculacionColaboradorView.as_view(), name='consulta-vinculacion-colaboradores'),
     #Creacion de persona y usuario por portal
     
     # Apoderados Personas
