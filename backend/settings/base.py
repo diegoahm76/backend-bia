@@ -199,6 +199,8 @@ EMAIL_HOST_PASSWORD = os.environ.get('BIA_EMAIL_HOST_PASSWORD')
 
 AUTHENTICATION_360_NRS = os.environ.get('AUTHENTICATION_360_NRS')
 
+PASSWORD_RESET_TIMEOUT = 86400
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
