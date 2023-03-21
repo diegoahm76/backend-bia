@@ -782,7 +782,7 @@ class LoginApiView(generics.CreateAPIView):
                     else:
                         subject = "Login exitoso"
                         template = "email-login.html"
-                        Util.notificacion_login_usuario(user.persona,subject,template,user)
+                        Util.notificacion(user.persona,subject,template,user)
                     
                     return Response({'userinfo':user_info}, status=status.HTTP_200_OK)
                 except:
