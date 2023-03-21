@@ -88,8 +88,7 @@ from seguridad.serializers.personas_serializers import (
     GetPersonaJuridicaByRepresentanteLegalSerializer,
     CargosSerializer,
     HistoricoCargosUndOrgPersonapostSerializer,
-    BusquedaPersonaNaturalSerializer,
-    BusquedaPersonaJuridicaSerializer,
+    PersonasFilterSerializer,
     BusquedaHistoricoCambiosSerializer,
     UpdatePersonasNaturalesSerializer,
     UpdatePersonasJuridicasSerializer,
@@ -223,71 +222,74 @@ class UpdateTipoDocumento(generics.RetrieveUpdateAPIView):
 
 # Views for Personas
 
-class GetPersonas(generics.ListAPIView):
-    serializer_class = PersonasSerializer
-    permission_classes = [IsAuthenticated, PermisoConsultarPersona]
-    queryset = Personas.objects.all()
+# class GetPersonas(generics.ListAPIView):
+#     serializer_class = PersonasSerializer
+#     permission_classes = [IsAuthenticated, PermisoConsultarPersona]
+#     queryset = Personas.objects.all()
 
 
-@api_view(['GET'])
-def getPersonaByEmail(request, pk):
-    try:
-        persona = Personas.objects.get(email=pk)
-        serializer = PersonasSerializer(persona, many=False)
-        return Response({'success': True, 'data': serializer.data,},  status=status.HTTP_200_OK)
-    except:
-        return Response({'success': False ,"message": "No existe una persona con este email"}, status=status.HTTP_404_NOT_FOUND)
+# @api_view(['GET'])
+# def getPersonaByEmail(request, pk):
+#     try:
+#         persona = Personas.objects.get(email=pk)
+#         serializer = PersonasSerializer(persona, many=False)
+#         return Response({'success': True, 'data': serializer.data,},  status=status.HTTP_200_OK)
+#     except:
+#         return Response({'success': False ,"message": "No existe una persona con este email"}, status=status.HTTP_404_NOT_FOUND)
 
 
 class GetPersonasByTipoDocumentoAndNumeroDocumento(generics.GenericAPIView):
-    serializer_class = PersonasSerializer
+    serializer_class = PersonasFilterSerializer
+    queryset = Personas.objects.all()
     
     def get(self, request, tipodocumento, numerodocumento):
-        # try:
-        queryset = Personas.objects.filter(Q(tipo_documento = tipodocumento) & Q(numero_documento=numerodocumento)).first()
-        print("QUERYSET: ", queryset)
-        persona_serializer = self.serializer_class(queryset)
-        return Response({'success': True,'data': persona_serializer.data}, status=status.HTTP_200_OK)
-        # except:
-        #     return Response({'success': False, 'detail': 'No existe una persona con los parametros ingresados'}, status=status.HTTP_404_NOT_FOUND)
-
+        persona = self.queryset.all().filter(tipo_documento=tipodocumento, numero_documento=numerodocumento).first()
+        if persona:
+            persona_serializer = self.serializer_class(persona)
+            if not persona.email:
+                return Response({'success':False,'detail':'El documento ingresado existe en el sistema, sin embargo no tiene un correo electrónico de notificación asociado, debe acercarse a Cormacarena y realizar una actualizacion  de datos para proceder con la creación del usuario en el sistema', 'data':persona_serializer.data},status=status.HTTP_403_FORBIDDEN)
+            return Response({'success': True, 'detail':'Se encontró la siguiente persona', 'data': persona_serializer.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success': False, 'detail': 'No existe una persona con los parametros ingresados'}, status=status.HTTP_404_NOT_FOUND)
 
 class GetPersonasByID(generics.GenericAPIView):
     serializer_class = PersonasSerializer
     queryset = Personas.objects.all()
+    permission_classes = [IsAuthenticated]
     
     def get(self, request, pk):
-        try:
-            queryset = Personas.objects.get(id_persona=pk)  
-            persona_serializer = self.serializer_class(queryset)
+        persona = Personas.objects.filter(id_persona=pk).first()
+        if persona:
+            persona_serializer = self.serializer_class(persona)
+            if not persona.email:
+                return Response({'success':False,'detail':'El documento ingresado existe en el sistema, sin embargo no tiene un correo electrónico de notificación asociado, debe acercarse a Cormacarena y realizar una actualizacion  de datos para proceder con la creación del usuario en el sistema', 'data':persona_serializer.data},status=status.HTTP_403_FORBIDDEN)
             return Response({'success': True,'data': persona_serializer.data}, status=status.HTTP_200_OK)
-        except:
+        else:
             return Response({'success': False,'detail': 'No encontró ninguna persona con los parametros ingresados'}, status=status.HTTP_404_NOT_FOUND)
 
+# class GetPersonaNaturalByTipoDocumentoAndNumeroDocumento(generics.ListAPIView):
+#     serializer_class = PersonaNaturalSerializer
 
-class GetPersonaNaturalByTipoDocumentoAndNumeroDocumento(generics.ListAPIView):
-    serializer_class = PersonaNaturalSerializer
+#     def get(self, request, tipodocumento, numerodocumento):
+#         persona = Personas.objects.filter(tipo_persona='N',tipo_documento=tipodocumento,numero_documento=numerodocumento).first()
+#         if persona:
+#             if not persona.email:
+#                 return Response({'success':False,'detail':'El documento ingresado existe en el sistema, sin embargo no tiene un correo electrónico de notificación asociado, debe acercarse a Cormacarena y realizar una actualizacion  de datos para proceder con la creación del usuario en el sistema'},status=status.HTTP_403_FORBIDDEN)
+#             serializador = self.serializer_class(persona)
+#             return Response({'success': True,'data': serializador.data}, status=status.HTTP_200_OK)
+#         return Response({'success': False,'data': 'No encontró ninguna persona con los parametros ingresados'}, status=status.HTTP_404_NOT_FOUND)
 
-    def get(self, request, tipodocumento, numerodocumento):
-        persona = Personas.objects.filter(tipo_persona='N',tipo_documento=tipodocumento,numero_documento=numerodocumento).first()
-        if persona:
-            if not persona.email:
-                return Response({'success':False,'detail':'El documento ingresado existe en el sistema, sin embargo no tiene un correo electrónico de notificación asociado, debe acercarse a Cormacarena y realizar una actualizacion  de datos para proceder con la creación del usuario en el sistema'},status=status.HTTP_403_FORBIDDEN)
-            serializador = self.serializer_class(persona)
-            return Response({'success': True,'data': serializador.data}, status=status.HTTP_200_OK)
-        return Response({'success': False,'data': 'No encontró ninguna persona con los parametros ingresados'}, status=status.HTTP_404_NOT_FOUND)
-
-class GetPersonaJuridicaByTipoDocumentoAndNumeroDocumento(generics.GenericAPIView):
-    serializer_class = PersonaJuridicaSerializer
+# class GetPersonaJuridicaByTipoDocumentoAndNumeroDocumento(generics.GenericAPIView):
+#     serializer_class = PersonaJuridicaSerializer
     
-    def get(self, request, tipodocumento, numerodocumento):
-        persona = Personas.objects.filter(tipo_persona='J',tipo_documento=tipodocumento,numero_documento=numerodocumento).first()
-        if persona:
-            if not persona.email:
-                return Response({'success':False,'detail':'El documento ingresado existe en el sistema, sin embargo no tiene un correo electrónico de notificación asociado, debe acercarse a Cormacarena y realizar una actualizacion  de datos para proceder con la creación del usuario en el sistema'},status=status.HTTP_403_FORBIDDEN)
-            serializador = self.serializer_class(persona)
-            return Response({'success': True,'data': serializador.data}, status=status.HTTP_200_OK)
-        return Response({'success': False,'data': 'No encontró ninguna persona con los parametros ingresados'}, status=status.HTTP_404_NOT_FOUND)
+#     def get(self, request, tipodocumento, numerodocumento):
+#         persona = Personas.objects.filter(tipo_persona='J',tipo_documento=tipodocumento,numero_documento=numerodocumento).first()
+#         if persona:
+#             if not persona.email:
+#                 return Response({'success':False,'detail':'El documento ingresado existe en el sistema, sin embargo no tiene un correo electrónico de notificación asociado, debe acercarse a Cormacarena y realizar una actualizacion  de datos para proceder con la creación del usuario en el sistema'},status=status.HTTP_403_FORBIDDEN)
+#             serializador = self.serializer_class(persona)
+#             return Response({'success': True,'data': serializador.data}, status=status.HTTP_200_OK)
+#         return Response({'success': False,'data': 'No encontró ninguna persona con los parametros ingresados'}, status=status.HTTP_404_NOT_FOUND)
 
 
 # class GetPersonaNatural(generics.ListAPIView):
@@ -298,34 +300,34 @@ class GetPersonaJuridicaByTipoDocumentoAndNumeroDocumento(generics.GenericAPIVie
 #     search_fields=['primer_nombre','primer_apellido']
 
 
-class GetPersonaNatural(generics.ListAPIView):
-    serializer_class=PersonaNaturalSerializer
-    queryset=Personas.objects.all()
-    def get(self,request):
-        filter={}
-        for key,value in request.query_params.items():
-            if key in ["primer_nombre","primer_apellido"]:
-                filter[key+"__icontains"]=value
-        filter["tipo_persona"]="N"
-        persona=Personas.objects.filter(**filter)
-        if persona:
-            serializador=self.serializer_class(persona,many=True)
-            return Response({"success":True,"detail":"Se encontraron personas","Persona":serializador.data},status=status.HTTP_200_OK)
-        return Response({"success":False,"detail":"No se encontraron personas"},status=status.HTTP_403_FORBIDDEN)
-class GetPersonaJuridica(generics.ListAPIView):
-    serializer_class=PersonaJuridicaSerializer
-    queryset=Personas.objects.all()
-    def get(self,request):
-        filter={}
-        for key,value in request.query_params.items():
-            if key in ["razon_social","nombre_comercial"]:
-                filter[key+"__icontains"]=value
-        filter["tipo_persona"]="J"
-        persona=Personas.objects.filter(**filter)
-        if persona:
-            serializador=self.serializer_class(persona,many=True)
-            return Response({"success":True,"detail":"Se encontraron personas","Persona":serializador.data},status=status.HTTP_200_OK)
-        return Response({"success":False,"detail":"No se encontraron personas"},status=status.HTTP_403_FORBIDDEN)
+# class GetPersonaNatural(generics.ListAPIView):
+#     serializer_class=PersonaNaturalSerializer
+#     queryset=Personas.objects.all()
+#     def get(self,request):
+#         filter={}
+#         for key,value in request.query_params.items():
+#             if key in ["primer_nombre","primer_apellido"]:
+#                 filter[key+"__icontains"]=value
+#         filter["tipo_persona"]="N"
+#         persona=Personas.objects.filter(**filter)
+#         if persona:
+#             serializador=self.serializer_class(persona,many=True)
+#             return Response({"success":True,"detail":"Se encontraron personas","Persona":serializador.data},status=status.HTTP_200_OK)
+#         return Response({"success":False,"detail":"No se encontraron personas"},status=status.HTTP_403_FORBIDDEN)
+# class GetPersonaJuridica(generics.ListAPIView):
+#     serializer_class=PersonaJuridicaSerializer
+#     queryset=Personas.objects.all()
+#     def get(self,request):
+#         filter={}
+#         for key,value in request.query_params.items():
+#             if key in ["razon_social","nombre_comercial"]:
+#                 filter[key+"__icontains"]=value
+#         filter["tipo_persona"]="J"
+#         persona=Personas.objects.filter(**filter)
+#         if persona:
+#             serializador=self.serializer_class(persona,many=True)
+#             return Response({"success":True,"detail":"Se encontraron personas","Persona":serializador.data},status=status.HTTP_200_OK)
+#         return Response({"success":False,"detail":"No se encontraron personas"},status=status.HTTP_403_FORBIDDEN)
     
 class GetPersonaJuridicaByRepresentanteLegal(generics.ListAPIView):
     serializer_class=GetPersonaJuridicaByRepresentanteLegalSerializer
@@ -985,61 +987,57 @@ class DeleteCargo(generics.DestroyAPIView):
         else:
             return Response({'success': False, 'detail':'No existe el cargo'}, status=status.HTTP_404_NOT_FOUND)
 
-class BusquedaPersonaNaturalView(generics.ListAPIView):
-    serializer_class = BusquedaPersonaNaturalSerializer
-    permission_classes = [IsAuthenticated]
+# class BusquedaPersonaNaturalView(generics.ListAPIView):
+#     serializer_class = BusquedaPersonaNaturalSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self,request):
+#         tipo_documento = request.GET.get('tipo_documento')
+#         numero_documento = request.GET.get('numero_documento')
+#         primer_nombre = request.GET.get('primer_nombre')
+#         primer_apellido = request.GET.get('primer_apellido')
+
+#         personas = Personas.objects.all()
+#         if tipo_documento:
+#             personas = personas.filter(tipo_documento=tipo_documento)
+#         if numero_documento:
+#             personas = personas.filter(numero_documento=numero_documento)
+#         if primer_nombre:
+#             personas = personas.filter(primer_nombre__icontains=primer_nombre)
+#         if primer_apellido:
+#             personas = personas.filter(primer_apellido__icontains=primer_apellido)
+        
+#         if personas.exists():
+#             serializer = self.serializer_class(personas, many=True)
+#             return Response({'success':True, 'detail':'Se encontraron personas que coinciden con los criterios de búsqueda', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+        
+#         else:
+#             return Response({'success': False, 'detail': 'No se encontraron personas que coincidan con los criterios de búsqueda.'}, status=status.HTTP_404_NOT_FOUND)
+
+class GetPersonasByFilters(generics.ListAPIView):
+    serializer_class = PersonasFilterSerializer
+    # permission_classes = [IsAuthenticated]
+    queryset = Personas.objects.all()
 
     def get(self,request):
-        tipo_documento = request.GET.get('tipo_documento')
-        numero_documento = request.GET.get('numero_documento')
-        primer_nombre = request.GET.get('primer_nombre')
-        primer_apellido = request.GET.get('primer_apellido')
-
-        personas = Personas.objects.all()
-        if tipo_documento:
-            personas = personas.filter(tipo_documento=tipo_documento)
-        if numero_documento:
-            personas = personas.filter(numero_documento=numero_documento)
-        if primer_nombre:
-            personas = personas.filter(primer_nombre__icontains=primer_nombre)
-        if primer_apellido:
-            personas = personas.filter(primer_apellido__icontains=primer_apellido)
-        
-        if personas.exists():
-            serializer = self.serializer_class(personas, many=True)
-            return Response({'success':True, 'detail':'Se encontraron personas que coinciden con los criterios de búsqueda', 'data':serializer.data}, status=status.HTTP_201_CREATED)
-        
-        else:
-            return Response({'success': False, 'detail': 'No se encontraron personas que coincidan con los criterios de búsqueda.'}, status=status.HTTP_404_NOT_FOUND)
-
-class BusquedaPersonaJuridicaView(generics.ListAPIView):
-    serializer_class = BusquedaPersonaJuridicaSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get(self,request):
-        
         filter = {}
         
         for key,value in request.query_params.items():
-            if key ['tipo_persona','numero_documento','razon_social','nombre_comercial']:
-                if key == 'razon_social' or key == 'nombre_comercial':
-                    
-                    filter[key+'__icontains']=  value
-                
+            if key in ['tipo_documento','numero_documento','primer_nombre','primer_apellido','razon_social','nombre_comercial']:
+                if key in ['primer_nombre','primer_apellido','razon_social','nombre_comercial']:
+                    if value != "":
+                        filter[key+'__icontains']=  value
                 elif key == "numero_documento":
-                    filter[key+'__startswith'] = value
-                
+                    if value != "":
+                        filter[key+'__startswith'] = value
                 else:
                     if value != "":
                         filter[key] = value
-                    
-        personas = Personas.objects.filter(**filter)
+                        
+        personas = self.queryset.all().filter(**filter)
         
-        if personas:
-            serializer = self.serializer_class(personas, many=True)
-            return Response({'success':True, 'detail':'Se encontraron personas que coinciden con los criterios de búsqueda', 'data':serializer.data}, status=status.HTTP_201_CREATED)
-        else:
-            return Response({'success': False, 'detail': 'No se encontraron personas que coincidan con los criterios de búsqueda.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.serializer_class(personas, many=True)
+        return Response({'success':True, 'detail':'Se encontraron las siguientes personas que coinciden con los criterios de búsqueda', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 
 class BusquedaHistoricoCambios(generics.ListAPIView):
     serializer_class = BusquedaHistoricoCambiosSerializer

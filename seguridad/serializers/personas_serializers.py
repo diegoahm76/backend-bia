@@ -659,15 +659,41 @@ class HistoricoCargosUndOrgPersonapostSerializer(serializers.ModelSerializer):
         # }
     
 
-class BusquedaPersonaNaturalSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Personas
-        fields = ['tipo_documento','numero_documento','primer_nombre','primer_apellido']
+# class BusquedaPersonaNaturalSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Personas
+#         fields = ['tipo_documento','numero_documento','primer_nombre','primer_apellido']
 
-class BusquedaPersonaJuridicaSerializer(serializers.ModelSerializer):
+class PersonasFilterSerializer(serializers.ModelSerializer):
+    nombre_completo = serializers.SerializerMethodField()
+    tiene_usuario = serializers.SerializerMethodField()
+    
+    def get_tiene_usuario(self, obj):
+        usuario = User.objects.filter(persona=obj.id_persona).exists()   
+        return usuario
+    
+    def get_nombre_completo(self, obj):
+        nombre_completo = None
+        nombre_list = [obj.primer_nombre, obj.segundo_nombre, obj.primer_apellido, obj.segundo_apellido]
+        nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+        return nombre_completo
+        
     class Meta:
         model = Personas
-        fields = ['tipo_persona','numero_documento','razon_social','nombre_comercial']
+        fields = [
+            'id_persona',
+            'tipo_persona',
+            'tipo_documento',
+            'numero_documento',
+            'primer_nombre',
+            'segundo_nombre',
+            'primer_apellido',
+            'segundo_apellido',
+            'nombre_completo',
+            'razon_social',
+            'nombre_comercial',
+            'tiene_usuario'
+        ]
 
 class BusquedaHistoricoCambiosSerializer(serializers.ModelSerializer):
     class Meta:
