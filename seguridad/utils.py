@@ -1,9 +1,11 @@
+from datetime import datetime, timedelta,date
+import time
+from seguridad.models import Personas
 from django.core.mail import EmailMessage
 from email_validator import validate_email, EmailNotValidError, EmailUndeliverableError, EmailSyntaxError
 from backend.settings.base import EMAIL_HOST_USER, AUTHENTICATION_360_NRS
 from seguridad.models import Shortener, User, Modulos, Permisos, Auditorias
 from rest_framework_simplejwt.tokens import RefreshToken
-from datetime import timedelta
 from rest_framework import status
 import re, requests
 # from twilio.rest import Client
@@ -68,9 +70,11 @@ class Util:
         telefono = phone
         mensaje = sms
         telefono = telefono.replace("+","")
+        print("SMS: ", mensaje)
         print(telefono)
         print(len(sms))
         payload = "{ \"to\": [\"" + telefono + "\"], \"from\": \"TEST\", \"message\": \"" + mensaje + "\" }"
+        print("PAYLOAD",payload)
         headers = {
         'Content-Type': 'application/json', 
         'Authorization': 'Basic ' + AUTHENTICATION_360_NRS
@@ -89,7 +93,7 @@ class Util:
         #                     to=to_whatsapp_number)
 
 
-        response = requests.request("POST", url, headers=headers, data=payload)
+        response = requests.request("POST", url, headers=headers, data=payload.encode("utf-8"))
 
         print(response.text)
         #client.messages.create(messaging_service_sid=TWILIO_MESSAGING_SERVICE_SID, body=sms, from_=PHONE_NUMBER, to=phone)
@@ -334,6 +338,22 @@ class Util:
         
         else:
             
+            fecha_inicio = data.get("fecha_inicio_cargo_rep_legal")
+            fecha_formateada = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+            
+            print(fecha_formateada)
+            fecha_ahora = date.today()
+            print(fecha_ahora)
+            
+            if fecha_formateada:
+                print(fecha_formateada)
+                if fecha_formateada > fecha_ahora:
+                    return {'success':False,'detail':'La fecha de inicio del cargo del representante no debe ser superior a la del sistema', 'status':status.HTTP_403_FORBIDDEN}
+            
+            representante_legal = Personas.objects.filter(id_persona = data.get("representante_legal")).first()
+            if representante_legal.tipo_persona == "J":
+                return {'success':False,'detail':'El representante legal debe ser una persona natural', 'status':status.HTTP_403_FORBIDDEN}
+            
             #Validación de tipo documento
             tipo_documento = data.get('tipo_documento')
             
@@ -389,28 +409,28 @@ class Util:
         return True
     
     @staticmethod
-    def notificacion_creacion_persona(intance):
+    def notificacion_creacion_persona(instance):
     
-        if intance.tipo_persona == "J":
+        if instance.tipo_persona == "J":
         
             # sms = 'Registro exitoso como persona Juridica en Cormacarena. Continue aqui: ' + 'http://127.0.0.1:8000/api/personas/persona-natural/create/'
-            context = {'razon_social': intance.razon_social, 'nombre_comercial':  intance.nombre_comercial}
+            context = {'razon_social': instance.razon_social, 'nombre_comercial':  instance.nombre_comercial}
             template = render_to_string(('email-register-personajuridica.html'), context)
-            subject = 'Registro exitoso ' + intance.razon_social
-            data = {'template': template, 'email_subject': subject, 'to_email': intance.email}
+            subject = 'Registro exitoso ' + instance.razon_social
+            data = {'template': template, 'email_subject': subject, 'to_email': instance.email}
             Util.send_email(data)
             # try:
-            #     Util.send_sms(intance.telefono_celular_empresa, sms)
+            #     Util.send_sms(instance.telefono_celular_empresa, sms)
             # except:
             #     return Response({'success':True,'detail':'Se guardo la persona pero no se pudo enviar el sms, verificar numero', 'data': serializer.data}, status=status.HTTP_201_CREATED)
         
         else:
             
             #sms = 'Registro exitoso como persona en Cormacarena. Continue aqui: ' + 'http://127.0.0.1:8000/api/personas/persona-natural/create/'  
-            context = {'primer_nombre': intance.primer_nombre, 'primer_apellido':  intance.primer_apellido}
+            context = {'primer_nombre': instance.primer_nombre, 'primer_apellido':  instance.primer_apellido}
             template = render_to_string(('plantilla-mensaje.html'), context)
-            subject = 'Registro exitoso ' + intance.primer_nombre
-            data = {'template': template, 'email_subject': subject, 'to_email': intance.email}
+            subject = 'Registro exitoso ' + instance.primer_nombre
+            data = {'template': template, 'email_subject': subject, 'to_email': instance.email}
             Util.send_email(data)
             
             # try:
@@ -419,3 +439,50 @@ class Util:
             #     return Response({'success':True,'detail': 'Se guardo la persona pero no se pudo enviar el sms, verificar numero'}, status=status.HTTP_201_CREATED)
         
         return True
+    
+    
+    @staticmethod
+    def notificacion_actualizacion_persona(instance):
+        
+        if instance.tipo_persona == "J":
+            
+            # sms = 'Actualizacion exitosa de persona natural en Cormacarena.'
+            context = {'primer_nombre': instance.primer_nombre, 'primer_apellido': instance.primer_apellido}
+            template = render_to_string(('email-update-personanatural-externa.html'), context)
+            subject = 'Actualización de datos exitosa ' + instance.primer_nombre
+            data = {'template': template, 'email_subject': subject, 'to_email': instance.email}
+            Util.send_email(data)
+        
+        else:
+            # sms = 'Actualizacion exitosa de persona Juridica en Cormacarena.'
+            context = {'razon_social': instance.razon_social}
+            template = render_to_string(('email-update-personajuridica-interno.html'), context)
+            subject = 'Actualización de datos exitosa ' + (instance.razon_social or '')
+            data = {'template': template, 'email_subject': subject, 'to_email': instance.email} 
+            Util.send_email(data)
+            
+        return True
+    
+    @staticmethod
+    def notificacion(persona,subject_email,template_name,usuario=None):
+        
+        if persona.tipo_persona == "N":
+            context = {'primer_nombre': persona.primer_nombre,'fecha_actual':str(datetime.now().replace(microsecond=0))}
+            if usuario:
+                context['nombre_de_usuario'] = usuario.nombre_de_usuario
+            template = render_to_string((template_name), context)
+            subject = subject_email + ' ' + persona.primer_nombre
+            email_data = {'template': template, 'email_subject': subject, 'to_email': persona.email}
+            Util.send_email(email_data)
+        else:
+            context = {'razon_social': persona.razon_social,'fecha_actual':str(datetime.now().replace(microsecond=0)),'nombre_de_usuario':usuario.nombre_de_usuario}
+            if usuario:
+                context['nombre_de_usuario'] = usuario.nombre_de_usuario
+            template = render_to_string((template_name), context)
+            subject = subject_email + ' ' + persona.razon_social
+            email_data = {'template': template, 'email_subject': subject, 'to_email': persona.email} 
+            Util.send_email(email_data)
+            
+        return True
+        
+                
