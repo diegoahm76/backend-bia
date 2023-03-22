@@ -10,9 +10,8 @@ from seguridad.models import Shortener
 def redirect_url_view(request, shortened_part):
     try:
         shortener = Shortener.objects.get(short_url=shortened_part)
-        shortener.times_followed += 1        
         shortener.save()
         
         return HttpResponseRedirect(shortener.long_url)
     except:
-        raise Http404('Sorry this link is broken :(')
+        raise Http404('El link no es válido')

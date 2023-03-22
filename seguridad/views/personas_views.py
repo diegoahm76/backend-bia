@@ -385,7 +385,10 @@ class UpdatePersonaNaturalByself(generics.RetrieveUpdateAPIView):
         }
         Util.save_auditoria(auditoria_data)
         
-        Util.notificacion_actualizacion_persona(persona)
+        subject = "Actualización de datos exitosa"
+        template = "email-update-personanatural-externa.html"
+        
+        Util.notificacion(persona,subject,template)
         
         return Response({'success': True, 'detail': 'Persona actualizada y notificada correctamente', 'data': persona_serializada.data}, status=status.HTTP_201_CREATED)
     
@@ -542,7 +545,10 @@ class UpdatePersonaJuridicaBySelf(generics.UpdateAPIView):
         }
         Util.save_auditoria(auditoria_data)
         
-        Util.notificacion_actualizacion_persona(persona)
+        subject = "Actualización de datos exitosa"
+        template = "email-update-personanatural-externa.html"
+        
+        Util.notificacion(persona,subject,template)
         
         return Response({'success': True, 'detail': 'Persona actualizada y notificada correctamente', 'data': persona_serializada.data}, status=status.HTTP_201_CREATED)
     
@@ -663,7 +669,10 @@ class RegisterPersonaNatural(generics.CreateAPIView):
         }
         Util.save_auditoria(auditoria_data)
         
-        Util.notificacion_creacion_persona(serializador)
+        subject = "Registro exitoso"
+        template = "email-register-personajuridica.html"
+        
+        Util.notificacion(serializador,subject,template)
 
         return Response({'success':True, 'detail': serializer.data}, status=status.HTTP_201_CREATED)
 
@@ -698,7 +707,10 @@ class RegisterPersonaJuridica(generics.CreateAPIView):
         }
         Util.save_auditoria(auditoria_data)
 
-        Util.notificacion_creacion_persona(serializador)
+        subject = "Registro exitoso"
+        template = "email-register-personajuridica.html"
+
+        Util.notificacion(serializador,subject,template)
         
         return Response({'success':True, 'detail': serializer.data}, status=status.HTTP_201_CREATED)
 
@@ -1368,7 +1380,10 @@ class CreatePersonaJuridicaAndUsuario(generics.CreateAPIView):
 
         # short_url = Util.get_short_url(request, absurl)
 
-        Util.enviar_notificacion_verificacion(serializador, absurl)
+        subject = "Verifica tu usuario"
+        template = "email-verification.html"
+
+        Util.notificacion(serializador,subject,template,absurl=absurl)
     
         
         return Response ({'success':True,'detail':'Se creo la persona jurídica y el usuario correctamente'},status=status.HTTP_200_OK)
@@ -1478,8 +1493,11 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
         absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
 
         # short_url = Util.get_short_url(request, absurl)
+        
+        subject = "Verifica tu usuario"
+        template = "email-verification.html"
 
-        Util.enviar_notificacion_verificacion(serializador, absurl)
+        Util.notificacion(serializador,subject,template,absurl=absurl)
     
         return Response ({'success':True,'detail':'Se creo la persona natural y el usuario correctamente'},status=status.HTTP_200_OK)
         

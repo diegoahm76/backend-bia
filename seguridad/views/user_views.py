@@ -560,8 +560,11 @@ class RegisterView(generics.CreateAPIView):
         relativeLink= reverse('verify')
         absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
         short_url = Util.get_short_url(request, absurl)
-    
-        Util.enviar_notificacion_verificacion(persona, absurl)
+        
+        subject = "Verifica tu usuario"
+        template = "email-verification.html"
+
+        Util.notificacion(persona,subject,template,absurl=absurl)
         
         return Response({'success':True,'detail': 'Usuario creado exitosamente, se ha enviado un correo a '+persona.email+', con la información para la activación del usuario en el sistema', 'usuario': serializer.data, 'Roles': roles, "redirect:":redirect_url}, status=status.HTTP_201_CREATED)
 
@@ -651,8 +654,11 @@ class RegisterExternoView(generics.CreateAPIView):
         absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
 
         # short_url = Util.get_short_url(request, absurl)
+        
+        subject = "Verifica tu usuario"
+        template = "email-verification.html"
 
-        Util.enviar_notificacion_verificacion(persona, absurl)
+        Util.notificacion(persona,subject,template,absurl=absurl)
     
         return Response([{"success":True, "detail":'Usuario creado exitosamente, se ha enviado un correo a '+persona.email+', con la información para la activación del usuario en el sistema'},user_data,{"redi:":redirect_url}], status=status.HTTP_201_CREATED)
 
@@ -684,11 +690,45 @@ class Verify(views.APIView):
                     subject = 'Verificación exitosa ' + user.nombre_de_usuario
                     data = {'template': template, 'email_subject': subject, 'to_email': user.persona.email}
                     Util.send_email(data)
+            
+            # ELIMINAR DIRECCIÓN CORTA SI EXISTE
+            current_site=get_current_site(request).domain
+
+            relativeLink= reverse('verify')
+            absurl= 'http://'+ current_site + relativeLink + "?token="+ token + '&redirect-url=' + redirect_url
+            print("absurl: ", absurl)
+            short_url = Shortener.objects.filter(long_url=absurl).first()
+            print("SHORT_URL: ", short_url)
+            if short_url:
+                short_url.delete()
+        
             return redirect(redirect_url)
         except jwt.ExpiredSignatureError as identifier:
+            # ELIMINAR DIRECCIÓN CORTA SI EXISTE
+            current_site=get_current_site(request).domain
+
+            relativeLink= reverse('verify')
+            absurl= 'http://'+ current_site + relativeLink + "?token="+ token + '&redirect-url=' + redirect_url
+            print("absurl: ", absurl)
+            short_url = Shortener.objects.filter(long_url=absurl).first()
+            print("SHORT_URL: ", short_url)
+            if short_url:
+                short_url.delete()
+                
             return redirect(redirect_url)
 
         except jwt.exceptions.DecodeError as identifier:
+            # ELIMINAR DIRECCIÓN CORTA SI EXISTE
+            current_site=get_current_site(request).domain
+
+            relativeLink= reverse('verify')
+            absurl= 'http://'+ current_site + relativeLink + "?token="+ token + '&redirect-url=' + redirect_url
+            print("absurl: ", absurl)
+            short_url = Shortener.objects.filter(long_url=absurl).first()
+            print("SHORT_URL: ", short_url)
+            if short_url:
+                short_url.delete()
+                
             return redirect(redirect_url)
 
 class LoginConsultarApiViews(generics.RetrieveAPIView):
@@ -782,7 +822,7 @@ class LoginApiView(generics.CreateAPIView):
                     else:
                         subject = "Login exitoso"
                         template = "email-login.html"
-                        Util.notificacion(user.persona,subject,template,user)
+                        Util.notificacion(user.persona,subject,template,nombre_de_usuario=user.nombre_de_usuario)
                     
                     return Response({'userinfo':user_info}, status=status.HTTP_200_OK)
                 except:
@@ -826,7 +866,7 @@ class LoginApiView(generics.CreateAPIView):
                         serializer = LoginErroneoPostSerializers(login_error, many=False)
                         return Response({'success':False,'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
             else:
-                return Response({'success':False,'detail': 'Usuario no verificado'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+                return Response({'success':False, 'detail':'Usuario no activado', 'data':{'modal':True, 'id_usuario':user.id_usuario, 'tipo_usuario':user.tipo_usuario}}, status=status.HTTP_403_FORBIDDEN)
         else:
             UsuarioErroneo.objects.create(
                 campo_usuario = data['nombre_de_usuario'],
@@ -960,13 +1000,42 @@ class PasswordTokenCheckApi(generics.GenericAPIView):
                 else:
                     return redirect(FRONTEND_URL+redirect_url+'?token-valid=False')
                 
-            print(request.query_params.get('redirect-url'))
-            print(token)
-            print(uidb64)
+            # ELIMINAR DIRECCIÓN CORTA SI EXISTE
+            current_site=get_current_site(request=request).domain
+            relativeLink=reverse('password-reset-confirm',kwargs={'uidb64':uidb64,'token':token})
+            
+            absurl='http://'+ current_site + relativeLink + '?redirect-url=' + redirect_url
+            print("absurl: ", absurl)
+            short_url = Shortener.objects.filter(long_url=absurl).first()
+            print("SHORT_URL: ", short_url)
+            if short_url:
+                short_url.delete()
+                
             return redirect(redirect_url+'?token-valid=True&?message=Credentials-valid?&uidb64='+uidb64+'&?token='+token)
         except encoding.DjangoUnicodeDecodeError as identifier:
-
+            # ELIMINAR DIRECCIÓN CORTA SI EXISTE
+            current_site=get_current_site(request=request).domain
+            relativeLink=reverse('password-reset-confirm',kwargs={'uidb64':uidb64,'token':token})
+            
+            absurl='http://'+ current_site + relativeLink + '?redirect-url=' + redirect_url
+            print("absurl: ", absurl)
+            short_url = Shortener.objects.filter(long_url=absurl).first()
+            print("SHORT_URL: ", short_url)
+            if short_url:
+                short_url.delete()
+                
             if not PasswordResetTokenGenerator().check_token(user):
+                # ELIMINAR DIRECCIÓN CORTA SI EXISTE
+                current_site=get_current_site(request=request).domain
+                relativeLink=reverse('password-reset-confirm',kwargs={'uidb64':uidb64,'token':token})
+                
+                absurl='http://'+ current_site + relativeLink + '?redirect-url=' + redirect_url
+                print("absurl: ", absurl)
+                short_url = Shortener.objects.filter(long_url=absurl).first()
+                print("SHORT_URL: ", short_url)
+                if short_url:
+                    short_url.delete()
+                    
                 return redirect(redirect_url+'?token-valid=False')
 
 
@@ -1078,8 +1147,10 @@ class ReenviarCorreoVerificacionDeUsuario(generics.UpdateAPIView):
             absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
 
             # short_url = Util.get_short_url(request, absurl)
+            subject = "Verifica tu usuario"
+            template = "email-verification.html"
 
-            Util.enviar_notificacion_verificacion(persona, absurl)
+            Util.notificacion(persona,subject,template,absurl=absurl)
             
             return Response({"success":True,'detail':"Se ha enviado un correo a "+persona.email+" con la información para la activación del usuario en el sistema"})
             

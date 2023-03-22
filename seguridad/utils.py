@@ -377,112 +377,37 @@ class Util:
                 return {'success':False,'detail':'El email principal no puede ser el mismo email empresarial', 'status':status.HTTP_400_BAD_REQUEST}
 
             return ({'success':True})
-        
-    @staticmethod
-    def enviar_notificacion_verificacion(instance,absurl):
-        
-        if instance.tipo_persona == 'N':
-            # sms = 'Verifica tu usuario de Cormarena-Bia aqui: ' + short_url
-            context = {'primer_nombre': instance.primer_nombre, 'primer_apellido': instance.primer_apellido, 'absurl': absurl}
-            template = render_to_string(('email-verification.html'), context)
-            subject = 'Verifica tu usuario ' + instance.primer_nombre
-            data = {'template': template, 'email_subject': subject, 'to_email': instance.email}
-            Util.send_email(data)
-            # try:
-            #     Util.send_sms(serializer_response.persona.telefono_celular, sms)
-            # except:
-            #     return Response({'success':True, 'detail':'No se pudo enviar sms de confirmacion'}, status=status.HTTP_201_CREATED)
-
-        else:
-            # sms = 'Verifica tu usuario de Cormarena-Bia aqui: ' + short_url
-            context = {'razon_social': instance.razon_social, 'absurl': absurl}
-            template = render_to_string(('email-verification.html'), context)
-            subject = 'Verifica tu usuario ' + instance.razon_social
-            data = {'template': template, 'email_subject': subject, 'to_email': instance.email}
-            Util.send_email(data)
-            # try:
-            #     Util.send_sms(serializer_response.persona.telefono_celular, sms)
-            # except:
-            #     return Response({'success':True, 'message':'No se pudo enviar sms de confirmacion'}, status=status.HTTP_201_CREATED)
-            
-        
-        return True
     
     @staticmethod
-    def notificacion_creacion_persona(instance):
-    
-        if instance.tipo_persona == "J":
-        
-            # sms = 'Registro exitoso como persona Juridica en Cormacarena. Continue aqui: ' + 'http://127.0.0.1:8000/api/personas/persona-natural/create/'
-            context = {'razon_social': instance.razon_social, 'nombre_comercial':  instance.nombre_comercial}
-            template = render_to_string(('email-register-personajuridica.html'), context)
-            subject = 'Registro exitoso ' + instance.razon_social
-            data = {'template': template, 'email_subject': subject, 'to_email': instance.email}
-            Util.send_email(data)
-            # try:
-            #     Util.send_sms(instance.telefono_celular_empresa, sms)
-            # except:
-            #     return Response({'success':True,'detail':'Se guardo la persona pero no se pudo enviar el sms, verificar numero', 'data': serializer.data}, status=status.HTTP_201_CREATED)
-        
-        else:
-            
-            #sms = 'Registro exitoso como persona en Cormacarena. Continue aqui: ' + 'http://127.0.0.1:8000/api/personas/persona-natural/create/'  
-            context = {'primer_nombre': instance.primer_nombre, 'primer_apellido':  instance.primer_apellido}
-            template = render_to_string(('plantilla-mensaje.html'), context)
-            subject = 'Registro exitoso ' + instance.primer_nombre
-            data = {'template': template, 'email_subject': subject, 'to_email': instance.email}
-            Util.send_email(data)
-            
-            # try:
-            #     Util.send_sms(serializador.telefono_celular, sms)
-            # except:
-            #     return Response({'success':True,'detail': 'Se guardo la persona pero no se pudo enviar el sms, verificar numero'}, status=status.HTTP_201_CREATED)
-        
-        return True
-    
-    
-    @staticmethod
-    def notificacion_actualizacion_persona(instance):
-        
-        if instance.tipo_persona == "J":
-            
-            # sms = 'Actualizacion exitosa de persona natural en Cormacarena.'
-            context = {'primer_nombre': instance.primer_nombre, 'primer_apellido': instance.primer_apellido}
-            template = render_to_string(('email-update-personanatural-externa.html'), context)
-            subject = 'Actualización de datos exitosa ' + instance.primer_nombre
-            data = {'template': template, 'email_subject': subject, 'to_email': instance.email}
-            Util.send_email(data)
-        
-        else:
-            # sms = 'Actualizacion exitosa de persona Juridica en Cormacarena.'
-            context = {'razon_social': instance.razon_social}
-            template = render_to_string(('email-update-personajuridica-interno.html'), context)
-            subject = 'Actualización de datos exitosa ' + (instance.razon_social or '')
-            data = {'template': template, 'email_subject': subject, 'to_email': instance.email} 
-            Util.send_email(data)
-            
-        return True
-    
-    @staticmethod
-    def notificacion(persona,subject_email,template_name,usuario=None):
+    def notificacion(persona,subject_email,template_name,**kwargs):
         
         if persona.tipo_persona == "N":
             context = {'primer_nombre': persona.primer_nombre,'fecha_actual':str(datetime.now().replace(microsecond=0))}
-            if usuario:
-                context['nombre_de_usuario'] = usuario.nombre_de_usuario
+            
+            for field, value in kwargs.items():
+                context[field] = value
+            
             template = render_to_string((template_name), context)
             subject = subject_email + ' ' + persona.primer_nombre
             email_data = {'template': template, 'email_subject': subject, 'to_email': persona.email}
             Util.send_email(email_data)
         else:
-            context = {'razon_social': persona.razon_social,'fecha_actual':str(datetime.now().replace(microsecond=0)),'nombre_de_usuario':usuario.nombre_de_usuario}
-            if usuario:
-                context['nombre_de_usuario'] = usuario.nombre_de_usuario
+            context = {'razon_social': persona.razon_social,'fecha_actual':str(datetime.now().replace(microsecond=0))}
+            
+            for field, value in kwargs.items():
+                context[field] = value
+            
             template = render_to_string((template_name), context)
             subject = subject_email + ' ' + persona.razon_social
             email_data = {'template': template, 'email_subject': subject, 'to_email': persona.email} 
             Util.send_email(email_data)
             
         return True
-        
-                
+    
+    @staticmethod
+    def comparacion_campos_actualizados(data,instance):
+        for field, value in data.items():
+            valor_previous= getattr(instance,field)
+            if value != valor_previous:
+                return True
+        return False
