@@ -13,6 +13,15 @@ from rest_framework.permissions import IsAuthenticated
 from seguridad.lists.tipo_persona_list import tipo_persona_LIST
 from seguridad.lists.tipo_documento_list import tipo_documento_LIST
 from seguridad.lists.tipo_usuario_list import tipo_usuario_LIST
+from seguridad.lists.clase_tercero_list import clase_tercero_LIST
+from seguridad.lists.cod_permiso_list import cod_permiso_LIST
+from seguridad.lists.estado_civil_list import estado_civil_LIST  
+from seguridad.lists.opciones_usuario_list import opciones_usuario_LIST
+from seguridad.lists.sexo_list import sexo_LIST 
+from seguridad.lists.subsistemas_list import subsistemas_LIST
+from seguridad.lists.tipo_direccion_list import tipo_direccion_LIST
+from seguridad.lists.direcciones_list import direcciones_LIST 
+from seguridad.lists.indicativo_paises_list import indicativo_paises_LIST
 
 class GetListMunicipios(generics.ListAPIView):
     serializer_class = MunicipiosSerializer
@@ -66,3 +75,38 @@ class GetListTipoUsuario(APIView):
     def get(self, request):
         return Response({'success': True, 'detail': 'Los tipos de usuarios son los siguientes', 'data': tipo_usuario_LIST}, status=status.HTTP_200_OK)
 
+class GetLisClaseTercero(APIView):
+    def get(self, request):
+        return Response({'success': True, 'detail': 'Los tipos de clase tercero son los siguientes', 'data': clase_tercero_LIST}, status=status.HTTP_200_OK)
+    
+class GetLisCodPermiso(APIView):
+    def get(self, request):
+        return Response({'success': True, 'detail': 'Los tipos de codigo permiso son los siguientes', 'data': cod_permiso_LIST}, status=status.HTTP_200_OK)
+    
+class GetLisEstadoCivil(APIView):
+    def get(self, request):
+        return Response({'success': True, 'detail': 'Los tipos de estado civil son los siguientes', 'data': estado_civil_LIST}, status=status.HTTP_200_OK) 
+
+class GetLisOpcUsuario(APIView):
+    def get(self, request):
+        return Response({'success': True, 'detail': 'Los tipos de opciones de usuario son los siguientes', 'data': opciones_usuario_LIST}, status=status.HTTP_200_OK) 
+
+class GetLisSexo(APIView):
+    def get(self, request):
+        return Response({'success': True, 'detail': 'Los tipos de sexo son los siguientes', 'data': sexo_LIST}, status=status.HTTP_200_OK) 
+
+class GetLisSubsistema(APIView):
+    def get(self, request):
+        return Response({'success': True, 'detail': 'Los tipos de subsistema son los siguientes', 'data': subsistemas_LIST}, status=status.HTTP_200_OK)
+    
+class GetLisTipoDireccion(APIView):
+    def get(self, request):
+        return Response({'success': True, 'detail': 'Los tipos de direccion son las siguientes', 'data': tipo_direccion_LIST}, status=status.HTTP_200_OK)
+
+class GetLisDirecciones(APIView):
+    def get(self, request):
+        return Response({'success': True, 'detail': 'Las direeciones son las siguientes', 'data': direcciones_LIST}, status=status.HTTP_200_OK) 
+        
+class GetLisIndicativoPais(APIView):
+    def get(self, request):
+        return Response({'success': True, 'detail': 'Los indicativos por pais son los siguientes', 'data': indicativo_paises_LIST}, status=status.HTTP_200_OK)
