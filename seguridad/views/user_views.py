@@ -492,10 +492,13 @@ class RegisterView(generics.CreateAPIView):
         if not persona:
             return Response ({'success':False,'detail':'No existe la persona'},status=status.HTTP_404_NOT_FOUND)
         
+        if not persona.email:
+                return Response({'success':False,'detail':'La persona no tiene un correo electrónico de notificación asociado, debe acercarse a Cormacarena y realizar una actualizacion  de datos para proceder con la creación del usuario en el sistema'},status=status.HTTP_403_FORBIDDEN)
+    
         usuario = persona.user_set.exclude(id_usuario=1)
-      
+
         if usuario:
-            return Response ({'success':False,'detail':'Esta persona ya tiene un usuario'},status=status.HTTP_403_FORBIDDEN)
+            return Response ({'success':False,'detail':'la persona ya posee un usuario en el sistema, en caso de pérdida de credenciales debe usar las opciones de recuperación'},status=status.HTTP_403_FORBIDDEN)
 
         #CREAR USUARIO
         serializer = self.serializer_class(data=data, many=False)
@@ -551,16 +554,19 @@ class RegisterView(generics.CreateAPIView):
             except:
                 return Response({'success':False,'detail':'No se puede consultar por que no existe este rol'}, status=status.HTTP_400_BAD_REQUEST)
         
-        token = RefreshToken.for_user(serializador).access_token
+        token = RefreshToken.for_user(serializador)
         current_site=get_current_site(request).domain
 
         relativeLink= reverse('verify')
         absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
         short_url = Util.get_short_url(request, absurl)
-    
-        Util.enviar_notificacion_verificacion(persona, absurl)
         
-        return Response({'success':True,'detail': 'Creado exitosamente', 'usuario': serializer.data, 'Roles': roles, "redirect:":redirect_url}, status=status.HTTP_201_CREATED)
+        subject = "Verifica tu usuario"
+        template = "email-verification.html"
+
+        Util.notificacion(persona,subject,template,absurl=absurl)
+        
+        return Response({'success':True,'detail': 'Usuario creado exitosamente, se ha enviado un correo a '+persona.email+', con la información para la activación del usuario en el sistema', 'usuario': serializer.data, 'Roles': roles, "redirect:":redirect_url}, status=status.HTTP_201_CREATED)
 
 class RegisterExternoView(generics.CreateAPIView):
     serializer_class = RegisterExternoSerializer
@@ -574,10 +580,17 @@ class RegisterExternoView(generics.CreateAPIView):
         if not persona:
             return Response ({'success':False,'detail':'No existe la persona'},status=status.HTTP_404_NOT_FOUND)
         
-        usuario = persona.user_set.exclude(id_usuario=1)
-      
+        if not persona.email:
+            return Response({'success':False,'detail':'La persona no tiene un correo electrónico de notificación asociado, debe acercarse a Cormacarena y realizar una actualizacion  de datos para proceder con la creación del usuario en el sistema'},status=status.HTTP_403_FORBIDDEN)
+    
+        usuario = persona.user_set.exclude(id_usuario=1).first()
+
         if usuario:
-            return Response ({'success':False,'detail':'Esta persona ya tiene un usuario'},status=status.HTTP_403_FORBIDDEN)
+            if usuario.is_active == True or usuario.tipo_usuario == "I":
+                return Response ({'success':False,'detail':'La persona ya posee un usuario en el sistema, en caso de pérdida de credenciales debe usar las opciones de recuperación'},status=status.HTTP_403_FORBIDDEN)
+
+            if usuario.is_active == False:
+                return Response ({'success':False,'detail':"La persona ya posee un usuario en el sistema, pero no se encuentra activado, ¿desea reenviar el correo de activación?","modal":True,"id_usuario":usuario.id_usuario},status=status.HTTP_403_FORBIDDEN)
 
         redirect_url=request.data.get('redirect_url','')
         print(redirect_url)
@@ -631,7 +644,7 @@ class RegisterExternoView(generics.CreateAPIView):
 
         #user = User.objects.get(email=user_data['email'])
 
-        token = RefreshToken.for_user(serializer_response).access_token
+        token = RefreshToken.for_user(serializer_response)
 
         current_site=get_current_site(request).domain
 
@@ -641,10 +654,13 @@ class RegisterExternoView(generics.CreateAPIView):
         absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
 
         # short_url = Util.get_short_url(request, absurl)
+        
+        subject = "Verifica tu usuario"
+        template = "email-verification.html"
 
-        Util.enviar_notificacion_verificacion(persona, absurl)
+        Util.notificacion(persona,subject,template,absurl=absurl)
     
-        return Response([{"success":True, "detail":"Usuario creado correctamente"},user_data,{"redi:":redirect_url}], status=status.HTTP_201_CREATED)
+        return Response([{"success":True, "detail":'Usuario creado exitosamente, se ha enviado un correo a '+persona.email+', con la información para la activación del usuario en el sistema'},user_data,{"redi:":redirect_url}], status=status.HTTP_201_CREATED)
 
 
 class Verify(views.APIView):
@@ -674,11 +690,45 @@ class Verify(views.APIView):
                     subject = 'Verificación exitosa ' + user.nombre_de_usuario
                     data = {'template': template, 'email_subject': subject, 'to_email': user.persona.email}
                     Util.send_email(data)
+            
+            # ELIMINAR DIRECCIÓN CORTA SI EXISTE
+            current_site=get_current_site(request).domain
+
+            relativeLink= reverse('verify')
+            absurl= 'http://'+ current_site + relativeLink + "?token="+ token + '&redirect-url=' + redirect_url
+            print("absurl: ", absurl)
+            short_url = Shortener.objects.filter(long_url=absurl).first()
+            print("SHORT_URL: ", short_url)
+            if short_url:
+                short_url.delete()
+        
             return redirect(redirect_url)
         except jwt.ExpiredSignatureError as identifier:
+            # ELIMINAR DIRECCIÓN CORTA SI EXISTE
+            current_site=get_current_site(request).domain
+
+            relativeLink= reverse('verify')
+            absurl= 'http://'+ current_site + relativeLink + "?token="+ token + '&redirect-url=' + redirect_url
+            print("absurl: ", absurl)
+            short_url = Shortener.objects.filter(long_url=absurl).first()
+            print("SHORT_URL: ", short_url)
+            if short_url:
+                short_url.delete()
+                
             return redirect(redirect_url)
 
         except jwt.exceptions.DecodeError as identifier:
+            # ELIMINAR DIRECCIÓN CORTA SI EXISTE
+            current_site=get_current_site(request).domain
+
+            relativeLink= reverse('verify')
+            absurl= 'http://'+ current_site + relativeLink + "?token="+ token + '&redirect-url=' + redirect_url
+            print("absurl: ", absurl)
+            short_url = Shortener.objects.filter(long_url=absurl).first()
+            print("SHORT_URL: ", short_url)
+            if short_url:
+                short_url.delete()
+                
             return redirect(redirect_url)
 
 class LoginConsultarApiViews(generics.RetrieveAPIView):
@@ -765,8 +815,14 @@ class LoginApiView(generics.CreateAPIView):
                     serializer_data = serializer.data
                     
                     user_info={'userinfo':serializer_data,'permisos':permisos_list,'representante_legal':representante_legal_list}
-                    sms = "Has iniciado sesion en bia cormacarena"
-                    Util.send_sms(user.persona.telefono_celular, sms)
+                    sms = "Bia Cormacarena te informa que se ha registrado una conexion con el usuario " + user.nombre_de_usuario + " en la fecha " + str(datetime.now())
+                    
+                    if user.persona.telefono_celular:
+                        Util.send_sms(user.persona.telefono_celular, sms)
+                    else:
+                        subject = "Login exitoso"
+                        template = "email-login.html"
+                        Util.notificacion(user.persona,subject,template,nombre_de_usuario=user.nombre_de_usuario)
                     
                     return Response({'userinfo':user_info}, status=status.HTTP_200_OK)
                 except:
@@ -785,31 +841,7 @@ class LoginApiView(generics.CreateAPIView):
                             if login_error.contador == 3:
                                 user.is_blocked = True
                                 user.save()
-
-                                if user.persona.tipo_persona == 'N':
-                                    sms = 'Usuario Cormacarena Bia bloqueado por limite de intentos, desbloquealo enviando un correo a admin@admin.com'
-                                    context = {'primer_nombre': user.persona.primer_nombre}
-                                    template = render_to_string(('email-blocked-user.html'), context)
-                                    subject = 'Bloqueo de cuenta ' + user.persona.primer_nombre
-                                    email_data = {'template': template, 'email_subject': subject, 'to_email': user.persona.email}
-                                    Util.send_email(email_data)
-                                    try:
-                                        Util.send_sms(user.persona.telefono_celular, sms)
-                                    except:
-                                        return Response({'success':False,'detail': 'Se bloqueó el usuario pero no pudo enviar el sms, verificar servicio o número'}, status=status.HTTP_403_FORBIDDEN)
-                                    return Response({'success':False,'detail':'Su usuario ha sido bloqueado'}, status=status.HTTP_403_FORBIDDEN)
-                                else:
-                                    sms = 'Usuario Cormacarena Bia bloqueado por limite de intentos, desbloquealo enviando un correo a admin@admin.com'
-                                    context = {'razon_social': user.persona.razon_social}
-                                    template = render_to_string(('email-blocked-user.html'), context)
-                                    subject = 'Bloqueo de cuenta ' + user.persona.razon_social
-                                    email_data = {'template': template, 'email_subject': subject, 'to_email': user.persona.email}
-                                    Util.send_email(email_data)
-                                    try:
-                                        Util.send_sms(user.persona.telefono_celular, sms)
-                                    except:
-                                        return Response({'success':False,'detail': 'Se bloqueó el usuario pero no pudo enviar el sms, verificar servicio o número'}, status=status.HTTP_403_FORBIDDEN)
-                                    return Response({'success':False,'detail':'Su usuario ha sido bloqueado'}, status=status.HTTP_403_FORBIDDEN)
+                                return Response({'success':False,'detail':'Su usuario ha sido bloqueado'}, status=status.HTTP_403_FORBIDDEN)
                             serializer = LoginErroneoPostSerializers(login_error, many=False)
                             return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
                         else:
@@ -834,7 +866,7 @@ class LoginApiView(generics.CreateAPIView):
                         serializer = LoginErroneoPostSerializers(login_error, many=False)
                         return Response({'success':False,'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
             else:
-                return Response({'success':False,'detail': 'Usuario no verificado'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+                return Response({'success':False, 'detail':'Usuario no activado', 'data':{'modal':True, 'id_usuario':user.id_usuario, 'tipo_usuario':user.tipo_usuario}}, status=status.HTTP_403_FORBIDDEN)
         else:
             UsuarioErroneo.objects.create(
                 campo_usuario = data['nombre_de_usuario'],
@@ -843,67 +875,117 @@ class LoginApiView(generics.CreateAPIView):
             )
             return Response({'success':False,'detail':'No existe el nombre de usuario ingresado'}, status=status.HTTP_400_BAD_REQUEST)
 
-class RequestPasswordResetEmail(generics.GenericAPIView):
-    serializer_class = ResetPasswordEmailRequestSerializer
+# class RequestPasswordResetEmail(generics.GenericAPIView):
+#     serializer_class = ResetPasswordEmailRequestSerializer
 
-    def post(self,request):
-        serializer=self.serializer_class(data=request.data)
-        email = request.data['email']
+#     def post(self,request):
+#         serializer=self.serializer_class(data=request.data)
+#         email = request.data['email']
         
-        if User.objects.filter(persona__email=email).exists():
-            user = User.objects.get(persona__email=email)
-            uidb64 =signing.dumps({'user':str(user.id_usuario)})
+#         if User.objects.filter(persona__email=email).exists():
+#             user = User.objects.get(persona__email=email)
+#             uidb64 =signing.dumps({'user':str(user.id_usuario)})
+#             print(uidb64)
+#             token = PasswordResetTokenGenerator().make_token(user)
+#             current_site=get_current_site(request=request).domain
+#             relativeLink=reverse('password-reset-confirm',kwargs={'uidb64':uidb64,'token':token})
+#             redirect_url= request.data.get('redirect_url','')
+#             absurl='http://'+ current_site + relativeLink 
+#             if user.persona.tipo_persona == 'N':
+#                 context = {
+#                 'primer_nombre': user.persona.primer_nombre,
+#                 'primer_apellido':user.persona.primer_apellido,
+#                 'absurl': absurl + '?redirect-url='+ redirect_url,
+#                 }
+#                 template = render_to_string(('email-resetpassword.html'), context)
+#                 subject = 'Actualiza tu contraseña ' + user.persona.primer_nombre
+#                 data = {'template': template, 'email_subject': subject, 'to_email': user.persona.email}
+#                 Util.send_email(data)
+#             else:
+#                 context = {
+#                 'razon_social': user.persona.razon_social,
+#                 'absurl': absurl + '?redirect-url='+ redirect_url,
+#                 }
+#                 template = render_to_string(('email-resetpassword.html'), context)
+#                 subject = 'Actualiza tu contraseña ' + user.persona.razon_social
+#                 data = {'template': template, 'email_subject': subject, 'to_email': user.persona.email}
+#                 Util.send_email(data)
+#         return Response( {'success':True,'detail':'Te enviamos el link para poder actualizar tu contraseña'},status=status.HTTP_200_OK)
+
+class RequestPasswordResetEmail(generics.CreateAPIView):
+    serializer_class = ResetPasswordEmailRequestSerializer
+    queryset = User.objects.all()
+    
+    def post(self,request):
+        
+        data = request.data
+        
+        usuario = self.queryset.all().filter(nombre_de_usuario=data['nombre_de_usuario']).first()
+        
+        if usuario:
+            
+            uidb64 =signing.dumps({'user':str(usuario.id_usuario)})
             print(uidb64)
-            token = PasswordResetTokenGenerator().make_token(user)
+            token = PasswordResetTokenGenerator().make_token(usuario)
             current_site=get_current_site(request=request).domain
             relativeLink=reverse('password-reset-confirm',kwargs={'uidb64':uidb64,'token':token})
             redirect_url= request.data.get('redirect_url','')
             absurl='http://'+ current_site + relativeLink 
-            if user.persona.tipo_persona == 'N':
+
+            data_email = None
+            sms = None
+            nro_telefono = None
+            
+            if usuario.persona.tipo_persona == "N":
                 context = {
-                'primer_nombre': user.persona.primer_nombre,
-                'primer_apellido':user.persona.primer_apellido,
-                'absurl': absurl + '?redirect-url='+ redirect_url,
+                    'primer_nombre': usuario.persona.primer_nombre,
+                    'primer_apellido':usuario.persona.primer_apellido,
+                    'absurl': absurl + '?redirect-url='+ redirect_url,
                 }
                 template = render_to_string(('email-resetpassword.html'), context)
-                subject = 'Actualiza tu contraseña ' + user.persona.primer_nombre
-                data = {'template': template, 'email_subject': subject, 'to_email': user.persona.email}
-                Util.send_email(data)
+                subject = 'Actualiza tu contraseña ' + usuario.persona.primer_nombre
+                data_email = {'template': template, 'email_subject': subject, 'to_email': usuario.persona.email}
+                
+                short_url = Util.get_short_url(request, absurl+'?redirect-url='+redirect_url)
+                sms = subject + ' ' + short_url
+                
+                nro_telefono = usuario.persona.telefono_celular
             else:
                 context = {
-                'razon_social': user.persona.razon_social,
-                'absurl': absurl + '?redirect-url='+ redirect_url,
+                    'razon_social': usuario.persona.razon_social,
+                    'absurl': absurl + '?redirect-url='+ redirect_url,
                 }
                 template = render_to_string(('email-resetpassword.html'), context)
-                subject = 'Actualiza tu contraseña ' + user.persona.razon_social
-                data = {'template': template, 'email_subject': subject, 'to_email': user.persona.email}
-                Util.send_email(data)
-        return Response( {'success':True,'detail':'Te enviamos el link para poder actualizar tu contraseña'},status=status.HTTP_200_OK)
-    
-    
-# class RequestPasswordResetEmail(generics.CreateAPIView):
-#     serializer_class = ResetPasswordEmailRequestSerializer
-#     queryset = User.objects.all()
-    
-#     def post(self,request):
-        
-#         data = request.data
-        
-#         usuario = self.queryset.all().filter(nombre_de_usuario=data['nombre_de_usuario']).first()
-        
-#         if usuario:
-#             if usuario.persona.tipo_persona == "N":
-                
-#                 if usuario.persona.email and not usuario.persona.telefono_celular:
-                
-#                 else:
-#                     return ({'success':True,'detail':'Cual de los dos medios registrados quiere '})
+                subject = 'Actualiza tu contraseña ' + usuario.persona.razon_social
+                data_email = {'template': template, 'email_subject': subject, 'to_email': usuario.persona.email}
             
-#             else:
+                short_url = Util.get_short_url(request, absurl+'?redirect-url='+redirect_url)
+                sms = subject + ' ' + short_url
                 
-#                 if usuario.persona.email and not usuario.persona.telefono_celular_empresa:
+                nro_telefono = usuario.persona.telefono_celular_empresa
+            
+            if usuario.persona.email and not nro_telefono:
+                Util.send_email(data_email)
+            else:
+                if not data.get('tipo_envio') or data.get('tipo_envio') == '':
+
+                    data_persona = {
+                        'email': usuario.persona.email,
+                        'sms': nro_telefono
+                    }   
                     
-            
+                    return Response({'success':True,'detail':'Selecciona uno de los medios para la recuperación de contraseña', 'data':data_persona},status=status.HTTP_200_OK)
+                else:
+                    if data.get('tipo_envio') == 'email':
+                        Util.send_email(data_email)
+                    elif data.get('tipo_envio') == 'sms':
+                        Util.send_sms(nro_telefono, sms)
+                    else:
+                        return Response({'success':False,'detail':'Debe elegir un tipo de envío valido'},status=status.HTTP_400_BAD_REQUEST)
+                    
+            return Response({'success':True,'detail':'Se ha enviado correctamente la notificación de la recuperación de contraseña'},status=status.HTTP_200_OK)
+        else:
+            return Response({'success':False,'detail':'No se encontró ningún usuario por el nombre de usuario ingresado'},status=status.HTTP_404_NOT_FOUND)
 
 class PasswordTokenCheckApi(generics.GenericAPIView):
     serializer_class=UserSerializer
@@ -918,13 +1000,42 @@ class PasswordTokenCheckApi(generics.GenericAPIView):
                 else:
                     return redirect(FRONTEND_URL+redirect_url+'?token-valid=False')
                 
-            print(request.query_params.get('redirect-url'))
-            print(token)
-            print(uidb64)
+            # ELIMINAR DIRECCIÓN CORTA SI EXISTE
+            current_site=get_current_site(request=request).domain
+            relativeLink=reverse('password-reset-confirm',kwargs={'uidb64':uidb64,'token':token})
+            
+            absurl='http://'+ current_site + relativeLink + '?redirect-url=' + redirect_url
+            print("absurl: ", absurl)
+            short_url = Shortener.objects.filter(long_url=absurl).first()
+            print("SHORT_URL: ", short_url)
+            if short_url:
+                short_url.delete()
+                
             return redirect(redirect_url+'?token-valid=True&?message=Credentials-valid?&uidb64='+uidb64+'&?token='+token)
         except encoding.DjangoUnicodeDecodeError as identifier:
-
+            # ELIMINAR DIRECCIÓN CORTA SI EXISTE
+            current_site=get_current_site(request=request).domain
+            relativeLink=reverse('password-reset-confirm',kwargs={'uidb64':uidb64,'token':token})
+            
+            absurl='http://'+ current_site + relativeLink + '?redirect-url=' + redirect_url
+            print("absurl: ", absurl)
+            short_url = Shortener.objects.filter(long_url=absurl).first()
+            print("SHORT_URL: ", short_url)
+            if short_url:
+                short_url.delete()
+                
             if not PasswordResetTokenGenerator().check_token(user):
+                # ELIMINAR DIRECCIÓN CORTA SI EXISTE
+                current_site=get_current_site(request=request).domain
+                relativeLink=reverse('password-reset-confirm',kwargs={'uidb64':uidb64,'token':token})
+                
+                absurl='http://'+ current_site + relativeLink + '?redirect-url=' + redirect_url
+                print("absurl: ", absurl)
+                short_url = Shortener.objects.filter(long_url=absurl).first()
+                print("SHORT_URL: ", short_url)
+                if short_url:
+                    short_url.delete()
+                    
                 return redirect(redirect_url+'?token-valid=False')
 
 
@@ -1005,14 +1116,47 @@ class Busqueda_Avanzada(generics.ListAPIView):
                     
         fecha_sistema =  datetime.now()           
         filter['fecha_a_finalizar_cargo_actual__gt'] = fecha_sistema
-                    
+
         persona = self.queryset.all().filter(**filter).filter(~Q(id_cargo = None))
         
         if persona:
             serializador = self.serializer_class(persona,many=True)
             return Response({'succes':True, 'detail':'Se encontraron las siguientes personas.','data':serializador.data},status=status.HTTP_200_OK)
         else: 
-             return Response({'succes':False, 'detail':'La persona no se encontro.'},status=status.HTTP_200_OK)
+            return Response({'succes':False, 'detail':'La persona no se encontro.'},status=status.HTTP_200_OK)
+        
+        
+class ReenviarCorreoVerificacionDeUsuario(generics.UpdateAPIView):
+    serializer_class = RegisterExternoSerializer
+    
+    def put(self,request,id_usuario):
+        
+        user = User.objects.filter(id_usuario=id_usuario).first()
+        
+        if user.is_active == False and user.tipo_usuario == "E":
+            
+            redirect_url=request.data.get('redirect_url','')
+
+            token = RefreshToken.for_user(user)
+
+            current_site=get_current_site(request).domain
+
+            persona = Personas.objects.filter(id_persona = user.persona.id_persona).first()
+
+            relativeLink= reverse('verify')
+            absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
+
+            # short_url = Util.get_short_url(request, absurl)
+            subject = "Verifica tu usuario"
+            template = "email-verification.html"
+
+            Util.notificacion(persona,subject,template,absurl=absurl)
+            
+            return Response({"success":True,'detail':"Se ha enviado un correo a "+persona.email+" con la información para la activación del usuario en el sistema"})
+            
+        else: 
+            return Response ({'success':False,'detail':'El usuario ya se encuentra activado'},status=status.HTTP_403_FORBIDDEN)
+    
 
 class BusquedaHistoricoActivacion(generics.ListAPIView):
     serializer_class = HistoricoActivacionSerializers
@@ -1030,10 +1174,15 @@ class BusquedaHistoricoActivacion(generics.ListAPIView):
             data = serializer.data
             for item in data:
                 id_usuario_operador = item['usuario_operador']
-                user = User.objects.get(id_usuario=id_usuario_operador)
-                persona = user.persona
-                item['primer_nombre'] = persona.primer_nombre
-                item['primer_apellido'] = persona.primer_apellido
+                try:
+                    user = User.objects.get(id_usuario=id_usuario_operador)
+                    persona = user.persona
+                    item['primer_nombre'] = persona.primer_nombre
+                    item['primer_apellido'] = persona.primer_apellido
+                except User.DoesNotExist:
+                    # Si el usuario no existe, se asignan valores vacíos
+                    item['primer_nombre'] = ''
+                    item['primer_apellido'] = ''
             return Response({'success': True, 'detail': 'Se encontró el siguiente historico de activación para ese usuario', 'data': data}, status=status.HTTP_200_OK)
         else:
             return Response({'success': False, 'detail': 'No se encontro historico de activación para ese usuario'}, status=status.HTTP_404_NOT_FOUND)

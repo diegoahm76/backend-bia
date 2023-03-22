@@ -32,6 +32,8 @@ urlpatterns = [
     path('unblock/', views.UnblockUser.as_view(), name='unblock-user'),
     path('password-unblock-complete/', views.UnBlockUserPassword.as_view(), name='password-unblock-complete'),
     path('get-historico-cargo-und/<str:id_persona>/', views.BusquedaHistoricoCargoUnd.as_view(), name='historico_cargos_und'),
+    path('reenviar-correo-verificacion-usuario/<str:id_usuario>/', views.ReenviarCorreoVerificacionDeUsuario.as_view(), name='reenviar-correo-verificacion-usuario'),
+
     #Login
     path('login/get-list/', views.LoginListApiViews.as_view(),name='login-get'),
     path('login/get-by-id/<str:pk>/', views.LoginConsultarApiViews.as_view(),name='login-id-get'),

@@ -166,7 +166,7 @@ class Personas(models.Model):
     direccion_notificacion_referencia = models.CharField(max_length=255, null=True, blank=True, db_column='T010dirNotificacionNalReferencia')
     fecha_cambio_representante_legal = models.DateTimeField(null=True, blank=True, db_column='T010fechaCambioRepLegal')
     fecha_inicio_cargo_rep_legal = models.DateTimeField(null=True, blank=True, db_column='T010fechaInicioCargoRepLegal')
-    fecha_inicio_cargo_actual = models.DateTimeField(null=True, blank=True, auto_now=True, db_column='T010fechaInicioCargoActual')
+    fecha_inicio_cargo_actual = models.DateTimeField(null=True, blank=True, db_column='T010fechaInicioCargoActual')
     fecha_a_finalizar_cargo_actual = models.DateTimeField(null=True, blank=True, db_column='T010fechaAFinalizarCargoActual')
     observaciones_vinculacion_cargo_actual = models.CharField(max_length=100, null=True, blank=True, db_column='T010observacionesVincuCargoActual')
     fecha_ultim_actualizacion_autorizaciones = models.DateTimeField(null=True, blank=True, db_column='T010fechaUltActuaAutorizaciones')
@@ -530,15 +530,14 @@ class HistoricoActivacion(models.Model):
         verbose_name_plural = 'Histórico de activaciones'
 
 class Shortener(models.Model):
-    created = models.DateTimeField(auto_now_add=True)
-    times_followed = models.PositiveIntegerField(default=0)    
-    long_url = models.URLField(max_length=500)
-    short_url = models.CharField(max_length=15, unique=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True, db_column='TzfechaCreacion')
+    long_url = models.URLField(max_length=500, db_column='TzdirLarga')
+    short_url = models.CharField(max_length=15, unique=True, blank=True, db_column='TzdirCorta')
 
     class Meta:
-        db_table = 'Shortener'  
-        verbose_name = 'Acortador'
-        verbose_name_plural = 'Acortadores'
+        db_table = 'TzAbreviacionesDir'  
+        verbose_name = 'Abreviación Dir'
+        verbose_name_plural = 'Abreviaciones Dir'
         ordering = ["-created"]
 
     def __str__(self):
@@ -575,7 +574,7 @@ class Shortener(models.Model):
 class HistoricoAutirzacionesNotis(models.Model):
     id_historico_autoriza_noti = models.AutoField(primary_key=True, editable=False, db_column='T021IdHistoricoAutorizaNoti')
     id_persona = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T021Id_Persona')
-    respueta_autorizacion_sms = models.BooleanField(default=True, db_column='T021rtaAutorizacionSMS')
+    respuesta_autorizacion_sms = models.BooleanField(default=True, db_column='T021rtaAutorizacionSMS')
     respuesta_autorizacion_mail = models.BooleanField(default=True, db_column='T021rtaAutorizacionMail')
     fecha_inicio = models.DateTimeField(db_column='T021fechaInicio')
     fecha_fin = models.DateTimeField(auto_now=True, db_column='T021fechaFin')

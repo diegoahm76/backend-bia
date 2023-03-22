@@ -51,8 +51,7 @@ class EstadoCivilPutSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'nombre': {'required': True}, 
         }
-
-
+        
 class TipoDocumentoSerializer(serializers.ModelSerializer):
     cod_tipo_documento = serializers.CharField(max_length=2, validators=[UniqueValidator(queryset=TipoDocumento.objects.all(), message='El cod_tipo_documento debe ser único')])
     class Meta:
@@ -84,12 +83,10 @@ class TipoDocumentoPutSerializer(serializers.ModelSerializer):
             'nombre': {'required': True}
         }
 
-
 class RepresentanteLegalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Personas
         fields = '__all__'
-
 
 class PersonasSerializer(serializers.ModelSerializer):
     tipo_documento = TipoDocumentoSerializer(read_only=True)
@@ -105,7 +102,6 @@ class PersonasSerializer(serializers.ModelSerializer):
     class Meta:
         model = Personas
         fields = '__all__'
-        
 
 class PersonaNaturalSerializer(serializers.ModelSerializer):
     tipo_documento = TipoDocumentoSerializer(read_only=True)
@@ -160,7 +156,6 @@ class PersonaJuridicaSerializer(serializers.ModelSerializer):
     def get_tiene_usuario(self, obj):
         usuario = User.objects.filter(persona=obj.id_persona).exists()   
         return usuario
-    
     class Meta:
         model = Personas
         fields = [
@@ -279,7 +274,8 @@ class PersonaJuridicaPostSerializer(serializers.ModelSerializer):
             'acepta_notificacion_email',
             'acepta_tratamiento_datos',
             'representante_legal',
-            'fecha_inicio_cargo_rep_legal'
+            'fecha_inicio_cargo_rep_legal',
+            "id_persona_crea"
         ]
         validators = [
             UniqueTogetherValidator(
@@ -300,7 +296,6 @@ class PersonaJuridicaPostSerializer(serializers.ModelSerializer):
                 'telefono_celular_empresa': {'required': True},
                 'direccion_notificaciones': {'required': True},
                 'municipio_residencia': {'required': True},
-                'representante_legal': {'required':True},
                 'fecha_inicio_cargo_rep_legal': {'required':True}
             }
         
@@ -393,8 +388,8 @@ class PersonaNaturalPostByUserSerializer(serializers.ModelSerializer):
             }
 
 
-class PersonaNaturalInternoUpdateSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(validators=[UniqueValidator(queryset=Personas.objects.all())])
+class PersonaNaturalUpdateSerializer(serializers.ModelSerializer):
+    
     telefono_celular = serializers.CharField(max_length=15, min_length=10)
     ubicacion_georeferenciada = serializers.CharField(max_length=50, min_length=5)
 
@@ -420,18 +415,13 @@ class PersonaNaturalInternoUpdateSerializer(serializers.ModelSerializer):
             'fecha_nacimiento',
             'pais_nacimiento',
             'sexo',
-            'estado_civil',
-            'acepta_notificacion_sms',
-            'acepta_notificacion_email',
-            'acepta_tratamiento_datos'
+            'estado_civil'
         ]
-    
-    def validate(self, data):
-        email_principal = data.get('email')
-        email_secundario = data.get('email_empresarial')
-        if email_principal and email_secundario and email_principal == email_secundario:
-            raise serializers.ValidationError('El correo electrónico principal y secundario deben ser diferentes')
-        return data
+        
+        extra_kwargs = {
+                    'email': {'required': True},
+                }
+
 
 class PersonaNaturalExternoUpdateSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(validators=[UniqueValidator(queryset=Personas.objects.all())])
@@ -526,7 +516,7 @@ class PersonaJuridicaInternaUpdateSerializer(serializers.ModelSerializer):
         ]
 
 
-class PersonaJuridicaExternaUpdateSerializer(serializers.ModelSerializer):
+class PersonaJuridicaUpdateSerializer(serializers.ModelSerializer):
     telefono_celular_empresa = serializers.CharField(max_length=15, min_length=10)
 
     class Meta:
@@ -669,17 +659,85 @@ class HistoricoCargosUndOrgPersonapostSerializer(serializers.ModelSerializer):
         # }
     
 
-class BusquedaPersonaNaturalSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Personas
-        fields = ['tipo_documento','numero_documento','primer_nombre','primer_apellido']
+# class BusquedaPersonaNaturalSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Personas
+#         fields = ['tipo_documento','numero_documento','primer_nombre','primer_apellido']
 
-class BusquedaPersonaJuridicaSerializer(serializers.ModelSerializer):
+class PersonasFilterSerializer(serializers.ModelSerializer):
+    nombre_completo = serializers.SerializerMethodField()
+    tiene_usuario = serializers.SerializerMethodField()
+    
+    def get_tiene_usuario(self, obj):
+        usuario = User.objects.filter(persona=obj.id_persona).exists()   
+        return usuario
+    
+    def get_nombre_completo(self, obj):
+        nombre_completo = None
+        nombre_list = [obj.primer_nombre, obj.segundo_nombre, obj.primer_apellido, obj.segundo_apellido]
+        nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+        return nombre_completo
+        
     class Meta:
         model = Personas
-        fields = ['tipo_persona','numero_documento','razon_social','nombre_comercial']
+        fields = [
+            'id_persona',
+            'tipo_persona',
+            'tipo_documento',
+            'numero_documento',
+            'primer_nombre',
+            'segundo_nombre',
+            'primer_apellido',
+            'segundo_apellido',
+            'nombre_completo',
+            'razon_social',
+            'nombre_comercial',
+            'tiene_usuario'
+        ]
 
 class BusquedaHistoricoCambiosSerializer(serializers.ModelSerializer):
     class Meta:
         model = HistoricoCambiosIDPersonas
         fields = '__all__'
+
+class UpdatePersonasNaturalesSerializer(serializers.ModelSerializer):
+    justificacion = serializers.CharField(required=True)
+
+    class Meta:
+        model = Personas
+        fields = ('id_persona', 'tipo_documento', 'numero_documento', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'justificacion')
+
+
+        validators = [
+                UniqueTogetherValidator(
+                    queryset = Personas.objects.all(),
+                    fields = ['tipo_documento', 'numero_documento'],
+                    message = 'Ya existe un registro con el tipo de documento y el número de documento ingresado'
+                    
+                )
+            ]
+    
+class UpdatePersonasJuridicasSerializer(serializers.ModelSerializer):
+    justificacion = serializers.CharField(required=True)
+
+    class Meta:
+        model = Personas
+        fields = ('id_persona', 'numero_documento', 'razon_social', 'nombre_comercial', 'cod_naturaleza_empresa','justificacion')
+
+
+        validators = [
+                UniqueTogetherValidator(
+                    queryset = Personas.objects.all(),
+                    fields = ['numero_documento'],
+                    message = 'Ya existe un registro con ese número de documento ingresado'    
+                )
+            ]
+
+class ConsultaVinculacionColaboradorSerializer(serializers.ModelSerializer):
+    cargo_actual = serializers.CharField(source='id_cargo.nombre', read_only=True)
+    unidad_organizacional_actual = serializers.CharField(source='id_unidad_organizacional_actual.nombre', read_only=True)
+    fecha_vencida = serializers.BooleanField(read_only=True)
+    
+    class Meta:
+        model = Personas
+        fields = ('cargo_actual','unidad_organizacional_actual','fecha_inicio_cargo_actual', 'fecha_asignacion_unidad', 'fecha_a_finalizar_cargo_actual', 'observaciones_vinculacion_cargo_actual','fecha_vencida')

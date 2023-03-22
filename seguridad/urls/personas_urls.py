@@ -18,32 +18,44 @@ urlpatterns = [
     path('tipos-documento/create/', views.RegisterTipoDocumento.as_view(), name='tipo-documento-register'),
     path('tipos-documento/update/<str:pk>/', views.UpdateTipoDocumento.as_view(), name='estado-civil-update'),
 
+    # PERSONAS
     
-    # Personas 
-    path('get-list/', views.GetPersonas.as_view(), name="personas-get"),
-    path('get-by-email/<str:pk>/', views.getPersonaByEmail, name='persona-email-get'),
+    # - Consultas
     path('get-by-id/<str:pk>/', views.GetPersonasByID.as_view(), name='persona-id-get'),
     path('get-personas-by-document/<str:tipodocumento>/<str:numerodocumento>/', views.GetPersonasByTipoDocumentoAndNumeroDocumento.as_view(), name='persona-by-document-and-tipo-documento-get'),
-    path('get-personas-naturales-by-document/<str:tipodocumento>/<str:numerodocumento>/', views.GetPersonaNaturalByTipoDocumentoAndNumeroDocumento.as_view(), name='persona-natural-by-document-and-tipo-documento-get'),
-    path('get-personas-juridicas-by-document/<str:tipodocumento>/<str:numerodocumento>/', views.GetPersonaJuridicaByTipoDocumentoAndNumeroDocumento.as_view(), name='persona-juridica-by-document-and-tipo-documento-get'),
-    path('get-personas-naturales/', views.GetPersonaNatural.as_view(), name='persona-natural-get'),
-    path('get-personas-juridicas/', views.GetPersonaJuridica.as_view(), name='persona-juridica-get'),
+    path('get-personas-filters/', views.GetPersonasByFilters.as_view(), name='get-personas-filters'),
+    
     path('get-persona-juridica/representante-legal/',views.GetPersonaJuridicaByRepresentanteLegal.as_view(),name='verify-persona-juridica'),
-    path('persona-natural/usuario-interno/self/update/', views.UpdatePersonaNaturalInternoBySelf.as_view(), name='persona-natural-interna-update-by-self'),
-    path('persona-natural/usuario-externo/self/update/', views.UpdatePersonaNaturalExternoBySelf.as_view(), name='persona-natural-externa-update-by-self'),
-    path('persona-natural/user-with-permissions/update/<str:tipodocumento>/<str:numerodocumento>/', views.UpdatePersonaNaturalByUserWithPermissions.as_view(), name='persona-natural-update-by-user-with-permissions'),
-    path('persona-juridica/usuario-interno/self/update/', views.UpdatePersonaJuridicaInternoBySelf.as_view(), name='persona-juridica-interna-update-by-self'),
-    path('persona-juridica/usuario-externo/self/update/', views.UpdatePersonaJuridicaExternoBySelf.as_view(), name='persona-juridica-externa-update-by-self'),
-    path('persona-juridica/user-with-permissions/update/<str:tipodocumento>/<str:numerodocumento>/', views.UpdatePersonaJuridicaByUserWithPermissions.as_view(), name='persona-natural-update-by-user-with-permissions'),
-    # path('persona-natural-and-usuario/create/', views.CreatePersonaNaturalAndUsuario.as_view(), name='persona-natural-and-usuario-create'),
-    # path('persona-juridica-and-usuario/create/', views.CreatePersonaJuridicaAndUsuario.as_view(), name='persona-juridica-and-usuario-create'),
+    path('buscar-historico-cambios/<str:id_persona>/', views.BusquedaHistoricoCambios.as_view(), name='buscar-historico-cambios'),
+    path('get-vinculacion-colaboradores/<str:id_persona>/', views.ConsultaVinculacionColaboradorView.as_view(), name='consulta-vinculacion-colaboradores'),
+    
+    # - Registros
     path('persona-natural/create/', views.RegisterPersonaNatural.as_view(), name='persona-natural-register'),
     path('persona-natural/create-by-user-interno/', views.RegisterPersonaNaturalByUserInterno.as_view(), name='persona-natural-register-by-user-interno'),
     path('persona-juridica/create/', views.RegisterPersonaJuridica.as_view(), name='persona-juridica-register'),
-    path('buscar-persona-natural/', views.BusquedaPersonaNaturalView.as_view(), name='buscar-persona-natural'),
-    path('buscar-persona-juridica/', views.BusquedaPersonaJuridicaView.as_view(), name='buscar-persona-juridica'),
-    path('buscar-historico-cambios/<str:id_persona>/', views.BusquedaHistoricoCambios.as_view(), name='buscar-historico-cambios'),
     
+    # - Actualizaciones
+    path('persona-natural/self/update/', views.UpdatePersonaNaturalByself.as_view(), name='persona-natural-update-by-self'),
+    path('persona-juridica/self/update/', views.UpdatePersonaJuridicaBySelf.as_view(), name='persona-juridica-update-by-self'),
+    path('update-personas-naturales-restringidos/<str:id_persona>/', views.ActualizarPersonasNatCamposRestringidosView.as_view(), name='update-nat-restringido'),    
+    path('update-personas-juridicas-restringidos/<str:id_persona>/', views.ActualizarPersonasJurCamposRestringidosView.as_view(), name='update-jur-restringido'),
+    
+    path('persona-natural/user-with-permissions/update/<str:tipodocumento>/<str:numerodocumento>/', views.UpdatePersonaNaturalByUserWithPermissions.as_view(), name='persona-natural-update-by-user-with-permissions'),
+    path('persona-juridica/user-with-permissions/update/<str:tipodocumento>/<str:numerodocumento>/', views.UpdatePersonaJuridicaByUserWithPermissions.as_view(), name='persona-natural-update-by-user-with-permissions'),
+    
+    # PENDIENTES POR VALIDAR
+    
+    # path('get-list/', views.GetPersonas.as_view(), name="personas-get"),
+    # path('get-by-email/<str:pk>/', views.getPersonaByEmail, name='persona-email-get'),
+    # path('get-personas-naturales-by-document/<str:tipodocumento>/<str:numerodocumento>/', views.GetPersonaNaturalByTipoDocumentoAndNumeroDocumento.as_view(), name='persona-natural-by-document-and-tipo-documento-get'),
+    # path('get-personas-juridicas-by-document/<str:tipodocumento>/<str:numerodocumento>/', views.GetPersonaJuridicaByTipoDocumentoAndNumeroDocumento.as_view(), name='persona-juridica-by-document-and-tipo-documento-get'),
+    # path('get-personas-naturales/', views.GetPersonaNatural.as_view(), name='persona-natural-get'),
+    # path('get-personas-juridicas/', views.GetPersonaJuridica.as_view(), name='persona-juridica-get'),
+    # path('persona-natural/usuario-externo/self/update/', views.UpdatePersonaNaturalExternoBySelf.as_view(), name='persona-natural-externa-update-by-self'),
+    # path('persona-juridica/usuario-externo/self/update/', views.UpdatePersonaJuridicaExternoBySelf.as_view(), name='persona-juridica-externa-update-by-self'),
+    # path('persona-natural-and-usuario/create/', views.CreatePersonaNaturalAndUsuario.as_view(), name='persona-natural-and-usuario-create'),
+    # path('persona-juridica-and-usuario/create/', views.CreatePersonaJuridicaAndUsuario.as_view(), name='persona-juridica-and-usuario-create'),
+    # path('buscar-persona-natural/', views.BusquedaPersonaNaturalView.as_view(), name='buscar-persona-natural'),
     #Creacion de persona y usuario por portal
     
     # Apoderados Personas
