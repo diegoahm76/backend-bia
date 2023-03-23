@@ -20,24 +20,13 @@ def create_update_solicitudes(sender, instance, **kwargs):
         if previous:
             # MODIFICA UNIDAD MEDIDA
             if previous.id_unidad_medida:
-                if not current.id_unidad_medida:
-                    item_solicitud = ItemsSolicitudConsumible.objects.filter(Q(id_unidad_medida=previous.id_unidad_medida.id_unidad_medida) & ~Q(id_item_solicitud_consumible=previous.id_item_solicitud_consumible)).first()
-                    unidad_medida = UnidadesMedida.objects.filter(id_unidad_medida=previous.id_unidad_medida.id_unidad_medida).first()
-                    if not item_solicitud:
-                        unidad_medida.item_ya_usado=False
-                        unidad_medida.save()
-                else:
+                if current.id_unidad_medida:
                     if previous.id_unidad_medida.id_unidad_medida != current.id_unidad_medida.id_unidad_medida:
                         item_solicitud_current = ItemsSolicitudConsumible.objects.filter(id_unidad_medida=current.id_unidad_medida.id_unidad_medida).first()
-                        item_solicitud_previous = ItemsSolicitudConsumible.objects.filter(Q(id_unidad_medida=previous.id_unidad_medida.id_unidad_medida) & ~Q(id_item_solicitud_consumible=previous.id_item_solicitud_consumible)).first()
                         unidad_medida_current = UnidadesMedida.objects.filter(id_unidad_medida=current.id_unidad_medida.id_unidad_medida).first()
-                        unidad_medida_previous = UnidadesMedida.objects.filter(id_unidad_medida=previous.id_unidad_medida.id_unidad_medida).first()
                         if not item_solicitud_current:
                             unidad_medida_current.item_ya_usado=True
                             unidad_medida_current.save()
-                        if not item_solicitud_previous:
-                            unidad_medida_previous.item_ya_usado=False
-                            unidad_medida_previous.save()
             else:
                 if current.id_unidad_medida:
                     item_solicitud = ItemsSolicitudConsumible.objects.filter(id_unidad_medida=current.id_unidad_medida.id_unidad_medida).first()
