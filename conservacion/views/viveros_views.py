@@ -116,7 +116,7 @@ class AbrirCerrarVivero(generics.RetrieveUpdateAPIView):
                     return Response({'success': True, 'detail': 'Acción realizada correctamente'}, status=status.HTTP_201_CREATED)
                 else:
                     if not vivero.fecha_cierre_actual:
-                        return Response({'success': False, 'detail': 'No se puede abrir un vivero si no se encuentra actualmente cerrado'}, status=status.HTTP_400_BAD_REQUEST)
+                        return Response({'success': False, 'detail': 'El vivero ya se encuentra abierto'}, status=status.HTTP_400_BAD_REQUEST)
                     data['fecha_ultima_apertura'] = datetime.now()
                     data['en_funcionamiento'] = True
                     data['item_ya_usado'] = True
@@ -283,7 +283,7 @@ class UpdateViveroCuarentena(generics.ListAPIView):
                 }
                 Util.save_auditoria(auditoria_data)
                 return Response({'success ':True,'detail':'Vivero fuera de cuarentena '},status=status.HTTP_200_OK)
-            return Response({'success ':False,'detail':'El vivero no se encuentra en funcionamiento '},status=status.HTTP_403_FORBIDDEN)
+            return Response({'success ':False,'detail':'El vivero se encuentra en funcionamiento '},status=status.HTTP_403_FORBIDDEN)
         else : 
             return Response({'success ':False,'detail':'El vivero seleccionado no existe'},status=status.HTTP_404_NOT_FOUND)
     

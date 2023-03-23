@@ -12,6 +12,7 @@ from seguridad.choices.tipo_direccion_choices import tipo_direccion_CHOICES
 from seguridad.choices.subsistemas_choices import subsistemas_CHOICES
 from seguridad.choices.tipo_usuario_choices import tipo_usuario_CHOICES
 from seguridad.choices.opciones_usuario_choices import opciones_usuario_CHOICES
+from seguridad.choices.cod_naturaleza_empresa_choices import cod_naturaleza_empresa_CHOICES
 from almacen.models.organigrama_models import (
     UnidadesOrganizacionales
 )
@@ -162,7 +163,7 @@ class Personas(models.Model):
     acepta_notificacion_email = models.BooleanField(default=True, db_column='T010aceptaNotificacionEmail')
     acepta_tratamiento_datos = models.BooleanField(default=True, db_column='T010aceptaTratamientoDeDatos')
     cod_municipio_expedicion_id = models.ForeignKey(Municipio, on_delete=models.SET_NULL, null=True, blank=True, db_column='T010Cod_MunicipioExpID')
-    cod_naturaleza_empresa = models.CharField(max_length=1, null=True, blank=True, db_column='T010codNaturalezaEmpresa')
+    cod_naturaleza_empresa = models.CharField(max_length=2, choices=cod_naturaleza_empresa_CHOICES,null=True, blank=True, db_column='T010codNaturalezaEmpresa')
     direccion_notificacion_referencia = models.CharField(max_length=255, null=True, blank=True, db_column='T010dirNotificacionNalReferencia')
     fecha_cambio_representante_legal = models.DateTimeField(null=True, blank=True, db_column='T010fechaCambioRepLegal')
     fecha_inicio_cargo_rep_legal = models.DateTimeField(null=True, blank=True, db_column='T010fechaInicioCargoRepLegal')

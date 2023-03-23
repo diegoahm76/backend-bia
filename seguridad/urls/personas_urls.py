@@ -37,6 +37,8 @@ urlpatterns = [
     # - Actualizaciones
     path('persona-natural/self/update/', views.UpdatePersonaNaturalByself.as_view(), name='persona-natural-update-by-self'),
     path('persona-juridica/self/update/', views.UpdatePersonaJuridicaBySelf.as_view(), name='persona-juridica-update-by-self'),
+    path('persona-natural-and-usuario/create/', views.CreatePersonaNaturalAndUsuario.as_view(), name='persona-natural-and-usuario-create'),
+    path('persona-juridica-and-usuario/create/', views.CreatePersonaJuridicaAndUsuario.as_view(), name='persona-juridica-and-usuario-create'),
     path('update-personas-naturales-restringidos/<str:id_persona>/', views.ActualizarPersonasNatCamposRestringidosView.as_view(), name='update-nat-restringido'),    
     path('update-personas-juridicas-restringidos/<str:id_persona>/', views.ActualizarPersonasJurCamposRestringidosView.as_view(), name='update-jur-restringido'),
     
@@ -53,8 +55,6 @@ urlpatterns = [
     # path('get-personas-juridicas/', views.GetPersonaJuridica.as_view(), name='persona-juridica-get'),
     # path('persona-natural/usuario-externo/self/update/', views.UpdatePersonaNaturalExternoBySelf.as_view(), name='persona-natural-externa-update-by-self'),
     # path('persona-juridica/usuario-externo/self/update/', views.UpdatePersonaJuridicaExternoBySelf.as_view(), name='persona-juridica-externa-update-by-self'),
-    # path('persona-natural-and-usuario/create/', views.CreatePersonaNaturalAndUsuario.as_view(), name='persona-natural-and-usuario-create'),
-    # path('persona-juridica-and-usuario/create/', views.CreatePersonaJuridicaAndUsuario.as_view(), name='persona-juridica-and-usuario-create'),
     # path('buscar-persona-natural/', views.BusquedaPersonaNaturalView.as_view(), name='buscar-persona-natural'),
     #Creacion de persona y usuario por portal
     

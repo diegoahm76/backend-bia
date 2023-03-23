@@ -354,17 +354,19 @@ class UpdatePersonaNaturalByself(generics.RetrieveUpdateAPIView):
         persona = request.user.persona
         previous_persona = copy.copy(persona)
         
+        if persona.tipo_persona != "N":
+            return Response ({'success':False,'detail':'No se puede actualizar una persona jurídica con este servicio'},status=status.HTTP_403_FORBIDDEN)
+        
         persona_serializada = self.serializer_class(persona, data=data, many=False)
         persona_serializada.is_valid(raise_exception=True)
         
+        #PARA UTILIZARLO EN EL UTIL
         data['tipo_persona'] = persona.tipo_persona
         
         validaciones_persona = Util.guardar_persona(data)
         
         if not validaciones_persona['success']:
             return Response({'success': validaciones_persona['success'], 'detail':validaciones_persona['detail']}, status=validaciones_persona['status'])       
-        
-        #Validar que el estado civil exista pendiente.
         
         serializador = persona_serializada.save()
         
@@ -391,6 +393,7 @@ class UpdatePersonaNaturalByself(generics.RetrieveUpdateAPIView):
         Util.notificacion(persona,subject,template)
         
         return Response({'success': True, 'detail': 'Persona actualizada y notificada correctamente', 'data': persona_serializada.data}, status=status.HTTP_201_CREATED)
+    
     
 class UpdatePersonaNaturalByUserWithPermissions(generics.RetrieveUpdateAPIView):
     http_method_names= ['patch']
@@ -512,6 +515,9 @@ class UpdatePersonaJuridicaBySelf(generics.UpdateAPIView):
         persona = request.user.persona
         previous_persona = copy.copy(persona)
         
+        if persona.tipo_persona != "J":
+            return Response ({'success':False,'detail':'No se puede actualizar una persona natural con este servicio'},status=status.HTTP_403_FORBIDDEN)
+        
         #VALIDACION DE REPRESENTANTE LEGAL
         if persona.representante_legal != data.get('representante_legal'):
             data['fecha_cambio_representante_legal'] = datetime.now()  
@@ -519,6 +525,7 @@ class UpdatePersonaJuridicaBySelf(generics.UpdateAPIView):
         persona_serializada = self.serializer_class(persona, data=data, many=False)
         persona_serializada.is_valid(raise_exception=True)
         
+        #PARA UTULIZARLO EN EL UTIL
         data['tipo_persona'] = persona.tipo_persona
         
         validaciones_persona = Util.guardar_persona(data)
@@ -546,12 +553,12 @@ class UpdatePersonaJuridicaBySelf(generics.UpdateAPIView):
         Util.save_auditoria(auditoria_data)
         
         subject = "Actualización de datos exitosa"
-        template = "email-update-personanatural-externa.html"
+        template = "email-update-personajuridica-externo.html"
         
         Util.notificacion(persona,subject,template)
         
         return Response({'success': True, 'detail': 'Persona actualizada y notificada correctamente', 'data': persona_serializada.data}, status=status.HTTP_201_CREATED)
-    
+        
 class UpdatePersonaJuridicaByUserWithPermissions(generics.RetrieveUpdateAPIView):
     http_method_names = ['patch']
     serializer_class = PersonaJuridicaUpdateUserPermissionsSerializer
@@ -636,83 +643,6 @@ class UpdatePersonaJuridicaByUserWithPermissions(generics.RetrieveUpdateAPIView)
                 return Response({'success':False,'detail': 'Revisar parámetros de ingreso de información, el email debe ser único y debe tener telefono celular empresa'}, status=status.HTTP_400_BAD_REQUEST)
         except:
             return Response({'success':False,'detail': 'No existe ninguna persona con estos datos, por favor verificar'}, status=status.HTTP_400_BAD_REQUEST)
-
-class RegisterPersonaNatural(generics.CreateAPIView):
-    serializer_class = PersonaNaturalPostSerializer
-    
-    def post(self, request):
-        persona = request.data
-        persona_logueada = request.user.persona.id_persona
-        persona['id_persona_crea'] = persona_logueada 
-        
-        serializer = self.serializer_class(data=persona)
-        serializer.is_valid(raise_exception=True)
-        
-        validaciones_persona = Util.guardar_persona(persona)
-        
-        print(validaciones_persona)
-        if not validaciones_persona['success']:
-            return Response({'success': validaciones_persona['success'], 'detail':validaciones_persona['detail']}, status=validaciones_persona['status'])       
-        
-        serializador=serializer.save()
-
-        # auditoria crear persona
-        descripcion = {"TipodeDocumentoID": str(serializador.tipo_documento), "NumeroDocumentoID": str(serializador.numero_documento), "PrimerNombre": str(serializador.primer_nombre), "PrimerApellido": str(serializador.primer_apellido)}
-        direccion=Util.get_client_ip(request)
-
-        auditoria_data = {
-            "id_modulo" : 9,
-            "cod_permiso": "CR",
-            "subsistema": 'TRSV',
-            "dirip": direccion,
-            "descripcion": descripcion, 
-        }
-        Util.save_auditoria(auditoria_data)
-        
-        subject = "Registro exitoso"
-        template = "email-register-personajuridica.html"
-        
-        Util.notificacion(serializador,subject,template)
-
-        return Response({'success':True, 'detail': serializer.data}, status=status.HTTP_201_CREATED)
-
-class RegisterPersonaJuridica(generics.CreateAPIView):
-    serializer_class = PersonaJuridicaPostSerializer
-
-    def post(self, request):
-        persona = request.data
-        persona_logueada = request.user.persona.id_persona
-        persona['id_persona_crea'] = persona_logueada 
-        
-        serializer = self.serializer_class(data=persona)
-        serializer.is_valid(raise_exception=True)
-
-        validaciones_persona = Util.guardar_persona(persona)
-        
-        if not validaciones_persona['success']:
-            return Response({'success': validaciones_persona['success'], 'detail':validaciones_persona['detail']}, status=validaciones_persona['status'])       
-        
-        serializador = serializer.save()
-        
-        # auditoria crear persona
-        descripcion = {"TipodeDocumentoID": str(serializador.tipo_documento), "NumeroDocumentoID": str(serializador.numero_documento), "RazonSocial": str(serializador.razon_social), "NombreComercial": str(serializador.nombre_comercial)}
-        direccion=Util.get_client_ip(request)
-
-        auditoria_data = {
-            "id_modulo" : 9,
-            "cod_permiso": "CR",
-            "subsistema": 'TRSV',
-            "dirip": direccion,
-            "descripcion": descripcion, 
-        }
-        Util.save_auditoria(auditoria_data)
-
-        subject = "Registro exitoso"
-        template = "email-register-personajuridica.html"
-
-        Util.notificacion(serializador,subject,template)
-        
-        return Response({'success':True, 'detail': serializer.data}, status=status.HTTP_201_CREATED)
 
 class RegisterPersonaNaturalByUserInterno(generics.CreateAPIView):
     serializer_class = PersonaNaturalPostByUserSerializer

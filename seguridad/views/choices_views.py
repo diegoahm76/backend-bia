@@ -13,6 +13,7 @@ from seguridad.choices.tipo_persona_choices import tipo_persona_CHOICES
 from seguridad.choices.tipo_usuario_choices import tipo_usuario_CHOICES
 from seguridad.choices.direcciones_choices import direcciones_CHOICES
 from seguridad.choices.clase_tercero_choices import clase_tercero_CHOICES
+from seguridad.choices.cod_naturaleza_empresa_choices import cod_naturaleza_empresa_CHOICES
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
@@ -89,4 +90,9 @@ class DireccionesChoices(APIView):
 class ClaseTerceroChoices(APIView):
     def get(self,request):
         choices = clase_tercero_CHOICES
+        return Response(choices)
+    
+class CodNaturalezaEmpresaChoices(APIView):
+    def get(self,request):
+        choices = cod_naturaleza_empresa_CHOICES
         return Response(choices)

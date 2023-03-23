@@ -64,6 +64,7 @@ def create_historico_personas(sender, instance, **kwargs):
                     fecha_cambio_sistema = datetime.now(),
                     fecha_inicio_cargo = previous.fecha_inicio_cargo_rep_legal
                 )
+                
             # MODIFICA CARGO
             if previous.id_cargo:
                 if not current.id_cargo:
