@@ -160,7 +160,6 @@ class AbrirCerrarVivero(generics.RetrieveUpdateAPIView):
                     return Response({'success': False, 'detail': 'No se puede cerrar un vivero si no se encuentra actualmente abierto'}, status=status.HTTP_400_BAD_REQUEST)
                 data['fecha_cierre_actual'] = datetime.now()
                 data['en_funcionamiento'] = False
-                data['item_ya_usado'] = True
                 data['id_persona_cierra'] = persona
                 serializer = CerrarViveroSerializer(vivero, data=data, many=False)
                 serializer.is_valid(raise_exception=True)

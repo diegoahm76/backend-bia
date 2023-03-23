@@ -230,21 +230,24 @@ class PersonaNaturalPostSerializer(serializers.ModelSerializer):
             )
         ]
         extra_kwargs = {
-                'tipo_persona': {'required': True},
-                'tipo_documento': {'required': True},
-                'numero_documento': {'required': True},
-                'primer_nombre': {'required': True},
-                'primer_apellido': {'required': True},
-                'fecha_nacimiento': {'required': True},
-                'email': {'required': True},
-                'sexo': {'required': True},
-                'estado_civil': {'required': True},
-                'cod_municipio_expedicion_id': {'required': True},
-                'pais_residencia': {'required': True},
-                'direccion_residencia': {'required': True},
-                'direccion_notificaciones': {'required': True},
-                'cod_municipio_notificacion_nal': {'required': True},
-            }
+            'tipo_persona': {'required': True},
+            'tipo_documento': {'required': True},
+            'numero_documento': {'required': True},
+            'primer_nombre': {'required': True},
+            'primer_apellido': {'required': True},
+            'fecha_nacimiento': {'required': True},
+            'email': {'required': True},
+            'sexo': {'required': True},
+            'estado_civil': {'required': True},
+            'cod_municipio_expedicion_id': {'required': True},
+            'pais_residencia': {'required': True},
+            'direccion_residencia': {'required': True},
+            'direccion_notificaciones': {'required': True},
+            'cod_municipio_notificacion_nal': {'required': True},
+            'acepta_notificacion_sms': {'required': True},
+            'acepta_notificacion_email': {'required': True},
+            'acepta_tratamiento_datos': {'required': True},
+        }
         
 
 #CREACION DE PERSONA JURIDICA
@@ -283,21 +286,21 @@ class PersonaJuridicaPostSerializer(serializers.ModelSerializer):
         ]
         
         extra_kwargs = {
-                'tipo_persona': {'required': True},
-                'tipo_documento': {'required': True},
-                'numero_documento': {'required': True},
-                'digito_verificacion': {'required': True},
-                'razon_social': {'required': True},
-                'nombre_comercial': {'required': True},
-                'representante_legal': {'required': True},
-                'cod_naturaleza_empresa': {'required': True},
-                'email': {'required': True},
-                'direccion_notificaciones': {'required': True},
-                'cod_municipio_notificacion_nal': {'required': True},
-                'fecha_inicio_cargo_rep_legal': {'required':True},
-                'acepta_notificacion_sms': {'required':True},
-                'acepta_notificacion_email': {'required':True}
-            }
+            'tipo_persona': {'required': True},
+            'tipo_documento': {'required': True},
+            'numero_documento': {'required': True},
+            'digito_verificacion': {'required': True},
+            'razon_social': {'required': True},
+            'nombre_comercial': {'required': True},
+            'representante_legal': {'required': True},
+            'cod_naturaleza_empresa': {'required': True},
+            'email': {'required': True},
+            'direccion_notificaciones': {'required': True},
+            'cod_municipio_notificacion_nal': {'required': True},
+            'fecha_inicio_cargo_rep_legal': {'required':True},
+            'acepta_notificacion_sms': {'required':True},
+            'acepta_notificacion_email': {'required':True}
+        }
         
 class GetPersonaJuridicaByRepresentanteLegalSerializer(serializers.ModelSerializer):
     class Meta:

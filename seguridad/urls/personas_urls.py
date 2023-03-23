@@ -30,20 +30,20 @@ urlpatterns = [
     path('get-vinculacion-colaboradores/<str:id_persona>/', views.ConsultaVinculacionColaboradorView.as_view(), name='consulta-vinculacion-colaboradores'),
     
     # - Registros
-    path('persona-natural/create/', views.RegisterPersonaNatural.as_view(), name='persona-natural-register'),
+    path('persona-natural-and-usuario/create/', views.CreatePersonaNaturalAndUsuario.as_view(), name='persona-natural-and-usuario-create'),
+    path('persona-juridica-and-usuario/create/', views.CreatePersonaJuridicaAndUsuario.as_view(), name='persona-juridica-and-usuario-create'),
     path('persona-natural/create-by-user-interno/', views.RegisterPersonaNaturalByUserInterno.as_view(), name='persona-natural-register-by-user-interno'),
-    path('persona-juridica/create/', views.RegisterPersonaJuridica.as_view(), name='persona-juridica-register'),
     
     # - Actualizaciones
     path('persona-natural/self/update/', views.UpdatePersonaNaturalByself.as_view(), name='persona-natural-update-by-self'),
     path('persona-juridica/self/update/', views.UpdatePersonaJuridicaBySelf.as_view(), name='persona-juridica-update-by-self'),
-    path('persona-natural-and-usuario/create/', views.CreatePersonaNaturalAndUsuario.as_view(), name='persona-natural-and-usuario-create'),
-    path('persona-juridica-and-usuario/create/', views.CreatePersonaJuridicaAndUsuario.as_view(), name='persona-juridica-and-usuario-create'),
     path('update-personas-naturales-restringidos/<str:id_persona>/', views.ActualizarPersonasNatCamposRestringidosView.as_view(), name='update-nat-restringido'),    
     path('update-personas-juridicas-restringidos/<str:id_persona>/', views.ActualizarPersonasJurCamposRestringidosView.as_view(), name='update-jur-restringido'),
     
     path('persona-natural/user-with-permissions/update/<str:tipodocumento>/<str:numerodocumento>/', views.UpdatePersonaNaturalByUserWithPermissions.as_view(), name='persona-natural-update-by-user-with-permissions'),
     path('persona-juridica/user-with-permissions/update/<str:tipodocumento>/<str:numerodocumento>/', views.UpdatePersonaJuridicaByUserWithPermissions.as_view(), name='persona-natural-update-by-user-with-permissions'),
+    
+    path('autorizacion-notificaciones-self/', views.AutorizacionNotificacionesPersonas.as_view(), name='autorizacion-notificaciones-self'),
     
     # PENDIENTES POR VALIDAR
     

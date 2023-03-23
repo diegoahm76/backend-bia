@@ -18,13 +18,13 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.db.models import Q
 from django.contrib.sites.shortcuts import get_current_site
-from seguridad.serializers.personas_serializers import PersonasSerializer
+from seguridad.serializers.personas_serializers import PersonasFilterSerializer, PersonasSerializer
 from seguridad.utils import Util
 from django.contrib.auth.hashers import make_password
 from rest_framework import status
 import jwt
 from django.conf import settings
-from seguridad.serializers.user_serializers import EmailVerificationSerializer, GetNuevoSuperUsuarioSerializer, GetSuperUsuarioSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserPutAdminSerializer,  UserPutSerializer, UserSerializer, UserSerializerWithToken, UserRolesSerializer, RegisterSerializer  ,LoginSerializer, DesbloquearUserSerializer, SetNewPasswordUnblockUserSerializer, HistoricoActivacionSerializers, UsuarioInternoAExternoSerializers, GetBusquedaNombreUsuario, BusquedaHistoricoCargoUndSerializer
+from seguridad.serializers.user_serializers import EmailVerificationSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserPutAdminSerializer,  UserPutSerializer, UserSerializer, UserSerializerWithToken, UserRolesSerializer, RegisterSerializer  ,LoginSerializer, DesbloquearUserSerializer, SetNewPasswordUnblockUserSerializer, HistoricoActivacionSerializers, UsuarioInternoAExternoSerializers, GetBusquedaNombreUsuario, BusquedaHistoricoCargoUndSerializer
 from rest_framework.generics import RetrieveUpdateAPIView
 from django.contrib.auth.hashers import make_password
 from rest_framework import status
@@ -314,8 +314,6 @@ class AsignarRolSuperUsuario(generics.CreateAPIView):
 
     def post(self, request, id_persona):
         user_logeado = request.user.id_usuario
-        #validar si es necesario esta linea con el "id_rol=3"
-        # rol_interno = Roles.objects.get(id_rol=3)
 
         #Validaciones
         
@@ -324,7 +322,7 @@ class AsignarRolSuperUsuario(generics.CreateAPIView):
         if not persona:
             return Response({'success':False,'detail': 'No existe la persona'}, status=status.HTTP_404_NOT_FOUND)
 
-        usuario_delegado = User.objects.filter(persona=persona.id_persona).first()
+        usuario_delegado = User.objects.filter(persona=persona.id_persona).exclude(id_usuario=1).first()
         
         if not usuario_delegado or usuario_delegado.tipo_usuario != 'I': 
             return Response({'success':False,'detail': 'Esta persona no tiene un usuario interno, por lo tanto no puede asignarle este rol'}, status=status.HTTP_403_FORBIDDEN)
@@ -335,7 +333,6 @@ class AsignarRolSuperUsuario(generics.CreateAPIView):
         previous_usuario_delegante = copy.copy(usuario_delegante)
         usuario_delegante.persona = persona
         usuario_delegante.save()
-        print(usuario_delegante)
 
         #Auditoria Delegación de Rol Super Usuario
         valores_actualizados = {'previous':previous_usuario_delegante,'current':usuario_delegante}
@@ -352,33 +349,15 @@ class AsignarRolSuperUsuario(generics.CreateAPIView):
         }
         Util.save_auditoria(auditoria_data)
         
-        #SMS y EMAIL para DELEGANTE
-        persona_delegante = Personas.objects.get(id_persona = usuario_delegante.persona.id_persona)
-        #sms = 'Te informamos que has delegado tu rol super usuario exitosamente'
-        context = {'primer_nombre': persona_delegante.primer_nombre, 'primer_apellido': persona_delegante.primer_apellido}
-        template = render_to_string(('email-delegate-superuser.html'), context)
-        subject = 'Delegación de rol exitosa ' + str(persona_delegante.primer_nombre)
-        data = {'template': template, 'email_subject': subject, 'to_email': persona_delegante.email}
-        Util.send_email(data)
-        #try:
-         #   Util.send_sms(persona_delegante.telefono_celular, sms)
-          #  pass
-        #except:
-         #   return Response({'success':True,'detail':'Se realizó la asignación sin problema pero no se pudo enviar sms de confirmación'}, status=status.HTTP_200_OK)
+        #EMAIL para DELEGANTE
+        template = 'email-delegate-superuser.html'
+        subject = 'Delegación de rol exitosa'
         
-        #SMS y EMAIL para DELEGADO
-        persona_delegado = Personas.objects.get(id_persona = usuario_delegado.persona.id_persona)
-        #sms = 'Te informamos que has sido delegado para tener el rol super usuario '
-        context = {'primer_nombre': persona_delegado.primer_nombre, 'primer_apellido': persona_delegado.primer_apellido}
-        template = render_to_string(('email-delegate-superuser.html'), context)
-        subject = 'Delegación de rol exitosa ' + str(persona_delegado.primer_nombre)
-        data = {'template': template, 'email_subject': subject, 'to_email': persona_delegado.email}
-        Util.send_email(data)
-        #try:
-         #   Util.send_sms(persona_delegado.telefono_celular, sms)
-          #  pass
-        #except:
-         #   return Response({'success':True,'detail':'Se realizó la asignación sin problema pero no se pudo enviar sms de confirmación'}, status=status.HTTP_200_OK)
+        Util.notificacion(usuario_delegante.persona,subject,template)
+        
+        #EMAIL para DELEGADO
+        
+        Util.notificacion(usuario_delegado.persona,subject,template)
         
         return Response({'success':True,'detail': 'Delegación y notificación exitosa'}, status=status.HTTP_200_OK)
 
@@ -476,7 +455,7 @@ class UnBlockUserPassword(generics.GenericAPIView):
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
-    renderer_classes = (UserRender,)
+    # renderer_classes = (UserRender,)
     permission_classes = [IsAuthenticated, PermisoCrearUsuarios]
 
     def post(self, request):
@@ -570,7 +549,7 @@ class RegisterView(generics.CreateAPIView):
 
 class RegisterExternoView(generics.CreateAPIView):
     serializer_class = RegisterExternoSerializer
-    renderer_classes = (UserRender,)
+    # renderer_classes = (UserRender,)
 
     def post(self, request):
         user = request.data
@@ -578,7 +557,7 @@ class RegisterExternoView(generics.CreateAPIView):
         persona = Personas.objects.filter(id_persona=user['persona']).first()
         
         if not persona:
-            return Response ({'success':False,'detail':'No existe la persona'},status=status.HTTP_404_NOT_FOUND)
+            return Response({'success':False,'detail':'No existe la persona'},status=status.HTTP_404_NOT_FOUND)
         
         if not persona.email:
             return Response({'success':False,'detail':'La persona no tiene un correo electrónico de notificación asociado, debe acercarse a Cormacarena y realizar una actualizacion  de datos para proceder con la creación del usuario en el sistema'},status=status.HTTP_403_FORBIDDEN)
@@ -587,13 +566,12 @@ class RegisterExternoView(generics.CreateAPIView):
 
         if usuario:
             if usuario.is_active == True or usuario.tipo_usuario == "I":
-                return Response ({'success':False,'detail':'La persona ya posee un usuario en el sistema, en caso de pérdida de credenciales debe usar las opciones de recuperación'},status=status.HTTP_403_FORBIDDEN)
+                return Response({'success':False,'detail':'La persona ya posee un usuario en el sistema, en caso de pérdida de credenciales debe usar las opciones de recuperación'},status=status.HTTP_403_FORBIDDEN)
 
             if usuario.is_active == False:
-                return Response ({'success':False,'detail':"La persona ya posee un usuario en el sistema, pero no se encuentra activado, ¿desea reenviar el correo de activación?","modal":True,"id_usuario":usuario.id_usuario},status=status.HTTP_403_FORBIDDEN)
+                return Response({'success':False,'detail':"La persona ya posee un usuario en el sistema, pero no se encuentra activado, ¿desea reenviar el correo de activación?","modal":True,"id_usuario":usuario.id_usuario},status=status.HTTP_403_FORBIDDEN)
 
         redirect_url=request.data.get('redirect_url','')
-        print(redirect_url)
         
         if " " in user['nombre_de_usuario']:
             return Response({'success':False,'detail':'No puede contener espacios en el nombre de usuario'},status=status.HTTP_403_FORBIDDEN)
@@ -660,8 +638,7 @@ class RegisterExternoView(generics.CreateAPIView):
 
         Util.notificacion(persona,subject,template,absurl=absurl)
     
-        return Response([{"success":True, "detail":'Usuario creado exitosamente, se ha enviado un correo a '+persona.email+', con la información para la activación del usuario en el sistema'},user_data,{"redi:":redirect_url}], status=status.HTTP_201_CREATED)
-
+        return Response({'success':True, 'detail':'Usuario creado exitosamente, se ha enviado un correo a '+persona.email+', con la información para la activación del usuario en el sistema', 'data':user_data}, status=status.HTTP_201_CREATED)
 
 class Verify(views.APIView):
 
@@ -774,8 +751,6 @@ class LoginApiView(generics.CreateAPIView):
     def post(self, request):
         data = request.data
         user = User.objects.filter(nombre_de_usuario=data['nombre_de_usuario']).first()
-        
-        print('USUARIO',user)
         
         ip = Util.get_client_ip(request)
         device = Util.get_client_device(request)
@@ -1059,72 +1034,49 @@ def uploadImage(request):
 
     return Response('Image was uploaded')
 
-#MOSTRAR EL NOMBRE DEL SUPER USUARIO
-class GetNombreSuperUsuario(generics.RetrieveAPIView):
-    
-    serializer_class = GetSuperUsuarioSerializer
-    queryset = User.objects.all()
-    
-    def get (self,request):
-        
-        user = request.user
-        
-        serializador = self.serializer_class(user)
-        
-        return Response({'success':True,'detail':'Petición exitosa','data':serializador.data},status=status.HTTP_200_OK)
-    
-# CONSULTAR NUEVO SUPER USUARIO FECHA ACTUAL
-
 class GetNuevoSuperUsuario(generics.RetrieveAPIView):
-    
-    serializer_class = GetNuevoSuperUsuarioSerializer
+    serializer_class = PersonasFilterSerializer
     queryset = User.objects.all()
+    permission_classes = [IsAuthenticated, IsAdminUser]
     
-    def get (self,request):
-        
-        tipo_documento = request.query_params.get('tipo_documento')
-        numero_documentos = request.query_params.get('numero_documento')
+    def get (self,request,tipo_documento,numero_documento):
         fecha_sistema = datetime.now()
-        
                 
-        nuevo_super_usuario = Personas.objects.filter(tipo_documento=tipo_documento,numero_documento=numero_documentos,fecha_a_finalizar_cargo_actual__gt=fecha_sistema).filter(~Q(id_cargo = None)).first()
+        nuevo_super_usuario = Personas.objects.filter(tipo_documento=tipo_documento,numero_documento=numero_documento,fecha_a_finalizar_cargo_actual__gt=fecha_sistema).filter(~Q(id_cargo = None)).first()
         
         if nuevo_super_usuario:
             serializador = self.serializer_class(nuevo_super_usuario)
-            return Response({'succes':True, 'detail':'Los datos coincidieron con la busqueda realizada.','data':serializador.data},status=status.HTTP_200_OK)
-        
+            return Response({'succes':True, 'detail':'Los datos coincidieron con la búsqueda realizada','data':serializador.data},status=status.HTTP_200_OK)
         else: 
-            return Response({'succes':True, 'detail':'La persona no existe o no tiene cargo actual.'},status=status.HTTP_200_OK)
+            return Response({'succes':False, 'detail':'La persona no existe o no tiene cargo actual'},status=status.HTTP_404_NOT_FOUND)
 
-#BUSQUEDA AVANZADA PARA LA TABLA PERSONAS
-
-class Busqueda_Avanzada(generics.ListAPIView):
-    serializer_class = GetNuevoSuperUsuarioSerializer
+class GetNuevoSuperUsuarioFilters(generics.ListAPIView):
+    serializer_class = PersonasFilterSerializer
     queryset = Personas.objects.all()
+    permission_classes = [IsAuthenticated, IsAdminUser]
     
     def get(self,request):
     
         filter={}
         for key, value in request.query_params.items():
             if key in ['primer_nombre','primer_apellido','tipo_documento','numero_documento']:
-                if key == 'primer_nombre'or key== 'primer_apellido':
-                    filter[key+'__icontains'] = value
+                if key == 'primer_nombre' or key== 'primer_apellido':
+                    if value != '':
+                        filter[key+'__icontains'] = value
                 elif key == 'numero_documento':
-                    filter[key+'__startswith'] = value
+                    if value != '':
+                        filter[key+'__startswith'] = value
                 else:
-                    filter[key] = value
+                    if value != '':
+                        filter[key] = value
                     
         fecha_sistema =  datetime.now()           
         filter['fecha_a_finalizar_cargo_actual__gt'] = fecha_sistema
 
         persona = self.queryset.all().filter(**filter).filter(~Q(id_cargo = None))
         
-        if persona:
-            serializador = self.serializer_class(persona,many=True)
-            return Response({'succes':True, 'detail':'Se encontraron las siguientes personas.','data':serializador.data},status=status.HTTP_200_OK)
-        else: 
-            return Response({'succes':False, 'detail':'La persona no se encontro.'},status=status.HTTP_200_OK)
-        
+        serializador = self.serializer_class(persona,many=True)
+        return Response({'succes':True, 'detail':'Se encontraron las siguientes personas','data':serializador.data},status=status.HTTP_200_OK)
         
 class ReenviarCorreoVerificacionDeUsuario(generics.UpdateAPIView):
     serializer_class = RegisterExternoSerializer
@@ -1156,7 +1108,6 @@ class ReenviarCorreoVerificacionDeUsuario(generics.UpdateAPIView):
             
         else: 
             return Response ({'success':False,'detail':'El usuario ya se encuentra activado'},status=status.HTTP_403_FORBIDDEN)
-    
 
 class BusquedaHistoricoActivacion(generics.ListAPIView):
     serializer_class = HistoricoActivacionSerializers

@@ -72,7 +72,7 @@ class UserSerializer(serializers.ModelSerializer):
         return user_instance
 
 class UserPutSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(required=True)
+    password = serializers.CharField(required=False)
     profile_img = serializers.ImageField(required=False)
 
     def validate_password(self, value):
@@ -134,12 +134,16 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 class RegisterExternoSerializer(serializers.ModelSerializer):
     password = serializers.CharField(max_length= 68, min_length = 6, write_only=True)
-
     redirect_url=serializers.CharField(max_length=500, read_only=True)
-    class Meta:
-        model = User
-        fields = ['nombre_de_usuario', 'persona', 'password','redirect_url','creado_por_portal']
-
+    
+    def validate_password(self, value):
+        if not re.search(r'[A-Z]', value):
+            raise serializers.ValidationError('La contraseña debe contener al menos una letra mayúscula.')
+        if not re.search(r'\d', value):
+            raise serializers.ValidationError('La contraseña debe contener al menos un número.')
+        if not re.search(r'[^A-Za-z0-9]', value):
+            raise serializers.ValidationError('La contraseña debe contener al menos un caracter especial.')
+        return value
 
     def validate(self, attrs):
         nombre_de_usuario=attrs.get('nombre_de_usuario', '')
@@ -147,8 +151,13 @@ class RegisterExternoSerializer(serializers.ModelSerializer):
         if not nombre_de_usuario.isalnum():
             raise serializers.ValidationError("El Nombre de usuario solo debe tener caracteres alfanumericos")
         return attrs
+    
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
+    
+    class Meta:
+        model = User
+        fields = ['nombre_de_usuario', 'persona', 'password','redirect_url','creado_por_portal']
 
 class UserSerializerWithToken(UserSerializer):
     token = serializers.SerializerMethodField(read_only=True)
@@ -327,6 +336,15 @@ class SetNewPasswordUnblockUserSerializer(serializers.Serializer):
 
     class Meta:
         fields = ['password', 'token', 'uidb64']
+        
+    def validate_password(self, value):
+        if not re.search(r'[A-Z]', value):
+            raise serializers.ValidationError('La contraseña debe contener al menos una letra mayúscula.')
+        if not re.search(r'\d', value):
+            raise serializers.ValidationError('La contraseña debe contener al menos un número.')
+        if not re.search(r'[^A-Za-z0-9]', value):
+            raise serializers.ValidationError('La contraseña debe contener al menos un caracter especial.')
+        return value
     
     def validate(self, attrs):
             password = attrs.get('password')
@@ -345,34 +363,6 @@ class SetNewPasswordUnblockUserSerializer(serializers.Serializer):
             user.save()
 
             return user
-        
-        #MOSTRAR EL NOMBRE DEL SUPER USUARIO
-        
-class GetSuperUsuarioSerializer(serializers.ModelSerializer):
-    nombre_persona = serializers.SerializerMethodField()
-    
-    def get_nombre_persona(self,obj):
-        
-        nombre_persona2 = obj.persona.primer_nombre + ' ' + obj.persona.primer_apellido
-        
-        return nombre_persona2
-    
-    class Meta:
-        fields = ['id_usuario','persona','nombre_persona']
-        model = User
-        
-# CONSULTAR NUEVO SUPER USUARIO FECHA ACTUAL
-
-class GetNuevoSuperUsuarioSerializer(serializers.ModelSerializer):
-    nombre_completo = serializers.SerializerMethodField() #para hacer una funcion, para la variable 'nombre_completo'
-    
-    def get_nombre_completo(self, obj): #la funcion para cada variable se debe de conectar todo pegado
-        nombre_completo2 = obj.primer_nombre + ' ' + obj.primer_apellido
-        return nombre_completo2
-        
-    class Meta:
-        fields = ['id_persona','tipo_documento','numero_documento','nombre_completo']
-        model = Personas
 
 class UsuarioInternoAExternoSerializers(serializers.ModelSerializer):
     class Meta:
