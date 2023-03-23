@@ -11,6 +11,7 @@ from django.urls import reverse
 from django.shortcuts import redirect
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.sites.shortcuts import get_current_site
+from gestion_documental.serializers.ventanilla_serializers import AutorizacionNotificacionesSerializer
 
 from seguridad.serializers.user_serializers import RegisterExternoSerializer
 from django.shortcuts import render
@@ -263,7 +264,7 @@ class GetPersonasByID(generics.GenericAPIView):
             persona_serializer = self.serializer_class(persona)
             if not persona.email:
                 return Response({'success':False,'detail':'El documento ingresado existe en el sistema, sin embargo no tiene un correo electrónico de notificación asociado, debe acercarse a Cormacarena y realizar una actualizacion  de datos para proceder con la creación del usuario en el sistema', 'data':persona_serializer.data},status=status.HTTP_403_FORBIDDEN)
-            return Response({'success': True,'data': persona_serializer.data}, status=status.HTTP_200_OK)
+            return Response({'success': True, 'detail':'Se encontró la persona','data': persona_serializer.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success': False,'detail': 'No encontró ninguna persona con los parametros ingresados'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -1430,8 +1431,49 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
         Util.notificacion(serializador,subject,template,absurl=absurl)
     
         return Response ({'success':True,'detail':'Se creo la persona natural y el usuario correctamente'},status=status.HTTP_200_OK)
-        
-        
+      
+class AutorizacionNotificacionesPersonas(generics.RetrieveUpdateAPIView):
+    serializer_class = AutorizacionNotificacionesSerializer
+    queryset = Personas.objects.all()
 
-        
-        
+    def put(self, request):
+        persona_ = self.request.user.id_usuario
+        persona = self.request.user.persona
+        data = request.data
+        previous_user = copy.copy(persona)
+
+        if 'acepta_autorizacion_email' in data and 'acepta_autorizacion_sms' in data:
+            acepta_autorizacion_email = data['acepta_autorizacion_email']
+            acepta_autorizacion_sms = data['acepta_autorizacion_sms']
+
+            persona.acepta_notificacion_email = acepta_autorizacion_email
+            persona.acepta_notificacion_sms = acepta_autorizacion_sms
+            persona.save()
+
+            # AUDITORIA AUTORIZACION NOTIFICACIONES
+            dirip = Util.get_client_ip(request)
+            descripcion = {'tipo_documento': persona.tipo_documento, 'numero_documento':persona.numero_documento}
+            valores_actualizados = {'current': persona, 'previous': previous_user}
+
+            auditoria_data = {
+                'id_usuario': persona_,
+                'id_modulo': 69,
+                'cod_permiso': 'AC',
+                'subsistema': 'SEG',
+                'dirip': dirip,
+                'descripcion': descripcion,
+                'valores_actualizados': valores_actualizados
+            }
+
+            Util.save_auditoria(auditoria_data)
+
+            if acepta_autorizacion_email and acepta_autorizacion_sms:
+                return Response({'success': True, 'detail': 'Autorización por correo electrónico y teléfono aceptada'}, status=status.HTTP_200_OK)
+            elif acepta_autorizacion_email:
+                return Response({'success': True, 'detail': 'Autorización por correo electrónico aceptada'}, status=status.HTTP_200_OK)
+            elif acepta_autorizacion_sms:
+                return Response({'success': True, 'detail': 'Autorización por teléfono aceptada'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'success': True, 'detail': 'Autorizacion no aceptada'}, status=status.HTTP_200_OK)
+        else: 
+            return Response({'success': False, 'detail': 'No envió las autorizaciones'}, status=status.HTTP_400_BAD_REQUEST)
