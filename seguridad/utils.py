@@ -341,12 +341,10 @@ class Util:
             fecha_inicio = data.get("fecha_inicio_cargo_rep_legal")
             fecha_formateada = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
             
-            print(fecha_formateada)
             fecha_ahora = date.today()
-            print(fecha_ahora)
             
             if fecha_formateada:
-                print(fecha_formateada)
+                
                 if fecha_formateada > fecha_ahora:
                     return {'success':False,'detail':'La fecha de inicio del cargo del representante no debe ser superior a la del sistema', 'status':status.HTTP_403_FORBIDDEN}
             
@@ -357,7 +355,7 @@ class Util:
             #Validación de tipo documento
             tipo_documento = data.get('tipo_documento')
             
-            if tipo_documento  != 'NT':
+            if tipo_documento and tipo_documento  != 'NT':
                 return {'success':False,'detail':'El tipo de documento debe ser el de una persona juridica', 'status':status.HTTP_400_BAD_REQUEST}
 
             email_principal = data.get('email')
