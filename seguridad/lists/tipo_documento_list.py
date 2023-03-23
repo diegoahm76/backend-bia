@@ -1,34 +1,34 @@
 tipo_documento_LIST = [
     {
-        "cod_tipo_documento": "CC",
-        "nombre": "Cédula de ciudadanía"
+        "value": "CC",
+        "label": "Cédula de ciudadanía"
     },
     {
-        "cod_tipo_documento": "CE",
-        "nombre": "Cédula extranjería"
+        "value": "CE",
+        "label": "Cédula extranjería"
     },
     {
-        "cod_tipo_documento": "TI",
-        "nombre": "Tarjeta de identidad"
+        "value": "TI",
+        "label": "Tarjeta de identidad"
     },
     {
-        "cod_tipo_documento": "RC",
-        "nombre": "Registro civil"
+        "value": "RC",
+        "label": "Registro civil"
     },
     {
-        "cod_tipo_documento": "NU",
-        "nombre": "NUIP"
+        "value": "NU",
+        "label": "NUIP"
     },
     {
-        "cod_tipo_documento": "PA",
-        "nombre": "Pasaporte"
+        "value": "PA",
+        "label": "Pasaporte"
     },
     {
-        "cod_tipo_documento": "PE",
-        "nombre": "Permiso especial de permanencia"
+        "value": "PE",
+        "label": "Permiso especial de permanencia"
     },
     {
-        "cod_tipo_documento": "NT",
-        "nombre": "NIT"
+        "value": "NT",
+        "label": "NIT"
     },
 ]

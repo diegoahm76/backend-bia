@@ -1,6 +1,9 @@
+from seguridad.models import HistoricoRepresentLegales
+from seguridad.models import HistoricoAutirzacionesNotis
 from django.db.models.signals import pre_save
 from django.db.models import Q
 from django.dispatch import receiver
+from datetime import datetime
 from seguridad.models import Personas, HistoricoEmails, HistoricoDireccion, Cargos, TipoDocumento, EstadoCivil
 
 @receiver(pre_save, sender=Personas)
@@ -33,7 +36,34 @@ def create_historico_personas(sender, instance, **kwargs):
                     email_notificacion = current.email
                 )
                 historico_email.save()
+            
+            # MODIFICA NOTIFICACION SMS O EMAIL
+            if previous.acepta_notificacion_sms!= current.acepta_notificacion_sms or previous.acepta_notificacion_email != current.acepta_notificacion_email:
+                fecha = previous.fecha_creacion if not previous.fecha_ultim_actualizacion_autorizaciones else previous.fecha_ultim_actualizacion_autorizaciones 
+                HistoricoAutirzacionesNotis.objects.create(
+                    id_persona = previous,
+                    respuesta_autorizacion_sms = previous.acepta_notificacion_sms,
+                    respuesta_autorizacion_mail = previous.acepta_notificacion_email,
+                    fecha_inicio = fecha,
+                    fecha_fin = datetime.now()
+                )
+            #MODIFICA HISTORICO DE REPRESENTANTE LEGAL
+            if previous.representante_legal != current.representante_legal:
                 
+                historico = HistoricoRepresentLegales.objects.filter(id_persona_empresa = previous).last()
+                
+                if historico:
+                    consecutivo = historico.consec_representacion + 1
+                else:
+                    consecutivo = 1
+                
+                HistoricoRepresentLegales.objects.create(
+                    id_persona_empresa = previous,
+                    consec_representacion = consecutivo,
+                    id_persona_represent_legal = previous.representante_legal,
+                    fecha_cambio_sistema = datetime.now(),
+                    fecha_inicio_cargo = previous.fecha_inicio_cargo_rep_legal
+                )
             # MODIFICA CARGO
             if previous.id_cargo:
                 if not current.id_cargo:
@@ -130,8 +160,8 @@ def create_historico_personas(sender, instance, **kwargs):
                     if previous.tipo_documento.cod_tipo_documento != current.tipo_documento.cod_tipo_documento:
                         persona_current = Personas.objects.filter(tipo_documento=current.tipo_documento.cod_tipo_documento).first()
                         persona_previous = Personas.objects.filter(Q(tipo_documento=previous.tipo_documento.cod_tipo_documento) & ~Q(id_persona=previous.id_persona)).first()
-                        tipo_documento_current = TipoDocumento.objects.filter(tipo_documento=current.tipo_documento.cod_tipo_documento).first()
-                        tipo_documento_previous = TipoDocumento.objects.filter(tipo_documento=previous.tipo_documento.cod_tipo_documento).first()
+                        tipo_documento_current = TipoDocumento.objects.filter(cod_tipo_documento=current.tipo_documento.cod_tipo_documento).first()
+                        tipo_documento_previous = TipoDocumento.objects.filter(cod_tipo_documento=previous.tipo_documento.cod_tipo_documento).first()
                         if not persona_current:
                             tipo_documento_current.item_ya_usado=True
                             tipo_documento_current.save()
