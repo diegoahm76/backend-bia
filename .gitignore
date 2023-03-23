@@ -178,3 +178,7 @@ cython_debug/
 migrations/
 
 # End of https://www.toptal.com/developers/gitignore/api/django
+
+Dockerfile
+.dockerignore
+docker-compose.yml
