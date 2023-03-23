@@ -5,6 +5,7 @@ from seguridad.models import Municipio, Departamento, Paises
 from rest_framework.permissions import IsAuthenticated
 from seguridad.serializers.listas_serializers import (
     MunicipiosSerializer,
+    DepartamentosSerializer
 )
 
 # IMPORT LISTS
@@ -76,21 +77,29 @@ class GetLisIndicativoPais(APIView):
 class GetListPaises(APIView):
     def get(self, request):
         return Response({'success': True, 'detail': 'Los indicativos por pais son los siguientes', 'data': paises_LIST}, status=status.HTTP_200_OK)
+    
+class GetListDepartamentos(generics.ListAPIView):
+    queryset = Departamento.objects.all()
+    serializer_class = DepartamentosSerializer
 
-class GetListDepartamentos(APIView):
     def get(self, request):
-        return Response({'success': True, 'detail': 'Los indicativos por pais son los siguientes', 'data': departamentos_LIST}, status=status.HTTP_200_OK)
+        pais = request.query_params.get('pais', '')
+        departamentos = self.queryset.all().filter(pais__icontains=pais)
+        serializer = self.serializer_class(departamentos, many=True)
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes departamentos', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
 
 class GetListMunicipios(generics.ListAPIView):
     queryset = Municipio.objects.all()
+    serializer_class = MunicipiosSerializer
 
     def get(self, request):
         cod_departamento = request.query_params.get('cod_departamento', '')
 
         municipios = self.queryset.all().filter(
             cod_departamento__icontains=cod_departamento)
-        data = []
-        for municipio in municipios:
-            data.append({'label': municipio.nombre, 'value': municipio.cod_municipio})
-        return Response({'success': True, 'detail': 'Se encontraron los siguientes municipios', 'data': data}, status=status.HTTP_200_OK)
+
+        serializer = self.serializer_class(municipios, many=True)
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes municipios', 'data': serializer.data}, status=status.HTTP_200_OK)
 
