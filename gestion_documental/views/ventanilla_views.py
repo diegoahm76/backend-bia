@@ -71,7 +71,7 @@ class RegisterPersonaNatural(generics.CreateAPIView):
         
         Util.notificacion(serializador,subject,template)
 
-        return Response({'success':True, 'detail': serializer.data}, status=status.HTTP_201_CREATED)
+        return Response({'success':True, 'detail':'Se creo la persona natural correctamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 
 class RegisterPersonaJuridica(generics.CreateAPIView):
     serializer_class = PersonaJuridicaPostSerializer
@@ -109,7 +109,7 @@ class RegisterPersonaJuridica(generics.CreateAPIView):
         
         Util.notificacion(serializador,subject,template)
         
-        return Response({'success':True, 'detail': serializer.data}, status=status.HTTP_201_CREATED)
+        return Response({'success':True, 'detail': 'Se creo la persona jurídica correctamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 
 class UpdatePersonaNaturalByVentanilla(generics.RetrieveUpdateAPIView):
     http_method_names = ['patch']
@@ -235,7 +235,7 @@ class UpdatePersonaJuridicaByVentanilla(generics.UpdateAPIView):
             return Response({'success': True, 'detail': 'Persona actualizada y notificada correctamente', 'data': persona_serializada.data}, status=status.HTTP_201_CREATED)
         return Response({'success':False,'detail':"No existe la persona"},status=status.HTTP_404_NOT_FOUND)
     
-class AutorizacionNotificaciones(generics.RetrieveUpdateAPIView):
+class AutorizacionNotificacionesVentanilla(generics.RetrieveUpdateAPIView):
     serializer_class = AutorizacionNotificacionesSerializer
     queryset = Personas.objects.all()
 
@@ -261,9 +261,9 @@ class AutorizacionNotificaciones(generics.RetrieveUpdateAPIView):
 
                 auditoria_data = {
                     'id_usuario': persona_,
-                    'id_modulo': 69,
+                    'id_modulo': 70,
                     'cod_permiso': 'AC',
-                    'subsistema': 'SEG',
+                    'subsistema': 'TRSV',
                     'dirip': dirip,
                     'descripcion': descripcion,
                     'valores_actualizados': valores_actualizados
@@ -278,14 +278,8 @@ class AutorizacionNotificaciones(generics.RetrieveUpdateAPIView):
                 elif acepta_autorizacion_sms:
                     return Response({'success': True, 'detail': 'Autorización por teléfono aceptada'}, status=status.HTTP_200_OK)
                 else:
-                    return Response({'success': False, 'detail': 'Autorización no aceptada'}, status=status.HTTP_200_OK)
+                    return Response({'success': True, 'detail': 'Autorizacion no aceptada'}, status=status.HTTP_200_OK)
             else: 
-                return Response({'success': False, 'detail': 'Autorización no aceptada'}, status=status.HTTP_200_OK) 
+                return Response({'success': False, 'detail': 'No envió las autorizaciones'}, status=status.HTTP_400_BAD_REQUEST) 
         else:
             return Response({'success': False, 'detail': 'La persona no existe'}, status=status.HTTP_404_NOT_FOUND)
-
-            
-            
-        
-
-            
