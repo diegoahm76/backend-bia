@@ -3,31 +3,18 @@ from conservacion.models.mezclas_models import Mezclas, PreparacionMezclas, Item
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from seguridad.models import (
     Municipio,
-    Departamento,
-    Paises,
-    TipoDocumento
 )
 
 class MunicipiosSerializer(serializers.ModelSerializer):
-    
+    label = serializers.CharField(source='nombre')
+    value = serializers.CharField(source='cod_municipio')
+
     class Meta:
         model = Municipio
-        fields = '__all__'
+        fields = ['label', 'value']
 
-class DepartamentosSerializer(serializers.ModelSerializer):
-    
-    class Meta:
-        model = Departamento
-        fields = '__all__'
-
-class TipoDocumentoSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model=TipoDocumento
-        fields = '__all__'
-
-class PaisSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model=Paises
-        fields = '__all__'
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if 'cod_municipio' in data:
+            del data['cod_municipio']
+        return data
