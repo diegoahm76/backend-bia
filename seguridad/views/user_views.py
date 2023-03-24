@@ -24,7 +24,7 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import status
 import jwt
 from django.conf import settings
-from seguridad.serializers.user_serializers import EmailVerificationSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserPutAdminSerializer,  UserPutSerializer, UserSerializer, UserSerializerWithToken, UserRolesSerializer, RegisterSerializer  ,LoginSerializer, DesbloquearUserSerializer, SetNewPasswordUnblockUserSerializer, HistoricoActivacionSerializers, UsuarioInternoAExternoSerializers, GetBusquedaNombreUsuario, BusquedaHistoricoCargoUndSerializer
+from seguridad.serializers.user_serializers import EmailVerificationSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserPutAdminSerializer,  UserPutSerializer, UserSerializer, UserSerializerWithToken, UserRolesSerializer, RegisterSerializer  ,LoginSerializer, DesbloquearUserSerializer, SetNewPasswordUnblockUserSerializer, HistoricoActivacionSerializers, UsuarioInternoAExternoSerializers, GetBusquedaNombreUsuario, BusquedaHistoricoCargoUndSerializer,GetBuscarIdPersona
 from rest_framework.generics import RetrieveUpdateAPIView
 from django.contrib.auth.hashers import make_password
 from rest_framework import status
@@ -1209,3 +1209,27 @@ class BusquedaHistoricoCargoUnd(generics.ListAPIView):
             })
         serializador = self.serializer_class(historicos,many=True)
         return Response({'success':True, 'detail': 'La persona con el id proporcionado tiene un historico asociado', 'data':serializador.data}, status=status.HTTP_200_OK)
+#BUSQUEDA ID PERSONA Y RETORNE LOS DATOS DE LA TABLA USUARIOS
+
+class BuscarIdPersona(generics.RetrieveAPIView):
+    serializer_class = GetBuscarIdPersona
+    queryset = User.objects.all()
+    
+    def get(self,request,id_persona):
+        persona = Personas.objects.filter(id_persona = id_persona).first()
+        usuarios = User.objects.filter(persona=persona)
+        print(usuarios)
+        
+        #ESTOS SON OTROS DOS METODOS DE BUSQUEDA
+        
+        # (metodo-1)usuarios = User.objects.filter(persona__id_persona = id_persona)
+        
+        # (metodo-2)personau = Personas.objects.filter(id_persona = id_persona).first()
+        # usuarios = personauu.user_set.all()    
+
+        if usuarios:
+            serializador = self.serializer_class(usuarios,many=True)
+            return Response({'succes':True,'detail':'Se encontraron los siguientes usuarios.','data':serializador.data},status=status.HTTP_200_OK)
+        else:
+            return Response({'succes':False,'detail':'No se encontro ningun resultado.'},status=status.HTTP_200_OK)
+    

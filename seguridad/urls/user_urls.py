@@ -28,6 +28,7 @@ urlpatterns = [
     path('get-nuevo-super-usuario/<str:tipo_documento>/<str:numero_documento>/', views.GetNuevoSuperUsuario.as_view(), name='get-nuevo-super-usuario'),
     path('get-nuevo-super-usuario-filters/', views.GetNuevoSuperUsuarioFilters.as_view(),name='get-nuevo-super-usuario-filters'),
     path('get-user-by-nombre-de-usuario/',views.BusquedaNombreUsuario.as_view(),name='get-user-by-nombre-de-usuario'),
+    path('get-buscar-by-id-persona/<str:id_persona>/',views.BuscarIdPersona.as_view(),name='get-buscar-id-persona'),#creado 5
     path('unblock/', views.UnblockUser.as_view(), name='unblock-user'),
     path('password-unblock-complete/', views.UnBlockUserPassword.as_view(), name='password-unblock-complete'),
     path('get-historico-cargo-und/<str:id_persona>/', views.BusquedaHistoricoCargoUnd.as_view(), name='historico_cargos_und'),

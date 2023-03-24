@@ -375,7 +375,7 @@ class UsuarioInternoAExternoSerializers(serializers.ModelSerializer):
 class GetBusquedaNombreUsuario(serializers.ModelSerializer):
     numero_documento = serializers.ReadOnlyField(source='persona.numero_documento',default=None)
     primer_nombre = serializers.ReadOnlyField(source='persona.primer_nombre',default=None)
-    segundo_nombre = serializers.ReadOnlyField(source='personaa.segundo_nombre',default=None)
+    segundo_nombre = serializers.ReadOnlyField(source='persona.segundo_nombre',default=None)
     primer_apellido = serializers.ReadOnlyField(source='persona.primer_apellido',default=None)
     seguno_apellido = serializers.ReadOnlyField(source='persona.segundo_apellido',default=None)
     razon_social = serializers.ReadOnlyField(source='persona.razon_social',default=None)
@@ -397,3 +397,12 @@ class BusquedaHistoricoCargoUndSerializer(serializers.ModelSerializer):
     class Meta:
         model = HistoricoCargosUndOrgPersona
         fields = ['nombre_cargo', 'nombre_unidad_organizacional', 'fecha_inicial_historico', 'fecha_final_historico', 'observaciones_vinculni_cargo', 'justificacion_cambio_und_org']
+#BUQUEDA DE PERSONA POR ID Y TRAIGA LA LISTA DE LOS DATOS DE LA TABLA USUARIOS
+
+class GetBuscarIdPersona(serializers.ModelSerializer): #modelserializer para identificadores
+
+    class Meta:
+        fields = '__all__' #['nombre_de_usuario','profile_img','tipo_usuario','is_active','created_at','creado_por_portal','id_usuario_creador']
+        model = User
+        
+    
