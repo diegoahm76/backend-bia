@@ -99,29 +99,19 @@ class ConsultaVinculacionColaboradorView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, id_persona):
-        consulta_personas = Personas.objects.filter(id_persona=id_persona, tipo_persona='N', id_cargo__isnull=False, id_unidad_organizacional_actual__isnull=False)
+        consulta_personas = Personas.objects.filter(id_persona=id_persona, tipo_persona='N', id_cargo__isnull=False, id_unidad_organizacional_actual__isnull=False).first()
 
         if not consulta_personas:
             return Response({'success':False, 'detail': 'La persona no esta vinculada como colaborador o no existe'}, status=status.HTTP_404_NOT_FOUND)
 
-        serializador = self.serializer_class(consulta_personas, many=True)
+        serializador = self.serializer_class(consulta_personas)
+        data = serializador.data
 
-        persona = consulta_personas.first()
-
-        cargo = Cargos.objects.filter(id_cargo=persona.id_cargo_id).first()
-        nombre_cargo_actual = cargo.nombre if cargo else ""
-        data = serializador.data[0]
-        data['cargo_actual'] = nombre_cargo_actual
-
-        unidad = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=persona.id_unidad_organizacional_actual_id).first()
-        nombre_unidad_organizacional_actual = unidad.nombre if unidad else ""
-        data['unidad_organizacional_actual'] = nombre_unidad_organizacional_actual
-
-        fecha_a_finalizar_cargo_actual = persona.fecha_a_finalizar_cargo_actual if cargo else None
-        fecha_vencida = fecha_a_finalizar_cargo_actual and fecha_a_finalizar_cargo_actual < datetime.now()
+        fecha_a_finalizar_cargo_actual = consulta_personas.fecha_a_finalizar_cargo_actual if consulta_personas.id_cargo else None
+        fecha_vencida = fecha_a_finalizar_cargo_actual if fecha_a_finalizar_cargo_actual < datetime.now() else False
         data['fecha_vencida'] = fecha_vencida
 
-        return Response({'success':True, 'detail': 'La persona existe y está vinculada como colaborador', 'data':serializador.data}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail': 'La persona existe y está vinculada como colaborador', 'data':data}, status=status.HTTP_200_OK)
     
 class UpdateVinculacionColaboradorView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = UpdateVinculacionColaboradorSerializer

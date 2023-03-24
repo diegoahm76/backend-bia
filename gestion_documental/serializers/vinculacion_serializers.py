@@ -8,8 +8,8 @@ class VinculacionColaboradorSerializer(serializers.ModelSerializer):
         fields = ['id_persona', 'id_cargo', 'id_unidad_organizacional_actual','observaciones_vinculacion_cargo_actual','fecha_a_finalizar_cargo_actual','fecha_inicio_cargo_actual']
 
 class ConsultaVinculacionColaboradorSerializer(serializers.ModelSerializer):
-    cargo_actual = serializers.CharField(source='id_cargo.nombre', read_only=True)
-    unidad_organizacional_actual = serializers.CharField(source='id_unidad_organizacional_actual.nombre', read_only=True)
+    cargo_actual = serializers.ReadOnlyField(source='id_cargo.nombre', default=None)
+    unidad_organizacional_actual = serializers.ReadOnlyField(source='id_unidad_organizacional_actual.nombre', default=None)
     fecha_vencida = serializers.BooleanField(read_only=True)
 
     class Meta:
