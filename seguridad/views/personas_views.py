@@ -94,7 +94,6 @@ from seguridad.serializers.personas_serializers import (
     BusquedaHistoricoCambiosSerializer,
     UpdatePersonasNaturalesSerializer,
     UpdatePersonasJuridicasSerializer,
-    ConsultaVinculacionColaboradorSerializer,
     BusquedaHistoricoCargoUndSerializer
 )
 
@@ -1057,40 +1056,6 @@ class ActualizarPersonasJurCamposRestringidosView(generics.UpdateAPIView):
             return Response({'success': True, 'detail': 'Se actualizó los datos de la persona jurídica','data':serializer.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success': False, 'detail': 'La persona no existe o es una persona natural'}, status=status.HTTP_404_NOT_FOUND)
-
-class ConsultaVinculacionColaboradorView(generics.ListAPIView):
-    serializer_class = ConsultaVinculacionColaboradorSerializer 
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, id_persona):
-        try:
-            persona = Personas.objects.filter(id_persona=id_persona).first()
-        except Personas.DoesNotExist:
-            return Response({'success':False, 'detail': 'La persona no existe'}, status=status.HTTP_404_NOT_FOUND)
-        
-        consulta_personas = Personas.objects.filter(id_persona=id_persona)
-
-        if not consulta_personas:
-            return Response({'success':False, 'detail': 'La persona no existe'}, status=status.HTTP_404_NOT_FOUND)
-
-        serializador = self.serializer_class(consulta_personas, many=True)
-
-        persona = consulta_personas.first()
-
-        cargo = Cargos.objects.filter(id_cargo=persona.id_cargo_id).first()
-        nombre_cargo_actual = cargo.nombre if cargo else ""
-        data = serializador.data[0]
-        data['cargo_actual'] = nombre_cargo_actual
-
-        unidad = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=persona.id_unidad_organizacional_actual_id).first()
-        nombre_unidad_organizacional_actual = unidad.nombre if unidad else ""
-        data['unidad_organizacional_actual'] = nombre_unidad_organizacional_actual
-
-        fecha_a_finalizar_cargo_actual = persona.fecha_a_finalizar_cargo_actual if cargo else None
-        fecha_vencida = fecha_a_finalizar_cargo_actual and fecha_a_finalizar_cargo_actual < datetime.now()
-        data['fecha_vencida'] = fecha_vencida
-
-        return Response({'success':True, 'detail': 'La persona existe', 'data':serializador.data}, status=status.HTTP_200_OK)
 """     
 # Views for Clases Tercero
 

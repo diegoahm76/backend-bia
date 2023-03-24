@@ -1,7 +1,6 @@
 from django.urls import path
 from gestion_documental.views import vinculacion_views as views
 
-
 urlpatterns = [
     #VINCULAR
     path('vinculacion-colaboradores/<str:id_persona>/', views.VinculacionColaboradorView.as_view(), name='vinculacion-colaboradores'),

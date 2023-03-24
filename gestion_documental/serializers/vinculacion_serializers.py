@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from django.contrib import auth
-
 from seguridad.models import Personas
 
 class VinculacionColaboradorSerializer(serializers.ModelSerializer):

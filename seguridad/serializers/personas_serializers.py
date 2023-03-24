@@ -744,6 +744,7 @@ class UpdatePersonasJuridicasSerializer(serializers.ModelSerializer):
                 )
             ]
 
+
 class BusquedaHistoricoCargoUndSerializer(serializers.ModelSerializer):
     nombre_cargo = serializers.CharField(source='id_cargo.nombre', read_only=True)
     nombre_unidad_organizacional = serializers.CharField(source='id_unidad_organizacional.nombre', read_only=True)

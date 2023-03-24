@@ -233,6 +233,7 @@ class UpdateVinculacionColaboradorView(generics.RetrieveUpdateDestroyAPIView):
        
         return Response({'success':True,'detail':'Actualización exitosa'}, status=status.HTTP_200_OK)
 
+
 class Desvinculacion_persona(generics.UpdateAPIView):
     serializer_class = GetDesvinculacion_persona
     queryset = Personas.objects.all()
