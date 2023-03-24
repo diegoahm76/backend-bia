@@ -389,14 +389,7 @@ class GetBusquedaNombreUsuario(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = User
-    
-class BusquedaHistoricoCargoUndSerializer(serializers.ModelSerializer):
-    nombre_cargo = serializers.CharField(source='id_cargo.nombre', read_only=True)
-    nombre_unidad_organizacional = serializers.CharField(source='id_unidad_organizacional.nombre', read_only=True)
-
-    class Meta:
-        model = HistoricoCargosUndOrgPersona
-        fields = ['nombre_cargo', 'nombre_unidad_organizacional', 'fecha_inicial_historico', 'fecha_final_historico', 'observaciones_vinculni_cargo', 'justificacion_cambio_und_org']
+        
 #BUQUEDA DE PERSONA POR ID Y TRAIGA LA LISTA DE LOS DATOS DE LA TABLA USUARIOS
 
 class GetBuscarIdPersona(serializers.ModelSerializer): #modelserializer para identificadores
@@ -404,5 +397,3 @@ class GetBuscarIdPersona(serializers.ModelSerializer): #modelserializer para ide
     class Meta:
         fields = '__all__' #['nombre_de_usuario','profile_img','tipo_usuario','is_active','created_at','creado_por_portal','id_usuario_creador']
         model = User
-        
-    

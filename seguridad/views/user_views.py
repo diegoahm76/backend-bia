@@ -24,7 +24,7 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import status
 import jwt
 from django.conf import settings
-from seguridad.serializers.user_serializers import EmailVerificationSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserPutAdminSerializer,  UserPutSerializer, UserSerializer, UserSerializerWithToken, UserRolesSerializer, RegisterSerializer  ,LoginSerializer, DesbloquearUserSerializer, SetNewPasswordUnblockUserSerializer, HistoricoActivacionSerializers, UsuarioInternoAExternoSerializers, GetBusquedaNombreUsuario, BusquedaHistoricoCargoUndSerializer,GetBuscarIdPersona
+from seguridad.serializers.user_serializers import EmailVerificationSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserPutAdminSerializer,  UserPutSerializer, UserSerializer, UserSerializerWithToken, UserRolesSerializer, RegisterSerializer  ,LoginSerializer, DesbloquearUserSerializer, SetNewPasswordUnblockUserSerializer, HistoricoActivacionSerializers, UsuarioInternoAExternoSerializers, GetBusquedaNombreUsuario,GetBuscarIdPersona
 from rest_framework.generics import RetrieveUpdateAPIView
 from django.contrib.auth.hashers import make_password
 from rest_framework import status
@@ -1179,36 +1179,6 @@ class BusquedaNombreUsuario(generics.ListAPIView):
         else:
             return Response({'succes':False,'detail':'No se encontro ningun resultado con los criterios de busqueda.'},status=status.HTTP_200_OK)
 
-class BusquedaHistoricoCargoUnd(generics.ListAPIView):
-    serializer_class = BusquedaHistoricoCargoUndSerializer
-    queryset = HistoricoCargosUndOrgPersona.objects.all()
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, id_persona):
-        try:
-            persona = HistoricoCargosUndOrgPersona.objects.filter(id_persona=id_persona)
-        except HistoricoCargosUndOrgPersona.DoesNotExist:
-            return Response({'success':False, 'detail': 'La persona con el id proporcionado no tiene un historico asociado'}, status=status.HTTP_404_NOT_FOUND)
-
-        historicos = HistoricoCargosUndOrgPersona.objects.filter(id_persona=id_persona)
-        cargos = Cargos.objects.all()
-        unidades_organizacionales = UnidadesOrganizacionales.objects.all()
-        data = []
-        for historico in historicos:
-            cargo = cargos.filter(id_cargo=historico.id_cargo.id_cargo).first()
-            unidad_organizacional = unidades_organizacionales.filter(id_unidad_organizacional=historico.id_unidad_organizacional.id_unidad_organizacional).first()
-            data.append({
-                'id_cargo': historico.id_cargo.id_cargo,
-                'nombre_cargo': cargo.nombre if cargo else None,
-                'id_unidad_organizacional': historico.id_unidad_organizacional.id_unidad_organizacional,
-                'nombre_unidad_organizacional': unidad_organizacional.nombre if unidad_organizacional else None,
-                'fecha_inicial_historico': historico.fecha_inicial_historico,
-                'fecha_final_historico': historico.fecha_final_historico,
-                'observaciones_vinculni_cargo': historico.observaciones_vinculni_cargo,
-                'justificacion_cambio_und_org': historico.justificacion_cambio_und_org
-            })
-        serializador = self.serializer_class(historicos,many=True)
-        return Response({'success':True, 'detail': 'La persona con el id proporcionado tiene un historico asociado', 'data':serializador.data}, status=status.HTTP_200_OK)
 #BUSQUEDA ID PERSONA Y RETORNE LOS DATOS DE LA TABLA USUARIOS
 
 class BuscarIdPersona(generics.RetrieveAPIView):

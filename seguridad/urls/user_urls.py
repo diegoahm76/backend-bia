@@ -31,7 +31,6 @@ urlpatterns = [
     path('get-buscar-by-id-persona/<str:id_persona>/',views.BuscarIdPersona.as_view(),name='get-buscar-id-persona'),#creado 5
     path('unblock/', views.UnblockUser.as_view(), name='unblock-user'),
     path('password-unblock-complete/', views.UnBlockUserPassword.as_view(), name='password-unblock-complete'),
-    path('get-historico-cargo-und/<str:id_persona>/', views.BusquedaHistoricoCargoUnd.as_view(), name='historico_cargos_und'),
     path('reenviar-correo-verificacion-usuario/<str:id_usuario>/', views.ReenviarCorreoVerificacionDeUsuario.as_view(), name='reenviar-correo-verificacion-usuario'),
 
     #Login
