@@ -18,6 +18,8 @@ urlpatterns = [
     path('viverista-actual-by-id-vivero/<str:id_vivero>/',views.GetViveristaActual.as_view(),name='viverista-actual-by-id-vivero'),
     path('get-persona-viverista-nuevo-lupa/',views.GetPersonaFiltro.as_view(),name='get-persona-viverista-nuevo-lupa'),
     path('get-persona-viverista-nuevo-by-numero-documento/',views.GetPersonaByNumeroDocumento.as_view(),name='get-persona-viverista-nuevo-by-numero-documento'),
-    path('asignacion-viverista/<str:id_vivero>/',views.GuardarAsignacionViverista.as_view(),name='asignacion-viverista')
-    
+    path('asignacion-viverista/<str:id_vivero>/',views.GuardarAsignacionViverista.as_view(),name='asignacion-viverista'),
+    path('get-bienes-consumo-by-codigo-bien/',views.GetBienesConsumoByCodigoBien.as_view(),name="get-bienes-consumo-by-codigo-bien"),
+    path('get-bienes-consumo-filtro/',views.GetBienesConsumoFiltro.as_view(),name="get-bienes-consumo-filtro"),
+
 ]
