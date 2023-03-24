@@ -1,13 +1,237 @@
 from rest_framework import generics,status
 from rest_framework.response import Response
 from conservacion.models.viveros_models import HistoricoResponsableVivero, Vivero
-from gestion_documental.serializers.vinculacion_serializers import GetDesvinculacion_persona
+from gestion_documental.serializers.vinculacion_serializers import GetDesvinculacion_persona, VinculacionColaboradorSerializer, ConsultaVinculacionColaboradorSerializer, UpdateVinculacionColaboradorSerializer
 from seguridad.models import ClasesTerceroPersona, HistoricoActivacion, HistoricoCargosUndOrgPersona, Personas, User
 from rest_framework.permissions import IsAuthenticated
-from datetime import datetime
+from datetime import datetime, date, timedelta
 import copy
-
+from seguridad.models import Cargos, HistoricoCargosUndOrgPersona
+from almacen.models import UnidadesOrganizacionales
 from seguridad.utils import Util
+
+class VinculacionColaboradorView(generics.UpdateAPIView):
+    serializer_class = VinculacionColaboradorSerializer
+    queryset = Personas.objects.filter(tipo_persona='N')
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, id_persona):
+        persona = self.queryset.all().filter(id_persona=id_persona).first()
+        data = request.data
+
+        id_cargo = data.get('id_cargo')
+        id_unidad_organizacional_actual = data.get('id_unidad_organizacional_actual')
+        fecha_a_finalizar_cargo_actual = data.get('fecha_a_finalizar_cargo_actual')
+
+        if persona:
+            previous_persona = copy.copy(persona)
+            cargo_inst = Cargos.objects.filter(id_cargo=id_cargo).first()
+
+            if not all([id_cargo, id_unidad_organizacional_actual, fecha_a_finalizar_cargo_actual]):
+                return Response({'success': False, 'detail': 'Todos los campos son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # VALIDACIÓN UNIDAD ORG PERTENECE A ORGANIGRAMA ACTUAL
+            unidad_organizacional = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=id_unidad_organizacional_actual).first()
+            
+            if not unidad_organizacional:
+                return Response({'success': False, 'detail': 'La unidad organizacional no existe'}, status=status.HTTP_400_BAD_REQUEST)
+            organigrama = unidad_organizacional.id_organigrama
+            
+            if not organigrama.actual:
+                return Response({'success': False, 'detail': 'El organigrama al que pertenece la unidad organizacional no es actual'}, status=status.HTTP_400_BAD_REQUEST)
+                
+             # CAMBIAR UNIDAD ORGANIZACIONAL
+            persona.id_unidad_organizacional_actual = unidad_organizacional
+
+            # CAMBIAR DE CARGO
+            if not cargo_inst:
+                return Response({'success': False, 'detail': 'El cargo no existe'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # VALIDACIÓN CARGO ACTIVO
+            if not cargo_inst.activo:
+                return Response({'success': False, 'detail': 'El cargo seleccionado está inactivo'}, status=status.HTTP_400_BAD_REQUEST)
+        
+            persona.id_cargo = cargo_inst
+
+
+            # VALIDACIÓN FECHA A FINALIZAR POSTERIOR A LA ACTUAL
+
+            fecha_minima = (datetime.today() + timedelta(days=1)).date()
+            fecha_finalizar_cargo = (datetime.strptime(fecha_a_finalizar_cargo_actual, '%Y-%m-%d %H:%M:%S')).date()
+
+            if fecha_finalizar_cargo < fecha_minima:
+                return Response({'success': False, 'detail':'La fecha de finalización debe ser posterior a la fecha actual, mínimo el día siguiente'}, status=status.HTTP_403_FORBIDDEN)
+
+            else:
+                persona.fecha_a_finalizar_cargo_actual = fecha_finalizar_cargo
+
+            # GUARDAR CAMPOS ASIGNADOS
+            persona.es_unidad_organizacional_actual = True
+            persona.fecha_inicio_cargo_actual = datetime.now()
+            persona.observaciones_vinculacion_cargo_actual = data.get('observaciones_vinculacion_cargo_actual')
+            persona.fecha_asignacion_unidad = datetime.now()
+            
+            persona.save()
+        
+            # AUDITORÍA
+            usuario = request.user.id_usuario
+            direccion=Util.get_client_ip(request)
+            descripcion = {"TipodeDocumentoID": str(persona.tipo_documento), "NumeroDocumentoID": str(persona.numero_documento)}
+            valores_actualizados = {'current': persona, 'previous': previous_persona}
+
+            auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 72,
+                "cod_permiso": "AC",
+                "subsistema": 'GEST',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+                "valores_actualizados": valores_actualizados
+            }
+            Util.save_auditoria(auditoria_data)
+
+            return Response({'success': True, 'detail': 'La persona ha sido vinculada como colaborador y sus datos han sido actualizados'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success': False, 'detail': 'La persona no existe o es jurídica'},status=status.HTTP_404_NOT_FOUND)
+
+class ConsultaVinculacionColaboradorView(generics.ListAPIView):
+    serializer_class = ConsultaVinculacionColaboradorSerializer 
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_persona):
+        consulta_personas = Personas.objects.filter(id_persona=id_persona, tipo_persona='N', id_cargo__isnull=False, id_unidad_organizacional_actual__isnull=False)
+
+        if not consulta_personas:
+            return Response({'success':False, 'detail': 'La persona no esta vinculada como colaborador o no existe'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializador = self.serializer_class(consulta_personas, many=True)
+
+        persona = consulta_personas.first()
+
+        cargo = Cargos.objects.filter(id_cargo=persona.id_cargo_id).first()
+        nombre_cargo_actual = cargo.nombre if cargo else ""
+        data = serializador.data[0]
+        data['cargo_actual'] = nombre_cargo_actual
+
+        unidad = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=persona.id_unidad_organizacional_actual_id).first()
+        nombre_unidad_organizacional_actual = unidad.nombre if unidad else ""
+        data['unidad_organizacional_actual'] = nombre_unidad_organizacional_actual
+
+        fecha_a_finalizar_cargo_actual = persona.fecha_a_finalizar_cargo_actual if cargo else None
+        fecha_vencida = fecha_a_finalizar_cargo_actual and fecha_a_finalizar_cargo_actual < datetime.now()
+        data['fecha_vencida'] = fecha_vencida
+
+        return Response({'success':True, 'detail': 'La persona existe y está vinculada como colaborador', 'data':serializador.data}, status=status.HTTP_200_OK)
+    
+class UpdateVinculacionColaboradorView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = UpdateVinculacionColaboradorSerializer
+    queryset = Personas.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, id_persona):
+
+        persona = self.queryset.filter(id_persona=id_persona).first()
+        print(persona)
+        print(persona.tipo_persona)
+        if persona.tipo_persona != 'N' :
+            return Response( {'sucess': False, 'detail':'La persona que va a actualizar debe ser natural'},status=status.HTTP_403_FORBIDDEN)
+
+        data = request.data
+        cargo = data.get('id_cargo')
+        fecha_finalizar_cargo = data.get('fecha_a_finalizar_cargo_actual')
+        unidad = data.get('id_unidad_organizacional_actual')
+        observacion = data.get('observaciones_vinculacion_cargo_actual')
+        justificacion = data.get('justificacion_cambio_und_org')
+        fecha_actual = datetime.today()
+
+        if persona:
+
+            cargo_inst_current = Cargos.objects.filter(id_cargo=cargo).first()
+            cargo_inst = Cargos.objects.filter(id_cargo=persona.id_cargo.id_cargo).first()
+            unidad_inst = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=persona.id_unidad_organizacional_actual.id_unidad_organizacional).first()
+            unidad_inst_current = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=unidad).first()
+            previous_persona = copy.copy(persona) 
+
+            if not fecha_finalizar_cargo:
+                return Response( {'success':False, 'detail':'Debe enviar la fecha de finalización'}, status=status.HTTP_403_FORBIDDEN)
+
+            fecha_finalizar_cargo = (datetime.strptime(fecha_finalizar_cargo, '%Y-%m-%d %H:%M:%S'))
+
+            if cargo == persona.id_cargo.id_cargo and unidad == persona.id_unidad_organizacional_actual.id_unidad_organizacional and fecha_finalizar_cargo == persona.fecha_a_finalizar_cargo_actual:
+                return Response({'success': False, 'detail': 'No se ha realizado ninguna actualización'}, status=status.HTTP_403_FORBIDDEN)
+
+            if fecha_finalizar_cargo != persona.fecha_a_finalizar_cargo_actual:
+                fecha_minima = (datetime.today() + timedelta(days=1))
+
+                if fecha_finalizar_cargo < fecha_minima:
+                    return Response({'success': False, 'detail':'La fecha de finalización debe ser posterior a la fecha actual, mínimo el día siguiente'}, status=status.HTTP_403_FORBIDDEN)
+
+                else:
+                    persona.fecha_a_finalizar_cargo_actual = fecha_finalizar_cargo
+
+            fecha_inicio_cargo = persona.fecha_inicio_cargo_actual
+            fecha_asignacion_unidad = persona.fecha_asignacion_unidad
+
+            if persona.fecha_a_finalizar_cargo_actual > fecha_actual:
+                if cargo and cargo != persona.id_cargo.id_cargo:
+
+                    persona.id_cargo = cargo_inst_current
+                    persona.fecha_inicio_cargo_actual = fecha_actual
+
+                    if not fecha_finalizar_cargo or fecha_actual > fecha_finalizar_cargo:
+                        return Response({'success': False, 'detail':'Se debe enviar la fecha de finalización del cargo y tiene que ser mayor a la de inicio del cargo'}, status=status.HTTP_403_FORBIDDEN)
+                    if not observacion or observacion == '':
+                        return Response({'success': False, 'detail':'Se debe ingresar una observación'}, status=status.HTTP_403_FORBIDDEN)
+
+                if unidad != persona.id_unidad_organizacional_actual.id_unidad_organizacional:
+                    persona.id_unidad_organizacional_actual = unidad_inst_current
+                    persona.fecha_asignacion_unidad = fecha_actual
+    
+                    if not justificacion or justificacion == '':
+                        return Response({'success': False, 'detail':'Se debe ingresar una justificación'}, status=status.HTTP_403_FORBIDDEN)
+
+                if fecha_inicio_cargo < fecha_asignacion_unidad:
+                    fecha_final = fecha_asignacion_unidad
+                else:
+                    fecha_final=fecha_inicio_cargo
+
+                if unidad != persona.id_unidad_organizacional_actual or cargo != persona.id_cargo:
+                    HistoricoCargosUndOrgPersona.objects.create(
+                        id_persona = persona,
+                        id_unidad_organizacional = unidad_inst,
+                        id_cargo = cargo_inst,
+                        fecha_inicial_historico = fecha_final,
+                        fecha_final_historico = fecha_actual,
+                        justificacion_cambio_und_org = justificacion if unidad != unidad_inst.id_unidad_organizacional else '',
+                        observaciones_vinculni_cargo = observacion if fecha_inicio_cargo >= fecha_asignacion_unidad else None,
+                        desvinculado = False,
+                        fecha_desvinculacion = fecha_actual
+                    )
+                
+            else: return Response({'success':False,'detail':'La fecha a finalizar está vencida, por lo tanto se puede solo puede modificar la fecha de finalización'},status=status.HTTP_403_FORBIDDEN)
+         
+            persona.save()
+
+            #AUDITORÍA
+            usuario = request.user.id_usuario
+            direccion=Util.get_client_ip(request)
+            descripcion = {"TipodeDocumentoID": str(persona.tipo_documento), "NumeroDocumentoID": str(persona.numero_documento) }
+            valores_actualizados = {'current': persona, 'previous': previous_persona}
+
+            auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 72,
+                "cod_permiso": "AC",
+                "subsistema": 'GEST',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+                "valores_actualizados": valores_actualizados
+            }
+            Util.save_auditoria(auditoria_data)
+        else:
+            return Response({'success':False,'detail':'La persona no existe'}, status=status.HTTP_403_FORBIDDEN)
+       
+        return Response({'success':True,'detail':'Actualización exitosa'}, status=status.HTTP_200_OK)
 
 class Desvinculacion_persona(generics.UpdateAPIView):
     serializer_class = GetDesvinculacion_persona

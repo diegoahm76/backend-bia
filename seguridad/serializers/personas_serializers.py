@@ -751,13 +751,3 @@ class BusquedaHistoricoCargoUndSerializer(serializers.ModelSerializer):
     class Meta:
         model = HistoricoCargosUndOrgPersona
         fields = ['nombre_cargo', 'nombre_unidad_organizacional', 'fecha_inicial_historico', 'fecha_final_historico', 'observaciones_vinculni_cargo', 'justificacion_cambio_und_org']
-
-
-class ConsultaVinculacionColaboradorSerializer(serializers.ModelSerializer):
-    cargo_actual = serializers.CharField(source='id_cargo.nombre', read_only=True)
-    unidad_organizacional_actual = serializers.CharField(source='id_unidad_organizacional_actual.nombre', read_only=True)
-    fecha_vencida = serializers.BooleanField(read_only=True)
-    
-    class Meta:
-        model = Personas
-        fields = ('cargo_actual','unidad_organizacional_actual','fecha_inicio_cargo_actual', 'fecha_asignacion_unidad', 'fecha_a_finalizar_cargo_actual', 'observaciones_vinculacion_cargo_actual','fecha_vencida')
