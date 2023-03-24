@@ -251,7 +251,7 @@ class GetPersonasByTipoDocumentoAndNumeroDocumento(generics.GenericAPIView):
                 return Response({'success':False,'detail':'El documento ingresado existe en el sistema, sin embargo no tiene un correo electrónico de notificación asociado, debe acercarse a Cormacarena y realizar una actualizacion  de datos para proceder con la creación del usuario en el sistema', 'data':persona_serializer.data},status=status.HTTP_403_FORBIDDEN)
             return Response({'success': True, 'detail':'Se encontró la siguiente persona', 'data': persona_serializer.data}, status=status.HTTP_200_OK)
         else:
-            return Response({'success': False, 'detail': 'No existe una persona con los parametros ingresados'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': True, 'detail': 'No existe una persona con los parametros ingresados'}, status=status.HTTP_200_OK)
 
 class GetPersonasByID(generics.GenericAPIView):
     serializer_class = PersonasSerializer
@@ -980,7 +980,7 @@ class GetPersonasByFilters(generics.ListAPIView):
         personas = self.queryset.all().filter(**filter)
         
         serializer = self.serializer_class(personas, many=True)
-        return Response({'success':True, 'detail':'Se encontraron las siguientes personas que coinciden con los criterios de búsqueda', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+        return Response({'success':True, 'detail':'Se encontraron las siguientes personas que coinciden con los criterios de búsqueda', 'data':serializer.data}, status=status.HTTP_200_OK)
 
 class BusquedaHistoricoCambios(generics.ListAPIView):
     serializer_class = BusquedaHistoricoCambiosSerializer

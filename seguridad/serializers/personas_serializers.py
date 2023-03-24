@@ -89,9 +89,6 @@ class RepresentanteLegalSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class PersonasSerializer(serializers.ModelSerializer):
-    tipo_documento = TipoDocumentoSerializer(read_only=True)
-    estado_civil = EstadoCivilSerializer(read_only=True)
-    representante_legal = RepresentanteLegalSerializer(read_only=True)
     nombre_unidad_organizacional_actual=serializers.ReadOnlyField(source='id_unidad_organizacional_actual.nombre',default=None)
     tiene_usuario = serializers.SerializerMethodField()
     
