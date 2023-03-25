@@ -123,8 +123,12 @@ class UpdateVinculacionColaboradorView(generics.RetrieveUpdateDestroyAPIView):
         persona = self.queryset.filter(id_persona=id_persona).first()
         print(persona)
         print(persona.tipo_persona)
-        if persona.tipo_persona != 'N' :
+        
+        if persona.tipo_persona != 'N':
             return Response( {'sucess': False, 'detail':'La persona que va a actualizar debe ser natural'},status=status.HTTP_403_FORBIDDEN)
+        
+        if persona.id_cargo is None or persona.id_unidad_organizacional_actual is None:
+            return Response({'sucess': False, 'detail': 'La persona no se encuentra vinculada'}, status=status.HTTP_400_BAD_REQUEST)
 
         data = request.data
         cargo = data.get('id_cargo')
@@ -165,6 +169,7 @@ class UpdateVinculacionColaboradorView(generics.RetrieveUpdateDestroyAPIView):
             if persona.fecha_a_finalizar_cargo_actual > fecha_actual:
                 if cargo and cargo != persona.id_cargo.id_cargo:
 
+                    print("Entró acá",cargo_inst_current)
                     persona.id_cargo = cargo_inst_current
                     persona.fecha_inicio_cargo_actual = fecha_actual
 
@@ -195,7 +200,6 @@ class UpdateVinculacionColaboradorView(generics.RetrieveUpdateDestroyAPIView):
                         justificacion_cambio_und_org = justificacion if unidad != unidad_inst.id_unidad_organizacional else '',
                         observaciones_vinculni_cargo = observacion if fecha_inicio_cargo >= fecha_asignacion_unidad else None,
                         desvinculado = False,
-                        fecha_desvinculacion = fecha_actual
                     )
                 
             else: return Response({'success':False,'detail':'La fecha a finalizar está vencida, por lo tanto se puede solo puede modificar la fecha de finalización'},status=status.HTTP_403_FORBIDDEN)

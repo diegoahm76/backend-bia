@@ -751,4 +751,4 @@ class BusquedaHistoricoCargoUndSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = HistoricoCargosUndOrgPersona
-        fields = ['nombre_cargo', 'nombre_unidad_organizacional', 'fecha_inicial_historico', 'fecha_final_historico', 'observaciones_vinculni_cargo', 'justificacion_cambio_und_org']
+        fields = ['nombre_cargo', 'nombre_unidad_organizacional', 'fecha_inicial_historico', 'fecha_final_historico', 'observaciones_vinculni_cargo', 'justificacion_cambio_und_org','desvinculado','fecha_desvinculacion','observaciones_desvinculacion']

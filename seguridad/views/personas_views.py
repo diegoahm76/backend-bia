@@ -1390,7 +1390,9 @@ class BusquedaHistoricoCargoUnd(generics.ListAPIView):
 
     def get(self, request, id_persona):
         try:
-            persona = HistoricoCargosUndOrgPersona.objects.filter(id_persona=id_persona)
+            persona = HistoricoCargosUndOrgPersona.objects.filter(id_persona=id_persona).first()
+            if not persona:
+                return Response({'success':False, 'detail': 'La persona con el id proporcionado no tiene un historico asociado'}, status=status.HTTP_404_NOT_FOUND)
         except HistoricoCargosUndOrgPersona.DoesNotExist:
             return Response({'success':False, 'detail': 'La persona con el id proporcionado no tiene un historico asociado'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -1409,7 +1411,10 @@ class BusquedaHistoricoCargoUnd(generics.ListAPIView):
                 'fecha_inicial_historico': historico.fecha_inicial_historico,
                 'fecha_final_historico': historico.fecha_final_historico,
                 'observaciones_vinculni_cargo': historico.observaciones_vinculni_cargo,
-                'justificacion_cambio_und_org': historico.justificacion_cambio_und_org
+                'justificacion_cambio_und_org': historico.justificacion_cambio_und_org,
+                'desvinculado': historico.desvinculado,
+                'fecha_desvinculacion' : historico.fecha_desvinculacion,
+                'observaciones_desvinculacion' : historico.observaciones_desvinculacion
             })
         serializador = self.serializer_class(historicos,many=True)
         return Response({'success':True, 'detail': 'La persona con el id proporcionado tiene un historico asociado', 'data':serializador.data}, status=status.HTTP_200_OK)
