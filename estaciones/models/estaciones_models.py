@@ -7,7 +7,7 @@ from seguridad.choices.municipios_choices import municipios_CHOICES
 from seguridad.choices.tipo_documento_choices import tipo_documento_CHOICES
 
 class Estaciones(models.Model):
-    id_estacion = models.AutoField(primary_key=True, editable=False, db_column='T900IdEstacion')
+    id_estacion = models.AutoField(primary_key=True, editable=True, db_column='T900IdEstacion')
     fecha_modificacion = models.DateTimeField(null=True, blank=True, db_column='T900fechaModificacion')
     nombre_estacion = models.CharField(max_length=30, db_column='T900nombreEstacion')
     cod_tipo_estacion = models.CharField(max_length=2, choices=cod_tipo_estacion_choices, null=True, blank=True, db_column='T900codTipoEstacion')
