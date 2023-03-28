@@ -485,7 +485,6 @@ class TipificacionBienConsumoVivero(generics.UpdateAPIView):
         else:
             return Response({'success':False, 'detail':'No existe el bien ingresado'}, status=status.HTTP_404_NOT_FOUND)
         
-        
 class HistorialViveristaByVivero (generics.ListAPIView):
 
     serializer_class = HistorialViveristaByViveroSerializers
@@ -529,7 +528,7 @@ class GetViveristaActual(generics.ListAPIView):
         
         else:
             return Response ({'success':False,'detail':'El vivero no existe o no está activo'},status=status.HTTP_404_NOT_FOUND)
-           
+
         
 class GetPersonaFiltro (generics.ListAPIView):
     
@@ -644,6 +643,64 @@ class GuardarAsignacionViverista(generics.CreateAPIView):
                     
         
 
+class GetBienesConsumoFiltro (generics.ListAPIView):
+    
+    serializer_class = CatalogoBienesSerializer
+    queryset = CatalogoBienes.objects.all()
+    
+    def get (self,request):
+        
+        filter={}
+        
+        for key,value in request.query_params.items():
+            if key in ['codigo_bien','nombre_cientifico','nombre','cod_tipo_elemento_vivero']:
+                if key == 'codigo_bien':
+                    if value != "":
+                        filter[key+'__startswith']=value
+                elif key == 'nombre_cientifico' or key == 'nombre':
+                    if value != "":
+                        filter[key+'__icontains']=value
+                else:
+                    if value != "":
+                        filter[key]=value
+                    
+        filter['solicitable_vivero'] = True
+        filter['nivel_jerarquico'] = 5
+        filter['cod_tipo_bien'] = "C"
+        
+        bienes = self.queryset.all().filter(**filter)
+        
+        if bienes:
+            serializador = self.serializer_class(bienes,many = True)
+            
+            return Response({'success':True,'detail':'Se encontraron bienes','data':serializador.data},status=status.HTTP_200_OK)
+        
+        else: return Response({'success':True,'detail':'No se encontraron bienes'},status=status.HTTP_200_OK)
+
+class GetBienesConsumoByCodigoBien(generics.ListAPIView):
+    
+    serializer_class = CatalogoBienesSerializer
+    queryset = CatalogoBienes.objects.all()
+    
+    def get (self,request):
+        
+        filter={}
+        
+        codigo_bien = request.query_params.get('codigo_bien')
+                    
+        filter['solicitable_vivero'] = True
+        filter['nivel_jerarquico'] = 5
+        filter['cod_tipo_bien'] = "C"
+        filter['codigo_bien'] = codigo_bien
+        
+        bien = self.queryset.all().filter(**filter).first()
+        
+        if bien:
+            serializador = self.serializer_class(bien)
+            
+            return Response({'success':True,'detail':'Se encontró el bien','data':serializador.data},status=status.HTTP_200_OK)
+        
+        else: return Response({'success':True,'detail':'No se encontró el bien'},status=status.HTTP_200_OK)
             
         
         
