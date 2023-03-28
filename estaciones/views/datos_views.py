@@ -2,8 +2,8 @@ from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
-from estaciones.serializers.datos_serializers import DatosSerializer
-from estaciones.models.estaciones_models import Datos
+from estaciones.serializers.datos_serializers import DatosSerializer, DatosSerializerGuamal
+from estaciones.models.estaciones_models import Datos, DatosGuamal
 from datetime import datetime, timedelta
 
 # Listar Datos
@@ -110,5 +110,21 @@ class ConsultarDatosReportes(generics.ListAPIView):
         if datos:
             serializador = self.serializer_class(datos, many=True)
             return Response({'success': True, 'detail': 'Se encontraron los siguientes datos', 'data': serializador.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success': True, 'detail': 'No se encontraron datos'}, status=status.HTTP_404_NOT_FOUND)
+
+
+### usando vista Guamal
+
+class ConsultarDatosGuamal(generics.ListAPIView):
+    serializer_class = DatosSerializerGuamal
+    queryset = DatosGuamal.objects.all().using("bia-estaciones")
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        datos = self.queryset.all()
+        if datos:
+            serializador = self.serializer_class(datos, many=True)
+            return Response({'success': True, 'detail': 'Se encontraron los siguentes datos', 'data': serializador.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success': True, 'detail': 'No se encontraron datos'}, status=status.HTTP_404_NOT_FOUND)
