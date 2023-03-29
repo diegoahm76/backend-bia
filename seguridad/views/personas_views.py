@@ -54,7 +54,8 @@ from seguridad.models import (
     User,
     HistoricoCambiosIDPersonas,
     UsuariosRol,
-    Roles
+    Roles,
+    HistoricoCargosUndOrgPersona
 )
 
 from almacen.models import UnidadesOrganizacionales
@@ -93,7 +94,7 @@ from seguridad.serializers.personas_serializers import (
     BusquedaHistoricoCambiosSerializer,
     UpdatePersonasNaturalesSerializer,
     UpdatePersonasJuridicasSerializer,
-    ConsultaVinculacionColaboradorSerializer
+    BusquedaHistoricoCargoUndSerializer
 )
 
 # Views for Estado Civil
@@ -1055,40 +1056,6 @@ class ActualizarPersonasJurCamposRestringidosView(generics.UpdateAPIView):
             return Response({'success': True, 'detail': 'Se actualizó los datos de la persona jurídica','data':serializer.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success': False, 'detail': 'La persona no existe o es una persona natural'}, status=status.HTTP_404_NOT_FOUND)
-
-class ConsultaVinculacionColaboradorView(generics.ListAPIView):
-    serializer_class = ConsultaVinculacionColaboradorSerializer 
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, id_persona):
-        try:
-            persona = Personas.objects.filter(id_persona=id_persona).first()
-        except Personas.DoesNotExist:
-            return Response({'success':False, 'detail': 'La persona no existe'}, status=status.HTTP_404_NOT_FOUND)
-        
-        consulta_personas = Personas.objects.filter(id_persona=id_persona)
-
-        if not consulta_personas:
-            return Response({'success':False, 'detail': 'La persona no existe'}, status=status.HTTP_404_NOT_FOUND)
-
-        serializador = self.serializer_class(consulta_personas, many=True)
-
-        persona = consulta_personas.first()
-
-        cargo = Cargos.objects.filter(id_cargo=persona.id_cargo_id).first()
-        nombre_cargo_actual = cargo.nombre if cargo else ""
-        data = serializador.data[0]
-        data['cargo_actual'] = nombre_cargo_actual
-
-        unidad = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=persona.id_unidad_organizacional_actual_id).first()
-        nombre_unidad_organizacional_actual = unidad.nombre if unidad else ""
-        data['unidad_organizacional_actual'] = nombre_unidad_organizacional_actual
-
-        fecha_a_finalizar_cargo_actual = persona.fecha_a_finalizar_cargo_actual if cargo else None
-        fecha_vencida = fecha_a_finalizar_cargo_actual and fecha_a_finalizar_cargo_actual < datetime.now()
-        data['fecha_vencida'] = fecha_vencida
-
-        return Response({'success':True, 'detail': 'La persona existe', 'data':serializador.data}, status=status.HTTP_200_OK)
 """     
 # Views for Clases Tercero
 
@@ -1415,3 +1382,39 @@ class AutorizacionNotificacionesPersonas(generics.RetrieveUpdateAPIView):
                 return Response({'success': True, 'detail': 'Autorizacion no aceptada'}, status=status.HTTP_200_OK)
         else: 
             return Response({'success': False, 'detail': 'No envió las autorizaciones'}, status=status.HTTP_400_BAD_REQUEST)
+
+class BusquedaHistoricoCargoUnd(generics.ListAPIView):
+    serializer_class = BusquedaHistoricoCargoUndSerializer
+    queryset = HistoricoCargosUndOrgPersona.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_persona):
+        try:
+            persona = HistoricoCargosUndOrgPersona.objects.filter(id_persona=id_persona).first()
+            if not persona:
+                return Response({'success':False, 'detail': 'La persona con el id proporcionado no tiene un historico asociado'}, status=status.HTTP_404_NOT_FOUND)
+        except HistoricoCargosUndOrgPersona.DoesNotExist:
+            return Response({'success':False, 'detail': 'La persona con el id proporcionado no tiene un historico asociado'}, status=status.HTTP_404_NOT_FOUND)
+
+        historicos = HistoricoCargosUndOrgPersona.objects.filter(id_persona=id_persona)
+        cargos = Cargos.objects.all()
+        unidades_organizacionales = UnidadesOrganizacionales.objects.all()
+        data = []
+        for historico in historicos:
+            cargo = cargos.filter(id_cargo=historico.id_cargo.id_cargo).first()
+            unidad_organizacional = unidades_organizacionales.filter(id_unidad_organizacional=historico.id_unidad_organizacional.id_unidad_organizacional).first()
+            data.append({
+                'id_cargo': historico.id_cargo.id_cargo,
+                'nombre_cargo': cargo.nombre if cargo else None,
+                'id_unidad_organizacional': historico.id_unidad_organizacional.id_unidad_organizacional,
+                'nombre_unidad_organizacional': unidad_organizacional.nombre if unidad_organizacional else None,
+                'fecha_inicial_historico': historico.fecha_inicial_historico,
+                'fecha_final_historico': historico.fecha_final_historico,
+                'observaciones_vinculni_cargo': historico.observaciones_vinculni_cargo,
+                'justificacion_cambio_und_org': historico.justificacion_cambio_und_org,
+                'desvinculado': historico.desvinculado,
+                'fecha_desvinculacion' : historico.fecha_desvinculacion,
+                'observaciones_desvinculacion' : historico.observaciones_desvinculacion
+            })
+        serializador = self.serializer_class(historicos,many=True)
+        return Response({'success':True, 'detail': 'La persona con el id proporcionado tiene un historico asociado', 'data':serializador.data}, status=status.HTTP_200_OK)

@@ -27,7 +27,6 @@ urlpatterns = [
     
     path('get-persona-juridica/representante-legal/',views.GetPersonaJuridicaByRepresentanteLegal.as_view(),name='verify-persona-juridica'),
     path('buscar-historico-cambios/<str:id_persona>/', views.BusquedaHistoricoCambios.as_view(), name='buscar-historico-cambios'),
-    path('get-vinculacion-colaboradores/<str:id_persona>/', views.ConsultaVinculacionColaboradorView.as_view(), name='consulta-vinculacion-colaboradores'),
     
     # - Registros
     path('persona-natural-and-usuario/create/', views.CreatePersonaNaturalAndUsuario.as_view(), name='persona-natural-and-usuario-create'),
@@ -77,6 +76,9 @@ urlpatterns = [
     
     # Historico Direcciones
     path('historico-direcciones/get-list/', views.GetHistoricoDirecciones.as_view(), name="historico-direcciones-get"),
+
+    # Historico Cargo-Unidad
+    path('get-historico-cargo-und/<str:id_persona>/', views.BusquedaHistoricoCargoUnd.as_view(), name='historico_cargos_und'),
     
     # Cargos
     path('cargos/get-list/', views.GetCargosList.as_view(), name="cargos-get"),

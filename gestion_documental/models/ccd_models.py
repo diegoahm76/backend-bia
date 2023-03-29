@@ -34,8 +34,7 @@ class SubseriesDoc(models.Model):
         db_table = 'T204SubseriesDoc_CDD'
         verbose_name = 'Subserie'
         verbose_name_plural = 'Subseries'
-        unique_together = ['id_ccd', 'nombre']
-        unique_together = ['id_ccd', 'codigo']
+        unique_together = (('id_ccd','nombre'), ('id_ccd','codigo'))        
         ordering = ['nombre']
     
 class SeriesDoc(models.Model):
@@ -52,6 +51,7 @@ class SeriesDoc(models.Model):
         verbose_name = 'Serie'
         verbose_name_plural = 'Series'
         ordering = ['nombre']
+        unique_together =(('id_ccd','nombre'),('id_ccd','codigo'))       
     
 class SeriesSubseriesUnidadOrg(models.Model):
     id_serie_subserie_doc = models.AutoField(primary_key=True, editable=False, db_column='T205IdSerieSubserieDoc')
@@ -66,3 +66,4 @@ class SeriesSubseriesUnidadOrg(models.Model):
         db_table = 'T205Series_Subseries_UnidadOrg_CCD'
         verbose_name = 'Serie Subserie Unidad'
         verbose_name_plural = 'Series Subseries Unidades'
+        unique_together= ['id_unidad_organizacional','id_serie_doc','id_sub_serie_doc']
