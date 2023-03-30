@@ -74,13 +74,13 @@ class ConsultarDatosIdPrimerosDatos(generics.ListAPIView):
 
     def get_queryset(self):
         pk = self.kwargs.get('pk')
-        return Datos.objects.using("bia-estaciones").filter(id_estacion=pk).order_by('-fecha_registro')[:3000]
+        return Datos.objects.using("bia-estaciones").filter(id_estacion=pk).order_by('-fecha_registro')[:2000]
 
     def get(self, request, pk):
         queryset = self.get_queryset()
         if queryset:
             serializador = self.serializer_class(queryset, many=True)
-            return Response({'success': True, 'detail': 'Estos son los 500 primeros datos', 'data': serializador.data}, status=status.HTTP_200_OK)
+            return Response({'success': True, 'detail': 'Estos son los 2000 primeros datos', 'data': serializador.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success': False, 'detail': 'No se encontraron datos'}, status=status.HTTP_404_NOT_FOUND)
 
