@@ -96,80 +96,77 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
     queryset = User.objects.all()
     permission_classes = [IsAuthenticated, PermisoActualizarUsuarios]
 
-def patch(self, request, pk):
-    user_loggedin = request.user.id_usuario
+    def patch(self, request, pk):
+        user_loggedin = request.user.id_usuario
 
-    if int(user_loggedin) != int(pk):
-        user = User.objects.filter(id_usuario = pk).first()
-        id_usuario_afectado = user.id_usuario
-        id_usuario_operador = request.user.id_usuario
-        fecha_operacion = datetime.now()
-        justificacion = request.data.get('justificacion', '')
-        cod_operacion = ''
-        previous_user = copy.copy(user)
+        if int(user_loggedin) != int(pk):
+            user = User.objects.filter(id_usuario=pk).first()
+            id_usuario_afectado = user.id_usuario
+            id_usuario_operador = request.user.id_usuario
+            fecha_operacion = datetime.now()
+            justificacion = request.data.get('justificacion', '')
+            previous_user = copy.copy(user)
 
-        if user:
-            user_serializer = self.serializer_class(user, data=request.data)
-            user_serializer.is_valid(raise_exception=True)
-            user_serializer.save()
+            if user:
+                user_serializer = self.serializer_class(user, data=request.data)
+                user_serializer.is_valid(raise_exception=True)
+                tipo_usuario_ant = user.tipo_usuario
+                tipo_usuario_act = user_serializer.validated_data.get('tipo_usuario')
 
-            # Obtenemos el tipo de usuario actual
-            tipo_usuario_act = user_serializer.validated_data.get('tipo_usuario')
+                # VALIDACIÓN DE PERSONAS JURIDICAS 
+                if tipo_usuario_act == 'J' and tipo_usuario_ant != 'E':
+                    return Response({'error': 'Las personas jurídicas solo pueden ser usuarios externos.'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                # VALIDACIÓN NO SE PUEDE INTERNO A EXTERNO
+                if tipo_usuario_ant == 'I' and tipo_usuario_act == 'E':
+                    return Response({'error': 'No se puede actualizar el usuario de interno a externo.'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Si el tipo de usuario es externo y se actualiza a interno,
-            # se activa automáticamente
-            if tipo_usuario_act == 'I' and user.tipo_usuario != 'I':
-                user.is_active = True
+                # VALIDACIÓN EXTERNO INACTIVO PASA A INTERNO ACTIVO
+                if tipo_usuario_ant == 'E' and tipo_usuario_act == 'I':
+                    if not user.is_active:
+                        user.is_active = True
+                        user_serializer.validated_data['is_active'] = True
+                        user.tipo_usuario = 'I'
+                        user.save()
+                        return Response({'mensaje': 'La persona ahora es interna y se encuentra activa.'})
 
-            roles = user_serializer.validated_data.get("roles")
-            roles_actuales = UsuariosRol.objects.filter(id_usuario=pk).values('id_rol')
-            roles_previous = copy.copy(roles_actuales)
+                # Validación NO desactivar externo activo
+                if user.tipo_usuario == 'E' and user.is_active and 'is_active' in request.data and request.data['is_active'] == False:
+                    return Response({'error': 'No se puede desactivar un usuario externo activo.'}, status=status.HTTP_400_BAD_REQUEST)
 
-            roles_asignados = {}
+                # Validación SE PUEDE desactivar interno
+                if user.tipo_usuario == 'I' and 'is_active' in request.data and request.data['is_active'] == False:
+                    user.is_active = False
 
-            # ASIGNAR ROLES NUEVOS A USUARIO
-            for rol in roles:
-                rol_existe = UsuariosRol.objects.filter(id_usuario=pk, id_rol=rol["id_rol"])
-                if not rol_existe:
-                    rol_instance = Roles.objects.filter(id_rol=rol["id_rol"]).first()
-                    roles_asignados["nombre_rol_"+str(rol_instance.id_rol)] = rol_instance.nombre_rol
-                    UsuariosRol.objects.create(
-                        id_usuario = user,
-                        id_rol = rol_instance
-                    )
+                user_serializer.save()
+        
+                user_serializer.save()
+                roles = user_serializer.validated_data.get("roles")
+                roles_actuales = UsuariosRol.objects.filter(id_usuario=pk).values('id_rol')
+                roles_previous = copy.copy(roles_actuales)
 
-            # ELIMINAR ROLES A USUARIO
+                roles_asignados = {}
 
-            roles_eliminados = {}
-            roles_list = [rol['id_rol'] for rol in roles]
-            roles_eliminar = UsuariosRol.objects.filter(id_usuario=pk).exclude(id_rol__in=roles_list)
+                # ASIGNAR ROLES NUEVOS A USUARIO
+                for rol in roles:
+                    rol_existe = UsuariosRol.objects.filter(id_usuario=pk, id_rol=rol["id_rol"])
+                    if not rol_existe:
+                        rol_instance = Roles.objects.filter(id_rol=rol["id_rol"]).first()
+                        roles_asignados["nombre_rol_"+str(rol_instance.id_rol)] = rol_instance.nombre_rol
+                        UsuariosRol.objects.create(
+                            id_usuario = user,
+                            id_rol = rol_instance
+                        )
 
-            for rol in roles_eliminar:
-                roles_eliminados["nombre_rol_"+str(rol.id_rol.id_rol)] = rol.id_rol.nombre_rol
+                # ELIMINAR ROLES A USUARIO
+                roles_eliminados = {}
+                roles_list = [rol['id_rol'] for rol in roles]
+                roles_eliminar = UsuariosRol.objects.filter(id_usuario=pk).exclude(id_rol__in=roles_list)
 
-            roles_eliminar.delete()
-
-            # ACTUALIZAR TIPO DE USUARIO Y ESTADO DE ACTIVACIÓN
-            is_active_act = None
-            if 'is_active' in user_serializer.validated_data:
-                is_active_act = user_serializer.validated_data.get('is_active')
-            if tipo_usuario_act is not None:
-                if user.tipo_usuario != tipo_usuario_act:
-                    user.tipo_usuario = tipo_usuario_act
-                if is_active_act is not None:
-                    user.is_active = is_active_act
-                    if user.is_active:
-                        if is_active_act:
-                            cod_operacion = 'A'
-                            if user.tipo_usuario == 'E':
-                                justificacion = 'Activación automática por cambio de usuario externo a usuario interno'
-                        else:
-                            cod_operacion = 'B'
-                        if cod_operacion in ['A', 'B']:
-                            justificacion = user_serializer.validated_data.get('justificacion', '')
-                            if not justificacion:
-                                return Response({'error': 'La justificación es obligatoria al actualizar el estado de activación o bloqueo.'}, status=status.HTTP_400_BAD_REQUEST)
-                
+                for rol in roles_eliminar:
+                    roles_eliminados["nombre_rol_"+str(rol.id_rol.id_rol)] = rol.id_rol.nombre_rol
+                roles_eliminar.delete()
+            
                 # ACTUALIZAR FOTO DE USUARIO
                 foto_usuario = request.data.get('profile_img', None)
                 if foto_usuario:
@@ -177,46 +174,31 @@ def patch(self, request, pk):
                     user.save()
                     previous_user.profile_img = foto_usuario
                     return Response({'message': 'Foto de usuario actualizada correctamente.'}, status=status.HTTP_200_OK)
-                
-                # ACTUALIZAR ESTADO DE ACTIVACIÓN 
-                # is_active_act = user_serializer.validated_data.get('is_active')
-                # if is_active_act is not None:
-                #     previous_is_active = User.is_active
-                #     user.is_active = is_active_act
-                #     user.save()
-                # if previous_is_active != is_active_act:
-                #     if is_active_act:
-                #         cod_operacion = 'A'
-                #         if user.tipo_usuario == 'E':
-                #             justificacion = 'Activación automática por cambio de usuario externo a usuario interno'
-                    # else:
-                    #     cod_operacion = 'I'
-                    # if cod_operacion in ['A', 'I']:
-                    #     justificacion = request.data.get('justificacion', '')
-                    #     if not justificacion:
-                    #         return Response({'error': 'La justificación es obligatoria al actualizar el estado de activación o bloqueo.'}, status=status.HTTP_400_BAD_REQUEST)
-
 
                 # ACTUALIZAR ESTADO DE BLOQUEO 
                 is_blocked_act = user_serializer.validated_data.get('is_blocked')
                 if is_blocked_act is not None:
-                    previous_is_blocked = user.is_blocked
                     user.is_blocked = is_blocked_act
-                    user.save()
-                    if previous_is_blocked != is_blocked_act:
-                        if is_blocked_act:
-                            cod_operacion = 'B'
-                        else:
-                            cod_operacion = 'D'
-                            if cod_operacion in ['B', 'D']:
-                                justificacion = request.data.get('justificacion', '') 
-                                if not justificacion:
-                                    return Response({'error': 'La justificación es obligatoria al actualizar el estado de activación o bloqueo.'}, status=status.HTTP_400_BAD_REQUEST)
 
+                # HISTORICO 
                 usuario_afectado = User.objects.get(id_usuario=id_usuario_afectado)
                 usuario_operador = User.objects.get(id_usuario=id_usuario_operador)
-                
-                # HISTORICO 
+                cod_operacion = ""
+
+                if user.is_active != previous_user.is_active:
+                    cod_operacion += "A" if user.is_active else "I"
+
+                if user.is_blocked != previous_user.is_blocked:
+                    cod_operacion += "B" if user.is_blocked else "D"
+
+                if tipo_usuario_ant != tipo_usuario_act:
+                    if tipo_usuario_ant == 'E' and tipo_usuario_act == 'I':
+                        cod_operacion = "A"
+                        justificacion = "Activación automática por cambio de usuario externo a usuario interno"
+                    elif tipo_usuario_ant == 'I' and tipo_usuario_act == 'E':
+                        cod_operacion = "I"
+                        justificacion = " "
+
                 if cod_operacion:
                     HistoricoActivacion.objects.create(
                         id_usuario_afectado = usuario_afectado,
@@ -301,7 +283,6 @@ def patch(self, request, pk):
                     )
                     
                     auditoria_user.save()
-                
                 return Response({'success': True,'data': user_serializer.data}, status=status.HTTP_200_OK)
             else:
                 return Response({'success': False,'detail': 'No se encontró el usuario'}, status=status.HTTP_400_BAD_REQUEST)
@@ -589,8 +570,6 @@ class RegisterView(generics.CreateAPIView):
             return Response({'success':False,'detail': 'El tipo de usuario debe ser interno'}, status=status.HTTP_403_FORBIDDEN)
 
         serializador = serializer.save()
-        
-        print('')
 
         #AUDITORIA CREAR USUARIO
         dirip = Util.get_client_ip(request)
