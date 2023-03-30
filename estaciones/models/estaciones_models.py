@@ -243,7 +243,37 @@ class HistorialAlarmasEnviadasEstacion(models.Model):
         verbose_name = 'Historial Alarma Enviada Por Estacion'
         verbose_name_plural = 'Historial Alarmas Enviadas por Estacion'
 
- # Buscar datos por estación teniendo en cuenta una vista
+# modelo para tabla para estacion acciitas y chichimene
+
+class Migracion(models.Model):
+    d_estacion = models.ForeignKey(
+        Estaciones, on_delete=models.CASCADE, db_column='Id_Estacion')
+    nombre = models.TextField(db_column='nombre')
+    sensor1 = models.TextField(db_column='sensor1')
+    sensor2 = models.TextField(db_column='sensor2')
+    sensor3 = models.TextField(db_column='sensor3')
+    sensor4 = models.TextField(db_column='sensor4')
+    sensor5 = models.TextField(db_column='sensor5')
+    sensor6 = models.TextField(db_column='sensor6')
+    sensor7 = models.TextField(db_column='sensor7')
+    sensor8 = models.TextField(db_column='sensor8')
+    sensor9 = models.TextField(db_column='sensor9')
+    sensor10 = models.TextField(db_column='sensor10')
+    sensor11 = models.TextField(db_column='sensor11')
+    sensor12 = models.TextField(db_column='sensor12')
+    sensor13 = models.TextField(db_column='sensor13')
+    sensor14 = models.TextField(db_column='sensor14')
+    sensor15 = models.TextField(db_column='sensor15')
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        db_table = 'T908Migracion'
+        verbose_name = 'Migracion'
+        verbose_name_plural = 'Migraciones'
+
+# Buscar datos por estación teniendo en cuenta una vista
 
 
 class DatosGuamal(models.Model):
@@ -271,13 +301,20 @@ class DatosGuamal(models.Model):
     velocidad_agua = models.DecimalField(
         max_digits=18, decimal_places=4, db_column='T901velocidadAgua')
 
-    def __str__(self):
-        return str(self.id_data)
-
     class Meta:
+        managed = False
         db_table = 'Guamal'
-        verbose_name = 'Dato'
-        verbose_name_plural = 'Datos'
+        verbose_name = 'Dato de Guamal'
+        verbose_name_plural = 'Datos de Guamal'
+
+    @classmethod
+    def create_view(cls):
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                CREATE VIEW datos_guamal AS
+                SELECT * FROM T901Datos WHERE T901Id_Estacion_id = 1
+                ORDER BY T901fechaRegistro DESC
+            """)
 
 
 class DatosOcoa(models.Model):
