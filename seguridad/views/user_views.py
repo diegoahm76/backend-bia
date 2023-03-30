@@ -115,11 +115,11 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
 
                 # VALIDACIÓN DE PERSONAS JURIDICAS 
                 if tipo_usuario_act == 'J' and tipo_usuario_ant != 'E':
-                    return Response({'error': 'Las personas jurídicas solo pueden ser usuarios externos.'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'success': False, 'detail': 'Las personas jurídicas solo pueden ser usuarios externos'}, status=status.HTTP_400_BAD_REQUEST)
                     
                 # VALIDACIÓN NO SE PUEDE INTERNO A EXTERNO
                 if tipo_usuario_ant == 'I' and tipo_usuario_act == 'E':
-                    return Response({'error': 'No se puede actualizar el usuario de interno a externo.'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'success': False,'detail': 'No se puede actualizar el usuario de interno a externo'}, status=status.HTTP_400_BAD_REQUEST)
 
                 # VALIDACIÓN EXTERNO INACTIVO PASA A INTERNO ACTIVO
                 if tipo_usuario_ant == 'E' and tipo_usuario_act == 'I':
@@ -128,18 +128,17 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                         user_serializer.validated_data['is_active'] = True
                         user.tipo_usuario = 'I'
                         user.save()
-                        return Response({'mensaje': 'La persona ahora es interna y se encuentra activa.'})
+                        return Response({'success': False, 'detail': 'La persona ahora es interna y se encuentra activa'}, status=status.HTTP_400_BAD_REQUEST)
 
                 # Validación NO desactivar externo activo
                 if user.tipo_usuario == 'E' and user.is_active and 'is_active' in request.data and request.data['is_active'] == False:
-                    return Response({'error': 'No se puede desactivar un usuario externo activo.'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'success': False,'detail': 'No se puede desactivar un usuario externo activo'}, status=status.HTTP_400_BAD_REQUEST)
 
                 # Validación SE PUEDE desactivar interno
                 if user.tipo_usuario == 'I' and 'is_active' in request.data and request.data['is_active'] == False:
                     user.is_active = False
-
-                user_serializer.save()
-        
+                    return Response({'success': False,'detail': 'Usuario interno desactivado'}, status=status.HTTP_400_BAD_REQUEST)
+                
                 user_serializer.save()
                 roles = user_serializer.validated_data.get("roles")
                 roles_actuales = UsuariosRol.objects.filter(id_usuario=pk).values('id_rol')
@@ -283,7 +282,7 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                     )
                     
                     auditoria_user.save()
-                return Response({'success': True,'data': user_serializer.data}, status=status.HTTP_200_OK)
+                return Response({'success': True, 'detail':'Actualización exitosa','data': user_serializer.data}, status=status.HTTP_200_OK)
             else:
                 return Response({'success': False,'detail': 'No se encontró el usuario'}, status=status.HTTP_400_BAD_REQUEST)
         else:
