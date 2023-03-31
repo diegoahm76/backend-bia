@@ -5,6 +5,6 @@ tipo_persona_LIST = [
     },
     {
         "value": "J",
-        "label": "Juridica"
+        "label": "Jurídica"
     }
 ]
