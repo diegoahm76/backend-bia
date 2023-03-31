@@ -17,5 +17,6 @@ urlpatterns = [
     path('tipo-persona/', views.TipoPersonaChoices.as_view(), name='tipo-persona'),
     path('tipo-usuario/', views.TipoUsuarioChoices.as_view(), name='tipo-usuario'),
     path('direcciones/', views.DireccionesChoices.as_view(), name='direcciones'),
-    path('clases-tercero/', views.ClaseTerceroChoices.as_view(), name='clases-tercero')
+    path('clases-tercero/', views.ClaseTerceroChoices.as_view(), name='clases-tercero'),
+    path('cod-naturaleza-empresa/', views.CodNaturalezaEmpresaChoices.as_view(), name='cod-naturaleza-empresa')
 ]
