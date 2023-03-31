@@ -24,6 +24,7 @@ from seguridad.lists.indicativo_paises_list import indicativo_paises_LIST
 from seguridad.lists.departamentos_list import departamentos_LIST
 from seguridad.lists.municipios_list import municipios_LIST
 from seguridad.lists.paises_list import paises_LIST
+from seguridad.lists.cod_naturaleza_empresa_list import cod_naturaleza_empresa_LIST
 
 class GetListTipoDocumento(APIView):
     def get(self, request):
@@ -103,3 +104,6 @@ class GetListMunicipios(generics.ListAPIView):
         serializer = self.serializer_class(municipios, many=True)
         return Response({'success': True, 'detail': 'Se encontraron los siguientes municipios', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+class GetLisCodNaturalezEmpresa(APIView):
+    def get(self, request):
+        return Response({'success': True, 'detail': 'Los códigos de la naturaleza de una empresa son los siguientes', 'data': cod_naturaleza_empresa_LIST}, status=status.HTTP_200_OK)
