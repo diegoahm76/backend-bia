@@ -98,20 +98,54 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
 
     def patch(self, request, pk):
         user_loggedin = request.user.id_usuario
+
         if int(user_loggedin) != int(pk):
-            user = User.objects.filter(id_usuario = pk).first()
+            user = User.objects.filter(id_usuario=pk).first()
+            id_usuario_afectado = user.id_usuario
+            id_usuario_operador = request.user.id_usuario
+            fecha_operacion = datetime.now()
+            justificacion = request.data.get('justificacion', '')
             previous_user = copy.copy(user)
+
             if user:
                 user_serializer = self.serializer_class(user, data=request.data)
                 user_serializer.is_valid(raise_exception=True)
-                user_serializer.save()
+                tipo_usuario_ant = user.tipo_usuario
+                tipo_usuario_act = user_serializer.validated_data.get('tipo_usuario')
+
+                # VALIDACIÓN DE PERSONAS JURIDICAS 
+                if tipo_usuario_act == 'J' and tipo_usuario_ant != 'E':
+                    return Response({'success': False, 'detail': 'Las personas jurídicas solo pueden ser usuarios externos'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                # VALIDACIÓN NO SE PUEDE INTERNO A EXTERNO
+                if tipo_usuario_ant == 'I' and tipo_usuario_act == 'E':
+                    return Response({'success': False,'detail': 'No se puede actualizar el usuario de interno a externo'}, status=status.HTTP_400_BAD_REQUEST)
+
+                # VALIDACIÓN EXTERNO INACTIVO PASA A INTERNO ACTIVO
+                if tipo_usuario_ant == 'E' and tipo_usuario_act == 'I':
+                    if not user.is_active:
+                        user.is_active = True
+                        user_serializer.validated_data['is_active'] = True
+                        user.tipo_usuario = 'I'
+                        user.save()
+                        return Response({'success': False, 'detail': 'La persona ahora es interna y se encuentra activa'}, status=status.HTTP_400_BAD_REQUEST)
+
+                # Validación NO desactivar externo activo
+                if user.tipo_usuario == 'E' and user.is_active and 'is_active' in request.data and request.data['is_active'] == False:
+                    return Response({'success': False,'detail': 'No se puede desactivar un usuario externo activo'}, status=status.HTTP_400_BAD_REQUEST)
+
+                # Validación SE PUEDE desactivar interno
+                if user.tipo_usuario == 'I' and 'is_active' in request.data and request.data['is_active'] == False:
+                    user.is_active = False
+                    return Response({'success': False,'detail': 'Usuario interno desactivado'}, status=status.HTTP_400_BAD_REQUEST)
                 
+                user_serializer.save()
                 roles = user_serializer.validated_data.get("roles")
                 roles_actuales = UsuariosRol.objects.filter(id_usuario=pk).values('id_rol')
                 roles_previous = copy.copy(roles_actuales)
-                
+
                 roles_asignados = {}
-                
+
                 # ASIGNAR ROLES NUEVOS A USUARIO
                 for rol in roles:
                     rol_existe = UsuariosRol.objects.filter(id_usuario=pk, id_rol=rol["id_rol"])
@@ -122,20 +156,59 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                             id_usuario = user,
                             id_rol = rol_instance
                         )
-                
+
                 # ELIMINAR ROLES A USUARIO
-                
                 roles_eliminados = {}
-                
                 roles_list = [rol['id_rol'] for rol in roles]
-                
                 roles_eliminar = UsuariosRol.objects.filter(id_usuario=pk).exclude(id_rol__in=roles_list)
-                
+
                 for rol in roles_eliminar:
                     roles_eliminados["nombre_rol_"+str(rol.id_rol.id_rol)] = rol.id_rol.nombre_rol
-                
                 roles_eliminar.delete()
+            
+                # ACTUALIZAR FOTO DE USUARIO
+                foto_usuario = request.data.get('profile_img', None)
+                if foto_usuario:
+                    user.profile_img = foto_usuario
+                    user.save()
+                    previous_user.profile_img = foto_usuario
+                    return Response({'message': 'Foto de usuario actualizada correctamente.'}, status=status.HTTP_200_OK)
+
+                # ACTUALIZAR ESTADO DE BLOQUEO 
+                is_blocked_act = user_serializer.validated_data.get('is_blocked')
+                if is_blocked_act is not None:
+                    user.is_blocked = is_blocked_act
+
+                # HISTORICO 
+                usuario_afectado = User.objects.get(id_usuario=id_usuario_afectado)
+                usuario_operador = User.objects.get(id_usuario=id_usuario_operador)
+                cod_operacion = ""
+
+                if user.is_active != previous_user.is_active:
+                    cod_operacion += "A" if user.is_active else "I"
+
+                if user.is_blocked != previous_user.is_blocked:
+                    cod_operacion += "B" if user.is_blocked else "D"
+
+                if tipo_usuario_ant != tipo_usuario_act:
+                    if tipo_usuario_ant == 'E' and tipo_usuario_act == 'I':
+                        cod_operacion = "A"
+                        justificacion = "Activación automática por cambio de usuario externo a usuario interno"
+                    elif tipo_usuario_ant == 'I' and tipo_usuario_act == 'E':
+                        cod_operacion = "I"
+                        justificacion = " "
+
+                if cod_operacion:
+                    HistoricoActivacion.objects.create(
+                        id_usuario_afectado = usuario_afectado,
+                        cod_operacion = cod_operacion,
+                        fecha_operacion = fecha_operacion,
+                        justificacion = justificacion,
+                        usuario_operador = usuario_operador,
+                    )
                 
+                user.save()
+
                 # AUDITORIA AL ACTUALIZAR USUARIO
 
                 dirip = Util.get_client_ip(request)
@@ -209,8 +282,7 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                     )
                     
                     auditoria_user.save()
-                
-                return Response({'success': True,'data': user_serializer.data}, status=status.HTTP_200_OK)
+                return Response({'success': True, 'detail':'Actualización exitosa','data': user_serializer.data}, status=status.HTTP_200_OK)
             else:
                 return Response({'success': False,'detail': 'No se encontró el usuario'}, status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -462,6 +534,8 @@ class RegisterView(generics.CreateAPIView):
         user_logeado = request.user.id_usuario
         data = request.data
         redirect_url=request.data.get('redirect_url','')
+        tipo_usuario = data.get('tipo_usuario')
+        fecha_actual = datetime.today()
         
         if " " in data['nombre_de_usuario']:
             return Response({'success':False,'detail':'No puede contener espacios en el nombre de usuario'},status=status.HTTP_403_FORBIDDEN)
@@ -479,6 +553,13 @@ class RegisterView(generics.CreateAPIView):
         if usuario:
             return Response ({'success':False,'detail':'la persona ya posee un usuario en el sistema, en caso de pérdida de credenciales debe usar las opciones de recuperación'},status=status.HTTP_403_FORBIDDEN)
 
+        # VALIDACIÓN DE CARGO ACTUAL SI EL TIPO DE USUARIO ES INTERNO
+        if tipo_usuario == 'I':
+            cargo_actual = persona.id_cargo
+            fecha_fin_cargo_actual = persona.fecha_a_finalizar_cargo_actual
+            if not cargo_actual or not fecha_fin_cargo_actual or fecha_fin_cargo_actual <= fecha_actual:
+                return Response({'success': False,'detail': 'La persona no tiene un cargo actual o el cargo actual está vencido, no se puede crear el usuario'}, status=status.HTTP_403_FORBIDDEN)
+
         #CREAR USUARIO
         serializer = self.serializer_class(data=data, many=False)
         serializer.is_valid(raise_exception=True)
@@ -488,9 +569,6 @@ class RegisterView(generics.CreateAPIView):
             return Response({'success':False,'detail': 'El tipo de usuario debe ser interno'}, status=status.HTTP_403_FORBIDDEN)
 
         serializador = serializer.save()
-        
-        print('')
-        #usuario = User.objects.get(nombre_de_usuario=nombre_usuario_creado)
 
         #AUDITORIA CREAR USUARIO
         dirip = Util.get_client_ip(request)

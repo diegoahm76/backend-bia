@@ -81,7 +81,7 @@ class UserPutSerializer(serializers.ModelSerializer):
         if not re.search(r'\d', value):
             raise serializers.ValidationError('La contraseña debe contener al menos un número.')
         if not re.search(r'[^A-Za-z0-9]', value):
-            raise serializers.ValidationError('La contraseña debe contener al menos un caracter especial.')
+            raise serializers.ValidationError('La contraseña debe contener al menos un .')
         return value
     
     def validate(self, data):
@@ -106,9 +106,14 @@ class UserPutAdminSerializer(serializers.ModelSerializer):
     nombre_de_usuario = serializers.CharField(max_length=30, min_length=6, validators=[UniqueValidator(queryset=User.objects.all())])
     tipo_usuario = serializers.CharField(max_length=1, write_only=True)
     roles = serializers.ListField(child=serializers.DictField())
+    profile_img = serializers.ImageField(required=False)
+    is_active = serializers.BooleanField(required=False)
+    is_blocked = serializers.BooleanField(write_only=True)
+    justificacion = serializers.CharField(max_length=255, write_only=True, required=False)
+
     class Meta:
         model = User
-        fields = ['nombre_de_usuario', 'is_active', 'is_blocked', 'tipo_usuario', 'roles']
+        fields = ['nombre_de_usuario', 'is_active', 'is_blocked', 'tipo_usuario', 'profile_img','justificacion','roles']
 
 class UsuarioRolesLookSerializers(serializers.ModelSerializer):
     id_usuario = UserSerializer(read_only=True)
@@ -117,12 +122,13 @@ class UsuarioRolesLookSerializers(serializers.ModelSerializer):
         fields='__all__'
 
 class RegisterSerializer(serializers.ModelSerializer):
+    
     password = serializers.CharField(max_length= 68, min_length = 6, write_only=True)
     roles = serializers.ListField(child=serializers.DictField(), read_only=True)
     
     class Meta:
         model = User
-        fields = ['nombre_de_usuario', 'persona', 'password', 'id_usuario_creador', 'tipo_usuario', 'is_active', 'is_blocked', 'roles']
+        fields = ['nombre_de_usuario', 'persona', 'password', 'id_usuario_creador', 'tipo_usuario', 'is_blocked', 'roles']
 
     def validate(self, attrs):
         nombre_de_usuario=attrs.get('nombre_de_usuario', '')
@@ -389,7 +395,7 @@ class GetBusquedaNombreUsuario(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = User
-        
+
 #BUQUEDA DE PERSONA POR ID Y TRAIGA LA LISTA DE LOS DATOS DE LA TABLA USUARIOS
 
 class GetBuscarIdPersona(serializers.ModelSerializer): #modelserializer para identificadores
