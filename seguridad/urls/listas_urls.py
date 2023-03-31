@@ -27,5 +27,5 @@ urlpatterns = [
     path('tipo-direccion/', views.GetLisTipoDireccion.as_view(), name='get-list-tipo-direccion'),
     path('direcciones/', views.GetLisDirecciones.as_view(), name='get-list-direcciones'),
     path('indicativo-pais/', views.GetLisIndicativoPais.as_view(), name='get-list-indicativo-pais'),
-    path('cod-naturaleza-empresa', views.GetLisIndicativoPais.as_view(), name='get-list-indicativo-pais'),
+    path('cod-naturaleza-empresa/', views.GetLisCodNaturalezEmpresa.as_view(), name='get-list-cod-naturaleza-empresa'),
 ]
