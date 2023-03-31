@@ -2,13 +2,13 @@ from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
-from estaciones.serializers.configuracion_alertas_serializers import ConfiguracionAlertasCreateSerializer ,ConfiguracionAlertasUpdateSerializer
+from estaciones.serializers.configuracion_alertas_serializers import ConfiguracionAlertasCreateSerializer ,ConfiguracionAlertasUpdateSerializer, ConfiguracionAlertasGetSerializer
 from estaciones.models.estaciones_models import ConfiguracionAlertaPersonas
 
 # Listar Alerta
 
 class ConsultarAlertaEstacion(generics.ListAPIView):
-    serializer_class = ConfiguracionAlertasCreateSerializer
+    serializer_class = ConfiguracionAlertasGetSerializer
     queryset = ConfiguracionAlertaPersonas.objects.all().using('bia-estaciones')
     permission_classes = [IsAuthenticated]
 

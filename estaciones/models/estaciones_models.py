@@ -117,8 +117,8 @@ class ParametrosReferencia(models.Model):
         max_digits=18, decimal_places=4, db_column='T902velocidadAguaMax')
     velocidad_agua_min = models.DecimalField(
         max_digits=18, decimal_places=4, db_column='T902velocidadAguaMin')
-    id_persona_modifica = models.PositiveIntegerField(
-        null=True, blank=True, db_column='T902Id_PersonaModifica')
+    id_persona_modifica = models.IntegerField(
+        null=True, blank=True, db_column='T900id_PersonaModifica')
 
     def __str__(self):
         return str(self.id_parametro_referencia)
@@ -245,6 +245,7 @@ class HistorialAlarmasEnviadasEstacion(models.Model):
 
 # modelo para tabla para estacion acciitas y chichimene
 
+
 class Migracion(models.Model):
     d_estacion = models.ForeignKey(
         Estaciones, on_delete=models.CASCADE, db_column='Id_Estacion')
@@ -301,20 +302,13 @@ class DatosGuamal(models.Model):
     velocidad_agua = models.DecimalField(
         max_digits=18, decimal_places=4, db_column='T901velocidadAgua')
 
-    class Meta:
-        managed = False
-        db_table = 'Guamal'
-        verbose_name = 'Dato de Guamal'
-        verbose_name_plural = 'Datos de Guamal'
+    def __str__(self):
+        return str(self.id_data)
 
-    @classmethod
-    def create_view(cls):
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                CREATE VIEW datos_guamal AS
-                SELECT * FROM T901Datos WHERE T901Id_Estacion_id = 1
-                ORDER BY T901fechaRegistro DESC
-            """)
+    class Meta:
+        db_table = 'Guamal'
+        verbose_name = 'Dato'
+        verbose_name_plural = 'Datos'
 
 
 class DatosOcoa(models.Model):
@@ -349,6 +343,7 @@ class DatosOcoa(models.Model):
         db_table = 'Ocoa'
         verbose_name = 'Dato'
         verbose_name_plural = 'Datos'
+
 
 class DatosGuayuriba(models.Model):
     id_data = models.AutoField(
