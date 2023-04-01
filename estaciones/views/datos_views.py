@@ -49,7 +49,6 @@ class ConsultarDatosOptimizado(generics.ListAPIView):
 
         return Response(response_data, status=status.HTTP_200_OK)
 
-
 # consultar datos por el id estacion
 
 class ConsultarDatosId(generics.ListAPIView):
@@ -61,12 +60,11 @@ class ConsultarDatosId(generics.ListAPIView):
         estaciones = self.queryset.filter(id_estacion=pk)
         if estaciones:
             serializador = self.serializer_class(estaciones, many=True)
-            return Response({'success': True, 'detail': 'Se encontró', 'data': serializador.data}, status=status.HTTP_200_OK)
+            return Response({'success': True, 'detail': 'Se encontraron los siguentes datos', 'data': serializador.data}, status=status.HTTP_200_OK)
         else:
-            return Response({'success': False, 'detail': 'error'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': True, 'detail': 'No se encontraron datos'}, status=status.HTTP_404_NOT_FOUND)
 
 # consultar datos por el id estacion primeros 500 datos
-
 
 class ConsultarDatosIdPrimerosDatos(generics.ListAPIView):
     serializer_class = DatosSerializer
