@@ -1,15 +1,27 @@
 from estaciones.models.estaciones_models import ParametrosReferencia
 from rest_framework import serializers
+from seguridad.models import Personas
 
 class ParametrosEstacionesSerializer(serializers.ModelSerializer):
-    
-    def create(self, validated_data):
+    nombre_persona_modifica = serializers.SerializerMethodField()
+
+    def get(self, validated_data):
         Modelclass= ParametrosReferencia
         try:
             instance=Modelclass.objects.db_manager("bia-estaciones").create(**validated_data)
         except TypeError:
             raise TypeError()
         return instance
+    
+    def get_nombre_persona_modifica(self, obj):
+        nombre_persona_modifica = None
+
+        persona = Personas.objects.filter(id_persona=obj.id_persona_modifica).first()
+        if persona:
+            nombre_list = [persona.primer_nombre, persona.segundo_nombre, persona.primer_apellido, persona.segundo_apellido]
+            nombre_persona_modifica = ' '.join(item for item in nombre_list if item is not None)
+        return nombre_persona_modifica
+
 
     class Meta:
         model=ParametrosReferencia
