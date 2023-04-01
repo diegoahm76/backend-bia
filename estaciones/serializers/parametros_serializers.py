@@ -3,6 +3,7 @@ from rest_framework import serializers
 from seguridad.models import Personas
 
 class ParametrosEstacionesSerializer(serializers.ModelSerializer):
+    nombre_estacion = serializers.ReadOnlyField(source='id_estacion.nombre_estacion', default=None)
     nombre_persona_modifica = serializers.SerializerMethodField()
 
     def get(self, validated_data):
