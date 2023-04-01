@@ -32,6 +32,7 @@ class ActualizarParametro(generics.UpdateAPIView):
         data['fecha_modificacion']= fecha_modificacion
 
         parametro=self.queryset.all().filter(id_parametro_referencia=pk).first()
+        
         if parametro:
             serializador=self.serializer_class(parametro, data=data)
             serializador.is_valid(raise_exception=True)
