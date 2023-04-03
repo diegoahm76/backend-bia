@@ -104,10 +104,40 @@ class UpdatePermisoModulo(RetrieveUpdateAPIView):
     serializer_class = PermisosModuloPostSerializer
     queryset = PermisosModulo.objects.all()
 
+# class ListarPermisosModulo(ListAPIView):
+#     serializer_class = PermisosModuloSerializer
+#     def get_queryset(self):
+#         return PermisosModulo.objects.all()
+
 class ListarPermisosModulo(ListAPIView):
-    serializer_class = PermisosModuloSerializer
-    def get_queryset(self):
-        return PermisosModulo.objects.all()
+    serializer_class = GetPermisosRolSerializer
+    queryset = PermisosModuloRol.objects.all()
+    
+    def get(self, request):
+        # permisos_modulo_rol = self.queryset.all()
+        # modulos_list = [permiso_modulo_rol.id_permiso_modulo.id_modulo.id_modulo for permiso_modulo_rol in permisos_modulo_rol]
+        modulos = Modulos.objects.all()
+        serializer_modulos = ModulosRolSerializer(modulos, many=True)
+        modulos_data = serializer_modulos.data
+        
+        modulos_data = sorted(modulos_data, key=operator.itemgetter("subsistema", "desc_subsistema"))
+        outputList = []
+        
+        for subsistema, info_modulos in itertools.groupby(modulos_data, key=operator.itemgetter("subsistema", "desc_subsistema")):
+            modulos = list(info_modulos)
+            
+            for modulo in modulos:
+                del modulo['subsistema']
+                del modulo['desc_subsistema']
+                
+            subsistema_data = {
+                "subsistema": subsistema[0],
+                "desc_subsistema": subsistema[1],
+                "modulos": modulos
+            }
+            outputList.append(subsistema_data)
+            
+        return Response({'success':True,'detail':'Se encontraron los siguientes permisos por módulo', 'data':outputList}, status=status.HTTP_200_OK)
 
 class DetailPermisosModulo(RetrieveAPIView):
     serializer_class = PermisosModuloSerializer

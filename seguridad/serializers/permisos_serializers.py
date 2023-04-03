@@ -47,19 +47,42 @@ class GetPermisosRolSerializer(serializers.ModelSerializer):
     class Meta:
         model = PermisosModuloRol
         fields = ['id_permiso_modulo', 'cod_permiso', 'nombre_permiso']
-        
+
+class GetPermisosModuloSerializer(serializers.ModelSerializer):
+    cod_permiso = serializers.ReadOnlyField(source='cod_permiso.cod_permiso', default=None)
+    nombre_permiso = serializers.ReadOnlyField(source='cod_permiso.nombre_permiso', default=None)
+    
+    class Meta:
+        model = PermisosModulo
+        fields = '__all__'
+
 class ModulosRolSerializer(serializers.ModelSerializer):
     desc_subsistema = serializers.SerializerMethodField()
     permisos = serializers.SerializerMethodField()
     
     def get_permisos(self, obj):
         id_rol = self.context.get("id_rol")
-        permisos_modulo_rol = PermisosModuloRol.objects.filter(id_permiso_modulo__id_modulo=obj.id_modulo, id_rol=id_rol)
-        permisos = GetPermisosRolSerializer(permisos_modulo_rol, many=True)
+        
+        if id_rol:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(id_permiso_modulo__id_modulo=obj.id_modulo, id_rol=id_rol)
+            permisos = GetPermisosRolSerializer(permisos_modulo_rol, many=True)
+        else:
+            permisos_modulo_rol = PermisosModulo.objects.filter(id_modulo=obj.id_modulo)
+            permisos = GetPermisosModuloSerializer(permisos_modulo_rol, many=True)
+        
         permisos_actions = {}
         for permiso in permisos.data:
             nombre_permiso = str(permiso['nombre_permiso'])
-            permisos_actions[nombre_permiso.lower()] = True
+            
+            if id_rol:
+                value = True
+            else:
+                value = {
+                    'value': True,
+                    'id': permiso['id_permisos_modulo']
+                }
+            
+            permisos_actions[nombre_permiso.lower()] = value
         return permisos_actions
     
     def get_desc_subsistema(self, obj):
