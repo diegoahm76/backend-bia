@@ -95,7 +95,7 @@ class ModulosRolSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Modulos
-        fields = ['id_modulo', 'nombre_modulo', 'descripcion', 'subsistema', 'desc_subsistema', 'ruta_formulario', 'nombre_icono', 'permisos', 'id_submodulo', 'nombre_submodulo']
+        fields = ['id_modulo', 'nombre_modulo', 'descripcion', 'subsistema', 'desc_subsistema', 'ruta_formulario', 'nombre_icono', 'permisos']
 
 class ModulosRolEntornoSerializer(serializers.ModelSerializer):
     desc_subsistema = serializers.SerializerMethodField()
@@ -121,7 +121,7 @@ class ModulosRolEntornoSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Modulos
-        fields = ['id_modulo', 'nombre_modulo', 'descripcion', 'subsistema', 'desc_subsistema', 'ruta_formulario', 'nombre_icono', 'permisos', 'id_submodulo', 'nombre_submodulo']
+        fields = ['id_modulo', 'nombre_modulo', 'descripcion', 'subsistema', 'desc_subsistema', 'ruta_formulario', 'nombre_icono', 'permisos']
 
 class PermisosModuloRolSerializerHyper(serializers.HyperlinkedModelSerializer):
     class Meta:

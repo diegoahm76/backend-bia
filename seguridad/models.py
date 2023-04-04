@@ -355,8 +355,6 @@ class Modulos(models.Model):
     descripcion = models.CharField(max_length=255, db_column='Tzdescripcion')
     ruta_formulario = models.CharField(default='/test', max_length=255, db_column='TzrutaFormulario')
     nombre_icono = models.CharField(default='test', max_length=30, db_column='TznombreIcono')
-    id_submodulo = models.IntegerField(blank=True, null=True, db_column='TzIdSubmodulo')
-    nombre_submodulo = models.CharField(blank=True, null=True, max_length=255, db_column='Tzsubmodulo')
     
     def __str__(self):
         return str(self.nombre_modulo)
