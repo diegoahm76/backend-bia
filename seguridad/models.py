@@ -399,10 +399,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     id_usuario = models.AutoField(primary_key=True, editable=False, db_column='TzIdUsuario')
     nombre_de_usuario = models.CharField(max_length=30, unique=True, db_column='TznombreUsuario')
     persona = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='TzId_Persona')
-    is_active = models.BooleanField(max_length=1, default=False, db_column='Tzactivo')
+    is_active = models.BooleanField(default=False, db_column='Tzactivo')
     is_staff = models.BooleanField(default=False, db_column='Tzstaff')#Añadido por Juan
     is_superuser = models.BooleanField(default=False, db_column='TzsuperUser')  #Añadido por Juan
-    is_blocked = models.BooleanField(max_length=1, default=False, db_column='Tzbloqueado')
+    is_blocked = models.BooleanField(default=False, db_column='Tzbloqueado')
     creado_por_portal = models.BooleanField(default=False, db_column='TzcreadoPorPortal')
     id_usuario_creador = models.ForeignKey('self', on_delete=models.SET_NULL,null=True, blank=True ,db_column="TzId_UsuarioCreador")
     created_at = models.DateTimeField(auto_now_add=True, db_column='TzfechaCreacion')

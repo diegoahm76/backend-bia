@@ -105,7 +105,6 @@ class UserPutSerializer(serializers.ModelSerializer):
 class UserPutAdminSerializer(serializers.ModelSerializer):
     nombre_de_usuario = serializers.CharField(max_length=30, min_length=6, validators=[UniqueValidator(queryset=User.objects.all())])
     tipo_usuario = serializers.CharField(max_length=1, write_only=True)
-    roles = serializers.ListField(child=serializers.DictField())
     profile_img = serializers.ImageField(required=False)
     is_active = serializers.BooleanField(required=False)
     is_blocked = serializers.BooleanField(write_only=True)
@@ -113,7 +112,7 @@ class UserPutAdminSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['nombre_de_usuario', 'is_active', 'is_blocked', 'tipo_usuario', 'profile_img','justificacion','roles']
+        fields = ['nombre_de_usuario', 'is_active', 'is_blocked', 'tipo_usuario', 'profile_img','justificacion']
 
 class UsuarioRolesLookSerializers(serializers.ModelSerializer):
     id_usuario = UserSerializer(read_only=True)
@@ -122,13 +121,11 @@ class UsuarioRolesLookSerializers(serializers.ModelSerializer):
         fields='__all__'
 
 class RegisterSerializer(serializers.ModelSerializer):
-    
     password = serializers.CharField(max_length= 68, min_length = 6, write_only=True)
-    roles = serializers.ListField(child=serializers.DictField(), read_only=True)
     
     class Meta:
         model = User
-        fields = ['nombre_de_usuario', 'persona', 'password', 'id_usuario_creador', 'tipo_usuario', 'is_blocked', 'roles']
+        fields = ['nombre_de_usuario', 'persona', 'password', 'id_usuario_creador', 'tipo_usuario']
 
     def validate(self, attrs):
         nombre_de_usuario=attrs.get('nombre_de_usuario', '')
