@@ -123,17 +123,14 @@ class UsuarioRolesLookSerializers(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(max_length= 68, min_length = 6, write_only=True)
     
+    def validate_nombre_usuario(self, value):
+        if not value.isalnum():
+            raise serializers.ValidationError("El Nombre de usuario solo debe tener caracteres alfanumericos")
+        return value
+    
     class Meta:
         model = User
         fields = ['persona', 'password', 'id_usuario_creador', 'tipo_usuario','nombre_de_usuario']
-
-    def validate(self, attrs):
-        nombre_de_usuario=attrs.get('nombre_de_usuario', '')
-        if not nombre_de_usuario.isalnum():
-            raise serializers.ValidationError("El Nombre de usuario solo debe tener caracteres alfanumericos")
-        return attrs
-    def create(self, validated_data):
-        return User.objects.create_user(**validated_data)
 
 class RegisterExternoSerializer(serializers.ModelSerializer):
     password = serializers.CharField(max_length= 68, min_length = 6, write_only=True)

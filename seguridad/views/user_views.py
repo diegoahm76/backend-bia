@@ -510,12 +510,24 @@ class RegisterView(generics.CreateAPIView):
         # VALIDAR CORREO NOTIFICACIONES
         if not persona.email:
             return Response({'success':False,'detail':'La persona no tiene un correo electrónico de notificación asociado, debe acercarse a Cormacarena y realizar una actualizacion  de datos para proceder con la creación del usuario en el sistema'},status=status.HTTP_403_FORBIDDEN)
-        # VALIDAR QUE TENGA CARGO
-        if not persona.id_cargo:
-            return Response({'success':False,'detail':'La persona no tiene un cargo asociado'},status=status.HTTP_403_FORBIDDEN)
-        # VALIDAR QUE ESTE VIGENTE EL CARGO
-        if persona.id_cargo and (persona.fecha_a_finalizar_cargo_actual <= datetime.now()):
-            return Response({'success':False,'detail':'La fecha de finalización del cargo actual no es vigente'},status=status.HTTP_403_FORBIDDEN)
+        
+        #VALIDACION DE USUARIO EXISTENTE A LA PERSONA
+        usuario = persona.user_set.exclude(id_usuario=1).first()
+
+        print("usuario",usuario)
+        if usuario:
+            if usuario.is_active:
+                return Response({'success':False,'detail':'La persona ya posee un usuario en el sistema'},status=status.HTTP_403_FORBIDDEN)
+            elif not usuario.is_active:
+                return Response({'success':False,'detail':'La persona ya posee un usuario en el sistema pero está inactivo'},status=status.HTTP_403_FORBIDDEN)
+        
+        if data["tipo_usuario"] == "I":
+            # VALIDAR QUE TENGA CARGO
+            if not persona.id_cargo:
+                return Response({'success':False,'detail':'La persona no tiene un cargo asociado'},status=status.HTTP_403_FORBIDDEN)
+            # VALIDAR QUE ESTE VIGENTE EL CARGO
+            if persona.id_cargo and (persona.fecha_a_finalizar_cargo_actual <= datetime.now()):
+                return Response({'success':False,'detail':'La fecha de finalización del cargo actual no es vigente'},status=status.HTTP_403_FORBIDDEN)
         # VALIDAR QUE EL NOMBRE DE USUARIO NO TENGA ESPACIOS
         if " " in data['nombre_de_usuario']:
             return Response({'success':False,'detail':'No puede contener espacios en el nombre de usuario'},status=status.HTTP_403_FORBIDDEN)
@@ -523,6 +535,13 @@ class RegisterView(generics.CreateAPIView):
         valores_creados_detalles = []
         # ASIGNACIÓN DE ROLES
         roles_por_asignar = data["roles"]
+        
+        if data["tipo_usuario"] == "E":
+            roles_por_asignar.clear()
+            
+        roles_por_asignar.append(2)
+        
+        print(roles_por_asignar)
         roles = Roles.objects.filter(id_rol__in=roles_por_asignar)
 
         # ASIGNACIÓN DE ROLES USUARIO EXTERNO
@@ -533,15 +552,15 @@ class RegisterView(generics.CreateAPIView):
             return Response( {'success':False, 'detail':'Deben existir todos los roles asignados'}, status=status.HTTP_400_BAD_REQUEST)
 
         user_serializer=serializer.save()
+        print("USER_SERIALIZER: ", user_serializer)
 
         for rol in roles:
             UsuariosRol.objects.create(
                 id_usuario=user_serializer,
                 id_rol=rol
             )
-
-            # descripcion={'nombre':rol.nombre_rol}
-            # valores_creados_detalles.append(descripcion)
+            descripcion={'nombre':rol.nombre_rol}
+            valores_creados_detalles.append(descripcion)
 
         # # Crear registro de auditoría para el maestro detalle de Roles
         # descripcion = {'nombre_de_usuario': request.data["nombre_de_usuario"]}
@@ -590,10 +609,9 @@ class RegisterExternoView(generics.CreateAPIView):
         usuario = persona.user_set.exclude(id_usuario=1).first()
 
         if usuario:
-            if usuario.is_active == True or usuario.tipo_usuario == "I":
+            if usuario.is_active or usuario.tipo_usuario == "I":
                 return Response({'success':False,'detail':'La persona ya posee un usuario en el sistema, en caso de pérdida de credenciales debe usar las opciones de recuperación'},status=status.HTTP_403_FORBIDDEN)
-
-            if usuario.is_active == False:
+            elif not usuario.is_active and usuario.tipo_usuario == "E" :
                 return Response({'success':False,'detail':"La persona ya posee un usuario en el sistema, pero no se encuentra activado, ¿desea reenviar el correo de activación?","modal":True,"id_usuario":usuario.id_usuario},status=status.HTTP_403_FORBIDDEN)
 
         redirect_url=request.data.get('redirect_url','')
@@ -1132,7 +1150,7 @@ class ReenviarCorreoVerificacionDeUsuario(generics.UpdateAPIView):
             return Response({"success":True,'detail':"Se ha enviado un correo a "+persona.email+" con la información para la activación del usuario en el sistema"})
             
         else: 
-            return Response ({'success':False,'detail':'El usuario ya se encuentra activado'},status=status.HTTP_403_FORBIDDEN)
+            return Response ({'success':False,'detail':'El usuario ya se encuentra activado o es un usuario interno'},status=status.HTTP_403_FORBIDDEN)
 
 class BusquedaHistoricoActivacion(generics.ListAPIView):
     serializer_class = HistoricoActivacionSerializers
