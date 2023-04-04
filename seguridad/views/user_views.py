@@ -115,10 +115,6 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                 tipo_usuario_ant = user.tipo_usuario
                 tipo_usuario_act = user_serializer.validated_data.get('tipo_usuario')
 
-                # VALIDACIÓN DE PERSONAS JURIDICAS 
-                if tipo_usuario_act == 'J' and tipo_usuario_ant != 'E':
-                    return Response({'success': False, 'detail': 'Las personas jurídicas solo pueden ser usuarios externos'}, status=status.HTTP_400_BAD_REQUEST)
-                    
                 # VALIDACIÓN NO SE PUEDE INTERNO A EXTERNO
                 if tipo_usuario_ant == 'I' and tipo_usuario_act == 'E':
                     return Response({'success': False,'detail': 'No se puede actualizar el usuario de interno a externo'}, status=status.HTTP_400_BAD_REQUEST)
@@ -131,6 +127,9 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                             return Response({'success':False, 'detail':'La persona propietaria del usuario no tiene cargo actual o la fecha final del cargo ha vencido'}, status=status.HTTP_400_BAD_REQUEST)
                         user.is_active = True
                         user.tipo_usuario = 'I'
+                        subject = "Verificación exitosa"
+                        template = "email-verified.html"
+                        Util.notificacion(persona,subject,template)
                         user. save()
                         return Response({'success': True, 'detail': 'La persona ahora es interna y se encuentra activa', 'data': user_serializer.data}, status=status.HTTP_200_OK)
 
@@ -522,13 +521,13 @@ class RegisterView(generics.CreateAPIView):
             return Response({'success':False,'detail':'No puede contener espacios en el nombre de usuario'},status=status.HTTP_403_FORBIDDEN)
 
         valores_creados_detalles = []
-        
         # ASIGNACIÓN DE ROLES
         roles_por_asignar = data["roles"]
-        print(type(roles_por_asignar))
-        roles_por_asignar.append(2)
-        print(roles_por_asignar)
         roles = Roles.objects.filter(id_rol__in=roles_por_asignar)
+
+        # ASIGNACIÓN DE ROLES USUARIO EXTERNO
+        if persona.tipo_persona == 'E':
+            roles_por_asignar = [2]
 
         if len(roles) != len(set(roles_por_asignar)):
             return Response( {'success':False, 'detail':'Deben existir todos los roles asignados'}, status=status.HTTP_400_BAD_REQUEST)
@@ -541,8 +540,8 @@ class RegisterView(generics.CreateAPIView):
                 id_rol=rol
             )
 
-            descripcion={'nombre':rol.nombre_rol}
-            valores_creados_detalles.append(descripcion)
+            # descripcion={'nombre':rol.nombre_rol}
+            # valores_creados_detalles.append(descripcion)
 
         # # Crear registro de auditoría para el maestro detalle de Roles
         # descripcion = {'nombre_de_usuario': request.data["nombre_de_usuario"]}

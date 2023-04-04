@@ -112,7 +112,7 @@ class UserPutAdminSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['nombre_de_usuario', 'is_active', 'is_blocked', 'tipo_usuario', 'profile_img','justificacion']
+        fields = ['is_active', 'is_blocked', 'tipo_usuario', 'profile_img','justificacion']
 
 class UsuarioRolesLookSerializers(serializers.ModelSerializer):
     id_usuario = UserSerializer(read_only=True)
@@ -125,7 +125,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ['nombre_de_usuario', 'persona', 'password', 'id_usuario_creador', 'tipo_usuario']
+        fields = ['persona', 'password', 'id_usuario_creador', 'tipo_usuario','nombre_de_usuario']
 
     def validate(self, attrs):
         nombre_de_usuario=attrs.get('nombre_de_usuario', '')
