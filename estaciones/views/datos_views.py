@@ -39,9 +39,7 @@ class ConsultarDatosIdPrimerosDatos(generics.ListAPIView):
         else:
             return Response({'success': False, 'detail': 'No se encontraron datos'}, status=status.HTTP_404_NOT_FOUND)
 
-
 # consultar datos por fechas
-
 
 class ConsultarDatosFecha(generics.ListAPIView):
     serializer_class = DatosSerializer
