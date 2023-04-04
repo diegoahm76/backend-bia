@@ -98,6 +98,8 @@ urlpatterns = [
     path("api/estaciones/datos/", include("estaciones.urls.datos_urls")),
     path('api/estaciones/choices/', include('estaciones.urls.choices_urls')),
     path("api/estaciones/parametros/",include('estaciones.urls.parametros_urls')),
+    path("api/estaciones/historial/",include('estaciones.urls.historial_alertas_urls')),
+    path("api/estaciones/migracion/",include('estaciones.urls.migracion_estaciones_urls')),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
