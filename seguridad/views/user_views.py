@@ -1186,6 +1186,7 @@ class UsuarioInternoAExterno(generics.UpdateAPIView):
             return Response({'success': True, 'detail': 'Se activo como usuario externo', 'data': serializador.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success': False, 'detail': 'El usuario no existe o no cumple con los requisitos para ser convertido en usuario externo'}, status=status.HTTP_400_BAD_REQUEST)
+        
 #BUSQUEDA DE USUARIOS ENTREGA 18 UD.11
 
 class BusquedaNombreUsuario(generics.ListAPIView):
@@ -1199,7 +1200,7 @@ class BusquedaNombreUsuario(generics.ListAPIView):
         busqueda_usuario = User.objects.filter(nombre_de_usuario__icontains=nombre_de_usuario)
         
         if busqueda_usuario:
-            serializador = self.serializer_class(busqueda_usuario,many=True)
+            serializador = self.serializer_class(busqueda_usuario,many=True, context = {'request':request})
             return Response({'succes':True,'detail':'Se encontraron los siguientes usuarios.','data':serializador.data},status=status.HTTP_200_OK)
         
         else:
@@ -1211,10 +1212,13 @@ class BuscarIdPersona(generics.RetrieveAPIView):
     serializer_class = GetBuscarIdPersona
     queryset = User.objects.all()
     
+        
     def get(self,request,id_persona):
         persona = Personas.objects.filter(id_persona = id_persona).first()
         usuarios = User.objects.filter(persona=persona)
         print(usuarios)
+        
+        
         
         #ESTOS SON OTROS DOS METODOS DE BUSQUEDA
         
@@ -1224,7 +1228,7 @@ class BuscarIdPersona(generics.RetrieveAPIView):
         # usuarios = personauu.user_set.all()    
 
         if usuarios:
-            serializador = self.serializer_class(usuarios,many=True)
+            serializador = self.serializer_class(usuarios,many=True, context = {'request':request})
             return Response({'succes':True,'detail':'Se encontraron los siguientes usuarios.','data':serializador.data},status=status.HTTP_200_OK)
         else:
             return Response({'succes':False,'detail':'No se encontro ningun resultado.'},status=status.HTTP_200_OK)

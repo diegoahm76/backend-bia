@@ -32,6 +32,7 @@ from almacen.serializers.solicitudes_serialiers import (
     CrearSolicitudesPostSerializer,
     CrearItemsSolicitudConsumiblePostSerializer
     )
+from almacen.serializers.solicitudes_serialiers import SolicitudesPendientesAprobarSerializer
 from seguridad.serializers.personas_serializers import PersonasSerializer
 import copy
 
@@ -540,7 +541,7 @@ class RevisionSolicitudBienConsumosPorSupervisor(generics.UpdateAPIView):
         return Response({'success':True,'Número de solicitud':'Solicitud procesada con éxito', },status=status.HTTP_200_OK)
     
 class SolicitudesPendientesDespachar(generics.ListAPIView):
-    serializer_class = CrearSolicitudesPostSerializer
+    serializer_class = SolicitudesPendientesAprobarSerializer
     queryset=SolicitudesConsumibles.objects.all()
     
     def get(self, request):

@@ -215,7 +215,7 @@ class CreateViveros(generics.CreateAPIView):
 class GetViveroByPk(generics.RetrieveAPIView):
     serializer_class=ViveroSerializer
     queryset=Vivero.objects.all()
-
+  
 class UpdateViveroCuarentena(generics.ListAPIView):
     serializer_class=ViveroSerializer
     queryset=Vivero.objects.all()
@@ -300,7 +300,7 @@ class FilterViverosByNombreAndMunicipioForCuarentena(generics.ListAPIView):
                 else: 
                     filter[key]=value
         vivero=Vivero.objects.filter(**filter).filter(Q(en_funcionamiento=True) | Q(vivero_en_cuarentena=True))
-        serializer=self.serializer_class(vivero,many=True)
+        serializer=self.serializer_class(vivero,many=True, context = {'request':request})
         if vivero:
             return Response({'success':True,'detail':'Se encontraron viveros','data':serializer.data},status=status.HTTP_200_OK)
         else: 
@@ -322,7 +322,7 @@ class FilterViverosByNombreAndMunicipioForAperturaCierres(generics.ListAPIView):
                     filter[key]=value
         vivero=Vivero.objects.filter(**filter).filter( Q(activo=True) & (Q(vivero_en_cuarentena=False) | Q(vivero_en_cuarentena= None)))
         if vivero:
-            serializer=self.serializer_class(vivero,many=True)
+            serializer=self.serializer_class(vivero,many=True, context = {'request':request})
             return Response({'success':True,'detail':'Se encontraron viveros','data':serializer.data},status=status.HTTP_200_OK)
         else: 
             return Response({'success':False,'detail':'No se encontraron viveros'},status=status.HTTP_404_NOT_FOUND)
@@ -343,7 +343,7 @@ class FilterViverosByNombreAndMunicipio(generics.ListAPIView):
                     filter[key]=value
         vivero=Vivero.objects.filter(**filter)
         if vivero:
-            serializer=self.serializer_class(vivero,many=True)
+            serializer=self.serializer_class(vivero,many=True, context = {'request':request})
             return Response({'success':True,'detail':'Se encontraron viveros','data':serializer.data},status=status.HTTP_200_OK)
         else: 
             return Response({'success':False,'detail':'No se encontraron viveros'},status=status.HTTP_404_NOT_FOUND)

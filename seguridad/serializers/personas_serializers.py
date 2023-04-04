@@ -91,11 +91,37 @@ class RepresentanteLegalSerializer(serializers.ModelSerializer):
 class PersonasSerializer(serializers.ModelSerializer):
     nombre_unidad_organizacional_actual=serializers.ReadOnlyField(source='id_unidad_organizacional_actual.nombre',default=None)
     tiene_usuario = serializers.SerializerMethodField()
+    primer_nombre = serializers.SerializerMethodField()
+    segundo_nombre = serializers.SerializerMethodField()
+    primer_apellido = serializers.SerializerMethodField()
+    segundo_apellido = serializers.SerializerMethodField()
     
     def get_tiene_usuario(self, obj):
         usuario = User.objects.filter(persona=obj.id_persona).exists()   
         return usuario
     
+    def get_primer_nombre(self, obj):
+        primer_nombre2 = obj.primer_nombre
+        primer_nombre2 = primer_nombre2.upper() if primer_nombre2 else primer_nombre2
+        return primer_nombre2
+    
+    def get_segundo_nombre(self, obj):
+        segundo_nombre2 = obj.segundo_nombre
+        segundo_nombre2 = segundo_nombre2.upper() if segundo_nombre2 else segundo_nombre2
+        return segundo_nombre2
+    
+    def get_primer_apellido(self, obj):
+        primer_apellido2 = obj.primer_apellido
+        primer_apellido2 = primer_apellido2.upper() if primer_apellido2 else primer_apellido2
+        return primer_apellido2
+        
+    def get_segundo_apellido(self, obj):
+        segundo_apellido2 = obj.segundo_apellido
+        segundo_apellido2 = segundo_apellido2.upper() if segundo_apellido2 else segundo_apellido2
+        return segundo_apellido2
+    
+    #MOSTRAR EL NOMBRE EN MAYUSCULA
+        
     class Meta:
         model = Personas
         fields = '__all__'
@@ -678,6 +704,11 @@ class HistoricoCargosUndOrgPersonapostSerializer(serializers.ModelSerializer):
 class PersonasFilterSerializer(serializers.ModelSerializer):
     nombre_completo = serializers.SerializerMethodField()
     tiene_usuario = serializers.SerializerMethodField()
+    primer_nombre = serializers.SerializerMethodField()
+    segundo_nombre = serializers.SerializerMethodField()
+    primer_apellido = serializers.SerializerMethodField()
+    segundo_apellido = serializers.SerializerMethodField()
+    razon_social = serializers.SerializerMethodField()
     
     def get_tiene_usuario(self, obj):
         usuario = User.objects.filter(persona=obj.id_persona).exists()   
@@ -687,7 +718,34 @@ class PersonasFilterSerializer(serializers.ModelSerializer):
         nombre_completo = None
         nombre_list = [obj.primer_nombre, obj.segundo_nombre, obj.primer_apellido, obj.segundo_apellido]
         nombre_completo = ' '.join(item for item in nombre_list if item is not None)
-        return nombre_completo
+        return nombre_completo.upper()
+    
+    def get_primer_nombre(self,obj):
+        primer_nombre2 = obj.primer_nombre
+        primer_nombre2 = primer_nombre2.upper() if primer_nombre2 else primer_nombre2
+        return primer_nombre2
+    
+    def get_segundo_nombre(self, obj):
+        segundo_nombre2 = obj.segundo_nombre
+        segundo_nombre2 = segundo_nombre2.upper() if segundo_nombre2 else segundo_nombre2
+        return segundo_nombre2
+    
+    def get_primer_apellido(self, obj):
+        primer_apellido2 = obj.primer_apellido
+        primer_apellido2 = primer_apellido2.upper() if primer_apellido2 else primer_apellido2
+        return primer_apellido2
+    
+    def get_segundo_apellido(self, obj):
+        segundo_apellido2 = obj.segundo_apellido
+        segundo_apellido2 = segundo_apellido2.upper() if segundo_apellido2 else segundo_apellido2
+        return segundo_apellido2
+    
+    def get_razon_social(self, obj):
+        razon_social2 = obj.razon_social
+        razon_social2 = razon_social2.upper() if razon_social2 else razon_social2
+        return razon_social2
+    
+    
         
     class Meta:
         model = Personas

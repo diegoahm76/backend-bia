@@ -437,7 +437,7 @@ class GetIngresoCuarentenaView(generics.ListAPIView):
 
     def get(self, request):
         cuarentenas = self.queryset.all()
-        serializer = self.serializer_class(cuarentenas, many=True)
+        serializer = self.serializer_class(cuarentenas, many=True, context = {'request':request})
         return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
@@ -456,7 +456,7 @@ class GetCuarentenasByLoteEtapa(generics.ListAPIView):
                     filter[key] = value
         cuarentenas = self.queryset.all().filter().filter(**filter)
         if cuarentenas: 
-            serializer = self.serializer_class(cuarentenas, many=True)
+            serializer = self.serializer_class(cuarentenas, many=True, context = {'request':request} )
             data = serializer.data
         else:
             data = []

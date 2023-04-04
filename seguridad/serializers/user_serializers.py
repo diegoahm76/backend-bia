@@ -330,8 +330,6 @@ class DesbloquearUserSerializer(serializers.Serializer):
     class Meta:
         fields = ['nombre_de_usuario', 'tipo_documento', 'numero_documento', 'telefono_celular', 'email', 'fecha_nacimiento', 'redirect_url']
 
-
-
 class SetNewPasswordUnblockUserSerializer(serializers.Serializer):
     password = serializers.CharField(min_length=6, max_length=68, write_only=True)
     token = serializers.CharField(min_length=1, write_only=True)
@@ -377,24 +375,47 @@ class UsuarioInternoAExternoSerializers(serializers.ModelSerializer):
 
 class GetBusquedaNombreUsuario(serializers.ModelSerializer):
     numero_documento = serializers.ReadOnlyField(source='persona.numero_documento',default=None)
-    primer_nombre = serializers.ReadOnlyField(source='persona.primer_nombre',default=None)
-    segundo_nombre = serializers.ReadOnlyField(source='persona.segundo_nombre',default=None)
-    primer_apellido = serializers.ReadOnlyField(source='persona.primer_apellido',default=None)
-    seguno_apellido = serializers.ReadOnlyField(source='persona.segundo_apellido',default=None)
+    primer_nombre = serializers.SerializerMethodField(source='persona.primer_nombre',default=None)
+    segundo_nombre = serializers.SerializerMethodField(source='persona.segundo_nombre',default=None)
+    primer_apellido = serializers.SerializerMethodField(source='persona.primer_apellido',default=None)
+    segundo_apellido = serializers.SerializerMethodField(source='persona.segundo_apellido',default=None)
     razon_social = serializers.ReadOnlyField(source='persona.razon_social',default=None)
     tipo_persona = serializers.ReadOnlyField(source='persona.tipo_persona', default=None)
     nombre_completo = serializers.SerializerMethodField()
     
+    #RETORNAR NOMBRE COMPLETO
     def get_nombre_completo(self, obj):
-        nombre_completo2 = obj.persona.primer_nombre + ' ' +obj.persona.segundo_nombre +' ' + obj.persona.primer_apellido + ' ' + obj.persona.segundo_apellido
-        return nombre_completo2
+        nombre_completo = None
+        nombre_list = [obj.persona.primer_nombre, obj.persona.segundo_nombre, obj.persona.primer_apellido, obj.persona.segundo_apellido]
+        nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+        return nombre_completo.upper()
+    
+    #RETORNE LOS DATOS EN MAYUSCULAS
+    def get_primer_nombre(self, obj):
+        primer_nombre2 = obj.persona.primer_nombre
+        primer_nombre2 = primer_nombre2.upper() if primer_nombre2 else primer_nombre2
+        return primer_nombre2
+    
+    def get_segundo_nombre(self, obj):
+        segundo_nombre2 = obj.persona.segundo_nombre
+        segundo_nombre2 = segundo_nombre2.upper() if segundo_nombre2 else segundo_nombre2
+        return segundo_nombre2
+    
+    def get_primer_apellido(self, obj):
+        primer_apellido2 = obj.persona.primer_apellido
+        primer_apellido2 = primer_apellido2.upper() if primer_apellido2 else primer_apellido2
+        return primer_apellido2
+    
+    def get_segundo_apellido(self, obj):
+        segundo_apellido2 = obj.persona.segundo_apellido
+        segundo_apellido2 = segundo_apellido2.upper() if segundo_apellido2 else segundo_apellido2
+        return segundo_apellido2
     
     class Meta:
         fields = '__all__'
         model = User
 
 #BUQUEDA DE PERSONA POR ID Y TRAIGA LA LISTA DE LOS DATOS DE LA TABLA USUARIOS
-
 class GetBuscarIdPersona(serializers.ModelSerializer): #modelserializer para identificadores
 
     class Meta:

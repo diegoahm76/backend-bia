@@ -18,7 +18,7 @@ class AbrirViveroSerializer(serializers.ModelSerializer):
         model = Vivero
         fields = ['justificacion_apertura', 'fecha_ultima_apertura', 'en_funcionamiento', 'item_ya_usado', 'id_persona_abre']
         extra_kwargs = {
-            'justificacion_apertura': {'required': True},
+            'justificacion_apertura': {'required': True, 'allow_null': False, 'allow_blank':False},
         }
 
 
@@ -27,7 +27,7 @@ class CerrarViveroSerializer(serializers.ModelSerializer):
         model = Vivero
         fields = ['justificacion_cierre', 'fecha_cierre_actual', 'en_funcionamiento', 'item_ya_usado', 'id_persona_cierra']
         extra_kwargs = {
-            'justificacion_cierre': {'required': True},
+            'justificacion_cierre': {'required': True, 'allow_null': False, 'allow_blank':False},
         }
         
 class ViveroSerializer(serializers.ModelSerializer):    
@@ -51,7 +51,7 @@ class ActivarDesactivarSerializer(serializers.ModelSerializer):
 
 class ViveroPostSerializer(serializers.ModelSerializer):
     nombre = serializers.CharField(validators=[UniqueValidator(queryset=Vivero.objects.all(), message='El nombre del Vivero debe ser único')])
-    cod_municipio = serializers.ChoiceField(choices=municipios_CHOICES)
+    # cod_municipio = serializers.ChoiceField(choices=municipios_CHOICES)
     
     def validate_cod_municipio(self, value):
         if value == '':

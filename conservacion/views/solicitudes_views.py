@@ -493,7 +493,7 @@ class GetSolicitudesView(generics.ListAPIView):
     
     def get(self, request):
         solicitudes = self.queryset.all()
-        serializer = self.serializer_class(solicitudes, many=True)
+        serializer = self.serializer_class(solicitudes, many=True, context = {'request':request})
         return Response({'success': True, 'detail': 'Obtenido exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
 
 

@@ -265,7 +265,7 @@ class GetPersonasByID(generics.GenericAPIView):
             persona_serializer = self.serializer_class(persona)
             if not persona.email:
                 return Response({'success':False,'detail':'El documento ingresado existe en el sistema, sin embargo no tiene un correo electrónico de notificación asociado, debe acercarse a Cormacarena y realizar una actualizacion  de datos para proceder con la creación del usuario en el sistema', 'data':persona_serializer.data},status=status.HTTP_403_FORBIDDEN)
-            return Response({'success': True, 'detail':'Se encontró la persona','data': persona_serializer.data}, status=status.HTTP_200_OK)
+            return Response({'success': True, 'detail':'Se encontró la persona.','data': persona_serializer.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success': False,'detail': 'No encontró ninguna persona con los parametros ingresados'}, status=status.HTTP_404_NOT_FOUND)
         
@@ -1264,8 +1264,7 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
         serializer = self.serializer_class_usuario(data=data)
         serializer.is_valid(raise_exception=True)
         nombre_de_usuario = serializer.validated_data.get('nombre_de_usuario')
-        serializer_response = serializer.save()
-        
+        serializer_response = serializer.save()        
         
         #ASIGNARLE ROL USUARIO EXTERNO POR DEFECTO
         rol = Roles.objects.get(id_rol=2)
