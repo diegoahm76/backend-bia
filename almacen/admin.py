@@ -4,12 +4,6 @@ from almacen.models.organigrama_models import (
     NivelesOrganigrama,
     UnidadesOrganizacionales
 )
-from gestion_documental.models.ccd_models import (
-    CuadrosClasificacionDocumental,
-    SubseriesDoc,
-    SeriesDoc,
-    SeriesSubseriesUnidadOrg
-)
 from almacen.models.generics_models import (
     Marcas,
     PorcentajesIVA,

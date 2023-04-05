@@ -14,7 +14,8 @@ from gestion_documental.models.ccd_models import (
     CuadrosClasificacionDocumental,
     SubseriesDoc,
     SeriesDoc,
-    SeriesSubseriesUnidadOrg,
+    CatalogosSeries,
+    CatalogosSeriesUnidad,
 )
 from gestion_documental.models.tca_models import (
     TablasControlAcceso,
@@ -31,7 +32,8 @@ from gestion_documental.models.tca_models import (
 admin.site.register(CuadrosClasificacionDocumental),
 admin.site.register(SubseriesDoc),
 admin.site.register(SeriesDoc),
-admin.site.register(SeriesSubseriesUnidadOrg),
+admin.site.register(CatalogosSeries),
+admin.site.register(CatalogosSeriesUnidad),
 
 #TRD
 admin.site.register(TablaRetencionDocumental),

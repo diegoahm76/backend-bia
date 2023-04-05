@@ -1,5 +1,5 @@
 from django.db import models
-from gestion_documental.models.ccd_models import SeriesSubseriesUnidadOrg, CuadrosClasificacionDocumental
+from gestion_documental.models.ccd_models import CatalogosSeriesUnidad, CuadrosClasificacionDocumental
 from gestion_documental.choices.tipo_clasificacion_choices import tipo_clasificacion_CHOICES
 from seguridad.models import Personas, Cargos
 from almacen.models.organigrama_models import (
@@ -52,7 +52,7 @@ class PermisosGD(models.Model):
 class Clasif_Serie_Subserie_Unidad_TCA(models.Model):
     id_clasif_serie_subserie_unidad_tca=models.AutoField(primary_key=True, db_column='T215IdClasif_S_Ss_UndOrg_TCA')
     id_tca=models.ForeignKey(TablasControlAcceso,on_delete=models.CASCADE,db_column='T215Id_TCA')
-    id_serie_subserie_unidad=models.ForeignKey(SeriesSubseriesUnidadOrg,on_delete=models.CASCADE,db_column='T215Id_SerieSubserieUnidadOrg')
+    id_cat_serie_und=models.ForeignKey(CatalogosSeriesUnidad,on_delete=models.CASCADE,db_column='T215Id_SerieSubserieUnidadOrg')
     cod_clas_expediente=models.CharField(max_length=1,choices=tipo_clasificacion_CHOICES,db_column='T215Cod_ClasificacionExp')
     fecha_registro=models.DateTimeField(auto_now_add=True, db_column='T215fechaRegistro')
     justificacion_cambio=models.CharField(max_length=255,db_column='T215justificacionDelCambio',blank=True,null=True)
@@ -65,7 +65,7 @@ class Clasif_Serie_Subserie_Unidad_TCA(models.Model):
         db_table='T215Clasif_S_Ss_UndOrg_TCA'
         verbose_name='Clasificacion Serie Subserie Unidad TCA'
         verbose_name_plural='Clasificacion Serie Subserie Unidad TCA'
-        unique_together = ['id_tca', 'id_serie_subserie_unidad']
+        unique_together = ['id_tca', 'id_cat_serie_und']
 
 
 class Historico_Clasif_S_Ss_UndOrg_TCA(models.Model):

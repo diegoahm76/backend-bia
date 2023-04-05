@@ -122,7 +122,7 @@ class SeriesSubSeriesUnidadesOrgTRDSerializer(serializers.ModelSerializer):
         model = SeriesSubSUnidadOrgTRD
         fields = (
             'id_trd',
-            'id_serie_subserie_doc',
+            'id_cat_serie_und',
             'cod_disposicion_final',
             'digitalizacion_dis_final',
             'tiempo_retencion_ag',
@@ -132,11 +132,11 @@ class SeriesSubSeriesUnidadesOrgTRDSerializer(serializers.ModelSerializer):
         )
         extra_kwargs = {
             'id_trd': {'required': True},
-            'id_serie_subserie_doc': {'required': True},
+            'id_cat_serie_und': {'required': True},
         }
         validators = [UniqueTogetherValidator(
                queryset=SeriesSubSUnidadOrgTRD.objects.all(),
-               fields = ['id_trd', 'id_serie_subserie_doc'],
+               fields = ['id_trd', 'id_cat_serie_und'],
                message='No puede relacionar un mismo expediente más de una vez con esta TRD'
            )]
 

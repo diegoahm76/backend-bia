@@ -489,7 +489,7 @@ class GetSeccionSubsecciones(generics.ListAPIView):
         if organigrama:
             unidades = UnidadesOrganizacionales.objects.filter(Q(id_organigrama=id_organigrama) & ~Q(cod_agrupacion_documental=None))
             serializer = self.serializer_class(unidades, many=True)
-            return Response({'success':True, 'detail':serializer.data}, status=status.HTTP_200_OK)
+            return Response({'success':True, 'detail':'Se encontraron las siguientes unidades', 'data':serializer.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success':False, 'detail':'Debe consultar por un organigrama válido'}, status=status.HTTP_404_NOT_FOUND)
             

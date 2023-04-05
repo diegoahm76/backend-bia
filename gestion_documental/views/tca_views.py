@@ -19,12 +19,12 @@ from gestion_documental.serializers.tca_serializers import (
     ClasifSerieSubseriUnidadTCA_activoSerializer,
     PermisosCargoUnidadSerieSubserieUnidadTCASerializer,
     Cargos_Unidad_S_Ss_UndOrg_TCASerializer,
-    SeriesSubseriesUnidadOrgClasifSerializer,
-    SeriesSubseriesUnidadOrgClasifPermisosSerializer
+    CatalogosSeriesUnidadClasifSerializer,
+    CatalogosSeriesUnidadClasifPermisosSerializer
 
 )
 from gestion_documental.models.ccd_models import (
-    SeriesSubseriesUnidadOrg,
+    CatalogosSeriesUnidad,
     CuadrosClasificacionDocumental,
     SeriesDoc,
 )
@@ -182,7 +182,7 @@ class ClasifSerieSubserieUnidadTCA(generics.CreateAPIView):
                 if not tca.fecha_terminado:
                     if not tca.actual:
                         # Validar existencia de expediente
-                        expediente = SeriesSubseriesUnidadOrg.objects.filter(id_serie_subserie_doc=data['id_serie_subserie_unidad']).first()
+                        expediente = CatalogosSeriesUnidad.objects.filter(id_cat_serie_und=data['id_cat_serie_und']).first()
                         if not expediente:
                             return Response({'success':False, 'detail':'Debe ingresar un expediente que exista'}, status=status.HTTP_400_BAD_REQUEST)
                         
@@ -452,11 +452,11 @@ class FinalizarTablaControlAcceso(generics.UpdateAPIView):
                 series = SeriesDoc.objects.filter(id_ccd=ccd.id_ccd)
                 series_list = [serie.id_serie_doc for serie in series]
 
-                series_subseries_unidades = SeriesSubseriesUnidadOrg.objects.filter(id_serie_doc__in=series_list)
-                series_subseries_unidades_list = [serie_subserie_unidad.id_serie_subserie_doc for serie_subserie_unidad in series_subseries_unidades]
+                series_subseries_unidades = CatalogosSeriesUnidad.objects.filter(id_catalogo_serie__id_serie_doc__in=series_list)
+                series_subseries_unidades_list = [serie_subserie_unidad.id_cat_serie_und for serie_subserie_unidad in series_subseries_unidades]
 
-                clasif_expedientes_tca = Clasif_Serie_Subserie_Unidad_TCA.objects.filter(id_serie_subserie_unidad__in=series_subseries_unidades_list)
-                clasif_expedientes_tca_list = [clasif_expediente.id_serie_subserie_unidad.id_serie_subserie_doc for clasif_expediente in clasif_expedientes_tca]
+                clasif_expedientes_tca = Clasif_Serie_Subserie_Unidad_TCA.objects.filter(id_cat_serie_und__in=series_subseries_unidades_list)
+                clasif_expedientes_tca_list = [clasif_expediente.id_cat_serie_und.id_cat_serie_und for clasif_expediente in clasif_expedientes_tca]
 
                 if not set(series_subseries_unidades_list).issubset(clasif_expedientes_tca_list):
                     return Response({'success': False, 'detail': 'Debe clasificar todos los expedientes para finalizar TCA'}, status=status.HTTP_403_FORBIDDEN)
@@ -470,14 +470,14 @@ class FinalizarTablaControlAcceso(generics.UpdateAPIView):
             return Response({'success': False, 'detail': 'No se encontró ningún TCA con estos parámetros'}, status=status.HTTP_404_NOT_FOUND)   
 
 class GetClasifSerieSubserieUnidad(generics.ListAPIView):
-    serializer_class = SeriesSubseriesUnidadOrgClasifSerializer
+    serializer_class = CatalogosSeriesUnidadClasifSerializer
     queryset = TablasControlAcceso.objects.all()
     permission_classes = [IsAuthenticated]
     
     def get(self, request, id_tca):
         tca = self.queryset.all().filter(id_tca=id_tca).first()
         if tca:
-            serie_subserie_unidad = SeriesSubseriesUnidadOrg.objects.filter(id_serie_doc__id_ccd = tca.id_ccd.id_ccd).distinct('id_unidad_organizacional', 'id_serie_doc')
+            serie_subserie_unidad = CatalogosSeriesUnidad.objects.filter(id_catalogo_serie__id_serie_doc__id_ccd = tca.id_ccd.id_ccd).distinct('id_unidad_organizacional', 'id_serie_doc')
             serie_subserie_unidad = [ssu for ssu in serie_subserie_unidad if ssu.clasif_serie_subserie_unidad_tca_set.all()]
             serializer = self.serializer_class(serie_subserie_unidad, many=True, context={'id_tca': id_tca})
             return Response({'success':True, 'detail':'Se encontraron las siguientes clasificaciones', 'data':serializer.data}, status=status.HTTP_200_OK)
@@ -485,16 +485,16 @@ class GetClasifSerieSubserieUnidad(generics.ListAPIView):
             return Response({'success':False, 'detail':'No existe la TCA ingresada'}, status=status.HTTP_404_NOT_FOUND)
         
 class GetCargoUnidadPermisos(generics.ListAPIView):
-    serializer_class = SeriesSubseriesUnidadOrgClasifPermisosSerializer
+    serializer_class = CatalogosSeriesUnidadClasifPermisosSerializer
     queryset = TablasControlAcceso.objects.all()
     permission_classes = [IsAuthenticated]
     
     def get(self, request, id_tca):
         tca = self.queryset.all().filter(id_tca=id_tca).first()
         if tca:
-            serie_subserie_unidad = SeriesSubseriesUnidadOrg.objects.filter(id_serie_doc__id_ccd = tca.id_ccd.id_ccd)
+            serie_subserie_unidad = CatalogosSeriesUnidad.objects.filter(id_catalogo_serie__id_serie_doc__id_ccd = tca.id_ccd.id_ccd)
             clasif_serie_subserie_unidad = [ssu.clasif_serie_subserie_unidad_tca_set.all().first() for ssu in serie_subserie_unidad if ssu.clasif_serie_subserie_unidad_tca_set.all()]
-            serie_subserie_unidad = [cssu.id_serie_subserie_unidad for cssu in clasif_serie_subserie_unidad if cssu.cargos_unidad_s_ss_undorg_tca_set.all()]
+            serie_subserie_unidad = [cssu.id_catalogo_serie for cssu in clasif_serie_subserie_unidad if cssu.cargos_unidad_s_ss_undorg_tca_set.all()]
             serializer = self.serializer_class(serie_subserie_unidad, many=True, context={'id_tca': id_tca})
             return Response({'success':True, 'detail':'Se encontraron las siguientes clasificaciones', 'data':serializer.data}, status=status.HTTP_200_OK)
         else:
