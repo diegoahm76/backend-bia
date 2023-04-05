@@ -28,7 +28,7 @@ from gestion_documental.serializers.ccd_serializers import (
 )
 
 from gestion_documental.models.ccd_models import (
-    SeriesSubseriesUnidadOrg,
+    CatalogosSeriesUnidad,
     CuadrosClasificacionDocumental,
     SeriesDoc
 )
@@ -269,7 +269,7 @@ class CreateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
             serializador.is_valid(raise_exception=True)
 
             id_trd_validated = serializador.validated_data.get('id_trd')
-            id_serie_subserie_unidad = serializador.validated_data.get('id_serie_subserie_doc')
+            id_cat_serie_und = serializador.validated_data.get('id_cat_serie_und')
             cod_disposicion_final = serializador.validated_data.get('cod_disposicion_final')
             digitalizacion_dis_final = serializador.validated_data.get('digitalizacion_dis_final')
             tiempo_retencion_ag = serializador.validated_data.get('tiempo_retencion_ag')
@@ -281,9 +281,9 @@ class CreateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
                 return Response({'success': False, 'detail': 'El id_trd enviado debe ser el mismo que el ingresado en la url'}, status=status.HTTP_400_BAD_REQUEST)
 
             #VALIDACION ENVIO VACIO DE LA INFORMACION
-            if not cod_disposicion_final and not digitalizacion_dis_final and not tiempo_retencion_ag and not tiempo_retencion_ac and not descripcion_procedimiento:
-                serializador.save()
-                return Response({'success': True, 'detail': 'Creación exitosa', 'data': serializador.data}, status=status.HTTP_201_CREATED)
+            #if not cod_disposicion_final and not digitalizacion_dis_final and not tiempo_retencion_ag and not tiempo_retencion_ac and not descripcion_procedimiento:
+             #   serializador.save()
+              #  return Response({'success': True, 'detail': 'Creación exitosa', 'data': serializador.data}, status=status.HTTP_201_CREATED)
 
             #VALIDACION ENVIO COMPLETO DE LA INFORMACION
             elif cod_disposicion_final and digitalizacion_dis_final and tiempo_retencion_ag and tiempo_retencion_ac and descripcion_procedimiento != None:
@@ -293,11 +293,11 @@ class CreateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
 
                 #VALIDAR QUE SE ELIJA UNA SERIE SUBSERIE UNIDAD VALIDA, SEGÚN LA TRD ELEGIDA
                 serie_subserie_unidad = []
-                serie_subserie_unidad.append(id_serie_subserie_unidad.id_serie_subserie_doc)
+                serie_subserie_unidad.append(id_cat_serie_und.id_cat_serie_und)
                 series_trd = list(SeriesDoc.objects.filter(id_ccd=trd.id_ccd))
                 series_id = [serie.id_serie_doc for serie in series_trd]
-                series_subseries_unidades_org_ccd = SeriesSubseriesUnidadOrg.objects.filter(id_serie_doc__in=series_id)
-                series_subseries_unidades_org_ccd_id = [serie.id_serie_subserie_doc for serie in series_subseries_unidades_org_ccd]
+                series_subseries_unidades_org_ccd = CatalogosSeriesUnidad.objects.filter(id_catalogo_serie__id_serie_doc__in=series_id)
+                series_subseries_unidades_org_ccd_id = [serie.id_cat_serie_und for serie in series_subseries_unidades_org_ccd]
                 if not set(serie_subserie_unidad).issubset(set(series_subseries_unidades_org_ccd_id)):
                     return Response({'success': False, 'detail': 'Debe elegir una serie subserie unidad asociada al ccd que tiene la trd enviada en la url'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -809,13 +809,13 @@ class finalizarTRD(generics.RetrieveUpdateAPIView):
         trd = TablaRetencionDocumental.objects.filter(id_trd = trd_ingresada).first()
         series = SeriesDoc.objects.filter(id_ccd = trd.id_ccd).values()
         id_series_totales = [i['id_serie_doc'] for i in series]
-        series_subseries_unidades_totales = SeriesSubseriesUnidadOrg.objects.filter(id_serie_doc__in = id_series_totales).values()
-        id_series_subseries_unidades_totales = [i['id_serie_subserie_doc'] for i in series_subseries_unidades_totales]
+        series_subseries_unidades_totales = CatalogosSeriesUnidad.objects.filter(id_catalogo_serie__id_serie_doc__in = id_series_totales).values()
+        id_series_subseries_unidades_totales = [i['id_cat_serie_und'] for i in series_subseries_unidades_totales]
         series_subseries_unidades_usadas = SeriesSubSUnidadOrgTRD.objects.filter(id_trd = trd_ingresada).values()
-        id_series_subseries_unidades_usadas = [i['id_serie_subserie_doc_id'] for i in series_subseries_unidades_usadas]
+        id_series_subseries_unidades_usadas = [i['id_cat_serie_und_id'] for i in series_subseries_unidades_usadas]
         id_series_subseries_unidades_no_usadas = [i for i in id_series_subseries_unidades_totales if i not in id_series_subseries_unidades_usadas]
         if len(id_series_subseries_unidades_no_usadas) >= 1:
-            instancia_id_series_subseries_unidades_no_usadas = SeriesSubseriesUnidadOrg.objects.filter(id_serie_subserie_doc__in = id_series_subseries_unidades_no_usadas).values()
+            instancia_id_series_subseries_unidades_no_usadas = CatalogosSeriesUnidad.objects.filter(id_cat_serie_und__in = id_series_subseries_unidades_no_usadas).values()
             return Response({'success': False, 'detail': 'Hay combinaciones de series, subseries y unidades que no se están usando', 'data' : instancia_id_series_subseries_unidades_no_usadas}, status=status.HTTP_403_FORBIDDEN)
         if trd.fecha_terminado == None:
             series_subseries_unidad_org_trd = SeriesSubSUnidadOrgTRD.objects.filter(id_trd = trd_ingresada).values()

@@ -265,7 +265,7 @@ class GetPersonasByID(generics.GenericAPIView):
             persona_serializer = self.serializer_class(persona)
             if not persona.email:
                 return Response({'success':False,'detail':'El documento ingresado existe en el sistema, sin embargo no tiene un correo electrónico de notificación asociado, debe acercarse a Cormacarena y realizar una actualizacion  de datos para proceder con la creación del usuario en el sistema', 'data':persona_serializer.data},status=status.HTTP_403_FORBIDDEN)
-            return Response({'success': True, 'detail':'Se encontró la persona','data': persona_serializer.data}, status=status.HTTP_200_OK)
+            return Response({'success': True, 'detail':'Se encontró la persona.','data': persona_serializer.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success': False,'detail': 'No encontró ninguna persona con los parametros ingresados'}, status=status.HTTP_404_NOT_FOUND)
         
@@ -1237,8 +1237,8 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
         
         #CREACION DE PERSONA
         
-        serializer = self.serializer_class(data=data)
-        serializer.is_valid(raise_exception=True)
+        serializer_persona = self.serializer_class(data=data)
+        serializer_persona.is_valid(raise_exception=True)
 
         validaciones_persona = Util.guardar_persona(data)
         
@@ -1254,7 +1254,7 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
             return Response({'success':False,'detail':'No puede contener espacios en el nombre de usuario'},status=status.HTTP_403_FORBIDDEN)
         
         #GUARDAR PERSONA
-        serializador = serializer.save()
+        serializador = serializer_persona.save()
         serializador.id_persona_crea = serializador
         serializador.save()
         
@@ -1264,8 +1264,7 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
         serializer = self.serializer_class_usuario(data=data)
         serializer.is_valid(raise_exception=True)
         nombre_de_usuario = serializer.validated_data.get('nombre_de_usuario')
-        serializer_response = serializer.save()
-        
+        serializer_response = serializer.save()        
         
         #ASIGNARLE ROL USUARIO EXTERNO POR DEFECTO
         rol = Roles.objects.get(id_rol=2)
@@ -1316,7 +1315,6 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
         }
         Util.save_auditoria(auditoria_data)
         
-
         #user = User.objects.get(email=user_data['email'])
 
         token = RefreshToken.for_user(serializer_response)

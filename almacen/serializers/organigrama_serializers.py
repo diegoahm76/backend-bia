@@ -55,7 +55,6 @@ class UnidadesPutSerializer(serializers.ModelSerializer):
         extra_kwargs = {"cod_tipo_unidad": {"error_messages": {"required": "El campo de cod_tipo_unidad es requerido"}}}
 
 class UnidadesGetSerializer(serializers.ModelSerializer):
-    id_nivel_organigrama = NivelesGetSerializer(read_only=True)
     class Meta:
         model = UnidadesOrganizacionales
         fields = '__all__'

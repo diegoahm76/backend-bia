@@ -541,7 +541,7 @@ class ActualizarMortalidad(generics.UpdateAPIView):
         
             # ACTUALIZAR MAESTRO
             if baja.motivo != data_mortalidad['motivo'] or baja.ruta_archivo_soporte != data_mortalidad['ruta_archivo_soporte']:
-                serializer_maestro = self.serializer_class(baja, data=data_mortalidad)
+                serializer_maestro = self.serializer_class(baja, data=data_mortalidad, context = {'request':request})
                 serializer_maestro.is_valid(raise_exception=True)
                 serializer_maestro.save()
             
