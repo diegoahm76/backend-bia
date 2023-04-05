@@ -6,7 +6,7 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils import encoding, http
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
-from seguridad.models import Personas, Cargos, User, UsuariosRol, HistoricoActivacion,Login,LoginErroneo,PermisosModuloRol,UsuarioErroneo, HistoricoCargosUndOrgPersona
+from seguridad.models import Personas, Cargos, User, UsuariosRol, HistoricoActivacion,Login,LoginErroneo,PermisosModuloRol,UsuarioErroneo, HistoricoCargosUndOrgPersona, Roles
 from almacen.models import UnidadesOrganizacionales
 from seguridad.serializers.personas_serializers import PersonasSerializer
 from seguridad.serializers.permisos_serializers import PermisosModuloRolSerializer
@@ -112,13 +112,19 @@ class UserPutAdminSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['is_active', 'is_blocked', 'tipo_usuario', 'profile_img','justificacion']
+        fields = ['is_active', 'is_blocked', 'tipo_usuario', 'profile_img', 'justificacion']
 
 class UsuarioRolesLookSerializers(serializers.ModelSerializer):
     id_usuario = UserSerializer(read_only=True)
     class Meta:
         model=UsuariosRol
         fields='__all__'
+        
+class RolesSerializers(serializers.ModelSerializer):
+    nombre_rol = serializers.ReadOnlyField(source='id_rol.nombre_rol', default=None)
+    class Meta:
+        model=UsuariosRol
+        fields=['id_rol', 'nombre_rol']
 
 class RegisterSerializer(serializers.ModelSerializer):
     def validate_nombre_de_usuario(self, value):
@@ -385,16 +391,66 @@ class UsuarioInternoAExternoSerializers(serializers.ModelSerializer):
         
 
 #BUSQUEDA USUARIO
-
-class GetBusquedaNombreUsuario(serializers.ModelSerializer):
+class UsuarioBasicoSerializer(serializers.ModelSerializer):
     numero_documento = serializers.ReadOnlyField(source='persona.numero_documento',default=None)
-    primer_nombre = serializers.SerializerMethodField(source='persona.primer_nombre',default=None)
-    segundo_nombre = serializers.SerializerMethodField(source='persona.segundo_nombre',default=None)
-    primer_apellido = serializers.SerializerMethodField(source='persona.primer_apellido',default=None)
-    segundo_apellido = serializers.SerializerMethodField(source='persona.segundo_apellido',default=None)
+    tipo_persona = serializers.ReadOnlyField(source='persona.tipo_persona', default=None)
+    primer_nombre = serializers.SerializerMethodField(default=None)
+    primer_apellido = serializers.SerializerMethodField(default=None)
     razon_social = serializers.ReadOnlyField(source='persona.razon_social',default=None)
+    nombre_comercial = serializers.ReadOnlyField(source='persona.nombre_comercial',default=None)
+    nombre_completo = serializers.SerializerMethodField()
+    
+    #RETORNAR NOMBRE COMPLETO
+    def get_nombre_completo(self, obj):
+        nombre_completo = None
+        nombre_list = [obj.persona.primer_nombre, obj.persona.segundo_nombre, obj.persona.primer_apellido, obj.persona.segundo_apellido]
+        nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+        return nombre_completo.upper()
+    
+    #RETORNE LOS DATOS EN MAYUSCULAS
+    def get_primer_nombre(self, obj):
+        primer_nombre2 = obj.persona.primer_nombre
+        primer_nombre2 = primer_nombre2.upper() if primer_nombre2 else primer_nombre2
+        return primer_nombre2
+    
+    def get_primer_apellido(self, obj):
+        primer_apellido2 = obj.persona.primer_apellido
+        primer_apellido2 = primer_apellido2.upper() if primer_apellido2 else primer_apellido2
+        return primer_apellido2
+    class Meta:
+        fields = [
+            'id_usuario',
+            'nombre_de_usuario',
+            'persona',
+            'tipo_persona',
+            'numero_documento',
+            'primer_nombre',
+            'primer_apellido',
+            'nombre_completo',
+            'razon_social',
+            'nombre_comercial',
+            'is_superuser'
+        ]
+        model = User
+
+class UsuarioFullSerializer(serializers.ModelSerializer):
+    tipo_documento = serializers.ReadOnlyField(source='persona.tipo_documento.cod_tipo_documento',default=None)
+    numero_documento = serializers.ReadOnlyField(source='persona.numero_documento',default=None)
+    primer_nombre = serializers.SerializerMethodField(default=None)
+    segundo_nombre = serializers.SerializerMethodField(default=None)
+    primer_apellido = serializers.SerializerMethodField(default=None)
+    segundo_apellido = serializers.SerializerMethodField(default=None)
+    razon_social = serializers.ReadOnlyField(source='persona.razon_social',default=None)
+    nombre_comercial = serializers.ReadOnlyField(source='persona.nombre_comercial',default=None)
     tipo_persona = serializers.ReadOnlyField(source='persona.tipo_persona', default=None)
     nombre_completo = serializers.SerializerMethodField()
+    primer_nombre_usuario_creador = serializers.SerializerMethodField(source='id_usuario_creador.persona.primer_nombre',default=None)
+    primer_apellido_usuario_creador = serializers.SerializerMethodField(source='id_usuario_creador.persona.primer_apellido',default=None)
+    roles = serializers.SerializerMethodField()
+    fecha_ultimo_cambio_activacion = serializers.SerializerMethodField()
+    justificacion_ultimo_cambio_activacion = serializers.SerializerMethodField()
+    fecha_ultimo_cambio_bloqueo = serializers.SerializerMethodField()
+    justificacion_ultimo_cambio_bloqueo = serializers.SerializerMethodField()
     
     #RETORNAR NOMBRE COMPLETO
     def get_nombre_completo(self, obj):
@@ -424,8 +480,80 @@ class GetBusquedaNombreUsuario(serializers.ModelSerializer):
         segundo_apellido2 = segundo_apellido2.upper() if segundo_apellido2 else segundo_apellido2
         return segundo_apellido2
     
+    def get_primer_nombre_usuario_creador(self, obj):
+        primer_nombre2 = None
+        if obj.id_usuario_creador:
+            primer_nombre2 = obj.id_usuario_creador.persona.primer_nombre
+            primer_nombre2 = primer_nombre2.upper() if primer_nombre2 else primer_nombre2
+        return primer_nombre2
+    
+    def get_primer_apellido_usuario_creador(self, obj):
+        primer_apellido2 = None
+        if obj.id_usuario_creador:
+            primer_apellido2 = obj.id_usuario_creador.persona.primer_apellido
+            primer_apellido2 = primer_apellido2.upper() if primer_apellido2 else primer_apellido2
+        return primer_apellido2
+    
+    def get_roles(self, obj):
+        roles = obj.usuariosrol_set.all()
+        serializer_roles = RolesSerializers(roles, many=True)
+        return serializer_roles.data
+    
+    def get_fecha_ultimo_cambio_activacion(self, obj):
+        estado_activo = 'A' if obj.is_active else 'I'
+        hist_activacion = HistoricoActivacion.objects.filter(id_usuario_afectado=obj.id_usuario, cod_operacion=estado_activo).last()
+        fecha_ultimo_cambio_activacion = hist_activacion.fecha_operacion if hist_activacion else None
+        return fecha_ultimo_cambio_activacion
+    
+    def get_justificacion_ultimo_cambio_activacion(self, obj):
+        estado_activo = 'A' if obj.is_active else 'I'
+        hist_activacion = HistoricoActivacion.objects.filter(id_usuario_afectado=obj.id_usuario, cod_operacion=estado_activo).last()
+        justificacion_ultimo_cambio_activacion = hist_activacion.justificacion if hist_activacion else None
+        return justificacion_ultimo_cambio_activacion
+    
+    def get_fecha_ultimo_cambio_bloqueo(self, obj):
+        estado_bloqueo = 'B' if obj.is_blocked else 'D'
+        hist_activacion = HistoricoActivacion.objects.filter(id_usuario_afectado=obj.id_usuario, cod_operacion=estado_bloqueo).last()
+        fecha_ultimo_cambio_bloqueo = hist_activacion.fecha_operacion if hist_activacion else None
+        return fecha_ultimo_cambio_bloqueo
+    
+    def get_justificacion_ultimo_cambio_bloqueo(self, obj):
+        estado_bloqueo = 'B' if obj.is_blocked else 'D'
+        hist_activacion = HistoricoActivacion.objects.filter(id_usuario_afectado=obj.id_usuario, cod_operacion=estado_bloqueo).last()
+        justificacion_ultimo_cambio_bloqueo = hist_activacion.justificacion if hist_activacion else None
+        return justificacion_ultimo_cambio_bloqueo
+    
     class Meta:
-        fields = '__all__'
+        fields = [
+            'id_usuario',
+            'nombre_de_usuario',
+            'persona',
+            'tipo_persona',
+            'tipo_documento',
+            'numero_documento',
+            'primer_nombre',
+            'segundo_nombre',
+            'primer_apellido',
+            'segundo_apellido',
+            'nombre_completo',
+            'razon_social',
+            'nombre_comercial',
+            'is_active',
+            'fecha_ultimo_cambio_activacion',
+            'justificacion_ultimo_cambio_activacion',
+            'is_blocked',
+            'fecha_ultimo_cambio_bloqueo',
+            'justificacion_ultimo_cambio_bloqueo',
+            'tipo_usuario',
+            'profile_img',
+            'creado_por_portal',
+            'created_at',
+            'activated_at',
+            'id_usuario_creador',
+            'primer_nombre_usuario_creador',
+            'primer_apellido_usuario_creador',
+            'roles'
+        ]
         model = User
 
 #BUQUEDA DE PERSONA POR ID Y TRAIGA LA LISTA DE LOS DATOS DE LA TABLA USUARIOS

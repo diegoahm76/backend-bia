@@ -24,7 +24,7 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import status
 import jwt
 from django.conf import settings
-from seguridad.serializers.user_serializers import EmailVerificationSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserPutAdminSerializer,  UserPutSerializer, UserSerializer, UserSerializerWithToken, UserRolesSerializer, RegisterSerializer  ,LoginSerializer, DesbloquearUserSerializer, SetNewPasswordUnblockUserSerializer, HistoricoActivacionSerializers, UsuarioInternoAExternoSerializers, GetBusquedaNombreUsuario,GetBuscarIdPersona
+from seguridad.serializers.user_serializers import EmailVerificationSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserPutAdminSerializer,  UserPutSerializer, UserSerializer, UserSerializerWithToken, UserRolesSerializer, RegisterSerializer  ,LoginSerializer, DesbloquearUserSerializer, SetNewPasswordUnblockUserSerializer, HistoricoActivacionSerializers, UsuarioBasicoSerializer, UsuarioFullSerializer, UsuarioInternoAExternoSerializers
 from rest_framework.generics import RetrieveUpdateAPIView
 from django.contrib.auth.hashers import make_password
 from rest_framework import status
@@ -92,7 +92,6 @@ class UpdateUserProfile(generics.UpdateAPIView):
 
 
 class UpdateUser(generics.RetrieveUpdateAPIView):
-    http_method_names = ["patch"]
     serializer_class = UserPutAdminSerializer
     queryset = User.objects.all()
     permission_classes = [IsAuthenticated, PermisoActualizarUsuarios]
@@ -255,7 +254,7 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
             else:
                 return Response({'success': False,'detail': 'No se encontró el usuario'}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({'success': False,'detail': 'No puede realizar esa acción'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'success': False,'detail': 'No puede actualizar sus propios datos por este módulo'}, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
 def roles(request):
@@ -1241,47 +1240,41 @@ class UsuarioInternoAExterno(generics.UpdateAPIView):
         
 #BUSQUEDA DE USUARIOS ENTREGA 18 UD.11
 
-class BusquedaNombreUsuario(generics.ListAPIView):
-    serializer_class = GetBusquedaNombreUsuario
+class BusquedaByNombreUsuario(generics.ListAPIView):
+    serializer_class = UsuarioBasicoSerializer
     queryset = User.objects.all()
         
     def get(self,request):
         
         nombre_de_usuario = request.query_params.get('nombre_de_usuario')
         
-        busqueda_usuario = User.objects.filter(nombre_de_usuario__icontains=nombre_de_usuario)
+        busqueda_usuario = self.queryset.all().filter(nombre_de_usuario__icontains=nombre_de_usuario)
         
-        if busqueda_usuario:
-            serializador = self.serializer_class(busqueda_usuario,many=True, context = {'request':request})
-            return Response({'succes':True,'detail':'Se encontraron los siguientes usuarios.','data':serializador.data},status=status.HTTP_200_OK)
+        serializador = self.serializer_class(busqueda_usuario,many=True, context = {'request':request})
         
-        else:
-            return Response({'succes':False,'detail':'No se encontro ningun resultado con los criterios de busqueda.'},status=status.HTTP_200_OK)
+        return Response({'succes':True,'detail':'Se encontraron los siguientes usuarios.','data':serializador.data},status=status.HTTP_200_OK)
 
 #BUSQUEDA ID PERSONA Y RETORNE LOS DATOS DE LA TABLA USUARIOS
 
-class BuscarIdPersona(generics.RetrieveAPIView):
-    serializer_class = GetBuscarIdPersona
+class BuscarByIdPersona(generics.RetrieveAPIView):
+    serializer_class = UsuarioBasicoSerializer
     queryset = User.objects.all()
     
-        
     def get(self,request,id_persona):
-        persona = Personas.objects.filter(id_persona = id_persona).first()
-        usuarios = User.objects.filter(persona=persona)
-        print(usuarios)
-        
-        
-        
-        #ESTOS SON OTROS DOS METODOS DE BUSQUEDA
-        
-        # (metodo-1)usuarios = User.objects.filter(persona__id_persona = id_persona)
-        
-        # (metodo-2)personau = Personas.objects.filter(id_persona = id_persona).first()
-        # usuarios = personauu.user_set.all()    
-
-        if usuarios:
-            serializador = self.serializer_class(usuarios,many=True, context = {'request':request})
-            return Response({'succes':True,'detail':'Se encontraron los siguientes usuarios.','data':serializador.data},status=status.HTTP_200_OK)
-        else:
-            return Response({'succes':False,'detail':'No se encontro ningun resultado.'},status=status.HTTP_200_OK)
+        usuarios = self.queryset.all().filter(persona=id_persona)
+            
+        serializador = self.serializer_class(usuarios,many=True, context = {'request':request})
+        return Response({'succes':True,'detail':'Se encontraron los siguientes usuarios.','data':serializador.data},status=status.HTTP_200_OK)
     
+class GetByIdUsuario(generics.RetrieveAPIView):
+    serializer_class = UsuarioFullSerializer
+    queryset = User.objects.all()
+    
+    def get(self,request,id_usuario):
+        usuario = self.queryset.all().filter(id_usuario=id_usuario).first()
+        
+        if not usuario:
+            return Response({'succes':False, 'detail':'No se encontró el usuario ingresado'},status=status.HTTP_404_NOT_FOUND)
+        
+        serializador = self.serializer_class(usuario, context = {'request':request})
+        return Response({'succes':True, 'detail':'Se encontró la información del usuario', 'data':serializador.data},status=status.HTTP_200_OK)
