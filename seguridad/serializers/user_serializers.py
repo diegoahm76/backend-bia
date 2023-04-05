@@ -112,7 +112,7 @@ class UserPutAdminSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['is_active', 'is_blocked', 'tipo_usuario', 'profile_img', 'justificacion']
+        fields = ['nombre_de_usuario','is_active', 'is_blocked', 'tipo_usuario', 'profile_img', 'justificacion']
 
 class UsuarioRolesLookSerializers(serializers.ModelSerializer):
     id_usuario = UserSerializer(read_only=True)
