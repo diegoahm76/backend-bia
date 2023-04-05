@@ -103,7 +103,7 @@ class UserPutSerializer(serializers.ModelSerializer):
         fields =['password','profile_img']
 
 class UserPutAdminSerializer(serializers.ModelSerializer):
-    nombre_de_usuario = serializers.CharField(max_length=30, min_length=6, validators=[UniqueValidator(queryset=User.objects.all())])
+    # nombre_de_usuario = serializers.CharField(max_length=30, min_length=6, validators=[UniqueValidator(queryset=User.objects.all())])
     tipo_usuario = serializers.CharField(max_length=1, write_only=True)
     profile_img = serializers.ImageField(required=False)
     is_active = serializers.BooleanField(required=False)
@@ -112,7 +112,7 @@ class UserPutAdminSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['nombre_de_usuario','is_active', 'is_blocked', 'tipo_usuario', 'profile_img', 'justificacion']
+        fields = ['is_active', 'is_blocked', 'tipo_usuario', 'profile_img', 'justificacion']
 
 class UsuarioRolesLookSerializers(serializers.ModelSerializer):
     id_usuario = UserSerializer(read_only=True)

@@ -94,7 +94,7 @@ class UpdateUserProfile(generics.UpdateAPIView):
 class UpdateUser(generics.RetrieveUpdateAPIView):
     serializer_class = UserPutAdminSerializer
     queryset = User.objects.all()
-    permission_classes = [IsAuthenticated, PermisoActualizarUsuarios]
+    permission_classes = [IsAuthenticated]
 
     def patch(self, request, pk):
         user_loggedin = request.user.id_usuario
