@@ -1465,7 +1465,7 @@ class CreatePersonaJuridicaAndUsuario(generics.CreateAPIView):
         # short_url = Util.get_short_url(request, absurl)
 
         subject = "Verifica tu usuario"
-        template = "email-verification.html"
+        template = "plantilla-mensaje.html"
 
         Util.notificacion(serializador,subject,template,absurl=absurl)
     
@@ -1485,8 +1485,8 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
         
         #CREACION DE PERSONA
         
-        serializer = self.serializer_class(data=data)
-        serializer.is_valid(raise_exception=True)
+        serializer_persona = self.serializer_class(data=data)
+        serializer_persona.is_valid(raise_exception=True)
 
         validaciones_persona = Util.guardar_persona(data)
         
@@ -1502,7 +1502,7 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
             return Response({'success':False,'detail':'No puede contener espacios en el nombre de usuario'},status=status.HTTP_403_FORBIDDEN)
         
         #GUARDAR PERSONA
-        serializador = serializer.save()
+        serializador = serializer_persona.save()
         serializador.id_persona_crea = serializador
         serializador.save()
         
@@ -1563,7 +1563,6 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
         }
         Util.save_auditoria(auditoria_data)
         
-
         #user = User.objects.get(email=user_data['email'])
 
         token = RefreshToken.for_user(serializer_response)
@@ -1578,7 +1577,7 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
         # short_url = Util.get_short_url(request, absurl)
         
         subject = "Verifica tu usuario"
-        template = "email-verification.html"
+        template = "plantilla-mensaje.html"
 
         Util.notificacion(serializador,subject,template,absurl=absurl)
     

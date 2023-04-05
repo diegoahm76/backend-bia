@@ -121,16 +121,21 @@ class UsuarioRolesLookSerializers(serializers.ModelSerializer):
         fields='__all__'
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(max_length= 68, min_length = 6, write_only=True)
-    
-    def validate_nombre_usuario(self, value):
+    def validate_nombre_de_usuario(self, value):
         if not value.isalnum():
-            raise serializers.ValidationError("El Nombre de usuario solo debe tener caracteres alfanumericos")
+            raise serializers.ValidationError("El nombre de usuario solo debe tener caracteres alfanumericos")
+        if " " in value:
+            raise serializers.ValidationError("No puede contener espacios en el nombre de usuario")
+        return value
+    
+    def validate_persona(self, value):
+        if not value.email:
+            raise serializers.ValidationError("La persona no tiene un correo electrónico de notificación asociado, debe acercarse a Cormacarena y realizar una actualizacion de datos para proceder con la creación del usuario en el sistema")
         return value
     
     class Meta:
         model = User
-        fields = ['persona', 'password', 'id_usuario_creador', 'tipo_usuario','nombre_de_usuario']
+        fields = ['persona', 'nombre_de_usuario', 'profile_img', 'tipo_usuario', 'id_usuario_creador']
 
 class RegisterExternoSerializer(serializers.ModelSerializer):
     password = serializers.CharField(max_length= 68, min_length = 6, write_only=True)
@@ -288,30 +293,41 @@ class ResetPasswordEmailRequestSerializer(serializers.Serializer):
         fields=['email','redirect_url']
     
 class SetNewPasswordSerializer(serializers.Serializer):
-    password = serializers.CharField(min_length=6,max_length=68,write_only=True)
+    password = serializers.CharField(min_length=8,max_length=68,write_only=True)
     token = serializers.CharField(min_length=1,write_only=True)   
-    uidb64 = serializers.CharField(min_length=1,write_only=True)   
+    uidb64 = serializers.CharField(min_length=1,write_only=True)
+    
+    def validate(self, attrs):
+        password = attrs.get('password')
+        token = attrs.get('token')
+        uidb64 = attrs.get('uidb64')
+
+        id = int(signing.loads(uidb64)['user'])
+        user = User.objects.get(id_usuario=id)
+        
+        # VALIDACIONES PASSWORD
+        if not re.search(r'[A-Z]', password):
+            raise serializers.ValidationError('La contraseña debe contener al menos una letra mayúscula.')
+        if not re.search(r'\d', password):
+            raise serializers.ValidationError('La contraseña debe contener al menos un número.')
+        if not re.search(r'[^A-Za-z0-9]', password):
+            raise serializers.ValidationError('La contraseña debe contener al menos un caracter especial.')
+        
+        # VALIDACIONES LINK
+        if not PasswordResetTokenGenerator().check_token(user,token):
+            if user.password:
+                raise AuthenticationFailed('Link de actualización de contraseña invalido')
+            else:
+                raise AuthenticationFailed('Link de activación de usuario invalido')
+        
+        # VALIDACIONES PASSWORD IGUAL A ANTERIOR
+        if check_password(password,user.password):
+            raise serializers.ValidationError('No se puede actualizar la contraseña. El valor proporcionado es el mismo que tiene actualmente')
+
+        return attrs
+    
     class Meta:
         fields = ['password','token','uidb64']
-    def validate(self, attrs):
-            password = attrs.get('password')
-            token = attrs.get('token')
-            uidb64 = attrs.get('uidb64')
-
-            id = int(signing.loads(uidb64)['user'])
-            user = User.objects.get(id_usuario=id)
-            print(make_password(password))
-            print(user.password)
-            print(check_password(password,user.password))
-            if not PasswordResetTokenGenerator().check_token(user,token):
-                raise AuthenticationFailed('Link de actualización de contraseña invalido',401)
-            
-            if check_password(password,user.password):
-                raise serializers.ValidationError('no se puede actualizar la contraseña. el valor proporcionado. el valor es el mismo que se teniene actualmente',401)
-            user.set_password(password)
-            user.save()
-
-            return user
        
 
 
