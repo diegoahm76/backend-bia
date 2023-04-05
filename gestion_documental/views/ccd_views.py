@@ -166,15 +166,15 @@ class FinalizarCuadroClasificacionDocumental(generics.RetrieveUpdateAPIView):
             # Mostrar las series sin asignar
             series_diff_list = [serie for serie in series_list if serie not in cat_series_list]
             series_diff_instance = series.filter(id_serie_doc__in=series_diff_list)
-            series_names = [serie.nombre for serie in series_diff_instance]
-            return Response({'success': False, 'detail': 'Debe asociar todas las series o eliminar las series faltantes', 'data': series_names}, status=status.HTTP_400_BAD_REQUEST)
+            serializer_series = SeriesDocPostSerializer(series_diff_instance, many=True)
+            return Response({'success': False, 'detail': 'Debe asociar todas las series o eliminar las series faltantes', 'error_series':True, 'error_catalogo':False, 'data': serializer_series.data}, status=status.HTTP_400_BAD_REQUEST)
         
         if not set(cat_series_subseries_list).issubset(cat_series_unidad_list):
             # Mostrar los items de catalogo de series y subseries sin asignar
             cat_series_subseries_diff_list = [cat_serie_subserie for cat_serie_subserie in cat_series_subseries_list if cat_serie_subserie not in cat_series_unidad_list]
             cat_series_subseries_diff_instance = cat_series_subseries.filter(id_catalogo_serie__in=cat_series_subseries_diff_list)
-            cat_series_subseries_names = [{'nombre_serie':cat_serie_subserie.id_serie_doc.nombre, 'nombre_subserie':cat_serie_subserie.id_subserie_doc.nombre if cat_serie_subserie.id_subserie_doc else None} for cat_serie_subserie in cat_series_subseries_diff_instance]
-            return Response({'success': False, 'detail': 'Debe asociar todos los items del catalogo de serie y subserie o eliminar los items faltantes', 'data': cat_series_subseries_names}, status=status.HTTP_400_BAD_REQUEST)
+            serializer_cat_series_subseries = CatalogoSerieSubserieSerializer(cat_series_subseries_diff_instance, many=True)
+            return Response({'success': False, 'detail': 'Debe asociar todos los items del catalogo de serie y subserie o eliminar los items faltantes', 'error_series':False, 'error_catalogo':True, 'data': serializer_cat_series_subseries.data}, status=status.HTTP_400_BAD_REQUEST)
             
         ccd.fecha_terminado = datetime.now()
         ccd.save()
@@ -302,7 +302,7 @@ class DeleteSeriesDoc(generics.DestroyAPIView):
             if cat_serie_subserie:
                 return Response({'success':False, 'detail':'No puede eliminar la serie elegida porque está asociada en el catalogo de series y subseries. Debe eliminar la asociación antes de proceder'}, status=status.HTTP_403_FORBIDDEN)
             
-            cat_und = serie.catalogosseriesunidad_set.all()
+            cat_und = serie.catalogosseries_set.all().first().catalogosseriesunidad_set.all() if serie.catalogosseries_set.all() else None
             if cat_und:
                 return Response({'success':False, 'detail':'No puede eliminar la serie elegida porque está asociada en el catalogo de series de las unidades de las unidades organizacionales. Debe eliminar la asociación antes de proceder'}, status=status.HTTP_403_FORBIDDEN)
             

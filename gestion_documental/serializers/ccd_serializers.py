@@ -29,6 +29,17 @@ class SubseriesAsignacionesSerializer(serializers.ModelSerializer):
         fields = ['label', 'value', 'codigo', 'id_cat_serie_und', 'clasificacion']
 
 class SeriesDocPostSerializer(serializers.ModelSerializer):
+    existe_catalogo = serializers.SerializerMethodField()
+    tiene_subseries = serializers.SerializerMethodField()
+    
+    def get_existe_catalogo(self, obj):
+        existe_catalogo = True if obj.catalogosseries_set.all() else False
+        return existe_catalogo
+    
+    def get_tiene_subseries(self, obj):
+        tiene_subseries = True if obj.subseriesdoc_set.all() else False
+        return tiene_subseries
+    
     class Meta:
         model = SeriesDoc
         fields = '__all__'
