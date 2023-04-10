@@ -215,7 +215,6 @@ class PersonaNaturalPostSerializer(serializers.ModelSerializer):
             'tipo_persona', 
             'tipo_documento', 
             'numero_documento', 
-            'digito_verificacion', 
             'nombre_comercial', 
             'primer_nombre', 
             'segundo_nombre', 
@@ -279,7 +278,6 @@ class PersonaNaturalUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Personas
         fields = [
-            'digito_verificacion',
             'nombre_comercial',
             'direccion_residencia',
             'direccion_residencia_ref',
@@ -401,7 +399,8 @@ class PersonaJuridicaUpdateSerializer(serializers.ModelSerializer):
             "representante_legal",
             "fecha_inicio_cargo_rep_legal",
             "fecha_ultim_actualiz_diferente_crea",
-            "id_persona_ultim_actualiz_diferente_crea"
+            "id_persona_ultim_actualiz_diferente_crea",
+            "fecha_cambio_representante_legal"
         ]
         
         extra_kwargs = {

@@ -362,9 +362,9 @@ class UpdatePersonaNaturalAdminPersonas(generics.UpdateAPIView):
                 
             if persona.tipo_persona != "N":
                 return Response ({'success':False,'detail':'No se puede actualizar una persona jurídica con este servicio'},status=status.HTTP_403_FORBIDDEN)
-        
+                
             if persona_logueada != persona.id_persona_crea.id_persona:
-                print("ENTRÓ")
+                
                 cambio = Util.comparacion_campos_actualizados(data,persona)
                 if cambio:
                     data['fecha_ultim_actualiz_diferente_crea'] = datetime.now()
@@ -428,6 +428,33 @@ class UpdatePersonaJuridicaAdminPersonas(generics.UpdateAPIView):
             else:
                 data['fecha_ultim_actualiz_diferente_crea'] = None
                 data['id_persona_ultim_actualiz_diferente_crea'] = None 
+                
+            #Validacion de Fecha de cambio de representante legal y fecha de incio de representantele legalñ
+            
+            if persona.representante_legal.id_persona != data["representante_legal"]:
+                data['fecha_cambio_representante_legal'] = datetime.now()
+                
+                fecha_inicio = data.get("fecha_inicio_cargo_rep_legal")
+            
+                if not fecha_inicio:
+                    fecha_inicio = datetime.now()
+                    
+                else:
+                    fecha_formateada = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+                    fecha_ahora = date.today()
+                    if fecha_formateada > fecha_ahora or fecha_formateada <= persona.fecha_inicio_cargo_rep_legal.date():
+                        return Response({'success':False,'detail':'La fecha de inicio del cargo del representante no debe ser superior a la del sistema y tiene que ser mayor a la fecha de inicio del representante legal anterior'}, status=status.HTTP_403_FORBIDDEN)
+
+            else:
+                fecha_inicio = data.get("fecha_inicio_cargo_rep_legal")
+                if fecha_inicio: 
+                
+                    fecha_formateada = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+                    print()
+                    if persona.fecha_inicio_cargo_rep_legal.date() != fecha_formateada:
+                        return Response({'success':False,'detail':'No se puede actualizar la fecha de inicio de representante legal sin haber cambiado el representante'},status=status.HTTP_403_FORBIDDEN)
+                    
+                data['fecha_cambio_representante_legal'] = None
                 
             persona_serializada = self.serializer_class(persona, data=data, many=False)
             persona_serializada.is_valid(raise_exception=True)
@@ -699,10 +726,6 @@ class UpdatePersonaJuridicaBySelf(generics.UpdateAPIView):
         
         if persona.tipo_persona != "J":
             return Response ({'success':False,'detail':'No se puede actualizar una persona natural con este servicio'},status=status.HTTP_403_FORBIDDEN)
-        
-        #VALIDACION DE REPRESENTANTE LEGAL
-        if persona.representante_legal.id_persona != data.get('representante_legal'):
-            data['fecha_cambio_representante_legal'] = datetime.now()  
             
         if persona.id_persona != persona.id_persona_crea.id_persona:
                 
@@ -714,6 +737,33 @@ class UpdatePersonaJuridicaBySelf(generics.UpdateAPIView):
         else:
             data['fecha_ultim_actualiz_diferente_crea'] = None
             data['id_persona_ultim_actualiz_diferente_crea'] = None 
+            
+        #Validacion de Fecha de cambio de representante legal y fecha de incio de representantele legalñ
+            
+        if persona.representante_legal.id_persona != data["representante_legal"]:
+            data['fecha_cambio_representante_legal'] = datetime.now()
+            
+            fecha_inicio = data.get("fecha_inicio_cargo_rep_legal")
+        
+            if not fecha_inicio:
+                fecha_inicio = datetime.now()
+                
+            else:
+                fecha_formateada = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+                fecha_ahora = date.today()
+                if fecha_formateada > fecha_ahora or fecha_formateada <= persona.fecha_inicio_cargo_rep_legal.date():
+                    return Response({'success':False,'detail':'La fecha de inicio del cargo del representante no debe ser superior a la del sistema y tiene que ser mayor a la fecha de inicio del representante legal anterior'}, status=status.HTTP_403_FORBIDDEN)
+
+        else:
+            fecha_inicio = data.get("fecha_inicio_cargo_rep_legal")
+            if fecha_inicio: 
+            
+                fecha_formateada = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+                print()
+                if persona.fecha_inicio_cargo_rep_legal.date() != fecha_formateada:
+                    return Response({'success':False,'detail':'No se puede actualizar la fecha de inicio de representante legal sin haber cambiado el representante'},status=status.HTTP_403_FORBIDDEN)
+                
+            data['fecha_cambio_representante_legal'] = None
         
         persona_serializada = self.serializer_class(persona, data=data, many=False)
         persona_serializada.is_valid(raise_exception=True)

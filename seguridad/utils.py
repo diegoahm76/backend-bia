@@ -339,12 +339,10 @@ class Util:
         else:
             
             fecha_inicio = data.get("fecha_inicio_cargo_rep_legal")
-            fecha_formateada = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
             
-            fecha_ahora = date.today()
-            
-            if fecha_formateada:
-                
+            if fecha_inicio:
+                fecha_formateada = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+                fecha_ahora = date.today()
                 if fecha_formateada > fecha_ahora:
                     return {'success':False,'detail':'La fecha de inicio del cargo del representante no debe ser superior a la del sistema', 'status':status.HTTP_403_FORBIDDEN}
             
