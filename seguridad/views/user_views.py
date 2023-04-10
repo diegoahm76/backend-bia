@@ -1235,7 +1235,7 @@ class UsuarioInternoAExterno(generics.UpdateAPIView):
             usuario.save()
             HistoricoActivacion.objects.create(
                 id_usuario_afectado=usuario,
-                justificacion='Usuario interno desactivado y convertido en externo activo',
+                justificacion='Usuario activado desde el portal, con cambio de INTERNO a EXTERNO',
                 usuario_operador=user_loggedin,
                 cod_operacion='A'
             )

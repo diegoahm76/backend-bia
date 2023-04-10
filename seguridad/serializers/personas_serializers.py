@@ -795,11 +795,10 @@ class BusquedaHistoricoCambiosSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class UpdatePersonasNaturalesSerializer(serializers.ModelSerializer):
-    justificacion = serializers.CharField(required=True)
 
     class Meta:
         model = Personas
-        fields = ('id_persona', 'tipo_documento', 'numero_documento', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'justificacion')
+        fields = ('id_persona', 'tipo_documento', 'numero_documento', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido')
 
 
         validators = [
@@ -812,11 +811,10 @@ class UpdatePersonasNaturalesSerializer(serializers.ModelSerializer):
             ]
     
 class UpdatePersonasJuridicasSerializer(serializers.ModelSerializer):
-    justificacion = serializers.CharField(required=True)
 
     class Meta:
         model = Personas
-        fields = ('id_persona', 'numero_documento', 'razon_social', 'nombre_comercial', 'cod_naturaleza_empresa','justificacion')
+        fields = ('id_persona', 'numero_documento', 'razon_social', 'nombre_comercial', 'cod_naturaleza_empresa')
 
 
         validators = [
