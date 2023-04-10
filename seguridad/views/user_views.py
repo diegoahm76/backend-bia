@@ -526,14 +526,14 @@ class RegisterView(generics.CreateAPIView):
         if data["tipo_usuario"] == "I":
             # VALIDAR QUE PERSONA NO SEA JURIDICA
             if persona.tipo_persona == 'J':
-                return Response({'success':False,'detail':'No puede registrar esta persona como un usuario interno'},status=status.HTTP_403_FORBIDDEN)
+                return Response({'success':False,'detail':'No puede registrar una persona jurídica como un usuario interno'},status=status.HTTP_403_FORBIDDEN)
                 
             # VALIDAR QUE TENGA CARGO
             if not persona.id_cargo:
                 return Response({'success':False,'detail':'La persona no tiene un cargo asociado'},status=status.HTTP_403_FORBIDDEN)
             
             # VALIDAR QUE ESTE VIGENTE EL CARGO
-            if persona.id_cargo and (persona.fecha_a_finalizar_cargo_actual <= datetime.now()):
+            if not persona.fecha_a_finalizar_cargo_actual or persona.fecha_a_finalizar_cargo_actual <= datetime.now():
                 return Response({'success':False,'detail':'La fecha de finalización del cargo actual no es vigente'},status=status.HTTP_403_FORBIDDEN)
         
         valores_creados_detalles = []
@@ -543,8 +543,9 @@ class RegisterView(generics.CreateAPIView):
         if not roles_por_asignar:
             return Response( {'success':False, 'detail':'Debe enviar mínimo un rol para asignar al usuario'}, status=status.HTTP_400_BAD_REQUEST)
         
-        roles_por_asignar = list(set(roles_por_asignar))
-        
+        roles_por_asignar = [int(a) for a in roles_por_asignar]
+        roles_por_asignar= set(roles_por_asignar)
+    
         if data["tipo_usuario"] == "I":
             if 2 not in roles_por_asignar:
                 roles_por_asignar.append(2)
@@ -554,12 +555,11 @@ class RegisterView(generics.CreateAPIView):
             roles_por_asignar = [2]
         
         roles = Roles.objects.filter(id_rol__in=roles_por_asignar)
-
-        if len(roles) != len(roles_por_asignar):
+        
+        if len(roles) != len(set(roles_por_asignar)):
             return Response( {'success':False, 'detail':'Deben existir todos los roles asignados'}, status=status.HTTP_400_BAD_REQUEST)
 
         user_serializer=serializer.save()
-        print("USER_SERIALIZER: ", user_serializer)
 
         for rol in roles:
             UsuariosRol.objects.create(
