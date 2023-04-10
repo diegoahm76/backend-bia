@@ -139,6 +139,11 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("La persona no tiene un correo electrónico de notificación asociado, debe acercarse a Cormacarena y realizar una actualizacion de datos para proceder con la creación del usuario en el sistema")
         return value
     
+    def validate_nombre_usuario(self, value):
+        if not value.isalnum():
+            raise serializers.ValidationError("El Nombre de usuario solo debe tener caracteres alfanumericos")
+        return value
+    
     class Meta:
         model = User
         fields = ['persona', 'nombre_de_usuario', 'profile_img', 'tipo_usuario', 'id_usuario_creador']

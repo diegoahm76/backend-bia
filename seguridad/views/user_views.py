@@ -162,8 +162,10 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                 roles_actuales = UsuariosRol.objects.filter(id_usuario=pk)
                 
                 lista_roles_bd = [rol.id_rol.id_rol for rol in roles_actuales]
-                lista_roles_json = request.data.get('roles', [])
-
+                lista_roles_json = request.data.getlist("roles")
+                
+                lista_roles_json = [int(a) for a in lista_roles_json]
+            
                 valores_creados_detalles=[]
                 valores_eliminados_detalles = []
 
@@ -187,7 +189,9 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                 
                     # ELIMINAR ROLES
                     for rol in lista_roles_bd:
+                        print(lista_roles_json)
                         if rol not in lista_roles_json:
+                            
                             if rol == 2:
                                 return Response({'success': False, 'detail': 'El rol con id_rol 2 no puede ser eliminado'}, status=status.HTTP_403_FORBIDDEN)
                             else:
@@ -544,7 +548,7 @@ class RegisterView(generics.CreateAPIView):
         if data["tipo_usuario"] == "I":
             if 2 not in roles_por_asignar:
                 roles_por_asignar.append(2)
-            elif 1 in roles_por_asignar:
+            if 1 in roles_por_asignar:
                 roles_por_asignar.remove(1)
         elif data["tipo_usuario"] == "E":
             roles_por_asignar = [2]
@@ -555,6 +559,7 @@ class RegisterView(generics.CreateAPIView):
             return Response( {'success':False, 'detail':'Deben existir todos los roles asignados'}, status=status.HTTP_400_BAD_REQUEST)
 
         user_serializer=serializer.save()
+        print("USER_SERIALIZER: ", user_serializer)
 
         for rol in roles:
             UsuariosRol.objects.create(
