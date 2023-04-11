@@ -215,7 +215,6 @@ class PersonaNaturalPostSerializer(serializers.ModelSerializer):
             'tipo_persona', 
             'tipo_documento', 
             'numero_documento', 
-            'digito_verificacion', 
             'nombre_comercial', 
             'primer_nombre', 
             'segundo_nombre', 
@@ -242,7 +241,9 @@ class PersonaNaturalPostSerializer(serializers.ModelSerializer):
             'acepta_notificacion_sms',
             'acepta_notificacion_email',
             'acepta_tratamiento_datos',
-            "cod_municipio_expedicion_id"
+            "cod_municipio_expedicion_id",
+            "id_persona_crea",
+        
         ]
         
         validators = [
@@ -253,25 +254,82 @@ class PersonaNaturalPostSerializer(serializers.ModelSerializer):
             )
         ]
         extra_kwargs = {
-            'tipo_persona': {'required': True},
-            'tipo_documento': {'required': True},
-            'numero_documento': {'required': True},
-            'primer_nombre': {'required': True},
-            'primer_apellido': {'required': True},
-            'fecha_nacimiento': {'required': True},
-            'email': {'required': True},
-            'sexo': {'required': True},
-            'estado_civil': {'required': True},
-            'cod_municipio_expedicion_id': {'required': True},
-            'pais_residencia': {'required': True},
-            'direccion_residencia': {'required': True},
-            'direccion_notificaciones': {'required': True},
-            'cod_municipio_notificacion_nal': {'required': True},
-            'acepta_notificacion_sms': {'required': True},
-            'acepta_notificacion_email': {'required': True},
-            'acepta_tratamiento_datos': {'required': True},
+            'tipo_persona': {'required': True,'allow_null':False, 'allow_blank':False},
+            'tipo_documento': {'required': True,'allow_null':False},
+            'numero_documento': {'required': True,'allow_null':False, 'allow_blank':False},
+            'primer_nombre': {'required': True,'allow_null':False, 'allow_blank':False},
+            'primer_apellido': {'required': True,'allow_null':False, 'allow_blank':False},
+            'fecha_nacimiento': {'required': True,'allow_null':False},
+            'email': {'required': True,'allow_null':False, 'allow_blank':False},
+            'sexo': {'required': True,'allow_null':False},
+            'estado_civil': {'required': True,'allow_null':False},
+            'cod_municipio_expedicion_id': {'required': True,'allow_null':False},
+            'pais_residencia': {'required': True,'allow_null':False},
+            'direccion_residencia': {'required': True,'allow_null':False, 'allow_blank':False},
+            'direccion_notificaciones': {'required': True,'allow_null':False, 'allow_blank':False},
+            'cod_municipio_notificacion_nal': {'required': True,'allow_null':False},
+            'acepta_notificacion_sms': {'required': True,'allow_null':False},
+            'acepta_notificacion_email': {'required': True,'allow_null':False},
+            'acepta_tratamiento_datos': {'required': True,'allow_null':False},
         }
         
+#ACTUALIZACION PERSONA NATURAL
+class PersonaNaturalUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Personas
+        fields = [
+            'nombre_comercial',
+            'direccion_residencia',
+            'direccion_residencia_ref',
+            'ubicacion_georeferenciada',
+            'municipio_residencia',
+            'pais_residencia',
+            'direccion_laboral',
+            'cod_municipio_laboral_nal',
+            'direccion_notificaciones',
+            'cod_municipio_notificacion_nal',
+            'email',
+            'email_empresarial',
+            'telefono_fijo_residencial',
+            'telefono_celular',
+            'telefono_empresa_2',
+            'fecha_nacimiento',
+            'pais_nacimiento',
+            'sexo',
+            'estado_civil',
+            "cod_municipio_expedicion_id",
+            "fecha_ultim_actualiz_diferente_crea",
+            "id_persona_ultim_actualiz_diferente_crea"
+        ]
+            
+        extra_kwargs = {
+                'fecha_nacimiento': {'required': True,'allow_null':False},
+                'email': {'required': True,'allow_null':False, 'allow_blank':False},
+                'sexo': {'required': True,'allow_null':False},
+                'estado_civil': {'required': True,'allow_null':False},
+                'cod_municipio_expedicion_id': {'required': True,'allow_null':False},
+                'pais_residencia': {'required': True,'allow_null':False},
+                'direccion_notificaciones': {'required': True,'allow_null':False, 'allow_blank':False},
+                'cod_municipio_notificacion_nal': {'required': True,'allow_null':False},
+                'direccion_residencia': {'required': True,'allow_null':False, 'allow_blank':False},
+            }
+        
+class PersonaNaturalUpdateAdminSerializer(PersonaNaturalUpdateSerializer):
+    
+    class Meta:
+        model =  Personas
+        fields = PersonaNaturalUpdateSerializer.Meta.fields
+        extra_kwargs = PersonaNaturalUpdateSerializer.Meta.extra_kwargs | {'direccion_notificaciones': {'required': False,'allow_null':True, 'allow_blank':True}}
+
+
+class PersonaNaturalPostAdminSerializer(PersonaNaturalPostSerializer):
+    
+    class Meta:
+        model =  Personas
+        fields = PersonaNaturalPostSerializer.Meta.fields
+        validators = PersonaNaturalPostSerializer.Meta.validators
+        extra_kwargs = PersonaNaturalPostSerializer.Meta.extra_kwargs | {'direccion_notificaciones': {'required': False,'allow_null':True, 'allow_blank':True}}
+
 
 #CREACION DE PERSONA JURIDICA
 class PersonaJuridicaPostSerializer(serializers.ModelSerializer):
@@ -309,22 +367,58 @@ class PersonaJuridicaPostSerializer(serializers.ModelSerializer):
         ]
         
         extra_kwargs = {
-            'tipo_persona': {'required': True},
-            'tipo_documento': {'required': True},
-            'numero_documento': {'required': True},
-            'digito_verificacion': {'required': True},
-            'razon_social': {'required': True},
-            'nombre_comercial': {'required': True},
-            'representante_legal': {'required': True},
-            'cod_naturaleza_empresa': {'required': True},
-            'email': {'required': True},
-            'direccion_notificaciones': {'required': True},
-            'cod_municipio_notificacion_nal': {'required': True},
-            'fecha_inicio_cargo_rep_legal': {'required':True},
-            'acepta_notificacion_sms': {'required':True},
-            'acepta_notificacion_email': {'required':True}
+            'tipo_persona': {'required': True,'allow_null':False},
+            'tipo_documento': {'required': True,'allow_null':False},
+            'numero_documento': {'required': True,'allow_null':False, 'allow_blank':False},
+            'digito_verificacion': {'required': True,'allow_null':False, 'allow_blank':False},
+            'razon_social': {'required': True,'allow_null':False, 'allow_blank':False},
+            'nombre_comercial': {'required': True,'allow_null':False, 'allow_blank':False},
+            'representante_legal': {'required': True,'allow_null':False},
+            'cod_naturaleza_empresa': {'required': True,'allow_null':False},
+            'email': {'required': True,'allow_null':False, 'allow_blank':False},
+            'direccion_notificaciones': {'required': True,'allow_null':False, 'allow_blank':False},
+            'cod_municipio_notificacion_nal': {'required': True,'allow_null':False},
+            'fecha_inicio_cargo_rep_legal': {'required':True,'allow_null':False},
+            'acepta_notificacion_sms': {'required':True,'allow_null':False},
+            'acepta_notificacion_email': {'required':True,'allow_null':False}
+        }
+
+#ACTUALIZACION DE PERSONA JURIDICA
+class PersonaJuridicaUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Personas
+        fields = [
+            'direccion_notificaciones', 
+            'cod_municipio_notificacion_nal',
+            'email',
+            'email_empresarial',
+            'telefono_empresa',
+            'telefono_celular_empresa',
+            'telefono_empresa_2',
+            'cod_pais_nacionalidad_empresa',
+            "representante_legal",
+            "fecha_inicio_cargo_rep_legal",
+            "fecha_ultim_actualiz_diferente_crea",
+            "id_persona_ultim_actualiz_diferente_crea",
+            "fecha_cambio_representante_legal"
+        ]
+        
+        extra_kwargs = {
+            'representante_legal': {'required': True,'allow_null':False},
+            'email': {'required': True},'allow_null':False, 'allow_blank':False,
+            'direccion_notificaciones': {'required': True,'allow_null':False, 'allow_blank':False},
+            'fecha_inicio_cargo_rep_legal': {'required':True,'allow_null':False},
+            'cod_municipio_notificacion_nal': {'required':True,'allow_null':False},
+            'cod_pais_nacionalidad_empresa': {'required':True,'allow_null':False}
         }
         
+class GetClaseTerceroSerializers(serializers.ModelSerializer):
+    
+    class Meta:
+        model = ClasesTercero
+        fields = '__all__'
+
+
 class GetPersonaJuridicaByRepresentanteLegalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Personas
@@ -409,51 +503,6 @@ class PersonaNaturalPostByUserSerializer(serializers.ModelSerializer):
                 'fecha_nacimiento': {'required': True},
                 'email': {'required': True}
             }
-
-
-#ACTUALIZACION PERSONA NATURAL
-class PersonaNaturalUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Personas
-        fields = [
-            'digito_verificacion',
-            'nombre_comercial',
-            'direccion_residencia',
-            'direccion_residencia_ref',
-            'ubicacion_georeferenciada',
-            'municipio_residencia',
-            'pais_residencia',
-            'direccion_laboral',
-            'cod_municipio_laboral_nal',
-            'direccion_notificaciones',
-            'cod_municipio_notificacion_nal',
-            'email',
-            'email_empresarial',
-            'telefono_fijo_residencial',
-            'telefono_celular',
-            'telefono_empresa_2',
-            'fecha_nacimiento',
-            'pais_nacimiento',
-            'sexo',
-            'estado_civil',
-            "cod_municipio_expedicion_id"
-        ]
-        
-        extra_kwargs = {
-                'fecha_nacimiento': {'required': True},
-                'email': {'required': True},
-                'sexo': {'required': True},
-                'estado_civil': {'required': True},
-                'cod_municipio_expedicion_id': {'required': True},
-                'pais_residencia': {'required': True},
-                'direccion_notificaciones': {'required': True},
-                'cod_municipio_notificacion_nal': {'required': True},
-                'direccion_residencia': {'required': True},
-            }
-        
-        
-        
-
 
 # class PersonaNaturalExternoUpdateSerializer(serializers.ModelSerializer):
 #     email = serializers.EmailField(validators=[UniqueValidator(queryset=Personas.objects.all())])
@@ -548,31 +597,6 @@ class PersonaNaturalUpdateUserPermissionsSerializer(serializers.ModelSerializer)
 #         ]
 
 
-#ACTUALIZACION DE PERSONA JURIDICA
-class PersonaJuridicaUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Personas
-        fields = [
-            'direccion_notificaciones', 
-            'cod_municipio_notificacion_nal',
-            'email',
-            'email_empresarial',
-            'telefono_empresa',
-            'telefono_celular_empresa',
-            'telefono_empresa_2',
-            'cod_pais_nacionalidad_empresa',
-            "representante_legal",
-            "fecha_inicio_cargo_rep_legal"
-        ]
-        
-        extra_kwargs = {
-            'representante_legal': {'required': True},
-            'email': {'required': True},
-            'direccion_notificaciones': {'required': True},
-            'fecha_inicio_cargo_rep_legal': {'required':True},
-            'cod_municipio_notificacion_nal': {'required':True},
-            'cod_pais_nacionalidad_empresa': {'required':True}
-        }
         
 class PersonaJuridicaUpdateUserPermissionsSerializer(serializers.ModelSerializer):
     telefono_celular_empresa = serializers.CharField(max_length=15, min_length=10)
@@ -801,12 +825,3 @@ class UpdatePersonasJuridicasSerializer(serializers.ModelSerializer):
                     message = 'Ya existe un registro con ese número de documento ingresado'    
                 )
             ]
-
-
-class BusquedaHistoricoCargoUndSerializer(serializers.ModelSerializer):
-    nombre_cargo = serializers.CharField(source='id_cargo.nombre', read_only=True)
-    nombre_unidad_organizacional = serializers.CharField(source='id_unidad_organizacional.nombre', read_only=True)
-
-    class Meta:
-        model = HistoricoCargosUndOrgPersona
-        fields = ['nombre_cargo', 'nombre_unidad_organizacional', 'fecha_inicial_historico', 'fecha_final_historico', 'observaciones_vinculni_cargo', 'justificacion_cambio_und_org','desvinculado','fecha_desvinculacion','observaciones_desvinculacion']

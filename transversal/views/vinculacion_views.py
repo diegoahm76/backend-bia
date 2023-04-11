@@ -1,7 +1,7 @@
 from rest_framework import generics,status
 from rest_framework.response import Response
 from conservacion.models.viveros_models import HistoricoResponsableVivero, Vivero
-from gestion_documental.serializers.vinculacion_serializers import GetDesvinculacion_persona, VinculacionColaboradorSerializer, ConsultaVinculacionColaboradorSerializer, UpdateVinculacionColaboradorSerializer
+from transversal.serializers.vinculacion_serializers import BusquedaHistoricoCargoUndSerializer, GetDesvinculacion_persona, VinculacionColaboradorSerializer, ConsultaVinculacionColaboradorSerializer, UpdateVinculacionColaboradorSerializer
 from seguridad.models import ClasesTerceroPersona, HistoricoActivacion, HistoricoCargosUndOrgPersona, Personas, User
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime, date, timedelta
@@ -53,11 +53,10 @@ class VinculacionColaboradorView(generics.UpdateAPIView):
         
             persona.id_cargo = cargo_inst
 
-
             # VALIDACIÓN FECHA A FINALIZAR POSTERIOR A LA ACTUAL
 
             fecha_minima = (datetime.today() + timedelta(days=1)).date()
-            fecha_finalizar_cargo = (datetime.strptime(fecha_a_finalizar_cargo_actual, '%Y-%m-%d %H:%M:%S')).date()
+            fecha_finalizar_cargo = (datetime.strptime(fecha_a_finalizar_cargo_actual, '%Y-%m-%d')).date()
 
             if fecha_finalizar_cargo < fecha_minima:
                 return Response({'success': False, 'detail':'La fecha de finalización debe ser posterior a la fecha actual, mínimo el día siguiente'}, status=status.HTTP_403_FORBIDDEN)
@@ -108,7 +107,7 @@ class ConsultaVinculacionColaboradorView(generics.ListAPIView):
         data = serializador.data
 
         fecha_a_finalizar_cargo_actual = consulta_personas.fecha_a_finalizar_cargo_actual if consulta_personas.id_cargo else None
-        fecha_vencida = fecha_a_finalizar_cargo_actual if fecha_a_finalizar_cargo_actual < datetime.now() else False
+        fecha_vencida = True if fecha_a_finalizar_cargo_actual < datetime.now() else False
         data['fecha_vencida'] = fecha_vencida
 
         return Response({'success':True, 'detail': 'La persona existe y está vinculada como colaborador', 'data':data}, status=status.HTTP_200_OK)
@@ -141,68 +140,76 @@ class UpdateVinculacionColaboradorView(generics.RetrieveUpdateDestroyAPIView):
         if persona:
 
             cargo_inst_current = Cargos.objects.filter(id_cargo=cargo).first()
-            cargo_inst = Cargos.objects.filter(id_cargo=persona.id_cargo.id_cargo).first()
-            unidad_inst = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=persona.id_unidad_organizacional_actual.id_unidad_organizacional).first()
+            cargo_inst = persona.id_cargo
+            unidad_inst = persona.id_unidad_organizacional_actual
+            observacion_old = persona.observaciones_vinculacion_cargo_actual
             unidad_inst_current = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=unidad).first()
             previous_persona = copy.copy(persona) 
 
             if not fecha_finalizar_cargo:
                 return Response( {'success':False, 'detail':'Debe enviar la fecha de finalización'}, status=status.HTTP_403_FORBIDDEN)
 
-            fecha_finalizar_cargo = (datetime.strptime(fecha_finalizar_cargo, '%Y-%m-%d %H:%M:%S'))
+            fecha_finalizar_cargo = datetime.strptime(fecha_finalizar_cargo, '%Y-%m-%d').date()
 
             if cargo == persona.id_cargo.id_cargo and unidad == persona.id_unidad_organizacional_actual.id_unidad_organizacional and fecha_finalizar_cargo == persona.fecha_a_finalizar_cargo_actual:
                 return Response({'success': False, 'detail': 'No se ha realizado ninguna actualización'}, status=status.HTTP_403_FORBIDDEN)
-
-            if fecha_finalizar_cargo != persona.fecha_a_finalizar_cargo_actual:
-                fecha_minima = (datetime.today() + timedelta(days=1))
-
-                if fecha_finalizar_cargo < fecha_minima:
-                    return Response({'success': False, 'detail':'La fecha de finalización debe ser posterior a la fecha actual, mínimo el día siguiente'}, status=status.HTTP_403_FORBIDDEN)
-
-                else:
-                    persona.fecha_a_finalizar_cargo_actual = fecha_finalizar_cargo
 
             fecha_inicio_cargo = persona.fecha_inicio_cargo_actual
             fecha_asignacion_unidad = persona.fecha_asignacion_unidad
 
             if persona.fecha_a_finalizar_cargo_actual > fecha_actual:
-                if cargo and cargo != persona.id_cargo.id_cargo:
+                if unidad != persona.id_unidad_organizacional_actual.id_unidad_organizacional or cargo != persona.id_cargo.id_cargo:
+                    if fecha_finalizar_cargo != persona.fecha_a_finalizar_cargo_actual:
+                        fecha_minima = (datetime.today() + timedelta(days=1)).date()
+                        if fecha_finalizar_cargo < fecha_minima:
+                            return Response({'success': False, 'detail':'La fecha de finalización debe ser posterior a la fecha actual, mínimo el día siguiente'}, status=status.HTTP_403_FORBIDDEN)
+                        else:
+                            persona.fecha_a_finalizar_cargo_actual = fecha_finalizar_cargo
+                        
+                    if cargo and cargo != persona.id_cargo.id_cargo:
+                        persona.id_cargo = cargo_inst_current
+                        persona.fecha_inicio_cargo_actual = fecha_actual
 
-                    print("Entró acá",cargo_inst_current)
-                    persona.id_cargo = cargo_inst_current
-                    persona.fecha_inicio_cargo_actual = fecha_actual
+                        if not fecha_finalizar_cargo or fecha_actual.date() > fecha_finalizar_cargo:
+                            return Response({'success': False, 'detail':'Se debe enviar la fecha de finalización del cargo y tiene que ser mayor a la de inicio del cargo'}, status=status.HTTP_403_FORBIDDEN)
+                        
+                        if not observacion or observacion == '':
+                            return Response({'success': False, 'detail':'Se debe ingresar una observación'}, status=status.HTTP_403_FORBIDDEN)
+                        else:
+                            persona.observaciones_vinculacion_cargo_actual = observacion
 
-                    if not fecha_finalizar_cargo or fecha_actual > fecha_finalizar_cargo:
-                        return Response({'success': False, 'detail':'Se debe enviar la fecha de finalización del cargo y tiene que ser mayor a la de inicio del cargo'}, status=status.HTTP_403_FORBIDDEN)
-                    if not observacion or observacion == '':
-                        return Response({'success': False, 'detail':'Se debe ingresar una observación'}, status=status.HTTP_403_FORBIDDEN)
+                    if unidad != persona.id_unidad_organizacional_actual.id_unidad_organizacional:
+                        persona.id_unidad_organizacional_actual = unidad_inst_current
+                        persona.fecha_asignacion_unidad = fecha_actual
+        
+                        if not justificacion or justificacion == '':
+                            return Response({'success': False, 'detail':'Se debe ingresar una justificación'}, status=status.HTTP_403_FORBIDDEN)
 
-                if unidad != persona.id_unidad_organizacional_actual.id_unidad_organizacional:
-                    persona.id_unidad_organizacional_actual = unidad_inst_current
-                    persona.fecha_asignacion_unidad = fecha_actual
-    
-                    if not justificacion or justificacion == '':
-                        return Response({'success': False, 'detail':'Se debe ingresar una justificación'}, status=status.HTTP_403_FORBIDDEN)
-
-                if fecha_inicio_cargo < fecha_asignacion_unidad:
-                    fecha_final = fecha_asignacion_unidad
-                else:
-                    fecha_final=fecha_inicio_cargo
-
-                if unidad != persona.id_unidad_organizacional_actual or cargo != persona.id_cargo:
+                    if fecha_inicio_cargo < fecha_asignacion_unidad:
+                        fecha_final = fecha_asignacion_unidad
+                    else:
+                        fecha_final=fecha_inicio_cargo
+                    
                     HistoricoCargosUndOrgPersona.objects.create(
                         id_persona = persona,
                         id_unidad_organizacional = unidad_inst,
                         id_cargo = cargo_inst,
                         fecha_inicial_historico = fecha_final,
                         fecha_final_historico = fecha_actual,
-                        justificacion_cambio_und_org = justificacion if unidad != unidad_inst.id_unidad_organizacional else '',
-                        observaciones_vinculni_cargo = observacion if fecha_inicio_cargo >= fecha_asignacion_unidad else None,
+                        justificacion_cambio_und_org = justificacion if unidad != unidad_inst.id_unidad_organizacional else None,
+                        observaciones_vinculni_cargo = observacion_old if fecha_inicio_cargo >= fecha_asignacion_unidad else None,
                         desvinculado = False,
                     )
                 
-            else: return Response({'success':False,'detail':'La fecha a finalizar está vencida, por lo tanto se puede solo puede modificar la fecha de finalización'},status=status.HTTP_403_FORBIDDEN)
+            else:
+                if fecha_finalizar_cargo != persona.fecha_a_finalizar_cargo_actual.date():
+                    fecha_minima = (datetime.today() + timedelta(days=1)).date()
+                    if fecha_finalizar_cargo < fecha_minima:
+                        return Response({'success': False, 'detail':'La fecha de finalización debe ser posterior a la fecha actual, mínimo el día siguiente'}, status=status.HTTP_403_FORBIDDEN)
+                    else:
+                        persona.fecha_a_finalizar_cargo_actual = fecha_finalizar_cargo
+                else:
+                    return Response({'success':False,'detail':'La fecha a finalizar está vencida, por lo tanto debe extender la fecha de finalización o desvincular a la persona'},status=status.HTTP_403_FORBIDDEN)
          
             persona.save()
 
@@ -244,11 +251,6 @@ class Desvinculacion_persona(generics.UpdateAPIView):
         if persona:
             usuario = User.objects.filter(persona=id_persona,tipo_usuario='I').exclude(id_usuario=1).first()
             
-            if not usuario:
-                
-                return Response({'succes':False,'detail':'La persona no cuenta con un usuario interno en el sistema.'},status=status.HTTP_403_FORBIDDEN)                        
-            
-            
             if not data['observaciones_desvinculacion']:
                 return Response({'succes':False,'detail':'Se debe enviar una observación de desvinculación.'},status=status.HTTP_400_BAD_REQUEST)
             
@@ -272,6 +274,7 @@ class Desvinculacion_persona(generics.UpdateAPIView):
             HistoricoCargosUndOrgPersona.objects.create(
                 fecha_desvinculacion = fecha_desvinculacion,
                 observaciones_desvinculacion = data['observaciones_desvinculacion'],
+                observaciones_vinculni_cargo = persona.observaciones_vinculacion_cargo_actual,
                 id_persona = persona,
                 id_cargo = persona.id_cargo,
                 id_unidad_organizacional = persona.id_unidad_organizacional_actual,
@@ -293,15 +296,18 @@ class Desvinculacion_persona(generics.UpdateAPIView):
                 if usuario.is_active and usuario.tipo_usuario=='I':
                     usuario.is_active = False
                     
-            #HISTORICO ACTIVACION
-            
-            HistoricoActivacion.objects.create(
-                id_usuario_afectado = usuario,
-                cod_operacion = 'I',
-                fecha_operacion = fecha_desvinculacion,
-                justificacion = "Inactivación automática por acción de desvinculación de la corporación desde el módulo de Vinculación de Colaboradores",
-                usuario_operador = usuario_logueado                
-            )            
+                #HISTORICO ACTIVACION
+                
+                HistoricoActivacion.objects.create(
+                    id_usuario_afectado = usuario,
+                    cod_operacion = 'I',
+                    fecha_operacion = fecha_desvinculacion,
+                    justificacion = "Inactivación automática por acción de desvinculación de la corporación desde el módulo de Vinculación de Colaboradores",
+                    usuario_operador = usuario_logueado                
+                )
+                
+                usuario.save()
+                
             #HISTORICO TABLA VIVEROS SI LA PERSONA ES RESPONSABLE DE ALGUN VIVERO
             
             viveros = Vivero.objects.filter(id_viverista_actual=persona)
@@ -378,10 +384,42 @@ class Desvinculacion_persona(generics.UpdateAPIView):
                 }
                 Util.save_auditoria_maestro_detalle(auditoria_data)    
         
-            persona.save()
-            usuario.save()
+                persona.save()
         
-        return Response({'succes':True,'detail':'Se realiza la desvinculación.'},status=status.HTTP_200_OK)                        
+        return Response({'succes':True,'detail':'Se realiza la desvinculación.'},status=status.HTTP_200_OK)
+    
+class BusquedaHistoricoCargoUnd(generics.ListAPIView):
+    serializer_class = BusquedaHistoricoCargoUndSerializer
+    queryset = HistoricoCargosUndOrgPersona.objects.all()
+    permission_classes = [IsAuthenticated]
 
-        
-        
+    def get(self, request, id_persona):
+        try:
+            persona = HistoricoCargosUndOrgPersona.objects.filter(id_persona=id_persona).first()
+            if not persona:
+                return Response({'success':False, 'detail': 'La persona elegida no tiene ningún historico asociado'}, status=status.HTTP_404_NOT_FOUND)
+        except HistoricoCargosUndOrgPersona.DoesNotExist:
+            return Response({'success':False, 'detail': 'La persona elegida no tiene ningún historico asociado'}, status=status.HTTP_404_NOT_FOUND)
+
+        historicos = HistoricoCargosUndOrgPersona.objects.filter(id_persona=id_persona)
+        cargos = Cargos.objects.all()
+        unidades_organizacionales = UnidadesOrganizacionales.objects.all()
+        data = []
+        for historico in historicos:
+            cargo = cargos.filter(id_cargo=historico.id_cargo.id_cargo).first()
+            unidad_organizacional = unidades_organizacionales.filter(id_unidad_organizacional=historico.id_unidad_organizacional.id_unidad_organizacional).first()
+            data.append({
+                'id_cargo': historico.id_cargo.id_cargo,
+                'nombre_cargo': cargo.nombre if cargo else None,
+                'id_unidad_organizacional': historico.id_unidad_organizacional.id_unidad_organizacional,
+                'nombre_unidad_organizacional': unidad_organizacional.nombre if unidad_organizacional else None,
+                'fecha_inicial_historico': historico.fecha_inicial_historico,
+                'fecha_final_historico': historico.fecha_final_historico,
+                'observaciones_vinculni_cargo': historico.observaciones_vinculni_cargo,
+                'justificacion_cambio_und_org': historico.justificacion_cambio_und_org,
+                'desvinculado': historico.desvinculado,
+                'fecha_desvinculacion' : historico.fecha_desvinculacion,
+                'observaciones_desvinculacion' : historico.observaciones_desvinculacion
+            })
+        serializador = self.serializer_class(historicos,many=True)
+        return Response({'success':True, 'detail': 'La persona elegida tiene los siguientes historicos asociados', 'data':serializador.data}, status=status.HTTP_200_OK)

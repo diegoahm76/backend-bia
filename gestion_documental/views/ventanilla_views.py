@@ -2,7 +2,7 @@ from gestion_documental.serializers.ventanilla_serializers import PersonasSerial
 from seguridad.models import Personas,HistoricoEmails,HistoricoDireccion
 from rest_framework import generics,status
 from rest_framework.response import Response
-from datetime import datetime
+from datetime import date, datetime
 import copy
 from seguridad.serializers.personas_serializers import PersonaJuridicaPostSerializer, PersonaJuridicaUpdateSerializer, PersonaNaturalPostSerializer, PersonaNaturalUpdateSerializer
 from seguridad.signals.roles_signals import IsAuthenticated
@@ -66,11 +66,6 @@ class RegisterPersonaNatural(generics.CreateAPIView):
         }
         Util.save_auditoria(auditoria_data)
         
-        subject = "Registro exitoso"
-        template = "email-register-personanatural.html"
-        
-        Util.notificacion(serializador,subject,template)
-
         return Response({'success':True, 'detail':'Se creo la persona natural correctamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 
 class RegisterPersonaJuridica(generics.CreateAPIView):
@@ -103,11 +98,6 @@ class RegisterPersonaJuridica(generics.CreateAPIView):
             "descripcion": descripcion, 
         }
         Util.save_auditoria(auditoria_data)
-
-        subject = "Registro exitoso"
-        template = "email-register-personajuridica.html"
-        
-        Util.notificacion(serializador,subject,template)
         
         return Response({'success':True, 'detail': 'Se creo la persona jurídica correctamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 
@@ -127,15 +117,14 @@ class UpdatePersonaNaturalByVentanilla(generics.RetrieveUpdateAPIView):
             if persona.tipo_persona != "N":
                 return Response ({'success':False,'detail':'No se puede actualizar una persona jurídica con este servicio'},status=status.HTTP_403_FORBIDDEN)
             
-            persona_serializada = self.serializer_class(persona, data=data, many=False)
-            persona_serializada.is_valid(raise_exception=True)
-            
-            if persona_logueada != id_persona:
-                
+            if persona_logueada != persona.id_persona_crea.id_persona:   
                 cambio = Util.comparacion_campos_actualizados(data,persona)
                 if cambio:
                     data['fecha_ultim_actualiz_diferente_crea'] = datetime.now()
                     data['id_persona_ultim_actualiz_diferente_crea'] = persona_logueada
+            
+            persona_serializada = self.serializer_class(persona, data=data, many=False)
+            persona_serializada.is_valid(raise_exception=True)
             
             data['tipo_persona'] = persona.tipo_persona
             
@@ -162,13 +151,8 @@ class UpdatePersonaNaturalByVentanilla(generics.RetrieveUpdateAPIView):
                 "valores_actualizados": valores_actualizados
             }
             Util.save_auditoria(auditoria_data)
-            
-            subject = "Actualización de datos exitosa"
-            template = "email-update-personanatural-externa.html"
-            
-            Util.notificacion(persona,subject,template)
-            
-            return Response({'success': True, 'detail': 'Persona actualizada y notificada correctamente', 'data': persona_serializada.data}, status=status.HTTP_201_CREATED)
+
+            return Response({'success': True, 'detail': 'Persona actualizada correctamente', 'data': persona_serializada.data}, status=status.HTTP_201_CREATED)
         return Response({'success':False,'detail':"No existe la persona"},status=status.HTTP_404_NOT_FOUND)
 
     
@@ -187,19 +171,42 @@ class UpdatePersonaJuridicaByVentanilla(generics.UpdateAPIView):
         if persona:
             if persona.tipo_persona != "J":
                 return Response ({'success':False,'detail':'No se puede actualizar una persona natural con este servicio'},status=status.HTTP_403_FORBIDDEN)
-            
-            #VALIDACION DE REPRESENTANTE LEGAL
-            if persona.representante_legal != data.get('representante_legal'):
-                data['fecha_cambio_representante_legal'] = datetime.now()  
-            
-            persona_serializada = self.serializer_class(persona, data=data, many=False)
-            persona_serializada.is_valid(raise_exception=True)
-            
-            if persona_logueada != id_persona:
+                
+            if persona_logueada !=  persona.id_persona_crea.id_persona:
                 cambio = Util.comparacion_campos_actualizados(data,persona)
                 if cambio:
                     data['fecha_ultim_actualiz_diferente_crea'] = datetime.now()
                     data['id_persona_ultim_actualiz_diferente_crea'] = persona_logueada
+                    
+            #Validacion de Fecha de cambio de representante legal y fecha de incio de representantele legalñ
+            
+            if persona.representante_legal.id_persona != data["representante_legal"]:
+                data['fecha_cambio_representante_legal'] = datetime.now()
+                
+                fecha_inicio = data.get("fecha_inicio_cargo_rep_legal")
+            
+                if not fecha_inicio:
+                    fecha_inicio = datetime.now()
+                    
+                else:
+                    fecha_formateada = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+                    fecha_ahora = date.today()
+                    if fecha_formateada > fecha_ahora or fecha_formateada <= persona.fecha_inicio_cargo_rep_legal.date():
+                        return Response({'success':False,'detail':'La fecha de inicio del cargo del representante no debe ser superior a la del sistema y tiene que ser mayor a la fecha de inicio del representante legal anterior'}, status=status.HTTP_403_FORBIDDEN)
+
+            else:
+                fecha_inicio = data.get("fecha_inicio_cargo_rep_legal")
+                if fecha_inicio: 
+                
+                    fecha_formateada = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+                    print()
+                    if persona.fecha_inicio_cargo_rep_legal.date() != fecha_formateada:
+                        return Response({'success':False,'detail':'No se puede actualizar la fecha de inicio de representante legal sin haber cambiado el representante'},status=status.HTTP_403_FORBIDDEN)
+                    
+                data['fecha_cambio_representante_legal'] = None
+            
+            persona_serializada = self.serializer_class(persona, data=data, many=False)
+            persona_serializada.is_valid(raise_exception=True)
                 
             data['tipo_persona'] = persona.tipo_persona
             
@@ -227,12 +234,7 @@ class UpdatePersonaJuridicaByVentanilla(generics.UpdateAPIView):
             }
             Util.save_auditoria(auditoria_data)
             
-            subject = "Actualización de datos exitosa"
-            template = "email-update-personajuridica-externo.html"
-            
-            Util.notificacion(persona,subject,template)
-            
-            return Response({'success': True, 'detail': 'Persona actualizada y notificada correctamente', 'data': persona_serializada.data}, status=status.HTTP_201_CREATED)
+            return Response({'success': True, 'detail': 'Persona actualizada correctamente', 'data': persona_serializada.data}, status=status.HTTP_201_CREATED)
         return Response({'success':False,'detail':"No existe la persona"},status=status.HTTP_404_NOT_FOUND)
     
 class AutorizacionNotificacionesVentanilla(generics.RetrieveUpdateAPIView):

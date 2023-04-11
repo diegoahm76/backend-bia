@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta,date
 import time
-from seguridad.models import Personas
+from seguridad.models import ClasesTercero, ClasesTerceroPersona, Personas
 from django.core.mail import EmailMessage
 from email_validator import validate_email, EmailNotValidError, EmailUndeliverableError, EmailSyntaxError
 from backend.settings.base import EMAIL_HOST_USER, AUTHENTICATION_360_NRS
@@ -339,12 +339,10 @@ class Util:
         else:
             
             fecha_inicio = data.get("fecha_inicio_cargo_rep_legal")
-            fecha_formateada = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
             
-            fecha_ahora = date.today()
-            
-            if fecha_formateada:
-                
+            if fecha_inicio:
+                fecha_formateada = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+                fecha_ahora = date.today()
                 if fecha_formateada > fecha_ahora:
                     return {'success':False,'detail':'La fecha de inicio del cargo del representante no debe ser superior a la del sistema', 'status':status.HTTP_403_FORBIDDEN}
             
@@ -405,7 +403,92 @@ class Util:
     @staticmethod
     def comparacion_campos_actualizados(data,instance):
         for field, value in data.items():
-            valor_previous= getattr(instance,field)
-            if value != valor_previous:
-                return True
+            
+            if field != "datos_clasificacion_persona" and field != "justificacion_cambio_und_org":
+                valor_previous= getattr(instance,field)
+                
+                # TOMAR DATE SI ES DATETIME
+                valor_previous = str(valor_previous.date()) if isinstance(valor_previous, datetime) else valor_previous
+                
+                valor_previous = str(valor_previous) if isinstance(valor_previous, date) else valor_previous
+                
+                # TOMAR PK SI ES INSTANCIA
+                try:
+                    valor_previous = valor_previous.pk
+                except:
+                    pass
+                if value != valor_previous:
+                    return True
         return False
+    
+    def actualizacion_clase_tercero_admin(instance,request):
+        
+        data = request.data
+        
+        clase_tercero_personas = ClasesTerceroPersona.objects.filter(id_persona=instance.id_persona)
+        
+        #LISTA DE ID DE LAS CLASES TERCERO QUE TIENE LA PERSONA  EN LA BASE DE DATOS
+        lista_clase_tecero_bd = [clase_tercero.id_clase_tercero.id_clase_tercero for clase_tercero in clase_tercero_personas]
+        
+        #LISTA DE ID DE LAS CLASES TERCERO QUE TIENE LA PERSONA EN EL JSON
+        lista_id_clase_tercero_json = data['datos_clasificacion_persona']
+        
+        valores_creados_detalles=[]
+        valores_eliminados_detalles = []
+        
+        actualizado = False
+        
+        #COMPARACION DE DOS LISTAS
+        if set(lista_clase_tecero_bd) != set(lista_id_clase_tercero_json):
+        
+            actualizado = True
+            data['fecha_ultim_actualiz_diferente_crea'] = datetime.now()
+            data['id_persona_ultim_actualiz_diferente_crea'] = request.user.persona.id_persona
+            
+            # VALIDAR EXISTENCIA CLASES TERCERO
+            
+            clases_tercero = ClasesTercero.objects.filter(id_clase_tercero__in = lista_id_clase_tercero_json)
+            if len(set(lista_id_clase_tercero_json)) != len(clases_tercero):
+                return {'success':False, 'detail':'Debe validar que todas las clases tercero elegidas existan','status':status.HTTP_400_BAD_REQUEST}
+            
+            #CREACION DE DE REGISTRO DE LA TABLA INTERMEDIA, CLASES TERCERO PERSONA.
+            for clase in clases_tercero:
+
+                if clase.id_clase_tercero not in lista_clase_tecero_bd:
+    
+                    ClasesTerceroPersona.objects.create(
+                    id_persona = instance,
+                    id_clase_tercero = clase
+                    )
+                    
+                    descripcion={'nombre':clase.nombre}
+                    valores_creados_detalles.append(descripcion)
+                    
+            #BORRAR CLASES TERCERO
+            for clase_tercero in lista_clase_tecero_bd:
+                
+                if clase_tercero not in lista_id_clase_tercero_json:
+                    
+                    clase_tercero_persona_borrar = clase_tercero_personas.filter(id_persona =instance.id_persona,id_clase_tercero = clase_tercero ).first()
+                    
+                    diccionario = {'nombre':clase_tercero_persona_borrar.id_clase_tercero.nombre}
+                    valores_eliminados_detalles.append(diccionario)
+                    clase_tercero_persona_borrar.delete()
+                        
+        #AUDITORIA DEL SERVICIO DE ACTUALIZADO PARA DETALLES  
+        descripcion = {"TipodeDocumentoID": instance.tipo_documento, "NumeroDocumentoID": instance.numero_documento}
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 1,
+            "cod_permiso": "AC",
+            "subsistema": 'SEGU',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_creados_detalles":valores_creados_detalles,
+            "valores_eliminados_detalles":valores_eliminados_detalles
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)    
+        
+        return {'success':True,'actualizado':actualizado}
+        

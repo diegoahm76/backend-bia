@@ -31,7 +31,7 @@ urlpatterns = [
     # - Registros
     path('persona-natural-and-usuario/create/', views.CreatePersonaNaturalAndUsuario.as_view(), name='persona-natural-and-usuario-create'),
     path('persona-juridica-and-usuario/create/', views.CreatePersonaJuridicaAndUsuario.as_view(), name='persona-juridica-and-usuario-create'),
-    path('persona-natural/create-by-user-interno/', views.RegisterPersonaNaturalByUserInterno.as_view(), name='persona-natural-register-by-user-interno'),
+    # path('persona-natural/create-by-user-interno/', views.RegisterPersonaNaturalByUserInterno.as_view(), name='persona-natural-register-by-user-interno'),
     
     # - Actualizaciones
     path('persona-natural/self/update/', views.UpdatePersonaNaturalByself.as_view(), name='persona-natural-update-by-self'),
@@ -39,13 +39,19 @@ urlpatterns = [
     path('update-personas-naturales-restringidos/<str:id_persona>/', views.ActualizarPersonasNatCamposRestringidosView.as_view(), name='update-nat-restringido'),    
     path('update-personas-juridicas-restringidos/<str:id_persona>/', views.ActualizarPersonasJurCamposRestringidosView.as_view(), name='update-jur-restringido'),
     
-    path('persona-natural/user-with-permissions/update/<str:tipodocumento>/<str:numerodocumento>/', views.UpdatePersonaNaturalByUserWithPermissions.as_view(), name='persona-natural-update-by-user-with-permissions'),
-    path('persona-juridica/user-with-permissions/update/<str:tipodocumento>/<str:numerodocumento>/', views.UpdatePersonaJuridicaByUserWithPermissions.as_view(), name='persona-natural-update-by-user-with-permissions'),
+    # path('persona-natural/user-with-permissions/update/<str:tipodocumento>/<str:numerodocumento>/', views.UpdatePersonaNaturalByUserWithPermissions.as_view(), name='persona-natural-update-by-user-with-permissions'),
+    # path('persona-juridica/user-with-permissions/update/<str:tipodocumento>/<str:numerodocumento>/', views.UpdatePersonaJuridicaByUserWithPermissions.as_view(), name='persona-natural-update-by-user-with-permissions'),
     
     path('autorizacion-notificaciones-self/', views.AutorizacionNotificacionesPersonas.as_view(), name='autorizacion-notificaciones-self'),
     
-    # PENDIENTES POR VALIDAR
     
+    #ADMINISTRACIÓ DE PERSONAS
+    path('register-persona-natural-admin-personas/', views.RegisterPersonaNaturalAdmin.as_view(), name='register-personal-natural-admin-personas'),
+    path('update-persona-natural-admin-personas/<str:id_persona>/', views.UpdatePersonaNaturalAdminPersonas.as_view(), name='update-personal-natural-admin-personas'),
+    path('register-persona-juridica-admin-personas/', views.RegisterPersonaJuridicaAdmin.as_view(), name='register-personal-juridica-admin-personas'),
+    path('update-persona-juridica-admin-personas/<str:id_persona>/', views.UpdatePersonaJuridicaAdminPersonas.as_view(), name='update-personal-juridica-admin-personas'),
+    path('get-clases-tercero-persona/<str:id_persona>/',views.GetClasesTerceroByPersona.as_view(),name='get-clases-tercero-persona'),
+    # PENDIENTES POR VALIDAR
     # path('get-list/', views.GetPersonas.as_view(), name="personas-get"),
     # path('get-by-email/<str:pk>/', views.getPersonaByEmail, name='persona-email-get'),
     # path('get-personas-naturales-by-document/<str:tipodocumento>/<str:numerodocumento>/', views.GetPersonaNaturalByTipoDocumentoAndNumeroDocumento.as_view(), name='persona-natural-by-document-and-tipo-documento-get'),
@@ -76,9 +82,6 @@ urlpatterns = [
     
     # Historico Direcciones
     path('historico-direcciones/get-list/', views.GetHistoricoDirecciones.as_view(), name="historico-direcciones-get"),
-
-    # Historico Cargo-Unidad
-    path('get-historico-cargo-und/<str:id_persona>/', views.BusquedaHistoricoCargoUnd.as_view(), name='historico_cargos_und'),
     
     # Cargos
     path('cargos/get-list/', views.GetCargosList.as_view(), name="cargos-get"),

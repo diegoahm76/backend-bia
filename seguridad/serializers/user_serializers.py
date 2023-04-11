@@ -16,6 +16,14 @@ import re
 from seguridad.utils import Util
 
 class HistoricoActivacionSerializers(serializers.ModelSerializer):
+    nombre_operador = serializers.SerializerMethodField()
+    
+    def get_nombre_operador(self, obj):
+        nombre_operador = None
+        nombre_list = [obj.usuario_operador.persona.primer_nombre, obj.usuario_operador.persona.primer_apellido]
+        nombre_operador = ' '.join(item for item in nombre_list if item is not None)
+        return nombre_operador.upper()
+    
     class Meta:
         model= HistoricoActivacion
         fields = '__all__'

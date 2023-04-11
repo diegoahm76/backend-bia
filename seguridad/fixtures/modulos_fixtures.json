@@ -19,7 +19,7 @@
         "nombre_modulo": "Administración de Usuarios",
         "subsistema":"SEGU",
         "descripcion":"Permite administrar las credenciales de acceso de las personas al sistema",
-        "ruta_formulario":"/test",
+        "ruta_formulario":"/#/app/seguridad/administracion_usuarios",
         "nombre_icono":"test"
       }
     },
@@ -55,7 +55,7 @@
         "nombre_modulo": "Roles",
         "subsistema":"SEGU",
         "descripcion":"Permite administrar los roles del sistema",
-        "ruta_formulario":"/test",
+        "ruta_formulario":"/#/app/seguridad/roles",
         "nombre_icono":"test"
       }
     },
@@ -91,7 +91,7 @@
           "nombre_modulo": "Delegación del Rol de SuperUsuario",
           "subsistema":"SEGU",
           "descripcion":"Proceso que permite a un SuperUsuario delegar dicha función a otra persona",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/seguridad/superusuario",
           "nombre_icono":"test"
         }
       },
@@ -127,7 +127,7 @@
           "nombre_modulo": "Marcas",
           "subsistema":"ALMA",
           "descripcion":"Permite administrar la información básica de las Marcas de artículos activos fijos",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/almacen/configuracion/crear_marca_porcentaje_medida",
           "nombre_icono":"test"
         }
       },
@@ -151,7 +151,7 @@
           "nombre_modulo": "Porcentajes de IVA",
           "subsistema":"ALMA",
           "descripcion":"Permite administrar la información básica de los porcentajes de IVA que manejará el sistema",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/almacen/configuracion/crear_marca_porcentaje_medida",
           "nombre_icono":"test"
         }
       },
@@ -163,7 +163,7 @@
           "nombre_modulo": "Unidades de Medida",
           "subsistema":"ALMA",
           "descripcion":"Permite administrar la información básica de las unidades de medida que manejará el sistema",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/almacen/configuracion/crear_marca_porcentaje_medida",
           "nombre_icono":"test"
         }
       },
@@ -175,7 +175,7 @@
           "nombre_modulo": "Organigramas",
           "subsistema":"TRSV",
           "descripcion":"Permite administrar los organigramas del sistema",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/gestor_documental/organigrama",
           "nombre_icono":"test"
         }
       },
@@ -187,7 +187,7 @@
           "nombre_modulo": "Cambio de Organigrama Actual",
           "subsistema":"TRSV",
           "descripcion":"Permite adoptar un nuevo organigrama de la entidad en el sistema",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/gestor_documental/organigrama/crear_editar_organigrama",
           "nombre_icono":"test"
         }
       },
@@ -319,7 +319,7 @@
           "nombre_modulo": "Cuadro de clasificación documental",
           "subsistema":"GEST",
           "descripcion":"Permite administrar los Cuadros de Clasificación Documental de la entidad en el sistema",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/gestor_documental/ccd/ccd",
           "nombre_icono":"test"
         }
       },
@@ -343,7 +343,7 @@
           "nombre_modulo": "Tabla de Retención Documental",
           "subsistema":"GEST",
           "descripcion":"Permite administrar las Tablas de Retención Documental de la entidad en el sistema",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/gestor_documental/trd",
           "nombre_icono":"test"
         }
       },
@@ -367,7 +367,7 @@
           "nombre_modulo": "Tabla de Control de Acceso",
           "subsistema":"GEST",
           "descripcion":"Permite administrar las Tablas de Control de Acceso de la entidad en el sistema",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/gestor_documental/tca",
           "nombre_icono":"test"
         }
       },
@@ -379,7 +379,7 @@
           "nombre_modulo": "Cambio de Tabla de Control de Acceso Actual",
           "subsistema":"GEST",
           "descripcion":"Permite adoptar una nueva Tabla de Control de Acceso de la entidad en el sistema",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/gestor_documental/tca/tca",
           "nombre_icono":"test"
         }
       },
@@ -391,7 +391,7 @@
           "nombre_modulo": "Catálogo de Bienes",
           "subsistema":"ALMA",
           "descripcion":"Permite administrar el catálogo de los bienes de la entidad a manejar en el subsistema de Almacén",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/almacen/entrada_y_salida_de_articulos/catalogo_bienes",
           "nombre_icono":"test"
         }
       },
@@ -487,7 +487,7 @@
           "nombre_modulo": "Administración de Viveros",
           "subsistema":"CONS",
           "descripcion":"Permite administrar los Viveros de la entidad",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/conservacion/gestor-vivero/administrar_viveros",
           "nombre_icono":"test"
         }
       },
@@ -499,7 +499,7 @@
           "nombre_modulo": "Ingresar/Retirar de Cuarentena un Vivero",
           "subsistema":"CONS",
           "descripcion":"módulo que permite ingresar o sacar de cuarentena un vivero de la entidad",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/conservacion/gestor-vivero/cuarentena",
           "nombre_icono":"test"
         }
       },
@@ -511,7 +511,7 @@
           "nombre_modulo": "Aperturar/Cerrar un Vivero",
           "subsistema":"CONS",
           "descripcion":"módulo que permite aperturar o cerrar un vivero existente de la entidad",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/conservacion/gestor-vivero/apertura_cierre",
           "nombre_icono":"test"
         }
       },
@@ -523,7 +523,7 @@
           "nombre_modulo": "Tipificación de Bienes de Consumo de Viveros",
           "subsistema":"CONS",
           "descripcion":"Permite tipificar los bienes de consumo utilizables en viveros para la producción",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/conservacion/configuracion/administrar_camas_germinacion",
           "nombre_icono":"test"
         }
       },
@@ -571,7 +571,7 @@
           "nombre_modulo": "Recepción y Distribución de Despachos Entrantes a Vivero",
           "subsistema":"CONS",
           "descripcion":"Permite Distribuir las entradas de bienes de consumo de Viveros en los diferentes viveros de la entidad",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/conservacion/gestor_vivero/recepcion_distribucion",
           "nombre_icono":"test"
         }
       },
@@ -583,7 +583,7 @@
           "nombre_modulo": "Administración de Camas de Germinación",
           "subsistema":"CONS",
           "descripcion":"Permite administrar las camas de germinación para los diferntes viveros de la entidad",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/conservacion/configuracion/tipificacion_bienes",
           "nombre_icono":"test"
         }
       },
@@ -595,7 +595,7 @@
           "nombre_modulo": "Siembra de Semillas",
           "subsistema":"CONS",
           "descripcion":"Permite crear y administrar las siembras de semillas de material vegetal realizadas en los diferentes viveros de la entidad",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/conservacion/material_vegetal/siembra_semilla",
           "nombre_icono":"test"
         }
       },
@@ -607,7 +607,7 @@
           "nombre_modulo": "Cambio de Etapa del Material Vegetal",
           "subsistema":"CONS",
           "descripcion":"Permite realizar el cambio de etapa de unidades de material vegetal de un lote específico",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/conservacion/produccion/cambio_etapa",
           "nombre_icono":"test"
         }
       },
@@ -619,7 +619,7 @@
           "nombre_modulo": "Traslados entre viveros",
           "subsistema":"CONS",
           "descripcion":"Permite trasladar bienes entre viveros",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/conservacion/distribucion/traslado",
           "nombre_icono":"test"
         }
       },
@@ -631,7 +631,7 @@
           "nombre_modulo": "Ingreso a Cuarentena de Material Vegetal",
           "subsistema":"CONS",
           "descripcion":"Permite registrar el ingreso de plantas y plántulas de un lote de un vivero a cuarentena",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/conservacion/material_vegetal/ingreso_cuarentena",
           "nombre_icono":"test"
         }
       },
@@ -643,7 +643,7 @@
           "nombre_modulo": "Levantamiento de Cuarentena de Material Vegetal",
           "subsistema":"CONS",
           "descripcion":"Permite registrar el levantamiento de cuarentena de plantas y plántulas de un lote de un vivero que está en cuarentena",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/conservacion/material_vegetal/levantamiento_cuarentena",
           "nombre_icono":"test"
         }
       },
@@ -655,7 +655,7 @@
           "nombre_modulo": "Bajas de Herramientas, Insumos y Semillas",
           "subsistema":"CONS",
           "descripcion":"Permite dar de baja elementos del tipo Herramientas, Insumos y Semillas del inventario de un vivero",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/conservacion/gestor_vivero/bajas",
           "nombre_icono":"test"
         }
       },
@@ -667,7 +667,7 @@
           "nombre_modulo": "Mortalidad de Plantas y Plántulas",
           "subsistema":"CONS",
           "descripcion":"Permite registrar la mortalidad de plantas y plántulas de un vivero",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/conservacion/produccion/mortalidad_plantas",
           "nombre_icono":"test"
         }
       },
@@ -679,7 +679,7 @@
           "nombre_modulo": "Mezclas",
           "subsistema":"CONS",
           "descripcion":"Permite administrar los nombres de las mezclas que se podrán crear en el sistema",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/conservacion/configuracion/tipos_mezcla",
           "nombre_icono":"test"
         }
       },
@@ -691,7 +691,7 @@
           "nombre_modulo": "Preparación para mezclas",
           "subsistema":"CONS",
           "descripcion":"Permite registrar la preparación de mezclas a utilizar en un vivero",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/conservacion/produccion/preparacion_mezcla",
           "nombre_icono":"test"
         }
       },
@@ -703,7 +703,7 @@
           "nombre_modulo": "Registrar Incidencias de Material Vegetal",
           "subsistema":"CONS",
           "descripcion":"'Permite registrar incidencias que se realicen o presenten sobre un lote de material vegetal de unvivero",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/conservacion/produccion/incidencia_material_vegetal",
           "nombre_icono":"test"
         }
       },
@@ -715,7 +715,91 @@
           "nombre_modulo": "Solicitudes de Plantas e Insumos a Viveros",
           "subsistema":"CONS",
           "descripcion":"Permite registrar las solicitudes de Plantas e Insumos a un Vivero determinado",
+          "ruta_formulario":"/#/app/conservacion/solicitud_material/plantas_insumos",
+          "nombre_icono":"test"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 61,
+        "fields": {
+          "id_modulo": 61,
+          "nombre_modulo": "Despachos de Plantas e Insumos de Viveros",
+          "subsistema":"CONS",
+          "descripcion":"Permite registrar los Despachos de Solicitudes de Plantas e Insumos a un Vivero determinado",
           "ruta_formulario":"/test",
+          "nombre_icono":"test"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 62,
+        "fields": {
+          "id_modulo": 62,
+          "nombre_modulo": "Listado de Solicitudes pendientes de Aprobación (Funcionario)",
+          "subsistema":"CONS",
+          "descripcion":"Permite consultar las solicitudes realizadas a viveros pendientes de aprobación",
+          "ruta_formulario":"/#/app/conservacion/solicitud_material/coordinador/solicitudes_pendientes",
+          "nombre_icono":"test"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 63,
+        "fields": {
+          "id_modulo": 63,
+          "nombre_modulo": "Aprobación de Solicitudes a Viveros (Funcionario)",
+          "subsistema":"CONS",
+          "descripcion":"Permite aprobar o rechazar por parte del funcionario responsable las solicitudes a viveros.",
+          "ruta_formulario":"/#/app/conservacion/solicitud_material/funcionario/aprobar_solicitud",
+          "nombre_icono":"test"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 64,
+        "fields": {
+          "id_modulo": 64,
+          "nombre_modulo": "Listado de Solicitudes pendientes de Aprobación (Coordinador de Viveros)",
+          "subsistema":"CONS",
+          "descripcion":"Permite consultar las solicitudes realizadas a viveros pendientes de aprobación ya aprobadas por funcionario responsable",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 65,
+        "fields": {
+          "id_modulo": 65,
+          "nombre_modulo": "Aprobación de Solicitudes a Viveros (Coordinador de Viveros)",
+          "subsistema":"CONS",
+          "descripcion":"Permite aprobar o rechazar por parte del coordinador de viveros las solicitudes a viveros.",
+          "ruta_formulario":"/#/app/conservacion/solicitud_material/coordinador/aprobar_solicitud",
+          "nombre_icono":"test"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 66,
+        "fields": {
+          "id_modulo": 66,
+          "nombre_modulo": "Cierre de Solicitudes a Viveros por No Disponibilidad",
+          "subsistema":"CONS",
+          "descripcion":"Permite cerrar una solicitud a viveros por no tener disponibilidad de ninguno de los items solicitados",
+          "ruta_formulario":"/#/app/conservacion/distribucion/cierre_solicitudes",
+          "nombre_icono":"test"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 67,
+        "fields": {
+          "id_modulo": 67,
+          "nombre_modulo": "Despacho de Viveros",
+          "subsistema":"CONS",
+          "descripcion":"Permite despachar elementos desde viveros en base a una solicitud",
+          "ruta_formulario":"/#/app/conservacion/distribucion/despacho",
           "nombre_icono":"test"
         }
       },
@@ -773,9 +857,9 @@
         "fields": {
           "id_modulo": 72,
           "nombre_modulo": "Vinculación de Colaboradores",
-          "subsistema":"GEST",
+          "subsistema":"TRSV",
           "descripcion":"Permite vincular o desvincular personas como colaboradores de la entidad en el sistema",
-          "ruta_formulario":"/test",
+          "ruta_formulario":"/#/app/conservacion/distribucion/cierre_solicitudes",
           "nombre_icono":"test"
         }
       },
