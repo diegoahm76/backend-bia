@@ -58,12 +58,12 @@ class GetRolByName(ListAPIView):
     
 class GetRol(ListAPIView):
     serializer_class=RolesSerializer
-    permission_classes = [IsAuthenticated, PermisoConsultarRoles]
-    queryset=Roles.objects.all()
+    permission_classes = [IsAuthenticated]
+    queryset=Roles.objects.all().exclude(id_rol=1).order_by('id_rol')
     
 class RegisterRol(CreateAPIView):
     serializer_class=RolesSerializer
-    permission_classes = [IsAuthenticated, PermisoCrearRoles]
+    permission_classes = [IsAuthenticated]
     queryset=Roles.objects.all()
 
 #------------------------------------------------> Borrar un rol a un usuario

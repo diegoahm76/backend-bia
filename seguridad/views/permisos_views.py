@@ -21,7 +21,9 @@ from seguridad.serializers.permisos_serializers import (
 )
 from rest_framework.generics import ListAPIView, CreateAPIView , RetrieveAPIView, DestroyAPIView, UpdateAPIView, RetrieveUpdateAPIView
 from seguridad.utils import Util
-import datetime, operator, itertools
+from datetime import datetime
+from django.template.loader import render_to_string
+import operator, itertools
 
 class ListarPermisos(ListAPIView):
     serializer_class = PermisosSerializer
@@ -226,6 +228,8 @@ class GetPermisosRolByEntorno(ListAPIView):
             return Response({'success':False, 'detail':'Debe enviar los parámetros de búsqueda'}, status=status.HTTP_400_BAD_REQUEST)
         
         usuario_instance = User.objects.filter(id_usuario=id_usuario).first()
+        supersusuario = User.objects.filter(id_usuario=1).first()
+        
         tipos_entorno = ['L','C']
             
         roles_list = UsuariosRol.objects.filter(id_usuario=id_usuario)
@@ -247,6 +251,17 @@ class GetPermisosRolByEntorno(ListAPIView):
             if tipo_entorno == 'C':
                 roles_list = roles_list.filter(id_rol=2)
             elif tipo_entorno == 'L':
+                if usuario_instance.persona.id_cargo is None or usuario_instance.persona.id_unidad_organizacional_actual is None or (usuario_instance.persona.fecha_a_finalizar_cargo_actual and usuario_instance.persona.fecha_a_finalizar_cargo_actual <= datetime.now()):
+                    subject = "Intento de ingreso a entorno laboral"
+                    template = "email-entorno.html"
+                    
+                    context = {'primer_nombre': usuario_instance.persona.primer_nombre}
+                    template = render_to_string((template), context)
+                    email_data = {'template': template, 'email_subject': subject, 'to_email': supersusuario.persona.email}
+                    Util.send_email(email_data)
+                    
+                    return Response({'success':False, 'permitido':False, 'detail':'NO SE LE PERMITIRÁ TRABAJAR EN ENTORNO LABORAL, dado que la persona no está actualmente vinculada o la fecha final del cargo ha vencido'}, status=status.HTTP_403_FORBIDDEN)
+                
                 roles_list = roles_list.exclude(id_rol=2)
         
         roles_list = [rol.id_rol for rol in roles_list]
@@ -274,7 +289,7 @@ class GetPermisosRolByEntorno(ListAPIView):
             }
             outputList.append(subsistema_data)
             
-        return Response({'success':True,'detail':'El tipo de entorno ingresado tiene acceso a lo siguiente', 'data':outputList}, status=status.HTTP_200_OK)
+        return Response({'success':True,'detail':'El tipo de entorno ingresado tiene acceso a lo siguiente', 'permitido':True, 'data':outputList}, status=status.HTTP_200_OK)
     
 #----------------------------------------------------->Tabla Modulos
 

@@ -1243,7 +1243,7 @@ class BusquedaHistoricoActivacion(generics.ListAPIView):
 class UsuarioInternoAExterno(generics.UpdateAPIView):
     serializer_class = UsuarioInternoAExternoSerializers
     queryset = User.objects.all()
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def put(self, request, id_usuario):
         user_loggedin = request.user
