@@ -101,14 +101,15 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
 
         if int(user_loggedin) != int(pk):
             user = User.objects.filter(id_usuario=pk).first()
-            id_usuario_afectado = user.id_usuario
             id_usuario_operador = request.user.id_usuario
             fecha_operacion = datetime.now()
-            justificacion = request.data.get('justificacion', '')
+            justificacion_activacion = request.data.get('justificacion_activacion', '')
+            justificacion_bloqueo = request.data.get('justificacion_bloqueo', '')
             previous_user = copy.copy(user)
 
             if user:
-              
+                id_usuario_afectado = user.id_usuario
+                
                 user_serializer = self.serializer_class(user, data=request.data)
                 user_serializer.is_valid(raise_exception=True)
                 tipo_usuario_ant = user.tipo_usuario
@@ -120,43 +121,46 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
 
                 # VALIDACIÓN EXTERNO INACTIVO PASA A INTERNO ACTIVO
                 if tipo_usuario_ant == 'E' and tipo_usuario_act == 'I':
-                    if not user.is_active:
-                        persona = Personas.objects.get(user=user)
-                        if persona.id_cargo is None or persona.fecha_a_finalizar_cargo_actual <= datetime.now():
-                            return Response({'success':False, 'detail':'La persona propietaria del usuario no tiene cargo actual o la fecha final del cargo ha vencido'}, status=status.HTTP_400_BAD_REQUEST)
-                        user.is_active = True
-                        user.tipo_usuario = 'I'
-                        subject = "Verificación exitosa"
-                        template = "email-verified.html"
-                        Util.notificacion(persona,subject,template)
-                        user. save()
-                        return Response({'success': True, 'detail': 'La persona ahora es interna y se encuentra activa', 'data': user_serializer.data}, status=status.HTTP_200_OK)
-
+                    
+                    persona = Personas.objects.get(user=user)
+                    
+                    if persona.id_cargo is None or persona.fecha_a_finalizar_cargo_actual <= datetime.now():
+                        return Response({'success':False, 'detail':'La persona propietaria del usuario no tiene cargo actual o la fecha final del cargo ha vencido'}, status=status.HTTP_403_FORBIDDEN)
+                    
+                    if persona.tipo_persona == 'J':
+                        return Response({'success':False, 'detail':'Una persona jurídica no puede tener un usuario de tipo interno'}, status=status.HTTP_403_FORBIDDEN)
+                    
                 # Validación NO desactivar externo activo
-                if user.tipo_usuario == 'E' and user.is_active and 'is_active' in request.data and request.data['is_active'] == False:
-                    return Response({'success': False,'detail': 'No se puede desactivar un usuario externo activo'}, status=status.HTTP_400_BAD_REQUEST)
+                if user.tipo_usuario == 'E' and user.is_active and 'is_active' in request.data and str(request.data['is_active']).lower() == "false":
+                    return Response({'success': False,'detail': 'No se puede desactivar un usuario externo activo'}, status=status.HTTP_403_FORBIDDEN)
 
                 # Validación SE PUEDE desactivar interno
-                if user.tipo_usuario == 'I' and 'is_active' in request.data and request.data['is_active'] == False:
-                    user.is_active = False
-                    if 'justificacion' not in request.data or not request.data['justificacion']:
-                        return Response({'success': False,'detail': 'Se requiere una justificación para la desactivación del usuario interno'}, status=status.HTTP_400_BAD_REQUEST)
-                    justificacion = request.data['justificacion']
-                    user.save() 
+                if user.tipo_usuario == 'I' and str(user.is_active).lower() != str(request.data['is_active']).lower():
+                    # user.is_active = False
+                    if not user.is_active:
+                        if user.persona.id_cargo is None or user.persona.fecha_a_finalizar_cargo_actual <= datetime.now():
+                            return Response({'success':False, 'detail':'La persona propietaria del usuario no tiene cargo actual o la fecha final del cargo ha vencido, por lo cual no puede activar su usuario'}, status=status.HTTP_403_FORBIDDEN)
+                        
+                    if 'justificacion_activacion' not in request.data or not request.data['justificacion_activacion']:
+                        return Response({'success': False,'detail': 'Se requiere una justificación para cambiar el estado de activación del usuario'}, status=status.HTTP_400_BAD_REQUEST)
+                    justificacion = request.data['justificacion_activacion']
+                
+                # Validación bloqueo/desbloqueo usuario
+                if str(user.is_blocked).lower() != str(request.data['is_blocked']).lower():
+                    # user.is_active = False  
+                    if 'justificacion_bloqueo' not in request.data or not request.data['justificacion_bloqueo']:
+                        return Response({'success': False,'detail': 'Se requiere una justificación para cambiar el estado de bloqueo del usuario'}, status=status.HTTP_400_BAD_REQUEST)
+                    justificacion = request.data['justificacion_bloqueo']
                 
                 # ACTUALIZAR FOTO DE USUARIO
-                foto_usuario = request.data.get('profile_img', None)
-                if foto_usuario:
-                    user.profile_img = foto_usuario
-                    user.save()
-                    previous_user.profile_img = foto_usuario
-                    return Response({'sucess':False, 'detail': 'Foto de usuario actualizada correctamente.'}, status=status.HTTP_200_OK)
+                # foto_usuario = request.data.get('profile_img', None)
+                # if foto_usuario:
+                #     user.profile_img = foto_usuario
                 
                 # ACTUALIZAR ESTADO DE BLOQUEO 
-                is_blocked_act = user_serializer.validated_data.get('is_blocked')
-                if is_blocked_act is not None:
-                    user.is_blocked = is_blocked_act
-                    user.save()
+                # is_blocked_act = user_serializer.validated_data.get('is_blocked')
+                # if is_blocked_act is not None:
+                #     user.is_blocked = is_blocked_act
                     
                 # ASIGNAR ROLES
                 roles_actuales = UsuariosRol.objects.filter(id_usuario=pk)
@@ -165,6 +169,12 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                 lista_roles_json = request.data.getlist("roles")
                 
                 lista_roles_json = [int(a) for a in lista_roles_json]
+                
+                if 1 in lista_roles_json:
+                    lista_roles_json.remove(1)
+                
+                if tipo_usuario_ant == 'E' and tipo_usuario_act == 'E':
+                    lista_roles_json = [2]
             
                 valores_creados_detalles=[]
                 valores_eliminados_detalles = []
@@ -189,17 +199,15 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                 
                     # ELIMINAR ROLES
                     for rol in lista_roles_bd:
-                        print(lista_roles_json)
                         if rol not in lista_roles_json:
                             
                             if rol == 2:
-                                return Response({'success': False, 'detail': 'El rol con id_rol 2 no puede ser eliminado'}, status=status.HTTP_403_FORBIDDEN)
+                                return Response({'success': False, 'detail': 'El rol de ciudadano no puede ser eliminado'}, status=status.HTTP_403_FORBIDDEN)
                             else:
                                 roles_actuales_borrar = roles_actuales.filter(id_usuario=user.id_usuario, id_rol=rol).first()
                                 diccionario = {'nombre': roles_actuales_borrar.id_rol.nombre_rol}
                                 valores_eliminados_detalles.append(diccionario)
                                 roles_actuales_borrar.delete()
-                    
             
                     #AUDITORIA DEL SERVICIO DE ACTUALIZADO PARA DETALLES
                     auditoria_data = {
@@ -213,22 +221,24 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                         "valores_creados_detalles":valores_creados_detalles
                     }
                     Util.save_auditoria_maestro_detalle(auditoria_data)
+                
+                user_actualizado = user_serializer.save()
+                # user.save()
+                valores_actualizados = {'current': user, 'previous': previous_user}
 
                 # HISTORICO 
                 usuario_afectado = User.objects.get(id_usuario=id_usuario_afectado)
                 usuario_operador = User.objects.get(id_usuario=id_usuario_operador)
                 cod_operacion = ""
 
-                if previous_user.tipo_usuario == 'E' and user.tipo_usuario == 'I' and not previous_user.is_active:
+                if previous_user.tipo_usuario == 'E' and user_actualizado.tipo_usuario == 'I' and not previous_user.is_active:
                     cod_operacion = "A"
-                    justificacion = "Activación automática por cambio de usuario externo a usuario interno" #REVISARRRRRRR
-                elif user.is_active != previous_user.is_active:
-                    cod_operacion += "I" if user.is_active else "A"
+                    justificacion = "Activación automática por cambio de usuario externo a usuario interno"
                     
-                if user.is_blocked != previous_user.is_blocked:
-                    cod_operacion += "B" if user.is_blocked else "D"
-
-                if cod_operacion:        
+                    subject = "Verificación exitosa"
+                    template = "email-verified.html"
+                    Util.notificacion(user_actualizado.persona,subject,template)
+                    
                     HistoricoActivacion.objects.create(
                         id_usuario_afectado = usuario_afectado,
                         cod_operacion = cod_operacion,
@@ -236,10 +246,31 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                         justificacion = justificacion,
                         usuario_operador = usuario_operador,
                     )
-                
-                user_serializer.save()
-                user.save()
-                valores_actualizados = {'current': user, 'previous': previous_user}
+                    
+                elif user_actualizado.is_active != previous_user.is_active:
+                    cod_operacion = "A" if user_actualizado.is_active else "I"
+                    subject = "Verificación exitosa"
+                    template = "email-verified.html"
+                    Util.notificacion(user_actualizado.persona,subject,template)
+                    
+                    HistoricoActivacion.objects.create(
+                        id_usuario_afectado = usuario_afectado,
+                        cod_operacion = cod_operacion,
+                        fecha_operacion = fecha_operacion,
+                        justificacion = justificacion_activacion,
+                        usuario_operador = usuario_operador,
+                    )
+                    
+                if user_actualizado.is_blocked != previous_user.is_blocked:
+                    cod_operacion = "B" if user_actualizado.is_blocked else "D"
+                    
+                    HistoricoActivacion.objects.create(
+                        id_usuario_afectado = usuario_afectado,
+                        cod_operacion = cod_operacion,
+                        fecha_operacion = fecha_operacion,
+                        justificacion = justificacion_bloqueo,
+                        usuario_operador = usuario_operador,
+                    )
 
                 # AUDITORIA AL ACTUALIZAR ROLES MAESTRO DETALLE 
                 auditoria_data = {
@@ -1205,17 +1236,6 @@ class BusquedaHistoricoActivacion(generics.ListAPIView):
         if queryset.exists():
             serializer = self.get_serializer(queryset, many=True)
             data = serializer.data
-            for item in data:
-                id_usuario_operador = item['usuario_operador']
-                try:
-                    user = User.objects.get(id_usuario=id_usuario_operador)
-                    persona = user.persona
-                    item['primer_nombre'] = persona.primer_nombre
-                    item['primer_apellido'] = persona.primer_apellido
-                except User.DoesNotExist:
-                    # Si el usuario no existe, se asignan valores vacíos
-                    item['primer_nombre'] = ''
-                    item['primer_apellido'] = ''
             return Response({'success': True, 'detail': 'Se encontró el siguiente historico de activación para ese usuario', 'data': data}, status=status.HTTP_200_OK)
         else:
             return Response({'success': False, 'detail': 'No se encontro historico de activación para ese usuario'}, status=status.HTTP_404_NOT_FOUND)
