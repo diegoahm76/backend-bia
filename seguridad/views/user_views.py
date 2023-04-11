@@ -99,6 +99,9 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
     def patch(self, request, pk):
         user_loggedin = request.user.id_usuario
 
+        if int(pk) == 1:
+            return Response({'success': False,'detail': 'No se puede actualizar el super usuario'}, status=status.HTTP_400_BAD_REQUEST)
+
         if int(user_loggedin) != int(pk):
             user = User.objects.filter(id_usuario=pk).first()
             id_usuario_operador = request.user.id_usuario
@@ -526,6 +529,14 @@ class UnBlockUserPassword(generics.GenericAPIView):
     def patch(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
+        usuario_operador = request.user
+        HistoricoActivacion.objects.create(
+            id_usuario_afectado=usuario_operador,
+            cod_operacion='D',
+            fecha_operacion=datetime.now(),
+            justificacion='Usuario desbloqueado por validación de datos',
+            usuario_operador=usuario_operador
+        )
         return Response({'success': True, 'detail': 'Usuario Desbloqueado'}, status=status.HTTP_200_OK)
 
 class RegisterView(generics.CreateAPIView):
@@ -831,6 +842,7 @@ class LoginErroneoListApiViews(generics.ListAPIView):
 
 class LoginApiView(generics.CreateAPIView):
     serializer_class=LoginSerializer
+
     def post(self, request):
         data = request.data
         user = User.objects.filter(nombre_de_usuario=data['nombre_de_usuario']).first()
@@ -899,6 +911,16 @@ class LoginApiView(generics.CreateAPIView):
                             if login_error.contador == 3:
                                 user.is_blocked = True
                                 user.save()
+                        
+                                HistoricoActivacion.objects.create(
+                                    id_usuario_afectado = user,
+                                    cod_operacion = 'B',
+                                    fecha_operacion = datetime.now(),
+                                    justificacion = 'Usuario bloqueado por exceder los intentos incorrectos en el login',
+                                    usuario_operador = user,
+                                )
+                                
+
                                 return Response({'success':False,'detail':'Su usuario ha sido bloqueado'}, status=status.HTTP_403_FORBIDDEN)
                             serializer = LoginErroneoPostSerializers(login_error, many=False)
                             return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
