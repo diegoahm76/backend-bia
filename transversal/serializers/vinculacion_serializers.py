@@ -14,7 +14,7 @@ class ConsultaVinculacionColaboradorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Personas
-        fields = ('cargo_actual','unidad_organizacional_actual','fecha_inicio_cargo_actual', 'fecha_asignacion_unidad', 'fecha_a_finalizar_cargo_actual', 'observaciones_vinculacion_cargo_actual','fecha_vencida')
+        fields = ('cargo_actual','unidad_organizacional_actual',"es_unidad_organizacional_actual",'fecha_inicio_cargo_actual', 'fecha_asignacion_unidad', 'fecha_a_finalizar_cargo_actual', 'observaciones_vinculacion_cargo_actual','fecha_vencida')
 
 class UpdateVinculacionColaboradorSerializer(serializers.ModelSerializer):
     justificacion_cambio_und_org = serializers.CharField()

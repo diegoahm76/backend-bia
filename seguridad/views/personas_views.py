@@ -1239,24 +1239,32 @@ class ActualizarPersonasNatCamposRestringidosView(generics.UpdateAPIView):
     def put(self, request, id_persona):
 
         data = request.data
+        persona_log = request.user.persona.id_persona
         persona = self.queryset.all().filter(id_persona=id_persona).first()
-        if persona:
+        
+        if persona is not None:
             previous_persona = copy.copy(persona)
-
             serializer = self.serializer_class(persona, data=data)
             serializer.is_valid(raise_exception=True)
 
             if data['tipo_documento'] == "NT":
                 return Response({'success': False, 'detail': "El tipo de documento no se puede actualizar a NIT"})
-
+            
+            if persona.id_persona != persona_log:
+                del data["justificacion"]
+                del data["ruta_archivo_soporte"]
+                cambio = Util.comparacion_campos_actualizados(data,persona)
+                if cambio:
+                    data['fecha_ultim_actualiz_diferente_crea'] = datetime.now()
+                    data['id_persona_ultim_actualiz_diferente_crea'] = persona.id_persona
+            else: 
+                data['fecha_ultim_actualiz_diferente_crea'] = None
+                data['id_persona_ultim_actualiz_diferente_crea'] = None
+            
             historicos_creados = []
-
-            if previous_persona == persona:
-                return Response({'success': False, 'detail': 'No se actualizó ningún campo'}, status=status.HTTP_400_BAD_REQUEST)
 
             ##HISTORICO
             for field, value in request.data.items():
-                
                 if field != 'ruta_archivo_soporte' and field != "justificacion":
                     valor_previous= getattr(persona,field)
                     valor_previous = valor_previous.cod_tipo_documento if field == 'tipo_documento' else valor_previous
@@ -1277,7 +1285,7 @@ class ActualizarPersonasNatCamposRestringidosView(generics.UpdateAPIView):
             #AUDITORÍA
             usuario = request.user.id_usuario
             direccion=Util.get_client_ip(request)
-            descripcion = {"TipodeDocumentoID": str(previous_persona.tipo_documento), "NumeroDocumentoID": str(previous_persona.numero_documento), "PrimerNombre": str(previous_persona.primer_nombre), "PrimerApellido": str(previous_persona.primer_apellido)}
+            descripcion = {"TipodeDocumentoID": str(previous_persona.tipo_documento), "NumeroDocumentoID": str(previous_persona.numero_documento)}
             valores_actualizados = {'current': persona, 'previous': previous_persona}
 
             auditoria_data = {
@@ -1303,23 +1311,33 @@ class ActualizarPersonasJurCamposRestringidosView(generics.UpdateAPIView):
     def put(self, request, id_persona):
 
         data = request.data
-        persona = self.queryset.all().filter(id_persona=id_persona).first()
+        persona_log = request.user.persona.id_persona
+        persona = self.querysetF.all().filter(id_persona=id_persona).first()
         if persona:
             previous_persona = copy.copy(persona)
 
             serializer = self.serializer_class(persona, data=data)
             serializer.is_valid(raise_exception=True)
 
+            if persona.id_persona != persona_log:
+                del data["justificacion"]
+                del data["ruta_archivo_soporte"]
+                cambio = Util.comparacion_campos_actualizados(data,persona)
+                if cambio:
+                    data['fecha_ultim_actualiz_diferente_crea'] = datetime.now()
+                    data['id_persona_ultim_actualiz_diferente_crea'] = persona.id_persona
+                else: 
+                    data['fecha_ultim_actualiz_diferente_crea'] = None
+                    data['id_persona_ultim_actualiz_diferente_crea'] = None
             historicos_creados = []
-
-            if previous_persona == persona:
-                return Response({'success': False, 'detail': 'No se actualizó ningún campo'}, status=status.HTTP_400_BAD_REQUEST)
 
             ##HISTORICO
             for field, value in request.data.items():
                 
                 if field != 'ruta_archivo_soporte' and field != "justificacion":
                     valor_previous= getattr(persona,field)
+                    print ("AQUIII", valor_previous)
+                    print("FIELD",field)
                     if value != valor_previous:
                         historico = HistoricoCambiosIDPersonas.objects.create(
                             id_persona=persona,
@@ -1336,7 +1354,7 @@ class ActualizarPersonasJurCamposRestringidosView(generics.UpdateAPIView):
             #AUDITORÍA
             usuario = request.user.id_usuario
             direccion=Util.get_client_ip(request)
-            descripcion = {"NumeroDocumentoID": str(previous_persona.numero_documento), "RazonSocial": str(previous_persona.razon_social), "NombreComercial": str(previous_persona.nombre_comercial), "NaturalezaEmpresa":str(previous_persona.cod_naturaleza_empresa)}
+            descripcion = {"NumeroDocumentoID": str(previous_persona.numero_documento)}
             valores_actualizados = {'current': persona, 'previous': previous_persona}
 
             auditoria_data = {
