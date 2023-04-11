@@ -404,7 +404,7 @@ class Util:
     def comparacion_campos_actualizados(data,instance):
         for field, value in data.items():
             
-            if field != "datos_clasificacion_persona":
+            if field != "datos_clasificacion_persona" and field != "justificacion_cambio_und_org":
                 valor_previous= getattr(instance,field)
                 
                 # TOMAR DATE SI ES DATETIME

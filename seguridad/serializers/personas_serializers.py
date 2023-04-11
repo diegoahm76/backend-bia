@@ -823,12 +823,3 @@ class UpdatePersonasJuridicasSerializer(serializers.ModelSerializer):
                     message = 'Ya existe un registro con ese número de documento ingresado'    
                 )
             ]
-
-
-class BusquedaHistoricoCargoUndSerializer(serializers.ModelSerializer):
-    nombre_cargo = serializers.CharField(source='id_cargo.nombre', read_only=True)
-    nombre_unidad_organizacional = serializers.CharField(source='id_unidad_organizacional.nombre', read_only=True)
-
-    class Meta:
-        model = HistoricoCargosUndOrgPersona
-        fields = ['nombre_cargo', 'nombre_unidad_organizacional', 'fecha_inicial_historico', 'fecha_final_historico', 'observaciones_vinculni_cargo', 'justificacion_cambio_und_org','desvinculado','fecha_desvinculacion','observaciones_desvinculacion']

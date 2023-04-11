@@ -82,9 +82,6 @@ urlpatterns = [
     
     # Historico Direcciones
     path('historico-direcciones/get-list/', views.GetHistoricoDirecciones.as_view(), name="historico-direcciones-get"),
-
-    # Historico Cargo-Unidad
-    path('get-historico-cargo-und/<str:id_persona>/', views.BusquedaHistoricoCargoUnd.as_view(), name='historico_cargos_und'),
     
     # Cargos
     path('cargos/get-list/', views.GetCargosList.as_view(), name="cargos-get"),
