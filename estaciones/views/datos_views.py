@@ -2,7 +2,7 @@ import calendar
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
-from estaciones.serializers.datos_serializers import DatosSerializer
+from estaciones.serializers.datos_serializers import DatosSerializer, DatosSerializerNombre
 from estaciones.models.estaciones_models import Datos
 from datetime import datetime
 
@@ -24,25 +24,25 @@ class ConsultarDatosId(generics.ListAPIView):
 # consultar datos por el id estacion primeros 500 datos
 
 class ConsultarDatosIdPrimerosDatos(generics.ListAPIView):
-    serializer_class = DatosSerializer
+    serializer_class = DatosSerializerNombre
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         pk = self.kwargs.get('pk')
-        return Datos.objects.using("bia-estaciones").filter(id_estacion=pk).order_by('-fecha_registro')[:2000]
+        return Datos.objects.using("bia-estaciones").filter(id_estacion=pk).order_by('-fecha_registro')[:500]
 
     def get(self, request, pk):
         queryset = self.get_queryset()
         if queryset:
             serializador = self.serializer_class(queryset, many=True)
-            return Response({'success': True, 'detail': 'Estos son los 2000 primeros datos', 'data': serializador.data}, status=status.HTTP_200_OK)
+            return Response({'success': True, 'detail': 'Estos son los 500 primeros datos', 'data': serializador.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success': False, 'detail': 'No se encontraron datos'}, status=status.HTTP_404_NOT_FOUND)
 
 # consultar datos por fechas
 
 class ConsultarDatosFecha(generics.ListAPIView):
-    serializer_class = DatosSerializer
+    serializer_class = DatosSerializerNombre
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -73,7 +73,7 @@ class ConsultarDatosFecha(generics.ListAPIView):
 
 
 class ConsultarDatosReportes(generics.ListAPIView):
-    serializer_class = DatosSerializer
+    serializer_class = DatosSerializerNombre
     queryset = Datos.objects.all().using("bia-estaciones")
     permission_classes = [IsAuthenticated]
 
