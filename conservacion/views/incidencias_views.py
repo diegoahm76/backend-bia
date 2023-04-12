@@ -239,16 +239,6 @@ class GuardarIncidencia(generics.CreateAPIView):
                     'nombre_etapa': nombre,
                     'consecutivo_por_lote_etapa':str(data_incidencia['consec_por_lote_etapa'])}
         direccion=Util.get_client_ip(request)
-    
-        auditoria_incidencia = {
-            "id_usuario" : request.user.id_usuario,
-            "id_modulo" : 59,
-            "cod_permiso": "CR",
-            "subsistema": 'CONS',
-            "dirip": direccion,
-            "descripcion": descripcion,
-        }
-        Util.save_auditoria(auditoria_incidencia)
         
         if items_detalles:
             #ASIGANACION DE PK DEL REGISTRO DE INCIDENCIA
@@ -448,18 +438,6 @@ class AnulacionIncidencia(generics.UpdateAPIView):
                         'nombre_etapa': nombre ,
                         'consecutivo_por_lote_etapa':str(ultima_incidencia.consec_por_lote_etapa)}
         direccion=Util.get_client_ip(request)
-        valores_actualizados = {'previous': previous_incidencia,'current': ultima_incidencia}
-
-        auditoria_incidencia = {
-            "id_usuario" : request.user.id_usuario,
-            "id_modulo" : 59,
-            "cod_permiso": "AN",
-            "subsistema": 'CONS',
-            "dirip": direccion,
-            "descripcion": descripcion,
-            "valores_actualizados": valores_actualizados
-        }
-        Util.save_auditoria(auditoria_incidencia)
         
         #AUDITORIA DEL SERVICIO DE ACTUALIZADO PARA DETALLES
         auditoria_data = {
@@ -685,19 +663,6 @@ class ActualizacionIncidencia(generics.ListAPIView):
             direccion=Util.get_client_ip(request)
             valores_actualizados = {'previous': previous_incidencias,'current': incidencia}
             
-            #AUDITORIA DEL SERVICIO DE ACTUALIZADO PARA MAESTRO
-            
-            auditoria_incidencia = {
-                "id_usuario" : request.user.id_usuario,
-                "id_modulo" : 59,
-                "cod_permiso": "AC",
-                "subsistema": 'CONS',
-                "dirip": direccion,
-                "descripcion": descripcion,
-                "valores_actualizados": valores_actualizados
-            }
-            Util.save_auditoria(auditoria_incidencia)
-            
             #AUDITORIA DEL SERVICIO DE ACTUALIZADO PARA DETALLES
             auditoria_data = {
                 "id_usuario" : request.user.id_usuario,
@@ -706,6 +671,7 @@ class ActualizacionIncidencia(generics.ListAPIView):
                 "subsistema": 'CONS',
                 "dirip": direccion,
                 "descripcion": descripcion,
+                "valores_actualizados_maestro": valores_actualizados,
                 "valores_creados_detalles":valores_creados_detalles,
                 "valores_actualizados_detalles":valores_actualizados_detalles,
                 "valores_eliminados_detalles":valores_eliminados_detalles

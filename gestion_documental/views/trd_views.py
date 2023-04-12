@@ -57,6 +57,8 @@ class UpdateTipologiasDocumentales(generics.UpdateAPIView):
         usuario = request.user.id_usuario
         descripcion = {"nombre": str(trd.nombre), "version": str(trd.version)}
         direccion = Util.get_client_ip(request)
+        previous_user = copy.copy(trd)
+        
         if trd:
             if (not trd.fecha_terminado and not trd.fecha_retiro_produccion) or (trd.actual and trd.fecha_puesta_produccion and not trd.fecha_retiro_produccion):
                 if data:
@@ -176,7 +178,8 @@ class UpdateTipologiasDocumentales(generics.UpdateAPIView):
                             return Response({'success':False, 'detail':'Una o varias tipologias a eliminar ya están asociadas al TRD', 'data':serie_subserie_unidad_tipologia.values()}, status=status.HTTP_403_FORBIDDEN)
                     
                     valores_eliminados_detalles = [{'nombre':tipologia.nombre, 'codigo':tipologia.codigo} for tipologia in tipologias_eliminar]
-                    
+                    valores_actualizados = {'current': trd, 'previous': previous_user}
+
                     tipologias_eliminar.delete()
                     
                     # AUDITORIA MAESTRO DETALLE
@@ -188,6 +191,7 @@ class UpdateTipologiasDocumentales(generics.UpdateAPIView):
                         "dirip": direccion,
                         "descripcion": descripcion,
                         "valores_creados_detalles": valores_creados_detalles,
+                        "valores_actualizados_maestro": valores_actualizados,
                         "valores_actualizados_detalles": valores_actualizados_detalles,
                         "valores_eliminados_detalles": valores_eliminados_detalles
                     }
@@ -212,18 +216,6 @@ class UpdateTipologiasDocumentales(generics.UpdateAPIView):
                     valores_eliminados_detalles = [{'nombre':tipologia.nombre, 'codigo':tipologia.codigo} for tipologia in tipologias_eliminar]
                     
                     tipologias_eliminar.delete()
-                    
-                    # AUDITORIA MAESTRO DETALLE
-                    auditoria_data = {
-                        "id_usuario" : usuario,
-                        "id_modulo" : 29,
-                        "cod_permiso": "AC",
-                        "subsistema": 'GEST',
-                        "dirip": direccion,
-                        "descripcion": descripcion,
-                        "valores_eliminados_detalles": valores_eliminados_detalles
-                    }
-                    Util.save_auditoria_maestro_detalle(auditoria_data)
 
                     return Response({'success':True, 'detail':'Se han eliminado todas las tipologias'}, status=status.HTTP_200_OK)
             else:

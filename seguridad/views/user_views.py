@@ -211,7 +211,8 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                                 diccionario = {'nombre': roles_actuales_borrar.id_rol.nombre_rol}
                                 valores_eliminados_detalles.append(diccionario)
                                 roles_actuales_borrar.delete()
-            
+                    
+                    valores_actualizados = {'current': user, 'previous': previous_user}
                     #AUDITORIA DEL SERVICIO DE ACTUALIZADO PARA DETALLES
                     auditoria_data = {
                         "id_usuario" : user_loggedin,
@@ -220,6 +221,7 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                         "subsistema": 'SEGU',
                         "dirip": dirip,
                         "descripcion": descripcion,
+                        "valores_actualizados_maestro": valores_actualizados, 
                         "valores_eliminados_detalles":valores_eliminados_detalles,
                         "valores_creados_detalles":valores_creados_detalles
                     }
@@ -227,7 +229,6 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                 
                 user_actualizado = user_serializer.save()
                 # user.save()
-                valores_actualizados = {'current': user, 'previous': previous_user}
 
                 # HISTORICO 
                 usuario_afectado = User.objects.get(id_usuario=id_usuario_afectado)
@@ -274,19 +275,6 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                         justificacion = justificacion_bloqueo,
                         usuario_operador = usuario_operador,
                     )
-
-                # AUDITORIA AL ACTUALIZAR ROLES MAESTRO DETALLE 
-                auditoria_data = {
-                    'id_usuario': user_loggedin,
-                    'id_modulo': 2,
-                    'cod_permiso': 'AC',
-                    'subsistema': 'SEGU',
-                    'dirip': dirip,
-                    'descripcion': descripcion,
-                    'valores_actualizados':valores_actualizados
-                }
-                Util.save_auditoria(auditoria_data)
-                
 
                 return Response({'success': True, 'detail':'Actualización exitosa','data': user_serializer.data}, status=status.HTTP_200_OK)
             else:
