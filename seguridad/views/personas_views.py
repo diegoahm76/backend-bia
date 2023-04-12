@@ -325,7 +325,7 @@ class UpdatePersonaNaturalByself(generics.RetrieveUpdateAPIView):
         # auditoria actualizar persona
         usuario = request.user.id_usuario
         direccion=Util.get_client_ip(request)
-        descripcion = {"TipodeDocumentoID": str(serializador.tipo_documento), "NumeroDocumentoID": str(serializador.numero_documento), "PrimerNombre": str(serializador.primer_nombre), "PrimerApellido": str(serializador.primer_apellido)}
+        descripcion = {"TipodeDocumentoID": str(serializador.tipo_documento.cod_tipo_documento), "NumeroDocumentoID": str(serializador.numero_documento), "PrimerNombre": str(serializador.primer_nombre), "PrimerApellido": str(serializador.primer_apellido)}
         valores_actualizados = {'current': persona, 'previous': previous_persona}
 
         auditoria_data = {
@@ -341,7 +341,6 @@ class UpdatePersonaNaturalByself(generics.RetrieveUpdateAPIView):
     
         return Response({'success': True, 'detail': 'Persona actualizada correctamente', 'data': persona_serializada.data}, status=status.HTTP_201_CREATED)
     
-    
 class UpdatePersonaNaturalAdminPersonas(generics.UpdateAPIView):
     serializer_class = PersonaNaturalUpdateAdminSerializer
     permission_classes = [IsAuthenticated]
@@ -354,7 +353,7 @@ class UpdatePersonaNaturalAdminPersonas(generics.UpdateAPIView):
         persona = self.queryset.all().filter(id_persona = id_persona).first()
         
         if persona:
-            
+            persona_previous = copy.copy(persona)
             if persona.direccion_notificaciones != None:
                 if data["direccion_notificaciones"] == None:
                     return Response({'success':False,"detail":"No se puede dejar en blanco debido a que ya había una dirección de notificación"},status=status.HTTP_403_FORBIDDEN)
@@ -396,12 +395,27 @@ class UpdatePersonaNaturalAdminPersonas(generics.UpdateAPIView):
                 persona_actualizada.fecha_ultim_actualiz_diferente_crea = datetime.now()
                 persona_actualizada.id_persona_ultim_actualiz_diferente_crea = request.user.persona
                 persona_actualizada.save()
+            
+            # AUDITORIA ACTUALIZAR PERSONA
+            descripcion = {"TipodeDocumentoID": str(persona_actualizada.tipo_documento.cod_tipo_documento), "NumeroDocumentoID": str(persona_actualizada.numero_documento), "PrimerNombre": str(persona_actualizada.primer_nombre), "PrimerApellido": str(persona_actualizada.primer_apellido)}
+            direccion=Util.get_client_ip(request)
+
+            auditoria_data = {
+                "id_modulo" : 1,
+                "cod_permiso": "AC",
+                "subsistema": 'SEGU',
+                "dirip": direccion,
+                "descripcion": descripcion,
+                "valores_actualizados_maestro": {'previous':persona_previous, 'current':persona},
+                "valores_creados_detalles": validaciones_cargo['valores_creados_detalles'],
+                "valores_eliminados_detalles": validaciones_cargo['valores_eliminados_detalles']
+            }
+            Util.save_auditoria_maestro_detalle(auditoria_data)
         
             return Response ({'success':True,'detail':'Se actualizó la persona correctamente','data':persona_serializada.data},status=status.HTTP_200_OK)
         
         return Response ({'success':False,'detail':'No existe la persona'},status=status.HTTP)
     
-
 class UpdatePersonaJuridicaAdminPersonas(generics.UpdateAPIView):
     serializer_class = PersonaJuridicaUpdateSerializer
     permission_classes = [IsAuthenticated]
@@ -553,6 +567,7 @@ class RegisterPersonaNaturalAdmin(generics.CreateAPIView):
         serializador = serializer.save()
     
         #CREACION DE CLASE TERCERO
+        valores_creados_detalles = []
         for clase_tercero in persona['datos_clasificacion_persona']:
 
             clase_tercero_instance = ClasesTercero.objects.filter(id_clase_tercero = clase_tercero ).first()
@@ -562,20 +577,22 @@ class RegisterPersonaNaturalAdmin(generics.CreateAPIView):
                     id_persona = serializador,
                     id_clase_tercero = clase_tercero_instance
                 )
+                valores_creados_detalles.append({"NombreClaseTercero":clase_tercero_instance.nombre})
             else: return Response({'success':False,'detail':'La clase tercero '+str(clase_tercero)+" no existe"},status=status.HTTP_403_FORBIDDEN)
 
         # AUDITORIA CREAR PERSONA
-        descripcion = {"TipodeDocumentoID": str(serializador.tipo_documento), "NumeroDocumentoID": str(serializador.numero_documento), "RazonSocial": str(serializador.razon_social), "NombreComercial": str(serializador.nombre_comercial)}
+        descripcion = {"TipodeDocumentoID": str(serializador.tipo_documento), "NumeroDocumentoID": str(serializador.numero_documento), "PrimerNombre": str(serializador.primer_nombre), "PrimerApellido": str(serializador.primer_apellido)}
         direccion=Util.get_client_ip(request)
 
         auditoria_data = {
-            "id_modulo" : 9,
+            "id_modulo" : 1,
             "cod_permiso": "CR",
-            "subsistema": 'TRSV',
+            "subsistema": 'SEGU',
             "dirip": direccion,
-            "descripcion": descripcion, 
+            "descripcion": descripcion,
+            "valores_creados_detalles": valores_creados_detalles
         }
-        Util.save_auditoria(auditoria_data)
+        Util.save_auditoria_maestro_detalle(auditoria_data)
         
         return Response({'success':True, 'detail': 'Se creo la persona jurídica correctamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 

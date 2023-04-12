@@ -50,7 +50,6 @@ class Util:
         # print(response.text)
         # return response
             
-
     @staticmethod
     def validate_dns(email):
         try: 
@@ -59,9 +58,6 @@ class Util:
             return True
         except EmailUndeliverableError as e:
             return False
-
-
-
         
     @staticmethod
     def send_sms(phone, sms):
@@ -168,8 +164,10 @@ class Util:
                 data_previous = data_actualizados.get('previous')
                 data_current = data_actualizados.get('current')
                 
-                del data_previous.__dict__["_state"]
-                del data_previous.__dict__["_django_version"]
+                if data_previous.__dict__.get("_state"):
+                    del data_previous.__dict__["_state"]
+                if data_previous.__dict__.get("_django_version"):
+                    del data_previous.__dict__["_django_version"]
                 
                 for field, value in data_previous.__dict__.items():
                     new_value = getattr(data_current,field)
@@ -217,6 +215,7 @@ class Util:
             modulo = Modulos.objects.get(id_modulo = data.get('id_modulo'))
             permiso = Permisos.objects.get(cod_permiso = data.get('cod_permiso'))
             data_descripcion = data.get('descripcion')
+            data_actualizados_maestro = data.get('valores_actualizados_maestro')
             data_actualizados_detalles = data.get('valores_actualizados_detalles')
             data_creados_detalles = data.get('valores_creados_detalles')
             data_eliminados_detalles = data.get('valores_eliminados_detalles')
@@ -233,9 +232,33 @@ class Util:
                     descripcion_general += field + ":" + str(value)
                     
                 descripcion_general += '.'
-                
-            valores_actualizados = None
             
+            # VALORES ACTUALIZADOS MAESTRO
+            valores_actualizados_maestro = None
+            
+            if data_actualizados_maestro:
+                valores_actualizados_maestro = ""
+                
+                data_previous = data_actualizados_maestro.get('previous')
+                data_current = data_actualizados_maestro.get('current')
+                
+                if data_previous.__dict__.get("_state"):
+                    del data_previous.__dict__["_state"]
+                if data_previous.__dict__.get("_django_version"):
+                    del data_previous.__dict__["_django_version"]
+                
+                for field, value in data_previous.__dict__.items():
+                    new_value = getattr(data_current,field)
+                    if value != new_value:
+                        valores_actualizados_maestro += '' if not valores_actualizados_maestro else '|'
+                        valores_actualizados_maestro += field + ":" + str(value) + " con " + str(new_value)
+                
+                if not valores_actualizados_maestro:
+                    valores_actualizados_maestro = None
+                else:
+                    valores_actualizados_maestro += '.'
+
+            # DATA DETALLES
             if data_creados_detalles:
                 for detalle_crear in data_creados_detalles:
                     descripcion_creados = ''
@@ -246,9 +269,12 @@ class Util:
                     descripcion_detalles += ' ' if descripcion_detalles.endswith('.') else ''
                     descripcion_detalles += 'Se agregó en el detalle el ítem ' + descripcion_creados
             
+            # VALORES ACTUALIZADOS DETALLES
+            valores_actualizados_detalles = None
+            
             if data_actualizados_detalles:
                 for detalle in data_actualizados_detalles:
-                    valores_actualizados = ""
+                    valores_actualizados_detalles = ""
                     
                     data_descripcion_detalle = detalle.get('descripcion')
                     data_previous = detalle.get('previous')
@@ -270,15 +296,15 @@ class Util:
                     for field, value in data_previous.__dict__.items():
                         new_value = getattr(data_current,field)
                         if value != new_value:
-                            valores_actualizados += '' if not valores_actualizados else '|'
-                            valores_actualizados += field + ":" + str(value) + " con " + str(new_value)
+                            valores_actualizados_detalles += '' if not valores_actualizados_detalles else '|'
+                            valores_actualizados_detalles += field + ":" + str(value) + " con " + str(new_value)
                     
-                    if not valores_actualizados:
-                        valores_actualizados = None
+                    if not valores_actualizados_detalles:
+                        valores_actualizados_detalles = None
                     else:
-                        valores_actualizados += '.'
+                        valores_actualizados_detalles += '.'
                         descripcion_detalles += ' ' if descripcion_detalles.endswith('.') else ''
-                        descripcion_detalles += 'Se actualizó en el detalle el ítem ' + description + ' en los siguientes campos: ' + valores_actualizados
+                        descripcion_detalles += 'Se actualizó en el detalle el ítem ' + description + ' en los siguientes campos: ' + valores_actualizados_detalles
             
             if data_eliminados_detalles:
                 for detalle_eliminar in data_eliminados_detalles:
@@ -289,19 +315,24 @@ class Util:
                     descripcion_eliminados += '.'
                     descripcion_detalles += ' ' if descripcion_detalles.endswith('.') else ''
                     descripcion_detalles += 'Se eliminó en el detalle el ítem ' + descripcion_eliminados
-                
-            descripcion_detalles = descripcion_detalles if descripcion_detalles != '' else None
-                
-            auditoria_user = Auditorias.objects.create(
-                id_usuario = usuario,
-                id_modulo = modulo,
-                id_cod_permiso_accion = permiso,
-                subsistema = data.get('subsistema'),
-                dirip = data.get('dirip'),
-                descripcion = descripcion_general,
-                valores_actualizados = descripcion_detalles
-            )
-            auditoria_user.save()
+            
+            # CONCATENAR LO ACTUALIZADO DEL MAESTRO CON LO DE LOS DETALLES
+            if valores_actualizados_maestro:
+                descripcion_detalles = valores_actualizados_maestro + 'DETALLE:' + descripcion_detalles if descripcion_detalles else valores_actualizados_maestro
+            else:
+                descripcion_detalles = descripcion_detalles if descripcion_detalles != '' else None
+            
+            if descripcion_detalles:
+                auditoria_user = Auditorias.objects.create(
+                    id_usuario = usuario,
+                    id_modulo = modulo,
+                    id_cod_permiso_accion = permiso,
+                    subsistema = data.get('subsistema'),
+                    dirip = data.get('dirip'),
+                    descripcion = descripcion_general,
+                    valores_actualizados = descripcion_detalles
+                )
+                auditoria_user.save()
         
             return True
         except:
@@ -475,20 +506,20 @@ class Util:
                     valores_eliminados_detalles.append(diccionario)
                     clase_tercero_persona_borrar.delete()
                         
-        #AUDITORIA DEL SERVICIO DE ACTUALIZADO PARA DETALLES  
-        descripcion = {"TipodeDocumentoID": instance.tipo_documento, "NumeroDocumentoID": instance.numero_documento}
-        direccion=Util.get_client_ip(request)
-        auditoria_data = {
-            "id_usuario" : request.user.id_usuario,
-            "id_modulo" : 1,
-            "cod_permiso": "AC",
-            "subsistema": 'SEGU',
-            "dirip": direccion,
-            "descripcion": descripcion,
-            "valores_creados_detalles":valores_creados_detalles,
-            "valores_eliminados_detalles":valores_eliminados_detalles
-        }
-        Util.save_auditoria_maestro_detalle(auditoria_data)    
+        # #AUDITORIA DEL SERVICIO DE ACTUALIZADO PARA DETALLES  
+        # descripcion = {"TipodeDocumentoID": instance.tipo_documento, "NumeroDocumentoID": instance.numero_documento}
+        # direccion=Util.get_client_ip(request)
+        # auditoria_data = {
+        #     "id_usuario" : request.user.id_usuario,
+        #     "id_modulo" : 1,
+        #     "cod_permiso": "AC",
+        #     "subsistema": 'SEGU',
+        #     "dirip": direccion,
+        #     "descripcion": descripcion,
+        #     "valores_creados_detalles":valores_creados_detalles,
+        #     "valores_eliminados_detalles":valores_eliminados_detalles
+        # }
+        # Util.save_auditoria_maestro_detalle(auditoria_data)    
         
-        return {'success':True,'actualizado':actualizado}
+        return {'success':True,'actualizado':actualizado, 'valores_creados_detalles':valores_creados_detalles, 'valores_eliminados_detalles':valores_eliminados_detalles}
         
