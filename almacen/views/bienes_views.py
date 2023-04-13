@@ -335,7 +335,7 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                         )
                         serializer = self.serializer_class(catalogo_bien)
                             
-            return Response({'success': False, 'detail': 'Bien guardado exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+            return Response({'success': True, 'detail': 'Bien guardado exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
 
 
 class GetCatalogoBienesList(generics.ListAPIView):
@@ -441,7 +441,7 @@ class GetCatalogoBienesList(generics.ListAPIView):
                                             
                                             data_cinco['data']['eliminar'] = True if not elementos else False
                                             data_cinco['data']['crear'] = False
-                                            data_cinco['data']['bien'] = nodo_cuatro
+                                            data_cinco['data']['bien'] = nodo_cinco
                                             data_cinco['children'] = []
                                             data_cuatro['children'].append(data_cinco)
                                             cont_cinco += 1
