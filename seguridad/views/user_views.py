@@ -99,6 +99,9 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
     def patch(self, request, pk):
         user_loggedin = request.user.id_usuario
 
+        if int(pk) == 1:
+            return Response({'success': False,'detail': 'No se puede actualizar el super usuario'}, status=status.HTTP_400_BAD_REQUEST)
+
         if int(user_loggedin) != int(pk):
             user = User.objects.filter(id_usuario=pk).first()
             id_usuario_operador = request.user.id_usuario
@@ -208,7 +211,8 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                                 diccionario = {'nombre': roles_actuales_borrar.id_rol.nombre_rol}
                                 valores_eliminados_detalles.append(diccionario)
                                 roles_actuales_borrar.delete()
-            
+                    
+                    valores_actualizados = {'current': user, 'previous': previous_user}
                     #AUDITORIA DEL SERVICIO DE ACTUALIZADO PARA DETALLES
                     auditoria_data = {
                         "id_usuario" : user_loggedin,
@@ -217,6 +221,7 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                         "subsistema": 'SEGU',
                         "dirip": dirip,
                         "descripcion": descripcion,
+                        "valores_actualizados_maestro": valores_actualizados, 
                         "valores_eliminados_detalles":valores_eliminados_detalles,
                         "valores_creados_detalles":valores_creados_detalles
                     }
@@ -224,7 +229,6 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                 
                 user_actualizado = user_serializer.save()
                 # user.save()
-                valores_actualizados = {'current': user, 'previous': previous_user}
 
                 # HISTORICO 
                 usuario_afectado = User.objects.get(id_usuario=id_usuario_afectado)
@@ -271,19 +275,6 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                         justificacion = justificacion_bloqueo,
                         usuario_operador = usuario_operador,
                     )
-
-                # AUDITORIA AL ACTUALIZAR ROLES MAESTRO DETALLE 
-                auditoria_data = {
-                    'id_usuario': user_loggedin,
-                    'id_modulo': 2,
-                    'cod_permiso': 'AC',
-                    'subsistema': 'SEGU',
-                    'dirip': dirip,
-                    'descripcion': descripcion,
-                    'valores_actualizados':valores_actualizados
-                }
-                Util.save_auditoria(auditoria_data)
-                
 
                 return Response({'success': True, 'detail':'Actualización exitosa','data': user_serializer.data}, status=status.HTTP_200_OK)
             else:
@@ -526,6 +517,14 @@ class UnBlockUserPassword(generics.GenericAPIView):
     def patch(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
+        usuario_operador = request.user
+        HistoricoActivacion.objects.create(
+            id_usuario_afectado=usuario_operador,
+            cod_operacion='D',
+            fecha_operacion=datetime.now(),
+            justificacion='Usuario desbloqueado por validación de datos',
+            usuario_operador=usuario_operador
+        )
         return Response({'success': True, 'detail': 'Usuario Desbloqueado'}, status=status.HTTP_200_OK)
 
 class RegisterView(generics.CreateAPIView):
@@ -831,6 +830,7 @@ class LoginErroneoListApiViews(generics.ListAPIView):
 
 class LoginApiView(generics.CreateAPIView):
     serializer_class=LoginSerializer
+
     def post(self, request):
         data = request.data
         user = User.objects.filter(nombre_de_usuario=data['nombre_de_usuario']).first()
@@ -899,6 +899,16 @@ class LoginApiView(generics.CreateAPIView):
                             if login_error.contador == 3:
                                 user.is_blocked = True
                                 user.save()
+                        
+                                HistoricoActivacion.objects.create(
+                                    id_usuario_afectado = user,
+                                    cod_operacion = 'B',
+                                    fecha_operacion = datetime.now(),
+                                    justificacion = 'Usuario bloqueado por exceder los intentos incorrectos en el login',
+                                    usuario_operador = user,
+                                )
+                                
+
                                 return Response({'success':False,'detail':'Su usuario ha sido bloqueado'}, status=status.HTTP_403_FORBIDDEN)
                             serializer = LoginErroneoPostSerializers(login_error, many=False)
                             return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
