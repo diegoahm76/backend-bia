@@ -49,7 +49,7 @@ class SubseriesDoc(models.Model):
         return str(self.nombre)
 
     class Meta:
-        db_table = 'T204Subseries_Serie_CCD'
+        db_table = 'T204Subseries_Series_CCD'
         verbose_name = 'Subserie'
         verbose_name_plural = 'Subseries'
         unique_together = (('id_serie_doc','nombre'), ('id_serie_doc','codigo'))        

@@ -328,9 +328,9 @@
         "pk": 28,
         "fields": {
           "id_modulo": 28,
-          "nombre_modulo": "Cambio de Cuadro de Clasificación Documental Actual",
+          "nombre_modulo": "Activación Instrumentos Archivísticos",
           "subsistema":"GEST",
-          "descripcion":"Permite adoptar un nuevo Cuadro de Clasificación Documental de la entidad en el sistema",
+          "descripcion":"Permite adoptar una nueva versión de los Instrumentos Archivísticos de la entidad en el sistema",
           "ruta_formulario":"/test",
           "nombre_icono":"test"
         }
@@ -760,7 +760,7 @@
         "pk": 64,
         "fields": {
           "id_modulo": 64,
-          "nombre_modulo": "Listado de Solicitudes pendientes de Aprobación (Coordinador de Viveros)",
+          "nombre_modulo": "Listado de Solicitudes pendientes de Aprobación (Coordinador Viveros)",
           "subsistema":"CONS",
           "descripcion":"Permite consultar las solicitudes realizadas a viveros pendientes de aprobación ya aprobadas por funcionario responsable",
           "ruta_formulario":"/test",
@@ -871,6 +871,42 @@
           "nombre_modulo": "Datos Personales de Modificación Restringida",
           "subsistema":"TRSV",
           "descripcion":"Permite actualizar los Datos Personales de modificación restringida en el sistema a cualquier persona creada en el mismo",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 74,
+        "fields": {
+          "id_modulo": 74,
+          "nombre_modulo": "Tipologías Documentales",
+          "subsistema":"GEST",
+          "descripcion":"Permite administrar las tipologías documentales de la entidad a manejar en el sistema",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 75,
+        "fields": {
+          "id_modulo": 75,
+          "nombre_modulo": "Formatos Documentales",
+          "subsistema":"GEST",
+          "descripcion":"Permite administrar las formatos de los documentos para medios físicos y digitales a manejar en el sistema",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 76,
+        "fields": {
+          "id_modulo": 76,
+          "nombre_modulo": "Permisos por Catálogo del TCA",
+          "subsistema":"GEST",
+          "descripcion":"Permite administrar los Permisos que tendrán los diferentes Cargo-Unidad Organizacional sobre las tipologías documentales de los catálogos disponibles de una TCA de la entidad en el sistema",
           "ruta_formulario":"/test",
           "nombre_icono":"test"
         }

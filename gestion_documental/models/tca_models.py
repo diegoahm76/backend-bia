@@ -7,14 +7,14 @@ from almacen.models.organigrama_models import (
 )
 class TablasControlAcceso(models.Model):
     id_tca=models.AutoField(primary_key=True, editable=False, db_column='T216IdTCA')
-    id_ccd=models.ForeignKey(CuadrosClasificacionDocumental,on_delete=models.CASCADE,db_column='T216Id_CCD')
+    id_trd=models.ForeignKey(CuadrosClasificacionDocumental,on_delete=models.CASCADE,db_column='T216Id_TRD')
     version=models.CharField(max_length=30,unique=True,db_column='T216version')
     nombre=models.CharField(max_length=200,unique=True,db_column='T216nombre')
     fecha_terminado=models.DateTimeField(blank=True,null=True,db_column='T216fechaTerminado')
     fecha_puesta_produccion=models.DateTimeField(blank=True,null=True,db_column='T216fechaPuestaEnProduccion')
     fecha_retiro_produccion=models.DateTimeField(blank=True,null=True,db_column='T216fechaRetiroDeProduccion')
-    justificacion_nueva_version=models.CharField(max_length=255,blank=True,null=True,db_column='T216justificacionNuevaVersion')
-    ruta_soporte=models.FileField(blank=True,null=True,db_column='T216rutaSoporte')
+    # justificacion_nueva_version=models.CharField(max_length=255,blank=True,null=True,db_column='T216justificacionNuevaVersion')
+    # ruta_soporte=models.FileField(blank=True,null=True,db_column='T216rutaSoporte')
     actual=models.BooleanField(default=False,db_column='T216actual')
     
     def __str__(self):
@@ -27,15 +27,15 @@ class TablasControlAcceso(models.Model):
         
 class ClasificacionExpedientes(models.Model):
     cod_clas_expediente=models.CharField(max_length=1,db_column='T214CodClasificacionExp')
-    tipo_clasificacion=models.CharField(max_length=20,db_column='T214tipoClasificacion')
+    nombre=models.CharField(max_length=20,db_column='T214nombre')
     
     def __str__(self):
         return str(self.cod_clas_serie_doc)
     
     class Meta:
         db_table='T214ClasificacionExpedientes'
-        verbose_name='Clasificacion serie sub Doc '
-        verbose_name_plural='Clasificaciones serie sub Doc'
+        verbose_name='Clasificacion expediente'
+        verbose_name_plural='Clasificaciones expedientes'
 
 class PermisosGD(models.Model):
     cod_permiso_gd=models.CharField(primary_key=True, max_length=2, editable=False,db_column='T213CodPermisoGD')
@@ -49,28 +49,28 @@ class PermisosGD(models.Model):
         verbose_name='Permiso GD'
         verbose_name_plural='Permisos GD'
         
-class Clasif_Serie_Subserie_Unidad_TCA(models.Model):
-    id_clasif_serie_subserie_unidad_tca=models.AutoField(primary_key=True, db_column='T215IdClasif_S_Ss_UndOrg_TCA')
+class CatSeriesUnidadOrgCCD_TRD_TCA(models.Model):
+    id_cat_serie_unidad_org_ccd_trd_tca=models.AutoField(primary_key=True, db_column='T215IdCatSerie_UndOrg_CCD_TRD_TCA')
     id_tca=models.ForeignKey(TablasControlAcceso,on_delete=models.CASCADE,db_column='T215Id_TCA')
-    id_cat_serie_und=models.ForeignKey(CatalogosSeriesUnidad,on_delete=models.CASCADE,db_column='T215Id_SerieSubserieUnidadOrg')
+    id_cat_serie_und_ccd_trd=models.ForeignKey(CatalogosSeriesUnidad,on_delete=models.CASCADE,db_column='T215Id_CatSerie_UndOrg_CCD_TRD')
     cod_clas_expediente=models.CharField(max_length=1,choices=tipo_clasificacion_CHOICES,db_column='T215Cod_ClasificacionExp')
     fecha_registro=models.DateTimeField(auto_now_add=True, db_column='T215fechaRegistro')
     justificacion_cambio=models.CharField(max_length=255,db_column='T215justificacionDelCambio',blank=True,null=True)
     ruta_archivo_cambio=models.FileField(db_column='T215rutaArchivoCambio',blank=True,null=True)
     
     def __str__(self):
-        return str(self.id_clasif_serie_subserie_unidad_tca)
+        return str(self.id_catserie_unidad_org)
     
     class Meta:
-        db_table='T215Clasif_S_Ss_UndOrg_TCA'
-        verbose_name='Clasificacion Serie Subserie Unidad TCA'
-        verbose_name_plural='Clasificacion Serie Subserie Unidad TCA'
-        unique_together = ['id_tca', 'id_cat_serie_und']
+        db_table='T215CatSeries_UndOrg_CCD_TRD_TCA'
+        verbose_name='Catalogo Serie Unidad CCD TRD TCA'
+        verbose_name_plural='Catalogo Series Unidades CCD TRD TCA'
+        unique_together = ['id_tca', 'id_cat_serie_und_ccd_trd']
 
 
-class Historico_Clasif_S_Ss_UndOrg_TCA(models.Model):
-    id_historico_clasif_serie_subserie_unidad_tca=models.AutoField(primary_key=True,editable=False, db_column='T220IdHistorico_Clasif_S_Ss_UndOrg_TCA')
-    id_clasif_s_ss_unidad_tca=models.ForeignKey(Clasif_Serie_Subserie_Unidad_TCA,on_delete=models.CASCADE,db_column='T220Id_Clasif_S_Ss_UndOrg_TCA')
+class HistoricoCatSeriesUnidadOrgCCD_TRD_TCA(models.Model):
+    id_historico_catserie_unidad=models.AutoField(primary_key=True,editable=False, db_column='T220IdHistorico_CatSerie_UndOrg_CCD_TRD_TCA')
+    id_catserie_unidad_org=models.ForeignKey(CatSeriesUnidadOrgCCD_TRD_TCA,on_delete=models.CASCADE,db_column='T220Id_CatSerie_UndOrg_CCD_TRD_TCA')
     cod_clasificacion_exp=models.CharField(max_length=1,choices=tipo_clasificacion_CHOICES,db_column='T220CodClasificacionExp')
     fecha_inicio=models.DateTimeField(auto_now_add=True,db_column='T220fechaInicio')
     justificacion_del_cambio=models.CharField(max_length=255,blank=True,null=True,db_column='T220justificacionDelCambio')
@@ -78,56 +78,57 @@ class Historico_Clasif_S_Ss_UndOrg_TCA(models.Model):
     id_persona_cambia=models.ForeignKey(Personas,on_delete=models.CASCADE,db_column='T220Id_personaCambia')
 
     def __str__(self):
-        return str(self.id_historico_clasif_serie_subserie_unidad_tca)
+        return str(self.id_historico_catserie_unidad)
 
     class Meta:
-        db_table='T220Historico_Clasif_S_Ss_UndOrg_TCA'
-        verbose_name='Historico_clasificacion serie subserie unidad org tca'
-        verbose_name_plural='Historico_clasificacion serie subserie unidad org tca'
+        db_table='T220Historico_CatSeries_UndOrg_CCD_TRD_TCA'
+        verbose_name='Historico catalogo serie unidad org CCD TRD TCA'
+        verbose_name_plural='Historico catalogo series unidad org CCD TRD TCA'
 
-class Cargos_Unidad_S_Ss_UndOrg_TCA(models.Model):
-    id_cargo_unidad_s_subserie_unidad_org_tca=models.AutoField(primary_key=True,editable=False,db_column='T221IdCargo_Unidad_S_Ss_UndOrg_TCA')
-    id_clasif_serie_subserie_unidad_tca=models.ForeignKey(Clasif_Serie_Subserie_Unidad_TCA,on_delete=models.CASCADE,db_column='T221Id_Clasif_S_Ss_UndOrg_TCA')
-    id_cargo_persona=models.ForeignKey(Cargos,on_delete=models.CASCADE,db_column='T221Id_CargoPersona')
+class PermisosCatSeriesUnidadOrgTCA(models.Model):
+    id_permisos_catserie_unidad_tca=models.AutoField(primary_key=True,editable=False,db_column='T221IdPermisos_CatSerie_UndOrg_TCA')
+    id_TCA=models.ForeignKey(TablasControlAcceso,on_delete=models.CASCADE,db_column='T221Id_TCA')
+    id_catserie_unidad_TCA=models.ForeignKey(CatSeriesUnidadOrgCCD_TRD_TCA,on_delete=models.CASCADE,db_column='T221Id_CatSerie_UndOrg_TCA ')
     id_unidad_org_cargo=models.ForeignKey(UnidadesOrganizacionales,on_delete=models.CASCADE,db_column='T221Id_UnidadOrgCargo')
+    id_cargo_persona= models.ForeignKey(Cargos,on_delete=models.CASCADE,db_column='T221Id_CargoPersona')
     fecha_configuracion=models.DateTimeField(auto_now=True,db_column='T221fechaConfiguracion')
     justificacion_del_cambio=models.CharField(max_length=255,blank=True,null=True,db_column='T221justificacionDelCambio')
     ruta_archivo_cambio=models.FileField(blank=True,null=True,db_column='T221rutaArchivoCambio')
     
     def __str__(self):
-        return str(self.id_cargo_unidad_s_subserie_unidad_org_tca)    
+        return str(self.id_permisos_catserie_unidad_tca)    
     class Meta:
-        db_table='T221Cargos_Unidad_S_Ss_UndOrg_TCA'
-        verbose_name='Cargos unidad serie subserie unidad TCA'
-        verbose_name_plural='Cargos unidad serie subserie unidad TCA'
-        unique_together=['id_unidad_org_cargo','id_cargo_persona','id_clasif_serie_subserie_unidad_tca']
+        db_table='T221Permisos_CatSeries_UndOrg_TCA'
+        verbose_name='Permiso categoria serie unidad TCA'
+        verbose_name_plural='Permisos categorias series unidad TCA'
+        unique_together=['id_unidad_org_cargo','id_cargo_persona','id_catserie_unidad_TCA']
 
-class PermisosCargoUnidadSerieSubserieUnidadTCA(models.Model):
-    id_permiso_cargo_unidad_s_ss_unidad_tca = models.AutoField(primary_key=True, editable=False, db_column='T222IdPermiso_Cargo_Unidad_S_Ss_UndOrg_TCA')
-    id_cargo_unidad_s_ss_unidad_tca = models.ForeignKey(Cargos_Unidad_S_Ss_UndOrg_TCA, on_delete=models.CASCADE, db_column='T222Id_Cargo_Unidad_S_Ss_UnidadOrg_TCA')
-    cod_permiso = models.ForeignKey(PermisosGD, on_delete=models.CASCADE, db_column='T222_Cod_Permiso')
+class PermisosDetPermisosCatSerieUndOrgTCA(models.Model):
+    id_det_permiso_catserie_unidad_tca = models.AutoField(primary_key=True, editable=False, db_column='T222IdDetPermiso_Catserie_UndOrg_TCA')
+    id_permiso_catserie_unidad_tca = models.ForeignKey(PermisosCatSeriesUnidadOrgTCA, on_delete=models.CASCADE, db_column='T222Id_Permiso_CatSerie_UndOrg_TCA ')
+    cod_permiso = models.ForeignKey(PermisosGD, on_delete=models.CASCADE, db_column='T222_Cod_PermisoGD')
 
     def __str__(self):
-        return str(self.id_permiso_cargo_unidad_s_ss_unidad_tca)
+        return str(self.id_det_permiso_catserie_unidad_tca)
     class Meta:
-        db_table='T222Permisos_Cargo_Unidad_S_Ss_UndOrg_TCA'
-        verbose_name='Permiso Cargo Unidad Serie Subserie Unidad TCA'
-        verbose_name_plural='Permisos Cargos Unidades Series Subseries Unidades TCA'
-        unique_together = ['id_permiso_cargo_unidad_s_ss_unidad_tca', 'cod_permiso']
+        db_table='T222DetPermisos_CatSeries_UndOrg_TCA'
+        verbose_name='Permiso Categoria Serie Unidad TCA'
+        verbose_name_plural='Permiso Categorias Serie Unidad TCA'
+        unique_together = ['id_det_permiso_catserie_unidad_tca', 'cod_permiso']
 
-class HistoricoCargosUnidadSerieSubserieUnidadTCA(models.Model):
-    id_historico_cargos_unidad_s_ss_unidad_tca = models.AutoField(primary_key=True, editable=False, db_column='T223IdHistorico_Cargos_Unidad_S_Ss_UndOrg_TCA')
-    id_cargo_unidad_s_ss_unidad_tca = models.ForeignKey(Cargos_Unidad_S_Ss_UndOrg_TCA, on_delete=models.CASCADE, db_column='T223Id_Cargo_Unidad_S_Ss_UndOrg_TCA')
-    fecha_inicio = models.DateTimeField(auto_now_add=True, db_column='T223FechaIncio')
+class HistoricoPermisosCatSeriesUndOrgTCA(models.Model):
+    id_historico_permisos_catseries_unidad_tca = models.AutoField(primary_key=True, editable=False, db_column='T223IdHistorico_Permisos_CatSeries_UndOrg_TCA')
+    id_permisos_catserie_unidad_tca = models.ForeignKey(PermisosCatSeriesUnidadOrgTCA, on_delete=models.CASCADE, db_column='T223Id_Permisos_CatSerie_UndOrg_TCA')
+    fecha_inicio = models.DateTimeField(auto_now_add=True, db_column='T223fechaIncioConfiguracion')
     nombre_permisos = models.CharField(max_length=255, db_column='T223nombrePermisos')
     justificacion = models.CharField(max_length=255, blank=True, null=True, db_column='T223justificacion')
     ruta_archivo = models.FileField(blank=True, null=True, db_column='T223rutaArchivo')
     id_persona_cambia = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T223Id_PersonaCambia')
 
     def __str__(self):
-        return str(self.id_historico_cargos_unidad_s_ss_unidad_tca)
+        return str(self.id_historico_permisos_catseries_unidad_tca)
     
     class Meta:
-        db_table='T223Historico_Cargos_Unidad_S_Ss_UndOrg_TCA'
-        verbose_name='Historico Cargo Unidad Serie Subserie Unidad TCA'
-        verbose_name_plural='Historicos Cargos Unidades Series Subseries Unidades TCA'
+        db_table='T223Historico_Permisos_CatSeries_UndOrg_TCA'
+        verbose_name='Historico Permiso CatSerie Unidad TCA'
+        verbose_name_plural='Historicos Permisos CatSeries Unidades TCA'

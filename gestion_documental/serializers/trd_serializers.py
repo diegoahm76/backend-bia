@@ -5,7 +5,7 @@ from gestion_documental.models.trd_models import (
     TipologiasDocumentales,
     TablaRetencionDocumental,
     FormatosTiposMedio,
-    SeriesSubSUnidadOrgTRD,
+    CatSeriesUnidadOrgCCDTRD,
     SeriesSubSUnidadOrgTRDTipologias
 )
 from gestion_documental.choices.tipos_medios_formato_choices import tipos_medios_formato_CHOICES
@@ -119,7 +119,7 @@ class FormatosTiposMedioPostSerializer(serializers.ModelSerializer):
 class SeriesSubSeriesUnidadesOrgTRDSerializer(serializers.ModelSerializer):
     tipologias = serializers.ListField(child=serializers.IntegerField(), read_only=True)
     class Meta:
-        model = SeriesSubSUnidadOrgTRD
+        model = CatSeriesUnidadOrgCCDTRD
         fields = (
             'id_trd',
             'id_cat_serie_und',
@@ -135,7 +135,7 @@ class SeriesSubSeriesUnidadesOrgTRDSerializer(serializers.ModelSerializer):
             'id_cat_serie_und': {'required': True},
         }
         validators = [UniqueTogetherValidator(
-               queryset=SeriesSubSUnidadOrgTRD.objects.all(),
+               queryset=CatSeriesUnidadOrgCCDTRD.objects.all(),
                fields = ['id_trd', 'id_cat_serie_und'],
                message='No puede relacionar un mismo expediente más de una vez con esta TRD'
            )]
@@ -144,7 +144,7 @@ class SeriesSubSeriesUnidadesOrgTRDSerializer(serializers.ModelSerializer):
 class SeriesSubSeriesUnidadesOrgTRDPutSerializer(serializers.ModelSerializer):
     tipologias = serializers.ListField(child=serializers.IntegerField(), read_only=True)
     class Meta:
-        model = SeriesSubSUnidadOrgTRD
+        model = CatSeriesUnidadOrgCCDTRD
         fields = (
             'cod_disposicion_final',
             'digitalizacion_dis_final',
@@ -161,7 +161,7 @@ class SeriesSubSeriesUnidadesOrgTRDPutSerializer(serializers.ModelSerializer):
 class GetSeriesSubSUnidadOrgTRDSerializer(serializers.ModelSerializer):
     
     class Meta:
-        model = SeriesSubSUnidadOrgTRD
+        model = CatSeriesUnidadOrgCCDTRD
         fields = '__all__'
 
 
