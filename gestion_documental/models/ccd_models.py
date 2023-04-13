@@ -25,9 +25,9 @@ class CuadrosClasificacionDocumental(models.Model):
     
 class SeriesDoc(models.Model):
     id_serie_doc = models.AutoField(primary_key=True, editable=False, db_column='T203IdSerieDocCCD')
-    nombre = models.CharField(max_length=200,db_column='T203nombre')
-    codigo = models.CharField(max_length=200,db_column='T203codigo')
-    id_ccd = models.ForeignKey(CuadrosClasificacionDocumental, on_delete=models.CASCADE, db_column='T203Id_CCD')
+    nombre = models.CharField(max_length=200, unique=True, db_column='T203nombre')
+    codigo = models.CharField(max_length=200, unique=True, db_column='T203codigo')
+    id_ccd = models.ForeignKey(CuadrosClasificacionDocumental, unique=True, on_delete=models.CASCADE, db_column='T203Id_CCD')
 
     def __str__(self):
         return str(self.nombre)
@@ -41,9 +41,9 @@ class SeriesDoc(models.Model):
 
 class SubseriesDoc(models.Model):
     id_subserie_doc = models.AutoField(primary_key=True, editable=False, db_column='T204IdSubserie_Serie_CCD')
-    nombre = models.CharField(max_length=200, db_column='T204nombre')
-    codigo = models.CharField(max_length=200,db_column='T204codigo')
-    id_serie_doc = models.ForeignKey(SeriesDoc, on_delete=models.CASCADE, db_column='T204Id_SerieDoc_CCD')
+    nombre = models.CharField(max_length=200, unique=True, db_column='T204nombre')
+    codigo = models.CharField(max_length=200, unique=True, db_column='T204codigo')
+    id_serie_doc = models.ForeignKey(SeriesDoc,unique=True, on_delete=models.CASCADE, db_column='T204Id_SerieDoc_CCD')
 
     def __str__(self):
         return str(self.nombre)
@@ -57,8 +57,8 @@ class SubseriesDoc(models.Model):
 
 class CatalogosSeries(models.Model):
     id_catalogo_serie = models.AutoField(primary_key=True, editable=False, db_column='T205IdCatalogoSerie_CCD')
-    id_serie_doc = models.ForeignKey(SeriesDoc,on_delete=models.CASCADE,db_column='T205Id_SerieDoc_CCD')
-    id_subserie_doc = models.ForeignKey(SubseriesDoc, on_delete=models.SET_NULL, null=True, blank=True, db_column='T205Id_Subserie_Serie_CCD')
+    id_serie_doc = models.ForeignKey(SeriesDoc,on_delete=models.CASCADE, unique=True, db_column='T205Id_SerieDoc_CCD')
+    id_subserie_doc = models.ForeignKey(SubseriesDoc, unique=True, on_delete=models.SET_NULL, null=True, blank=True, db_column='T205Id_Subserie_Serie_CCD')
 
     def __str__(self):
         return str(self.id_catalogo_serie)
@@ -71,8 +71,8 @@ class CatalogosSeries(models.Model):
 
 class CatalogosSeriesUnidad(models.Model):
     id_cat_serie_und = models.AutoField(primary_key=True, editable=False, db_column='T224IdCatSerie_UndOrg_CCD')
-    id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales,on_delete=models.CASCADE,db_column='T224Id_UnidadOrganizacional ')
-    id_catalogo_serie = models.ForeignKey(CatalogosSeries, on_delete=models.CASCADE, db_column='T224Id_CatalogoSerie_CCD')
+    id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, unique=True,on_delete=models.CASCADE,db_column='T224Id_UnidadOrganizacional ')
+    id_catalogo_serie = models.ForeignKey(CatalogosSeries,unique=True, on_delete=models.CASCADE, db_column='T224Id_CatalogoSerie_CCD')
 
     def __str__(self):
         return str(self.id_cat_serie_und)
