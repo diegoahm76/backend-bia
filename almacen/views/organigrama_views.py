@@ -1,5 +1,5 @@
 from rest_framework import status
-from rest_framework import generics
+from rest_framework import generics, views
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from itertools import groupby
@@ -10,8 +10,10 @@ import copy
 from operator import itemgetter
 from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
 from almacen.serializers.organigrama_serializers import ( 
+    NewUserOrganigramaSerializer,
     OrganigramaSerializer,
-    OrganigramaPutSerializer, 
+    OrganigramaPutSerializer,
+    PersonaOrgSerializer, 
     UnidadesPutSerializer, 
     OrganigramaActivateSerializer, 
     NivelesUpdateSerializer, 
@@ -24,7 +26,9 @@ from almacen.models.organigrama_models import (
     UnidadesOrganizacionales,
     NivelesOrganigrama
     )
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from seguridad.models import User, Personas
+from datetime import datetime
 
 # VIEWS FOR NIVELES ORGANIGRAMA
 class UpdateNiveles(generics.UpdateAPIView):
@@ -378,6 +382,7 @@ class FinalizarOrganigrama(generics.UpdateAPIView):
                     nivel_difference_instance = NivelesOrganigrama.objects.filter(id_nivel_organigrama__in=nivel_difference_list).values()
                     return Response({'success':False,'detail':'No se puede finalizar organigrama porque debe utilizar todos los niveles', 'Niveles sin asignar': nivel_difference_instance}, status=status.HTTP_403_FORBIDDEN)
                 organigrama_a_finalizar.fecha_terminado=datetime.now()
+                organigrama_a_finalizar.id_persona_cargo=None
                 organigrama_a_finalizar.save()
                 return Response({'success':True,'detail':'Se Finalizo el organigrama correctamente'},status=status.HTTP_200_OK)
             else:
@@ -389,7 +394,12 @@ class CreateOrgChart(generics.CreateAPIView):
     queryset = Organigramas.objects.all()
     permission_classes = [IsAuthenticated]
     def post(self, request):
-        serializer = self.serializer_class(data=request.data)
+        
+        persona = request.user.persona.id_persona
+        data=request.data
+        data['id_persona_cargo']=persona
+        
+        serializer = self.serializer_class(data=data)
         try:
             serializer.is_valid(raise_exception=True)
             pass
@@ -459,25 +469,27 @@ class GetOrganigrama(generics.ListAPIView):
     def get(self, request):
         consulta = request.query_params.get('pk')
         if consulta == None:
-            organigramas = Organigramas.objects.all().values()
+            organigramas = Organigramas.objects.all()
+            serializador = self.serializer_class(organigramas,many=True)
             if len(organigramas) == 0:
                 return Response({'success':False, 'detail' : 'Aún no hay organigramas registrados'}, status=status.HTTP_404_NOT_FOUND)
-            return Response({'Organigramas' : organigramas}, status=status.HTTP_200_OK) 
-        organigrama = Organigramas.objects.filter(id_organigrama=int(consulta)).values()
+            return Response({'Organigramas' : serializador.data}, status=status.HTTP_200_OK) 
+        organigrama = Organigramas.objects.filter(id_organigrama=int(consulta))
+        serializador = self.serializer_class(organigramas,many=True)
         if len(organigrama) == 0:
             return Response({'success': False, 'detail' : 'No se encontró el organigrama ingresado'}, status=status.HTTP_404_NOT_FOUND)
         niveles = NivelesOrganigrama.objects.filter(id_organigrama=int(consulta)).values()
         if len(niveles) == 0:
             niveles = 'No hay niveles registrados'
             unidades = 'No hay unidades registradas'
-            datos_finales = {'Organigrama' : organigrama, 'Niveles' : niveles, 'Unidades' : unidades}
+            datos_finales = {'Organigrama' : serializador.data, 'Niveles' : niveles, 'Unidades' : unidades}
             return Response({'Organigrama' : datos_finales}, status=status.HTTP_200_OK)   
         unidades = UnidadesOrganizacionales.objects.filter(id_organigrama=int(consulta)).values()
         if len(unidades) == 0:
             unidades = 'No hay unidades registradas'
-            datos_finales = {'Organigrama' : organigrama, 'Niveles' : niveles, 'Unidades' : unidades}
+            datos_finales = {'Organigrama' : serializador.data, 'Niveles' : niveles, 'Unidades' : unidades}
             return Response({'Organigrama' : datos_finales}, status=status.HTTP_200_OK)
-        datos_finales = {'Organigrama' : organigrama, 'Niveles' : niveles, 'Unidades' : unidades}
+        datos_finales = {'Organigrama' : serializador.data, 'Niveles' : niveles, 'Unidades' : unidades}
         return Response({'Organigrama' : datos_finales}, status=status.HTTP_200_OK)
 
 class GetSeccionSubsecciones(generics.ListAPIView):
@@ -532,3 +544,133 @@ class GetUnidadesJerarquizadas(generics.ListAPIView):
                 return Response({'success': True, 'detail': 'No se encontraron unidades para el organigrama', 'data' : unidades}, status=status.HTTP_200_OK)
         else:
             return Response({'success':False, 'detail':'El organigrama no existe'}, status=status.HTTP_404_NOT_FOUND)
+#BUSQUEDA USUARIO ORGANIGRAMA
+class GetNuevoUserOrganigrama(generics.RetrieveAPIView):
+    serializer_class = PersonaOrgSerializer
+    queryset = User.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get (self,request,tipo_documento,numero_documento):
+        fecha_sistema = datetime.now()
+        
+        persona_log = request.user.persona.id_persona #para validar de que la persona no pueda reasignarse asi mismo el organigrama
+        nuevo_user_organigrama = Personas.objects.filter(tipo_documento=tipo_documento, numero_documento=numero_documento).first()
+        if not nuevo_user_organigrama:
+            return Response({'succes':False, 'detail':'No existe la persona con ese tipo y numero de documento.'},status=status.HTTP_404_NOT_FOUND) 
+        if not nuevo_user_organigrama.fecha_a_finalizar_cargo_actual or nuevo_user_organigrama.fecha_a_finalizar_cargo_actual < fecha_sistema:
+            return Response({'succes':False, 'detail':'La persona no se encuentra vinculada o la fecha de finalización del cargo ya expiro.'},status=status.HTTP_404_NOT_FOUND) 
+                
+        if nuevo_user_organigrama.id_persona == persona_log:
+            return Response({'succes':False, 'detail':'La persona no se puede reasignar asi mismo.'},status=status.HTTP_404_NOT_FOUND)              
+        
+        if nuevo_user_organigrama:
+            serializador = self.serializer_class(nuevo_user_organigrama)
+            return Response({'succes':True, 'detail':'Los datos coincidieron con los criterios de busqueda','data':serializador.data},status=status.HTTP_200_OK)
+        
+        else:
+            return Response({'succes':False, 'detail':'La persona no existe o no tiene un cargo actual'},status=status.HTTP_404_NOT_FOUND)
+
+#BUSQUEDA AVANZADA PERSONA ORGANIGRAMA
+class GetNuevoUserOrganigramaFilters(generics.ListCreateAPIView):
+    serializer_class = PersonaOrgSerializer
+    queryset = Personas.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get (self, request):
+        filter={}
+        for key, value in request.query_params.items():
+            if key in ['primer_nombre','primer_apellido']:
+                if value != '':
+                    filter[key+'__icontains'] = value
+                        
+        fecha_sistema = datetime.now()
+        filter['fecha_a_finalizar_cargo_actual__gt'] = fecha_sistema
+        
+        persona = self.queryset.all().filter(**filter).filter(~Q(id_cargo = None))
+        serializador = self.serializer_class(persona,many=True)
+        return Response({'succes': True, 'detail':'Se encontraron las siguientes personas', 'data':serializador.data}, status=status.HTTP_200_OK)
+
+#DELEGAR USUARIO ORGANIGRAMA
+
+class AsignarOrganigramaUser(generics.CreateAPIView):
+    serializer_class = NewUserOrganigramaSerializer
+    queryset = Personas.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        fecha_sistema = datetime.now()
+        
+        id_persona = request.query_params.get('id_persona')
+        id_organigrama = request.query_params.get('id_organigrama')
+        
+        if not id_persona and id_organigrama:
+            return Response({'succes':False,'detail':'No pueden estar vacios los campos.'},status=status.HTTP_404_NOT_FOUND)
+        
+        #validaciones de funcionamiento
+        
+        persona = Personas.objects.filter(id_persona=id_persona).first()
+        organigrama = Organigramas.objects.filter(id_organigrama=id_organigrama).first()
+        persona_super_usuario = User.objects.filter(id_usuario=1).first()
+        
+        if not persona:
+            return Response({'succes':False,'detail':'No existe la persona ingresada.'},status=status.HTTP_404_NOT_FOUND)
+        
+        if not organigrama:
+            return Response({'succes':False,'detail':'No existe el organigrama ingresado.'},status=status.HTTP_404_NOT_FOUND)
+        
+        persona_logueado = request.user.persona.id_persona
+        
+        if organigrama.id_persona_cargo.id_persona != persona_logueado  and  persona_logueado != persona_super_usuario.persona.id_persona:
+            return Response({'succes':False, 'detail':'No tiene permisos para asignar este organigrama.'},status=status.HTTP_404_NOT_FOUND)
+        
+        if persona.id_persona == organigrama.id_persona_cargo.id_persona:
+            return Response({'succes':False, 'detail':'La persona no se puede reasignar asi mismo.'},status=status.HTTP_404_NOT_FOUND)
+        
+        if not persona.fecha_a_finalizar_cargo_actual or persona.fecha_a_finalizar_cargo_actual < fecha_sistema:
+            return Response({'succes':False, 'detail':'La persona no se encuentra vinculada o la fecha de finalización del cargo ya expiro.'},status=status.HTTP_404_NOT_FOUND)             
+        
+        if organigrama.fecha_terminado != None:
+            return Response({'succes':False, 'detail':'El organigrama ya se encuentra finalizado no se puede delegar.'},status=status.HTTP_404_NOT_FOUND)             
+
+        
+        #DELEGAR ORGANIGRAMA
+        
+        #usuario_delegante = Personas.objects.filter(id_persona=persona_logueado).first()
+        previous_organigrama = copy.copy(organigrama)
+        organigrama.id_persona_cargo = persona
+        organigrama.save()
+        return Response({'succes':True, 'detail':'Se delego a la persona.'},status=status.HTTP_201_CREATED)             
+
+class ReanudarOrganigrama(generics.RetrieveUpdateAPIView):
+    serializer_class = NewUserOrganigramaSerializer
+    queryset = Organigramas.objects.all()
+    
+    def put(self, request, id_organigrama):
+                
+        organigrama = Organigramas.objects.filter(id_organigrama=id_organigrama).first()
+        
+        if not organigrama:
+            return Response({'succes':False,'detail':'No existe el organigrama ingresado.'},status=status.HTTP_404_NOT_FOUND)
+        
+        if organigrama.fecha_terminado == None:
+            return Response({'succes':False, 'detail':'El organigrama debe de estar finalizado para su Reanudación.'},status=status.HTTP_403_FORBIDDEN)             
+
+        # persona_logueado = request.user.persona.id_persona
+        
+        # if persona_logueado != None:
+        #     return Response({'succes':False, 'detail':'El Organigrama no debe de poseer un usuario asignado.'},status=status.HTTP_404_NOT_FOUND)             
+
+        ccd_activo = CuadrosClasificacionDocumental.objects.filter(id_organigrama=id_organigrama).first()
+        
+        if ccd_activo:
+            return Response({'succes':False, 'detail':'El Organigrama ya esta siendo utilizado por un CCD.'},status=status.HTTP_404_NOT_FOUND)             
+        
+        organigrama.fecha_terminado = None
+        
+        organigrama.save()
+        return Response({'succes': True, 'detail':'Se reanudo correctamente el organigrama.'}, status=status.HTTP_200_OK)
+
+        
+
+            
+            

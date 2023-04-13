@@ -12,7 +12,8 @@ class Organigramas(models.Model):
     justificacion_nueva_version = models.CharField(max_length=255, null=True, blank=True, db_column='T017justificacionNuevaVersion')
     version = models.CharField(max_length=10, unique=True, db_column='T017version')
     actual = models.BooleanField(default=False, db_column='T017actual')
-    ruta_resolucion = models.FileField(null=True, blank=True, db_column='T017rutaResolucion')
+    ruta_resolucion = models.FileField(max_length=255, null=True, blank=True, db_column='T017rutaResolucion')
+    id_persona_cargo = models.ForeignKey("seguridad.Personas",on_delete=models.SET_NULL,blank=True,null=True,db_column='T017IdPersonaACargo')
     
     def __str__(self):
         return str(self.nombre)
@@ -21,11 +22,10 @@ class Organigramas(models.Model):
         db_table = 'T017Organigramas'
         verbose_name = 'Organigrama'
         verbose_name_plural = 'Organigramas'
-          
 
 class NivelesOrganigrama(models.Model):
     id_nivel_organigrama = models.AutoField(primary_key = True, editable=False, db_column='T018IdNivelOrganigrama')
-    id_organigrama = models.ForeignKey(Organigramas, on_delete=models.CASCADE, null=False, blank=False, db_column='T018Id_Organigrama')
+    id_organigrama = models.ForeignKey(Organigramas, on_delete=models.CASCADE, db_column='T018Id_Organigrama')
     orden_nivel = models.SmallIntegerField(db_column='T018ordenDelNivel')
     nombre = models.CharField(max_length=50, db_column='T018nombre')
     
@@ -36,10 +36,8 @@ class NivelesOrganigrama(models.Model):
         db_table = 'T018NivelesOrganigrama'
         verbose_name = 'Nivel Organigrama'
         verbose_name_plural = 'Niveles Organigrama'
-        ordering = ['orden_nivel'] 
-        unique_together = ['id_organigrama', 'nombre']
-        unique_together = ['id_organigrama', 'orden_nivel']
-
+        ordering = ['orden_nivel']        
+        unique_together = (('id_organigrama','orden_nivel'), ('id_organigrama','nombre'))
 
 
 class UnidadesOrganizacionales(models.Model):
@@ -58,7 +56,6 @@ class UnidadesOrganizacionales(models.Model):
     class Meta:
         db_table='T019UnidadesOrganizacionales'
         verbose_name= 'Unidad organizacional'
-        verbose_name_plural= 'Unidad organizacionales'
-        unique_together = ['id_organigrama', 'nombre']
-        unique_together = ['id_organigrama', 'codigo']
+        verbose_name_plural= 'Unidad organizacionales'        
+        unique_together = (('id_organigrama','nombre'), ('id_organigrama','codigo'))
         ordering = ['id_nivel_organigrama']
