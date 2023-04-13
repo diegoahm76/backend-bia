@@ -157,7 +157,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ['persona', 'nombre_de_usuario', 'profile_img', 'tipo_usuario', 'id_usuario_creador']
 
 class RegisterExternoSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(max_length= 68, min_length = 6, write_only=True)
+    password = serializers.CharField(max_length= 68, min_length = 8, write_only=True)
     redirect_url=serializers.CharField(max_length=500, read_only=True)
     
     def validate_password(self, value):

@@ -22,5 +22,9 @@ urlpatterns = [
     path('get-terminados/', views.GetOrganigramasTerminados.as_view(), name='get-terminados-organigrama'),
     path('update/<str:id_organigrama>/', views.UpdateOrganigrama.as_view(), name='update-organigrama'),
     path('finalizar/<str:pk>/', views.FinalizarOrganigrama.as_view(), name='finalizar-organigrama'),
-    
+    path('get-nuevo-user-organigrama/<str:tipo_documento>/<str:numero_documento>/', views.GetNuevoUserOrganigrama.as_view(), name='get-nuevo-user-orgranigrama'),
+    path('get-nuevo-user-organigrama-filters/',views.GetNuevoUserOrganigramaFilters.as_view(),name='get-nuevo-user-orgranigrama-filters'),
+    path('delegate-organigrama-persona/',views.AsignarOrganigramaUser.as_view(),name='delegar-organigrama-persona'),
+    path('reanudar-organigrama/<str:id_organigrama>/',views.ReanudarOrganigrama.as_view(),name='reanudar-organigrama')
+
 ]
