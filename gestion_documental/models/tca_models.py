@@ -7,7 +7,7 @@ from almacen.models.organigrama_models import (
 )
 class TablasControlAcceso(models.Model):
     id_tca=models.AutoField(primary_key=True, editable=False, db_column='T216IdTCA')
-    id_trd=models.ForeignKey(CuadrosClasificacionDocumental,unique=True,on_delete=models.CASCADE,db_column='T216Id_TRD')
+    id_trd=models.OneToOneField(CuadrosClasificacionDocumental,on_delete=models.CASCADE,db_column='T216Id_TRD')
     version=models.CharField(max_length=10,unique=True,db_column='T216version')
     nombre=models.CharField(max_length=50,unique=True,db_column='T216nombre')
     fecha_terminado=models.DateTimeField(blank=True,null=True,db_column='T216fechaTerminado')
@@ -51,8 +51,8 @@ class PermisosGD(models.Model):
         
 class CatSeriesUnidadOrgCCD_TRD_TCA(models.Model):
     id_cat_serie_unidad_org_ccd_trd_tca=models.AutoField(primary_key=True, db_column='T215IdCatSerie_UndOrg_CCD_TRD_TCA')
-    id_tca=models.ForeignKey(TablasControlAcceso, unique=True, on_delete=models.CASCADE,db_column='T215Id_TCA')
-    id_cat_serie_und_ccd_trd=models.ForeignKey(CatalogosSeriesUnidad, unique=True, on_delete=models.CASCADE,db_column='T215Id_CatSerie_UndOrg_CCD_TRD')
+    id_tca=models.ForeignKey(TablasControlAcceso, on_delete=models.CASCADE,db_column='T215Id_TCA')
+    id_cat_serie_und_ccd_trd=models.ForeignKey(CatalogosSeriesUnidad, on_delete=models.CASCADE,db_column='T215Id_CatSerie_UndOrg_CCD_TRD')
     cod_clas_expediente=models.CharField(max_length=1,choices=tipo_clasificacion_CHOICES,db_column='T215Cod_ClasificacionExp')
     fecha_registro=models.DateTimeField(auto_now_add=True, db_column='T215fechaRegistro')
     justificacion_cambio=models.CharField(max_length=255,db_column='T215justificacionDelCambio',blank=True,null=True)
@@ -88,9 +88,9 @@ class HistoricoCatSeriesUnidadOrgCCD_TRD_TCA(models.Model):
 class PermisosCatSeriesUnidadOrgTCA(models.Model):
     id_permisos_catserie_unidad_tca=models.AutoField(primary_key=True,editable=False,db_column='T221IdPermisos_CatSerie_UndOrg_TCA')
     id_TCA=models.ForeignKey(TablasControlAcceso,on_delete=models.CASCADE,db_column='T221Id_TCA')
-    id_catserie_unidad_TCA=models.ForeignKey(CatSeriesUnidadOrgCCD_TRD_TCA, unique=True, on_delete=models.CASCADE,db_column='T221Id_CatSerie_UndOrg_TCA ')
-    id_unidad_org_cargo=models.ForeignKey(UnidadesOrganizacionales, unique=True, on_delete=models.CASCADE,db_column='T221Id_UnidadOrgCargo')
-    id_cargo_persona= models.ForeignKey(Cargos,unique=True,on_delete=models.CASCADE,db_column='T221Id_CargoPersona')
+    id_catserie_unidad_TCA=models.ForeignKey(CatSeriesUnidadOrgCCD_TRD_TCA, on_delete=models.CASCADE,db_column='T221Id_CatSerie_UndOrg_TCA ')
+    id_unidad_org_cargo=models.ForeignKey(UnidadesOrganizacionales,on_delete=models.CASCADE,db_column='T221Id_UnidadOrgCargo')
+    id_cargo_persona= models.ForeignKey(Cargos,on_delete=models.CASCADE,db_column='T221Id_CargoPersona')
     fecha_configuracion=models.DateTimeField(auto_now=True,db_column='T221fechaConfiguracion')
     justificacion_del_cambio=models.CharField(max_length=255,blank=True,null=True,db_column='T221justificacionDelCambio')
     ruta_archivo_cambio=models.FileField(blank=True,null=True,db_column='T221rutaArchivoCambio')
@@ -105,8 +105,8 @@ class PermisosCatSeriesUnidadOrgTCA(models.Model):
 
 class PermisosDetPermisosCatSerieUndOrgTCA(models.Model):
     id_det_permiso_catserie_unidad_tca = models.AutoField(primary_key=True, editable=False, db_column='T222IdDetPermiso_Catserie_UndOrg_TCA')
-    id_permiso_catserie_unidad_tca = models.ForeignKey(PermisosCatSeriesUnidadOrgTCA, unique=True, on_delete=models.CASCADE, db_column='T222Id_Permiso_CatSerie_UndOrg_TCA ')
-    cod_permiso = models.ForeignKey(PermisosGD, unique=True, on_delete=models.CASCADE, db_column='T222_Cod_PermisoGD')
+    id_permiso_catserie_unidad_tca = models.ForeignKey(PermisosCatSeriesUnidadOrgTCA, on_delete=models.CASCADE, db_column='T222Id_Permiso_CatSerie_UndOrg_TCA ')
+    cod_permiso = models.ForeignKey(PermisosGD, on_delete=models.CASCADE, db_column='T222_Cod_PermisoGD')
 
     def __str__(self):
         return str(self.id_det_permiso_catserie_unidad_tca)

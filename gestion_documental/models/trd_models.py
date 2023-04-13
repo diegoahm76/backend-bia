@@ -8,7 +8,7 @@ from seguridad.models import Personas
 
 class TablaRetencionDocumental(models.Model):
     id_trd = models.AutoField(primary_key=True, editable=False, db_column='T212IdTRD')
-    id_ccd = models.ForeignKey(CuadrosClasificacionDocumental, on_delete=models.CASCADE, unique=True, db_column='T212Id_CCD')
+    id_ccd = models.OneToOneField(CuadrosClasificacionDocumental, on_delete=models.CASCADE, db_column='T212Id_CCD')
     version = models.CharField(max_length=10, unique=True, db_column='T212version')
     nombre = models.CharField(max_length=50, unique=True, db_column='T212nombre')
     fecha_terminado = models.DateTimeField(null=True, blank=True, db_column='T212fechaTerminado')
@@ -23,7 +23,6 @@ class TablaRetencionDocumental(models.Model):
         db_table = 'T212TablasRetencionDoc'
         verbose_name= 'Tabla de Retención Documental'
         verbose_name_plural = 'Tablas de Retención Documental'
-
 
 class TiposMediosDocumentos(models.Model):
     cod_tipo_medio_doc = models.CharField(max_length=1, primary_key=True, editable=False, db_column='T209CodTipoMedioDoc')
@@ -40,8 +39,8 @@ class TiposMediosDocumentos(models.Model):
 
 class FormatosTiposMedio(models.Model):
     id_formato_tipo_medio = models.AutoField(primary_key=True, editable=False, db_column='T210IdFormato_TipoMedio')
-    cod_tipo_medio_doc = models.CharField(unique=True, choices=tipos_medios_formato_CHOICES, db_column='T210Cod_TipoMedioDoc')
-    nombre = models.CharField(max_length=20, unique=True, db_column='T210nombre')
+    cod_tipo_medio_doc = models.CharField(max_length=2, choices=tipos_medios_formato_CHOICES, db_column='T210Cod_TipoMedioDoc')
+    nombre = models.CharField(max_length=20, db_column='T210nombre')
     registro_precargado=models.BooleanField(default=False, db_column='T210registroPrecargado')
     activo = models.BooleanField(default=True, db_column='T210activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T210itemYaUsado')
@@ -58,7 +57,7 @@ class FormatosTiposMedio(models.Model):
 class TipologiasDocumentales(models.Model):
     id_tipologia_documental = models.AutoField(editable=False, primary_key=True, db_column='T208IdTipologiaDoc_TRD')
     # id_trd = models.ForeignKey(TablaRetencionDocumental, on_delete=models.CASCADE, db_column='T208Id_TRD')
-    nombre = models.CharField(max_length=10, db_column='T208nombre')
+    nombre = models.CharField(max_length=10, unique=True, db_column='T208nombre')
     # codigo = models.CharField(max_length=200,db_column='T208codigo')
     cod_tipo_medio_doc = models.CharField(max_length=1, choices=tipos_medios_doc_CHOICES, db_column='T208Cod_TipoMedioDoc')
     activo = models.BooleanField(default=True, db_column='T208activo')
@@ -78,8 +77,8 @@ class TipologiasDocumentales(models.Model):
 
 class FormatosTiposMedioTipoDoc(models.Model):
     id_formato_tipomedio_tipo_doc = models.AutoField(primary_key=True, editable=False, db_column='T217IdFormato_TipoMedio_TipoDoc')
-    id_tipologia_doc = models.ForeignKey(TipologiasDocumentales,unique=True, on_delete=models.CASCADE, db_column='T217Id_TipologiaDoc')
-    id_formato_tipo_medio = models.ForeignKey(FormatosTiposMedio, unique=True, on_delete=models.CASCADE, db_column='T217Id_Formato_TipoMedio')
+    id_tipologia_doc = models.ForeignKey(TipologiasDocumentales, on_delete=models.CASCADE, db_column='T217Id_TipologiaDoc')
+    id_formato_tipo_medio = models.ForeignKey(FormatosTiposMedio, on_delete=models.CASCADE, db_column='T217Id_Formato_TipoMedio')
 
     def __str__(self):
         return str(self.id_formato_tipomedio_tipo_doc)
@@ -88,6 +87,7 @@ class FormatosTiposMedioTipoDoc(models.Model):
         db_table = 'T217Formatos_TiposMedio_TipologiaDoc'
         verbose_name = 'Formatos Tipos Medio Tipologia Documental'
         verbose_name_plural = 'Formatos Tipos Medio Tipologia Documental'
+        unique_together = ['id_tipologia_doc','id_formato_tipo_medio']
 
 class DisposicionFinalSeries(models.Model):
     cod_disposicion_final = models.CharField(max_length=1, editable=False, primary_key=True, db_column='T207CodDisposicionFinal')
@@ -104,7 +104,7 @@ class DisposicionFinalSeries(models.Model):
 class CatSeriesUnidadOrgCCDTRD(models.Model):
     id_catserie_unidadorg = models.AutoField(primary_key=True, editable=False, db_column='T218IdCatSerie_UndOrg_CCD_TRD')
     id_trd = models.ForeignKey(TablaRetencionDocumental, on_delete=models.CASCADE, db_column='T2018Id_TRD')
-    id_cat_serie_und = models.ForeignKey(CatalogosSeriesUnidad,unique=True, on_delete=models.CASCADE, db_column='T218Id_CatSerie_UndOrg_CCD')
+    id_cat_serie_und = models.OneToOneField(CatalogosSeriesUnidad, on_delete=models.CASCADE, db_column='T218Id_CatSerie_UndOrg_CCD')
     cod_disposicion_final = models.ForeignKey(DisposicionFinalSeries, on_delete=models.CASCADE, db_column='T218Cod_DisposicionFinal')
     digitalizacion_dis_final = models.BooleanField(null=True, blank=True, db_column='T218digitalizacionDispFinal')
     tiempo_retencion_ag = models.PositiveSmallIntegerField(null=True, blank=True, db_column='T218tiempoRetencionAG')
@@ -121,13 +121,13 @@ class CatSeriesUnidadOrgCCDTRD(models.Model):
         db_table = 'T218CatSeries_UndOrg_CCD_TRD'
         verbose_name = 'Categoria serie Unidad Organizacional CCD TRD'
         verbose_name = 'Categorias series Unidad Organizacional CCD TRD'
-        unique_together = ['id_trd', 'id_cat_serie_und']
+        # unique_together = ['id_trd', 'id_cat_serie_und']
 
 
 class SeriesSubSUnidadOrgTRDTipologias(models.Model):
     id_tipologia_catserie_unidad_ccd_trd = models.AutoField(primary_key=True, editable=False, db_column='T211IdSerieSubserieTipologia')
-    id_catserie_unidadorg_ccd_trd = models.ForeignKey(CatSeriesUnidadOrgCCDTRD, unique=True, on_delete=models.CASCADE, db_column='T211IdSerie_SubS_UnidadOrg_TRD')
-    id_tipologia_doc = models.ForeignKey(TipologiasDocumentales, unique=True, on_delete=models.CASCADE, db_column='T211IdTipologiaDoc_TRD')
+    id_catserie_unidadorg_ccd_trd = models.OneToOneField(CatSeriesUnidadOrgCCDTRD, on_delete=models.CASCADE, db_column='T211IdSerie_SubS_UnidadOrg_TRD')
+    id_tipologia_doc = models.ForeignKey(TipologiasDocumentales, on_delete=models.CASCADE, db_column='T211IdTipologiaDoc_TRD')
     activo = models.BooleanField(default=True, db_column='T211activo')
     def __str__(self):
         return str(self.id_tipologia_catserie_unidad_ccd_trd)
