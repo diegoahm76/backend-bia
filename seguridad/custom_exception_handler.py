@@ -50,7 +50,7 @@ def api_exception_handler(exc, context):
                         value[i] = 'Debe enviar un archivo válido' if value[i] == 'The submitted data was not a file. Check the encoding type on the form.' else value[i]
                         value[i] = 'Esta persona ya tiene un usuario' if value[i] == 'Usuario with this persona already exists.' else value[i]
                         value[i] = 'El nombre de usuario ya existe' if value[i] == 'Usuario with this nombre de usuario already exists.' else value[i]
-                           
+            
                     separator = ', '
                     if index == len(error_message_dict)-1:
                         separator = ''
@@ -62,6 +62,7 @@ def api_exception_handler(exc, context):
             error_message = response.data
         
         #error_message = response.data
+        error_message = error_message[0] if isinstance(error_message, list) else error_message
         
         error_payload = {
             "success": False,
