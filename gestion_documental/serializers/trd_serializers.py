@@ -14,36 +14,36 @@ class TipologiasDocumentalesSerializer(serializers.ModelSerializer):
     class Meta:
         model = TipologiasDocumentales
         fields = '__all__'
-        validators = [
-           UniqueTogetherValidator(
-               queryset=TipologiasDocumentales.objects.all(),
-               fields = ['id_trd', 'codigo'],
-               message='No puede registrar más de una tipología con el mismo código para esta TRD'
-           ),
-           UniqueTogetherValidator(
-               queryset=TipologiasDocumentales.objects.all(),
-               fields = ['id_trd', 'nombre'],
-               message='No puede registrar más de una tipología con el mismo nombre para esta TRD'
-           )
-        ]
+        # validators = [
+        #    UniqueTogetherValidator(
+        #        queryset=TipologiasDocumentales.objects.all(),
+        #        fields = ['id_trd', 'codigo'],
+        #        message='No puede registrar más de una tipología con el mismo código para esta TRD'
+        #    ),
+        #    UniqueTogetherValidator(
+        #        queryset=TipologiasDocumentales.objects.all(),
+        #        fields = ['id_trd', 'nombre'],
+        #        message='No puede registrar más de una tipología con el mismo nombre para esta TRD'
+        #    )
+        # ]
 
 class TipologiasDocumentalesPutSerializer(serializers.ModelSerializer):
-    formatos = serializers.ListField(child=serializers.IntegerField(), read_only=True)
+    # formatos = serializers.ListField(child=serializers.IntegerField(), read_only=True)
     class Meta:
         model = TipologiasDocumentales
-        fields = ('id_tipologia_documental', 'id_trd', 'nombre', 'codigo', 'cod_tipo_medio_doc', 'formatos')
-        validators = [
-           UniqueTogetherValidator(
-               queryset=TipologiasDocumentales.objects.all(),
-               fields = ['id_trd', 'codigo'],
-               message='No puede registrar más de una tipología con el mismo código para esta TRD'
-           ),
-           UniqueTogetherValidator(
-               queryset=TipologiasDocumentales.objects.all(),
-               fields = ['id_trd', 'nombre'],
-               message='No puede registrar más de una tipología con el mismo nombre para esta TRD'
-           )
-        ]
+        fields = ('id_tipologia_documental', 'nombre', 'cod_tipo_medio_doc')
+        # validators = [
+        #    UniqueTogetherValidator(
+        #        queryset=TipologiasDocumentales.objects.all(),
+        #        fields = ['id_trd', 'codigo'],
+        #        message='No puede registrar más de una tipología con el mismo código para esta TRD'
+        #    ),
+        #    UniqueTogetherValidator(
+        #        queryset=TipologiasDocumentales.objects.all(),
+        #        fields = ['id_trd', 'nombre'],
+        #        message='No puede registrar más de una tipología con el mismo nombre para esta TRD'
+        #    )
+        # ]
 
 class TRDSerializer(serializers.ModelSerializer):
     
@@ -71,7 +71,7 @@ class TRDPutSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TablaRetencionDocumental
-        fields = ['version', 'nombre', 'ruta_soporte']
+        fields = ['version', 'nombre']
         extra_kwargs = {
             'version': {'required': True},
             'nombre': {'required': True}

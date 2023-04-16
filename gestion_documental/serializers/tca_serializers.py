@@ -27,10 +27,10 @@ class TCAPostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TablasControlAcceso
-        fields = ['id_tca', 'id_ccd', 'version', 'nombre']
+        fields = ['id_tca', 'id_trd', 'version', 'nombre']
         extra_kwargs = {
             'id_tca': {'read_only': True},
-            'id_ccd': {'required': True},
+            'id_trd': {'required': True},
             'version': {'required': True},
             'nombre': {'required': True}
         }
@@ -41,7 +41,7 @@ class TCAPutSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TablasControlAcceso
-        fields = ['version', 'nombre', 'ruta_soporte']
+        fields = ['version', 'nombre']
         extra_kwargs = {
             'version': {'required': True},
             'nombre': {'required': True}
