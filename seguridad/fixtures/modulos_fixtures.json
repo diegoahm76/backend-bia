@@ -910,5 +910,17 @@
           "ruta_formulario":"/test",
           "nombre_icono":"test"
         }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 77,
+        "fields": {
+          "id_modulo": 77,
+          "nombre_modulo": "Auditoría",
+          "subsistema":"SEGU",
+          "descripcion":"Módulo para realizar la auditoría del sistema",
+          "ruta_formulario":"/test",
+          "nombre_icono":"test"
+        }
       }
   ]

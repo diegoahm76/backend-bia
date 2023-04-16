@@ -1969,6 +1969,15 @@
         "id_modulo": 76,
         "cod_permiso": "BO"
       }
+    },
+    {
+      "model": "seguridad.PermisosModulo",
+      "pk": 242,
+      "fields": {
+        "id_permisos_modulo":242,
+        "id_modulo": 77,
+        "cod_permiso": "CO"
+      }
     }
   ]
   
