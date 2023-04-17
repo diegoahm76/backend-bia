@@ -40,7 +40,7 @@ class TiposMediosDocumentos(models.Model):
 class FormatosTiposMedio(models.Model):
     id_formato_tipo_medio = models.AutoField(primary_key=True, editable=False, db_column='T210IdFormato_TipoMedio')
     cod_tipo_medio_doc = models.CharField(max_length=2, choices=tipos_medios_formato_CHOICES, db_column='T210Cod_TipoMedioDoc')
-    nombre = models.CharField(max_length=20, db_column='T210nombre')
+    nombre = models.CharField(max_length=30, db_column='T210nombre')
     registro_precargado=models.BooleanField(default=False, db_column='T210registroPrecargado')
     activo = models.BooleanField(default=True, db_column='T210activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T210itemYaUsado')

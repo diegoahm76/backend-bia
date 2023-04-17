@@ -568,5 +568,45 @@
             "cod_tipo_medio_doc":"E",
             "registro_precargado": true
         }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 58,
+        "fields": {
+            "id_formato_tipo_medio":58,
+            "nombre":"PAPEL",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 59,
+        "fields": {
+            "id_formato_tipo_medio":59,
+            "nombre":"CINTA",
+            "cod_tipo_medio_doc":"E",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 60,
+        "fields": {
+            "id_formato_tipo_medio":60,
+            "nombre":"ACETATO",
+            "cod_tipo_medio_doc":"F",
+            "registro_precargado": true
+        }
+    },
+    {
+        "model": "gestion_documental.FormatosTiposMedio",
+        "pk" : 61,
+        "fields": {
+            "id_formato_tipo_medio":61,
+            "nombre":"CD",
+            "cod_tipo_medio_doc":"F",
+            "registro_precargado": true
+        }
     }
 ]  
