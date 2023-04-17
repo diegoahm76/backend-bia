@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models import Q
+from django.db.models.constraints import UniqueConstraint
 from almacen.models.organigrama_models import Organigramas, UnidadesOrganizacionales
 
 class CuadrosClasificacionDocumental(models.Model):
@@ -67,7 +69,13 @@ class CatalogosSeries(models.Model):
         db_table = 'T205CatalogosSeries_CCD'
         verbose_name = 'Catalogo Serie'
         verbose_name_plural = 'Catalogos Series'
-        unique_together= ['id_serie_doc','id_subserie_doc']
+        constraints = [
+            UniqueConstraint(fields=['id_serie_doc', 'id_subserie_doc'],
+                             name='unique_with_optional_cat_serie'),
+            UniqueConstraint(fields=['id_serie_doc'],
+                             condition=Q(id_subserie_doc=None),
+                             name='unique_without_optional_cat_serie'),
+        ]
 
 class CatalogosSeriesUnidad(models.Model):
     id_cat_serie_und = models.AutoField(primary_key=True, editable=False, db_column='T224IdCatSerie_UndOrg_CCD')
