@@ -1,4 +1,5 @@
 from asyncio import exceptions
+from urllib.parse import quote_plus
 from django.forms import ValidationError
 from rest_framework.exceptions import APIException
 from datetime import datetime, date, timedelta
@@ -1468,6 +1469,7 @@ class CreatePersonaJuridicaAndUsuario(generics.CreateAPIView):
         #CREACION DE USUARIO PARA LA PERSONA JURIDICA
         
         redirect_url=request.data.get('redirect_url','')
+        redirect_url=quote_plus(redirect_url)
         
         if " " in data['nombre_de_usuario']:
             return Response({'success':False,'detail':'No puede contener espacios en el nombre de usuario'},status=status.HTTP_403_FORBIDDEN)
@@ -1580,7 +1582,7 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
         #CREACION DE USUARIO
         
         redirect_url=request.data.get('redirect_url','')
-        print(redirect_url)
+        redirect_url=quote_plus(redirect_url)
         
         if " " in data['nombre_de_usuario']:
             return Response({'success':False,'detail':'No puede contener espacios en el nombre de usuario'},status=status.HTTP_403_FORBIDDEN)

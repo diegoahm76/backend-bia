@@ -1,4 +1,5 @@
 from django.core import signing
+from urllib.parse import quote_plus, unquote_plus
 from holidays_co import get_colombia_holidays_by_year
 from backend.settings.base import FRONTEND_URL
 from django.urls import reverse
@@ -453,6 +454,7 @@ class UnblockUser(generics.CreateAPIView):
         relative_link = reverse('password-reset-confirm', kwargs={'uidb64': uidb64, 'token': token})
 
         redirect_url = request.data.get('redirect_url', '')
+        redirect_url=quote_plus(redirect_url)
         absurl = 'http://' + current_site + relative_link
 
         try:
@@ -627,6 +629,7 @@ class RegisterView(generics.CreateAPIView):
         current_site=get_current_site(request=request).domain
         relativeLink=reverse('password-reset-confirm',kwargs={'uidb64':uidb64,'token':token})
         redirect_url= request.data.get('redirect_url','')
+        redirect_url=quote_plus(redirect_url)
         absurl='http://'+ current_site + relativeLink + '?redirect-url='+ redirect_url
         print("ABSURL: ", absurl)
         subject = "Verifica tu usuario"
@@ -660,6 +663,7 @@ class RegisterExternoView(generics.CreateAPIView):
                 return Response({'success':False,'detail':"La persona ya posee un usuario en el sistema, pero no se encuentra activado, ¿desea reenviar el correo de activación?","modal":True,"id_usuario":usuario.id_usuario},status=status.HTTP_403_FORBIDDEN)
 
         redirect_url=request.data.get('redirect_url','')
+        redirect_url=quote_plus(redirect_url)
         
         if " " in user['nombre_de_usuario']:
             return Response({'success':False,'detail':'No puede contener espacios en el nombre de usuario'},status=status.HTTP_403_FORBIDDEN)
@@ -737,6 +741,7 @@ class Verify(views.APIView):
     def get(self, request):
         token = request.GET.get('token')
         redirect_url= request.query_params.get('redirect-url')
+        redirect_url=unquote_plus(redirect_url)
         try:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms='HS256')
             user = User.objects.get(id_usuario=payload['user_id'])
@@ -765,8 +770,8 @@ class Verify(views.APIView):
             short_url = Shortener.objects.filter(long_url=absurl).first()
             if short_url:
                 short_url.delete()
-        
-            return redirect(redirect_url + "?success=True")
+            redirect_url = redirect_url + '&' if '?' in redirect_url else redirect_url + '?'
+            return redirect(redirect_url + "success=True")
         except jwt.ExpiredSignatureError as identifier:
             # ELIMINAR DIRECCIÓN CORTA SI EXISTE
             current_site=get_current_site(request).domain
@@ -776,8 +781,8 @@ class Verify(views.APIView):
             short_url = Shortener.objects.filter(long_url=absurl).first()
             if short_url:
                 short_url.delete()
-                
-            return redirect(redirect_url + "?success=False")
+            redirect_url = redirect_url + '&' if '?' in redirect_url else redirect_url + '?'
+            return redirect(redirect_url + "success=False")
 
         except jwt.exceptions.DecodeError as identifier:
             # ELIMINAR DIRECCIÓN CORTA SI EXISTE
@@ -788,8 +793,8 @@ class Verify(views.APIView):
             short_url = Shortener.objects.filter(long_url=absurl).first()
             if short_url:
                 short_url.delete()
-                
-            return redirect(redirect_url + "?success=False")
+            redirect_url = redirect_url + '&' if '?' in redirect_url else redirect_url + '?'
+            return redirect(redirect_url + "success=False")
 
 class LoginConsultarApiViews(generics.RetrieveAPIView):
     serializer_class=LoginSerializers
@@ -999,6 +1004,7 @@ class RequestPasswordResetEmail(generics.CreateAPIView):
             current_site=get_current_site(request=request).domain
             relativeLink=reverse('password-reset-confirm',kwargs={'uidb64':uidb64,'token':token})
             redirect_url= request.data.get('redirect_url','')
+            redirect_url=quote_plus(redirect_url)
             absurl='http://'+ current_site + relativeLink 
 
             data_email = None
@@ -1060,37 +1066,34 @@ class PasswordTokenCheckApi(generics.GenericAPIView):
     serializer_class=UserSerializer
     def get(self,request,uidb64,token):
         redirect_url= request.query_params.get('redirect-url')
+        redirect_url=unquote_plus(redirect_url)
         try:
             id = int(signing.loads(uidb64)['user'])
             user = User.objects.get(id_usuario=id)
-            
+            redirect_url = redirect_url + '&' if '?' in redirect_url else redirect_url + '?'
             if not PasswordResetTokenGenerator().check_token(user,token):
                 if len(redirect_url)>3:
-                    return redirect(redirect_url+'?token-valid=False')
+                    return redirect(redirect_url+'token-valid=False')
                 else:
-                    return redirect(FRONTEND_URL+redirect_url+'?token-valid=False')
+                    return redirect(FRONTEND_URL+redirect_url+'token-valid=False')
             
             # ELIMINAR DIRECCIÓN CORTA SI EXISTE
             current_site=get_current_site(request=request).domain
             relativeLink=reverse('password-reset-confirm',kwargs={'uidb64':uidb64,'token':token})
             
             absurl='http://'+ current_site + relativeLink + '?redirect-url=' + redirect_url
-            print("absurl: ", absurl)
             short_url = Shortener.objects.filter(long_url=absurl).first()
-            print("SHORT_URL: ", short_url)
             if short_url:
                 short_url.delete()
-                
-            return redirect(redirect_url+'?token-valid=True&?message=Credentials-valid?&uidb64='+uidb64+'&?token='+token)
+            redirect_url = redirect_url + '&' if '?' in redirect_url else redirect_url + '?'
+            return redirect(redirect_url+'token-valid=True&message=Credentials-valid&uidb64='+uidb64+'&token='+token)
         except encoding.DjangoUnicodeDecodeError as identifier:
             # ELIMINAR DIRECCIÓN CORTA SI EXISTE
             current_site=get_current_site(request=request).domain
             relativeLink=reverse('password-reset-confirm',kwargs={'uidb64':uidb64,'token':token})
             
             absurl='http://'+ current_site + relativeLink + '?redirect-url=' + redirect_url
-            print("absurl: ", absurl)
             short_url = Shortener.objects.filter(long_url=absurl).first()
-            print("SHORT_URL: ", short_url)
             if short_url:
                 short_url.delete()
                 
@@ -1100,13 +1103,11 @@ class PasswordTokenCheckApi(generics.GenericAPIView):
                 relativeLink=reverse('password-reset-confirm',kwargs={'uidb64':uidb64,'token':token})
                 
                 absurl='http://'+ current_site + relativeLink + '?redirect-url=' + redirect_url
-                print("absurl: ", absurl)
                 short_url = Shortener.objects.filter(long_url=absurl).first()
-                print("SHORT_URL: ", short_url)
                 if short_url:
                     short_url.delete()
-                    
-                return redirect(redirect_url+'?token-valid=False')
+                redirect_url = redirect_url + '&' if '?' in redirect_url else redirect_url + '?'
+                return redirect(redirect_url+'token-valid=False')
 
 
 class SetNewPasswordApiView(generics.GenericAPIView):
@@ -1212,6 +1213,7 @@ class ReenviarCorreoVerificacionDeUsuario(generics.UpdateAPIView):
         if user.is_active == False and user.tipo_usuario == "E":
             
             redirect_url=request.data.get('redirect_url','')
+            redirect_url=quote_plus(redirect_url)
 
             token = RefreshToken.for_user(user)
 

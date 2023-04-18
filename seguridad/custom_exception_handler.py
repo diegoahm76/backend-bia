@@ -28,6 +28,9 @@ def api_exception_handler(exc, context):
                             value[i] = 'Debe enviar un archivo válido' if value[i] == 'The submitted data was not a file. Check the encoding type on the form.' else value[i]
                             value[i] = 'El nombre de usuario ya existe' if value[i] == 'Usuario with this nombre de usuario already exists.' else value[i]
                             value[i] = 'Esta persona ya tiene un usuario' if value[i] == 'Usuario with this persona already exists.' else value[i]
+                            value[i] = 'El nombre de usuario ya existe' if value[i] == 'Usuario with this nombre de usuario already exists.' else value[i]
+                            value[i] = 'La contraseña debe tener mínimo 8 carácteres' if value[i] == 'Ensure this field has at least 8 characters.' else value[i]
+                            value[i] = 'Ingrese un correo válido' if value[i] == 'Enter a valid email address.' else value[i]
                         error_message += key.replace('_',' ').title() + ': ' + ','.join(value) + separator
                     else:
                         error_message += value
@@ -50,6 +53,8 @@ def api_exception_handler(exc, context):
                         value[i] = 'Debe enviar un archivo válido' if value[i] == 'The submitted data was not a file. Check the encoding type on the form.' else value[i]
                         value[i] = 'Esta persona ya tiene un usuario' if value[i] == 'Usuario with this persona already exists.' else value[i]
                         value[i] = 'El nombre de usuario ya existe' if value[i] == 'Usuario with this nombre de usuario already exists.' else value[i]
+                        value[i] = 'La contraseña debe tener mínimo 8 carácteres' if value[i] == 'Ensure this field has at least 8 characters.' else value[i]
+                        value[i] = 'Ingrese un correo válido' if value[i] == 'Enter a valid email address.' else value[i]
             
                     separator = ', '
                     if index == len(error_message_dict)-1:
