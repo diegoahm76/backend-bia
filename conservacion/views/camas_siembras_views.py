@@ -136,10 +136,48 @@ class GetCamasGerminacionesView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, id_vivero):
+    
         data = self.queryset.all().filter(item_activo=True, id_vivero=id_vivero)
         serializer = self.serializer_class(data, many=True)
         return Response({'success':True, 'detail':'Busqueda exitosa', 'data': serializer.data},status=status.HTTP_200_OK)
 
+
+class GetCamasGerminacionList(generics.ListAPIView):
+    
+    serializer_class = GetCamasGerminacionSerializer 
+    queryset = CamasGerminacionVivero.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get (self,request):
+    
+        id_vivero = request.query_params.get('id_vivero')
+        if id_vivero:
+            camas = self.queryset.all().filter(id_vivero = id_vivero) 
+        else:
+            camas = self.queryset.all()
+    
+        serializador = self.serializer_class(camas,many=True)
+        
+        return Response({'success':True, 'detail':'Busqueda exitosa', 'data': serializador.data},status=status.HTTP_200_OK)
+    
+    
+class GetCamasGerminacionesByIdVivero(generics.ListAPIView):
+    serializer_class = GetCamasGerminacionSerializer
+    queryset = CamasGerminacionVivero.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_vivero):
+        lista = []
+        instances = self.queryset.all().filter(item_activo=True, id_vivero=id_vivero)
+        
+        for intance in instances:
+            registro_cama = intance.camasgerminacionviverosiembra_set.all()
+            if not registro_cama:
+                lista.append(intance)
+        
+        serializer = self.serializer_class(lista, many=True)
+        return Response({'success':True, 'detail':'Busqueda exitosa', 'data': serializer.data},status=status.HTTP_200_OK)
+    
 class FilterViverosByNombreAndMunicipioView(generics.ListAPIView):
     serializer_class = ViveroSerializer
     queryset = Vivero.objects.all()

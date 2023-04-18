@@ -39,6 +39,7 @@ import copy, re
 from django.http import HttpResponsePermanentRedirect
 from django.contrib.sessions.models import Session
 from django.core.exceptions import ValidationError
+from rest_framework.exceptions import NotFound
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -1313,3 +1314,34 @@ class GetByIdUsuario(generics.RetrieveAPIView):
         
         serializador = self.serializer_class(usuario, context = {'request':request})
         return Response({'succes':True, 'detail':'Se encontró la información del usuario', 'data':serializador.data},status=status.HTTP_200_OK)
+    
+
+class RecuperarNombreDeUsuario(generics.RetrieveAPIView):
+    
+    serializer_class = UserSerializer
+    queryset = User.objects.all()
+    
+    def get(self,request):
+        
+        data = request.data
+        
+        persona = Personas.objects.filter(tipo_documento = data['tipo_documento'], numero_documento= data['numero_documento'],email = data['email']).first()
+        
+        if persona:
+            usuario = self.queryset.all().filter(persona = persona.id_persona).exclude(id_usuario=1).first()
+            
+            if usuario:
+                
+                subject = "Verifica tu usuario"
+                template = "email-recupe-nombre-usuario.html"
+
+                Util.notificacion(persona,subject,template,nombre_de_ususario=usuario.nombre_de_usuario)
+
+                return Response ({'success':True,'detail':' Se ha enviado el correo'},status=status.HTTP_200_OK)
+            
+            else:
+                raise NotFound('No existe usuario') 
+        raise NotFound('No existe usuario')      
+            
+            
+        
