@@ -24,7 +24,7 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import status
 import jwt
 from django.conf import settings
-from seguridad.serializers.user_serializers import EmailVerificationSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserPutAdminSerializer,  UserPutSerializer, UserSerializer, UserSerializerWithToken, UserRolesSerializer, RegisterSerializer  ,LoginSerializer, DesbloquearUserSerializer, SetNewPasswordUnblockUserSerializer, HistoricoActivacionSerializers, UsuarioBasicoSerializer, UsuarioFullSerializer, UsuarioInternoAExternoSerializers
+from seguridad.serializers.user_serializers import EmailVerificationSerializer, RecuperarUsuarioSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserPutAdminSerializer,  UserPutSerializer, UserSerializer, UserSerializerWithToken, UserRolesSerializer, RegisterSerializer  ,LoginSerializer, DesbloquearUserSerializer, SetNewPasswordUnblockUserSerializer, HistoricoActivacionSerializers, UsuarioBasicoSerializer, UsuarioFullSerializer, UsuarioInternoAExternoSerializers
 from rest_framework.generics import RetrieveUpdateAPIView
 from django.contrib.auth.hashers import make_password
 from rest_framework import status
@@ -1316,14 +1316,17 @@ class GetByIdUsuario(generics.RetrieveAPIView):
         return Response({'succes':True, 'detail':'Se encontró la información del usuario', 'data':serializador.data},status=status.HTTP_200_OK)
     
 
-class RecuperarNombreDeUsuario(generics.RetrieveAPIView):
+class RecuperarNombreDeUsuario(generics.UpdateAPIView):
     
-    serializer_class = UserSerializer
+    serializer_class = RecuperarUsuarioSerializer
     queryset = User.objects.all()
     
-    def get(self,request):
+    def put(self,request):
         
         data = request.data
+        
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
         
         persona = Personas.objects.filter(tipo_documento = data['tipo_documento'], numero_documento= data['numero_documento'],email = data['email']).first()
         
