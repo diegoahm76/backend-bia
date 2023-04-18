@@ -575,3 +575,17 @@ class GetBuscarIdPersona(serializers.ModelSerializer): #modelserializer para ide
     class Meta:
         fields = '__all__' #['nombre_de_usuario','profile_img','tipo_usuario','is_active','created_at','creado_por_portal','id_usuario_creador']
         model = User
+        
+
+class RecuperarUsuarioSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        fields = ['tipo_documento','numero_documento','email']
+        model = Personas
+        
+        extra_kwargs= {
+            'tipo_documento': {'required': True, 'allow_null':False},
+            'numero_documento': {'required': True, 'allow_null':False, 'allow_blank':False},
+            'email': {'required': True, 'allow_null':False, 'allow_blank':False},
+        }
+

@@ -19,7 +19,7 @@ class Util:
         email = EmailMessage(subject= data['email_subject'], body=data['template'], to=[data['to_email']], from_email=EMAIL_HOST_USER)
         
         email.content_subtype ='html'
-        response = email.send(fail_silently=False)
+        response = email.send(fail_silently=True)
         print(response)
         return response
 
