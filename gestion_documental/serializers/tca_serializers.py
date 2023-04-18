@@ -3,9 +3,9 @@ from rest_framework.serializers import ReadOnlyField
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from gestion_documental.models.tca_models import (
     TablasControlAcceso,
-    Clasif_Serie_Subserie_Unidad_TCA,
-    Cargos_Unidad_S_Ss_UndOrg_TCA,
-    PermisosCargoUnidadSerieSubserieUnidadTCA
+    CatSeriesUnidadOrgCCD_TRD_TCA,
+    PermisosCatSeriesUnidadOrgTCA,
+    PermisosDetPermisosCatSerieUndOrgTCA
 )
 from gestion_documental.models.ccd_models import (
     CatalogosSeriesUnidad
@@ -27,10 +27,10 @@ class TCAPostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TablasControlAcceso
-        fields = ['id_tca', 'id_ccd', 'version', 'nombre']
+        fields = ['id_tca', 'id_trd', 'version', 'nombre']
         extra_kwargs = {
             'id_tca': {'read_only': True},
-            'id_ccd': {'required': True},
+            'id_trd': {'required': True},
             'version': {'required': True},
             'nombre': {'required': True}
         }
@@ -41,7 +41,7 @@ class TCAPutSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TablasControlAcceso
-        fields = ['version', 'nombre', 'ruta_soporte']
+        fields = ['version', 'nombre']
         extra_kwargs = {
             'version': {'required': True},
             'nombre': {'required': True}
@@ -50,10 +50,10 @@ class TCAPutSerializer(serializers.ModelSerializer):
 class ClasifSerieSubserieUnidadTCASerializer(serializers.ModelSerializer):
     cod_clas_expediente = serializers.ChoiceField(choices=tipo_clasificacion_CHOICES)
     class Meta:
-        model = Clasif_Serie_Subserie_Unidad_TCA
+        model = CatSeriesUnidadOrgCCD_TRD_TCA
         fields = '__all__'
         extra_kwargs = {
-            'id_clasif_serie_subserie_unidad_tca': {'read_only': True},
+            'id_cat_serie_unidad_org_ccd_trd_tca': {'read_only': True},
             'id_tca': {'required': True},
             'id_cat_serie_und': {'required': True},
             'cod_clas_expediente': {'required': True},
@@ -63,7 +63,7 @@ class ClasifSerieSubserieUnidadTCASerializer(serializers.ModelSerializer):
         }
         validators = [
            UniqueTogetherValidator(
-               queryset=Clasif_Serie_Subserie_Unidad_TCA.objects.all(),
+               queryset=CatSeriesUnidadOrgCCD_TRD_TCA.objects.all(),
                fields = ['id_tca', 'id_cat_serie_und'],
                message='No puede existir más de una clasificación para el mismo expediente'
            )
@@ -72,10 +72,10 @@ class ClasifSerieSubserieUnidadTCASerializer(serializers.ModelSerializer):
 class ClasifSerieSubserieUnidadTCAPutSerializer(serializers.ModelSerializer):
     cod_clas_expediente = serializers.ChoiceField(choices=tipo_clasificacion_CHOICES)
     class Meta:
-        model = Clasif_Serie_Subserie_Unidad_TCA
+        model = CatSeriesUnidadOrgCCD_TRD_TCA
         fields = '__all__'
         extra_kwargs = {
-            'id_clasif_serie_subserie_unidad_tca': {'read_only': True},
+            'id_cat_serie_unidad_org_ccd_trd_tca': {'read_only': True},
             'id_tca': {'read_only': True},
             'id_cat_serie_und': {'read_only': True},
             'cod_clas_expediente': {'required': True},
@@ -87,10 +87,10 @@ class ClasifSerieSubserieUnidadTCAPutSerializer(serializers.ModelSerializer):
 class ClasifSerieSubserieUnidadTCAPutSerializer(serializers.ModelSerializer):
     cod_clas_expediente = serializers.ChoiceField(choices=tipo_clasificacion_CHOICES)
     class Meta:
-        model = Clasif_Serie_Subserie_Unidad_TCA
+        model = CatSeriesUnidadOrgCCD_TRD_TCA
         fields = '__all__'
         extra_kwargs = {
-            'id_clasif_serie_subserie_unidad_tca': {'read_only': True},
+            'id_cat_serie_unidad_org_ccd_trd_tca': {'read_only': True},
             'id_tca': {'read_only': True},
             'id_cat_serie_und': {'read_only': True},
             'cod_clas_expediente': {'required': True},
@@ -146,7 +146,7 @@ class CatalogosSeriesUnidadClasifSerializer(serializers.ModelSerializer):
         subseries_instances = CatalogosSeriesUnidad.objects.filter(id_unidad_organizacional=obj.id_unidad_organizacional.id_unidad_organizacional, id_catalogo_serie__id_serie_doc=obj.id_catalogo_serie.id_serie_doc.id_serie_doc).exclude(id_catalogo_serie__id_subserie_doc=None)
         clasificacion = None
         if not subseries_instances:
-            clasificaciones_instances = Clasif_Serie_Subserie_Unidad_TCA.objects.filter(id_cat_serie_und=obj.id_cat_serie_und, id_tca=id_tca).first()
+            clasificaciones_instances = CatSeriesUnidadOrgCCD_TRD_TCA.objects.filter(id_cat_serie_und=obj.id_cat_serie_und, id_tca=id_tca).first()
             clasificacion = ClasifExpedientesSerializer(clasificaciones_instances).data
         return clasificacion
     
@@ -175,9 +175,9 @@ class ClasifExpedientesSerializer(serializers.ModelSerializer):
         return clas_expediente
     
     class Meta:
-        model = Clasif_Serie_Subserie_Unidad_TCA
+        model = CatSeriesUnidadOrgCCD_TRD_TCA
         fields = [
-            'id_clasif_serie_subserie_unidad_tca',
+            'id_cat_serie_unidad_org_ccd_trd_tca',
             'cod_clas_expediente',
             'clas_expediente',
             'fecha_registro',
@@ -233,7 +233,7 @@ class CatalogosSeriesUnidadClasifPermisosSerializer(serializers.ModelSerializer)
         subseries_instances = CatalogosSeriesUnidad.objects.filter(id_unidad_organizacional=obj.id_unidad_organizacional.id_unidad_organizacional, id_catalogo_serie__id_serie_doc=obj.id_catalogo_serie.id_serie_doc.id_serie_doc).exclude(id_catalogo_serie__id_subserie_doc=None)
         clasificacion = None
         if not subseries_instances:
-            clasificaciones_instances = Clasif_Serie_Subserie_Unidad_TCA.objects.filter(id_cat_serie_und=obj.id_cat_serie_und, id_tca=id_tca).first()
+            clasificaciones_instances = CatSeriesUnidadOrgCCD_TRD_TCA.objects.filter(id_cat_serie_und=obj.id_cat_serie_und, id_tca=id_tca).first()
             clasificacion = ClasifExpedientesSerializer(clasificaciones_instances).data
         return clasificacion
     
@@ -303,16 +303,16 @@ class ClasifCargoUnidadPermisosSerializer(ClasifExpedientesSerializer):
         return permisos
     
     class Meta:
-        model = Clasif_Serie_Subserie_Unidad_TCA
+        model = CatSeriesUnidadOrgCCD_TRD_TCA
         fields = ClasifExpedientesSerializer.Meta.fields + ['id_cargo_persona', 'nombre_cargo_persona', 'id_unidad_org_cargo', 'nombre_unidad_org_cargo', 'permisos']
 
 class ClasifSerieSubseriUnidadTCA_activoSerializer(serializers.ModelSerializer):
     justificacion_cambio = serializers.CharField(max_length=255,min_length=1)
     class Meta:
-        model = Clasif_Serie_Subserie_Unidad_TCA
+        model = CatSeriesUnidadOrgCCD_TRD_TCA
         fields = ['cod_clas_expediente','justificacion_cambio','ruta_archivo_cambio']
         extra_kwargs={
-            'id_clasif_serie_subserie_unidad_tca': {'read_only': True},
+            'id_cat_serie_unidad_org_ccd_trd_tca': {'read_only': True},
             'id_tca': {'read_only': True},
             'id_cat_serie_und': {'read_only': True},
             'cod_clas_expediente': {'required': True},
@@ -323,11 +323,11 @@ class ClasifSerieSubseriUnidadTCA_activoSerializer(serializers.ModelSerializer):
 
 class Cargos_Unidad_S_Ss_UndOrg_TCASerializer(serializers.ModelSerializer):
     class Meta:
-        model = Cargos_Unidad_S_Ss_UndOrg_TCA   
+        model = PermisosCatSeriesUnidadOrgTCA   
         fields = '__all__'
     
 class PermisosCargoUnidadSerieSubserieUnidadTCASerializer(serializers.ModelSerializer):
     tipo_permiso = serializers.ReadOnlyField(source='cod_permiso.tipo_permiso', default=None)
     class Meta:
-        model = PermisosCargoUnidadSerieSubserieUnidadTCA
+        model = PermisosDetPermisosCatSerieUndOrgTCA
         fields = '__all__'

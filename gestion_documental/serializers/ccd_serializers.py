@@ -85,7 +85,9 @@ class SubseriesDocPostSerializer(serializers.ModelSerializer):
     id_ccd = serializers.ReadOnlyField(source='id_serie_doc.id_ccd.id_ccd', default=None)
     
     def validate_id_serie_doc(self, value):
-        if value.id_ccd.fecha_terminado:
+        if value.id_ccd.actual:
+            raise serializers.ValidationError('No puede crear subseries a un CCD actual')
+        elif value.id_ccd.fecha_terminado:
             raise serializers.ValidationError('El CCD elegido se encuentra terminado. Por favor intente reanudarlo antes de continuar')
         elif value.id_ccd.fecha_retiro_produccion:
             raise serializers.ValidationError('No puede realizar esta acción a un CCD retirado de producción')
@@ -334,17 +336,13 @@ class CatalogoSerieSubserieSerializer(serializers.ModelSerializer):
     
     def validate_id_serie_doc(self, value):
         # VALIDACIONES CCD
-        if value.id_ccd.fecha_terminado:
+        if value.id_ccd.fecha_terminado and not value.id_ccd.actual:
             raise serializers.ValidationError('El CCD elegido se encuentra terminado. Por favor intente reanudarlo antes de continuar')
         elif value.id_ccd.fecha_retiro_produccion:
             raise serializers.ValidationError('No puede realizar esta acción a un CCD retirado de producción')
         
-        # VALIDACION NO TENGA SUBSERIES
-        if value.subseriesdoc_set.all():
-            raise serializers.ValidationError('No puede relacionar series con subseries en este catalogo')
-        
         # VALIDACION NO EXISTA EN CATALOGO
-        if value.catalogosseries_set.all():
+        if value.catalogosseries_set.all().filter(id_subserie_doc=None):
             raise serializers.ValidationError('No puede relacionar la misma serie más de una vez en el catalogo')
         
         return value
@@ -367,7 +365,7 @@ class CatalogosSeriesUnidadSerializer(serializers.ModelSerializer):
     
     def validate_id_catalogo_serie(self, value):
         # VALIDACIONES CCD
-        if value.id_serie_doc.id_ccd.fecha_terminado:
+        if value.id_serie_doc.id_ccd.fecha_terminado and not value.id_serie_doc.id_ccd.actual:
             raise serializers.ValidationError('El CCD elegido se encuentra terminado. Por favor intente reanudarlo antes de continuar')
         elif value.id_serie_doc.id_ccd.fecha_retiro_produccion:
             raise serializers.ValidationError('No puede realizar esta acción a un CCD retirado de producción')
@@ -387,3 +385,8 @@ class CatalogosSeriesUnidadSerializer(serializers.ModelSerializer):
                 message='No puede relacionar el mismo item de catalogo de serie y subserie más de una vez'
             )
         ]
+
+class BusquedaCCDSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CuadrosClasificacionDocumental
+        fields ='__all__'

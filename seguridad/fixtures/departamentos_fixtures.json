@@ -1,0 +1,266 @@
+[
+    {
+        "model": "seguridad.departamento",
+        "pk": "05",
+        "fields": {
+            "nombre": "ANTIOQUIA",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "08",
+        "fields": {
+            "nombre": "ATLÁNTICO",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "11",
+        "fields": {
+            "nombre": "BOGOTÁ. D.C.",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "13",
+        "fields": {
+            "nombre": "BOLÍVAR",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "15",
+        "fields": {
+            "nombre": "BOYACÁ",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "17",
+        "fields": {
+            "nombre": "CALDAS",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "18",
+        "fields": {
+            "nombre": "CAQUETÁ",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "19",
+        "fields": {
+            "nombre": "CAUCA",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "20",
+        "fields": {
+            "nombre": "CESAR",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "23",
+        "fields": {
+            "nombre": "CÓRDOBA",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "25",
+        "fields": {
+            "nombre": "CUNDINAMARCA",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "27",
+        "fields": {
+            "nombre": "CHOCÓ",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "41",
+        "fields": {
+            "nombre": "HUILA",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "44",
+        "fields": {
+            "nombre": "LA GUAJIRA",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "47",
+        "fields": {
+            "nombre": "MAGDALENA",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "50",
+        "fields": {
+            "nombre": "META",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "52",
+        "fields": {
+            "nombre": "NARIÑO",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "54",
+        "fields": {
+            "nombre": "NORTE DE SANTANDER",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "63",
+        "fields": {
+            "nombre": "QUINDÍO",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "66",
+        "fields": {
+            "nombre": "RISARALDA",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "68",
+        "fields": {
+            "nombre": "SANTANDER",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "70",
+        "fields": {
+            "nombre": "SUCRE",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "73",
+        "fields": {
+            "nombre": "TOLIMA",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "76",
+        "fields": {
+            "nombre": "VALLE DEL CAUCA",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "81",
+        "fields": {
+            "nombre": "ARAUCA",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "85",
+        "fields": {
+            "nombre": "CASANARE",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "86",
+        "fields": {
+            "nombre": "PUTUMAYO",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "88",
+        "fields": {
+            "nombre": "SAN ANDRÉS, PROVIDENCIA Y SANTA CATALINA",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "91",
+        "fields": {
+            "nombre": "AMAZONAS",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "94",
+        "fields": {
+            "nombre": "GUAINÍA",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "95",
+        "fields": {
+            "nombre": "GUAVIARE",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "97",
+        "fields": {
+            "nombre": "VAUPÉS",
+            "pais": "CO"
+        }
+    },
+    {
+        "model": "seguridad.departamento",
+        "pk": "99",
+        "fields": {
+            "nombre": "VICHADA",
+            "pais": "CO"
+        }
+    }
+]

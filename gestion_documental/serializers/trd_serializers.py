@@ -5,7 +5,7 @@ from gestion_documental.models.trd_models import (
     TipologiasDocumentales,
     TablaRetencionDocumental,
     FormatosTiposMedio,
-    SeriesSubSUnidadOrgTRD,
+    CatSeriesUnidadOrgCCDTRD,
     SeriesSubSUnidadOrgTRDTipologias
 )
 from gestion_documental.choices.tipos_medios_formato_choices import tipos_medios_formato_CHOICES
@@ -14,36 +14,36 @@ class TipologiasDocumentalesSerializer(serializers.ModelSerializer):
     class Meta:
         model = TipologiasDocumentales
         fields = '__all__'
-        validators = [
-           UniqueTogetherValidator(
-               queryset=TipologiasDocumentales.objects.all(),
-               fields = ['id_trd', 'codigo'],
-               message='No puede registrar más de una tipología con el mismo código para esta TRD'
-           ),
-           UniqueTogetherValidator(
-               queryset=TipologiasDocumentales.objects.all(),
-               fields = ['id_trd', 'nombre'],
-               message='No puede registrar más de una tipología con el mismo nombre para esta TRD'
-           )
-        ]
+        # validators = [
+        #    UniqueTogetherValidator(
+        #        queryset=TipologiasDocumentales.objects.all(),
+        #        fields = ['id_trd', 'codigo'],
+        #        message='No puede registrar más de una tipología con el mismo código para esta TRD'
+        #    ),
+        #    UniqueTogetherValidator(
+        #        queryset=TipologiasDocumentales.objects.all(),
+        #        fields = ['id_trd', 'nombre'],
+        #        message='No puede registrar más de una tipología con el mismo nombre para esta TRD'
+        #    )
+        # ]
 
 class TipologiasDocumentalesPutSerializer(serializers.ModelSerializer):
-    formatos = serializers.ListField(child=serializers.IntegerField(), read_only=True)
+    # formatos = serializers.ListField(child=serializers.IntegerField(), read_only=True)
     class Meta:
         model = TipologiasDocumentales
-        fields = ('id_tipologia_documental', 'id_trd', 'nombre', 'codigo', 'cod_tipo_medio_doc', 'formatos')
-        validators = [
-           UniqueTogetherValidator(
-               queryset=TipologiasDocumentales.objects.all(),
-               fields = ['id_trd', 'codigo'],
-               message='No puede registrar más de una tipología con el mismo código para esta TRD'
-           ),
-           UniqueTogetherValidator(
-               queryset=TipologiasDocumentales.objects.all(),
-               fields = ['id_trd', 'nombre'],
-               message='No puede registrar más de una tipología con el mismo nombre para esta TRD'
-           )
-        ]
+        fields = ('id_tipologia_documental', 'nombre', 'cod_tipo_medio_doc')
+        # validators = [
+        #    UniqueTogetherValidator(
+        #        queryset=TipologiasDocumentales.objects.all(),
+        #        fields = ['id_trd', 'codigo'],
+        #        message='No puede registrar más de una tipología con el mismo código para esta TRD'
+        #    ),
+        #    UniqueTogetherValidator(
+        #        queryset=TipologiasDocumentales.objects.all(),
+        #        fields = ['id_trd', 'nombre'],
+        #        message='No puede registrar más de una tipología con el mismo nombre para esta TRD'
+        #    )
+        # ]
 
 class TRDSerializer(serializers.ModelSerializer):
     
@@ -71,7 +71,7 @@ class TRDPutSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TablaRetencionDocumental
-        fields = ['version', 'nombre', 'ruta_soporte']
+        fields = ['version', 'nombre']
         extra_kwargs = {
             'version': {'required': True},
             'nombre': {'required': True}
@@ -119,7 +119,7 @@ class FormatosTiposMedioPostSerializer(serializers.ModelSerializer):
 class SeriesSubSeriesUnidadesOrgTRDSerializer(serializers.ModelSerializer):
     tipologias = serializers.ListField(child=serializers.IntegerField(), read_only=True)
     class Meta:
-        model = SeriesSubSUnidadOrgTRD
+        model = CatSeriesUnidadOrgCCDTRD
         fields = (
             'id_trd',
             'id_cat_serie_und',
@@ -135,7 +135,7 @@ class SeriesSubSeriesUnidadesOrgTRDSerializer(serializers.ModelSerializer):
             'id_cat_serie_und': {'required': True},
         }
         validators = [UniqueTogetherValidator(
-               queryset=SeriesSubSUnidadOrgTRD.objects.all(),
+               queryset=CatSeriesUnidadOrgCCDTRD.objects.all(),
                fields = ['id_trd', 'id_cat_serie_und'],
                message='No puede relacionar un mismo expediente más de una vez con esta TRD'
            )]
@@ -144,7 +144,7 @@ class SeriesSubSeriesUnidadesOrgTRDSerializer(serializers.ModelSerializer):
 class SeriesSubSeriesUnidadesOrgTRDPutSerializer(serializers.ModelSerializer):
     tipologias = serializers.ListField(child=serializers.IntegerField(), read_only=True)
     class Meta:
-        model = SeriesSubSUnidadOrgTRD
+        model = CatSeriesUnidadOrgCCDTRD
         fields = (
             'cod_disposicion_final',
             'digitalizacion_dis_final',
@@ -161,7 +161,7 @@ class SeriesSubSeriesUnidadesOrgTRDPutSerializer(serializers.ModelSerializer):
 class GetSeriesSubSUnidadOrgTRDSerializer(serializers.ModelSerializer):
     
     class Meta:
-        model = SeriesSubSUnidadOrgTRD
+        model = CatSeriesUnidadOrgCCDTRD
         fields = '__all__'
 
 

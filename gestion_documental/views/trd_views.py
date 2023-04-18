@@ -40,9 +40,9 @@ from gestion_documental.models.trd_models import (
     TipologiasDocumentales,
     SeriesSubSUnidadOrgTRDTipologias,
     FormatosTiposMedio,
-    SeriesSubSUnidadOrgTRD,
+    CatSeriesUnidadOrgCCDTRD,
     FormatosTiposMedioTipoDoc,
-    HistoricosSerieSubSeriesUnidadOrgTRD,
+    HistoricosCatSeriesUnidadOrgCCDTRD,
 )
 
 class UpdateTipologiasDocumentales(generics.UpdateAPIView):
@@ -248,7 +248,7 @@ class GetTipologiasDocumentales(generics.ListAPIView):
 #Series SubSeries Unidades Organizacionales TRD
 class CreateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
     serializer_class = SeriesSubSeriesUnidadesOrgTRDSerializer
-    queryset = SeriesSubSUnidadOrgTRD.objects.all()
+    queryset = CatSeriesUnidadOrgCCDTRD.objects.all()
     permission_classes = [IsAuthenticated]
 
     def post(self, request, id_trd):
@@ -309,7 +309,7 @@ class CreateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
 
 @api_view(['POST'])
 def uploadDocument(request, id_serie_subserie_uniorg_trd):
-    ssuorg_trd = SeriesSubSUnidadOrgTRD.objects.filter(id_serie_subs_unidadorg_trd=id_serie_subserie_uniorg_trd).first()
+    ssuorg_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_serie_subs_unidadorg_trd=id_serie_subserie_uniorg_trd).first()
     if ssuorg_trd:
         if ssuorg_trd.id_trd.actual:
             ssuorg_trd.ruta_archivo_cambio = request.FILES.get('document')
@@ -324,13 +324,13 @@ def uploadDocument(request, id_serie_subserie_uniorg_trd):
 
 class UpdateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
     serializer_class = SeriesSubSeriesUnidadesOrgTRDPutSerializer
-    queryset = SeriesSubSUnidadOrgTRD.objects.all()
+    queryset = CatSeriesUnidadOrgCCDTRD.objects.all()
     permission_classes = [IsAuthenticated]
 
     def put(self, request, id_serie_subs_unidadorg_trd):
         data_entrante = request.data
         persona_usuario_logeado = request.user.persona
-        serie_subs_unidadorg_trd = SeriesSubSUnidadOrgTRD.objects.filter(id_serie_subs_unidadorg_trd=id_serie_subs_unidadorg_trd).first()
+        serie_subs_unidadorg_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_serie_subs_unidadorg_trd=id_serie_subs_unidadorg_trd).first()
         tipologias = request.data.get('tipologias')
         previous_serie_subs_unidad_org_trd = copy.copy(serie_subs_unidadorg_trd)
 
@@ -424,7 +424,7 @@ class UpdateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
                             )
 
                     #CREA EL HISTORICO
-                    HistoricosSerieSubSeriesUnidadOrgTRD.objects.create(
+                    HistoricosCatSeriesUnidadOrgCCDTRD.objects.create(
                         id_serie_subs_unidadorg_trd = previous_serie_subs_unidad_org_trd,
                         cod_disposicion_final = previous_serie_subs_unidad_org_trd.cod_disposicion_final,
                         digitalizacion_disp_final = previous_serie_subs_unidad_org_trd.digitalizacion_dis_final,
@@ -445,11 +445,11 @@ class UpdateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
 
 class DeleteSerieSubserieUnidadTRD(generics.RetrieveDestroyAPIView):
     serializer_class = GetSeriesSubSUnidadOrgTRDSerializer
-    queryset = SeriesSubSUnidadOrgTRD.objects.all()
+    queryset = CatSeriesUnidadOrgCCDTRD.objects.all()
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, id_ssuorg_trd):
-        serie_ss_uniorg_trd = SeriesSubSUnidadOrgTRD.objects.filter(id_serie_subs_unidadorg_trd=id_ssuorg_trd).first()
+        serie_ss_uniorg_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_serie_subs_unidadorg_trd=id_ssuorg_trd).first()
         if serie_ss_uniorg_trd:
             if serie_ss_uniorg_trd.id_trd.actual == True:
                 return Response({'success': False, 'detail': 'No se pueden realizar acciones sobre las Series'}, status=status.HTTP_403_FORBIDDEN)
@@ -674,7 +674,7 @@ class CambiosPorConfirmar(generics.UpdateAPIView):
         if trd:
             if trd.actual:
                 if trd.cambios_por_confirmar:
-                    series_sub_unidades_trd = SeriesSubSUnidadOrgTRD.objects.filter(id_trd=id_trd)
+                    series_sub_unidades_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_trd=id_trd)
                     series_sub_unidades_trd_list = [serie_sub_unidad_trd.id_serie_subs_unidadorg_trd for serie_sub_unidad_trd in series_sub_unidades_trd]
                     formatos_tipo_medio = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_serie_subserie_unidadorg_trd__in=series_sub_unidades_trd_list)
                     tipologias_list = [formato_tipo_medio.id_tipologia_doc.id_tipologia_documental for formato_tipo_medio in formatos_tipo_medio]
@@ -703,13 +703,13 @@ class CambiosPorConfirmar(generics.UpdateAPIView):
 
 class GetSeriesSubSUnidadOrgTRD(generics.ListAPIView):
     serializer_class = GetSeriesSubSUnidadOrgTRDSerializer
-    queryset = SeriesSubSUnidadOrgTRD.objects.all()
+    queryset = CatSeriesUnidadOrgCCDTRD.objects.all()
     permission_classes = [IsAuthenticated]
     
     def get(self, request, id_trd):
         
         #VALIDACIÓN SI EXISTE LA TRD ENVIADA
-        series_subseries_unidad_org_trd = SeriesSubSUnidadOrgTRD.objects.filter(id_trd=id_trd)
+        series_subseries_unidad_org_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_trd=id_trd)
         if not series_subseries_unidad_org_trd:
             return Response({'success': False, 'detail': 'No se encontró la TRD'}, status=status.HTTP_404_NOT_FOUND)
         
@@ -718,7 +718,7 @@ class GetSeriesSubSUnidadOrgTRD(generics.ListAPIView):
         for i in ids_serie_subs_unidad_org_trd:
             main_detail = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_serie_subserie_unidadorg_trd = i).first()
             serializer_ssutrdtipo = GetSeriesSubSUnidadOrgTRDTipologiasSerializer(main_detail, many=False)
-            detalle_serie_subs_unidad_org_trd = SeriesSubSUnidadOrgTRD.objects.filter(id_serie_subs_unidadorg_trd = serializer_ssutrdtipo.data['id_serie_subserie_unidadorg_trd']).first()
+            detalle_serie_subs_unidad_org_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_serie_subs_unidadorg_trd = serializer_ssutrdtipo.data['id_serie_subserie_unidadorg_trd']).first()
             serializer_ssutrd = GetSeriesSubSUnidadOrgTRDSerializer(detalle_serie_subs_unidad_org_trd, many=False)
             detalle_tipologias = TipologiasDocumentales.objects.filter(id_tipologia_documental = serializer_ssutrdtipo.data['id_tipologia_doc']).first()
             serializer_tipologias = GetTipologiasDocumentalesSerializer(detalle_tipologias, many=False)
@@ -732,12 +732,12 @@ class GetSeriesSubSUnidadOrgTRD(generics.ListAPIView):
 
 class GetSeriesSubSUnidadOrgTRDByPk(generics.ListAPIView):
     serializer_class = GetSeriesSubSUnidadOrgTRDSerializer
-    queryset = SeriesSubSUnidadOrgTRD.objects.all()
+    queryset = CatSeriesUnidadOrgCCDTRD.objects.all()
     permission_classes = [IsAuthenticated]
     
     def get(self, request, pk):
         pk_a_consultar1 = pk
-        serie_subseries_unidad_org = SeriesSubSUnidadOrgTRD.objects.filter(id_serie_subs_unidadorg_trd = pk_a_consultar1)
+        serie_subseries_unidad_org = CatSeriesUnidadOrgCCDTRD.objects.filter(id_serie_subs_unidadorg_trd = pk_a_consultar1)
         if not serie_subseries_unidad_org:
             return Response({'success': False, 'detail': 'No se encontró información relacionada a ese id'}, status=status.HTTP_404_NOT_FOUND)
         
@@ -750,7 +750,7 @@ class GetSeriesSubSUnidadOrgTRDByPk(generics.ListAPIView):
                 data = [{'id_serie_subserie_tipologia': None, 'id_serie_subserie_unidadorg_trd': None, 'id_tipologia_doc': None}]
                 return Response({'success': True, 'detail': 'Esta Serie Sub Serie Unidad no tiene asociada ninguna tipologia', 'data': data})
 
-            detalle_serie_subs_unidad_org_trd = SeriesSubSUnidadOrgTRD.objects.filter(id_serie_subs_unidadorg_trd = serializer_ssutrdtipo.data['id_serie_subserie_unidadorg_trd']).first()
+            detalle_serie_subs_unidad_org_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_serie_subs_unidadorg_trd = serializer_ssutrdtipo.data['id_serie_subserie_unidadorg_trd']).first()
             serializer_ssutrd = GetSeriesSubSUnidadOrgTRDSerializer(detalle_serie_subs_unidad_org_trd, many=False)
             detalle_tipologias = TipologiasDocumentales.objects.filter(id_tipologia_documental = serializer_ssutrdtipo.data['id_tipologia_doc']).first()
             serializer_tipologias = GetTipologiasDocumentalesSerializer(detalle_tipologias, many=False)
@@ -803,14 +803,14 @@ class finalizarTRD(generics.RetrieveUpdateAPIView):
         id_series_totales = [i['id_serie_doc'] for i in series]
         series_subseries_unidades_totales = CatalogosSeriesUnidad.objects.filter(id_catalogo_serie__id_serie_doc__in = id_series_totales).values()
         id_series_subseries_unidades_totales = [i['id_cat_serie_und'] for i in series_subseries_unidades_totales]
-        series_subseries_unidades_usadas = SeriesSubSUnidadOrgTRD.objects.filter(id_trd = trd_ingresada).values()
+        series_subseries_unidades_usadas = CatSeriesUnidadOrgCCDTRD.objects.filter(id_trd = trd_ingresada).values()
         id_series_subseries_unidades_usadas = [i['id_cat_serie_und_id'] for i in series_subseries_unidades_usadas]
         id_series_subseries_unidades_no_usadas = [i for i in id_series_subseries_unidades_totales if i not in id_series_subseries_unidades_usadas]
         if len(id_series_subseries_unidades_no_usadas) >= 1:
             instancia_id_series_subseries_unidades_no_usadas = CatalogosSeriesUnidad.objects.filter(id_cat_serie_und__in = id_series_subseries_unidades_no_usadas).values()
             return Response({'success': False, 'detail': 'Hay combinaciones de series, subseries y unidades que no se están usando', 'data' : instancia_id_series_subseries_unidades_no_usadas}, status=status.HTTP_403_FORBIDDEN)
         if trd.fecha_terminado == None:
-            series_subseries_unidad_org_trd = SeriesSubSUnidadOrgTRD.objects.filter(id_trd = trd_ingresada).values()
+            series_subseries_unidad_org_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_trd = trd_ingresada).values()
             for i in series_subseries_unidad_org_trd:
                 if i['cod_disposicion_final'] != None and i['digitalizacion_dis_final'] != None and i['tiempo_retencion_ag'] != None and i['tiempo_retencion_ac'] != None:
                     consulta = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_serie_subserie_unidadorg_trd = i['id_serie_subs_unidadorg_trd']).first()

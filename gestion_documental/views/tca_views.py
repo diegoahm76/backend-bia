@@ -33,13 +33,13 @@ from almacen.models.organigrama_models import (
 )
 from gestion_documental.models.tca_models import (
     TablasControlAcceso,
-    Clasif_Serie_Subserie_Unidad_TCA,
+    CatSeriesUnidadOrgCCD_TRD_TCA,
     ClasificacionExpedientes,
-    Cargos_Unidad_S_Ss_UndOrg_TCA,
-    PermisosCargoUnidadSerieSubserieUnidadTCA,
+    PermisosCatSeriesUnidadOrgTCA,
+    PermisosDetPermisosCatSerieUndOrgTCA,
     PermisosGD,
-    Historico_Clasif_S_Ss_UndOrg_TCA, 
-    HistoricoCargosUnidadSerieSubserieUnidadTCA
+    HistoricoCatSeriesUnidadOrgCCD_TRD_TCA, 
+    HistoricoPermisosCatSeriesUndOrgTCA
 )
 from seguridad.models import Cargos,Personas
 from gestion_documental.choices.tipo_clasificacion_choices import tipo_clasificacion_CHOICES
@@ -171,7 +171,7 @@ class UpdateTablaControlAcceso(generics.RetrieveUpdateAPIView):
 
 class ClasifSerieSubserieUnidadTCA(generics.CreateAPIView):
     serializer_class = ClasifSerieSubserieUnidadTCASerializer
-    queryset = Clasif_Serie_Subserie_Unidad_TCA.objects.all()
+    queryset = CatSeriesUnidadOrgCCD_TRD_TCA.objects.all()
     permission_classes = [IsAuthenticated]
 
     def post(self, request, id_tca):
@@ -208,13 +208,13 @@ class ClasifSerieSubserieUnidadTCA(generics.CreateAPIView):
 
 class UpdateClasifSerieSubserieUnidadTCA(generics.UpdateAPIView):
     serializer_class = ClasifSerieSubserieUnidadTCAPutSerializer
-    queryset = Clasif_Serie_Subserie_Unidad_TCA.objects.all()
+    queryset = CatSeriesUnidadOrgCCD_TRD_TCA.objects.all()
     permission_classes = [IsAuthenticated]
     serializer_class_2=ClasifSerieSubseriUnidadTCA_activoSerializer
     def put(self, request, pk):
     
         data = request.data
-        clasif_s_ss_unidad_tca = Clasif_Serie_Subserie_Unidad_TCA.objects.filter(id_clasif_serie_subserie_unidad_tca=pk).first()
+        clasif_s_ss_unidad_tca = CatSeriesUnidadOrgCCD_TRD_TCA.objects.filter(id_cat_serie_unidad_org_ccd_trd_tca=pk).first()
         clasif__previous=copy.copy(clasif_s_ss_unidad_tca)
         if clasif_s_ss_unidad_tca:
             if not clasif_s_ss_unidad_tca.id_tca.fecha_retiro_produccion:
@@ -254,8 +254,8 @@ class UpdateClasifSerieSubserieUnidadTCA(generics.UpdateAPIView):
                         if value != new_value:
                             datos_actualizados.append({field: value})
                     if datos_actualizados:  
-                        Historico_Clasif_S_Ss_UndOrg_TCA.objects.create(
-                            id_clasif_s_ss_unidad_tca = clasif_s_ss_unidad_tca,
+                        HistoricoCatSeriesUnidadOrgCCD_TRD_TCA.objects.create(
+                            id_catserie_unidad_org = clasif_s_ss_unidad_tca,
                             cod_clasificacion_exp = clasif__previous.cod_clas_expediente,
                             justificacion_del_cambio = clasif__previous.justificacion_cambio,
                             ruta_archivo_cambio = clasif__previous.ruta_archivo_cambio,
@@ -295,7 +295,7 @@ def asignar_cargo_unidad_permiso_expediente(request):
     user = request.user
     
     try:
-        clasif_serie_subserie_unidad_TCA= Clasif_Serie_Subserie_Unidad_TCA.objects.get(id_clasif_serie_subserie_unidad_tca=data['id_clasif_serie_subserie_unidad_tca'])
+        clasif_serie_subserie_unidad_TCA= CatSeriesUnidadOrgCCD_TRD_TCA.objects.get(id_cat_serie_unidad_org_ccd_trd_tca=data['id_cat_serie_unidad_org_ccd_trd_tca'])
     except:
         return Response({'success':False, 'detail':'No existe expediente relacionado al id de clasificacion serie/subserie/unidad TCA'}, status=status.HTTP_400_BAD_REQUEST)
     try:
@@ -307,7 +307,7 @@ def asignar_cargo_unidad_permiso_expediente(request):
     except:
         return Response({'success':False, 'detail':'No existe id cargo'}, status=status.HTTP_400_BAD_REQUEST)
     
-    cargo_unidad = Cargos_Unidad_S_Ss_UndOrg_TCA.objects.filter(id_clasif_serie_subserie_unidad_tca=data['id_clasif_serie_subserie_unidad_tca'],id_cargo_persona=data['id_cargo_persona'],id_unidad_org_cargo=data['id_unidad_org_persona'])
+    cargo_unidad = PermisosCatSeriesUnidadOrgTCA.objects.filter(id_clasif_serie_subserie_unidad_tca=data['id_cat_serie_unidad_org_ccd_trd_tca'],id_cargo_persona=data['id_cargo_persona'],id_unidad_org_cargo=data['id_unidad_org_persona'])
     if cargo_unidad:
         return Response({'success':False, 'detail':'Ya asignó previamente el mismo cargo y la misma unidad para el expediente elegido. Por favor eliminelo primero si desea volverlo a crear'}, status=status.HTTP_400_BAD_REQUEST)
     
@@ -324,22 +324,22 @@ def asignar_cargo_unidad_permiso_expediente(request):
                 return Response({'success':False, 'detail':'Debe ingresar justificación'}, status=status.HTTP_400_BAD_REQUEST)
             if not request.FILES.get('ruta_archivo_cambio'):
                 return Response({'success':False, 'detail':'Debe ingresar un documento'}, status=status.HTTP_400_BAD_REQUEST)
-            cargo_unidad_serie_subserie_undorg_tca= Cargos_Unidad_S_Ss_UndOrg_TCA.objects.create(
-                id_clasif_serie_subserie_unidad_tca = clasif_serie_subserie_unidad_TCA,
+            cargo_unidad_serie_subserie_undorg_tca= PermisosCatSeriesUnidadOrgTCA.objects.create(
+                id_cat_serie_unidad_org_ccd_trd_tca = clasif_serie_subserie_unidad_TCA,
                 id_cargo_persona = cargo_persona,
                 id_unidad_org_cargo = unidad_org_persona,
                 justificacion_del_cambio = data['justificacion_del_cambio'],
                 ruta_archivo_cambio = request.FILES.get('ruta_archivo_cambio'))
         case False:
-            cargo_unidad_serie_subserie_undorg_tca= Cargos_Unidad_S_Ss_UndOrg_TCA.objects.create(
-                id_clasif_serie_subserie_unidad_tca = clasif_serie_subserie_unidad_TCA,
+            cargo_unidad_serie_subserie_undorg_tca= PermisosCatSeriesUnidadOrgTCA.objects.create(
+                id_cat_serie_unidad_org_ccd_trd_tca = clasif_serie_subserie_unidad_TCA,
                 id_cargo_persona = cargo_persona,
                 id_unidad_org_cargo = unidad_org_persona
             )
     permisos_serializer_list = []
     for permiso in permisos_validados_list:
-        permiso_cargo_unidad_s_ss_unidad_tca = PermisosCargoUnidadSerieSubserieUnidadTCA.objects.create(
-            id_cargo_unidad_s_ss_unidad_tca = cargo_unidad_serie_subserie_undorg_tca,
+        permiso_cargo_unidad_s_ss_unidad_tca = PermisosDetPermisosCatSerieUndOrgTCA.objects.create(
+            id_permisos_catserie_unidad_tca = cargo_unidad_serie_subserie_undorg_tca,
             cod_permiso = permiso 
         )
         permisos_serializer_list.append(permiso_cargo_unidad_s_ss_unidad_tca)
@@ -354,7 +354,7 @@ def asignar_cargo_unidad_permiso_expediente(request):
 def actualizar_cargo_unidad_permiso_expediente(request,pk):
     data = request.data
     try:
-        cargo_unidad_serie_subserie_undorg_tca = Cargos_Unidad_S_Ss_UndOrg_TCA.objects.get(id_cargo_unidad_s_subserie_unidad_org_tca=pk)
+        cargo_unidad_serie_subserie_undorg_tca = PermisosCatSeriesUnidadOrgTCA.objects.get(id_cargo_unidad_s_subserie_unidad_org_tca=pk)
         entry__previous=copy.copy(cargo_unidad_serie_subserie_undorg_tca)
 
     except:
@@ -367,7 +367,7 @@ def actualizar_cargo_unidad_permiso_expediente(request,pk):
     if len(data.getlist('permisos')) != len(permisos_validados_list):
         return Response({'success':False, 'detail':'Uno de los permisos ingresados no existe'}, status=status.HTTP_400_BAD_REQUEST)
     
-    permisos_validados_list = PermisosCargoUnidadSerieSubserieUnidadTCA.objects.filter(id_cargo_unidad_s_ss_unidad_tca=cargo_unidad_serie_subserie_undorg_tca.id_cargo_unidad_s_subserie_unidad_org_tca)
+    permisos_validados_list = PermisosDetPermisosCatSerieUndOrgTCA.objects.filter(id_permisos_catserie_unidad_tca=cargo_unidad_serie_subserie_undorg_tca.id_cargo_unidad_s_subserie_unidad_org_tca)
     lista_de_permisos = [x.cod_permiso.tipo_permiso for x in permisos_validados_list]
     string_permisos = ' | '.join(lista_de_permisos)
     
@@ -377,8 +377,8 @@ def actualizar_cargo_unidad_permiso_expediente(request,pk):
     permisos_serializer_list = []
     
     for permiso in lista_crear:
-        permiso_cargo_unidad_s_ss_unidad_tca = PermisosCargoUnidadSerieSubserieUnidadTCA.objects.create(
-            id_cargo_unidad_s_ss_unidad_tca = cargo_unidad_serie_subserie_undorg_tca,
+        permiso_cargo_unidad_s_ss_unidad_tca = PermisosDetPermisosCatSerieUndOrgTCA.objects.create(
+            id_cargo_id_permisos_catserie_unidad_tcaunidad_s_ss_unidad_tca = cargo_unidad_serie_subserie_undorg_tca,
             cod_permiso = PermisosGD.objects.get(cod_permiso_gd=permiso) 
         )
         permisos_serializer_list.append(permiso_cargo_unidad_s_ss_unidad_tca)
@@ -394,8 +394,8 @@ def actualizar_cargo_unidad_permiso_expediente(request,pk):
             cargo_unidad_serie_subserie_undorg_tca.justificacion_del_cambio = justificacion_cambio
             cargo_unidad_serie_subserie_undorg_tca.ruta_archivo_cambio = ruta_archivo_cambio
             cargo_unidad_serie_subserie_undorg_tca.save()
-            HistoricoCargosUnidadSerieSubserieUnidadTCA.objects.create(
-                id_cargo_unidad_s_ss_unidad_tca = cargo_unidad_serie_subserie_undorg_tca,
+            HistoricoPermisosCatSeriesUndOrgTCA.objects.create(
+                id_permisos_catserie_unidad_tca = cargo_unidad_serie_subserie_undorg_tca,
                 nombre_permisos = string_permisos,
                 justificacion= cargo_unidad_serie_subserie_undorg_tca.justificacion_del_cambio,
                 ruta_archivo= cargo_unidad_serie_subserie_undorg_tca.ruta_archivo_cambio,
@@ -418,7 +418,7 @@ def actualizar_cargo_unidad_permiso_expediente(request,pk):
 
 class EliminarCargoUnidadPermisoExp(generics.DestroyAPIView):
     serializer_class = Cargos_Unidad_S_Ss_UndOrg_TCASerializer
-    queryset = Cargos_Unidad_S_Ss_UndOrg_TCA.objects.all()
+    queryset = PermisosCatSeriesUnidadOrgTCA.objects.all()
     permission_classes = [IsAuthenticated]
     
     def delete(self, request, pk):
@@ -455,7 +455,7 @@ class FinalizarTablaControlAcceso(generics.UpdateAPIView):
                 series_subseries_unidades = CatalogosSeriesUnidad.objects.filter(id_catalogo_serie__id_serie_doc__in=series_list)
                 series_subseries_unidades_list = [serie_subserie_unidad.id_cat_serie_und for serie_subserie_unidad in series_subseries_unidades]
 
-                clasif_expedientes_tca = Clasif_Serie_Subserie_Unidad_TCA.objects.filter(id_cat_serie_und__in=series_subseries_unidades_list)
+                clasif_expedientes_tca = CatSeriesUnidadOrgCCD_TRD_TCA.objects.filter(id_cat_serie_und__in=series_subseries_unidades_list)
                 clasif_expedientes_tca_list = [clasif_expediente.id_cat_serie_und.id_cat_serie_und for clasif_expediente in clasif_expedientes_tca]
 
                 if not set(series_subseries_unidades_list).issubset(clasif_expedientes_tca_list):
