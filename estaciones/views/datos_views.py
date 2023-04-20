@@ -46,7 +46,7 @@ class ConsultarDatosFecha(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        queryset = Datos.objects.all().using("bia-estaciones")
+        # queryset = Datos.objects.all().using("bia-estaciones")
 
         # Obtener los parámetros de consulta de la URL
         fecha_inicial = self.kwargs.get('fecha_inicial')
@@ -55,8 +55,8 @@ class ConsultarDatosFecha(generics.ListAPIView):
 
         # Filtrar los datos por fecha si se especificaron los parámetros de consulta
         if fecha_inicial and fecha_final and pk:
-            queryset = queryset.filter(fecha_registro__range=[
-                                       fecha_inicial, fecha_final], id_estacion=pk)
+            queryset = Datos.objects.filter(fecha_registro__range=[
+                                       fecha_inicial, fecha_final], id_estacion=pk).using("bia-estaciones")
 
         return queryset
 
