@@ -39,8 +39,7 @@ from django.utils import encoding, http
 import copy, re
 from django.http import HttpResponsePermanentRedirect
 from django.contrib.sessions.models import Session
-from django.core.exceptions import ValidationError
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound,ValidationError
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -1319,18 +1318,16 @@ class GetByIdUsuario(generics.RetrieveAPIView):
     
 
 class RecuperarNombreDeUsuario(generics.UpdateAPIView):
-    
     serializer_class = RecuperarUsuarioSerializer
     queryset = User.objects.all()
     
     def put(self,request):
-        
         data = request.data
         
-        serializer = self.serializer_class(data=data)
-        serializer.is_valid(raise_exception=True)
+        if not data.get('tipo_documento') or not data.get('numero_documento') or not data.get('email'):
+            raise ValidationError('Debe ingresar los parámetros respectivos: tipo de documento, número de documento, email')
         
-        persona = Personas.objects.filter(tipo_documento = data['tipo_documento'], numero_documento= data['numero_documento'],email = data['email']).first()
+        persona = Personas.objects.filter(tipo_documento=data['tipo_documento'], numero_documento=data['numero_documento'], email=data['email']).first()
         
         if persona:
             usuario = self.queryset.all().filter(persona = persona.id_persona).exclude(id_usuario=1).first()
@@ -1342,11 +1339,8 @@ class RecuperarNombreDeUsuario(generics.UpdateAPIView):
 
                 Util.notificacion(persona,subject,template,nombre_de_ususario=usuario.nombre_de_usuario)
 
-                return Response ({'success':True,'detail':' Se ha enviado el correo'},status=status.HTTP_200_OK)
+                return Response({'success':True,'detail':'Se ha enviado el correo'},status=status.HTTP_200_OK)
             
             else:
                 raise NotFound('No existe usuario') 
-        raise NotFound('No existe usuario')      
-            
-            
-        
+        raise NotFound('No existe usuario')
