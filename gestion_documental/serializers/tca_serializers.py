@@ -25,14 +25,20 @@ class TCAPostSerializer(serializers.ModelSerializer):
     version = serializers.CharField(validators=[UniqueValidator(queryset=TablasControlAcceso.objects.all(), message='La versión de la Tabla de Control de Acceso debe ser único')])
     nombre = serializers.CharField(validators=[UniqueValidator(queryset=TablasControlAcceso.objects.all(), message='El nombre de la Tabla de Control de Acceso debe ser único')])
 
+    def validate_id_trd(self, trd):
+        if trd.fecha_terminado == None:
+            raise serializers.ValidationError('No se puede seleccionar una TRD que no esté terminada')
+
+        return trd
+
     class Meta:
         model = TablasControlAcceso
-        fields = ['id_tca', 'id_trd', 'version', 'nombre']
+        fields = ['id_trd', 'version', 'nombre', 'id_tca']
         extra_kwargs = {
             'id_tca': {'read_only': True},
-            'id_trd': {'required': True},
-            'version': {'required': True},
-            'nombre': {'required': True}
+            'id_trd': {'required': True, 'allow_null':False},
+            'version': {'required': True, 'allow_null':False, 'allow_blank':False},
+            'nombre': {'required': True, 'allow_null':False, 'allow_blank':False}
         }
 
 class TCAPutSerializer(serializers.ModelSerializer):
@@ -55,11 +61,11 @@ class ClasifSerieSubserieUnidadTCASerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'id_cat_serie_unidad_org_ccd_trd_tca': {'read_only': True},
             'id_tca': {'required': True},
-            'id_cat_serie_und': {'required': True},
+            'id_cat_serie_und_ccd_trd': {'required': True},
             'cod_clas_expediente': {'required': True},
             'fecha_registro': {'read_only': True},
             'justificacion_cambio': {'read_only': True},
-            'ruta_archivo_cambio': {'read_only': True}
+            'ruta_archivo_cambio': {'read_only': True},
         }
         validators = [
            UniqueTogetherValidator(
@@ -331,3 +337,25 @@ class PermisosCargoUnidadSerieSubserieUnidadTCASerializer(serializers.ModelSeria
     class Meta:
         model = PermisosDetPermisosCatSerieUndOrgTCA
         fields = '__all__'
+
+class BusquedaTCASerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TablasControlAcceso
+        fields =['nombre','version','actual','fecha_terminado','fecha_puesta_produccion','fecha_retiro_produccion']
+
+class GetSeriesSubSUnidadOrgTCASerializer(serializers.ModelSerializer):
+    nombre_unidad = serializers.ReadOnlyField(source='id_cat_serie_und_ccd_trd.id_unidad_organizacional.nombre',default =None)
+    cod_unidad_org = serializers.ReadOnlyField(source='id_cat_serie_und_ccd_trd.id_unidad_organizacional.id_unidad_organizacional',default =None)
+    nombre_serie = serializers.ReadOnlyField(source='id_cat_serie_und_ccd_trd.id_catalogo_serie.id_serie_doc.nombre', default=None)
+    cod_serie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_serie_doc.codigo', default=None)
+    nombre_subserie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.nombre', default=None)
+    cod_subserie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.codigo', default=None)
+    tipo_clasificacion = serializers.ReadOnlyField(source='cod_clas_expediente')
+    # id_trd = serializers.ReadOnlyField(source='id_tca.id_trd')
+    # id_tca = serializers.ReadOnlyField(source='id_tca')
+    # version = serializers.ReadOnlyField(source='id_trd.version')
+    
+    class Meta:
+        model = CatSeriesUnidadOrgCCD_TRD_TCA
+        fields = ['nombre_unidad','cod_unidad_org','nombre_serie','cod_serie','nombre_subserie','cod_subserie','tipo_clasificacion'] 
+

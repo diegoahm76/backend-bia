@@ -3,7 +3,7 @@ from gestion_documental.models.trd_models import (
     TablaRetencionDocumental,
     TiposMediosDocumentos,
     FormatosTiposMedio,
-    TipologiasDocumentales,
+    TipologiasDoc,
     FormatosTiposMedioTipoDoc,
     DisposicionFinalSeries,
     CatSeriesUnidadOrgCCDTRD,
@@ -37,7 +37,7 @@ admin.site.register(CatalogosSeriesUnidad),
 
 #TRD
 admin.site.register(TablaRetencionDocumental),
-admin.site.register(TipologiasDocumentales),
+admin.site.register(TipologiasDoc),
 admin.site.register(TiposMediosDocumentos),
 admin.site.register(FormatosTiposMedio),
 admin.site.register(FormatosTiposMedioTipoDoc),

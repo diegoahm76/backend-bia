@@ -2,21 +2,22 @@ from rest_framework import serializers
 from rest_framework.serializers import ReadOnlyField
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from gestion_documental.models.trd_models import (
-    TipologiasDocumentales,
+    TipologiasDoc,
     TablaRetencionDocumental,
     FormatosTiposMedio,
     CatSeriesUnidadOrgCCDTRD,
     SeriesSubSUnidadOrgTRDTipologias
 )
 from gestion_documental.choices.tipos_medios_formato_choices import tipos_medios_formato_CHOICES
+from almacen.models.organigrama_models import UnidadesOrganizacionales
 
 class TipologiasDocumentalesSerializer(serializers.ModelSerializer):
     class Meta:
-        model = TipologiasDocumentales
+        model = TipologiasDoc
         fields = '__all__'
         # validators = [
         #    UniqueTogetherValidator(
-        #        queryset=TipologiasDocumentales.objects.all(),
+        #        queryset=TipologiasDoc.objects.all(),
         #        fields = ['id_trd', 'codigo'],
         #        message='No puede registrar más de una tipología con el mismo código para esta TRD'
         #    ),
@@ -30,7 +31,7 @@ class TipologiasDocumentalesSerializer(serializers.ModelSerializer):
 class TipologiasDocumentalesPutSerializer(serializers.ModelSerializer):
     # formatos = serializers.ListField(child=serializers.IntegerField(), read_only=True)
     class Meta:
-        model = TipologiasDocumentales
+        model = TipologiasDoc
         fields = ('id_tipologia_documental', 'nombre', 'cod_tipo_medio_doc')
         # validators = [
         #    UniqueTogetherValidator(
@@ -159,10 +160,18 @@ class SeriesSubSeriesUnidadesOrgTRDPutSerializer(serializers.ModelSerializer):
         }
 
 class GetSeriesSubSUnidadOrgTRDSerializer(serializers.ModelSerializer):
+    nombre_unidad = serializers.ReadOnlyField(source='id_cat_serie_und.id_unidad_organizacional.nombre',default =None)
+    cod_unidad_org = serializers.ReadOnlyField(source='id_cat_serie_und.id_unidad_organizacional.id_unidad_organizacional',default =None)
+    nombre_serie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_serie_doc.nombre', default=None)
+    cod_serie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_serie_doc.codigo', default=None)
+    nombre_subserie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.nombre', default=None)
+    cod_subserie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.codigo', default=None)
+    disposicion_final = serializers.ReadOnlyField(source='cod_disposicion_final.cod_disposicion_final', default=None)
+    # version = serializers.ReadOnlyField(source='id_trd.version')
     
     class Meta:
         model = CatSeriesUnidadOrgCCDTRD
-        fields = '__all__'
+        fields = ['id_catserie_unidadorg','nombre_unidad','cod_unidad_org','nombre_serie','cod_serie','nombre_subserie','cod_subserie','disposicion_final'] 
 
 
 class GetSeriesSubSUnidadOrgTRDTipologiasSerializer(serializers.ModelSerializer):
@@ -174,5 +183,5 @@ class GetSeriesSubSUnidadOrgTRDTipologiasSerializer(serializers.ModelSerializer)
 
 class GetTipologiasDocumentalesSerializer(serializers.ModelSerializer):
     class Meta:
-        model = TipologiasDocumentales
+        model = TipologiasDoc
         fields = '__all__'
