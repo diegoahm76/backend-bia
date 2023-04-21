@@ -10,14 +10,18 @@ from datetime import datetime
 
 class ConsultarDatosId(generics.ListAPIView):
     serializer_class = DatosSerializer
-    queryset = Datos.objects.all().using("bia-estaciones")
+    # queryset = Datos.objects.all().using("bia-estaciones")
     permission_classes = [IsAuthenticated]
 
     def get(self, requet, pk):
-        estaciones = self.queryset.filter(id_estacion=pk)
+        estaciones = Datos.objects.filter(id_estacion=pk).values(
+                'id_data','fecha_registro','id_estacion','temperatura_ambiente','humedad_ambiente',
+                'presion_barometrica','velocidad_viento','direccion_viento','precipitacion',
+                'luminosidad','nivel_agua','velocidad_agua'
+            ).using("bia-estaciones")
         if estaciones:
-            serializador = self.serializer_class(estaciones, many=True)
-            return Response({'success': True, 'detail': 'Se encontraron los siguentes datos', 'data': serializador.data}, status=status.HTTP_200_OK)
+            # serializador = self.serializer_class(estaciones, many=True)
+            return Response({'success': True, 'detail': 'Se encontraron los siguentes datos', 'data': estaciones}, status=status.HTTP_200_OK)
         else:
             return Response({'success': True, 'detail': 'No se encontraron datos'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -46,8 +50,6 @@ class ConsultarDatosFecha(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        queryset = Datos.objects.all().using("bia-estaciones")
-
         # Obtener los parámetros de consulta de la URL
         fecha_inicial = self.kwargs.get('fecha_inicial')
         fecha_final = self.kwargs.get('fecha_final')
@@ -55,8 +57,12 @@ class ConsultarDatosFecha(generics.ListAPIView):
 
         # Filtrar los datos por fecha si se especificaron los parámetros de consulta
         if fecha_inicial and fecha_final and pk:
-            queryset = queryset.filter(fecha_registro__range=[
-                                       fecha_inicial, fecha_final], id_estacion=pk)
+            queryset = Datos.objects.filter(fecha_registro__range=[
+                                       fecha_inicial, fecha_final], id_estacion=pk).using("bia-estaciones").values(
+                'id_data','fecha_registro','id_estacion','temperatura_ambiente','humedad_ambiente',
+                'presion_barometrica','velocidad_viento','direccion_viento','precipitacion',
+                'luminosidad','nivel_agua','velocidad_agua'
+            )
 
         return queryset
 
@@ -64,8 +70,8 @@ class ConsultarDatosFecha(generics.ListAPIView):
         queryset = self.get_queryset()
 
         if queryset:
-            serializador = self.serializer_class(queryset, many=True)
-            return Response({'success': True, 'detail': 'Se encontraron los siguientes datos', 'data': serializador.data}, status=status.HTTP_200_OK)
+            # serializador = self.serializer_class(queryset, many=True)
+            return Response({'success': True, 'detail': 'Se encontraron los siguientes datos', 'data': queryset}, status=status.HTTP_200_OK)
         else:
             return Response({'success': True, 'detail': 'No se encontraron datos'}, status=status.HTTP_200_OK)
 
@@ -74,7 +80,7 @@ class ConsultarDatosFecha(generics.ListAPIView):
 
 class ConsultarDatosReportes(generics.ListAPIView):
     serializer_class = DatosSerializerNombre
-    queryset = Datos.objects.all().using("bia-estaciones")
+    # queryset = Datos.objects.all().using("bia-estaciones")
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
@@ -89,12 +95,16 @@ class ConsultarDatosReportes(generics.ListAPIView):
         except ValueError:
             return Response({'success': False, 'detail': 'El mes debe estar en el formato YYYY-MM'}, status=status.HTTP_400_BAD_REQUEST)
 
-        datos = self.queryset.filter(fecha_registro__range=[
-                                     fecha_inicio, fecha_fin], id_estacion=pk)
+        datos = Datos.objects.filter(fecha_registro__range=[
+                                     fecha_inicio, fecha_fin], id_estacion=pk).values(
+                'id_data','fecha_registro','id_estacion','temperatura_ambiente','humedad_ambiente',
+                'presion_barometrica','velocidad_viento','direccion_viento','precipitacion',
+                'luminosidad','nivel_agua','velocidad_agua'
+            ).using("bia-estaciones").using("bia-estaciones")
 
         if datos:
-            serializador = self.serializer_class(datos, many=True)
-            return Response({'success': True, 'detail': 'Se encontraron los siguientes datos', 'data': serializador.data}, status=status.HTTP_200_OK)
+            #serializador = self.serializer_class(datos, many=True)
+            return Response({'success': True, 'detail': 'Se encontraron los siguientes datos', 'data': datos}, status=status.HTTP_200_OK)
         else:
             return Response({'success': True, 'detail': 'No se encontraron datos'}, status=status.HTTP_404_NOT_FOUND)
 
