@@ -656,6 +656,8 @@ class SearchFuncionarioResponsable(generics.ListAPIView):
             raise NotFound('No se encontró a la persona')
         
         unidad_solicita_instance = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=unidad_solicita).first()
+        if not unidad_solicita_instance:
+            raise ValidationError('Debe enviar una unidad para la que solicita existente')
         
         unidades_iguales_y_arriba = UtilAlmacen.get_unidades_actual_iguales_y_arriba(unidad_solicita_instance)
             
@@ -680,6 +682,8 @@ class SearchFuncionarioResponsableFiltros(generics.ListAPIView):
             raise ValidationError('Debe enviar mínimo la unidad a la que solicita')
         
         unidad_solicita_instance = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=unidad_solicita).first()
+        if not unidad_solicita_instance:
+            raise ValidationError('Debe enviar una unidad para la que solicita existente')
         
         unidades_iguales_y_arriba = UtilAlmacen.get_unidades_actual_iguales_y_arriba(unidad_solicita_instance)
         
