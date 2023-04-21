@@ -59,7 +59,7 @@ class CatSeriesUnidadOrgCCD_TRD_TCA(models.Model):
     cod_clas_expediente=models.CharField(max_length=1,choices=tipo_clasificacion_CHOICES,db_column='T215Cod_ClasificacionExp')
     fecha_registro=models.DateTimeField(auto_now_add=True, db_column='T215fechaRegistro')
     justificacion_cambio=models.CharField(max_length=255,db_column='T215justificacionDelCambio',blank=True,null=True)
-    ruta_archivo_cambio=models.FileField(db_column='T215rutaArchivoCambio',blank=True,null=True)
+    ruta_archivo_cambio=models.FileField(max_length=500, db_column='T215rutaArchivoCambio',blank=True,null=True)
     
     def __str__(self):
         return str(self.id_cat_serie_unidad_org_ccd_trd_tca)
@@ -83,7 +83,7 @@ class HistoricoCatSeriesUnidadOrgCCD_TRD_TCA(models.Model):
     cod_clasificacion_exp=models.CharField(max_length=1,choices=tipo_clasificacion_CHOICES,db_column='T220CodClasificacionExp')
     fecha_inicio=models.DateTimeField(auto_now_add=True,db_column='T220fechaInicio')
     justificacion_del_cambio=models.CharField(max_length=255,blank=True,null=True,db_column='T220justificacionDelCambio')
-    ruta_archivo_cambio=models.FileField(blank=True,null=True,db_column='T220rutaArchivoCambio')
+    ruta_archivo_cambio=models.FileField(max_length=255, blank=True,null=True,db_column='T220rutaArchivoCambio')
     id_persona_cambia=models.ForeignKey(Personas,on_delete=models.CASCADE,db_column='T220Id_personaCambia')
 
     def __str__(self):
@@ -108,7 +108,7 @@ class PermisosCatSeriesUnidadOrgTCA(models.Model):
     id_cargo_persona= models.ForeignKey(Cargos,on_delete=models.CASCADE,db_column='T221Id_CargoPersona')
     fecha_configuracion=models.DateTimeField(auto_now=True,db_column='T221fechaConfiguracion')
     justificacion_del_cambio=models.CharField(max_length=255,blank=True,null=True,db_column='T221justificacionDelCambio')
-    ruta_archivo_cambio=models.FileField(blank=True,null=True,db_column='T221rutaArchivoCambio')
+    ruta_archivo_cambio=models.FileField(max_length=255, blank=True,null=True,db_column='T221rutaArchivoCambio')
     
     def __str__(self):
         return str(self.id_permisos_catserie_unidad_tca)    
@@ -143,7 +143,7 @@ class HistoricoPermisosCatSeriesUndOrgTCA(models.Model):
     fecha_inicio = models.DateTimeField(auto_now_add=True, db_column='T223fechaIncioConfiguracion')
     nombre_permisos = models.CharField(max_length=255, db_column='T223nombrePermisos')
     justificacion = models.CharField(max_length=255, blank=True, null=True, db_column='T223justificacion')
-    ruta_archivo = models.FileField(blank=True, null=True, db_column='T223rutaArchivo')
+    ruta_archivo = models.FileField(max_length=255 ,blank=True, null=True, db_column='T223rutaArchivo')
     id_persona_cambia = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T223Id_PersonaCambia')
 
     def __str__(self):
