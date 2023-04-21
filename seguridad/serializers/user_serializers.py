@@ -214,6 +214,8 @@ class LoginSerializer(serializers.ModelSerializer):
     tipo_usuario = serializers.CharField(read_only=True)
     id_persona = serializers.IntegerField(read_only=True)
     tipo_persona = serializers.CharField(read_only=True)
+    id_unidad_organizacional_actual = serializers.IntegerField(read_only=True)
+    nombre_unidad_organizacional = serializers.CharField(read_only=True)
     activated_at = serializers.DateTimeField(read_only=True)
     profile_img = serializers.CharField(read_only=True)
     permisos = serializers.DictField(read_only=True)
@@ -221,7 +223,7 @@ class LoginSerializer(serializers.ModelSerializer):
     
     class Meta:
         model=Login
-        fields= ['email', 'password', 'nombre_de_usuario', 'nombre', 'tokens', 'is_superuser', 'id_usuario', 'tipo_usuario', 'id_persona', 'tipo_persona', 'activated_at', 'profile_img', 'permisos', 'representante_legal']
+        fields= ['email', 'password', 'nombre_de_usuario', 'nombre', 'tokens', 'is_superuser', 'id_usuario', 'tipo_usuario', 'id_persona', 'tipo_persona', 'id_unidad_organizacional_actual', 'nombre_unidad_organizacional', 'activated_at', 'profile_img', 'permisos', 'representante_legal']
     
     def validate(self, attrs):
         nombre_de_usuario = attrs.get('nombre_de_usuario', '')
@@ -261,6 +263,8 @@ class LoginSerializer(serializers.ModelSerializer):
             'tipo_usuario': user.tipo_usuario,
             'id_persona': user.persona.id_persona,
             'tipo_persona': user.persona.tipo_persona,
+            'id_unidad_organizacional_actual': user.persona.id_unidad_organizacional_actual.id_unidad_organizacional if user.persona.id_unidad_organizacional_actual else None,
+            'nombre_unidad_organizacional': user.persona.id_unidad_organizacional_actual.nombre if user.persona.id_unidad_organizacional_actual else None,
             'activated_at': user.activated_at,
             'profile_img': user.profile_img
         }
