@@ -318,6 +318,10 @@ class GetEstructuraMenu(ListAPIView):
         for item in hierarchy:
             if item.get("subsistema") == subsistema and item.get("id_menu") == id_menu:
                 item["modulos"].append(permiso_modulo['modulos'])
+            if item.get("submenus"):
+                updated_submenus = self.find_and_update_item(item.get("submenus"), subsistema, id_menu, permiso_modulo)
+                if updated_submenus:
+                    item['submenus'] = updated_submenus
         return hierarchy
     
     def filter_hierarchy(self, hierarchy):
@@ -327,7 +331,7 @@ class GetEstructuraMenu(ListAPIView):
                 submenus = node.get('submenus', [])
                 filtered_submenus = self.filter_hierarchy(submenus)
                 if filtered_submenus:
-                    node['filhos'] = filtered_submenus
+                    node['submenus'] = filtered_submenus
                 if node.get('modulos') or filtered_submenus:
                     filtered_hierarchy.append(node)
         return filtered_hierarchy
@@ -347,6 +351,7 @@ class GetEstructuraMenu(ListAPIView):
                 hierarchy.append(self.get_hierarchy(estructura))
                 
         permisos_modulo = util_prueba(id_usuario,tipo_entorno)
+        print("hierarchy: ", hierarchy)
         
         for permiso_modulo in permisos_modulo:
             hierarchy_2 = self.find_and_update_item(hierarchy, permiso_modulo['subsistema'], permiso_modulo['id_menu'], permiso_modulo)
