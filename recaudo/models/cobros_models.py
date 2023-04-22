@@ -1,10 +1,10 @@
 from django.db import models
-from recaudo.models.liquidaciones_models import LiquidacionesBase
+from recaudo.models.liquidaciones_models import LiquidacionesBase, Deudores
 
 
 class DocumentosCobro(models.Model):
     id = models.AutoField(primary_key=True, db_column='T405id')
-    cod_deudor = models.IntegerField(db_column='T405cod_deudor')
+    cod_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T405cod_deudor')
     fecha_cobro = models.DateTimeField(db_column='T405fecha_cobro')
     vencimiento = models.DateTimeField(db_column='T405vencimiento')
     valor_deuda = models.IntegerField(default=0, db_column='T405valor_deuda')
@@ -32,22 +32,6 @@ class DetalleDocumentosCobro(models.Model):
         db_table = 'T406detalles_documentos_cobro'
         verbose_name = 'Detalle documentos cobro'
         verbose_name_plural = 'Detalles documentos cobro'
-
-
-class Deudores(models.Model):
-    codigo = models.AutoField(primary_key=True, db_column='T410codigo')
-    identificacion = models.CharField(max_length=255, db_column='T410identificacion')
-    nombres = models.CharField(max_length=255, db_column='T410nombres')
-    apellidos = models.CharField(max_length=255, db_column='T410apellidos')
-    telefono = models.CharField(max_length=255, db_column='T410telefono')
-    email = models.CharField(max_length=255, db_column='T410email')
-    ubicacion_id = models.IntegerField(db_column='T41oubicacion_id') #posible foranea
-    naturaleza_juridica_id = models.IntegerField(db_column='T410naturaleza_juridica_id')
-
-    class Meta:
-        db_table = 'T410deudores'
-        verbose_name = 'Deudor'
-        verbose_name_plural = 'Deudores'
 
 
 class Expedientes(models.Model):
@@ -78,13 +62,13 @@ class Obligaciones(models.Model):
 
 class Cartera(models.Model):
     id = models.AutoField(primary_key=True, db_column='T417id')
-    id_obligacion = models.IntegerField(db_column='T417id_obligacion') #posible foranea
+    id_obligacion = models.IntegerField(db_column='T417id_obligacion')
     dias_mora = models.IntegerField(db_column='T417dias_mora')
     valor_intereses = models.DecimalField(max_digits=30, decimal_places=2, db_column='T417valor_intereses')
     valor_sancion = models.DecimalField(max_digits=30, decimal_places=2, db_column='T417valor_sancion')
     inicio = models.DateField(db_column='T417inicio')
     fin = models.DateField(db_column='T417fin')
-    id_rango = models.IntegerField(db_column='T417id_rango')  #posible foranea
+    id_rango = models.IntegerField(db_column='T417id_rango')
     codigo_contable = models.CharField(max_length=255, db_column='T417codigo_contable')
     fecha_facturacion = models.DateField(db_column='T417fecha_facturacion')
     numero_factura = models.CharField(max_length=255, db_column='T417numero_factura')

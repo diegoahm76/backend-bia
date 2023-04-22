@@ -1,5 +1,21 @@
 from django.db import models
-from recaudo.models.base_models import VariablesBase
+from recaudo.models.base_models import VariablesBase, NaturalezaJuridica, Ubicaciones
+
+
+class Deudores(models.Model):
+    codigo = models.AutoField(primary_key=True, db_column='T410codigo')
+    identificacion = models.CharField(max_length=255, db_column='T410identificacion')
+    nombres = models.CharField(max_length=255, db_column='T410nombres')
+    apellidos = models.CharField(max_length=255, db_column='T410apellidos')
+    telefono = models.CharField(max_length=255, db_column='T410telefono')
+    email = models.CharField(max_length=255, db_column='T410email')
+    ubicacion_id = models.ForeignKey(Ubicaciones, on_delete=models.CASCADE, db_column='T41oubicacion_id') #posible foranea
+    naturaleza_juridica_id = models.ForeignKey(NaturalezaJuridica, on_delete=models.CASCADE ,db_column='T410naturaleza_juridica_id')
+
+    class Meta:
+        db_table = 'T410deudores'
+        verbose_name = 'Deudor'
+        verbose_name_plural = 'Deudores'
 
 
 class OpcionesLiquidacionBase(models.Model):
@@ -19,7 +35,7 @@ class OpcionesLiquidacionBase(models.Model):
 class LiquidacionesBase(models.Model):
     id = models.AutoField(primary_key=True, db_column="T403id")
     id_opcion_liq = models.ForeignKey(OpcionesLiquidacionBase, db_column="T403id_opcion_liq", on_delete=models.CASCADE)
-    cod_deudor = models.IntegerField(db_column="T403cod_deudor")
+    cod_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column="T403cod_deudor")
     cod_expediente = models.IntegerField(db_column="T403cod_expediente")
     fecha_liquidacion = models.DateTimeField(db_column="T403fecha_liquidacion")
     vencimiento = models.DateTimeField(db_column="T403vencimiento")

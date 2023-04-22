@@ -27,7 +27,7 @@ class NaturalezaJuridica(models.Model):
 class Ubicaciones(models.Model):
     id = models.AutoField(primary_key=True, db_column='T409id')
     nombre = models.CharField(max_length=255, db_column='T409nombre')
-    id_ubicacion_padre = models.IntegerField(db_column='T409id_ubicacion_padre')
+    id_ubicacion_padre = models.ForeignKey('self', blank=True, null=True, on_delete=models.CASCADE, db_column='T409id_ubicacion_padre')
 
     class Meta:
         db_table = 'T409ubicaciones'
