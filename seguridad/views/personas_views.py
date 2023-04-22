@@ -1291,7 +1291,7 @@ class ActualizarPersonasNatCamposRestringidosView(generics.UpdateAPIView):
                         historico = HistoricoCambiosIDPersonas.objects.create(
                             id_persona=persona,
                             nombre_campo_cambiado=field,
-                            valor_campo_cambiado=valor_previous,
+                            valor_campo_cambiado=valor_previous if valor_previous!=None else "",
                             ruta_archivo_soporte=request.data.get('ruta_archivo_soporte', ''),
                             justificacion_cambio=request.data.get('justificacion', ''),
                         )
@@ -1330,7 +1330,7 @@ class ActualizarPersonasJurCamposRestringidosView(generics.UpdateAPIView):
 
         data = request.data
         persona_log = request.user.persona.id_persona
-        persona = self.querysetF.all().filter(id_persona=id_persona).first()
+        persona = self.queryset.all().filter(id_persona=id_persona).first()
         if persona:
             previous_persona = copy.copy(persona)
 
@@ -1354,13 +1354,11 @@ class ActualizarPersonasJurCamposRestringidosView(generics.UpdateAPIView):
                 
                 if field != 'ruta_archivo_soporte' and field != "justificacion":
                     valor_previous= getattr(persona,field)
-                    print ("AQUIII", valor_previous)
-                    print("FIELD",field)
                     if value != valor_previous:
                         historico = HistoricoCambiosIDPersonas.objects.create(
                             id_persona=persona,
                             nombre_campo_cambiado=field,
-                            valor_campo_cambiado=valor_previous,
+                            valor_campo_cambiado=valor_previous if valor_previous!=None else "",
                             ruta_archivo_soporte=request.data.get('ruta_archivo_soporte', ''),
                             justificacion_cambio=request.data.get('justificacion', ''),
                         )
