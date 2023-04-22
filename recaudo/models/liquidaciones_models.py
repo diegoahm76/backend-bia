@@ -42,5 +42,5 @@ class DetalleLiquidacionBase(models.Model):
 
     class Meta:
         db_table = "T404detalles_liquidaciones_base"
-        verbose_name = 'Opcion liquidación base'
-        verbose_name_plural = 'Opciones liquidación base'
+        verbose_name = 'Detalle liquidación base'
+        verbose_name_plural = 'Detalles liquidación base'
