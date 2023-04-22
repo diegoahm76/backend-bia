@@ -6,7 +6,8 @@ from seguridad.models import (
     Permisos, 
     PermisosModulo, 
     PermisosModuloRol,
-    Modulos
+    Modulos,
+    EstructuraMenus
 )
 
 class ModulosSerializers(serializers.ModelSerializer):
@@ -37,6 +38,21 @@ class PermisosModuloRolSerializer(serializers.ModelSerializer):
     id_permiso_modulo = PermisosModuloSerializer(read_only=True)
     class Meta:
         model = PermisosModuloRol
+        fields = '__all__'
+
+class GetEstructuraMenusSerializer(serializers.ModelSerializer):
+    desc_subsistema = serializers.SerializerMethodField()
+    
+    def get_desc_subsistema(self, obj):
+        desc_subsistema = None
+        
+        diccionario_subsistemas = dict((x,y) for x,y in subsistemas_CHOICES) # transforma un choices en un diccionario
+        desc_subsistema = diccionario_subsistemas[obj.subsistema] if obj.subsistema else None
+        
+        return desc_subsistema
+    
+    class Meta:
+        model = EstructuraMenus
         fields = '__all__'
 
 class GetPermisosRolSerializer(serializers.ModelSerializer):
@@ -121,7 +137,7 @@ class ModulosRolEntornoSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Modulos
-        fields = ['id_modulo', 'nombre_modulo', 'descripcion', 'subsistema', 'desc_subsistema', 'ruta_formulario', 'nombre_icono', 'permisos']
+        fields = ['id_modulo', 'nombre_modulo', 'descripcion', 'subsistema', 'desc_subsistema', 'ruta_formulario', 'nombre_icono', 'id_menu', 'permisos']
 
 class PermisosModuloRolSerializerHyper(serializers.HyperlinkedModelSerializer):
     class Meta:
