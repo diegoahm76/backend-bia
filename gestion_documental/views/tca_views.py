@@ -9,6 +9,8 @@ from rest_framework.permissions import IsAuthenticated
 from almacen.serializers.organigrama_serializers import UnidadesGetSerializer
 from almacen.models.organigrama_models import UnidadesOrganizacionales
 from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
+from gestion_documental.models.trd_models import TablaRetencionDocumental, CatSeriesUnidadOrgCCDTRD
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from seguridad.serializers.personas_serializers import CargosSerializer
 from gestion_documental.serializers.tca_serializers import (
     TCASerializer,
@@ -20,7 +22,9 @@ from gestion_documental.serializers.tca_serializers import (
     PermisosCargoUnidadSerieSubserieUnidadTCASerializer,
     Cargos_Unidad_S_Ss_UndOrg_TCASerializer,
     CatalogosSeriesUnidadClasifSerializer,
-    CatalogosSeriesUnidadClasifPermisosSerializer
+    CatalogosSeriesUnidadClasifPermisosSerializer,
+    BusquedaTCASerializer,
+    GetSeriesSubSUnidadOrgTCASerializer
 
 )
 from gestion_documental.models.ccd_models import (
@@ -92,19 +96,12 @@ class PostTablaControlAcceso(generics.CreateAPIView):
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
-        try:
-            serializer.is_valid(raise_exception=True)
-            pass
-        except:
-            return Response({'success': False, 'detail': 'Valide la información ingresada, el id_ccd es requerido, el nombre y la versión son requeridos y deben ser únicos'}, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
 
         #Validación de seleccionar solo ccd terminados
-        ccd = serializer.validated_data.get('id_ccd')
-        ccd_instance = CuadrosClasificacionDocumental.objects.filter(id_ccd=ccd.id_ccd).first()
-        if ccd_instance:
-            if ccd_instance.fecha_terminado == None:
-                return Response({'success': False, 'detail': 'No se pueden seleccionar Cuadros de Clasificación Documental que no estén terminados'}, status=status.HTTP_403_FORBIDDEN)
-
+        trd = serializer.validated_data.get('id_trd')
+        trd_instance = TablaRetencionDocumental.objects.filter(id_ccd=trd.id_trd).first()
+        if trd_instance:
             serializado = serializer.save()
 
             #Auditoria Crear TCA
@@ -123,7 +120,7 @@ class PostTablaControlAcceso(generics.CreateAPIView):
 
             return Response({'success': True, 'detail': 'TCA creada exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
         else:
-            return Response({'success': False, 'detail': 'No existe un Cuadro de Clasificación Documental con el id_ccd enviado'}, status=status.HTTP_400_BAD_REQUEST)
+            raise NotFound('No existe la TRD elegida')
 
 class UpdateTablaControlAcceso(generics.RetrieveUpdateAPIView):
     serializer_class = TCAPutSerializer
@@ -176,19 +173,22 @@ class ClasifSerieSubserieUnidadTCA(generics.CreateAPIView):
 
     def post(self, request, id_tca):
         data = request.data
+        # if 'id_cat_serie_und' not in data:
+        #     return Response({'success':False, 'detail':'Debe ingresar un ID de serie y unidad'}, status=status.HTTP_400_BAD_REQUEST)
+
         tca = TablasControlAcceso.objects.filter(id_tca=id_tca).first()
         if tca:
             if not tca.fecha_retiro_produccion:
                 if not tca.fecha_terminado:
                     if not tca.actual:
                         # Validar existencia de expediente
-                        expediente = CatalogosSeriesUnidad.objects.filter(id_cat_serie_und=data['id_cat_serie_und']).first()
-                        if not expediente:
+                        expediente_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_cat_serie_und=data['id_cat_serie_und_ccd_trd']).first()
+                        if not expediente_trd:
                             return Response({'success':False, 'detail':'Debe ingresar un expediente que exista'}, status=status.HTTP_400_BAD_REQUEST)
-                        
+
                         # Validad existencia del tipo clasificación
                         dict_tipo_clasificacion = dict(tipo_clasificacion_CHOICES)
-                        if data['cod_clas_expediente'] not in dict_tipo_clasificacion:
+                        if data.get('cod_clas_expediente') not in dict_tipo_clasificacion:
                             return Response({'success':False, 'detail':'Debe ingresar un código de clasificación que exista'}, status=status.HTTP_400_BAD_REQUEST)
                         
                         data['id_tca'] = id_tca
@@ -253,7 +253,8 @@ class UpdateClasifSerieSubserieUnidadTCA(generics.UpdateAPIView):
                         value = value if value != '' else None
                         if value != new_value:
                             datos_actualizados.append({field: value})
-                    if datos_actualizados:  
+                    # HISTORICO:
+                    if datos_actualizados:
                         HistoricoCatSeriesUnidadOrgCCD_TRD_TCA.objects.create(
                             id_catserie_unidad_org = clasif_s_ss_unidad_tca,
                             cod_clasificacion_exp = clasif__previous.cod_clas_expediente,
@@ -272,23 +273,20 @@ class ReanudarTablaControlAcceso(generics.UpdateAPIView):
     queryset = TablasControlAcceso
     permission_classes = [IsAuthenticated]
 
-    def put(self, request, pk):
-        tca = TablasControlAcceso.objects.filter(id_tca=pk).first()
+    def put(self, request, id_tca):
+        tca = TablasControlAcceso.objects.filter(id_tca=id_tca).first()
         if tca:
-            if tca.fecha_terminado:
-                if tca.fecha_retiro_produccion:
-                    return Response({'success': False, 'detail': 'No se puede reanudar una TCA que ya fue retirada de producción'}, status=status.HTTP_403_FORBIDDEN)
-                if tca.actual:
-                    return Response({'success': False, 'detail': 'No se puede reanudar una TCA actual'}, status=status.HTTP_403_FORBIDDEN)
-                
-                tca.fecha_terminado = None
-                tca.save()
-                return Response({'success': True, 'detail': 'Se reanudó el TCA'}, status=status.HTTP_201_CREATED)
-            else:
+            if not tca.fecha_terminado:
                 return Response({'success': False, 'detail': 'No puede reanudar un TCA no terminado'}, status=status.HTTP_403_FORBIDDEN)
+            if tca.fecha_puesta_produccion:
+                return Response({'success': False, 'detail': 'No se puede reanudar una TCA que ya fue puesta en producción'}, status=status.HTTP_403_FORBIDDEN)
+            if PermisosCatSeriesUnidadOrgTCA.objects.filter(id_tca=tca.id_tca).exists():
+                return Response({'success': False, 'detail': 'No se puede reanudar una TCA que está siendo usada en una configuración de permisos'}, status=status.HTTP_403_FORBIDDEN)
+            tca.fecha_terminado = None
+            tca.save()
+            return Response({'success': True, 'detail': 'Se reanudó el TCA'}, status=status.HTTP_201_CREATED)
         else:
-            return Response({'success': False, 'detail': 'No se encontró ningún TCA con estos parámetros'}, status=status.HTTP_404_NOT_FOUND) 
-
+            return Response({'success': False, 'detail': 'No se encontró ningún TCA con estos parámetros'}, status=status.HTTP_404_NOT_FOUND)
 @api_view(['POST'])
 def asignar_cargo_unidad_permiso_expediente(request):
     data = request.data
@@ -416,26 +414,44 @@ def actualizar_cargo_unidad_permiso_expediente(request,pk):
     
     return Response({'success':True, 'detail':'Se actualizaron correctamente los permisos al expediente clasificado', 'data':serializer_data}, status=status.HTTP_201_CREATED)
 
-class EliminarCargoUnidadPermisoExp(generics.DestroyAPIView):
-    serializer_class = Cargos_Unidad_S_Ss_UndOrg_TCASerializer
-    queryset = PermisosCatSeriesUnidadOrgTCA.objects.all()
-    permission_classes = [IsAuthenticated]
+# class EliminarCargoUnidadPermisoExp(generics.DestroyAPIView):
+#     serializer_class = Cargos_Unidad_S_Ss_UndOrg_TCASerializer
+#     queryset = PermisosCatSeriesUnidadOrgTCA.objects.all()
+#     permission_classes = [IsAuthenticated]
     
-    def delete(self, request, pk):
-        cargo_unidad_exp = self.queryset.all().filter(id_cargo_unidad_s_subserie_unidad_org_tca=pk).first()
+#     def delete(self, request, pk):
+#         cargo_unidad_exp = self.queryset.all().filter(id_permisos_catserie_unidad_tca=pk).first()
         
-        if cargo_unidad_exp:
-            if cargo_unidad_exp.id_clasif_serie_subserie_unidad_tca.id_tca.fecha_retiro_produccion:
-                return Response({'success':False, 'detail':'No se puede eliminar la asociación del cargo, unidad y permisos porque la TCA fue retirada de producción'}, status=status.HTTP_403_FORBIDDEN)
-            if cargo_unidad_exp.id_clasif_serie_subserie_unidad_tca.id_tca.actual:
-                return Response({'success':False, 'detail':'No se puede eliminar la asociación del cargo, unidad y permisos para una TCA actual'}, status=status.HTTP_403_FORBIDDEN)
-            if cargo_unidad_exp.id_clasif_serie_subserie_unidad_tca.id_tca.fecha_terminado:
-                return Response({'success':False, 'detail':'No se puede eliminar la asociación del cargo, unidad y permisos porque la TCA fue terminada. Intente reanudar primero'}, status=status.HTTP_403_FORBIDDEN)
+#         if cargo_unidad_exp:
+#             if cargo_unidad_exp.id_permisos_catserie_unidad_tca.id_tca.fecha_retiro_produccion:
+#                 return Response({'success':False, 'detail':'No se puede eliminar la asociación del cargo, unidad y permisos porque la TCA fue retirada de producción'}, status=status.HTTP_403_FORBIDDEN)
+#             if cargo_unidad_exp.id_permisos_catserie_unidad_tca.id_tca.actual:
+#                 return Response({'success':False, 'detail':'No se puede eliminar la asociación del cargo, unidad y permisos para una TCA actual'}, status=status.HTTP_403_FORBIDDEN)
+#             if cargo_unidad_exp.id_permisos_catserie_unidad_tca.id_tca.fecha_terminado:
+#                 return Response({'success':False, 'detail':'No se puede eliminar la asociación del cargo, unidad y permisos porque la TCA fue terminada. Intente reanudar primero'}, status=status.HTTP_403_FORBIDDEN)
             
-            cargo_unidad_exp.delete()
-            return Response({'success':True, 'detail':'Se ha eliminado la relacion del cargo, unidad y los permisos asignados del expediente elegido'}, status=status.HTTP_200_OK)
-        else:
-            return Response({'success':False, 'detail':'No existe la asociación del cargo, unidad y permisos ingresada'}, status=status.HTTP_404_NOT_FOUND)
+#             cargo_unidad_exp.delete()
+#             return Response({'success':True, 'detail':'Se ha eliminado la relacion del cargo, unidad y los permisos asignados del expediente elegido'}, status=status.HTTP_200_OK)
+#         else:
+#             return Response({'success':False, 'detail':'No existe la asociación del cargo, unidad y permisos ingresada'}, status=status.HTTP_404_NOT_FOUND)
+class EliminarRelaciones(generics.DestroyAPIView):
+    serializer_class = Cargos_Unidad_S_Ss_UndOrg_TCASerializer
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, id_trd):
+        try:
+            registro = CatSeriesUnidadOrgCCDTRD.objects.get(id_trd=id_trd)
+        except CatSeriesUnidadOrgCCDTRD.DoesNotExist:
+            return Response({'success':False, 'detail': "No se encontró ningún registro con el id_trd proporcionado."}, status=status.HTTP_404_NOT_FOUND)
+
+        if registro.id_trd.fecha_terminado:
+            return Response({'success':False, 'detail': "No se puede eliminar un registro que tiene fecha de terminación establecida"}, status=status.HTTP_400_BAD_REQUEST)
+        registros_tca = CatSeriesUnidadOrgCCD_TRD_TCA.objects.filter(id_cat_serie_und_ccd_trd=registro)
+        for registro_tca in registros_tca:
+            registro_tca.delete()
+
+        registro.delete()
+        return Response({'success':True, 'detail': f"El registro con id_trd {id_trd} y sus registros relacionados han sido eliminados correctamente."}, status=status.HTTP_200_OK)
 
 class FinalizarTablaControlAcceso(generics.UpdateAPIView):
     serializer_class = TCAPostSerializer
@@ -447,20 +463,21 @@ class FinalizarTablaControlAcceso(generics.UpdateAPIView):
         if tca:
             #Validacion existencia del tca a finalizar
             if not tca.fecha_terminado:
-                ccd = tca.id_ccd
-                
-                series = SeriesDoc.objects.filter(id_ccd=ccd.id_ccd)
-                series_list = [serie.id_serie_doc for serie in series]
+                trd = tca.id_trd
 
-                series_subseries_unidades = CatalogosSeriesUnidad.objects.filter(id_catalogo_serie__id_serie_doc__in=series_list)
-                series_subseries_unidades_list = [serie_subserie_unidad.id_cat_serie_und for serie_subserie_unidad in series_subseries_unidades]
+                # Validacion de clasificacion de expedientes
+                cat_series_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_trd=tca.id_trd)
+                if cat_series_trd:
+                    cat_series_list = [cat_serie.id_catserie_unidadorg for cat_serie in cat_series_trd]
 
-                clasif_expedientes_tca = CatSeriesUnidadOrgCCD_TRD_TCA.objects.filter(id_cat_serie_und__in=series_subseries_unidades_list)
-                clasif_expedientes_tca_list = [clasif_expediente.id_cat_serie_und.id_cat_serie_und for clasif_expediente in clasif_expedientes_tca]
+                    clasif_expedientes_tca = CatSeriesUnidadOrgCCD_TRD_TCA.objects.filter(id_cat_serie_und_ccd_trd__in=cat_series_list)
+                            
+                    if len(cat_series_list) != len(clasif_expedientes_tca):
+                        return Response({'success': False, 'detail': 'Debe asignar un tipo de clasificación a todos los expedientes para finalizar TCA'}, status=status.HTTP_403_FORBIDDEN)
 
-                if not set(series_subseries_unidades_list).issubset(clasif_expedientes_tca_list):
-                    return Response({'success': False, 'detail': 'Debe clasificar todos los expedientes para finalizar TCA'}, status=status.HTTP_403_FORBIDDEN)
-                    
+                else:
+                    return Response({'success': False, 'detail': 'No se encontró la TRD correspondiente'}, status=status.HTTP_404_NOT_FOUND)
+
                 tca.fecha_terminado = datetime.now(pytz.timezone('America/Bogota'))
                 tca.save()
                 return Response({'success': True, 'detail': 'Finalizado el TCA'}, status=status.HTTP_201_CREATED)
@@ -499,3 +516,39 @@ class GetCargoUnidadPermisos(generics.ListAPIView):
             return Response({'success':True, 'detail':'Se encontraron las siguientes clasificaciones', 'data':serializer.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success':False, 'detail':'No existe la TCA ingresada'}, status=status.HTTP_404_NOT_FOUND)
+
+class BusquedaTCA(generics.ListAPIView):
+    serializer_class = BusquedaTCASerializer 
+    queryset = TablasControlAcceso.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get (self, request):
+        filter={}
+        for key, value in request.query_params.items():
+            if key in ['nombre','version']:
+                if value != '':
+                    filter[key+'__icontains'] = value
+        
+        ccd = self.queryset.filter(**filter)
+        serializador = self.serializer_class(ccd,many=True)
+        return Response({'succes': True, 'detail':'Resultados de la búsqueda', 'data':serializador.data}, status=status.HTTP_200_OK)
+
+class GetSeriesSubSUnidadOrgTCA(generics.ListAPIView):
+    serializer_class = GetSeriesSubSUnidadOrgTCASerializer
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request, id_tca):
+        queryset = CatSeriesUnidadOrgCCD_TRD_TCA.objects.filter(id_tca=id_tca)
+
+        #VALIDACIÓN SI EXISTE LA TCA ENVIADA
+        if not queryset:
+            return Response({'success': False, 'detail': 'No se encontró la TCA'}, status=status.HTTP_404_NOT_FOUND)  
+        # VALIDACIÓN TIPO CLASIFICACION
+        for obj in queryset:
+            if not obj.cod_clas_expediente:
+                return Response({'success': False, 'detail': 'No tiene un tipo de clasificación de expediente definido'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        serializer = self.get_serializer(queryset, many=True)
+        data = serializer.data
+        return Response({'success': True, 'detail':'Se encontraron los siguientes resultados', 'data': data}, status=status.HTTP_200_OK)
+

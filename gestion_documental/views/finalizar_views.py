@@ -12,7 +12,8 @@ from seguridad.models import Personas
 from gestion_documental.models.tca_models import TablasControlAcceso
 from gestion_documental.serializers.trd_serializers import (
     TRDSerializer,
-    FormatosTiposMedioSerializer
+    FormatosTiposMedioSerializer,
+    TipologiasDoc
 )
 from gestion_documental.serializers.tca_serializers import (
     TCASerializer
@@ -31,7 +32,7 @@ from almacen.models.organigrama_models import (
 )
 from gestion_documental.models.trd_models import (
     TablaRetencionDocumental,
-    TipologiasDocumentales,
+    TipologiasDoc,
     SeriesSubSUnidadOrgTRDTipologias,
     FormatosTiposMedio
 )
@@ -145,11 +146,11 @@ class Activar(generics.UpdateAPIView):
             if organigrama.actual == True and ccd.actual == True and trd.actual == True and tca.actual == True:
                 return Response({'success': False, 'detail': 'Esta combinación ya se encuentra activa'}, status=status.HTTP_400_BAD_REQUEST)
             if  organigrama.actual == False and ccd.actual == False and trd.actual == False and tca.actual == False:
-                tipologias_trd = TipologiasDocumentales.objects.filter(id_trd=trd_a_remplazar.id_trd).values()
+                tipologias_trd = TipologiasDoc.objects.filter(id_trd=trd_a_remplazar.id_trd).values()
                 id_tipologias_trd = [i['id_tipologia_documental'] for i in tipologias_trd]
                 tipologias_usadas = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_tipologia_doc__in = id_tipologias_trd).values()
                 id_tipologias_usadas = [i['id_tipologia_doc_id'] for i in tipologias_usadas]
-                tipologias_sin_usar = TipologiasDocumentales.objects.filter(~Q(id_tipologia_documental__in = id_tipologias_usadas)).filter(id_trd=trd_a_remplazar.id_trd)
+                tipologias_sin_usar = TipologiasDoc.objects.filter(~Q(id_tipologia_documental__in = id_tipologias_usadas)).filter(id_trd=trd_a_remplazar.id_trd)
                 if tipologias_sin_usar:
                     tipologias_sin_usar.delete()
                 
