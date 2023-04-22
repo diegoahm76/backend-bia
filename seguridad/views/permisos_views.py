@@ -338,7 +338,7 @@ class GetEstructuraMenu(ListAPIView):
         if not id_usuario and not tipo_entorno:
             return Response({'success':False, 'detail':'Debe enviar los parámetros de búsqueda'}, status=status.HTTP_400_BAD_REQUEST)
         
-        estructuras = EstructuraMenus.objects.order_by('subsistema')
+        estructuras = EstructuraMenus.objects.order_by('subsistema', 'nivel_jerarquico', 'id_menu_padre', 'orden_por_padre')
         
         hierarchy = []
         for estructura in estructuras:
