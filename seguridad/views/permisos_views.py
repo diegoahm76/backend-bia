@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from seguridad.models import EstructuraMenus, Permisos, PermisosModulo, PermisosModuloRol, Modulos, User, Auditorias, Roles, UsuariosRol
 from rest_framework import status,viewsets,mixins
 from rest_framework import status
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from seguridad.serializers.permisos_serializers import (
     # ModulosRolEntornoOtroSerializer,
     GetEstructuraMenusSerializer,
@@ -222,7 +223,7 @@ class GetPermisosRolByRol(ListAPIView):
 def util_prueba(id_usuario,tipo_entorno):
     
     if not id_usuario and not tipo_entorno:
-        return Response({'success':False, 'detail':'Debe enviar los parámetros de búsqueda'}, status=status.HTTP_400_BAD_REQUEST)
+        raise ValidationError('Debe enviar los parámetros de búsqueda')
     
     usuario_instance = User.objects.filter(id_usuario=id_usuario).first()
     supersusuario = User.objects.filter(id_usuario=1).first()
@@ -232,18 +233,18 @@ def util_prueba(id_usuario,tipo_entorno):
     roles_list = UsuariosRol.objects.filter(id_usuario=id_usuario)
     
     if not usuario_instance:
-        return Response({'success':False, 'detail':'Debe ingresar un usuario que exista'}, status=status.HTTP_400_BAD_REQUEST)
+        raise ValidationError('Debe ingresar un usuario que exista')
     else:
         if usuario_instance.is_superuser:
             roles_list = roles_list.filter(id_rol=1)
             tipo_entorno = None
         else:
             if not tipo_entorno or tipo_entorno == '':
-                return Response({'success':False, 'detail':'Debe indicar el tipo de entorno'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('Debe indicar el tipo de entorno')
     
     if tipo_entorno:
         if tipo_entorno not in tipos_entorno:
-            return Response({'success':False, 'detail':'Debe ingresar un tipo de entorno valido'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Debe ingresar un tipo de entorno valido')
     
         if tipo_entorno == 'C':
             roles_list = roles_list.filter(id_rol=2)
@@ -257,7 +258,7 @@ def util_prueba(id_usuario,tipo_entorno):
                 email_data = {'template': template, 'email_subject': subject, 'to_email': supersusuario.persona.email}
                 Util.send_email(email_data)
                 
-                return Response({'success':False, 'permitido':False, 'detail':'NO SE LE PERMITIRÁ TRABAJAR EN ENTORNO LABORAL, dado que la persona no está actualmente vinculada o la fecha final del cargo ha vencido'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('NO SE LE PERMITIRÁ TRABAJAR EN ENTORNO LABORAL, dado que la persona no está actualmente vinculada o la fecha final del cargo ha vencido')
             
             roles_list = roles_list.exclude(id_rol=2)
     
