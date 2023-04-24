@@ -342,10 +342,6 @@ class SetNewPasswordSerializer(serializers.Serializer):
                 raise AuthenticationFailed('Link de actualización de contraseña invalido')
             else:
                 raise AuthenticationFailed('Link de activación de usuario invalido')
-        
-        # VALIDACIONES PASSWORD IGUAL A ANTERIOR
-        if check_password(password,user.password):
-            raise serializers.ValidationError('No se puede actualizar la contraseña. El valor proporcionado es el mismo que tiene actualmente')
 
         return attrs
     
@@ -393,8 +389,7 @@ class SetNewPasswordUnblockUserSerializer(serializers.Serializer):
 
             if not PasswordResetTokenGenerator().check_token(user, token):
                 raise AuthenticationFailed('Link de desbloqueo de usuario invalido', 401)
-            if check_password(password,user.password):
-                raise serializers.ValidationError('no se puede actualizar la contraseña. el valor proporcionado',401)
+            
             user.set_password(password)
             user.is_blocked = False
             user.save()
