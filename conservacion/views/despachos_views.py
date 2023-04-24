@@ -71,6 +71,7 @@ class GetItemsDespachosEntrantes(generics.ListAPIView):
             'observacion',
             codigo_bien=F('id_bien__codigo_bien'),
             nombre_bien=F('id_bien__nombre'),
+            cod_tipo_elemento_vivero=F('id_bien__cod_tipo_elemento_vivero'),
             unidad_medida=F('id_bien__id_unidad_medida__abreviatura'),
             tipo_documento=F('id_entrada_alm_del_bien__id_tipo_entrada__nombre'),
             numero_documento=F('id_entrada_alm_del_bien__numero_entrada_almacen')
