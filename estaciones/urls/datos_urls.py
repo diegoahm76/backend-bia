@@ -11,4 +11,6 @@ urlpatterns = [
          views.ConsultarDatosReportes.as_view(), name='consultar-datos-reporte'),
     path('consultar-datos-id-primeros/<str:pk>/',
          views.ConsultarDatosIdPrimerosDatos.as_view(), name='consultardatosidprimerosdatos'),
+    path('consultar-datos-diario/<str:pk>/<str:fecha_inicial>/',
+         views.ConsultarDatosFechaDiario.as_view(), name='consultardatosdiario'),
 ]
