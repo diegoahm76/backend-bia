@@ -38,7 +38,16 @@ class SerializersEstadosArticulo(serializers.ModelSerializer):
         fields=('__all__')
         
 class SerializerBodegas(serializers.ModelSerializer):
-    id_responsable=PersonasSerializer(read_only=True)
+    nombre_completo_responsable = serializers.SerializerMethodField()
+    
+    def get_nombre_completo_responsable(self, obj):
+        nombre_completo_responsable = None
+        nombre_list = [obj.id_responsable.primer_nombre, obj.id_responsable.segundo_nombre,
+                        obj.id_responsable.primer_apellido, obj.id_responsable.segundo_apellido]
+        nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+        return nombre_completo_responsable
+    
     class Meta:
         model=Bodegas
         fields='__all__'
