@@ -1549,7 +1549,7 @@ class CreatePersonaJuridicaAndUsuario(generics.CreateAPIView):
         # short_url = Util.get_short_url(request, absurl)
 
         subject = "Verifica tu usuario"
-        template = "plantilla-mensaje.html"
+        template = "activación-de-usuario.html"
 
         Util.notificacion(serializador,subject,template,absurl=absurl)
     
@@ -1661,7 +1661,7 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
         # short_url = Util.get_short_url(request, absurl)
         
         subject = "Verifica tu usuario"
-        template = "plantilla-mensaje.html"
+        template = "activación-de-usuario.html"
 
         Util.notificacion(serializador,subject,template,absurl=absurl)
     
