@@ -475,18 +475,11 @@ class UnblockUser(generics.CreateAPIView):
                 pass
             except:
                 return Response({'success':False,'detail': 'Los datos ingresados de persona natural son incorrectos, intenta nuevamente'}, status=status.HTTP_400_BAD_REQUEST)
-            short_url = Util.get_short_url(request, absurl+'?redirect-url='+redirect_url)
-            sms = 'Puedes desbloquear tu usuario en el siguiente link ' + short_url
-            context = {'primer_nombre': persona_usuario_bloqueado.primer_nombre, 'primer_apellido': persona_usuario_bloqueado.primer_apellido, 'absurl': absurl+'?redirect-url='+ redirect_url}
-            template = render_to_string(('email-unblock-user-naturalperson.html'), context)
-            subject = 'Desbloquea tu usuario' + persona_usuario_bloqueado.primer_nombre
-            data = {'template': template, 'email_subject': subject, 'to_email': persona_usuario_bloqueado.email}
-            Util.send_email(data)
-            try:
-                Util.send_sms(persona_usuario_bloqueado.telefono_celular, sms)
-            except:
-                return Response({'success':True, 'detail':'No se pudo enviar sms de confirmacion'}, status=status.HTTP_200_OK)
-            pass 
+            
+            subject = "Desbloquea tu usuario"
+            template = "desbloqueo-de-usuario.html"
+
+            Util.notificacion(persona_usuario_bloqueado,subject,template,absurl=absurl+'?redirect-url='+ redirect_url)
 
         else:
             try:
@@ -499,18 +492,11 @@ class UnblockUser(generics.CreateAPIView):
                 pass
             except:
                 return Response({'success':False,'detail': 'Los datos ingresados de persona juridica son incorrectos, intenta nuevamente'}, status=status.HTTP_400_BAD_REQUEST)                                 
-            short_url = Util.get_short_url(request, absurl+'?redirect-url='+redirect_url)
-            sms = 'Puedes desbloquear tu usuario en el siguiente link ' + short_url
-            context = {'razon_social': persona_usuario_bloqueado.razon_social, 'absurl': absurl+'?redirect-url='+ redirect_url}
-            template = render_to_string(('email-unblock-user-naturaljuridica.html'), context)
-            subject = 'Desbloquea tu usuario' + persona_usuario_bloqueado.razon_social
-            data = {'template': template, 'email_subject': subject, 'to_email': persona_usuario_bloqueado.email}
-            Util.send_email(data)
-            try:
-                Util.send_sms(persona_usuario_bloqueado.telefono_celular_empresa, sms)
-            except:
-                return Response({'success':True, 'detail':'No se pudo enviar sms de confirmacion'}, status=status.HTTP_200_OK)
-            pass
+            subject = "Desbloquea tu usuario"
+            template = "desbloqueo-de-usuario.html"
+
+            Util.notificacion(persona_usuario_bloqueado,subject,template,absurl=absurl+'?redirect-url='+ redirect_url)
+
         return Response({'success': True, 'detail': 'Email y sms enviado para desbloquear usuario'}, status=status.HTTP_200_OK)
 
 class UnBlockUserPassword(generics.GenericAPIView):
@@ -519,14 +505,6 @@ class UnBlockUserPassword(generics.GenericAPIView):
     def patch(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        usuario_operador = request.user
-        HistoricoActivacion.objects.create(
-            id_usuario_afectado=usuario_operador,
-            cod_operacion='D',
-            fecha_operacion=datetime.now(),
-            justificacion='Usuario desbloqueado por validación de datos',
-            usuario_operador=usuario_operador
-        )
         return Response({'success': True, 'detail': 'Usuario Desbloqueado'}, status=status.HTTP_200_OK)
 
 class RegisterView(generics.CreateAPIView):
@@ -630,9 +608,9 @@ class RegisterView(generics.CreateAPIView):
         redirect_url= request.data.get('redirect_url','')
         redirect_url=quote_plus(redirect_url)
         absurl='http://'+ current_site + relativeLink + '?redirect-url='+ redirect_url
-        print("ABSURL: ", absurl)
+        
         subject = "Verifica tu usuario"
-        template = "plantilla-mensaje.html"
+        template = "activación-de-usuario.html"
 
         Util.notificacion(persona,subject,template,absurl=absurl)
         
@@ -725,7 +703,7 @@ class RegisterExternoView(generics.CreateAPIView):
         # short_url = Util.get_short_url(request, absurl)
         
         subject = "Verifica tu usuario"
-        template = "plantilla-mensaje.html"
+        template = "activación-de-usuario.html"
 
         Util.notificacion(persona,subject,template,absurl=absurl)
     
@@ -1225,7 +1203,7 @@ class ReenviarCorreoVerificacionDeUsuario(generics.UpdateAPIView):
 
             # short_url = Util.get_short_url(request, absurl)
             subject = "Verifica tu usuario"
-            template = "plantilla-mensaje.html"
+            template = "activación-de-usuario.html"
 
             Util.notificacion(persona,subject,template,absurl=absurl)
             

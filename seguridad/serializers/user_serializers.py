@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.core import signing
 from django.contrib.auth.hashers import make_password, check_password
 from rest_framework import serializers
@@ -393,6 +394,15 @@ class SetNewPasswordUnblockUserSerializer(serializers.Serializer):
             user.set_password(password)
             user.is_blocked = False
             user.save()
+            
+            # HISTORICO DESBLOQUEO
+            HistoricoActivacion.objects.create(
+                id_usuario_afectado=user,
+                cod_operacion='D',
+                fecha_operacion=datetime.now(),
+                justificacion='Usuario desbloqueado por validación de datos',
+                usuario_operador=user
+            )
 
             return user
 

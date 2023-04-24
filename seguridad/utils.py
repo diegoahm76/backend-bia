@@ -409,13 +409,16 @@ class Util:
     def notificacion(persona,subject_email,template_name,**kwargs):
         
         if persona.tipo_persona == "N":
-            context = {'primer_nombre': persona.primer_nombre,'fecha_actual':str(datetime.now().replace(microsecond=0))}
+            primer_nombre = [persona.primer_nombre, persona.primer_apellido]
+            primer_nombre = ' '.join(item for item in primer_nombre if item is not None)
+            
+            context = {'primer_nombre': primer_nombre,'fecha_actual':str(datetime.now().replace(microsecond=0))}
             
             for field, value in kwargs.items():
                 context[field] = value
             
             template = render_to_string((template_name), context)
-            subject = subject_email + ' ' + persona.primer_nombre
+            subject = subject_email + ' ' + primer_nombre
             email_data = {'template': template, 'email_subject': subject, 'to_email': persona.email}
             Util.send_email(email_data)
         else:
