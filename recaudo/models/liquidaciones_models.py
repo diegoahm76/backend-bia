@@ -66,6 +66,7 @@ class DetalleLiquidacionBase(models.Model):
     id_variable = models.ForeignKey(VariablesBase, on_delete=models.CASCADE, db_column="T404id_variable")
     valor = models.IntegerField(default=0, db_column="T404valor")
     estado = models.IntegerField(default=1, db_column="T404estado")
+    concepto = models.TextField(db_column="T404concepto")
 
     class Meta:
         db_table = "T404detalles_liquidaciones_base"

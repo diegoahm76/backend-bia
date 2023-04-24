@@ -32,7 +32,7 @@ class DetallesLiquidacionBaseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DetalleLiquidacionBase
-        fields = ('id', 'id_variable', 'valor', 'estado')
+        fields = ('id', 'id_variable', 'valor', 'estado', 'concepto')
 
 
 class ExpedientesSerializer(serializers.ModelSerializer):
