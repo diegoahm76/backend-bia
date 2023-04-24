@@ -14,7 +14,6 @@ from recaudo.models.cobros_models import (
     DocumentosCobro,
     DetalleDocumentosCobro,
     Deudores,
-    Expedientes,
     Obligaciones,
     Cartera
 )
@@ -47,7 +46,8 @@ from recaudo.models.pagos_models import (
 from recaudo.models.liquidaciones_models import (
     OpcionesLiquidacionBase,
     LiquidacionesBase,
-    DetalleLiquidacionBase
+    DetalleLiquidacionBase,
+    Expedientes
 )
 
 #Base

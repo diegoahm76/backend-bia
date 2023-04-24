@@ -9,13 +9,24 @@ class Deudores(models.Model):
     apellidos = models.CharField(max_length=255, db_column='T410apellidos')
     telefono = models.CharField(max_length=255, db_column='T410telefono')
     email = models.CharField(max_length=255, db_column='T410email')
-    ubicacion_id = models.ForeignKey(Ubicaciones, on_delete=models.CASCADE, db_column='T41oubicacion_id') #posible foranea
-    naturaleza_juridica_id = models.ForeignKey(NaturalezaJuridica, on_delete=models.CASCADE ,db_column='T410naturaleza_juridica_id')
+    ubicacion_id = models.ForeignKey(Ubicaciones, on_delete=models.CASCADE, db_column='T41oubicacion_id')
+    naturaleza_juridica_id = models.ForeignKey(NaturalezaJuridica, on_delete=models.CASCADE, db_column='T410naturaleza_juridica_id')
 
     class Meta:
         db_table = 'T410deudores'
         verbose_name = 'Deudor'
         verbose_name_plural = 'Deudores'
+
+
+class Expedientes(models.Model):
+    id = models.AutoField(primary_key=True, db_column='T407id')
+    codigo_expediente = models.IntegerField(db_column='T407codigo_expediente')
+    cod_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T407cod_deudor')
+
+    class Meta:
+        db_table = 'T407expedientes'
+        verbose_name = 'Expediente'
+        verbose_name_plural = 'Expedientes'
 
 
 class OpcionesLiquidacionBase(models.Model):
@@ -36,7 +47,7 @@ class LiquidacionesBase(models.Model):
     id = models.AutoField(primary_key=True, db_column="T403id")
     id_opcion_liq = models.ForeignKey(OpcionesLiquidacionBase, db_column="T403id_opcion_liq", on_delete=models.CASCADE)
     cod_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column="T403cod_deudor")
-    cod_expediente = models.IntegerField(db_column="T403cod_expediente")
+    cod_expediente = models.ForeignKey(Expedientes, on_delete=models.CASCADE, db_column="T403cod_expediente")
     fecha_liquidacion = models.DateTimeField(db_column="T403fecha_liquidacion")
     vencimiento = models.DateTimeField(db_column="T403vencimiento")
     periodo_liquidacion = models.CharField(max_length=255, db_column="T403periodo_liquidacion")
@@ -51,7 +62,7 @@ class LiquidacionesBase(models.Model):
 
 class DetalleLiquidacionBase(models.Model):
     id = models.AutoField(primary_key=True, db_column="T404id")
-    id_liquidacion = models.ForeignKey(LiquidacionesBase, on_delete=models.CASCADE, db_column="T404id_liquidacion")
+    id_liquidacion = models.ForeignKey(LiquidacionesBase, on_delete=models.CASCADE, db_column="T404id_liquidacion", related_name='detalles')
     id_variable = models.ForeignKey(VariablesBase, on_delete=models.CASCADE, db_column="T404id_variable")
     valor = models.IntegerField(default=0, db_column="T404valor")
     estado = models.IntegerField(default=1, db_column="T404estado")

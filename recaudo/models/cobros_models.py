@@ -34,17 +34,6 @@ class DetalleDocumentosCobro(models.Model):
         verbose_name_plural = 'Detalles documentos cobro'
 
 
-class Expedientes(models.Model):
-    id = models.AutoField(primary_key=True, db_column='T407id')
-    codigo_expediente = models.IntegerField(db_column='T407codigo_expediente')
-    cod_deudor = models.IntegerField(db_column='T407cod_deudor')
-
-    class Meta:
-        db_table = 'T407expedientes'
-        verbose_name = 'Expediente'
-        verbose_name_plural = 'Expedientes'
-
-
 class Obligaciones(models.Model):
     id = models.AutoField(primary_key=True, db_column='T416id')
     cod_factura = models.CharField(max_length=255, db_column='T416cod_factura')
