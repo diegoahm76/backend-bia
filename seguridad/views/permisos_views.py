@@ -317,7 +317,7 @@ class GetEstructuraMenu(ListAPIView):
     def find_and_update_item(self, hierarchy, subsistema, id_menu, permiso_modulo):
         for item in hierarchy:
             if item.get("subsistema") == subsistema and item.get("id_menu") == id_menu:
-                item["modulos"].append(permiso_modulo['modulos'])
+                item["modulos"] = permiso_modulo['modulos']
             if item.get("submenus"):
                 updated_submenus = self.find_and_update_item(item.get("submenus"), subsistema, id_menu, permiso_modulo)
                 if updated_submenus:
