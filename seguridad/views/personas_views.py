@@ -69,6 +69,7 @@ from seguridad.serializers.personas_serializers import (
     GetClaseTerceroSerializers,
     PersonaNaturalPostAdminSerializer,
     PersonaNaturalUpdateAdminSerializer,
+    PersonasFilterAdminUserSerializer,
     TipoDocumentoSerializer,
     TipoDocumentoPostSerializer,
     TipoDocumentoPutSerializer,
@@ -1712,3 +1713,12 @@ class AutorizacionNotificacionesPersonas(generics.RetrieveUpdateAPIView):
                 return Response({'success': True, 'detail': 'Autorizacion no aceptada'}, status=status.HTTP_200_OK)
         else: 
             return Response({'success': False, 'detail': 'No envió las autorizaciones'}, status=status.HTTP_400_BAD_REQUEST)
+
+class GetPersonasByTipoDocumentoAndNumeroDocumentoAdminUser(GetPersonasByTipoDocumentoAndNumeroDocumento):
+    serializer_class = PersonasFilterAdminUserSerializer
+    queryset = Personas.objects.all()
+    
+class GetPersonasByFiltersAdminUser(GetPersonasByFilters):
+    serializer_class = PersonasFilterAdminUserSerializer
+    # permission_classes = [IsAuthenticated]
+    queryset = Personas.objects.all()
