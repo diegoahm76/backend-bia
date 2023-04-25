@@ -791,8 +791,28 @@ class PersonasFilterSerializer(serializers.ModelSerializer):
             'nombre_completo',
             'razon_social',
             'nombre_comercial',
+            'digito_verificacion',
+            'cod_naturaleza_empresa',
             'tiene_usuario'
         ]
+
+class UsuarioAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id_usuario', 'nombre_de_usuario']
+
+class PersonasFilterAdminUserSerializer(PersonasFilterSerializer):
+    usuarios = serializers.SerializerMethodField()
+    
+    def get_usuarios(self, obj):
+        usuarios = User.objects.filter(persona=obj.id_persona)
+        usuarios_serializer = UsuarioAdminSerializer(usuarios, many=True)
+        usuarios_data = usuarios_serializer.data if usuarios_serializer else []
+        return usuarios_data
+        
+    class Meta:
+        model = Personas
+        fields = PersonasFilterSerializer.Meta.fields + ['usuarios']
 
 class BusquedaHistoricoCambiosSerializer(serializers.ModelSerializer):
     class Meta:
