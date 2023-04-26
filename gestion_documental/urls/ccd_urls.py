@@ -9,6 +9,7 @@ urlpatterns = [
     path('get-terminados/', views.GetCCDTerminado.as_view(),name='get-terminados-ccd'),
     path('finish/<str:pk>/', views.FinalizarCuadroClasificacionDocumental.as_view(),name='finish-ccd'),
     path('resume/<str:pk>/', views.ReanudarCuadroClasificacionDocumental.as_view(),name='resume-ccd'),
+    path('get-busqueda/', views.BusquedaCCD.as_view(),name='buscar-ccd'),
 
     # Series
     path('series/create/',views.CreateSeriesDoc.as_view(),name='create-series-ccd'),

@@ -37,7 +37,7 @@ from almacen.models.organigrama_models import (
 )
 from gestion_documental.models.trd_models import (
     TablaRetencionDocumental,
-    TipologiasDocumentales,
+    TipologiasDoc,
     SeriesSubSUnidadOrgTRDTipologias,
     FormatosTiposMedio,
     CatSeriesUnidadOrgCCDTRD,
@@ -47,7 +47,7 @@ from gestion_documental.models.trd_models import (
 
 class UpdateTipologiasDocumentales(generics.UpdateAPIView):
     serializer_class = TipologiasDocumentalesPutSerializer
-    queryset = TipologiasDocumentales.objects.all()
+    queryset = TipologiasDoc.objects.all()
     permission_classes = [IsAuthenticated]
 
     def put(self, request, id_trd):
@@ -132,7 +132,7 @@ class UpdateTipologiasDocumentales(generics.UpdateAPIView):
                     tipologias_update = list(filter(lambda tipologia: tipologia['id_tipologia_documental'] != None, data))
                     if tipologias_update:
                         for tipologia in tipologias_update:
-                            tipologia_existe = TipologiasDocumentales.objects.filter(id_tipologia_documental=tipologia['id_tipologia_documental']).first()
+                            tipologia_existe = TipologiasDoc.objects.filter(id_tipologia_documental=tipologia['id_tipologia_documental']).first()
                             previous_tipologia = copy.copy(tipologia_existe)
                             if tipologia_existe:
                                 if tipologia_existe.cod_tipo_medio_doc != tipologia['cod_tipo_medio_doc']:
@@ -147,7 +147,7 @@ class UpdateTipologiasDocumentales(generics.UpdateAPIView):
                                 # ACTUALIZAR FORMATOS
                                 for formato in tipologia['formatos']:
                                     formato_tipologia_existe = FormatosTiposMedioTipoDoc.objects.filter(id_tipologia_doc=tipologia['id_tipologia_documental'], id_formato_tipo_medio=formato)
-                                    tipologia_actualizada = TipologiasDocumentales.objects.filter(id_tipologia_documental=tipologia['id_tipologia_documental']).first()
+                                    tipologia_actualizada = TipologiasDoc.objects.filter(id_tipologia_documental=tipologia['id_tipologia_documental']).first()
                                     if not formato_tipologia_existe:
                                         formato_instance = FormatosTiposMedio.objects.filter(id_formato_tipo_medio=formato).first()
                                         FormatosTiposMedioTipoDoc.objects.create(
@@ -163,7 +163,7 @@ class UpdateTipologiasDocumentales(generics.UpdateAPIView):
                     # ELIMINAR TIPOLOGIAS
                     lista_tipologia_id = [tipologia['id_tipologia_documental'] for tipologia in tipologias_update]
                     lista_tipologia_id.extend(tipologias_id_create)
-                    tipologias_eliminar = TipologiasDocumentales.objects.filter(id_trd=id_trd).exclude(id_tipologia_documental__in=lista_tipologia_id)
+                    tipologias_eliminar = TipologiasDoc.objects.filter(id_trd=id_trd).exclude(id_tipologia_documental__in=lista_tipologia_id)
                     
                     if tipologias_eliminar and trd.actual:
                         return Response({'success':False, 'detail':'No puede eliminar tipologias para una TRD actual. Intente desactivar'}, status=status.HTTP_403_FORBIDDEN)
@@ -200,7 +200,7 @@ class UpdateTipologiasDocumentales(generics.UpdateAPIView):
                     return Response({'success':True, 'detail':'Se ha realizado cambios con las tipologias'}, status=status.HTTP_201_CREATED)
                 else:
                     # VALIDAR QUE NO SE ESTÉN USANDO LAS TIPOLOGIAS A ELIMINAR
-                    tipologias_eliminar = TipologiasDocumentales.objects.filter(id_trd=id_trd)
+                    tipologias_eliminar = TipologiasDoc.objects.filter(id_trd=id_trd)
                     
                     if tipologias_eliminar and trd.actual:
                         return Response({'success':False, 'detail':'No puede eliminar tipologias para una TRD actual. Intente desactivar'})
@@ -225,13 +225,13 @@ class UpdateTipologiasDocumentales(generics.UpdateAPIView):
 
 class GetTipologiasDocumentales(generics.ListAPIView):
     serializer_class = TipologiasDocumentalesSerializer
-    queryset = TipologiasDocumentales.objects.all()
+    queryset = TipologiasDoc.objects.all()
     permission_classes = [IsAuthenticated]
 
     def get(self, request, id_trd):
         trd = TablaRetencionDocumental.objects.filter(id_trd=id_trd).first()
         if trd:
-            tipologias = TipologiasDocumentales.objects.filter(id_trd=id_trd, activo=True).values()
+            tipologias = TipologiasDoc.objects.filter(id_trd=id_trd, activo=True).values()
             if not tipologias:
                 return Response({'success':True, 'detail':'No se encontraron tipologías para el TRD', 'data':tipologias}, status=status.HTTP_200_OK)
             for tipologia in tipologias:
@@ -279,7 +279,7 @@ class CreateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
 
             #VALIDACION ENVIO COMPLETO DE LA INFORMACION
             elif cod_disposicion_final and digitalizacion_dis_final and tiempo_retencion_ag and tiempo_retencion_ac and descripcion_procedimiento != None:
-                tipologias_instance = TipologiasDocumentales.objects.filter(id_tipologia_documental__in=tipologias, id_trd=id_trd)
+                tipologias_instance = TipologiasDoc.objects.filter(id_tipologia_documental__in=tipologias, id_trd=id_trd)
                 if len(tipologias) != tipologias_instance.count():
                     return Response({'success': False, 'detail': 'Todas las tipologias seleccionadas deben existir y deben estar relacionadas a la TRD elegida'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -357,7 +357,7 @@ class UpdateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
 
                 #SI ENVIAN TODAS LAS ESPECIFICACIONES DILIGENCIADAS
                 elif cod_disposicion_final and digitalizacion_dis_final and tiempo_retencion_ag and tiempo_retencion_ac and descripcion_procedimiento and tipologias:
-                    tipologias_instance = TipologiasDocumentales.objects.filter(id_tipologia_documental__in=tipologias, id_trd=serie_subs_unidadorg_trd.id_trd.id_trd)
+                    tipologias_instance = TipologiasDoc.objects.filter(id_tipologia_documental__in=tipologias, id_trd=serie_subs_unidadorg_trd.id_trd.id_trd)
 
                     #VALIDACION SI ENVIAN TIPOLOGIAS QUE NO SON DE LA MISMA TRD O QUE NO EXISTEN
                     if len(tipologias) != tipologias_instance.count():
@@ -372,7 +372,7 @@ class UpdateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
                     #VERIFICA QUE NO EXISTA EN SSUTRD-TIPOLOGIAS Y CREA LA CONEXIÓN
                     for tipologia in tipologias:
                         serie_tipologia_instance = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_serie_subserie_unidadorg_trd=id_serie_subs_unidadorg_trd, id_tipologia_doc=tipologia)
-                        tipologia_instance_create = TipologiasDocumentales.objects.filter(id_tipologia_documental=tipologia).first()
+                        tipologia_instance_create = TipologiasDoc.objects.filter(id_tipologia_documental=tipologia).first()
                         if not serie_tipologia_instance:
                             SeriesSubSUnidadOrgTRDTipologias.objects.create(
                                 id_serie_subserie_unidadorg_trd = serie_subs_unidadorg_trd,
@@ -397,7 +397,7 @@ class UpdateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
 
                 #SI ENVIAN TODA LA INFORMACIÓN DILIGENCIADA
                 if cod_disposicion_final and digitalizacion_dis_final == True or digitalizacion_dis_final == False and tiempo_retencion_ag and tiempo_retencion_ac and descripcion_procedimiento and justificacion_cambio:
-                    tipologias_instance = TipologiasDocumentales.objects.filter(id_tipologia_documental__in=tipologias, id_trd=serie_subs_unidadorg_trd.id_trd.id_trd)
+                    tipologias_instance = TipologiasDoc.objects.filter(id_tipologia_documental__in=tipologias, id_trd=serie_subs_unidadorg_trd.id_trd.id_trd)
                     tipologias_instance_list = [tipologia.id_tipologia_documental for tipologia in tipologias_instance]
                     
                     #VALIDA QUE LAS TIPOLOGIAS SELECCIONADAS TENGAN LA MISMA TRD COMO PADRE
@@ -473,6 +473,11 @@ class GetTablaRetencionDocumentalTerminados(generics.ListAPIView):
     serializer_class = TRDSerializer
     queryset = TablaRetencionDocumental.objects.filter(~Q(fecha_terminado = None) & Q(fecha_retiro_produccion=None))
     permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        trd_terminados = self.queryset.all()
+        serializer = self.serializer_class(trd_terminados, many=True)
+        return Response({'success':True, 'detail':'Se encontraron los siguientes TRD terminados', 'data':serializer.data}, status=status.HTTP_200_OK)
 
 class PostTablaRetencionDocumental(generics.CreateAPIView):
     serializer_class = TRDPostSerializer
@@ -678,11 +683,11 @@ class CambiosPorConfirmar(generics.UpdateAPIView):
                     series_sub_unidades_trd_list = [serie_sub_unidad_trd.id_serie_subs_unidadorg_trd for serie_sub_unidad_trd in series_sub_unidades_trd]
                     formatos_tipo_medio = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_serie_subserie_unidadorg_trd__in=series_sub_unidades_trd_list)
                     tipologias_list = [formato_tipo_medio.id_tipologia_doc.id_tipologia_documental for formato_tipo_medio in formatos_tipo_medio]
-                    tipologias_trd = TipologiasDocumentales.objects.filter(id_trd=id_trd)
+                    tipologias_trd = TipologiasDoc.objects.filter(id_trd=id_trd)
                     tipologias_trd_list = [tipologia.id_tipologia_documental for tipologia in tipologias_trd]
 
                     if not set(tipologias_trd_list).issubset(tipologias_list):
-                        tipologias_faltan = TipologiasDocumentales.objects.filter(id_trd=id_trd).exclude(id_tipologia_documental__in=tipologias_list)
+                        tipologias_faltan = TipologiasDoc.objects.filter(id_trd=id_trd).exclude(id_tipologia_documental__in=tipologias_list)
                         if confirm == 'true':
                             tipologias_faltan.delete()
                             trd.cambios_por_confirmar = False
@@ -701,34 +706,48 @@ class CambiosPorConfirmar(generics.UpdateAPIView):
         else:
             return Response({'success':False, 'detail':'El TRD no existe'}, status=status.HTTP_404_NOT_FOUND)
 
+# class GetSeriesSubSUnidadOrgTRD(generics.ListAPIView):
+#     serializer_class = GetSeriesSubSUnidadOrgTRDSerializer
+#     queryset = CatSeriesUnidadOrgCCDTRD.objects.all()
+#     permission_classes = [IsAuthenticated]
+    
+#     def get(self, request, id_trd):
+        
+#         #VALIDACIÓN SI EXISTE LA TRD ENVIADA
+#         series_subseries_unidad_org_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_trd=id_trd)
+#         if not series_subseries_unidad_org_trd:
+#             return Response({'success': False, 'detail': 'No se encontró la TRD'}, status=status.HTTP_404_NOT_FOUND)
+        
+#         ids_serie_subs_unidad_org_trd = [i.id_serie_subs_unidadorg_trd for i in series_subseries_unidad_org_trd]
+#         result = []
+#         for i in ids_serie_subs_unidad_org_trd:
+#             main_detail = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_serie_subserie_unidadorg_trd = i).first()
+#             serializer_ssutrdtipo = GetSeriesSubSUnidadOrgTRDTipologiasSerializer(main_detail, many=False)
+#             detalle_serie_subs_unidad_org_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_serie_subs_unidadorg_trd = serializer_ssutrdtipo.data['id_serie_subserie_unidadorg_trd']).first()
+#             serializer_ssutrd = GetSeriesSubSUnidadOrgTRDSerializer(detalle_serie_subs_unidad_org_trd, many=False)
+#             detalle_tipologias = TipologiasDocumentales.objects.filter(id_tipologia_documental = serializer_ssutrdtipo.data['id_tipologia_doc']).first()
+#             serializer_tipologias = GetTipologiasDocumentalesSerializer(detalle_tipologias, many=False)
+
+#             data = serializer_ssutrdtipo.data
+#             data['id_serie_subserie_unidadorg_trd'] = serializer_ssutrd.data
+#             data['id_tipologia_doc'] = serializer_tipologias.data
+#             result.append(data)
+            
+#         return Response({'success': True, 'detail':'Se encontraron los siguientes resultados', 'data': result}, status=status.HTTP_200_OK)
+
 class GetSeriesSubSUnidadOrgTRD(generics.ListAPIView):
     serializer_class = GetSeriesSubSUnidadOrgTRDSerializer
-    queryset = CatSeriesUnidadOrgCCDTRD.objects.all()
     permission_classes = [IsAuthenticated]
-    
+
     def get(self, request, id_trd):
+        queryset = CatSeriesUnidadOrgCCDTRD.objects.filter(id_trd=id_trd)
         
         #VALIDACIÓN SI EXISTE LA TRD ENVIADA
-        series_subseries_unidad_org_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_trd=id_trd)
-        if not series_subseries_unidad_org_trd:
-            return Response({'success': False, 'detail': 'No se encontró la TRD'}, status=status.HTTP_404_NOT_FOUND)
+        if not queryset:
+            return Response({'success': False, 'detail': 'No se encontró la TRD'}, status=status.HTTP_404_NOT_FOUND)  
         
-        ids_serie_subs_unidad_org_trd = [i.id_serie_subs_unidadorg_trd for i in series_subseries_unidad_org_trd]
-        result = []
-        for i in ids_serie_subs_unidad_org_trd:
-            main_detail = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_serie_subserie_unidadorg_trd = i).first()
-            serializer_ssutrdtipo = GetSeriesSubSUnidadOrgTRDTipologiasSerializer(main_detail, many=False)
-            detalle_serie_subs_unidad_org_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_serie_subs_unidadorg_trd = serializer_ssutrdtipo.data['id_serie_subserie_unidadorg_trd']).first()
-            serializer_ssutrd = GetSeriesSubSUnidadOrgTRDSerializer(detalle_serie_subs_unidad_org_trd, many=False)
-            detalle_tipologias = TipologiasDocumentales.objects.filter(id_tipologia_documental = serializer_ssutrdtipo.data['id_tipologia_doc']).first()
-            serializer_tipologias = GetTipologiasDocumentalesSerializer(detalle_tipologias, many=False)
-
-            data = serializer_ssutrdtipo.data
-            data['id_serie_subserie_unidadorg_trd'] = serializer_ssutrd.data
-            data['id_tipologia_doc'] = serializer_tipologias.data
-            result.append(data)
-            
-        return Response({'success': True, 'detail':'Se encontraron los siguientes resultados', 'data': result}, status=status.HTTP_200_OK)
+        serializer = GetSeriesSubSUnidadOrgTRDSerializer(queryset, many=True)
+        return Response({'success': True, 'detail':'Se encontraron los siguientes resultados', 'data':serializer.data}, status=status.HTTP_200_OK)
 
 class GetSeriesSubSUnidadOrgTRDByPk(generics.ListAPIView):
     serializer_class = GetSeriesSubSUnidadOrgTRDSerializer
@@ -752,7 +771,7 @@ class GetSeriesSubSUnidadOrgTRDByPk(generics.ListAPIView):
 
             detalle_serie_subs_unidad_org_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_serie_subs_unidadorg_trd = serializer_ssutrdtipo.data['id_serie_subserie_unidadorg_trd']).first()
             serializer_ssutrd = GetSeriesSubSUnidadOrgTRDSerializer(detalle_serie_subs_unidad_org_trd, many=False)
-            detalle_tipologias = TipologiasDocumentales.objects.filter(id_tipologia_documental = serializer_ssutrdtipo.data['id_tipologia_doc']).first()
+            detalle_tipologias = TipologiasDoc.objects.filter(id_tipologia_documental = serializer_ssutrdtipo.data['id_tipologia_doc']).first()
             serializer_tipologias = GetTipologiasDocumentalesSerializer(detalle_tipologias, many=False)
             
             data = serializer_ssutrdtipo.data
@@ -764,12 +783,12 @@ class GetSeriesSubSUnidadOrgTRDByPk(generics.ListAPIView):
 
 class DesactivarTipologiaActual(generics.UpdateAPIView):
     serializer_class = TipologiasDocumentalesPutSerializer
-    queryset = TipologiasDocumentales.objects.all()
+    queryset = TipologiasDoc.objects.all()
     permission_classes = [IsAuthenticated]
 
     def put(self, request, id_tipologia):
         persona = request.user.persona
-        tipologia = TipologiasDocumentales.objects.filter(id_tipologia_documental=id_tipologia).first()
+        tipologia = TipologiasDoc.objects.filter(id_tipologia_documental=id_tipologia).first()
         justificacion = request.data.get('justificacion_desactivacion')
         if tipologia:
             trd = TablaRetencionDocumental.objects.filter(id_trd=tipologia.id_trd.id_trd).first()
@@ -819,7 +838,7 @@ class finalizarTRD(generics.RetrieveUpdateAPIView):
             ids_series_subseries_unidad_org_trd = [i['id_serie_subs_unidadorg_trd'] for i in series_subseries_unidad_org_trd]
             series_subseries_unidad_org_trd_tipologias = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_serie_subserie_unidadorg_trd__in = ids_series_subseries_unidad_org_trd).values()
             id_tipologias_usadas = [i['id_tipologia_doc_id'] for i in series_subseries_unidad_org_trd_tipologias]
-            tipologias_sin_usar_instance = TipologiasDocumentales.objects.filter(~Q(id_tipologia_documental__in = id_tipologias_usadas))
+            tipologias_sin_usar_instance = TipologiasDoc.objects.filter(~Q(id_tipologia_documental__in = id_tipologias_usadas))
             if confirm == 'true':
                 tipologias_sin_usar_instance.delete()
             if (tipologias_sin_usar_instance.values()):

@@ -6,6 +6,7 @@ from estaciones.models.estaciones_models import Migracion
 from datetime import datetime
 # Listar Estaciones
 
+
 class ConsultarMigracionId(generics.ListAPIView):
     serializer_class = MigracionSerializer
     queryset = Migracion.objects.all().using("bia-estaciones")
@@ -62,7 +63,7 @@ class ConsultarMigracionId(generics.ListAPIView):
                     date, time, value = values
                     timestamp = date + time
                     sensor3_data[timestamp] = value
-            
+
              # Procesar los datos del sensor 4
             sensor4_raw_data = estacion.sensor4.strip('{}').split(',')
             for raw_data in sensor4_raw_data:
@@ -71,7 +72,7 @@ class ConsultarMigracionId(generics.ListAPIView):
                     date, time, value = values
                     timestamp = date + time
                     sensor4_data[timestamp] = value
-            
+
              # Procesar los datos del sensor 5
             sensor5_raw_data = estacion.sensor5.strip('{}').split(',')
             for raw_data in sensor5_raw_data:
@@ -80,7 +81,7 @@ class ConsultarMigracionId(generics.ListAPIView):
                     date, time, value = values
                     timestamp = date + time
                     sensor5_data[timestamp] = value
-            
+
             # Procesar los datos del sensor 6
             sensor6_raw_data = estacion.sensor6.strip('{}').split(',')
             for raw_data in sensor6_raw_data:
@@ -89,7 +90,7 @@ class ConsultarMigracionId(generics.ListAPIView):
                     date, time, value = values
                     timestamp = date + time
                     sensor6_data[timestamp] = value
-            
+
             # Procesar los datos del sensor 7
             sensor7_raw_data = estacion.sensor7.strip('{}').split(',')
             for raw_data in sensor7_raw_data:
@@ -98,7 +99,7 @@ class ConsultarMigracionId(generics.ListAPIView):
                     date, time, value = values
                     timestamp = date + time
                     sensor7_data[timestamp] = value
-                    
+
             # Procesar los datos del sensor 8
             sensor8_raw_data = estacion.sensor8.strip('{}').split(',')
             for raw_data in sensor8_raw_data:
@@ -172,7 +173,8 @@ class ConsultarMigracionId(generics.ListAPIView):
                     sensor15_data[timestamp] = value
 
             # Crear objetos con los datos procesados
-            common_timestamps = set(sensor1_data.keys()).intersection(sensor2_data.keys()).intersection(sensor3_data.keys()).intersection(sensor4_data.keys()).intersection(sensor5_data.keys()).intersection(sensor6_data.keys()).intersection(sensor7_data.keys()).intersection(sensor8_data.keys()).intersection(sensor9_data.keys()).intersection(sensor10_data.keys()).intersection(sensor11_data.keys()).intersection(sensor12_data.keys()).intersection(sensor13_data.keys()).intersection(sensor14_data.keys()).intersection(sensor15_data.keys())
+            common_timestamps = set(sensor1_data.keys()).intersection(sensor2_data.keys()).intersection(sensor3_data.keys()).intersection(sensor4_data.keys()).intersection(sensor5_data.keys()).intersection(sensor6_data.keys()).intersection(sensor7_data.keys()).intersection(
+                sensor8_data.keys()).intersection(sensor9_data.keys()).intersection(sensor10_data.keys()).intersection(sensor11_data.keys()).intersection(sensor12_data.keys()).intersection(sensor13_data.keys()).intersection(sensor14_data.keys()).intersection(sensor15_data.keys())
 
             for timestamp in common_timestamps:
                 dt = datetime.strptime(timestamp, '%Y%m%d%H%M%S')
@@ -198,22 +200,27 @@ class ConsultarMigracionId(generics.ListAPIView):
                     'sensor14_data': sensor14_data.get(timestamp, None),
                     'sensor15_data': sensor15_data.get(timestamp, None),
                 })
-            
+
             lista_data = []
-            
-            #TENER EN CUENTA CUANDO NINGUN REGISTRO CUMPLE CON LA CONDICION
+
+            # TENER EN CUENTA CUANDO NINGUN REGISTRO CUMPLE CON LA CONDICION
+        
             if fecha_desde and fecha_hasta:
                 print("acaa entro 1")
-                fecha_formateada_desde = datetime.strptime(fecha_desde,'%Y-%m-%d').date()
-                fecha_formateada_hasta= datetime.strptime(fecha_hasta,'%Y-%m-%d').date()
-                
+                fecha_formateada_desde = datetime.strptime(fecha_desde, '%Y-%m-%d').date()
+                fecha_formateada_hasta = datetime.strptime(fecha_hasta, '%Y-%m-%d').date()
+
                 if fecha_inicio:
                     print("acaa entro 2")
-                    return Response ({'success': False, 'detail': 'Solo puede enviar una fecha desde y fecha hasta'}, status=status.HTTP_403_FORBIDDEN)
+                    return Response({'success': False, 'detail': 'Solo puede enviar una fecha desde y fecha hasta'}, status=status.HTTP_403_FORBIDDEN)
+
+                if fecha_formateada_desde > fecha_formateada_hasta:
+                    print("acaa entro 2")
+                    return Response({'success': False, 'detail': 'La fecha desde no puede ser posterior a la fecha hasta'}, status=status.HTTP_403_FORBIDDEN)
 
                 for estacion in data:
-                    fecha_est=datetime.strptime(estacion['fecha'],'%Y-%m-%d %H:%M:%S').date()
-                    
+                    fecha_est = datetime.strptime(estacion['fecha'], '%Y-%m-%d %H:%M:%S').date()
+
                     if fecha_est >= fecha_formateada_desde and fecha_est <= fecha_formateada_hasta:
                         print("acaa entro 3")
                         lista_data.append(estacion)
@@ -223,23 +230,30 @@ class ConsultarMigracionId(generics.ListAPIView):
             if fecha_inicio:
                 print("acaa entro 4")
 
-                fecha_formateada = datetime.strptime(fecha_inicio,'%Y-%m').month
-            
+                fecha_formateada = datetime.strptime(fecha_inicio, '%Y-%m')
+                year_inicio = fecha_formateada.year
+                month_inicio = fecha_formateada.month
+
                 for estacion in data:
-                    mes=datetime.strptime(estacion['fecha'],'%Y-%m-%d %H:%M:%S').month
-                    
-                    if fecha_formateada == mes:
+                    fecha_estacion = datetime.strptime(
+                        estacion['fecha'], '%Y-%m-%d %H:%M:%S')
+                    year_estacion = fecha_estacion.year
+                    month_estacion = fecha_estacion.month
+
+                    if year_inicio == year_estacion and month_inicio == month_estacion:
                         lista_data.append(estacion)
 
                 serializador = self.serializer_class(lista_data, many=True)
 
             if not lista_data:
-                print("acaa entro 5")
-                serializador = self.serializer_class(data, many=True)
+                if fecha_desde is None and fecha_hasta is None and fecha_inicio is None:
+                    serializador = self.serializer_class(data, many=True)
+                else:
+                    return Response({'success': False, 'detail': 'No se encontraron resultados'}, status=status.HTTP_404_NOT_FOUND)
 
             if serializador:
-                data = sorted(serializador.data,key = lambda x:x['fecha'])
-                
+                data = sorted(serializador.data, key=lambda x: x['fecha'])
+
                 print("acaa entro 6")
                 return Response({'success': True, 'detail': 'Se encontró la siguiente estación', 'data': data}, status=status.HTTP_200_OK)
 

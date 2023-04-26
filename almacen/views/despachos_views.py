@@ -63,6 +63,7 @@ class CreateDespachoMaestro(generics.UpdateAPIView):
         info_despacho = json.loads(datos_ingresados['info_despacho'])
         items_despacho = json.loads(datos_ingresados['items_despacho'])
         info_despacho['ruta_archivo_doc_con_recibido'] = request.FILES.get('ruta_archivo_doc_con_recibido')
+        
         #Validaciones primarias
         if str(user_logeado) == 'AnonymousUser':
             return Response({'success':False,'detail':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
@@ -76,7 +77,7 @@ class CreateDespachoMaestro(generics.UpdateAPIView):
         if instancia_solicitud.solicitud_abierta == False or instancia_solicitud.estado_aprobacion_responsable != 'A':
             return Response({'success':False,'detail':'La solicitud a despachar debe de estar aprobada por el funcionario responsable y no debe de estar cerrada'},status=status.HTTP_404_NOT_FOUND)
         if instancia_solicitud.es_solicitud_de_conservacion != False:
-            return Response({'success':False,'detail':'En este mmódulo no se pueden despahcar solicitudes de vivero'},status=status.HTTP_404_NOT_FOUND)
+            return Response({'success':False,'detail':'En este mmódulo no se pueden despachar solicitudes de vivero'},status=status.HTTP_404_NOT_FOUND)
         #Asignación de fecha de registro
         info_despacho['fecha_registro'] = datetime.now()
         #Se valida que la fecha de la solicitud no sea inferior a (fecha_actual - 8 días) ni superior a la actual
@@ -114,6 +115,7 @@ class CreateDespachoMaestro(generics.UpdateAPIView):
         nro_posicion_items = [i['numero_posicion_despacho'] for i in items_despacho]
         if len(nro_posicion_items) != len(set(nro_posicion_items)):
             return Response({'success':False,'detail':'El número de posición debe ser único' },status=status.HTTP_404_NOT_FOUND)
+        
         # VALIDACIONES EN ITEMS DEL DESPACHO
         aux_validacion_bienes_despachados_repetidos = []
         aux_validacion_bienes_despachados_contra_solicitados = []
@@ -319,7 +321,7 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
         if int(aux_validacion_fechas.days) > 45:
             return Response({'success':False,'detail':'No puede actualizar un despacho con fecha anterior a 45 días respecto a la actual'},status=status.HTTP_404_NOT_FOUND)
         
-         # SE OBTIENEN TODOS LOS ITEMS DE LA SOLICITUD PARA LUEGO VALIDAR QUE LOS ITEMS DESPACHADOS ESTÉN DENTRO DE LA SOLICITUD
+        # SE OBTIENEN TODOS LOS ITEMS DE LA SOLICITUD PARA LUEGO VALIDAR QUE LOS ITEMS DESPACHADOS ESTÉN DENTRO DE LA SOLICITUD
         id_items_solicitud = [i.id_bien.id_bien for i in items_solcitud_instancia]
         # SE OBTIENEN TODOS LOS ITEMS DEL DESPACHO PARA LA VALIDACION 4
         id_items_despacho = [i.id_item_despacho_consumo for i in items_despacho_instancia]
@@ -652,7 +654,7 @@ class GetNroDocumentoDespachoBienesConsumo(generics.ListAPIView):
     def get(self, request):
         nro_solicitud = DespachoConsumo.objects.all().order_by('numero_despacho_consumo').last() 
         return Response({'success':True,'detail':nro_solicitud.numero_despacho_consumo + 1, },status=status.HTTP_200_OK)
-    
+
 
 class CerrarSolicitudDebidoInexistenciaView(generics.RetrieveUpdateAPIView):
     serializer_class = CerrarSolicitudDebidoInexistenciaSerializer

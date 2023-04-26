@@ -3,7 +3,9 @@ from almacen.serializers.bienes_serializers import CatalogoBienesSerializer
 from almacen.serializers.organigrama_serializers import UnidadesOrganizacionales, UnidadesGetSerializer
 from rest_framework import generics,status
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from almacen.models import UnidadesOrganizacionales, NivelesOrganigrama
+from almacen.utils import UtilAlmacen
 from seguridad.models import Personas, User
 from rest_framework.decorators import api_view
 from seguridad.utils import Util
@@ -30,7 +32,8 @@ from rest_framework.response import Response
 from datetime import datetime, date
 from almacen.serializers.solicitudes_serialiers import ( 
     CrearSolicitudesPostSerializer,
-    CrearItemsSolicitudConsumiblePostSerializer
+    CrearItemsSolicitudConsumiblePostSerializer,
+    PersonasResponsablesFilterSerializer
     )
 from almacen.serializers.solicitudes_serialiers import SolicitudesPendientesAprobarSerializer
 from seguridad.serializers.personas_serializers import PersonasSerializer
@@ -630,16 +633,17 @@ class AnularSolicitudesBienesConsumo(generics.UpdateAPIView):
         return Response({'success':True,'detail':'Solicitud procesada con éxito', },status=status.HTTP_200_OK)
 
 class SearchFuncionarioResponsable(generics.ListAPIView):
-    serializer_class=PersonasSerializer
+    serializer_class=PersonasResponsablesFilterSerializer
     queryset=Personas.objects.all()
     permission_classes=[IsAuthenticated]
     
     def get(self, request):
         tipo_documento = request.query_params.get('tipo_documento')
         numero_documento = request.query_params.get('numero_documento')
+        unidad_solicita = request.query_params.get('id_unidad_para_la_que_solicita')
         
-        if (not tipo_documento or tipo_documento=='') and (not numero_documento or numero_documento==''):
-            return Response({'success':False, 'detail':'Debe ingresar mínimo los parámetros de tipo documento y número de documento'}, status=status.HTTP_400_BAD_REQUEST)
+        if (not tipo_documento or tipo_documento=='') or (not numero_documento or numero_documento=='') or (not unidad_solicita):
+            raise ValidationError('Debe ingresar mínimo los parámetros de tipo documento, número de documento y unidad a la que solicita')
         
         filter={}
         for key,value in request.query_params.items():
@@ -647,13 +651,73 @@ class SearchFuncionarioResponsable(generics.ListAPIView):
                 if value != '':
                     filter[key]=value
         
-        persona = Personas.objects.filter(**filter).first()
+        persona = self.queryset.filter(**filter).first()
         if not persona:
-            return Response({'success':True, 'detail':'No se encontraron resultados', 'detail':{}}, status=status.HTTP_200_OK)
+            raise NotFound('No se encontró a la persona')
         
+        unidad_solicita_instance = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=unidad_solicita).first()
+        if not unidad_solicita_instance:
+            raise ValidationError('Debe enviar una unidad para la que solicita existente')
+        
+        unidades_iguales_y_arriba = UtilAlmacen.get_unidades_actual_iguales_y_arriba(unidad_solicita_instance)
+            
         funcionario_persona=ClasesTerceroPersona.objects.filter(id_persona=persona.id_persona, id_clase_tercero=2).first()
         if funcionario_persona:
+            if not persona.id_unidad_organizacional_actual.nombre in unidades_iguales_y_arriba:
+                raise ValidationError('Se encontró a la persona pero no pertenece a la misma unidad a la que solicita o a una unidad superior de ella')
+
             serializador_persona = self.serializer_class(persona)
-            return Response({'success':True, 'detail':'Se encontró el funcionario responsable', 'detail':serializador_persona.data}, status=status.HTTP_200_OK)
+            return Response({'success':True, 'detail':'Se encontró el funcionario responsable', 'data':serializador_persona.data}, status=status.HTTP_200_OK)
         else:
-            return Response({'success':True, 'detail':'La persona no es un funcionario', 'detail':{}}, status=status.HTTP_200_OK)
+            return Response({'success':True, 'detail':'La persona no es un funcionario', 'data':{}}, status=status.HTTP_200_OK)
+
+class SearchFuncionarioResponsableFiltros(generics.ListAPIView):
+    serializer_class=PersonasResponsablesFilterSerializer
+    queryset=Personas.objects.all()
+    permission_classes=[IsAuthenticated]
+    
+    def get(self, request):
+        unidad_solicita = request.query_params.get('id_unidad_para_la_que_solicita')
+        if not unidad_solicita:
+            raise ValidationError('Debe enviar mínimo la unidad a la que solicita')
+        
+        unidad_solicita_instance = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=unidad_solicita).first()
+        if not unidad_solicita_instance:
+            raise ValidationError('Debe enviar una unidad para la que solicita existente')
+        
+        unidades_iguales_y_arriba = UtilAlmacen.get_unidades_actual_iguales_y_arriba(unidad_solicita_instance)
+        
+        filter = {}
+        for key,value in request.query_params.items():
+            if key in ['tipo_documento','numero_documento','primer_nombre','primer_apellido','id_unidad_organizacional_actual']:
+                if key in ['primer_nombre','primer_apellido']:
+                    if value != "":
+                        filter[key+'__icontains']=  value
+                elif key == "numero_documento":
+                    if value != "":
+                        filter[key+'__startswith'] = value
+                else:
+                    if value != "":
+                        filter[key] = value
+        
+        personas = self.queryset.filter(**filter)
+        
+        personas_responsables = [persona_responsable for persona_responsable in personas if persona_responsable.clasesterceropersona_set.filter(id_clase_tercero=2) and persona_responsable.id_unidad_organizacional_actual.nombre in unidades_iguales_y_arriba]
+        
+        serializador_personas = self.serializer_class(personas_responsables, many=True)
+        return Response({'success':True, 'detail':'Se encontró el funcionario responsable', 'data':serializador_personas.data}, status=status.HTTP_200_OK)
+
+class ListUnidadesResponsable(generics.ListAPIView):
+    serializer_class=UnidadesGetSerializer
+    queryset=UnidadesOrganizacionales.objects.all()
+    permission_classes=[IsAuthenticated]
+    
+    def get(self, request, id_unidad_para_la_que_solicita):
+        unidad_solicita_instance = self.queryset.filter(id_unidad_organizacional=id_unidad_para_la_que_solicita).first()
+        if not unidad_solicita_instance:
+            raise NotFound('No se encontró la unidad para la que se solicita')
+        
+        unidades_iguales_y_arriba = UtilAlmacen.get_unidades_actual_iguales_y_arriba(unidad_solicita_instance)
+        unidades_list = self.queryset.filter(nombre__in=unidades_iguales_y_arriba).order_by('id_nivel_organigrama')
+        serializador_unidades = self.serializer_class(unidades_list, many=True)
+        return Response({'success':True, 'detail':'Se encontraron las siguientes unidades posibles para filtrar', 'data':serializador_unidades.data}, status=status.HTTP_200_OK)

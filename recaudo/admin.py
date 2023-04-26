@@ -1,3 +1,95 @@
 from django.contrib import admin
 
-# Register your models here.
+from recaudo.models.base_models import (
+    VariablesBase,
+    NaturalezaJuridica,
+    Ubicaciones,
+    RangosEdad,
+    TiposBien,
+    TiposPago,
+    TipoActuacion
+)
+
+from recaudo.models.cobros_models import (
+    DocumentosCobro,
+    DetalleDocumentosCobro,
+    Deudores,
+    Obligaciones,
+    Cartera
+)
+
+from recaudo.models.garantias_models import (
+    RolesGarantias,
+    Garantias
+)
+
+from recaudo.models.procesos_models import (
+    Bienes,
+    Avaluos,
+    EtapasProceso,
+    AtributosEtapas,
+    Procesos,
+    ValoresProceso,
+    FlujoProceso
+)
+
+from recaudo.models.pagos_models import (
+    FacilidadesPago,
+    RequisitosActuacion,
+    CumplimientoRequisitos,
+    DetallesFacilidadPago,
+    GarantiasFacilidad,
+    PlanPagos,
+    TasasInteres
+)
+
+from recaudo.models.liquidaciones_models import (
+    OpcionesLiquidacionBase,
+    LiquidacionesBase,
+    DetalleLiquidacionBase,
+    Expedientes
+)
+
+#Base
+admin.site.register(VariablesBase),
+admin.site.register(NaturalezaJuridica),
+admin.site.register(Ubicaciones),
+admin.site.register(RangosEdad),
+admin.site.register(TiposBien),
+admin.site.register(TiposPago),
+admin.site.register(TipoActuacion),
+
+#Cobros
+admin.site.register(DocumentosCobro),
+admin.site.register(DetalleDocumentosCobro),
+admin.site.register(Deudores),
+admin.site.register(Expedientes),
+admin.site.register(Obligaciones),
+admin.site.register(Cartera),
+
+#Garantias
+admin.site.register(RolesGarantias),
+admin.site.register(Garantias),
+
+#Liquidaciones
+admin.site.register(OpcionesLiquidacionBase),
+admin.site.register(LiquidacionesBase),
+admin.site.register(DetalleLiquidacionBase),
+
+#Pagos
+admin.site.register(FacilidadesPago),
+admin.site.register(RequisitosActuacion),
+admin.site.register(CumplimientoRequisitos),
+admin.site.register(DetallesFacilidadPago),
+admin.site.register(GarantiasFacilidad),
+admin.site.register(PlanPagos),
+admin.site.register(TasasInteres),
+
+#Procesos
+admin.site.register(Bienes),
+admin.site.register(Avaluos),
+admin.site.register(EtapasProceso),
+admin.site.register(AtributosEtapas),
+admin.site.register(Procesos),
+admin.site.register(ValoresProceso),
+admin.site.register(FlujoProceso)

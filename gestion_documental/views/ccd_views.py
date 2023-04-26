@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db.models import Q
 from seguridad.utils import Util
+from rest_framework.exceptions import PermissionDenied
 from datetime import datetime
 from rest_framework.permissions import IsAuthenticated
 from gestion_documental.serializers.ccd_serializers import (
@@ -17,7 +18,8 @@ from gestion_documental.serializers.ccd_serializers import (
     SubseriesDocPostSerializer,
     SubseriesDocPutSerializer,
     CatalogosSeriesUnidadSerializer,
-    AsignacionesCatalogosOrgSerializer
+    AsignacionesCatalogosOrgSerializer,
+    BusquedaCCDSerializer
 )
 from almacen.models.organigrama_models import Organigramas
 from gestion_documental.models.ccd_models import (
@@ -85,53 +87,71 @@ class UpdateCuadroClasificacionDocumental(generics.RetrieveUpdateAPIView):
             return Response({'success':False, 'detail':'El CCD ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
         elif ccd.fecha_terminado:
             return Response({'success':False, 'detail':'El CCD elegido se encuentra terminado. Por favor intente reanudarlo antes de continuar'}, status=status.HTTP_403_FORBIDDEN)
-        elif ccd.fecha_retiro_produccion:
-            return Response({'success':False, 'detail':'No puede realizar esta acción a un CCD retirado de producción'}, status=status.HTTP_403_FORBIDDEN)
-        
-        previoud_ccd = copy.copy(ccd)
-        
-        serializer = self.serializer_class(ccd, data=data)
-        serializer.is_valid(raise_exception=True)
-        
-        series = ccd.seriesdoc_set.all()
-        
-        valor_aumento_serie = data.get('valor_aumento_serie')
-        valor_aumento_subserie = data.get('valor_aumento_subserie')
-        
-        # CAMBIAR CODIGO DE LA ÚNICA SERIE
-        if valor_aumento_serie and int(valor_aumento_serie) != ccd.valor_aumento_serie:
-            if series:
-                print("ENTROOOOO")
-                primera_serie = series.first()
-                primera_serie.codigo = int(valor_aumento_serie)
-                primera_serie.save()
+        elif ccd.fecha_retiro_produccion or ccd.id_organigrama.fecha_retiro_produccion:
+            return Response({'success':False, 'detail':'No puede realizar esta acción en un CCD retirado de producción o en un CCD cuya construcción está basada en un organigrama que ya fue sacado de circulación'}, status=status.HTTP_403_FORBIDDEN)
+        elif ccd.actual:
+            return Response({'success':False, 'detail':'No se pueden realizar operaciones en un CCD actual'}, status=status.HTTP_403_FORBIDDEN)
+
+        elif not ccd.fecha_terminado:
+            previoud_ccd = copy.copy(ccd)
+            serializer = self.serializer_class(ccd, data=data)
+            serializer.is_valid(raise_exception=True)
             
-        # CAMBIAR CODIGO DE LAS ÚNICAS SUBSERIES
-        if valor_aumento_subserie and int(valor_aumento_subserie) != ccd.valor_aumento_subserie:
-            for serie in series:
-                primera_subserie = serie.subseriesdoc_set.all().first()
-                if primera_subserie:
-                    primera_subserie.codigo = int(valor_aumento_subserie)
-                    primera_subserie.save()
-        
-        serializer.save()
+            # Validar que el nuevo nombre del CCD no esté en uso
+            nuevo_nombre = data.get('nombre', ccd.nombre)
+            if  CuadrosClasificacionDocumental.objects.filter(nombre=nuevo_nombre).exclude(id_ccd=ccd.id_ccd).exists():
+                return Response({'success':False, 'detail':'Ya existe un CCD con el nombre ingresado. Por favor ingrese un nombre diferente'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Validar que la nueva versión del CCD no esté en uso
+            nueva_version = data.get('version', ccd.version)
+            if CuadrosClasificacionDocumental.objects.filter(version=nueva_version).exclude(id_ccd=ccd.id_ccd).exists():
+                return Response({'success':False, 'detail':'Ya existe un CCD con la versión ingresada. Por favor ingrese una versión diferente'}, status=status.HTTP_400_BAD_REQUEST)
+
+            series = ccd.seriesdoc_set.all()
             
-        # AUDITORIA DE UPDATE DE CCD
-        user_logeado = request.user.id_usuario
-        dirip = Util.get_client_ip(request)
-        descripcion = {'nombre':str(previoud_ccd.nombre), 'version':str(previoud_ccd.version)}
-        valores_actualizados={'previous':previoud_ccd, 'current':ccd}
-        auditoria_data = {
-            'id_usuario': user_logeado,
-            'id_modulo': 27,
-            'cod_permiso': 'AC',
-            'subsistema': 'GEST',
-            'dirip': dirip,
-            'descripcion': descripcion,
-            'valores_actualizados': valores_actualizados
-        }
-        Util.save_auditoria(auditoria_data)
-        
+            valor_aumento_serie = data.get('valor_aumento_serie')
+            valor_aumento_subserie = data.get('valor_aumento_subserie')
+            
+            # Verificar si se intentó cambiar el organigrama
+            nuevo_organigrama = data.get('id_organigrama', ccd.id_organigrama.id_organigrama)
+            if int(nuevo_organigrama) != ccd.id_organigrama.id_organigrama:
+                print ("ACTUAL",type(nuevo_organigrama))
+                print ("PASADO",type(ccd.id_organigrama.id_organigrama))
+                return Response({'success':False, 'detail':'No puede cambiar el organigrama utilizado para crear el CCD'}, status=status.HTTP_400_BAD_REQUEST)
+    
+            # CAMBIAR CODIGO DE LA ÚNICA SERIE
+            if valor_aumento_serie and int(valor_aumento_serie) != ccd.valor_aumento_serie:
+                if series:
+                    primera_serie = series.first()
+                    primera_serie.codigo = int(valor_aumento_serie)
+                    primera_serie.save()
+                
+            # CAMBIAR CODIGO DE LAS ÚNICAS SUBSERIES
+            if valor_aumento_subserie and int(valor_aumento_subserie) != ccd.valor_aumento_subserie:
+                for serie in series:
+                    primera_subserie = serie.subseriesdoc_set.all().first()
+                    if primera_subserie:
+                        primera_subserie.codigo = int(valor_aumento_subserie)
+                        primera_subserie.save()
+            
+            serializer.save()
+                
+            # AUDITORIA DE UPDATE DE CCD
+            user_logeado = request.user.id_usuario
+            dirip = Util.get_client_ip(request)
+            descripcion = {'nombre':str(previoud_ccd.nombre), 'version':str(previoud_ccd.version)}
+            valores_actualizados={'previous':previoud_ccd, 'current':ccd}
+            auditoria_data = {
+                'id_usuario': user_logeado,
+                'id_modulo': 27,
+                'cod_permiso': 'AC',
+                'subsistema': 'GEST',
+                'dirip': dirip,
+                'descripcion': descripcion,
+                'valores_actualizados': valores_actualizados
+            }
+            Util.save_auditoria(auditoria_data)
+            
         return Response({'success': True, 'detail': 'Cuadro de Clasificación Documental actualizado exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
 
 class FinalizarCuadroClasificacionDocumental(generics.RetrieveUpdateAPIView):
@@ -225,6 +245,8 @@ class CreateSeriesDoc(generics.CreateAPIView):
         # VALIDACIONES CCD
         if not ccd:
             return Response({'success':False, 'detail':'El CCD ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+        elif ccd.actual:
+            return Response({'success':False, 'detail':'No puede agregar series a un CCD actual'}, status=status.HTTP_403_FORBIDDEN)
         elif ccd.fecha_terminado:
             return Response({'success':False, 'detail':'El CCD elegido se encuentra terminado. Por favor intente reanudarlo antes de continuar'}, status=status.HTTP_403_FORBIDDEN)
         elif ccd.fecha_retiro_produccion:
@@ -263,7 +285,9 @@ class UpdateSeriesDoc(generics.RetrieveUpdateAPIView):
         
         if serie:
             # VALIDACIONES CCD
-            if serie.id_ccd.fecha_terminado:
+            if serie.id_ccd.actual:
+                return Response({'success':False, 'detail':'No puede modificar series a un CCD actual'}, status=status.HTTP_403_FORBIDDEN)
+            elif serie.id_ccd.fecha_terminado:
                 return Response({'success':False, 'detail':'El CCD elegido se encuentra terminado. Por favor intente reanudarlo antes de continuar'}, status=status.HTTP_403_FORBIDDEN)
             elif serie.id_ccd.fecha_retiro_produccion:
                 return Response({'success':False, 'detail':'No puede realizar esta acción a un CCD retirado de producción'}, status=status.HTTP_403_FORBIDDEN)
@@ -288,7 +312,9 @@ class DeleteSeriesDoc(generics.DestroyAPIView):
             id_ccd = serie.id_ccd.id_ccd
             
             # VALIDACIONES CCD
-            if serie.id_ccd.fecha_terminado:
+            if serie.id_ccd.actual:
+                return Response({'success':False, 'detail':'No puede eliminar series a un CCD actual'}, status=status.HTTP_403_FORBIDDEN)
+            elif serie.id_ccd.fecha_terminado:
                 return Response({'success':False, 'detail':'El CCD elegido se encuentra terminado. Por favor intente reanudarlo antes de continuar'}, status=status.HTTP_403_FORBIDDEN)
             elif serie.id_ccd.fecha_retiro_produccion:
                 return Response({'success':False, 'detail':'No puede realizar esta acción a un CCD retirado de producción'}, status=status.HTTP_403_FORBIDDEN)
@@ -373,7 +399,7 @@ class GetSeriesIndependent(generics.ListAPIView):
         if not ccd:
             return Response({'success':False, 'detail':'El CCD ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
         
-        cat_serie_subserie = self.queryset.all().filter(id_serie_doc__id_ccd=id_ccd).values_list('id_serie_doc__id_serie_doc', flat=True)
+        cat_serie_subserie = self.queryset.all().filter(id_serie_doc__id_ccd=id_ccd, id_subserie_doc=None).values_list('id_serie_doc__id_serie_doc', flat=True)
         series = SeriesDoc.objects.filter(id_ccd=id_ccd).exclude(id_serie_doc__in=cat_serie_subserie).order_by('codigo')
         serializador = self.serializer_class(series, many=True)
         
@@ -394,7 +420,7 @@ class CreateSubseriesDoc(generics.CreateAPIView):
         ultima_subserie = self.queryset.all().filter(id_serie_doc=data['id_serie_doc']).last()
         
         codigo_correcto = int(ultima_subserie.codigo) + serie.id_ccd.valor_aumento_subserie if ultima_subserie else serie.id_ccd.valor_aumento_subserie
-        print("CODIGO_CORRECTO: ", codigo_correcto)
+        
         if int(data['codigo']) != codigo_correcto:
             return Response({'success':False, 'detail':'El codigo ingresado no es correcto. Valide que siga el orden definido por el valor de aumento elegido para las subseries'}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -418,7 +444,9 @@ class UpdateSubseriesDoc(generics.RetrieveUpdateAPIView):
 
         if subserie:
             # VALIDACIONES CCD
-            if subserie.id_serie_doc.id_ccd.fecha_terminado:
+            if subserie.id_serie_doc.id_ccd.actual:
+                return Response({'success':False, 'detail':'No puede modificar subseries en un CCD actual'}, status=status.HTTP_403_FORBIDDEN)
+            elif subserie.id_serie_doc.id_ccd.fecha_terminado:
                 return Response({'success':False, 'detail':'El CCD elegido se encuentra terminado. Por favor intente reanudarlo antes de continuar'}, status=status.HTTP_403_FORBIDDEN)
             elif subserie.id_serie_doc.id_ccd.fecha_retiro_produccion:
                 return Response({'success':False, 'detail':'No puede realizar esta acción a un CCD retirado de producción'}, status=status.HTTP_403_FORBIDDEN)
@@ -489,95 +517,6 @@ class GetSubseriesByIdSerieDoc(generics.ListAPIView):
         
         return Response({'success':True, 'detail':'Se encontraron las siguientes subseries', 'data':serializador.data}, status=status.HTTP_200_OK)
 
-# class AsignarSeriesYSubseriesAUnidades(generics.UpdateAPIView):
-#     serializer_class = AsignacionesCatalogosOrgSerializer
-#     queryset = CatalogosSeriesUnidad.objects.all()
-#     permission_classes = [IsAuthenticated]
-    
-#     def put(self, request, id_ccd):
-#         id_ccd_ingresado = id_ccd
-#         datos_ingresados = request.data
-#         if datos_ingresados == []:
-#             series = SeriesDoc.objects.filter(id_ccd=id_ccd_ingresado).values()
-#             for i in series:
-#                 instancia = CatalogosSeriesUnidad.objects.filter(id_serie_doc=i['id_serie_doc'])
-#                 instancia.delete()
-#             return Response({'success':False, "detail" : "Todas las relaciones de serires, subseries y unidades de esta CCD fueron borradas"}, status=status.HTTP_400_BAD_REQUEST)
-#         fecha_ccd = (CuadrosClasificacionDocumental.objects.filter(id_ccd=id_ccd_ingresado).values().first())
-#         if fecha_ccd:
-#             if fecha_ccd['fecha_terminado'] != None:
-#                 return Response({'success':False, "detail" : "No se pueden realizar modificaciones sobre esta CCD, ya está terminado"}, status=status.HTTP_400_BAD_REQUEST)
-#         series = SeriesDoc.objects.filter(id_ccd=id_ccd_ingresado).values()
-#         # Validaciones antes de borrar
-#         series_id = set([i['id_serie_doc'] for i in datos_ingresados])
-#         filtrados = SeriesDoc.objects.filter(id_ccd=id_ccd_ingresado).filter(id_serie_doc__in=series_id).values()
-#         series_id_filtrados = set([i['id_serie_doc'] for i in filtrados])
-#         if len(series_id) != len(series_id_filtrados):
-#              return Response({'success':False, "detail" : "Ingresó una serie documental que no corresponde a la ccd sobre la que se está trabajando"}, status=status.HTTP_400_BAD_REQUEST)
-#         else:
-#             pass
-#         # SE EVALÚAN LAS SERIES Y UNIDADES REPETIDAS
-#         series_unidades_repetidas = []
-
-#         # Guardar y actualizar asignaciones
-#         total_datos_guardados = []
-#         datos = []
-#         for i in datos_ingresados:
-#             if [i['id_serie_doc'],i['id_unidad_organizacional']] in series_unidades_repetidas:
-#                 return Response({'success':False, "detail" : "La combinación de serie documental y unidad organizacional, solo se puede enviar una vez dentro del registro."}, status=status.HTTP_400_BAD_REQUEST)
-#             if not isinstance(i['id_unidad_organizacional'], int):
-#                 return Response({'success':False, "detail" : "Unidad organizacional debe ser un número entero"}, status=status.HTTP_400_BAD_REQUEST)
-#             if not isinstance(i['id_serie_doc'], int):
-#                 return Response({'success':False, "detail" : "Debe ingresar una serie documental válida"}, status=status.HTTP_400_BAD_REQUEST)
-#             unidad_organizacional = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=i['id_unidad_organizacional']).first()
-#             if unidad_organizacional == None:
-#                 return Response({'success':False, "detail" : "No existe esa unidad organizacional"}, status=status.HTTP_400_BAD_REQUEST)
-#             serie = SeriesDoc.objects.filter(id_serie_doc=i['id_serie_doc']).first()
-#             if serie == None:
-#                 return Response({'success':False, "detail" : "No existe esa serie documental"}, status=status.HTTP_400_BAD_REQUEST)
-#             if str(id_ccd_ingresado) != str((((SeriesDoc.objects.filter(id_serie_doc=i['id_serie_doc']).values())[0])['id_ccd_id'])):
-#                 return Response({'success':False, "detail" : "Ingresó una serie documental que no corresponde a la ccd sobre la que se está trabajando"}, status=status.HTTP_400_BAD_REQUEST)
-#             subseries = i['subseries']
-#             if subseries == []:
-#                 datos.append({"id_unidad_organizacional" : unidad_organizacional.id_unidad_organizacional, "id_serie_doc" : serie.id_serie_doc, "id_sub_serie_doc" : None})
-                
-#             # SE EVALÚAN LAS SERIES Y UNIDADES REPETIDAS
-#             series_unidades_repetidas.append([i['id_serie_doc'],i['id_unidad_organizacional']])
-            
-#             for i in subseries:
-#                 if  (not (isinstance(i, int)) or (i == None)):
-#                     return Response({'success':False, "detail" : "Las subseries documentales deben ser un número entero", "data" : i}, status=status.HTTP_400_BAD_REQUEST)
-#                 subserie = SubseriesDoc.objects.filter(id_subserie_doc=i).first()
-#                 if not subserie:
-#                         return Response({'success':False, "detail" : "Una de las subseries documentales no existe", "data" : i}, status=status.HTTP_400_BAD_REQUEST)
-#                 datos.append({"id_unidad_organizacional" : unidad_organizacional.id_unidad_organizacional, "id_serie_doc" : serie.id_serie_doc, "id_sub_serie_doc" : subserie.id_subserie_doc})
-            
-#             # Borrar asignaciones
-#         for i in series:
-#             elmentos_a_borrar = CatalogosSeriesUnidad.objects.filter(id_serie_doc=i['id_serie_doc'])
-#             elmentos_a_borrar.delete()         
-#         serializer = self.get_serializer(data=datos, many=isinstance(datos,list))
-#         serializer.is_valid(raise_exception=True)
-#         serializer.save()
-#         total_datos_guardados.append(serializer.data)
-
-#         return Response({'success':True, "detail" : "Datos guardados con éxito", "data" : total_datos_guardados}, status=status.HTTP_201_CREATED)
-    
-# class GetAsignaciones(generics.ListAPIView):
-#     serializer_class = CatalogosSeriesUnidadSerializer
-#     queryset = CatalogosSeriesUnidad.objects.all()
-#     permission_classes = [IsAuthenticated]
-    
-#     def get(self, request, id_ccd):
-#         ccd = CuadrosClasificacionDocumental.objects.filter(id_ccd=id_ccd).first()
-#         if not ccd:
-#             return Response({'success':False, "detail" : "Esta CCD no existe"}, status=status.HTTP_400_BAD_REQUEST)
-#         asignaciones = self.queryset.all().filter(id_serie_doc__id_ccd=id_ccd).distinct('id_unidad_organizacional', 'id_serie_doc')
-        
-#         serializer = self.serializer_class(asignaciones, many=True)
-            
-#         return Response({'success':True, 'detail':'El CCD ingresado tiene asignado lo siguiente', "data": serializer.data}, status=status.HTTP_200_OK)
-
 class CreateCatalogoSerieSubserie(generics.CreateAPIView):
     serializer_class = CatalogoSerieSubserieSerializer
     permission_classes = [IsAuthenticated]
@@ -629,7 +568,9 @@ class ReanudarCuadroClasificacionDocumental(generics.UpdateAPIView):
         ccd = CuadrosClasificacionDocumental.objects.filter(id_ccd=pk).first()
         if ccd:
             if ccd.fecha_terminado:
-                if ccd.fecha_retiro_produccion:
+                if ccd.actual:
+                    return Response({'success': False, 'detail': 'No se puede reanudar un cuadro de clasificación documental actual'}, status=status.HTTP_403_FORBIDDEN)
+                elif ccd.fecha_retiro_produccion:
                     return Response({'success': False, 'detail': 'No se puede reanudar un cuadro de clasificación documental que ya fue retirado de producción'}, status=status.HTTP_403_FORBIDDEN)
                 trd = TablaRetencionDocumental.objects.filter(id_ccd=pk).exists()
                 if not trd:
@@ -673,10 +614,15 @@ class UpdateCatalogoUnidad(generics.UpdateAPIView):
         cat_unidad_actual = self.queryset.all().filter(id_catalogo_serie__id_serie_doc__id_ccd=id_ccd)
         cat_unidad_actual_values = cat_unidad_actual.values('id_unidad_organizacional', 'id_catalogo_serie')
         
+        if 'actual' in data and data['actual']:
+            raise PermissionDenied('No puede eliminar o actualizar registros en este catalogo en un CCD actual')
+       
         # SEPARAR REGISTROS A ELIMINAR
         cat_unidad_eliminar = [cat_unidad for cat_unidad in cat_unidad_actual_values if cat_unidad not in data]
         for cat_unidad in cat_unidad_eliminar:
-            cat_unidad_actual_eliminar = cat_unidad_actual.filter(id_unidad_organizacional=cat_unidad['id_unidad_organizacional'], id_catalogo_serie=cat_unidad['id_catalogo_serie']).first()
+            cat_unidad_actual_eliminar = cat_unidad_actual.filter(id_unidad_organizacional=cat_unidad['id_unidad_organizacional'], id_catalogo_serie=cat_unidad['id_catalogo_serie']).first() 
+            if ccd.actual:
+                raise PermissionDenied('No puede eliminar registros en un CCD actual')
             cat_unidad_actual_eliminar.delete()
         
         # SEPARAR REGISTROS A CREAR
@@ -698,3 +644,19 @@ class GetCatalogoSeriesUnidadByIdCCD(generics.ListAPIView):
         serializador = self.serializer_class(cat_series_subseries, many=True)
         
         return Response({'success':True, 'detail':'Se encontró lo siguiente para el catalogo de series de las unidades organizacionales', 'data':serializador.data}, status=status.HTTP_200_OK)
+
+class BusquedaCCD(generics.ListAPIView):
+    serializer_class = BusquedaCCDSerializer 
+    queryset = CuadrosClasificacionDocumental.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get (self, request):
+        filter={}
+        for key, value in request.query_params.items():
+            if key in ['nombre','version']:
+                if value != '':
+                    filter[key+'__icontains'] = value
+        
+        ccd = self.queryset.filter(**filter)
+        serializador = self.serializer_class(ccd,many=True)
+        return Response({'succes': True, 'detail':'Resultados de la búsqueda', 'data':serializador.data}, status=status.HTTP_200_OK)

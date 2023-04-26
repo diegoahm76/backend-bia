@@ -6,6 +6,7 @@ urlpatterns = [
     
     path('login/', views.LoginApiView.as_view(), name='token_obtain_pair'),
     path('upload/', views.uploadImage, name="image-upload"),
+    path('recuperar-nombre-usuario/',views.RecuperarNombreDeUsuario.as_view(),name='recuperar-nombre-de-usuario'),
 
     path('register/', views.RegisterView.as_view(), name='register'),
     path('register-externo/', views.RegisterExternoView.as_view(), name='register-externo'),
