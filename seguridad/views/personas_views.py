@@ -1552,7 +1552,7 @@ class CreatePersonaJuridicaAndUsuario(generics.CreateAPIView):
         subject = "Verifica tu usuario"
         template = "activación-de-usuario.html"
 
-        Util.notificacion(serializador,subject,template,absurl=absurl)
+        Util.notificacion(serializador,subject,template,absurl=absurl,email=serializador.email)
     
         
         return Response ({'success':True,'detail':'Se creo la persona jurídica y el usuario correctamente'},status=status.HTTP_200_OK)
@@ -1664,7 +1664,7 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
         subject = "Verifica tu usuario"
         template = "activación-de-usuario.html"
 
-        Util.notificacion(serializador,subject,template,absurl=absurl)
+        Util.notificacion(serializador,subject,template,absurl=absurl,email=serializador.email)
     
         return Response ({'success':True,'detail':'Se creo la persona natural y el usuario correctamente'},status=status.HTTP_200_OK)
 

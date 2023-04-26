@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta,date
 import time
 from seguridad.models import ClasesTercero, ClasesTerceroPersona, Personas
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMultiAlternatives
 from email_validator import validate_email, EmailNotValidError, EmailUndeliverableError, EmailSyntaxError
 from backend.settings.base import EMAIL_HOST_USER, AUTHENTICATION_360_NRS
 from seguridad.models import Shortener, User, Modulos, Permisos, Auditorias
@@ -16,7 +16,7 @@ class Util:
     
     @staticmethod
     def send_email(data):
-        email = EmailMessage(subject= data['email_subject'], body=data['template'], to=[data['to_email']], from_email=EMAIL_HOST_USER)
+        email = EmailMultiAlternatives(subject= data['email_subject'], body=data['template'], to=[data['to_email']], from_email=EMAIL_HOST_USER)
         
         email.content_subtype ='html'
         response = email.send(fail_silently=True)
@@ -412,7 +412,7 @@ class Util:
             primer_nombre = [persona.primer_nombre, persona.primer_apellido]
             primer_nombre = ' '.join(item for item in primer_nombre if item is not None)
             
-            context = {'primer_nombre': primer_nombre,'fecha_actual':str(datetime.now().replace(microsecond=0))}
+            context = {'primer_nombre': primer_nombre,'fecha_actual':str(datetime.now().replace(microsecond=0)),'email': persona.email}
             
             for field, value in kwargs.items():
                 context[field] = value
@@ -422,7 +422,7 @@ class Util:
             email_data = {'template': template, 'email_subject': subject, 'to_email': persona.email}
             Util.send_email(email_data)
         else:
-            context = {'razon_social': persona.razon_social,'fecha_actual':str(datetime.now().replace(microsecond=0))}
+            context = {'razon_social': persona.razon_social,'fecha_actual':str(datetime.now().replace(microsecond=0)),'email': persona.email}
             
             for field, value in kwargs.items():
                 context[field] = value

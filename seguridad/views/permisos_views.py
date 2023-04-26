@@ -251,12 +251,14 @@ def util_prueba(id_usuario,tipo_entorno):
         elif tipo_entorno == 'L':
             if usuario_instance.persona.id_cargo is None or usuario_instance.persona.id_unidad_organizacional_actual is None or (usuario_instance.persona.fecha_a_finalizar_cargo_actual and usuario_instance.persona.fecha_a_finalizar_cargo_actual <= datetime.now()):
                 subject = "Intento de ingreso a entorno laboral"
-                template = "email-entorno.html"
+                template = "ingreso-de-entorno.html"
                 
                 context = {'primer_nombre': usuario_instance.persona.primer_nombre}
-                template = render_to_string((template), context)
-                email_data = {'template': template, 'email_subject': subject, 'to_email': supersusuario.persona.email}
-                Util.send_email(email_data)
+                #template = render_to_string((template), context)
+                #email_data = {'template': template, 'email_subject': subject, 'to_email': supersusuario.persona.email}
+                
+                Util.notificacion(supersusuario.persona,subject,template,nombre_de_usuario=usuario_instance.nombre_de_usuario)
+                #Util.send_email(email_data)
                 
                 raise PermissionDenied('NO SE LE PERMITIRÁ TRABAJAR EN ENTORNO LABORAL, dado que la persona no está actualmente vinculada o la fecha final del cargo ha vencido')
             
@@ -410,7 +412,7 @@ class GetPermisosRolByEntorno(ListAPIView):
             elif tipo_entorno == 'L':
                 if usuario_instance.persona.id_cargo is None or usuario_instance.persona.id_unidad_organizacional_actual is None or (usuario_instance.persona.fecha_a_finalizar_cargo_actual and usuario_instance.persona.fecha_a_finalizar_cargo_actual <= datetime.now()):
                     subject = "Intento de ingreso a entorno laboral"
-                    template = "email-entorno.html"
+                    template = "ingreso-de-entorno.html"
                     
                     context = {'primer_nombre': usuario_instance.persona.primer_nombre}
                     template = render_to_string((template), context)
