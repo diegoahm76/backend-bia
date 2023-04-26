@@ -160,6 +160,20 @@ class GetCamasGerminacionList(generics.ListAPIView):
         
         return Response({'success':True, 'detail':'Busqueda exitosa', 'data': serializador.data},status=status.HTTP_200_OK)
     
+class GetCamasGerminacionByIdList(generics.ListAPIView):
+    serializer_class = GetCamasGerminacionSerializer 
+    queryset = CamasGerminacionVivero.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get (self,request):
+        camas_list = request.data.get('camas_list')
+        
+        camas = self.queryset.all().filter(id_cama_germinacion_vivero__in = camas_list)
+    
+        serializador = self.serializer_class(camas,many=True)
+        
+        return Response({'success':True, 'detail':'Busqueda exitosa', 'data': serializador.data},status=status.HTTP_200_OK)
+    
     
 class GetCamasGerminacionesByIdVivero(generics.ListAPIView):
     serializer_class = GetCamasGerminacionSerializer

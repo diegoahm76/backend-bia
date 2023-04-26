@@ -20,6 +20,7 @@ urlpatterns = [
     path('siembra/get-camas-germinacion/<str:id_vivero>/', views.GetCamasGerminacionesView.as_view(), name='get-camas-germinacion'),
     path('siembra/get-camas-germinacion-siembra/<str:id_vivero>/', views.GetCamasGerminacionesByIdVivero.as_view(), name='get-camas-germinacion-siembra'),
     path('siembra/get-camas-germinacion-list/', views.GetCamasGerminacionList.as_view(), name='siembraget-camas-germinacion-list'),
+    path('siembra/get-camas-germinacion-by-id-list/', views.GetCamasGerminacionByIdList.as_view(), name='siembraget-camas-germinacion-by-id-list'),
     path('siembra/get/<str:id_siembra>/', views.GetSiembrasView.as_view(), name='get-siembra'),
     path('siembra/get-bienes-por-consumir/<str:id_vivero>/<str:codigo_bien>/', views.GetBienesPorConsumirView.as_view(), name='get-bienes-por-consumir'),
     path('siembra/get-bienes-por-consumir-lupa/<str:id_vivero>/', views.GetBusquedaBienesConsumidosView.as_view(), name='get-bienes-por-consumir'),
