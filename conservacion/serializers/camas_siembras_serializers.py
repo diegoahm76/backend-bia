@@ -152,24 +152,13 @@ class GetBienesConsumidosSiembraSerializer(serializers.ModelSerializer):
             'tipo_bien'
         )
 
-class CamasGerminacionViverosSerializer(serializers.ModelSerializer):
-    id_cama = serializers.ReadOnlyField(source='id_cama_germinacion_vivero.id_cama_germinacion_vivero', default=None)
-    nombre_cama = serializers.ReadOnlyField(source='id_cama_germinacion_vivero.nombre', default=None)
-    
-    class Meta:
-        model = CamasGerminacionViveroSiembra
-        fields = ['id_cama','nombre_cama']
-
 class GetSiembrasSerializer(serializers.ModelSerializer):
-    camas_germinacion = serializers.SerializerMethodField()
+    cama_germinacion = serializers.SerializerMethodField()
     
-    def get_camas_germinacion(self, obj):
-        camas_germinacion = []
-        camas = CamasGerminacionViveroSiembra.objects.filter(id_siembra=obj.id_siembra)
-        if camas:
-            camas_serializer = CamasGerminacionViverosSerializer(camas, many=True)
-            camas_germinacion = camas_serializer.data
-        return camas_germinacion
+    def get_cama_germinacion(self, obj):
+        cama_germinacion = CamasGerminacionViveroSiembra.objects.filter(id_siembra=obj.id_siembra).values_list('id_cama_germinacion_vivero', flat=True)
+        
+        return cama_germinacion
         
     class Meta:
         model = Siembras
