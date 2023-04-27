@@ -757,7 +757,7 @@ class UpdateSiembraView(generics.RetrieveUpdateAPIView):
 
         return Response({'success': True, 'detail': 'Actualización exitosa'}, status=status.HTTP_201_CREATED)
 
-class GetSiembrasView(generics.RetrieveAPIView):
+class GetSiembraByIdView(generics.RetrieveAPIView):
     serializer_class = GetSiembraSerializer
     queryset = Siembras.objects.all()
     permission_classes = [IsAuthenticated]
