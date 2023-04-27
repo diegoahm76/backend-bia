@@ -166,7 +166,7 @@ class GetMantenimientosProgramadosByFechas(generics.ListAPIView):
         
         mantenimientos_programados = ProgramacionMantenimientos.objects.filter(fecha_programada__range=[start_date,end_date], ejecutado=False, fecha_anulacion=None)
         if cod_tipo_activo:
-            mantenimientos_programados.filter(id_articulo__cod_tipo_activo=cod_tipo_activo)
+            mantenimientos_programados = mantenimientos_programados.filter(id_articulo__cod_tipo_activo=cod_tipo_activo)
         
         mantenimientos_programados = mantenimientos_programados.values(id_programacion_mantenimiento=F('id_programacion_mtto'), articulo=F('id_articulo'), tipo=F('cod_tipo_mantenimiento'), fecha=F('fecha_programada')).order_by('fecha')
         if mantenimientos_programados:
