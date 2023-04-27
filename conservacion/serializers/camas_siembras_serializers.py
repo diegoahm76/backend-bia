@@ -2,7 +2,8 @@ from rest_framework import serializers
 from conservacion.models.siembras_models import (
     Siembras,
     ConsumosSiembra,
-    CamasGerminacionVivero
+    CamasGerminacionVivero,
+    CamasGerminacionViveroSiembra
 )
 from almacen.models.bienes_models import (
     CatalogoBienes
@@ -151,8 +152,25 @@ class GetBienesConsumidosSiembraSerializer(serializers.ModelSerializer):
             'tipo_bien'
         )
 
+class CamasGerminacionViverosSerializer(serializers.ModelSerializer):
+    id_cama = serializers.ReadOnlyField(source='id_cama_germinacion_vivero.id_cama_germinacion_vivero', default=None)
+    nombre_cama = serializers.ReadOnlyField(source='id_cama_germinacion_vivero.nombre', default=None)
+    
+    class Meta:
+        model = CamasGerminacionViveroSiembra
+        fields = ['id_cama','nombre_cama']
 
 class GetSiembrasSerializer(serializers.ModelSerializer):
+    camas_germinacion = serializers.SerializerMethodField()
+    
+    def get_camas_germinacion(self, obj):
+        camas_germinacion = []
+        camas = CamasGerminacionViveroSiembra.objects.filter(id_siembra=obj.id_siembra)
+        if camas:
+            camas_serializer = CamasGerminacionViverosSerializer(camas, many=True)
+            camas_germinacion = camas_serializer.data
+        return camas_germinacion
+        
     class Meta:
         model = Siembras
         fields = '__all__'
