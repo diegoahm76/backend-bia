@@ -160,12 +160,12 @@ class GetCamasGerminacionList(generics.ListAPIView):
         
         return Response({'success':True, 'detail':'Busqueda exitosa', 'data': serializador.data},status=status.HTTP_200_OK)
     
-class GetCamasGerminacionByIdList(generics.ListAPIView):
+class GetCamasGerminacionByIdList(generics.CreateAPIView):
     serializer_class = GetCamasGerminacionSerializer 
     queryset = CamasGerminacionVivero.objects.all()
     permission_classes = [IsAuthenticated]
     
-    def get (self,request):
+    def post(self,request):
         camas_list = request.data.get('camas_list')
         
         camas = self.queryset.all().filter(id_cama_germinacion_vivero__in = camas_list)
