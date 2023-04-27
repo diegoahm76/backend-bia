@@ -16,12 +16,13 @@ from almacen.serializers.generics_serializers import (
     SerializerBodegas,
     SerializerPostBodegas,
     SerializerPutBodegas,
-    
     SerializerMagnitudes,
     SerializersEstadosArticulo
     )   
 from almacen.models.generics_models import Marcas, PorcentajesIVA
 from almacen.models.bienes_models import EstadosArticulo
+from seguridad.models import Personas
+from django.db.models import Q
 from almacen.choices.estados_articulo_choices import estados_articulo_CHOICES
 from almacen.choices.magnitudes_choices import magnitudes_CHOICES
 from rest_framework.response import Response
@@ -96,6 +97,12 @@ class RegisterBodega(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         
         es_principal = serializer.validated_data.get('es_principal')
+        id_responsable = data.get('id_responsable')
+        
+        if id_responsable:
+            responsable = Personas.objects.filter(id_persona=data['id_responsable']).filter(~Q(id_cargo=None) and ~Q(id_unidad_organizacional_actual=None) and Q(es_unidad_organizacional_actual=True))
+            if not responsable:
+                raise ValidationError('La persona debe tener un cargo y tener asignada una Unidad Organizacional')
         
         bodega_principal = Bodegas.objects.filter(es_principal=es_principal).first()
         
@@ -104,7 +111,8 @@ class RegisterBodega(generics.CreateAPIView):
         else:
             serializer.save()
             return Response({'success': True, 'detail':'Se creado la bodega con éxito', 'data':serializer.data}, status=status.HTTP_201_CREATED)
-    
+
+        
 class UpdateBodega(generics.UpdateAPIView):
     serializer_class=SerializerPutBodegas
     queryset=Bodegas.objects.all()
@@ -117,7 +125,13 @@ class UpdateBodega(generics.UpdateAPIView):
             serializer.is_valid(raise_exception=True)
             
             es_principal = serializer.validated_data.get('es_principal')
-            
+            id_responsable = data.get('id_responsable')
+        
+            if id_responsable:
+                responsable = Personas.objects.filter(id_persona=data['id_responsable']).filter(~Q(id_cargo=None) and ~Q(id_unidad_organizacional_actual=None) and Q(es_unidad_organizacional_actual=True))
+                if not responsable:
+                    raise ValidationError('La persona debe tener un cargo y tener asignada una Unidad Organizacional')
+
             bodega_principal = Bodegas.objects.filter(es_principal=es_principal).first()
             
             if bodega_principal and es_principal:
