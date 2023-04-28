@@ -9,6 +9,7 @@ urlpatterns = [
     path('get-bienes-solicitud/', views.GetVisibleBySolicitud.as_view(), name='search-viveros'),
     path('get-orgchart-tree/<str:pk>/', views.get_orgchart_tree, name='get-orgchart-tree'),
     path('get-solicitudes-pendientes-por-aprobar/<str:tipodocumento>/<str:numerodocumento>/', views.GetSolicitudesPendentesPorAprobar.as_view(), name='get-solicitudes-pendientes-por-aprobar'),
+    path('get-solicitudes-no-aprobadas/<str:id_persona_solicita>/', views.GetSolicitudesNoAprobadas.as_view(), name='get-solicitudes-no-aprobar'),
     path('get-solicitud-by-id/<str:id_solicitud>/', views.GetSolicitudesById_Solicitudes.as_view(), name='get-solicitudes-pendientes-por-aprobar'),
     path('get-nro-documento-solicitudes-bienes-consumo/', views.GetNroDocumentoSolicitudesBienesConsumo.as_view(), name='get-solicitudes-pendientes-por-aprobar'),
     path('SearchViveros', views.GetNroDocumentoSolicitudesBienesConsumo.as_view(), name='get-solicitudes-pendientes-por-aprobar'),
