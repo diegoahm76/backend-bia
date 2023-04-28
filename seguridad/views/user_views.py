@@ -1248,7 +1248,7 @@ class UsuarioInternoAExterno(generics.UpdateAPIView):
 
             subject = "Cambio a usuario externo"
             template = "cambio-tipo-de-usuario.html"
-            Util.notificacion(usuario.persona,subject,template,nombre_de_ususario=usuario.nombre_de_usuario)
+            Util.notificacion(usuario.persona,subject,template,nombre_de_usuario=usuario.nombre_de_usuario)
 
             return Response({'success': True, 'detail': 'Se activo como usuario externo', 'data': serializador.data}, status=status.HTTP_200_OK)
         else:
@@ -1314,9 +1314,9 @@ class RecuperarNombreDeUsuario(generics.UpdateAPIView):
             if usuario:
                 
                 subject = "Verifica tu usuario"
-                template = "email-recupe-nombre-usuario.html"
+                template = "recuperar-usuario.html"
 
-                Util.notificacion(persona,subject,template,nombre_de_ususario=usuario.nombre_de_usuario)
+                Util.notificacion(persona,subject,template,nombre_de_usuario=usuario.nombre_de_usuario)
 
                 return Response({'success':True,'detail':'Se ha enviado el correo'},status=status.HTTP_200_OK)
             

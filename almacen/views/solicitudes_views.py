@@ -488,6 +488,18 @@ class GetSolicitudesPendentesPorAprobar(generics.ListAPIView):
         serializer = self.serializer_class(solicitudes_por_aprobar, many=True)
         return Response({'success':True,'detail':serializer.data, },status=status.HTTP_200_OK)
 
+
+class GetSolicitudesNoAprobadas(generics.ListAPIView):
+# ESTA FUNCIONALIDAD PERMITE LISTAR LAS SOLICITUDES PENDIENTES DE APORVACIÓN PORL SUPERVISOR DESIGNADO
+    serializer_class = CrearSolicitudesPostSerializer
+    queryset=SolicitudesConsumibles.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_persona_solicita):
+        solicitudes_no_aprobadas = SolicitudesConsumibles.objects.filter(id_persona_solicita=id_persona_solicita, revisada_responsable = False)
+        serializer = self.serializer_class(solicitudes_no_aprobadas, many=True)
+        return Response({'success':True,'detail':'Se encontraron las siguientes solicitudes','data':serializer.data},status=status.HTTP_200_OK)
+
 class GetSolicitudesById_Solicitudes(generics.ListAPIView):
     # ESTA FUNCIONALIDAD PERMITE CONSULTAR SOLICITUDES DE BIENES DE CONSUMO POR ID_SOLICITUDES
     serializer_class = CrearSolicitudesPostSerializer
