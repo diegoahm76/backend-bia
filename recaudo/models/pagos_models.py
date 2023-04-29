@@ -1,15 +1,31 @@
 from django.db import models
 from recaudo.models.base_models import TipoActuacion, TiposPago
+from recaudo.models.liquidaciones_models import Deudores
+from recaudo.models.cobros_models import Cartera
+from recaudo.models.procesos_models import Bienes
+
+
+class TasasInteres(models.Model):
+    id = models.BigAutoField(primary_key=True, db_column='T433id')
+    valor = models.DecimalField(max_digits=30, decimal_places=2, db_column='T433valor')
+    vigencia_desde = models.DateTimeField(db_column='T433vigencia_desde')
+    vigencia_hasta = models.DateTimeField(db_column='T433vigencia_hasta')
+
+    class Meta:
+        db_table = 'T433tasas_interes'
+        verbose_name = 'Tasa interes'
+        verbose_name_plural = 'Tasas interes'
 
 
 class FacilidadesPago(models.Model):
-    id = models.AutoField(db_column='T426id', primary_key=True)
-    id_deudor_actuacion = models.IntegerField(db_column='T426id_deudor_actuacion')
+    id = models.AutoField(primary_key=True, db_column='T426id')
+    id_deudor_actuacion = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T426id_deudor_actuacion')
     id_tipo_actuacion = models.ForeignKey(TipoActuacion, on_delete=models.CASCADE, db_column='T426id_tipo_actuacion')
     fecha_generacion = models.DateTimeField(db_column='T426fecha_generacion')
     observaciones = models.TextField(db_column='T426observaciones')
     periodicidad = models.IntegerField(db_column='T426periodicidad')
     cuotas = models.IntegerField(db_column='T426cuotas')
+    id_tasas_interes = models.ForeignKey(TasasInteres, on_delete=models.CASCADE, db_column='T426id_tasa_interes')
     documento_soporte = models.TextField(db_column='_T426documento_soporte')
     id_funcionario = models.IntegerField(db_column='T426id_funcionario')
 
@@ -20,10 +36,10 @@ class FacilidadesPago(models.Model):
 
 
 class RequisitosActuacion(models.Model):
-    id = models.AutoField(db_column='T428id', primary_key=True)
-    descripcion = models.CharField(db_column='T428descripcion', max_length=255)
+    id = models.AutoField(primary_key=True, db_column='T428id')
+    descripcion = models.CharField(max_length=255, db_column='T428descripcion')
     id_tipo_actuacion = models.ForeignKey(TipoActuacion, on_delete=models.CASCADE, db_column='T428id_tipo_actuacion')
-    tipo = models.CharField(db_column='T428tipo', max_length=255)
+    tipo = models.CharField(max_length=255, db_column='T428tipo')
 
     class Meta:
         db_table = 'T428requisitos_actuacion'
@@ -45,7 +61,8 @@ class CumplimientoRequisitos(models.Model):
 
 class DetallesFacilidadPago(models.Model):
     id = models.AutoField(primary_key=True, db_column='T430id')
-    id_cartera = models.IntegerField(db_column='T430id_cartera')
+    id_cartera = models.ForeignKey(Cartera, on_delete=models.CASCADE, db_column='T430id_cartera')
+    id_facilidad_pago = models.ForeignKey(FacilidadesPago, on_delete=models.CASCADE, db_column='T430id_facilidad_pago')
 
     class Meta:
         db_table = 'T430detalles_facilidad_pago'
@@ -55,7 +72,7 @@ class DetallesFacilidadPago(models.Model):
 
 class GarantiasFacilidad(models.Model):
     id = models.AutoField(primary_key=True, db_column='T431id')
-    id_bien = models.IntegerField(db_column='T431id_bien')
+    id_bien = models.ForeignKey(Bienes, on_delete=models.CASCADE, db_column='T431id_bien')
     id_facilidad_pago = models.ForeignKey(FacilidadesPago, on_delete=models.CASCADE, db_column='T431id_facilidad_pago')
 
     class Meta:
@@ -65,30 +82,19 @@ class GarantiasFacilidad(models.Model):
 
 
 class PlanPagos(models.Model):
-    id = models.BigAutoField(db_column='T432id', primary_key=True)
+    id = models.BigAutoField(primary_key=True, db_column='T432id')
     id_facilidad_pago = models.ForeignKey(FacilidadesPago, on_delete=models.CASCADE, db_column='T432id_facilidad_pago')
     fecha_proyectada = models.DateTimeField(db_column='T432fecha_proyectada')
     fecha_pago = models.DateTimeField(db_column='T432fecha_pago')
-    valor = models.DecimalField(db_column='T432valor', max_digits=30, decimal_places=2)
+    valor = models.DecimalField(max_digits=30, decimal_places=2, db_column='T432valor')
     id_tipo_pago = models.ForeignKey(TiposPago, on_delete=models.CASCADE, db_column='T432id_tipo_pago')
     verificado = models.IntegerField(db_column='T432verificado')
     soporte = models.TextField(db_column='_T432soporte')
-    id_funcionario = models.IntegerField(db_column='_T4322id_funcionario')
-    id_tasa_interes = models.IntegerField(db_column='T432id_tasa_interes')
+    id_funcionario = models.IntegerField(db_column='_T432id_funcionario')
+    id_tasa_interes =models.ForeignKey(TasasInteres, on_delete=models.CASCADE, db_column='T432id_tasa_interes')
 
     class Meta:
         db_table = 'T432plan_pagos'
         verbose_name = 'Plan pago'
         verbose_name_plural = 'Plan pagos'
 
-
-class TasasInteres(models.Model):
-    id = models.BigAutoField(db_column='T433id', primary_key=True)
-    valor = models.DecimalField(db_column='T433valor', max_digits=30, decimal_places=2)
-    vigencia_desde = models.DateTimeField(db_column='T433vigencia_desde')
-    vigencia_hasta = models.DateTimeField(db_column='T433vigencia_hasta')
-
-    class Meta:
-        db_table = 'T433tasas_interes'
-        verbose_name = 'Tasa interes'
-        verbose_name_plural = 'Tasas interes'
