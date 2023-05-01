@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.core import signing
 from django.contrib.auth.hashers import make_password, check_password
 from rest_framework import serializers
@@ -342,10 +343,6 @@ class SetNewPasswordSerializer(serializers.Serializer):
                 raise AuthenticationFailed('Link de actualización de contraseña invalido')
             else:
                 raise AuthenticationFailed('Link de activación de usuario invalido')
-        
-        # VALIDACIONES PASSWORD IGUAL A ANTERIOR
-        if check_password(password,user.password):
-            raise serializers.ValidationError('No se puede actualizar la contraseña. El valor proporcionado es el mismo que tiene actualmente')
 
         return attrs
     
@@ -393,11 +390,19 @@ class SetNewPasswordUnblockUserSerializer(serializers.Serializer):
 
             if not PasswordResetTokenGenerator().check_token(user, token):
                 raise AuthenticationFailed('Link de desbloqueo de usuario invalido', 401)
-            if check_password(password,user.password):
-                raise serializers.ValidationError('no se puede actualizar la contraseña. el valor proporcionado',401)
+            
             user.set_password(password)
             user.is_blocked = False
             user.save()
+            
+            # HISTORICO DESBLOQUEO
+            HistoricoActivacion.objects.create(
+                id_usuario_afectado=user,
+                cod_operacion='D',
+                fecha_operacion=datetime.now(),
+                justificacion='Usuario desbloqueado por validación de datos',
+                usuario_operador=user
+            )
 
             return user
 

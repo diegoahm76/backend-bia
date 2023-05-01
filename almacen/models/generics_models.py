@@ -67,7 +67,7 @@ class Bodegas(models.Model):
     nombre = models.CharField(max_length=255, db_column='T056nombre',unique=True)
     cod_municipio = models.CharField(max_length=5, choices=municipios_CHOICES, null=True, blank=True, db_column='T056Cod_Municipio')
     direccion = models.CharField(max_length=255, null=True, blank=True, db_column='T056direccion')
-    id_responsable = models.ForeignKey('seguridad.Personas', on_delete=models.CASCADE, db_column='T056Id_Responsable')
+    id_responsable = models.ForeignKey('seguridad.Personas', on_delete=models.SET_NULL, db_column='T056Id_Responsable', blank=True, null=True)
     es_principal = models.BooleanField(default=False, db_column='T056esPrincipal')
     activo = models.BooleanField(default=True, db_column='T056activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T056itemYaUsado')
