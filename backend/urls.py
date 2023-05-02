@@ -104,8 +104,9 @@ urlpatterns = [
     path("api/estaciones/historial/",include('estaciones.urls.historial_alertas_urls')),
     path("api/estaciones/migracion/",include('estaciones.urls.migracion_estaciones_urls')),
 
-    #liquidaciones
+    #Recaudo
     path('api/recaudo/liquidaciones/', include('recaudo.urls.liquidaciones_urls')),
+    path('api/recaudo/procesos/', include('recaudo.urls.procesos_urls')),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
