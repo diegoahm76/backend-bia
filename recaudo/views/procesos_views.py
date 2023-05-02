@@ -8,7 +8,8 @@ from recaudo.serializers.procesos_serializers import (
     EtapasProcesoSerializer,
     TiposAtributosSerializer,
     AtributosEtapasSerializer,
-    FlujoProcesoSerializer
+    FlujoProcesoSerializer,
+    FlujoProcesoPostSerializer
 )
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
@@ -59,7 +60,7 @@ class FlujoProcesoView(generics.ListAPIView):
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
 
     def post(self, request):
-        serializer = self.serializer_class(data=request.data)
+        serializer = FlujoProcesoPostSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)

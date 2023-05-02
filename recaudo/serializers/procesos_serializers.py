@@ -34,3 +34,9 @@ class FlujoProcesoSerializer(serializers.ModelSerializer):
     class Meta:
         model = FlujoProceso
         fields = '__all__'
+
+
+class FlujoProcesoPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FlujoProceso
+        fields = '__all__'
