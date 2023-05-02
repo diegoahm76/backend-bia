@@ -1,7 +1,7 @@
 from django.db import models
 from recaudo.models.base_models import TipoActuacion, TiposPago
 from recaudo.models.liquidaciones_models import Deudores
-from recaudo.models.cobros_models import Cartera
+# from recaudo.models.cobros_models import Cartera
 from recaudo.models.procesos_models import Bienes
 
 
@@ -61,7 +61,7 @@ class CumplimientoRequisitos(models.Model):
 
 class DetallesFacilidadPago(models.Model):
     id = models.AutoField(primary_key=True, db_column='T430id')
-    id_cartera = models.ForeignKey(Cartera, on_delete=models.CASCADE, db_column='T430id_cartera')
+    id_cartera = models.ForeignKey('recaudo.Cartera', on_delete=models.CASCADE, db_column='T430id_cartera')
     id_facilidad_pago = models.ForeignKey(FacilidadesPago, on_delete=models.CASCADE, db_column='T430id_facilidad_pago')
 
     class Meta:

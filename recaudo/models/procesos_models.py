@@ -1,7 +1,7 @@
 from django.db import models
 from recaudo.models.base_models import TiposBien
 from recaudo.models.liquidaciones_models import Deudores
-from recaudo.models.cobros_models import Cartera
+# from recaudo.models.cobros_models import Cartera
 
 
 class Bienes(models.Model):
@@ -58,7 +58,7 @@ class AtributosEtapas(models.Model):
 
 class Procesos(models.Model):
     id = models.AutoField(primary_key=True, db_column='T422id')
-    id_cartera = models.ForeignKey(Cartera, on_delete=models.CASCADE, db_column='T422id_cartera')
+    id_cartera = models.ForeignKey('recaudo.Cartera', on_delete=models.CASCADE, db_column='T422id_cartera')
     id_funcionario = models.IntegerField(db_column='T422id_funcionario')
     inicio = models.DateField(db_column='T422inicio')
     fin = models.DateField(db_column='T422fin')
@@ -83,8 +83,8 @@ class ValoresProceso(models.Model):
 
 class FlujoProceso(models.Model):
     id = models.AutoField(primary_key=True, db_column='T425id')
-    id_etapa_origen = models.ForeignKey(EtapasProceso, on_delete=models.CASCADE, db_column='T425id_etapa_origen')
-    id_etapa_destino = models.ForeignKey(EtapasProceso, on_delete=models.CASCADE, db_column='T425id_etapa_destino')
+    id_etapa_origen = models.ForeignKey(EtapasProceso, related_name='etapa_origen', on_delete=models.CASCADE, db_column='T425id_etapa_origen')
+    id_etapa_destino = models.ForeignKey(EtapasProceso, related_name='etapa_destino', on_delete=models.CASCADE, db_column='T425id_etapa_destino')
     fecha = models.DateField(db_column='T425fecha')
     descripcion = models.CharField(max_length=255, db_column='T425descripcion')
     requisitos = models.TextField(db_column='T425requisitos')
