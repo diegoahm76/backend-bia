@@ -6,4 +6,5 @@ urlpatterns = [
     path('tipos-atributos/', views.TiposAtributosView.as_view(), name='tipos-etapas-todos'),
     path('atributos/<int:etapa>/', views.AtributosEtapasView.as_view(), name='atributos-etapas-todos'),
     path('flujos/', views.FlujoProcesoView.as_view(), name='flujos-todos'),
+    path('grafica/', views.GraficaView.as_view(), name='grafica-flujo'),
 ]

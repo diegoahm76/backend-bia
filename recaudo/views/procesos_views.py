@@ -66,3 +66,21 @@ class FlujoProcesoView(generics.ListAPIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class GraficaView(generics.ListAPIView):
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        querysetEtapas = EtapasProceso.objects.all()
+        querysetFlujos = FlujoProceso.objects.all()
+        nuevasEtapas = []
+        nuevoFlujo = []
+        for item in querysetEtapas:
+            nuevasEtapas.append({'id': item.pk, 'data': {'nombre': item.etapa, 'descripcion': item.descripcion, 'fecha': ''}})
+        for item in querysetFlujos:
+            nuevoFlujo.append({'id': item.pk, 'source': item.id_etapa_origen.pk, 'target': item.id_etapa_destino.pk})
+        response = {
+            'nodes': nuevasEtapas,
+            'edges': nuevoFlujo
+        }
+        return Response(response, status=status.HTTP_200_OK)
