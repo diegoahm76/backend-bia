@@ -609,27 +609,28 @@ class UpdateSiembraView(generics.RetrieveUpdateAPIView):
         
         data_bienes_consumidos = request.data['data_bienes_consumidos']
         
-        #VALIDACIÓN QUE TODOS LOS ITEMS TENGAN UNA SOLA SIEMBRA Y SEA LA MISMA ENVIADA EN LA URL
-        id_siembra_list = [bien['id_siembra'] for bien in data_bienes_consumidos]
-        if len(set(id_siembra_list)) > 1:
-            raise ValidationError('Todos los bienes consumidos deben pertenecer a solo una siembra')
-        if int(id_siembra_list[0]) != int(id_siembra):
-            raise ValidationError('Todos los bienes consumidos deben asociarse a la siembra seleccionada')
+        if data_bienes_consumidos:
+            #VALIDACIÓN QUE TODOS LOS ITEMS TENGAN UNA SOLA SIEMBRA Y SEA LA MISMA ENVIADA EN LA URL
+            id_siembra_list = [bien['id_siembra'] for bien in data_bienes_consumidos]
+            if len(set(id_siembra_list)) > 1:
+                raise ValidationError('Todos los bienes consumidos deben pertenecer a solo una siembra')
+            if int(id_siembra_list[0]) != int(id_siembra):
+                raise ValidationError('Todos los bienes consumidos deben asociarse a la siembra seleccionada')
+            
+            #VALIDACIÓN QUE EL ID_BIEN ENVIADO EXISTA EN INVENTARIO VIVERO
+            id_bien = [bien['id_bien_consumido'] for bien in data_bienes_consumidos]
+            bien_in_inventario_viveros = InventarioViveros.objects.filter(id_bien__in=id_bien, id_siembra_lote_germinacion=None, id_vivero=instancia_siembra_actualizada.id_vivero.id_vivero)
+            if len(set(id_bien)) != len(bien_in_inventario_viveros):
+                raise ValidationError('Todos los bienes por consumir deben existir')
         
-        #VALIDACIÓN QUE EL ID_BIEN ENVIADO EXISTA EN INVENTARIO VIVERO
-        id_bien = [bien['id_bien_consumido'] for bien in data_bienes_consumidos]
-        bien_in_inventario_viveros = InventarioViveros.objects.filter(id_bien__in=id_bien, id_siembra_lote_germinacion=None, id_vivero=instancia_siembra_actualizada.id_vivero.id_vivero)
-        if len(set(id_bien)) != len(bien_in_inventario_viveros):
-            raise ValidationError('Todos los bienes por consumir deben existir')
-        
-        #VALIDACIÓN QUE EN LOS BIENES ENVIADOS SOLO HAYA UNA SEMILLA
-        bienes_semilla = []
-        for bien in bien_in_inventario_viveros:
-            if bien.id_bien.es_semilla_vivero == True:
-                bienes_semilla.append(bien)
-        
-        if len(bienes_semilla) > 1:
-            raise PermissionDenied('No se puede guardar los bienes consumidos por que tiene más de una semilla')
+            #VALIDACIÓN QUE EN LOS BIENES ENVIADOS SOLO HAYA UNA SEMILLA
+            bienes_semilla = []
+            for bien in bien_in_inventario_viveros:
+                if bien.id_bien.es_semilla_vivero == True:
+                    bienes_semilla.append(bien)
+            
+            if len(bienes_semilla) > 1:
+                raise PermissionDenied('No se puede guardar los bienes consumidos por que tiene más de una semilla')
 
         #SEPARO ENTRE LO QUE SE CREA Y LO QUE SE ACTUALIZA
         bienes_actualizar = [bien for bien in data_bienes_consumidos if bien['id_consumo_siembra'] != None]
