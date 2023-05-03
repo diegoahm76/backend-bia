@@ -105,7 +105,7 @@ class Util:
         
     @staticmethod
     def get_client_device(request):
-        client_device = request.META.get('HTTP_USER_AGENT')
+        client_device = request.META.get('HTTP_USER_AGENT', '')
         
         MOBILE_AGENT_RE=re.compile(r".*(iphone|mobile|androidtouch)",re.IGNORECASE)
 
