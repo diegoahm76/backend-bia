@@ -194,6 +194,7 @@ class ListarPermisosModuloRolByRol(ListAPIView):
 class GetPermisosRolByRol(ListAPIView):
     serializer_class = GetPermisosRolSerializer
     queryset = PermisosModuloRol.objects.all()
+    
     def get(self, request, id_rol):
         permisos_modulo_rol = self.queryset.all().filter(id_rol=id_rol)
         modulos_list = [permiso_modulo_rol.id_permiso_modulo.id_modulo.id_modulo for permiso_modulo_rol in permisos_modulo_rol]

@@ -65,12 +65,13 @@ class GetPermisosRolSerializer(serializers.ModelSerializer):
         fields = ['id_permiso_modulo', 'cod_permiso', 'nombre_permiso']
 
 class GetPermisosModuloSerializer(serializers.ModelSerializer):
+    id_permiso_modulo = serializers.ReadOnlyField(source='id_permisos_modulo', default=None)
     cod_permiso = serializers.ReadOnlyField(source='cod_permiso.cod_permiso', default=None)
     nombre_permiso = serializers.ReadOnlyField(source='cod_permiso.nombre_permiso', default=None)
     
     class Meta:
         model = PermisosModulo
-        fields = '__all__'
+        fields = ['id_permiso_modulo', 'cod_permiso', 'nombre_permiso']
 
 class ModulosRolSerializer(serializers.ModelSerializer):
     desc_subsistema = serializers.SerializerMethodField()
@@ -90,13 +91,10 @@ class ModulosRolSerializer(serializers.ModelSerializer):
         for permiso in permisos.data:
             nombre_permiso = str(permiso['nombre_permiso'])
             
-            if id_rol:
-                value = True
-            else:
-                value = {
-                    'value': True,
-                    'id': permiso['id_permisos_modulo']
-                }
+            value = {
+                'value': True,
+                'id': permiso['id_permiso_modulo']
+            }
             
             permisos_actions[nombre_permiso.lower()] = value
         return permisos_actions
