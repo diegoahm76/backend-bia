@@ -61,6 +61,7 @@ class GuardarCambioEtapa(generics.CreateAPIView):
     
     def post(self,request):
         data = request.data
+        data._mutable = True
         
         data['consec_por_lote_etapa'] = 0
         serializador = self.serializer_class(data=data)
