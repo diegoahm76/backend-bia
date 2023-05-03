@@ -42,8 +42,7 @@ class GuardarCambioEtapaSerializer(serializers.ModelSerializer):
             'cantidad_movida': {'required': True},
             'altura_lote_en_cms': {'required': True},
             'observaciones': {'required': True},
-            'id_persona_cambia': {'required': True},
-            'ruta_archivo_soporte': {'required': True}
+            'id_persona_cambia': {'required': True}
         }
 
 class ActualizarCambioEtapaSerializer(serializers.ModelSerializer):
@@ -74,7 +73,7 @@ class GetCambioEtapasSerializer(serializers.ModelSerializer):
     class Meta:
         
         model = CambiosDeEtapa
-        fields = ['codigo','nombre','agno_lote','nro_lote','consec_por_lote_etapa','cod_etapa_lote_origen', 'cod_etapa_lote_destino', 'desc_etapa_lote_origen', 'desc_etapa_lote_destino']
+        fields = '__all__'
         
 class AnularCambioEtapaSerializer(serializers.ModelSerializer):
     class Meta:
