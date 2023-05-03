@@ -437,6 +437,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     def tokens(self):
         refresh = RefreshToken.for_user(self)
+        roles = self.usuariosrol_set.all().values_list('id_rol__nombre_rol', flat=True)
+        refresh['roles'] = list(roles)
         return{'refresh': str(refresh), 'access': str(refresh.access_token)}
     
     class Meta:
