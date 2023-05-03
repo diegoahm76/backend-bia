@@ -1,18 +1,14 @@
 from datetime import datetime
 from django.core import signing
-from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 from django.contrib import auth
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.utils import encoding, http
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
-from seguridad.models import Personas, Cargos, User, UsuariosRol, HistoricoActivacion,Login,LoginErroneo,PermisosModuloRol,UsuarioErroneo, HistoricoCargosUndOrgPersona, Roles
-from almacen.models import UnidadesOrganizacionales
+from seguridad.models import Personas, User, UsuariosRol, HistoricoActivacion,Login,LoginErroneo,PermisosModuloRol
 from seguridad.serializers.personas_serializers import PersonasSerializer
 from seguridad.serializers.permisos_serializers import PermisosModuloRolSerializer
-from rest_framework.validators import UniqueValidator
-from django.contrib.auth.password_validation import validate_password
 import re
 from seguridad.utils import Util
 
@@ -597,4 +593,3 @@ class RecuperarUsuarioSerializer(serializers.ModelSerializer):
             'numero_documento': {'required': True, 'allow_null':False, 'allow_blank':False},
             'email': {'required': True, 'allow_null':False, 'allow_blank':False},
         }
-
