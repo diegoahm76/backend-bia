@@ -75,14 +75,13 @@ class FacilidadPagoUpdateView(generics.UpdateAPIView):
         if facilidad_de_pago:
             serializer = self.serializer_class(facilidad_de_pago, data=data, many=False)
             serializer.is_valid(raise_exception=True)
-            
             id_funcionario = serializer.validated_data.get('id_funcionario')
-
-            if not id_funcionario:
-                return Response({'success': False, 'detail':'Falta asignar funcionario'})
-            else:
+            id_funcionario = ClasesTerceroPersona.objects.filter(id_persona=id_funcionario, id_clase_tercero=2).first()
+            if id_funcionario:
                 serializer.save(update_fields=['id_funcionario'])
                 return Response({'success': True, 'data':serializer.data})
+            else:
+                return Response({'success': False, 'detail':'El funcionario ingresado no tiene permisos'})
         else:
             return Response({'success': False, 'detail':'La facilidad de pago ingresada no existe'})
     
