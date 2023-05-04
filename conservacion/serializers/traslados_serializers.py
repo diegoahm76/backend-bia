@@ -37,7 +37,7 @@ class InventarioViverosSerielizers(serializers.ModelSerializer):
         if (obj.id_bien.cod_tipo_elemento_vivero == 'MV'and obj.id_bien.es_semilla_vivero == True) or obj.id_bien.cod_tipo_elemento_vivero == 'IN':
             saldo_disponible = cantidad_entrante - cantidad_bajas - cantidad_consumos_internos - cantidad_salidas
         elif obj.id_bien.cod_tipo_elemento_vivero == 'HE':
-            saldo_disponible = obj.cantidad_entrante - obj.cantidad_bajas - obj.cantidad_salidas
+            saldo_disponible = cantidad_entrante - cantidad_bajas - cantidad_salidas
         elif obj.id_bien.cod_tipo_elemento_vivero == 'MV' and obj.id_bien.es_semilla_vivero == False:
             if obj.cod_etapa_lote == 'P':
                 saldo_disponible = cantidad_entrante - cantidad_bajas - cantidad_traslados_lote_produccion_distribucion - cantidad_salidas - cantidad_lote_cuarentena
