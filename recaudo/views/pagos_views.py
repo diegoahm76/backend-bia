@@ -49,7 +49,7 @@ class DatosDeudorView(generics.ListAPIView):
     serializer_class = DeudorFacilidadPagoSerializer
 
     def get(self, request, id):
-        queryset = Deudores.objects.filter(id=id).first()
+        queryset = Deudores.objects.filter(codigo=id).first()
         if not queryset:
             return Response({'success': False, 'detail': 'No se encontró ningun registro con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.serializer_class(queryset)
@@ -115,6 +115,7 @@ class FuncionariosView(generics.ListAPIView):
         serializer = self.serializer_class(funcionarios, many=True)
         return Response({'success': True, 'data':serializer.data})
 
+
 class ListadoObligacionesViews(generics.ListAPIView):
     serializer_class = ObligacionesSerializer
     permission_classes = [IsAuthenticated]
@@ -156,6 +157,7 @@ class ListadoObligacionesViews(generics.ListAPIView):
         else:
             return Response({'error': 'Usuario no autenticado.'}, status=status.HTTP_401_UNAUTHORIZED)
 
+
 class ConsultaObligacionesViews(generics.ListAPIView):
     serializer_class = ConsultaObligacionesSerializer
     
@@ -164,6 +166,7 @@ class ConsultaObligacionesViews(generics.ListAPIView):
         queryset = Obligaciones.objects.filter(id=id_obligaciones)
         return queryset
     
+
 class ConsultaDeudoresViews(generics.ListAPIView):
     serializer_class = ConsultaDeudoresSerializer
     queryset = Deudores.objects.all()
@@ -189,6 +192,7 @@ class ConsultaDeudoresViews(generics.ListAPIView):
         serializador = self.serializer_class(consulta, many=True)
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializador.data}, status=status.HTTP_200_OK)
 
+
 class ListadoFacilidadesPagoViews(generics.ListAPIView):
     serializer_class = ListadoFacilidadesPagoSerializer
     permission_classes = [IsAuthenticated]
@@ -204,6 +208,7 @@ class ListadoFacilidadesPagoViews(generics.ListAPIView):
         facilidades_pago = FacilidadesPago.objects.filter(**filter)
         serializer = ListadoFacilidadesPagoSerializer(facilidades_pago, many=True)
         return Response(serializer.data)
+
 
 class ConsultaFacilidadesPagosViews(generics.ListAPIView):
     serializer_class = ConsultaFacilidadesPagosSerializer

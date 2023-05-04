@@ -13,6 +13,7 @@ from recaudo.models.pagos_models import (
 from recaudo.models.cobros_models import Obligaciones, Cartera, Deudores
 from seguridad.models import Personas, User
 
+
 class TipoPagoSerializer(serializers.ModelField):
     class Meta:
         model = TiposPago
@@ -60,6 +61,7 @@ class TasasInteresSerializer(serializers.ModelSerializer):
         model = TasasInteres
         fields = '__all__'
 
+
 class DeudorFacilidadPagoSerializer(serializers.ModelSerializer):
     #fecha_creacion = serializers.DateTimeField()
     class Meta:
@@ -88,7 +90,6 @@ class FacilidadesPagoPutSerializer(serializers.ModelSerializer):
         fields = ('id','id_funcionario')
 
 
-
 class FuncionariosSerializer(serializers.ModelSerializer):
     nombre_funcionario = serializers.SerializerMethodField()
     
@@ -101,10 +102,13 @@ class FuncionariosSerializer(serializers.ModelSerializer):
     class Meta:
         model = Personas
         fields = ('id_persona', 'nombre_funcionario')
+
+
 class CarteraSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cartera
         fields = ('id','valor_intereses','dias_mora')
+
 
 class ObligacionesSerializer(serializers.ModelSerializer):
     carteras = serializers.SerializerMethodField()
@@ -119,15 +123,18 @@ class ObligacionesSerializer(serializers.ModelSerializer):
         model = Obligaciones
         fields = ('id','fecha_inicio', 'id_expediente','monto_inicial','carteras')
 
+
 class ConsultaObligacionesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Obligaciones
         fields = '__all__'
 
+
 class ConsultaDeudoresSerializer(serializers.ModelSerializer):
     class Meta:
         model = Deudores
         fields = '__all__'
+
 
 class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
     identificacion = serializers.ReadOnlyField(source='id_deudor_actuacion.identificacion',default=None)
@@ -144,6 +151,7 @@ class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
             usuario = persona.user_set.exclude(id_usuario=1).first() 
             nombre_de_usuario = usuario.nombre_de_usuario if usuario else None
         return nombre_de_usuario
+
 
 class ConsultaFacilidadesPagosSerializer(serializers.ModelSerializer):
     class Meta:
