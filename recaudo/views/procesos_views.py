@@ -2,14 +2,17 @@ from recaudo.models.procesos_models import (
     EtapasProceso,
     TiposAtributos,
     AtributosEtapas,
-    FlujoProceso
+    FlujoProceso,
+    ValoresProceso
 )
 from recaudo.serializers.procesos_serializers import (
     EtapasProcesoSerializer,
     TiposAtributosSerializer,
     AtributosEtapasSerializer,
     FlujoProcesoSerializer,
-    FlujoProcesoPostSerializer
+    FlujoProcesoPostSerializer,
+    ValoresProcesoSerializer,
+    ValoresProcesoPostSerializer
 )
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
@@ -84,3 +87,21 @@ class GraficaView(generics.ListAPIView):
             'edges': nuevoFlujo
         }
         return Response(response, status=status.HTTP_200_OK)
+
+
+class ValoresProcesoView(generics.ListAPIView):
+    queryset = ValoresProceso.objects.all()
+    serializer_class = ValoresProcesoSerializer
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request, proceso):
+        queryset = ValoresProceso.objects.filter(id_proceso=proceso)
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = ValoresProcesoPostSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

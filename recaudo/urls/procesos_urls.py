@@ -7,4 +7,6 @@ urlpatterns = [
     path('atributos/<int:etapa>/', views.AtributosEtapasView.as_view(), name='atributos-etapas-todos'),
     path('flujos/', views.FlujoProcesoView.as_view(), name='flujos-todos'),
     path('grafica/', views.GraficaView.as_view(), name='grafica-flujo'),
+    path('valores-proceso/<int:proceso>/', views.ValoresProcesoView.as_view(), name='valores-por-proceso'),
+    path('valores-proceso/', views.ValoresProcesoView.as_view(), name='crear-valores-proceso'),
 ]
