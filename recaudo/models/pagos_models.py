@@ -27,6 +27,7 @@ class FacilidadesPago(models.Model):
     cuotas = models.IntegerField(db_column='T426cuotas')
     id_tasas_interes = models.ForeignKey(TasasInteres, on_delete=models.CASCADE, db_column='T426id_tasa_interes')
     documento_soporte = models.TextField(db_column='_T426documento_soporte')
+    #documento_soporte = models.FileField(db_column='_T426documento_soporte')
     id_funcionario = models.IntegerField(db_column='T426id_funcionario')
 
     class Meta:

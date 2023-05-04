@@ -105,6 +105,9 @@ urlpatterns = [
 
     #liquidaciones
     path('api/recaudo/liquidaciones/', include('recaudo.urls.liquidaciones_urls')),
+
+    #facilidades pagos
+    path('api/recaudo/pagos/', include('recaudo.urls.pagos_urls'))
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
