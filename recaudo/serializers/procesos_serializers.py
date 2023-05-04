@@ -4,7 +4,8 @@ from recaudo.models.procesos_models import (
     AtributosEtapas,
     TiposAtributos,
     FlujoProceso,
-    ValoresProceso
+    ValoresProceso,
+    Procesos
 )
 
 
@@ -54,4 +55,10 @@ class ValoresProcesoSerializer(serializers.ModelSerializer):
 class ValoresProcesoPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = ValoresProceso
+        fields = '__all__'
+
+
+class ProcesosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Procesos
         fields = '__all__'

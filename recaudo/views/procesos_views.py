@@ -3,7 +3,8 @@ from recaudo.models.procesos_models import (
     TiposAtributos,
     AtributosEtapas,
     FlujoProceso,
-    ValoresProceso
+    ValoresProceso,
+    Procesos
 )
 from recaudo.serializers.procesos_serializers import (
     EtapasProcesoSerializer,
@@ -12,11 +13,13 @@ from recaudo.serializers.procesos_serializers import (
     FlujoProcesoSerializer,
     FlujoProcesoPostSerializer,
     ValoresProcesoSerializer,
-    ValoresProcesoPostSerializer
+    ValoresProcesoPostSerializer,
+    ProcesosSerializer
 )
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
 from rest_framework.response import Response
+import datetime
 
 
 class EtapasProcesoView(generics.ListAPIView):
@@ -105,3 +108,32 @@ class ValoresProcesoView(generics.ListAPIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ActualizarEtapaProceso(generics.ListAPIView):
+    serializer_class = ProcesosSerializer
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request, proceso):
+        procesoFilter = Procesos.objects.filter(pk=proceso).filter(fin__isnull=True)
+        if len(procesoFilter) == 0:
+            return Response({'success': False, 'detail': 'No existen etapas sin finalizar en el proceso con el id enviado'}, status=status.HTTP_200_OK)
+        else:
+            procesoActual = procesoFilter.get()
+            procesoActual.fin = datetime.date.today()
+            procesoActual.save()
+            flujo_siguiente = FlujoProceso.objects.filter(id_etapa_origen=procesoActual.id_etapa.pk)
+            if len(flujo_siguiente) == 0:
+                serializer = self.serializer_class(procesoActual, many=False)
+                return Response({'success': True, 'detail': 'Esta era la ultima etapa en el flujo, fecha fin actualizada correctamente', 'data': serializer.data}, status=status.HTTP_200_OK)
+            else:
+                flujo_nuevo = flujo_siguiente.first()
+                proceso_nuevo = Procesos(
+                    id_cartera=procesoActual.id_cartera,
+                    id_etapa=flujo_nuevo.id_etapa_destino,
+                    id_funcionario=procesoActual.id_funcionario,
+                    inicio=datetime.date.today()
+                )
+                proceso_nuevo.save()
+                serializer = self.serializer_class(proceso_nuevo, many=False)
+                return Response({'success': True, 'detail': 'Se creo la siguiente etapa de manera exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)

@@ -69,6 +69,7 @@ class AtributosEtapas(models.Model):
 class Procesos(models.Model):
     id = models.AutoField(primary_key=True, db_column='T422id')
     id_cartera = models.ForeignKey(Cartera, on_delete=models.CASCADE, db_column='T422id_cartera')
+    id_etapa = models.ForeignKey(EtapasProceso, on_delete=models.CASCADE, db_column='T422id_etapa')
     id_funcionario = models.IntegerField(db_column='T422id_funcionario')
     inicio = models.DateField(db_column='T422inicio')
     fin = models.DateField(db_column='T422fin', null=True, blank=True)
