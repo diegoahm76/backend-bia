@@ -836,93 +836,93 @@ class LoginApiView(generics.CreateAPIView):
                     permisos = PermisosModuloRol.objects.filter(id_rol=rol).values()
                     permisos_list.append(permisos)
                
-                # try:
-                login_error = LoginErroneo.objects.filter(id_usuario=user.id_usuario).last()
-                
-                serializer = self.serializer_class(data=data)
-                serializer.is_valid(raise_exception=True)
-
-                login = Login.objects.create(
-                    id_usuario = user,
-                    dirip = str(ip),
-                    dispositivo_conexion = device
-                )
-
-                LoginPostSerializers(login, many=False)
-
-                if login_error:
-                    login_error.contador = 0
-                    login_error.save()
+                try:
+                    login_error = LoginErroneo.objects.filter(id_usuario=user.id_usuario).last()
                     
-                representante_legal=Personas.objects.filter(representante_legal=user.persona.id_persona).values()
-                representante_legal_list=[{'id_persona':representante['id_persona'],'razon_social':representante['razon_social'],'NUIP':representante['numero_documento']}for representante in representante_legal]
-                
-                # DEFINIR SI UN USUARIO SI O SI DEBE TENER UN PERMISO O NO
-                permisos_list = permisos_list[0] if permisos_list else []
-                
-                serializer_data = serializer.data
-                
-                user_info={'userinfo':serializer_data,'permisos':permisos_list,'representante_legal':representante_legal_list}
-                sms = "Bia Cormacarena te informa que se ha registrado una conexion con el usuario " + user.nombre_de_usuario + " en la fecha " + str(datetime.now())
-                
-                if user.persona.telefono_celular:
-                    Util.send_sms(user.persona.telefono_celular, sms)
-                else:
-                    subject = "Login exitoso"
-                    template = "notificacion-login.html"
-                    Util.notificacion(user.persona,subject,template,nombre_de_usuario=user.nombre_de_usuario)
-                
-                return Response({'userinfo':user_info}, status=status.HTTP_200_OK)
-                # except:
-                #     login_error = LoginErroneo.objects.filter(id_usuario=user.id_usuario).first()
-                #     if login_error:
-                #         if login_error.contador < 3:
-                #             hour_difference = datetime.utcnow().replace(tzinfo=None) - login_error.fecha_login_error.replace(tzinfo=None)
-                #             hour_difference = (hour_difference.days * 24) + (hour_difference.seconds//3600)
-                #             if hour_difference < 24:
-                #                 login_error.contador += 1
-                #                 login_error.restantes = 3 - login_error.contador
-                #                 login_error.save()
-                #             else :
-                #                 login_error.contador = 1
-                #                 login_error.save()
-                #             if login_error.contador == 3:
-                #                 user.is_blocked = True
-                #                 user.save()
+                    serializer = self.serializer_class(data=data)
+                    serializer.is_valid(raise_exception=True)
+
+                    login = Login.objects.create(
+                        id_usuario = user,
+                        dirip = str(ip),
+                        dispositivo_conexion = device
+                    )
+
+                    LoginPostSerializers(login, many=False)
+
+                    if login_error:
+                        login_error.contador = 0
+                        login_error.save()
                         
-                #                 HistoricoActivacion.objects.create(
-                #                     id_usuario_afectado = user,
-                #                     cod_operacion = 'B',
-                #                     fecha_operacion = datetime.now(),
-                #                     justificacion = 'Usuario bloqueado por exceder los intentos incorrectos en el login',
-                #                     usuario_operador = user,
-                #                 )
+                    representante_legal=Personas.objects.filter(representante_legal=user.persona.id_persona).values()
+                    representante_legal_list=[{'id_persona':representante['id_persona'],'razon_social':representante['razon_social'],'NUIP':representante['numero_documento']}for representante in representante_legal]
+                    
+                    # DEFINIR SI UN USUARIO SI O SI DEBE TENER UN PERMISO O NO
+                    permisos_list = permisos_list[0] if permisos_list else []
+                    
+                    serializer_data = serializer.data
+                    
+                    user_info={'userinfo':serializer_data,'permisos':permisos_list,'representante_legal':representante_legal_list}
+                    sms = "Bia Cormacarena te informa que se ha registrado una conexion con el usuario " + user.nombre_de_usuario + " en la fecha " + str(datetime.now())
+                    
+                    if user.persona.telefono_celular:
+                        Util.send_sms(user.persona.telefono_celular, sms)
+                    else:
+                        subject = "Login exitoso"
+                        template = "notificacion-login.html"
+                        Util.notificacion(user.persona,subject,template,nombre_de_usuario=user.nombre_de_usuario)
+                    
+                    return Response({'userinfo':user_info}, status=status.HTTP_200_OK)
+                except:
+                    login_error = LoginErroneo.objects.filter(id_usuario=user.id_usuario).first()
+                    if login_error:
+                        if login_error.contador < 3:
+                            hour_difference = datetime.utcnow().replace(tzinfo=None) - login_error.fecha_login_error.replace(tzinfo=None)
+                            hour_difference = (hour_difference.days * 24) + (hour_difference.seconds//3600)
+                            if hour_difference < 24:
+                                login_error.contador += 1
+                                login_error.restantes = 3 - login_error.contador
+                                login_error.save()
+                            else :
+                                login_error.contador = 1
+                                login_error.save()
+                            if login_error.contador == 3:
+                                user.is_blocked = True
+                                user.save()
+                        
+                                HistoricoActivacion.objects.create(
+                                    id_usuario_afectado = user,
+                                    cod_operacion = 'B',
+                                    fecha_operacion = datetime.now(),
+                                    justificacion = 'Usuario bloqueado por exceder los intentos incorrectos en el login',
+                                    usuario_operador = user,
+                                )
                                 
 
-                #                 return Response({'success':False,'detail':'Su usuario ha sido bloqueado'}, status=status.HTTP_403_FORBIDDEN)
-                #             serializer = LoginErroneoPostSerializers(login_error, many=False)
-                #             return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
-                #         else:
-                #             if user.is_blocked:
-                #                 return Response({'success':False, 'detail':'Su usuario está bloqueado, debe comunicarse con el administrador'}, status=status.HTTP_403_FORBIDDEN)
-                #             else:
-                #                 login_error.contador = 1
-                #                 login_error.save()
-                #                 serializer = LoginErroneoPostSerializers(login_error, many=False)
-                #                 return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
-                #     else:
-                #         if user.is_blocked:
-                #             return Response({'success':False, 'detail':'Su usuario está bloqueado, debe comunicarse con el administrador'}, status=status.HTTP_403_FORBIDDEN)
-                #         else:
-                #             login_error = LoginErroneo.objects.create(
-                #                 id_usuario = user,
-                #                 dirip = str(ip),
-                #                 dispositivo_conexion = device,
-                #                 contador = 1
-                #             )
-                #         login_error.restantes = 3 - login_error.contador
-                #         serializer = LoginErroneoPostSerializers(login_error, many=False)
-                #         return Response({'success':False,'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
+                                return Response({'success':False,'detail':'Su usuario ha sido bloqueado'}, status=status.HTTP_403_FORBIDDEN)
+                            serializer = LoginErroneoPostSerializers(login_error, many=False)
+                            return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
+                        else:
+                            if user.is_blocked:
+                                return Response({'success':False, 'detail':'Su usuario está bloqueado, debe comunicarse con el administrador'}, status=status.HTTP_403_FORBIDDEN)
+                            else:
+                                login_error.contador = 1
+                                login_error.save()
+                                serializer = LoginErroneoPostSerializers(login_error, many=False)
+                                return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
+                    else:
+                        if user.is_blocked:
+                            return Response({'success':False, 'detail':'Su usuario está bloqueado, debe comunicarse con el administrador'}, status=status.HTTP_403_FORBIDDEN)
+                        else:
+                            login_error = LoginErroneo.objects.create(
+                                id_usuario = user,
+                                dirip = str(ip),
+                                dispositivo_conexion = device,
+                                contador = 1
+                            )
+                        login_error.restantes = 3 - login_error.contador
+                        serializer = LoginErroneoPostSerializers(login_error, many=False)
+                        return Response({'success':False,'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response({'success':False, 'detail':'Usuario no activado', 'data':{'modal':True, 'id_usuario':user.id_usuario, 'tipo_usuario':user.tipo_usuario}}, status=status.HTTP_403_FORBIDDEN)
         else:
