@@ -1,0 +1,26 @@
+[
+    {
+        "model": "seguridad.Sexo",
+        "pk" : "H",
+        "fields": {
+            "cod_sexo" : "H",
+            "nombre": "Hombre"
+        }
+    },
+    {
+        "model": "seguridad.Sexo",
+        "pk" : "M",
+        "fields": {
+            "cod_sexo" : "M",
+            "nombre": "Mujer"
+        }
+    },
+    {
+        "model": "seguridad.Sexo",
+        "pk" : "O",
+        "fields": {
+            "cod_sexo" : "O",
+            "nombre": "Otros"
+        }
+    }
+]
