@@ -3,7 +3,11 @@ from gestion_documental.views import trd_views as views
 
 urlpatterns = [
     # TIPOLOGIAS DOCUMENTALES
-    path('tipologias/update/<str:id_trd>/', views.UpdateTipologiasDocumentales.as_view(), name='update-tipologias-doc'),
+    # path('tipologias/update/<str:id_trd>/', views.UpdateTipologiasDocumentales.as_view(), name='update-tipologias-doc'),
+    path('crear/tipologia/documental/', views.CrearTipologiaDocumental.as_view(), name='crear-tipologia-documental'),#TRD
+    path('eliminar/tipologia/documental/<str:pk>/', views.EliminarTipologiaDocumental.as_view(), name='eliminar-tipologia-documental'),#
+    path('update/tipologia/documental/<str:pk>/', views.ModificarTipologiaDocumental.as_view(), name='modificar-tipologia-documental'),#
+    path('buscar/tipologia/documental/', views.BuscarTipologia.as_view(),name='buscar-tipologia-documental'),
     path('tipologias/get-by-id/<str:id_trd>/', views.GetTipologiasDocumentales.as_view(),name='id-get-tipologias-doc'),
     path('tipologias/desactivar/<str:id_tipologia>/', views.DesactivarTipologiaActual.as_view(),name='desactivar-tipologias-doc'),
     
@@ -15,9 +19,12 @@ urlpatterns = [
     path('finish/<str:pk>/', views.finalizarTRD.as_view(), name='trd-finish'),
     path('serie-subserie-unidad-trd/asignar/<str:id_trd>/',views.CreateSerieSubSeriesUnidadesOrgTRD.as_view(),name='serie-subserie-unidad-trd-create'),
     path('serie-subserie-unidad-trd/update/<str:id_serie_subs_unidadorg_trd>/', views.UpdateSerieSubSeriesUnidadesOrgTRD.as_view(),name='serie-subserie-unidad-trd-update'),
-    path('serie-subserie-unidad-trd/delete/<str:id_ssuorg_trd>/',views.DeleteSerieSubserieUnidadTRD.as_view(), name='serie-subserie-unidad-trd-delete'),
+    path('serie-subserie-unidad-trd/delete/<str:id_serie>/',views.EliminarSerieUnidadTRD.as_view(), name='serie-subserie-unidad-trd-delete'),
     path('serie-subserie-unidad-trd/upload/document/<str:id_serie_subserie_uniorg_trd>/',views.uploadDocument, name='serie-subserie-unidad-trd-upload-document'),
     path('confirmar-cambios/<str:id_trd>/',views.CambiosPorConfirmar.as_view(),name='confirmar-cambios-trd'),
+    path('buscar/trd/nombre-version/',views.BusquedaTRDNombreVersion.as_view(),name='busqueda-usuario-nombre-version'),#
+    path('modificar/trd/nombre/version/<str:id_trd>/',views.ModificarNombreVersionTRD.as_view(),name='modificar-trd-nombre-version'),#
+    path('reanudar/trd/<str:id_trd>/',views.ReanudarTRD.as_view(),name='reanudar-trd'),#
 
 
     # FORMATOS TIPOS MEDIO

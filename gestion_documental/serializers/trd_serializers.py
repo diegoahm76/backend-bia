@@ -27,7 +27,46 @@ class TipologiasDocumentalesSerializer(serializers.ModelSerializer):
         #        message='No puede registrar más de una tipología con el mismo nombre para esta TRD'
         #    )
         # ]
+class CrearTipologiaDocumentalSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = TipologiasDoc
+        fields = ['nombre','cod_tipo_medio_doc']
+        
+class RetornarDatosTRDSerializador(serializers.ModelSerializer):
+    
+    nombre = serializers.ReadOnlyField(source='id_catserie_unidadorg_ccd_trd.id_trd.nombre', default=None)
+    version = serializers.ReadOnlyField(source='id_catserie_unidadorg_ccd_trd.id_trd.version', default=None)
+    
+    class Meta:
+        model = SeriesSubSUnidadOrgTRDTipologias
+        fields = '__all__'
 
+class ModificarTipologiaDocumentalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipologiasDoc
+        fields = ['nombre','activo','cod_tipo_medio_doc']
+        
+class BuscarTipologiaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipologiasDoc
+        fields = '__all__'
+
+class BusquedaTRDNombreVersionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TablaRetencionDocumental
+        fields = '__all__'
+        
+class ModificarTRDNombreVersionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TablaRetencionDocumental
+        #fields = '__all__'
+        fields = ['nombre','version']
+        extra_kwargs = {
+            'nombre': {'allow_null':False, 'allow_blank':False},
+            'version': {'allow_null':False, 'allow_blank':False},
+        }
+  
 class TipologiasDocumentalesPutSerializer(serializers.ModelSerializer):
     # formatos = serializers.ListField(child=serializers.IntegerField(), read_only=True)
     class Meta:
@@ -99,7 +138,6 @@ class FormatosTiposMedioSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class FormatosTiposMedioPostSerializer(serializers.ModelSerializer):
-    cod_tipo_medio_doc = serializers.ChoiceField(choices=tipos_medios_formato_CHOICES)
     nombre = serializers.CharField(max_length=30)
 
     class Meta:
@@ -116,7 +154,16 @@ class FormatosTiposMedioPostSerializer(serializers.ModelSerializer):
                message='No puede registrar un tipo de medio más de una vez con el mismo nombre'
            )
         ]
+class ReanudarTrdSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TablaRetencionDocumental
+        fields = '__all__'
 
+class EliminarCatSerieUndOrgCCDTRD218Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = CatSeriesUnidadOrgCCDTRD
+        fields = '__all__'
+       
 class SeriesSubSeriesUnidadesOrgTRDSerializer(serializers.ModelSerializer):
     tipologias = serializers.ListField(child=serializers.IntegerField(), read_only=True)
     class Meta:
@@ -153,26 +200,29 @@ class SeriesSubSeriesUnidadesOrgTRDPutSerializer(serializers.ModelSerializer):
             'tiempo_retencion_ac',
             'descripcion_procedimiento',
             'justificacion_cambio',
-            'tipologias'
+            'tipologias',
+            'ruta_archivo_cambio'
         )
-        extra_kwargs = {
-            'justificacion_cambio': {'required': True},
-        }
+        
+
+# class GetSeriesSubSUnidadOrgTRDSerializer(serializers.ModelSerializer):
+#     nombre_unidad = serializers.ReadOnlyField(source='id_cat_serie_und.id_unidad_organizacional.nombre',default =None)
+#     cod_unidad_org = serializers.ReadOnlyField(source='id_cat_serie_und.id_unidad_organizacional.id_unidad_organizacional',default =None)
+#     nombre_serie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_serie_doc.nombre', default=None)
+#     cod_serie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_serie_doc.codigo', default=None)
+#     nombre_subserie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.nombre', default=None)
+#     cod_subserie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.codigo', default=None)
+#     disposicion_final = serializers.ReadOnlyField(source='cod_disposicion_final.cod_disposicion_final', default=None)
+#     # version = serializers.ReadOnlyField(source='id_trd.version')
+    
+#     class Meta:
+#         model = CatSeriesUnidadOrgCCDTRD
+#         fields = ['id_catserie_unidadorg','nombre_unidad','cod_unidad_org','nombre_serie','cod_serie','nombre_subserie','cod_subserie','disposicion_final'] 
 
 class GetSeriesSubSUnidadOrgTRDSerializer(serializers.ModelSerializer):
-    nombre_unidad = serializers.ReadOnlyField(source='id_cat_serie_und.id_unidad_organizacional.nombre',default =None)
-    cod_unidad_org = serializers.ReadOnlyField(source='id_cat_serie_und.id_unidad_organizacional.id_unidad_organizacional',default =None)
-    nombre_serie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_serie_doc.nombre', default=None)
-    cod_serie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_serie_doc.codigo', default=None)
-    nombre_subserie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.nombre', default=None)
-    cod_subserie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.codigo', default=None)
-    disposicion_final = serializers.ReadOnlyField(source='cod_disposicion_final.cod_disposicion_final', default=None)
-    # version = serializers.ReadOnlyField(source='id_trd.version')
-    
     class Meta:
         model = CatSeriesUnidadOrgCCDTRD
-        fields = ['id_catserie_unidadorg','nombre_unidad','cod_unidad_org','nombre_serie','cod_serie','nombre_subserie','cod_subserie','disposicion_final'] 
-
+        fields = '__all__'
 
 class GetSeriesSubSUnidadOrgTRDTipologiasSerializer(serializers.ModelSerializer):
     

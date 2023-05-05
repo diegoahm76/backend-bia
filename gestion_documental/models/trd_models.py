@@ -1,4 +1,5 @@
 from django.db import models
+from django.forms import ValidationError
 from gestion_documental.models.ccd_models import CatalogosSeriesUnidad, CuadrosClasificacionDocumental
 from gestion_documental.choices.disposicion_final_series_choices import disposicion_final_series_CHOICES
 from gestion_documental.choices.tipos_medios_doc_choices import tipos_medios_doc_CHOICES
@@ -59,7 +60,7 @@ class TipologiasDoc(models.Model):
     nombre = models.CharField(max_length=10, unique=True, db_column='T208nombre')
     cod_tipo_medio_doc = models.ForeignKey(TiposMediosDocumentos, on_delete=models.CASCADE, db_column='T208Cod_TipoMedioDoc')
     activo = models.BooleanField(default=True, db_column='T208activo')
-    item_ya_usado = models.BooleanField(default=True, db_column='T208itemYaUsado')
+    item_ya_usado = models.BooleanField(default=False, db_column='T208itemYaUsado')
 
     def __str__(self):
         return str(self.nombre)
@@ -132,7 +133,7 @@ class SeriesSubSUnidadOrgTRDTipologias(models.Model):
         db_table = 'T211Tipologias_CatSeries_UndOrg_CCD_TRD'
         verbose_name= 'Categoria Series Unidad Organizacional CCD TRD'
         verbose_name_plural = 'CategoriaS Series Unidad Organizacional CCD TRD'
-        unique_together = ['id_tipologia_catserie_unidad_ccd_trd', 'id_tipologia_doc']
+        unique_together = ['id_catserie_unidadorg_ccd_trd', 'id_tipologia_doc']
 
 
 class HistoricosCatSeriesUnidadOrgCCDTRD(models.Model):
@@ -151,6 +152,11 @@ class HistoricosCatSeriesUnidadOrgCCDTRD(models.Model):
     def __str__(self):
         return str(self.id_historico_catserie_unidadorg_ccd_trd)
 
+    def clean(self):
+        if self.ruta_archivo:
+            extension = self.ruta_archivo.name.split()[-1]
+            if extension.lower() != 'pdf':
+                raise ValidationError({'ruta_archivo':["El archivo debe ser en formato PDF."]})
     class Meta:
         db_table = 'T219Historicos_CatSeries_UndOrg_CCD_TRD'
         verbose_name= 'Historicos Categoria Series UnidadOrg CCD TRD'
