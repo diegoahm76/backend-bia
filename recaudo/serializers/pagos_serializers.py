@@ -114,7 +114,7 @@ class ObligacionesSerializer(serializers.ModelSerializer):
     carteras = serializers.SerializerMethodField()
 
     def get_carteras(self, obj):
-        carteras = obj.cartera_set.all()
+        carteras = obj.cartera_set.filter(fin__isnull=True)
         carteras_serializer = CarteraSerializer(carteras, many=True)
         carteras_data = carteras_serializer.data if carteras_serializer else []
         return carteras_data
@@ -157,6 +157,17 @@ class ConsultaFacilidadesPagosSerializer(serializers.ModelSerializer):
     class Meta:
         model = FacilidadesPago
         fields = '__all__'
+
+class ListadoDeudoresUltSerializer(serializers.ModelSerializer):
+    nombre_contribuyente = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Deudores
+        fields = ('nombre_contribuyente','identificacion')
+
+    def get_nombre_completo(self, obj):
+        return f"{obj.nombres} {obj.apellidos}"
+
 
 
 
