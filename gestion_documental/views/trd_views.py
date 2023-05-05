@@ -128,14 +128,15 @@ class ModificarTipologiaDocumental(generics.UpdateAPIView):
         
         #item_ya_usado = TipologiasDocumentales.objects.filter(id_tipologia_documental=pk, item_ya_usado=True).first()
         
-
         if not tipologias:
             raise ValidationError('No existe la Tipologia ingresada')        
         
         #EL NOMBRE DE LA TIPOLOGIA SOLO SE PUEDE EDITAR SI EL CAMPO ITEM_YA_USADO ESTA EN FALSE
         if tipologias.item_ya_usado==True:
-            raise ValidationError('No se puede actualizar el nombre de una Tipologia que esta siendo usada.')
-        
+            if tipologias.nombre != data['nombre']:
+                raise ValidationError('No se puede actualizar el nombre de una Tipologia que esta siendo usada.')
+            elif tipologias.activo != data['activo']:
+                raise ValidationError('No se puede actualizar el estado de una Tipologia que esta siendo usada.')    
         
         serializador = self.serializer_class(tipologias,data=data)
         serializador.is_valid(raise_exception=True)
@@ -145,9 +146,9 @@ class ModificarTipologiaDocumental(generics.UpdateAPIView):
         id_cod_tipo_medio = data['cod_tipo_medio_doc']
         
         if not id_lista_formatos:
-            raise ValidationError('Los campos de los formatos no se pueden quedar vacios.')
+            raise ValidationError('Los campos de los formatos no pueden quedar vacios.')
         if not id_cod_tipo_medio:
-            raise ValidationError('Los campos del tipo medio doc no se pueden quedar vacios.')
+            raise ValidationError('Los campos del tipo medio doc no pueden quedar vacios.')
         
         desactivar_tipologia = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_tipologia_doc=pk,activo=True,id_catserie_unidadorg_ccd_trd__id_trd__fecha_retiro_produccion=None).first()
         serializer = RetornarDatosTRDSerializador(desactivar_tipologia)  
@@ -158,16 +159,6 @@ class ModificarTipologiaDocumental(generics.UpdateAPIView):
             except ValidationError as e:
                 return Response({'success':False, 'detail':'La Tipologia no se puede desactivar si se esta usando en una TRD.', 'data':serializer.data}, status=status.HTTP_403_FORBIDDEN)
                 
-        
-        # desactivar_tipologia212 = TablaRetencionDocumental.objects.filter(id_catserie_unidadorg_ccd_trd.id_trd=pk,fecha_retiro_produccion=" ")
-        
-        # if desactivar_tipologia212:
-        #     raise ValidationError('La Tipologia no se puede desactivar si la fecha de retiro de produccion no esta en vacio table 212.')
-        
-        # if desactivar_tipologia:
-        #     raise ValueError('La tipologia no se puede desactivar si esta siento utilizada en una trd')
-        
-        
         id_lista_formatos = set(id_lista_formatos) #el "SET" elimina los valores repetidos enviados por el usuario ejm:[10,10,25] y solo deja el primero
         
         formatos = FormatosTiposMedio.objects.filter(id_formato_tipo_medio__in = id_lista_formatos) #"IN" para traer la lista de datos.
@@ -188,10 +179,6 @@ class ModificarTipologiaDocumental(generics.UpdateAPIView):
         # list_id_formatos_formatosactuales = [formatoactual.id_formato_tipo_medio.id_formato_tipo_medio for formatoactual in formatosactuales] # list comprehension = ?
         if formatos_eliminar:
             formatos_eliminar.delete()
-        
-        #nuevo_registro = FormatosTiposMedioTipoDoc.objects.filter(id_formato_tipomedio_tipo_doc=pk).first()
-        # print(id_lista_formatos)
-        # print(formatosactuales)
         
         #poder crear los nuevos registros en la tabla 217 con los nuevos formatos enviados por el usuario.
         for formato in id_lista_formatos:
@@ -235,29 +222,11 @@ class BuscarTipologia(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
-        data = request.data
-     
-        #nombre_tipologia = data["nombre"]
-        
-        
         nombre_tipologia = request.query_params.get('nombre')
-        buscar_tipologia = self.queryset.all().filter(nombre__icontains=nombre_tipologia)#__icontains=buscar en un campo lo que encuentre ejm=ju va a traer todos los datos que se parezcan
+        buscar_tipologia = self.queryset.filter(nombre__icontains=nombre_tipologia) if nombre_tipologia else self.queryset.all()
         serializador = self.serializer_class(buscar_tipologia,many=True,context={'request':request})
         
-        if not nombre_tipologia:
-            raise ValidationError('No se encuentra la Tipologia.')
-        
-        
-        
-        
         return Response({'succes':True,'detail':'Se encontraron los siguientes usuarios.','data':serializador.data},status=status.HTTP_200_OK)
-
-
-        
-        # tipologia = TipologiasDocumentales.objects.filter(id_tipologia_documental=id_tipologia)
-        
-        # if tipologia:
-        #     raise ValidationError('No se existe la tipologia que esta buscando')
             
 
 #BUSQUEDA DE TRD POR NOMBRE Y VERSIÓN
