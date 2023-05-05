@@ -57,7 +57,7 @@ class FormatosTiposMedio(models.Model):
 
 class TipologiasDoc(models.Model):
     id_tipologia_documental = models.AutoField(editable=False, primary_key=True, db_column='T208IdTipologiaDoc')
-    nombre = models.CharField(max_length=10, unique=True, db_column='T208nombre')
+    nombre = models.CharField(max_length=50, unique=True, db_column='T208nombre')
     cod_tipo_medio_doc = models.ForeignKey(TiposMediosDocumentos, on_delete=models.CASCADE, db_column='T208Cod_TipoMedioDoc')
     activo = models.BooleanField(default=True, db_column='T208activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T208itemYaUsado')
