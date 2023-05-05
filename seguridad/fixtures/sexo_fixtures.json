@@ -17,10 +17,10 @@
     },
     {
         "model": "seguridad.Sexo",
-        "pk" : "I",
+        "pk" : "O",
         "fields": {
-            "cod_sexo" : "I",
-            "nombre": "Intersexual"
+            "cod_sexo" : "O",
+            "nombre": "Otros"
         }
     }
 ]
