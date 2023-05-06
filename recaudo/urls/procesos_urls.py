@@ -10,4 +10,5 @@ urlpatterns = [
     path('valores-proceso/<int:proceso>/', views.ValoresProcesoView.as_view(), name='valores-por-proceso'),
     path('valores-proceso/', views.ValoresProcesoView.as_view(), name='crear-valores-proceso'),
     path('actualizar-etapa-proceso/<int:proceso>/', views.ActualizarEtapaProceso.as_view(), name='actualiza-etapa-de-un-proceso'),
+    path('procesos-sin-finalizar/', views.ProcesosView.as_view(), name='procesos-sin-finalizar'),
 ]

@@ -137,3 +137,14 @@ class ActualizarEtapaProceso(generics.ListAPIView):
                 proceso_nuevo.save()
                 serializer = self.serializer_class(proceso_nuevo, many=False)
                 return Response({'success': True, 'detail': 'Se creo la siguiente etapa de manera exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+class ProcesosView(generics.ListAPIView):
+    queryset = Procesos.objects.filter(fin__isnull=True)
+    serializer_class = ProcesosSerializer
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
