@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from seguridad.models import Personas, ClasesTerceroPersona
+from seguridad.models import Personas
 from recaudo.models.base_models import TipoActuacion, TiposPago
 from recaudo.models.pagos_models import (
     FacilidadesPago,
@@ -11,10 +11,10 @@ from recaudo.models.pagos_models import (
     TasasInteres
 )
 from recaudo.models.cobros_models import Obligaciones, Cartera, Deudores
-from seguridad.models import Personas, User
+from seguridad.models import Personas
 
 
-class TipoPagoSerializer(serializers.ModelField):
+class TipoPagoSerializer(serializers.ModelSerializer):
     class Meta:
         model = TiposPago
         fields = ('id', 'descripcion')
@@ -63,7 +63,6 @@ class TasasInteresSerializer(serializers.ModelSerializer):
 
 
 class DeudorFacilidadPagoSerializer(serializers.ModelSerializer):
-    #fecha_creacion = serializers.DateTimeField()
     class Meta:
         model = Deudores
         fields = ('codigo', 'identificacion', 'nombres', 'apellidos', 'email')
@@ -71,7 +70,6 @@ class DeudorFacilidadPagoSerializer(serializers.ModelSerializer):
 
 class FacilidadesPagoSerializer(serializers.ModelSerializer):
     id_deudor_actiacion = DeudorFacilidadPagoSerializer
-
     class Meta:
         model = FacilidadesPago
         fields = '__all__'
@@ -84,7 +82,6 @@ class FacilidadesPagoSerializer(serializers.ModelSerializer):
 
 
 class FacilidadesPagoPutSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = FacilidadesPago
         fields = ('id','id_funcionario')

@@ -8,9 +8,6 @@ from recaudo.models.pagos_models import (
     TasasInteres
 )
 
-from recaudo.models.liquidaciones_models import Deudores
-from seguridad.models import Personas, ClasesTerceroPersona
-
 from recaudo.serializers.pagos_serializers import (
     FacilidadesPagoSerializer,
     FacilidadesPagoPutSerializer,
@@ -29,20 +26,17 @@ from recaudo.serializers.pagos_serializers import (
     ListadoFacilidadesPagoSerializer,
     ConsultaFacilidadesPagosSerializer
 )
-from recaudo.models.cobros_models import Obligaciones, Expedientes, Deudores, Cartera
-from seguridad.models import Personas, User
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import generics, status
-from rest_framework.response import Response
-from django.core.exceptions import ObjectDoesNotExist
-from rest_framework.exceptions import NotFound
-from django.db.models import Q
-from recaudo.models.base_models import TipoActuacion, TiposPago
-from rest_framework import generics, status
-from rest_framework.response import Response
 
-from rest_framework.views import APIView
-from django.shortcuts import get_object_or_404
+from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Q
+from seguridad.models import Personas, ClasesTerceroPersona, User
+from recaudo.models.base_models import TipoActuacion, TiposPago
+from recaudo.models.cobros_models import Obligaciones, Expedientes, Deudores, Cartera
+from recaudo.models.liquidaciones_models import Deudores
+from rest_framework import generics, status
+from rest_framework.exceptions import NotFound
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 
 class DatosDeudorView(generics.ListAPIView):
@@ -61,9 +55,9 @@ class TipoActuacionView(generics.ListAPIView):
     queryset = TipoActuacion.objects.all()
     serializer_class = TipoActuacionSerializer
 
-    def get(self, request, id):
-        queryset = TipoActuacion.objects.filter(id=id).first()
-        serializer = self.serializer_class(queryset)
+    def get(self, request):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
     
 
