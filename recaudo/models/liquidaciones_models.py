@@ -9,7 +9,7 @@ class Deudores(models.Model):
     apellidos = models.CharField(max_length=255, db_column='T410apellidos')
     telefono = models.CharField(max_length=255, db_column='T410telefono')
     email = models.CharField(max_length=255, db_column='T410email')
-    ubicacion_id = models.ForeignKey(Ubicaciones, on_delete=models.CASCADE, db_column='T410ubicacion_id')
+    ubicacion_id= models.ForeignKey(Ubicaciones, on_delete=models.CASCADE, db_column='T410ubicacion_id')
     naturaleza_juridica_id = models.ForeignKey(NaturalezaJuridica, on_delete=models.CASCADE, db_column='T410naturaleza_juridica_id')
 
     class Meta:

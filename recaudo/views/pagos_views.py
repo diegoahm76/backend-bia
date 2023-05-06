@@ -24,7 +24,8 @@ from recaudo.serializers.pagos_serializers import (
     ConsultaDeudoresSerializer,
     ConsultaObligacionesSerializer,
     ListadoFacilidadesPagoSerializer,
-    ConsultaFacilidadesPagosSerializer
+    ConsultaFacilidadesPagosSerializer,
+    ListadoDeudoresUltSerializer
 )
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -120,10 +121,11 @@ class ListadoObligacionesViews(generics.ListAPIView):
         intereses_total = 0
         for obligacion in obligaciones:
             monto_total += obligacion.monto_inicial
-            carteras = obligacion.cartera_set.all()
+            carteras = obligacion.cartera_set.filter(fin__isnull=True)
             for cartera in carteras:
                 intereses_total += cartera.valor_intereses
         return monto_total, intereses_total, monto_total + intereses_total
+
     
     def get(self, request):
         if request.user.is_authenticated:
@@ -167,26 +169,12 @@ class ConsultaDeudoresViews(generics.ListAPIView):
     queryset = Deudores.objects.all()
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        filter = {}
-        for key, value in request.query_params.items():
-            if key == 'identificacion':
-                filter[key + '__icontains'] = value
-            elif key == 'nombre_completo':
-                if value != '':
-                    nombres_apellidos = value.split()
-                    if len(nombres_apellidos) >= 2:
-                        nombres = ' '.join(nombres_apellidos[:-1])
-                        apellidos = nombres_apellidos[-1]
-                        filter['nombres__icontains'] = nombres
-                        filter['apellidos__icontains'] = apellidos
-        
-        consulta = self.queryset.filter(**filter)
+    def get(self, request, identificacion):
+        consulta = self.queryset.filter(identificacion__icontains=identificacion)
         if not consulta.exists():
             raise NotFound(detail='No se encontraron resultados')
         serializador = self.serializer_class(consulta, many=True)
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializador.data}, status=status.HTTP_200_OK)
-
 
 class ListadoFacilidadesPagoViews(generics.ListAPIView):
     serializer_class = ListadoFacilidadesPagoSerializer
@@ -212,3 +200,29 @@ class ConsultaFacilidadesPagosViews(generics.ListAPIView):
         id_facilidades = self.kwargs['id']
         queryset = FacilidadesPago.objects.filter(id=id_facilidades)
         return queryset
+
+class ListadoDeudoresViews(generics.ListAPIView):
+    serializer_class = ListadoDeudoresUltSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        filter = {}
+        for key, value in self.request.query_params.items():
+            if key == 'identificacion':
+                filter[key + '__icontains'] = value
+            elif key == 'nombre_contribuyente':
+                if value != '':
+                    nombres_apellidos = value.split()
+                    if len(nombres_apellidos) >= 2:
+                        nombres = ' '.join(nombres_apellidos[:-1])
+                        apellidos = nombres_apellidos[-1]
+                        filter['nombres__icontains'] = nombres
+                        filter['apellidos__icontains'] = apellidos
+        return Deudores.objects.filter(**filter).values('identificacion', 'nombres', 'apellidos')
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        data = [{'identificacion': item['identificacion'], 'nombre_contribuyente': f"{item['nombres']} {item['apellidos']}"} for item in queryset]
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data})
+
+

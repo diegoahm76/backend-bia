@@ -58,7 +58,7 @@ class Cartera(models.Model):
     valor_intereses = models.DecimalField(max_digits=30, decimal_places=2, db_column='T417valor_intereses')
     valor_sancion = models.DecimalField(max_digits=30, decimal_places=2, db_column='T417valor_sancion')
     inicio = models.DateField(db_column='T417inicio')
-    fin = models.DateField(db_column='T417fin')
+    fin = models.DateField(null=True, blank=True,db_column='T417fin')
     id_rango = models.ForeignKey(RangosEdad, on_delete=models.CASCADE, db_column='T417id_rango')
     codigo_contable = models.CharField(max_length=255, db_column='T417codigo_contable')
     fecha_facturacion = models.DateField(db_column='T417fecha_facturacion')
