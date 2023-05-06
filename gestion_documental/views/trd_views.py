@@ -479,6 +479,18 @@ class GetTipologiasDocumentales(generics.ListAPIView):
         else:
             return Response({'success':False, 'detail':'Debe consultar por un TRD válido'}, status=status.HTTP_404_NOT_FOUND)
 
+class GetFormatosTipologiasDocumentales(generics.ListAPIView):
+    serializer_class = FormatosTiposMedioSerializer
+    queryset = FormatosTiposMedioTipoDoc.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_tipologia_documental):
+        formatos_tipologias = self.queryset.filter(id_tipologia_doc=id_tipologia_documental)
+        formatos_tipos_medio= [formato_tipo_medio.id_formato_tipo_medio for formato_tipo_medio in formatos_tipologias]
+        formatos_tipologias_serializer = self.serializer_class(formatos_tipos_medio, many=True)
+            
+        return Response({'success':True, 'detail':'Se encontraron los siguientes formatos para la tipología elegida', 'data':formatos_tipologias_serializer.data}, status=status.HTTP_200_OK)
+
 #----------------------------------------------------------------------------------------------------------------#
 
 #Series SubSeries Unidades Organizacionales TRD
@@ -812,7 +824,7 @@ class EliminarSerieUnidadTRD(generics.RetrieveDestroyAPIView):
                 raise ValidationError('No se puede realizar la acción solicitada si la TRD se encuentra Finalizada.')
             eliminar_serie.delete()
             
-            return Response({'succes':True,'detail':'Se ha Eliminado Exitosamente la relacion de la tabla 218.'},status=status.HTTP_200_OK)
+            return Response({'succes':True,'detail':'Se ha Eliminado Exitosamente el registro del catalogo de TRD.'},status=status.HTTP_200_OK)
         else:
             raise ValidationError('No se encontró ninguna serie con el parametro Ingresado.')
 
@@ -1127,47 +1139,27 @@ class GetSeriesSubSUnidadOrgTRD(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, id_trd):
-        queryset = CatSeriesUnidadOrgCCDTRD.objects.filter(id_trd=id_trd)
+        queryset = CatSeriesUnidadOrgCCDTRD.objects.filter(id_trd=id_trd).order_by('id_catserie_unidadorg')
         
         #VALIDACIÓN SI EXISTE LA TRD ENVIADA
         if not queryset:
             return Response({'success': False, 'detail': 'No se encontró la TRD'}, status=status.HTTP_404_NOT_FOUND)  
         
-        serializer = GetSeriesSubSUnidadOrgTRDSerializer(queryset, many=True)
+        serializer = self.serializer_class(queryset, many=True, context={'request':request})
         return Response({'success': True, 'detail':'Se encontraron los siguientes resultados', 'data':serializer.data}, status=status.HTTP_200_OK)
-
-class GetSeriesSubSUnidadOrgTRDByPk(generics.ListAPIView):
-    serializer_class = GetSeriesSubSUnidadOrgTRDSerializer
-    queryset = CatSeriesUnidadOrgCCDTRD.objects.all()
-    permission_classes = [IsAuthenticated]
     
-    def get(self, request, pk):
-        pk_a_consultar1 = pk
-        serie_subseries_unidad_org = CatSeriesUnidadOrgCCDTRD.objects.filter(id_serie_subs_unidadorg_trd = pk_a_consultar1)
-        if not serie_subseries_unidad_org:
-            return Response({'success': False, 'detail': 'No se encontró información relacionada a ese id'}, status=status.HTTP_404_NOT_FOUND)
-        
-        ids_serie_subs_unidad_org_trd = [i.id_serie_subs_unidadorg_trd for i in serie_subseries_unidad_org]
-        result = []
-        for i in ids_serie_subs_unidad_org_trd:
-            main_detail = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_serie_subserie_unidadorg_trd = i).first()
-            serializer_ssutrdtipo = GetSeriesSubSUnidadOrgTRDTipologiasSerializer(main_detail, many=False)
-            if not main_detail:
-                data = [{'id_serie_subserie_tipologia': None, 'id_serie_subserie_unidadorg_trd': None, 'id_tipologia_doc': None}]
-                return Response({'success': True, 'detail': 'Esta Serie Sub Serie Unidad no tiene asociada ninguna tipologia', 'data': data})
+class GetTipologiasSeriesSubSUnidadOrgTRD(generics.ListAPIView):
+    serializer_class = TipologiasDocumentalesSerializer
+    queryset = SeriesSubSUnidadOrgTRDTipologias.objects.all()
+    permission_classes = [IsAuthenticated]
 
-            detalle_serie_subs_unidad_org_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_serie_subs_unidadorg_trd = serializer_ssutrdtipo.data['id_serie_subserie_unidadorg_trd']).first()
-            serializer_ssutrd = GetSeriesSubSUnidadOrgTRDSerializer(detalle_serie_subs_unidad_org_trd, many=False)
-            detalle_tipologias = TipologiasDoc.objects.filter(id_tipologia_documental = serializer_ssutrdtipo.data['id_tipologia_doc']).first()
-            serializer_tipologias = GetTipologiasDocumentalesSerializer(detalle_tipologias, many=False)
+    def get(self, request, id_catserie_unidadorg):
+        tipologias_catalogo_trd = self.queryset.filter(id_catserie_unidadorg_ccd_trd=id_catserie_unidadorg)
+        tipologias_catalogo = [tipologia_catalogo_trd.id_tipologia_doc for tipologia_catalogo_trd in tipologias_catalogo_trd]
+        tipologias_catalogo_serializer = self.serializer_class(tipologias_catalogo, many=True)
             
-            data = serializer_ssutrdtipo.data
-            data['id_serie_subserie_unidadorg_trd'] = serializer_ssutrd.data
-            data['id_tipologia_doc'] = serializer_tipologias.data
-            result.append(data)
-            
-        return Response({'success': True, 'detail':'Se encontraron los siguientes resultados', 'data': result}, status=status.HTTP_200_OK)
-
+        return Response({'success':True, 'detail':'Se encontraron las siguientes tipologias para el registro del catalogo TRD elegido', 'data':tipologias_catalogo_serializer.data}, status=status.HTTP_200_OK)
+  
 class DesactivarTipologiaActual(generics.UpdateAPIView):
     serializer_class = TipologiasDocumentalesPutSerializer
     queryset = TipologiasDoc.objects.all()
@@ -1196,42 +1188,30 @@ class DesactivarTipologiaActual(generics.UpdateAPIView):
         else:
             return Response({'success':False, 'detail':'La tipologia ingresada no existe'}, status=status.HTTP_404_NOT_FOUND)
 
-class finalizarTRD(generics.RetrieveUpdateAPIView):
+class FinalizarTRD(generics.RetrieveUpdateAPIView):
     serializer_class = TRDFinalizarSerializer
     queryset = TablaRetencionDocumental.objects.all()
     permission_classes = [IsAuthenticated]
     
     def put(self, request, pk):
-        trd_ingresada = pk
-        confirm = request.query_params.get("confirm")
-        trd = TablaRetencionDocumental.objects.filter(id_trd = trd_ingresada).first()
-        series = SeriesDoc.objects.filter(id_ccd = trd.id_ccd).values()
-        id_series_totales = [i['id_serie_doc'] for i in series]
-        series_subseries_unidades_totales = CatalogosSeriesUnidad.objects.filter(id_catalogo_serie__id_serie_doc__in = id_series_totales).values()
-        id_series_subseries_unidades_totales = [i['id_cat_serie_und'] for i in series_subseries_unidades_totales]
-        series_subseries_unidades_usadas = CatSeriesUnidadOrgCCDTRD.objects.filter(id_trd = trd_ingresada).values()
-        id_series_subseries_unidades_usadas = [i['id_cat_serie_und_id'] for i in series_subseries_unidades_usadas]
-        id_series_subseries_unidades_no_usadas = [i for i in id_series_subseries_unidades_totales if i not in id_series_subseries_unidades_usadas]
-        if len(id_series_subseries_unidades_no_usadas) >= 1:
-            instancia_id_series_subseries_unidades_no_usadas = CatalogosSeriesUnidad.objects.filter(id_cat_serie_und__in = id_series_subseries_unidades_no_usadas).values()
-            return Response({'success': False, 'detail': 'Hay combinaciones de series, subseries y unidades que no se están usando', 'data' : instancia_id_series_subseries_unidades_no_usadas}, status=status.HTTP_403_FORBIDDEN)
-        if trd.fecha_terminado == None:
-            series_subseries_unidad_org_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_trd = trd_ingresada).values()
-            for i in series_subseries_unidad_org_trd:
-                if i['cod_disposicion_final'] != None and i['digitalizacion_dis_final'] != None and i['tiempo_retencion_ag'] != None and i['tiempo_retencion_ac'] != None:
-                    consulta = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_serie_subserie_unidadorg_trd = i['id_serie_subs_unidadorg_trd']).first()
-                    if not consulta:
-                        return Response({'success': False, 'detail': 'La relación ' + str(i['id_serie_subs_unidadorg_trd']) +  ' debe tener una tipología asignada'}, status=status.HTTP_403_FORBIDDEN)    
-            ids_series_subseries_unidad_org_trd = [i['id_serie_subs_unidadorg_trd'] for i in series_subseries_unidad_org_trd]
-            series_subseries_unidad_org_trd_tipologias = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_serie_subserie_unidadorg_trd__in = ids_series_subseries_unidad_org_trd).values()
-            id_tipologias_usadas = [i['id_tipologia_doc_id'] for i in series_subseries_unidad_org_trd_tipologias]
-            tipologias_sin_usar_instance = TipologiasDoc.objects.filter(~Q(id_tipologia_documental__in = id_tipologias_usadas))
-            if confirm == 'true':
-                tipologias_sin_usar_instance.delete()
-            if (tipologias_sin_usar_instance.values()):
-                return Response({'success': False, 'detail': 'Hay tipologias documentales sin usar', 'data' : tipologias_sin_usar_instance.values()}, status=status.HTTP_403_FORBIDDEN)
-            trd.fecha_terminado = datetime.now()
-            trd.save()
-        else:
-            return Response({'success': False, 'detail': 'Esta TRD ya está finalizada'}, status=status.HTTP_403_FORBIDDEN)
-        return Response({'success': True, 'detail': 'TRD finalizada con éxito'}, status=status.HTTP_200_OK)
+        trd = self.queryset.filter(id_trd=pk).first()
+        if not trd:
+            raise NotFound('No se encontró la TRD elegida')
+        
+        if trd.fecha_terminado:
+            raise ValidationError('No puede finalizar una TRD que ya se encuentra finalizada')
+        if trd.fecha_retiro_produccion:
+            raise ValidationError('No puede finalizar una TRD que haya sido retirada de producción')
+        if trd.actual:
+            raise ValidationError('No puede finalizar una TRD actual')
+        
+        existencia_catalogo_ccd = CatalogosSeriesUnidad.objects.filter(id_catalogo_serie__id_serie_doc__id_ccd=trd.id_ccd).values_list('id_cat_serie_und', flat=True)
+        existencia_catalogo_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_trd=trd.id_trd).values_list('id_cat_serie_und', flat=True)
+        
+        if len(existencia_catalogo_ccd) != len(existencia_catalogo_trd):
+            raise PermissionDenied('No puede finalizar la TRD elegida porque no todos los registros del catalogo de la CCD están relacionadas en el catalogo de la TRD')
+        
+        trd.fecha_terminado = datetime.now()
+        trd.save()
+        
+        return Response({'success':True, 'detail':'Se ha finalizado correctamente la TRD'}, status=status.HTTP_200_OK)

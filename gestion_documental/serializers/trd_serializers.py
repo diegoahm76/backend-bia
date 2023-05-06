@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from rest_framework.serializers import ReadOnlyField
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
+from gestion_documental.models.tca_models import TablasControlAcceso
 from gestion_documental.models.trd_models import (
     TipologiasDoc,
     TablaRetencionDocumental,
@@ -53,6 +54,14 @@ class BuscarTipologiaSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class BusquedaTRDNombreVersionSerializer(serializers.ModelSerializer):
+    usado = serializers.SerializerMethodField()
+    
+    def get_usado(self,obj):
+        tca = TablasControlAcceso.objects.filter(id_trd=obj.id_trd)
+        usado = True if tca else False
+        
+        return usado
+    
     class Meta:
         model = TablaRetencionDocumental
         fields = '__all__'
@@ -86,6 +95,13 @@ class TipologiasDocumentalesPutSerializer(serializers.ModelSerializer):
         # ]
 
 class TRDSerializer(serializers.ModelSerializer):
+    usado = serializers.SerializerMethodField()
+    
+    def get_usado(self,obj):
+        tca = TablasControlAcceso.objects.filter(id_trd=obj.id_trd)
+        usado = True if tca else False
+        
+        return usado
     
     class Meta:
         model = TablaRetencionDocumental
