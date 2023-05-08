@@ -176,6 +176,7 @@ class ConsultaDeudoresViews(generics.ListAPIView):
         serializador = self.serializer_class(consulta, many=True)
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializador.data}, status=status.HTTP_200_OK)
 
+
 class ListadoFacilidadesPagoViews(generics.ListAPIView):
     serializer_class = ListadoFacilidadesPagoSerializer
     permission_classes = [IsAuthenticated]
@@ -200,6 +201,7 @@ class ConsultaFacilidadesPagosViews(generics.ListAPIView):
         id_facilidades = self.kwargs['id']
         queryset = FacilidadesPago.objects.filter(id=id_facilidades)
         return queryset
+
 
 class ListadoDeudoresViews(generics.ListAPIView):
     serializer_class = ListadoDeudoresUltSerializer
@@ -226,3 +228,23 @@ class ListadoDeudoresViews(generics.ListAPIView):
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data})
 
 
+class RequisitosActuacionView(generics.ListAPIView):
+    serializer_class = RequisitosActuacionSerializer
+    queryset = RequisitosActuacion
+    
+    def get(self, request, id):
+        queryset = RequisitosActuacion.objects.filter(id_tipo_actuacion=id)
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+class AgregarDocumentosRequisitosView(generics.CreateAPIView):
+    serializer_class = CumplimientoRequisitosSerializer
+    queryset = CumplimientoRequisitos.objects.all()
+
+    def post(self, request):
+        data = request.data
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'data':serializer.data})

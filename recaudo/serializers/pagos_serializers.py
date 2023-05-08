@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from seguridad.models import Personas
-from recaudo.models.base_models import TipoActuacion, TiposPago
+from recaudo.models.base_models import TipoActuacion, TiposPago, Ubicaciones
 from recaudo.models.pagos_models import (
     FacilidadesPago,
     RequisitosActuacion,
@@ -63,9 +63,15 @@ class TasasInteresSerializer(serializers.ModelSerializer):
 
 
 class DeudorFacilidadPagoSerializer(serializers.ModelSerializer):
+    ubicacion = serializers.SerializerMethodField()
+    
+    def get_ubicacion(self, obj):
+        ubicacion = obj.ubicacion_id.nombre
+        return ubicacion
+
     class Meta:
         model = Deudores
-        fields = ('codigo', 'identificacion', 'nombres', 'apellidos', 'email')
+        fields = ('codigo', 'identificacion', 'nombres', 'apellidos', 'email', 'ubicacion')
         
 
 class FacilidadesPagoSerializer(serializers.ModelSerializer):

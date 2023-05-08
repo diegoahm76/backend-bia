@@ -13,5 +13,7 @@ urlpatterns = [
     path('consulta-deudores/<int:identificacion>/', views.ConsultaDeudoresViews.as_view(),name='consulta-deudores'),
     path('listado-facilidades-pagos/', views.ListadoFacilidadesPagoViews.as_view(),name='listado-facilidades-pagos'),
     path('consulta-facilidades-pagos/<int:id>/', views.ConsultaFacilidadesPagosViews.as_view(), name='consulta-facilidades'),
+    path('requisitos-actuacion/<int:id>/', views.RequisitosActuacionView.as_view(), name='requisitos-actuacion'),
+    path('cumplimiento-requisitos/', views.AgregarDocumentosRequisitosView.as_view(), name='cumplimiento-requisitos'),
     ]
     
