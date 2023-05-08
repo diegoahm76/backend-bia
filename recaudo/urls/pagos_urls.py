@@ -10,8 +10,9 @@ urlpatterns = [
     path('listado-obligaciones/', views.ListadoObligacionesViews.as_view(),name='listado-obligaciones'),
     path('consulta-obligaciones/<int:id_obligaciones>/', views.ConsultaObligacionesViews.as_view(), name='consulta-obligaciones'),
     path('listado-deudores/', views.ListadoDeudoresViews.as_view(),name='listado-deudores'),
-    path('consulta-deudores/<int:identificacion>/', views.ConsultaDeudoresViews.as_view(),name='consulta-deudores'),
+    path('consulta-deudores-obligaciones/<int:identificacion>/', views.ConsultaObligacionesDeudoresViews.as_view(),name='consulta-deudores-obligaciones'),
     path('listado-facilidades-pagos/', views.ListadoFacilidadesPagoViews.as_view(),name='listado-facilidades-pagos'),
     path('consulta-facilidades-pagos/<int:id>/', views.ConsultaFacilidadesPagosViews.as_view(), name='consulta-facilidades'),
+    path('listado-facilidades-funcionarios/', views.ListadoFacilidadesPagoFuncionariosViews.as_view(), name='listado-facilidades-funcionario'),
     ]
     
