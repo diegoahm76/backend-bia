@@ -29,6 +29,7 @@ from almacen.models.organigrama_models import (
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from seguridad.models import User, Personas
 from datetime import datetime
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
 # VIEWS FOR NIVELES ORGANIGRAMA
 class UpdateNiveles(generics.UpdateAPIView):
@@ -650,15 +651,11 @@ class ReanudarOrganigrama(generics.RetrieveUpdateAPIView):
         organigrama = Organigramas.objects.filter(id_organigrama=id_organigrama).first()
         
         if not organigrama:
-            return Response({'succes':False,'detail':'No existe el organigrama ingresado.'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe el Organigrama Ingresado.') #PARA ERRORES 404_NOT_FOUND
         
         if organigrama.fecha_terminado == None:
-            return Response({'succes':False, 'detail':'El organigrama debe de estar finalizado para su Reanudación.'},status=status.HTTP_403_FORBIDDEN)             
+            raise PermissionDenied('El organigrama debe de estar finalizado para su Reanudación.')#PARA ERRORES 403_FORBIDDEN
 
-        # persona_logueado = request.user.persona.id_persona
-        
-        # if persona_logueado != None:
-        #     return Response({'succes':False, 'detail':'El Organigrama no debe de poseer un usuario asignado.'},status=status.HTTP_404_NOT_FOUND)             
 
         ccd_activo = CuadrosClasificacionDocumental.objects.filter(id_organigrama=id_organigrama).first()
         

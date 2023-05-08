@@ -438,7 +438,7 @@ class Util:
     def comparacion_campos_actualizados(data,instance):
         for field, value in data.items():
             
-            if field != "datos_clasificacion_persona" and field != "justificacion_cambio_und_org":
+            if field != "datos_clasificacion_persona" and field != "justificacion_cambio_und_org" and field != "tipologias" and  field != "justificacion_cambio" and field != "ruta_archivo_cambio":
                 valor_previous= getattr(instance,field)
                 
                 # TOMAR DATE SI ES DATETIME
@@ -446,11 +446,17 @@ class Util:
                 
                 valor_previous = str(valor_previous) if isinstance(valor_previous, date) else valor_previous
                 
+                value = True if value == 'true' or value == 'True' else value
+                
                 # TOMAR PK SI ES INSTANCIA
                 try:
                     valor_previous = valor_previous.pk
                 except:
                     pass
+                
+                if isinstance(valor_previous, int):
+                    value = int(value)
+                
                 if value != valor_previous:
                     return True
         return False
