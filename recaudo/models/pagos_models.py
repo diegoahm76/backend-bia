@@ -27,8 +27,8 @@ class FacilidadesPago(models.Model):
     cuotas = models.IntegerField(db_column='T426cuotas')
     id_tasas_interes = models.ForeignKey(TasasInteres, on_delete=models.CASCADE, db_column='T426id_tasa_interes')
     documento_soporte = models.TextField(db_column='_T426documento_soporte')
-    #documento_soporte = models.FileField(db_column='_T426documento_soporte')
-    id_funcionario = models.IntegerField(db_column='T426id_funcionario')
+    documento_soporte = models.FileField(db_column='_T426documento_soporte')
+    #id_funcionario = models.IntegerField(db_column='T426id_funcionario')
 
     class Meta:
         db_table = 'T426facilidades_pago'
@@ -52,7 +52,7 @@ class CumplimientoRequisitos(models.Model):
     id = models.AutoField(primary_key=True, db_column='T429id')
     id_facilidad_pago = models.ForeignKey(FacilidadesPago, on_delete=models.CASCADE, db_column='T429id_facilidad_pago')
     id_requisito_actuacion = models.ForeignKey(RequisitosActuacion, on_delete=models.CASCADE, db_column='T429id_requisito_actuacion')
-    valor = models.TextField(db_column='T429valor')
+    valor = models.FileField(db_column='T429valor')
 
     class Meta:
         db_table = 'T429cumplimiento_requisitos'
