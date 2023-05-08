@@ -75,7 +75,8 @@ class DeudorFacilidadPagoSerializer(serializers.ModelSerializer):
         
 
 class FacilidadesPagoSerializer(serializers.ModelSerializer):
-    id_deudor_actiacion = DeudorFacilidadPagoSerializer
+    id_deudor_actuacion = DeudorFacilidadPagoSerializer
+
     class Meta:
         model = FacilidadesPago
         fields = '__all__'
@@ -131,13 +132,6 @@ class ConsultaObligacionesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Obligaciones
         fields = '__all__'
-
-
-class ConsultaDeudoresSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Deudores
-        fields = '__all__'
-
 
 class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
     identificacion = serializers.ReadOnlyField(source='id_deudor_actuacion.identificacion',default=None)

@@ -21,7 +21,6 @@ from recaudo.serializers.pagos_serializers import (
     PlanPagosSerializer,
     TasasInteresSerializer,
     ObligacionesSerializer,
-    ConsultaDeudoresSerializer,
     ConsultaObligacionesSerializer,
     ListadoFacilidadesPagoSerializer,
     ConsultaFacilidadesPagosSerializer,
@@ -163,18 +162,41 @@ class ConsultaObligacionesViews(generics.ListAPIView):
         queryset = Obligaciones.objects.filter(id=id_obligaciones)
         return queryset
     
-
-class ConsultaDeudoresViews(generics.ListAPIView):
-    serializer_class = ConsultaDeudoresSerializer
-    queryset = Deudores.objects.all()
+class ConsultaObligacionesDeudoresViews(generics.ListAPIView):
+    serializer_class = ObligacionesSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_monto_total(self, obligaciones):
+        monto_total = 0
+        intereses_total = 0
+        for obligacion in obligaciones:
+            monto_total += obligacion.monto_inicial
+            carteras = obligacion.cartera_set.filter(fin__isnull=True)
+            for cartera in carteras:
+                intereses_total += cartera.valor_intereses
+        return monto_total, intereses_total, monto_total + intereses_total
+    
+    def get_queryset(self):
+        identificacion = self.kwargs['identificacion']
+        deudor = Deudores.objects.get(identificacion=identificacion)
+        return Obligaciones.objects.filter(id_expediente__cod_deudor=deudor)
+    
     def get(self, request, identificacion):
-        consulta = self.queryset.filter(identificacion__icontains=identificacion)
-        if not consulta.exists():
+        try:
+            queryset = self.get_queryset()
+            serializer = self.serializer_class(queryset, many=True)
+            monto_total, intereses_total, monto_e_intereses_total = self.get_monto_total(queryset)
+            return Response({
+                'success': True, 
+                'detail': 'Resultados de la búsqueda', 
+                'data': serializer.data,
+                'monto_total': monto_total,
+                'intereses_total': intereses_total,
+                'monto_e_intereses_total': monto_e_intereses_total
+            }, status=status.HTTP_200_OK)
+        except Deudores.DoesNotExist:
             raise NotFound(detail='No se encontraron resultados')
-        serializador = self.serializer_class(consulta, many=True)
-        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializador.data}, status=status.HTTP_200_OK)
+
 
 
 class ListadoFacilidadesPagoViews(generics.ListAPIView):
@@ -226,6 +248,21 @@ class ListadoDeudoresViews(generics.ListAPIView):
         queryset = self.get_queryset()
         data = [{'identificacion': item['identificacion'], 'nombre_contribuyente': f"{item['nombres']} {item['apellidos']}"} for item in queryset]
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data})
+
+class ListadoFacilidadesPagoFuncionariosViews(generics.ListAPIView):
+    serializer_class = ListadoFacilidadesPagoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = self.request.user
+        facilidades_pago = FacilidadesPago.objects.filter(id_funcionario=user.pk)
+        for key, value in request.query_params.items():
+            if key == 'identificacion':
+                facilidades_pago = facilidades_pago.filter(id_deudor_actuacion__identificacion__icontains=value)
+            elif key == 'nombre_de_usuario':
+                facilidades_pago = facilidades_pago.filter(id_deudor_actuacion__usuario__primer_nombre__icontains=value)
+        serializer = ListadoFacilidadesPagoSerializer(facilidades_pago, many=True)
+        return Response(serializer.data)
 
 
 class RequisitosActuacionView(generics.ListAPIView):

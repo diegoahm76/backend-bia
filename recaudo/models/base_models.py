@@ -38,8 +38,8 @@ class Ubicaciones(models.Model):
 class RangosEdad(models.Model):
     id = models.AutoField(primary_key=True, db_column='T411id')
     descripcion = models.CharField(max_length=255, db_column='T411descripcion')
-    inicial = models.IntegerField(db_column='T411inicial')
-    final = models.IntegerField(db_column='T411final')
+    inicial = models.DateField(db_column='T411inicial')
+    final = models.DateField(db_column='T411final')
 
     class Meta:
         db_table = 'T411rangos_edad'
