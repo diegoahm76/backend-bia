@@ -30,7 +30,8 @@ from recaudo.models.procesos_models import (
     AtributosEtapas,
     Procesos,
     ValoresProceso,
-    FlujoProceso
+    FlujoProceso,
+    TiposAtributos
 )
 
 from recaudo.models.pagos_models import (
@@ -92,4 +93,5 @@ admin.site.register(EtapasProceso),
 admin.site.register(AtributosEtapas),
 admin.site.register(Procesos),
 admin.site.register(ValoresProceso),
-admin.site.register(FlujoProceso)
+admin.site.register(FlujoProceso),
+admin.site.register(TiposAtributos)

@@ -17,6 +17,8 @@ class DespachosEntrantesSerializer(serializers.ModelSerializer):
 class ItemsDespachosEntrantesSerializer(serializers.ModelSerializer):
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
     nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
+    cod_tipo_elemento_vivero = serializers.ReadOnlyField(source='id_bien.cod_tipo_elemento_vivero', default=None)
+    es_semilla_vivero = serializers.ReadOnlyField(source='id_bien.es_semilla_vivero', default=None)
     tipo_documento = serializers.ReadOnlyField(source='id_entrada_alm_del_bien.id_tipo_entrada.nombre', default=None)
     numero_documento = serializers.ReadOnlyField(source='id_entrada_alm_del_bien.numero_entrada_almacen', default=None)
     cantidad_restante = serializers.IntegerField(read_only=True, default=None)

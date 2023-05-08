@@ -1,5 +1,6 @@
 from django.db import models
 from recaudo.models.liquidaciones_models import LiquidacionesBase, Deudores
+from recaudo.models.base_models import RangosEdad
 
 
 class DocumentosCobro(models.Model):
@@ -51,13 +52,13 @@ class Obligaciones(models.Model):
 
 class Cartera(models.Model):
     id = models.AutoField(primary_key=True, db_column='T417id')
-    id_obligacion = models.IntegerField(db_column='T417id_obligacion')
+    id_obligacion = models.ForeignKey(Obligaciones, on_delete=models.CASCADE, db_column='T417id_obligacion')
     dias_mora = models.IntegerField(db_column='T417dias_mora')
     valor_intereses = models.DecimalField(max_digits=30, decimal_places=2, db_column='T417valor_intereses')
     valor_sancion = models.DecimalField(max_digits=30, decimal_places=2, db_column='T417valor_sancion')
     inicio = models.DateField(db_column='T417inicio')
     fin = models.DateField(db_column='T417fin')
-    id_rango = models.IntegerField(db_column='T417id_rango')
+    id_rango = models.ForeignKey(RangosEdad, on_delete=models.CASCADE, db_column='T417id_rango')
     codigo_contable = models.CharField(max_length=255, db_column='T417codigo_contable')
     fecha_facturacion = models.DateField(db_column='T417fecha_facturacion')
     numero_factura = models.CharField(max_length=255, db_column='T417numero_factura')

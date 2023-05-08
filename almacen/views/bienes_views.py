@@ -298,6 +298,7 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                 stock_minimo=data['stock_minimo'],
                                 stock_maximo=data['stock_maximo'],
                                 solicitable_vivero=data['solicitable_vivero'],
+                                visible_solicitudes=data['visible_solicitudes'],
                                 id_bien_padre=padre
                             )
                             serializer = self.serializer_class(catalogo_bien)
@@ -331,6 +332,7 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                             stock_minimo=data['stock_minimo'],
                             stock_maximo=data['stock_maximo'],
                             solicitable_vivero=data['solicitable_vivero'],
+                            visible_solicitudes=data['visible_solicitudes'],
                             id_bien_padre=None
                         )
                         serializer = self.serializer_class(catalogo_bien)

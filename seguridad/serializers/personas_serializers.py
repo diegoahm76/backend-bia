@@ -236,6 +236,7 @@ class PersonaNaturalPostSerializer(serializers.ModelSerializer):
             'direccion_laboral',
             'direccion_residencia_ref',
             'direccion_notificaciones',
+            'direccion_notificacion_referencia',
             'cod_municipio_laboral_nal',
             'cod_municipio_notificacion_nal',
             'acepta_notificacion_sms',
@@ -281,6 +282,7 @@ class PersonaNaturalUpdateSerializer(serializers.ModelSerializer):
             'nombre_comercial',
             'direccion_residencia',
             'direccion_residencia_ref',
+            'direccion_notificacion_referencia',
             'ubicacion_georeferenciada',
             'municipio_residencia',
             'pais_residencia',
@@ -345,6 +347,7 @@ class PersonaJuridicaPostSerializer(serializers.ModelSerializer):
             'email', 
             'email_empresarial',
             'direccion_notificaciones',
+            'direccion_notificacion_referencia',
             'cod_municipio_notificacion_nal',
             'cod_pais_nacionalidad_empresa',
             'telefono_celular_empresa',
@@ -388,7 +391,8 @@ class PersonaJuridicaUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Personas
         fields = [
-            'direccion_notificaciones', 
+            'direccion_notificaciones',
+            'direccion_notificacion_referencia',
             'cod_municipio_notificacion_nal',
             'email',
             'email_empresarial',
@@ -434,7 +438,8 @@ class GetPersonaJuridicaByRepresentanteLegalSerializer(serializers.ModelSerializ
             'email', 
             'email_empresarial',
             'telefono_celular', 
-            'direccion_notificaciones', 
+            'direccion_notificaciones',
+            'direccion_notificacion_referencia',
             'direccion_residencia',
             'pais_residencia',
             'municipio_residencia',
@@ -479,6 +484,7 @@ class PersonaNaturalPostByUserSerializer(serializers.ModelSerializer):
             'direccion_laboral',
             'direccion_residencia_ref',
             'direccion_notificaciones',
+            'direccion_notificacion_referencia',
             'cod_municipio_laboral_nal',
             'cod_municipio_notificacion_nal',
             'acepta_notificacion_sms',
@@ -556,6 +562,7 @@ class PersonaNaturalUpdateUserPermissionsSerializer(serializers.ModelSerializer)
             'direccion_laboral',
             'cod_municipio_laboral_nal',
             'direccion_notificaciones',
+            'direccion_notificacion_referencia',
             'cod_municipio_notificacion_nal',
             'email',
             'email_empresarial',
@@ -604,7 +611,8 @@ class PersonaJuridicaUpdateUserPermissionsSerializer(serializers.ModelSerializer
     class Meta:
         model = Personas
         fields = [
-            'direccion_notificaciones', 
+            'direccion_notificaciones',
+            'direccion_notificacion_referencia',
             'cod_municipio_notificacion_nal',
             'email',
             'email_empresarial',
@@ -768,8 +776,6 @@ class PersonasFilterSerializer(serializers.ModelSerializer):
         razon_social2 = obj.razon_social
         razon_social2 = razon_social2.upper() if razon_social2 else razon_social2
         return razon_social2
-    
-    
         
     class Meta:
         model = Personas
@@ -785,8 +791,28 @@ class PersonasFilterSerializer(serializers.ModelSerializer):
             'nombre_completo',
             'razon_social',
             'nombre_comercial',
+            'digito_verificacion',
+            'cod_naturaleza_empresa',
             'tiene_usuario'
         ]
+
+class UsuarioAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id_usuario', 'nombre_de_usuario']
+
+class PersonasFilterAdminUserSerializer(PersonasFilterSerializer):
+    usuarios = serializers.SerializerMethodField()
+    
+    def get_usuarios(self, obj):
+        usuarios = User.objects.filter(persona=obj.id_persona)
+        usuarios_serializer = UsuarioAdminSerializer(usuarios, many=True)
+        usuarios_data = usuarios_serializer.data if usuarios_serializer else []
+        return usuarios_data
+        
+    class Meta:
+        model = Personas
+        fields = PersonasFilterSerializer.Meta.fields + ['usuarios']
 
 class BusquedaHistoricoCambiosSerializer(serializers.ModelSerializer):
     class Meta:

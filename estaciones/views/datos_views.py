@@ -108,3 +108,45 @@ class ConsultarDatosReportes(generics.ListAPIView):
         else:
             return Response({'success': True, 'detail': 'No se encontraron datos'}, status=status.HTTP_404_NOT_FOUND)
 
+class ConsultarDatosFechaDiario(generics.ListAPIView):
+    serializer_class = DatosSerializerNombre
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Obtener los parámetros de consulta de la URL
+        fecha_inicial = self.kwargs.get('fecha_inicial')
+        pk = self.kwargs.get('pk')
+
+        # Convertir la fecha de la URL en un objeto de fecha de Python
+        fecha_inicial_dt = datetime.strptime(fecha_inicial, '%Y-%m-%d').date()
+
+        # Filtrar los datos por fecha si se especificaron los parámetros de consulta
+        lista=[]
+        if fecha_inicial and pk:
+            queryset = Datos.objects.filter(id_estacion=pk).using("bia-estaciones").values(
+                'id_data','fecha_registro','id_estacion','temperatura_ambiente','humedad_ambiente',
+                'presion_barometrica','velocidad_viento','direccion_viento','precipitacion',
+                'luminosidad','nivel_agua','velocidad_agua'
+            )
+            for resgistro in queryset:
+                fecha = resgistro['fecha_registro'].date()
+                if fecha == fecha_inicial_dt:
+                    lista.append(resgistro)
+            print("lista",lista)
+        else:
+            queryset = Datos.objects.none()
+
+        return lista
+
+
+    def get(self, request, pk, fecha_inicial):
+        queryset = self.get_queryset()
+
+        if queryset:
+            # serializador = self.serializer_class(queryset, many=True)
+            return Response({'success': True, 'detail': 'Se encontraron los siguientes datos', 'data': queryset}, status=status.HTTP_200_OK)
+        else:
+            
+            return Response({'success': False, 'detail': 'No se encontraron datos'}, status=status.HTTP_404_NOT_FOUND)
+
+

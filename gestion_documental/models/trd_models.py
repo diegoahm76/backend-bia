@@ -149,7 +149,7 @@ class HistoricosCatSeriesUnidadOrgCCDTRD(models.Model):
     id_persona_cambia = models.ForeignKey(Personas, null=True, blank=True, on_delete=models.SET_NULL, db_column='T219Id_PersonaCambia')
 
     def __str__(self):
-        return str(self.historico_serie_subs_unidadorg_trd)
+        return str(self.id_historico_catserie_unidadorg_ccd_trd)
 
     class Meta:
         db_table = 'T219Historicos_CatSeries_UndOrg_CCD_TRD'
