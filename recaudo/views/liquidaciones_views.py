@@ -3,8 +3,7 @@ from recaudo.models.liquidaciones_models import (
     Deudores,
     LiquidacionesBase,
     DetalleLiquidacionBase,
-    Expedientes,
-    VariablesBase
+    Expedientes
 )
 from recaudo.serializers.liquidaciones_serializers import (
     OpcionesLiquidacionBaseSerializer,
@@ -13,8 +12,7 @@ from recaudo.serializers.liquidaciones_serializers import (
     LiquidacionesBasePostSerializer,
     DetallesLiquidacionBaseSerializer,
     DetallesLiquidacionBasePostSerializer,
-    ExpedientesSerializer,
-    VariablesBaseSerializer
+    ExpedientesSerializer
 )
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
@@ -117,16 +115,11 @@ class DetallesLiquidacionBaseView(generics.GenericAPIView):
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
 
     def post(self, request):
-        variable_serializer = VariablesBaseSerializer(data=self.request.data.get('id_variable'))
-        if variable_serializer.is_valid(raise_exception=True):
-            variable = variable_serializer.save()
-            request.data['id_variable'] = variable.pk
-            serializer = DetallesLiquidacionBasePostSerializer(data=request.data)
-            if serializer.is_valid(raise_exception=True):
-                serializer.save(id_variable=variable)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        return Response(variable_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer = DetallesLiquidacionBasePostSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ExpedientesView(generics.ListAPIView):
