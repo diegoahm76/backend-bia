@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from seguridad.utils import Util  
 from django.db.models import Q, F, Sum
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime, timedelta
 from datetime import timezone
@@ -92,6 +92,8 @@ class GetItemsDespachosEntrantes(generics.ListAPIView):
             'observacion',
             codigo_bien=F('id_bien__codigo_bien'),
             nombre_bien=F('id_bien__nombre'),
+            cod_tipo_elemento_vivero=F('id_bien__cod_tipo_elemento_vivero'),
+            es_semilla_vivero=F('id_bien__es_semilla_vivero'),
             unidad_medida=F('id_bien__id_unidad_medida__abreviatura'),
             tipo_documento=F('id_entrada_alm_del_bien__id_tipo_entrada__nombre'),
             numero_documento=F('id_entrada_alm_del_bien__numero_entrada_almacen')
@@ -121,7 +123,7 @@ class GuardarDistribucionBienes(generics.ListAPIView):
             "distribucion_confirmada": str(despacho_entrante_previous.distribucion_confirmada),
             "fecha_confirmacion_distribucion": str(despacho_entrante_previous.fecha_confirmacion_distribucion),
             "observacion_distribucion": str(despacho_entrante_previous.observacion_distribucion),
-            "persona_distribuye": str(despacho_entrante_previous.id_persona_distribuye.primer_nombre + ' ' + despacho_entrante_previous.id_persona_distribuye.primer_apellido if despacho_entrante_previous.id_persona_distribuye.tipo_persona=='N' else despacho_entrante_previous.id_persona_distribuye.razon_social)
+            "persona_distribuye": str(despacho_entrante_previous.id_persona_distribuye.primer_nombre + ' ' + despacho_entrante_previous.id_persona_distribuye.primer_apellido if despacho_entrante_previous.id_persona_distribuye.tipo_persona=='N' else despacho_entrante_previous.id_persona_distribuye.razon_social) if despacho_entrante_previous.id_persona_distribuye else 'None'
         }
         valores_actualizados={'previous':despacho_entrante_previous, 'current':despacho_entrante}
         direccion=Util.get_client_ip(request)
@@ -153,7 +155,7 @@ class ConfirmarDistribucion(generics.UpdateAPIView):
             response_dict = UtilConservacion.guardar_distribuciones(id_despacho_entrante, request, self.queryset.all(),True)
             
             if response_dict['success'] != True:
-                return Response({'success':response_dict['success'], 'detail':response_dict['detail']}, status=response_dict['status'])
+                raise ValidationError(response_dict['detail'])
 
             despacho_entrante.fecha_confirmacion_distribucion = datetime.now()
             despacho_entrante.observacion_distribucion=despacho_entrante.observacion_distribucion
@@ -188,6 +190,9 @@ class ConfirmarDistribucion(generics.UpdateAPIView):
                             nro_lote = 1
                             if vivero_destino:
                                 nro_lote = vivero_destino.nro_lote + 1 if vivero_destino.nro_lote else 1
+                                
+                            if item["cod_etapa_lote_al_ingresar"] == 'G':
+                                raise ValidationError('No puede distribuir un material vegetal no semilla a germinación')
                                 
                             InventarioViveros.objects.create(
                                 id_vivero = vivero,
@@ -225,7 +230,7 @@ class ConfirmarDistribucion(generics.UpdateAPIView):
                        
             return Response({'success':True, 'detail':'Confirmación exitosa'}, status=status.HTTP_200_OK)
         
-        return Response({'success':False, 'detail':'El despacho entrante elegido no existe'}, status=status.HTTP_404_NOT_FOUND)
+        raise NotFound('El despacho entrante elegido no existe')
 
 class GetItemsPredistribuidos(generics.ListAPIView):
     serializer_class=DistribucionesItemPreDistribuidoSerializer
