@@ -1,7 +1,7 @@
 from almacen.models.generics_models import UnidadesMedida
 from almacen.models.generics_models import Magnitudes
 from almacen.models.generics_models import Bodegas
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.views import APIView
 from almacen.serializers.generics_serializers import (
     SerializersMarca,
@@ -16,16 +16,17 @@ from almacen.serializers.generics_serializers import (
     SerializerBodegas,
     SerializerPostBodegas,
     SerializerPutBodegas,
-    
     SerializerMagnitudes,
     SerializersEstadosArticulo
     )   
 from almacen.models.generics_models import Marcas, PorcentajesIVA
 from almacen.models.bienes_models import EstadosArticulo
+from seguridad.models import Personas
+from django.db.models import Q
 from almacen.choices.estados_articulo_choices import estados_articulo_CHOICES
 from almacen.choices.magnitudes_choices import magnitudes_CHOICES
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
 
 #_______Marca
@@ -37,9 +38,34 @@ class UpdateMarca(generics.UpdateAPIView):
     serializer_class=SerializersPutMarca
     queryset=Marcas.objects.all()
     
+    def put(self, request, pk):
+        data = request.data
+        marca = self.queryset.filter(id_marca=pk).first()
+        if marca:
+            if marca.item_ya_usado:
+                raise PermissionDenied('No puedes actualizar una marca que haya sido usada')
+            else:
+                marca_serializer = self.serializer_class(marca, data)
+                marca_serializer.is_valid(raise_exception=True)
+                marca_serializer.save()
+                return Response({'success':True, 'detail':'Se ha actualizado la marca exitosamente', 'data': marca_serializer.data}, status=status.HTTP_201_CREATED)
+        else:
+            raise NotFound('No existe el porcentaje ingresado')
+    
 class DeleteMarca(generics.DestroyAPIView):
     serializer_class=SerializersMarca
     queryset=Marcas.objects.all()
+    
+    def delete(self, request, pk):
+        marca = self.queryset.filter(id_marca=pk).first()
+        if marca:
+            if marca.item_ya_usado:
+                raise PermissionDenied('No puedes eliminar una marca que haya sido usada')
+            else:
+                marca.delete()
+                return Response({'success':True, 'detail': 'Se ha eliminado exitosamente'}, status=status.HTTP_200_OK)
+        else:
+            raise NotFound('No existe la marca ingresada')
 
 class GetMarcaById(generics.RetrieveAPIView):
     serializer_class=SerializersMarca
@@ -71,15 +97,22 @@ class RegisterBodega(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         
         es_principal = serializer.validated_data.get('es_principal')
+        id_responsable = data.get('id_responsable')
+        
+        if id_responsable:
+            responsable = Personas.objects.filter(id_persona=data['id_responsable']).filter(~Q(id_cargo=None) and ~Q(id_unidad_organizacional_actual=None) and Q(es_unidad_organizacional_actual=True))
+            if not responsable:
+                raise ValidationError('La persona debe tener un cargo y tener asignada una Unidad Organizacional')
         
         bodega_principal = Bodegas.objects.filter(es_principal=es_principal).first()
         
         if bodega_principal and es_principal:
-            return Response({'success': False, 'detail':'Ya existe una bodega principal'})
+            raise ValidationError('Ya existe una bodega principal')
         else:
             serializer.save()
-            return Response({'success': True, 'data':serializer.data})
-    
+            return Response({'success': True, 'detail':'Se creado la bodega con éxito', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+
+        
 class UpdateBodega(generics.UpdateAPIView):
     serializer_class=SerializerPutBodegas
     queryset=Bodegas.objects.all()
@@ -92,20 +125,37 @@ class UpdateBodega(generics.UpdateAPIView):
             serializer.is_valid(raise_exception=True)
             
             es_principal = serializer.validated_data.get('es_principal')
-            
+            id_responsable = data.get('id_responsable')
+        
+            if id_responsable:
+                responsable = Personas.objects.filter(id_persona=data['id_responsable']).filter(~Q(id_cargo=None) and ~Q(id_unidad_organizacional_actual=None) and Q(es_unidad_organizacional_actual=True))
+                if not responsable:
+                    raise ValidationError('La persona debe tener un cargo y tener asignada una Unidad Organizacional')
+
             bodega_principal = Bodegas.objects.filter(es_principal=es_principal).first()
             
             if bodega_principal and es_principal:
-                return Response({'success': False, 'detail':'Ya existe una bodega principal'})
+                raise ValidationError('Ya existe una bodega principal')
             else:
                 serializer.save()
-                return Response({'success': True, 'data':serializer.data})
+                return Response({'success': True, 'detail':'Se ha actualizado la bodega', 'data':serializer.data}, status=status.HTTP_201_CREATED)
         else:
-            return Response({'success': False, 'detail':'La bodega ingresada no existe'})
+            raise NotFound('La bodega ingresada no existe')
     
 class DeleteBodega(generics.DestroyAPIView):
     serializer_class=SerializerBodegas
     queryset=Bodegas.objects.all()
+    
+    def delete(self, request, pk):
+        bodega = self.queryset.filter(id_bodega=pk).first()
+        if bodega:
+            if not bodega.item_ya_usado:
+                bodega.delete()
+                return Response({'success':True, 'detail': 'Se ha eliminado exitosamente'}, status=status.HTTP_200_OK)
+            else:
+                raise PermissionDenied('No puedes eliminar una bodega que esté o haya sido usada')
+        else:
+            raise NotFound('La bodega ingresada no existe')
 
 class GetBodegaById(generics.RetrieveAPIView):
     serializer_class=SerializerBodegas
@@ -138,15 +188,15 @@ class UpdatePorcentaje(generics.UpdateAPIView):
         data = request.data
         porcentaje = PorcentajesIVA.objects.filter(id_porcentaje_iva=pk).first()
         if porcentaje:
-            if porcentaje.registro_precargado == False:
+            if porcentaje.registro_precargado or porcentaje.item_ya_usado:
+                raise PermissionDenied('No puedes actualizar un porcentaje precargado o que haya sido usado')
+            else:
                 porcentaje_serializer = self.serializer_class(porcentaje, data)
                 porcentaje_serializer.is_valid(raise_exception=True)
                 porcentaje_serializer.save()
-                return Response({'success':True, 'data': porcentaje_serializer.data})
-            else:
-                return Response({'success':False, 'detail': 'No puedes actualizar un porcentaje precargado'})
+                return Response({'success':True, 'detail':'Se ha actualizado el porcentaje exitosamente','data': porcentaje_serializer.data}, status=status.HTTP_201_CREATED)
         else:
-            return Response({'success':False, 'detail': 'No existe el porcentaje'})
+            raise NotFound('No existe el porcentaje ingresado')
     
 class DeletePorcentaje(generics.DestroyAPIView):
     serializer_class=SerializerPorcentajesIVA
@@ -155,13 +205,13 @@ class DeletePorcentaje(generics.DestroyAPIView):
     def delete(self, request, pk):
         porcentaje = PorcentajesIVA.objects.filter(id_porcentaje_iva=pk).first()
         if porcentaje:
-            if porcentaje.registro_precargado == False:
-                porcentaje.delete()
-                return Response({'success':True, 'detail': 'Se ha eliminado exitosamente'})
+            if porcentaje.registro_precargado or porcentaje.item_ya_usado:
+                raise PermissionDenied('No puedes eliminar un porcentaje precargado o que haya sido usado')
             else:
-                return Response({'success':False, 'detail': 'No puedes eliminar un porcentaje precargado'})
+                porcentaje.delete()
+                return Response({'success':True, 'detail': 'Se ha eliminado exitosamente'}, status=status.HTTP_200_OK)
         else:
-            return Response({'success':False, 'detail': 'No existe el porcentaje'})
+            raise NotFound('No existe el porcentaje ingresado')
 
 class GetPorcentajeById(generics.RetrieveAPIView):
     serializer_class=SerializerPorcentajesIVA
@@ -181,44 +231,34 @@ class UpdateUnidadMedida(generics.UpdateAPIView):
     queryset=UnidadesMedida.objects.all()
     
     def put(self,request,pk):
+        unidad_medida=self.queryset.filter(id_unidad_medida=pk).first()
+        data=request.data
+        if unidad_medida:
+            if unidad_medida.precargado or unidad_medida.item_ya_usado:
+                raise PermissionDenied("No se puede actualizar una unidad de medida precargada o que haya sido usada")
+            else:
+                unidad_medida_serializer=self.serializer_class(unidad_medida,data)
+                unidad_medida_serializer.is_valid(raise_exception=True)
+                unidad_medida_serializer.save()
+                return Response({'success':True, 'detail':'Se ha actualizado la unidad de medida exitosamente', 'data': unidad_medida_serializer.data}, status=status.HTTP_201_CREATED)
+        else:    
+            raise NotFound('No existe la unidad de medida ingresada')
         
-        try:
-            unidad_medida=UnidadesMedida.objects.get(id_unidad_medida=pk)
-            data=request.data
-            print(unidad_medida.precargado)
-            if unidad_medida.precargado==True:
-                return Response({"success":False, "detail":"No se puede actualizar porque es una unidad de medida precargado"})
-            
-            try:
-                if unidad_medida.precargado==False:
-                    unidad_medida_serializer=self.serializer_class(unidad_medida,data)
-                    unidad_medida_serializer.is_valid(raise_exception=True)
-                    unidad_medida_serializer.save()
-                    return Response({'success':True, 'data': unidad_medida_serializer.data})
-            except Exception as e:
-                print(e)
-                return Response({'detail': e.detail})
-        except:
-            return Response({'success':False, 'detail': 'No existe la unidad de medida'})
 class DeleteUnidadMedida(generics.DestroyAPIView):
     serializer_class=SerializersUnidadesMedida
     queryset=UnidadesMedida.objects.all()
     
     def delete(self, request, pk):
-        
-        try:
-            unidad_medida=UnidadesMedida.objects.get(id_unidad_medida=pk)
-            
-            if unidad_medida.precargado==False:
-                unidad_medida.delete()
-                
-                return Response({'success':True,'detail': 'Se ha eliminado la unidad de medida' })
+        unidad_medida=self.queryset.filter(id_unidad_medida=pk).first()
+        if unidad_medida:
+            if unidad_medida.precargado or unidad_medida.item_ya_usado:
+                raise PermissionDenied("No se puede actualizar una unidad de medida precargada o que haya sido usada")
             else:
-                return Response({'success':False, 'detail': 'No puede eliminar una unidad de medida precargado'})
-
-        except:
-                return Response({'success':False, 'detail': 'No existe la unidad de medida'})
-
+                unidad_medida.delete()
+                return Response({'success':True,'detail': 'Se ha eliminado la unidad de medida exitosamente'}, status=status.HTTP_200_OK)
+        else:
+            raise NotFound('No existe la unidad de medida ingresada')
+        
 class GetUnidadMedidaById(generics.RetrieveAPIView):
     serializer_class=SerializersUnidadesMedida
     queryset=UnidadesMedida.objects.all()

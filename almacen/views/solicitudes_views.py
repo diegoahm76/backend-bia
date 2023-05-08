@@ -1,10 +1,10 @@
 from almacen.models.bienes_models import CatalogoBienes
 from almacen.serializers.bienes_serializers import CatalogoBienesSerializer
-from almacen.serializers.organigrama_serializers import UnidadesOrganizacionales, UnidadesGetSerializer
+from almacen.serializers.organigrama_serializers import UnidadesGetSerializer
 from rest_framework import generics,status
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
-from almacen.models import UnidadesOrganizacionales, NivelesOrganigrama
+from almacen.models.organigrama_models import UnidadesOrganizacionales, NivelesOrganigrama
 from almacen.utils import UtilAlmacen
 from seguridad.models import Personas, User
 from rest_framework.decorators import api_view
@@ -123,6 +123,7 @@ class FiltroVisibleBySolicitud(generics.ListAPIView):
         nodos=[2,3,4,5]
         filter['nivel_jerarquico__in'] = nodos
         filter['nro_elemento_bien']=None
+        filter['cod_tipo_bien'] = 'C'
         bien_especial=CatalogoBienes.objects.filter(**filter)
         # filter['nivel_jerarquico__in'] = nodos
         filter['visible_solicitudes']= True
@@ -398,7 +399,9 @@ class CreateSolicitud(generics.UpdateAPIView):
                 if len(numero_solicitudes_no_conservacion) > 0:
                     info_solicitud['nro_solicitud_por_tipo'] = max(numero_solicitudes_no_conservacion) + 1
                 else:
-                    info_solicitud['nro_solicitud_por_tipo'] = 1    
+                    info_solicitud['nro_solicitud_por_tipo'] = 1
+            else:
+                info_solicitud['nro_solicitud_por_tipo'] = 1  
             serializer = self.serializer_class(data=info_solicitud)
             serializer.is_valid(raise_exception=True)
             serializer.save()        
@@ -485,6 +488,18 @@ class GetSolicitudesPendentesPorAprobar(generics.ListAPIView):
         solicitudes_por_aprobar = SolicitudesConsumibles.objects.filter(Q(id_funcionario_responsable_unidad=persona_responsable.id_persona) & Q(revisada_responsable = False))
         serializer = self.serializer_class(solicitudes_por_aprobar, many=True)
         return Response({'success':True,'detail':serializer.data, },status=status.HTTP_200_OK)
+
+
+class GetSolicitudesNoAprobadas(generics.ListAPIView):
+# ESTA FUNCIONALIDAD PERMITE LISTAR LAS SOLICITUDES PENDIENTES DE APORVACIÓN PORL SUPERVISOR DESIGNADO
+    serializer_class = CrearSolicitudesPostSerializer
+    queryset=SolicitudesConsumibles.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_persona_solicita):
+        solicitudes_no_aprobadas = SolicitudesConsumibles.objects.filter(id_persona_solicita=id_persona_solicita, revisada_responsable = False)
+        serializer = self.serializer_class(solicitudes_no_aprobadas, many=True)
+        return Response({'success':True,'detail':'Se encontraron las siguientes solicitudes','data':serializer.data},status=status.HTTP_200_OK)
 
 class GetSolicitudesById_Solicitudes(generics.ListAPIView):
     # ESTA FUNCIONALIDAD PERMITE CONSULTAR SOLICITUDES DE BIENES DE CONSUMO POR ID_SOLICITUDES

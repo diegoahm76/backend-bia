@@ -346,7 +346,23 @@ class Roles(models.Model):
         db_table= 'TzRoles'
         verbose_name = 'Rol'
         verbose_name_plural = 'Roles'
+
+class EstructuraMenus(models.Model): 
+    id_menu = models.AutoField(primary_key=True, editable=False, db_column='TzIdMenu')
+    nombre = models.CharField(max_length=50, db_column='Tznombre')
+    nivel_jerarquico = models.SmallIntegerField(db_column='TznivelJerarquico')
+    id_menu_padre = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, db_column='TzId_MenuPadre')
+    orden_por_padre = models.SmallIntegerField(db_column='TzordenPorPadre')
+    subsistema = models.CharField(max_length=4, choices=subsistemas_CHOICES, db_column='Tzsubsistema')
     
+    def __str__(self):
+        return str(self.id_menu)
+    
+    class Meta:
+        db_table= 'TzEstructuraMenus'
+        verbose_name = 'Estructura Menus'
+        verbose_name_plural = 'Estructura Menus'
+        unique_together = ['id_menu_padre', 'nombre']
         
 class Modulos(models.Model): 
     id_modulo = models.AutoField(primary_key=True, editable=False, db_column='TzIdModulo')
@@ -355,6 +371,7 @@ class Modulos(models.Model):
     descripcion = models.CharField(max_length=255, db_column='Tzdescripcion')
     ruta_formulario = models.CharField(default='/test', max_length=255, db_column='TzrutaFormulario')
     nombre_icono = models.CharField(default='test', max_length=30, db_column='TznombreIcono')
+    id_menu = models.ForeignKey(EstructuraMenus, on_delete=models.SET_NULL, null=True, blank=True, db_column='TzIdMenu')
     
     def __str__(self):
         return str(self.nombre_modulo)
@@ -364,7 +381,6 @@ class Modulos(models.Model):
         verbose_name = 'Modulo'
         verbose_name_plural = 'Modulos'       
     
-
 class PermisosModulo(models.Model):
     id_permisos_modulo= models.AutoField(primary_key=True,db_column='TzIdPermisos_Modulo' )
     id_modulo = models.ForeignKey(Modulos, on_delete=models.CASCADE, db_column='TzId_Modulo')
@@ -421,6 +437,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     def tokens(self):
         refresh = RefreshToken.for_user(self)
+        roles = self.usuariosrol_set.all().values_list('id_rol__nombre_rol', flat=True)
+        refresh['roles'] = list(roles)
         return{'refresh': str(refresh), 'access': str(refresh.access_token)}
     
     class Meta:

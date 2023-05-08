@@ -153,6 +153,7 @@ class GetMantenimientosProgramadosByFechas(generics.ListAPIView):
     queryset=ProgramacionMantenimientos.objects.all()
     
     def get(self, request):
+        cod_tipo_activo = request.query_params.get('cod_tipo_activo')
         rango_inicial_fecha = request.query_params.get('rango-inicial-fecha')
         rango_final_fecha = request.query_params.get('rango-final-fecha')
         
@@ -163,7 +164,11 @@ class GetMantenimientosProgramadosByFechas(generics.ListAPIView):
         start_date=datetime(int(rango_inicial_fecha.split('-')[2]),int(rango_inicial_fecha.split('-')[1]),int(rango_inicial_fecha.split('-')[0]), tzinfo=pytz.timezone('America/Bogota'))
         end_date=datetime(int(rango_final_fecha.split('-')[2]),int(rango_final_fecha.split('-')[1]),int(rango_final_fecha.split('-')[0]),23,59,59,999, tzinfo=pytz.timezone('America/Bogota'))
         
-        mantenimientos_programados = ProgramacionMantenimientos.objects.filter(fecha_programada__range=[start_date,end_date], ejecutado=False, fecha_anulacion=None).values(id_programacion_mantenimiento=F('id_programacion_mtto'), articulo=F('id_articulo'), tipo=F('cod_tipo_mantenimiento'), fecha=F('fecha_programada')).order_by('fecha')
+        mantenimientos_programados = ProgramacionMantenimientos.objects.filter(fecha_programada__range=[start_date,end_date], ejecutado=False, fecha_anulacion=None)
+        if cod_tipo_activo:
+            mantenimientos_programados = mantenimientos_programados.filter(id_articulo__cod_tipo_activo=cod_tipo_activo)
+        
+        mantenimientos_programados = mantenimientos_programados.values(id_programacion_mantenimiento=F('id_programacion_mtto'), articulo=F('id_articulo'), tipo=F('cod_tipo_mantenimiento'), fecha=F('fecha_programada')).order_by('fecha')
         if mantenimientos_programados:
             mantenimientos_programados = [dict(item, estado='Vencido' if item['fecha'] < datetime.now().date() else 'Programado') for item in mantenimientos_programados]
             mantenimientos_programados = [dict(item, responsable='NA') for item in mantenimientos_programados]

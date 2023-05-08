@@ -92,6 +92,7 @@ urlpatterns = [
     path('api/conservacion/incidencias/', include('conservacion.urls.incidencia_urls')),
     path('api/conservacion/solicitudes/', include('conservacion.urls.solicitudes_urls')),
     path('api/conservacion/mezclas/', include('conservacion.urls.mezclas_urls')),
+    path('api/conservacion/funcionario/', include('conservacion.urls.solicitudes_funcionario_coordinador_urls')),
 
     #ESTACIONES
     path("api/estaciones/",include('estaciones.urls.estaciones_urls')),
@@ -103,13 +104,13 @@ urlpatterns = [
     path("api/estaciones/historial/",include('estaciones.urls.historial_alertas_urls')),
     path("api/estaciones/migracion/",include('estaciones.urls.migracion_estaciones_urls')),
 
-    #LIQUIDACIONES
-    path('api/recaudo/liquidaciones/', include('recaudo.urls.liquidaciones_urls')),
-
     #FACILIDADES PAGOS
     path('api/recaudo/pagos/', include('recaudo.urls.pagos_urls')),
-    path('api/recaudo/pagos/', include('recaudo.urls.garantias_urls'))
+    path('api/recaudo/pagos/', include('recaudo.urls.garantias_urls')),
 
+    #Recaudo
+    path('api/recaudo/liquidaciones/', include('recaudo.urls.liquidaciones_urls')),
+    path('api/recaudo/procesos/', include('recaudo.urls.procesos_urls')),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

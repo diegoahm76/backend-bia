@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta,date
 import time
 from seguridad.models import ClasesTercero, ClasesTerceroPersona, Personas
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMultiAlternatives
 from email_validator import validate_email, EmailNotValidError, EmailUndeliverableError, EmailSyntaxError
 from backend.settings.base import EMAIL_HOST_USER, AUTHENTICATION_360_NRS
 from seguridad.models import Shortener, User, Modulos, Permisos, Auditorias
@@ -16,7 +16,7 @@ class Util:
     
     @staticmethod
     def send_email(data):
-        email = EmailMessage(subject= data['email_subject'], body=data['template'], to=[data['to_email']], from_email=EMAIL_HOST_USER)
+        email = EmailMultiAlternatives(subject= data['email_subject'], body=data['template'], to=[data['to_email']], from_email=EMAIL_HOST_USER)
         
         email.content_subtype ='html'
         response = email.send(fail_silently=True)
@@ -105,7 +105,7 @@ class Util:
         
     @staticmethod
     def get_client_device(request):
-        client_device = request.META.get('HTTP_USER_AGENT')
+        client_device = request.META.get('HTTP_USER_AGENT', '')
         
         MOBILE_AGENT_RE=re.compile(r".*(iphone|mobile|androidtouch)",re.IGNORECASE)
 
@@ -409,17 +409,20 @@ class Util:
     def notificacion(persona,subject_email,template_name,**kwargs):
         
         if persona.tipo_persona == "N":
-            context = {'primer_nombre': persona.primer_nombre,'fecha_actual':str(datetime.now().replace(microsecond=0))}
+            primer_nombre = [persona.primer_nombre, persona.primer_apellido]
+            primer_nombre = ' '.join(item for item in primer_nombre if item is not None)
+            
+            context = {'primer_nombre': primer_nombre,'fecha_actual':str(datetime.now().replace(microsecond=0)),'email': persona.email}
             
             for field, value in kwargs.items():
                 context[field] = value
             
             template = render_to_string((template_name), context)
-            subject = subject_email + ' ' + persona.primer_nombre
+            subject = subject_email + ' ' + primer_nombre
             email_data = {'template': template, 'email_subject': subject, 'to_email': persona.email}
             Util.send_email(email_data)
         else:
-            context = {'razon_social': persona.razon_social,'fecha_actual':str(datetime.now().replace(microsecond=0))}
+            context = {'razon_social': persona.razon_social,'fecha_actual':str(datetime.now().replace(microsecond=0)),'email': persona.email}
             
             for field, value in kwargs.items():
                 context[field] = value
@@ -435,7 +438,7 @@ class Util:
     def comparacion_campos_actualizados(data,instance):
         for field, value in data.items():
             
-            if field != "datos_clasificacion_persona" and field != "justificacion_cambio_und_org":
+            if field != "datos_clasificacion_persona" and field != "justificacion_cambio_und_org" and field != "tipologias" and  field != "justificacion_cambio" and field != "ruta_archivo_cambio":
                 valor_previous= getattr(instance,field)
                 
                 # TOMAR DATE SI ES DATETIME
@@ -443,11 +446,17 @@ class Util:
                 
                 valor_previous = str(valor_previous) if isinstance(valor_previous, date) else valor_previous
                 
+                value = True if value == 'true' or value == 'True' else value
+                
                 # TOMAR PK SI ES INSTANCIA
                 try:
                     valor_previous = valor_previous.pk
                 except:
                     pass
+                
+                if isinstance(valor_previous, int):
+                    value = int(value)
+                
                 if value != valor_previous:
                     return True
         return False

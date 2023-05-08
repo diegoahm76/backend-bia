@@ -38,7 +38,17 @@ class SerializersEstadosArticulo(serializers.ModelSerializer):
         fields=('__all__')
         
 class SerializerBodegas(serializers.ModelSerializer):
-    id_responsable=PersonasSerializer(read_only=True)
+    nombre_completo_responsable = serializers.SerializerMethodField()
+    
+    def get_nombre_completo_responsable(self, obj):
+        nombre_completo_responsable = None
+        if obj.id_responsable:
+            nombre_list = [obj.id_responsable.primer_nombre, obj.id_responsable.segundo_nombre,
+                            obj.id_responsable.primer_apellido, obj.id_responsable.segundo_apellido]
+            nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+        return nombre_completo_responsable
+    
     class Meta:
         model=Bodegas
         fields='__all__'
@@ -48,8 +58,7 @@ class SerializerPostBodegas(serializers.ModelSerializer):
         model=Bodegas
         fields=['nombre', 'cod_municipio', 'direccion', 'id_responsable', 'es_principal']
         extra_kwargs = {
-            'nombre': {'required': True},
-            'id_responsable': {'required': True}
+            'nombre': {'required': True}
         }
 
 class SerializerPutBodegas(serializers.ModelSerializer):
@@ -57,8 +66,7 @@ class SerializerPutBodegas(serializers.ModelSerializer):
         model=Bodegas
         fields=['nombre', 'cod_municipio', 'direccion', 'id_responsable', 'es_principal', 'activo']
         extra_kwargs = {
-            'nombre': {'required': True},
-            'id_responsable': {'required': True}
+            'nombre': {'required': True}
         }
         
 class SerializerMagnitudes(serializers.ModelSerializer):

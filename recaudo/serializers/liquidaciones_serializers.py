@@ -6,7 +6,7 @@ from recaudo.models.liquidaciones_models import (
     DetalleLiquidacionBase,
     Expedientes
 )
-from recaudo.models.base_models import VariablesBase
+
 
 
 class OpcionesLiquidacionBaseSerializer(serializers.ModelSerializer):
@@ -21,18 +21,12 @@ class DeudoresSerializer(serializers.ModelSerializer):
         fields = ('codigo', 'identificacion', 'nombres', 'apellidos')
 
 
-class VariablesBaseSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = VariablesBase
-        fields = ('id', 'nombre', 'tipo', 'valor_defecto', 'estado')
-
-
 class DetallesLiquidacionBaseSerializer(serializers.ModelSerializer):
-    id_variable = VariablesBaseSerializer(many=False)
+    id_opcion_liq = OpcionesLiquidacionBaseSerializer(many=False)
 
     class Meta:
         model = DetalleLiquidacionBase
-        fields = ('id', 'id_variable', 'valor', 'estado', 'concepto')
+        fields = '__all__'
 
 
 class ExpedientesSerializer(serializers.ModelSerializer):
@@ -43,13 +37,12 @@ class ExpedientesSerializer(serializers.ModelSerializer):
 
 class LiquidacionesBaseSerializer(serializers.ModelSerializer):
     cod_deudor = DeudoresSerializer(many=False)
-    id_opcion_liq = OpcionesLiquidacionBaseSerializer(many=False)
     cod_expediente = ExpedientesSerializer(many=False)
     detalles = DetallesLiquidacionBaseSerializer(many=True)
 
     class Meta:
         model = LiquidacionesBase
-        fields = ('id', 'id_opcion_liq', 'cod_deudor', 'cod_expediente', 'fecha_liquidacion', 'vencimiento', 'periodo_liquidacion', 'valor', 'estado', 'detalles')
+        fields = ('id', 'cod_deudor', 'cod_expediente', 'fecha_liquidacion', 'vencimiento', 'periodo_liquidacion', 'valor', 'estado', 'detalles')
 
 
 class LiquidacionesBasePostSerializer(serializers.ModelSerializer):

@@ -36,6 +36,7 @@ class OpcionesLiquidacionBase(models.Model):
     version = models.IntegerField(default=1, db_column='T402version')
     funcion = models.TextField(db_column='T402funcion')
     variables = models.JSONField(db_column='T402variables')
+    bloques = models.TextField(db_column='T402bloques')
 
     class Meta:
         db_table = "T402opciones_liquidacion_base"
@@ -45,7 +46,6 @@ class OpcionesLiquidacionBase(models.Model):
 
 class LiquidacionesBase(models.Model):
     id = models.AutoField(primary_key=True, db_column="T403id")
-    id_opcion_liq = models.ForeignKey(OpcionesLiquidacionBase, db_column="T403id_opcion_liq", on_delete=models.CASCADE)
     cod_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column="T403cod_deudor")
     cod_expediente = models.ForeignKey(Expedientes, on_delete=models.CASCADE, db_column="T403cod_expediente")
     fecha_liquidacion = models.DateTimeField(db_column="T403fecha_liquidacion")
@@ -62,8 +62,9 @@ class LiquidacionesBase(models.Model):
 
 class DetalleLiquidacionBase(models.Model):
     id = models.AutoField(primary_key=True, db_column="T404id")
+    id_opcion_liq = models.ForeignKey(OpcionesLiquidacionBase, db_column="T403id_opcion_liq", on_delete=models.CASCADE)
     id_liquidacion = models.ForeignKey(LiquidacionesBase, on_delete=models.CASCADE, db_column="T404id_liquidacion", related_name='detalles')
-    id_variable = models.ForeignKey(VariablesBase, on_delete=models.CASCADE, db_column="T404id_variable")
+    variables = models.JSONField(db_column="T404variables")
     valor = models.IntegerField(default=0, db_column="T404valor")
     estado = models.IntegerField(default=1, db_column="T404estado")
     concepto = models.TextField(db_column="T404concepto")

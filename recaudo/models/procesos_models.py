@@ -1,7 +1,6 @@
 from django.db import models
 from recaudo.models.base_models import TiposBien
 from recaudo.models.liquidaciones_models import Deudores
-# from recaudo.models.cobros_models import Cartera
 
 
 class Bienes(models.Model):
@@ -33,8 +32,19 @@ class Avaluos(models.Model):
         verbose_name_plural = 'Avaluos'
 
 
+class TiposAtributos(models.Model):
+    id = models.AutoField(primary_key=True, db_column='T434id')
+    tipo = models.CharField(max_length=255, db_column='T434tipo')
+
+    class Meta:
+        db_table = 'T434tipos_atributos'
+        verbose_name = 'Tipos atributo'
+        verbose_name_plural = 'Tipo atributo'
+
+
 class EtapasProceso(models.Model):
     id = models.AutoField(primary_key=True, db_column='T413id')
+    etapa = models.CharField(max_length=255, db_column='T413etapa')
     descripcion = models.CharField(max_length=255, db_column='T413descripcion')
 
     class Meta:
@@ -47,7 +57,7 @@ class AtributosEtapas(models.Model):
     id = models.AutoField(primary_key=True, db_column='T421id')
     descripcion = models.CharField(max_length=255, db_column='T421descripcion')
     obligatorio = models.IntegerField(db_column='T421obligatorio')
-    tipo = models.IntegerField(db_column='T421tipo')
+    id_tipo = models.ForeignKey(TiposAtributos, on_delete=models.CASCADE, db_column='T421tipo')
     id_etapa = models.ForeignKey(EtapasProceso, on_delete=models.CASCADE, db_column='T421id_etapa')
 
     class Meta:
@@ -59,9 +69,10 @@ class AtributosEtapas(models.Model):
 class Procesos(models.Model):
     id = models.AutoField(primary_key=True, db_column='T422id')
     id_cartera = models.ForeignKey('recaudo.Cartera', on_delete=models.CASCADE, db_column='T422id_cartera')
+    id_etapa = models.ForeignKey(EtapasProceso, on_delete=models.CASCADE, db_column='T422id_etapa')
     id_funcionario = models.IntegerField(db_column='T422id_funcionario')
     inicio = models.DateField(db_column='T422inicio')
-    fin = models.DateField(db_column='T422fin')
+    fin = models.DateField(db_column='T422fin', null=True, blank=True)
 
     class Meta:
         db_table = 'T422procesos'
@@ -83,9 +94,9 @@ class ValoresProceso(models.Model):
 
 class FlujoProceso(models.Model):
     id = models.AutoField(primary_key=True, db_column='T425id')
-    id_etapa_origen = models.ForeignKey(EtapasProceso, related_name='etapa_origen', on_delete=models.CASCADE, db_column='T425id_etapa_origen')
-    id_etapa_destino = models.ForeignKey(EtapasProceso, related_name='etapa_destino', on_delete=models.CASCADE, db_column='T425id_etapa_destino')
-    fecha = models.DateField(db_column='T425fecha')
+    id_etapa_origen = models.ForeignKey(EtapasProceso, on_delete=models.CASCADE, db_column='T425id_etapa_origen', related_name='origen')
+    id_etapa_destino = models.ForeignKey(EtapasProceso, on_delete=models.CASCADE, db_column='T425id_etapa_destino', related_name='destino')
+    fecha_flujo = models.DateField(db_column='T425fecha_flujo')
     descripcion = models.CharField(max_length=255, db_column='T425descripcion')
     requisitos = models.TextField(db_column='T425requisitos')
 

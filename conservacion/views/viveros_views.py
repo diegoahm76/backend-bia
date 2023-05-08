@@ -3,6 +3,7 @@ from conservacion.serializers.viveros_serializers import ViveristaActualSerializ
 from conservacion.models.viveros_models import HistoricoResponsableVivero
 from conservacion.serializers.viveros_serializers import HistorialViveristaByViveroSerializers
 from rest_framework import generics, status
+from seguridad.serializers.personas_serializers import PersonasFilterSerializer
 from seguridad.utils import Util  
 from django.db.models import Q
 from rest_framework.response import Response
@@ -532,7 +533,7 @@ class GetViveristaActual(generics.ListAPIView):
         
 class GetPersonaFiltro (generics.ListAPIView):
     
-    serializer_class = PersonasAsignacionViveroSerializer
+    serializer_class = PersonasFilterSerializer
     queryset = Personas.objects.all()
     
     def get(self,request):
@@ -542,12 +543,14 @@ class GetPersonaFiltro (generics.ListAPIView):
         for key,value in request.query_params.items():
             if key in ['tipo_documento','numero_documento','primer_nombre','segundo_nombre','primer_apellido','segundo_apellido']:
                 if key == 'numero_documento':
-                    filter[key+'__startswith']=value
+                    if value != '':
+                        filter[key+'__startswith']=value
                 elif key == 'tipo_documento':
                     if value != '':
                         filter[key]=value
                 else:
-                    filter[key+'__icontains']=value
+                    if value != '':
+                        filter[key+'__icontains']=value
                 
         persona = self.queryset.all().filter(**filter).filter(~Q(id_cargo=None) & ~Q(id_unidad_organizacional_actual=None) & Q(es_unidad_organizacional_actual=True))
 
@@ -564,7 +567,7 @@ class GetPersonaFiltro (generics.ListAPIView):
 
 class GetPersonaByNumeroDocumento(generics.ListAPIView):
     
-    serializer_class = PersonasAsignacionViveroSerializer
+    serializer_class = PersonasFilterSerializer
     queryset = Personas.objects.all()
     
     def get(self,request):
