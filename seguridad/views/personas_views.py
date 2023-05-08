@@ -59,9 +59,6 @@ from seguridad.models import (
     HistoricoCargosUndOrgPersona
 )
 
-from almacen.models import UnidadesOrganizacionales
-
-from rest_framework import filters
 from seguridad.serializers.personas_serializers import (
     EstadoCivilSerializer,
     EstadoCivilPostSerializer,

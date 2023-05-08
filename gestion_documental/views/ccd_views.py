@@ -214,7 +214,7 @@ class GetCuadroClasificacionDocumental(generics.ListAPIView):
             if len(ccds) == 0:
                 return Response({'success':True, 'detail':'Aún no hay Cuadros de Clasificación Documental registrados', 'data':[]}, status=status.HTTP_200_OK)
             
-            serializer = self.serializer_class(ccds, many=True)
+            serializer = self.serializer_class(ccds, many=True, context={'request':request})
             
             return Response({'success': True, 'detail':'Se encontraron los siguientes CCDs', 'data':serializer.data}, status=status.HTTP_200_OK) 
         else:
@@ -223,7 +223,7 @@ class GetCuadroClasificacionDocumental(generics.ListAPIView):
             if len(ccd) == 0:
                 return Response({'success':False, 'detail':'No se encontró el Cuadro de Clasificación Documental ingresado'}, status=status.HTTP_404_NOT_FOUND)
 
-            serializer = self.serializer_class(ccd, many=True)
+            serializer = self.serializer_class(ccd, many=True, context={'request':request})
         
             return Response({'success': True,'detail':'Se encontró el siguiente CCD', 'data':serializer.data}, status=status.HTTP_200_OK)
 
@@ -252,7 +252,7 @@ class CreateSeriesDoc(generics.CreateAPIView):
         elif ccd.fecha_retiro_produccion:
             return Response({'success':False, 'detail':'No puede realizar esta acción a un CCD retirado de producción'}, status=status.HTTP_403_FORBIDDEN)
         
-        ultima_serie = self.queryset.all().filter(id_ccd=data['id_ccd']).last()
+        ultima_serie = self.queryset.all().filter(id_ccd=data['id_ccd']).order_by('codigo').last()
         
         codigo_correcto = int(ultima_serie.codigo) + ccd.valor_aumento_serie if ultima_serie else ccd.valor_aumento_serie
         
@@ -417,7 +417,7 @@ class CreateSubseriesDoc(generics.CreateAPIView):
         
         serie = SeriesDoc.objects.filter(id_serie_doc = data['id_serie_doc']).first()
         
-        ultima_subserie = self.queryset.all().filter(id_serie_doc=data['id_serie_doc']).last()
+        ultima_subserie = self.queryset.all().filter(id_serie_doc=data['id_serie_doc']).order_by('codigo').last()
         
         codigo_correcto = int(ultima_subserie.codigo) + serie.id_ccd.valor_aumento_subserie if ultima_subserie else serie.id_ccd.valor_aumento_subserie
         
@@ -537,6 +537,13 @@ class DeleteCatalogoSerieSubserie(generics.DestroyAPIView):
 
     def delete(self, request, id_catalogo_serie):
         cat_serie_subserie = self.queryset.all().filter(id_catalogo_serie=id_catalogo_serie).first()
+        
+        if cat_serie_subserie.id_serie_doc.id_ccd.actual:
+            return Response({'success':False, 'detail':'No puede eliminar del catalogo de series y subseries a un CCD actual'}, status=status.HTTP_403_FORBIDDEN)
+        elif cat_serie_subserie.id_serie_doc.id_ccd.fecha_terminado:
+            return Response({'success':False, 'detail':'El CCD elegido se encuentra terminado. Por favor intente reanudarlo antes de continuar'}, status=status.HTTP_403_FORBIDDEN)
+        elif cat_serie_subserie.id_serie_doc.id_ccd.fecha_retiro_produccion:
+            return Response({'success':False, 'detail':'No puede realizar esta acción a un CCD retirado de producción'}, status=status.HTTP_403_FORBIDDEN)
         
         if not cat_serie_subserie:
             return Response({'success': False, 'detail':'No existe el catalogo de la serie y subserie elegida'}, status=status.HTTP_404_NOT_FOUND)
@@ -658,5 +665,5 @@ class BusquedaCCD(generics.ListAPIView):
                     filter[key+'__icontains'] = value
         
         ccd = self.queryset.filter(**filter)
-        serializador = self.serializer_class(ccd,many=True)
+        serializador = self.serializer_class(ccd, many=True, context = {'request':request})
         return Response({'succes': True, 'detail':'Resultados de la búsqueda', 'data':serializador.data}, status=status.HTTP_200_OK)

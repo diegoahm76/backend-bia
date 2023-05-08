@@ -11,6 +11,7 @@ from conservacion.models.siembras_models import CambiosDeEtapa
 from conservacion.choices.cod_etapa_lote import cod_etapa_lote_CHOICES
 from datetime import datetime, timedelta
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import NotFound
 import json
 from seguridad.utils import Util
 import copy
@@ -244,6 +245,31 @@ class GetItemsInventarioVivero(generics.ListAPIView):
                 else:
                     modal = False
         return Response({'success':True,'detail':'OK', 'modal':modal, 'data':serializer.data}, status=status.HTTP_200_OK)
+
+class FilterInventarioVivero(generics.ListAPIView):
+    serializer_class = InventarioViverosSerielizers
+    queryset = InventarioViveros.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_vivero_entrante):
+        filter={}
+        for key,value in request.query_params.items():
+            if key in ['nombre','codigo_bien','cod_tipo_elemento_vivero']:
+                if key != 'cod_tipo_elemento_vivero':
+                    filter['id_bien__'+key+'__icontains']=value
+                else:
+                    if value != '':
+                        filter['id_bien__'+key]=value
+                    
+        instancia_vivero = Vivero.objects.filter(id_vivero=id_vivero_entrante).first()
+        if not instancia_vivero:
+            raise NotFound('El vivero ingresado no existe')
+        instancia_salida = InventarioViveros.objects.filter(**filter).filter(id_vivero=id_vivero_entrante).exclude(cod_etapa_lote='G')
+        if not instancia_salida:
+            return Response({'success':True,'detail':'Se encontró lo siguiente', 'data':[]}, status=status.HTTP_200_OK)
+        serializer = self.serializer_class(instancia_salida, many=True)
+        
+        return Response({'success':True,'detail':'Se encontró lo siguiente', 'data':serializer.data}, status=status.HTTP_200_OK)
 
 class GetTrasladosByIdTraslados(generics.ListAPIView):
     serializer_class = TrasladosViverosSerializers

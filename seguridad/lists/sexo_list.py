@@ -8,7 +8,7 @@ sexo_LIST = [
         "label": "Mujer"
     },
     {
-        "value": "I",
-        "label": "Intersexual"
+        "value": "O",
+        "label": "Otros"
     }
 ]
