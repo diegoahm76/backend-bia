@@ -94,7 +94,7 @@ urlpatterns = [
     path('api/conservacion/mezclas/', include('conservacion.urls.mezclas_urls')),
     path('api/conservacion/funcionario/', include('conservacion.urls.solicitudes_funcionario_coordinador_urls')),
 
-    #Estaciones
+    #ESTACIONES
     path("api/estaciones/",include('estaciones.urls.estaciones_urls')),
     path("api/estaciones/personas/",include('estaciones.urls.personas_estaciones_urls')),
     path("api/estaciones/configuracion/alertas/",include('estaciones.urls.configuracion_alertas_estaciones_urls')),
@@ -103,6 +103,10 @@ urlpatterns = [
     path("api/estaciones/parametros/",include('estaciones.urls.parametros_urls')),
     path("api/estaciones/historial/",include('estaciones.urls.historial_alertas_urls')),
     path("api/estaciones/migracion/",include('estaciones.urls.migracion_estaciones_urls')),
+
+    #FACILIDADES PAGOS
+    path('api/recaudo/pagos/', include('recaudo.urls.pagos_urls')),
+    path('api/recaudo/pagos/', include('recaudo.urls.garantias_urls')),
 
     #Recaudo
     path('api/recaudo/liquidaciones/', include('recaudo.urls.liquidaciones_urls')),

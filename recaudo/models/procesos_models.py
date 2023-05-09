@@ -1,11 +1,11 @@
 from django.db import models
 from recaudo.models.base_models import TiposBien
-from recaudo.models.cobros_models import Cartera
+from recaudo.models.liquidaciones_models import Deudores
 
 
 class Bienes(models.Model):
     id = models.AutoField(primary_key=True, db_column='T419id')
-    cod_deudor = models.IntegerField(db_column='T419cod_deudor')
+    cod_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T419cod_deudor')
     descripcion = models.CharField(max_length=255, db_column='T419descripcion')
     estado = models.CharField(max_length=255, db_column='T419estado')
     id_tipo_bien = models.ForeignKey(TiposBien, on_delete=models.CASCADE, db_column='T419id_tipo_bien')
@@ -19,7 +19,7 @@ class Bienes(models.Model):
 
 class Avaluos(models.Model):
     id = models.AutoField(primary_key=True, db_column='T420id')
-    id_bien = models.IntegerField(db_column='T420id_bien')
+    id_bien = models.ForeignKey(Bienes, on_delete=models.CASCADE, db_column='T420id_bien')
     fecha_avaluo = models.DateField(db_column='T420fecha_avaluo')
     cod_funcionario_perito = models.IntegerField(db_column='T420cod_funcionario_perito')
     valor = models.DecimalField(max_digits=30, decimal_places=2, db_column='T420valor')
@@ -68,7 +68,7 @@ class AtributosEtapas(models.Model):
 
 class Procesos(models.Model):
     id = models.AutoField(primary_key=True, db_column='T422id')
-    id_cartera = models.ForeignKey(Cartera, on_delete=models.CASCADE, db_column='T422id_cartera')
+    id_cartera = models.ForeignKey('recaudo.Cartera', on_delete=models.CASCADE, db_column='T422id_cartera')
     id_etapa = models.ForeignKey(EtapasProceso, on_delete=models.CASCADE, db_column='T422id_etapa')
     id_funcionario = models.IntegerField(db_column='T422id_funcionario')
     inicio = models.DateField(db_column='T422inicio')

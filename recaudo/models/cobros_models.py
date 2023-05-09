@@ -1,5 +1,6 @@
 from django.db import models
-from recaudo.models.liquidaciones_models import LiquidacionesBase, Deudores
+from recaudo.models.liquidaciones_models import LiquidacionesBase, Deudores, Expedientes
+from recaudo.models.pagos_models import TasasInteres
 from recaudo.models.base_models import RangosEdad
 
 
@@ -9,7 +10,7 @@ class DocumentosCobro(models.Model):
     fecha_cobro = models.DateTimeField(db_column='T405fecha_cobro')
     vencimiento = models.DateTimeField(db_column='T405vencimiento')
     valor_deuda = models.IntegerField(default=0, db_column='T405valor_deuda')
-    tasa_interes = models.IntegerField(default=0, db_column='T405tasa_interes')
+    tasa_interes = models.ForeignKey(TasasInteres, on_delete=models.CASCADE, default=0, db_column='T405tasa_interes')
     valor_mora = models.IntegerField(default=0, db_column='T405valor_mora')
     porcentaje_descuento = models.IntegerField(default=0, db_column='T405porcentaje_descuento')
     valor_descuento = models.IntegerField(default=0, db_column='T405valor_descuento')
@@ -41,8 +42,8 @@ class Obligaciones(models.Model):
     fecha_inicio = models.DateField(db_column='T416fecha_inicio')
     monto_inicial = models.DecimalField(max_digits=30, decimal_places=2, db_column='T416monto_inicial')
     naturaleza = models.CharField(max_length=255, db_column='T416naturaleza')
-    id_documento_cobro = models.IntegerField(db_column='T416id_documento_cobro')
-    id_expediente = models.IntegerField(db_column='T416id_expediente')
+    id_documento_cobro = models.ForeignKey(DocumentosCobro, on_delete=models.CASCADE, db_column='T416id_documento_cobro')
+    id_expediente = models.ForeignKey(Expedientes, on_delete=models.CASCADE, db_column='T416id_expediente')
 
     class Meta:
         db_table = 'T416obligaciones'
@@ -57,7 +58,7 @@ class Cartera(models.Model):
     valor_intereses = models.DecimalField(max_digits=30, decimal_places=2, db_column='T417valor_intereses')
     valor_sancion = models.DecimalField(max_digits=30, decimal_places=2, db_column='T417valor_sancion')
     inicio = models.DateField(db_column='T417inicio')
-    fin = models.DateField(db_column='T417fin')
+    fin = models.DateField(null=True, blank=True,db_column='T417fin')
     id_rango = models.ForeignKey(RangosEdad, on_delete=models.CASCADE, db_column='T417id_rango')
     codigo_contable = models.CharField(max_length=255, db_column='T417codigo_contable')
     fecha_facturacion = models.DateField(db_column='T417fecha_facturacion')
