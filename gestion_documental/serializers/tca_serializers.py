@@ -55,6 +55,13 @@ class TCAPutSerializer(serializers.ModelSerializer):
 
 class ClasifSerieSubserieUnidadTCASerializer(serializers.ModelSerializer):
     cod_clas_expediente = serializers.ChoiceField(choices=tipo_clasificacion_CHOICES)
+
+    def validate_ruta_soporte(self, value):
+        extension = value.name.split('.')[-1]
+        if extension != 'pdf':
+            raise serializers.ValidationError('El archivo adjunto debe estar en formato PDF.')
+        return value
+    
     class Meta:
         model = CatSeriesUnidadOrgCCD_TRD_TCA
         fields = '__all__'
@@ -77,6 +84,13 @@ class ClasifSerieSubserieUnidadTCASerializer(serializers.ModelSerializer):
 
 class ClasifSerieSubserieUnidadTCAPutSerializer(serializers.ModelSerializer):
     cod_clas_expediente = serializers.ChoiceField(choices=tipo_clasificacion_CHOICES)
+
+    def validate_ruta_soporte(self, value):
+        extension = value.name.split('.')[-1]
+        if extension != 'pdf':
+            raise serializers.ValidationError('El archivo adjunto debe estar en formato PDF.')
+        return value
+    
     class Meta:
         model = CatSeriesUnidadOrgCCD_TRD_TCA
         fields = '__all__'
@@ -92,6 +106,13 @@ class ClasifSerieSubserieUnidadTCAPutSerializer(serializers.ModelSerializer):
 
 class ClasifSerieSubserieUnidadTCAPutSerializer(serializers.ModelSerializer):
     cod_clas_expediente = serializers.ChoiceField(choices=tipo_clasificacion_CHOICES)
+
+    def validate_ruta_soporte(self, value):
+        extension = value.name.split('.')[-1]
+        if extension != 'pdf':
+            raise serializers.ValidationError('El archivo adjunto debe estar en formato PDF.')
+        return value
+    
     class Meta:
         model = CatSeriesUnidadOrgCCD_TRD_TCA
         fields = '__all__'
@@ -179,6 +200,12 @@ class ClasifExpedientesSerializer(serializers.ModelSerializer):
         elif obj.cod_clas_expediente == 'R':
             clas_expediente = 'Rerservado'
         return clas_expediente
+    
+    def validate_ruta_soporte(self, value):
+        extension = value.name.split('.')[-1]
+        if extension != 'pdf':
+            raise serializers.ValidationError('El archivo adjunto debe estar en formato PDF.')
+        return value
     
     class Meta:
         model = CatSeriesUnidadOrgCCD_TRD_TCA
@@ -308,12 +335,24 @@ class ClasifCargoUnidadPermisosSerializer(ClasifExpedientesSerializer):
             permisos = serializer_permisos.data
         return permisos
     
+    def validate_ruta_soporte(self, value):
+        extension = value.name.split('.')[-1]
+        if extension != 'pdf':
+            raise serializers.ValidationError('El archivo adjunto debe estar en formato PDF.')
+        return value
+    
     class Meta:
         model = CatSeriesUnidadOrgCCD_TRD_TCA
         fields = ClasifExpedientesSerializer.Meta.fields + ['id_cargo_persona', 'nombre_cargo_persona', 'id_unidad_org_cargo', 'nombre_unidad_org_cargo', 'permisos']
 
 class ClasifSerieSubseriUnidadTCA_activoSerializer(serializers.ModelSerializer):
     justificacion_cambio = serializers.CharField(max_length=255,min_length=1)
+    def validate_ruta_soporte(self, value):
+        extension = value.name.split('.')[-1]
+        if extension != 'pdf':
+            raise serializers.ValidationError('El archivo adjunto debe estar en formato PDF.')
+        return value
+    
     class Meta:
         model = CatSeriesUnidadOrgCCD_TRD_TCA
         fields = ['cod_clas_expediente','justificacion_cambio','ruta_archivo_cambio']
@@ -328,6 +367,11 @@ class ClasifSerieSubseriUnidadTCA_activoSerializer(serializers.ModelSerializer):
         }
 
 class Cargos_Unidad_S_Ss_UndOrg_TCASerializer(serializers.ModelSerializer):
+    def validate_ruta_soporte(self, value):
+        extension = value.name.split('.')[-1]
+        if extension != 'pdf':
+            raise serializers.ValidationError('El archivo adjunto debe estar en formato PDF.')
+        return value
     class Meta:
         model = PermisosCatSeriesUnidadOrgTCA   
         fields = '__all__'

@@ -152,11 +152,6 @@ class HistoricosCatSeriesUnidadOrgCCDTRD(models.Model):
     def __str__(self):
         return str(self.id_historico_catserie_unidadorg_ccd_trd)
 
-    def clean(self):
-        if self.ruta_archivo:
-            extension = self.ruta_archivo.name.split()[-1]
-            if extension.lower() != 'pdf':
-                raise ValidationError({'ruta_archivo':["El archivo debe ser en formato PDF."]})
     class Meta:
         db_table = 'T219Historicos_CatSeries_UndOrg_CCD_TRD'
         verbose_name= 'Historicos Categoria Series UnidadOrg CCD TRD'

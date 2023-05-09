@@ -25,7 +25,7 @@ from string import ascii_letters, digits
 
 
 class Sexo(models.Model):
-    cod_sexo = models.CharField(max_length=1, db_column='T004CodSexo')
+    cod_sexo = models.CharField(primary_key=True, max_length=1, db_column='T004CodSexo')
     nombre = models.CharField(max_length=20, db_column='T004nombre')
 
     def __str__(self):  

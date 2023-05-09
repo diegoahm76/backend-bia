@@ -64,13 +64,6 @@ class CatSeriesUnidadOrgCCD_TRD_TCA(models.Model):
     def __str__(self):
         return str(self.id_cat_serie_unidad_org_ccd_trd_tca)
     
-    def clean(self):
-        # Validación del formato del archivo de cambio
-        if self.ruta_archivo_cambio:
-            extension = self.ruta_archivo_cambio.name.split('.')[-1]
-            if extension.lower() != 'pdf':
-                raise ValidationError({'ruta_archivo_cambio': ["El archivo debe estar en formato PDF."]})
-    
     class Meta:
         db_table='T215CatSeries_UndOrg_CCD_TRD_TCA'
         verbose_name='Catalogo Serie Unidad CCD TRD TCA'
@@ -89,12 +82,6 @@ class HistoricoCatSeriesUnidadOrgCCD_TRD_TCA(models.Model):
     def __str__(self):
         return str(self.id_historico_catserie_unidad)
     
-    def clean(self):
-        # Validación del formato del archivo de cambio
-        if self.ruta_archivo_cambio:
-            extension = self.ruta_archivo_cambio.name.split('.')[-1]
-            if extension.lower() != 'pdf':
-                raise ValidationError({'ruta_archivo_cambio': ["El archivo debe estar en formato PDF."]})
     class Meta:
         db_table='T220Historico_CatSeries_UndOrg_CCD_TRD_TCA'
         verbose_name='Historico catalogo serie unidad org CCD TRD TCA'
@@ -112,12 +99,7 @@ class PermisosCatSeriesUnidadOrgTCA(models.Model):
     
     def __str__(self):
         return str(self.id_permisos_catserie_unidad_tca)    
-    def clean(self):
-        # Validación del formato del archivo de cambio
-        if self.ruta_archivo_cambio:
-            extension = self.ruta_archivo_cambio.name.split('.')[-1]
-            if extension.lower() != 'pdf':
-                raise ValidationError({'ruta_archivo_cambio': ["El archivo debe estar en formato PDF."]})
+    
     class Meta:
         db_table='T221Permisos_CatSeries_UndOrg_TCA'
         verbose_name='Permiso categoria serie unidad TCA'
@@ -148,13 +130,6 @@ class HistoricoPermisosCatSeriesUndOrgTCA(models.Model):
 
     def __str__(self):
         return str(self.id_historico_permisos_catseries_unidad_tca)
-    
-    def clean(self):
-        # Validación del formato del archivo de cambio
-        if self.ruta_archivo_cambio:
-            extension = self.ruta_archivo_cambio.name.split('.')[-1]
-            if extension.lower() != 'pdf':
-                raise ValidationError({'ruta_archivo_cambio': ["El archivo debe estar en formato PDF."]})
     
     class Meta:
         db_table='T223Historico_Permisos_CatSeries_UndOrg_TCA'

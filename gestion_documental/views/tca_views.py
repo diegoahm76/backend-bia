@@ -104,7 +104,7 @@ class PostTablaControlAcceso(generics.CreateAPIView):
         if trd_instance:
             serializado = serializer.save()
 
-            #Auditoria Crear TCA
+            # AUDITORIA CREAR TCA
             usuario = request.user.id_usuario
             descripcion = {"Nombre": str(serializado.nombre), "Versión": str(serializado.version)}
             direccion=Util.get_client_ip(request)
