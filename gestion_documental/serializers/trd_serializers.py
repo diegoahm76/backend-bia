@@ -228,7 +228,7 @@ class GetSeriesSubSUnidadOrgTRDSerializer(serializers.ModelSerializer):
     # version = serializers.ReadOnlyField(source='id_trd.version')
     class Meta:
         model = CatSeriesUnidadOrgCCDTRD
-        fields = ['id_catserie_unidadorg','nombre_unidad','cod_unidad_org','nombre_serie','cod_serie','nombre_subserie','cod_subserie','disposicion_final'] 
+        fields = '__all__'
 
 class GetSeriesSubSUnidadOrgTRDTipologiasSerializer(serializers.ModelSerializer):
     

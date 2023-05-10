@@ -68,6 +68,7 @@ class CatSeriesUnidadOrgCCD_TRD_TCA(models.Model):
         db_table='T215CatSeries_UndOrg_CCD_TRD_TCA'
         verbose_name='Catalogo Serie Unidad CCD TRD TCA'
         verbose_name_plural='Catalogo Series Unidades CCD TRD TCA'
+        unique_together=['id_tca','id_cat_serie_und_ccd_trd']
 
 
 class HistoricoCatSeriesUnidadOrgCCD_TRD_TCA(models.Model):

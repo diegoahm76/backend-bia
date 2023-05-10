@@ -179,26 +179,23 @@ class ClasifSerieSubserieUnidadTCA(generics.CreateAPIView):
         tca = TablasControlAcceso.objects.filter(id_tca=id_tca).first()
         if tca:
             if not tca.fecha_retiro_produccion:
-                if not tca.fecha_terminado:
-                    if not tca.actual:
-                        # Validar existencia de expediente
-                        expediente_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_catserie_unidadorg=data['id_cat_serie_und_ccd_trd']).first()
-                        if not expediente_trd:
-                            return Response({'success':False, 'detail':'Debe ingresar un expediente que exista'}, status=status.HTTP_400_BAD_REQUEST)
+                if not tca.fecha_terminado or tca.actual:
+                    # Validar existencia de expediente
+                    expediente_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_catserie_unidadorg=data['id_cat_serie_und_ccd_trd']).first()
+                    if not expediente_trd:
+                        return Response({'success':False, 'detail':'Debe ingresar un expediente que exista'}, status=status.HTTP_400_BAD_REQUEST)
 
-                        # Validad existencia del tipo clasificación
-                        dict_tipo_clasificacion = dict(tipo_clasificacion_CHOICES)
-                        if data.get('cod_clas_expediente') not in dict_tipo_clasificacion:
-                            return Response({'success':False, 'detail':'Debe ingresar un código de clasificación que exista'}, status=status.HTTP_400_BAD_REQUEST)
-                        
-                        data['id_tca'] = id_tca
-                        serializer = self.serializer_class(data=data)
-                        serializer.is_valid(raise_exception=True)
-                        serializer.save()
+                    # Validad existencia del tipo clasificación
+                    dict_tipo_clasificacion = dict(tipo_clasificacion_CHOICES)
+                    if data.get('cod_clas_expediente') not in dict_tipo_clasificacion:
+                        return Response({'success':False, 'detail':'Debe ingresar un código de clasificación que exista'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    data['id_tca'] = id_tca
+                    serializer = self.serializer_class(data=data)
+                    serializer.is_valid(raise_exception=True)
+                    serializer.save()
 
-                        return Response({'success': True, 'detail': 'Se realizó la clasificación del expediente exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
-                    else:
-                        return Response({'success': False,'detail': 'No puede realizar esta acción a una TCA actual'}, status=status.HTTP_403_FORBIDDEN)
+                    return Response({'success': True, 'detail': 'Se realizó la clasificación del expediente exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
                 else:
                     return Response({'success': False,'detail': 'No puede realizar cambios a una TCA terminada, intente reanudar primero'}, status=status.HTTP_403_FORBIDDEN)
             else:
@@ -290,23 +287,22 @@ class ReanudarTablaControlAcceso(generics.UpdateAPIView):
             return Response({'success': False, 'detail': 'No se encontró ningún TCA con estos parámetros'}, status=status.HTTP_404_NOT_FOUND)
 
 class EliminarRelaciones(generics.DestroyAPIView):
-    serializer_class = Cargos_Unidad_S_Ss_UndOrg_TCASerializer
+    serializer_class = GetClasifExpedientesSerializer
     permission_classes = [IsAuthenticated]
 
-    def delete(self, request, id_trd):
-        try:
-            registro = CatSeriesUnidadOrgCCDTRD.objects.get(id_trd=id_trd)
-        except CatSeriesUnidadOrgCCDTRD.DoesNotExist:
-            return Response({'success':False, 'detail': "No se encontró ningún registro con el id_trd proporcionado."}, status=status.HTTP_404_NOT_FOUND)
+    def delete(self, request, pk):
+        registro_catalogo_tca = CatSeriesUnidadOrgCCD_TRD_TCA.objects.filter(id_cat_serie_unidad_org_ccd_trd_tca=pk).first()
+        if not registro_catalogo_tca:
+            raise ValidationError('No se encontró el registro del catalogo TCA que desea eliminar')
+        
+        if registro_catalogo_tca.id_tca.actual:
+            raise ValidationError('No puede eliminar un registro del catalogo TCA de un TCA actual')
+        if registro_catalogo_tca.id_tca.fecha_terminado:
+            raise ValidationError('No puede eliminar un registro del catalogo TCA de un TCA terminado, intente reanudar')
 
-        if registro.id_trd.fecha_terminado:
-            return Response({'success':False, 'detail': "No se puede eliminar un registro que tiene fecha de terminación establecida"}, status=status.HTTP_400_BAD_REQUEST)
-        registros_tca = CatSeriesUnidadOrgCCD_TRD_TCA.objects.filter(id_cat_serie_und_ccd_trd=registro)
-        for registro_tca in registros_tca:
-            registro_tca.delete()
+        registro_catalogo_tca.delete()
 
-        registro.delete()
-        return Response({'success':True, 'detail': f"El registro con id_trd {id_trd} y sus registros relacionados han sido eliminados correctamente."}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail': "El registro del catalogo TCA elegido ha sido eliminado correctamente"}, status=status.HTTP_200_OK)
 
 class FinalizarTablaControlAcceso(generics.UpdateAPIView):
     serializer_class = TCAPostSerializer

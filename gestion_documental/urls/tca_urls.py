@@ -14,5 +14,5 @@ urlpatterns = [
     path('catalogo-tca/clasificar/<str:id_tca>/',views.ClasifSerieSubserieUnidadTCA.as_view(),name='catalogo-tca-clasificar'),
     path('catalogo-tca/update-clasif/<str:pk>/',views.UpdateClasifSerieSubserieUnidadTCA.as_view(),name='catalogo-tca-update-clasif'),
     path('catalogo-tca/get-clasif/<str:id_tca>/',views.GetClasifExpedientesTCA.as_view(),name='catalogo-tca-get-clasif'),
-    path('catalogo-tca/delete-clasif/<str:id_tca>/',views.EliminarRelaciones.as_view(),name='catalogo-tca-delete-clasif'),
+    path('catalogo-tca/delete-clasif/<str:pk>/',views.EliminarRelaciones.as_view(),name='catalogo-tca-delete-clasif'),
 ]
