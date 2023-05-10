@@ -1221,7 +1221,7 @@ class GetSeriesSubSUnidadOrgTRD(generics.ListAPIView):
         
         #VALIDACIÓN SI EXISTE LA TRD ENVIADA
         if not queryset:
-            return Response({'success': False, 'detail': 'No se encontró la TRD'}, status=status.HTTP_404_NOT_FOUND)  
+            return Response({'success': False, 'detail': 'No se encontró ningún registro del cátalogo de TRD ingresada'}, status=status.HTTP_404_NOT_FOUND)  
         
         serializer = self.serializer_class(queryset, many=True, context={'request':request})
         return Response({'success': True, 'detail':'Se encontraron los siguientes resultados', 'data':serializer.data}, status=status.HTTP_200_OK)
