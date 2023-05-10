@@ -432,9 +432,9 @@ class UpdatePersonaJuridicaAdminPersonas(generics.UpdateAPIView):
                 return Response ({'success':False,'detail':'No se puede actualizar una persona jurídica con este servicio'},status=status.HTTP_403_FORBIDDEN)
         
             cambio = Util.comparacion_campos_actualizados(data,persona)
-            if persona_logueada != persona.id_persona_crea.id_persona:
+            
+            if not persona.id_persona_crea or persona_logueada != persona.id_persona_crea.id_persona:
                 if cambio:
-                    print(cambio)
                     data['fecha_ultim_actualiz_diferente_crea'] = datetime.now()
                     data['id_persona_ultim_actualiz_diferente_crea'] = persona_logueada
             else:
