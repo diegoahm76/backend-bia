@@ -32,7 +32,7 @@ from gestion_documental.models.ccd_models import (
     CuadrosClasificacionDocumental,
     SeriesDoc,
 )
-from transversal.models.organigrama_models import (
+from almacen.models.organigrama_models import (
     Organigramas
 )
 from gestion_documental.models.tca_models import (
