@@ -1,3 +1,4 @@
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework import status
 from rest_framework import generics
 from rest_framework.views import APIView
@@ -147,6 +148,7 @@ class UpdateCuadroClasificacionDocumental(generics.RetrieveUpdateAPIView):
                 'cod_permiso': 'AC',
                 'subsistema': 'GEST',
                 'dirip': dirip,
+                
                 'descripcion': descripcion,
                 'valores_actualizados': valores_actualizados
             }
@@ -273,15 +275,41 @@ class CreateSeriesDoc(generics.CreateAPIView):
         serializador.is_valid(raise_exception=True)
         serializador.save()
         
+        
+        descripcion = {'Nombre':ccd.nombre, 'Versión': ccd.version}
+        valores_creados_detalles = [
+            {
+                'NombreSerie':data['nombre'],
+                'CodigoSerie':data['codigo']
+            }
+        ]
+        
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 27,
+            "cod_permiso": "AC",
+            "subsistema": 'GEST',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_creados_detalles": valores_creados_detalles,
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)            
+                 
+        
+        
+        
         return Response ({'success':True,'detail':'Se ha creado la serie correctamente','data':serializador.data}, status=status.HTTP_201_CREATED)
 
 class UpdateSeriesDoc(generics.RetrieveUpdateAPIView):
     serializer_class = SeriesDocPutSerializer
     queryset = SeriesDoc.objects.all()
     permission_classes = [IsAuthenticated]
+    
 
     def put(self, request, id_serie_doc):
         serie = self.queryset.all().filter(id_serie_doc=id_serie_doc).first()
+        previous = copy.copy(serie)
         
         if serie:
             # VALIDACIONES CCD
@@ -295,6 +323,30 @@ class UpdateSeriesDoc(generics.RetrieveUpdateAPIView):
             serializer = self.serializer_class(serie, data=request.data, many=False)
             serializer.is_valid(raise_exception=True)
             serializer.save()
+                    
+            descripcion = {'Nombre':str(serie.id_ccd.nombre), 'Versión':str(serie.id_ccd.version)}
+            valores_actualizados_detalles = [
+                {
+                    'previous':previous,'current':serie,
+                    'descripcion': {
+                        'NombreSerie':serie.nombre,
+                        'CodigoSerie':serie.codigo
+                    }
+                }
+            ]
+            direccion = Util.get_client_ip(request)
+            auditoria_data = {
+                "id_usuario" : request.user.id_usuario,
+                "id_modulo" : 27,
+                "cod_permiso" : "AC",
+                "subsistema" : 'GEST',
+                "dirip" : direccion,
+                "descripcion" : descripcion,
+                "valores_actualizados_detalles" : valores_actualizados_detalles,
+            }
+            Util.save_auditoria_maestro_detalle(auditoria_data)
+            
+            
             return Response({'success':True, 'detail':'Registro actualizado exitosamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)
         else:
             return Response({'success': False, 'detail': 'No existe la serie elegida'}, status=status.HTTP_404_NOT_FOUND)
@@ -342,6 +394,25 @@ class DeleteSeriesDoc(generics.DestroyAPIView):
                 serie_posterior.codigo = codigo_serie
                 codigo_serie = int(codigo_serie) + serie_posterior.id_ccd.valor_aumento_serie
                 serie_posterior.save()
+            
+            descripcion = {'Nombre': str(serie.id_ccd.nombre), 'Versión':str(serie.id_ccd.version)}
+            valores_eliminados_detalles = [
+                {
+                    'NombreSerie':serie.nombre,
+                    'CodigoSerie':serie.codigo
+                }
+            ]    
+            direccion = Util.get_client_ip(request)
+            auditoria_data = {
+                "id_usuario" : request.user.id_usuario,
+                "id_modulo" : 27,
+                "cod_permiso": "AC",
+                "subsistema": 'GEST',
+                "dirip": direccion,
+                "descripcion": descripcion,
+                "valores_eliminados_detalles": valores_eliminados_detalles,  
+            }
+            Util.save_auditoria_maestro_detalle(auditoria_data)
             
             return Response({'success': True, 'detail': 'Esta serie ha sido eliminada exitosamente'}, status=status.HTTP_200_OK)
         else:
@@ -431,6 +502,29 @@ class CreateSubseriesDoc(generics.CreateAPIView):
             id_serie_doc=serie,
             id_subserie_doc=subserie_creada
         )
+       
+        descripcion = {'Nombre':serie.id_ccd.nombre,'Versión':serie.id_ccd.version}
+        valores_creados_detalles = [
+            {
+                'NombreSerie':serie.nombre,
+                'NombreSubSerie':data['nombre'],
+                'CodigoSubSerie':data['codigo']
+            }
+        ]
+        
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 27,
+            "cod_permiso": "AC",
+            "subsistema": 'GEST',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_creados_detalles": valores_creados_detalles,
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data) 
+        
+        
         
         return Response ({'success':True,'detail':'Se ha creado la subserie correctamente','data':serializador.data}, status=status.HTTP_201_CREATED)
 
@@ -441,7 +535,8 @@ class UpdateSubseriesDoc(generics.RetrieveUpdateAPIView):
 
     def put(self, request, id_subserie_doc):
         subserie = self.queryset.all().filter(id_subserie_doc=id_subserie_doc).first()
-
+        previous = copy.copy(subserie)
+        
         if subserie:
             # VALIDACIONES CCD
             if subserie.id_serie_doc.id_ccd.actual:
@@ -454,6 +549,29 @@ class UpdateSubseriesDoc(generics.RetrieveUpdateAPIView):
             serializer = self.serializer_class(subserie, data=request.data, many=False)
             serializer.is_valid(raise_exception=True)
             serializer.save()
+            
+            descripcion = {'Nombre':str(subserie.id_serie_doc.nombre)}
+            valores_actualizados_detalles = [
+                {
+                    'previous' : previous,'current':subserie,
+                    'descripcion' : {
+                        'NombreSubSerie' : subserie.nombre,
+                        'CodigoSubSerie' : subserie.codigo
+                    }
+                }
+            ]            
+            direccion = Util.get_client_ip(request)
+            auditoria_data = {
+                "id_usuario" : request.user.id_usuario,
+                "id_modulo" : 27,
+                "cod_permiso" : "AC",
+                "subsistema" : 'GEST',
+                "dirip" : direccion,
+                "descripcion" : descripcion,
+                "valores_actualizados_detalles" : valores_actualizados_detalles,
+            }
+            Util.save_auditoria_maestro_detalle(auditoria_data)
+            
             return Response({'success':True, 'detail':'Registro actualizado exitosamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)
         else:
             return Response({'success': False, 'detail': 'No existe la subserie elegida'}, status=status.HTTP_404_NOT_FOUND)
@@ -488,6 +606,25 @@ class DeleteSubseriesDoc(generics.DestroyAPIView):
                 subserie_posterior.codigo = codigo_subserie
                 codigo_subserie = int(codigo_subserie) + subserie_posterior.id_serie_doc.id_ccd.valor_aumento_subserie
                 subserie_posterior.save()
+                
+            descripcion = {'Nombre':str(subserie.id_serie_doc.nombre)}
+            valores_eliminados_detalles = [
+                {
+                    'NombreSubSerie' : subserie.nombre,
+                    'CodigoSubSerie' : subserie.codigo
+                }
+            ]
+            direccion=Util.get_client_ip(request)
+            auditoria_data = {
+                "id_usuario" : request.user.id_usuario,
+                "id_modulo" : 27,
+                "cod_permiso": "AC",
+                "subsistema": 'GEST',
+                "dirip": direccion,
+                "descripcion": descripcion,
+                "valores_eliminados_detalles": valores_eliminados_detalles,
+            }
+            Util.save_auditoria_maestro_detalle(auditoria_data)
             
             return Response({'success': True, 'detail': 'Esta subserie ha sido eliminada exitosamente'}, status=status.HTTP_200_OK)
         else:
@@ -552,6 +689,25 @@ class DeleteCatalogoSerieSubserie(generics.DestroyAPIView):
         
         # ELIMINAR DEL CATALOGO
         cat_serie_subserie.delete()
+        
+        descripcion = {'Nombre':cat_serie_subserie.id_serie_doc.nombre, 'Codigo':cat_serie_subserie.id_serie_doc.codigo}
+        valores_creados_detalles = [
+            {
+                'NombreSerie':cat_serie_subserie.id_serie_doc.nombre,
+                'CodigoSerie':cat_serie_subserie.id_serie_doc.codigo
+            }
+        ]
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 27,
+            "cod_permiso": "AC",
+            "subsistema": 'GEST',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_creados_detalles": valores_creados_detalles,
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
         
         return Response({'success':True, 'detail':'Se ha eliminado del catalogo correctamente'}, status=status.HTTP_200_OK)
         
@@ -618,6 +774,13 @@ class UpdateCatalogoUnidad(generics.UpdateAPIView):
         if len(set(cat_serie_subserie_list)) != len(cat_serie_subserie_instances):
             return Response({'success':False, 'detail':'Debe asociar items del catalogo de series y subseries existentes'}, status=status.HTTP_400_BAD_REQUEST)
         
+        #VALIDAR QUE LA RELACION DE LOS CATALOGOS Y LA CCD SEAN CORRECTOS
+        ccd_list = [cat_serie_subserie_instance.id_serie_doc.id_ccd.id_ccd for cat_serie_subserie_instance in cat_serie_subserie_instances]
+        
+        if len(set(ccd_list)) > 1 or (len(set(ccd_list)) == 1 and ccd_list[0] != int(id_ccd)):
+            print(ccd_list)
+            raise ValidationError('Los catalogos de la Serie y Subserie deben ser iguales a la CCD ingresada.')
+        
         cat_unidad_actual = self.queryset.all().filter(id_catalogo_serie__id_serie_doc__id_ccd=id_ccd)
         cat_unidad_actual_values = cat_unidad_actual.values('id_unidad_organizacional', 'id_catalogo_serie')
         
@@ -626,18 +789,74 @@ class UpdateCatalogoUnidad(generics.UpdateAPIView):
        
         # SEPARAR REGISTROS A ELIMINAR
         cat_unidad_eliminar = [cat_unidad for cat_unidad in cat_unidad_actual_values if cat_unidad not in data]
+        valores_eliminados_detalles = []
         for cat_unidad in cat_unidad_eliminar:
             cat_unidad_actual_eliminar = cat_unidad_actual.filter(id_unidad_organizacional=cat_unidad['id_unidad_organizacional'], id_catalogo_serie=cat_unidad['id_catalogo_serie']).first() 
+            
+            ############
+            descripcion = {'Nombre':ccd.nombre,'Versión':ccd.version}
+            descripcion_registros_eliminados = {
+                'NombreUnidadOrg':str(cat_unidad_actual_eliminar.id_unidad_organizacional.nombre), 
+                'CodigoUnidadOrg':str(cat_unidad_actual_eliminar.id_unidad_organizacional.codigo),
+                'NombreOrganigrama':str(ccd.id_organigrama.nombre),
+                'VersionOrganigrama':str(ccd.id_organigrama.version),
+                'NombreSerie':str(cat_unidad_actual_eliminar.id_catalogo_serie.id_serie_doc.nombre),
+                'CodigoSerie':str(cat_unidad_actual_eliminar.id_catalogo_serie.id_serie_doc.codigo)
+                }
+            
+            if cat_unidad_actual_eliminar.id_catalogo_serie.id_subserie_doc:
+                descripcion_registros_creados["NombreSubSerie"]=str(cat_unidad_actual_eliminar.id_catalogo_serie.id_subserie_doc.nombre)
+                descripcion_registros_creados["CodigoSubSerie"]=str(cat_unidad_actual_eliminar.id_catalogo_serie.id_subserie_doc.codigo)
+            
+            valores_eliminados_detalles.append(descripcion_registros_eliminados) #para insertar en una lista
+            
             if ccd.actual:
                 raise PermissionDenied('No puede eliminar registros en un CCD actual')
+            
             cat_unidad_actual_eliminar.delete()
         
         # SEPARAR REGISTROS A CREAR
+        
+        valores_creados_detalles = []
+        
+        
+        
         cat_unidad_crear = [cat_unidad for cat_unidad in data if cat_unidad not in cat_unidad_actual_values]
         if cat_unidad_crear:
             serializador = self.serializer_class(data=cat_unidad_crear, many=True)
             serializador.is_valid(raise_exception=True)
-            serializador.save()
+            cat_unidad_creados = serializador.save()
+            
+            for cat_unidad in cat_unidad_creados:
+                descripcion = {'Nombre':ccd.nombre,'Versión':ccd.version}
+                
+                descripcion_registros_creados = {
+                'NombreUnidadOrg':str(cat_unidad.id_unidad_organizacional.nombre), 
+                'CodigoUnidadOrg':str(cat_unidad.id_unidad_organizacional.codigo),
+                'NombreOrganigrama':str(ccd.id_organigrama.nombre),
+                'VersionOrganigrama':str(ccd.id_organigrama.version),
+                'NombreSerie':str(cat_unidad.id_catalogo_serie.id_serie_doc.nombre),
+                'CodigoSerie':str(cat_unidad.id_catalogo_serie.id_serie_doc.codigo),
+                }
+                if cat_unidad.id_catalogo_serie.id_subserie_doc:
+                    descripcion_registros_creados["NombreSubSerie"]=str(cat_unidad.id_catalogo_serie.id_subserie_doc.nombre)
+                    descripcion_registros_creados["CodigoSubSerie"]=str(cat_unidad.id_catalogo_serie.id_subserie_doc.codigo)
+                
+                valores_creados_detalles.append(descripcion_registros_creados) #para insertar en una lista
+
+        
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+        "id_usuario" : request.user.id_usuario,
+        "id_modulo" : 27,
+        "cod_permiso": "AC",
+        "subsistema": 'GEST',
+        "dirip": direccion,
+        "descripcion": descripcion,
+        "valores_creados_detalles": valores_creados_detalles,
+        'valores_eliminados_detalles':valores_eliminados_detalles,
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
         
         return Response ({'success':True,'detail':'Se guardaron los cambios correctamente en el catalogo'}, status=status.HTTP_201_CREATED)
 

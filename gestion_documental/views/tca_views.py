@@ -13,6 +13,7 @@ from gestion_documental.models.trd_models import TablaRetencionDocumental, CatSe
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from seguridad.serializers.personas_serializers import CargosSerializer
 from gestion_documental.serializers.tca_serializers import (
+    GetClasifExpedientesSerializer,
     TCASerializer,
     TCAPostSerializer,
     TCAPutSerializer,
@@ -21,10 +22,9 @@ from gestion_documental.serializers.tca_serializers import (
     ClasifSerieSubseriUnidadTCA_activoSerializer,
     PermisosCargoUnidadSerieSubserieUnidadTCASerializer,
     Cargos_Unidad_S_Ss_UndOrg_TCASerializer,
-    CatalogosSeriesUnidadClasifSerializer,
-    CatalogosSeriesUnidadClasifPermisosSerializer,
+    # CatalogosSeriesUnidadClasifSerializer,
+    # CatalogosSeriesUnidadClasifPermisosSerializer,
     BusquedaTCASerializer,
-    GetSeriesSubSUnidadOrgTCASerializer
 
 )
 from gestion_documental.models.ccd_models import (
@@ -104,7 +104,7 @@ class PostTablaControlAcceso(generics.CreateAPIView):
         if trd_instance:
             serializado = serializer.save()
 
-            #Auditoria Crear TCA
+            # AUDITORIA CREAR TCA
             usuario = request.user.id_usuario
             descripcion = {"Nombre": str(serializado.nombre), "Versión": str(serializado.version)}
             direccion=Util.get_client_ip(request)
@@ -179,26 +179,23 @@ class ClasifSerieSubserieUnidadTCA(generics.CreateAPIView):
         tca = TablasControlAcceso.objects.filter(id_tca=id_tca).first()
         if tca:
             if not tca.fecha_retiro_produccion:
-                if not tca.fecha_terminado:
-                    if not tca.actual:
-                        # Validar existencia de expediente
-                        expediente_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_cat_serie_und=data['id_cat_serie_und_ccd_trd']).first()
-                        if not expediente_trd:
-                            return Response({'success':False, 'detail':'Debe ingresar un expediente que exista'}, status=status.HTTP_400_BAD_REQUEST)
+                if not tca.fecha_terminado or tca.actual:
+                    # Validar existencia de expediente
+                    expediente_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_catserie_unidadorg=data['id_cat_serie_und_ccd_trd']).first()
+                    if not expediente_trd:
+                        return Response({'success':False, 'detail':'Debe ingresar un expediente que exista'}, status=status.HTTP_400_BAD_REQUEST)
 
-                        # Validad existencia del tipo clasificación
-                        dict_tipo_clasificacion = dict(tipo_clasificacion_CHOICES)
-                        if data.get('cod_clas_expediente') not in dict_tipo_clasificacion:
-                            return Response({'success':False, 'detail':'Debe ingresar un código de clasificación que exista'}, status=status.HTTP_400_BAD_REQUEST)
-                        
-                        data['id_tca'] = id_tca
-                        serializer = self.serializer_class(data=data)
-                        serializer.is_valid(raise_exception=True)
-                        serializer.save()
+                    # Validad existencia del tipo clasificación
+                    dict_tipo_clasificacion = dict(tipo_clasificacion_CHOICES)
+                    if data.get('cod_clas_expediente') not in dict_tipo_clasificacion:
+                        return Response({'success':False, 'detail':'Debe ingresar un código de clasificación que exista'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    data['id_tca'] = id_tca
+                    serializer = self.serializer_class(data=data)
+                    serializer.is_valid(raise_exception=True)
+                    serializer.save()
 
-                        return Response({'success': True, 'detail': 'Se realizó la clasificación del expediente exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
-                    else:
-                        return Response({'success': False,'detail': 'No puede realizar esta acción a una TCA actual'}, status=status.HTTP_403_FORBIDDEN)
+                    return Response({'success': True, 'detail': 'Se realizó la clasificación del expediente exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
                 else:
                     return Response({'success': False,'detail': 'No puede realizar cambios a una TCA terminada, intente reanudar primero'}, status=status.HTTP_403_FORBIDDEN)
             else:
@@ -253,6 +250,7 @@ class UpdateClasifSerieSubserieUnidadTCA(generics.UpdateAPIView):
                         value = value if value != '' else None
                         if value != new_value:
                             datos_actualizados.append({field: value})
+                            
                     # HISTORICO:
                     if datos_actualizados:
                         HistoricoCatSeriesUnidadOrgCCD_TRD_TCA.objects.create(
@@ -287,171 +285,24 @@ class ReanudarTablaControlAcceso(generics.UpdateAPIView):
             return Response({'success': True, 'detail': 'Se reanudó el TCA'}, status=status.HTTP_201_CREATED)
         else:
             return Response({'success': False, 'detail': 'No se encontró ningún TCA con estos parámetros'}, status=status.HTTP_404_NOT_FOUND)
-@api_view(['POST'])
-def asignar_cargo_unidad_permiso_expediente(request):
-    data = request.data
-    user = request.user
-    
-    try:
-        clasif_serie_subserie_unidad_TCA= CatSeriesUnidadOrgCCD_TRD_TCA.objects.get(id_cat_serie_unidad_org_ccd_trd_tca=data['id_cat_serie_unidad_org_ccd_trd_tca'])
-    except:
-        return Response({'success':False, 'detail':'No existe expediente relacionado al id de clasificacion serie/subserie/unidad TCA'}, status=status.HTTP_400_BAD_REQUEST)
-    try:
-        unidad_org_persona = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=data['id_unidad_org_persona'])
-    except:
-        return Response({'success':False, 'detail':'No existe unidad organisacional con el id unidad organizacional persona ingresado'}, status=status.HTTP_400_BAD_REQUEST)
-    try:
-        cargo_persona = Cargos.objects.get(id_cargo=data['id_cargo_persona'])
-    except:
-        return Response({'success':False, 'detail':'No existe id cargo'}, status=status.HTTP_400_BAD_REQUEST)
-    
-    cargo_unidad = PermisosCatSeriesUnidadOrgTCA.objects.filter(id_clasif_serie_subserie_unidad_tca=data['id_cat_serie_unidad_org_ccd_trd_tca'],id_cargo_persona=data['id_cargo_persona'],id_unidad_org_cargo=data['id_unidad_org_persona'])
-    if cargo_unidad:
-        return Response({'success':False, 'detail':'Ya asignó previamente el mismo cargo y la misma unidad para el expediente elegido. Por favor eliminelo primero si desea volverlo a crear'}, status=status.HTTP_400_BAD_REQUEST)
-    
-    if not data.getlist('permisos'):
-        return Response({'success':False, 'detail':'Debe asignar por lo menos un permiso'}, status=status.HTTP_400_BAD_REQUEST)
-    
-    permisos_validados_list = PermisosGD.objects.filter(cod_permiso_gd__in=data.getlist('permisos'))
-    if len(data.getlist('permisos')) != len(permisos_validados_list):
-        return Response({'success':False, 'detail':'Uno de los permisos ingresados no existe'}, status=status.HTTP_400_BAD_REQUEST)
-    
-    match clasif_serie_subserie_unidad_TCA.id_tca.actual:
-        case True:
-            if not data.get('justificacion_del_cambio') or data['justificacion_del_cambio'] == '':
-                return Response({'success':False, 'detail':'Debe ingresar justificación'}, status=status.HTTP_400_BAD_REQUEST)
-            if not request.FILES.get('ruta_archivo_cambio'):
-                return Response({'success':False, 'detail':'Debe ingresar un documento'}, status=status.HTTP_400_BAD_REQUEST)
-            cargo_unidad_serie_subserie_undorg_tca= PermisosCatSeriesUnidadOrgTCA.objects.create(
-                id_cat_serie_unidad_org_ccd_trd_tca = clasif_serie_subserie_unidad_TCA,
-                id_cargo_persona = cargo_persona,
-                id_unidad_org_cargo = unidad_org_persona,
-                justificacion_del_cambio = data['justificacion_del_cambio'],
-                ruta_archivo_cambio = request.FILES.get('ruta_archivo_cambio'))
-        case False:
-            cargo_unidad_serie_subserie_undorg_tca= PermisosCatSeriesUnidadOrgTCA.objects.create(
-                id_cat_serie_unidad_org_ccd_trd_tca = clasif_serie_subserie_unidad_TCA,
-                id_cargo_persona = cargo_persona,
-                id_unidad_org_cargo = unidad_org_persona
-            )
-    permisos_serializer_list = []
-    for permiso in permisos_validados_list:
-        permiso_cargo_unidad_s_ss_unidad_tca = PermisosDetPermisosCatSerieUndOrgTCA.objects.create(
-            id_permisos_catserie_unidad_tca = cargo_unidad_serie_subserie_undorg_tca,
-            cod_permiso = permiso 
-        )
-        permisos_serializer_list.append(permiso_cargo_unidad_s_ss_unidad_tca)
-    expediente_serializer = Cargos_Unidad_S_Ss_UndOrg_TCASerializer(cargo_unidad_serie_subserie_undorg_tca,many=False)
-    permisos_serializer = PermisosCargoUnidadSerieSubserieUnidadTCASerializer(permisos_serializer_list, many=True)
-    serializer_data = expediente_serializer.data
-    serializer_data['permisos'] = permisos_serializer.data
-    return Response({'success':True, 'detail':'Se asignaron correctamente los permisos al expediente clasificado', 'data':serializer_data},status=status.HTTP_201_CREATED)
 
-@api_view(['PUT'])
-@permission_classes([IsAuthenticated])
-def actualizar_cargo_unidad_permiso_expediente(request,pk):
-    data = request.data
-    try:
-        cargo_unidad_serie_subserie_undorg_tca = PermisosCatSeriesUnidadOrgTCA.objects.get(id_cargo_unidad_s_subserie_unidad_org_tca=pk)
-        entry__previous=copy.copy(cargo_unidad_serie_subserie_undorg_tca)
-
-    except:
-        return Response({'success':False,'detail':'El expediente elegido es invalido'}, status=status.HTTP_400_BAD_REQUEST)
-    
-    if not data.getlist('permisos'):
-        return Response({'success':False, 'detail':'Debe elegir por lo menos un permiso'}, status=status.HTTP_400_BAD_REQUEST)
-    
-    permisos_validados_list = PermisosGD.objects.filter(cod_permiso_gd__in=data.getlist('permisos'))
-    if len(data.getlist('permisos')) != len(permisos_validados_list):
-        return Response({'success':False, 'detail':'Uno de los permisos ingresados no existe'}, status=status.HTTP_400_BAD_REQUEST)
-    
-    permisos_validados_list = PermisosDetPermisosCatSerieUndOrgTCA.objects.filter(id_permisos_catserie_unidad_tca=cargo_unidad_serie_subserie_undorg_tca.id_cargo_unidad_s_subserie_unidad_org_tca)
-    lista_de_permisos = [x.cod_permiso.tipo_permiso for x in permisos_validados_list]
-    string_permisos = ' | '.join(lista_de_permisos)
-    
-    lista_permisos = [str(x.cod_permiso.cod_permiso_gd) for x in permisos_validados_list]
-    lista_crear = list(set(data.getlist('permisos'))-set(lista_permisos)) 
-    permisos_validados_list.exclude(cod_permiso__in= data.getlist('permisos')).delete()
-    permisos_serializer_list = []
-    
-    for permiso in lista_crear:
-        permiso_cargo_unidad_s_ss_unidad_tca = PermisosDetPermisosCatSerieUndOrgTCA.objects.create(
-            id_cargo_id_permisos_catserie_unidad_tcaunidad_s_ss_unidad_tca = cargo_unidad_serie_subserie_undorg_tca,
-            cod_permiso = PermisosGD.objects.get(cod_permiso_gd=permiso) 
-        )
-        permisos_serializer_list.append(permiso_cargo_unidad_s_ss_unidad_tca)
-        
-    match cargo_unidad_serie_subserie_undorg_tca.id_clasif_serie_subserie_unidad_tca.id_tca.actual:
-        case True:
-            justificacion_cambio = data['justificacion_del_cambio']
-            ruta_archivo_cambio = request.FILES.get('ruta_archivo_cambio')
-            
-            if (not justificacion_cambio or justificacion_cambio == '') or not ruta_archivo_cambio:
-                return Response({'success':False, 'detail':'Debe enviar una justificación y un archivo de soporte de la actualización de los permisos que desea realizar'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            cargo_unidad_serie_subserie_undorg_tca.justificacion_del_cambio = justificacion_cambio
-            cargo_unidad_serie_subserie_undorg_tca.ruta_archivo_cambio = ruta_archivo_cambio
-            cargo_unidad_serie_subserie_undorg_tca.save()
-            HistoricoPermisosCatSeriesUndOrgTCA.objects.create(
-                id_permisos_catserie_unidad_tca = cargo_unidad_serie_subserie_undorg_tca,
-                nombre_permisos = string_permisos,
-                justificacion= cargo_unidad_serie_subserie_undorg_tca.justificacion_del_cambio,
-                ruta_archivo= cargo_unidad_serie_subserie_undorg_tca.ruta_archivo_cambio,
-                id_persona_cambia= request.user.persona,
-            )
-        # case False:
-        #     HistoricoCargosUnidadSerieSubserieUnidadTCA.objects.create(
-        #         id_cargo_unidad_s_ss_unidad_tca = cargo_unidad_serie_subserie_undorg_tca,
-        #         nombre_permisos = string_permisos,
-        #         id_persona_cambia= request.user.persona,
-        #     )
-
-    expediente_serializer = Cargos_Unidad_S_Ss_UndOrg_TCASerializer(cargo_unidad_serie_subserie_undorg_tca,many=False)
-    permisos_serializer = PermisosCargoUnidadSerieSubserieUnidadTCASerializer(permisos_serializer_list, many=True)    
-    
-    serializer_data = expediente_serializer.data
-    serializer_data['permisos'] = permisos_serializer.data
-    
-    return Response({'success':True, 'detail':'Se actualizaron correctamente los permisos al expediente clasificado', 'data':serializer_data}, status=status.HTTP_201_CREATED)
-
-# class EliminarCargoUnidadPermisoExp(generics.DestroyAPIView):
-#     serializer_class = Cargos_Unidad_S_Ss_UndOrg_TCASerializer
-#     queryset = PermisosCatSeriesUnidadOrgTCA.objects.all()
-#     permission_classes = [IsAuthenticated]
-    
-#     def delete(self, request, pk):
-#         cargo_unidad_exp = self.queryset.all().filter(id_permisos_catserie_unidad_tca=pk).first()
-        
-#         if cargo_unidad_exp:
-#             if cargo_unidad_exp.id_permisos_catserie_unidad_tca.id_tca.fecha_retiro_produccion:
-#                 return Response({'success':False, 'detail':'No se puede eliminar la asociación del cargo, unidad y permisos porque la TCA fue retirada de producción'}, status=status.HTTP_403_FORBIDDEN)
-#             if cargo_unidad_exp.id_permisos_catserie_unidad_tca.id_tca.actual:
-#                 return Response({'success':False, 'detail':'No se puede eliminar la asociación del cargo, unidad y permisos para una TCA actual'}, status=status.HTTP_403_FORBIDDEN)
-#             if cargo_unidad_exp.id_permisos_catserie_unidad_tca.id_tca.fecha_terminado:
-#                 return Response({'success':False, 'detail':'No se puede eliminar la asociación del cargo, unidad y permisos porque la TCA fue terminada. Intente reanudar primero'}, status=status.HTTP_403_FORBIDDEN)
-            
-#             cargo_unidad_exp.delete()
-#             return Response({'success':True, 'detail':'Se ha eliminado la relacion del cargo, unidad y los permisos asignados del expediente elegido'}, status=status.HTTP_200_OK)
-#         else:
-#             return Response({'success':False, 'detail':'No existe la asociación del cargo, unidad y permisos ingresada'}, status=status.HTTP_404_NOT_FOUND)
 class EliminarRelaciones(generics.DestroyAPIView):
-    serializer_class = Cargos_Unidad_S_Ss_UndOrg_TCASerializer
+    serializer_class = GetClasifExpedientesSerializer
     permission_classes = [IsAuthenticated]
 
-    def delete(self, request, id_trd):
-        try:
-            registro = CatSeriesUnidadOrgCCDTRD.objects.get(id_trd=id_trd)
-        except CatSeriesUnidadOrgCCDTRD.DoesNotExist:
-            return Response({'success':False, 'detail': "No se encontró ningún registro con el id_trd proporcionado."}, status=status.HTTP_404_NOT_FOUND)
+    def delete(self, request, pk):
+        registro_catalogo_tca = CatSeriesUnidadOrgCCD_TRD_TCA.objects.filter(id_cat_serie_unidad_org_ccd_trd_tca=pk).first()
+        if not registro_catalogo_tca:
+            raise ValidationError('No se encontró el registro del catalogo TCA que desea eliminar')
+        
+        if registro_catalogo_tca.id_tca.actual:
+            raise ValidationError('No puede eliminar un registro del catalogo TCA de un TCA actual')
+        if registro_catalogo_tca.id_tca.fecha_terminado:
+            raise ValidationError('No puede eliminar un registro del catalogo TCA de un TCA terminado, intente reanudar')
 
-        if registro.id_trd.fecha_terminado:
-            return Response({'success':False, 'detail': "No se puede eliminar un registro que tiene fecha de terminación establecida"}, status=status.HTTP_400_BAD_REQUEST)
-        registros_tca = CatSeriesUnidadOrgCCD_TRD_TCA.objects.filter(id_cat_serie_und_ccd_trd=registro)
-        for registro_tca in registros_tca:
-            registro_tca.delete()
+        registro_catalogo_tca.delete()
 
-        registro.delete()
-        return Response({'success':True, 'detail': f"El registro con id_trd {id_trd} y sus registros relacionados han sido eliminados correctamente."}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail': "El registro del catalogo TCA elegido ha sido eliminado correctamente"}, status=status.HTTP_200_OK)
 
 class FinalizarTablaControlAcceso(generics.UpdateAPIView):
     serializer_class = TCAPostSerializer
@@ -486,37 +337,6 @@ class FinalizarTablaControlAcceso(generics.UpdateAPIView):
         else:
             return Response({'success': False, 'detail': 'No se encontró ningún TCA con estos parámetros'}, status=status.HTTP_404_NOT_FOUND)   
 
-class GetClasifSerieSubserieUnidad(generics.ListAPIView):
-    serializer_class = CatalogosSeriesUnidadClasifSerializer
-    queryset = TablasControlAcceso.objects.all()
-    permission_classes = [IsAuthenticated]
-    
-    def get(self, request, id_tca):
-        tca = self.queryset.all().filter(id_tca=id_tca).first()
-        if tca:
-            serie_subserie_unidad = CatalogosSeriesUnidad.objects.filter(id_catalogo_serie__id_serie_doc__id_ccd = tca.id_ccd.id_ccd).distinct('id_unidad_organizacional', 'id_serie_doc')
-            serie_subserie_unidad = [ssu for ssu in serie_subserie_unidad if ssu.clasif_serie_subserie_unidad_tca_set.all()]
-            serializer = self.serializer_class(serie_subserie_unidad, many=True, context={'id_tca': id_tca})
-            return Response({'success':True, 'detail':'Se encontraron las siguientes clasificaciones', 'data':serializer.data}, status=status.HTTP_200_OK)
-        else:
-            return Response({'success':False, 'detail':'No existe la TCA ingresada'}, status=status.HTTP_404_NOT_FOUND)
-        
-class GetCargoUnidadPermisos(generics.ListAPIView):
-    serializer_class = CatalogosSeriesUnidadClasifPermisosSerializer
-    queryset = TablasControlAcceso.objects.all()
-    permission_classes = [IsAuthenticated]
-    
-    def get(self, request, id_tca):
-        tca = self.queryset.all().filter(id_tca=id_tca).first()
-        if tca:
-            serie_subserie_unidad = CatalogosSeriesUnidad.objects.filter(id_catalogo_serie__id_serie_doc__id_ccd = tca.id_ccd.id_ccd)
-            clasif_serie_subserie_unidad = [ssu.clasif_serie_subserie_unidad_tca_set.all().first() for ssu in serie_subserie_unidad if ssu.clasif_serie_subserie_unidad_tca_set.all()]
-            serie_subserie_unidad = [cssu.id_catalogo_serie for cssu in clasif_serie_subserie_unidad if cssu.cargos_unidad_s_ss_undorg_tca_set.all()]
-            serializer = self.serializer_class(serie_subserie_unidad, many=True, context={'id_tca': id_tca})
-            return Response({'success':True, 'detail':'Se encontraron las siguientes clasificaciones', 'data':serializer.data}, status=status.HTTP_200_OK)
-        else:
-            return Response({'success':False, 'detail':'No existe la TCA ingresada'}, status=status.HTTP_404_NOT_FOUND)
-
 class BusquedaTCA(generics.ListAPIView):
     serializer_class = BusquedaTCASerializer 
     queryset = TablasControlAcceso.objects.all()
@@ -533,8 +353,8 @@ class BusquedaTCA(generics.ListAPIView):
         serializador = self.serializer_class(ccd,many=True)
         return Response({'succes': True, 'detail':'Resultados de la búsqueda', 'data':serializador.data}, status=status.HTTP_200_OK)
 
-class GetSeriesSubSUnidadOrgTCA(generics.ListAPIView):
-    serializer_class = GetSeriesSubSUnidadOrgTCASerializer
+class GetClasifExpedientesTCA(generics.ListAPIView):
+    serializer_class = GetClasifExpedientesSerializer
     permission_classes = [IsAuthenticated]
 
     def list(self, request, id_tca):
@@ -543,12 +363,7 @@ class GetSeriesSubSUnidadOrgTCA(generics.ListAPIView):
         #VALIDACIÓN SI EXISTE LA TCA ENVIADA
         if not queryset:
             return Response({'success': False, 'detail': 'No se encontró la TCA'}, status=status.HTTP_404_NOT_FOUND)  
-        # VALIDACIÓN TIPO CLASIFICACION
-        for obj in queryset:
-            if not obj.cod_clas_expediente:
-                return Response({'success': False, 'detail': 'No tiene un tipo de clasificación de expediente definido'}, status=status.HTTP_400_BAD_REQUEST)
             
         serializer = self.get_serializer(queryset, many=True)
         data = serializer.data
         return Response({'success': True, 'detail':'Se encontraron los siguientes resultados', 'data': data}, status=status.HTTP_200_OK)
-

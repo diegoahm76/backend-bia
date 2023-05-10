@@ -217,21 +217,15 @@ class SeriesSubSeriesUnidadesOrgTRDPutSerializer(serializers.ModelSerializer):
         )
         
 
-# class GetSeriesSubSUnidadOrgTRDSerializer(serializers.ModelSerializer):
-#     nombre_unidad = serializers.ReadOnlyField(source='id_cat_serie_und.id_unidad_organizacional.nombre',default =None)
-#     cod_unidad_org = serializers.ReadOnlyField(source='id_cat_serie_und.id_unidad_organizacional.id_unidad_organizacional',default =None)
-#     nombre_serie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_serie_doc.nombre', default=None)
-#     cod_serie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_serie_doc.codigo', default=None)
-#     nombre_subserie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.nombre', default=None)
-#     cod_subserie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.codigo', default=None)
-#     disposicion_final = serializers.ReadOnlyField(source='cod_disposicion_final.cod_disposicion_final', default=None)
-#     # version = serializers.ReadOnlyField(source='id_trd.version')
-    
-#     class Meta:
-#         model = CatSeriesUnidadOrgCCDTRD
-#         fields = ['id_catserie_unidadorg','nombre_unidad','cod_unidad_org','nombre_serie','cod_serie','nombre_subserie','cod_subserie','disposicion_final'] 
-
 class GetSeriesSubSUnidadOrgTRDSerializer(serializers.ModelSerializer):
+    nombre_unidad = serializers.ReadOnlyField(source='id_cat_serie_und.id_unidad_organizacional.nombre',default =None)
+    cod_unidad_org = serializers.ReadOnlyField(source='id_cat_serie_und.id_unidad_organizacional.id_unidad_organizacional',default =None)
+    nombre_serie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_serie_doc.nombre', default=None)
+    cod_serie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_serie_doc.codigo', default=None)
+    nombre_subserie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.nombre', default=None)
+    cod_subserie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.codigo', default=None)
+    disposicion_final = serializers.ReadOnlyField(source='cod_disposicion_final.cod_disposicion_final', default=None)
+    # version = serializers.ReadOnlyField(source='id_trd.version')
     class Meta:
         model = CatSeriesUnidadOrgCCDTRD
         fields = '__all__'
