@@ -4,7 +4,7 @@ from conservacion.models.solicitudes_models import (
     SolicitudesViveros,
     ItemSolicitudViveros
 )
-from almacen.models.organigrama_models import (
+from transversal.models.organigrama_models import (
     UnidadesOrganizacionales
 )
 from conservacion.models.inventario_models import (

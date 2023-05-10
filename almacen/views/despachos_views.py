@@ -35,7 +35,7 @@ from seguridad.models import (
     User,
     ClasesTerceroPersona
 )
-from almacen.models.organigrama_models import (
+from transversal.models.organigrama_models import (
     UnidadesOrganizacionales,
     NivelesOrganigrama
 )
@@ -652,9 +652,9 @@ class GetNroDocumentoDespachoBienesConsumo(generics.ListAPIView):
     queryset=DespachoConsumo.objects.all()
     
     def get(self, request):
-        nro_solicitud = DespachoConsumo.objects.all().order_by('numero_despacho_consumo').last() 
-        return Response({'success':True,'detail':nro_solicitud.numero_despacho_consumo + 1, },status=status.HTTP_200_OK)
-
+        nro_solicitud = DespachoConsumo.objects.all().order_by('numero_despacho_consumo').last()     
+        salida = 0 if nro_solicitud == None else nro_solicitud.numero_despacho_consumo
+        return Response({'success':True,'detail':salida + 1, },status=status.HTTP_200_OK)
 
 class CerrarSolicitudDebidoInexistenciaView(generics.RetrieveUpdateAPIView):
     serializer_class = CerrarSolicitudDebidoInexistenciaSerializer

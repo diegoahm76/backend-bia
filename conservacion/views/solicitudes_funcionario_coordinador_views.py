@@ -36,7 +36,7 @@ from conservacion.models.viveros_models import (
 from almacen.models.bienes_models import (
     CatalogoBienes
 )
-from almacen.models.organigrama_models import (
+from transversal.models.organigrama_models import (
     UnidadesOrganizacionales,
 )
 from seguridad.serializers.personas_serializers import (

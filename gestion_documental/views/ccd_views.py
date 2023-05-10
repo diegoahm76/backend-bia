@@ -22,7 +22,7 @@ from gestion_documental.serializers.ccd_serializers import (
     AsignacionesCatalogosOrgSerializer,
     BusquedaCCDSerializer
 )
-from almacen.models.organigrama_models import Organigramas
+from transversal.models.organigrama_models import Organigramas
 from gestion_documental.models.ccd_models import (
     CuadrosClasificacionDocumental,
     SeriesDoc,
@@ -30,7 +30,7 @@ from gestion_documental.models.ccd_models import (
     CatalogosSeries,
     CatalogosSeriesUnidad
 )
-from almacen.models.organigrama_models import (
+from transversal.models.organigrama_models import (
     UnidadesOrganizacionales
 )
 from gestion_documental.models.trd_models import (

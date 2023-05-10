@@ -1,19 +1,11 @@
 from almacen.models.bienes_models import CatalogoBienes
-from almacen.serializers.bienes_serializers import CatalogoBienesSerializer
-from almacen.serializers.organigrama_serializers import UnidadesOrganizacionales, UnidadesGetSerializer
 from rest_framework import generics,status
 from rest_framework.response import Response
-from almacen.models import UnidadesOrganizacionales, NivelesOrganigrama
-from seguridad.models import Personas, User
-from rest_framework.decorators import api_view
+from transversal.models import UnidadesOrganizacionales, NivelesOrganigrama
+from seguridad.models import Personas
 from seguridad.utils import Util
 from rest_framework.permissions import IsAuthenticated
-from seguridad.models import (
-    Personas,
-    User,
-    ClasesTerceroPersona
-)
-from almacen.models.organigrama_models import (
+from transversal.models.organigrama_models import (
     UnidadesOrganizacionales,
     NivelesOrganigrama
 )

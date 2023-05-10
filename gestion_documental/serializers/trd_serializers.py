@@ -10,7 +10,7 @@ from gestion_documental.models.trd_models import (
     SeriesSubSUnidadOrgTRDTipologias
 )
 from gestion_documental.choices.tipos_medios_formato_choices import tipos_medios_formato_CHOICES
-from almacen.models.organigrama_models import UnidadesOrganizacionales
+from transversal.models.organigrama_models import UnidadesOrganizacionales
 
 class TipologiasDocumentalesSerializer(serializers.ModelSerializer):
     class Meta:

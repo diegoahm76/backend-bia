@@ -1,10 +1,10 @@
 from almacen.models.bienes_models import CatalogoBienes
 from almacen.serializers.bienes_serializers import CatalogoBienesSerializer
-from almacen.serializers.organigrama_serializers import UnidadesGetSerializer
+from transversal.serializers.organigrama_serializers import UnidadesGetSerializer
 from rest_framework import generics,status
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
-from almacen.models.organigrama_models import UnidadesOrganizacionales, NivelesOrganigrama
+from transversal.models.organigrama_models import UnidadesOrganizacionales, NivelesOrganigrama
 from almacen.utils import UtilAlmacen
 from seguridad.models import Personas, User
 from rest_framework.decorators import api_view
@@ -15,7 +15,7 @@ from seguridad.models import (
     User,
     ClasesTerceroPersona
 )
-from almacen.models.organigrama_models import (
+from transversal.models.organigrama_models import (
     UnidadesOrganizacionales,
     NivelesOrganigrama
 )

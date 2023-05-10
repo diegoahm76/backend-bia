@@ -6,8 +6,8 @@ import copy, pytz
 from datetime import datetime
 from seguridad.utils import Util
 from rest_framework.permissions import IsAuthenticated
-from almacen.serializers.organigrama_serializers import UnidadesGetSerializer
-from almacen.models.organigrama_models import UnidadesOrganizacionales
+from transversal.serializers.organigrama_serializers import UnidadesGetSerializer
+from transversal.models.organigrama_models import UnidadesOrganizacionales
 from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
 from gestion_documental.models.trd_models import TablaRetencionDocumental, CatSeriesUnidadOrgCCDTRD
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
@@ -32,7 +32,7 @@ from gestion_documental.models.ccd_models import (
     CuadrosClasificacionDocumental,
     SeriesDoc,
 )
-from almacen.models.organigrama_models import (
+from transversal.models.organigrama_models import (
     Organigramas
 )
 from gestion_documental.models.tca_models import (
