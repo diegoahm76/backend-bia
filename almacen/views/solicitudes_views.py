@@ -705,17 +705,14 @@ class SearchFuncionarioResponsableFiltros(generics.ListAPIView):
         filter = {}
         for key,value in request.query_params.items():
             if key in ['tipo_documento','numero_documento','primer_nombre','primer_apellido','id_unidad_organizacional_actual']:
-                if key in ['primer_nombre','primer_apellido']:
+                if key in ['primer_nombre','primer_apellido','numero_documento']:
                     if value != "":
                         filter[key+'__icontains']=  value
-                elif key == "numero_documento":
-                    if value != "":
-                        filter[key+'__startswith'] = value
                 else:
                     if value != "":
                         filter[key] = value
         
-        personas = self.queryset.filter(**filter)
+        personas = self.queryset.filter(**filter).exclude(id_unidad_organizacional_actual=None)
         
         personas_responsables = [persona_responsable for persona_responsable in personas if persona_responsable.clasesterceropersona_set.filter(id_clase_tercero=2) and persona_responsable.id_unidad_organizacional_actual.nombre in unidades_iguales_y_arriba]
         
