@@ -63,7 +63,7 @@ class DeleteMarca(generics.DestroyAPIView):
                 raise PermissionDenied('No puedes eliminar una marca que haya sido usada')
             else:
                 marca.delete()
-                return Response({'success':True, 'detail': 'Se ha eliminado exitosamente'}, status=status.HTTP_200_OK)
+                return Response({'success':True, 'detail':'Se ha eliminado exitosamente'}, status=status.HTTP_200_OK)
         else:
             raise NotFound('No existe la marca ingresada')
 
@@ -110,7 +110,7 @@ class RegisterBodega(generics.CreateAPIView):
             raise ValidationError('Ya existe una bodega principal')
         else:
             serializer.save()
-            return Response({'success': True, 'detail':'Se creado la bodega con éxito', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+            return Response({'success':True, 'detail':'Se creado la bodega con éxito', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 
         
 class UpdateBodega(generics.UpdateAPIView):
@@ -138,7 +138,7 @@ class UpdateBodega(generics.UpdateAPIView):
                 raise ValidationError('Ya existe una bodega principal')
             else:
                 serializer.save()
-                return Response({'success': True, 'detail':'Se ha actualizado la bodega', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+                return Response({'success':True, 'detail':'Se ha actualizado la bodega', 'data':serializer.data}, status=status.HTTP_201_CREATED)
         else:
             raise NotFound('La bodega ingresada no existe')
     
@@ -151,7 +151,7 @@ class DeleteBodega(generics.DestroyAPIView):
         if bodega:
             if not bodega.item_ya_usado:
                 bodega.delete()
-                return Response({'success':True, 'detail': 'Se ha eliminado exitosamente'}, status=status.HTTP_200_OK)
+                return Response({'success':True, 'detail':'Se ha eliminado exitosamente'}, status=status.HTTP_200_OK)
             else:
                 raise PermissionDenied('No puedes eliminar una bodega que esté o haya sido usada')
         else:
@@ -209,7 +209,7 @@ class DeletePorcentaje(generics.DestroyAPIView):
                 raise PermissionDenied('No puedes eliminar un porcentaje precargado o que haya sido usado')
             else:
                 porcentaje.delete()
-                return Response({'success':True, 'detail': 'Se ha eliminado exitosamente'}, status=status.HTTP_200_OK)
+                return Response({'success':True, 'detail':'Se ha eliminado exitosamente'}, status=status.HTTP_200_OK)
         else:
             raise NotFound('No existe el porcentaje ingresado')
 
@@ -255,7 +255,7 @@ class DeleteUnidadMedida(generics.DestroyAPIView):
                 raise PermissionDenied("No se puede actualizar una unidad de medida precargada o que haya sido usada")
             else:
                 unidad_medida.delete()
-                return Response({'success':True,'detail': 'Se ha eliminado la unidad de medida exitosamente'}, status=status.HTTP_200_OK)
+                return Response({'success':True, 'detail':'Se ha eliminado la unidad de medida exitosamente'}, status=status.HTTP_200_OK)
         else:
             raise NotFound('No existe la unidad de medida ingresada')
         

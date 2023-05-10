@@ -30,7 +30,7 @@ from almacen.models.mantenimientos_models import (
     ProgramacionMantenimientos
     )   
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from rest_framework.permissions import IsAuthenticated
 from seguridad.utils import Util
 import copy
@@ -47,14 +47,14 @@ class CreateHojaDeVidaComputadores(generics.CreateAPIView):
         articulo_existentes=CatalogoBienes.objects.filter(Q(id_bien=id_articulo) & ~Q(nro_elemento_bien=None)).first()
         print('ARTICULO',articulo_existentes)
         if not articulo_existentes:
-            return Response({'success':False,'detail':'El bien ingresado no existe'},status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('El bien ingresado no existe')
         if articulo_existentes.cod_tipo_bien == 'C':
-            return Response({'success':False,'detail':'No se puede crear una hoja de vida a un bien tipo consumo'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No se puede crear una hoja de vida a un bien tipo consumo')
         if articulo_existentes.cod_tipo_activo != 'Com':
-            return Response({'success':False,'detail':'No se puede crear una hoja de vida a este bien ya que no es de la categoría computador'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No se puede crear una hoja de vida a este bien ya que no es de la categoría computador')
         hoja_vida_articulo=HojaDeVidaComputadores.objects.filter(id_articulo=id_articulo).first()
         if hoja_vida_articulo:
-            return Response({'success':False,'detail':'El bien ingresado ya tiene hoja de vida'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('El bien ingresado ya tiene hoja de vida')
         
         articulo_existentes.tiene_hoja_vida=True
         articulo_existentes.save()
@@ -75,7 +75,7 @@ class CreateHojaDeVidaComputadores(generics.CreateAPIView):
         Util.save_auditoria(auditoria_data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({'success':True,'detail':'Hoja de vida creada','data': serializer.data},status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Hoja de vida creada','data': serializer.data},status=status.HTTP_200_OK)
 
 class CreateHojaDeVidaVehiculos(generics.CreateAPIView):
     serializer_class=SerializersHojaDeVidaVehiculos
@@ -87,14 +87,14 @@ class CreateHojaDeVidaVehiculos(generics.CreateAPIView):
         id_articulo=data['id_articulo']
         articulo_existentes=CatalogoBienes.objects.filter(Q(id_bien=id_articulo) & ~Q(nro_elemento_bien=None)).first()
         if not articulo_existentes:
-            return Response({'success':False,'detail':'El bien ingresado no existe'},status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('El bien ingresado no existe')
         if articulo_existentes.cod_tipo_bien == 'C':
-            return Response({'success':False,'detail':'No se puede crear una hoja de vida a un bien tipo consumo'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No se puede crear una hoja de vida a un bien tipo consumo')
         if articulo_existentes.cod_tipo_activo != 'Veh':
-            return Response({'success':False,'detail':'No se puede crear una hoja de vida a este bien ya que no es de la categoría de vehículo'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No se puede crear una hoja de vida a este bien ya que no es de la categoría de vehículo')
         hoja_vida_articulo=HojaDeVidaVehiculos.objects.filter(id_articulo=id_articulo)
         if hoja_vida_articulo:
-            return Response({'success':False,'detail':'El bien ingresado ya tiene hoja de vida'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('El bien ingresado ya tiene hoja de vida')
         
         articulo_existentes.tiene_hoja_vida=True
         articulo_existentes.save()
@@ -116,7 +116,7 @@ class CreateHojaDeVidaVehiculos(generics.CreateAPIView):
         
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({'success':True,'detail':'Hoja de vida creada','data': serializer.data},status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Hoja de vida creada','data': serializer.data},status=status.HTTP_200_OK)
 
 class CreateHojaDeVidaOtros(generics.CreateAPIView):
     serializer_class=SerializersHojaDeVidaOtrosActivos
@@ -128,14 +128,14 @@ class CreateHojaDeVidaOtros(generics.CreateAPIView):
         id_articulo=data['id_articulo']
         articulo_existentes=CatalogoBienes.objects.filter(Q(id_bien=id_articulo) & ~Q(nro_elemento_bien=None)).first()
         if not articulo_existentes:
-            return Response({'success':False,'detail':'El bien ingresado no existe'},status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('El bien ingresado no existe')
         if articulo_existentes.cod_tipo_bien == 'C':
-            return Response({'success':False,'detail':'No se puede crear una hoja de vida a un bien tipo consumo'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No se puede crear una hoja de vida a un bien tipo consumo')
         if articulo_existentes.cod_tipo_activo != 'OAc':
-            return Response({'success':False,'detail':'No se puede crear una hoja de vida a este bien ya que no es de la categoría otro activo'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No se puede crear una hoja de vida a este bien ya que no es de la categoría otro activo')
         hoja_vida_articulo=HojaDeVidaOtrosActivos.objects.filter(id_articulo=id_articulo)
         if hoja_vida_articulo:
-            return Response({'success':False,'detail':'El bien ingresado ya tiene hoja de vida'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('El bien ingresado ya tiene hoja de vida')
         
         articulo_existentes.tiene_hoja_vida=True
         articulo_existentes.save()
@@ -157,7 +157,7 @@ class CreateHojaDeVidaOtros(generics.CreateAPIView):
         
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({'success':True,'detail':'Hoja de vida creada','data': serializer.data},status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Hoja de vida creada','data': serializer.data},status=status.HTTP_200_OK)
 
 class DeleteHojaDeVidaComputadores(generics.DestroyAPIView):
     serializer_class=SerializersHojaDeVidaComputadores
@@ -166,7 +166,7 @@ class DeleteHojaDeVidaComputadores(generics.DestroyAPIView):
     def delete(self, request, pk):
         hv_a_borrar = HojaDeVidaComputadores.objects.filter(id_hoja_de_vida=pk).first()
         if hv_a_borrar == None:
-            return Response({'success': False, 'detail': 'No se encuentra la hoja de vida'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No se encuentra la hoja de vida')
     
         mtto_registrado = RegistroMantenimientos.objects.filter(id_articulo=hv_a_borrar.id_articulo.id_bien).first()
         mtto_programado = ProgramacionMantenimientos.objects.filter(id_articulo=hv_a_borrar.id_articulo.id_bien).first()
@@ -174,7 +174,7 @@ class DeleteHojaDeVidaComputadores(generics.DestroyAPIView):
         print({'articulo_existenteeeeee':articulo_existentes.nombre,'articulo_doc':articulo_existentes.doc_identificador_nro})
         
         if mtto_programado != None or mtto_registrado != None:
-            return Response({'success': False, 'detail': 'No se puede eliminar una hoja de vida que ya tiene mantenimientos programados o ejecutados'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No se puede eliminar una hoja de vida que ya tiene mantenimientos programados o ejecutados')
         else:
             hv_a_borrar.delete()
             
@@ -192,7 +192,7 @@ class DeleteHojaDeVidaComputadores(generics.DestroyAPIView):
                 "descripcion": descripcion, 
             }
             Util.save_auditoria(auditoria_data)
-            return Response({'success': True, 'detail': 'Se eliminó la hoja de vida del computador seleccionado'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('Se eliminó la hoja de vida del computador seleccionado')
         
 class DeleteHojaDeVidaVehiculos(generics.DestroyAPIView):
     serializer_class=SerializersHojaDeVidaVehiculos
@@ -201,13 +201,13 @@ class DeleteHojaDeVidaVehiculos(generics.DestroyAPIView):
     def delete(self, request, pk):
         hv_a_borrar = HojaDeVidaVehiculos.objects.filter(id_hoja_de_vida=pk).first()
         if hv_a_borrar == None:
-            return Response({'success': False, 'detail': 'No se encuentra la hoja de vida'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No se encuentra la hoja de vida')
     
         mtto_registrado = RegistroMantenimientos.objects.filter(id_articulo=hv_a_borrar.id_articulo.id_bien).first()
         mtto_programado = ProgramacionMantenimientos.objects.filter(id_articulo=hv_a_borrar.id_articulo.id_bien).first()
         articulo_existentes=CatalogoBienes.objects.filter(Q(id_bien=hv_a_borrar.id_articulo.id_bien) & ~Q(nro_elemento_bien=None)).first()
         if mtto_programado != None or mtto_registrado != None:
-            return Response({'success': False, 'detail': 'No se puede eliminar una hoja de vida que ya tiene mantenimientos programados o ejecutados'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No se puede eliminar una hoja de vida que ya tiene mantenimientos programados o ejecutados')
         else:
             hv_a_borrar.delete()
             
@@ -225,7 +225,7 @@ class DeleteHojaDeVidaVehiculos(generics.DestroyAPIView):
                 "descripcion": descripcion, 
             }
             Util.save_auditoria(auditoria_data)
-            return Response({'success': True, 'detail': 'Se eliminó la hoja de vida del vehículo seleccionado'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('Se eliminó la hoja de vida del vehículo seleccionado')
         
 class DeleteHojaDeVidaOtrosActivos(generics.DestroyAPIView):
     serializer_class=SerializersHojaDeVidaOtrosActivos
@@ -234,14 +234,14 @@ class DeleteHojaDeVidaOtrosActivos(generics.DestroyAPIView):
     def delete(self, request, pk):
         hv_a_borrar = HojaDeVidaOtrosActivos.objects.filter(id_hoja_de_vida=pk).first()
         if hv_a_borrar == None:
-            return Response({'success': False, 'detail': 'No se encuentra la hoja de vida'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No se encuentra la hoja de vida')
     
         mtto_registrado = RegistroMantenimientos.objects.filter(id_articulo=hv_a_borrar.id_articulo.id_bien).first()
         mtto_programado = ProgramacionMantenimientos.objects.filter(id_articulo=hv_a_borrar.id_articulo.id_bien).first()
         articulo_existentes=CatalogoBienes.objects.filter(Q(id_bien=hv_a_borrar.id_articulo.id_bien) & ~Q(nro_elemento_bien=None)).first()
         
         if mtto_programado != None or mtto_registrado != None:
-            return Response({'success': False, 'detail': 'No se puede eliminar una hoja de vida que ya tiene mantenimientos programados o ejecutados'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No se puede eliminar una hoja de vida que ya tiene mantenimientos programados o ejecutados')
         else:
             hv_a_borrar.delete()
             
@@ -259,7 +259,7 @@ class DeleteHojaDeVidaOtrosActivos(generics.DestroyAPIView):
                 "descripcion": descripcion, 
             }
             Util.save_auditoria(auditoria_data)
-            return Response({'success': True, 'detail': 'Se eliminó la hoja de vida del activo seleccionado'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('Se eliminó la hoja de vida del activo seleccionado')
         
 class UpdateHojaDeVidaComputadores(generics.UpdateAPIView):
     serializer_class=SerializersPutHojaDeVidaComputadores
@@ -317,7 +317,7 @@ class UpdateHojaDeVidaComputadores(generics.UpdateAPIView):
             
             return Response({'success':True, 'detail':'Se ha actualizado la hoja de vida', 'data':data_serializada}, status=status.HTTP_201_CREATED)
         else:
-            return Response({'success':False, 'detail':'No existe la hoja de vida ingresada'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe la hoja de vida ingresada')
 
 class UpdateHojaDeVidaVehiculos(generics.UpdateAPIView):
     serializer_class=SerializersPutHojaDeVidaVehiculos
@@ -375,7 +375,7 @@ class UpdateHojaDeVidaVehiculos(generics.UpdateAPIView):
             
             return Response({'success':True, 'detail':'Se ha actualizado la hoja de vida', 'data':data_serializada}, status=status.HTTP_201_CREATED)
         else:
-            return Response({'success':False, 'detail':'No existe la hoja de vida ingresada'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe la hoja de vida ingresada')
 
 class UpdateHojaDeVidaOtrosActivos(generics.UpdateAPIView):
     serializer_class=SerializersPutHojaDeVidaOtrosActivos
@@ -433,7 +433,7 @@ class UpdateHojaDeVidaOtrosActivos(generics.UpdateAPIView):
             
             return Response({'success':True, 'detail':'Se ha actualizado la hoja de vida', 'data':data_serializada}, status=status.HTTP_201_CREATED)
         else:
-            return Response({'success':False, 'detail':'No existe la hoja de vida ingresada'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe la hoja de vida ingresada')
 
 class GetHojaDeVidaComputadoresById(generics.RetrieveAPIView):
     serializer_class=SerializersHojaDeVidaComputadores
@@ -445,7 +445,10 @@ class GetHojaDeVidaComputadoresById(generics.RetrieveAPIView):
             serializador = self.serializer_class(hoja_vida_computador)
             return Response({'success':True, 'detail':'Se encontró la hoja de vida', 'data':serializador.data}, status=status.HTTP_200_OK)
         else:
-            return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
+            try:
+                raise NotFound('No se encontró la hoja de vida')
+            except NotFound as e:
+                return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
 
 class GetHojaDeVidaVehiculosById(generics.RetrieveAPIView):
     serializer_class=SerializersHojaDeVidaVehiculos
@@ -457,7 +460,10 @@ class GetHojaDeVidaVehiculosById(generics.RetrieveAPIView):
             serializador = self.serializer_class(hoja_vida_vehiculo)
             return Response({'success':True, 'detail':'Se encontró la hoja de vida', 'data':serializador.data}, status=status.HTTP_200_OK)
         else:
-            return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
+            try:
+                raise NotFound('No se encontró la hoja de vida')
+            except NotFound as e:
+                return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
 
 class GetHojaDeVidaOtrosActivosById(generics.RetrieveAPIView):
     serializer_class=SerializersHojaDeVidaOtrosActivos
@@ -469,7 +475,10 @@ class GetHojaDeVidaOtrosActivosById(generics.RetrieveAPIView):
             serializador = self.serializer_class(hoja_vida_otros)
             return Response({'success':True, 'detail':'Se encontró la hoja de vida', 'data':serializador.data}, status=status.HTTP_200_OK)
         else:
-            return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
+            try:
+                raise NotFound('No se encontró la hoja de vida')
+            except NotFound as e:
+                return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
 
 class GetHojaDeVidaComputadoresByIdBien(generics.RetrieveAPIView):
     serializer_class=SerializersHojaDeVidaComputadores
@@ -488,7 +497,10 @@ class GetHojaDeVidaComputadoresByIdBien(generics.RetrieveAPIView):
             
             return Response({'success':True, 'detail':'Se encontró la hoja de vida', 'data':data_serializada}, status=status.HTTP_200_OK)
         else:
-            return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
+            try:
+                raise NotFound('No se encontró la hoja de vida')
+            except NotFound as e:
+                return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
 
 class GetHojaDeVidaVehiculosByIdBien(generics.RetrieveAPIView):
     serializer_class=SerializersHojaDeVidaVehiculos
@@ -507,7 +519,10 @@ class GetHojaDeVidaVehiculosByIdBien(generics.RetrieveAPIView):
             
             return Response({'success':True, 'detail':'Se encontró la hoja de vida', 'data':data_serializada}, status=status.HTTP_200_OK)
         else:
-            return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
+            try:
+                raise NotFound('No se encontró la hoja de vida')
+            except NotFound as e:
+                return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
 
 class GetHojaDeVidaOtrosActivosByIdBien(generics.RetrieveAPIView):
     serializer_class=SerializersHojaDeVidaOtrosActivos
@@ -526,4 +541,7 @@ class GetHojaDeVidaOtrosActivosByIdBien(generics.RetrieveAPIView):
             
             return Response({'success':True, 'detail':'Se encontró la hoja de vida', 'data':data_serializada}, status=status.HTTP_200_OK)
         else:
-            return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
+            try:
+                raise NotFound('No se encontró la hoja de vida')
+            except NotFound as e:
+                return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
