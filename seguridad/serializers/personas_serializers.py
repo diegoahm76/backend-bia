@@ -698,15 +698,12 @@ class SucursalesEmpresasPostSerializer(serializers.ModelSerializer):
         
 
 class HistoricoEmailsSerializer(serializers.ModelSerializer):
-    id_persona = PersonasSerializer(read_only=True)
     class Meta:
         model = HistoricoEmails
         fields = '__all__'
         
         
 class HistoricoDireccionSerializer(serializers.ModelSerializer):
-    id_persona = PersonasSerializer(read_only=True)
-    
     class Meta:
         model = HistoricoDireccion
         fields = '__all__'

@@ -1116,15 +1116,23 @@ class registerSucursalEmpresa(generics.CreateAPIView):
         # descripcion = "idUsuario:" + str(serializer_response.pk) + ";" + "fecha:" + formatDate + ";" + "observaciones:Registro de otro usuario" + ";" + "nombreUsuario:"+ serializer_response.nombre_de_usuario + "."
         
 # Views for Historico Emails
-class getHistoricoEmails(generics.ListAPIView):
+class HistoricoEmailsByIdPersona(generics.ListAPIView):
     serializer_class = HistoricoEmailsSerializer
-    queryset = HistoricoEmails.objects.all()
 
+    def get_queryset(self):
+        id_persona = self.kwargs['id_persona']
+        queryset = HistoricoEmails.objects.filter(id_persona=id_persona)
+        return queryset
 
 # Views for Historico Direcciones
-class GetHistoricoDirecciones(generics.ListAPIView):
-    queryset = HistoricoDireccion.objects.all()
+class HistoricoDireccionByIdPersona(generics.ListAPIView):
     serializer_class = HistoricoDireccionSerializer
+
+    def get_queryset(self):
+        id_persona = self.kwargs['id_persona']
+        queryset = HistoricoDireccion.objects.filter(id_persona=id_persona)
+        return queryset
+
 
 class GetCargosList(generics.ListAPIView):
     serializer_class = CargosSerializer
