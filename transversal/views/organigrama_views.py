@@ -3,14 +3,17 @@ from rest_framework import generics, views
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from itertools import groupby
+from gestion_documental.models.tca_models import TablasControlAcceso
+from gestion_documental.serializers.ccd_serializers import CCDSerializer
 from seguridad.utils import Util
 from django.db.models import Q, F
 from datetime import datetime
 import copy
 from operator import itemgetter
 from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
-from almacen.serializers.organigrama_serializers import ( 
+from transversal.serializers.organigrama_serializers import ( 
     NewUserOrganigramaSerializer,
+    OrganigramaCambioDeOrganigramaActualSerializer,
     OrganigramaSerializer,
     OrganigramaPutSerializer,
     PersonaOrgSerializer, 
@@ -21,7 +24,7 @@ from almacen.serializers.organigrama_serializers import (
     UnidadesGetSerializer,
     OrganigramaPostSerializer
     )
-from almacen.models.organigrama_models import (
+from transversal.models.organigrama_models import (
     Organigramas,
     UnidadesOrganizacionales,
     NivelesOrganigrama
@@ -656,6 +659,10 @@ class ReanudarOrganigrama(generics.RetrieveUpdateAPIView):
         if organigrama.fecha_terminado == None:
             raise PermissionDenied('El organigrama debe de estar finalizado para su Reanudación.')#PARA ERRORES 403_FORBIDDEN
 
+        # persona_logueado = request.user.persona.id_persona
+        
+        # if persona_logueado != None:
+        #     return Response({'succes':False, 'detail':'El Organigrama no debe de poseer un usuario asignado.'},status=status.HTTP_404_NOT_FOUND)             
 
         ccd_activo = CuadrosClasificacionDocumental.objects.filter(id_organigrama=id_organigrama).first()
         
@@ -667,7 +674,134 @@ class ReanudarOrganigrama(generics.RetrieveUpdateAPIView):
         organigrama.save()
         return Response({'succes': True, 'detail':'Se reanudo correctamente el organigrama.'}, status=status.HTTP_200_OK)
 
+class CambioDeOrganigramaActual(generics.UpdateAPIView):
+    serializer_class = OrganigramaCambioDeOrganigramaActualSerializer
+    queryset = Organigramas.objects.all()
+    queryset2 = CuadrosClasificacionDocumental.objects.all()
+    
+    def put(self,request):
         
+        data = request.data
+        organigrama_seleccionado = self.queryset.filter(id_organigrama = data['organigrama']).first()
+        organigrama_actual = self.queryset.filter(actual = True).first()
+        ccd_actual = self.queryset2.filter(actual=True).first()
+        
+        if not ccd_actual:
+            organigrama_seleccionado.justificacion_nueva_version = data['justificacion']
+            organigrama_seleccionado.actual = True
+            organigrama_seleccionado.fecha_puesta_produccion = datetime.now()
+            
+            if organigrama_actual:
+                organigrama_actual.fecha_retiro_produccion = datetime.now()
+                organigrama_actual.actual = False
+            
+        else:
+            if not data.get('id_ccd'):
+                raise ValidationError('Debe de seleccionar un CCD')
+            
+            #CCD SELECCIONADO
+            ccd_seleccionado =  self.queryset2.filter(id_ccd=data.get('id_ccd'))
+            tca = TablasControlAcceso.objects.filter(id_trd__id_ccd=ccd_seleccionado).first()
+            
+            #ACTIVACION TCA
+            
+            tca.actual = True
+            tca.fecha_puesta_produccion = datetime.now()
+            tca.justificacion_nueva_version = data['justificacion']
+            
+            #ACTIVACION TRD
+            
+            tca.id_trd.actual = True
+            tca.id_trd.fecha_puesta_produccion = datetime.now()
+            tca.id_trd.justificacion = data['justificacion']
+            
+            #ACTIVACION CCD
+            
+            tca.id_trd.id_ccd.actual = True
+            tca.id_trd.id_ccd.fecha_puesta_produccion = datetime.now()
+            tca.id_trd.id_ccd.justificacion = data['justificacion']
+            
+            #ACTIVACION ORG
+            
+            organigrama_seleccionado.justificacion_nueva_version = data['justificacion']
+            organigrama_seleccionado.actual = True
+            organigrama_seleccionado.fecha_puesta_produccion = datetime.now()
 
+            #CCD ACTUAL
             
+            tca_actual = TablasControlAcceso.objects.filter(id_trd__id_ccd=ccd_actual).first()
             
+            #DESACTIVACION TCA
+            
+            tca_actual.actual = False
+            tca_actual.fecha_puesta_produccion = datetime.now()
+    
+            #DESACTIVACION TRD
+            
+            tca_actual.id_trd.actual = False
+            tca_actual.id_trd.fecha_puesta_produccion = datetime.now()
+            
+            #DESACTIVACION CCD
+            
+            tca_actual.id_trd.id_ccd.actual = False
+            tca_actual.id_trd.id_ccd.fecha_puesta_produccion = datetime.now()
+            
+            #DESACTIVACION ORG
+            
+            tca_actual.id_trd.id_ccd.id_organigrama.actual = False
+            tca_actual.id_trd.id_ccd.id_organigrama.fecha_puesta_produccion = datetime.now()
+            
+            #GUARDADO
+            tca.save()
+            tca.id_trd.id_ccd.id_organigrama.save()
+            tca.id_trd.id_ccd.save()
+            tca.id_trd.save()
+            
+            #GUARDADO
+            tca_actual.save()
+            tca_actual.id_trd.id_ccd.id_organigrama.save()
+            tca_actual.id_trd.id_ccd.save()
+            tca_actual.id_trd.save()
+            
+            return Response ({'success':True,'detail':'Se activó el instrumento archivistico correctamente '},status=status.HTTP_200_OK)
+        
+class GetCCDTerminadoByORG(generics.ListAPIView):
+    serializer_class = CCDSerializer
+    queryset = CuadrosClasificacionDocumental.objects.filter(~Q(fecha_terminado = None) & Q(fecha_puesta_produccion=None))
+
+    def get(self, request, id_organigrama):
+        organigrama = Organigramas.objects.filter(id_organigrama = id_organigrama).first()
+        if not organigrama:
+            return Response({'success': False, 'detail': 'El organigrama ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+
+        if organigrama.fecha_terminado == None or organigrama.fecha_retiro_produccion != None or organigrama.fecha_puesta_produccion!=None:
+            return Response({'success': False, 'detail': 'El organigrama ingresado ya está retirado, no está terminado o ya está en producción'}, status=status.HTTP_403_FORBIDDEN)
+        ccds = self.queryset.all().filter(id_organigrama = organigrama.id_organigrama)
+        
+        lista=[]
+        if ccds:
+            for t in ccds:
+                tca = TablasControlAcceso.objects.filter(id_trd__id_ccd=t).first()
+                if tca:
+                    list.append(t)
+                    
+        if not ccds:
+            return Response({'success': False, 'detail': 'No existe CCD terminado basado en el organigrama seleccionado'}, status=status.HTTP_403_FORBIDDEN)
+        serializador = self.serializer_class(lista,many=True)
+        serializer_data = serializador.data
+    
+        return Response({'success': True, 'detail': 'CCD', 'data': serializador.data},status=status.HTTP_200_OK)
+    
+class ObtenerOrganigramaActual(generics.ListAPIView):
+    serializer_class = NewUserOrganigramaSerializer
+    queryset = Organigramas.objects.all()
+    
+    def get (self,request):
+        
+        organigrama_actual = self.queryset.all().filter(actual = True).first()
+        
+        if organigrama_actual:
+            serializador = self.serializer_class(organigrama_actual)
+            
+            return Response({'success':True,'detail':'Busqueda exitosa','data':serializador.data},status=status.HTTP_200_OK)
+        return Response({'success':True,'detail':'Busqueda exitosa, no existe organigrama actual'},status=status.HTTP_200_OK)

@@ -1,7 +1,7 @@
 from django.core.mail import EmailMultiAlternatives
 from django.db.models import Sum
 from email_validator import validate_email, EmailNotValidError, EmailUndeliverableError, EmailSyntaxError
-from almacen.models.organigrama_models import NivelesOrganigrama, UnidadesOrganizacionales
+from transversal.models.organigrama_models import NivelesOrganigrama, UnidadesOrganizacionales
 from backend.settings.base import EMAIL_HOST_USER, AUTHENTICATION_360_NRS
 from seguridad.models import Shortener, User, Modulos, Permisos, Auditorias
 from almacen.models.inventario_models import (

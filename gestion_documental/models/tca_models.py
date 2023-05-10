@@ -3,7 +3,7 @@ from gestion_documental.models.ccd_models import CatalogosSeriesUnidad, CuadrosC
 from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, TablaRetencionDocumental
 from gestion_documental.choices.tipo_clasificacion_choices import tipo_clasificacion_CHOICES
 from seguridad.models import Personas, Cargos
-from almacen.models.organigrama_models import (
+from transversal.models.organigrama_models import (
     UnidadesOrganizacionales
 )
 from rest_framework.exceptions import ValidationError

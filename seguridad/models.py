@@ -13,7 +13,7 @@ from seguridad.choices.subsistemas_choices import subsistemas_CHOICES
 from seguridad.choices.tipo_usuario_choices import tipo_usuario_CHOICES
 from seguridad.choices.opciones_usuario_choices import opciones_usuario_CHOICES
 from seguridad.choices.cod_naturaleza_empresa_choices import cod_naturaleza_empresa_CHOICES
-from almacen.models.organigrama_models import (
+from transversal.models.organigrama_models import (
     UnidadesOrganizacionales
 )
 

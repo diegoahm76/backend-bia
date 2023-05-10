@@ -10,7 +10,7 @@ from gestion_documental.models.tca_models import (
 from gestion_documental.models.ccd_models import (
     CatalogosSeriesUnidad
 )
-from almacen.models.organigrama_models import (
+from transversal.models.organigrama_models import (
     UnidadesOrganizacionales
 )
 from gestion_documental.serializers.ccd_serializers import SubseriesAsignacionesSerializer

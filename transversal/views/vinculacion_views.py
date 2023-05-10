@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from datetime import datetime, date, timedelta
 import copy
 from seguridad.models import Cargos, HistoricoCargosUndOrgPersona
-from almacen.models import UnidadesOrganizacionales
+from transversal.models import UnidadesOrganizacionales
 from seguridad.utils import Util
 
 class VinculacionColaboradorView(generics.UpdateAPIView):

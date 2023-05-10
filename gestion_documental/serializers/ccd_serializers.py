@@ -14,7 +14,7 @@ from gestion_documental.models.trd_models import (
 from gestion_documental.models.tca_models import (
     TablasControlAcceso
 )
-from almacen.models.organigrama_models import (
+from transversal.models.organigrama_models import (
     UnidadesOrganizacionales
 )
 

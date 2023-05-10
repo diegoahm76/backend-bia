@@ -32,7 +32,7 @@ from seguridad.models import (
     User,
     ClasesTerceroPersona
 )
-from almacen.models.organigrama_models import (
+from transversal.models.organigrama_models import (
     UnidadesOrganizacionales,
     NivelesOrganigrama
 )
