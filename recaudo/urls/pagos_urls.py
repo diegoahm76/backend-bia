@@ -14,5 +14,6 @@ urlpatterns = [
     path('listado-facilidades-pagos/', views.ListadoFacilidadesPagoViews.as_view(),name='listado-facilidades-pagos'),
     path('consulta-facilidades-pagos/<int:id>/', views.ConsultaFacilidadesPagosViews.as_view(), name='consulta-facilidades'),
     path('listado-facilidades-funcionarios/', views.ListadoFacilidadesPagoFuncionariosViews.as_view(), name='listado-facilidades-funcionario'),
+    path('datos-contacto-deudor/<int:id>/', views.DatosContactoDeudorView.as_view(), name='datos-contacto-deudor'),
     ]
     

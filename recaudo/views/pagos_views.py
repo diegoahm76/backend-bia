@@ -16,6 +16,7 @@ from recaudo.serializers.pagos_serializers import (
     FuncionariosSerializer,    
     RequisitosActuacionSerializer,
     CumplimientoRequisitosSerializer,
+    DatosContactoDeudorSerializer,
     DetallesFacilidadPagoSerializer,
     GarantiasFacilidadSerializer,
     PlanPagosSerializer,
@@ -49,6 +50,18 @@ class DatosDeudorView(generics.ListAPIView):
             return Response({'success': False, 'detail': 'No se encontró ningun registro con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.serializer_class(queryset)
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)   
+
+        
+class DatosContactoDeudorView(generics.ListAPIView):
+    serializer_class = DatosContactoDeudorSerializer
+
+    def get(self, request, id):
+        queryset = Deudores.objects.filter(codigo=id).first()
+        if not queryset:
+            return Response({'success': False, 'detail': 'No se encontró ningun registro con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+        queryset = Personas.objects.filter(numero_documento = queryset.identificacion).first()
+        serializer = self.serializer_class(queryset)
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK) 
 
 
 class TipoActuacionView(generics.ListAPIView):

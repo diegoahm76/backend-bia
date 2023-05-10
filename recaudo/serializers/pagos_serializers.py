@@ -11,7 +11,7 @@ from recaudo.models.pagos_models import (
     TasasInteres
 )
 from recaudo.models.cobros_models import Obligaciones, Cartera, Deudores
-from seguridad.models import Personas
+from seguridad.models import Personas, Municipio
 
 
 class TipoPagoSerializer(serializers.ModelSerializer):
@@ -72,6 +72,19 @@ class DeudorFacilidadPagoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Deudores
         fields = ('codigo', 'identificacion', 'nombres', 'apellidos', 'email', 'ubicacion')
+
+
+class DatosContactoDeudorSerializer(serializers.ModelSerializer):
+    ciudad = serializers.SerializerMethodField()
+
+    def get_ciudad(self, obj):
+        ubicacion = Municipio.objects.filter(cod_municipio=obj.municipio_residencia).first()
+        ubicacion = ubicacion.nombre
+        return ubicacion
+        
+    class Meta:
+        model = Personas
+        fields = ('direccion_notificaciones', 'ciudad', 'telefono_celular')
         
 
 class FacilidadesPagoSerializer(serializers.ModelSerializer):
