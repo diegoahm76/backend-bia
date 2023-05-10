@@ -521,15 +521,9 @@ class CreateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
             if int(id_trd) != id_trd_validated.id_trd:
                 raise ValidationError('El id de la TRD enviado debe ser el mismo id que se ingreso en la URL.')    
 
-            #VALIDACION ENVIO VACIO DE LA INFORMACION
-
-            if not cod_disposicion_final and not digitalizacion_dis_final and not tiempo_retencion_ag and not tiempo_retencion_ac and not descripcion_procedimiento:
-                serializador.save()
-                return Response({'succes':True,'detail':'Se realizo la creación solicitada.', 'data':serializador.data}, status=status.HTTP_201_CREATED)
-            
             #VALIDACION ENVIO COMPLETO DE LA INFORMACION
 
-            elif cod_disposicion_final and digitalizacion_dis_final and tiempo_retencion_ag and tiempo_retencion_ac and descripcion_procedimiento != None:
+            if cod_disposicion_final and digitalizacion_dis_final and tiempo_retencion_ag and tiempo_retencion_ac and descripcion_procedimiento != None:
                 tipologias_instance = TipologiasDoc.objects.filter(id_tipologia_documental__in = tipologias)
                 if len(tipologias) != tipologias_instance.count():
                     raise ValidationError('Todas las tipologias selecionadas deben existir')
@@ -558,7 +552,29 @@ class CreateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
                     if not tipologia.item_ya_usado:
                         tipologia.item_ya_usado = True
                         tipologia.save()
-                
+                        
+                        
+                descripcion = {'Nombre':str(trd.nombre), 'Versión':str(trd.version)}    
+                valores_creados_detalles = [
+                    {
+                        'NombreUnidad':serializado.id_cat_serie_und.id_unidad_organizacional.nombre, 
+                        'NombreSerie':serializado.id_cat_serie_und.id_catalogo_serie.id_serie_doc.nombre,
+                        'NombreSubserie':serializado.id_cat_serie_und.id_catalogo_serie.id_subserie_doc.nombre
+                    }
+                ]
+                direccion=Util.get_client_ip(request)
+                auditoria_data = {
+                    "id_usuario" : request.user.id_usuario,
+                    "id_modulo" : 29,
+                    "cod_permiso": "AC",
+                    "subsistema": 'GEST',
+                    "dirip": direccion,
+                    "descripcion": descripcion,
+                    "valores_creados_detalles": valores_creados_detalles,
+                }
+                Util.save_auditoria_maestro_detalle(auditoria_data)            
+                    
+
                 return Response({'succes':True, 'detail':'Creación exitosa','data': serializador.data}, status=status.HTTP_201_CREATED)
             else:
                 raise ValidationError('Debe enviar todas las especificaciones diligenciadas o todas las especificaciones vacias.')
@@ -581,7 +597,7 @@ def uploadDocument(request, id_serie_subserie_uniorg_trd):
         return Response({'success': False, 'detail': 'No se encontró ninguna ssuorg-trd con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
 
 
-class UpdateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
+class UpdateSerieSubSeriesUnidadesOrgTRD(generics.UpdateAPIView):
     serializer_class = SeriesSubSeriesUnidadesOrgTRDPutSerializer
     queryset = CatSeriesUnidadOrgCCDTRD.objects.all()
     permission_classes = [IsAuthenticated]
@@ -590,6 +606,8 @@ class UpdateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
         data_entrante = request.data
         persona_usuario_logeado = request.user.persona
         serie_subs_unidadorg_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_catserie_unidadorg=id_serie_subs_unidadorg_trd).first()
+        previous = copy.copy(serie_subs_unidadorg_trd)
+        
         
         tipologias = request.data.get('tipologias')
         tipologias = json.loads(tipologias)
@@ -652,6 +670,32 @@ class UpdateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
                         if not tipologia_instance_create.item_ya_usado:
                             tipologia_instance_create.item_ya_usado = True
                             tipologia_instance_create.save()
+                    
+                    
+                    descripcion = {'Nombre':str(serie_subs_unidadorg_trd.id_trd.nombre), 'Versión':str(serie_subs_unidadorg_trd.id_trd.version)}    
+                    valores_actualizados_detalles = [
+                        {
+                            'previous':previous,'current':serie_subs_unidadorg_trd,
+                            'descripcion': {
+                                'NombreUnidad':serie_subs_unidadorg_trd.id_cat_serie_und.id_unidad_organizacional.nombre, 
+                                'NombreSerie':serie_subs_unidadorg_trd.id_cat_serie_und.id_catalogo_serie.id_serie_doc.nombre,
+                                'NombreSubserie':serie_subs_unidadorg_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc.nombre
+                            }
+                        }
+                    ]
+                    direccion=Util.get_client_ip(request)
+                    auditoria_data = {
+                        "id_usuario" : request.user.id_usuario,
+                        "id_modulo" : 29,
+                        "cod_permiso": "AC",
+                        "subsistema": 'GEST',
+                        "dirip": direccion,
+                        "descripcion": descripcion,
+                        "valores_actualizados_detalles": valores_actualizados_detalles,
+                    }
+                    Util.save_auditoria_maestro_detalle(auditoria_data)  
+                    
+                    
                                 
                     return Response({'success': True, 'detail': 'Actualización realizada correctamente', 'data': serializador.data}, status=status.HTTP_201_CREATED)
 
@@ -738,7 +782,25 @@ class UpdateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
                         if not tipologia_instance_create.item_ya_usado:
                             tipologia_instance_create.item_ya_usado = True
                             tipologia_instance_create.save()
-                    
+                        
+                    descripcion = {'Nombre':str(serie_subs_unidadorg_trd.id_trd.nombre), 'Versión':str(serie_subs_unidadorg_trd.id_trd.version)}    
+                    valores_actualizados_detalles = [
+                        {
+                            'previous':previous,'current':serie_subs_unidadorg_trd
+                        }
+                    ]
+                    direccion=Util.get_client_ip(request)
+                    auditoria_data = {
+                        "id_usuario" : request.user.id_usuario,
+                        "id_modulo" : 29,
+                        "cod_permiso": "AC",
+                        "subsistema": 'GEST',
+                        "dirip": direccion,
+                        "descripcion": descripcion,
+                        "valores_actualizados_detalles": valores_actualizados_detalles,
+                    }
+                    Util.save_auditoria_maestro_detalle(auditoria_data)  
+                            
                     
                     
                     # for tipologia in tipologias_instance:                          
@@ -815,23 +877,39 @@ class EliminarSerieUnidadTRD(generics.RetrieveDestroyAPIView):
     permission_classes = [IsAuthenticated]
     
     def delete(self,request,id_serie):
-        eliminar_serie = CatSeriesUnidadOrgCCDTRD.objects.filter(id_catserie_unidadorg=id_serie).first()
+        eliminar_catalogo_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_catserie_unidadorg=id_serie).first()
         
-        if eliminar_serie:
-            if eliminar_serie.id_trd.actual == True:
+        if eliminar_catalogo_trd:
+            if eliminar_catalogo_trd.id_trd.actual == True:
                 raise PermissionDenied('No se puede realizar la acción solicitada si la TRD se encuentra siendo la actual.')
-            if eliminar_serie.id_trd.fecha_terminado != None:
+            if eliminar_catalogo_trd.id_trd.fecha_terminado != None:
                 raise ValidationError('No se puede realizar la acción solicitada si la TRD se encuentra Finalizada.')
-            eliminar_serie.delete()
+            eliminar_catalogo_trd.delete()
             
+            descripcion = {'Nombre':str(eliminar_catalogo_trd.id_trd.nombre), 'Versión':str(eliminar_catalogo_trd.id_trd.version)}    
+            valores_eliminados_detalles = [
+                {
+                    'NombreUnidad':eliminar_catalogo_trd.id_cat_serie_und.id_unidad_organizacional.nombre, 
+                    'NombreSerie':eliminar_catalogo_trd.id_cat_serie_und.id_catalogo_serie.id_serie_doc.nombre,
+                    'NombreSubserie':eliminar_catalogo_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc.nombre
+                }
+            ]
+            direccion=Util.get_client_ip(request)
+            auditoria_data = {
+                "id_usuario" : request.user.id_usuario,
+                "id_modulo" : 29,
+                "cod_permiso": "AC",
+                "subsistema": 'GEST',
+                "dirip": direccion,
+                "descripcion": descripcion,
+                "valores_eliminados_detalles": valores_eliminados_detalles,
+            }
+            Util.save_auditoria_maestro_detalle(auditoria_data)  
+    
+ 
             return Response({'succes':True,'detail':'Se ha Eliminado Exitosamente el registro del catalogo de TRD.'},status=status.HTTP_200_OK)
         else:
             raise ValidationError('No se encontró ninguna serie con el parametro Ingresado.')
-
-
-
-
-
 
 # class DeleteSerieSubserieUnidadTRD(generics.RetrieveDestroyAPIView):
 #     serializer_class = GetSeriesSubSUnidadOrgTRDSerializer
@@ -935,10 +1013,10 @@ class UpdateTablaRetencionDocumental(generics.RetrieveUpdateAPIView):
             return Response({'success': False, 'detail': 'Validar data enviada, el nombre y la versión son requeridos y deben ser únicos'}, status=status.HTTP_400_BAD_REQUEST)
         serializer.save()
 
-        # AUDITORIA DE UPDATE DE CCD
+        # AUDITORIA DE UPDATE DE TRD
         user_logeado = request.user.id_usuario
         dirip = Util.get_client_ip(request)
-        descripcion = {'nombre':str(previoud_trd.nombre), 'version':str(previoud_trd.version)}
+        descripcion = {'Nombre':str(previoud_trd.nombre), 'Versión':str(previoud_trd.version)}
         valores_actualizados={'previous':previoud_trd, 'current':trd}
         auditoria_data = {
             'id_usuario': user_logeado,
