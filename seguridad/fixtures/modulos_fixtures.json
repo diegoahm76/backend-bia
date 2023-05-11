@@ -76,7 +76,7 @@
         "pk": 7,
         "fields": {
           "id_modulo": 7,
-          "nombre_modulo": "Tipo de Documento de ID",
+          "nombre_modulo": "Tipos de Documentos de ID",
           "subsistema":"TRSV",
           "descripcion":"Permite administrar los tipos de documentos de identificación",
           "ruta_formulario":"/#/app/transversal/configuracion/datos_basicos/tipos_documento",
@@ -349,18 +349,6 @@
       },
       {
         "model": "seguridad.Modulos",
-        "pk": 30,
-        "fields": {
-          "id_modulo": 30,
-          "nombre_modulo": "Cambio de Tabla de Retención Documental Actual",
-          "subsistema":"GEST",
-          "descripcion":"Permite adoptar una nueva Tabla de Retención Documental de la entidad en el sistema",
-          "ruta_formulario":"/#/app/gestor_documental/gestion/instrumentos_archivisticos/cambio_trd",
-          "nombre_icono":"test"
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
         "pk": 31,
         "fields": {
           "id_modulo": 31,
@@ -368,18 +356,6 @@
           "subsistema":"GEST",
           "descripcion":"Permite administrar las Tablas de Control de Acceso de la entidad en el sistema",
           "ruta_formulario":"/#/app/gestor_documental/gestion/instrumentos_archivisticos/tca",
-          "nombre_icono":"test"
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 32,
-        "fields": {
-          "id_modulo": 32,
-          "nombre_modulo": "Cambio de Tabla de Control de Acceso Actual",
-          "subsistema":"GEST",
-          "descripcion":"Permite adoptar una nueva Tabla de Control de Acceso de la entidad en el sistema",
-          "ruta_formulario":"/#/app/gestor_documental/gestion/instrumentos_archivisticos/cambio_tca",
           "nombre_icono":"test"
         }
       },

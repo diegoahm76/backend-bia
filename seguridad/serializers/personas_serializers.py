@@ -698,19 +698,25 @@ class SucursalesEmpresasPostSerializer(serializers.ModelSerializer):
         
 
 class HistoricoEmailsSerializer(serializers.ModelSerializer):
-    id_persona = PersonasSerializer(read_only=True)
+    nombre_completo = serializers.SerializerMethodField()
+
+    def get_nombre_completo(self, obj):
+        return f"{obj.id_persona.primer_nombre} {obj.id_persona.segundo_nombre}{obj.id_persona.primer_apellido}{obj.id_persona.segundo_apellido}"
+        
     class Meta:
         model = HistoricoEmails
         fields = '__all__'
-        
-        
+
 class HistoricoDireccionSerializer(serializers.ModelSerializer):
-    id_persona = PersonasSerializer(read_only=True)
+    nombre_completo = serializers.SerializerMethodField()
     
+    def get_nombre_completo(self, obj):
+        return f"{obj.id_persona.primer_nombre} {obj.id_persona.segundo_nombre}{obj.id_persona.primer_apellido}{obj.id_persona.segundo_apellido}"
+        
     class Meta:
         model = HistoricoDireccion
         fields = '__all__'
-
+    
 class ClasesTerceroSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClasesTercero

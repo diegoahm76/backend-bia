@@ -82,9 +82,10 @@ class GraficaView(generics.ListAPIView):
         nuevasEtapas = []
         nuevoFlujo = []
         for item in querysetEtapas:
-            nuevasEtapas.append({'id': item.pk, 'data': {'nombre': item.etapa, 'descripcion': item.descripcion, 'fecha': ''}})
+            nuevasEtapas.append({'id': item.pk, 'data': {'etapa': item.etapa, 'descripcion': item.descripcion}})
         for item in querysetFlujos:
-            nuevoFlujo.append({'id': item.pk, 'source': item.id_etapa_origen.pk, 'target': item.id_etapa_destino.pk})
+            data = {'fecha_flujo': item.fecha_flujo, 'descripcion': item.descripcion, 'requisitos': item.requisitos}
+            nuevoFlujo.append({'id': item.pk, 'source': item.id_etapa_origen.pk, 'target': item.id_etapa_destino.pk, 'data': data})
         response = {
             'nodes': nuevasEtapas,
             'edges': nuevoFlujo

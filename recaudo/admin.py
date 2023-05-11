@@ -41,7 +41,8 @@ from recaudo.models.pagos_models import (
     DetallesFacilidadPago,
     GarantiasFacilidad,
     PlanPagos,
-    TasasInteres
+    TasasInteres,
+    RespuestaSolicitud
 )
 
 from recaudo.models.liquidaciones_models import (
@@ -85,6 +86,7 @@ admin.site.register(DetallesFacilidadPago),
 admin.site.register(GarantiasFacilidad),
 admin.site.register(PlanPagos),
 admin.site.register(TasasInteres),
+admin.site.register(RespuestaSolicitud),
 
 #Procesos
 admin.site.register(Bienes),

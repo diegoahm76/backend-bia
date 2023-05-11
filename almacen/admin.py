@@ -1,5 +1,5 @@
 from django.contrib import admin
-from almacen.models.organigrama_models import (
+from transversal.models.organigrama_models import (
     Organigramas,
     NivelesOrganigrama,
     UnidadesOrganizacionales

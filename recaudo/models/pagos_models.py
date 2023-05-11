@@ -26,9 +26,9 @@ class FacilidadesPago(models.Model):
     periodicidad = models.IntegerField(db_column='T426periodicidad')
     cuotas = models.IntegerField(db_column='T426cuotas')
     id_tasas_interes = models.ForeignKey(TasasInteres, on_delete=models.CASCADE, db_column='T426id_tasa_interes')
-    #documento_soporte = models.TextField(db_column='_T426documento_soporte')
     documento_soporte = models.FileField(db_column='_T426documento_soporte')
     id_funcionario = models.IntegerField(db_column='T426id_funcionario')
+    notificaciones = models.BooleanField(db_column='T426id_notificaciones')
 
     class Meta:
         db_table = 'T426facilidades_pago'
@@ -92,10 +92,24 @@ class PlanPagos(models.Model):
     verificado = models.IntegerField(db_column='T432verificado')
     soporte = models.TextField(db_column='_T432soporte')
     id_funcionario = models.IntegerField(db_column='_T432id_funcionario')
-    id_tasa_interes =models.ForeignKey(TasasInteres, on_delete=models.CASCADE, db_column='T432id_tasa_interes')
+    id_tasa_interes = models.ForeignKey(TasasInteres, on_delete=models.CASCADE, db_column='T432id_tasa_interes')
 
     class Meta:
         db_table = 'T432plan_pagos'
         verbose_name = 'Plan pago'
         verbose_name_plural = 'Plan pagos'
 
+
+class RespuestaSolicitud(models.Model):
+    id = models.BigAutoField(primary_key=True, db_column='T434id')
+    id_funcionario = models.IntegerField(db_column='_T434id_funcionario')
+    id_facilidades_pago = models.ForeignKey(FacilidadesPago, on_delete=models.CASCADE, db_column='T434id_facilidades_pago')
+    estado = models.BooleanField(db_column='T434estado')
+    aprobacion = models.CharField(max_length=255, db_column='T434aprobacion')
+    observacion = models.CharField(max_length=255, db_column='T434observacion')
+    consulta_dbme = models.CharField(max_length=255, db_column='T434consulta_dbme')
+
+    class Meta:
+        db_table = 'T434respuesta_solicitud'
+        verbose_name = 'Respuesta Solicitud'
+        verbose_name_plural = 'Respuestas Solicitud'

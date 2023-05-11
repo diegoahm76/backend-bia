@@ -1,26 +1,15 @@
 from almacen.models.bienes_models import CatalogoBienes
-from almacen.serializers.bienes_serializers import CatalogoBienesSerializer
-from almacen.serializers.organigrama_serializers import UnidadesOrganizacionales, UnidadesGetSerializer
 from rest_framework import generics,status
 from rest_framework.response import Response
-from almacen.models import UnidadesOrganizacionales, NivelesOrganigrama
-from seguridad.models import Personas, User
-from rest_framework.decorators import api_view
+from transversal.models import UnidadesOrganizacionales, NivelesOrganigrama
+from seguridad.models import Personas
 from seguridad.utils import Util
 from rest_framework.permissions import IsAuthenticated
-from seguridad.models import (
-    Personas,
-    User,
-    ClasesTerceroPersona
-)
-from almacen.models.organigrama_models import (
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
+from transversal.models.organigrama_models import (
     UnidadesOrganizacionales,
     NivelesOrganigrama
 )
-from almacen.models.generics_models import (
-    UnidadesMedida
-)
-
 from almacen.models.solicitudes_models import (
     SolicitudesConsumibles,
     ItemsSolicitudConsumible
@@ -49,15 +38,15 @@ class CreateSolicitudViveros(generics.UpdateAPIView):
         valores_creados_detalles = []
         user_logeado = request.user
         if str(user_logeado) == 'AnonymousUser':
-            return Response({'success':False,'detail':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('Esta solicitud solo la puede ejecutar un usuario logueado')
         if len(items_solicitud) <= 0:
-            return Response({'success':False,'detail':'La solicitud debe tener items'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('La solicitud debe tener items')
         if info_solicitud['id_solicitud_consumibles'] == None:
             bandera_actualizar = False
         else:
             instancia_solicitud = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles=info_solicitud['id_solicitud_consumibles']).first()
             if not instancia_solicitud:
-                return Response({'success':False,'detail':'Si desea actualizar una solicitud, ingrese un id de solicitud de consumibles válido'},status=status.HTTP_404_NOT_FOUND)
+                raise NotFound('Si desea actualizar una solicitud, ingrese un id de solicitud de consumibles válido')
             else:
                 instancia_solicitud_previous = copy.copy(instancia_solicitud)
                 bandera_actualizar = True
@@ -66,7 +55,7 @@ class CreateSolicitudViveros(generics.UpdateAPIView):
         info_solicitud['fecha_solicitud'] = str(date.today())
         info_solicitud['id_persona_solicita'] = user_logeado.persona.id_persona
         if user_logeado.persona.id_unidad_organizacional_actual == None:
-            return Response({'success':False,'detail':'El usuario solicitante debe tener asignada una unidad organizacional' },status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('El usuario solicitante debe tener asignada una unidad organizacional')
         info_solicitud['id_unidad_org_del_solicitante'] = user_logeado.persona.id_unidad_organizacional_actual.id_unidad_organizacional
         info_solicitud['solicitud_abierta'] = True
         solicitudes_existentes = SolicitudesConsumibles.objects.all()
@@ -75,19 +64,19 @@ class CreateSolicitudViveros(generics.UpdateAPIView):
         if info_solicitud['id_funcionario_responsable_unidad'] != None and info_solicitud['id_funcionario_responsable_unidad'] != '':
             funcionario_responsable = Personas.objects.filter(id_persona = info_solicitud['id_funcionario_responsable_unidad']).first()
             if not funcionario_responsable:
-                return Response({'success':False,'detail':'El funcionario responsable no existe' },status=status.HTTP_404_NOT_FOUND)
+                raise NotFound('El funcionario responsable no existe')
             if funcionario_responsable.id_unidad_organizacional_actual == None:
-                return Response({'success':False,'detail':'El funcionario responsable debe tener asignada una unidad organizacional' },status=status.HTTP_404_NOT_FOUND)
+                raise NotFound('El funcionario responsable debe tener asignada una unidad organizacional')
             if user_logeado.persona.id_unidad_organizacional_actual.id_unidad_organizacional == funcionario_responsable.id_unidad_organizacional_actual.id_unidad_organizacional:
-                return Response({'success':False,'detail':'El funcionario responsable no puede ser de la misma unidad organizacional del que solicita' },status=status.HTTP_404_NOT_FOUND)
+                raise NotFound('El funcionario responsable no puede ser de la misma unidad organizacional del que solicita')
             info_solicitud['id_unidad_org_del_responsable'] = funcionario_responsable.id_unidad_organizacional_actual.id_unidad_organizacional
         else:
             info_solicitud['id_unidad_org_del_responsable'] = None
         # VALIDACIONES PRIMARIAS        
         if not unidad_para_la_que_solicita:
-            return Response({'success':False,'detail':'La unidad organizacional ingresada no existe'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('La unidad organizacional ingresada no existe')
         if len(bienes_repetidos) != len(set(bienes_repetidos)):
-            return Response({'success':False,'detail':'Solo puede ingresar una vez un bien en una solicitud' },status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('Solo puede ingresar una vez un bien en una solicitud')
         # ASIGNACIÓN DEL NÚMERO DE SOLICITUD
         info_solicitud['es_solicitud_de_conservacion'] = True
 
@@ -103,42 +92,40 @@ class CreateSolicitudViveros(generics.UpdateAPIView):
                     instancia_item = None
                 if instancia_item:
                     if str(instancia_item.id_solicitud_consumibles) != str(info_solicitud['id_solicitud_consumibles']):
-                        return Response({'success':False,'detail':'El item (' + str(instancia_item.id_item_solicitud_consumible) + ') no tiene relación con la solicitud' },status=status.HTTP_404_NOT_FOUND)
+                        raise NotFound('El item (' + str(instancia_item.id_item_solicitud_consumible) + ') no tiene relación con la solicitud')
             bien = CatalogoBienes.objects.filter(id_bien = i['id_bien']).first()
             if not bien:
-                return Response({'success':False,'detail':'El bien (' + str(i['id_bien']) + ') no existe' },status=status.HTTP_404_NOT_FOUND)
+                raise NotFound('El bien (' + str(i['id_bien']) + ') no existe')
             if bien.nivel_jerarquico > 5 or bien.nivel_jerarquico < 2:
-                return Response({'success':False,'detail':'El bien (' + bien.nombre + ') no es de nivel 5' },status=status.HTTP_404_NOT_FOUND)
+                raise NotFound('El bien (' + bien.nombre + ') no es de nivel 5')
             if bien.cod_tipo_bien != 'C':
-                return Response({'success':False,'detail':'El bien (' + bien.nombre + ') no es de consumo' },status=status.HTTP_404_NOT_FOUND)
+                raise NotFound('El bien (' + bien.nombre + ') no es de consumo')
             if not str(i['cantidad']).isdigit():
-                return Response({'success':False,'detail':'La cantidad debe ser un número entero' },status=status.HTTP_404_NOT_FOUND)
+                raise NotFound('La cantidad debe ser un número entero')
             if not str(i['nro_posicion']).isdigit():
-                return Response({'success':False,'detail':'El número de posición debe ser un número entero' },status=status.HTTP_404_NOT_FOUND)
+                raise NotFound('El número de posición debe ser un número entero')
             if bien.solicitable_vivero != True:
-                return Response({'success':False,'detail':'En este módulo solo se pueden despachar bienes solicitables por vivero' },status=status.HTTP_404_NOT_FOUND)
-            # unidad_de_medida = UnidadesMedida.objects.filter(id_unidad_medida = i['id_unidad_medida']).first()
-            # if not unidad_de_medida:
-            #     return Response({'success':False,'detail':'La unidad de medida (' + unidad_de_medida.nombre + ') no existe' },status=status.HTTP_404_NOT_FOUND)
+                raise NotFound('En este módulo solo se pueden despachar bienes solicitables por vivero')
+            
             i['id_unidad_medida'] = bien.id_unidad_medida.id_unidad_medida
         aux_nro_posicion = [i['nro_posicion'] for i in items_solicitud]
 
         if len(aux_nro_posicion) != len(set(aux_nro_posicion)):
-            return Response({'success':False,'detail':'Los números de posición deben ser diferentes entre ellos' },status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('Los números de posición deben ser diferentes entre ellos')
         
         if str(user_logeado.persona.id_unidad_organizacional_actual.cod_tipo_unidad) == 'AS' or str(user_logeado.persona.id_unidad_organizacional_actual.cod_tipo_unidad) == 'AP':
             instancia_nivel_1 = NivelesOrganigrama.objects.filter(id_nivel_organigrama = 1).first()
             unidad_padre_de_todos = UnidadesOrganizacionales.objects.filter(id_nivel_organigrama = instancia_nivel_1).first()
             padre_de_todos = Personas.objects.filter(id_unidad_organizacional_actual = unidad_padre_de_todos).first()
             if user_logeado.persona.id_unidad_organizacional_actual.id_unidad_organizacional != info_solicitud['id_unidad_para_la_que_solicita']:
-                return Response({'success':False,'detail':'Un usuario de una unidad de apoyo o asesor solo le puede hacer solicitudes a la misma unidad a la que pertenece' },status=status.HTTP_404_NOT_FOUND)
+                raise NotFound('Un usuario de una unidad de apoyo o asesor solo le puede hacer solicitudes a la misma unidad a la que pertenece')
 
             if (info_solicitud['id_funcionario_responsable_unidad'] != padre_de_todos.id_persona and info_solicitud['id_funcionario_responsable_unidad'] != '' and info_solicitud['id_funcionario_responsable_unidad'] != None) or info_solicitud['id_funcionario_responsable_unidad'] == user_logeado.persona.id_persona:
-                return Response({'success':False,'detail':'El usuario supervisor no puede ser el mismo usuario que solicita, el funcionario supervisor solo puede ser de unidad organizacional nivel 1' },status=status.HTTP_404_NOT_FOUND)
+                raise NotFound('El usuario supervisor no puede ser el mismo usuario que solicita, el funcionario supervisor solo puede ser de unidad organizacional nivel 1')
         # VALIDACIÓN DE LA LINEA DEL ORGANIGRAMA A LA QUE PERTENECE EL USUARIO SOLICITANTE Y EL USUARIO SUPERVISOR DEL SOLICITANTE
         else:
             if int(info_solicitud['id_funcionario_responsable_unidad']) == user_logeado.persona.id_persona:
-                return Response({'success':False,'detail':'El usuario quien solicita no puede ser el supervisor' },status=status.HTTP_404_NOT_FOUND)
+                raise NotFound('El usuario quien solicita no puede ser el supervisor')
             aux_niveles_organigrama = NivelesOrganigrama.objects.all().values()
             
             niveles_organigrama = [i['orden_nivel'] for i in aux_niveles_organigrama]
@@ -180,10 +167,10 @@ class CreateSolicitudViveros(generics.UpdateAPIView):
                             count = count - 1
                         unidades_organiacionales_misma_linea = sorted(unidades_organiacionales_misma_linea)
             if not unidad_para_la_que_solicita['nombre'] in unidades_organiacionales_misma_linea:
-                return Response({'success':False,'detail':'La unidad organizacional para la que solicita no pertenece a la linea del organigrama a la que pertenece el solicitante'},status=status.HTTP_404_NOT_FOUND)
+                raise NotFound('La unidad organizacional para la que solicita no pertenece a la linea del organigrama a la que pertenece el solicitante')
             
             if not funcionario_responsable.id_unidad_organizacional_actual.nombre in unidades_iguales_y_arriba or funcionario_responsable.id_unidad_organizacional_actual.nombre == None:
-                return Response({'success':False,'detail':'La persona que ingresó como responsable no es ningún superior de la persona que solicita'},status=status.HTTP_404_NOT_FOUND)
+                raise NotFound('La persona que ingresó como responsable no es ningún superior de la persona que solicita')
         # Creacion de solicitudes
         if bandera_actualizar == False:
             if solicitudes_existentes:
@@ -245,7 +232,7 @@ class CreateSolicitudViveros(generics.UpdateAPIView):
                     instancia_item = ItemsSolicitudConsumible.objects.filter(id_item_solicitud_consumible = j['id_item_solicitud_consumible']).first()
                     previous_instancia_item = copy.copy(instancia_item)
                     if not instancia_item:
-                        return Response({'success':False,'detail':'Uno de los id de los items no es válido'},status=status.HTTP_404_NOT_FOUND)
+                        raise NotFound('Uno de los id de los items no es válido')
                     serializer_act = self.serializer_item_solicitud(instancia_item, data=j, many=False)
                     serializer_act.is_valid(raise_exception=True)
                     serializer_act.save()
@@ -265,8 +252,8 @@ class CreateSolicitudViveros(generics.UpdateAPIView):
             }
             Util.save_auditoria_maestro_detalle(auditoria_data)
             
-            return Response({'success':True,'detail':'Solicitud actualizada con éxito', 'Numero solicitud' : info_solicitud["nro_solicitud_por_tipo"]},status=status.HTTP_200_OK)
-        return Response({'success':True,'detail':'Solicitud registrada con éxito', 'Numero solicitud' : info_solicitud["nro_solicitud_por_tipo"]},status=status.HTTP_200_OK)
+            return Response({'success':True, 'detail':'Solicitud actualizada con éxito', 'Numero solicitud' : info_solicitud["nro_solicitud_por_tipo"]},status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Solicitud registrada con éxito', 'Numero solicitud' : info_solicitud["nro_solicitud_por_tipo"]},status=status.HTTP_200_OK)
     
 class GetNroDocumentoSolicitudesBienesConsumoVivero(generics.ListAPIView):
 # ESTA FUNCIONALIDAD PERMITE CONSULTAR EL ÚLTIMO NÚMERO DE DOCUMENTO DE LA CREACIÓN DE SOLICITUDES
@@ -275,7 +262,7 @@ class GetNroDocumentoSolicitudesBienesConsumoVivero(generics.ListAPIView):
     
     def get(self, request):
         nro_solicitud = SolicitudesConsumibles.objects.filter(es_solicitud_de_conservacion=True).order_by('nro_solicitud_por_tipo').last()
-        return Response({'success':True,'detail':nro_solicitud.nro_solicitud_por_tipo + 1, },status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':nro_solicitud.nro_solicitud_por_tipo + 1, },status=status.HTTP_200_OK)
 
 class RevisionSolicitudBienConsumosViveroPorSupervisor(generics.UpdateAPIView):
     serializer_class = CrearSolicitudesviverosPostSerializer
@@ -285,21 +272,21 @@ class RevisionSolicitudBienConsumosViveroPorSupervisor(generics.UpdateAPIView):
         datos_ingresados = request.data
         user_logeado = request.user
         if str(user_logeado) == 'AnonymousUser':
-            return Response({'success':False,'detail':'Esta solicitud solo la puede ejecutar un usuario logueado'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('Esta solicitud solo la puede ejecutar un usuario logueado')
         if not str(id_solicitud).isdigit():
-            return Response({'success':False,'detail':'El Id_solicitud debe ser un número entero' },status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('El Id_solicitud debe ser un número entero')
         if datos_ingresados['estado_aprobacion_responsable'] != 'A' and datos_ingresados['estado_aprobacion_responsable'] != 'R':
-            return Response({'success':False,'detail':'El estado de aprobación debe ser A o R'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('El estado de aprobación debe ser A o R')
 
         instance = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles=int(id_solicitud)).first()
         if instance.es_solicitud_de_conservacion != True:
-            return Response({'success':False,'detail':'La solicitud que ingresó no es de vivero'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('La solicitud que ingresó no es de vivero')
         if not instance:
-            return Response({'success':False,'detail':'Debe de ingresar un id de solicitud válido'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('Debe de ingresar un id de solicitud válido')
         if instance.revisada_responsable == True:
-            return Response({'success':False,'detail':'Esta solicitud ya ha sido aprobada'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('Esta solicitud ya ha sido aprobada')
         if instance.id_funcionario_responsable_unidad.id_persona != user_logeado.persona.id_persona:
-            return Response({'success':False,'detail':'Usted no es el funcionario responsable de esta solicitud'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('Usted no es el funcionario responsable de esta solicitud')
         instance.estado_aprobacion_responsable = datos_ingresados['estado_aprobacion_responsable']
         instance.revisada_responsable = True
         instance.fecha_aprobacion_responsable = str(date.today())
