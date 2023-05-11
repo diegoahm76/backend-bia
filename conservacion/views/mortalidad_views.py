@@ -31,6 +31,7 @@ from conservacion.serializers.mortalidad_serializers import (
 from conservacion.utils import UtilConservacion
 from seguridad.utils import Util
 import json
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
 class GetMaterialVegetalByCodigo(generics.ListAPIView):
     serializer_class=MortalidadMaterialVegetalSerializer
@@ -43,19 +44,19 @@ class GetMaterialVegetalByCodigo(generics.ListAPIView):
         
         # VALIDAR EXISTENCIA DEL VIVERO
         if not vivero:
-            return Response({'success':False, 'detail':'Debe elegir un vivero que exista'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('Debe elegir un vivero que exista')
         
         catalogo_bien = CatalogoBienes.objects.filter(codigo_bien=codigo_bien).first()
         
         # VALIDACIONES DEL CÓDIGO BIEN
         if not catalogo_bien:
-            return Response({'success':False, 'detail':'El código ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('El código ingresado no existe')
         
         if catalogo_bien.cod_tipo_elemento_vivero:
             if catalogo_bien.cod_tipo_elemento_vivero != 'MV' or (catalogo_bien.cod_tipo_elemento_vivero == 'MV' and catalogo_bien.es_semilla_vivero):
-                return Response({'success':False, 'detail':'El código ingresado no es el código de una planta o una plántula'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El código ingresado no es el código de una planta o una plántula')
         else:
-            return Response({'success':False, 'detail':'El código ingresado no es de consumo o no se encuentra tipificado'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('El código ingresado no es de consumo o no se encuentra tipificado')
            
         inventarios_viveros = InventarioViveros.objects.filter(id_bien__codigo_bien=codigo_bien, id_bien__cod_tipo_elemento_vivero='MV', id_bien__es_semilla_vivero=False, id_vivero=id_vivero)
         serializador = self.serializer_class(inventarios_viveros, many=True)
@@ -65,7 +66,7 @@ class GetMaterialVegetalByCodigo(generics.ListAPIView):
         
         if data_serializada:
             if len(set(saldos_disponibles_principal)) == 1 and list(set(saldos_disponibles_principal))[0] == 0:
-                return Response({'success':False, 'detail':'El código ingresado es de una planta que no tiene saldo disponible en ningún lote-etapa'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('El código ingresado es de una planta que no tiene saldo disponible en ningún lote-etapa')
         
         data_serializada = [data for data in data_serializada if data['saldo_disponible_busqueda'] != 0]
         
@@ -87,7 +88,7 @@ class GetMaterialVegetalByLupa(generics.ListAPIView):
         
         # VALIDAR EXISTENCIA DEL VIVERO
         if not vivero:
-            return Response({'success':False, 'detail':'Debe elegir un vivero que exista'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('Debe elegir un vivero que exista')
         
         filtro = {}
         for key,value in request.query_params.items():
@@ -211,15 +212,15 @@ class RegistrarMortalidad(generics.CreateAPIView):
         serializador_maestro.is_valid(raise_exception=True)
         
         if fecha_baja < fecha_posible:
-            return Response({'success':False, 'detail':'La fecha de baja no puede superar las 24 horas'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError ('La fecha de baja no puede superar las 24 horas')
         
         if ultima_mortalidad:
             if fecha_baja < ultima_mortalidad.fecha_baja:
-                return Response({'success':False, 'detail':'La fecha de baja no puede superar la fecha de mortalidad del último registro en el sistema (' + str(ultima_mortalidad.fecha_baja) + ')'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('La fecha de baja no puede superar la fecha de mortalidad del último registro en el sistema (' + str(ultima_mortalidad.fecha_baja) + ')')
         
         # VALIDACIONES DETALLE
         if not data_items_mortalidad:
-            return Response({'success':False, 'detail':'No puede guardar un registro de mortalidad sin haber agregado por lo menos un ítem'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No puede guardar un registro de mortalidad sin haber agregado por lo menos un ítem')
             
         for item in data_items_mortalidad:
             # VALIDAR SI ENVIAN ITEMS REPETIDOS
@@ -231,16 +232,16 @@ class RegistrarMortalidad(generics.CreateAPIView):
                                 item_data['consec_cuaren_por_lote_etapa']==item['consec_cuaren_por_lote_etapa']]
                 
             if len(items_repetidos) > 1:
-                return Response({'success':False, 'detail':'El item de la posición ' + str(item['nro_posicion']) + ' ha sido agregado más de una vez en los registros. Si desea actualizar la cantidad a registrar de mortalidad de dicho material vegetal, debe borrar el registro y agregarlo nuevamente'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError ('El item de la posición ' + str(item['nro_posicion']) + ' ha sido agregado más de una vez en los registros. Si desea actualizar la cantidad a registrar de mortalidad de dicho material vegetal, debe borrar el registro y agregarlo nuevamente')
             
             # VALIDAR QUE EL ITEM DE GERMINACION SEA EL PRINCIPAL
             if item['cod_etapa_lote'] == 'G' and item['consec_cuaren_por_lote_etapa']:
-                return Response({'success':False, 'detail':'No puede seleccionar un registro de cuarentena para registrar una mortalidad a una germinación'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('No puede seleccionar un registro de cuarentena para registrar una mortalidad a una germinación')
             
             # VALIDACIONES DE CANTIDAD_BAJA (P,D)
             if item['cod_etapa_lote'] != 'G':
                 if item['cantidad_baja'] <= 0:
-                    return Response({'success':False, 'detail':'Debe ingresar una cantidad de mortalidad mayor a cero en el item de la posición ' + str(item['nro_posicion'])})
+                    raise ValidationError ('Debe ingresar una cantidad de mortalidad mayor a cero en el item de la posición ' + str(item['nro_posicion']))
                     
                 saldo_disponible = 0
                 
@@ -269,7 +270,7 @@ class RegistrarMortalidad(generics.CreateAPIView):
                         saldo_disponible = UtilConservacion.get_cantidad_disponible_distribucion(inventario_vivero)
                     
                 if item['cantidad_baja'] > saldo_disponible:
-                    return Response({'success':False, 'detail':'La cantidad a registrar de mortalidad del item en la posición ' + str(item['nro_posicion']) + ' no puede superar el saldo disponible (' + str(saldo_disponible) + ')'})
+                    raise ValidationError ('La cantidad a registrar de mortalidad del item en la posición ' + str(item['nro_posicion']) + ' no puede superar el saldo disponible (' + str(saldo_disponible) + ')')
                 
                 # VALIDACION DETALLES CON FECHA_INCIDENCIA
                 item_incidencia = incidencias.filter(
@@ -281,10 +282,10 @@ class RegistrarMortalidad(generics.CreateAPIView):
                 
                 if item_incidencia:
                     if item['cantidad_baja'] == saldo_disponible:
-                        return Response({'success':False, 'detail':'No es posible marcar mortalidad de todo el saldo disponible del registro lote-etapa en la posición ' + str(item['nro_posicion']) + ', ya que tiene un registro de incidencia posterior a la fecha de este registro de mortalidad'}, status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('No es posible marcar mortalidad de todo el saldo disponible del registro lote-etapa en la posición ' + str(item['nro_posicion']) + ', ya que tiene un registro de incidencia posterior a la fecha de este registro de mortalidad')
             else:
                 if item['consec_cuaren_por_lote_etapa']:
-                    return Response({'success':False, 'detail':'No puede elegir un registro de cuarentena para registrar mortalidad de germinación'}, status=status.HTTP_403_FORBIDDEN)
+                    raise PermissionDenied('No puede elegir un registro de cuarentena para registrar mortalidad de germinación')
                 else:
                     item['cantidad_baja'] = 100
         
@@ -393,16 +394,16 @@ class ActualizarMortalidad(generics.UpdateAPIView):
             siembras = Siembras.objects.filter(id_vivero=baja.id_vivero)
             
             if not data_items_mortalidad:
-                return Response({'success':False, 'detail':'No puede eliminar todos los items, debe dejar por lo menos uno'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied ('No puede eliminar todos los items, debe dejar por lo menos uno')
             
             if baja.motivo != data_mortalidad['motivo'] or baja.ruta_archivo_soporte != data_mortalidad['ruta_archivo_soporte']:
                 if fecha_actual > fecha_maxima_maestro:
-                    return Response({'success':False, 'detail':'No puede actualizar el motivo o el archivo porque ha superado los 30 días después de la fecha de mortalidad'}, status=status.HTTP_403_FORBIDDEN)
+                    raise PermissionDenied('No puede actualizar el motivo o el archivo porque ha superado los 30 días después de la fecha de mortalidad')
             
             # REALIZAR VALIDACIONES INICIALES DETALLES
             for item in data_items_mortalidad:
                 if item['cantidad_baja'] <= 0:
-                    return Response({'success':False, 'detail':'Debe ingresar una cantidad de mortalidad mayor a cero en el item de la posición ' + str(item['nro_posicion'])})
+                    raise PermissionDenied('Debe ingresar una cantidad de mortalidad mayor a cero en el item de la posición ' + str(item['nro_posicion']))
                     
                 items_repetidos = [item_data for item_data in data_items_mortalidad if
                                 item_data['id_bien']==item['id_bien'] and
@@ -412,7 +413,7 @@ class ActualizarMortalidad(generics.UpdateAPIView):
                                 item_data['consec_cuaren_por_lote_etapa']==item['consec_cuaren_por_lote_etapa']]
                 
                 if len(items_repetidos) > 1:
-                    return Response({'success':False, 'detail':'El item de la posición ' + str(item['nro_posicion']) + ' ha sido agregado más de una vez en los registros. Si desea actualizar la cantidad a registrar de mortalidad de dicho material vegetal, debe borrar el registro y agregarlo nuevamente'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('El item de la posición ' + str(item['nro_posicion']) + ' ha sido agregado más de una vez en los registros. Si desea actualizar la cantidad a registrar de mortalidad de dicho material vegetal, debe borrar el registro y agregarlo nuevamente')
                 
                 item['id_baja'] = id_baja
             
@@ -427,7 +428,7 @@ class ActualizarMortalidad(generics.UpdateAPIView):
             items_id_list = [item_actualizar['id_item_baja_viveros'] for item_actualizar in items_actualizar]
             items_existentes = items_mortalidad_actual.filter(id_item_baja_viveros__in=items_id_list)
             if len(items_id_list) != len(items_existentes):
-                return Response({'success':False, 'detail':'Debe validar que todos los items pertenezcan al mismo registro de mortalidad'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError ('Debe validar que todos los items pertenezcan al mismo registro de mortalidad')
             
             items_cambios_actualizar = []
             
@@ -444,7 +445,7 @@ class ActualizarMortalidad(generics.UpdateAPIView):
                 # VALIDAR SI ACTUALIZARON CANTIDAD_BAJA U OBSERVACIONES
                 if item_actual.cantidad_baja != item['cantidad_baja']:
                     if fecha_actual > fecha_maxima_detalle_cantidad:
-                        return Response({'success':False, 'detail':'No puede actualizar la cantidad de los items porque ha superado las 48 horas'}, status=status.HTTP_403_FORBIDDEN)
+                        raise PermissionDenied('No puede actualizar la cantidad de los items porque ha superado las 48 horas')
                     
                     if item['cantidad_baja'] > item_actual.cantidad_baja:
                         cantidad_aumentada = item['cantidad_baja'] - item_actual.cantidad_baja
@@ -454,11 +455,11 @@ class ActualizarMortalidad(generics.UpdateAPIView):
                             if item_actual.cod_etapa_lote == 'P':
                                 saldo_disponible = UtilConservacion.get_cantidad_disponible_produccion(inventario_vivero)
                                 if cantidad_aumentada > saldo_disponible:
-                                    return Response({'success':False, 'detail':'La cantidad aumentada del item en la posición ' + str(item_actual.nro_posicion) + ' no puede ser mayor al saldo disponible (' + str(saldo_disponible) + ')'}, status=status.HTTP_400_BAD_REQUEST)
+                                    raise ValidationError('La cantidad aumentada del item en la posición ' + str(item_actual.nro_posicion) + ' no puede ser mayor al saldo disponible (' + str(saldo_disponible) + ')')
                             else:
                                 saldo_disponible = UtilConservacion.get_cantidad_disponible_distribucion(inventario_vivero)
                                 if cantidad_aumentada > saldo_disponible:
-                                    return Response({'success':False, 'detail':'La cantidad aumentada del item en la posición ' + str(item_actual.nro_posicion) + ' no puede ser mayor al saldo disponible (' + str(saldo_disponible) + ')'}, status=status.HTTP_400_BAD_REQUEST)
+                                    raise ValidationError('La cantidad aumentada del item en la posición ' + str(item_actual.nro_posicion) + ' no puede ser mayor al saldo disponible (' + str(saldo_disponible) + ')')
                         else:
                             item_cuarentena = cuarentenas.filter(
                                 id_bien = item_actual.id_bien,
@@ -469,7 +470,7 @@ class ActualizarMortalidad(generics.UpdateAPIView):
                             ).first()
                             saldo_disponible = UtilConservacion.get_saldo_por_levantar(item_cuarentena)
                             if cantidad_aumentada > saldo_disponible:
-                                return Response({'success':False, 'detail':'La cantidad aumentada del item en la posición ' + str(item_actual.nro_posicion) + ' no puede ser mayor al saldo disponible (' + str(saldo_disponible) + ')'})
+                                raise ValidationError('La cantidad aumentada del item en la posición ' + str(item_actual.nro_posicion) + ' no puede ser mayor al saldo disponible (' + str(saldo_disponible) + ')')
 
                         # VALIDACION DETALLES CON FECHA_INCIDENCIA
                         item_incidencia = incidencias.filter(
@@ -482,11 +483,11 @@ class ActualizarMortalidad(generics.UpdateAPIView):
                         
                         if item_incidencia:
                             if cantidad_aumentada == saldo_disponible:
-                                return Response({'success':False, 'detail':'No es posible marcar mortalidad de todo el saldo disponible del registro lote-etapa en la posición ' + str(item['nro_posicion']) + ', ya que tiene un registro de incidencia posterior a la fecha de este registro de mortalidad'}, status=status.HTTP_400_BAD_REQUEST)
+                                raise ValidationError('No es posible marcar mortalidad de todo el saldo disponible del registro lote-etapa en la posición ' + str(item['nro_posicion']) + ', ya que tiene un registro de incidencia posterior a la fecha de este registro de mortalidad')
                     
                 if item_actual.observaciones != item['observaciones']:
                     if fecha_actual > fecha_maxima_detalle_observaciones:
-                        return Response({'success':False, 'detail':'No puede actualizar la observación de los items porque ha superado los 30 días'}, status=status.HTTP_403_FORBIDDEN)
+                        raise PermissionDenied('No puede actualizar la observación de los items porque ha superado los 30 días')
             
                 if item_actual.cantidad_baja != item['cantidad_baja'] or item_actual.observaciones != item['observaciones']:
                     items_cambios_actualizar.append(item)
@@ -519,10 +520,10 @@ class ActualizarMortalidad(generics.UpdateAPIView):
                             saldo_disponible = UtilConservacion.get_cantidad_disponible_distribucion(inventario_vivero)
                         
                     if item['cantidad_baja'] > saldo_disponible:
-                        return Response({'success':False, 'detail':'La cantidad a registrar de mortalidad del item en la posición ' + str(item['nro_posicion']) + ' no puede superar el saldo disponible (' + str(saldo_disponible) + ')'})
+                        raise PermissionDenied('La cantidad a registrar de mortalidad del item en la posición ' + str(item['nro_posicion']) + ' no puede superar el saldo disponible (' + str(saldo_disponible) + ')')
                 else:
                     if item['consec_cuaren_por_lote_etapa']:
-                        return Response({'success':False, 'detail':'No puede elegir un registro de cuarentena para registrar mortalidad de germinación'}, status=status.HTTP_403_FORBIDDEN)
+                        raise PermissionDenied('No puede elegir un registro de cuarentena para registrar mortalidad de germinación')
                     else:
                         item['cantidad_baja'] = 100
                     
@@ -537,7 +538,7 @@ class ActualizarMortalidad(generics.UpdateAPIView):
                 
                 if item_incidencia:
                     if item['cantidad_baja'] == saldo_disponible:
-                        return Response({'success':False, 'detail':'No es posible marcar mortalidad de todo el saldo disponible del registro lote-etapa en la posición ' + str(item['nro_posicion']) + ', ya que tiene un registro de incidencia posterior a la fecha de este registro de mortalidad'}, status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('No es posible marcar mortalidad de todo el saldo disponible del registro lote-etapa en la posición ' + str(item['nro_posicion']) + ', ya que tiene un registro de incidencia posterior a la fecha de este registro de mortalidad')
         
             # ACTUALIZAR MAESTRO
             if baja.motivo != data_mortalidad['motivo'] or baja.ruta_archivo_soporte != data_mortalidad['ruta_archivo_soporte']:
@@ -740,7 +741,7 @@ class ActualizarMortalidad(generics.UpdateAPIView):
             
             return Response({'success':True, 'detail':'Se realizó la actualizacón del registro de mortalidad correctamente'}, status=status.HTTP_201_CREATED)
         else:
-            return Response({'success':False, 'detail':'No existe el registro de mortalidad elegido'}, status=status.HTTP_404_NOT_FOUND)
+            raise ValidationError('No existe el registro de mortalidad elegido')
 
 class AnularMortalidad(generics.UpdateAPIView):
     serializer_class=AnularMortalidadSerializer
@@ -755,13 +756,13 @@ class AnularMortalidad(generics.UpdateAPIView):
         
         if baja:
             if baja.id_baja != ultima_baja.id_baja:
-                return Response({'success':False, 'detail':'Solo puede anular el último registro de mortalidad'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('Solo puede anular el último registro de mortalidad')
             
             fecha_maxima_anular = baja.fecha_baja + timedelta(days=2)
             fecha_actual = datetime.now()
             
             if fecha_actual > fecha_maxima_anular:
-                return Response({'success':False, 'detail':'No puede anular el registro de mortalidad porque ha superado las 48 horas'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('No puede anular el registro de mortalidad porque ha superado las 48 horas')
             
             items_mortalidad = ItemsBajasVivero.objects.filter(id_baja=id_baja)
             inventarios_viveros = InventarioViveros.objects.filter(id_vivero=baja.id_vivero)
@@ -842,4 +843,4 @@ class AnularMortalidad(generics.UpdateAPIView):
             
             return Response({'success':True, 'detail':'Se realizó la anulación del registro de mortalidad correctamente'}, status=status.HTTP_201_CREATED)
         else:
-            return Response({'success':False, 'detail':'No existe el registro de mortalidad elegido'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe el registro de mortalidad elegido')
