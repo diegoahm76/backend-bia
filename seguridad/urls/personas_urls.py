@@ -83,10 +83,10 @@ urlpatterns = [
     path('sucursales-empresas/create/', views.registerSucursalEmpresa.as_view(), name='sucursal-empresa-register'),
     
     # Historico Emails
-    path('historico-emails/get-list/', views.getHistoricoEmails.as_view(), name="historico-emails-get"),
+    path('historico-emails/<int:id_persona>/', views.HistoricoEmailsByIdPersona.as_view(), name="historico-emails"),
     
     # Historico Direcciones
-    path('historico-direcciones/get-list/', views.GetHistoricoDirecciones.as_view(), name="historico-direcciones-get"),
+    path('historico-direccion/<int:id_persona>/', views.HistoricoDireccionByIdPersona.as_view(), name="historico-direcciones"),
     
     # Cargos
     path('cargos/get-list/', views.GetCargosList.as_view(), name="cargos-get"),

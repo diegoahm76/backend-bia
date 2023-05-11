@@ -432,9 +432,9 @@ class UpdatePersonaJuridicaAdminPersonas(generics.UpdateAPIView):
                 return Response ({'success':False,'detail':'No se puede actualizar una persona jurídica con este servicio'},status=status.HTTP_403_FORBIDDEN)
         
             cambio = Util.comparacion_campos_actualizados(data,persona)
-            if persona_logueada != persona.id_persona_crea.id_persona:
+            
+            if not persona.id_persona_crea or persona_logueada != persona.id_persona_crea.id_persona:
                 if cambio:
-                    print(cambio)
                     data['fecha_ultim_actualiz_diferente_crea'] = datetime.now()
                     data['id_persona_ultim_actualiz_diferente_crea'] = persona_logueada
             else:
@@ -1116,15 +1116,23 @@ class registerSucursalEmpresa(generics.CreateAPIView):
         # descripcion = "idUsuario:" + str(serializer_response.pk) + ";" + "fecha:" + formatDate + ";" + "observaciones:Registro de otro usuario" + ";" + "nombreUsuario:"+ serializer_response.nombre_de_usuario + "."
         
 # Views for Historico Emails
-class getHistoricoEmails(generics.ListAPIView):
+class HistoricoEmailsByIdPersona(generics.ListAPIView):
     serializer_class = HistoricoEmailsSerializer
-    queryset = HistoricoEmails.objects.all()
 
+    def get_queryset(self):
+        id_persona = self.kwargs['id_persona']
+        queryset = HistoricoEmails.objects.filter(id_persona=id_persona)
+        return queryset
 
 # Views for Historico Direcciones
-class GetHistoricoDirecciones(generics.ListAPIView):
-    queryset = HistoricoDireccion.objects.all()
+class HistoricoDireccionByIdPersona(generics.ListAPIView):
     serializer_class = HistoricoDireccionSerializer
+
+    def get_queryset(self):
+        id_persona = self.kwargs['id_persona']
+        queryset = HistoricoDireccion.objects.filter(id_persona=id_persona)
+        return queryset
+
 
 class GetCargosList(generics.ListAPIView):
     serializer_class = CargosSerializer
