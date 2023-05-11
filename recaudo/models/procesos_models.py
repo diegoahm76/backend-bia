@@ -1,5 +1,5 @@
 from django.db import models
-from recaudo.models.base_models import TiposBien
+from recaudo.models.base_models import TiposBien, Ubicaciones
 from recaudo.models.liquidaciones_models import Deudores
 
 
@@ -10,6 +10,8 @@ class Bienes(models.Model):
     estado = models.CharField(max_length=255, db_column='T419estado')
     id_tipo_bien = models.ForeignKey(TiposBien, on_delete=models.CASCADE, db_column='T419id_tipo_bien')
     documento_soporte = models.TextField(db_column='T419documento_soporte')
+    vigencia = models.IntegerField(db_column='T419vigencia')
+    ubicacion_id = models.ForeignKey(Ubicaciones, on_delete=models.CASCADE, db_column='T419ubicacion_id')
 
     class Meta:
         db_table = 'T419bienes'
