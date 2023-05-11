@@ -123,7 +123,6 @@ class FuncionariosView(generics.ListAPIView):
         serializer = self.serializer_class(funcionarios, many=True)
         return Response({'success': True, 'data':serializer.data})
 
-
 class ListadoObligacionesViews(generics.ListAPIView):
     serializer_class = ObligacionesSerializer
     permission_classes = [IsAuthenticated]
@@ -173,6 +172,10 @@ class ConsultaObligacionesViews(generics.ListAPIView):
     def get_queryset(self):
         id_obligaciones = self.kwargs['id_obligaciones']
         queryset = Obligaciones.objects.filter(id=id_obligaciones)
+        
+        if not queryset.exists():
+            raise NotFound("La obligación consultada no existe")
+            
         return queryset
     
 class ConsultaObligacionesDeudoresViews(generics.ListAPIView):
@@ -225,9 +228,12 @@ class ListadoFacilidadesPagoViews(generics.ListAPIView):
                 if value != '':
                     filter['id_deudor_actuacion__' + key + '__icontains'] = value
         facilidades_pago = FacilidadesPago.objects.filter(**filter)
+        
+        if not facilidades_pago.exists():
+            raise NotFound("La facilidad de pagos consultada no existe")
+        
         serializer = ListadoFacilidadesPagoSerializer(facilidades_pago, many=True)
         return Response(serializer.data)
-
 
 class ConsultaFacilidadesPagosViews(generics.ListAPIView):
     serializer_class = ConsultaFacilidadesPagosSerializer

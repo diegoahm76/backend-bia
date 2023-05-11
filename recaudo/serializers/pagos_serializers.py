@@ -128,17 +128,33 @@ class CarteraSerializer(serializers.ModelSerializer):
 
 
 class ObligacionesSerializer(serializers.ModelSerializer):
-    carteras = serializers.SerializerMethodField()
+    valor_intereses = serializers.SerializerMethodField()
+    dias_mora = serializers.SerializerMethodField()
 
     def get_carteras(self, obj):
         carteras = obj.cartera_set.filter(fin__isnull=True)
-        carteras_serializer = CarteraSerializer(carteras, many=True)
-        carteras_data = carteras_serializer.data if carteras_serializer else []
-        return carteras_data
-    
+        if carteras.exists():
+            return carteras.first()
+        else:
+            return None
+
+    def get_valor_intereses(self, obj):
+        cartera = self.get_carteras(obj)
+        if cartera:
+            return cartera.valor_intereses
+        else:
+            return None
+
+    def get_dias_mora(self, obj):
+        cartera = self.get_carteras(obj)
+        if cartera:
+            return cartera.dias_mora
+        else:
+            return None
+
     class Meta:
         model = Obligaciones
-        fields = ('id','fecha_inicio', 'id_expediente','monto_inicial','carteras')
+        fields = ('nombre','fecha_inicio', 'id_expediente','monto_inicial','valor_intereses', 'dias_mora')
 
 
 class ConsultaObligacionesSerializer(serializers.ModelSerializer):
@@ -152,7 +168,7 @@ class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FacilidadesPago
-        fields = ('id', 'nombre_de_usuario','identificacion', 'fecha_generacion')
+        fields = ('nombre_de_usuario','identificacion', 'fecha_generacion')
 
     def get_nombre_de_usuario(self, obj):
         nombre_de_usuario = None
