@@ -1,6 +1,6 @@
 from django.db import models
-from almacen.choices.agrupacion_documental_choices import agrupacion_documental_CHOICES
-from almacen.choices.tipo_unidad_choices import tipo_unidad_CHOICES
+from transversal.choices.agrupacion_documental_choices import agrupacion_documental_CHOICES
+from transversal.choices.tipo_unidad_choices import tipo_unidad_CHOICES
 
 class Organigramas(models.Model):
     id_organigrama = models.AutoField(primary_key=True, editable=False, db_column='T017IdOrganigrama')

@@ -19,6 +19,7 @@ from rest_framework.permissions import IsAuthenticated
 from conservacion.serializers.incidencias_serializers import MaterialVegetalSerializer
 from conservacion.models.incidencias_models import IncidenciasMatVegetal
 from conservacion.serializers.incidencias_serializers import IncidenciaSerializer
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
 class GetMaterialVegetalByCodigo(generics.ListAPIView):
     serializer_class = MaterialVegetalSerializer
@@ -29,20 +30,20 @@ class GetMaterialVegetalByCodigo(generics.ListAPIView):
         
         vivero=Vivero.objects.filter(id_vivero=id_vivero).first()
         if not vivero:
-            return Response ({'success':False,'detail':'No existe vivero'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No existe vivero')
         
         codigo_bien = request.query_params.get('codigo_bien')
         
         catalogo_bienes_mt=CatalogoBienes.objects.filter(codigo_bien=codigo_bien).first()
         
         if not catalogo_bienes_mt:
-            return Response ({'success':False,'detail':'El codigo de bien no existe'},status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('El codigo de bien no existe')
 
         if catalogo_bienes_mt.cod_tipo_elemento_vivero:
             if catalogo_bienes_mt.cod_tipo_elemento_vivero != 'MV' or (catalogo_bienes_mt.cod_tipo_elemento_vivero == 'MV' and catalogo_bienes_mt.es_semilla_vivero):
-                return Response({'success':False, 'detail':'El código ingresado no es el código de una planta o una plántula'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El código ingresado no es el código de una planta o una plántula')
         else:
-            return Response({'success':False, 'detail':'El código ingresado no es de consumo o no se encuentra tipificado'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('El código ingresado no es de consumo o no se encuentra tipificado')
         
         material_vegetal = self.queryset.all().filter(id_vivero=vivero.id_vivero,id_bien__codigo_bien=catalogo_bienes_mt.codigo_bien)
         
@@ -60,7 +61,7 @@ class GetMaterialVegetalByCodigo(generics.ListAPIView):
         
         if data_serializada:
             if len(set(saldo_total)) == 1 and list(set(saldo_total))[0] == 0:
-                return Response({'success':False, 'detail':'El código ingresado es de una planta que no tiene saldo disponible en ningún lote-etapa'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('El código ingresado es de una planta que no tiene saldo disponible en ningún lote-etapa')
         
         data_serializada = [data for data in data_serializada if data['saldo_total'] != 0]
         
@@ -75,7 +76,7 @@ class GetMaterialVegetalByLupa(generics.ListAPIView):
         
         vivero=Vivero.objects.filter(id_vivero=id_vivero).first()
         if not vivero:
-            return Response ({'success':False,'detail':'No existe vivero'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No existe vivero')
         
         filter={}
         for key,value in request.query_params.items():
@@ -124,12 +125,12 @@ class GuardarIncidencia(generics.CreateAPIView):
         vivero = Vivero.objects.filter(id_vivero = id_vivero).first()
         
         if not vivero:
-            return Response({'success':False,'detail':'El vivero enviado no existe'},status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('El vivero enviado no existe')
         
         inventario_vivero = InventarioViveros.objects.filter(id_bien=data_incidencia['id_bien'],id_vivero=vivero.id_vivero,nro_lote=data_incidencia['nro_lote'],agno_lote=data_incidencia['agno_lote'],cod_etapa_lote=data_incidencia['cod_etapa_lote']).first()
 
         if not inventario_vivero:
-            return Response({'success':False,'detail':'El bien no tiene existencia en el vivero que se está trabajando'},status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('El bien no tiene existencia en el vivero que se está trabajando')
         
         incidencia = self.queryset.all().filter(id_bien=inventario_vivero.id_bien,id_vivero=inventario_vivero.id_vivero,nro_lote=inventario_vivero.nro_lote,agno_lote=inventario_vivero.agno_lote,cod_etapa_lote=inventario_vivero.cod_etapa_lote)
         incidencia_ultimo = incidencia.last()
@@ -145,11 +146,11 @@ class GuardarIncidencia(generics.CreateAPIView):
         fecha_hace_un_dia = datetime.now() - timedelta(days=1)
         
         if fecha_incidencia != datetime.now() and fecha_incidencia < fecha_hace_un_dia:
-            return Response({'success':False,'detail':'No se puede realizar el registro de incidencia con más de 24 horas de anterioridad'},status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se puede realizar el registro de incidencia con más de 24 horas de anterioridad')
 
         if incidencia_no_anulada:
             if fecha_incidencia <= incidencia_no_anulada.fecha_incidencia:
-                return Response({'success':False,'detail':'La fecha de incidencia no puede ser menor o igual a la fecha del ultimo registro de incidencia('+str(incidencia_no_anulada.fecha_incidencia)+')'},status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('La fecha de incidencia no puede ser menor o igual a la fecha del ultimo registro de incidencia('+str(incidencia_no_anulada.fecha_incidencia)+')')
                 
         #VALIDAR ALTURA
         data_incidencia['altura_lote_en_cms'] = None if data_incidencia['consec_cuaren_lote_etapa'] != None else data_incidencia['altura_lote_en_cms']
@@ -188,12 +189,12 @@ class GuardarIncidencia(generics.CreateAPIView):
                 if bien['cantidad_a_consumir'] > saldo_disponible:
 
                     if bien['saldo_disponible'] != saldo_disponible:
-                        return Response({'success':False,'detail':'El saldo disponible del item '+str(nombre)+' en el vivero '+str(vivero)+' se actualizó, por favor verifique que la cantidad a consumir no supere el nuevo saldo ('+str(saldo_disponible)+')'},status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('El saldo disponible del item '+str(nombre)+' en el vivero '+str(vivero)+' se actualizó, por favor verifique que la cantidad a consumir no supere el nuevo saldo ('+str(saldo_disponible)+')')
             
-                    return Response({'success':False,'detail':'La cantidad a consumir del item '+str(nombre)+' en el vivero '+str(vivero)+' no puede ser mayor al saldo disponible ('+str(saldo_disponible)+')'},status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('La cantidad a consumir del item '+str(nombre)+' en el vivero '+str(vivero)+' no puede ser mayor al saldo disponible ('+str(saldo_disponible)+')')
                 
                 elif bien['cantidad_a_consumir'] <= 0:
-                    return Response({'success':False,'detail':'La cantidad a consumir del item '+str(nombre)+' en el vivero '+str(vivero)+' tiene que ser mayor a 0'},status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('La cantidad a consumir del item '+str(nombre)+' en el vivero '+str(vivero)+' tiene que ser mayor a 0')
             
                 #VALIDACION DE REPETIDOS
                 
@@ -203,7 +204,7 @@ class GuardarIncidencia(generics.CreateAPIView):
                                     item_data['id_mezcla']==bien['id_mezcla'] 
                                 ]
                 if len(items_repetidos) > 1:
-                    return Response({'success':False, 'detail':'El item '+str(nombre)+' en el vivero '+str(vivero)+' ha sido agregado más de una vez en los registros. Si desea actualizar la cantidad consumida u observación de dicho item, borre el registro y agreguelo nuevamente o edite el ya existente'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('El item '+str(nombre)+' en el vivero '+str(vivero)+' ha sido agregado más de una vez en los registros. Si desea actualizar la cantidad consumida u observación de dicho item, borre el registro y agreguelo nuevamente o edite el ya existente')
                 
                 bien['cantidad_consumida'] = bien['cantidad_a_consumir']
                 
@@ -279,27 +280,27 @@ class GetElementosInsumoByCodigo(generics.ListAPIView):
         vivero = Vivero.objects.filter(id_vivero = id_vivero).first()
         
         if not vivero:
-            return Response({'success':False,'detail':'No existe el vivero seleccionado'},status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No existe el vivero seleccionado')
         
         #BUSCO EL BIEN DE TIPO INSUMO
         catalogo_bienes_in = CatalogoBienes.objects.filter(codigo_bien=codigo_bien).first()
         
         if not catalogo_bienes_in:
-            return Response ({'success':False,'detail':'El codigo de bien no existe'},status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('El codigo de bien no existe')
 
         if catalogo_bienes_in.cod_tipo_elemento_vivero:
             
             if catalogo_bienes_in.cod_tipo_elemento_vivero != 'IN':
-                return Response({'success':False, 'detail':'El código ingresado no es de un insumo'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El código ingresado no es de un insumo')
         else:
-            return Response({'success':False, 'detail':'El código ingresado no es de consumo o no se encuentra tipificado'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('El código ingresado no es de consumo o no se encuentra tipificado')
 
         #VALIDACION EN LA TABLA DE INVENTARIO VIVEROS
         
         inventario_vivero = self.queryset.all().filter(id_bien = catalogo_bienes_in.id_bien,id_vivero = id_vivero).first()
         
         if not inventario_vivero:
-            return Response({'success':False,'detail':'El item no tiene existencia en el vivero que se está trabajando'},status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('El item no tiene existencia en el vivero que se está trabajando')
         
         serializador = self.serializer_class(inventario_vivero,many=False)
         
@@ -308,7 +309,7 @@ class GetElementosInsumoByCodigo(generics.ListAPIView):
         serializer = serializador_data if serializador_data['saldo_disponible'] > 0 else None
         
         if not serializer:
-            return Response({'success':False,'detail':'El bien de tipo insumo no tiene saldo disponible'})
+            raise ValidationError('El bien de tipo insumo no tiene saldo disponible')
         
         return Response({'success':True,'detail':'Se encontró el elemento de insumo','data':serializer},status=status.HTTP_200_OK)
     
@@ -327,10 +328,10 @@ class GetElementoYMezclaByLupa(generics.ListAPIView):
         vivero = Vivero.objects.filter(id_vivero = id_vivero).first()
         
         if not vivero:
-            return Response({'success':False,'detail':'No existe el vivero seleccionado'},status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No existe el vivero seleccionado')
         
         if not tipo_bien:
-            return Response ({'success':False,'detail':'Debe seleccionar un tipo'},status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Debe seleccionar un tipo')
         
         tipo_bien = 'id_bien' if tipo_bien == 'IN' else 'id_mezcla'
         
@@ -368,18 +369,18 @@ class AnulacionIncidencia(generics.UpdateAPIView):
         data = request.data
         
         if not data['justificacion_anulacion']:
-            return Response({'success':False,'detail':'Debe de enviar la justifiación'},status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Debe de enviar la justifiación')
         
         incidencias = self.queryset.all()
         id_incidencia = incidencias.filter(id_incidencias_mat_vegetal=id_incidencias_mat_vegetal,incidencia_anulacion=False).first()
         
         if not id_incidencia:
-            return Response ({'success':False,'detail':'El registro de incidencia no existe o se encuentra anulado'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('El registro de incidencia no existe o se encuentra anulado')
         
         ultima_incidencia = incidencias.filter(nro_lote = id_incidencia.nro_lote, cod_etapa_lote =id_incidencia.cod_etapa_lote, id_vivero =id_incidencia.id_vivero,incidencia_anulacion=False).last()
         
         if id_incidencia.id_incidencias_mat_vegetal != ultima_incidencia.id_incidencias_mat_vegetal:
-            return Response({'success':False,'detail':'El registro no se puede anular debido a que no es la última incidencia que existe con el vivero '+str(id_incidencia.id_vivero)+', Lote '+str(id_incidencia.nro_lote)+', Etapa '+str(id_incidencia.cod_etapa_lote)+'.'})
+            raise NotFound('El registro no se puede anular debido a que no es la última incidencia que existe con el vivero '+str(id_incidencia.id_vivero)+', Lote '+str(id_incidencia.nro_lote)+', Etapa '+str(id_incidencia.cod_etapa_lote)+'.')
         
         inventario_vivero = InventarioViveros.objects.filter(id_bien = ultima_incidencia.id_bien,id_vivero=ultima_incidencia.id_vivero,agno_lote=ultima_incidencia.agno_lote,nro_lote=ultima_incidencia.nro_lote,cod_etapa_lote=ultima_incidencia.cod_etapa_lote).first()
 
@@ -390,10 +391,10 @@ class AnulacionIncidencia(generics.UpdateAPIView):
             fecha_incidencia_48_despues = ultima_incidencia.fecha_incidencia + timedelta(days=2)
             
             if datetime.now() > fecha_incidencia_48_despues:
-                return Response({'success':False,'detail':'El registro de incidencia no se puede anular ya que supero las 48 horas permitidas para esta acción'},status=status.HTTP_404_NOT_FOUND)
+                raise NotFound('El registro de incidencia no se puede anular ya que supero las 48 horas permitidas para esta acción')
 
             if ultima_incidencia.fecha_incidencia == inventario_vivero.fecha_ult_altura_lote:
-                return Response({'success':False,'detail':'la última altura registrada para el lote es de '+str(inventario_vivero.ult_altura_lote)+' cm y fue dada por la incidencia a anular, por lo tanto se recomienda que haga un Registro de Incidencia nuevo para modificar nuevamente dicha altura en caso de que no esté de acuerdo con ella.'},status=status.HTTP_404_NOT_FOUND)
+                raise NotFound('la última altura registrada para el lote es de '+str(inventario_vivero.ult_altura_lote)+' cm y fue dada por la incidencia a anular, por lo tanto se recomienda que haga un Registro de Incidencia nuevo para modificar nuevamente dicha altura en caso de que no esté de acuerdo con ella.')
             
             items_consumidos = ConsumosIncidenciasMV.objects.filter(id_incidencia_mat_vegetal=ultima_incidencia.id_incidencias_mat_vegetal)
             
@@ -474,7 +475,7 @@ class ActualizacionIncidencia(generics.ListAPIView):
         #VALIDACION PARA COMPARAR SI LA PERSONA QUE ESTÁ ACTUALIZANDO ES LA MISMA QUE CREO EL REGISTRO
         
         if incidencia.id_persona_registra.id_persona != request.user.persona.id_persona:
-            return Response({'success':False,'detail':'No se puede actualizar debido a que la pesona que está intentando hacer esta acción no es la misma que registró esta incidencia'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No se puede actualizar debido a que la pesona que está intentando hacer esta acción no es la misma que registró esta incidencia')
         
         if incidencia:
             
@@ -492,7 +493,7 @@ class ActualizacionIncidencia(generics.ListAPIView):
             items_cantidad_consumida_crear = []
         
             if fecha_hoy > fecha_en_30_dias:
-                return Response ({'success':False,'detail':'La incidencia no se puede actualizar debido a que ya superó los 30 días establecido para hacer esta acción'},status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('La incidencia no se puede actualizar debido a que ya superó los 30 días establecido para hacer esta acción')
 
             if incidencia.fecha_incidencia == inventario_vivero.fecha_ult_altura_lote:
                 inventario_vivero.ult_altura_lote = data_incidencia['altura_lote_en_cms']
@@ -511,7 +512,7 @@ class ActualizacionIncidencia(generics.ListAPIView):
                                     item_data['id_mezcla']==item['id_mezcla'] 
                                 ]
                 if len(items_repetidos) > 1:
-                    return Response({'success':False, 'detail':'El item '+str(nombre)+' en el vivero '+str(vivero)+' ha sido agregado más de una vez en los registros. Si desea actualizar la cantidad consumida u observación de dicho item, borre el registro y agreguelo nuevamente o edite el ya existente'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('El item '+str(nombre)+' en el vivero '+str(vivero)+' ha sido agregado más de una vez en los registros. Si desea actualizar la cantidad consumida u observación de dicho item, borre el registro y agreguelo nuevamente o edite el ya existente')
                 
                 #ACTUALIZACION ITEMS
                 if item_consumido:
@@ -532,7 +533,7 @@ class ActualizacionIncidencia(generics.ListAPIView):
                             
                             #VALIDACION DE TIEMPO DE ACTUALIZACION DISPONIBLE PARA ACTUALIZAR LA CANTIDAD CONSUMIDA
                             if fecha_hoy > cuarenta_ocho:
-                                return Response ({'success':False,'detail':'La cantidad consumida del item '+str(nombre)+' no se puede actualizar debido a que ya superó las 48 horas establecidas para hacer esta acción'},status=status.HTTP_403_FORBIDDEN)
+                                raise PermissionDenied('La cantidad consumida del item '+str(nombre)+' no se puede actualizar debido a que ya superó las 48 horas establecidas para hacer esta acción')
                             
                             #AUMENTAR CANTIDAD CONSUMIDA   
                             if int(item['cantidad_a_consumir']) > item_consumido.cantidad_consumida:
@@ -540,7 +541,7 @@ class ActualizacionIncidencia(generics.ListAPIView):
                                 cantidad_aumentada = int(item['cantidad_a_consumir']) - item_consumido.cantidad_consumida
                                 
                                 if cantidad_aumentada > saldo_disponible:
-                                    return Response ({'success':False,'detail':'La cantidad aumentada del item '+str(nombre)+' no se puede actualizar debido a que es mayor a la cantidad disponible ('+str(saldo_disponible)+').'},status=status.HTTP_403_FORBIDDEN)
+                                    raise PermissionDenied('La cantidad aumentada del item '+str(nombre)+' no se puede actualizar debido a que es mayor a la cantidad disponible ('+str(saldo_disponible)+').')
                                 
                                 registro_vivero.cantidad_consumos_internos += cantidad_aumentada
                                 
@@ -549,7 +550,7 @@ class ActualizacionIncidencia(generics.ListAPIView):
                             #ACTUALIZACION DISMINUIR CANTIDAD CONSUMIDA    
                             else:
                                 if int(item['cantidad_a_consumir']) <= 0:
-                                    return Response ({'success':False,'detail':'La cantidad a consumir tiene que ser mayor a cero'},status=status.HTTP_403_FORBIDDEN)
+                                    raise PermissionDenied('La cantidad a consumir tiene que ser mayor a cero')
                                 
                                 cantidad_disminuida = item_consumido.cantidad_consumida - int(item['cantidad_a_consumir']) 
                                 
@@ -583,11 +584,11 @@ class ActualizacionIncidencia(generics.ListAPIView):
                         if item['saldo_disponible'] != saldo_disponible:
                             return Response({'success':False,'detail':'El saldo disponible del item '+str(nombre)+' en el vivero '+str(vivero)+' se actualizó, por favor verifique que la cantidad a consumir no supere el nuevo saldo ('+str(saldo_disponible)+')'},status=status.HTTP_400_BAD_REQUEST)
                 
-                        return Response({'success':False,'detail':'La cantidad a consumir del item '+str(nombre)+' en el vivero '+str(vivero)+' no puede ser mayor al saldo disponible ('+str(saldo_disponible)+')'},status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('La cantidad a consumir del item '+str(nombre)+' en el vivero '+str(vivero)+' no puede ser mayor al saldo disponible ('+str(saldo_disponible)+')')
                     
                         #VALIDACION PARA CUANDO DISMINUYE LA CANTIDAD A CONSUMIR
                     elif item['cantidad_a_consumir'] <= 0:
-                        return Response({'success':False,'detail':'La cantidad a consumir del item '+str(nombre)+' en el vivero '+str(vivero)+' tiene que ser mayor a 0'},status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('La cantidad a consumir del item '+str(nombre)+' en el vivero '+str(vivero)+' tiene que ser mayor a 0')
                 
                     item['cantidad_consumida'] = item['cantidad_a_consumir']
                     
@@ -680,7 +681,7 @@ class ActualizacionIncidencia(generics.ListAPIView):
         
             return Response({'Succes':True,'detail':'Actualizado correctamente'},status=status.HTTP_200_OK)
         else:
-            return Response({'Succes':False,'detail':'No existe incidenia'},status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No existe incidenia')
 
 class GetIncidenciasByVivero (generics.ListAPIView):
     serializer_class = IncidenciaSerializer
@@ -692,7 +693,7 @@ class GetIncidenciasByVivero (generics.ListAPIView):
         vivero = Vivero.objects.filter(id_vivero = id_vivero).first()
         
         if not vivero:
-            return Response({'success':False,'detail':'No existe el vivero seleccionado'},status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No existe el vivero seleccionado')
         
         incidencias = self.queryset.all().filter(incidencia_anulacion = False,id_viver=vivero.id_vivero)
         
@@ -725,4 +726,4 @@ class GetConsumoIncidenciaByidIncidencia (generics.ListAPIView):
             return Response ({'success':True,'detail':'No se encontraron incidencia para esta incidencia'},status=status.HTTP_200_OK)       
         
         else:
-            return Response ({'success':False,'detail':'No existe la incidencia'},status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No existe la incidencia')

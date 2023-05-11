@@ -13,7 +13,7 @@ from seguridad.choices.subsistemas_choices import subsistemas_CHOICES
 from seguridad.choices.tipo_usuario_choices import tipo_usuario_CHOICES
 from seguridad.choices.opciones_usuario_choices import opciones_usuario_CHOICES
 from seguridad.choices.cod_naturaleza_empresa_choices import cod_naturaleza_empresa_CHOICES
-from almacen.models.organigrama_models import (
+from transversal.models.organigrama_models import (
     UnidadesOrganizacionales
 )
 
@@ -25,7 +25,7 @@ from string import ascii_letters, digits
 
 
 class Sexo(models.Model):
-    cod_sexo = models.CharField(max_length=1, db_column='T004CodSexo')
+    cod_sexo = models.CharField(primary_key=True, max_length=1, db_column='T004CodSexo')
     nombre = models.CharField(max_length=20, db_column='T004nombre')
 
     def __str__(self):  

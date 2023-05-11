@@ -56,7 +56,9 @@ urlpatterns = [
     path('short/', include('seguridad.urls.shortener_urls')),
 
     #TRANSVERSAL
+    path('api/transversal/choices/', include('transversal.urls.choices_urls')),
     path('api/transversal/vinculacion/',include('transversal.urls.vinculacion_urls')),
+    path('api/transversal/organigrama/', include('transversal.urls.organigrama_urls')),
 
     #GESTOR DOCUMENTAL
     path('api/gestor/ccd/', include('gestion_documental.urls.ccd_urls')),
@@ -76,7 +78,6 @@ urlpatterns = [
     path('api/almacen/entregas/', include('almacen.urls.entregas_urls')),
     path('api/almacen/choices/', include('almacen.urls.choices_urls')),
     path('api/almacen/mantenimientos/', include('almacen.urls.mantenimientos_urls')),
-    path('api/almacen/organigrama/', include('almacen.urls.organigrama_urls')),
     
     # CONSERVACIÓN
     path('api/conservacion/choices/', include('conservacion.urls.choices_urls')),
