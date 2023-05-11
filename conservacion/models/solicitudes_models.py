@@ -3,7 +3,7 @@ from conservacion.models.viveros_models import Vivero
 from seguridad.choices.municipios_choices import municipios_CHOICES
 from conservacion.choices.estado_aprobacion_choices import estado_aprobacion_CHOICES
 from seguridad.models import Personas
-from almacen.models.organigrama_models import UnidadesOrganizacionales
+from transversal.models.organigrama_models import UnidadesOrganizacionales
 from almacen.models.bienes_models import CatalogoBienes
 
 

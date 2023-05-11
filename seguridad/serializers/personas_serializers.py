@@ -4,6 +4,7 @@ from rest_framework import serializers
 from rest_framework.serializers import ReadOnlyField
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from seguridad.models import (
+    Departamento,
     Personas, 
     User,
     TipoDocumento, 
@@ -95,6 +96,31 @@ class PersonasSerializer(serializers.ModelSerializer):
     segundo_nombre = serializers.SerializerMethodField()
     primer_apellido = serializers.SerializerMethodField()
     segundo_apellido = serializers.SerializerMethodField()
+    cod_departamento_expedicion = serializers.ReadOnlyField(source='cod_municipio_expedicion_id.cod_departamento',default=None)
+    cod_departamento_residencia = serializers.SerializerMethodField()
+    cod_departamento_notificacion = serializers.SerializerMethodField()
+    cod_departamento_laboral = serializers.SerializerMethodField()
+    
+    def get_cod_departamento_residencia(self, obj):
+        cod_departamento_residencia = None
+        departamento = Departamento.objects.filter(cod_departamento=obj.municipio_residencia[:2]).first() if obj.municipio_residencia else None
+        if departamento:
+            cod_departamento_residencia = departamento.cod_departamento
+        return cod_departamento_residencia
+    
+    def get_cod_departamento_notificacion(self, obj):
+        cod_departamento_notificacion = None
+        departamento = Departamento.objects.filter(cod_departamento=obj.cod_municipio_notificacion_nal[:2]).first() if obj.cod_municipio_notificacion_nal else None
+        if departamento:
+            cod_departamento_notificacion = departamento.cod_departamento
+        return cod_departamento_notificacion
+    
+    def get_cod_departamento_laboral(self, obj):
+        cod_departamento_laboral = None
+        departamento = Departamento.objects.filter(cod_departamento=obj.cod_municipio_laboral_nal[:2]).first() if obj.cod_municipio_laboral_nal else None
+        if departamento:
+            cod_departamento_laboral = departamento.cod_departamento
+        return cod_departamento_laboral
     
     def get_tiene_usuario(self, obj):
         usuario = User.objects.filter(persona=obj.id_persona).exists()   
@@ -236,6 +262,7 @@ class PersonaNaturalPostSerializer(serializers.ModelSerializer):
             'direccion_laboral',
             'direccion_residencia_ref',
             'direccion_notificaciones',
+            'direccion_notificacion_referencia',
             'cod_municipio_laboral_nal',
             'cod_municipio_notificacion_nal',
             'acepta_notificacion_sms',
@@ -281,6 +308,7 @@ class PersonaNaturalUpdateSerializer(serializers.ModelSerializer):
             'nombre_comercial',
             'direccion_residencia',
             'direccion_residencia_ref',
+            'direccion_notificacion_referencia',
             'ubicacion_georeferenciada',
             'municipio_residencia',
             'pais_residencia',
@@ -345,6 +373,7 @@ class PersonaJuridicaPostSerializer(serializers.ModelSerializer):
             'email', 
             'email_empresarial',
             'direccion_notificaciones',
+            'direccion_notificacion_referencia',
             'cod_municipio_notificacion_nal',
             'cod_pais_nacionalidad_empresa',
             'telefono_celular_empresa',
@@ -388,7 +417,8 @@ class PersonaJuridicaUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Personas
         fields = [
-            'direccion_notificaciones', 
+            'direccion_notificaciones',
+            'direccion_notificacion_referencia',
             'cod_municipio_notificacion_nal',
             'email',
             'email_empresarial',
@@ -434,7 +464,8 @@ class GetPersonaJuridicaByRepresentanteLegalSerializer(serializers.ModelSerializ
             'email', 
             'email_empresarial',
             'telefono_celular', 
-            'direccion_notificaciones', 
+            'direccion_notificaciones',
+            'direccion_notificacion_referencia',
             'direccion_residencia',
             'pais_residencia',
             'municipio_residencia',
@@ -479,6 +510,7 @@ class PersonaNaturalPostByUserSerializer(serializers.ModelSerializer):
             'direccion_laboral',
             'direccion_residencia_ref',
             'direccion_notificaciones',
+            'direccion_notificacion_referencia',
             'cod_municipio_laboral_nal',
             'cod_municipio_notificacion_nal',
             'acepta_notificacion_sms',
@@ -556,6 +588,7 @@ class PersonaNaturalUpdateUserPermissionsSerializer(serializers.ModelSerializer)
             'direccion_laboral',
             'cod_municipio_laboral_nal',
             'direccion_notificaciones',
+            'direccion_notificacion_referencia',
             'cod_municipio_notificacion_nal',
             'email',
             'email_empresarial',
@@ -604,7 +637,8 @@ class PersonaJuridicaUpdateUserPermissionsSerializer(serializers.ModelSerializer
     class Meta:
         model = Personas
         fields = [
-            'direccion_notificaciones', 
+            'direccion_notificaciones',
+            'direccion_notificacion_referencia',
             'cod_municipio_notificacion_nal',
             'email',
             'email_empresarial',
@@ -664,15 +698,12 @@ class SucursalesEmpresasPostSerializer(serializers.ModelSerializer):
         
 
 class HistoricoEmailsSerializer(serializers.ModelSerializer):
-    id_persona = PersonasSerializer(read_only=True)
     class Meta:
         model = HistoricoEmails
         fields = '__all__'
         
         
 class HistoricoDireccionSerializer(serializers.ModelSerializer):
-    id_persona = PersonasSerializer(read_only=True)
-    
     class Meta:
         model = HistoricoDireccion
         fields = '__all__'
@@ -768,8 +799,6 @@ class PersonasFilterSerializer(serializers.ModelSerializer):
         razon_social2 = obj.razon_social
         razon_social2 = razon_social2.upper() if razon_social2 else razon_social2
         return razon_social2
-    
-    
         
     class Meta:
         model = Personas
@@ -785,8 +814,28 @@ class PersonasFilterSerializer(serializers.ModelSerializer):
             'nombre_completo',
             'razon_social',
             'nombre_comercial',
+            'digito_verificacion',
+            'cod_naturaleza_empresa',
             'tiene_usuario'
         ]
+
+class UsuarioAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id_usuario', 'nombre_de_usuario']
+
+class PersonasFilterAdminUserSerializer(PersonasFilterSerializer):
+    usuarios = serializers.SerializerMethodField()
+    
+    def get_usuarios(self, obj):
+        usuarios = User.objects.filter(persona=obj.id_persona)
+        usuarios_serializer = UsuarioAdminSerializer(usuarios, many=True)
+        usuarios_data = usuarios_serializer.data if usuarios_serializer else []
+        return usuarios_data
+        
+    class Meta:
+        model = Personas
+        fields = PersonasFilterSerializer.Meta.fields + ['usuarios']
 
 class BusquedaHistoricoCambiosSerializer(serializers.ModelSerializer):
     class Meta:

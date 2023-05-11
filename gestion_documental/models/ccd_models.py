@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models import Q
 from django.db.models.constraints import UniqueConstraint
-from almacen.models.organigrama_models import Organigramas, UnidadesOrganizacionales
+from transversal.models.organigrama_models import Organigramas, UnidadesOrganizacionales
 
 class CuadrosClasificacionDocumental(models.Model):
     id_ccd = models.AutoField(primary_key=True, editable=False, db_column='T206IdCCD')

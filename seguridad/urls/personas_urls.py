@@ -25,6 +25,11 @@ urlpatterns = [
     path('get-personas-by-document/<str:tipodocumento>/<str:numerodocumento>/', views.GetPersonasByTipoDocumentoAndNumeroDocumento.as_view(), name='persona-by-document-and-tipo-documento-get'),
     path('get-personas-filters/', views.GetPersonasByFilters.as_view(), name='get-personas-filters'),
     
+    # - Consultas Admin Usuarios
+    
+    path('get-personas-by-document-admin-user/<str:tipodocumento>/<str:numerodocumento>/', views.GetPersonasByTipoDocumentoAndNumeroDocumentoAdminUser.as_view(), name='persona-by-document-and-tipo-documento-get-admin-user'),
+    path('get-personas-filters-admin-user/', views.GetPersonasByFiltersAdminUser.as_view(), name='get-personas-filters-admin-user'),
+    
     path('get-persona-juridica/representante-legal/',views.GetPersonaJuridicaByRepresentanteLegal.as_view(),name='verify-persona-juridica'),
     path('buscar-historico-cambios/<str:id_persona>/', views.BusquedaHistoricoCambios.as_view(), name='buscar-historico-cambios'),
     
@@ -78,10 +83,10 @@ urlpatterns = [
     path('sucursales-empresas/create/', views.registerSucursalEmpresa.as_view(), name='sucursal-empresa-register'),
     
     # Historico Emails
-    path('historico-emails/get-list/', views.getHistoricoEmails.as_view(), name="historico-emails-get"),
+    path('historico-emails/<int:id_persona>/', views.HistoricoEmailsByIdPersona.as_view(), name="historico-emails"),
     
     # Historico Direcciones
-    path('historico-direcciones/get-list/', views.GetHistoricoDirecciones.as_view(), name="historico-direcciones-get"),
+    path('historico-direccion/<int:id_persona>/', views.HistoricoDireccionByIdPersona.as_view(), name="historico-direcciones"),
     
     # Cargos
     path('cargos/get-list/', views.GetCargosList.as_view(), name="cargos-get"),

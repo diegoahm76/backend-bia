@@ -227,9 +227,30 @@ class GetBienInsumosByCodigoAndName(generics.ListAPIView):
     queryset = CatalogoBienes.objects.all()
     permission_classes = [IsAuthenticated]
     
-    def get(self,request,codigo_bien, nombre_bien, id_vivero):
+    def get(self,request):
         queryset = self.queryset.all()
-        resultados_busqueda = queryset.filter(codigo_bien__icontains=codigo_bien, nombre__icontains=nombre_bien, cod_tipo_elemento_vivero="IN")
+        filter = {}
+        id_vivero = None
+        
+        for key, value in request.query_params.items():
+            if key in ['id_vivero']:
+                if value == '' and value == None:
+                    return Response({'success':False, 'detail':'Es obligatorio elegir un vivero'}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    id_vivero = value
+            elif key in ['nombre_bien']:
+                if value != '' and value != None:
+                    filter['nombre__icontains'] = value
+            elif key in ['codigo_bien']:
+                if value != '' and value != None:
+                    filter['codigo_bien__startswith'] = value
+                    
+        filter['cod_tipo_elemento_vivero'] = "IN"
+        
+        if id_vivero == None:
+            return Response({'success':False, 'detail':'Es obligatorio elegir un vivero'}, status=status.HTTP_400_BAD_REQUEST)
+                 
+        resultados_busqueda = queryset.filter(**filter)
         
         if not resultados_busqueda:
             return Response({'success':False, 'detail':'No se encontró ningún insumo con el código ingresado.'}, status=status.HTTP_400_BAD_REQUEST)

@@ -1,13 +1,14 @@
 from rest_framework import generics,status
 from rest_framework.response import Response
 from conservacion.models.viveros_models import HistoricoResponsableVivero, Vivero
+from almacen.models.generics_models import Bodegas
 from transversal.serializers.vinculacion_serializers import BusquedaHistoricoCargoUndSerializer, GetDesvinculacion_persona, VinculacionColaboradorSerializer, ConsultaVinculacionColaboradorSerializer, UpdateVinculacionColaboradorSerializer
 from seguridad.models import ClasesTerceroPersona, HistoricoActivacion, HistoricoCargosUndOrgPersona, Personas, User
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime, date, timedelta
 import copy
 from seguridad.models import Cargos, HistoricoCargosUndOrgPersona
-from almacen.models import UnidadesOrganizacionales
+from transversal.models import UnidadesOrganizacionales
 from seguridad.utils import Util
 
 class VinculacionColaboradorView(generics.UpdateAPIView):
@@ -357,7 +358,14 @@ class Desvinculacion_persona(generics.UpdateAPIView):
                 }
                 Util.save_auditoria(auditoria_data)
     
-                
+            #SI LA PERSONA ES RESPONSABLE DE ALGUNA BODEGA
+
+            bodegas = Bodegas.objects.filter(id_responsable=persona)
+
+            for bodega in bodegas:
+                bodega.id_responsable = None
+                bodega.save()
+
             if persona:
                 funcionarios = ClasesTerceroPersona.objects.filter(id_persona=persona,id_clase_tercero=2)
                 

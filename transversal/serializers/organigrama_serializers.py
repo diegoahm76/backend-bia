@@ -1,7 +1,12 @@
 from rest_framework import serializers
 from rest_framework.serializers import ReadOnlyField
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
-from almacen.models.organigrama_models import (
+from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
+from gestion_documental.models.tca_models import TablasControlAcceso
+from gestion_documental.models.trd_models import TablaRetencionDocumental
+from gestion_documental.serializers.tca_serializers import TCASerializer
+from gestion_documental.serializers.trd_serializers import TRDSerializer
+from transversal.models.organigrama_models import (
     Organigramas,
     NivelesOrganigrama,
     UnidadesOrganizacionales
@@ -156,3 +161,29 @@ class OrganigramaActivateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organigramas
         fields = ['actual']
+        
+class OrganigramaCambioDeOrganigramaActualSerializer(serializers.ModelSerializer):
+    class Meta:
+        model= Organigramas
+        fields=['justificacion_nueva_version']
+        
+class CCDSerializer_(serializers.ModelSerializer):
+    trd = serializers.SerializerMethodField()
+    tca = serializers.SerializerMethodField()
+    
+    def get_trd(value,instance):
+        trd = TablaRetencionDocumental.objects.filter(id_ccd=instance.id_ccd).first()
+        serializador = TRDSerializer(trd)
+        serializador = serializador.data if serializador else None
+        return serializador
+    
+    def get_tca(value,instance):
+        trd = TablaRetencionDocumental.objects.filter(id_ccd=instance.id_ccd).first()
+        tca = TablasControlAcceso.objects.filter(id_trd=trd.id_trd).first()
+        serializador = TCASerializer(tca)
+        serializador = serializador.data if serializador else None
+        return serializador
+    
+    class Meta:
+        fields = ['id_ccd','id_organigrama','version','nombre','fecha_terminado','fecha_puesta_produccion','fecha_retiro_produccion','justificacion','ruta_soporte','actual','valor_aumento_serie','valor_aumento_subserie','trd','tca']
+        model = CuadrosClasificacionDocumental

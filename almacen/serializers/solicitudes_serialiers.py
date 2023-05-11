@@ -6,7 +6,8 @@ from almacen.models.solicitudes_models import (
     SolicitudesConsumibles,
     ItemsSolicitudConsumible
 )
-from seguridad.models import ClasesTerceroPersona
+from seguridad.models import ClasesTerceroPersona, Personas
+from seguridad.serializers.personas_serializers import PersonasFilterSerializer
 
 class CrearSolicitudesPostSerializer(serializers.ModelSerializer):
     
@@ -45,6 +46,9 @@ class SolicitudesPendientesAprobarSerializer(serializers.ModelSerializer):
 
 class CrearItemsSolicitudConsumiblePostSerializer(serializers.ModelSerializer):
     #nro_posicion = serializers.IntegerField(validators=[UniqueValidator(queryset=ItemsSolicitudConsumible.objects.all())])
+    codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None) 
+    nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
+    
     class Meta:
         model = ItemsSolicitudConsumible
         fields = '__all__'
@@ -56,3 +60,9 @@ class CrearItemsSolicitudConsumiblePostSerializer(serializers.ModelSerializer):
             )
         ]
 
+class PersonasResponsablesFilterSerializer(PersonasFilterSerializer):
+    nombre_unidad_organizacional_actual=serializers.ReadOnlyField(source='id_unidad_organizacional_actual.nombre',default=None)
+    
+    class Meta:
+        model = Personas
+        fields = PersonasFilterSerializer.Meta.fields + ['id_unidad_organizacional_actual','nombre_unidad_organizacional_actual']

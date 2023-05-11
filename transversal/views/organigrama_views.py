@@ -3,14 +3,17 @@ from rest_framework import generics, views
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from itertools import groupby
+from gestion_documental.models.tca_models import TablasControlAcceso
+from gestion_documental.serializers.ccd_serializers import CCDSerializer
 from seguridad.utils import Util
 from django.db.models import Q, F
 from datetime import datetime
 import copy
 from operator import itemgetter
 from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
-from almacen.serializers.organigrama_serializers import ( 
+from transversal.serializers.organigrama_serializers import ( 
     NewUserOrganigramaSerializer,
+    OrganigramaCambioDeOrganigramaActualSerializer,
     OrganigramaSerializer,
     OrganigramaPutSerializer,
     PersonaOrgSerializer, 
@@ -21,7 +24,7 @@ from almacen.serializers.organigrama_serializers import (
     UnidadesGetSerializer,
     OrganigramaPostSerializer
     )
-from almacen.models.organigrama_models import (
+from transversal.models.organigrama_models import (
     Organigramas,
     UnidadesOrganizacionales,
     NivelesOrganigrama
@@ -29,6 +32,7 @@ from almacen.models.organigrama_models import (
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from seguridad.models import User, Personas
 from datetime import datetime
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
 # VIEWS FOR NIVELES ORGANIGRAMA
 class UpdateNiveles(generics.UpdateAPIView):
@@ -43,23 +47,23 @@ class UpdateNiveles(generics.UpdateAPIView):
             organigrama = Organigramas.objects.get(id_organigrama=id_organigrama)
             pass
         except:
-            return Response({'success': False, 'detail': 'No se pudo encontrar un organigrama con el parámetro ingresado'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se pudo encontrar un organigrama con el parámetro ingresado')
         
         #VALIDA SI NO HA CREADO NINGÚN NIVEL
         if not data:
-            return Response({'success': False, 'detail': 'No se puede guardar sin crear al menos un nivel'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se puede guardar sin crear al menos un nivel')
         
         #VALIDACIÓN QUE ID_ORGANIGRAMA SEA EL MISMO
         niveles_list_id = [nivel['id_organigrama'] for nivel in data]
         if len(set(niveles_list_id)) != 1:
-             return Response({'success':False, 'detail':'Debe validar que los niveles pertenezcan a un mismo Organigrama'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Debe validar que los niveles pertenezcan a un mismo Organigrama')
         else:
             if niveles_list_id[0] != int(id_organigrama):
-                return Response({'success':False, 'detail':'El id organigrama de la petición debe ser igual al enviado en url'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El id organigrama de la petición debe ser igual al enviado en url')
 
         #VALIDACION DE FECHA DE TERMINADO
         if organigrama.fecha_terminado != None:
-            return Response({'success': False, 'detail': 'El organigrama ya está terminado, por lo cúal no es posible realizar acciones sobre los niveles'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('El organigrama ya está terminado, por lo cúal no es posible realizar acciones sobre los niveles')
 
         #CREACION DE NIVELES Y VALIDACION DEL ORDEN DE NIVEL
         contador = 1
@@ -70,7 +74,7 @@ class UpdateNiveles(generics.UpdateAPIView):
                 contador += 1
                 pass
             else:
-                return Response({'success': False, 'detail': 'No coincide el orden de los niveles'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('No coincide el orden de los niveles')
         
         #Creación de niveles
         niveles_create = list(filter(lambda nivel: nivel['id_nivel_organigrama'] == None, data))
@@ -100,10 +104,10 @@ class UpdateNiveles(generics.UpdateAPIView):
         #Validacion NO PODER ELIMINAR un nivel que ya está siendo usado
         niveles_eliminar_list = [nivel.id_nivel_organigrama for nivel in niveles_total]
         if UnidadesOrganizacionales.objects.filter(id_nivel_organigrama__in=niveles_eliminar_list).exists():
-            return Response({'success': False, 'detail': 'El nivel que intenta eliminar ya se encuentra relacionado con una unidad organizacional'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('El nivel que intenta eliminar ya se encuentra relacionado con una unidad organizacional')
         niveles_total.delete()
 
-        return Response({'success':True,'detail': 'Actualizacion exitosa de los niveles'}, status=status.HTTP_201_CREATED)
+        return Response({'success':True, 'detail':'Actualizacion exitosa de los niveles'}, status=status.HTTP_201_CREATED)
 
 class GetNiveles(generics.ListAPIView):
     serializer_class = NivelesGetSerializer
@@ -113,11 +117,11 @@ class GetNiveles(generics.ListAPIView):
         if consulta == None:
             niveles = NivelesOrganigrama.objects.all().values()
             if len(niveles) == 0:
-                return Response({'success': False, 'detail' : 'Aún no hay niveles registrados'}, status=status.HTTP_404_NOT_FOUND)
-            return Response({'success': True, 'Niveles' : niveles}, status=status.HTTP_200_OK)
+                raise NotFound( 'Aún no hay niveles registrados')
+            return Response({'success':True, 'Niveles' : niveles}, status=status.HTTP_200_OK)
         else:
             nivel = NivelesOrganigrama.objects.filter(id_nivel_organigrama=int(consulta)).values()
-            return Response({'success': True, 'Nivel': nivel}, status=status.HTTP_200_OK)
+            return Response({'success':True, 'Nivel': nivel}, status=status.HTTP_200_OK)
 
 
 class GetNivelesByOrganigrama(generics.ListAPIView):
@@ -128,9 +132,9 @@ class GetNivelesByOrganigrama(generics.ListAPIView):
     def get(self, request, id_organigrama):
         niveles = NivelesOrganigrama.objects.filter(id_organigrama=id_organigrama)
         if not niveles:
-            return Response({'success': True, 'detail': 'No se encontraron niveles para el organigrama ingresado', 'data': niveles.values()}, status=status.HTTP_200_OK)
+            return Response({'success':True, 'detail':'No se encontraron niveles para el organigrama ingresado', 'data': niveles.values()}, status=status.HTTP_200_OK)
         serializer = self.serializer_class(niveles, many=True)
-        return Response({'success': True, 'detail': 'Se encontraron los siguientes niveles para el organigrama ingresado', 'data': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Se encontraron los siguientes niveles para el organigrama ingresado', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
 #VIEWS FOR UNIDADES ORGANIZACIONALES 
@@ -160,60 +164,60 @@ class UpdateUnidades(generics.UpdateAPIView):
                     niveles_list = [unidad['id_nivel_organigrama'] for unidad in data]
                     niveles_existe = NivelesOrganigrama.objects.filter(id_nivel_organigrama__in=niveles_list)
                     if niveles_existe.count() != len(list(dict.fromkeys(niveles_list))):
-                        return Response({'success':False, 'detail':'Uno o varios niveles que está asociando no existen'}, status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('Uno o varios niveles que está asociando no existen')
                     
                     # VALIDACIÓN DE UNA SOLA RAÍZ          
                     raiz_list = [unidad['unidad_raiz'] for unidad in data]
                     if raiz_list.count(True) > 1:
-                        return Response({'success':False, 'detail':'No puede definir más de una unidad como raíz'}, status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('No puede definir más de una unidad como raíz')
                     
                     # VALIDACIÓN DE CÓDIGO ÚNICO          
                     codigo_list = [unidad['codigo'] for unidad in data]
                     if len(set(codigo_list)) != len(codigo_list):
-                        return Response({'success':False, 'detail':'No puede definir más de una unidad con el mismo código'}, status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('No puede definir más de una unidad con el mismo código')
                     
                     # VALIDACIÓN DE NOMBRE ÚNICO          
                     nombre_list = [unidad['nombre'] for unidad in data]
                     if len(set(nombre_list)) != len(nombre_list):
-                        return Response({'success':False, 'detail':'No puede definir más de una unidad con el mismo nombre'}, status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('No puede definir más de una unidad con el mismo nombre')
                     
                     # VALIDACIÓN DE EXISTENCIA UNIDAD RAÍZ Y PERTENENCIA A NIVEL UNO
                     unidad_raiz = list(filter(lambda unidad: unidad['unidad_raiz'] == True, data))
                     if unidad_raiz:
                         nivel_instance = NivelesOrganigrama.objects.filter(id_nivel_organigrama=unidad_raiz[0]['id_nivel_organigrama']).first()
                         if nivel_instance.orden_nivel != 1:
-                            return Response({'success':False, 'detail':'La unidad raíz solo puede pertenecer al nivel uno'}, status=status.HTTP_400_BAD_REQUEST)
+                           raise ValidationError('La unidad raíz solo puede pertenecer al nivel uno')
                     else:
-                        return Response({'success':False, 'detail':'Debe enviar la unidad raíz'}, status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('Debe enviar la unidad raíz')
                     
                     # VALIDACIÓN QUE SECCIÓN SEA UNIDAD RAÍZ
                     seccion_raiz = list(filter(lambda unidad: unidad['cod_agrupacion_documental'] == 'SEC', data))
                     if seccion_raiz:
                         nivel_instance = NivelesOrganigrama.objects.filter(id_nivel_organigrama=seccion_raiz[0]['id_nivel_organigrama']).first()
                         if nivel_instance.orden_nivel != 1:
-                            return Response({'success':False, 'detail':'La sección solo puede pertenecer a la unidad raíz'}, status=status.HTTP_400_BAD_REQUEST)
+                            raise ValidationError('La sección solo puede pertenecer a la unidad raíz')
                     
                     # VALIDACIÓN QUE UNIDADES STAFF SEAN DE NIVEL SUPERIOR AL UNO
                     staff_unidades = list(filter(lambda unidad: unidad['cod_tipo_unidad'] != 'LI', data))
                     for unidad in staff_unidades:
                         nivel_instance = NivelesOrganigrama.objects.filter(id_nivel_organigrama=unidad['id_nivel_organigrama']).first()
                         if nivel_instance.orden_nivel < 2:
-                            return Response({'success':False, 'detail':'Las unidades de staff deben tener un nivel superior al uno'}, status=status.HTTP_400_BAD_REQUEST)
+                            raise ValidationError('Las unidades de staff deben tener un nivel superior al uno')
 
                     # VALIDACIÓN DE EXISTENCIA DE SECCIÓN Y UNA SOLA SECCIÓN
                     seccion_list = [unidad['cod_agrupacion_documental'] for unidad in data]
                     if seccion_list:
                         if seccion_list.count('SEC') > 1:
-                            return Response({'success':False, 'detail':'No puede definir más de una unidad como sección'}, status=status.HTTP_400_BAD_REQUEST)
+                            raise ValidationError('No puede definir más de una unidad como sección')
                         if ('SUB' in seccion_list) and ('SEC' not in seccion_list):
-                            return Response({'success':False, 'detail':'Debe definir la sección para las subsecciones'}, status=status.HTTP_400_BAD_REQUEST)
+                            raise ValidationError('Debe definir la sección para las subsecciones')
                     
                     # VALIDACIÓN DE EXISTENCIA DE UNIDADES PADRE
                     unidades_codigo_list = [unidad['codigo'] for unidad in data]
                     unidades_padre_list = [unidad['cod_unidad_org_padre'] for unidad in data if unidad['cod_unidad_org_padre'] is not None]
                     
                     if not set(unidades_padre_list).issubset(unidades_codigo_list):
-                        return Response({'success':False, 'detail':'Debe asociar unidades padre que existan'}, status=status.HTTP_400_BAD_REQUEST)          
+                        raise ValidationError('Debe asociar unidades padre que existan')          
                     
                     # VALIDACIÓN DE UNA UNIDAD EN NIVEL UNO
                     padre_unidad_list = []
@@ -227,17 +231,17 @@ class UpdateUnidades(generics.UpdateAPIView):
                         current_cod_unidades.extend(unidades_codigo_list)
                         unidades_padre_list = [unidad['cod_unidad_org_padre'] for unidad in unidades_list if unidad['cod_unidad_org_padre'] is not None]
                         if not set(unidades_padre_list).issubset(current_cod_unidades):
-                            return Response({'success':False, 'detail':'Debe asociar unidades padre de línea superiores a unidades hijos'}, status=status.HTTP_400_BAD_REQUEST)   
+                            raise ValidationError('Debe asociar unidades padre de línea superiores a unidades hijos')   
                         
                         # VALIDACIÓN DE UNA UNIDAD EN NIVEL UNO
                         if nivel_instance.orden_nivel == 1 and (len(unidades_list) > 1):
-                            return Response({'success':False, 'detail':'Solo debe establecer una unidad para el nivel uno'}, status=status.HTTP_400_BAD_REQUEST)
+                            raise ValidationError('Solo debe establecer una unidad para el nivel uno')
                         if nivel_instance.orden_nivel != 1:
                             
                             # VALIDACIÓN DEFINIR PADRES EN TODAS LOS NIVELES MENOS EL UNO
                             unidades_org = list(filter(lambda unidad: unidad['cod_unidad_org_padre'] == None or unidad['cod_unidad_org_padre'] == '', unidades_list))
                             if unidades_org:
-                                return Response({'success':False, 'detail':'Debe definir el padre en todas las unidades distintas a la raiz'}, status=status.HTTP_400_BAD_REQUEST)                
+                                raise ValidationError('Debe definir el padre en todas las unidades distintas a la raiz')                
                             
                             # VALIDACIÓN QUE EL PADRE DE SUBSECCIÓN ESTÉ MARCADO COMO SUBSECCIÓN
                             unidades_sub = list(filter(lambda unidad: unidad['cod_agrupacion_documental'] == 'SUB', unidades_list))
@@ -245,12 +249,12 @@ class UpdateUnidades(generics.UpdateAPIView):
                                 unidad_padre = list(filter(lambda unidad: unidad['codigo'] == unidades_sub[0]['cod_unidad_org_padre'], data))
                                 if unidad_padre:
                                     if unidad_padre[0]['cod_agrupacion_documental'] == None or unidad_padre[0]['cod_agrupacion_documental'] == '':
-                                        return Response({'success':False, 'detail':'Debe marcar las unidades padre como subsecciones'}, status=status.HTTP_400_BAD_REQUEST)
+                                        raise ValidationError('Debe marcar las unidades padre como subsecciones')
                         #VALIDACIÓN QUE CUANDO ES UNA UNIDAD DE APOYO O SOPORTE EL PADRE DEBE SER DE NIVEL INMEDIATAMENTE ANTERIOR
                         unidades_padre_staff_list = [unidad['cod_unidad_org_padre'] for unidad in unidades_list if unidad['cod_tipo_unidad'] != 'LI']
 
                         if not set(unidades_padre_staff_list).issubset(padre_unidad_list):
-                            return Response({'success':False, 'detail':'Debe asociar unidades padre de línea inmediatamente anteriores para las unidades staff'}, status=status.HTTP_400_BAD_REQUEST) 
+                            raise ValidationError('Debe asociar unidades padre de línea inmediatamente anteriores para las unidades staff') 
                             
                         padre_unidad_list = unidades_codigo_list
 
@@ -275,13 +279,13 @@ class UpdateUnidades(generics.UpdateAPIView):
                                 id_unidad_org_padre=unidad_org
                             )
                     
-                    return Response({'success':True,'detail': 'Actualizacion exitosa de las unidades'}, status=status.HTTP_201_CREATED)
+                    return Response({'success':True, 'detail':'Actualizacion exitosa de las unidades'}, status=status.HTTP_201_CREATED)
                 else:
-                    return Response({'success':False, 'detail':'Debe crear por lo menos una unidad'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('Debe crear por lo menos una unidad')
             else:
-                return Response({'success':False, 'detail':'El organigrama ya está terminado, por lo cual no es posible realizar acciones sobre las unidades'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El organigrama ya está terminado, por lo cual no es posible realizar acciones sobre las unidades')
         else:
-            return Response({'success':False, 'detail':'El organigrama no existe'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('El organigrama no existe')
 
 
 class GetUnidades(generics.ListAPIView):
@@ -293,14 +297,14 @@ class GetUnidades(generics.ListAPIView):
         if consulta == None:
             unidades = UnidadesOrganizacionales.objects.all().values()
             if len(unidades) == 0:
-                return Response({'success': False, 'detail' : 'Aún no hay unidades registradas'}, status=status.HTTP_404_NOT_FOUND)
-            return Response({'success': True, 'Unidades' : unidades}, status=status.HTTP_200_OK)
+                raise NotFound( 'Aún no hay unidades registradas')
+            return Response({'success':True, 'Unidades' : unidades}, status=status.HTTP_200_OK)
         unidades = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = int(consulta)).values()
         unidades_vector = unidades[0]
         id_niveles = unidades_vector['id_nivel_organigrama_id']
         nivel = NivelesOrganigrama.objects.filter(id_nivel_organigrama = id_niveles).values()
         unidades_vector['id_nivel_organigrama_id'] = nivel
-        return Response({'success': True, 'Unidades' : unidades_vector}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'Unidades' : unidades_vector}, status=status.HTTP_200_OK)
 
 class GetUnidadesByOrganigrama(generics.ListAPIView):
     serializer_class = UnidadesGetSerializer
@@ -314,11 +318,11 @@ class GetUnidadesByOrganigrama(generics.ListAPIView):
                 unidad_padre_instance = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=unidad['id_unidad_org_padre']).first()
                 unidad['cod_unidad_org_padre'] = unidad_padre_instance.codigo if unidad_padre_instance else None
             if unidades:
-                return Response({'success': True, 'detail': 'Se encontraron unidades para el organigrama', 'data' : unidades}, status=status.HTTP_200_OK)
+                return Response({'success':True, 'detail':'Se encontraron unidades para el organigrama', 'data' : unidades}, status=status.HTTP_200_OK)
             else:
-                return Response({'success': True, 'detail': 'No se encontraron unidades para el organigrama', 'data' : unidades}, status=status.HTTP_200_OK)
+                return Response({'success':True, 'detail':'No se encontraron unidades para el organigrama', 'data' : unidades}, status=status.HTTP_200_OK)
         else:
-            return Response({'success':False, 'detail':'El organigrama no existe'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('El organigrama no existe')
 
 
 class GetUnidadesOrganigramaActual(generics.ListAPIView):
@@ -328,14 +332,14 @@ class GetUnidadesOrganigramaActual(generics.ListAPIView):
     def get(self, request):
         organigrama = Organigramas.objects.filter(actual=True)
         if not organigrama:
-            return Response({'success': False, 'detail': 'No existe ningún organigrama activado'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe ningún organigrama activado')
         if len(organigrama) > 1:
-            return Response({'success': False, 'detail': 'Existe más de un organigrama actual, contacte a soporte'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('Existe más de un organigrama actual, contacte a soporte')
         
         organigrama_actual = organigrama.first()
         unidades_organigrama_actual = UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama_actual.id_organigrama)
         serializer = self.serializer_class(unidades_organigrama_actual, many=True)
-        return Response({'success': True, 'detail': 'Consulta Exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Consulta Exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
 #VIEWS FOR ORGANIGRAMA
@@ -353,9 +357,9 @@ class FinalizarOrganigrama(generics.UpdateAPIView):
                 nivel_list= [nivel.id_nivel_organigrama for nivel in niveles] 
                 nivel_unidad_list=[unidad.id_nivel_organigrama.id_nivel_organigrama for unidad in unidades]
                 if not niveles:
-                    return Response({'success':False,'detail':'No se puede finalizar organigrama si no cuenta con minimo un nivel'}, status=status.HTTP_403_FORBIDDEN)
+                    raise PermissionDenied('No se puede finalizar organigrama si no cuenta con minimo un nivel')
                 if not unidades:
-                    return Response({'success':False,'detail':'No se puede finalizar organigrama porque debe contener por lo menos una unidad'}, status=status.HTTP_403_FORBIDDEN)
+                    raise PermissionDenied('No se puede finalizar organigrama porque debe contener por lo menos una unidad')
                #Confirmación de unidades para borrar las que no están siendo utilizadas
                 if confirm == 'true':
                     nivel_difference_list = [nivel for nivel in nivel_list if nivel not in nivel_unidad_list]
@@ -371,24 +375,30 @@ class FinalizarOrganigrama(generics.UpdateAPIView):
                             nivel_difference_instance.delete()
                         else:
                             return Response({"Detail":"No se puede borrar",'La unidad que no se puede borrar es= ':nivel_difference_values})
-                    return Response({'success':True,'detail':'Niveles eliminadas'},status=status.HTTP_200_OK)
+                    return Response({'success':True, 'detail':'Niveles eliminadas'},status=status.HTTP_200_OK)
                 if nivel_list and not nivel_unidad_list: # si los niveles no se está utilizando (hace comparacion de dos listas)
                     nivel_difference_list = [nivel for nivel in nivel_list if nivel not in nivel_unidad_list]
                     nivel_difference_instance = NivelesOrganigrama.objects.filter(id_nivel_organigrama__in=nivel_difference_list).values()
-                    return Response({'success':False,'detail':'No se puede finalizar organigrama porque debe utilizar todos los niveles', 'Niveles sin asignar': nivel_difference_instance}, status=status.HTTP_403_FORBIDDEN)
+                    try:
+                        raise PermissionDenied('No se puede finalizar organigrama porque debe utilizar todos los niveles')
+                    except PermissionDenied as e:
+                        return Response({'success':False, 'detail':'No se puede finalizar organigrama porque debe utilizar todos los niveles', 'Niveles sin asignar': nivel_difference_instance}, status=status.HTTP_403_FORBIDDEN)
                 if not set(nivel_list).issubset(nivel_unidad_list): 
                     nivel_difference_list = [nivel for nivel in nivel_list if nivel not in nivel_unidad_list]
                     print('NO SE ESTAN UTILIZANDO',nivel_difference_list)
                     nivel_difference_instance = NivelesOrganigrama.objects.filter(id_nivel_organigrama__in=nivel_difference_list).values()
-                    return Response({'success':False,'detail':'No se puede finalizar organigrama porque debe utilizar todos los niveles', 'Niveles sin asignar': nivel_difference_instance}, status=status.HTTP_403_FORBIDDEN)
+                    try:
+                        raise PermissionDenied('No se puede finalizar organigrama porque debe utilizar todos los niveles')
+                    except PermissionDenied as e:
+                        return Response({'success':False, 'detail':'No se puede finalizar organigrama porque debe utilizar todos los niveles', 'Niveles sin asignar': nivel_difference_instance}, status=status.HTTP_403_FORBIDDEN)
                 organigrama_a_finalizar.fecha_terminado=datetime.now()
                 organigrama_a_finalizar.id_persona_cargo=None
                 organigrama_a_finalizar.save()
-                return Response({'success':True,'detail':'Se Finalizo el organigrama correctamente'},status=status.HTTP_200_OK)
+                return Response({'success':True, 'detail':'Se Finalizo el organigrama correctamente'},status=status.HTTP_200_OK)
             else:
-                return Response({'success':False, 'detail':'Ya se encuentra finalizado este Organigrama'})
+                raise PermissionDenied('Ya se encuentra finalizado este Organigrama')
 
-        return Response({'success':False,'detail':'No existe organigrama'},status=status.HTTP_403_FORBIDDEN)
+        raise PermissionDenied('No existe organigrama')
 class CreateOrgChart(generics.CreateAPIView):
     serializer_class = OrganigramaPostSerializer
     queryset = Organigramas.objects.all()
@@ -404,7 +414,7 @@ class CreateOrgChart(generics.CreateAPIView):
             serializer.is_valid(raise_exception=True)
             pass
         except:
-            return Response({'success': False, 'detail': 'Validar la data ingresada, el nombre debe ser único y es requerido, la descripción y la versión son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Validar la data ingresada, el nombre debe ser único y es requerido, la descripción y la versión son requeridos')
         serializador = serializer.save()
 
         #Auditoria Crear Organigrama
@@ -421,7 +431,7 @@ class CreateOrgChart(generics.CreateAPIView):
         }
         Util.save_auditoria(auditoria_data)
 
-        return Response({'success': True, 'detail': serializer.data}, status=status.HTTP_201_CREATED)
+        return Response({'success':True, 'detail':serializer.data}, status=status.HTTP_201_CREATED)
 
 class UpdateOrganigrama(generics.RetrieveUpdateAPIView):
     serializer_class = OrganigramaPutSerializer
@@ -433,7 +443,7 @@ class UpdateOrganigrama(generics.RetrieveUpdateAPIView):
         organigrama = Organigramas.objects.get(id_organigrama=id_organigrama)   
         previous_organigrama = copy.copy(organigrama)
         if organigrama.fecha_terminado:
-            return Response({'success': False, 'detail': 'No se puede actualizar un organigrama que ya está terminado'})   
+            raise PermissionDenied('No se puede actualizar un organigrama que ya está terminado')   
         ccd = list(CuadrosClasificacionDocumental.objects.filter(id_organigrama=organigrama.id_organigrama).values())
         if not len(ccd):
             serializer = self.serializer_class(organigrama, data=request.data)
@@ -441,7 +451,7 @@ class UpdateOrganigrama(generics.RetrieveUpdateAPIView):
                 serializer.is_valid(raise_exception=True)
                 pass
             except:
-                return Response({'success': False, 'detail': 'Validar la data ingresada, el nombre debe ser único y es requerido, la descripción y la versión son requeridos'},status=status.HTTP_400_BAD_REQUEST)    
+                raise ValidationError('Validar la data ingresada, el nombre debe ser único y es requerido, la descripción y la versión son requeridos')    
             serializer.save()
 
             # AUDITORIA DE UPDATE DE ORGANIGRAMA
@@ -459,9 +469,9 @@ class UpdateOrganigrama(generics.RetrieveUpdateAPIView):
                 'valores_actualizados': valores_actualizados
             }
             Util.save_auditoria(auditoria_data)
-            return Response({'success': True, 'detail': serializer.data}, status=status.HTTP_201_CREATED)
+            return Response({'success':True, 'detail':serializer.data}, status=status.HTTP_201_CREATED)
         else:
-            return Response({'sucsess': False, 'detail': 'Ya está siendo usado este organigrama'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('Ya está siendo usado este organigrama')
 
 class GetOrganigrama(generics.ListAPIView):
     serializer_class = OrganigramaSerializer  
@@ -472,12 +482,12 @@ class GetOrganigrama(generics.ListAPIView):
             organigramas = Organigramas.objects.all()
             serializador = self.serializer_class(organigramas,many=True)
             if len(organigramas) == 0:
-                return Response({'success':False, 'detail' : 'Aún no hay organigramas registrados'}, status=status.HTTP_404_NOT_FOUND)
+                raise NotFound( 'Aún no hay organigramas registrados')
             return Response({'Organigramas' : serializador.data}, status=status.HTTP_200_OK) 
         organigrama = Organigramas.objects.filter(id_organigrama=int(consulta))
         serializador = self.serializer_class(organigramas,many=True)
         if len(organigrama) == 0:
-            return Response({'success': False, 'detail' : 'No se encontró el organigrama ingresado'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound( 'No se encontró el organigrama ingresado')
         niveles = NivelesOrganigrama.objects.filter(id_organigrama=int(consulta)).values()
         if len(niveles) == 0:
             niveles = 'No hay niveles registrados'
@@ -503,7 +513,7 @@ class GetSeccionSubsecciones(generics.ListAPIView):
             serializer = self.serializer_class(unidades, many=True)
             return Response({'success':True, 'detail':'Se encontraron las siguientes unidades', 'data':serializer.data}, status=status.HTTP_200_OK)
         else:
-            return Response({'success':False, 'detail':'Debe consultar por un organigrama válido'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('Debe consultar por un organigrama válido')
             
 class GetOrganigramasTerminados(generics.ListAPIView):
     serializer_class = OrganigramaSerializer
@@ -539,11 +549,11 @@ class GetUnidadesJerarquizadas(generics.ListAPIView):
                     if unidad['unidad_raiz']:
                         unidades_jerarquia.append(unidad)
                         
-                return Response({'success': True, 'detail': 'Se encontraron unidades para el organigrama', 'data' : unidades_jerarquia}, status=status.HTTP_200_OK)
+                return Response({'success':True, 'detail':'Se encontraron unidades para el organigrama', 'data' : unidades_jerarquia}, status=status.HTTP_200_OK)
             else:
-                return Response({'success': True, 'detail': 'No se encontraron unidades para el organigrama', 'data' : unidades}, status=status.HTTP_200_OK)
+                return Response({'success':True, 'detail':'No se encontraron unidades para el organigrama', 'data' : unidades}, status=status.HTTP_200_OK)
         else:
-            return Response({'success':False, 'detail':'El organigrama no existe'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('El organigrama no existe')
 #BUSQUEDA USUARIO ORGANIGRAMA
 class GetNuevoUserOrganigrama(generics.RetrieveAPIView):
     serializer_class = PersonaOrgSerializer
@@ -556,19 +566,19 @@ class GetNuevoUserOrganigrama(generics.RetrieveAPIView):
         persona_log = request.user.persona.id_persona #para validar de que la persona no pueda reasignarse asi mismo el organigrama
         nuevo_user_organigrama = Personas.objects.filter(tipo_documento=tipo_documento, numero_documento=numero_documento).first()
         if not nuevo_user_organigrama:
-            return Response({'succes':False, 'detail':'No existe la persona con ese tipo y numero de documento.'},status=status.HTTP_404_NOT_FOUND) 
+            raise NotFound('No existe la persona con ese tipo y numero de documento.') 
         if not nuevo_user_organigrama.fecha_a_finalizar_cargo_actual or nuevo_user_organigrama.fecha_a_finalizar_cargo_actual < fecha_sistema:
-            return Response({'succes':False, 'detail':'La persona no se encuentra vinculada o la fecha de finalización del cargo ya expiro.'},status=status.HTTP_404_NOT_FOUND) 
+            raise NotFound('La persona no se encuentra vinculada o la fecha de finalización del cargo ya expiro.') 
                 
         if nuevo_user_organigrama.id_persona == persona_log:
-            return Response({'succes':False, 'detail':'La persona no se puede reasignar asi mismo.'},status=status.HTTP_404_NOT_FOUND)              
+            raise NotFound('La persona no se puede reasignar asi mismo.')              
         
         if nuevo_user_organigrama:
             serializador = self.serializer_class(nuevo_user_organigrama)
             return Response({'succes':True, 'detail':'Los datos coincidieron con los criterios de busqueda','data':serializador.data},status=status.HTTP_200_OK)
         
         else:
-            return Response({'succes':False, 'detail':'La persona no existe o no tiene un cargo actual'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('La persona no existe o no tiene un cargo actual')
 
 #BUSQUEDA AVANZADA PERSONA ORGANIGRAMA
 class GetNuevoUserOrganigramaFilters(generics.ListCreateAPIView):
@@ -604,7 +614,7 @@ class AsignarOrganigramaUser(generics.CreateAPIView):
         id_organigrama = request.query_params.get('id_organigrama')
         
         if not id_persona and id_organigrama:
-            return Response({'succes':False,'detail':'No pueden estar vacios los campos.'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No pueden estar vacios los campos.')
         
         #validaciones de funcionamiento
         
@@ -613,24 +623,24 @@ class AsignarOrganigramaUser(generics.CreateAPIView):
         persona_super_usuario = User.objects.filter(id_usuario=1).first()
         
         if not persona:
-            return Response({'succes':False,'detail':'No existe la persona ingresada.'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe la persona ingresada.')
         
         if not organigrama:
-            return Response({'succes':False,'detail':'No existe el organigrama ingresado.'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe el organigrama ingresado.')
         
         persona_logueado = request.user.persona.id_persona
         
         if organigrama.id_persona_cargo.id_persona != persona_logueado  and  persona_logueado != persona_super_usuario.persona.id_persona:
-            return Response({'succes':False, 'detail':'No tiene permisos para asignar este organigrama.'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No tiene permisos para asignar este organigrama.')
         
         if persona.id_persona == organigrama.id_persona_cargo.id_persona:
-            return Response({'succes':False, 'detail':'La persona no se puede reasignar asi mismo.'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('La persona no se puede reasignar asi mismo.')
         
         if not persona.fecha_a_finalizar_cargo_actual or persona.fecha_a_finalizar_cargo_actual < fecha_sistema:
-            return Response({'succes':False, 'detail':'La persona no se encuentra vinculada o la fecha de finalización del cargo ya expiro.'},status=status.HTTP_404_NOT_FOUND)             
+            raise NotFound('La persona no se encuentra vinculada o la fecha de finalización del cargo ya expiro.')             
         
         if organigrama.fecha_terminado != None:
-            return Response({'succes':False, 'detail':'El organigrama ya se encuentra finalizado no se puede delegar.'},status=status.HTTP_404_NOT_FOUND)             
+            raise NotFound('El organigrama ya se encuentra finalizado no se puede delegar.')             
 
         
         #DELEGAR ORGANIGRAMA
@@ -650,10 +660,10 @@ class ReanudarOrganigrama(generics.RetrieveUpdateAPIView):
         organigrama = Organigramas.objects.filter(id_organigrama=id_organigrama).first()
         
         if not organigrama:
-            return Response({'succes':False,'detail':'No existe el organigrama ingresado.'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe el Organigrama Ingresado.') #PARA ERRORES 404_NOT_FOUND
         
         if organigrama.fecha_terminado == None:
-            return Response({'succes':False, 'detail':'El organigrama debe de estar finalizado para su Reanudación.'},status=status.HTTP_403_FORBIDDEN)             
+            raise PermissionDenied('El organigrama debe de estar finalizado para su Reanudación.')#PARA ERRORES 403_FORBIDDEN
 
         # persona_logueado = request.user.persona.id_persona
         
@@ -663,14 +673,141 @@ class ReanudarOrganigrama(generics.RetrieveUpdateAPIView):
         ccd_activo = CuadrosClasificacionDocumental.objects.filter(id_organigrama=id_organigrama).first()
         
         if ccd_activo:
-            return Response({'succes':False, 'detail':'El Organigrama ya esta siendo utilizado por un CCD.'},status=status.HTTP_404_NOT_FOUND)             
+            raise NotFound('El Organigrama ya esta siendo utilizado por un CCD.')             
         
         organigrama.fecha_terminado = None
         
         organigrama.save()
         return Response({'succes': True, 'detail':'Se reanudo correctamente el organigrama.'}, status=status.HTTP_200_OK)
 
+class CambioDeOrganigramaActual(generics.UpdateAPIView):
+    serializer_class = OrganigramaCambioDeOrganigramaActualSerializer
+    queryset = Organigramas.objects.all()
+    queryset2 = CuadrosClasificacionDocumental.objects.all()
+    
+    def put(self,request):
         
+        data = request.data
+        organigrama_seleccionado = self.queryset.filter(id_organigrama = data['organigrama']).first()
+        organigrama_actual = self.queryset.filter(actual = True).first()
+        ccd_actual = self.queryset2.filter(actual=True).first()
+        
+        if not ccd_actual:
+            organigrama_seleccionado.justificacion_nueva_version = data['justificacion']
+            organigrama_seleccionado.actual = True
+            organigrama_seleccionado.fecha_puesta_produccion = datetime.now()
+            
+            if organigrama_actual:
+                organigrama_actual.fecha_retiro_produccion = datetime.now()
+                organigrama_actual.actual = False
+            
+        else:
+            if not data.get('id_ccd'):
+                raise ValidationError('Debe de seleccionar un CCD')
+            
+            #CCD SELECCIONADO
+            ccd_seleccionado =  self.queryset2.filter(id_ccd=data.get('id_ccd'))
+            tca = TablasControlAcceso.objects.filter(id_trd__id_ccd=ccd_seleccionado).first()
+            
+            #ACTIVACION TCA
+            
+            tca.actual = True
+            tca.fecha_puesta_produccion = datetime.now()
+            tca.justificacion_nueva_version = data['justificacion']
+            
+            #ACTIVACION TRD
+            
+            tca.id_trd.actual = True
+            tca.id_trd.fecha_puesta_produccion = datetime.now()
+            tca.id_trd.justificacion = data['justificacion']
+            
+            #ACTIVACION CCD
+            
+            tca.id_trd.id_ccd.actual = True
+            tca.id_trd.id_ccd.fecha_puesta_produccion = datetime.now()
+            tca.id_trd.id_ccd.justificacion = data['justificacion']
+            
+            #ACTIVACION ORG
+            
+            organigrama_seleccionado.justificacion_nueva_version = data['justificacion']
+            organigrama_seleccionado.actual = True
+            organigrama_seleccionado.fecha_puesta_produccion = datetime.now()
 
+            #CCD ACTUAL
             
+            tca_actual = TablasControlAcceso.objects.filter(id_trd__id_ccd=ccd_actual).first()
             
+            #DESACTIVACION TCA
+            
+            tca_actual.actual = False
+            tca_actual.fecha_puesta_produccion = datetime.now()
+    
+            #DESACTIVACION TRD
+            
+            tca_actual.id_trd.actual = False
+            tca_actual.id_trd.fecha_puesta_produccion = datetime.now()
+            
+            #DESACTIVACION CCD
+            
+            tca_actual.id_trd.id_ccd.actual = False
+            tca_actual.id_trd.id_ccd.fecha_puesta_produccion = datetime.now()
+            
+            #DESACTIVACION ORG
+            
+            tca_actual.id_trd.id_ccd.id_organigrama.actual = False
+            tca_actual.id_trd.id_ccd.id_organigrama.fecha_puesta_produccion = datetime.now()
+            
+            #GUARDADO
+            tca.save()
+            tca.id_trd.id_ccd.id_organigrama.save()
+            tca.id_trd.id_ccd.save()
+            tca.id_trd.save()
+            
+            #GUARDADO
+            tca_actual.save()
+            tca_actual.id_trd.id_ccd.id_organigrama.save()
+            tca_actual.id_trd.id_ccd.save()
+            tca_actual.id_trd.save()
+            
+            return Response ({'success':True,'detail':'Se activó el instrumento archivistico correctamente '},status=status.HTTP_200_OK)
+        
+class GetCCDTerminadoByORG(generics.ListAPIView):
+    serializer_class = CCDSerializer
+    queryset = CuadrosClasificacionDocumental.objects.filter(~Q(fecha_terminado = None) & Q(fecha_puesta_produccion=None))
+
+    def get(self, request, id_organigrama):
+        organigrama = Organigramas.objects.filter(id_organigrama = id_organigrama).first()
+        if not organigrama:
+            return Response({'success': False, 'detail': 'El organigrama ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+
+        if organigrama.fecha_terminado == None or organigrama.fecha_retiro_produccion != None or organigrama.fecha_puesta_produccion!=None:
+            return Response({'success': False, 'detail': 'El organigrama ingresado ya está retirado, no está terminado o ya está en producción'}, status=status.HTTP_403_FORBIDDEN)
+        ccds = self.queryset.all().filter(id_organigrama = organigrama.id_organigrama)
+        
+        lista=[]
+        if ccds:
+            for t in ccds:
+                tca = TablasControlAcceso.objects.filter(id_trd__id_ccd=t).first()
+                if tca:
+                    list.append(t)
+                    
+        if not ccds:
+            return Response({'success': False, 'detail': 'No existe CCD terminado basado en el organigrama seleccionado'}, status=status.HTTP_403_FORBIDDEN)
+        serializador = self.serializer_class(lista,many=True)
+        serializer_data = serializador.data
+    
+        return Response({'success': True, 'detail': 'CCD', 'data': serializador.data},status=status.HTTP_200_OK)
+    
+class ObtenerOrganigramaActual(generics.ListAPIView):
+    serializer_class = NewUserOrganigramaSerializer
+    queryset = Organigramas.objects.all()
+    
+    def get (self,request):
+        
+        organigrama_actual = self.queryset.all().filter(actual = True).first()
+        
+        if organigrama_actual:
+            serializador = self.serializer_class(organigrama_actual)
+            
+            return Response({'success':True,'detail':'Busqueda exitosa','data':serializador.data},status=status.HTTP_200_OK)
+        return Response({'success':True,'detail':'Busqueda exitosa, no existe organigrama actual'},status=status.HTTP_200_OK)

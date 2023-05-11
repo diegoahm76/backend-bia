@@ -9,6 +9,7 @@ urlpatterns = [
     path('get-bienes-solicitud/', views.GetVisibleBySolicitud.as_view(), name='search-viveros'),
     path('get-orgchart-tree/<str:pk>/', views.get_orgchart_tree, name='get-orgchart-tree'),
     path('get-solicitudes-pendientes-por-aprobar/<str:tipodocumento>/<str:numerodocumento>/', views.GetSolicitudesPendentesPorAprobar.as_view(), name='get-solicitudes-pendientes-por-aprobar'),
+    path('get-solicitudes-no-aprobadas/<str:id_persona_solicita>/', views.GetSolicitudesNoAprobadas.as_view(), name='get-solicitudes-no-aprobar'),
     path('get-solicitud-by-id/<str:id_solicitud>/', views.GetSolicitudesById_Solicitudes.as_view(), name='get-solicitudes-pendientes-por-aprobar'),
     path('get-nro-documento-solicitudes-bienes-consumo/', views.GetNroDocumentoSolicitudesBienesConsumo.as_view(), name='get-solicitudes-pendientes-por-aprobar'),
     path('SearchViveros', views.GetNroDocumentoSolicitudesBienesConsumo.as_view(), name='get-solicitudes-pendientes-por-aprobar'),
@@ -16,5 +17,7 @@ urlpatterns = [
     path('solicitudes-pendientes-por-despachar/', views.SolicitudesPendientesDespachar.as_view(), name='solicitudes-pendientes-por-despachar'),
     path('rechazo-solicitudes-bienes-desde-almacen/<str:id_solicitud>/', views.RechazoSolicitudesBienesAlmacen.as_view(), name='rechazo-solicitudes-bienes-desde-almacen'),
     path('anular-solicitudes-bienes/<str:id_solicitud>/', views.AnularSolicitudesBienesConsumo.as_view(), name='anular-solicitudes-bienes'),
-    path('search-funcionario/', views.SearchFuncionarioResponsable.as_view(), name='search-funcionario-responsable')
+    path('search-funcionario/', views.SearchFuncionarioResponsable.as_view(), name='search-funcionario-responsable'),
+    path('search-funcionario-filtros/', views.SearchFuncionarioResponsableFiltros.as_view(), name='search-funcionario-responsable-filtros'),
+    path('unidades-responsable/<str:id_unidad_para_la_que_solicita>/', views.ListUnidadesResponsable.as_view(), name='list-unidades-responsable')
 ]

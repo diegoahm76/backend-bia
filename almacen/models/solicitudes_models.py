@@ -1,7 +1,7 @@
 from django.db import models
 from seguridad.models import Personas
-from almacen.models.organigrama_models import UnidadesOrganizacionales
-from almacen.choices.tipo_unidad_choices import tipo_unidad_CHOICES
+from transversal.models.organigrama_models import UnidadesOrganizacionales
+from transversal.choices.tipo_unidad_choices import tipo_unidad_CHOICES
 from almacen.models.generics_models import UnidadesMedida
 from almacen.models.bienes_models import (
     EntradasAlmacen, 

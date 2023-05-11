@@ -10,9 +10,11 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import api_view, permission_classes
 from seguridad.models import Personas
 from gestion_documental.models.tca_models import TablasControlAcceso
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from gestion_documental.serializers.trd_serializers import (
     TRDSerializer,
-    FormatosTiposMedioSerializer
+    FormatosTiposMedioSerializer,
+    TipologiasDoc
 )
 from gestion_documental.serializers.tca_serializers import (
     TCASerializer
@@ -24,14 +26,14 @@ from gestion_documental.serializers.ccd_serializers import (
 from gestion_documental.models.ccd_models import (
     CuadrosClasificacionDocumental,
 )
-from almacen.models.organigrama_models import (
+from transversal.models.organigrama_models import (
     Organigramas,
     UnidadesOrganizacionales
     
 )
 from gestion_documental.models.trd_models import (
     TablaRetencionDocumental,
-    TipologiasDocumentales,
+    TipologiasDoc,
     SeriesSubSUnidadOrgTRDTipologias,
     FormatosTiposMedio
 )
@@ -47,12 +49,12 @@ class GetCCDTerminadoByORG(generics.ListAPIView):
     def get(self, request, id_organigrama):
         orgamigrama = Organigramas.objects.filter(id_organigrama = id_organigrama).first()
         if not orgamigrama:
-            return Response({'success': False, 'detail': 'El organigrama ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('El organigrama ingresado no existe')
 
         if orgamigrama.fecha_terminado == None or orgamigrama.fecha_retiro_produccion != None:
-            return Response({'success': False, 'detail': 'El organigrama ingresado ya está retirado o no está terminado'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('El organigrama ingresado ya está retirado o no está terminado')
         ccds = CuadrosClasificacionDocumental.objects.filter(~Q(fecha_terminado = None) & Q(fecha_retiro_produccion=None)).filter(id_organigrama = int(orgamigrama.id_organigrama)).values()
-        return Response({'success': True, 'detail': 'CCD', 'data': ccds},status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'CCD', 'data': ccds}, status=status.HTTP_200_OK)
 
 class GetTRDTerminadoByCCD(generics.ListAPIView):
     serializer_class = TRDSerializer
@@ -61,12 +63,12 @@ class GetTRDTerminadoByCCD(generics.ListAPIView):
     def get(self, request, id_ccd):
         ccd = CuadrosClasificacionDocumental.objects.filter(id_ccd = id_ccd).first()
         if not ccd:
-            return Response({'success': False, 'detail': 'El ccd ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('El ccd ingresado no existe')
 
         if ccd.fecha_terminado == None or ccd.fecha_retiro_produccion != None:
-            return Response({'success': False, 'detail': 'El ccd ingresado ya está retirado o no está terminado'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('El ccd ingresado ya está retirado o no está terminado')
         trds = TablaRetencionDocumental.objects.filter(~Q(fecha_terminado = None) & Q(fecha_retiro_produccion=None)).filter(id_ccd = int(ccd.id_ccd)).values()
-        return Response({'success': True, 'detail': 'TRD', 'data': trds}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'TRD', 'data': trds}, status=status.HTTP_200_OK)
     
 class GetTCATerminadoByCCD(generics.ListAPIView):
     serializer_class = TCASerializer
@@ -75,12 +77,12 @@ class GetTCATerminadoByCCD(generics.ListAPIView):
     def get(self, request, id_ccd):
         ccd = CuadrosClasificacionDocumental.objects.filter(id_ccd = id_ccd).first()
         if not ccd:
-            return Response({'success': False, 'detail': 'El ccd ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('El ccd ingresado no existe')
 
         if ccd.fecha_terminado == None or ccd.fecha_retiro_produccion != None:
-            return Response({'success': False, 'detail': 'El ccd ingresado ya está retirado o no está terminado'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('El ccd ingresado ya está retirado o no está terminado')
         tca = TablasControlAcceso.objects.filter(~Q(fecha_terminado = None) & Q(fecha_retiro_produccion=None)).filter(id_ccd = int(ccd.id_ccd)).values()
-        return Response({'success': True, 'detail': 'TCA', 'data': tca}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'TCA', 'data': tca}, status=status.HTTP_200_OK)
 
 class Activar(generics.UpdateAPIView):
     parser_classes = (MultiPartParser, FormParser)
@@ -90,40 +92,40 @@ class Activar(generics.UpdateAPIView):
     def put(self,request):
         json_recibido = request.data
         if not json_recibido:
-            return Response({'success': False, 'detail': 'Ingrese información'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Ingrese información')
         if json_recibido['id_organigrama'] == '' or json_recibido['id_organigrama'] == None:
-            return Response({'success': False, 'detail': 'Ingrese un organigrama'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Ingrese un organigrama')
         if json_recibido['id_ccd'] == '' or json_recibido['id_ccd'] == None:
-            return Response({'success': False, 'detail': 'Ingrese cuadro de clasificación documental'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Ingrese cuadro de clasificación documental')
         if json_recibido['id_trd'] == '' or json_recibido['id_trd'] == None:
-            return Response({'success': False, 'detail': 'Ingrese tabla de retención documental'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Ingrese tabla de retención documental')
         if json_recibido['id_tca'] == '' or json_recibido['id_tca'] == None:
-            return Response({'success': False, 'detail': 'Ingrese tabla de control de  acceso'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Ingrese tabla de control de  acceso')
         if json_recibido['justificacion'] == '' or json_recibido['justificacion'] == None:
-            return Response({'success': False, 'detail': 'Ingrese justificación'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Ingrese justificación')
         if json_recibido['archivo'] == '' or json_recibido['archivo'] == None:
-            return Response({'success': False, 'detail': 'Ingrese archivo'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Ingrese archivo')
     
         #VALIDAR LA EXISTENCIA DE LOS DATOS
         organigrama = Organigramas.objects.filter(~Q(fecha_terminado=None) & Q(fecha_retiro_produccion=None)).filter(id_organigrama = json_recibido['id_organigrama']).first()
         if not organigrama:
-            return Response({'success': False, 'detail': 'El organigrama ingresado no se puede activar porque no se encuentra terminado o porque ya fue desactivado'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('El organigrama ingresado no se puede activar porque no se encuentra terminado o porque ya fue desactivado')
         ccd = CuadrosClasificacionDocumental.objects.filter(~Q(fecha_terminado=None) & Q(fecha_retiro_produccion=None)).filter(id_ccd = json_recibido['id_ccd']).first()
         if not ccd:
-            return Response({'success': False, 'detail': 'El CCD ingresado no se puede activar porque no se encuentra terminado o porque ya fue desactivado'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('El CCD ingresado no se puede activar porque no se encuentra terminado o porque ya fue desactivado')
         trd = TablaRetencionDocumental.objects.filter(~Q(fecha_terminado=None) & Q(fecha_retiro_produccion=None)).filter(id_trd = json_recibido['id_trd']).first()
         if not trd:
-            return Response({'success': False, 'detail': 'La TRD ingresada no se puede activar porque no se encuentra terminado o porque ya fue desactivado'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('La TRD ingresada no se puede activar porque no se encuentra terminado o porque ya fue desactivado')
         tca = TablasControlAcceso.objects.filter(~Q(fecha_terminado=None) & Q(fecha_retiro_produccion=None)).filter(id_tca = json_recibido['id_tca']).first()
         if not tca:
-            return Response({'success': False, 'detail': 'La TCA ingresada no se puede activar porque no se encuentra terminado o porque ya fue desactivado'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('La TCA ingresada no se puede activar porque no se encuentra terminado o porque ya fue desactivado')
         #VALIDAR LA RELACION DE LA CCD CON EL ORGANIGRAMA,Y DE LA CCD CON LA TRD Y TCA
         if ccd.id_organigrama.id_organigrama != organigrama.id_organigrama:
-            return Response({'success': False, 'detail': 'El organigrama ingresado no tiene relación con el CCD ingresado'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('El organigrama ingresado no tiene relación con el CCD ingresado')
         if trd.id_ccd.id_ccd != ccd.id_ccd:
-            return Response({'success': False, 'detail': 'El CCD ingresado no tiene relación con la TRD ingresada'}, status=status.HTTP_400_BAD_REQUEST)        
+            raise ValidationError('El CCD ingresado no tiene relación con la TRD ingresada')        
         if tca.id_ccd.id_ccd != ccd.id_ccd:
-            return Response({'success': False, 'detail': 'El CCD ingresado no tiene relación con la TCA ingresada'}, status=status.HTTP_400_BAD_REQUEST)        
+            raise ValidationError('El CCD ingresado no tiene relación con la TCA ingresada')        
         #CONSULTAR LA PREEXISTENCIA DE DE TABLAS ACTIVADAS
         tca_a_remplazar=TablasControlAcceso.objects.filter(actual=True).first()
         trd_a_remplazar=TablaRetencionDocumental.objects.filter(actual=True).first()
@@ -143,13 +145,13 @@ class Activar(generics.UpdateAPIView):
 
         if tca_a_remplazar and trd_a_remplazar and ccd_a_remplazar and organigrama_a_remplazar:
             if organigrama.actual == True and ccd.actual == True and trd.actual == True and tca.actual == True:
-                return Response({'success': False, 'detail': 'Esta combinación ya se encuentra activa'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('Esta combinación ya se encuentra activa')
             if  organigrama.actual == False and ccd.actual == False and trd.actual == False and tca.actual == False:
-                tipologias_trd = TipologiasDocumentales.objects.filter(id_trd=trd_a_remplazar.id_trd).values()
+                tipologias_trd = TipologiasDoc.objects.filter(id_trd=trd_a_remplazar.id_trd).values()
                 id_tipologias_trd = [i['id_tipologia_documental'] for i in tipologias_trd]
                 tipologias_usadas = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_tipologia_doc__in = id_tipologias_trd).values()
                 id_tipologias_usadas = [i['id_tipologia_doc_id'] for i in tipologias_usadas]
-                tipologias_sin_usar = TipologiasDocumentales.objects.filter(~Q(id_tipologia_documental__in = id_tipologias_usadas)).filter(id_trd=trd_a_remplazar.id_trd)
+                tipologias_sin_usar = TipologiasDoc.objects.filter(~Q(id_tipologia_documental__in = id_tipologias_usadas)).filter(id_trd=trd_a_remplazar.id_trd)
                 if tipologias_sin_usar:
                     tipologias_sin_usar.delete()
                 
@@ -247,7 +249,7 @@ class Activar(generics.UpdateAPIView):
                 auditoria_data = {'id_usuario': user_logeado,'id_modulo': 32,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
                 Util.save_auditoria(auditoria_data)
 
-                return Response({'success': True, 'detail': 'Activación exitosa'}, status=status.HTTP_201_CREATED)
+                return Response({'success':True, 'detail':'Activación exitosa'}, status=status.HTTP_201_CREATED)
 
             if organigrama.actual == True and ccd.actual == False and trd.actual == False and tca.actual == False:
                 
@@ -317,7 +319,7 @@ class Activar(generics.UpdateAPIView):
                 auditoria_data = {'id_usuario': user_logeado,'id_modulo': 32,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
                 Util.save_auditoria(auditoria_data)
                 
-                return Response({'success': True, 'detail': 'Activación exitosa'}, status=status.HTTP_201_CREATED)
+                return Response({'success':True, 'detail':'Activación exitosa'}, status=status.HTTP_201_CREATED)
 
             if organigrama.actual == True and ccd.actual == True and trd.actual == False and tca.actual == False:
                 trd_a_remplazar.actual = False
@@ -361,9 +363,9 @@ class Activar(generics.UpdateAPIView):
                 auditoria_data = {'id_usuario': user_logeado,'id_modulo': 32,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
                 Util.save_auditoria(auditoria_data)
 
-                return Response({'success': True, 'detail': 'Activación exitosa'}, status=status.HTTP_201_CREATED)
+                return Response({'success':True, 'detail':'Activación exitosa'}, status=status.HTTP_201_CREATED)
 
-            return Response({'success': False, 'detail': 'No se pudo llevar a cabo la activación. Contraste la información ingresada con la que está en la base de datos'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se pudo llevar a cabo la activación. Contraste la información ingresada con la que está en la base de datos')
 
         if trd_a_remplazar == None and ccd_a_remplazar == None and organigrama_a_remplazar == None and tca_a_remplazar == None:
                 organigrama.actual = True
@@ -415,7 +417,7 @@ class Activar(generics.UpdateAPIView):
                 auditoria_data = {'id_usuario': user_logeado,'id_modulo': 32,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
                 Util.save_auditoria(auditoria_data)
 
-                return Response({'success': True, 'detail': 'Activación exitosa'}, status=status.HTTP_201_CREATED)
-        return Response({'success': False, 'detail': 'Error de base de datos'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'success':True, 'detail':'Activación exitosa'}, status=status.HTTP_201_CREATED)
+        raise ValidationError('Error de base de datos')
 
 

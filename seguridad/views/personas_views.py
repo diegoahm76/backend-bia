@@ -59,9 +59,6 @@ from seguridad.models import (
     HistoricoCargosUndOrgPersona
 )
 
-from almacen.models import UnidadesOrganizacionales
-
-from rest_framework import filters
 from seguridad.serializers.personas_serializers import (
     EstadoCivilSerializer,
     EstadoCivilPostSerializer,
@@ -69,6 +66,7 @@ from seguridad.serializers.personas_serializers import (
     GetClaseTerceroSerializers,
     PersonaNaturalPostAdminSerializer,
     PersonaNaturalUpdateAdminSerializer,
+    PersonasFilterAdminUserSerializer,
     TipoDocumentoSerializer,
     TipoDocumentoPostSerializer,
     TipoDocumentoPutSerializer,
@@ -434,9 +432,9 @@ class UpdatePersonaJuridicaAdminPersonas(generics.UpdateAPIView):
                 return Response ({'success':False,'detail':'No se puede actualizar una persona jurídica con este servicio'},status=status.HTTP_403_FORBIDDEN)
         
             cambio = Util.comparacion_campos_actualizados(data,persona)
-            if persona_logueada != persona.id_persona_crea.id_persona:
+            
+            if not persona.id_persona_crea or persona_logueada != persona.id_persona_crea.id_persona:
                 if cambio:
-                    print(cambio)
                     data['fecha_ultim_actualiz_diferente_crea'] = datetime.now()
                     data['id_persona_ultim_actualiz_diferente_crea'] = persona_logueada
             else:
@@ -1118,15 +1116,23 @@ class registerSucursalEmpresa(generics.CreateAPIView):
         # descripcion = "idUsuario:" + str(serializer_response.pk) + ";" + "fecha:" + formatDate + ";" + "observaciones:Registro de otro usuario" + ";" + "nombreUsuario:"+ serializer_response.nombre_de_usuario + "."
         
 # Views for Historico Emails
-class getHistoricoEmails(generics.ListAPIView):
+class HistoricoEmailsByIdPersona(generics.ListAPIView):
     serializer_class = HistoricoEmailsSerializer
-    queryset = HistoricoEmails.objects.all()
 
+    def get_queryset(self):
+        id_persona = self.kwargs['id_persona']
+        queryset = HistoricoEmails.objects.filter(id_persona=id_persona)
+        return queryset
 
 # Views for Historico Direcciones
-class GetHistoricoDirecciones(generics.ListAPIView):
-    queryset = HistoricoDireccion.objects.all()
+class HistoricoDireccionByIdPersona(generics.ListAPIView):
     serializer_class = HistoricoDireccionSerializer
+
+    def get_queryset(self):
+        id_persona = self.kwargs['id_persona']
+        queryset = HistoricoDireccion.objects.filter(id_persona=id_persona)
+        return queryset
+
 
 class GetCargosList(generics.ListAPIView):
     serializer_class = CargosSerializer
@@ -1291,7 +1297,7 @@ class ActualizarPersonasNatCamposRestringidosView(generics.UpdateAPIView):
                         historico = HistoricoCambiosIDPersonas.objects.create(
                             id_persona=persona,
                             nombre_campo_cambiado=field,
-                            valor_campo_cambiado=valor_previous,
+                            valor_campo_cambiado=valor_previous if valor_previous!=None else "",
                             ruta_archivo_soporte=request.data.get('ruta_archivo_soporte', ''),
                             justificacion_cambio=request.data.get('justificacion', ''),
                         )
@@ -1330,7 +1336,7 @@ class ActualizarPersonasJurCamposRestringidosView(generics.UpdateAPIView):
 
         data = request.data
         persona_log = request.user.persona.id_persona
-        persona = self.querysetF.all().filter(id_persona=id_persona).first()
+        persona = self.queryset.all().filter(id_persona=id_persona).first()
         if persona:
             previous_persona = copy.copy(persona)
 
@@ -1354,13 +1360,11 @@ class ActualizarPersonasJurCamposRestringidosView(generics.UpdateAPIView):
                 
                 if field != 'ruta_archivo_soporte' and field != "justificacion":
                     valor_previous= getattr(persona,field)
-                    print ("AQUIII", valor_previous)
-                    print("FIELD",field)
                     if value != valor_previous:
                         historico = HistoricoCambiosIDPersonas.objects.create(
                             id_persona=persona,
                             nombre_campo_cambiado=field,
-                            valor_campo_cambiado=valor_previous,
+                            valor_campo_cambiado=valor_previous if valor_previous!=None else "",
                             ruta_archivo_soporte=request.data.get('ruta_archivo_soporte', ''),
                             justificacion_cambio=request.data.get('justificacion', ''),
                         )
@@ -1551,9 +1555,9 @@ class CreatePersonaJuridicaAndUsuario(generics.CreateAPIView):
         # short_url = Util.get_short_url(request, absurl)
 
         subject = "Verifica tu usuario"
-        template = "plantilla-mensaje.html"
+        template = "activación-de-usuario.html"
 
-        Util.notificacion(serializador,subject,template,absurl=absurl)
+        Util.notificacion(serializador,subject,template,absurl=absurl,email=serializador.email)
     
         
         return Response ({'success':True,'detail':'Se creo la persona jurídica y el usuario correctamente'},status=status.HTTP_200_OK)
@@ -1663,9 +1667,9 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
         # short_url = Util.get_short_url(request, absurl)
         
         subject = "Verifica tu usuario"
-        template = "plantilla-mensaje.html"
+        template = "activación-de-usuario.html"
 
-        Util.notificacion(serializador,subject,template,absurl=absurl)
+        Util.notificacion(serializador,subject,template,absurl=absurl,email=serializador.email)
     
         return Response ({'success':True,'detail':'Se creo la persona natural y el usuario correctamente'},status=status.HTTP_200_OK)
 
@@ -1714,3 +1718,12 @@ class AutorizacionNotificacionesPersonas(generics.RetrieveUpdateAPIView):
                 return Response({'success': True, 'detail': 'Autorizacion no aceptada'}, status=status.HTTP_200_OK)
         else: 
             return Response({'success': False, 'detail': 'No envió las autorizaciones'}, status=status.HTTP_400_BAD_REQUEST)
+
+class GetPersonasByTipoDocumentoAndNumeroDocumentoAdminUser(GetPersonasByTipoDocumentoAndNumeroDocumento):
+    serializer_class = PersonasFilterAdminUserSerializer
+    queryset = Personas.objects.all()
+    
+class GetPersonasByFiltersAdminUser(GetPersonasByFilters):
+    serializer_class = PersonasFilterAdminUserSerializer
+    # permission_classes = [IsAuthenticated]
+    queryset = Personas.objects.all()

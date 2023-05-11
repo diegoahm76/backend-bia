@@ -1,17 +1,14 @@
+from datetime import datetime
 from django.core import signing
-from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 from django.contrib import auth
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.utils import encoding, http
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
-from seguridad.models import Personas, Cargos, User, UsuariosRol, HistoricoActivacion,Login,LoginErroneo,PermisosModuloRol,UsuarioErroneo, HistoricoCargosUndOrgPersona, Roles
-from almacen.models import UnidadesOrganizacionales
+from seguridad.models import Personas, User, UsuariosRol, HistoricoActivacion,Login,LoginErroneo,PermisosModuloRol
 from seguridad.serializers.personas_serializers import PersonasSerializer
 from seguridad.serializers.permisos_serializers import PermisosModuloRolSerializer
-from rest_framework.validators import UniqueValidator
-from django.contrib.auth.password_validation import validate_password
 import re
 from seguridad.utils import Util
 
@@ -214,6 +211,8 @@ class LoginSerializer(serializers.ModelSerializer):
     tipo_usuario = serializers.CharField(read_only=True)
     id_persona = serializers.IntegerField(read_only=True)
     tipo_persona = serializers.CharField(read_only=True)
+    id_unidad_organizacional_actual = serializers.IntegerField(read_only=True)
+    nombre_unidad_organizacional = serializers.CharField(read_only=True)
     activated_at = serializers.DateTimeField(read_only=True)
     profile_img = serializers.CharField(read_only=True)
     permisos = serializers.DictField(read_only=True)
@@ -221,7 +220,7 @@ class LoginSerializer(serializers.ModelSerializer):
     
     class Meta:
         model=Login
-        fields= ['email', 'password', 'nombre_de_usuario', 'nombre', 'tokens', 'is_superuser', 'id_usuario', 'tipo_usuario', 'id_persona', 'tipo_persona', 'activated_at', 'profile_img', 'permisos', 'representante_legal']
+        fields= ['email', 'password', 'nombre_de_usuario', 'nombre', 'tokens', 'is_superuser', 'id_usuario', 'tipo_usuario', 'id_persona', 'tipo_persona', 'id_unidad_organizacional_actual', 'nombre_unidad_organizacional', 'activated_at', 'profile_img', 'permisos', 'representante_legal']
     
     def validate(self, attrs):
         nombre_de_usuario = attrs.get('nombre_de_usuario', '')
@@ -261,6 +260,8 @@ class LoginSerializer(serializers.ModelSerializer):
             'tipo_usuario': user.tipo_usuario,
             'id_persona': user.persona.id_persona,
             'tipo_persona': user.persona.tipo_persona,
+            'id_unidad_organizacional_actual': user.persona.id_unidad_organizacional_actual.id_unidad_organizacional if user.persona.id_unidad_organizacional_actual else None,
+            'nombre_unidad_organizacional': user.persona.id_unidad_organizacional_actual.nombre if user.persona.id_unidad_organizacional_actual else None,
             'activated_at': user.activated_at,
             'profile_img': user.profile_img
         }
@@ -338,10 +339,6 @@ class SetNewPasswordSerializer(serializers.Serializer):
                 raise AuthenticationFailed('Link de actualización de contraseña invalido')
             else:
                 raise AuthenticationFailed('Link de activación de usuario invalido')
-        
-        # VALIDACIONES PASSWORD IGUAL A ANTERIOR
-        if check_password(password,user.password):
-            raise serializers.ValidationError('No se puede actualizar la contraseña. El valor proporcionado es el mismo que tiene actualmente')
 
         return attrs
     
@@ -389,11 +386,19 @@ class SetNewPasswordUnblockUserSerializer(serializers.Serializer):
 
             if not PasswordResetTokenGenerator().check_token(user, token):
                 raise AuthenticationFailed('Link de desbloqueo de usuario invalido', 401)
-            if check_password(password,user.password):
-                raise serializers.ValidationError('no se puede actualizar la contraseña. el valor proporcionado',401)
+            
             user.set_password(password)
             user.is_blocked = False
             user.save()
+            
+            # HISTORICO DESBLOQUEO
+            HistoricoActivacion.objects.create(
+                id_usuario_afectado=user,
+                cod_operacion='D',
+                fecha_operacion=datetime.now(),
+                justificacion='Usuario desbloqueado por validación de datos',
+                usuario_operador=user
+            )
 
             return user
 
@@ -588,4 +593,3 @@ class RecuperarUsuarioSerializer(serializers.ModelSerializer):
             'numero_documento': {'required': True, 'allow_null':False, 'allow_blank':False},
             'email': {'required': True, 'allow_null':False, 'allow_blank':False},
         }
-

@@ -1,6 +1,7 @@
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMultiAlternatives
 from django.db.models import Sum
 from email_validator import validate_email, EmailNotValidError, EmailUndeliverableError, EmailSyntaxError
+from transversal.models.organigrama_models import NivelesOrganigrama, UnidadesOrganizacionales
 from backend.settings.base import EMAIL_HOST_USER, AUTHENTICATION_360_NRS
 from seguridad.models import Shortener, User, Modulos, Permisos, Auditorias
 from almacen.models.inventario_models import (
@@ -16,7 +17,7 @@ class UtilAlmacen:
     
     @staticmethod
     def send_email(data):
-        email = EmailMessage(subject= data['email_subject'], body=data['template'], to=[data['to_email']], from_email=EMAIL_HOST_USER)
+        email = EmailMultiAlternatives(subject= data['email_subject'], body=data['template'], to=[data['to_email']], from_email=EMAIL_HOST_USER)
         
         email.content_subtype ='html'
         response = email.send(fail_silently=True)
@@ -225,3 +226,30 @@ class UtilAlmacen:
         valor_maximo = cantidad_evento[0]['cantidad'] + z
         
         return valor_maximo
+    
+    @staticmethod
+    def get_unidades_actual_iguales_y_arriba(unidad_instance):
+        unidades_iguales_y_arriba = []
+        aux_unidades_mismo_nivel = unidad_instance.nombre
+        unidades_iguales_y_arriba.append(aux_unidades_mismo_nivel)
+        
+        if unidad_instance.unidad_raiz == False:
+            unidades_arriba = unidad_instance.id_unidad_org_padre.nombre
+            unidades_iguales_y_arriba.append(unidades_arriba)
+            count = unidad_instance.id_unidad_org_padre.id_nivel_organigrama.orden_nivel - 1
+            aux_menor = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = unidad_instance.id_unidad_org_padre.id_unidad_organizacional).first()
+            if aux_menor.id_nivel_organigrama.orden_nivel >= 2:
+                if aux_menor.id_unidad_org_padre.unidad_raiz == False:
+                    print("asdasdasd")
+                    unidades_iguales_y_arriba.append(aux_menor.id_unidad_org_padre.nombre)
+                    while count >= 1:
+                        aux_menor = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = aux_menor.id_unidad_org_padre.id_unidad_organizacional).first()
+                        if aux_menor.id_unidad_org_padre:
+                            unidades_iguales_y_arriba.append(aux_menor.id_unidad_org_padre.nombre)
+                        count = count - 1
+                        
+        unidad_raiz = UnidadesOrganizacionales.objects.filter(unidad_raiz=True).first()
+        if unidad_raiz.nombre not in unidades_iguales_y_arriba:
+            unidades_iguales_y_arriba.append(unidad_raiz.nombre)
+        
+        return unidades_iguales_y_arriba

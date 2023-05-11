@@ -14,7 +14,7 @@ from gestion_documental.models.trd_models import (
 from gestion_documental.models.tca_models import (
     TablasControlAcceso
 )
-from almacen.models.organigrama_models import (
+from transversal.models.organigrama_models import (
     UnidadesOrganizacionales
 )
 
@@ -165,8 +165,7 @@ class CCDSerializer(serializers.ModelSerializer):
     
     def get_usado(self,obj):
         trd = TablaRetencionDocumental.objects.filter(id_ccd=obj.id_ccd)
-        tca = TablasControlAcceso.objects.filter(id_ccd=obj.id_ccd)
-        usado = True if trd or tca else False
+        usado = True if trd else False
         
         return usado
     
@@ -387,6 +386,14 @@ class CatalogosSeriesUnidadSerializer(serializers.ModelSerializer):
         ]
 
 class BusquedaCCDSerializer(serializers.ModelSerializer):
+    usado = serializers.SerializerMethodField()
+    
+    def get_usado(self,obj):
+        trd = TablaRetencionDocumental.objects.filter(id_ccd=obj.id_ccd)
+        usado = True if trd else False
+        
+        return usado
+    
     class Meta:
         model = CuadrosClasificacionDocumental
         fields ='__all__'
