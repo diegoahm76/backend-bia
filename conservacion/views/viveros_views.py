@@ -7,7 +7,7 @@ from seguridad.serializers.personas_serializers import PersonasFilterSerializer
 from seguridad.utils import Util  
 from django.db.models import Q
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from datetime import timezone
@@ -52,10 +52,10 @@ class DeleteVivero(generics.DestroyAPIView):
         vivero_eliminar = vivero
         
         if not vivero:
-            return Response({'success': False, 'detail': 'No se encontró ningún vivero con el id_vivero enviado'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontró ningún vivero con el id_vivero enviado')
         
         if vivero.en_funcionamiento != None:
-            return Response({'success': False, 'detail': 'No se puede eliminar un vivero que ha tenido una apertura'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No se puede eliminar un vivero que ha tenido una apertura')
         
         vivero.delete()
         
@@ -86,13 +86,13 @@ class AbrirCerrarVivero(generics.RetrieveUpdateAPIView):
         persona = request.user.persona.id_persona
         vivero = Vivero.objects.filter(id_vivero=id_vivero).first()
         if not vivero:
-            return Response({'success': False, 'detail': 'No se encontró ningún vivero con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontró ningún vivero con el parámetro ingresado')
        
         match accion:
             case 'Abrir':
                 if vivero.en_funcionamiento == None:
                     if vivero.id_viverista_actual == None:
-                        return Response({'success': False, 'detail': 'No se puede abrir un vivero sin un viverista'}, status=status.HTTP_403_FORBIDDEN)
+                        raise PermissionDenied('No se puede abrir un vivero sin un viverista')
                     data['fecha_ultima_apertura'] = datetime.now()
                     data['en_funcionamiento'] = True
                     data['item_ya_usado'] = True
@@ -117,7 +117,7 @@ class AbrirCerrarVivero(generics.RetrieveUpdateAPIView):
                     return Response({'success': True, 'detail': 'Acción realizada correctamente'}, status=status.HTTP_201_CREATED)
                 else:
                     if not vivero.fecha_cierre_actual:
-                        return Response({'success': False, 'detail': 'El vivero ya se encuentra abierto'}, status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('El vivero ya se encuentra abierto')
                     data['fecha_ultima_apertura'] = datetime.now()
                     data['en_funcionamiento'] = True
                     data['item_ya_usado'] = True
@@ -158,7 +158,7 @@ class AbrirCerrarVivero(generics.RetrieveUpdateAPIView):
             
             case 'Cerrar':
                 if not vivero.fecha_ultima_apertura:
-                    return Response({'success': False, 'detail': 'No se puede cerrar un vivero si no se encuentra actualmente abierto'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('No se puede cerrar un vivero si no se encuentra actualmente abierto')
                 data['fecha_cierre_actual'] = datetime.now()
                 data['en_funcionamiento'] = False
                 data['id_persona_cierra'] = persona
@@ -181,7 +181,7 @@ class AbrirCerrarVivero(generics.RetrieveUpdateAPIView):
                 Util.save_auditoria(auditoria_data)
                 return Response({'success': True, 'detail': 'Acción realizada correctamente'}, status=status.HTTP_201_CREATED)
             case _:
-                return Response({'success': False, 'detail': 'Debe enviar una acción válida'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('Debe enviar una acción válida')
 
 class CreateViveros(generics.CreateAPIView):
     serializer_class = ViveroPostSerializer
@@ -283,9 +283,9 @@ class UpdateViveroCuarentena(generics.ListAPIView):
                 }
                 Util.save_auditoria(auditoria_data)
                 return Response({'success ':True,'detail':'Vivero fuera de cuarentena '},status=status.HTTP_200_OK)
-            return Response({'success ':False,'detail':'El vivero se encuentra en funcionamiento '},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied ('El vivero se encuentra en funcionamiento ')
         else : 
-            return Response({'success ':False,'detail':'El vivero seleccionado no existe'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('El vivero seleccionado no existe')
     
 class FilterViverosByNombreAndMunicipioForCuarentena(generics.ListAPIView):
     serializer_class=ViveroSerializer
@@ -305,7 +305,7 @@ class FilterViverosByNombreAndMunicipioForCuarentena(generics.ListAPIView):
         if vivero:
             return Response({'success':True,'detail':'Se encontraron viveros','data':serializer.data},status=status.HTTP_200_OK)
         else: 
-            return Response({'success':False,'detail':'No se encontraron viveros'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontraron viveros')
         
         
 class FilterViverosByNombreAndMunicipioForAperturaCierres(generics.ListAPIView):
@@ -326,7 +326,7 @@ class FilterViverosByNombreAndMunicipioForAperturaCierres(generics.ListAPIView):
             serializer=self.serializer_class(vivero,many=True, context = {'request':request})
             return Response({'success':True,'detail':'Se encontraron viveros','data':serializer.data},status=status.HTTP_200_OK)
         else: 
-            return Response({'success':False,'detail':'No se encontraron viveros'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontraron viveros')
         
 
 class FilterViverosByNombreAndMunicipio(generics.ListAPIView):
@@ -347,7 +347,7 @@ class FilterViverosByNombreAndMunicipio(generics.ListAPIView):
             serializer=self.serializer_class(vivero,many=True, context = {'request':request})
             return Response({'success':True,'detail':'Se encontraron viveros','data':serializer.data},status=status.HTTP_200_OK)
         else: 
-            return Response({'success':False,'detail':'No se encontraron viveros'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontraron viveros')
         
 
 class UpdateViveros(generics.UpdateAPIView):
@@ -362,7 +362,7 @@ class UpdateViveros(generics.UpdateAPIView):
         data['id_persona_crea'] = persona
         vivero_actualizar = Vivero.objects.filter(id_vivero=id_vivero_ingresado).first()
         if not vivero_actualizar:
-            return Response({'status':False, 'detail':'No se encontró ningun vivero'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se encontró ningun vivero')
         previous = copy.copy(vivero_actualizar)
         
         serializador = self.serializer_class(vivero_actualizar,data=data)
@@ -396,7 +396,7 @@ class DesactivarActivarViveroView(generics.RetrieveUpdateAPIView):
         vivero = Vivero.objects.filter(id_vivero=id_vivero).first()
         previous_vivero = copy.copy(vivero)
         if not vivero:
-            return Response({'success':False, 'detail':'No existe ningun vivero con el id proporcionado'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe ningun vivero con el id proporcionado')
         if vivero.activo == False:
             request.data['activo'] = True
             serializer = self.serializer_class(vivero, data=request.data, many=False)
@@ -456,7 +456,7 @@ class TipificacionBienConsumoVivero(generics.UpdateAPIView):
             inventario_vivero = InventarioViveros.objects.filter(id_bien=bien.id_bien)
             
             if inventario_vivero:
-                return Response({'success':False, 'detail':'No puede realizar la tipificación porque este bien ya fue distribuido'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('No puede realizar la tipificación porque este bien ya fue distribuido')
             
             previous_bien = copy.copy(bien)
             if bien.cod_tipo_bien == 'C' and bien.nivel_jerarquico == 5 and bien.solicitable_vivero:
@@ -480,11 +480,11 @@ class TipificacionBienConsumoVivero(generics.UpdateAPIView):
                 }
                 Util.save_auditoria(auditoria_data)
             else:
-                return Response({'success':False, 'detail':'No puede tipificar el bien ingresado'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('No puede tipificar el bien ingresado')
             
             return Response({'success':True, 'detail':'Bien tipificado con éxito', 'data':serializador.data}, status=status.HTTP_201_CREATED)
         else:
-            return Response({'success':False, 'detail':'No existe el bien ingresado'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe el bien ingresado')
         
 class HistorialViveristaByVivero (generics.ListAPIView):
 
@@ -496,7 +496,7 @@ class HistorialViveristaByVivero (generics.ListAPIView):
         vivero = Vivero.objects.filter(id_vivero=id_vivero,activo=True).first()
         
         if not vivero:
-            return Response ({'success':False,'detail':'No existe el vivero o está desactivado'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe el vivero o está desactivado')
         
         viveristas = self.queryset.all().filter(id_vivero=vivero.id_vivero)
         
@@ -528,7 +528,7 @@ class GetViveristaActual(generics.ListAPIView):
                 return Response ({'success':True,'detail':'El vivero ingresado no tiene viverista actual'},status=status.HTTP_200_OK)
         
         else:
-            return Response ({'success':False,'detail':'El vivero no existe o no está activo'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('El vivero no existe o no está activo')
 
         
 class GetPersonaFiltro (generics.ListAPIView):
@@ -576,7 +576,7 @@ class GetPersonaByNumeroDocumento(generics.ListAPIView):
         tipo_documento = request.query_params.get('tipo_documento')
         
         if not numero_documento or not tipo_documento:
-            return Response ({'success':False,'detail':'Debe de seleccionar el tipo de documento y digitar el número de documento'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('Debe de seleccionar el tipo de documento y digitar el número de documento')
 
         for key,value in request.query_params.items():
             if key in ['tipo_documento','numero_documento']:
@@ -609,7 +609,7 @@ class GuardarAsignacionViverista(generics.CreateAPIView):
         if vivero:
             
             if vivero.id_viverista_actual == persona:
-                return Response({'success':False,'detail':'La persona seleccionada ya es el viverista de este vivero'},status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('La persona seleccionada ya es el viverista de este vivero')
             
             if vivero.id_viverista_actual == None and vivero.fecha_inicio_viverista_actual == None:
                 
@@ -642,7 +642,7 @@ class GuardarAsignacionViverista(generics.CreateAPIView):
             
             return Response({'success':True,'detail':'La asignación del viverista fue exitosa'},status=status.HTTP_200_OK)
         else:
-            return Response({'succes':False,'detail':'El vivero no existe'},status=status.HTTP_404_NOT_FOUND)      
+            raise NotFound('El vivero no existe')      
                     
         
 

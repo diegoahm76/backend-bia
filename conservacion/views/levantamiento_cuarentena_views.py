@@ -17,6 +17,7 @@ from django.db.models import Q
 from datetime import datetime,date,timedelta
 from rest_framework.permissions import IsAuthenticated
 from conservacion.utils import UtilConservacion
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
 
 class GetViveroActivo (generics.ListAPIView):
@@ -43,7 +44,7 @@ class GetViveroActivo (generics.ListAPIView):
         if viveros:
             serializador = self.serializer_class(viveros, many=True)
             return Response ({'success':True,'detail':'Se encontraron viveros','data':serializador.data},status=status.HTTP_200_OK)
-        return Response ({'success':False,'detail':'No se encontraron viveros'},status=status.HTTP_404_NOT_FOUND)
+        raise NotFound('No se encontraron viveros')
     
 class GetMaterialVegetalByCodigo(generics.ListAPIView):
     serializer_class = MaterialVegetalCuarentenaSerializer
@@ -54,7 +55,7 @@ class GetMaterialVegetalByCodigo(generics.ListAPIView):
         
         vivero=Vivero.objects.filter(id_vivero=id_vivero).first()
         if not vivero:
-            return Response ({'success':False,'detail':'No existe vivero'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No existe vivero')
         codigo_bien = request.query_params.get('codigo_bien')
         
         
@@ -84,7 +85,7 @@ class GetCuarentenaMaterialVegetalByLupa(generics.ListAPIView):
         
         vivero=Vivero.objects.filter(id_vivero=id_vivero).first()
         if not vivero:
-            return Response ({'success':False,'detail':'No existe vivero'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No existe vivero')
         filtro = {}
         for key,value in request.query_params.items():
             if key in ['codigo_bien','nombre','cod_etapa_lote','agno_lote']:
@@ -152,10 +153,10 @@ class GuardarLevantamientoCuarentena(generics.CreateAPIView):
         
         #VALIDACIÓN DEL REGISTRO DE CUARENTENA
         if not cuarentena:
-            return Response ({'success':False,'detail':'No existe el registro de cuarentena seleccionado'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No existe el registro de cuarentena seleccionado')
         
         if cuarentena.cuarentena_anulada == True:
-            return Response ({'success':False,'detail':'El registro de cuarentena se encuentra anulado'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('El registro de cuarentena se encuentra anulado')
             
         items = self.queryset.all().filter(id_cuarentena_mat_vegetal = cuarentena.id_cuarentena_mat_vegetal).last()
         
@@ -173,10 +174,10 @@ class GuardarLevantamientoCuarentena(generics.CreateAPIView):
         
         if items_no_anulados:
             if fecha_levantamiento_strptime < items_no_anulados.fecha_levantamiento:
-                return Response ({'success':False,'detail':'La fecha del levantamiento ingresado es menor a la fecha del último registro de levantamiento para la cuarentena elegida ('+str(items_no_anulados.fecha_levantamiento)+')'},status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('La fecha del levantamiento ingresado es menor a la fecha del último registro de levantamiento para la cuarentena elegida ('+str(items_no_anulados.fecha_levantamiento)+')')
         
         elif fecha_levantamiento_strptime < cuarentena.fecha_registro:
-            return Response ({'success':False,'detail':'La fecha de levantamiento ingresado es menor a la fecha del registro de cuarentena seleccionado ('+str(cuarentena.fecha_registro)+')'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('La fecha de levantamiento ingresado es menor a la fecha del registro de cuarentena seleccionado ('+str(cuarentena.fecha_registro)+')')
         
         #PERSONA QUE LEVANTA
         data['id_persona_levanta'] = persona
@@ -196,12 +197,12 @@ class GuardarLevantamientoCuarentena(generics.CreateAPIView):
         
         if item_incidencia:
             if int(data['cantidad_a_levantar']) == cantidad_por_levantar :
-                return Response({'success':False, 'detail':'No se puede levantar la totalidad ya que tiene un registro de incidencia posterior a la fecha del registro de cuarentena a la cual se le quiere hacer el levantamiento'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError ('No se puede levantar la totalidad ya que tiene un registro de incidencia posterior a la fecha del registro de cuarentena a la cual se le quiere hacer el levantamiento')
         
         if int(data['cantidad_a_levantar']) <= 0:
-            return Response({'success':False,'detail':'La cantidad a levantar debe ser mayor a cero'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('La cantidad a levantar debe ser mayor a cero')
         if int(data['cantidad_a_levantar']) > cantidad_por_levantar:
-            return Response({'success':False,'detail':'La cantidad a levantar no puede ser mayor a la cantidad por levantar (' + str(cantidad_por_levantar)+')'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('La cantidad a levantar no puede ser mayor a la cantidad por levantar (' + str(cantidad_por_levantar)+')')
     
         # GUARDADO
         serializador = self.serializer_class(data = data)
@@ -265,8 +266,7 @@ class GetHistorialLevantamientoCuarentena (generics.ListAPIView):
         
         print ('cuarentena',cuarentena)
         if not  cuarentena:
-            return Response({'success':False,'detail':'No existe la cuarentena de material vegetal enviada o fue anulada'},status=status.HTTP_403_FORBIDDEN
-                            )
+            raise PermissionDenied('No existe la cuarentena de material vegetal enviada o fue anulada')
         levantamientos = ItemsLevantaCuarentena.objects.filter(id_cuarentena_mat_vegetal=cuarentena.id_cuarentena_mat_vegetal,levantamiento_anulado=False)
         
         if levantamientos:
@@ -282,7 +282,7 @@ class GetAnulacionCuarentenaMaterialVegetalByLupa(generics.ListAPIView):
         
         vivero=Vivero.objects.filter(id_vivero=id_vivero).first()
         if not vivero:
-            return Response ({'success':False,'detail':'No existe vivero'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No existe vivero')
         filtro = {}
         for key,value in request.query_params.items():
             if key in ['codigo_bien','nombre','cod_etapa_lote','agno_lote']:
@@ -325,10 +325,10 @@ class UpdateLevantamientoCuarentena (generics.UpdateAPIView):
         
         
         if not item_levantamiento_cuarentena:
-            return Response ({'success':False,'detail':'No existe el levantamiento de cuarentena enviado o está anulado'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No existe el levantamiento de cuarentena enviado o está anulado')
         
         if item_levantamiento_cuarentena != ultimo_item_levatamiento:
-            return Response ({'success':False,'detail':'No se puede actualizar este registro debido a que no es el último levantamiento sobre la cuarentena ligada'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No se puede actualizar este registro debido a que no es el último levantamiento sobre la cuarentena ligada')
         
         item_levantamiento_cuarentena_previous=copy.copy(item_levantamiento_cuarentena)
         
@@ -343,11 +343,11 @@ class UpdateLevantamientoCuarentena (generics.UpdateAPIView):
             
             if int(data['cantidad_a_levantar']) != item_levantamiento_cuarentena.cantidad_a_levantar:
                 if fecha_hoy > cuarenta_ocho_horas_después:
-                    return Response ({'success':False,'detail':'No se puede actualizar la cantidad a levantar porque el levantamiento a actualizar ya superó las 48 horas permitidas para esta acción.'},status=status.HTTP_403_FORBIDDEN)
+                    raise PermissionDenied('No se puede actualizar la cantidad a levantar porque el levantamiento a actualizar ya superó las 48 horas permitidas para esta acción.')
             
             if data['observaciones'] != item_levantamiento_cuarentena.observaciones:
                 if fecha_hoy > fecha_hace_un_mes:
-                    return Response ({'success':True,'detail':'No se puede actualizar el campo observación porque el levantamiento a actualizar ya superó el mes permitido para esta acción.'},status=status.HTTP_403_FORBIDDEN)
+                    raise PermissionDenied('No se puede actualizar el campo observación porque el levantamiento a actualizar ya superó el mes permitido para esta acción.')
             
             
             #ACTUALIZACION CUANDO LA CANTIDAD DISMINUYE
@@ -365,10 +365,10 @@ class UpdateLevantamientoCuarentena (generics.UpdateAPIView):
                 cantidad_disminuida = item_levantamiento_cuarentena.cantidad_a_levantar - int(data['cantidad_a_levantar']) 
                 
                 if int(data['cantidad_a_levantar']) < 1:
-                    return Response ({'success':False,'detail':'La cantidad a levantar no puede ser menor a 1'})
+                    raise PermissionDenied('La cantidad a levantar no puede ser menor a 1')
                 
                 if cantidad_disminuida > saldo_disponible:
-                    return Response ({'success':False,'detail':'La cantidad a levantar no puede ser mayor al saldo disponible ('+saldo_disponible+')'},status=status.HTTP_403_FORBIDDEN)
+                    raise PermissionDenied('La cantidad a levantar no puede ser mayor al saldo disponible ('+saldo_disponible+')')
                 
                 if item_levantamiento_cuarentena.id_cuarentena_mat_vegetal.cuarentena_abierta == False:
                     item_levantamiento_cuarentena.id_cuarentena_mat_vegetal.cuarentena_abierta = True
@@ -395,7 +395,7 @@ class UpdateLevantamientoCuarentena (generics.UpdateAPIView):
                 cantidad_aumentada = int(data['cantidad_a_levantar']) - item_levantamiento_cuarentena.cantidad_a_levantar
                 
                 if cantidad_aumentada > valor_por_levantar:
-                    return Response ({'success':False,'detail':'La cantidad a levantar es mayor a la cantidad por levantar ('+str(valor_por_levantar)+')'},status=status.HTTP_403_FORBIDDEN)
+                    raise PermissionDenied('La cantidad a levantar es mayor a la cantidad por levantar ('+str(valor_por_levantar)+')')
                     
                 ## VALIDACIÓN PENDIENTE INCIDENCIAS
                 
@@ -415,7 +415,7 @@ class UpdateLevantamientoCuarentena (generics.UpdateAPIView):
                     print('LLEGÓ ACÁ',item_incidencia)
                     
                     if item_incidencia:
-                        return Response({'success':False, 'detail':'No se puede levantar la totalidad ya que tiene un registro de incidencia posterior a la fecha del levantamiento'}, status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('No se puede levantar la totalidad ya que tiene un registro de incidencia posterior a la fecha del levantamiento')
                     
                             
                     item_levantamiento_cuarentena.id_cuarentena_mat_vegetal.cuarentena_abierta = False
@@ -470,11 +470,11 @@ class AnularLevantamientoCuarentena (generics.UpdateAPIView):
         data=request.data
         
         if not data['justificacion_anulacion']:
-            return Response ({'success':False,'detail':'Debe enviar la justificación de la anulación'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('Debe enviar la justificación de la anulación')
         
         items_levanta_cuarentena = self.queryset.all().filter(id_item_levanta_cuarentena=id_item_levanta_cuarentena,levantamiento_anulado=False).last() 
         if not items_levanta_cuarentena:
-            return Response ({'success':False,'detail':'No existe el registro de levantamiento o ya fue anulado'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No existe el registro de levantamiento o ya fue anulado')
         
         items_levanta_cuarentena_previous=copy.copy(items_levanta_cuarentena)
         
@@ -491,7 +491,7 @@ class AnularLevantamientoCuarentena (generics.UpdateAPIView):
         cuarenta_ocho_horas_después = items_levanta_cuarentena.fecha_levantamiento + timedelta(days=2) 
         
         if fecha_hoy > cuarenta_ocho_horas_después:
-            return Response ({'success':False,'detail':'No se puede anular el registro de levantamiento de cuarentena debido a que ya superó las 48 horas permitidas para hacer esta acción'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No se puede anular el registro de levantamiento de cuarentena debido a que ya superó las 48 horas permitidas para hacer esta acción')
         
         #OBTENER SALDO DISPONIBLE
         saldo_disponible = 0
@@ -505,7 +505,7 @@ class AnularLevantamientoCuarentena (generics.UpdateAPIView):
         #VALIDACIÓN DE CANTIDAD A LEVANTAR CON CANTIDAD DISPONIBLE
         
         if items_levanta_cuarentena.cantidad_a_levantar > saldo_disponible:
-            return Response ({'success':False, 'detail':'No se puede anular debido a que la cantidad a levantar ('+str(items_levanta_cuarentena.cantidad_a_levantar)+') es mayor a la cantidad disponible ('+str(saldo_disponible)+')'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No se puede anular debido a que la cantidad a levantar ('+str(items_levanta_cuarentena.cantidad_a_levantar)+') es mayor a la cantidad disponible ('+str(saldo_disponible)+')')
         
         #VALIDACION DE CUARENTENA SI ESTÁ CERRADA
         if items_levanta_cuarentena.id_cuarentena_mat_vegetal.cuarentena_abierta == False:

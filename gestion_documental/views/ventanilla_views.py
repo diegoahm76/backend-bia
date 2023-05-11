@@ -7,6 +7,7 @@ import copy
 from seguridad.serializers.personas_serializers import PersonaJuridicaPostSerializer, PersonaJuridicaUpdateSerializer, PersonaNaturalPostSerializer, PersonaNaturalUpdateSerializer
 from seguridad.signals.roles_signals import IsAuthenticated
 from seguridad.utils import Util
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
 
 class BusquedaPersonaParaRegistro(generics.RetrieveAPIView):
@@ -21,7 +22,7 @@ class BusquedaPersonaParaRegistro(generics.RetrieveAPIView):
         
         
         if not tipo_documento or not numero_documento:
-            return Response ({'success':False,'detail':'Debe de enviar el tipo de documento junto con el número de documento'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('Debe de enviar el tipo de documento junto con el número de documento')
         
         persona = self.queryset.all().filter(tipo_documento=tipo_documento, numero_documento=numero_documento).first()
         
@@ -29,10 +30,10 @@ class BusquedaPersonaParaRegistro(generics.RetrieveAPIView):
             
             serializador = self.serializer_class(persona,many = False)
             
-            return Response({'success':True,'detail':'Ya existe una persona registrada en la base de datos con estos datos','data':serializador.data},status=status.HTTP_200_OK)
+            return Response({'success':True, 'detail':'Ya existe una persona registrada en la base de datos con estos datos','data':serializador.data}, status=status.HTTP_200_OK)
         
         else:
-            return Response({'success':True,'detail':'Está disponible para crear una persona con estos datos'},status=status.HTTP_200_OK)
+            return Response({'success':True, 'detail':'Está disponible para crear una persona con estos datos'}, status=status.HTTP_200_OK)
         
 class RegisterPersonaNatural(generics.CreateAPIView):
     serializer_class = PersonaNaturalPostSerializer
@@ -49,7 +50,7 @@ class RegisterPersonaNatural(generics.CreateAPIView):
         
         print(validaciones_persona)
         if not validaciones_persona['success']:
-            return Response({'success': validaciones_persona['success'], 'detail':validaciones_persona['detail']}, status=validaciones_persona['status'])       
+            return Response({'success':validaciones_persona['success'], 'detail':validaciones_persona['detail']}, status=validaciones_persona['status'])       
         
         serializador=serializer.save()
 
@@ -82,7 +83,7 @@ class RegisterPersonaJuridica(generics.CreateAPIView):
         validaciones_persona = Util.guardar_persona(persona)
         
         if not validaciones_persona['success']:
-            return Response({'success': validaciones_persona['success'], 'detail':validaciones_persona['detail']}, status=validaciones_persona['status'])       
+            return Response({'success':validaciones_persona['success'], 'detail':validaciones_persona['detail']}, status=validaciones_persona['status'])       
         
         serializador = serializer.save()
         
@@ -99,7 +100,7 @@ class RegisterPersonaJuridica(generics.CreateAPIView):
         }
         Util.save_auditoria(auditoria_data)
         
-        return Response({'success':True, 'detail': 'Se creo la persona jurídica correctamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+        return Response({'success':True, 'detail':'Se creo la persona jurídica correctamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 
 class UpdatePersonaNaturalByVentanilla(generics.RetrieveUpdateAPIView):
     http_method_names = ['patch']
@@ -115,7 +116,7 @@ class UpdatePersonaNaturalByVentanilla(generics.RetrieveUpdateAPIView):
         
         if persona:
             if persona.tipo_persona != "N":
-                return Response ({'success':False,'detail':'No se puede actualizar una persona jurídica con este servicio'},status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('No se puede actualizar una persona jurídica con este servicio')
             
             if persona_logueada != persona.id_persona_crea.id_persona:   
                 cambio = Util.comparacion_campos_actualizados(data,persona)
@@ -131,7 +132,7 @@ class UpdatePersonaNaturalByVentanilla(generics.RetrieveUpdateAPIView):
             validaciones_persona = Util.guardar_persona(data)
             
             if not validaciones_persona['success']:
-                return Response({'success': validaciones_persona['success'], 'detail':validaciones_persona['detail']}, status=validaciones_persona['status'])       
+                return Response({'success':validaciones_persona['success'], 'detail':validaciones_persona['detail']}, status=validaciones_persona['status'])       
             
             serializador = persona_serializada.save()
             
@@ -152,8 +153,8 @@ class UpdatePersonaNaturalByVentanilla(generics.RetrieveUpdateAPIView):
             }
             Util.save_auditoria(auditoria_data)
 
-            return Response({'success': True, 'detail': 'Persona actualizada correctamente', 'data': persona_serializada.data}, status=status.HTTP_201_CREATED)
-        return Response({'success':False,'detail':"No existe la persona"},status=status.HTTP_404_NOT_FOUND)
+            return Response({'success':True, 'detail':'Persona actualizada correctamente', 'data': persona_serializada.data}, status=status.HTTP_201_CREATED)
+        raise NotFound('No existe la persona')
 
     
 class UpdatePersonaJuridicaByVentanilla(generics.UpdateAPIView):
@@ -170,7 +171,7 @@ class UpdatePersonaJuridicaByVentanilla(generics.UpdateAPIView):
         previous_persona = copy.copy(persona)
         if persona:
             if persona.tipo_persona != "J":
-                return Response ({'success':False,'detail':'No se puede actualizar una persona natural con este servicio'},status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('No se puede actualizar una persona natural con este servicio')
                 
             if persona_logueada !=  persona.id_persona_crea.id_persona:
                 cambio = Util.comparacion_campos_actualizados(data,persona)
@@ -192,7 +193,7 @@ class UpdatePersonaJuridicaByVentanilla(generics.UpdateAPIView):
                     fecha_formateada = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
                     fecha_ahora = date.today()
                     if fecha_formateada > fecha_ahora or fecha_formateada <= persona.fecha_inicio_cargo_rep_legal.date():
-                        return Response({'success':False,'detail':'La fecha de inicio del cargo del representante no debe ser superior a la del sistema y tiene que ser mayor a la fecha de inicio del representante legal anterior'}, status=status.HTTP_403_FORBIDDEN)
+                        raise PermissionDenied('La fecha de inicio del cargo del representante no debe ser superior a la del sistema y tiene que ser mayor a la fecha de inicio del representante legal anterior')
 
             else:
                 fecha_inicio = data.get("fecha_inicio_cargo_rep_legal")
@@ -201,7 +202,7 @@ class UpdatePersonaJuridicaByVentanilla(generics.UpdateAPIView):
                     fecha_formateada = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
                     print()
                     if persona.fecha_inicio_cargo_rep_legal.date() != fecha_formateada:
-                        return Response({'success':False,'detail':'No se puede actualizar la fecha de inicio de representante legal sin haber cambiado el representante'},status=status.HTTP_403_FORBIDDEN)
+                        raise PermissionDenied('No se puede actualizar la fecha de inicio de representante legal sin haber cambiado el representante')
                     
                 data['fecha_cambio_representante_legal'] = None
             
@@ -213,7 +214,7 @@ class UpdatePersonaJuridicaByVentanilla(generics.UpdateAPIView):
             validaciones_persona = Util.guardar_persona(data)
             
             if not validaciones_persona['success']:
-                return Response({'success': validaciones_persona['success'], 'detail':validaciones_persona['detail']}, status=validaciones_persona['status'])       
+                return Response({'success':validaciones_persona['success'], 'detail':validaciones_persona['detail']}, status=validaciones_persona['status'])       
             
             serializador = persona_serializada.save()
             
@@ -234,8 +235,8 @@ class UpdatePersonaJuridicaByVentanilla(generics.UpdateAPIView):
             }
             Util.save_auditoria(auditoria_data)
             
-            return Response({'success': True, 'detail': 'Persona actualizada correctamente', 'data': persona_serializada.data}, status=status.HTTP_201_CREATED)
-        return Response({'success':False,'detail':"No existe la persona"},status=status.HTTP_404_NOT_FOUND)
+            return Response({'success':True, 'detail':'Persona actualizada correctamente', 'data': persona_serializada.data}, status=status.HTTP_201_CREATED)
+        raise NotFound('No existe la persona')
     
 class AutorizacionNotificacionesVentanilla(generics.RetrieveUpdateAPIView):
     serializer_class = AutorizacionNotificacionesSerializer
@@ -274,14 +275,14 @@ class AutorizacionNotificacionesVentanilla(generics.RetrieveUpdateAPIView):
                 Util.save_auditoria(auditoria_data)
 
                 if acepta_autorizacion_email and acepta_autorizacion_sms:
-                    return Response({'success': True, 'detail': 'Autorización por correo electrónico y teléfono aceptada'}, status=status.HTTP_200_OK)
+                    return Response({'success':True, 'detail':'Autorización por correo electrónico y teléfono aceptada'}, status=status.HTTP_200_OK)
                 elif acepta_autorizacion_email:
-                    return Response({'success': True, 'detail': 'Autorización por correo electrónico aceptada'}, status=status.HTTP_200_OK)
+                    return Response({'success':True, 'detail':'Autorización por correo electrónico aceptada'}, status=status.HTTP_200_OK)
                 elif acepta_autorizacion_sms:
-                    return Response({'success': True, 'detail': 'Autorización por teléfono aceptada'}, status=status.HTTP_200_OK)
+                    return Response({'success':True, 'detail':'Autorización por teléfono aceptada'}, status=status.HTTP_200_OK)
                 else:
-                    return Response({'success': True, 'detail': 'Autorizacion no aceptada'}, status=status.HTTP_200_OK)
+                    return Response({'success':True, 'detail':'Autorizacion no aceptada'}, status=status.HTTP_200_OK)
             else: 
-                return Response({'success': False, 'detail': 'No envió las autorizaciones'}, status=status.HTTP_400_BAD_REQUEST) 
+                raise ValidationError('No envió las autorizaciones') 
         else:
-            return Response({'success': False, 'detail': 'La persona no existe'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('La persona no existe')
