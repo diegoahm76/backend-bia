@@ -96,7 +96,7 @@ class CrearTipologiaDocumental(generics.CreateAPIView):
                     id_formato_tipo_medio = formato)
                         
 
-        return Response({'success':True,'detail':'Se creo correctamente'}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Se creo correctamente'}, status=status.HTTP_200_OK)
     
        
         #formatos = FormatosTiposMedio.objects.filter(id_formato_tipo_medio=id_formato_tipo_medio).first()
@@ -155,8 +155,8 @@ class ModificarTipologiaDocumental(generics.UpdateAPIView):
            
         if desactivar_tipologia:
             try:
-                raise ValidationError('La Tipologia no se puede desactivar si se esta usando en una TRD.')
-            except ValidationError as e:
+                raise PermissionDenied('La Tipologia no se puede desactivar si se esta usando en una TRD.')
+            except PermissionDenied as e:
                 return Response({'success':False, 'detail':'La Tipologia no se puede desactivar si se esta usando en una TRD.', 'data':serializer.data}, status=status.HTTP_403_FORBIDDEN)
                 
         id_lista_formatos = set(id_lista_formatos) #el "SET" elimina los valores repetidos enviados por el usuario ejm:[10,10,25] y solo deja el primero
@@ -187,7 +187,7 @@ class ModificarTipologiaDocumental(generics.UpdateAPIView):
                     id_tipologia_doc = tipologia, 
                     id_formato_tipo_medio = formatos.filter(id_formato_tipo_medio=formato).first()
                 )              
-        return Response({'success':True,'detail':'Se Realizo la modificación solicitada.'}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Se Realizo la modificación solicitada.'}, status=status.HTTP_200_OK)
     
 #ELIMINAR TIPOLOGIA DOCUMENTAL
 
@@ -206,10 +206,10 @@ class EliminarTipologiaDocumental(generics.DestroyAPIView):
                 return Response({'success':True, 'detail':'Registro se elimino correctamente.'}, status=status.HTTP_200_OK)
             else:
                 raise ValidationError('No se puede eliminar una tipologia que se ecuentre siendo usada.')
-                #return Response({'success':False, 'detail':'No se puede eliminar una tipologia que se ecuentre siendo usada.'}, status=status.HTTP_403_FORBIDDEN)
+                #raise NotFound('No se puede eliminar una tipologia que se ecuentre siendo usada.')
         else:
             raise ValidationError('No existe la tipologia indicada a eliminar.')
-             #return Response({'success': False, 'detail': 'No existe la tipologia indicada a eliminar.'}, status=status.HTTP_404_NOT_FOUND)
+             #raise NotFound('No existe la tipologia indicada a eliminar.')
 
             #raise ValidationError('No se puede eliminar una tipologia que se ecuentre siendo usada.')
 
@@ -226,7 +226,7 @@ class BuscarTipologia(generics.ListAPIView):
         buscar_tipologia = self.queryset.filter(nombre__icontains=nombre_tipologia) if nombre_tipologia else self.queryset.all()
         serializador = self.serializer_class(buscar_tipologia,many=True,context={'request':request})
         
-        return Response({'succes':True,'detail':'Se encontraron los siguientes usuarios.','data':serializador.data},status=status.HTTP_200_OK)
+        return Response({'succes':True, 'detail':'Se encontraron los siguientes usuarios.','data':serializador.data}, status=status.HTTP_200_OK)
             
 
 #BUSQUEDA DE TRD POR NOMBRE Y VERSIÓN
@@ -277,7 +277,7 @@ class ModificarNombreVersionTRD(generics.UpdateAPIView):
         trd = serializador.save()
         
         
-        return Response({'succes':True,'detail':'Se realizo la Modidificación Solicitada.'},status=status.HTTP_200_OK)
+        return Response({'succes':True, 'detail':'Se realizo la Modidificación Solicitada.'}, status=status.HTTP_200_OK)
 
 # class UpdateTipologiasDocumentales(generics.UpdateAPIView):
 #     serializer_class = TipologiasDocumentalesPutSerializer
@@ -401,7 +401,7 @@ class ModificarNombreVersionTRD(generics.UpdateAPIView):
 #                     tipologias_eliminar = TipologiasDoc.objects.filter(id_trd=id_trd).exclude(id_tipologia_documental__in=lista_tipologia_id)
                     
 #                     if tipologias_eliminar and trd.actual:
-#                         return Response({'success':False, 'detail':'No puede eliminar tipologias para una TRD actual. Intente desactivar'}, status=status.HTTP_403_FORBIDDEN)
+#                         return Response({'success':False, 'detail':'No puede eliminar tipologias para una TRD actual. Intente desactivar')
                     
 #                     # VALIDAR QUE NO SE ESTÉN USANDO LAS TIPOLOGIAS A ELIMINAR
 #                     tipologias_eliminar_id = [tipologia.id_tipologia_documental for tipologia in tipologias_eliminar]
@@ -454,9 +454,9 @@ class ModificarNombreVersionTRD(generics.UpdateAPIView):
 
 #                     return Response({'success':True, 'detail':'Se han eliminado todas las tipologias'}, status=status.HTTP_200_OK)
 #             else:
-#                 return Response({'success':False, 'detail':'El TRD ya está terminado o fue retirado de producción, por lo cual no es posible realizar acciones sobre las tipologias'}, status=status.HTTP_403_FORBIDDEN)
+#                 return Response({'success':False, 'detail':'El TRD ya está terminado o fue retirado de producción, por lo cual no es posible realizar acciones sobre las tipologias')
 #         else:
-#             return Response({'success':False, 'detail':'El TRD no existe'}, status=status.HTTP_404_NOT_FOUND)
+#             return Response({'success':False, 'detail':'El TRD no existe')
 
 class GetTipologiasDocumentales(generics.ListAPIView):
     serializer_class = TipologiasDocumentalesSerializer
@@ -477,7 +477,7 @@ class GetTipologiasDocumentales(generics.ListAPIView):
                 
             return Response({'success':True, 'detail':'Se encontraron las siguientes tipologías para el TRD', 'data':tipologias}, status=status.HTTP_200_OK)
         else:
-            return Response({'success':False, 'detail':'Debe consultar por un TRD válido'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('Debe consultar por un TRD válido')
 
 class GetFormatosTipologiasDocumentales(generics.ListAPIView):
     serializer_class = FormatosTiposMedioSerializer
@@ -590,11 +590,11 @@ def uploadDocument(request, id_serie_subserie_uniorg_trd):
         if ssuorg_trd.id_trd.actual:
             ssuorg_trd.ruta_archivo_cambio = request.FILES.get('document')
             ssuorg_trd.save()
-            return Response({'success': True, 'detail': 'Documento cargado correctamente'}, status=status.HTTP_201_CREATED)
+            return Response({'success':True, 'detail':'Documento cargado correctamente'}, status=status.HTTP_201_CREATED)
         else:
-            return Response({'success': False, 'detail': 'El documento solo debe ser subido cuando se realizan cambios a una trd actual'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('El documento solo debe ser subido cuando se realizan cambios a una trd actual')
     else:
-        return Response({'success': False, 'detail': 'No se encontró ninguna ssuorg-trd con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+        raise NotFound('No se encontró ninguna ssuorg-trd con el parámetro ingresado')
 
 
 class UpdateSerieSubSeriesUnidadesOrgTRD(generics.UpdateAPIView):
@@ -642,7 +642,7 @@ class UpdateSerieSubSeriesUnidadesOrgTRD(generics.UpdateAPIView):
 
                     #VALIDACION SI ENVIAN TIPOLOGIAS QUE NO SON DE LA MISMA TRD O QUE NO EXISTEN
                     if len(tipologias) != tipologias_instance.count():
-                        #return Response({'success': False, 'detail': 'Todas las tipologias seleccionadas deben existir y deben estar relacionadas a la TRD elegida'}, status=status.HTTP_400_BAD_REQUEST)
+                        #return Response({'success':False, 'detail':'Todas las tipologias seleccionadas deben existir y deben estar relacionadas a la TRD elegida'}, status=status.HTTP_400_BAD_REQUEST)
                         raise ValidationError('Todas las tipologias seleccionadas deben de existir y deben de estar relacionadas a la TRD elegida.')
 
                     #ELIMINA TODAS LAS TIPOLOGIAS QUE NO HAYA ENVIADO AL MOMENTO DE ACTUALIZAR
@@ -697,10 +697,10 @@ class UpdateSerieSubSeriesUnidadesOrgTRD(generics.UpdateAPIView):
                     
                     
                                 
-                    return Response({'success': True, 'detail': 'Actualización realizada correctamente', 'data': serializador.data}, status=status.HTTP_201_CREATED)
+                    return Response({'success':True, 'detail':'Actualización realizada correctamente', 'data': serializador.data}, status=status.HTTP_201_CREATED)
 
                 else:
-                    #return Response({'success': False, 'detail': 'Debe enviar todas las especificaciones y tipologias diligenciadas o todas las especificaciones y tipologias vacias'}, status=status.HTTP_400_BAD_REQUEST)
+                    #return Response({'success':False, 'detail':'Debe enviar todas las especificaciones y tipologias diligenciadas o todas las especificaciones y tipologias vacias'}, status=status.HTTP_400_BAD_REQUEST)
                     raise ValidationError('Se deben enviar todas las especificaciones y tipologias diligenciadas')
                 
 
@@ -724,7 +724,7 @@ class UpdateSerieSubSeriesUnidadesOrgTRD(generics.UpdateAPIView):
                     
                     #VALIDA QUE LAS TIPOLOGIAS SELECCIONADAS EXISTAN
                     if len(tipologias) != tipologias_instance.count():
-                        #return Response({'success': False, 'detail': 'Todas las tipologias seleccionadas deben existir y deben estar relacionadas a la TRD elegida'}, status=status.HTTP_400_BAD_REQUEST)
+                        #return Response({'success':False, 'detail':'Todas las tipologias seleccionadas deben existir y deben estar relacionadas a la TRD elegida'}, status=status.HTTP_400_BAD_REQUEST)
                         raise ValidationError('Todas las tipologias seleccionadas deben de existir y deben de estar relacionadas a la TRD elegida.')
                     
                     
@@ -732,7 +732,7 @@ class UpdateSerieSubSeriesUnidadesOrgTRD(generics.UpdateAPIView):
                     #VALIDA QUE LA TIPOLOGIA SELECCIONADA ESTÉ ACTIVA
                     for tipologia in tipologias_instance:
                         if tipologia.activo == False:
-                            #return Response({'success': False, 'detail': 'Todas las tipologias seleccionadas deben estar activas para poder asignarlas'}, status=status.HTTP_400_BAD_REQUEST)
+                            #return Response({'success':False, 'detail':'Todas las tipologias seleccionadas deben estar activas para poder asignarlas'}, status=status.HTTP_400_BAD_REQUEST)
                             raise ValidationError('Todas las tipologias seleccionadas deben estar activas para poder asignarlas.')
            
 
@@ -810,15 +810,15 @@ class UpdateSerieSubSeriesUnidadesOrgTRD(generics.UpdateAPIView):
                     #             id_catserie_unidadorg_ccd_trd = serie_subs_unidadorg_trd,
                     #             id_tipologia_doc = tipologia)
 
-                    return Response({'success': True, 'detail': 'Actualización exitosa de la TRD Actual', 'data': serializador.data}, status=status.HTTP_201_CREATED)
+                    return Response({'success':True, 'detail':'Actualización exitosa de la TRD Actual', 'data': serializador.data}, status=status.HTTP_201_CREATED)
                 else:
-                    #return Response({'success': False, 'detail': 'Para modificar una trd actual se debe completar toda la información'}, status=status.HTTP_400_BAD_REQUEST)
+                    #return Response({'success':False, 'detail':'Para modificar una trd actual se debe completar toda la información'}, status=status.HTTP_400_BAD_REQUEST)
                     raise ValidationError('Para modificar una TRD actual se debe de completar toda la información')
             else:
                 raise PermissionDenied('No puede realizar esta acción si la TRD se encuentra terminada o retirada de producción.')
                 # return Response({'success':False, 'detail':'Test'})
         else:
-            #return Response({'success': False, 'detail': 'No existe ninguna Serie Subserie Unidad TRD con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+            #return Response({'success':False, 'detail':'No existe ninguna Serie Subserie Unidad TRD con el parámetro ingresado')
             raise ValidationError('No existe ninguna Serie Subserie Unidad TRD con los parametros ingresados')
 
 class ReanudarTRD(generics.RetrieveUpdateAPIView):
@@ -850,7 +850,7 @@ class ReanudarTRD(generics.RetrieveUpdateAPIView):
         
         trd.save()
         
-        return Response({'succes':True,'detail':'Se ha Reanudado con exito la TRD Seleccionada.'},status=status.HTTP_200_OK)
+        return Response({'succes':True, 'detail':'Se ha Reanudado con exito la TRD Seleccionada.'}, status=status.HTTP_200_OK)
 
 
 # class EliminarCatSerieUndOrgCCDTRD218(generics.DestroyAPIView):
@@ -865,7 +865,7 @@ class ReanudarTRD(generics.RetrieveUpdateAPIView):
 #         if eliminar_relacion:
 #             if not eliminar_relacion.id_trd.fecha_terminado:
 #                 eliminar_relacion.delete()
-#                 return Response({'succes':True,'detail':'Se Elimino la Relacion seleccionada Correctamente.'})
+#                 return Response({'succes':True, 'detail':'Se Elimino la Relacion seleccionada Correctamente.'})
 #             else:
 #                 raise PermissionDenied('No se puede Eliminar la Relación Seleccionada.')
 #         else:
@@ -907,7 +907,7 @@ class EliminarSerieUnidadTRD(generics.RetrieveDestroyAPIView):
             Util.save_auditoria_maestro_detalle(auditoria_data)  
     
  
-            return Response({'succes':True,'detail':'Se ha Eliminado Exitosamente el registro del catalogo de TRD.'},status=status.HTTP_200_OK)
+            return Response({'succes':True, 'detail':'Se ha Eliminado Exitosamente el registro del catalogo de TRD.'}, status=status.HTTP_200_OK)
         else:
             raise ValidationError('No se encontró ninguna serie con el parametro Ingresado.')
 
@@ -920,14 +920,14 @@ class EliminarSerieUnidadTRD(generics.RetrieveDestroyAPIView):
 #         serie_ss_uniorg_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_catserie_unidadorg=id_ssuorg_trd).first()
 #         if serie_ss_uniorg_trd:
 #             if serie_ss_uniorg_trd.id_trd.actual == True:
-#                 #return Response({'success': False, 'detail': 'No se pueden realizar ninguna acción sobre las Series'}, status=status.HTTP_403_FORBIDDEN)
+#                 #return Response({'success':False, 'detail':'No se pueden realizar ninguna acción sobre las Series')
 #                 raise PermissionDenied('No se puede realizar ninguna acción sobre la serie Ingresada siendo la Actual.')
 #             # serie_ss_uniorg_trd_tipologias = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_tipologia_catserie_unidad_ccd_trd=serie_ss_uniorg_trd)
 #             # serie_ss_uniorg_trd_tipologias.delete()
 #             serie_ss_uniorg_trd.delete()
-#             return Response({'success': True, 'detail': 'Eliminado exitosamente'}, status=status.HTTP_200_OK)
+#             return Response({'success':True, 'detail':'Eliminado exitosamente'}, status=status.HTTP_200_OK)
 #         else:
-#             #return Response({'success': False, 'detail': 'No se encontró ninguna Serie Subserie Unidad TRD con el parámetro ingresado'}, status.HTTP_404_NOT_FOUND)
+#             #return Response({'success':False, 'detail':'No se encontró ninguna Serie Subserie Unidad TRD con el parámetro ingresado'}, status.HTTP_404_NOT_FOUND)
 #             raise ValidationError('No se encontró ninguna Serie con el parámetro Ingresado')
 
 
@@ -960,14 +960,14 @@ class PostTablaRetencionDocumental(generics.CreateAPIView):
             serializer.is_valid(raise_exception=True)
             pass
         except:
-            return Response({'success': False, 'detail': 'Valide la información ingresada, el id_ccd es requerido, el nombre y la versión son requeridos y deben ser únicos'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Valide la información ingresada, el id_ccd es requerido, el nombre y la versión son requeridos y deben ser únicos')
 
         #Validación de seleccionar solo ccd terminados
         ccd = serializer.validated_data.get('id_ccd')
         ccd_instance = CuadrosClasificacionDocumental.objects.filter(id_ccd=ccd.id_ccd).first()
         if ccd_instance:
             if ccd_instance.fecha_terminado == None:
-                return Response({'success': False, 'detail': 'No se pueden seleccionar Cuadros de Clasificación Documental que no estén terminados'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('No se pueden seleccionar Cuadros de Clasificación Documental que no estén terminados')
 
             serializado = serializer.save()
 
@@ -985,9 +985,9 @@ class PostTablaRetencionDocumental(generics.CreateAPIView):
             }
             Util.save_auditoria(auditoria_data)
 
-            return Response({'success': True, 'detail': 'TRD creada exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+            return Response({'success':True, 'detail':'TRD creada exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
         else:
-            return Response({'success': False, 'detail': 'No existe un Cuadro de Clasificación Documental con el id_ccd enviado'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No existe un Cuadro de Clasificación Documental con el id_ccd enviado')
 
 class UpdateTablaRetencionDocumental(generics.RetrieveUpdateAPIView):
     serializer_class = TRDPutSerializer
@@ -1000,17 +1000,17 @@ class UpdateTablaRetencionDocumental(generics.RetrieveUpdateAPIView):
             previoud_trd = copy.copy(trd)
             pass
         except:
-            return Response({'success': False, 'detail': 'No existe ninguna Tabla de Retención Documental con los parámetros ingresados'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe ninguna Tabla de Retención Documental con los parámetros ingresados')
 
         if trd.fecha_terminado:
-            return Response({'success': False,'detail': 'No se puede actualizar una TRD terminada'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No se puede actualizar una TRD terminada')
 
         serializer = self.serializer_class(trd, data=request.data)
         try:
             serializer.is_valid(raise_exception=True)
             pass
         except:
-            return Response({'success': False, 'detail': 'Validar data enviada, el nombre y la versión son requeridos y deben ser únicos'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Validar data enviada, el nombre y la versión son requeridos y deben ser únicos')
         serializer.save()
 
         # AUDITORIA DE UPDATE DE TRD
@@ -1029,7 +1029,7 @@ class UpdateTablaRetencionDocumental(generics.RetrieveUpdateAPIView):
         }
         Util.save_auditoria(auditoria_data)
 
-        return Response({'success': True, 'detail': 'Tabla de Retención Documental actualizado exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        return Response({'success':True, 'detail':'Tabla de Retención Documental actualizado exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
     
 class GetFormatosTiposMedioByParams(generics.ListAPIView):
     serializer_class = FormatosTiposMedioSerializer
@@ -1046,7 +1046,7 @@ class GetFormatosTiposMedioByParams(generics.ListAPIView):
             nombre = None
 
         if not cod_tipo_medio and not nombre:
-            return Response({'success':False, 'detail':'Debe ingresar los parámetros de búsqueda'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('Debe ingresar los parámetros de búsqueda')
 
         filter={}
         
@@ -1065,7 +1065,7 @@ class GetFormatosTiposMedioByParams(generics.ListAPIView):
         if formatos_tipos_medio:
             return Response({'success':True, 'detail':'Se encontró la siguiente información', 'data':serializador.data}, status=status.HTTP_200_OK)
         else:
-            return Response({'success':False, 'detail':'No se encontró ningún resultado'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontró ningún resultado')
 
 class GetFormatosTiposMedioByCodTipoMedio(generics.ListAPIView):
     serializer_class = FormatosTiposMedioSerializer
@@ -1082,7 +1082,7 @@ class GetFormatosTiposMedioByCodTipoMedio(generics.ListAPIView):
         if serializador:
             return Response({'success':True, 'detail':'Se encontró la siguiente información', 'data':serializador.data}, status=status.HTTP_200_OK)
         else:
-            return Response({'success':False, 'detail':'No se encontró ningún resultado'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontró ningún resultado')
 
 class RegisterFormatosTiposMedio(generics.CreateAPIView):
     serializer_class =  FormatosTiposMedioPostSerializer
@@ -1114,16 +1114,16 @@ class UpdateFormatosTiposMedio(generics.RetrieveUpdateAPIView):
         if formato_tipo_medio:
             if not formato_tipo_medio.registro_precargado:
                 if formato_tipo_medio.item_ya_usado:
-                    return Response({'success':False, 'detail':'Este formato tipo medio ya está siendo usado, por lo cual no es actualizable'}, status=status.HTTP_403_FORBIDDEN)
+                    raise PermissionDenied('Este formato tipo medio ya está siendo usado, por lo cual no es actualizable')
 
                 serializer = self.serializer_class(formato_tipo_medio, data=request.data, many=False)
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
                 return Response({'success':True, 'detail':'Registro actualizado exitosamente'}, status=status.HTTP_201_CREATED)
             else:
-                return Response({'success': False, 'detail': 'No puede actualizar un formato tipo medio precargado'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('No puede actualizar un formato tipo medio precargado')
         else:
-            return Response({'success': False, 'detail': 'No existe el formato tipo medio'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe el formato tipo medio')
 
 class DeleteFormatosTiposMedio(generics.DestroyAPIView):
     serializer_class = FormatosTiposMedioPostSerializer
@@ -1136,14 +1136,14 @@ class DeleteFormatosTiposMedio(generics.DestroyAPIView):
             pass
             if not formato_tipo_medio.registro_precargado:
                 if formato_tipo_medio.item_ya_usado:
-                    return Response({'success':False, 'detail':'Este formato tipo medio ya está siendo usado, no se pudo eliminar'}, status=status.HTTP_403_FORBIDDEN)
+                    raise PermissionDenied('Este formato tipo medio ya está siendo usado, no se pudo eliminar')
 
                 formato_tipo_medio.delete()
-                return Response({'success': True, 'detail': 'Este formato tipo medio ha sido eliminado exitosamente'}, status=status.HTTP_200_OK)
+                return Response({'success':True, 'detail':'Este formato tipo medio ha sido eliminado exitosamente'}, status=status.HTTP_200_OK)
             else:
-                return Response({'success': False, 'detail': 'No puedes eliminar un formato tipo medio precargado'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('No puedes eliminar un formato tipo medio precargado')
         else:
-            return Response({'success': False, 'detail':'No existe el formato tipo medio'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe el formato tipo medio')
 
 class CambiosPorConfirmar(generics.UpdateAPIView):
     serializer_class = SeriesSubSeriesUnidadesOrgTRDPutSerializer
@@ -1169,19 +1169,22 @@ class CambiosPorConfirmar(generics.UpdateAPIView):
                             tipologias_faltan.delete()
                             trd.cambios_por_confirmar = False
                             trd.save()
-                            return Response({'success': True, 'detail': 'Se han eliminado las tipologias no usadas y se confirmaron cambios'}, status=status.HTTP_200_OK)
+                            return Response({'success':True, 'detail':'Se han eliminado las tipologias no usadas y se confirmaron cambios'}, status=status.HTTP_200_OK)
                         else:
-                            return Response({'success': False, 'detail': 'Tiene tipologias pendientes por usar', 'data':tipologias_faltan.values()}, status=status.HTTP_403_FORBIDDEN)
+                            try:
+                                raise PermissionDenied('Tiene tipologias pendientes por usar')
+                            except PermissionDenied as e:
+                                return Response({'success':False, 'detail':'Tiene tipologias pendientes por usar', 'data':tipologias_faltan.values()}, status=status.HTTP_403_FORBIDDEN)
                     else:
                         trd.cambios_por_confirmar = False
                         trd.save()
-                        return Response({'success': True, 'detail': 'Está usando todas las tipologias, se han confirmado cambios'}, status=status.HTTP_200_OK)
+                        return Response({'success':True, 'detail':'Está usando todas las tipologias, se han confirmado cambios'}, status=status.HTTP_200_OK)
                 else:
-                    return Response({'success': False, 'detail': 'No tiene cambios por confirmar'}, status=status.HTTP_403_FORBIDDEN)
+                    raise PermissionDenied('No tiene cambios por confirmar')
             else:
-                return Response({'success':False, 'detail':'No puede realizar esta acción porque no es el TRD actual'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('No puede realizar esta acción porque no es el TRD actual')
         else:
-            return Response({'success':False, 'detail':'El TRD no existe'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('El TRD no existe')
 
 # class GetSeriesSubSUnidadOrgTRD(generics.ListAPIView):
 #     serializer_class = GetSeriesSubSUnidadOrgTRDSerializer
@@ -1193,7 +1196,7 @@ class CambiosPorConfirmar(generics.UpdateAPIView):
 #         #VALIDACIÓN SI EXISTE LA TRD ENVIADA
 #         series_subseries_unidad_org_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_trd=id_trd)
 #         if not series_subseries_unidad_org_trd:
-#             return Response({'success': False, 'detail': 'No se encontró la TRD'}, status=status.HTTP_404_NOT_FOUND)
+#             return Response({'success':False, 'detail':'No se encontró la TRD')
         
 #         ids_serie_subs_unidad_org_trd = [i.id_serie_subs_unidadorg_trd for i in series_subseries_unidad_org_trd]
 #         result = []
@@ -1210,7 +1213,7 @@ class CambiosPorConfirmar(generics.UpdateAPIView):
 #             data['id_tipologia_doc'] = serializer_tipologias.data
 #             result.append(data)
             
-#         return Response({'success': True, 'detail':'Se encontraron los siguientes resultados', 'data': result}, status=status.HTTP_200_OK)
+#         return Response({'success':True, 'detail':'Se encontraron los siguientes resultados', 'data': result}, status=status.HTTP_200_OK)
 
 class GetSeriesSubSUnidadOrgTRD(generics.ListAPIView):
     serializer_class = GetSeriesSubSUnidadOrgTRDSerializer
@@ -1221,10 +1224,10 @@ class GetSeriesSubSUnidadOrgTRD(generics.ListAPIView):
         
         #VALIDACIÓN SI EXISTE LA TRD ENVIADA
         if not queryset:
-            return Response({'success': False, 'detail': 'No se encontró ningún registro del cátalogo de TRD ingresada'}, status=status.HTTP_404_NOT_FOUND)  
+            raise NotFound('No se encontró ningún registro del cátalogo de TRD ingresada')  
         
         serializer = self.serializer_class(queryset, many=True, context={'request':request})
-        return Response({'success': True, 'detail':'Se encontraron los siguientes resultados', 'data':serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Se encontraron los siguientes resultados', 'data':serializer.data}, status=status.HTTP_200_OK)
     
 class GetTipologiasSeriesSubSUnidadOrgTRD(generics.ListAPIView):
     serializer_class = TipologiasDocumentalesSerializer
@@ -1251,20 +1254,20 @@ class DesactivarTipologiaActual(generics.UpdateAPIView):
             trd = TablaRetencionDocumental.objects.filter(id_trd=tipologia.id_trd.id_trd).first()
             if trd.actual:
                 if not tipologia.activo:
-                    return Response({'success':False, 'detail':'La tipologia ya se encuentra desactivada'}, status=status.HTTP_403_FORBIDDEN)
+                    raise PermissionDenied('La tipologia ya se encuentra desactivada')
                 if not justificacion:
-                    return Response({'success':False, 'detail':'Debe ingresar la justificación para desactivar la tipología'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('Debe ingresar la justificación para desactivar la tipología')
                 
                 tipologia.activo = False
                 tipologia.fecha_desactivacion = datetime.now()
                 tipologia.justificacion_desactivacion = justificacion
                 tipologia.id_persona_desactiva = persona
                 tipologia.save()
-                return Response({'success': True, 'detail': 'Se ha desactivado la tipologia indicada'}, status=status.HTTP_200_OK)
+                return Response({'success':True, 'detail':'Se ha desactivado la tipologia indicada'}, status=status.HTTP_200_OK)
             else:
-                return Response({'success':False, 'detail':'No puede realizar esta acción porque no es el TRD actual'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('No puede realizar esta acción porque no es el TRD actual')
         else:
-            return Response({'success':False, 'detail':'La tipologia ingresada no existe'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('La tipologia ingresada no existe')
 
 class FinalizarTRD(generics.RetrieveUpdateAPIView):
     serializer_class = TRDFinalizarSerializer

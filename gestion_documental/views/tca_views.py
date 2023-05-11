@@ -58,8 +58,8 @@ class GetUnidadesbyCCD(generics.ListAPIView):
         if ccd: 
             unidades=UnidadesOrganizacionales.objects.filter(id_organigrama=ccd.id_organigrama.id_organigrama)
             serializador=self.serializer_class(unidades,many=True)
-            return Response({'success':True,'detail':'El ccd cuenta con las siguientes unidades','data':serializador.data},status=status.HTTP_200_OK)
-        return Response({'success':False,'detail':'El ccd no cuenta con unidades'},status=status.HTTP_403_FORBIDDEN)
+            return Response({'success':True, 'detail':'El ccd cuenta con las siguientes unidades','data':serializador.data}, status=status.HTTP_200_OK)
+        raise PermissionDenied('El ccd no cuenta con unidades')
     
 class GetCargosByUnidades(generics.ListAPIView):
     serializer_class=CargosSerializer
@@ -77,12 +77,12 @@ class GetCargosByUnidades(generics.ListAPIView):
                 cargos=Cargos.objects.filter(id_cargo__in=list_cargos)
                 if cargos:
                     serializador=self.serializer_class(cargos,many=True)
-                    return Response ({'success':True,'detail':'Se encontraron cargos','data':serializador.data},status=status.HTTP_200_OK)
-                else: return Response ({'success':False,'detail':'No se encontraron cargos'},status=status.HTTP_404_NOT_FOUND)
-            return Response ({'success':False,'detail':'No existe unidad'},status=status.HTTP_403_FORBIDDEN)
+                    return Response ({'success':True, 'detail':'Se encontraron cargos','data':serializador.data}, status=status.HTTP_200_OK)
+                else: raise NotFound('No se encontraron cargos')
+            raise PermissionDenied('No existe unidad')
         else:
             cargos=Cargos.objects.filter(activo=True).values()
-            return Response ({'success':True, 'detail':'Se encontraron cargos', 'data':cargos},status=status.HTTP_200_OK)
+            return Response ({'success':True, 'detail':'Se encontraron cargos', 'data':cargos}, status=status.HTTP_200_OK)
         
 class GetListTca(generics.ListAPIView):
     serializer_class=TCASerializer
@@ -118,7 +118,7 @@ class PostTablaControlAcceso(generics.CreateAPIView):
             }
             Util.save_auditoria(auditoria_data)
 
-            return Response({'success': True, 'detail': 'TCA creada exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+            return Response({'success':True, 'detail':'TCA creada exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
         else:
             raise NotFound('No existe la TRD elegida')
 
@@ -139,7 +139,7 @@ class UpdateTablaControlAcceso(generics.RetrieveUpdateAPIView):
                         serializer.is_valid(raise_exception=True)
                         pass
                     except:
-                        return Response({'success': False, 'detail': 'Validar data enviada, el nombre y la versión son requeridos y deben ser únicos'}, status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('Validar data enviada, el nombre y la versión son requeridos y deben ser únicos')
                     serializer.save()
 
                     # AUDITORIA DE UPDATE DE TCA
@@ -158,13 +158,13 @@ class UpdateTablaControlAcceso(generics.RetrieveUpdateAPIView):
                     }
                     Util.save_auditoria(auditoria_data)
 
-                    return Response({'success': True, 'detail': 'Tabla de Control de Acceso actualizado exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+                    return Response({'success':True, 'detail':'Tabla de Control de Acceso actualizado exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
                 else:
-                    return Response({'success': False,'detail': 'No se puede actualizar una TCA terminada, intente reanudar primero'}, status=status.HTTP_403_FORBIDDEN)
+                    raise PermissionDenied('No se puede actualizar una TCA terminada, intente reanudar primero')
             else:
-                return Response({'success': False,'detail': 'No puede realizar cambios a una TCA que ya fue retirada de producción'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('No puede realizar cambios a una TCA que ya fue retirada de producción')
         else:
-            return Response({'success': False, 'detail': 'No existe ninguna Tabla de Control de Acceso con los parámetros ingresados'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe ninguna Tabla de Control de Acceso con los parámetros ingresados')
 
 class ClasifSerieSubserieUnidadTCA(generics.CreateAPIView):
     serializer_class = ClasifSerieSubserieUnidadTCASerializer
@@ -174,7 +174,7 @@ class ClasifSerieSubserieUnidadTCA(generics.CreateAPIView):
     def post(self, request, id_tca):
         data = request.data
         # if 'id_cat_serie_und' not in data:
-        #     return Response({'success':False, 'detail':'Debe ingresar un ID de serie y unidad'}, status=status.HTTP_400_BAD_REQUEST)
+        #     raise ValidationError('Debe ingresar un ID de serie y unidad')
 
         tca = TablasControlAcceso.objects.filter(id_tca=id_tca).first()
         if tca:
@@ -183,25 +183,25 @@ class ClasifSerieSubserieUnidadTCA(generics.CreateAPIView):
                     # Validar existencia de expediente
                     expediente_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_catserie_unidadorg=data['id_cat_serie_und_ccd_trd']).first()
                     if not expediente_trd:
-                        return Response({'success':False, 'detail':'Debe ingresar un expediente que exista'}, status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('Debe ingresar un expediente que exista')
 
                     # Validad existencia del tipo clasificación
                     dict_tipo_clasificacion = dict(tipo_clasificacion_CHOICES)
                     if data.get('cod_clas_expediente') not in dict_tipo_clasificacion:
-                        return Response({'success':False, 'detail':'Debe ingresar un código de clasificación que exista'}, status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('Debe ingresar un código de clasificación que exista')
                     
                     data['id_tca'] = id_tca
                     serializer = self.serializer_class(data=data)
                     serializer.is_valid(raise_exception=True)
                     serializer.save()
 
-                    return Response({'success': True, 'detail': 'Se realizó la clasificación del expediente exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+                    return Response({'success':True, 'detail':'Se realizó la clasificación del expediente exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
                 else:
-                    return Response({'success': False,'detail': 'No puede realizar cambios a una TCA terminada, intente reanudar primero'}, status=status.HTTP_403_FORBIDDEN)
+                    raise PermissionDenied('No puede realizar cambios a una TCA terminada, intente reanudar primero')
             else:
-                return Response({'success': False,'detail': 'No puede realizar cambios a una TCA que ya fue retirada de producción'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('No puede realizar cambios a una TCA que ya fue retirada de producción')
         else:
-            return Response({'success': False, 'detail': 'No existe ninguna Tabla de Control de Acceso con los parámetros ingresados'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe ninguna Tabla de Control de Acceso con los parámetros ingresados')
 
 class UpdateClasifSerieSubserieUnidadTCA(generics.UpdateAPIView):
     serializer_class = ClasifSerieSubserieUnidadTCAPutSerializer
@@ -220,19 +220,19 @@ class UpdateClasifSerieSubserieUnidadTCA(generics.UpdateAPIView):
                         # Validad existencia del tipo clasificación
                         dict_tipo_clasificacion = dict(tipo_clasificacion_CHOICES)
                         if data['cod_clas_expediente'] not in dict_tipo_clasificacion:
-                            return Response({'success':False, 'detail':'Debe ingresar un código de clasificación que exista'}, status=status.HTTP_400_BAD_REQUEST)
+                            raise ValidationError('Debe ingresar un código de clasificación que exista')
                         
                         serializer = self.serializer_class(clasif_s_ss_unidad_tca, data=data)
                         serializer.is_valid(raise_exception=True)
                         serializer.save()
 
-                        return Response({'success': True, 'detail': 'Se actualizó la clasificación del expediente exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+                        return Response({'success':True, 'detail':'Se actualizó la clasificación del expediente exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
                     else:
-                        return Response({'success': False,'detail': 'No se puede actualizar una TCA terminada, intente reanudar primero'}, status=status.HTTP_403_FORBIDDEN)
+                        raise PermissionDenied('No se puede actualizar una TCA terminada, intente reanudar primero')
                 else:
                     dict_tipo_clasificacion = dict(tipo_clasificacion_CHOICES)
                     if data['cod_clas_expediente'] not in dict_tipo_clasificacion:
-                        return Response({'success':False, 'detail':'Debe ingresar un código de clasificación que exista'}, status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('Debe ingresar un código de clasificación que exista')
                     serializer= self.serializer_class_2(clasif_s_ss_unidad_tca, data=data)
                     serializer.is_valid(raise_exception=True)
                     serializer.save() 
@@ -260,11 +260,11 @@ class UpdateClasifSerieSubserieUnidadTCA(generics.UpdateAPIView):
                             ruta_archivo_cambio = clasif__previous.ruta_archivo_cambio,
                             id_persona_cambia = persona_intance
                         )
-                    return Response({'success': True, 'detail': 'Se actualizó la clasificación del expediente exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+                    return Response({'success':True, 'detail':'Se actualizó la clasificación del expediente exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
             else:
-                return Response({'success': False,'detail': 'No puede realizar cambios a una TCA que ya fue retirada de producción'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('No puede realizar cambios a una TCA que ya fue retirada de producción')
         else:
-            return Response({'success': False, 'detail': 'No existe ninguna clasificación del expediente con los parámetros ingresados'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe ninguna clasificación del expediente con los parámetros ingresados')
 
 class ReanudarTablaControlAcceso(generics.UpdateAPIView):
     serializer_class = TCAPostSerializer
@@ -275,16 +275,16 @@ class ReanudarTablaControlAcceso(generics.UpdateAPIView):
         tca = TablasControlAcceso.objects.filter(id_tca=id_tca).first()
         if tca:
             if not tca.fecha_terminado:
-                return Response({'success': False, 'detail': 'No puede reanudar un TCA no terminado'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('No puede reanudar un TCA no terminado')
             if tca.fecha_puesta_produccion:
-                return Response({'success': False, 'detail': 'No se puede reanudar una TCA que ya fue puesta en producción'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('No se puede reanudar una TCA que ya fue puesta en producción')
             if PermisosCatSeriesUnidadOrgTCA.objects.filter(id_tca=tca.id_tca).exists():
-                return Response({'success': False, 'detail': 'No se puede reanudar una TCA que está siendo usada en una configuración de permisos'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('No se puede reanudar una TCA que está siendo usada en una configuración de permisos')
             tca.fecha_terminado = None
             tca.save()
-            return Response({'success': True, 'detail': 'Se reanudó el TCA'}, status=status.HTTP_201_CREATED)
+            return Response({'success':True, 'detail':'Se reanudó el TCA'}, status=status.HTTP_201_CREATED)
         else:
-            return Response({'success': False, 'detail': 'No se encontró ningún TCA con estos parámetros'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontró ningún TCA con estos parámetros')
 
 class EliminarRelaciones(generics.DestroyAPIView):
     serializer_class = GetClasifExpedientesSerializer
@@ -302,7 +302,7 @@ class EliminarRelaciones(generics.DestroyAPIView):
 
         registro_catalogo_tca.delete()
 
-        return Response({'success':True, 'detail': "El registro del catalogo TCA elegido ha sido eliminado correctamente"}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':"El registro del catalogo TCA elegido ha sido eliminado correctamente"}, status=status.HTTP_200_OK)
 
 class FinalizarTablaControlAcceso(generics.UpdateAPIView):
     serializer_class = TCAPostSerializer
@@ -324,18 +324,18 @@ class FinalizarTablaControlAcceso(generics.UpdateAPIView):
                     clasif_expedientes_tca = CatSeriesUnidadOrgCCD_TRD_TCA.objects.filter(id_cat_serie_und_ccd_trd__in=cat_series_list)
                             
                     if len(cat_series_list) != len(clasif_expedientes_tca):
-                        return Response({'success': False, 'detail': 'Debe asignar un tipo de clasificación a todos los expedientes para finalizar TCA'}, status=status.HTTP_403_FORBIDDEN)
+                        raise PermissionDenied('Debe asignar un tipo de clasificación a todos los expedientes para finalizar TCA')
 
                 else:
-                    return Response({'success': False, 'detail': 'No se encontró la TRD correspondiente'}, status=status.HTTP_404_NOT_FOUND)
+                    raise NotFound('No se encontró la TRD correspondiente')
 
                 tca.fecha_terminado = datetime.now(pytz.timezone('America/Bogota'))
                 tca.save()
-                return Response({'success': True, 'detail': 'Finalizado el TCA'}, status=status.HTTP_201_CREATED)
+                return Response({'success':True, 'detail':'Finalizado el TCA'}, status=status.HTTP_201_CREATED)
             else:
-                return Response({'success': False, 'detail': 'Ya se encuentra finalizado este TCA'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('Ya se encuentra finalizado este TCA')
         else:
-            return Response({'success': False, 'detail': 'No se encontró ningún TCA con estos parámetros'}, status=status.HTTP_404_NOT_FOUND)   
+            raise NotFound('No se encontró ningún TCA con estos parámetros')   
 
 class BusquedaTCA(generics.ListAPIView):
     serializer_class = BusquedaTCASerializer 
@@ -362,8 +362,8 @@ class GetClasifExpedientesTCA(generics.ListAPIView):
 
         #VALIDACIÓN SI EXISTE LA TCA ENVIADA
         if not queryset:
-            return Response({'success': False, 'detail': 'No se encontró la TCA'}, status=status.HTTP_404_NOT_FOUND)  
+            raise NotFound('No se encontró la TCA')  
             
         serializer = self.get_serializer(queryset, many=True)
         data = serializer.data
-        return Response({'success': True, 'detail':'Se encontraron los siguientes resultados', 'data': data}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Se encontraron los siguientes resultados', 'data': data}, status=status.HTTP_200_OK)
