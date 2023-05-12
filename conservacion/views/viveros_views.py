@@ -13,6 +13,7 @@ from datetime import datetime
 from datetime import timezone
 from django.db.models.functions import Concat
 import copy
+import datetime
 
 from seguridad.models import Personas
 from conservacion.models.viveros_models import (
@@ -87,7 +88,13 @@ class AbrirCerrarVivero(generics.RetrieveUpdateAPIView):
         vivero = Vivero.objects.filter(id_vivero=id_vivero).first()
         if not vivero:
             raise NotFound('No se encontró ningún vivero con el parámetro ingresado')
-       
+        
+        if accion == 'Abrir':
+            if vivero.id_viverista_actual is None:
+                raise ValidationError('No se puede abrir un vivero sin un viverista asignado')
+            if vivero.fecha_inicio_viverista_actual is None:
+                raise ValidationError('No se puede abrir un vivero sin una fecha de inicio del viverista asignado')
+
         match accion:
             case 'Abrir':
                 if vivero.en_funcionamiento == None:
@@ -595,56 +602,103 @@ class GetPersonaByNumeroDocumento(generics.ListAPIView):
         
 
 class GuardarAsignacionViverista(generics.CreateAPIView):
-    
     serializer_class = ViveroSerializer
     queryset = Vivero.objects.all()
-    
-    def post(self,request,id_vivero):
-        
+
+    def post(self, request, id_vivero):
         data = request.data
-        
-        vivero = Vivero.objects.filter(id_vivero = id_vivero).first()
-        persona = Personas.objects.filter(id_persona = data['id_persona']).filter(~Q(id_cargo=None) and ~Q(id_unidad_organizacional_actual=None) and Q(es_unidad_organizacional_actual=True)).first()
+        vivero = Vivero.objects.filter(id_vivero=id_vivero).first()
+        persona = Personas.objects.filter(id_persona=data['id_persona']).filter(Q(id_cargo=None) | Q(id_unidad_organizacional_actual=None) | Q(es_unidad_organizacional_actual=False)).first()
 
-        if vivero:
-            
-            if vivero.id_viverista_actual == persona:
-                raise PermissionDenied('La persona seleccionada ya es el viverista de este vivero')
-            
-            if vivero.id_viverista_actual == None and vivero.fecha_inicio_viverista_actual == None:
-                
-                vivero.id_viverista_actual = persona
-                vivero.fecha_inicio_viverista_actual = datetime.now()
-            
-            else:
-                
-                historico = HistoricoResponsableVivero.objects.filter(id_vivero=vivero.id_vivero, id_persona=vivero.id_viverista_actual).last()
-                
-                consecutivo = 1
-                
-                if historico:
-                    consecutivo = historico.consec_asignacion + 1
-                
-                HistoricoResponsableVivero.objects.create(
-                    id_vivero = vivero,
-                    id_persona = vivero.id_viverista_actual,
-                    consec_asignacion = consecutivo,
-                    fecha_inicio_periodo = vivero.fecha_inicio_viverista_actual,
-                    fecha_fin_periodo = datetime.now(),
-                    observaciones = data['observaciones'],
-                    id_persona_cambia = request.user.persona,
-                    )
+        if not vivero:
+            raise NotFound('El vivero no existe')
 
-                vivero.id_viverista_actual = persona
-                vivero.fecha_inicio_viverista_actual = datetime.now()
-            
+        if vivero.id_viverista_actual == persona:
+            raise PermissionDenied('La persona seleccionada ya es el viverista de este vivero')
+
+        if vivero.id_viverista_actual == None and vivero.fecha_inicio_viverista_actual == None:
+            # Asignar el viverista al vivero
+            vivero.id_viverista_actual = persona
+            vivero.fecha_inicio_viverista_actual = datetime.now()
+            vivero.en_funcionamiento = 'Abierto'
             vivero.save()
-            
-            return Response({'success':True,'detail':'La asignación del viverista fue exitosa'},status=status.HTTP_200_OK)
+
+            return Response({'success': True, 'detail': 'La asignación del viverista fue exitosa'}, status=status.HTTP_200_OK)
+
         else:
-            raise NotFound('El vivero no existe')      
-                    
+            # Verificar si el vivero está cerrado
+            if vivero.en_funcionamiento == 'Cerrado':
+                raise PermissionDenied('El vivero está cerrado, no se puede asignar un viverista')
+
+
+            # Crear el histórico si se va a reemplazar al viverista actual
+            
+            historico = HistoricoResponsableVivero.objects.filter(id_vivero=vivero.id_vivero, id_persona=vivero.id_viverista_actual).last()
+            consecutivo = 1
+            fecha_fin_periodo = datetime.now()
+            if vivero.id_viverista_actual:
+                consecutivo = historico.consec_asignacion + 1
+            HistoricoResponsableVivero.objects.create(
+                id_vivero=vivero,
+                id_persona=vivero.id_viverista_actual,
+                consec_asignacion=consecutivo,
+                fecha_inicio_periodo=vivero.fecha_inicio_viverista_actual,
+                fecha_fin_periodo=fecha_fin_periodo,
+                observaciones=data['observaciones'],
+                id_persona_cambia=request.user.persona
+            )
+
+            # Asignar el nuevo viverista al vivero
+            vivero.id_viverista_actual = persona
+            vivero.fecha_inicio_viverista_actual = datetime.now()
+            vivero.estado_vivero = 'Abierto'
+            vivero.save()
+
+            return Response({'success': True, 'detail': 'La asignación del viverista fue exitosa'}, status=status.HTTP_200_OK)
+
+class RemoverViveristaView(generics.UpdateAPIView):
+    serializer_class = HistorialViveristaByViveroSerializers
+    queryset = Vivero.objects.all()
+
+    def put(self, request, id_vivero):
+        vivero = Vivero.objects.filter(pk=id_vivero, id_viverista_actual__isnull=False).first()
+
+        if not Vivero.objects.filter(pk=id_vivero, id_viverista_actual__isnull=False).exists():
+            raise ValidationError('No se puede remover un viverista de un vivero que no tiene asignado ningún viverista')
+    
+        # Crear un nuevo registro en la tabla HistoricoResponsableVivero
+        observaciones = request.data.get('observaciones')
+        if not observaciones:
+            raise ValidationError('La observación es obligatoria')
+
+        vivero_instancia = Vivero.objects.get(pk=id_vivero)
+        id_persona = vivero.id_viverista_actual
+        consec_asignacion = HistoricoResponsableVivero.objects.filter(id_vivero=id_vivero).count() + 1
+        fecha_inicio_periodo = vivero.fecha_inicio_viverista_actual
+        fecha_fin_periodo = datetime.datetime.now()
+        id_persona_cambia = request.user.persona
+        HistoricoResponsableVivero.objects.create(id_vivero=vivero_instancia,
+                                                                id_persona=id_persona,
+                                                                consec_asignacion=consec_asignacion,
+                                                                fecha_inicio_periodo=fecha_inicio_periodo,
+                                                                fecha_fin_periodo=fecha_fin_periodo,
+                                                                observaciones=observaciones,
+                                                                id_persona_cambia=id_persona_cambia)
         
+        # Quitar la información del viverista actual en la tabla Vivero para ese vivero
+        vivero.id_viverista_actual = None
+        vivero.fecha_inicio_viverista_actual = None
+        vivero.save()
+        
+        # Cerrar el vivero si está abierto, actualizando la información en la tabla Vivero
+        if vivero.en_funcionamiento:
+            vivero.en_funcionamiento = False
+            vivero.fecha_cierre_actual = datetime.datetime.now()
+            vivero.id_persona_cierra = id_persona_cambia
+            vivero.justificacion_cierre = "Vivero cerrado por des-asignación del viverista"
+            vivero.save()
+
+        return Response({'success':True,'detail':'El viverista ha sido removido'},status=status.HTTP_200_OK)
 
 class GetBienesConsumoFiltro (generics.ListAPIView):
     
@@ -705,5 +759,6 @@ class GetBienesConsumoByCodigoBien(generics.ListAPIView):
         
         else: return Response({'success':True,'detail':'No se encontró el bien'},status=status.HTTP_200_OK)
             
-        
-        
+class ListaViveros(generics.ListAPIView):
+    queryset = Vivero.objects.all()
+    serializer_class = ViveroSerializer
