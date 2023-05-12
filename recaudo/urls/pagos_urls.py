@@ -15,5 +15,6 @@ urlpatterns = [
     path('consulta-facilidades-pagos/<int:id>/', views.ConsultaFacilidadesPagosViews.as_view(), name='consulta-facilidades'),
     path('listado-facilidades-funcionarios/', views.ListadoFacilidadesPagoFuncionariosViews.as_view(), name='listado-facilidades-funcionario'),
     path('datos-contacto-deudor/<int:id>/', views.DatosContactoDeudorView.as_view(), name='datos-contacto-deudor'),
+    path('autorizacion-notificaciones/<int:pk>/', views.AutorizacionNotificacionesView.as_view(), name='autorizacion-notificaciones'),
     ]
     

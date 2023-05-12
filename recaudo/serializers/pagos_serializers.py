@@ -194,6 +194,9 @@ class ListadoDeudoresUltSerializer(serializers.ModelSerializer):
     def get_nombre_completo(self, obj):
         return f"{obj.nombres} {obj.apellidos}"
 
-
+class AutorizacionNotificacionesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FacilidadesPago
+        fields = ['notificaciones']
 
 
