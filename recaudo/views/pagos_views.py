@@ -50,7 +50,7 @@ class DatosDeudorView(generics.ListAPIView):
         if not queryset:
             raise NotFound('No se encontró ningun registro con el parámetro ingresado')
         serializer = self.serializer_class(queryset)
-        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)   
+        return Response({'success': True, 'detail':'Se muestra los datos del deudor', 'data': serializer.data}, status=status.HTTP_200_OK)   
 
         
 class DatosContactoDeudorView(generics.ListAPIView):
@@ -62,7 +62,7 @@ class DatosContactoDeudorView(generics.ListAPIView):
             raise NotFound('No se encontró ningun registro con el parámetro ingresado')
         queryset = Personas.objects.filter(numero_documento = queryset.identificacion).first()
         serializer = self.serializer_class(queryset)
-        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK) 
+        return Response({'success': True, 'detail':'Se muestra los datos de contacto del deudor', 'data': serializer.data}, status=status.HTTP_200_OK) 
 
 
 class TipoActuacionView(generics.ListAPIView):
@@ -72,7 +72,7 @@ class TipoActuacionView(generics.ListAPIView):
     def get(self, request):
         queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
-        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail':'Se muestran los tipos de actuacion de deudor', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 
 class CrearFacilidadPagoView(generics.CreateAPIView):
@@ -87,10 +87,10 @@ class CrearFacilidadPagoView(generics.CreateAPIView):
         cuotas = serializer.validated_data.get('cuotas')
         total_plazos = periodicidad * cuotas
         if total_plazos > 61:
-            raise NotFound('Las cuotas deben ser menor de 60 meses')
+            raise PermissionDenied('Las cuotas deben ser menor de 60 meses')
         else:
             serializer.save()
-            return Response({'success': True, 'data':serializer.data},status=status.HTTP_200_OK)
+            return Response({'success': True, 'detail':'Se crea una facilidad de pago', 'data':serializer.data},status=status.HTTP_200_OK)
 
 
 class FacilidadPagoUpdateView(generics.UpdateAPIView):
@@ -107,9 +107,9 @@ class FacilidadPagoUpdateView(generics.UpdateAPIView):
             id_funcionario = ClasesTerceroPersona.objects.filter(id_persona=id_funcionario, id_clase_tercero=2).first()
             if id_funcionario:
                 serializer.save(update_fields=['id_funcionario'])
-                return Response({'success': True, 'data':serializer.data}, status=status.HTTP_200_OK)
+                return Response({'success': True, 'detail':'Se le asigna el funcionario a la facilidad de pago', 'data':serializer.data}, status=status.HTTP_200_OK)
             else:
-                raise NotFound('El funcionario ingresado no tiene permisos')
+                raise PermissionDenied('El funcionario ingresado no tiene permisos')
         else:
             raise NotFound('La facilidad de pago ingresada no existe')
     
@@ -122,7 +122,7 @@ class FuncionariosView(generics.ListAPIView):
         funcionarios = ClasesTerceroPersona.objects.filter(id_clase_tercero=2)
         funcionarios = [funcionario.id_persona for funcionario in funcionarios]
         serializer = self.serializer_class(funcionarios, many=True)
-        return Response({'success': True, 'data':serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail':'Se muestra los funcionarios para facilidades de pago', 'data':serializer.data}, status=status.HTTP_200_OK)
 
 class ListadoObligacionesViews(generics.ListAPIView):
     serializer_class = ObligacionesSerializer
@@ -227,7 +227,7 @@ class ListadoFacilidadesPagoViews(generics.ListAPIView):
             raise NotFound("La facilidad de pagos consultada no existe")
         
         serializer = ListadoFacilidadesPagoSerializer(facilidades_pago, many=True)
-        return Response({'success':True, 'data':serializer.data},status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Se muestra las facilidades de pago del deudor', 'data':serializer.data},status=status.HTTP_200_OK)
 
 class ConsultaFacilidadesPagosViews(generics.ListAPIView):
     serializer_class = ConsultaFacilidadesPagosSerializer
@@ -292,7 +292,7 @@ class RequisitosActuacionView(generics.ListAPIView):
     def get(self, request, id):
         queryset = RequisitosActuacion.objects.filter(id_tipo_actuacion=id)
         serializer = self.serializer_class(queryset, many=True)
-        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail':'Se muestra los requisitos deltipo de actuacion del deudor',  'data': serializer.data}, status=status.HTTP_200_OK)
 
 class AgregarDocumentosRequisitosView(generics.CreateAPIView):
     serializer_class = CumplimientoRequisitosSerializer
@@ -303,7 +303,7 @@ class AgregarDocumentosRequisitosView(generics.CreateAPIView):
         serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({'success': True, 'data':serializer.data},status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail':'Se agregar los documentos requeridos para el deudor actuacion', 'data':serializer.data},status=status.HTTP_200_OK)
     
 class AutorizacionNotificacionesView(generics.RetrieveUpdateAPIView):
     serializer_class = AutorizacionNotificacionesSerializer
@@ -321,7 +321,7 @@ class AutorizacionNotificacionesView(generics.RetrieveUpdateAPIView):
         else:
             facilidad_pago.notificaciones = False
             facilidad_pago.save()
-            raise ValidationError ('El usuario no acepta notificaciones por correo electrónico')
+            raise ValidationError('El usuario no acepta notificaciones por correo electrónico')
     
 
 class DocumentosRequisitosView(generics.ListAPIView):
@@ -331,4 +331,4 @@ class DocumentosRequisitosView(generics.ListAPIView):
     def get(self, request, id):
         queryset = CumplimientoRequisitos.objects.filter(id_facilidad_pago=id)
         serializer = self.serializer_class(queryset, many=True)
-        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK) 
+        return Response({'success': True, 'detail':'Se muestra los documentos del tipo de actuacion del deudor',  'data': serializer.data}, status=status.HTTP_200_OK) 
