@@ -97,7 +97,8 @@ class FacilidadesPagoSerializer(serializers.ModelSerializer):
             'id_deudor_actuacion': {'required': True},
             'id_tipo_actuacion': {'required': True},
             'id_tasas_interes': {'required': True},
-            'documento_soporte': {'required': True}
+            'documento_soporte': {'required': True},
+            'consignacion_soporte': {'required':True}
         }
 
 

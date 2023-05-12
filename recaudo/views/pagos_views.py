@@ -36,7 +36,7 @@ from recaudo.models.base_models import TipoActuacion, TiposPago
 from recaudo.models.cobros_models import Obligaciones, Expedientes, Deudores, Cartera
 from recaudo.models.liquidaciones_models import Deudores
 from rest_framework import generics, status
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -48,7 +48,7 @@ class DatosDeudorView(generics.ListAPIView):
     def get(self, request, id):
         queryset = Deudores.objects.filter(codigo=id).first()
         if not queryset:
-            return Response({'success': False, 'detail': 'No se encontró ningun registro con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontró ningun registro con el parámetro ingresado')
         serializer = self.serializer_class(queryset)
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)   
 
@@ -59,7 +59,7 @@ class DatosContactoDeudorView(generics.ListAPIView):
     def get(self, request, id):
         queryset = Deudores.objects.filter(codigo=id).first()
         if not queryset:
-            return Response({'success': False, 'detail': 'No se encontró ningun registro con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontró ningun registro con el parámetro ingresado')
         queryset = Personas.objects.filter(numero_documento = queryset.identificacion).first()
         serializer = self.serializer_class(queryset)
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK) 
@@ -331,3 +331,14 @@ class AutorizacionNotificacionesView(generics.RetrieveUpdateAPIView):
             facilidad_pago.save()
             return Response({'success': False, 'detail': 'El usuario no acepta notificaciones por correo electrónico'}, status=status.HTTP_400_BAD_REQUEST)
 
+        #return Response({'success': True, 'data':serializer.data})
+    
+
+class DocumentosRequisitosView(generics.ListAPIView):
+    serializer_class = CumplimientoRequisitosSerializer
+    queryset = CumplimientoRequisitos.objects.all()
+
+    def get(self, request, id):
+        queryset = CumplimientoRequisitos.objects.filter(id_facilidad_pago=id)
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK) 
