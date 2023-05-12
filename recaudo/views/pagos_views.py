@@ -36,7 +36,7 @@ from recaudo.models.base_models import TipoActuacion, TiposPago
 from recaudo.models.cobros_models import Obligaciones, Expedientes, Deudores, Cartera
 from recaudo.models.liquidaciones_models import Deudores
 from rest_framework import generics, status
-from rest_framework.exceptions import NotFound, PermissionDenied
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -87,7 +87,7 @@ class CrearFacilidadPagoView(generics.CreateAPIView):
         cuotas = serializer.validated_data.get('cuotas')
         total_plazos = periodicidad * cuotas
         if total_plazos > 61:
-            return Response({'success': False, 'detail':'Las cuotas deben ser menor de 60 meses'})
+            raise NotFound('Las cuotas deben ser menor de 60 meses')
         else:
             serializer.save()
             return Response({'success': True, 'data':serializer.data},status=status.HTTP_200_OK)
@@ -109,9 +109,9 @@ class FacilidadPagoUpdateView(generics.UpdateAPIView):
                 serializer.save(update_fields=['id_funcionario'])
                 return Response({'success': True, 'data':serializer.data}, status=status.HTTP_200_OK)
             else:
-                return Response({'success': False, 'detail':'El funcionario ingresado no tiene permisos'})
+                raise NotFound('El funcionario ingresado no tiene permisos')
         else:
-            return Response({'success': False, 'detail':'La facilidad de pago ingresada no existe'})
+            raise NotFound('La facilidad de pago ingresada no existe')
     
 
 class FuncionariosView(generics.ListAPIView):
@@ -140,32 +140,28 @@ class ListadoObligacionesViews(generics.ListAPIView):
 
     
     def get(self, request):
-        if request.user.is_authenticated:
-            user = request.user
-            numero_identificacion = user.persona.numero_documento
-            try:
-                deudor = Deudores.objects.get(identificacion=numero_identificacion)
-            except ObjectDoesNotExist:
-                return Response({'error': 'No se encontró un objeto deudor para este usuario.'}, status=status.HTTP_404_NOT_FOUND)
-            nombre_completo = user.persona.primer_nombre + ' ' + user.persona.segundo_nombre + ' ' + user.persona.primer_apellido + ' ' + user.persona.segundo_apellido
-            obligaciones = Obligaciones.objects.filter(id_expediente__cod_deudor=deudor)
-            serializer = self.serializer_class(obligaciones, many=True)
-            
-            monto_total, intereses_total, monto_total_con_intereses = self.get_monto_total(obligaciones)
-            data = {
-                'nombre_completo': nombre_completo,
-                'numero_identificacion': numero_identificacion,
-                'email': user.persona.email,
-                'obligaciones': serializer.data,
-                'monto_total': monto_total,
-                'intereses_total': intereses_total,
-                'monto_total_con_intereses': monto_total_con_intereses
+        user = request.user
+        numero_identificacion = user.persona.numero_documento
+        try:
+            deudor = Deudores.objects.get(identificacion=numero_identificacion)
+        except ObjectDoesNotExist:
+            raise NotFound('No se encontró un objeto deudor para este usuario.')
+        nombre_completo = user.persona.primer_nombre + ' ' + user.persona.segundo_nombre + ' ' + user.persona.primer_apellido + ' ' + user.persona.segundo_apellido
+        obligaciones = Obligaciones.objects.filter(id_expediente__cod_deudor=deudor)
+        serializer = self.serializer_class(obligaciones, many=True)
+        
+        monto_total, intereses_total, monto_total_con_intereses = self.get_monto_total(obligaciones)
+        data = {
+            'nombre_completo': nombre_completo,
+            'numero_identificacion': numero_identificacion,
+            'email': user.persona.email,
+            'obligaciones': serializer.data,
+            'monto_total': monto_total,
+            'intereses_total': intereses_total,
+            'monto_total_con_intereses': monto_total_con_intereses
 
-            }
-            return Response(data)
-        else:
-            return Response({'error': 'Usuario no autenticado.'}, status=status.HTTP_401_UNAUTHORIZED)
-
+        }
+        return Response(data)
 
 class ConsultaObligacionesViews(generics.ListAPIView):
     serializer_class = ConsultaObligacionesSerializer
@@ -176,7 +172,6 @@ class ConsultaObligacionesViews(generics.ListAPIView):
         
         if not queryset.exists():
             raise NotFound("La obligación consultada no existe")
-            
         return queryset
     
 class ConsultaObligacionesDeudoresViews(generics.ListAPIView):
@@ -242,7 +237,6 @@ class ConsultaFacilidadesPagosViews(generics.ListAPIView):
         queryset = FacilidadesPago.objects.filter(id=id_facilidades)
         return queryset
 
-
 class ListadoDeudoresViews(generics.ListAPIView):
     serializer_class = ListadoDeudoresUltSerializer
     permission_classes = [IsAuthenticated]
@@ -267,11 +261,11 @@ class ListadoDeudoresViews(generics.ListAPIView):
         try:
             user = User.objects.get(pk=current_user.pk)
         except User.DoesNotExist:
-            return Response({'success': False, 'detail': 'El usuario no existe.'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('El usuario no tiene deudas')
 
         queryset = self.get_queryset()
         if not queryset.exists():
-            return Response({'success': False, 'detail': 'No se encontraron resultados.'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontraron resultados.')
     
         data = [{'identificacion': item['identificacion'], 'nombre_contribuyente': f"{item['nombres']} {item['apellidos']}"} for item in queryset]
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
@@ -291,7 +285,6 @@ class ListadoFacilidadesPagoFuncionariosViews(generics.ListAPIView):
         serializer = ListadoFacilidadesPagoSerializer(facilidades_pago, many=True)
         return Response( {'success': True, 'detail':'Se le asignaron las siguientes facilidades de pago','data':serializer.data},status=status.HTTP_200_OK)
 
-
 class RequisitosActuacionView(generics.ListAPIView):
     serializer_class = RequisitosActuacionSerializer
     queryset = RequisitosActuacion
@@ -300,7 +293,6 @@ class RequisitosActuacionView(generics.ListAPIView):
         queryset = RequisitosActuacion.objects.filter(id_tipo_actuacion=id)
         serializer = self.serializer_class(queryset, many=True)
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
-
 
 class AgregarDocumentosRequisitosView(generics.CreateAPIView):
     serializer_class = CumplimientoRequisitosSerializer
@@ -329,9 +321,7 @@ class AutorizacionNotificacionesView(generics.RetrieveUpdateAPIView):
         else:
             facilidad_pago.notificaciones = False
             facilidad_pago.save()
-            return Response({'success': False, 'detail': 'El usuario no acepta notificaciones por correo electrónico'}, status=status.HTTP_400_BAD_REQUEST)
-
-        #return Response({'success': True, 'data':serializer.data})
+            raise ValidationError ('El usuario no acepta notificaciones por correo electrónico')
     
 
 class DocumentosRequisitosView(generics.ListAPIView):
