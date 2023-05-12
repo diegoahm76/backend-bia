@@ -20,8 +20,7 @@ urlpatterns = [
     path('get-persona-viverista-nuevo-by-numero-documento/',views.GetPersonaByNumeroDocumento.as_view(),name='get-persona-viverista-nuevo-by-numero-documento'),
     path('asignacion-viverista/<str:id_vivero>/',views.GuardarAsignacionViverista.as_view(),name='asignacion-viverista'),
     path('remover-viverista/<str:id_vivero>/',views.RemoverViveristaView.as_view(),name='remover-viverista'),
-    path('listado-viveros-estado/',views.ListaViveros.as_view(),name='lista-viveros'),
+    path('listado-viveros/',views.ListaViveros.as_view(),name='lista-viveros'),
     path('get-bienes-consumo-by-codigo-bien/',views.GetBienesConsumoByCodigoBien.as_view(),name="get-bienes-consumo-by-codigo-bien"),
     path('get-bienes-consumo-filtro/',views.GetBienesConsumoFiltro.as_view(),name="get-bienes-consumo-filtro"),
-
 ]

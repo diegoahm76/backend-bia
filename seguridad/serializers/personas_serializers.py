@@ -18,7 +18,8 @@ from seguridad.models import (
     Cargos,
     HistoricoCargosUndOrgPersona,
     HistoricoCambiosIDPersonas,
-    HistoricoAutirzacionesNotis
+    HistoricoAutirzacionesNotis,
+    HistoricoRepresentLegales
 )
 
 
@@ -896,3 +897,15 @@ class HistoricoNotificacionesSerializer(serializers.ModelSerializer):
     class Meta:
         model = HistoricoAutirzacionesNotis
         fields = '__all__'
+
+class HistoricoRepresentLegalSerializer(serializers.ModelSerializer):
+    nombre_comercial = serializers.CharField(source='id_persona_empresa.nombre_comercial', read_only=True)
+    razon_social = serializers.CharField(source='id_persona_empresa.razon_social', read_only=True)
+    nombre_completo_replegal = serializers.SerializerMethodField()
+
+    def get_nombre_completo_replegal(self, obj):
+        return f"{obj.id_persona_represent_legal.primer_nombre} {obj.id_persona_represent_legal.segundo_nombre} {obj.id_persona_represent_legal.primer_apellido} {obj.id_persona_represent_legal.segundo_apellido}"
+        
+    class Meta:
+        model = HistoricoRepresentLegales
+        fields = ['id_historico_represent_legal', 'consec_representacion', 'fecha_cambio_sistema', 'fecha_inicio_cargo', 'id_persona_empresa', 'nombre_comercial', 'razon_social','id_persona_represent_legal','nombre_completo_replegal']

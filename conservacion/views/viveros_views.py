@@ -762,3 +762,23 @@ class GetBienesConsumoByCodigoBien(generics.ListAPIView):
 class ListaViveros(generics.ListAPIView):
     queryset = Vivero.objects.all()
     serializer_class = ViveroSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request):
+        
+        filter={}
+        for key,value in request.query_params.items():
+            if key in ['nombre','cod_municipio']:
+                if key != "cod_municipio":
+                    filter[key+"__icontains"] = value
+                else:
+                    if value != '':
+                        filter[key] = value
+                    
+        filter['activo'] = True
+        
+        viveros = self.queryset.all().filter(**filter)
+        if viveros:
+            serializador = self.serializer_class(viveros, many=True)
+            return Response ({'success':True,'detail':'Se encontraron viveros','data':serializador.data},status=status.HTTP_200_OK)
+        raise NotFound('No se encontraron viveros')
