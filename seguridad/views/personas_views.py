@@ -56,7 +56,8 @@ from seguridad.models import (
     UsuariosRol,
     Roles,
     HistoricoCargosUndOrgPersona,
-    HistoricoAutirzacionesNotis
+    HistoricoAutirzacionesNotis,
+    HistoricoRepresentLegales
 )
 
 from seguridad.serializers.personas_serializers import (
@@ -96,7 +97,8 @@ from seguridad.serializers.personas_serializers import (
     BusquedaHistoricoCambiosSerializer,
     UpdatePersonasNaturalesSerializer,
     UpdatePersonasJuridicasSerializer,
-    HistoricoNotificacionesSerializer
+    HistoricoNotificacionesSerializer,
+    HistoricoRepresentLegalSerializer
 )
 
 # Views for Estado Civil
@@ -1336,4 +1338,13 @@ class HistoricoAutorizacionNotificacionesByIdPersona(generics.ListAPIView):
     def get_queryset(self):
         id_persona = self.kwargs['id_persona']
         queryset = HistoricoAutirzacionesNotis.objects.filter(id_persona=id_persona)
+        return queryset
+    
+class HistoricoRepresentLegalView(generics.ListAPIView):
+    serializer_class = HistoricoRepresentLegalSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        id_persona_empresa = self.kwargs['id_persona_empresa']
+        queryset = HistoricoRepresentLegales.objects.filter(id_persona_empresa=id_persona_empresa)
         return queryset

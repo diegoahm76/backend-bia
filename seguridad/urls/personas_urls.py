@@ -88,9 +88,11 @@ urlpatterns = [
     # Historico Direcciones
     path('historico-direccion/<int:id_persona>/', views.HistoricoDireccionByIdPersona.as_view(), name="historico-direcciones"),
     
-    # Historico Notificaicones
-     path('historico-notificaciones/<int:id_persona>/', views.HistoricoAutorizacionNotificacionesByIdPersona.as_view(), name="historico-notificaciones"),
+    # Historico Notificaciones
+    path('historico-notificaciones/<int:id_persona>/', views.HistoricoAutorizacionNotificacionesByIdPersona.as_view(), name="historico-notificaciones"),
     
+    # Historico Representante Legal
+    path('historico-representante-legal/<int:id_persona_empresa>/', views.HistoricoRepresentLegalView.as_view(), name="historico-representante"),
     # Cargos
     path('cargos/get-list/', views.GetCargosList.as_view(), name="cargos-get"),
     path('cargos/create/', views.RegisterCargos.as_view(), name='cargos-register'),
