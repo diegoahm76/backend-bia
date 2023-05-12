@@ -701,7 +701,8 @@ class HistoricoEmailsSerializer(serializers.ModelSerializer):
     nombre_completo = serializers.SerializerMethodField()
 
     def get_nombre_completo(self, obj):
-        return f"{obj.id_persona.primer_nombre} {obj.id_persona.segundo_nombre}{obj.id_persona.primer_apellido}{obj.id_persona.segundo_apellido}"
+        return f"{obj.id_persona.primer_nombre} {obj.id_persona.segundo_nombre} {obj.id_persona.primer_apellido} {obj.id_persona.segundo_apellido}"
+
         
     class Meta:
         model = HistoricoEmails
@@ -711,7 +712,7 @@ class HistoricoDireccionSerializer(serializers.ModelSerializer):
     nombre_completo = serializers.SerializerMethodField()
     
     def get_nombre_completo(self, obj):
-        return f"{obj.id_persona.primer_nombre} {obj.id_persona.segundo_nombre}{obj.id_persona.primer_apellido}{obj.id_persona.segundo_apellido}"
+        return f"{obj.id_persona.primer_nombre} {obj.id_persona.segundo_nombre} {obj.id_persona.primer_apellido} {obj.id_persona.segundo_apellido}"
         
     class Meta:
         model = HistoricoDireccion
@@ -852,11 +853,14 @@ class BusquedaHistoricoCambiosSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class UpdatePersonasNaturalesSerializer(serializers.ModelSerializer):
+    nombre_completo = serializers.SerializerMethodField()
+
+    def get_nombre_completo(self, obj):
+        return f"{obj.primer_nombre} {obj.segundo_nombre} {obj.primer_apellido} {obj.segundo_apellido}"
 
     class Meta:
         model = Personas
-        fields = ('id_persona', 'tipo_documento', 'numero_documento', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido')
-
+        fields = ('id_persona', 'tipo_documento', 'numero_documento', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido','nombre_completo')
 
         validators = [
                 UniqueTogetherValidator(
