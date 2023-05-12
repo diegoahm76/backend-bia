@@ -16,6 +16,7 @@ from recaudo.serializers.pagos_serializers import (
     FuncionariosSerializer,    
     RequisitosActuacionSerializer,
     CumplimientoRequisitosSerializer,
+    DatosContactoDeudorSerializer,
     DetallesFacilidadPagoSerializer,
     GarantiasFacilidadSerializer,
     PlanPagosSerializer,
@@ -24,7 +25,8 @@ from recaudo.serializers.pagos_serializers import (
     ConsultaObligacionesSerializer,
     ListadoFacilidadesPagoSerializer,
     ConsultaFacilidadesPagosSerializer,
-    ListadoDeudoresUltSerializer
+    ListadoDeudoresUltSerializer,
+    AutorizacionNotificacionesSerializer
 )
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -34,7 +36,7 @@ from recaudo.models.base_models import TipoActuacion, TiposPago
 from recaudo.models.cobros_models import Obligaciones, Expedientes, Deudores, Cartera
 from recaudo.models.liquidaciones_models import Deudores
 from rest_framework import generics, status
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -46,9 +48,21 @@ class DatosDeudorView(generics.ListAPIView):
     def get(self, request, id):
         queryset = Deudores.objects.filter(codigo=id).first()
         if not queryset:
-            return Response({'success': False, 'detail': 'No se encontró ningun registro con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontró ningun registro con el parámetro ingresado')
         serializer = self.serializer_class(queryset)
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)   
+
+        
+class DatosContactoDeudorView(generics.ListAPIView):
+    serializer_class = DatosContactoDeudorSerializer
+
+    def get(self, request, id):
+        queryset = Deudores.objects.filter(codigo=id).first()
+        if not queryset:
+            raise NotFound('No se encontró ningun registro con el parámetro ingresado')
+        queryset = Personas.objects.filter(numero_documento = queryset.identificacion).first()
+        serializer = self.serializer_class(queryset)
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK) 
 
 
 class TipoActuacionView(generics.ListAPIView):
@@ -76,7 +90,7 @@ class CrearFacilidadPagoView(generics.CreateAPIView):
             return Response({'success': False, 'detail':'Las cuotas deben ser menor de 60 meses'})
         else:
             serializer.save()
-            return Response({'success': True, 'data':serializer.data})
+            return Response({'success': True, 'data':serializer.data},status=status.HTTP_200_OK)
 
 
 class FacilidadPagoUpdateView(generics.UpdateAPIView):
@@ -93,7 +107,7 @@ class FacilidadPagoUpdateView(generics.UpdateAPIView):
             id_funcionario = ClasesTerceroPersona.objects.filter(id_persona=id_funcionario, id_clase_tercero=2).first()
             if id_funcionario:
                 serializer.save(update_fields=['id_funcionario'])
-                return Response({'success': True, 'data':serializer.data})
+                return Response({'success': True, 'data':serializer.data}, status=status.HTTP_200_OK)
             else:
                 return Response({'success': False, 'detail':'El funcionario ingresado no tiene permisos'})
         else:
@@ -108,8 +122,7 @@ class FuncionariosView(generics.ListAPIView):
         funcionarios = ClasesTerceroPersona.objects.filter(id_clase_tercero=2)
         funcionarios = [funcionario.id_persona for funcionario in funcionarios]
         serializer = self.serializer_class(funcionarios, many=True)
-        return Response({'success': True, 'data':serializer.data})
-
+        return Response({'success': True, 'data':serializer.data}, status=status.HTTP_200_OK)
 
 class ListadoObligacionesViews(generics.ListAPIView):
     serializer_class = ObligacionesSerializer
@@ -160,6 +173,10 @@ class ConsultaObligacionesViews(generics.ListAPIView):
     def get_queryset(self):
         id_obligaciones = self.kwargs['id_obligaciones']
         queryset = Obligaciones.objects.filter(id=id_obligaciones)
+        
+        if not queryset.exists():
+            raise NotFound("La obligación consultada no existe")
+            
         return queryset
     
 class ConsultaObligacionesDeudoresViews(generics.ListAPIView):
@@ -197,8 +214,6 @@ class ConsultaObligacionesDeudoresViews(generics.ListAPIView):
         except Deudores.DoesNotExist:
             raise NotFound(detail='No se encontraron resultados')
 
-
-
 class ListadoFacilidadesPagoViews(generics.ListAPIView):
     serializer_class = ListadoFacilidadesPagoSerializer
     permission_classes = [IsAuthenticated]
@@ -212,9 +227,12 @@ class ListadoFacilidadesPagoViews(generics.ListAPIView):
                 if value != '':
                     filter['id_deudor_actuacion__' + key + '__icontains'] = value
         facilidades_pago = FacilidadesPago.objects.filter(**filter)
+        
+        if not facilidades_pago.exists():
+            raise NotFound("La facilidad de pagos consultada no existe")
+        
         serializer = ListadoFacilidadesPagoSerializer(facilidades_pago, many=True)
-        return Response(serializer.data)
-
+        return Response({'success':True, 'data':serializer.data},status=status.HTTP_200_OK)
 
 class ConsultaFacilidadesPagosViews(generics.ListAPIView):
     serializer_class = ConsultaFacilidadesPagosSerializer
@@ -245,10 +263,19 @@ class ListadoDeudoresViews(generics.ListAPIView):
         return Deudores.objects.filter(**filter).values('identificacion', 'nombres', 'apellidos')
 
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        data = [{'identificacion': item['identificacion'], 'nombre_contribuyente': f"{item['nombres']} {item['apellidos']}"} for item in queryset]
-        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data})
+        current_user = self.request.user
+        try:
+            user = User.objects.get(pk=current_user.pk)
+        except User.DoesNotExist:
+            return Response({'success': False, 'detail': 'El usuario no existe.'}, status=status.HTTP_404_NOT_FOUND)
 
+        queryset = self.get_queryset()
+        if not queryset.exists():
+            return Response({'success': False, 'detail': 'No se encontraron resultados.'}, status=status.HTTP_404_NOT_FOUND)
+    
+        data = [{'identificacion': item['identificacion'], 'nombre_contribuyente': f"{item['nombres']} {item['apellidos']}"} for item in queryset]
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
+    
 class ListadoFacilidadesPagoFuncionariosViews(generics.ListAPIView):
     serializer_class = ListadoFacilidadesPagoSerializer
     permission_classes = [IsAuthenticated]
@@ -262,7 +289,7 @@ class ListadoFacilidadesPagoFuncionariosViews(generics.ListAPIView):
             elif key == 'nombre_de_usuario':
                 facilidades_pago = facilidades_pago.filter(id_deudor_actuacion__usuario__primer_nombre__icontains=value)
         serializer = ListadoFacilidadesPagoSerializer(facilidades_pago, many=True)
-        return Response(serializer.data)
+        return Response( {'success': True, 'detail':'Se le asignaron las siguientes facilidades de pago','data':serializer.data},status=status.HTTP_200_OK)
 
 
 class RequisitosActuacionView(generics.ListAPIView):
@@ -284,4 +311,34 @@ class AgregarDocumentosRequisitosView(generics.CreateAPIView):
         serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({'success': True, 'data':serializer.data})
+        return Response({'success': True, 'data':serializer.data},status=status.HTTP_200_OK)
+    
+class AutorizacionNotificacionesView(generics.RetrieveUpdateAPIView):
+    serializer_class = AutorizacionNotificacionesSerializer
+    queryset = FacilidadesPago.objects.all()
+
+    def put(self, request, *args, **kwargs):
+        facilidad_pago = self.get_object()
+        data = request.data
+        notificaciones = data.get('notificaciones')
+
+        if notificaciones:
+            facilidad_pago.notificaciones = True
+            facilidad_pago.save()
+            return Response({'success': True, 'detail': 'El usuario acepta las notificaciones por correo electrónico'}, status=status.HTTP_200_OK)
+        else:
+            facilidad_pago.notificaciones = False
+            facilidad_pago.save()
+            return Response({'success': False, 'detail': 'El usuario no acepta notificaciones por correo electrónico'}, status=status.HTTP_400_BAD_REQUEST)
+
+        #return Response({'success': True, 'data':serializer.data})
+    
+
+class DocumentosRequisitosView(generics.ListAPIView):
+    serializer_class = CumplimientoRequisitosSerializer
+    queryset = CumplimientoRequisitos.objects.all()
+
+    def get(self, request, id):
+        queryset = CumplimientoRequisitos.objects.filter(id_facilidad_pago=id)
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK) 

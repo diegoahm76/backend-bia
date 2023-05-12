@@ -38,6 +38,7 @@ class DetalleDocumentosCobro(models.Model):
 
 class Obligaciones(models.Model):
     id = models.AutoField(primary_key=True, db_column='T416id')
+    nombre = models.CharField(max_length=255, db_column='T416nombre')
     cod_factura = models.CharField(max_length=255, db_column='T416cod_factura')
     fecha_inicio = models.DateField(db_column='T416fecha_inicio')
     monto_inicial = models.DecimalField(max_digits=30, decimal_places=2, db_column='T416monto_inicial')

@@ -25,9 +25,16 @@ class RolesGarantiasView(generics.ListAPIView):
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
     
 
-class GarantiasView(generics.ListAPIView):
+class GarantiasView(generics.CreateAPIView):
     serializer_class = GarantiasSerializer
     permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data = request.data
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'data':serializer.data})
 
 
 class TiposBienesView(generics.ListAPIView):
@@ -37,19 +44,18 @@ class TiposBienesView(generics.ListAPIView):
     def get(self, request):
         queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
-        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Se muestra los tipos de bienes', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
 class CrearBienView(generics.CreateAPIView):
     serializer_class = BienSerializer
-    queryset = Bienes.objects.all()
     
     def post(self, request):
         data = request.data
         serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({'success': True, 'data':serializer.data})
+        return Response({'success': True, 'detail': 'Se crea el bien que coloca el deudor', 'data':serializer.data})
 
 
 class ListaBienesDeudorView(generics.ListAPIView):
@@ -62,4 +68,4 @@ class ListaBienesDeudorView(generics.ListAPIView):
         if not bienes_deudor:
             return Response({'success': False, 'detail': 'No se encontró ningun registro con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.serializer_class(bienes_deudor, many=True)
-        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK) 
+        return Response({'success': True, 'detail': 'Se muestra todos los bienes del deudor', 'data': serializer.data}, status=status.HTTP_200_OK) 
