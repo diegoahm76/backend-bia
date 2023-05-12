@@ -33,7 +33,8 @@ class GetViveroActivo (generics.ListAPIView):
                 if key != "cod_municipio":
                     filter[key+"__icontains"] = value
                 else:
-                    filter[key] = value
+                    if value != '':
+                        filter[key] = value
                     
         filter['activo'] = True
         filter['fecha_cierre_actual'] = None

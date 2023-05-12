@@ -177,17 +177,3 @@ class PersonasAsignacionViveroSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Personas
-
-class ViveroSerializer(serializers.ModelSerializer):
-    id_viverista_actual = serializers.CharField(source='id_viverista_actual.nombre', read_only=True)
-    estado = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Vivero
-        fields = ('id_vivero', 'nombre', 'id_viverista_actual', 'estado')
-
-    def get_estado(self, obj):
-        if obj.en_funcionamiento:
-            return 'Abierto'
-        else:
-            return 'Cerrado'
