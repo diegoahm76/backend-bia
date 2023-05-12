@@ -30,7 +30,6 @@ class FacilidadesPago(models.Model):
     consignacion_soporte = models.FileField(db_column='T426consignacion_soporte')
     id_funcionario = models.IntegerField(db_column='T426id_funcionario')
     notificaciones = models.BooleanField(db_column='T426id_notificaciones')
-    consignacion_soporte = models.FileField(db_column='_T426consignacion_soporte')
 
     class Meta:
         db_table = 'T426facilidades_pago'
