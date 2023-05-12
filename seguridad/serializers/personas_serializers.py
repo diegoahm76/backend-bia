@@ -17,7 +17,8 @@ from seguridad.models import (
     ClasesTerceroPersona,
     Cargos,
     HistoricoCargosUndOrgPersona,
-    HistoricoCambiosIDPersonas
+    HistoricoCambiosIDPersonas,
+    HistoricoAutirzacionesNotis
 )
 
 
@@ -885,3 +886,13 @@ class UpdatePersonasJuridicasSerializer(serializers.ModelSerializer):
                     message = 'Ya existe un registro con ese número de documento ingresado'    
                 )
             ]
+
+class HistoricoNotificacionesSerializer(serializers.ModelSerializer):
+    nombre_completo = serializers.SerializerMethodField()
+    
+    def get_nombre_completo(self, obj):
+        return f"{obj.id_persona.primer_nombre} {obj.id_persona.segundo_nombre} {obj.id_persona.primer_apellido} {obj.id_persona.segundo_apellido}"
+        
+    class Meta:
+        model = HistoricoAutirzacionesNotis
+        fields = '__all__'

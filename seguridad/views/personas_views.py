@@ -55,7 +55,8 @@ from seguridad.models import (
     HistoricoCambiosIDPersonas,
     UsuariosRol,
     Roles,
-    HistoricoCargosUndOrgPersona
+    HistoricoCargosUndOrgPersona,
+    HistoricoAutirzacionesNotis
 )
 
 from seguridad.serializers.personas_serializers import (
@@ -94,7 +95,8 @@ from seguridad.serializers.personas_serializers import (
     PersonasFilterSerializer,
     BusquedaHistoricoCambiosSerializer,
     UpdatePersonasNaturalesSerializer,
-    UpdatePersonasJuridicasSerializer
+    UpdatePersonasJuridicasSerializer,
+    HistoricoNotificacionesSerializer
 )
 
 # Views for Estado Civil
@@ -805,6 +807,7 @@ class registerSucursalEmpresa(generics.CreateAPIView):
 # Views for Historico Emails
 class HistoricoEmailsByIdPersona(generics.ListAPIView):
     serializer_class = HistoricoEmailsSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         id_persona = self.kwargs['id_persona']
@@ -814,6 +817,7 @@ class HistoricoEmailsByIdPersona(generics.ListAPIView):
 # Views for Historico Direcciones
 class HistoricoDireccionByIdPersona(generics.ListAPIView):
     serializer_class = HistoricoDireccionSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         id_persona = self.kwargs['id_persona']
@@ -1324,3 +1328,12 @@ class GetPersonasByTipoDocumentoAndNumeroDocumentoAdminUser(GetPersonasByTipoDoc
 class GetPersonasByFiltersAdminUser(GetPersonasByFilters):
     serializer_class = PersonasFilterAdminUserSerializer
     queryset = Personas.objects.all()
+
+class HistoricoAutorizacionNotificacionesByIdPersona(generics.ListAPIView):
+    serializer_class = HistoricoNotificacionesSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        id_persona = self.kwargs['id_persona']
+        queryset = HistoricoAutirzacionesNotis.objects.filter(id_persona=id_persona)
+        return queryset
