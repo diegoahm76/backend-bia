@@ -7,7 +7,8 @@ from recaudo.models.base_models import TiposBien
 from recaudo.models.procesos_models import Bienes
 from recaudo.models.garantias_models import RolesGarantias, Garantias
 from recaudo.serializers.garantias_serializers import (
-    RolesGarantiasSerializer, 
+    RolesGarantiasSerializer,
+    GarantiasFacilidadSerializer,
     GarantiasSerializer,
     TipoBienSerializer,
     BienSerializer,
@@ -25,16 +26,15 @@ class RolesGarantiasView(generics.ListAPIView):
         return Response({'success': True, 'detail':'Se muestra los roles de garantias', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 
-class GarantiasView(generics.CreateAPIView):
-    serializer_class = GarantiasSerializer
-    permission_classes = [IsAuthenticated]
+class GarantiasFacilidadView(generics.CreateAPIView):
+    serializer_class = GarantiasFacilidadSerializer
 
     def post(self, request):
         data = request.data
         serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({'success': True, 'data':serializer.data})
+        return Response({'success': True, 'detail':'Se crea la relacion de facilidades de pago y bienes mediante garantias', 'data':serializer.data})
 
 
 class TiposBienesView(generics.ListAPIView):
