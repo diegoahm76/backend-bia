@@ -18,7 +18,6 @@ from recaudo.serializers.pagos_serializers import (
     CumplimientoRequisitosSerializer,
     DatosContactoDeudorSerializer,
     DetallesFacilidadPagoSerializer,
-    GarantiasFacilidadSerializer,
     PlanPagosSerializer,
     TasasInteresSerializer,
     ObligacionesSerializer,
