@@ -43,12 +43,6 @@ class DetallesFacilidadPagoSerializer(serializers.ModelSerializer):
         model =DetallesFacilidadPago
         fields = '__all__'
 
-
-class GarantiasFacilidadSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = GarantiasFacilidad
-        fields = '__all__'
-    
     
 class PlanPagosSerializer(serializers.ModelSerializer):
     class Meta:
