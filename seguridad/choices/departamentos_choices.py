@@ -1,4 +1,5 @@
 departamentos_CHOICES = (
+    ('50', 'META'),
     ('05', 'ANTIOQUIA'),
     ('08', 'ATLANTICO'),
     ('11', 'BOGOTA'),
@@ -14,7 +15,6 @@ departamentos_CHOICES = (
     ('41', 'HUILA'),
     ('44', 'LA GUAJIRA'),
     ('47', 'MAGDALENA'),
-    ('50', 'META'),
     ('52', 'NARIÑO'),
     ('54', 'N. DE SANTANDER'),
     ('63', 'QUINDIO'),
