@@ -6,9 +6,9 @@ from recaudo.models.pagos_models import (
     RequisitosActuacion,
     CumplimientoRequisitos,
     DetallesFacilidadPago,
-    GarantiasFacilidad,
     PlanPagos,
-    TasasInteres
+    TasasInteres,
+    RespuestaSolicitud
 )
 from recaudo.models.cobros_models import Obligaciones, Cartera, Deudores
 from seguridad.models import Personas, Municipio
@@ -195,3 +195,7 @@ class AutorizacionNotificacionesSerializer(serializers.ModelSerializer):
         fields = ['notificaciones']
 
 
+class RespuestaSolicitudFacilidadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RespuestaSolicitud
+        fields = '__all__'

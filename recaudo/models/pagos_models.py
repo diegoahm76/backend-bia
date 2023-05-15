@@ -105,8 +105,8 @@ class RespuestaSolicitud(models.Model):
     id = models.BigAutoField(primary_key=True, db_column='T434id')
     id_funcionario = models.IntegerField(db_column='T434id_funcionario')
     id_facilidades_pago = models.ForeignKey(FacilidadesPago, on_delete=models.CASCADE, db_column='T434id_facilidades_pago')
-    estado = models.BooleanField(db_column='T434estado')
-    aprobacion = models.CharField(max_length=255, db_column='T434aprobacion')
+    estado = models.CharField(max_length=255, db_column='T434estado')
+    aprobacion = models.BooleanField(db_column='T434aprobacion')
     observacion = models.CharField(max_length=255, db_column='T434observacion')
     consulta_dbme = models.CharField(max_length=255, db_column='T434consulta_dbme')
 
