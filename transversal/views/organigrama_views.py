@@ -22,7 +22,8 @@ from transversal.serializers.organigrama_serializers import (
     NivelesUpdateSerializer, 
     NivelesGetSerializer,
     UnidadesGetSerializer,
-    OrganigramaPostSerializer
+    OrganigramaPostSerializer,
+    ActUnidadOrgAntiguaSerializer
     )
 from transversal.models.organigrama_models import (
     Organigramas,
@@ -811,3 +812,56 @@ class ObtenerOrganigramaActual(generics.ListAPIView):
             
             return Response({'success':True,'detail':'Busqueda exitosa','data':serializador.data},status=status.HTTP_200_OK)
         return Response({'success':True,'detail':'Busqueda exitosa, no existe organigrama actual'},status=status.HTTP_200_OK)
+
+class ActualizacionUnidadOrganizativaAntigua(generics.UpdateAPIView):
+    serializer_class = ActUnidadOrgAntiguaSerializer
+
+    def put(self, request, *args, **kwargs):
+        id_unidad_organizacional_actual = self.kwargs['id_unidad_organizacional_actual']
+        nueva_id_unidad_organizacional = request.data.get('nueva_id_unidad_organizacional')
+
+        try:
+            unidad_organizacional = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=nueva_id_unidad_organizacional)
+        except UnidadesOrganizacionales.DoesNotExist:
+            return Response({'message': 'La nueva unidad organizacional que estas asignando no existe'}, status=status.HTTP_400_BAD_REQUEST)
+
+        queryset = Personas.objects.filter(
+            id_unidad_organizacional_actual=id_unidad_organizacional_actual,
+            es_unidad_organizacional_actual=False
+        )
+
+        personas_actualizadas = []
+
+        for persona in queryset:
+            persona.id_unidad_organizacional_actual = unidad_organizacional
+            persona.es_unidad_organizacional_actual = True
+            persona.save(update_fields=['id_unidad_organizacional_actual', 'es_unidad_organizacional_actual'])
+            personas_actualizadas.append(persona)
+
+        if personas_actualizadas:
+            return Response({'success': True, 'detail': 'Actualización exitosa'}, status=status.HTTP_200_OK)
+        else:
+            raise ValidationError('Las personas se encuentran actualizadas con una unidad organizacional vigente')
+
+class GetUnidadOrgDesactualizada(generics.ListAPIView):
+    serializer_class = ActUnidadOrgAntiguaSerializer
+
+    def get(self, request):
+        id_unidad_organizacional_actual = self.request.data.get('id_unidad_organizacional_actual')
+        if id_unidad_organizacional_actual:
+            try:
+                id_unidad_organizacional_actual = int(id_unidad_organizacional_actual)
+                queryset = Personas.objects.filter(
+                    id_unidad_organizacional_actual=id_unidad_organizacional_actual,
+                    es_unidad_organizacional_actual=False
+                )
+            except ValueError:
+                return Personas.objects.none()
+        else:
+            queryset = Personas.objects.filter(es_unidad_organizacional_actual=False)
+            
+        if not queryset.exists():
+            raise NotFound('No se encuentran personas con unidades organizacionales desactualizadas')
+        
+        serializador = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializador.data}, status=status.HTTP_200_OK)
