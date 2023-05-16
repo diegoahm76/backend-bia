@@ -294,7 +294,7 @@ class PersonaNaturalPostSerializer(serializers.ModelSerializer):
             'estado_civil': {'required': True,'allow_null':False},
             'cod_municipio_expedicion_id': {'required': True,'allow_null':False},
             'pais_residencia': {'required': True,'allow_null':False},
-            'direccion_residencia': {'required': True,'allow_null':False, 'allow_blank':False},
+            'direccion_residencia': {'required': False,'allow_null':True, 'allow_blank':False},
             'direccion_notificaciones': {'required': True,'allow_null':False, 'allow_blank':False},
             'cod_municipio_notificacion_nal': {'required': True,'allow_null':False},
             'acepta_notificacion_sms': {'required': True,'allow_null':False},
