@@ -865,3 +865,19 @@ class GetUnidadOrgDesactualizada(generics.ListAPIView):
         
         serializador = self.get_serializer(queryset, many=True)
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializador.data}, status=status.HTTP_200_OK)
+
+
+class GetUnidadesOrganigramaRetiradoReciente(generics.ListAPIView):
+    serializer_class = UnidadesGetSerializer
+    queryset = UnidadesOrganizacionales.objects.all()
+
+    def get(self, request):
+        organigramas = Organigramas.objects.filter(actual=False).order_by('-fecha_retiro_produccion')
+        if not organigramas:
+            raise NotFound('No existe organigramas retirados de produccion')
+        
+        organigrama_retirado = organigramas.first()
+        unidades_organigrama_retirado = UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama_retirado.id_organigrama)
+        serializer = self.serializer_class(unidades_organigrama_retirado, many=True)
+        return Response({'success':True, 'detail':'Consulta Organigrama Retirado Reciente Exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
+

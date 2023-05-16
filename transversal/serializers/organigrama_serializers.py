@@ -65,6 +65,7 @@ class UnidadesGetSerializer(serializers.ModelSerializer):
         model = UnidadesOrganizacionales
         fields = '__all__'
 
+
 class PersonaOrgSerializer(serializers.ModelSerializer):
     nombre_completo = serializers.SerializerMethodField()
     tiene_usuario = serializers.SerializerMethodField()

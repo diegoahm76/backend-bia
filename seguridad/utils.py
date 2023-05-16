@@ -202,7 +202,8 @@ class Util:
                 auditoria_user.save()
         
             return True
-        except:
+        except Exception as err:
+            print("Error: " + repr(err))
             return False
         
     @staticmethod
