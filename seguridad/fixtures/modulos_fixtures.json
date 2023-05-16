@@ -8,7 +8,8 @@
         "subsistema":"TRSV",
         "descripcion":"Permite administrar las personas registradas en el sistema",
         "ruta_formulario":"/#/app/transversal/personas/administracion_personas",
-        "nombre_icono":"test"
+        "nombre_icono":"test",
+        "id_menu": 1
       }
     },
     {
@@ -20,7 +21,8 @@
         "subsistema":"SEGU",
         "descripcion":"Permite administrar las credenciales de acceso de las personas al sistema",
         "ruta_formulario":"/#/app/seguridad/administracion_usuarios",
-        "nombre_icono":"test"
+        "nombre_icono":"test",
+        "id_menu": 8
       }
     },
     {
@@ -32,7 +34,8 @@
         "subsistema":"SEGU",
         "descripcion":"Permite administrar a una persona que tiene un usuario interno, los datos de su usuario y datos personales desde el sistema - Sólo para usuarios internos",
         "ruta_formulario":"/*",
-        "nombre_icono":"test"
+        "nombre_icono":"test",
+        "id_menu": 6
       }
     },
     {
@@ -44,7 +47,8 @@
         "subsistema":"SEGU",
         "descripcion":"Permite administrar a una persona que tiene un usuario externo, los datos de su usuario y datos personales desde el portal web - Sólo para usuarios externos",
         "ruta_formulario":"/*",
-        "nombre_icono":"test"
+        "nombre_icono":"test",
+        "id_menu": 7
       }
     },
     {
@@ -56,7 +60,8 @@
         "subsistema":"SEGU",
         "descripcion":"Permite administrar los roles del sistema",
         "ruta_formulario":"/#/app/seguridad/roles",
-        "nombre_icono":"test"
+        "nombre_icono":"test",
+        "id_menu": 8
       }
     },
     {
@@ -68,7 +73,8 @@
         "subsistema":"TRSV",
         "descripcion":"Permite administrar la información básica de los Estados Civiles del sistema",
         "ruta_formulario":"/#/app/transversal/configuracion/datos_basicos/estado_civil",
-        "nombre_icono":"test"
+        "nombre_icono":"test",
+        "id_menu": 5
       }
     },
     {
@@ -80,7 +86,8 @@
           "subsistema":"TRSV",
           "descripcion":"Permite administrar los tipos de documentos de identificación",
           "ruta_formulario":"/#/app/transversal/configuracion/datos_basicos/tipos_documento",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 5
         }
       },
       {
@@ -92,7 +99,8 @@
           "subsistema":"SEGU",
           "descripcion":"Proceso que permite a un SuperUsuario delegar dicha función a otra persona",
           "ruta_formulario":"/#/app/seguridad/superusuario",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 8
         }
       },
       {
@@ -104,7 +112,8 @@
           "subsistema":"SEGU",
           "descripcion":"Permite crear una persona vía Portal",
           "ruta_formulario":"/*",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": null
         }
       },
       {
@@ -116,7 +125,8 @@
           "subsistema":"SEGU",
           "descripcion":"Permite crear un usuario vía Portal",
           "ruta_formulario":"/*",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": null
         }
       },
       {
@@ -128,7 +138,8 @@
           "subsistema":"ALMA",
           "descripcion":"Permite administrar la información básica de las Marcas de artículos activos fijos",
           "ruta_formulario":"/#/app/almacen/configuracion/marca",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 45
         }
       },
       {
@@ -140,7 +151,8 @@
           "subsistema":"ALMA",
           "descripcion":"Permite administrar las bodegas del Almacén creadas en el sistema",
           "ruta_formulario":"/#/app/almacen/configuracion_datos_basicos/bodegas",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 44
         }
       },
       {
@@ -152,7 +164,8 @@
           "subsistema":"ALMA",
           "descripcion":"Permite administrar la información básica de los porcentajes de IVA que manejará el sistema",
           "ruta_formulario":"/#/app/almacen/configuracion/porcentaje",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 45
         }
       },
       {
@@ -164,7 +177,8 @@
           "subsistema":"ALMA",
           "descripcion":"Permite administrar la información básica de las unidades de medida que manejará el sistema",
           "ruta_formulario":"/#/app/almacen/configuracion_datos_basicos/datos_basicos/unidades_medida",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 45
         }
       },
       {
@@ -176,7 +190,8 @@
           "subsistema":"TRSV",
           "descripcion":"Permite administrar los organigramas del sistema",
           "ruta_formulario":"/#/app/transversal/corporativo/organigramas",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 2
         }
       },
       {
@@ -188,7 +203,8 @@
           "subsistema":"TRSV",
           "descripcion":"Permite adoptar un nuevo organigrama de la entidad en el sistema",
           "ruta_formulario":"/#/app/transversal/procesos/cambio_organigrama_actual",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 3
         }
       },
       {
@@ -200,7 +216,8 @@
           "subsistema":"TRSV",
           "descripcion":"Permite administrar los cargos disponibles en el sistema",
           "ruta_formulario":"/#/app/transversal/configuracion/datos_basicos/cargos",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 5
         }
       },
       {
@@ -212,7 +229,8 @@
           "subsistema":"ALMA",
           "descripcion":"Permite administrar la información de las hojas de vidas de los computadores",
           "ruta_formulario":"/#/app/almacen/gestion_inventario/hv_activos_fijos/hv_computadores",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 34
         }
       },
       {
@@ -224,7 +242,8 @@
           "subsistema":"ALMA",
           "descripcion":"Permite administrar la información de las hojas de vidas de los vehículos",
           "ruta_formulario":"/#/app/almacen/gestion_inventario/hv_activos_fijos/hv_vehiculos",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 34
         }
       },
       {
@@ -236,7 +255,8 @@
           "subsistema":"ALMA",
           "descripcion":"Permite administrar la información de las hojas de vidas de otros activos",
           "ruta_formulario":"/#/app/almacen/gestion_inventario/hv_activos_fijos/hv_otros_activos",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 34
         }
       },
       {
@@ -248,7 +268,8 @@
           "subsistema":"ALMA",
           "descripcion":"Permite administrar la información de las programaciones de mantenimiento de computadores",
           "ruta_formulario":"/#/app/almacen/gestion_inventario/mantenimiento_equipos/programacion_mantenimiento_computadores",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 35
         }
       },
       {
@@ -260,7 +281,8 @@
           "subsistema":"ALMA",
           "descripcion":"Permite administrar la información de las programaciones de mantenimiento de vehículos",
           "ruta_formulario":"/#/app/almacen/gestion_inventario/mantenimiento_equipos/programacion_mantenimiento_vehiculos",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 35
         }
       },
       {
@@ -272,7 +294,8 @@
           "subsistema":"ALMA",
           "descripcion":"Permite administrar la información de las programaciones de mantenimiento de otros activos",
           "ruta_formulario":"/#/app/almacen/gestion_inventario/mantenimiento_equipos/programacion_mantenimiento_otros_activos",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 35
         }
       },
       {
@@ -284,7 +307,8 @@
           "subsistema":"ALMA",
           "descripcion":"Permite administrar la información de las ejecuciones de mantenimiento de computadores",
           "ruta_formulario":"/#/app/almacen/gestion_inventario/mantenimiento_equipos/ejecucion_mantenimiento_computadores",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 35
         }
       },
       {
@@ -296,7 +320,8 @@
           "subsistema":"ALMA",
           "descripcion":"Permite administrar la información de las ejecuciones de mantenimiento de vehículos",
           "ruta_formulario":"/#/app/almacen/gestion_inventario/mantenimiento_equipos/ejecucion_mantenimiento_vehiculos",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 35
         }
       },
       {
@@ -308,7 +333,8 @@
           "subsistema":"ALMA",
           "descripcion":"Permite administrar la información de las ejecuciones de mantenimiento de otros activos",
           "ruta_formulario":"/#/app/almacen/gestion_inventario/mantenimiento_equipos/ejecucion_mantenimiento_otros_activos",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 35
         }
       },
       {
@@ -320,7 +346,8 @@
           "subsistema":"GEST",
           "descripcion":"Permite administrar los Cuadros de Clasificación Documental de la entidad en el sistema",
           "ruta_formulario":"/#/app/gestor_documental/gestion/instrumentos_archivisticos/ccd",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 12
         }
       },
       {
@@ -332,7 +359,8 @@
           "subsistema":"GEST",
           "descripcion":"Permite adoptar una nueva versión de los Instrumentos Archivísticos de la entidad en el sistema",
           "ruta_formulario":"/*",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 13
         }
       },
       {
@@ -344,7 +372,8 @@
           "subsistema":"GEST",
           "descripcion":"Permite administrar las Tablas de Retención Documental de la entidad en el sistema",
           "ruta_formulario":"/#/app/gestor_documental/gestion/instrumentos_archivisticos/trd",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 12
         }
       },
       {
@@ -356,7 +385,8 @@
           "subsistema":"GEST",
           "descripcion":"Permite administrar las Tablas de Control de Acceso de la entidad en el sistema",
           "ruta_formulario":"/#/app/gestor_documental/gestion/instrumentos_archivisticos/tca",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 12
         }
       },
       {
@@ -368,7 +398,8 @@
           "subsistema":"ALMA",
           "descripcion":"Permite administrar el catálogo de los bienes de la entidad a manejar en el subsistema de Almacén",
           "ruta_formulario":"/#/app/almacen/entrada_y_salida_de_articulos/catalogo_bienes",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 31
         }
       },
       {
@@ -380,7 +411,8 @@
           "subsistema":"ALMA",
           "descripcion":"Permite ingresar bienes al Almacén de la entidad para su control",
           "ruta_formulario":"/#/app/almacen/entrada_almacen/entrada_bienes_almacen",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 36
         }
       },
       {
@@ -392,7 +424,8 @@
           "subsistema":"ALMA",
           "descripcion":"Permite solicitar bienes de consumo por parte de la entidad al almacén de la misma",
           "ruta_formulario":"/#/app/almacen/registro_solicitudes_almacen/solicitud_bienes_consumo",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 37
         }
       },
       {
@@ -404,7 +437,8 @@
           "subsistema":"ALMA",
           "descripcion":"Permite solicitar bienes de consumo para uso en la actividad misional de Viveros por parte del personal de Viveros al Almacén de la entidad",
           "ruta_formulario":"/#/app/almacen/registro_solicitudes_almacen/solicitud_bienes_consumo_viveros",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 37
         }
       },
       {
@@ -416,7 +450,8 @@
           "subsistema":"ALMA",
           "descripcion":"Permite aprobar o rechazar solicitudes de bienes de las cuales se le elijió como responsable por parte del solicitante",
           "ruta_formulario":"/#/app/almacen/registro_solicitudes_almacen/aprobacion_solicitud_bienes",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 37
         }
       },
       {
@@ -428,7 +463,8 @@
           "subsistema":"ALMA",
           "descripcion":"Permite aprobar o rechazar solicitudes de bienes de Consumo para la actividad misional de Vivero y sobre las cuales se le elijió como responsable por parte del solicitante",
           "ruta_formulario":"/#/app/almacen/registro_solicitudes_almacen/aprobacion_solicitud_consumo_vivero",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 37
         }
       },
       {
@@ -440,7 +476,8 @@
           "subsistema":"ALMA",
           "descripcion":"Permite rechazar por parte de Almacén, solicitudes de bienes realizadas por las diferentes áreas de la entidad",
           "ruta_formulario":"/#/app/almacen/gestion_inventario/movimientos/respuesta_solicitudes/rechazo_solicitudes_bienes_almacen",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 33
         }
       },
       {
@@ -452,7 +489,8 @@
           "subsistema":"ALMA",
           "descripcion":"Lista todas las solicitudes realizadas por la empresa y que no han sido gestionadas por Almacén",
           "ruta_formulario":"/#/app/almacen/gestion_inventario/movimientos/respuesta_solicitudes/listado_solicitudes_bienes_pendientes_por_despachar",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 33
         }
       },
       {
@@ -464,7 +502,8 @@
           "subsistema":"CONS",
           "descripcion":"Permite administrar los Viveros de la entidad",
           "ruta_formulario":"/#/app/conservacion/gestor_vivero/administrar_viveros",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 20
         }
       },
       {
@@ -476,7 +515,8 @@
           "subsistema":"CONS",
           "descripcion":"módulo que permite ingresar o sacar de cuarentena un vivero de la entidad",
           "ruta_formulario":"/#/app/conservacion/gestor_vivero/cuarentena",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 20
         }
       },
       {
@@ -488,7 +528,8 @@
           "subsistema":"CONS",
           "descripcion":"módulo que permite aperturar o cerrar un vivero existente de la entidad",
           "ruta_formulario":"/#/app/conservacion/gestor_vivero/apertura_cierre",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 20
         }
       },
       {
@@ -500,7 +541,8 @@
           "subsistema":"CONS",
           "descripcion":"Permite tipificar los bienes de consumo utilizables en viveros para la producción",
           "ruta_formulario":"/#/app/conservacion/configuracion/administrar_camas_germinacion",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 30
         }
       },
       {
@@ -512,7 +554,8 @@
           "subsistema":"ALMA",
           "descripcion":"Permite a Almacén despachar los bienes de consumo de la entidad basados en una solicitud",
           "ruta_formulario":"/#/app/almacen/gestion_inventario/movimientos/respuesta_solicitudes/despacho_bienes_consumo",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 32
         }
       },
       {
@@ -524,7 +567,8 @@
           "subsistema":"ALMA",
           "descripcion":"permite a Almacén entregar los bienes de consumo de Viveros que ingresaron a la entidad mediante una Donación, Resarcimiento o Compensación",
           "ruta_formulario":"/#/app/almacen/gestion_inventario/movimientos/entrega_donaciones_resarcimientos_compensaciones_viveros",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 32
         }
       },
       {
@@ -536,7 +580,8 @@
           "subsistema":"ALMA",
           "descripcion":"Permite cerrar por parte de Almacén una solicitud de bienes por no tener disponibilidad de ninguno de los items solicitados",
           "ruta_formulario":"/#/app/almacen/gestion_inventario/movimientos/respuesta_solicitudes/cierre_solicitudes_bienes_no_disponibilidad",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 33
         }
       },
       {
@@ -548,7 +593,8 @@
           "subsistema":"CONS",
           "descripcion":"Permite Distribuir las entradas de bienes de consumo de Viveros en los diferentes viveros de la entidad",
           "ruta_formulario":"/#/app/conservacion/gestor_vivero/recepcion_distribucion",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 20
         }
       },
       {
@@ -560,7 +606,8 @@
           "subsistema":"CONS",
           "descripcion":"Permite administrar las camas de germinación para los diferntes viveros de la entidad",
           "ruta_formulario":"/#/app/conservacion/configuracion/tipificacion_bienes",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 30
         }
       },
       {
@@ -572,7 +619,8 @@
           "subsistema":"CONS",
           "descripcion":"Permite crear y administrar las siembras de semillas de material vegetal realizadas en los diferentes viveros de la entidad",
           "ruta_formulario":"/#/app/conservacion/material_vegetal/siembra_semilla",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 21
         }
       },
       {
@@ -584,7 +632,8 @@
           "subsistema":"CONS",
           "descripcion":"Permite realizar el cambio de etapa de unidades de material vegetal de un lote específico",
           "ruta_formulario":"/#/app/conservacion/produccion/cambio_etapa",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 22
         }
       },
       {
@@ -596,7 +645,8 @@
           "subsistema":"CONS",
           "descripcion":"Permite trasladar bienes entre viveros",
           "ruta_formulario":"/#/app/conservacion/distribucion/traslado",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 24
         }
       },
       {
@@ -608,7 +658,8 @@
           "subsistema":"CONS",
           "descripcion":"Permite registrar el ingreso de plantas y plántulas de un lote de un vivero a cuarentena",
           "ruta_formulario":"/#/app/conservacion/material_vegetal/ingreso_cuarentena",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 21
         }
       },
       {
@@ -620,7 +671,8 @@
           "subsistema":"CONS",
           "descripcion":"Permite registrar el levantamiento de cuarentena de plantas y plántulas de un lote de un vivero que está en cuarentena",
           "ruta_formulario":"/#/app/conservacion/material_vegetal/levantamiento_cuarentena",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 21
         }
       },
       {
@@ -632,7 +684,8 @@
           "subsistema":"CONS",
           "descripcion":"Permite dar de baja elementos del tipo Herramientas, Insumos y Semillas del inventario de un vivero",
           "ruta_formulario":"/#/app/conservacion/gestor_vivero/bajas",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 20
         }
       },
       {
@@ -644,7 +697,8 @@
           "subsistema":"CONS",
           "descripcion":"Permite registrar la mortalidad de plantas y plántulas de un vivero",
           "ruta_formulario":"/#/app/conservacion/produccion/mortalidad_plantas",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 22
         }
       },
       {
@@ -656,7 +710,8 @@
           "subsistema":"CONS",
           "descripcion":"Permite administrar los nombres de las mezclas que se podrán crear en el sistema",
           "ruta_formulario":"/#/app/conservacion/configuracion/tipos_mezcla",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 30
         }
       },
       {
@@ -668,7 +723,8 @@
           "subsistema":"CONS",
           "descripcion":"Permite registrar la preparación de mezclas a utilizar en un vivero",
           "ruta_formulario":"/#/app/conservacion/produccion/preparacion_mezcla",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 22
         }
       },
       {
@@ -680,7 +736,8 @@
           "subsistema":"CONS",
           "descripcion":"'Permite registrar incidencias que se realicen o presenten sobre un lote de material vegetal de unvivero",
           "ruta_formulario":"/#/app/conservacion/produccion/incidencia_material_vegetal",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 22
         }
       },
       {
@@ -692,7 +749,8 @@
           "subsistema":"CONS",
           "descripcion":"Permite registrar las solicitudes de Plantas e Insumos a un Vivero determinado",
           "ruta_formulario":"/#/app/conservacion/solicitud_material/plantas_insumos",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 23
         }
       },
       {
@@ -704,7 +762,8 @@
           "subsistema":"CONS",
           "descripcion":"Permite registrar los Despachos de Solicitudes de Plantas e Insumos a un Vivero determinado",
           "ruta_formulario":"/*",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 24
         }
       },
       {
@@ -716,7 +775,8 @@
           "subsistema":"CONS",
           "descripcion":"Permite consultar las solicitudes realizadas a viveros pendientes de aprobación",
           "ruta_formulario":"/#/app/conservacion/solicitud_material/funcionario/solicitudes_pendientes",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 23
         }
       },
       {
@@ -728,7 +788,8 @@
           "subsistema":"CONS",
           "descripcion":"Permite aprobar o rechazar por parte del funcionario responsable las solicitudes a viveros.",
           "ruta_formulario":"/#/app/conservacion/solicitud_material/funcionario/aprobar_solicitud",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 23
         }
       },
       {
@@ -740,7 +801,8 @@
           "subsistema":"CONS",
           "descripcion":"Permite consultar las solicitudes realizadas a viveros pendientes de aprobación ya aprobadas por funcionario responsable",
           "ruta_formulario":"/#/app/conservacion/solicitud_material/coordinador/solicitudes_pendientes",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 23
         }
       },
       {
@@ -752,7 +814,8 @@
           "subsistema":"CONS",
           "descripcion":"Permite aprobar o rechazar por parte del coordinador de viveros las solicitudes a viveros.",
           "ruta_formulario":"/#/app/conservacion/solicitud_material/coordinador/aprobar_solicitud",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 23
         }
       },
       {
@@ -764,7 +827,8 @@
           "subsistema":"CONS",
           "descripcion":"Permite cerrar una solicitud a viveros por no tener disponibilidad de ninguno de los items solicitados",
           "ruta_formulario":"/#/app/conservacion/distribucion/cierre_solicitudes",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 24
         }
       },
       {
@@ -776,7 +840,8 @@
           "subsistema":"CONS",
           "descripcion":"Permite despachar elementos desde viveros en base a una solicitud",
           "ruta_formulario":"/#/app/conservacion/distribucion/despacho",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 24
         }
       },
       {
@@ -788,7 +853,8 @@
           "subsistema":"CONS",
           "descripcion":"Permite configurar los responsables de cada vivero en la entidad",
           "ruta_formulario":"/#/app/conservacion/solicitud-material/responsable_viveros",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 20
         }
       },
       {
@@ -800,7 +866,8 @@
           "subsistema":"SEGU",
           "descripcion":"Permite administrar a una persona sus autorizaciones acerca de las notificaciones de la entidad",
           "ruta_formulario":"/*",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 6
         }
       },
       {
@@ -812,7 +879,8 @@
           "subsistema":"TRSV",
           "descripcion":"Permite administrar a una persona las autorizaciones de las personas acerca de las notificaciones de la entidad",
           "ruta_formulario":"/#/app/transversal/personas/autorizacion_notificaciones_cuentas",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 1
         }
       },
       {
@@ -824,7 +892,8 @@
           "subsistema":"GEST",
           "descripcion":"Permite crear personas que van a solicitar desde la ventanilla algún servicio a la entidad",
           "ruta_formulario":"/#/app/gestor_documental/ventanilla_unica/creacion_persona",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 10
         }
       },
       {
@@ -836,7 +905,8 @@
           "subsistema":"TRSV",
           "descripcion":"Permite vincular o desvincular personas como colaboradores de la entidad en el sistema",
           "ruta_formulario":"/#/app/transversal/personas/vinculacion_colaboradores",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 1
         }
       },
       {
@@ -848,7 +918,8 @@
           "subsistema":"TRSV",
           "descripcion":"Permite actualizar los Datos Personales de modificación restringida en el sistema a cualquier persona creada en el mismo",
           "ruta_formulario":"/#/app/transversal/personas/datos_personales_modificacion_restringida",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 1
         }
       },
       {
@@ -860,7 +931,8 @@
           "subsistema":"GEST",
           "descripcion":"Permite administrar las tipologías documentales de la entidad a manejar en el sistema",
           "ruta_formulario":"/*",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 19
         }
       },
       {
@@ -872,7 +944,8 @@
           "subsistema":"GEST",
           "descripcion":"Permite administrar las formatos de los documentos para medios físicos y digitales a manejar en el sistema",
           "ruta_formulario":"/*",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 19
         }
       },
       {
@@ -884,7 +957,8 @@
           "subsistema":"GEST",
           "descripcion":"Permite administrar los Permisos que tendrán los diferentes Cargo-Unidad Organizacional sobre las tipologías documentales de los catálogos disponibles de una TCA de la entidad en el sistema",
           "ruta_formulario":"/*",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 13
         }
       },
       {
@@ -896,7 +970,164 @@
           "subsistema":"SEGU",
           "descripcion":"Módulo para realizar la auditoría del sistema",
           "ruta_formulario":"/*",
-          "nombre_icono":"test"
+          "nombre_icono":"test",
+          "id_menu": 9
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 78,
+        "fields": {
+          "id_modulo": 78,
+          "nombre_modulo": "Estaciones Hidrometeorológicas",
+          "subsistema":"RECU",
+          "descripcion":"Permite administrar las Estaciones Hidrometeorológicas controladas por el sistema",
+          "ruta_formulario":"/#/app/recurso_hidrico/estaciones/estacion",
+          "nombre_icono":"test",
+          "id_menu": 58
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 79,
+        "fields": {
+          "id_modulo": 79,
+          "nombre_modulo": "Parámetros de Referencia Sensores",
+          "subsistema":"RECU",
+          "descripcion":"Permite administrar los valores de referencia de cada una de las variables monitorizadas por Estación Hidrometeorológica controlada por el sistema",
+          "ruta_formulario":"/#/app/recurso_hidrico/estaciones/alertas",
+          "nombre_icono":"test",
+          "id_menu": 58
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 80,
+        "fields": {
+          "id_modulo": 80,
+          "nombre_modulo": "Mensajes de Alerta Externos",
+          "subsistema":"RECU",
+          "descripcion":"Permite crear y configurar los mensajes de las alertas generadas por las Estaciones Hidrometeorológicas que se enviarán a los interesados desde el sistema",
+          "ruta_formulario":"/#/app/recurso_hidrico/estaciones/alertas",
+          "nombre_icono":"test",
+          "id_menu": 58
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 81,
+        "fields": {
+          "id_modulo": 81,
+          "nombre_modulo": "Usuarios por Estación",
+          "subsistema":"RECU",
+          "descripcion":"Permite administrar a las personas interesadas en recibir reportes de las Estaciones Meteorológicas registradas en el sistema",
+          "ruta_formulario":"/#/app/recurso_hidrico/estaciones/usuarios",
+          "nombre_icono":"test",
+          "id_menu": 58
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 82,
+        "fields": {
+          "id_modulo": 82,
+          "nombre_modulo": "Geolocalización",
+          "subsistema":"RECU",
+          "descripcion":"Permite visualizar la ubicación geográfica de las Estaciones Meteorológicas y sus últimos datos, registradas en el sistema",
+          "ruta_formulario":"/#/app/recurso_hidrico/estaciones/geolocalizacion",
+          "nombre_icono":"test",
+          "id_menu": 49
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 83,
+        "fields": {
+          "id_modulo": 83,
+          "nombre_modulo": "Emisión de Datos Sensor",
+          "subsistema":"RECU",
+          "descripcion":"Reporte que muestra cuando se emitieron datos y cuando no de cada uno de los sensores de una Estación Meteorológica registrada en el sistema",
+          "ruta_formulario":"/#/app/recurso_hidrico/estaciones/reportes",
+          "nombre_icono":"test",
+          "id_menu": 54
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 84,
+        "fields": {
+          "id_modulo": 84,
+          "nombre_modulo": "Valores Extremos Sensor",
+          "subsistema":"RECU",
+          "descripcion":"Reporte que muestra los valores máximo, mínimo y promedio emitidos para cada variable por cada sensor de una Estación Meteorológica registrada en el sistema",
+          "ruta_formulario":"/#/app/recurso_hidrico/estaciones/reportes",
+          "nombre_icono":"test",
+          "id_menu": 54
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 85,
+        "fields": {
+          "id_modulo": 85,
+          "nombre_modulo": "Historial de Datos",
+          "subsistema":"RECU",
+          "descripcion":"Reporte que muestra el historial por mes de los valores generados por cada Estación Meteorológica monitorizada en el sistema",
+          "ruta_formulario":"/#/app/recurso_hidrico/estaciones/historial",
+          "nombre_icono":"test",
+          "id_menu": 54
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 86,
+        "fields": {
+          "id_modulo": 86,
+          "nombre_modulo": "Historial de Alertas Emitidas a Interesados",
+          "subsistema":"RECU",
+          "descripcion":"Reporte que muestra el historial por mes de las alertas emitidas a la población interesada, a causa de los datos generados por los diferentes sensores de las Estaciones Meteorológicas monitorizadas en el sistema",
+          "ruta_formulario":"/#/app/recurso_hidrico/estaciones/historial",
+          "nombre_icono":"test",
+          "id_menu": 54
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 87,
+        "fields": {
+          "id_modulo": 87,
+          "nombre_modulo": "Historial de Alertas Internas",
+          "subsistema":"RECU",
+          "descripcion":"Reporte que muestra el historial por mes de las alertas emitidas hacia la corporación a causa de los datos generados por los diferentes sensores de las Estaciones Meteorológicas monitorizadas en el sistema",
+          "ruta_formulario":"/#/app/recurso_hidrico/estaciones/historial",
+          "nombre_icono":"test",
+          "id_menu": 54
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 88,
+        "fields": {
+          "id_modulo": 88,
+          "nombre_modulo": "Comportamiento Variables de Estación",
+          "subsistema":"RECU",
+          "descripcion":"Módulo que permite observar el comportamiento de una variable de una Estación Meteorológica en un rango de fechas",
+          "ruta_formulario":"/#/app/recurso_hidrico/estaciones/dashboard",
+          "nombre_icono":"test",
+          "id_menu": 56
+        }
+      },
+      {
+        "model": "seguridad.Modulos",
+        "pk": 89,
+        "fields": {
+          "id_modulo": 89,
+          "nombre_modulo": "Comparativa Variable de Estación en Rango de Fechas",
+          "subsistema":"RECU",
+          "descripcion":"Módulo que permite comparar el comportamiento de una variable de una Estación Meteorológica entre 2 rangos de fechas",
+          "ruta_formulario":"/#/app/recurso_hidrico/estaciones/analitica_datos",
+          "nombre_icono":"test",
+          "id_menu": 56
         }
       }
   ]

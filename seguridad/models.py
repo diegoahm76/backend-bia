@@ -348,7 +348,7 @@ class Roles(models.Model):
         verbose_name_plural = 'Roles'
 
 class EstructuraMenus(models.Model): 
-    id_menu = models.AutoField(primary_key=True, editable=False, db_column='TzIdMenu')
+    id_menu = models.SmallAutoField(primary_key=True, editable=False, db_column='TzIdMenu')
     nombre = models.CharField(max_length=50, db_column='Tznombre')
     nivel_jerarquico = models.SmallIntegerField(db_column='TznivelJerarquico')
     id_menu_padre = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, db_column='TzId_MenuPadre')
