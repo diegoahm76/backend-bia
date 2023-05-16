@@ -187,3 +187,13 @@ class CCDSerializer_(serializers.ModelSerializer):
     class Meta:
         fields = ['id_ccd','id_organigrama','version','nombre','fecha_terminado','fecha_puesta_produccion','fecha_retiro_produccion','justificacion','ruta_soporte','actual','valor_aumento_serie','valor_aumento_subserie','trd','tca']
         model = CuadrosClasificacionDocumental
+
+class ActUnidadOrgAntiguaSerializer(serializers.ModelSerializer):
+    nombre_completo = serializers.SerializerMethodField()
+
+    def get_nombre_completo(self, obj):
+        return f"{obj.primer_nombre} {obj.segundo_nombre} {obj.primer_apellido} {obj.segundo_apellido}"
+
+    class Meta:
+        model = Personas
+        fields = ['id_persona','nombre_completo','id_unidad_organizacional_actual','es_unidad_organizacional_actual','fecha_asignacion_unidad']
