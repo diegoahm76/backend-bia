@@ -191,10 +191,15 @@ class CCDSerializer_(serializers.ModelSerializer):
 
 class ActUnidadOrgAntiguaSerializer(serializers.ModelSerializer):
     nombre_completo = serializers.SerializerMethodField()
+    nombre_unidad_organizacional = serializers.SerializerMethodField()
 
     def get_nombre_completo(self, obj):
         return f"{obj.primer_nombre} {obj.segundo_nombre} {obj.primer_apellido} {obj.segundo_apellido}"
 
+    def get_nombre_unidad_organizacional(self, obj):
+        return obj.id_unidad_organizacional_actual.nombre
+
     class Meta:
         model = Personas
-        fields = ['id_persona','nombre_completo','id_unidad_organizacional_actual','es_unidad_organizacional_actual','fecha_asignacion_unidad']
+        fields = ['id_persona', 'nombre_completo', 'id_unidad_organizacional_actual', 'nombre_unidad_organizacional', 'es_unidad_organizacional_actual', 'fecha_asignacion_unidad']
+
