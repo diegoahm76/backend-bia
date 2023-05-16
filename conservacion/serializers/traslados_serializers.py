@@ -15,12 +15,19 @@ class TrasladosViverosSerializers(serializers.ModelSerializer):
         fields = '__all__'
 
 class ItemsTrasladosViverosSerielizers(serializers.ModelSerializer):
+    nombre_bien = serializers.ReadOnlyField(source='id_bien_origen.nombre', default=None)
+    codigo_bien = serializers.ReadOnlyField(source='id_bien_origen.codigo', default=None)
+    es_semilla_vivero = serializers.ReadOnlyField(source='id_bien_origen.es_semilla_vivero', default=None)
+    cod_tipo_elemento_vivero = serializers.ReadOnlyField(source='id_bien_origen.cod_tipo_elemento_vivero', default=None)
+    
     class Meta:
         model = ItemsTrasladoViveros
         fields = '__all__'
 
 class InventarioViverosSerielizers(serializers.ModelSerializer):
     nombre = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
+    id_unidad_medida = serializers.ReadOnlyField(source='id_bien.id_unidad_medida.id_unidad_medida', default=None)
+    unidad_medida = serializers.ReadOnlyField(source='id_bien.id_unidad_medida.abreviatura', default=None)
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
     es_semilla_vivero = serializers.ReadOnlyField(source='id_bien.es_semilla_vivero', default=None)
     cod_tipo_elemento_vivero = serializers.ReadOnlyField(source='id_bien.cod_tipo_elemento_vivero', default=None)
@@ -59,6 +66,8 @@ class InventarioViverosSerielizers(serializers.ModelSerializer):
                   'cantidad_salidas', 
                   'cantidad_lote_cuarentena', 
                   'ult_altura_lote',
+                  'id_unidad_medida',
+                  'unidad_medida',
                   'nombre',
                   'codigo_bien',
                   'es_semilla_vivero',
