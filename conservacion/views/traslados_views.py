@@ -508,9 +508,9 @@ class TrasladosActualizar(generics.UpdateAPIView):
                     raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +' la etapa de destino no puede ser germinación')
                 
                 # SE ASIGNA EL AÑO DEL LOTE Y EL NÚMERO DEL LOTE
-                i['agno_lote_destino_MV'] = instancia_traslado.fecha_traslado.year
                 aux_get_ultimo_nro_lote_by_agno = InventarioViveros.objects.filter(id_bien=i['id_bien_origen'],agno_lote=i['agno_lote_destino_MV']).order_by('nro_lote').last()
                 if instancia_bien.cod_tipo_elemento_vivero == 'MV'and instancia_bien.es_semilla_vivero == False:
+                    i['agno_lote_destino_MV'] = instancia_traslado.fecha_traslado.year
                     if not aux_get_ultimo_nro_lote_by_agno:
                         i['nro_lote_destino_MV'] = 1
                     else:
