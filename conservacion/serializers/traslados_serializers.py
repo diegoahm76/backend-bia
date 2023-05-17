@@ -16,7 +16,7 @@ class TrasladosViverosSerializers(serializers.ModelSerializer):
 
 class ItemsTrasladosViverosSerielizers(serializers.ModelSerializer):
     nombre_bien = serializers.ReadOnlyField(source='id_bien_origen.nombre', default=None)
-    codigo_bien = serializers.ReadOnlyField(source='id_bien_origen.codigo', default=None)
+    codigo_bien = serializers.ReadOnlyField(source='id_bien_origen.codigo_bien', default=None)
     es_semilla_vivero = serializers.ReadOnlyField(source='id_bien_origen.es_semilla_vivero', default=None)
     cod_tipo_elemento_vivero = serializers.ReadOnlyField(source='id_bien_origen.cod_tipo_elemento_vivero', default=None)
     
