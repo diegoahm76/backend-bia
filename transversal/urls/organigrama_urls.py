@@ -19,6 +19,7 @@ urlpatterns = [
     path('unidades/get-by-organigrama/<str:id_organigrama>/', views.GetUnidadesByOrganigrama.as_view(), name='unidades-get-by-organigrama'),
     path('unidades/get-sec-sub/<str:id_organigrama>/', views.GetSeccionSubsecciones.as_view(), name='unidades-get-sec-sub'),
     path('unidades/get-list/organigrama-actual/', views.GetUnidadesOrganigramaActual.as_view(), name='unidades-get-organigrama-actual'),
+    path('unidades/get-list/organigrama-retirado-reciente/', views.GetUnidadesOrganigramaRetiradoReciente.as_view(), name='unidades-get-organigrama-retirado-reciente'),
     path('unidades/get-jerarquia/<str:id_organigrama>/', views.GetUnidadesJerarquizadas.as_view(), name='unidades-jerarquizadas'),
 
     # NIVELES
@@ -30,6 +31,6 @@ urlpatterns = [
     path('get-ccd-terminados-by-org/<str:id_organigrama>/', views.GetCCDTerminadoByORG.as_view(), name='ccd-terminados-get-by-org'),
     path('get-organigrama-actual/', views.ObtenerOrganigramaActual.as_view(), name='get-organigrama-actual'),
     path('change-actual-organigrama/<str:id_organigrama>/', views.CambioDeOrganigramaActual.as_view(), name='change-actual-organigrama'),
-    path('update-unidad-organizacional-actual/<str:id_unidad_organizacional_actual>/', views.ActualizacionUnidadOrganizativaAntigua.as_view(), name='update-unidad'),
+    path('update-unidad-organizacional-actual/', views.ActualizacionUnidadOrganizacionalAntigua.as_view(), name='update-unidad'),
     path('get-unidad-organizacional-desactualizada/', views.GetUnidadOrgDesactualizada.as_view(), name='get-unidad'),
 ]

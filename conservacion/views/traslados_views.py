@@ -286,7 +286,7 @@ class GetTrasladosByIdTraslados(generics.ListAPIView):
         if not instancia_items_traslado:
             raise ValidationError('Este traslado no tiene items registrados')
         serializador = self.serializer_class(instancia_traslado, many=False)
-        serializador_items = self.serializer_item_class(instancia_items_traslado, many=True)
+        serializador_items = self.serializer_item_class(instancia_items_traslado, many=True,  context = {'request':request})
         salida['info_traslado'] = serializador.data
         salida['items_traslado'] = serializador_items.data
         return Response({'success':True, 'detail':'Ok', 'data':salida}, status=status.HTTP_200_OK)
@@ -334,7 +334,7 @@ class GetItemsTrasladoByIdTraslado(generics.ListAPIView):
         instancia_items_traslado = ItemsTrasladoViveros.objects.filter(id_traslado=id_traslado_entrante)
         if not instancia_items_traslado:
             raise ValidationError('El traslado no existe o no no tiene items registrados')
-        serializer = self.serializer_class(instancia_items_traslado, many=True)
+        serializer = self.serializer_class(instancia_items_traslado, many=True , context = {'request':request})
         return Response({'success':True, 'detail':'Ok', 'data':serializer.data}, status=status.HTTP_200_OK)
 
 class TrasladosActualizar(generics.UpdateAPIView):
