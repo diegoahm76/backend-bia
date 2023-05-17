@@ -394,6 +394,7 @@ class UpdatePersonaNaturalAdminPersonas(generics.UpdateAPIView):
             direccion=Util.get_client_ip(request)
 
             auditoria_data = {
+                'id_usuario': request.user.id_usuario,
                 "id_modulo" : 1,
                 "cod_permiso": "AC",
                 "subsistema": 'SEGU',
@@ -456,7 +457,7 @@ class UpdatePersonaJuridicaAdminPersonas(generics.UpdateAPIView):
                 if fecha_inicio: 
                 
                     fecha_formateada = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
-                    print()
+                  
                     if persona.fecha_inicio_cargo_rep_legal.date() != fecha_formateada:
                         raise PermissionDenied('No se puede actualizar la fecha de inicio de representante legal sin haber cambiado el representante')
                     
@@ -1211,8 +1212,12 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
         
         serializer = self.serializer_class_usuario(data=data)
         serializer.is_valid(raise_exception=True)
+        
         nombre_de_usuario = serializer.validated_data.get('nombre_de_usuario')
-        serializer_response = serializer.save()        
+        
+        serializer_response = serializer.save()
+        serializer_response.id_usuario_creador = serializer_response
+        serializer_response.save()
         
         #ASIGNARLE ROL USUARIO EXTERNO POR DEFECTO
         rol = Roles.objects.get(id_rol=2)
@@ -1221,47 +1226,35 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
             id_rol = rol,
             id_usuario = usuario_por_asignar
         )
+        
+        # AUDITORIA CREACION PERSONA NATURAL
+        descripcion = {"TipodeDocumentoID": str(serializador.tipo_documento), "NumeroDocumentoID": str(serializador.numero_documento), "RazonSocial": str(serializador.razon_social), "NombreComercial": str(serializador.nombre_comercial)}
+
+        auditoria_data = {
+            'id_usuario': serializer_response.pk,
+            "id_modulo" : 9,
+            "cod_permiso": "CR",
+            "subsistema": 'TRSV',
+            "dirip": dirip,
+            "descripcion": descripcion, 
+        }
+        Util.save_auditoria(auditoria_data)
 
         # AUDITORIA AL REGISTRAR USUARIO
 
         dirip = Util.get_client_ip(request)
-        descripcion = {'nombre_de_usuario': request.data["nombre_de_usuario"]}
-
+        descripcion = {'NombreUsuario': request.data["nombre_de_usuario"]}
+        valores_creados_detalles = [{"NombreRol": rol.nombre_rol}]
         auditoria_data = {
             'id_usuario': serializer_response.pk,
             'id_modulo': 10,
             'cod_permiso': 'CR',
             'subsistema': 'SEGU',
             'dirip': dirip,
-            'descripcion': descripcion
+            'descripcion': descripcion,
+            'valores_creados_detalles': valores_creados_detalles
         }
-        Util.save_auditoria(auditoria_data)
-
-        #AUDITORIA AL ASIGNARLE ROL DE USUARIO EXTERNO POR DEFECTO
-        dirip = Util.get_client_ip(request)
-        descripcion = {'nombre_de_usuario': request.data["nombre_de_usuario"], 'Rol': rol}
-        auditoria_data = {
-            'id_usuario': serializer_response.pk,
-            'id_modulo': 5,
-            'cod_permiso': 'CR',
-            'subsistema': 'SEGU',
-            'dirip': dirip,
-            'descripcion': descripcion
-        }
-        Util.save_auditoria(auditoria_data)
-        
-        # AUDITORIA CREACION PERSONA NATURAL
-        descripcion = {"TipodeDocumentoID": str(serializador.tipo_documento), "NumeroDocumentoID": str(serializador.numero_documento), "RazonSocial": str(serializador.razon_social), "NombreComercial": str(serializador.nombre_comercial)}
-        direccion=Util.get_client_ip(request)
-
-        auditoria_data = {
-            "id_modulo" : 9,
-            "cod_permiso": "CR",
-            "subsistema": 'TRSV',
-            "dirip": direccion,
-            "descripcion": descripcion, 
-        }
-        Util.save_auditoria(auditoria_data)
+        Util.save_auditoria_maestro_detalle(auditoria_data)
         
         token = RefreshToken.for_user(serializer_response)
 
