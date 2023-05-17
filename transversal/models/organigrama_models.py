@@ -2,6 +2,7 @@ from django.db import models
 from transversal.choices.agrupacion_documental_choices import agrupacion_documental_CHOICES
 from transversal.choices.tipo_unidad_choices import tipo_unidad_CHOICES
 
+
 class Organigramas(models.Model):
     id_organigrama = models.AutoField(primary_key=True, editable=False, db_column='T017IdOrganigrama')
     nombre = models.CharField(max_length=50, unique=True, db_column='T017nombre')
@@ -59,3 +60,30 @@ class UnidadesOrganizacionales(models.Model):
         verbose_name_plural= 'Unidad organizacionales'        
         unique_together = (('id_organigrama','nombre'), ('id_organigrama','codigo'))
         ordering = ['id_nivel_organigrama']
+
+
+class TemporalPersonasUnidad(models.Model):
+    id_temporal_personas=models.AutoField(primary_key=True,editable=False,db_column='TzIdTemporalPersonasUnidad')
+    id_persona=models.OneToOneField('seguridad.Personas', on_delete=models.CASCADE, db_column='TzId_Persona')
+    id_unidad_org_anterior=models.ForeignKey(UnidadesOrganizacionales, related_name='UnidadOrgAnterior', on_delete=models.CASCADE, db_column='TzId_UnidadOrgAnterior')
+    id_unidad_org_nueva=models.ForeignKey(UnidadesOrganizacionales, related_name='UnidadOrgNueva', on_delete=models.CASCADE, db_column='TzId_UnidadOrgNueva')
+    
+    class Meta:
+        db_table = "TzTemporalPersonasUnidad"
+        verbose_name = 'Temporal Persona Unidad'
+        verbose_name_plural = 'Temporal Personas Unidades'
+
+
+class CambiosUnidadMasivos(models.Model):
+    id_cambio_unidad_masivo=models.AutoField(primary_key=True,editable=False,db_column='TzIdCambioUnidadMasivo')
+    consecutivo=models.SmallIntegerField(db_column='Tzconsecutivo')
+    fecha_cambio=models.DateTimeField(auto_now_add=True, db_column='TzfechaCambio')
+    id_persona_cambio=models.ForeignKey('seguridad.Personas', on_delete=models.CASCADE, db_column='TzId_PersonaCambio')
+    tipo_cambio=models.CharField(max_length=50, db_column='TztipoCambio')
+    justificacion=models.CharField(max_length=255,db_column='Tzjustificacion')
+ 
+    class Meta:
+        db_table = "TzCambiosUnidadMasivos"
+        verbose_name = 'Cambios masivos de unidad'
+        verbose_name_plural = 'Cambios masivos de unidad'
+        
