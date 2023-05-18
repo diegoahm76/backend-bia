@@ -691,17 +691,20 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
         datos_ingresados['fecha_registrado'] = datetime.now()
         fecha_registrado = datos_ingresados['fecha_registrado'].date()
         fecha_ejecutado = (datetime.strptime(datos_ingresados['fecha_ejecutado'], '%Y-%m-%d')).date()
+        
         diferencia_dias = fecha_registrado - fecha_ejecutado
+        diferencia_dias = diferencia_dias.days if fecha_registrado != fecha_ejecutado else 1
+        
         cod_estado_final = EstadosArticulo.objects.filter(cod_estado=datos_ingresados['cod_estado_final'])
         persona_realiza = Personas.objects.filter(id_persona=datos_ingresados['id_persona_realiza']).values().filter()
         datos_ingresados['id_persona_diligencia'] = request.user.id_usuario
         if not articulo:
             raise NotFound('Ingrese un id de articulo válido')
-        if diferencia_dias.days < 0:
+        if diferencia_dias < 0:
             raise NotFound('La fecha del registro del mantenimiento debe ser mayor o igual a la fecha de la ejecución del mantenimiento')
         if int(datos_ingresados['dias_empleados']) <= 0:
             raise NotFound('Cantidad de días debe ser un número entero mayor a cero')
-        if int(datos_ingresados['dias_empleados']) > diferencia_dias.days:
+        if int(datos_ingresados['dias_empleados']) > diferencia_dias:
             raise NotFound('La diferecia de fecha registrado y fecha ejecutado no puede ser mayor a la cantidad de días empleados')
         articulo = CatalogoBienes.objects.filter(id_bien=id_articulo).values().first()
         if datos_ingresados['cod_tipo_mantenimiento'] != 'P' and datos_ingresados['cod_tipo_mantenimiento'] != 'C':
