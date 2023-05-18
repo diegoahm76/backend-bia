@@ -33,4 +33,11 @@ urlpatterns = [
     path('change-actual-organigrama/<str:id_organigrama>/', views.CambioDeOrganigramaActual.as_view(), name='change-actual-organigrama'),
     path('update-unidad-organizacional-actual/', views.ActualizacionUnidadOrganizacionalAntigua.as_view(), name='update-unidad'),
     path('get-unidad-organizacional-desactualizada/', views.GetUnidadOrgDesactualizada.as_view(), name='get-unidad'),
+    path('get-unidad-organizacional-after/', views.ListadoUnidadOrgDesactSinTemporal.as_view(), name='get-unidad-after'),
+    path('listado-registro-temporal/', views.ListaTemporalPersonasUnidad.as_view(), name='listado-temporal'),
+    path('listado-personas-organigrama/', views.ListadoPersonasOrganigramaActual.as_view(), name='listado-temporal'),
+    path('update-unidad-organizacional-persona/', views.ActualizacionUnidadOrganizacionalPersona.as_view(), name='update-unidad-persona'),
+    path('guardar-actualizacion-unidad/', views.GuardarActualizacionUnidadOrganizacional.as_view(), name='guardar-unidad'),
+    path('finalizar-actualizacion-unidad/', views.ProcederActualizacionUnidad.as_view(), name='finalizar-unidad'),
 ]
+

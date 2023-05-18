@@ -9,6 +9,8 @@ from seguridad.utils import Util
 from django.db.models import Q, F
 from datetime import datetime
 from django.contrib.auth import get_user
+from django.db.models import Max
+from django.db import transaction
 import copy
 from operator import itemgetter
 from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
@@ -24,12 +26,15 @@ from transversal.serializers.organigrama_serializers import (
     NivelesGetSerializer,
     UnidadesGetSerializer,
     OrganigramaPostSerializer,
-    ActUnidadOrgAntiguaSerializer
+    ActUnidadOrgAntiguaSerializer,
+    TemporalPersonasUnidadSerializer
     )
 from transversal.models.organigrama_models import (
     Organigramas,
     UnidadesOrganizacionales,
-    NivelesOrganigrama
+    NivelesOrganigrama,
+    TemporalPersonasUnidad,
+    CambiosUnidadMasivos
     )
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from seguridad.models import User, Personas, HistoricoCargosUndOrgPersona
@@ -815,6 +820,7 @@ class ObtenerOrganigramaActual(generics.ListAPIView):
         return Response({'success':True,'detail':'Busqueda exitosa, no existe organigrama actual'},status=status.HTTP_200_OK)
 
 
+
 class ActualizacionUnidadOrganizacionalAntigua(generics.UpdateAPIView):
     serializer_class = ActUnidadOrgAntiguaSerializer
 
@@ -834,19 +840,22 @@ class ActualizacionUnidadOrganizacionalAntigua(generics.UpdateAPIView):
         organigrama_actual = Organigramas.objects.filter(fecha_retiro_produccion__lte=fecha_actual).order_by('-fecha_retiro_produccion').first()
 
         if organigrama_actual.fecha_retiro_produccion and organigrama_actual.actual:
-            raise ValidationError('El organigrama esta fuera de producción por ende no puede ser el actual')
+            raise ValidationError('El organigrama está fuera de producción y no puede ser el actual')
 
         personas = Personas.objects.filter(id_persona__in=lista_id_personas, id_unidad_organizacional_actual__id_organigrama=organigrama_actual.id_organigrama)
         if len(set(lista_id_personas)) != len(personas):
-            raise ValidationError('Debe asegurarse que todas las personas tengan asignadas una unidad del último organigrama retirado de la producción')
+            raise ValidationError('Debe asegurarse de que todas las personas tengan asignadas una unidad del último organigrama retirado de la producción')
 
         queryset = Personas.objects.filter(
             es_unidad_organizacional_actual=False,
             id_persona__in=lista_id_personas
         )
 
-        if queryset is not None:
+        if queryset.exists():
             personas_actualizadas = []
+
+            # Obtener el consecutivo actual
+            consecutivo_actual = CambiosUnidadMasivos.objects.aggregate(max_consecutivo=Max('consecutivo'))['max_consecutivo'] or 0
 
             for persona in queryset:
                 historico = HistoricoCargosUndOrgPersona(
@@ -868,17 +877,30 @@ class ActualizacionUnidadOrganizacionalAntigua(generics.UpdateAPIView):
                 personas_actualizadas.append(persona)
 
             if personas_actualizadas:
+                # Incrementar el consecutivo
+                consecutivo_actual += 1
+
+                # Crear el registro en CambiosUnidadMasivos
+                cambio_unidad_masivo = CambiosUnidadMasivos(
+                    consecutivo=consecutivo_actual,
+                    fecha_cambio=fecha_actual,
+                    id_persona_cambio=user.persona,
+                    tipo_cambio='UnidadAUnidad',
+                    justificacion=f'Se realizó un cambio masivo de unidad organizacional a {len(personas_actualizadas)} personas',
+                )
+                cambio_unidad_masivo.save()
+
                 return Response({'success': True, 'detail': 'Las personas han sido actualizadas exitosamente'}, status=status.HTTP_200_OK)
             else:
                 raise ValidationError('No se encontraron personas para actualizar')
+        else:
+            raise ValidationError('No se encontraron personas para actualizar')
 
 class GetUnidadOrgDesactualizada(generics.ListAPIView):
     serializer_class = ActUnidadOrgAntiguaSerializer
 
     def get(self, request):
         id_unidad_organizacional_actual = self.request.data.get('id_unidad_organizacional_actual')
-        
-        # Obtener la fecha de retiro de producción más actual
         fecha_actual = datetime.now()
         organigrama_actual = Organigramas.objects.filter(fecha_retiro_produccion__lte=fecha_actual).order_by('-fecha_retiro_produccion').first()
 
@@ -921,3 +943,242 @@ class GetUnidadesOrganigramaRetiradoReciente(generics.ListAPIView):
         serializer = self.serializer_class(unidades_organigrama_retirado, many=True)
         return Response({'success':True, 'detail':'Consulta Organigrama Retirado Reciente Exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+class ListadoUnidadOrgDesactSinTemporal(generics.ListAPIView):
+    serializer_class = ActUnidadOrgAntiguaSerializer
+
+    def get(self, request):
+        fecha_actual = datetime.now()
+        organigrama_actual = Organigramas.objects.filter(fecha_retiro_produccion__lte=fecha_actual).order_by('-fecha_retiro_produccion').first()
+
+        if organigrama_actual.fecha_retiro_produccion and organigrama_actual.actual:
+            raise ValidationError('El organigrama está fuera de producción y no puede ser el actual')
+
+        queryset = Personas.objects.filter(
+            es_unidad_organizacional_actual=False,
+            id_unidad_organizacional_actual__id_organigrama=organigrama_actual.id_organigrama
+        ).exclude(Q(id_persona__in=TemporalPersonasUnidad.objects.values('id_persona')))
+        
+        serializador = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializador.data}, status=status.HTTP_200_OK)
+
+class ListaTemporalPersonasUnidad(generics.ListAPIView):
+    serializer_class = TemporalPersonasUnidadSerializer
+    queryset = TemporalPersonasUnidad.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        if queryset.exists():
+            serializer = self.get_serializer(queryset, many=True)
+            return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
+        else:
+            raise ValidationError('No hay ninguna persona en proceso de actualización de unidad organizacional')
+
+class ListadoPersonasOrganigramaActual(generics.ListAPIView):
+    serializer_class = ActUnidadOrgAntiguaSerializer
+
+    def get_queryset(self):
+        unidades_activas = UnidadesOrganizacionales.objects.filter(id_organigrama__actual=True)
+        queryset = Personas.objects.filter(
+            id_unidad_organizacional_actual__in=unidades_activas,
+            es_unidad_organizacional_actual=True
+        )
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if queryset.exists():
+            serializer = self.get_serializer(queryset, many=True)
+            return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
+        else:
+            raise ValidationError('Ninguna persona está asignada al organigrama actual')
+
+class ActualizacionUnidadOrganizacionalPersona(generics.UpdateAPIView):
+    serializer_class = ActUnidadOrgAntiguaSerializer
+
+    def put(self, request, *args, **kwargs):
+        personas_nuevas_unidades = request.data
+
+        if not isinstance(personas_nuevas_unidades, list):
+            raise ValidationError('El cuerpo de la solicitud debe ser una lista de objetos')
+
+        user = request.user
+        nombre_de_usuario = user.nombre_de_usuario
+
+        # Obtener la fecha de retiro de producción más actual
+        fecha_actual = datetime.now()
+        organigrama_actual = Organigramas.objects.filter(fecha_retiro_produccion__lte=fecha_actual).order_by('-fecha_retiro_produccion').first()
+
+        if organigrama_actual.fecha_retiro_produccion and organigrama_actual.actual:
+            raise ValidationError('El organigrama está fuera de producción y no puede ser el actual')
+
+        personas_actualizadas = []
+
+        for persona_nueva_unidad in personas_nuevas_unidades:
+            id_persona = persona_nueva_unidad.get('id_persona')
+            nueva_id_unidad_organizacional = persona_nueva_unidad.get('nueva_id_unidad_organizacional')
+
+            try:
+                unidad_organizacional = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=nueva_id_unidad_organizacional)
+            except UnidadesOrganizacionales.DoesNotExist:
+                raise ValidationError(f'La nueva unidad organizacional asignada a la persona con ID {id_persona} no existe')
+
+            persona = Personas.objects.filter(
+                id_persona=id_persona,
+                id_unidad_organizacional_actual__id_organigrama=organigrama_actual.id_organigrama
+            ).first()
+
+            if not persona:
+                raise ValidationError(f'La persona con ID {id_persona} no tiene asignada una unidad del último organigrama retirado de la producción')
+
+            historico = HistoricoCargosUndOrgPersona(
+                id_persona=persona,
+                id_cargo=persona.id_cargo,
+                id_unidad_organizacional=persona.id_unidad_organizacional_actual,
+                fecha_inicial_historico=persona.fecha_asignacion_unidad,
+                fecha_final_historico=fecha_actual,
+                observaciones_vinculni_cargo=None,
+                justificacion_cambio_und_org=f'Cambio masivo de unidad organizacional por {nombre_de_usuario} el {fecha_actual.strftime("%Y-%m-%d %H:%M:%S")}',
+                desvinculado=False
+            )
+            historico.save()
+
+            temporal_persona = TemporalPersonasUnidad.objects.create(
+                id_persona=persona,
+                id_unidad_org_anterior=persona.id_unidad_organizacional_actual,
+                id_unidad_org_nueva=unidad_organizacional
+            )
+
+            personas_actualizadas.append(persona)
+
+        if personas_actualizadas:
+            # Obtener el consecutivo actual
+            consecutivo_actual = CambiosUnidadMasivos.objects.aggregate(max_consecutivo=Max('consecutivo'))['max_consecutivo'] or 0
+
+            # Incrementar el consecutivo
+            consecutivo_actual += 1
+
+            # Crear el registro en CambiosUnidadMasivos
+            cambio_unidad_masivo = CambiosUnidadMasivos(
+                consecutivo=consecutivo_actual,
+                fecha_cambio=fecha_actual,
+                id_persona_cambio=user.persona,
+                tipo_cambio='UnidadesTodas',
+                justificacion=f'Se realizó un cambio masivo de unidad organizacional a {len(personas_actualizadas)} personas',
+            )
+            cambio_unidad_masivo.save()
+
+            return Response({'success': True, 'detail': 'Las personas han sido actualizadas exitosamente'}, status=status.HTTP_200_OK)
+        else:
+            raise ValidationError('No se encontraron personas para actualizar')
+
+class GuardarActualizacionUnidadOrganizacional(generics.UpdateAPIView):
+    serializer_class = ActUnidadOrgAntiguaSerializer
+
+    def put(self, request, *args, **kwargs):
+        personas_nuevas_unidades = request.data
+        if not isinstance(personas_nuevas_unidades, list):
+            raise ValidationError('El cuerpo de la solicitud debe ser una lista de objetos')
+        
+        personas_enviadas = [persona_nueva_unidad.get('id_persona') for persona_nueva_unidad in personas_nuevas_unidades]
+        TemporalPersonasUnidad.objects.exclude(id_persona__in=personas_enviadas).delete()
+        
+        personas_actualizadas = []
+
+        for persona_nueva_unidad in personas_nuevas_unidades:
+            id_persona = persona_nueva_unidad.get('id_persona')
+            nueva_id_unidad_organizacional = persona_nueva_unidad.get('nueva_id_unidad_organizacional')
+            try:
+                persona = Personas.objects.get(id_persona=id_persona)
+            except Personas.DoesNotExist:
+                raise ValidationError(f'La persona con ID {id_persona} no existe')
+
+            # Verificar si existe un registro en TemporalPersonasUnidad para la persona actual
+            temporal_persona = TemporalPersonasUnidad.objects.filter(id_persona=persona).first()
+
+            nueva_unidad = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=nueva_id_unidad_organizacional)
+
+            if temporal_persona:
+                if temporal_persona.id_unidad_org_nueva != nueva_unidad:
+                    temporal_persona.id_unidad_org_nueva = nueva_unidad
+                    temporal_persona.save()
+            else:
+                unidad_anterior = persona.id_unidad_organizacional_actual.id_unidad_organizacional
+                unidad_anterior_obj = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=unidad_anterior)
+                TemporalPersonasUnidad.objects.create(
+                    id_persona=persona,
+                    id_unidad_org_anterior=unidad_anterior_obj,
+                    id_unidad_org_nueva=nueva_unidad
+                )
+
+            personas_actualizadas.append(persona)
+
+        return Response({'success': True, 'detail': 'Las personas han sido guardadas exitosamente'}, status=status.HTTP_201_CREATED)
+
+class ProcederActualizacionUnidad(generics.UpdateAPIView):
+    serializer_class = ActUnidadOrgAntiguaSerializer
+    
+    def put(self, request, format=None):
+        personas_nuevas_unidades = request.data
+        if not isinstance(personas_nuevas_unidades, list):
+            raise ValidationError('El cuerpo de la solicitud debe ser una lista de objetos')
+        
+        personas_actualizadas = []
+        fecha_actual = datetime.now()
+        user = request.user
+        nombre_de_usuario = user.nombre_de_usuario
+        
+        with transaction.atomic():
+            try:
+                for persona_nueva_unidad in personas_nuevas_unidades:
+                    id_persona = persona_nueva_unidad.get('id_persona')
+                    nueva_id_unidad_organizacional = persona_nueva_unidad.get('nueva_id_unidad_organizacional')
+                    
+                    try:
+                        persona = Personas.objects.get(id_persona=id_persona)
+                    except Personas.DoesNotExist:
+                        raise NotFound(f'La persona con ID {id_persona} no existe')
+                    
+                    # Crear registro histórico
+                    historico = HistoricoCargosUndOrgPersona(
+                        id_persona = persona,
+                        id_cargo = persona.id_cargo,
+                        id_unidad_organizacional = persona.id_unidad_organizacional_actual,
+                        fecha_inicial_historico = persona.fecha_asignacion_unidad,
+                        fecha_final_historico = fecha_actual,
+                        observaciones_vinculni_cargo = None,
+                        justificacion_cambio_und_org = f'Cambio masivo de unidad organizacional por {nombre_de_usuario} el {fecha_actual.strftime("%Y-%m-%d %H:%M:%S")}',
+                        desvinculado = False
+                    )
+                    historico.save()
+                    
+                    # Actualizar persona
+                    persona.id_unidad_organizacional_actual = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=nueva_id_unidad_organizacional)
+                    persona.es_unidad_organizacional_actual = True
+                    persona.fecha_asignacion_unidad = datetime.now() 
+                    persona.save()
+                    
+                    personas_actualizadas.append(persona)
+
+                if personas_actualizadas:
+                    # Obtener el consecutivo actual
+                    consecutivo_actual = CambiosUnidadMasivos.objects.aggregate(max_consecutivo=Max('consecutivo'))['max_consecutivo'] or 0
+
+                    # Incrementar el consecutivo
+                    consecutivo_actual += 1
+
+                    # Crear el registro en CambiosUnidadMasivos
+                    cambio_unidad_masivo = CambiosUnidadMasivos(
+                        consecutivo=consecutivo_actual,
+                        fecha_cambio=fecha_actual,
+                        id_persona_cambio=user.persona,
+                        tipo_cambio='UnidadesTodas',
+                        justificacion=f'Se realizó un cambio masivo de unidad organizacional a {len(personas_actualizadas)} personas',
+                    )
+                    cambio_unidad_masivo.save()
+                        
+                TemporalPersonasUnidad.objects.all().delete()
+                
+            except Exception as e:
+                return Response({'error': str(e)}, status=500)
+        
+        return Response({'success': True, 'detail': 'Las personas han sido actualizadas exitosamente'}, status=status.HTTP_200_OK)
