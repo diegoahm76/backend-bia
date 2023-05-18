@@ -118,6 +118,7 @@ class OrganigramaSerializer(serializers.ModelSerializer):
                   'fecha_retiro_produccion',
                   'justificacion_nueva_version',
                   'version',
+                  'actual',
                   'ruta_resolucion',
                   'id_persona_cargo',
                   'tipo_documento',
