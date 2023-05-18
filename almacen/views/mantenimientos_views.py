@@ -705,7 +705,7 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
         if int(datos_ingresados['dias_empleados']) <= 0:
             raise NotFound('Cantidad de días debe ser un número entero mayor a cero')
         if int(datos_ingresados['dias_empleados']) > diferencia_dias:
-            raise NotFound('La diferecia de fecha registrado y fecha ejecutado no puede ser mayor a la cantidad de días empleados')
+            raise NotFound('La diferencia de fecha registrado y fecha ejecutado no puede ser mayor a la cantidad de días empleados')
         articulo = CatalogoBienes.objects.filter(id_bien=id_articulo).values().first()
         if datos_ingresados['cod_tipo_mantenimiento'] != 'P' and datos_ingresados['cod_tipo_mantenimiento'] != 'C':
             raise NotFound('El tipo de mantenimiento debe ser P (preventivo) o C (correctivo)')
