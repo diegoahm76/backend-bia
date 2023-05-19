@@ -100,6 +100,12 @@ class OrganigramaSerializer(serializers.ModelSerializer):
     tipo_documento = serializers.ReadOnlyField(source='id_persona_cargo.tipo_documento.cod_tipo_documento',default=None)
     numero_documento = serializers.ReadOnlyField(source='id_persona_cargo.numero_documento',default=None) 
     nombre_completo = serializers.SerializerMethodField()
+    usado = serializers.SerializerMethodField()
+    
+    def get_usado(self,obj):
+        ccd = obj.cuadrosclasificaciondocumental_set.all()
+        usado = True if ccd else False
+        return usado
     
     def get_nombre_completo(self, obj):
         nombre_completo = None
@@ -118,12 +124,12 @@ class OrganigramaSerializer(serializers.ModelSerializer):
                   'fecha_retiro_produccion',
                   'justificacion_nueva_version',
                   'version',
-                  'actual',
                   'ruta_resolucion',
                   'id_persona_cargo',
                   'tipo_documento',
                   'numero_documento',
-                  'nombre_completo'
+                  'nombre_completo',
+                  'usado'
                 ]
         read_only_fields = ['actual']
 
