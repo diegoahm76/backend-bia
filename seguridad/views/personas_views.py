@@ -1229,7 +1229,7 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
         
         # AUDITORIA CREACION PERSONA NATURAL
         descripcion = {"TipodeDocumentoID": str(serializador.tipo_documento), "NumeroDocumentoID": str(serializador.numero_documento), "RazonSocial": str(serializador.razon_social), "NombreComercial": str(serializador.nombre_comercial)}
-
+        dirip = Util.get_client_ip(request)
         auditoria_data = {
             'id_usuario': serializer_response.pk,
             "id_modulo" : 9,
@@ -1242,7 +1242,6 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
 
         # AUDITORIA AL REGISTRAR USUARIO
 
-        dirip = Util.get_client_ip(request)
         descripcion = {'NombreUsuario': request.data["nombre_de_usuario"]}
         valores_creados_detalles = [{"NombreRol": rol.nombre_rol}]
         auditoria_data = {
