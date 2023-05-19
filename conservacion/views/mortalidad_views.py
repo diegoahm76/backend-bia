@@ -94,7 +94,7 @@ class GetMaterialVegetalByLupa(generics.ListAPIView):
         for key,value in request.query_params.items():
             if key in ['codigo_bien','nombre','cod_etapa_lote']:
                 if key == 'codigo_bien':
-                    filtro['id_bien__' + key + '__startswith'] = value
+                    filtro['id_bien__' + key + '__icontains'] = value
                 elif key == 'nombre':
                     filtro['id_bien__' + key + '__icontains'] = value
                 else:

@@ -758,7 +758,7 @@ class FiltroDespachoConsumo(generics.ListAPIView):
         for key,value in request.query_params.items():
             if key in ['numero_solicitud_por_tipo', 'fecha_despacho','id_unidad_para_la_que_solicita','es_despacho_conservacion']:
                 if key != 'id_unidad_para_la_que_solicita' and key != 'es_despacho_conservacion':
-                    filter[key+"__startswith"]=value
+                    filter[key+"__icontains"]=value
                 else:
                     if value != '':
                         filter[key]=value

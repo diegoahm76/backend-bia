@@ -1104,7 +1104,7 @@ class GetNuevoSuperUsuarioFilters(generics.ListAPIView):
                         filter[key+'__icontains'] = value
                 elif key == 'numero_documento':
                     if value != '':
-                        filter[key+'__startswith'] = value
+                        filter[key+'__icontains'] = value
                 else:
                     if value != '':
                         filter[key] = value
