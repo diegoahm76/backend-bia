@@ -29,6 +29,12 @@ class AtributosEtapasSerializer(serializers.ModelSerializer):
         fields = ('id', 'descripcion', 'obligatorio', 'id_tipo')
 
 
+class AtributosEtapasPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AtributosEtapas
+        fields = '__all__'
+
+
 class FlujoProcesoSerializer(serializers.ModelSerializer):
     id_etapa_origen = EtapasProcesoSerializer(many=False)
     id_etapa_destino = EtapasProcesoSerializer(many=False)
