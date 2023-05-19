@@ -186,6 +186,37 @@ class CCDSerializer(serializers.ModelSerializer):
             'series',
             'subseries',
         )
+        
+class CCDPosiblesSerializer(serializers.ModelSerializer):
+    trd = serializers.SerializerMethodField()
+    tca = serializers.SerializerMethodField()
+    
+    def get_trd(self,ccd):
+        trd = ccd.tablaretenciondocumental
+        trd_data = {
+            'nombre': trd.nombre,
+            'version': trd.version
+        }
+        return trd_data
+    
+    def get_tca(self,ccd):
+        trd = ccd.tablaretenciondocumental
+        tca = trd.tablascontrolacceso
+        tca_data = {
+            'nombre': tca.nombre,
+            'version': tca.version
+        }
+        return tca_data
+    
+    class Meta:
+        model = CuadrosClasificacionDocumental
+        fields = (
+            'id_ccd',
+            'nombre',
+            'version',
+            'trd',
+            'tca'
+        )
 
 class CCDPostSerializer(serializers.ModelSerializer):
     version = serializers.CharField(validators=[UniqueValidator(queryset=CuadrosClasificacionDocumental.objects.all(), message='La versión del Cuadro de Clasificación Documental debe ser único')])
