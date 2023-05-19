@@ -546,7 +546,7 @@ class GetPersonaFiltro (generics.ListAPIView):
             if key in ['tipo_documento','numero_documento','primer_nombre','segundo_nombre','primer_apellido','segundo_apellido']:
                 if key == 'numero_documento':
                     if value != '':
-                        filter[key+'__startswith']=value
+                        filter[key+'__icontains']=value
                 elif key == 'tipo_documento':
                     if value != '':
                         filter[key]=value
@@ -714,7 +714,7 @@ class GetBienesConsumoFiltro (generics.ListAPIView):
             if key in ['codigo_bien','nombre_cientifico','nombre','cod_tipo_elemento_vivero']:
                 if key == 'codigo_bien':
                     if value != "":
-                        filter[key+'__startswith']=value
+                        filter[key+'__icontains']=value
                 elif key == 'nombre_cientifico' or key == 'nombre':
                     if value != "":
                         filter[key+'__icontains']=value
