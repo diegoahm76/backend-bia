@@ -44,11 +44,16 @@ from gestion_documental.models.tca_models import (
 
 class GetCCDPosiblesActivar(generics.ListAPIView):
     serializer_class = CCDPosiblesSerializer
-    queryset = CuadrosClasificacionDocumental.objects.filter(fecha_retiro_produccion=None, actual=False, id_organigrama__actual=True).exclude(fecha_terminado=None)
+    queryset = CuadrosClasificacionDocumental.objects.filter(fecha_retiro_produccion=None, actual=False).exclude(fecha_terminado=None)
 
     def get(self, request):
+        id_organigrama = request.query_params.get('id_organigrama')
+        
         ccd_posibles = []
-        for ccd in self.queryset.all():
+        
+        ccd_queryset = self.queryset.filter(id_organigrama__actual=True) if not id_organigrama else self.queryset.filter(id_organigrama=id_organigrama)
+        
+        for ccd in ccd_queryset:
             trd = ccd.tablaretenciondocumental
             tca = trd.tablascontrolacceso
             
@@ -108,22 +113,24 @@ class Activar(generics.UpdateAPIView):
     
     def put(self,request):
         data = request.data
-        if data['id_ccd'] == '' or data['id_ccd'] == None:
+        if not data.get('id_ccd'):
             raise ValidationError('Ingrese cuadro de clasificación documental')
-        if data['justificacion'] == '' or data['justificacion'] == None:
+        if not data.get('justificacion') or data.get('justificacion') == '':
             raise ValidationError('Ingrese justificación')
     
         #VALIDAR LA EXISTENCIA DE LOS DATOS
         ccd = CuadrosClasificacionDocumental.objects.filter(~Q(fecha_terminado=None) & Q(fecha_retiro_produccion=None)).filter(id_ccd = data['id_ccd']).first()
         if not ccd:
             raise ValidationError('El CCD ingresado no se puede activar porque no se encuentra terminado o ya fue retirado de producción')
+        elif not ccd.id_organigrama.actual:
+            raise ValidationError('No puede activar el CCD elegido porque no está basado en el organigrama actual')
         
-        trd = ccd.tablaretenciondocumental_set.filter(~Q(fecha_terminado=None) & Q(fecha_retiro_produccion=None)).first()
-        if not trd:
+        trd = ccd.tablaretenciondocumental
+        if not trd or (not trd.fecha_terminado or trd.fecha_retiro_produccion) :
             raise ValidationError('La TRD asociada a la CCD no se encuentra terminada o ya fue retirado de producción')
         
-        tca = trd.tablascontrolacceso_set.filter(~Q(fecha_terminado=None) & Q(fecha_retiro_produccion=None)).first()
-        if not tca:
+        tca = trd.tablascontrolacceso
+        if not tca or (not tca.fecha_terminado or tca.fecha_retiro_produccion):
             raise ValidationError('La TCA asociada a la TRD no se encuentra terminada o ya fue retirado de producción')
               
         #CONSULTAR LA PREEXISTENCIA DE DE TABLAS ACTIVADAS
@@ -170,39 +177,39 @@ class Activar(generics.UpdateAPIView):
                 tca.save()
 
                 #auditoria CCD desactivado
-                descripcion = {"nombre":str(ccd_a_remplazar.nombre),"versión":str(ccd_a_remplazar.version)}
+                descripcion = {"NombreCCD":str(ccd_a_remplazar.nombre),"VersionCCD":str(ccd_a_remplazar.version)}
                 valores_actualizados={'previous':previous_a_remplazar_ccd, 'current':ccd_a_remplazar}
-                auditoria_data = {'id_usuario': user_logeado,'id_modulo': 28,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
+                auditoria_data = {'id_usuario': user_logeado,'id_modulo': 27,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
                 Util.save_auditoria(auditoria_data)
 
                 #auditoria TRD desactivado
-                descripcion = {"nombre":str(trd_a_remplazar.nombre),"versión":str(trd_a_remplazar.version)}
+                descripcion = {"NombreTRD":str(trd_a_remplazar.nombre),"VersionTRD":str(trd_a_remplazar.version)}
                 valores_actualizados={'previous':previous_a_remplazar_trd, 'current':trd_a_remplazar}
-                auditoria_data = {'id_usuario': user_logeado,'id_modulo': 30,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
+                auditoria_data = {'id_usuario': user_logeado,'id_modulo': 29,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
                 Util.save_auditoria(auditoria_data)
                 
                 #auditoria TCA desactivado
-                descripcion = {"nombre":str(tca_a_remplazar.nombre),"versión":str(tca_a_remplazar.version)}
+                descripcion = {"NombreTCA":str(tca_a_remplazar.nombre),"VersionTCA":str(tca_a_remplazar.version)}
                 valores_actualizados={'previous':previous_a_remplazar_tca, 'current':tca_a_remplazar}
-                auditoria_data = {'id_usuario': user_logeado,'id_modulo': 32,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
+                auditoria_data = {'id_usuario': user_logeado,'id_modulo': 31,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
                 Util.save_auditoria(auditoria_data)
 
                 #auditoria CCD activado
-                descripcion = {"nombre":str(ccd.nombre),"versión":str(ccd.version)}
+                descripcion = {"NombreCCD":str(ccd.nombre),"VersionCCD":str(ccd.version)}
                 valores_actualizados={'previous':previous_remplazante_ccd, 'current':ccd}
-                auditoria_data = {'id_usuario': user_logeado,'id_modulo': 28,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
+                auditoria_data = {'id_usuario': user_logeado,'id_modulo': 27,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
                 Util.save_auditoria(auditoria_data)
 
                 #auditoria TRD activado
-                descripcion = {"nombre":str(trd.nombre),"versión":str(trd.version)}
+                descripcion = {"NombreTRD":str(trd.nombre),"VersionTRD":str(trd.version)}
                 valores_actualizados={'previous':previous_remplazante_trd, 'current':trd}
-                auditoria_data = {'id_usuario': user_logeado,'id_modulo': 30,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
+                auditoria_data = {'id_usuario': user_logeado,'id_modulo': 29,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
                 Util.save_auditoria(auditoria_data)
                 
                 #auditoria TCA activado
-                descripcion = {"nombre":str(tca.nombre),"versión":str(tca.version)}
+                descripcion = {"NombreTCA":str(tca.nombre),"VersionTCA":str(tca.version)}
                 valores_actualizados={'previous':previous_remplazante_tca, 'current':tca}
-                auditoria_data = {'id_usuario': user_logeado,'id_modulo': 32,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
+                auditoria_data = {'id_usuario': user_logeado,'id_modulo': 31,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
                 Util.save_auditoria(auditoria_data)
 
                 return Response({'success':True, 'detail':'Activación exitosa'}, status=status.HTTP_201_CREATED)
@@ -223,21 +230,21 @@ class Activar(generics.UpdateAPIView):
             ccd.save()
 
             #auditoria CCD activado
-            descripcion = {"nombre":str(ccd.nombre),"versión":str(ccd.version)}
+            descripcion = {"NombreCCD":str(ccd.nombre),"VersionCCD":str(ccd.version)}
             valores_actualizados={'previous':previous_remplazante_ccd, 'current':ccd}
-            auditoria_data = {'id_usuario': user_logeado,'id_modulo': 28,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
+            auditoria_data = {'id_usuario': user_logeado,'id_modulo': 27,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
             Util.save_auditoria(auditoria_data)
 
             #auditoria TRD activado
-            descripcion = {"nombre":str(trd.nombre),"versión":str(trd.version)}
+            descripcion = {"NombreTRD":str(trd.nombre),"VersionTRD":str(trd.version)}
             valores_actualizados={'previous':previous_remplazante_trd, 'current':trd}
-            auditoria_data = {'id_usuario': user_logeado,'id_modulo': 30,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
+            auditoria_data = {'id_usuario': user_logeado,'id_modulo': 29,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
             Util.save_auditoria(auditoria_data)
             
             #auditoria TCA activado
-            descripcion = {"nombre":str(tca.nombre),"versión":str(tca.version)}
+            descripcion = {"NombreTCA":str(tca.nombre),"VersionTCA":str(tca.version)}
             valores_actualizados={'previous':previous_remplazante_tca, 'current':tca}
-            auditoria_data = {'id_usuario': user_logeado,'id_modulo': 32,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
+            auditoria_data = {'id_usuario': user_logeado,'id_modulo': 31,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
             Util.save_auditoria(auditoria_data)
 
             return Response({'success':True, 'detail':'Activación exitosa'}, status=status.HTTP_201_CREATED)

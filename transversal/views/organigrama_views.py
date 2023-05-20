@@ -696,12 +696,12 @@ class CambioDeOrganigramaActual(generics.UpdateAPIView):
         data = request.data
         user_logeado = request.user.id_usuario
         dirip = Util.get_client_ip(request)
-        organigrama_seleccionado = self.queryset.filter(id_organigrama=data['organigrama']).first()
+        organigrama_seleccionado = self.queryset.filter(id_organigrama=data['organigrama'], fecha_retiro_produccion=None).first()
         organigrama_actual = self.queryset.filter(actual=True).first()
         ccd_actual = self.queryset2.filter(actual=True).first()
-
+        
         if not organigrama_seleccionado:
-            raise ValidationError('El organigrama elegido no se encuentra terminado. Debe elegir uno terminado')
+            raise ValidationError('El organigrama elegido no se encuentra terminado o ha sido retirado de producción')
         elif organigrama_seleccionado.actual:
             raise ValidationError('No puede activar un organigrama que ya se encuentra activado')
         
@@ -720,26 +720,29 @@ class CambioDeOrganigramaActual(generics.UpdateAPIView):
                 organigrama_actual.save()
                 
                 # Auditoria Organigrama desactivado
-                descripcion = {"nombre":str(organigrama_actual.nombre),"versión":str(organigrama_actual.version)}
+                descripcion = {"NombreOrganigrama":str(organigrama_actual.nombre),"VersionOrganigrama":str(organigrama_actual.version)}
                 valores_actualizados={'previous':previous_desactivacion_organigrama, 'current':organigrama_actual}
-                auditoria_data = {'id_usuario': user_logeado,'id_modulo': 16,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
+                auditoria_data = {'id_usuario': user_logeado,'id_modulo': 15,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
                 Util.save_auditoria(auditoria_data)
             
             organigrama_seleccionado.save()
 
             # Auditoria Organigrama activado
-            descripcion = {"nombre":str(organigrama_seleccionado.nombre),"versión":str(organigrama_seleccionado.version)}
+            descripcion = {"NombreOrganigrama":str(organigrama_seleccionado.nombre),"VersionOrganigrama":str(organigrama_seleccionado.version)}
             valores_actualizados={'previous':previous_activacion_organigrama, 'current':organigrama_seleccionado}
-            auditoria_data = {'id_usuario': user_logeado,'id_modulo': 16,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
+            auditoria_data = {'id_usuario': user_logeado,'id_modulo': 15,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
             Util.save_auditoria(auditoria_data)
         else:
             if not data.get('id_ccd'):
-                raise ValidationError('Debe de seleccionar un CCD')
+                raise ValidationError('Debe seleccionar un CCD')
             
             #CCD SELECCIONADO
             ccd_seleccionado =  self.queryset2.filter(id_ccd=data.get('id_ccd'), id_organigrama=organigrama_seleccionado.id_organigrama).first()
             if not ccd_seleccionado:
                 raise ValidationError('Debe seleccionar un CCD que pertenezca al organigrama que desea activar')
+            
+            if not ccd_seleccionado.fecha_terminado or ccd_seleccionado.fecha_retiro_produccion:
+                raise ValidationError('El CCD seleccionado no se encuentra terminado o ha sido retirado de producción')
                 
             tca = TablasControlAcceso.objects.filter(id_trd__id_ccd=ccd_seleccionado.id_ccd).first()
 
@@ -809,50 +812,65 @@ class CambioDeOrganigramaActual(generics.UpdateAPIView):
             tca_actual.id_trd.id_ccd.save()
             tca_actual.id_trd.save()
             tca_actual.save()
+            
+            # Auditoria Organigrama desactivado
+            descripcion = {"NombreOrganigrama":str(tca_actual.id_trd.id_ccd.id_organigrama.nombre),"VersionOrganigrama":str(tca_actual.id_trd.id_ccd.id_organigrama.version)}
+            valores_actualizados={'previous':previous_desactivacion_organigrama, 'current':tca_actual.id_trd.id_ccd.id_organigrama}
+            auditoria_data = {'id_usuario': user_logeado,'id_modulo': 15,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
+            Util.save_auditoria(auditoria_data)
+            
+            # Auditoria Organigrama activado
+            descripcion = {"NombreOrganigrama":str(organigrama_seleccionado.nombre),"VersionOrganigrama":str(organigrama_seleccionado.version)}
+            valores_actualizados={'previous':previous_activacion_organigrama, 'current':organigrama_seleccionado}
+            auditoria_data = {'id_usuario': user_logeado,'id_modulo': 15,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
+            Util.save_auditoria(auditoria_data)
 
             # Auditoria CCD desactivado
-            descripcion = {"nombre":str(tca_actual.id_trd.id_ccd.nombre),"versión":str(tca_actual.id_trd.id_ccd.version)}
+            descripcion = {"NombreCCD":str(tca_actual.id_trd.id_ccd.nombre),"VersionCCD":str(tca_actual.id_trd.id_ccd.version)}
             valores_actualizados={'previous':previous_desactivacion_ccd, 'current':tca_actual.id_trd.id_ccd}
-            auditoria_data = {'id_usuario': user_logeado,'id_modulo': 28,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
+            auditoria_data = {'id_usuario': user_logeado,'id_modulo': 27,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
             Util.save_auditoria(auditoria_data)
 
             # Auditoria CCD activado
-            descripcion = {"nombre":str(tca.id_trd.id_ccd.nombre),"versión":str(tca.id_trd.id_ccd.version)}
+            descripcion = {"NombreCCD":str(tca.id_trd.id_ccd.nombre),"VersionCCD":str(tca.id_trd.id_ccd.version)}
             valores_actualizados={'previous':previous_activacion_ccd, 'current':tca.id_trd.id_ccd}
-            auditoria_data = {'id_usuario': user_logeado,'id_modulo': 28,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
+            auditoria_data = {'id_usuario': user_logeado,'id_modulo': 27,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
             Util.save_auditoria(auditoria_data)
 
             # Auditoria TRD desactivado
-            descripcion = {"nombre":str(tca_actual.id_trd.nombre),"versión":str(tca_actual.id_trd.version)}
+            descripcion = {"NombreTRD":str(tca_actual.id_trd.nombre),"VersionTRD":str(tca_actual.id_trd.version)}
             valores_actualizados={'previous':previous_desactivacion_trd, 'current':tca_actual.id_trd}
-            auditoria_data = {'id_usuario': user_logeado,'id_modulo': 30,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
+            auditoria_data = {'id_usuario': user_logeado,'id_modulo': 29,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
             Util.save_auditoria(auditoria_data)
 
             # Auditoria TRD activado
-            descripcion = {"nombre":str(tca.id_trd.nombre),"versión":str(tca.id_trd.version)}
+            descripcion = {"NombreTRD":str(tca.id_trd.nombre),"VersionTRD":str(tca.id_trd.version)}
             valores_actualizados={'previous':previous_activacion_trd, 'current':tca.id_trd}
-            auditoria_data = {'id_usuario': user_logeado,'id_modulo': 30,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
+            auditoria_data = {'id_usuario': user_logeado,'id_modulo': 29,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
             Util.save_auditoria(auditoria_data)
 
             # Auditoria TCA desactivado
-            descripcion = {"nombre":str(tca_actual.nombre),"versión":str(tca_actual.version)}
+            descripcion = {"NombreTCA":str(tca_actual.nombre),"VersionTCA":str(tca_actual.version)}
             valores_actualizados={'previous':previous_desactivacion_tca, 'current':tca_actual}
-            auditoria_data = {'id_usuario': user_logeado,'id_modulo': 32,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
+            auditoria_data = {'id_usuario': user_logeado,'id_modulo': 31,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
             Util.save_auditoria(auditoria_data)
 
             # Auditoria TCA activado
-            descripcion = {"nombre":str(tca.nombre),"versión":str(tca.version)}
+            descripcion = {"NombreTCA":str(tca.nombre),"VersionTCA":str(tca.version)}
             valores_actualizados={'previous':previous_activacion_tca, 'current':tca}
-            auditoria_data = {'id_usuario': user_logeado,'id_modulo': 32,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
+            auditoria_data = {'id_usuario': user_logeado,'id_modulo': 31,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
             Util.save_auditoria(auditoria_data)
             
         #unidades de personas desactivar
-        unidades_utilizadas=UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama_actual.id_organigrama)
-        unidades_list=[id.id_unidad_organizacional for id in unidades_utilizadas]
-        persona_organigrama_a_remplazar=Personas.objects.filter(id_unidad_organizacional_actual__in=unidades_list)
-        for persona in persona_organigrama_a_remplazar:
-            persona.es_unidad_organizacional_actual=False
-            persona.save()
+        if organigrama_actual:
+            unidades_utilizadas=UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama_actual.id_organigrama)
+            unidades_list=[id.id_unidad_organizacional for id in unidades_utilizadas]
+            persona_organigrama_a_remplazar=Personas.objects.filter(id_unidad_organizacional_actual__in=unidades_list)
+            for persona in persona_organigrama_a_remplazar:
+                persona.es_unidad_organizacional_actual=False
+                persona.save()
+            
+        return Response({'success':True, 'detail':'Se ha activado correctamente el organigrama'}, status=status.HTTP_201_CREATED)
     
 class GetCCDTerminadoByORG(generics.ListAPIView):
     serializer_class = CCDSerializer
@@ -897,17 +915,12 @@ class ObtenerOrganigramaActual(generics.ListAPIView):
 
 class ObtenerOrganigramasPosibles(generics.ListAPIView):
     serializer_class = NewUserOrganigramaSerializer
-    queryset = Organigramas.objects.all()
+    queryset = Organigramas.objects.filter(actual=False, fecha_retiro_produccion=None).exclude(fecha_terminado=None)
     
     def get (self,request):
+        serializador = self.serializer_class(self.queryset.all(), many=True)
         
-        organigrama_actual = self.queryset.all().filter(actual = True).first()
-        
-        if organigrama_actual:
-            serializador = self.serializer_class(organigrama_actual)
-            
-            return Response({'success':True,'detail':'Busqueda exitosa','data':serializador.data},status=status.HTTP_200_OK)
-        return Response({'success':True,'detail':'Busqueda exitosa, no existe organigrama actual'},status=status.HTTP_200_OK)
+        return Response({'success':True,'detail':'Los organigramas posibles para activar son los siguientes','data':serializador.data},status=status.HTTP_200_OK)
 
 class ActualizacionUnidadOrganizacionalAntigua(generics.UpdateAPIView):
     serializer_class = ActUnidadOrgAntiguaSerializer

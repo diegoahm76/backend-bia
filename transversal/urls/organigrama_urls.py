@@ -30,7 +30,7 @@ urlpatterns = [
     # ACTIVACION ORGANIGRAMA
     path('get-ccd-terminados-by-org/<str:id_organigrama>/', views.GetCCDTerminadoByORG.as_view(), name='ccd-terminados-get-by-org'),
     path('get-organigrama-actual/', views.ObtenerOrganigramaActual.as_view(), name='get-organigrama-actual'),
-    path('get-organigramas-posibles/', views.ObtenerOrganigramaActual.as_view(), name='get-organigrama-actual'),
+    path('get-organigramas-posibles/', views.ObtenerOrganigramasPosibles.as_view(), name='get-organigrama-posibles'),
     path('change-actual-organigrama/', views.CambioDeOrganigramaActual.as_view(), name='change-actual-organigrama'),
     path('update-unidad-organizacional-actual/', views.ActualizacionUnidadOrganizacionalAntigua.as_view(), name='update-unidad'),
     path('get-unidad-organizacional-desactualizada/', views.GetUnidadOrgDesactualizada.as_view(), name='get-unidad'),
