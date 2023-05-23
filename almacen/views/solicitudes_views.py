@@ -485,12 +485,14 @@ class GetSolicitudesPendentesPorAprobar(generics.ListAPIView):
 # ESTA FUNCIONALIDAD PERMITE LISTAR LAS SOLICITUDES PENDIENTES DE APORVACIÓN PORL SUPERVISOR DESIGNADO
     serializer_class = CrearSolicitudesPostSerializer
     queryset=SolicitudesConsumibles.objects.all()
+    permission_classes = [IsAuthenticated]
     
-    def get(self, request, tipodocumento, numerodocumento):
-        persona_responsable = Personas.objects.get(Q(tipo_documento=tipodocumento) & Q(numero_documento=numerodocumento) & Q(tipo_persona='N'))
-        usuario = User.objects.filter(persona = persona_responsable.id_persona).first()
-        if not usuario:
-            raise ValidationError('Debe ingresar un usuario válido')        
+    def get(self, request):
+        persona_responsable = request.user.persona
+        # persona_responsable = Personas.objects.get(Q(tipo_documento=tipodocumento) & Q(numero_documento=numerodocumento) & Q(tipo_persona='N'))
+        # usuario = User.objects.filter(persona = persona_responsable.id_persona).first()
+        # if not usuario:
+        #     raise ValidationError('Debe ingresar un usuario válido')        
         solicitudes_por_aprobar = SolicitudesConsumibles.objects.filter(Q(id_funcionario_responsable_unidad=persona_responsable.id_persona) & Q(revisada_responsable = False))
         serializer = self.serializer_class(solicitudes_por_aprobar, many=True)
         return Response({'success':True, 'detail':serializer.data, },status=status.HTTP_200_OK)
