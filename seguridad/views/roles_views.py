@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.generics import ListAPIView, CreateAPIView , RetrieveAPIView, DestroyAPIView, UpdateAPIView, RetrieveUpdateAPIView
 from rest_framework import generics
 from seguridad.utils import Util
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
 class GetRolesByUser(ListAPIView):
     serializer_class = UsuarioRolesLookSerializers
@@ -58,12 +59,12 @@ class GetRolByName(ListAPIView):
     
 class GetRol(ListAPIView):
     serializer_class=RolesSerializer
-    permission_classes = [IsAuthenticated, PermisoConsultarRoles]
-    queryset=Roles.objects.all()
+    permission_classes = [IsAuthenticated]
+    queryset=Roles.objects.all().exclude(id_rol=1).order_by('id_rol')
     
 class RegisterRol(CreateAPIView):
     serializer_class=RolesSerializer
-    permission_classes = [IsAuthenticated, PermisoCrearRoles]
+    permission_classes = [IsAuthenticated]
     queryset=Roles.objects.all()
 
 #------------------------------------------------> Borrar un rol a un usuario
@@ -77,7 +78,7 @@ class DeleteUserRol(DestroyAPIView):
             id_usuarios_rol = UsuariosRol.objects.get(id_usuarios_rol=pk)
             pass
         except:
-            return Response({'success':False,'detail': 'No se encontró ningún registro con el parámetro ingresado'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontró ningún registro con el parámetro ingresado')
         
         if id_usuarios_rol:
             id_usuarios_rol.delete()
@@ -96,36 +97,12 @@ class DeleteUserRol(DestroyAPIView):
             
             Util.save_auditoria(auditoria_data)
             
-            return Response({'success':True,'detail':'El rol fue eliminado'},status=status.HTTP_200_OK)
+            return Response({'success':True, 'detail':'El rol fue eliminado'},status=status.HTTP_200_OK)
         else:
-            return Response({'success':False,'detail':'No existe el rol ingresado'},status=status.HTTP_404_NOT_FOUND)
-            
-#------------------------------------------------> Borrar un rol 
-# class DeleteRol(DestroyAPIView):
-#     serializer_class = RolesSerializer
-#     queryset = Roles.objects.all()
-    
-#     def delete(self, request, pk):
-#         usuario_rol = UsuariosRol.objects.filter(id_rol=pk)
-        
-#         if usuario_rol:
-            
-#         else:
-#             rol = Roles.objects.filter(id_rol=pk).first()
-            
-#             if rol:
-#                 #rol.delete()
-#                 usuario = request.user.id_usuario
-#                 user = User.objects.get(id_usuario = usuario)
-#                 modulo = Modulos.objects.get(id_modulo = 5)
-#                 permiso = Permisos.objects.get(cod_permiso = 'BO')
-#                 direccion_ip = Util.get_client_ip(request)
-#                 descripcion =  {"nombre" :  str(rol.nombre_rol)}
-#                 Auditorias.objects.create(id_usuario = user, id_modulo = modulo, id_cod_permiso_accion = permiso, subsistema = "SEGU", dirip=direccion_ip, descripcion=descripcion, valores_actualizados='')  
-                
-#                 return Response({'success':True,'detail':'El rol fue eliminado'},status=status.HTTP_200_OK)
-#             else:
-                
+            raise NotFound('No existe el rol ingresado')
+ 
+ 
+# Borrar Rol    
 
 class DeleteRol(generics.RetrieveDestroyAPIView):
     serializer_class = RolesSerializer
@@ -136,12 +113,12 @@ class DeleteRol(generics.RetrieveDestroyAPIView):
 
         usuario_rol = UsuariosRol.objects.filter(id_rol=id_rol).first()
         if usuario_rol:
-            return Response({'success':False,'detail':'No puede eliminar el rol porque ya está asignado a un usuario'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No puede eliminar el rol porque ya está asignado a un usuario')
         
         rol = Roles.objects.filter(id_rol=id_rol).first()
         rolsito = rol
         if not rol:
-            return Response({'success':False,'detail':'No existe el rol ingresado'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe el rol ingresado')
         
         rol.delete()
         
@@ -158,7 +135,7 @@ class DeleteRol(generics.RetrieveDestroyAPIView):
             "descripcion": descripcion, 
         }
         Util.save_auditoria(auditoria_data)
-        return Response({'success':True,'detail':'El rol fue eliminado'},status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'El rol fue eliminado'},status=status.HTTP_200_OK)
 
 
 
@@ -199,7 +176,7 @@ class UpdateRol(RetrieveUpdateAPIView):
         usuario_rol = UsuariosRol.objects.filter(id_rol=pk).first()
         
         if usuario_rol:
-            return Response({'success':False,'detail':'No puede actualizar el rol porque ya está asignado a un usuario'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No puede actualizar el rol porque ya está asignado a un usuario')
         else:
             rol = Roles.objects.filter(id_rol=pk).first()
             
@@ -208,11 +185,11 @@ class UpdateRol(RetrieveUpdateAPIView):
                     serializer = self.serializer_class(rol, data=request.data, many=False)
                     serializer.is_valid(raise_exception=True)
                     serializer.save()
-                    return Response({'success':True,'detail':'El rol fue actualizado'},status=status.HTTP_201_CREATED)
+                    return Response({'success':True, 'detail':'El rol fue actualizado'},status=status.HTTP_201_CREATED)
                 else:
-                    return Response({'success':False,'detail': 'No se puede actualizar un rol precargado'},status=status.HTTP_403_FORBIDDEN)
+                    raise PermissionDenied('No se puede actualizar un rol precargado')
             else:
-                return Response({'success':False,'detail':'No existe el rol ingresado'},status=status.HTTP_404_NOT_FOUND)
+                raise NotFound('No existe el rol ingresado')
             
 
 class GetRolesByIdPersona(generics.ListAPIView):
@@ -243,4 +220,4 @@ class GetRolesByIdPersona(generics.ListAPIView):
             roles.append(rol_usuario)
         serializador= self.serializer_class(roles, many= True)
             
-        return Response({'success':True,'detail':'Correcto','data':serializador.data},status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Correcto','data':serializador.data},status=status.HTTP_200_OK)

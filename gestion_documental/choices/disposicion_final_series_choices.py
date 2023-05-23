@@ -1,5 +1,5 @@
 disposicion_final_series_CHOICES = (
-    ('CT', 'Conservación Total'),
+    ('C', 'Conservación Total'),
     ('E', 'Eliminación'),
     ('S', 'Selección')
 )

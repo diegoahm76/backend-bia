@@ -23,6 +23,7 @@ import json
 from seguridad.utils import Util
 import copy
 from conservacion.utils import UtilConservacion
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
 class GetMezclasByNombre(generics.ListAPIView):
     serializer_class = MezclasSerializer
@@ -33,7 +34,7 @@ class GetMezclasByNombre(generics.ListAPIView):
         queryset = self.queryset.all()
         mezcla = queryset.filter(nombre__icontains=nombre_mezcla, item_activo=True)
         if not mezcla:
-            return Response({'success':False, 'detail':'No se encontró ninguna mezcla con ese nombre.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se encontró ninguna mezcla con ese nombre.')
         
         serializer = self.serializer_class(mezcla, many=True)
         
@@ -54,25 +55,25 @@ class CreatePreparacionMezclas(generics.UpdateAPIView):
         
         instancia_mezcla = Mezclas.objects.filter(id_mezcla=info_preparacion['id_mezcla']).first()
         if not instancia_mezcla:
-            return Response({'success':False, 'detail':'No se encontró ninguna mezcla con ese nombre.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se encontró ninguna mezcla con ese nombre.')
         if instancia_mezcla.item_activo == False:
-            return Response({'success':False, 'detail':'Debe elegir una mezcla que esté activa.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Debe elegir una mezcla que esté activa.')
         
         # SE VALIDA LA FECHA
         fecha_preparacion = datetime.strptime(info_preparacion['fecha_preparacion'], '%Y-%m-%d %H:%M:%S')
         aux_validacion_fecha = queryset.filter(fecha_preparacion__range=[fecha_preparacion,datetime.now()], preparacion_anulada=False)
         if aux_validacion_fecha:
-            return Response({'success':False,'detail':'No es posible registrar una mezcla con fecha anterior o igual a la ultima mezcla registrada.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No es posible registrar una mezcla con fecha anterior o igual a la ultima mezcla registrada.')
         fecha_posible = datetime.now() - timedelta(days=1)
         if fecha_preparacion < fecha_posible:
-            return Response({'success':False,'detail':'No es posible registrar una preparación de mezclas con más de un día de anterioridad.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No es posible registrar una preparación de mezclas con más de un día de anterioridad.')
         
         instancia_vivero = Vivero.objects.filter(id_vivero=info_preparacion['id_vivero']).first()
         if not instancia_vivero:
-            return Response({'success':False, 'detail':'No existe el vivero ingresado.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No existe el vivero ingresado.')
         
         if info_preparacion['cantidad_creada'] == None or info_preparacion['cantidad_creada'] <= 0:
-            return Response({'success':False, 'detail':'La cantidad de mezcla debe ser mayor a cero.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError ('La cantidad de mezcla debe ser mayor a cero.')
         
         info_preparacion['fecha_registro'] = datetime.now()
         info_preparacion['id_persona_prepara'] = user_logeado.persona.id_persona
@@ -95,35 +96,35 @@ class CreatePreparacionMezclas(generics.UpdateAPIView):
                         
             # SE VALIDA LA EXISTENCIA DEL BIEN
             if not instancia_bien:
-                return Response({'success':False,'detail':'El bien con número de posición ' + str(i['nro_posicion']) +  'no existe.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El bien con número de posición ' + str(i['nro_posicion']) +  'no existe.')
 
             # SE VALIDA LA EXISTENCIA DEL BIEN EN EL INVENTARIO VIVERO
             if not instancia_bien_vivero:
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +  'no tiene registros en el inventario del vivero.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +  'no tiene registros en el inventario del vivero.')
             
             # SE VALIDA QUE EL BIEN TENGA ENTRADAS
             if instancia_bien_vivero.cantidad_entrante == None or instancia_bien_vivero.cantidad_entrante == 0:
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +  'no tiene entradas, por lo tanto su saldo es cero.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +  'no tiene entradas, por lo tanto su saldo es cero.')
             
             # SE VALIDA QUE EL BIEN SEA DEL TIPO INSUMO
             if instancia_bien.cod_tipo_elemento_vivero != "IN":
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +  ' no es un insumo.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +  ' no es un insumo.')
             # SE VALIDA QUE EL NÚMERO DE POSICIÓN SEA ÚNICO
             if i['id_bien_usado'] in aux_valores_repetidos:
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' No se puede ingresar dos veces un mismo bien dentro de una preparación de mezclas.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' No se puede ingresar dos veces un mismo bien dentro de una preparación de mezclas.')
             
             # SE VALIDA QUE EL NÚMERO DE POSICIÓN SEA ÚNICO
             if i['nro_posicion'] in aux_nro_posicion:
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene un número de posición que ya existe.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene un número de posición que ya existe.')
             
             # SE VALIDA QUE LA CANTIDAD USADA SEA MAYOR QUE CERO
             if i['cantidad_usada'] <= 0:
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene como cantidad de usada cero, la cantidad debe ser mayor que cero.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene como cantidad de usada cero, la cantidad debe ser mayor que cero.')
             
             # SE VALIDA QUE HAYA SALDO DISPONIBLE
             saldo_disponible = UtilConservacion.get_cantidad_disponible_F(instancia_bien, instancia_bien_vivero)
             if i['cantidad_usada'] > saldo_disponible:
-                return Response({'success':False,'detail':'En el bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' no tiene saldo disponible para suplir la cantidad usada.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError ('En el bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' no tiene saldo disponible para suplir la cantidad usada.')
             
             # SE GUARDAN EL NÚMERO DE POSICIÓN Y EL ID DE BIEN EN LISTAS PARA VALIDAR SI SE REPITEN
             aux_nro_posicion.append(i['nro_posicion'])
@@ -210,11 +211,11 @@ class GetBienInsumosByCodigo(generics.ListAPIView):
         instancia_bien = queryset.filter(codigo_bien=codigo_bien, cod_tipo_elemento_vivero="IN").first()
         
         if not instancia_bien:
-            return Response({'success':False, 'detail':'No se encontró ningún insumo con el código ingresado.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se encontró ningún insumo con el código ingresado.')
         
         instancia_bien_vivero = InventarioViveros.objects.filter(id_bien=instancia_bien.id_bien,id_vivero=id_vivero).first()
         if not instancia_bien_vivero:
-            return Response({'success':False, 'detail':'El bien ingresado no tiene registros en el inventario del vivero.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('El bien ingresado no tiene registros en el inventario del vivero.')
         
         # SE LE AGRAGA EL SALDO DISPONIBLE AL RESULTADO DE BUSQUEDA
         instancia_bien.saldo_disponible = UtilConservacion.get_cantidad_disponible_F(instancia_bien, instancia_bien_vivero) 
@@ -227,18 +228,39 @@ class GetBienInsumosByCodigoAndName(generics.ListAPIView):
     queryset = CatalogoBienes.objects.all()
     permission_classes = [IsAuthenticated]
     
-    def get(self,request,codigo_bien, nombre_bien, id_vivero):
+    def get(self,request):
         queryset = self.queryset.all()
-        resultados_busqueda = queryset.filter(codigo_bien__icontains=codigo_bien, nombre__icontains=nombre_bien, cod_tipo_elemento_vivero="IN")
+        filter = {}
+        id_vivero = None
+        
+        for key, value in request.query_params.items():
+            if key in ['id_vivero']:
+                if value == '' and value == None:
+                    raise ValidationError('Es obligatorio elegir un vivero')
+                else:
+                    id_vivero = value
+            elif key in ['nombre_bien']:
+                if value != '' and value != None:
+                    filter['nombre__icontains'] = value
+            elif key in ['codigo_bien']:
+                if value != '' and value != None:
+                    filter['codigo_bien__icontains'] = value
+                    
+        filter['cod_tipo_elemento_vivero'] = "IN"
+        
+        if id_vivero == None:
+            raise ValidationError('Es obligatorio elegir un vivero')
+                 
+        resultados_busqueda = queryset.filter(**filter)
         
         if not resultados_busqueda:
-            return Response({'success':False, 'detail':'No se encontró ningún insumo con el código ingresado.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se encontró ningún insumo con el código ingresado.')
         
         # SE LE AGRAGA EL SALDO DISPONIBLE AL RESULTADO DE BUSQUEDA
         for i in resultados_busqueda:
             instancia_bien_vivero = InventarioViveros.objects.filter(id_bien=i.id_bien,id_vivero=id_vivero).first()
             if not instancia_bien_vivero:
-                return Response({'success':False,'detail':'El bien que intenta seleccionar no tiene registros en el inventario del vivero.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El bien que intenta seleccionar no tiene registros en el inventario del vivero.')
             i.saldo_disponible = UtilConservacion.get_cantidad_disponible_F(i, instancia_bien_vivero) 
                 
         serializer = self.serializer_class(resultados_busqueda, many=True)
@@ -269,35 +291,35 @@ class UpdatePreparacionMezclas(generics.UpdateAPIView):
         instancia_preparacion = PreparacionMezclas.objects.filter(id_preparacion_mezcla=info_preparacion['id_preparacion_mezcla']).first()
 
         if not instancia_preparacion:
-            return Response({'success':False, 'detail':'No se encontró la preparación de mezclas que desea actualizar.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se encontró la preparación de mezclas que desea actualizar.')
         
         ultima_preparacion = queryset.filter(id_mezcla=instancia_preparacion.id_mezcla.id_mezcla, id_vivero=instancia_preparacion.id_vivero).order_by("consec_vivero_mezclas").last()
         
         if not ultima_preparacion:
-            return Response({'success':False, 'detail':'No se encontró ninguna preparación de mezclas.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se encontró ninguna preparación de mezclas.')
 
         # SE VALIDA QUE SOLO SE PUEDA ACTUALIZAR EL ULTIMO REGISTRO DE LA COMBINACIÓN ID_VIVERO-ID_MEZCLA
         if instancia_preparacion.consec_vivero_mezclas != ultima_preparacion.consec_vivero_mezclas or instancia_preparacion.preparacion_anulada == True:
-            return Response({'success':False, 'detail':'Solo es posible actualizar la última preparación de mezclas registrada que no está anulada.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError ('Solo es posible actualizar la última preparación de mezclas registrada que no está anulada.')
         
         # SE VALIDA LA FECHA
         fecha_preparacion = instancia_preparacion.fecha_preparacion
         fecha_posible = datetime.now() - timedelta(days=30)
         if fecha_preparacion < fecha_posible:
-            return Response({'success':False,'detail':'No es posible actualiazar una preparación de mezclas con más de 30 días de anterioridad.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No es posible actualiazar una preparación de mezclas con más de 30 días de anterioridad.')
         
         if info_preparacion['cantidad_creada'] != instancia_preparacion.cantidad_creada:
             # SE VALIDA LA FECHA
             fecha_posible = datetime.now() - timedelta(days=2)
             if fecha_preparacion < fecha_posible:
-                return Response({'success':False,'detail':'No es posible actualiazar la cantidad creada de una preparación de mezclas con más de 2 días de anterioridad.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('No es posible actualiazar la cantidad creada de una preparación de mezclas con más de 2 días de anterioridad.')
             if info_preparacion['cantidad_creada'] == None or info_preparacion['cantidad_creada'] <= 0:
-                return Response({'success':False,'detail':'No es posible actualiazar la cantidad creada a 0.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('No es posible actualiazar la cantidad creada a 0.')
         
         # SE VALIDA LA EXISTENCIA DE LA MEZCLA EN EL INVENTARIO VIVERO
         instancia_mezcla_vivero = InventarioViveros.objects.filter(id_mezcla=instancia_preparacion.id_mezcla.id_mezcla,id_vivero=instancia_preparacion.id_vivero).first()
         if not instancia_mezcla_vivero:
-            return Response({'success':False,'detail':'No existe el registro de la mezcla en el inventario del vivero.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No existe el registro de la mezcla en el inventario del vivero.')
         
         # SE VALIDA QUE EN CASO DE QUE SE DISMINUYA LA CANTIDAD CREADA DE LA MEZCLA, EL SALDO DISPONIBLE SUPLA LA CANTIDAD POR LA QUE SE ESTÁ ACTUALIZANDO
         if instancia_preparacion.cantidad_creada > info_preparacion['cantidad_creada']:
@@ -307,7 +329,7 @@ class UpdatePreparacionMezclas(generics.UpdateAPIView):
             instancia_mezcla_vivero.cantidad_entrante = instancia_mezcla_vivero.cantidad_entrante + aux_cantidad
             saldo_disponible_mezcla = instancia_mezcla_vivero.cantidad_entrante -  instancia_mezcla_vivero.cantidad_consumos_internos
             if saldo_disponible_mezcla <= 0:
-                return Response({'success':False,'detail':'La cantidad a disminuir de la mezcla es mayor al saldo disponible.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('La cantidad a disminuir de la mezcla es mayor al saldo disponible.')
         
         # SE OBTIENEN LOS ITEMS ITEMS QUE SE VAN A AÑADIR
         items_nuevos = [i for i in items_preparacion if i['id_item_preparacion_mezcla'] == None]
@@ -316,7 +338,7 @@ class UpdatePreparacionMezclas(generics.UpdateAPIView):
             # SE VALIDA LA FECHA
             fecha_posible = datetime.now() - timedelta(days=2)
             if fecha_preparacion < fecha_posible:
-                return Response({'success':False,'detail':'No es posible añadir items a una preparación de mezcla que tenga más de 2 días de anterioridad.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('No es posible añadir items a una preparación de mezcla que tenga más de 2 días de anterioridad.')
         
         # SE OBTIENEN LOS ITEMS QUE SE VAN A ACTUALZIAR
         items_actualizar = [i for i in items_preparacion if i['id_item_preparacion_mezcla'] != None]
@@ -342,36 +364,36 @@ class UpdatePreparacionMezclas(generics.UpdateAPIView):
                         
             # SE VALIDA LA EXISTENCIA DEL BIEN
             if not instancia_bien:
-                return Response({'success':False,'detail':'El bien con número de posición ' + str(i['nro_posicion']) +  'no existe.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El bien con número de posición ' + str(i['nro_posicion']) +  'no existe.')
 
             # SE VALIDA LA EXISTENCIA DEL BIEN EN EL INVENTARIO VIVERO
             if not instancia_bien_vivero:
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +  'no tiene registros en el inventario del vivero.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +  'no tiene registros en el inventario del vivero.')
             
             # SE VALIDA QUE EL BIEN TENGA ENTRADAS
             if instancia_bien_vivero.cantidad_entrante == None or instancia_bien_vivero.cantidad_entrante == 0:
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +  'no tiene entradas, por lo tanto su saldo es cero.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +  'no tiene entradas, por lo tanto su saldo es cero.')
             
             # SE VALIDA QUE EL BIEN SEA DEL TIPO INSUMO
             if instancia_bien.cod_tipo_elemento_vivero != "IN":
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +  ' no es un insumo.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +  ' no es un insumo.')
             
             # SE VALIDA QUE EL BIEN USADO SEA UNICO DENTRO LA PREPARACION DE MEZCLA
             if i['id_bien_usado'] in aux_valores_repetidos:
-                return Response({'success':False,'detail':'Error en el bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + '. No se puede ingresar dos veces un mismo bien dentro de una preparación de mezclas.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('Error en el bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + '. No se puede ingresar dos veces un mismo bien dentro de una preparación de mezclas.')
             
             # SE VALIDA QUE EL NÚMERO DE POSICIÓN SEA ÚNICO
             if i['nro_posicion'] in aux_nro_posicion:
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene un número de posición que ya existe.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene un número de posición que ya existe.')
             
             # SE VALIDA QUE LA CANTIDAD DEL BIEN USADO SEA MAYOR QUE CERO
             if i['cantidad_usada'] <= 0:
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene como cantidad de usada cero, la cantidad debe ser mayor que cero.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene como cantidad de usada cero, la cantidad debe ser mayor que cero.')
             
             # SE VALIDA QUE HAYA SALDO DISPONIBLE
             saldo_disponible = UtilConservacion.get_cantidad_disponible_F(instancia_bien, instancia_bien_vivero)
             if i['cantidad_usada'] > saldo_disponible:
-                return Response({'success':False,'detail':'En el bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' no tiene saldo disponible para suplir la cantidad usada.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('En el bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' no tiene saldo disponible para suplir la cantidad usada.')
             
             # SE GUARDAN EL NÚMERO DE POSICIÓN Y EL ID DE BIEN EN LISTAS PARA VALIDAR SI SE REPITEN
             aux_nro_posicion.append(i['nro_posicion'])
@@ -383,34 +405,34 @@ class UpdatePreparacionMezclas(generics.UpdateAPIView):
             # SE VALIDA LA EXISTENCIA DE LA ITEM USADO EN LA PREPARACIÓN
             instancia_item_preparacion = ItemsPreparacionMezcla.objects.filter(id_item_preparacion_mezcla=i['id_item_preparacion_mezcla']).first()
             if not instancia_item_preparacion:
-                return Response({'success':False,'detail':'El bien con número de posición ' + str(i['nro_posicion']) + ' no existe el registro de la preparación de la mezcla.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El bien con número de posición ' + str(i['nro_posicion']) + ' no existe el registro de la preparación de la mezcla.')
             
             # SE VALIDA LA EXISTENCIA DEL BIEN USADO EN CATALOGO DE BIENES
             instancia_bien = CatalogoBienes.objects.filter(id_bien=instancia_item_preparacion.id_bien_usado.id_bien).first()
             if not instancia_bien:
-                return Response({'success':False,'detail':'El bien con número de posición ' + str(i['nro_posicion']) + ' no existe registrado en el sistema como bien.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El bien con número de posición ' + str(i['nro_posicion']) + ' no existe registrado en el sistema como bien.')
             
             # SE VALIDA LA EXISTENCIA DEL BIEN USADO EN EL INVENTARIO DEL VIVERO
             instancia_bien_vivero = InventarioViveros.objects.filter(id_bien=instancia_bien.id_bien,id_vivero=instancia_preparacion.id_vivero).first()
             if not instancia_bien_vivero:
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' no existe en el inventario del vivero.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' no existe en el inventario del vivero.')
             
             # SE VALIDA QUE LA FECHA DE ACTUALIZACIÓN DE LA CANTIDAD USADA NO SEA SUPERIOR A DOS DÍAS DE ANTERIORIDAD
             if i['cantidad_usada'] != instancia_item_preparacion.cantidad_usada:
                 fecha_posible = datetime.now() - timedelta(days=2)
                 if instancia_preparacion.fecha_preparacion < fecha_posible:
-                    return Response({'success':False,'detail':'No es posible actualizar una cantidad usada de una prepracación con más de dos días de anterioridad.'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('No es posible actualizar una cantidad usada de una prepracación con más de dos días de anterioridad.')
                 
                 # SE VALIDA QUE EL SALDO DISPONIBLE SEA SUFICIENTE PARA SATISFACER LA CANTIDAD USADA POR LA QUE SE VA A REEMPLAZAR
                 aux_cantidad = i['cantidad_usada'] - instancia_item_preparacion.cantidad_usada
                 saldo_disponible = UtilConservacion.get_cantidad_disponible_F(instancia_bien, instancia_bien_vivero)
                 saldo_disponible = saldo_disponible - aux_cantidad
                 if saldo_disponible <= 0:
-                    return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ', no tiene saldo disponible para cubrir la cantidad usada ingresada.'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ', no tiene saldo disponible para cubrir la cantidad usada ingresada.')
                 
             # SE VALIDA QUE LA CANTIDAD ACTUALIZADA NO SE VALIDE POR CERO
             if i['cantidad_usada'] <= 0:
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene cantidad igual a cero, la cantidad debe ser mayor que cero.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene cantidad igual a cero, la cantidad debe ser mayor que cero.')
                        
 #----------------------------------------------------> ACTUALIZACION DE LOS VALORES DEL INVENTARIO VIVEROS <----------------------------#
         # SE ACTUALIZA LA CANTIDAD ENTRANTE DE LA MEZCLA EN EL INVENTARIO DEL VIVERO
@@ -504,34 +526,34 @@ class AnularPreparacionMezclas(generics.UpdateAPIView):
         
         preparacion_a_anular = queryset.filter(id_preparacion_mezcla=id_preparacion_anular).first()
         if not preparacion_a_anular:
-            return Response({'success':False,'detail':'No se encontró ninguna preparación de mezcla con el id que ingresó'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se encontró ninguna preparación de mezcla con el id que ingresó')
         
         ultima_mezcla = queryset.filter(id_vivero=preparacion_a_anular.id_vivero,id_mezcla=preparacion_a_anular.id_mezcla).order_by('consec_vivero_mezclas').last()
         ultimo_consecutivo = 0 if not ultima_mezcla else ultima_mezcla.consec_vivero_mezclas
                 
         if not preparacion_a_anular:
-            return Response({'success':False,'detail':'No se encontró ninguna preparación de mezcla con el id que ingresó'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se encontró ninguna preparación de mezcla con el id que ingresó')
         
         if preparacion_a_anular.preparacion_anulada == True:
-            return Response({'success':False,'detail':'Esta preparación ya fue anulada.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Esta preparación ya fue anulada.')
         
         items_preparacion_a_anular = ItemsPreparacionMezcla.objects.filter(id_preparacion_mezcla=preparacion_a_anular.id_preparacion_mezcla)
         if not items_preparacion_a_anular:
-            return Response({'success':False,'detail':'Esta preparación no registra items.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Esta preparación no registra items.')
         
         # SE OBTIENE LA ÚLTIMA BAJA REGISTRADA Y SE CONTRASTA CON EL NRO DE BAJA INGRESADO
         if preparacion_a_anular.consec_vivero_mezclas != ultimo_consecutivo:
-            return Response({'success':False, 'detail':'Solo es posible actualizar la última preparación de la mezcla.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Solo es posible actualizar la última preparación de la mezcla.')
         
         # SE VALIDA LA FECHA
         fecha_posible = datetime.now() - timedelta(days=2)
         if preparacion_a_anular.fecha_preparacion < fecha_posible:
-            return Response({'success':False,'detail':'No es posible anular una preparación de mezcla que tenga más de 2 días de anterioridad.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No es posible anular una preparación de mezcla que tenga más de 2 días de anterioridad.')
         
         # SE VALIDA LA EXISTENCIA DE LA MEZCLA EN EL INVENTARIO VIVERO
         instancia_mezcla_vivero = InventarioViveros.objects.filter(id_mezcla=preparacion_a_anular.id_mezcla.id_mezcla,id_vivero=preparacion_a_anular.id_vivero).first()
         if not instancia_mezcla_vivero:
-            return Response({'success':False,'detail':'No existe el registro de la mezcla en el inventario del vivero.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No existe el registro de la mezcla en el inventario del vivero.')
         
         # SE VALIDA QUE EN CASO DE QUE SE DISMINUYA LA CANTIDAD CREADA DE LA MEZCLA, EL SALDO DISPONIBLE SUPLA LA CANTIDAD POR LA QUE SE ESTÁ ACTUALIZANDO
         instancia_mezcla_vivero.cantidad_entrante = instancia_mezcla_vivero.cantidad_entrante if instancia_mezcla_vivero.cantidad_entrante else 0
@@ -540,7 +562,7 @@ class AnularPreparacionMezclas(generics.UpdateAPIView):
         instancia_mezcla_vivero.cantidad_entrante = instancia_mezcla_vivero.cantidad_entrante - preparacion_a_anular.cantidad_creada
         saldo_disponible_mezcla = instancia_mezcla_vivero.cantidad_entrante -  instancia_mezcla_vivero.cantidad_consumos_internos - instancia_mezcla_vivero.cantidad_bajas
         if saldo_disponible_mezcla < 0:
-            return Response({'success':False,'detail':'La cantidad a disminuir de la mezcla es mayor al saldo disponible.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('La cantidad a disminuir de la mezcla es mayor al saldo disponible.')
         elif saldo_disponible_mezcla == 0:
             instancia_mezcla_vivero.delete()
         elif saldo_disponible_mezcla > 0:
@@ -550,7 +572,7 @@ class AnularPreparacionMezclas(generics.UpdateAPIView):
         for i in items_preparacion_a_anular:
             instancia_inventario_vivero = InventarioViveros.objects.filter(id_bien=i.id_bien_usado.id_bien, id_vivero=preparacion_a_anular.id_vivero).first()
             if not instancia_inventario_vivero:
-                return Response({'success':False,'detail':'El bien con número de posición ' + str(i.nro_posicion) +  'no tiene registro en el inventario del vivero.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El bien con número de posición ' + str(i.nro_posicion) +  'no tiene registro en el inventario del vivero.')
             instancia_inventario_vivero.cantidad_consumos_internos = instancia_inventario_vivero.cantidad_consumos_internos if instancia_inventario_vivero.cantidad_consumos_internos else 0
             instancia_inventario_vivero.cantidad_consumos_internos = instancia_inventario_vivero.cantidad_consumos_internos - i.cantidad_usada
             instancia_inventario_vivero.save()   
@@ -597,7 +619,7 @@ class BusquedaAvanzadaPreparacionesMezclas(generics.ListAPIView):
                     filter['id_mezcla__nombre__icontains'] = value
 
         if not filter:
-            return Response({'success':False,'detail':'No ingresó ningún parámetro de búsqueda.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No ingresó ningún parámetro de búsqueda.')
         else:
             resultados_busqueda = PreparacionMezclas.objects.filter(**filter)
             serializer = self.serializer_class(resultados_busqueda, many=True)
@@ -614,7 +636,7 @@ class GetPreparacionById(generics.ListAPIView):
         instancia_preparacion = queryset.filter(id_preparacion_mezcla=id_preparacion).first()
         
         if not instancia_preparacion:
-            return Response({'success':False, 'detail':'No se encontró ninguna preparación con el id ingresado.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se encontró ninguna preparación con el id ingresado.')
         
         # SE LE AGRAGA EL SALDO DISPONIBLE AL RESULTADO DE BUSQUEDA
         serializer = self.serializer_class(instancia_preparacion, many=False)

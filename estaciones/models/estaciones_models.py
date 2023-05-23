@@ -247,167 +247,31 @@ class HistorialAlarmasEnviadasEstacion(models.Model):
 
 
 class Migracion(models.Model):
-    d_estacion = models.ForeignKey(
-        Estaciones, on_delete=models.CASCADE, db_column='Id_Estacion')
-    nombre = models.TextField(db_column='nombre')
-    sensor1 = models.TextField(db_column='sensor1')
-    sensor2 = models.TextField(db_column='sensor2')
-    sensor3 = models.TextField(db_column='sensor3')
-    sensor4 = models.TextField(db_column='sensor4')
-    sensor5 = models.TextField(db_column='sensor5')
-    sensor6 = models.TextField(db_column='sensor6')
-    sensor7 = models.TextField(db_column='sensor7')
-    sensor8 = models.TextField(db_column='sensor8')
-    sensor9 = models.TextField(db_column='sensor9')
-    sensor10 = models.TextField(db_column='sensor10')
-    sensor11 = models.TextField(db_column='sensor11')
-    sensor12 = models.TextField(db_column='sensor12')
-    sensor13 = models.TextField(db_column='sensor13')
-    sensor14 = models.TextField(db_column='sensor14')
-    sensor15 = models.TextField(db_column='sensor15')
+    id_migracion_estacion = models.AutoField(
+        primary_key=True, editable=False, db_column='T908IdMigracionEstaciones')
+    id_estacion = models.ForeignKey(
+        Estaciones, on_delete=models.CASCADE, db_column='T908Id_Estacion')
+    nombre = models.TextField(db_column='T908NombreEstacion')
+    sensor1 = models.TextField(db_column='T908sensor1')
+    sensor2 = models.TextField(db_column='T908sensor2')
+    sensor3 = models.TextField(db_column='T908sensor3')
+    sensor4 = models.TextField(db_column='T908sensor4')
+    sensor5 = models.TextField(db_column='T908sensor5')
+    sensor6 = models.TextField(db_column='T908sensor6')
+    sensor7 = models.TextField(db_column='T908sensor7')
+    sensor8 = models.TextField(db_column='T908sensor8')
+    sensor9 = models.TextField(db_column='T908sensor9')
+    sensor10 = models.TextField(db_column='T908sensor10')
+    sensor11 = models.TextField(db_column='T908sensor11')
+    sensor12 = models.TextField(db_column='T908sensor12')
+    sensor13 = models.TextField(db_column='T908sensor13')
+    sensor14 = models.TextField(db_column='T908sensor14')
+    sensor15 = models.TextField(db_column='T908sensor15')
 
     def __str__(self):
-        return str(self.nombre)
+        return str(self.id_migracion_estacion)
 
     class Meta:
         db_table = 'T908Migracion'
         verbose_name = 'Migracion'
         verbose_name_plural = 'Migraciones'
-
-# Buscar datos por estación teniendo en cuenta una vista
-
-
-class DatosGuamal(models.Model):
-    id_data = models.AutoField(
-        primary_key=True, editable=False, db_column='T901IdData')
-    fecha_registro = models.DateTimeField(db_column='T901fechaRegistro')
-    id_estacion = models.ForeignKey(
-        Estaciones, on_delete=models.CASCADE, db_column='T901Id_Estacion')
-    temperatura_ambiente = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901temperaturaAmbiente')
-    humedad_ambiente = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901humedadAmbiente')
-    presion_barometrica = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901presionBarometrica')
-    velocidad_viento = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901velocidadViento')
-    direccion_viento = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901direccionViento')
-    precipitacion = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901precipitacion')
-    luminosidad = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901luminosidad')
-    nivel_agua = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901nivelAgua')
-    velocidad_agua = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901velocidadAgua')
-
-    def __str__(self):
-        return str(self.id_data)
-
-    class Meta:
-        db_table = 'Guamal'
-        verbose_name = 'Dato'
-        verbose_name_plural = 'Datos'
-
-
-class DatosOcoa(models.Model):
-    id_data = models.AutoField(
-        primary_key=True, editable=False, db_column='T901IdData')
-    fecha_registro = models.DateTimeField(db_column='T901fechaRegistro')
-    id_estacion = models.ForeignKey(
-        Estaciones, on_delete=models.CASCADE, db_column='T901Id_Estacion')
-    temperatura_ambiente = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901temperaturaAmbiente')
-    humedad_ambiente = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901humedadAmbiente')
-    presion_barometrica = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901presionBarometrica')
-    velocidad_viento = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901velocidadViento')
-    direccion_viento = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901direccionViento')
-    precipitacion = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901precipitacion')
-    luminosidad = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901luminosidad')
-    nivel_agua = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901nivelAgua')
-    velocidad_agua = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901velocidadAgua')
-
-    def __str__(self):
-        return str(self.id_data)
-
-    class Meta:
-        db_table = 'Ocoa'
-        verbose_name = 'Dato'
-        verbose_name_plural = 'Datos'
-
-
-class DatosGuayuriba(models.Model):
-    id_data = models.AutoField(
-        primary_key=True, editable=False, db_column='T901IdData')
-    fecha_registro = models.DateTimeField(db_column='T901fechaRegistro')
-    id_estacion = models.ForeignKey(
-        Estaciones, on_delete=models.CASCADE, db_column='T901Id_Estacion')
-    temperatura_ambiente = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901temperaturaAmbiente')
-    humedad_ambiente = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901humedadAmbiente')
-    presion_barometrica = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901presionBarometrica')
-    velocidad_viento = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901velocidadViento')
-    direccion_viento = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901direccionViento')
-    precipitacion = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901precipitacion')
-    luminosidad = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901luminosidad')
-    nivel_agua = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901nivelAgua')
-    velocidad_agua = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901velocidadAgua')
-
-    def __str__(self):
-        return str(self.id_data)
-
-    class Meta:
-        db_table = 'Guayuriba'
-        verbose_name = 'Dato'
-        verbose_name_plural = 'Datos'
-
-
-class DatosGaitan(models.Model):
-    id_data = models.AutoField(
-        primary_key=True, editable=False, db_column='T901IdData')
-    fecha_registro = models.DateTimeField(db_column='T901fechaRegistro')
-    id_estacion = models.ForeignKey(
-        Estaciones, on_delete=models.CASCADE, db_column='T901Id_Estacion')
-    temperatura_ambiente = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901temperaturaAmbiente')
-    humedad_ambiente = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901humedadAmbiente')
-    presion_barometrica = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901presionBarometrica')
-    velocidad_viento = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901velocidadViento')
-    direccion_viento = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901direccionViento')
-    precipitacion = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901precipitacion')
-    luminosidad = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901luminosidad')
-    nivel_agua = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901nivelAgua')
-    velocidad_agua = models.DecimalField(
-        max_digits=18, decimal_places=4, db_column='T901velocidadAgua')
-
-    def __str__(self):
-        return str(self.id_data)
-
-    class Meta:
-        db_table = 'Gaitan'
-        verbose_name = 'Dato'
-        verbose_name_plural = 'Datos'

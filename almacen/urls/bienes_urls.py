@@ -13,6 +13,7 @@ urlpatterns = [
     path('catalogo-bienes/validar-codigo/<str:nivel>/<str:codigo_bien>/',views.ValidacionCodigoBien.as_view(),name='validar-codigo'),
     
     #Entradas
+    path('entradas/tipos-entradas/', views.GetTiposEntradas.as_view(), name='tipos-entrada'),
     path('entradas/create/', views.CreateEntradaandItemsEntrada.as_view(), name='entrada-create'),
     path('entradas/get-list/', views.GetEntradas.as_view(), name='entrada-get-list'),
     path('entradas/update/<str:id_entrada>/', views.UpdateEntrada.as_view(), name='entrada-update'),

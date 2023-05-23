@@ -1,0 +1,26 @@
+[
+    {
+        "model": "gestion_documental.DisposicionFinalSeries",
+        "pk" : "C",
+        "fields": {
+            "cod_disposicion_final" : "C",
+            "nombre": "Control total"
+        }
+    },
+    {
+        "model": "gestion_documental.DisposicionFinalSeries",
+        "pk" : "E",
+        "fields": {
+            "cod_disposicion_final" : "E",
+            "nombre": "Eliminación"
+        }
+    },
+    {
+        "model": "gestion_documental.DisposicionFinalSeries",
+        "pk" : "S",
+        "fields": {
+            "cod_disposicion_final" : "S",
+            "nombre": "Selección"
+        }
+    }
+]

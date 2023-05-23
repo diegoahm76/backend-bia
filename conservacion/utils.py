@@ -10,7 +10,7 @@ from conservacion.models.despachos_models import (
     ItemsDespachoEntrante,
     DistribucionesItemDespachoEntrante
 )
-from almacen.models.organigrama_models import (
+from transversal.models.organigrama_models import (
     NivelesOrganigrama,
     UnidadesOrganizacionales
 )

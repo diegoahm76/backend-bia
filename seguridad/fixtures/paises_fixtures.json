@@ -1,0 +1,1682 @@
+[
+{
+    "model": "seguridad.paises",
+    "pk": "AD",
+    "fields": {
+        "nombre": "ANDORRA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "AE",
+    "fields": {
+        "nombre": "EMIRATOS ÁRABES UNIDOS"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "AF",
+    "fields": {
+        "nombre": "AFGANISTÁN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "AG",
+    "fields": {
+        "nombre": "ANTIGUA Y BARBUDA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "AI",
+    "fields": {
+        "nombre": "ANGUILA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "AL",
+    "fields": {
+        "nombre": "ALBANIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "AM",
+    "fields": {
+        "nombre": "ARMENIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "AN",
+    "fields": {
+        "nombre": "ANTILLAS NEERLANDESAS"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "AO",
+    "fields": {
+        "nombre": "ANGOLA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "AQ",
+    "fields": {
+        "nombre": "ANTÁRTIDA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "AR",
+    "fields": {
+        "nombre": "ARGENTINA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "AS",
+    "fields": {
+        "nombre": "SAMOA AMERICANA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "AT",
+    "fields": {
+        "nombre": "AUSTRIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "AU",
+    "fields": {
+        "nombre": "AUSTRALIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "AW",
+    "fields": {
+        "nombre": "ARUBA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "AX",
+    "fields": {
+        "nombre": "ISLAS ÁLAND"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "AZ",
+    "fields": {
+        "nombre": "AZERBAIYÁN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "BA",
+    "fields": {
+        "nombre": "BOSNIA Y HERZEGOVINA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "BB",
+    "fields": {
+        "nombre": "BARBADOS"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "BD",
+    "fields": {
+        "nombre": "BANGLADESH"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "BE",
+    "fields": {
+        "nombre": "BÉLGICA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "BF",
+    "fields": {
+        "nombre": "BURKINA FASO"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "BG",
+    "fields": {
+        "nombre": "BULGARIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "BH",
+    "fields": {
+        "nombre": "BAHRÉIN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "BI",
+    "fields": {
+        "nombre": "BURUNDI"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "BJ",
+    "fields": {
+        "nombre": "BENIN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "BL",
+    "fields": {
+        "nombre": "SAN BARTOLOMÉ"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "BM",
+    "fields": {
+        "nombre": "BERMUDAS"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "BN",
+    "fields": {
+        "nombre": "BRUNÉI"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "BO",
+    "fields": {
+        "nombre": "BOLIVIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "BR",
+    "fields": {
+        "nombre": "BRASIL"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "BS",
+    "fields": {
+        "nombre": "BAHAMAS"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "BT",
+    "fields": {
+        "nombre": "BHUTÁN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "BV",
+    "fields": {
+        "nombre": "ISLA BOUVET"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "BW",
+    "fields": {
+        "nombre": "BOTSUANA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "BY",
+    "fields": {
+        "nombre": "BELARÚS"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "BZ",
+    "fields": {
+        "nombre": "BELICE"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "CA",
+    "fields": {
+        "nombre": "CANADÁ"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "CC",
+    "fields": {
+        "nombre": "ISLAS COCOS"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "CF",
+    "fields": {
+        "nombre": "REPÚBLICA CENTRO-AFRICANA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "CG",
+    "fields": {
+        "nombre": "CONGO"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "CH",
+    "fields": {
+        "nombre": "SUIZA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "CI",
+    "fields": {
+        "nombre": "COSTA DE MARFIL"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "CK",
+    "fields": {
+        "nombre": "ISLAS COOK"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "CL",
+    "fields": {
+        "nombre": "CHILE"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "CM",
+    "fields": {
+        "nombre": "CAMERÚN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "CN",
+    "fields": {
+        "nombre": "CHINA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "CO",
+    "fields": {
+        "nombre": "COLOMBIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "CR",
+    "fields": {
+        "nombre": "COSTA RICA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "CU",
+    "fields": {
+        "nombre": "CUBA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "CV",
+    "fields": {
+        "nombre": "CABO VERDE"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "CX",
+    "fields": {
+        "nombre": "ISLAS CHRISTMAS"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "CY",
+    "fields": {
+        "nombre": "CHIPRE"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "CZ",
+    "fields": {
+        "nombre": "REPÚBLICA CHECA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "DE",
+    "fields": {
+        "nombre": "ALEMANIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "DJ",
+    "fields": {
+        "nombre": "YIBUTI"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "DK",
+    "fields": {
+        "nombre": "DINAMARCA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "DM",
+    "fields": {
+        "nombre": "DOMÍNICA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "DO",
+    "fields": {
+        "nombre": "REPÚBLICA DOMINICANA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "DZ",
+    "fields": {
+        "nombre": "ARGEL"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "EC",
+    "fields": {
+        "nombre": "ECUADOR"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "EE",
+    "fields": {
+        "nombre": "ESTONIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "EG",
+    "fields": {
+        "nombre": "EGIPTO"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "EH",
+    "fields": {
+        "nombre": "SAHARA OCCIDENTAL"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "ER",
+    "fields": {
+        "nombre": "ERITREA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "ES",
+    "fields": {
+        "nombre": "ESPAÑA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "ET",
+    "fields": {
+        "nombre": "ETIOPÍA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "FI",
+    "fields": {
+        "nombre": "FINLANDIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "FJ",
+    "fields": {
+        "nombre": "FIJI"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "FK",
+    "fields": {
+        "nombre": "ISLAS MALVINAS"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "FM",
+    "fields": {
+        "nombre": "MICRONESIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "FO",
+    "fields": {
+        "nombre": "ISLAS FAROE"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "FR",
+    "fields": {
+        "nombre": "FRANCIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "GA",
+    "fields": {
+        "nombre": "GABÓN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "GB",
+    "fields": {
+        "nombre": "REINO UNIDO"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "GD",
+    "fields": {
+        "nombre": "GRANADA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "GE",
+    "fields": {
+        "nombre": "GEORGIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "GF",
+    "fields": {
+        "nombre": "GUAYANA FRANCESA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "GG",
+    "fields": {
+        "nombre": "GUERNSEY"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "GH",
+    "fields": {
+        "nombre": "GHANA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "GI",
+    "fields": {
+        "nombre": "GIBRALTAR"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "GL",
+    "fields": {
+        "nombre": "GROENLANDIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "GM",
+    "fields": {
+        "nombre": "GAMBIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "GN",
+    "fields": {
+        "nombre": "GUINEA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "GP",
+    "fields": {
+        "nombre": "GUADALUPE"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "GQ",
+    "fields": {
+        "nombre": "GUINEA ECUATORIAL"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "GR",
+    "fields": {
+        "nombre": "GRECIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "GS",
+    "fields": {
+        "nombre": "GEORGIA DEL SUR E ISLAS SANDWICH DEL SUR"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "GT",
+    "fields": {
+        "nombre": "GUATEMALA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "GU",
+    "fields": {
+        "nombre": "GUAM"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "GW",
+    "fields": {
+        "nombre": "GUINEA-BISSAU"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "GY",
+    "fields": {
+        "nombre": "GUAYANA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "HK",
+    "fields": {
+        "nombre": "HONG KONG"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "HM",
+    "fields": {
+        "nombre": "ISLAS HEARD Y MCDONALD"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "HN",
+    "fields": {
+        "nombre": "HONDURAS"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "HR",
+    "fields": {
+        "nombre": "CROACIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "HT",
+    "fields": {
+        "nombre": "HAITÍ"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "HU",
+    "fields": {
+        "nombre": "HUNGRÍA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "ID",
+    "fields": {
+        "nombre": "INDONESIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "IE",
+    "fields": {
+        "nombre": "IRLANDA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "IL",
+    "fields": {
+        "nombre": "ISRAEL"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "IM",
+    "fields": {
+        "nombre": "ISLA DE MAN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "IN",
+    "fields": {
+        "nombre": "INDIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "IO",
+    "fields": {
+        "nombre": "TERRITORIO BRITÁNICO DEL OCÉANO ÍNDICO"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "IQ",
+    "fields": {
+        "nombre": "IRAK"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "IR",
+    "fields": {
+        "nombre": "IRÁN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "IS",
+    "fields": {
+        "nombre": "ISLANDIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "IT",
+    "fields": {
+        "nombre": "ITALIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "JE",
+    "fields": {
+        "nombre": "JERSEY"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "JM",
+    "fields": {
+        "nombre": "JAMAICA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "JO",
+    "fields": {
+        "nombre": "JORDANIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "JP",
+    "fields": {
+        "nombre": "JAPÓN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "KE",
+    "fields": {
+        "nombre": "KENIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "KG",
+    "fields": {
+        "nombre": "KIRGUISTÁN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "KH",
+    "fields": {
+        "nombre": "CAMBOYA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "KI",
+    "fields": {
+        "nombre": "KIRIBATI"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "KM",
+    "fields": {
+        "nombre": "COMOROS"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "KN",
+    "fields": {
+        "nombre": "SAN CRISTÓBAL Y NIEVES"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "KP",
+    "fields": {
+        "nombre": "COREA DEL NORTE"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "KR",
+    "fields": {
+        "nombre": "COREA DEL SUR"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "KW",
+    "fields": {
+        "nombre": "KUWAIT"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "KY",
+    "fields": {
+        "nombre": "ISLAS CAIMÁN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "KZ",
+    "fields": {
+        "nombre": "KAZAJSTÁN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "LA",
+    "fields": {
+        "nombre": "LAOS"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "LB",
+    "fields": {
+        "nombre": "LÍBANO"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "LC",
+    "fields": {
+        "nombre": "SANTA LUCÍA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "LI",
+    "fields": {
+        "nombre": "LIECHTENSTEIN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "LK",
+    "fields": {
+        "nombre": "SRI LANKA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "LR",
+    "fields": {
+        "nombre": "LIBERIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "LS",
+    "fields": {
+        "nombre": "LESOTHO"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "LT",
+    "fields": {
+        "nombre": "LITUANIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "LU",
+    "fields": {
+        "nombre": "LUXEMBURGO"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "LV",
+    "fields": {
+        "nombre": "LETONIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "LY",
+    "fields": {
+        "nombre": "LIBIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "MA",
+    "fields": {
+        "nombre": "MARRUECOS"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "MC",
+    "fields": {
+        "nombre": "MÓNACO"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "MD",
+    "fields": {
+        "nombre": "MOLDOVA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "ME",
+    "fields": {
+        "nombre": "MONTENEGRO"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "MG",
+    "fields": {
+        "nombre": "MADAGASCAR"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "MH",
+    "fields": {
+        "nombre": "ISLAS MARSHALL"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "MK",
+    "fields": {
+        "nombre": "MACEDONIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "ML",
+    "fields": {
+        "nombre": "MALI"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "MM",
+    "fields": {
+        "nombre": "MYANMAR"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "MN",
+    "fields": {
+        "nombre": "MONGOLIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "MO",
+    "fields": {
+        "nombre": "MACAO"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "MQ",
+    "fields": {
+        "nombre": "MARTINICA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "MR",
+    "fields": {
+        "nombre": "MAURITANIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "MS",
+    "fields": {
+        "nombre": "MONTSERRAT"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "MT",
+    "fields": {
+        "nombre": "MALTA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "MU",
+    "fields": {
+        "nombre": "MAURICIO"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "MV",
+    "fields": {
+        "nombre": "MALDIVAS"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "MW",
+    "fields": {
+        "nombre": "MALAWI"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "MX",
+    "fields": {
+        "nombre": "MÉXICO"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "MY",
+    "fields": {
+        "nombre": "MALASIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "MZ",
+    "fields": {
+        "nombre": "MOZAMBIQUE"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "NA",
+    "fields": {
+        "nombre": "NAMIBIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "NC",
+    "fields": {
+        "nombre": "NUEVA CALEDONIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "NE",
+    "fields": {
+        "nombre": "NÍGER"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "NF",
+    "fields": {
+        "nombre": "ISLAS NORKFOLK"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "NG",
+    "fields": {
+        "nombre": "NIGERIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "NI",
+    "fields": {
+        "nombre": "NICARAGUA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "NL",
+    "fields": {
+        "nombre": "PAÍSES BAJOS"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "NO",
+    "fields": {
+        "nombre": "NORUEGA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "NP",
+    "fields": {
+        "nombre": "NEPAL"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "NR",
+    "fields": {
+        "nombre": "NAURU"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "NU",
+    "fields": {
+        "nombre": "NIUE"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "NZ",
+    "fields": {
+        "nombre": "NUEVA ZELANDA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "OM",
+    "fields": {
+        "nombre": "OMÁN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "PA",
+    "fields": {
+        "nombre": "PANAMÁ"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "PE",
+    "fields": {
+        "nombre": "PERÚ"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "PF",
+    "fields": {
+        "nombre": "POLINESIA FRANCESA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "PG",
+    "fields": {
+        "nombre": "PAPÚA NUEVA GUINEA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "PH",
+    "fields": {
+        "nombre": "FILIPINAS"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "PK",
+    "fields": {
+        "nombre": "PAKISTÁN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "PL",
+    "fields": {
+        "nombre": "POLONIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "PM",
+    "fields": {
+        "nombre": "SAN PEDRO Y MIQUELÓN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "PN",
+    "fields": {
+        "nombre": "ISLAS PITCAIRN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "PR",
+    "fields": {
+        "nombre": "PUERTO RICO"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "PS",
+    "fields": {
+        "nombre": "PALESTINA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "PT",
+    "fields": {
+        "nombre": "PORTUGAL"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "PW",
+    "fields": {
+        "nombre": "ISLAS PALAOS"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "PY",
+    "fields": {
+        "nombre": "PARAGUAY"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "QA",
+    "fields": {
+        "nombre": "QATAR"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "RE",
+    "fields": {
+        "nombre": "REUNIÓN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "RO",
+    "fields": {
+        "nombre": "RUMANÍA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "RS",
+    "fields": {
+        "nombre": "SERBIA Y MONTENEGRO"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "RU",
+    "fields": {
+        "nombre": "RUSIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "RW",
+    "fields": {
+        "nombre": "RUANDA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "SA",
+    "fields": {
+        "nombre": "ARABIA SAUDITA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "SB",
+    "fields": {
+        "nombre": "ISLAS SOLOMÓN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "SC",
+    "fields": {
+        "nombre": "SEYCHELLES"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "SD",
+    "fields": {
+        "nombre": "SUDÁN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "SE",
+    "fields": {
+        "nombre": "SUECIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "SG",
+    "fields": {
+        "nombre": "SINGAPUR"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "SH",
+    "fields": {
+        "nombre": "SANTA ELENA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "SI",
+    "fields": {
+        "nombre": "ESLOVENIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "SJ",
+    "fields": {
+        "nombre": "ISLAS SVALBARD Y JAN MAYEN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "SK",
+    "fields": {
+        "nombre": "ESLOVAQUIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "SL",
+    "fields": {
+        "nombre": "SIERRA LEONA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "SM",
+    "fields": {
+        "nombre": "SAN MARINO"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "SN",
+    "fields": {
+        "nombre": "SENEGAL"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "SO",
+    "fields": {
+        "nombre": "SOMALIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "SR",
+    "fields": {
+        "nombre": "SURINAM"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "ST",
+    "fields": {
+        "nombre": "SANTO TOMÉ Y PRÍNCIPE"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "SV",
+    "fields": {
+        "nombre": "EL SALVADOR"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "SY",
+    "fields": {
+        "nombre": "SIRIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "SZ",
+    "fields": {
+        "nombre": "SUAZILANDIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "TC",
+    "fields": {
+        "nombre": "ISLAS TURCAS Y CAICOS"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "TD",
+    "fields": {
+        "nombre": "CHAD"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "TF",
+    "fields": {
+        "nombre": "TERRITORIOS AUSTRALES FRANCESES"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "TG",
+    "fields": {
+        "nombre": "TOGO"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "TH",
+    "fields": {
+        "nombre": "TAILANDIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "TJ",
+    "fields": {
+        "nombre": "TAYIKISTÁN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "TK",
+    "fields": {
+        "nombre": "TOKELAU"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "TL",
+    "fields": {
+        "nombre": "TIMOR-LESTE"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "TM",
+    "fields": {
+        "nombre": "TURKMENISTÁN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "TN",
+    "fields": {
+        "nombre": "TÚNEZ"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "TO",
+    "fields": {
+        "nombre": "TONGA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "TR",
+    "fields": {
+        "nombre": "TURQUÍA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "TT",
+    "fields": {
+        "nombre": "TRINIDAD Y TOBAGO"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "TV",
+    "fields": {
+        "nombre": "TUVALU"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "TW",
+    "fields": {
+        "nombre": "TAIWÁN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "TZ",
+    "fields": {
+        "nombre": "TANZANIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "UA",
+    "fields": {
+        "nombre": "UCRANIA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "UG",
+    "fields": {
+        "nombre": "UGANDA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "US",
+    "fields": {
+        "nombre": "ESTADOS UNIDOS DE AMÉRICA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "UY",
+    "fields": {
+        "nombre": "URUGUAY"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "UZ",
+    "fields": {
+        "nombre": "UZBEKISTÁN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "VA",
+    "fields": {
+        "nombre": "CIUDAD DEL VATICANO"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "VC",
+    "fields": {
+        "nombre": "SAN VICENTE Y LAS GRANADINAS"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "VE",
+    "fields": {
+        "nombre": "VENEZUELA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "VG",
+    "fields": {
+        "nombre": "ISLAS VÍRGENES BRITÁNICAS"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "VI",
+    "fields": {
+        "nombre": "ISLAS VÍRGENES DE LOS ESTADOS UNIDOS DE AMÉRICA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "VN",
+    "fields": {
+        "nombre": "VIETNAM"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "VU",
+    "fields": {
+        "nombre": "VANUATU"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "WF",
+    "fields": {
+        "nombre": "WALLIS Y FUTUNA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "WS",
+    "fields": {
+        "nombre": "SAMOA"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "YE",
+    "fields": {
+        "nombre": "YEMEN"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "YT",
+    "fields": {
+        "nombre": "MAYOTTE"
+    }
+},
+{
+    "model": "seguridad.paises",
+    "pk": "ZA",
+    "fields": {
+        "nombre": "SUDÁFRICA"
+    }
+}
+]

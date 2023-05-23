@@ -1,14 +1,8 @@
 from django.contrib import admin
-from almacen.models.organigrama_models import (
+from transversal.models.organigrama_models import (
     Organigramas,
     NivelesOrganigrama,
     UnidadesOrganizacionales
-)
-from gestion_documental.models.ccd_models import (
-    CuadrosClasificacionDocumental,
-    SubseriesDoc,
-    SeriesDoc,
-    SeriesSubseriesUnidadOrg
 )
 from almacen.models.generics_models import (
     Marcas,

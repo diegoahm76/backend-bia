@@ -6,7 +6,9 @@
             "id_formato_tipo_medio":1,
             "nombre":"ARC_IA",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -14,9 +16,11 @@
         "pk" : 2,
         "fields": {
             "id_formato_tipo_medio":2,
-            "nombre":"BWF",
+            "nombre":"dBase",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -24,9 +28,11 @@
         "pk" : 3,
         "fields": {
             "id_formato_tipo_medio":3,
-            "nombre":"CGM",
+            "nombre":"DWG",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -34,9 +40,11 @@
         "pk" : 4,
         "fields": {
             "id_formato_tipo_medio":4,
-            "nombre":"dBase",
+            "nombre":"DXF",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -44,9 +52,11 @@
         "pk" : 5,
         "fields": {
             "id_formato_tipo_medio":5,
-            "nombre":"DWG",
+            "nombre":"EML",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -54,9 +64,11 @@
         "pk" : 6,
         "fields": {
             "id_formato_tipo_medio":6,
-            "nombre":"DXF",
+            "nombre":"ESRI",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -64,9 +76,11 @@
         "pk" : 7,
         "fields": {
             "id_formato_tipo_medio":7,
-            "nombre":"EML",
+            "nombre":"XLSX",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -74,9 +88,11 @@
         "pk" : 8,
         "fields": {
             "id_formato_tipo_medio":8,
-            "nombre":"ESRI Shapefile",
+            "nombre":"Formulario",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -84,9 +100,11 @@
         "pk" : 9,
         "fields": {
             "id_formato_tipo_medio":9,
-            "nombre":"XLSX",
+            "nombre":"GML",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -94,9 +112,11 @@
         "pk" : 10,
         "fields": {
             "id_formato_tipo_medio":10,
-            "nombre":"Formulario electrónico",
+            "nombre":"GMLJP2",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -104,9 +124,11 @@
         "pk" : 11,
         "fields": {
             "id_formato_tipo_medio":11,
-            "nombre":"GML",
+            "nombre":"GZIP",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -114,9 +136,11 @@
         "pk" : 12,
         "fields": {
             "id_formato_tipo_medio":12,
-            "nombre":"GMLJP2",
+            "nombre":"HTML",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -124,9 +148,11 @@
         "pk" : 13,
         "fields": {
             "id_formato_tipo_medio":13,
-            "nombre":"GZIP",
+            "nombre":"JPEG",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -134,9 +160,11 @@
         "pk" : 14,
         "fields": {
             "id_formato_tipo_medio":14,
-            "nombre":"HTML",
+            "nombre":"JPEG/Exif",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -144,9 +172,11 @@
         "pk" : 15,
         "fields": {
             "id_formato_tipo_medio":15,
-            "nombre":"JPEG 2000-Motion",
+            "nombre":"JPEG2000",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -154,9 +184,11 @@
         "pk" : 16,
         "fields": {
             "id_formato_tipo_medio":16,
-            "nombre":"JPEG/Exif",
+            "nombre":"JPG/JFIF",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -164,9 +196,11 @@
         "pk" : 17,
         "fields": {
             "id_formato_tipo_medio":17,
-            "nombre":"JPEG2000",
+            "nombre":"JSON",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -174,9 +208,11 @@
         "pk" : 18,
         "fields": {
             "id_formato_tipo_medio":18,
-            "nombre":"JPG/JFIF",
+            "nombre":"Maildir",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -184,9 +220,11 @@
         "pk" : 19,
         "fields": {
             "id_formato_tipo_medio":19,
-            "nombre":"JSON",
+            "nombre":"Matroska",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -194,9 +232,11 @@
         "pk" : 20,
         "fields": {
             "id_formato_tipo_medio":20,
-            "nombre":"Maildir",
+            "nombre":"MBOX",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -204,9 +244,11 @@
         "pk" : 21,
         "fields": {
             "id_formato_tipo_medio":21,
-            "nombre":"Matroska",
+            "nombre":"MNG",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -214,9 +256,11 @@
         "pk" : 22,
         "fields": {
             "id_formato_tipo_medio":22,
-            "nombre":"MBOX",
+            "nombre":"MP3",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -224,9 +268,11 @@
         "pk" : 23,
         "fields": {
             "id_formato_tipo_medio":23,
-            "nombre":"MNG",
+            "nombre":"MPEG-1",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -234,9 +280,11 @@
         "pk" : 24,
         "fields": {
             "id_formato_tipo_medio":24,
-            "nombre":"MP3",
+            "nombre":"MPEG-2",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -244,9 +292,11 @@
         "pk" : 25,
         "fields": {
             "id_formato_tipo_medio":25,
-            "nombre":"MPEG-1",
+            "nombre":"MPEG-4",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -254,9 +304,11 @@
         "pk" : 26,
         "fields": {
             "id_formato_tipo_medio":26,
-            "nombre":"MPEG-2",
+            "nombre":"MXD",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -264,9 +316,11 @@
         "pk" : 27,
         "fields": {
             "id_formato_tipo_medio":27,
-            "nombre":"MPEG-4",
+            "nombre":"MXF",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -274,9 +328,11 @@
         "pk" : 28,
         "fields": {
             "id_formato_tipo_medio":28,
-            "nombre":"MXD",
+            "nombre":"Office",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -284,9 +340,11 @@
         "pk" : 29,
         "fields": {
             "id_formato_tipo_medio":29,
-            "nombre":"MXF",
+            "nombre":"Ogg",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -294,9 +352,11 @@
         "pk" : 30,
         "fields": {
             "id_formato_tipo_medio":30,
-            "nombre":"Office OpenXML",
+            "nombre":"OOXML",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -304,9 +364,11 @@
         "pk" : 31,
         "fields": {
             "id_formato_tipo_medio":31,
-            "nombre":"OGM",
+            "nombre":"Open",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -314,9 +376,11 @@
         "pk" : 32,
         "fields": {
             "id_formato_tipo_medio":32,
-            "nombre":"OOXML",
+            "nombre":"OpenDocument",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -324,9 +388,11 @@
         "pk" : 33,
         "fields": {
             "id_formato_tipo_medio":33,
-            "nombre":"Open Document",
+            "nombre":"PDF",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -334,9 +400,11 @@
         "pk" : 34,
         "fields": {
             "id_formato_tipo_medio":34,
-            "nombre":"OpenDocument",
+            "nombre":"PDF/",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -344,9 +412,11 @@
         "pk" : 35,
         "fields": {
             "id_formato_tipo_medio":35,
-            "nombre":"PDF",
+            "nombre":"PDF/A-1",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -354,9 +424,11 @@
         "pk" : 36,
         "fields": {
             "id_formato_tipo_medio":36,
-            "nombre":"PDF/ A-2",
+            "nombre":"PDFA",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -364,9 +436,11 @@
         "pk" : 37,
         "fields": {
             "id_formato_tipo_medio":37,
-            "nombre":"PDF/ A-3",
+            "nombre":"PNG",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -374,9 +448,11 @@
         "pk" : 38,
         "fields": {
             "id_formato_tipo_medio":38,
-            "nombre":"PDF/A-1",
+            "nombre":"SHP",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -384,9 +460,11 @@
         "pk" : 39,
         "fields": {
             "id_formato_tipo_medio":39,
-            "nombre":"PDFA",
+            "nombre":"SIARD",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -394,9 +472,11 @@
         "pk" : 40,
         "fields": {
             "id_formato_tipo_medio":40,
-            "nombre":"PNG",
+            "nombre":"SQL",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -404,9 +484,11 @@
         "pk" : 41,
         "fields": {
             "id_formato_tipo_medio":41,
-            "nombre":"SHP",
+            "nombre":"SVG",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -414,9 +496,11 @@
         "pk" : 42,
         "fields": {
             "id_formato_tipo_medio":42,
-            "nombre":"SIARD",
+            "nombre":"TXT",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -424,9 +508,11 @@
         "pk" : 43,
         "fields": {
             "id_formato_tipo_medio":43,
-            "nombre":"SQL",
+            "nombre":"TIFF",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -434,9 +520,11 @@
         "pk" : 44,
         "fields": {
             "id_formato_tipo_medio":44,
-            "nombre":"SVG",
+            "nombre":"WAVE",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -444,9 +532,11 @@
         "pk" : 45,
         "fields": {
             "id_formato_tipo_medio":45,
-            "nombre":"TXT",
+            "nombre":"Web",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -454,9 +544,11 @@
         "pk" : 46,
         "fields": {
             "id_formato_tipo_medio":46,
-            "nombre":"TIFF",
+            "nombre":"WebMovie",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -464,9 +556,11 @@
         "pk" : 47,
         "fields": {
             "id_formato_tipo_medio":47,
-            "nombre":"WAVE",
+            "nombre":"WFS",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -474,9 +568,11 @@
         "pk" : 48,
         "fields": {
             "id_formato_tipo_medio":48,
-            "nombre":"Web Archive",
+            "nombre":"WMS",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -484,9 +580,11 @@
         "pk" : 49,
         "fields": {
             "id_formato_tipo_medio":49,
-            "nombre":"WebMovie",
+            "nombre":"DOCX",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -494,9 +592,11 @@
         "pk" : 50,
         "fields": {
             "id_formato_tipo_medio":50,
-            "nombre":"WFS",
+            "nombre":"XML",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -504,9 +604,11 @@
         "pk" : 51,
         "fields": {
             "id_formato_tipo_medio":51,
-            "nombre":"WMS",
+            "nombre":"XPDL",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -514,9 +616,11 @@
         "pk" : 52,
         "fields": {
             "id_formato_tipo_medio":52,
-            "nombre":"DOCX",
+            "nombre":"XPM",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -524,9 +628,11 @@
         "pk" : 53,
         "fields": {
             "id_formato_tipo_medio":53,
-            "nombre":"XML",
+            "nombre":"ZIP",
             "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -534,9 +640,11 @@
         "pk" : 54,
         "fields": {
             "id_formato_tipo_medio":54,
-            "nombre":"XPDL",
-            "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "nombre":"PAPEL",
+            "cod_tipo_medio_doc":"F",
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -544,9 +652,11 @@
         "pk" : 55,
         "fields": {
             "id_formato_tipo_medio":55,
-            "nombre":"XPM",
-            "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "nombre":"CINTA",
+            "cod_tipo_medio_doc":"F",
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -554,9 +664,11 @@
         "pk" : 56,
         "fields": {
             "id_formato_tipo_medio":56,
-            "nombre":"XPM Pixmap Graphic",
-            "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "nombre":"ACETATO",
+            "cod_tipo_medio_doc":"F",
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     },
     {
@@ -564,9 +676,11 @@
         "pk" : 57,
         "fields": {
             "id_formato_tipo_medio":57,
-            "nombre":"ZIP",
-            "cod_tipo_medio_doc":"E",
-            "registro_precargado": true
+            "nombre":"CD",
+            "cod_tipo_medio_doc":"F",
+            "registro_precargado": true,
+            "activo": true,
+            "item_ya_usado": false
         }
     }
 ]  

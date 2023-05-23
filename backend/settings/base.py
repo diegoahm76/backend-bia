@@ -14,6 +14,10 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+# CARGAR VARIABLES DE ENTORNO
+from dotenv import load_dotenv
+load_dotenv()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -50,7 +54,8 @@ INSTALLED_APPS = [
     'recurso_hidrico.apps.RecursoHidricoConfig',
     'seguimiento_planes.apps.SeguimientoPlanesConfig',
     'tramites.apps.TramitesConfig',
-    'estaciones.apps.EstacionesConfig'
+    'estaciones.apps.EstacionesConfig',
+    'transversal.apps.TransversalConfig'
 ]
 
 SWAGGER_SETTINGS = {

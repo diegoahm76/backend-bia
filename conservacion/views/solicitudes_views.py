@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from seguridad.utils import Util  
 from django.db.models import Q, F, Sum
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime, time, timedelta
 from datetime import timezone
@@ -29,11 +29,13 @@ from conservacion.serializers.solicitudes_serializers import (
     GetBienByFilterSerializer,
     DeleteItemsSolicitudSerializer,
     GetSolicitudesViverosSerializer,
-    ItemSolicitudViverosSerializer,
     ListarSolicitudIDSerializer,
     AnulacionSolicitudesSerializer,
     UpdateSolicitudesSerializer,
-    CreateItemsSolicitudSerializer
+    CreateItemsSolicitudSerializer,
+    UpdateItemsSolicitudSerializer,
+    DeleteItemsSolicitudSerializer,
+    CerrarSolicitudNoDisponibilidadSerializer
 )
 from conservacion.models.viveros_models import (
     Vivero
@@ -41,9 +43,8 @@ from conservacion.models.viveros_models import (
 from almacen.models.bienes_models import (
     CatalogoBienes
 )
-from almacen.models.organigrama_models import (
+from transversal.models.organigrama_models import (
     UnidadesOrganizacionales,
-    NivelesOrganigrama
 )
 from seguridad.serializers.personas_serializers import (
     PersonasSerializer
@@ -76,7 +77,7 @@ class GetSolicitudByNumeroSolicitudView(generics.RetrieveAPIView):
     def get(self, request, nro_solicitud):
         solicitud = SolicitudesViveros.objects.filter(nro_solicitud=nro_solicitud).first()
         if not solicitud:
-            return Response({'success': False, 'detail': 'No existe ninguna solicitud con el numero ingresado'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe ninguna solicitud con el numero ingresado')
         
         serializer = self.serializer_class(solicitud, many=False)
         return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
@@ -104,19 +105,19 @@ class GetFuncionarioResponsableView(generics.GenericAPIView):
         #VALIDACIÓN SI EXISTE LA PERSONA ENVIADA
         user = User.objects.filter(persona__tipo_documento=tipodocumento, persona__numero_documento=numerodocumento).first()
         if not user:
-            return Response({'success': False, 'detail': 'No existe o no tiene usuario creado el funcionario responsable seleccionado'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe o no tiene usuario creado el funcionario responsable seleccionado')
         
         #VALIDACIÓN QUE EL USUARIO SEA INTERNO
         if user.tipo_usuario != 'I':
-            return Response({'success': False, 'detail': 'El funcionario responsable debe ser un usuario interno'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('El funcionario responsable debe ser un usuario interno')
 
         #VALIDACIÓN SI ESA PERSONA ESTÁ ASOCIADA A UNA UNIDAD ORGANIZACIONAL
         if not user.persona.id_unidad_organizacional_actual:
-            return Response({'success': False, 'detail': 'La persona seleccionada no se encuentra relacionada con ninguna unidad organizacional'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('La persona seleccionada no se encuentra relacionada con ninguna unidad organizacional')
 
         #VALIDACIÓN SI LA PERSONA SE ENCUENTRA EN UNA UNIDAD DE UN ORGANIGRAMA ACTUAL
         if user.persona.id_unidad_organizacional_actual.id_organigrama.actual != True:
-            return Response({'success': False, 'detail': 'El responsable seleccionado no pertenece a un organigrama actual'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('El responsable seleccionado no pertenece a un organigrama actual')
 
         #VALIDACIÓN DE LINEA JERARQUICA SUPERIOR O IGUAL
         linea_jerarquica = UtilConservacion.get_linea_jerarquica_superior(persona_logeada)
@@ -124,7 +125,7 @@ class GetFuncionarioResponsableView(generics.GenericAPIView):
         lista_unidades_permitidas = [unidad.id_unidad_organizacional for unidad in linea_jerarquica]
 
         if user.persona.id_unidad_organizacional_actual.id_unidad_organizacional not in lista_unidades_permitidas:
-            return Response({'success': False, 'detail': 'No se puede seleccionar una persona que no esté al mismo nivel o superior en la linea jerarquica'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No se puede seleccionar una persona que no esté al mismo nivel o superior en la linea jerarquica')
 
         persona_serializer = self.serializer_class(user.persona, many=False)
         return Response({'success': True,'data': persona_serializer.data}, status=status.HTTP_200_OK)
@@ -139,7 +140,7 @@ class GetFuncionarioByFiltersView(generics.ListAPIView):
         #VALIDACIÓN QUE LA PERSONA QUE HACE LA SOLICITUD TENGA UNIDAD ORGANIZACIONAL
         persona_logeada = request.user.persona
         if not persona_logeada.id_unidad_organizacional_actual:
-            return Response({'success': False, 'detail': 'La persona que realiza la busqueda debe estar asociada a una unidad organizacional'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('La persona que realiza la busqueda debe estar asociada a una unidad organizacional')
         
         #ELABORACIÓN DE FILTRO PARA EL QUERY
         filter = {}
@@ -188,9 +189,9 @@ class CreateSolicitudViverosView(generics.CreateAPIView):
 
         #VALIDACIÓN QUE LA PERSONA QUE HACE LA SOLICITUD ESTÉ ASOCIADA A UNA UNIDAD Y QUE SEA ACTUAL
         if not persona_logeada.id_unidad_organizacional_actual:
-            return Response({'succcess': False, 'detail': 'La persona que hace la solicitud debe pertenecer a una unidad organizacional'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('La persona que hace la solicitud debe pertenecer a una unidad organizacional')
         if persona_logeada.id_unidad_organizacional_actual.id_organigrama.actual != True:
-            return Response({'succcess': False, 'detail': 'La unidad organizacional de la persona que hace la solicitud debe pertenecer a un organigrama actual'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('La unidad organizacional de la persona que hace la solicitud debe pertenecer a un organigrama actual')
         
         #ASIGNACIÓN NÚMERO CONSECUTIVO
         ultima_solicitud = SolicitudesViveros.objects.all().order_by('-nro_solicitud').first()
@@ -203,49 +204,49 @@ class CreateSolicitudViverosView(generics.CreateAPIView):
         #VALIDACIÓN QUE EL VIVERO SELECCIONADO EXISTA
         vivero = Vivero.objects.filter(id_vivero=data_solicitud['id_vivero_solicitud']).first()
         if not vivero:
-            return Response({'success': False, 'detail': 'El vivero seleccionado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('El vivero seleccionado no existe')
         if vivero.fecha_cierre_actual != None:
-            return Response({'success': False, 'detail': 'El vivero seleccionado no puede estar cerrado'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('El vivero seleccionado no puede estar cerrado')
         
         #VALIDACIÓN QUE LA UNIDAD PARA LA QUE SOLICITA ESTÉ DENTRO DE LA LINEA JERARQUICA DE LA PERSONA LOGEADA
         linea_jerarquica = UtilConservacion.get_linea_jerarquica(persona_logeada)
         linea_jerarquica_id = [unidad.id_unidad_organizacional for unidad in linea_jerarquica]
         if data_solicitud['id_unidad_para_la_que_solicita'] not in linea_jerarquica_id:
-            return Response({'success': False, 'detail': 'La unidad seleccionada debe hacer parte de su linea jerarquica'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('La unidad seleccionada debe hacer parte de su linea jerarquica')
         
         #VALIDACIÓN PARA QUE LA UNIDAD DEL RESPONSABLE SEA DE MISMA O SUPERIOR NIVEL EN LA LINEA JERARQUICA
         linea_jerarquica = UtilConservacion.get_linea_jerarquica_superior(persona_logeada)
         linea_jerarquica_id = [unidad.id_unidad_organizacional for unidad in linea_jerarquica]
         if data_solicitud['id_unidad_org_del_responsable'] not in linea_jerarquica_id:
-            return Response({'success': False, 'detail': 'La unidad del responsable debe hacer parte de su linea jerarquica superior o igual'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('La unidad del responsable debe hacer parte de su linea jerarquica superior o igual')
 
         # VALIDACIÓN QUE EL ID BIEN ENVIADO CUMPLA CON LAS CONDICIONES DADAS POR EL EQUIPO DE MODELADO
         id_bienes = [bien['codigo_bien'] for bien in data_items_solicitud]
         id_bienes_instance = CatalogoBienes.objects.filter(codigo_bien__in=id_bienes)
         if len(set(id_bienes)) != len(id_bienes_instance):
-            return Response({'success': False, 'detail': 'Todos los bienes seleccionados deben existir'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Todos los bienes seleccionados deben existir')
         
-        #VALIDACIÓN QUE EL NUMERO DE SOLICITUD SEA ÚNICO POR ITEM
+        #VALIDACIÓN QUE EL NUMERO DE POSICIÓN SEA ÚNICO POR ITEM
         nro_posicion_list = [bien['nro_posicion'] for bien in data_items_solicitud]
         if len(nro_posicion_list) != len(set(nro_posicion_list)):
-            return Response({'success': False, 'detail': 'El numero de posición debe ser único para todos los items solicitados'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('El numero de posición debe ser único para todos los items solicitados')
             
         for bien in data_items_solicitud:
             bien = InventarioViveros.objects.filter(id_bien__codigo_bien=bien['codigo_bien'], id_vivero=vivero.id_vivero)
             if not bien:
-                return Response({'success': False, 'detail': 'El bien seleccionado no se encuentra relacionado al vivero seleccionado'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('El bien seleccionado no se encuentra relacionado al vivero seleccionado')
              
             if bien[0].id_bien.solicitable_vivero != True:
-                return Response({'success': False, 'detail': 'El bien seleccionado no es solicitable por vivero'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('El bien seleccionado no es solicitable por vivero')
             
             if bien[0].id_bien.cod_tipo_bien != 'C':
-                return Response({'success': False, 'detail': 'El bien seleccionado no es consumible'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('El bien seleccionado no es consumible')
                 
             if bien[0].id_bien.cod_tipo_elemento_vivero == 'HE':
-                return Response({'success': False, 'detail': 'El bien seleccionado debe ser de tipo insumo o material vegetal'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('El bien seleccionado debe ser de tipo insumo o material vegetal')
 
             if bien[0].id_bien.cod_tipo_elemento_vivero == 'MV' and bien[0].id_bien.es_semilla_vivero == True:
-                return Response({'success': False, 'detail': 'El bien seleccionado debe ser material vegetal que no sea semilla'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('El bien seleccionado debe ser material vegetal que no sea semilla')
 
             if bien[0].id_bien.cod_tipo_elemento_vivero == 'MV':
 
@@ -256,7 +257,7 @@ class CreateSolicitudViverosView(generics.CreateAPIView):
                         bien_in_inventario_no_germinacion.append(biensito)
 
                 if not bien_in_inventario_no_germinacion:
-                    return Response({'success': False, 'detail': 'El bien seleccionado no tiene lotes que cumplan las condiciones para ser solicitado'}, status=status.HTTP_403_FORBIDDEN) 
+                    raise PermissionDenied('El bien seleccionado no tiene lotes que cumplan las condiciones para ser solicitado') 
 
                 #VALIDACIÓN QUE EL BIEN EN ALGÚN LOTE TENGA SALDO DISPONIBLE
                 saldo_disponible = False
@@ -267,7 +268,7 @@ class CreateSolicitudViverosView(generics.CreateAPIView):
                         pass
                 
                 if saldo_disponible == False:
-                    return Response({'success': False, 'detail': 'El bien seleccionado no tiene ningun saldo disponible en viveros'}, status=status.HTTP_403_FORBIDDEN)
+                    raise PermissionDenied('El bien seleccionado no tiene ningun saldo disponible en viveros')
         
             elif bien[0].id_bien.cod_tipo_elemento_vivero == 'IN':
 
@@ -276,7 +277,7 @@ class CreateSolicitudViverosView(generics.CreateAPIView):
                 bien = bien_in_inventario.id_bien
                 bien.saldo_disponible = UtilConservacion.get_saldo_disponible_solicitud_viveros(bien_in_inventario)    
                 if not bien.saldo_disponible > 0:
-                    return Response({'success': False, 'detail': f'El bien {bien.nombre} de tipo insumo no tiene cantidades disponibles para solicitar'}, status=status.HTTP_403_FORBIDDEN)
+                    raise PermissionDenied (f'El bien {bien.nombre} de tipo insumo no tiene cantidades disponibles para solicitar')
 
         serializer = self.serializer_class(data=data_solicitud, many=False)
         serializer.is_valid(raise_exception=True)
@@ -294,7 +295,7 @@ class CreateSolicitudViverosView(generics.CreateAPIView):
         for bien in items_guardados:
             valores_creados_detalles.append({'nombre_bien': bien.id_bien.nombre})
 
-        descripcion = {"nombre_bien_sembrado": str(solicitud_maestro.nro_solicitud)}
+        descripcion = {"numero_solicitud": str(solicitud_maestro.nro_solicitud)}
         direccion=Util.get_client_ip(request)
         auditoria_data = {
             "id_usuario" : request.user.id_usuario,
@@ -318,19 +319,19 @@ class GetBienByCodigoViveroView(generics.ListAPIView):
         #VALIDACIONES SOBRE LA EXISTENCIA DEL BIEN Y EL TIPO DE BIEN ENVIADO
         bienes = InventarioViveros.objects.filter(id_bien__codigo_bien=codigito_bien, id_vivero=id_vivero)
         if not bienes:
-            return Response({'success': False, 'detail': 'El bien seleccionado no se encuentra relacionado al vivero seleccionado'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('El bien seleccionado no se encuentra relacionado al vivero seleccionado')
              
         if bienes[0].id_bien.solicitable_vivero != True:
-            return Response({'success': False, 'detail': 'El bien seleccionado no es solicitable por vivero'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('El bien seleccionado no es solicitable por vivero')
         
         if bienes[0].id_bien.cod_tipo_bien != 'C':
-            return Response({'success': False, 'detail': 'El bien seleccionado no es consumible'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('El bien seleccionado no es consumible')
             
         if bienes[0].id_bien.cod_tipo_elemento_vivero == 'HE':
-            return Response({'success': False, 'detail': 'El bien seleccionado debe ser de tipo insumo o material vegetal'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('El bien seleccionado debe ser de tipo insumo o material vegetal')
 
         if bienes[0].id_bien.cod_tipo_elemento_vivero=='MV' and bienes[0].id_bien.es_semilla_vivero==True:
-            return Response({'success': False, 'detail': 'El bien seleccionado debe ser material vegetal que no sea semilla'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('El bien seleccionado debe ser material vegetal que no sea semilla')
 
         if bienes[0].id_bien.cod_tipo_elemento_vivero == 'MV':
 
@@ -341,7 +342,7 @@ class GetBienByCodigoViveroView(generics.ListAPIView):
                     bien_in_inventario_no_germinacion.append(bien)
 
             if not bien_in_inventario_no_germinacion:
-                return Response({'success': False, 'detail': 'El bien seleccionado no tiene lotes que cumplan las condiciones para ser solicitado'}, status=status.HTTP_403_FORBIDDEN) 
+                raise PermissionDenied('El bien seleccionado no tiene lotes que cumplan las condiciones para ser solicitado') 
 
             #VALIDACIÓN QUE EL BIEN EN ALGÚN LOTE TENGA SALDO DISPONIBLE
             saldo_disponible = False
@@ -352,7 +353,7 @@ class GetBienByCodigoViveroView(generics.ListAPIView):
                     pass
             
             if saldo_disponible == False:
-                return Response({'success': False, 'detail': 'El bien seleccionado no tiene ningun saldo disponible en viveros'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('El bien seleccionado no tiene ningun saldo disponible en viveros')
             
             bien = bien_in_inventario_no_germinacion[0].id_bien
         
@@ -363,7 +364,7 @@ class GetBienByCodigoViveroView(generics.ListAPIView):
             bien = bien_in_inventario.id_bien
             bien.saldo_disponible = UtilConservacion.get_saldo_disponible_solicitud_viveros(bien_in_inventario)    
             if not bien.saldo_disponible > 0:
-                return Response({'success': False, 'detail': 'El bien de tipo insumo no tiene cantidades disponibles para solicitar'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('El bien de tipo insumo no tiene cantidades disponibles para solicitar')
                          
         serializer = self.serializer_class(bien, many=False)
         data = serializer.data
@@ -384,12 +385,12 @@ class GetBienByFiltrosView(generics.ListAPIView):
     def get(self, request, id_vivero):
         vivero = Vivero.objects.filter(id_vivero=id_vivero).first()
         if not vivero:
-            return Response({'success': False, 'detail': 'No se encontró ningún vivero con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontró ningún vivero con el parámetro ingresado')
         
         #CREACIÓN DE FILTROS SEGÚN QUERYPARAMS
         query_param = request.query_params.get('cod_tipo_elemento_vivero')
         if not query_param:
-            return Response({'success': False, 'detail': 'Es obligatorio seleccionar un tipo de bien'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Es obligatorio seleccionar un tipo de bien')
 
         if query_param == 'IN':
             #CREACIÓN DE FILTRO
@@ -431,7 +432,7 @@ class GetBienByFiltrosView(generics.ListAPIView):
             bienes_por_consumir = InventarioViveros.objects.filter(id_vivero=id_vivero)
             bienes_filtrados_pre = bienes_por_consumir.filter(**filter).exclude(id_bien__cod_tipo_elemento_vivero='MV', id_bien__es_semilla_vivero=True).exclude(cod_etapa_lote='G')
             if not bienes_filtrados_pre:
-                return Response({'success': False, 'detail': 'No existe ningún bien que se pueda consumir'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('No existe ningún bien que se pueda consumir')
             
             #UNIÓN DE TODOS LOS RESULTADOS QUE TENGAN EL MISMO ID_VIVERO, ID_BIEN Y COD_ETAPA_LOTE
             bienes_filtrados = bienes_filtrados_pre.values('id_vivero', 'id_bien', 'cod_etapa_lote').annotate(cantidad_entrante=Sum('cantidad_entrante'), cantidad_bajas=Sum('cantidad_bajas'), cantidad_consumos_internos=Sum('cantidad_consumos_internos'), cantidad_salidas=Sum('cantidad_salidas'))
@@ -503,18 +504,20 @@ class GetItemsSolicitudView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, id_solicitud):
+
         # VALIDACIÓN QUE LA SOLICITUD SELECCIONADA EXISTA
         solicitud = SolicitudesViveros.objects.filter(id_solicitud_vivero=id_solicitud).first()
         if not solicitud:
-            return Response({'success':False, 'detail':'La solicitud seleccionada no existe'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('La solicitud seleccionada no existe')
+        
         #VALIDACIÓN QUE LA SOLICITUD SELECCIONADA NO ESTÉ ANULADA
         if solicitud.solicitud_anulada_solicitante==True:
-            return Response({'success':False, 'detail':'La solicitud seleccionada se encuentra anulada'}, status=status.HTTP_400_BAD_REQUEST)    
+            raise ValidationError('La solicitud seleccionada se encuentra anulada')    
         
         #BUSCAR LOS ITEMS DE ESA SOLICITUD
         solicitudid = self.queryset.all().filter(id_solicitud_viveros=id_solicitud) 
-    
-        serializador = self.serializer_class (solicitudid, many=True)
+        serializador = self.serializer_class(solicitudid, many=True)
+
         return Response({'sucess':True, 'detail':'Busqueda exitosa','data': serializador.data}, status=status.HTTP_200_OK)
 
 class UpdateSolicitudesView(generics.UpdateAPIView):
@@ -531,44 +534,44 @@ class UpdateSolicitudesView(generics.UpdateAPIView):
         persona_logeada = request.user.persona
         
         if not persona_logeada.id_unidad_organizacional_actual:
-            return Response({'success': False, 'detail': 'La persona que realiza la busqueda debe estar asociada a una unidad organizacional'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('La persona que realiza la busqueda debe estar asociada a una unidad organizacional')
         if usuario_logeado.tipo_usuario != "I":
-            return Response({'success': False, 'detail': 'La persona que realiza la busqueda debe ser usuario interno'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('La persona que realiza la busqueda debe ser usuario interno')
 
         # VALIDACIÓN QUE LA SOLICITUD SELECCIONADA EXISTA
         solicitud_act = SolicitudesViveros.objects.filter(id_solicitud_vivero=id_solicitud).first()
         if not solicitud_act:
-            return Response({'success':False, 'detail':'La solicitud seleccionada no existe'}, status=status.HTTP_400_BAD_REQUEST) 
+            raise ValidationError('La solicitud seleccionada no existe') 
         solicitud_copy = copy.copy(solicitud_act)
 
         # VALIDACIÓN QUE LA PERSONA QUE ACTUALIZA ES LA MISMA QUE CREÓ LA SOLICITUD
         if solicitud_act.id_persona_solicita.id_persona != persona_logeada.id_persona:
-            return Response({'success':False, 'detail':'Solo la persona que realizó el registro de solicitud puede realizar actualizaciones'}, status=status.HTTP_403_FORBIDDEN) 
+            raise PermissionDenied('Solo la persona que realizó el registro de solicitud puede realizar actualizaciones') 
         
         # VALIDACIÓN QUE LA ACTUALIZACIÓN NO SE HAGA EN UN TIEMPO SUPERIOR A DOS DIAS
         if  datetime.now() > (solicitud_act.fecha_solicitud + timedelta(hours=48)):
-            return Response({'success':False, 'detail':'No se pueden realizar actualizaciones en solicitudes que tienen más de 2 días de haber sido creadas'}, status=status.HTTP_403_FORBIDDEN) 
+            raise PermissionDenied('No se pueden realizar actualizaciones en solicitudes que tienen más de 2 días de haber sido creadas') 
         
         # VALIDACIÓN ESTADO DE LA APROBACIÓN DEL RESPONSABLE DE LA UNIDAD
         if solicitud_act.revisada_responsable != False:
-            return Response({'success':False, 'detail':'No se pueden realizar actualizaciones en solicitudes que ya fueron aprobadas o rechazadas por el responsable de la unidad'}, status=status.HTTP_403_FORBIDDEN) 
+            raise PermissionDenied('No se pueden realizar actualizaciones en solicitudes que ya fueron aprobadas o rechazadas por el responsable de la unidad') 
         
         # VALIDACIÓN QUE EL FUNCIONARIO ENVIADO EXISTA
         persona_instance = Personas.objects.filter(id_persona=data_solicitud['id_funcionario_responsable_und_destino']).first()
         if not persona_instance:
-            return Response({'success':False, 'detail':'El funcionario no existe'}, status=status.HTTP_400_BAD_REQUEST) 
+            raise ValidationError('El funcionario no existe') 
            
         # VALIDACIÓN DE LINEA JERARQUICA SUPERIOR O IGUAL
         linea_jerarquica = UtilConservacion.get_linea_jerarquica_superior(persona_logeada)
         lista_unidades_permitidas = [unidad.id_unidad_organizacional for unidad in linea_jerarquica]
 
         if persona_instance.id_unidad_organizacional_actual.id_unidad_organizacional not in lista_unidades_permitidas:
-            return Response({'success': False, 'detail': 'No se puede seleccionar una persona que no esté al mismo nivel o superior en la linea jerarquica'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No se puede seleccionar una persona que no esté al mismo nivel o superior en la linea jerarquica')
 
         # VALIDACIÓN QUE LA FECHA SELECCIONADA SEA SUPERIOR A LA EXISTENTE
         fecha_strp = datetime.strptime(data_solicitud['fecha_retiro_material'], '%Y-%m-%d')
         if solicitud_act.fecha_solicitud <= fecha_strp:
-            return Response({'success': False, 'detail': 'La fecha seleccionada no es superior a la existente'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('La fecha seleccionada no es superior a la existente')
 
         serializer = self.serializer_class(solicitud_act, data=data_solicitud, many=False)
         serializer.is_valid(raise_exception=True)
@@ -580,7 +583,7 @@ class UpdateSolicitudesView(generics.UpdateAPIView):
        # AUDITORIA ACTUALIZAR SOLICITUD
         usuario = request.user.id_usuario
         direccion = Util.get_client_ip(request)
-        descripcion = {"nro_solicitud": str(instancia_post_save.nro_solicitud)}
+        descripcion = {"numero_solicitud": str(instancia_post_save.nro_solicitud)}
         valores_actualizados = {'current': serializador, 'previous': solicitud_copy}
         auditoria_data = {
             "id_usuario" : usuario,
@@ -604,6 +607,7 @@ class AnulacionSolicitudesView(generics.RetrieveUpdateAPIView):
     def put(self, request, solicitudsita):   
         #VALIDACIÓN QUE LA SOLICITUD SELECCIONADA EXISTA            
         solicitud_anular = SolicitudesViveros.objects.filter(id_solicitud_vivero=solicitudsita).first()
+        copia_solicitud = copy.copy(solicitud_anular)
         if not solicitud_anular.solicitud_abierta == True and not solicitud_anular.gestionada_viveros == False:
             return Response({'success':False, 'detail':'La solicitud ya ha sido gestionada por viveros y no puede ser anulada'}, status=status.HTTP_200_OK)
         
@@ -616,7 +620,25 @@ class AnulacionSolicitudesView(generics.RetrieveUpdateAPIView):
 
         # ELIMINACIÓN DE ITEMS DE SOLICITUD
         items_anulacion = ItemSolicitudViveros.objects.filter(id_solicitud_viveros=solicitud_anular)
-        items_anulacion.delete()  
+        valores_eliminados_detalles = []
+        for item in items_anulacion:
+            valores_eliminados_detalles.append({'nombre' : item.id_bien.nombre})
+            item.delete()  
+
+        # AUDITORIA ANULAR SOLICITUD
+        usuario = request.user.id_usuario
+        direccion = Util.get_client_ip(request)
+        descripcion = {"numero_solicitud": str(copia_solicitud.nro_solicitud)}
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 60,
+            "cod_permiso": "AN",
+            "subsistema": 'CONS',
+            "dirip": direccion,
+            "descripcion": descripcion, 
+            "valores_eliminados_detalles": valores_eliminados_detalles
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
 
         return Response({'success':True, 'detail':'La solicitud ha sido anulada con éxito'}, status=status.HTTP_200_OK)             
             
@@ -633,24 +655,51 @@ class DeleteItemsSolicitudView(generics.RetrieveDestroyAPIView):
         solicitud = SolicitudesViveros.objects.filter(id_solicitud_vivero=id_solicitud).first()
         if not solicitud:
             return Response({'success': False, 'detail': 'No se encontró ningún vivero con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+        
+        #VALIDACIÓN QUE LA PERSONA QUE HACE LA SOLICITUD TENGA UNIDAD ORGANIZACIONAL Y SEA USUARIO INTERNO
+        usuario_logeado = request.user
+        persona_logeada = request.user.persona
+        
+        if not persona_logeada.id_unidad_organizacional_actual:
+            raise ValidationError('La persona que realiza la acción debe estar asociada a una unidad organizacional')
+        if usuario_logeado.tipo_usuario != "I":
+            raise ValidationError('La persona que realiza la acción debe ser usuario interno')
+
+        # VALIDACIÓN QUE LA SOLICITUD SELECCIONADA EXISTA
+        solicitud_instance = SolicitudesViveros.objects.filter(id_solicitud_vivero=id_solicitud).first()
+        if not solicitud_instance:
+            raise ValidationError('La solicitud seleccionada no existe') 
+        solicitud_copy = copy.copy(solicitud_instance)
+
+        # VALIDACIÓN QUE LA PERSONA QUE ACTUALIZA ES LA MISMA QUE CREÓ LA SOLICITUD
+        if solicitud_instance.id_persona_solicita.id_persona != persona_logeada.id_persona:
+            raise PermissionDenied('Solo la persona que realizó el registro de solicitud puede realizar actualizaciones') 
+        
+        # VALIDACIÓN QUE LA ACTUALIZACIÓN NO SE HAGA EN UN TIEMPO SUPERIOR A DOS DIAS
+        if datetime.now() > (solicitud_instance.fecha_solicitud + timedelta(hours=48)):
+            raise PermissionDenied('No se pueden realizar actualizaciones en solicitudes que tienen más de 2 días de haber sido creadas') 
+        
+        # VALIDACIÓN ESTADO DE LA APROBACIÓN DEL RESPONSABLE DE LA UNIDAD
+        if solicitud_instance.revisada_responsable != False:
+            raise PermissionDenied('No se pueden realizar actualizaciones en solicitudes que ya fueron aprobadas o rechazadas por el responsable de la unidad')
 
         #VALIDACIÓN QUE TODOS LOS ID DE LOS ITEMS ENVIADOS EXISTAN
         id_items_list = [item['id_item_solicitud_viveros'] for item in data_items]
         id_items_list_instance = ItemSolicitudViveros.objects.filter(id_item_solicitud_viveros__in=id_items_list)
         if len(set(id_items_list)) != len(id_items_list_instance):
-            return Response({'success': False, 'detail': 'Los items seleccionados para eliminar deben existir'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Los items seleccionados para eliminar deben existir')
 
         #VALIDACIÓN QUE TODOS LOS ITEMS ENVIADOS PERTENEZCAN A LA SOLICITUD ENVIADA
         id_solicitud_list = [item.id_solicitud_viveros.id_solicitud_vivero for item in id_items_list_instance]
         if len(set(id_solicitud_list)) > 1:
-            return Response({'success': False, 'detail': 'Todos los items seleccionados deben pertenecer a una sola solicitud'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Todos los items seleccionados deben pertenecer a una sola solicitud')
         if id_solicitud_list[0] != int(id_solicitud):
-            return Response({'success': False, 'detail': 'Todos los items por eliminar deben pertenecer a la solicitud seleccionada'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Todos los items por eliminar deben pertenecer a la solicitud seleccionada')
         
         #VALIDACIÓN QUE NO ELIMINE TODOS LOS ITEMS DE LA SOLICITUD ENVIADOS
         items_solicitud = ItemSolicitudViveros.objects.filter(id_solicitud_viveros=id_solicitud)
         if len(items_solicitud) == len(id_items_list):
-            return Response({'success': False, 'detail': 'No se pueden eliminar todos los items de una solicitud'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No se pueden eliminar todos los items de una solicitud')
         
         #ELIMINACION DE TODOS LOS ITEMS ENVIADOS
         valores_eliminados_detalles = []
@@ -659,7 +708,7 @@ class DeleteItemsSolicitudView(generics.RetrieveDestroyAPIView):
             item.delete()
 
         # AUDITORIA ELIMINACIÓN DE ITEMS SOLICITUD
-        descripcion = ({"numero_despacho_almacen": str(solicitud.nro_solicitud)})
+        descripcion = ({"numero_solicitud": str(solicitud.nro_solicitud)})
         direccion=Util.get_client_ip(request)
         auditoria_data = {
             "id_usuario" : request.user.id_usuario,
@@ -673,3 +722,167 @@ class DeleteItemsSolicitudView(generics.RetrieveDestroyAPIView):
         Util.save_auditoria_maestro_detalle(auditoria_data)
 
         return Response({'success': True, 'detail': 'Items eliminados exitosamente'}, status=status.HTTP_200_OK)
+
+class UpdateItemsSolicitudView(generics.RetrieveUpdateAPIView):
+    serializer_class = UpdateItemsSolicitudSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = ItemSolicitudViveros.objects.all()
+    lookup_field = 'id_solicitud'
+    lookup_url_kwarg = 'id_solicitud'
+    
+    def patch(self, request, id_solicitud):
+        data = request.data
+
+        #VALIDACIÓN QUE LA PERSONA QUE HACE LA SOLICITUD TENGA UNIDAD ORGANIZACIONAL Y SEA USUARIO INTERNO
+        usuario_logeado = request.user
+        persona_logeada = request.user.persona
+        
+        if not persona_logeada.id_unidad_organizacional_actual:
+            raise ValidationError('La persona que realiza la acción debe estar asociada a una unidad organizacional')
+        if usuario_logeado.tipo_usuario != "I":
+            raise ValidationError('La persona que realiza la acción debe ser usuario interno')
+
+        # VALIDACIÓN QUE LA SOLICITUD SELECCIONADA EXISTA
+        solicitud_instance = SolicitudesViveros.objects.filter(id_solicitud_vivero=id_solicitud).first()
+        if not solicitud_instance:
+            raise ValidationError('La solicitud seleccionada no existe') 
+        solicitud_copy = copy.copy(solicitud_instance)
+
+        # VALIDACIÓN QUE LA PERSONA QUE ACTUALIZA ES LA MISMA QUE CREÓ LA SOLICITUD
+        if solicitud_instance.id_persona_solicita.id_persona != persona_logeada.id_persona:
+            raise PermissionDenied('Solo la persona que realizó el registro de solicitud puede realizar actualizaciones') 
+        
+        # VALIDACIÓN QUE LA ACTUALIZACIÓN NO SE HAGA EN UN TIEMPO SUPERIOR A DOS DIAS
+        if datetime.now() > (solicitud_instance.fecha_solicitud + timedelta(hours=48)):
+            raise PermissionDenied('No se pueden realizar actualizaciones en solicitudes que tienen más de 2 días de haber sido creadas') 
+        
+        # VALIDACIÓN ESTADO DE LA APROBACIÓN DEL RESPONSABLE DE LA UNIDAD
+        if solicitud_instance.revisada_responsable != False:
+            raise PermissionDenied('No se pueden realizar actualizaciones en solicitudes que ya fueron aprobadas o rechazadas por el responsable de la unidad')
+        
+        #SEPARACIÓN DE DATA ENTRE LO QUE SE ACTUALIZA Y LO QUE SE CREA
+        data_items_actualizacion = [item for item in data if item['id_item_solicitud_viveros'] != None and item['id_item_solicitud_viveros'] != '']
+        data_items_creacion = [item for item in data if item['id_item_solicitud_viveros'] == None or item['id_item_solicitud_viveros'] == '']
+
+        #INICIA PROCESO DE VALIDACIONES PARA CREACIÓN
+
+        # VALIDACIÓN QUE EL ID BIEN ENVIADO CUMPLA CON LAS CONDICIONES DADAS POR EL EQUIPO DE MODELADO
+        id_bienes = [bien['codigo_bien'] for bien in data_items_creacion]
+        id_bienes_instance = CatalogoBienes.objects.filter(codigo_bien__in=id_bienes)
+        if len(set(id_bienes)) != len(id_bienes_instance):
+            raise ValidationError('Todos los bienes seleccionados deben existir')
+        
+        #VALIDACIÓN QUE EL NUMERO DE POSICIÓN SEA ÚNICO POR ITEM
+        nro_posicion_list = [bien['nro_posicion'] for bien in data]
+        if len(nro_posicion_list) != len(set(nro_posicion_list)):
+            raise ValidationError('El numero de posición debe ser único para todos los items solicitados')
+            
+        for biensito in data_items_creacion:
+            print('revienta acpa')
+            bien = InventarioViveros.objects.filter(id_bien__codigo_bien=biensito['codigo_bien'], id_vivero=solicitud_instance.id_vivero_solicitud.id_vivero)
+            if not bien:
+                raise PermissionDenied('El bien seleccionado no se encuentra relacionado al vivero seleccionado')
+             
+            if bien[0].id_bien.solicitable_vivero != True:
+                raise PermissionDenied('El bien seleccionado no es solicitable por vivero')
+            
+            if bien[0].id_bien.cod_tipo_bien != 'C':
+                raise PermissionDenied('El bien seleccionado no es consumible')
+                
+            if bien[0].id_bien.cod_tipo_elemento_vivero == 'HE':
+                raise PermissionDenied('El bien seleccionado debe ser de tipo insumo o material vegetal')
+
+            if bien[0].id_bien.cod_tipo_elemento_vivero == 'MV' and bien[0].id_bien.es_semilla_vivero == True:
+                raise PermissionDenied('El bien seleccionado debe ser material vegetal que no sea semilla')
+
+            if bien[0].id_bien.cod_tipo_elemento_vivero == 'MV':
+
+                #VALIDACIÓN QUE LOS BIENES ESTÉN EN ALGUN LOTE ETAPA DE DISTRIBUCIÓN O PRODUCCIÓN
+                bien_in_inventario_no_germinacion = []
+                for biensito in bien:
+                    if biensito.cod_etapa_lote != 'G':
+                        bien_in_inventario_no_germinacion.append(biensito)
+
+                if not bien_in_inventario_no_germinacion:
+                    raise PermissionDenied('El bien seleccionado no tiene lotes que cumplan las condiciones para ser solicitado') 
+
+                #VALIDACIÓN QUE EL BIEN EN ALGÚN LOTE TENGA SALDO DISPONIBLE
+                saldo_disponible = False
+                for bien in bien_in_inventario_no_germinacion:
+                    bien.id_bien.saldo_disponible = UtilConservacion.get_saldo_disponible_solicitud_viveros(bien)
+                    if bien.id_bien.saldo_disponible > 0:
+                        saldo_disponible = True
+                        pass
+                
+                if saldo_disponible == False:
+                    raise PermissionDenied('El bien seleccionado no tiene ningun saldo disponible en viveros')
+        
+            elif bien[0].id_bien.cod_tipo_elemento_vivero == 'IN':
+
+                #VALIDACIÓN QUE EL BIEN TENGA SALDO DISPONIBLE
+                bien_in_inventario = bien.first()
+                bien = bien_in_inventario.id_bien
+                bien.saldo_disponible = UtilConservacion.get_saldo_disponible_solicitud_viveros(bien_in_inventario)    
+                if not bien.saldo_disponible > 0:
+                    raise PermissionDenied (f'El bien {bien.nombre} de tipo insumo no tiene cantidades disponibles para solicitar')
+
+
+        #GUARDADO DE ITEMS QUE SE ESTÁN CREANDO
+        serializador_items = CreateItemsSolicitudSerializer(data=data_items_creacion, many=True)
+        serializador_items.is_valid(raise_exception=True)
+        items_guardados = serializador_items.save()
+
+        items_finales = ItemSolicitudViveros.objects.filter(id_solicitud_viveros=id_solicitud).order_by('nro_posicion')
+        serializador = ListarSolicitudIDSerializer(items_finales, many=True)
+        
+        # AUDITORIA SOLICITUDES A VIVEROS
+        valores_creados_detalles = []
+        for bien in items_guardados:
+            valores_creados_detalles.append({'nombre_bien': bien.id_bien.nombre})
+
+        descripcion = {"numero_solicitud": str(solicitud_instance.nro_solicitud)}
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 60,
+            "cod_permiso": "CR",
+            "subsistema": 'CONS',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_creados_detalles": valores_creados_detalles
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
+        return Response({'success': True, 'detail': 'Actualización exitosa', 'data': serializador.data}, status=status.HTTP_201_CREATED)
+
+
+class CerrarSolicitudNoDisponibilidadView(generics.RetrieveUpdateAPIView):
+    serializer_class = CerrarSolicitudNoDisponibilidadSerializer
+    queryset = SolicitudesViveros.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, id_solicitud):
+        data = request.data
+
+        solicitud = SolicitudesViveros.objects.filter(id_solicitud_vivero=id_solicitud).first()
+        if not solicitud:
+            raise ValidationError('La solicitud seleccionada no existe') 
+
+        if solicitud.solicitud_abierta != True and solicitud.gestionada_viveros == True:
+            raise ValidationError('La solicitud seleccionada ya fue gestionada') 
+
+        if datetime.now().date() <= solicitud.fecha_retiro_material:
+            raise ValidationError('Para que la solicitud sea cerrada por no disponibilidad, la fecha de retiro de material debe ser superior') 
+
+        data['fecha_cierre_no_dispo'] = datetime.now()
+        data['id_persona_cierre_no_dispo_viveros'] = request.user.persona.id_persona
+        data['solicitud_abierta'] = False
+        data['fecha_cierra_solicitud'] = datetime.now()
+        data['gestionada_viveros'] = True
+
+        serializer = self.serializer_class(solicitud, data=data)
+        serializer.is_valid(raise_exception=True)
+        serializador = serializer.save()
+
+        data = GetSolicitudesViverosSerializer(solicitud, many=False).data
+
+        return Response({'success': True, 'detail': 'Solicitud cerrada por no disponibilidad exitosamente', 'data': data}, status=status.HTTP_201_CREATED)

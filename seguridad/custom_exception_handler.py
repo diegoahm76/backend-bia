@@ -23,11 +23,13 @@ def api_exception_handler(exc, context):
                             value[i] = 'No es una opción válida' if 'is not a valid choice.' in value[i] else value[i]
                             value[i] = 'El valor ingresado no existe' if 'object does not exist.' in value[i] else value[i]
                             value[i] = 'Debe adjuntar un archivo' if value[i] == 'No file was submitted.' else value[i]
-                            value[i] = 'Ya existe un registro con el valor ingresado' if 'with this nombre already exists.' in value[i] else value[i]
-                            value[i] = 'El campo no debe ser nulo' if value[i] == 'This field may not be null.' else value[i]
-                            value[i] = 'Debe enviar un archivo válido' if value[i] == 'The submitted data was not a file. Check the encoding type on the form.' else value[i]
                             value[i] = 'El nombre de usuario ya existe' if value[i] == 'Usuario with this nombre de usuario already exists.' else value[i]
                             value[i] = 'Esta persona ya tiene un usuario' if value[i] == 'Usuario with this persona already exists.' else value[i]
+                            value[i] = 'Ya existe un registro con el valor ingresado' if 'already exists.' in value[i] else value[i]
+                            value[i] = 'El campo no debe ser nulo' if value[i] == 'This field may not be null.' else value[i]
+                            value[i] = 'Debe enviar un archivo válido' if value[i] == 'The submitted data was not a file. Check the encoding type on the form.' else value[i]
+                            value[i] = 'La contraseña debe tener mínimo 8 carácteres' if value[i] == 'Ensure this field has at least 8 characters.' else value[i]
+                            value[i] = 'Ingrese un correo válido' if value[i] == 'Enter a valid email address.' else value[i]
                         error_message += key.replace('_',' ').title() + ': ' + ','.join(value) + separator
                     else:
                         error_message += value
@@ -45,12 +47,14 @@ def api_exception_handler(exc, context):
                         value[i] = 'No es una opción válida' if 'is not a valid choice.' in value[i] else value[i]
                         value[i] = 'El valor ingresado no existe' if 'object does not exist.' in value[i] else value[i]
                         value[i] = 'Debe adjuntar un archivo' if value[i] == 'No file was submitted.' else value[i]
-                        value[i] = 'Ya existe un registro con el valor ingresado' if 'with this nombre already exists.' in value[i] else value[i]
-                        value[i] = 'El campo no debe ser nulo' if value[i] == 'This field may not be null.' else value[i]
-                        value[i] = 'Debe enviar un archivo válido' if value[i] == 'The submitted data was not a file. Check the encoding type on the form.' else value[i]
                         value[i] = 'Esta persona ya tiene un usuario' if value[i] == 'Usuario with this persona already exists.' else value[i]
                         value[i] = 'El nombre de usuario ya existe' if value[i] == 'Usuario with this nombre de usuario already exists.' else value[i]
-                           
+                        value[i] = 'Ya existe un registro con el valor ingresado' if 'already exists.' in value[i] else value[i]
+                        value[i] = 'El campo no debe ser nulo' if value[i] == 'This field may not be null.' else value[i]
+                        value[i] = 'Debe enviar un archivo válido' if value[i] == 'The submitted data was not a file. Check the encoding type on the form.' else value[i]
+                        value[i] = 'La contraseña debe tener mínimo 8 carácteres' if value[i] == 'Ensure this field has at least 8 characters.' else value[i]
+                        value[i] = 'Ingrese un correo válido' if value[i] == 'Enter a valid email address.' else value[i]
+            
                     separator = ', '
                     if index == len(error_message_dict)-1:
                         separator = ''
@@ -62,6 +66,7 @@ def api_exception_handler(exc, context):
             error_message = response.data
         
         #error_message = response.data
+        error_message = error_message[0] if isinstance(error_message, list) else error_message
         
         error_payload = {
             "success": False,

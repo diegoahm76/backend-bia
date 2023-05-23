@@ -13,7 +13,8 @@ from almacen.serializers.bienes_serializers import (
     ItemEntradaSerializer,
     EntradaSerializer,
     CatalogoBienesActivoFijoPutSerializer,
-    SerializerItemEntradaConsumoPut
+    SerializerItemEntradaConsumoPut,
+    TiposEntradasSerializer
 )
 from almacen.models.hoja_de_vida_models import (
     HojaDeVidaComputadores,
@@ -39,7 +40,7 @@ from almacen.models.bienes_models import EntradasAlmacen, ItemEntradaAlmacen
 from seguridad.utils import Util
 from django.db.models import Q
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from datetime import timezone
@@ -65,25 +66,25 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                         id_unidad_medida=data['id_unidad_medida'])
                     pass
                 except:
-                    return Response({'success': False, 'detail': 'El id de unidad de medida ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('El id de unidad de medida ingresado no existe')
                 try:
                     id_porcentaje_iva = PorcentajesIVA.objects.get(
                         id_porcentaje_iva=data['id_porcentaje_iva'])
                     pass
                 except:
-                    return Response({'success': False, 'detail': 'El id de porcentaje de iva ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('El id de porcentaje de iva ingresado no existe')
                 try:
                     id_unidad_medida_vida_util = UnidadesMedida.objects.get(
                         id_unidad_medida=data['id_unidad_medida_vida_util'])
                     pass
                 except:
-                    return Response({'success': False, 'detail': 'El id de unidad de medida vida util ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('El id de unidad de medida vida util ingresado no existe')
                 try:
                     if data['id_marca']:
                         id_marca = Marcas.objects.get(id_marca=data['id_marca'])
                     pass
                 except:
-                    return Response({'success': False, 'detail': 'El id de marca ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('El id de marca ingresado no existe')
 
                 match data['cod_tipo_bien']:
                     case 'A':
@@ -118,9 +119,9 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                             catalogo_bien, many=False)
                         return Response(serializer.data, status=status.HTTP_200_OK)
                     case _:
-                        return Response({'success': False, 'detail': 'No hay ningun bien referente al id_bien enviado'}, status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('No hay ningun bien referente al id_bien enviado')
             else:
-                return Response({'success': False, 'detail': 'No hay ningun bien referente al id_bien enviado'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('No hay ningun bien referente al id_bien enviado')
         # Create
         else:
             # match de los 5 niveles jerarquicos
@@ -128,46 +129,46 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                 case 1:
                     if int(data['codigo_bien']) >= 1 and len(data['codigo_bien']) == 1:
                         if CatalogoBienes.objects.filter(codigo_bien=data['codigo_bien']).exists():
-                            return Response({'success': False, 'detail': 'Ya existe un codigo de bien relacionado en catalogo de bienes'}, status=status.HTTP_400_BAD_REQUEST)
+                            raise ValidationError('Ya existe un codigo de bien relacionado en catalogo de bienes')
                         else:
                             nivel_bien_padre = None
 
                     else:
                         print(len(data['codigo_bien']))
-                        return Response({'success': False, 'detail': 'Codigo bien fuera de rango'}, status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('Codigo bien fuera de rango')
                 case 2:
                     if (int(data['codigo_bien'][0])) >= 1 and len(data['codigo_bien']) == 2:
                         if CatalogoBienes.objects.filter(codigo_bien=data['codigo_bien']).exists():
-                            return Response({'success': False, 'detail': 'Ya existe un codigo de bien relacionado en catalogo de bienes'}, status=status.HTTP_400_BAD_REQUEST)
+                            raise ValidationError('Ya existe un codigo de bien relacionado en catalogo de bienes')
                         else:
                             nivel_bien_padre = 1
                     else:
                         print((int(data['codigo_bien'][0])) >= 1)
                         print(len(data['codigo_bien']) == 2)
-                        return Response({'success': False, 'detail': 'Codigo bien fuera de rango'}, status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('Codigo bien fuera de rango')
                 case 3:
                     if int(data['codigo_bien'][0]) >= 1 and len(data['codigo_bien']) == 4:
                         if CatalogoBienes.objects.filter(codigo_bien=data['codigo_bien']).exists():
-                            return Response({'success': False, 'detail': 'Ya existe un codigo de bien relacionado en catalogo de bienes'}, status=status.HTTP_400_BAD_REQUEST)
+                            raise ValidationError('Ya existe un codigo de bien relacionado en catalogo de bienes')
                         else:
                             nivel_bien_padre = 2
                     else:
-                        return Response({'success': False, 'detail': 'Codigo bien fuera de rango'}, status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('Codigo bien fuera de rango')
                 case 4:
                     if int(data['codigo_bien'][0]) >= 1 and len(data['codigo_bien']) == 7:
                         if CatalogoBienes.objects.filter(codigo_bien=data['codigo_bien']).exists():
-                            return Response({'success': False, 'detail': 'Ya existe un codigo de bien relacionado en catalogo de bienes'}, status=status.HTTP_400_BAD_REQUEST)
+                            raise ValidationError('Ya existe un codigo de bien relacionado en catalogo de bienes')
                         else:
                             nivel_bien_padre = 3
                     else:
-                        return Response({'success': False, 'detail': 'Codigo bien fuera de rango'}, status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('Codigo bien fuera de rango')
                 case 5:
                     if int(data['codigo_bien'][0]) >= 1 and len(data['codigo_bien']) == 12:
                         nivel_bien_padre = 4
                     else:
-                        return Response({'success': False, 'detail': 'Codigo bien fuera de rango'}, status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('Codigo bien fuera de rango')
                 case _:
-                    return Response({'success': False, 'detail': 'Nivel jerarquico fuera de rango'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('Nivel jerarquico fuera de rango')
 
             match data['cod_tipo_bien']:
                 case 'A':
@@ -181,23 +182,23 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                     id_unidad_medida = UnidadesMedida.objects.get(id_unidad_medida=data['id_unidad_medida'])
                                     pass
                                 except:
-                                    return Response({'success':False, 'detail':'El id de unidad de medida ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                                   raise ValidationError('El id de unidad de medida ingresado no existe')
                                 try:
                                     id_porcentaje_iva = PorcentajesIVA.objects.get(id_porcentaje_iva=data['id_porcentaje_iva'])
                                     pass
                                 except:
-                                    return Response({'success':False, 'detail':'El id de porcentaje de iva ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                                    raise ValidationError('El id de porcentaje de iva ingresado no existe')
                                 try:
                                     id_unidad_medida_vida_util = UnidadesMedida.objects.get(id_unidad_medida=data['id_unidad_medida_vida_util'])
                                     pass
                                 except:
-                                    return Response({'success':False, 'detail':'El id de unidad de medida vida util ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                                    raise ValidationError('El id de unidad de medida vida util ingresado no existe')
                                 try:
                                     if data['id_marca']:
                                         id_marca = Marcas.objects.get(id_marca=data['id_marca'])
                                     pass
                                 except:
-                                    return Response({'success':False, 'detail':'El id de marca ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                                    raise ValidationError('El id de marca ingresado no existe')
                                 catalogo_bien = CatalogoBienes.objects.create(
                                     id_bien=data['id_bien'],
                                     codigo_bien=data['codigo_bien'],
@@ -219,32 +220,32 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                 )
                                 serializer = self.serializer_class(catalogo_bien)
                         else:
-                            return Response({'success':False, 'detail':'el nivel del bien padre no corresponde con el nivel anterior'})
+                            raise ValidationError('el nivel del bien padre no corresponde con el nivel anterior')
                     elif data['nivel_jerarquico'] == 1:
                             try:
                                 id_unidad_medida = UnidadesMedida.objects.get(
                                     id_unidad_medida=data['id_unidad_medida'])
                                 pass
                             except:
-                                return Response({'success': False, 'detail': 'El id de unidad de medida ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                                raise ValidationError('El id de unidad de medida ingresado no existe')
                             try:
                                 id_porcentaje_iva = PorcentajesIVA.objects.get(
                                     id_porcentaje_iva=data['id_porcentaje_iva'])
                                 pass
                             except:
-                                return Response({'success': False, 'detail': 'El id de porcentaje de iva ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                                raise ValidationError('El id de porcentaje de iva ingresado no existe')
                             try:
                                 id_unidad_medida_vida_util = UnidadesMedida.objects.get(
                                     id_unidad_medida=data['id_unidad_medida_vida_util'])
                                 pass
                             except:
-                                return Response({'success': False, 'detail': 'El id de unidad de medida vida util ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                                raise ValidationError('El id de unidad de medida vida util ingresado no existe')
                             try:
                                 if data['id_marca']:
                                     id_marca = Marcas.objects.get(id_marca=data['id_marca'])
                                 pass
                             except:
-                                return Response({'success': False, 'detail': 'El id de marca ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                                raise ValidationError('El id de marca ingresado no existe')
                             catalogo_bien = CatalogoBienes.objects.create(
                                 id_bien=data['id_bien'],
                                 codigo_bien=data['codigo_bien'],
@@ -277,13 +278,13 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                     id_unidad_medida=data['id_unidad_medida'])
                                 pass
                             except:
-                                return Response({'success': False, 'detail': 'El id de unidad de medida ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                                raise ValidationError('El id de unidad de medida ingresado no existe')
                             try:
                                 id_porcentaje_iva = PorcentajesIVA.objects.get(
                                     id_porcentaje_iva=data['id_porcentaje_iva'])
                                 pass
                             except:
-                                return Response({'success': False, 'detail': 'El id de porcentaje de iva ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                                raise ValidationError('El id de porcentaje de iva ingresado no existe')
                             catalogo_bien = CatalogoBienes.objects.create(
                                 id_bien=data['id_bien'],
                                 codigo_bien=data['codigo_bien'],
@@ -298,24 +299,25 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                 stock_minimo=data['stock_minimo'],
                                 stock_maximo=data['stock_maximo'],
                                 solicitable_vivero=data['solicitable_vivero'],
+                                visible_solicitudes=data['visible_solicitudes'],
                                 id_bien_padre=padre
                             )
                             serializer = self.serializer_class(catalogo_bien)
                         else:
-                            return Response({'success':False, 'detail':'el nivel del bien padre no corresponde con el nivel anterior'})
+                            raise ValidationError('el nivel del bien padre no corresponde con el nivel anterior')
                     elif data['nivel_jerarquico'] == 1:
                         try:
                             id_unidad_medida = UnidadesMedida.objects.get(
                                 id_unidad_medida=data['id_unidad_medida'])
                             pass
                         except:
-                            return Response({'success': False, 'detail': 'El id de unidad de medida ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                            raise ValidationError('El id de unidad de medida ingresado no existe')
                         try:
                             id_porcentaje_iva = PorcentajesIVA.objects.get(
                                 id_porcentaje_iva=data['id_porcentaje_iva'])
                             pass
                         except:
-                            return Response({'success': False, 'detail': 'El id de porcentaje de iva ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                            raise ValidationError('El id de porcentaje de iva ingresado no existe')
 
                         catalogo_bien = CatalogoBienes.objects.create(
                             id_bien=data['id_bien'],
@@ -331,11 +333,12 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                             stock_minimo=data['stock_minimo'],
                             stock_maximo=data['stock_maximo'],
                             solicitable_vivero=data['solicitable_vivero'],
+                            visible_solicitudes=data['visible_solicitudes'],
                             id_bien_padre=None
                         )
                         serializer = self.serializer_class(catalogo_bien)
                             
-            return Response({'success': False, 'detail': 'Bien guardado exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+            return Response({'success':True, 'detail':'Bien guardado exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
 
 
 class GetCatalogoBienesList(generics.ListAPIView):
@@ -441,7 +444,7 @@ class GetCatalogoBienesList(generics.ListAPIView):
                                             
                                             data_cinco['data']['eliminar'] = True if not elementos else False
                                             data_cinco['data']['crear'] = False
-                                            data_cinco['data']['bien'] = nodo_cuatro
+                                            data_cinco['data']['bien'] = nodo_cinco
                                             data_cinco['children'] = []
                                             data_cuatro['children'].append(data_cinco)
                                             cont_cinco += 1
@@ -469,7 +472,7 @@ class DeleteNodos(generics.RetrieveDestroyAPIView):
                 registra_movimiento = Inventario.objects.filter(
                     id_bien=nodo.id_bien)
                 if registra_movimiento:
-                    return Response({'success': False, 'detail': 'No se puede eliminar un elemento que tenga movimientos en inventario'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('No se puede eliminar un elemento que tenga movimientos en inventario')
                 nodo.delete()
 
                 # Auditoria Crear Organigrama
@@ -486,11 +489,11 @@ class DeleteNodos(generics.RetrieveDestroyAPIView):
                     "descripcion": descripcion,
                 }
                 Util.save_auditoria(auditoria_data)
-                return Response({'success': True, 'detail': 'Eliminado el elemento'}, status=status.HTTP_200_OK)
+                return Response({'success':True, 'detail':'Eliminado el elemento'}, status=status.HTTP_200_OK)
 
             hijos = CatalogoBienes.objects.filter(id_bien_padre=nodo.id_bien)
             if hijos:
-                return Response({'success': False, 'detail': 'No se puede eliminar un bien si es padre de otros bienes'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('No se puede eliminar un bien si es padre de otros bienes')
             nodo.delete()
 
             # Auditoria Crear Organigrama
@@ -507,9 +510,9 @@ class DeleteNodos(generics.RetrieveDestroyAPIView):
                 "descripcion": descripcion,
             }
             Util.save_auditoria(auditoria_data)
-            return Response({'success': True, 'detail': 'Se ha eliminado el bien correctamente'}, status=status.HTTP_200_OK)
+            return Response({'success':True, 'detail':'Se ha eliminado el bien correctamente'}, status=status.HTTP_200_OK)
         else:
-            return Response({'success': False, 'detail': 'No se encontró ningún nodo con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontró ningún nodo con el parámetro ingresado')
 
 
 class GetElementosByIdNodo(generics.ListAPIView):
@@ -523,9 +526,9 @@ class GetElementosByIdNodo(generics.ListAPIView):
             elementos = CatalogoBienes.objects.filter(
                 Q(codigo_bien=id_nodo) & ~Q(nro_elemento_bien=None))
             elementos_serializer = self.serializer_class(elementos, many=True)
-            return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': elementos_serializer.data})
+            return Response({'success':True, 'detail':'Busqueda exitosa', 'data': elementos_serializer.data})
         else:
-            return Response({'success': False, 'detail': 'No se encontró ningún elemento con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontró ningún elemento con el parámetro ingresado')
 
 
 class SearchArticuloByDocIdentificador(generics.ListAPIView):
@@ -539,9 +542,9 @@ class SearchArticuloByDocIdentificador(generics.ListAPIView):
             if key in ['cod_tipo_activo', 'doc_identificador_nro']:
                 filter[key] = value
         if not filter.get('doc_identificador_nro'):
-            return Response({'success': False, 'detail': 'Debe enviar el parametro de número de identificación del bien'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('Debe enviar el parametro de número de identificación del bien')
         if not filter.get('cod_tipo_activo'):
-            return Response({'success': False, 'detail': 'Debe enviar el parametro del tipo de activo'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('Debe enviar el parametro del tipo de activo')
 
         bien = CatalogoBienes.objects.filter(**filter).first()
         if bien:
@@ -554,8 +557,11 @@ class SearchArticuloByDocIdentificador(generics.ListAPIView):
                 (x, y) for x, y in estados_articulo_CHOICES)
             estado = diccionario_cod_estado_activo[inventario.cod_estado_activo]
             data_serializado['estado'] = estado
-            return Response({'success': True, 'detail': 'Se encontraron elementos', 'Elementos': data_serializado}, status=status.HTTP_200_OK)
-        return Response({'success': False, 'detail': 'No se encontró elementos', 'data': bien}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success':True, 'detail':'Se encontraron elementos', 'Elementos': data_serializado}, status=status.HTTP_200_OK)
+        try:
+            raise NotFound('No se encontró elementos')
+        except NotFound as e:
+            return Response({'success':False, 'detail':'No se encontró elementos', 'data': bien}, status=status.HTTP_404_NOT_FOUND)
 
 
 class SearchArticulosByNombreDocIdentificador(generics.ListAPIView):
@@ -572,7 +578,7 @@ class SearchArticulosByNombreDocIdentificador(generics.ListAPIView):
                 else:
                     filter[key] = value
         if not filter.get('cod_tipo_activo'):
-            return Response({'success': False, 'detail': 'Debe enviar el parametro del tipo de activo'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('Debe enviar el parametro del tipo de activo')
         bien = CatalogoBienes.objects.filter(**filter)
         if bien:
             serializer = self.serializer_class(bien, many=True)
@@ -589,8 +595,11 @@ class SearchArticulosByNombreDocIdentificador(generics.ListAPIView):
                 estado = inventario_instance.cod_estado_activo if inventario_instance else None
                 item['estado'] = diccionario_cod_estado_activo[estado] if estado else None
 
-            return Response({'success': True, 'detail': 'Se encontraron elementos', 'Elementos': data_serializado}, status=status.HTTP_200_OK)
-        return Response({'success': False, 'detail': 'No se encontró elementos', 'data': bien}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success':True, 'detail':'Se encontraron elementos', 'Elementos': data_serializado}, status=status.HTTP_200_OK)
+        try:
+            raise NotFound('No se encontró elementos')
+        except NotFound as e:
+            return Response({'success':False, 'detail':'No se encontró elementos', 'data': bien}, status=status.HTTP_404_NOT_FOUND)
 
 
 class SearchArticulos(generics.ListAPIView):
@@ -611,9 +620,12 @@ class SearchArticulos(generics.ListAPIView):
         bien = CatalogoBienes.objects.filter(**filter).filter(Q(cod_tipo_activo__in=['Com','Veh','OAc']) | Q(cod_tipo_activo=None))
         serializador = self.serializer_class(bien, many=True)
         if bien:
-            return Response({'success': True, 'detail': 'Se encontró los elementos', 'data': serializador.data}, status=status.HTTP_200_OK)
+            return Response({'success':True, 'detail':'Se encontró los elementos', 'data': serializador.data}, status=status.HTTP_200_OK)
         else:
-            return Response({'success': False, 'detail': 'No se encontró elementos', 'data': bien}, status=status.HTTP_404_NOT_FOUND)
+            try:
+                raise NotFound('No se encontró elementos')
+            except NotFound as e:
+                return Response({'success':False, 'detail':'No se encontró elementos', 'data': bien}, status=status.HTTP_404_NOT_FOUND)
 
 
 class GetCatalogoBienesByCodigo(generics.ListAPIView):
@@ -623,7 +635,10 @@ class GetCatalogoBienesByCodigo(generics.ListAPIView):
 
     def get(self, request):
         if not request.query_params.items():
-            return Response({'success': False, 'detail': 'Debe ingresar un parámetro de búsqueda', 'data': []}, status=status.HTTP_404_NOT_FOUND)
+            try:
+                raise NotFound('Debe ingresar un parámetro de búsqueda')
+            except NotFound as e:    
+                return Response({'success':False, 'detail':'Debe ingresar un parámetro de búsqueda', 'data': []}, status=status.HTTP_404_NOT_FOUND)
         filters = {}
         filters['codigo_bien'] = request.query_params.get('codigo_bien')
         filters['nivel_jerarquico'] = 5
@@ -633,9 +648,12 @@ class GetCatalogoBienesByCodigo(generics.ListAPIView):
         bien_serializer = self.serializer_class(bien)
 
         if bien:
-            return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': bien_serializer.data}, status=status.HTTP_200_OK)
+            return Response({'success':True, 'detail':'Busqueda exitosa', 'data': bien_serializer.data}, status=status.HTTP_200_OK)
         else:
-            return Response({'success': False, 'detail': 'No se encontraron resultados', 'data': []}, status=status.HTTP_404_NOT_FOUND)
+            try:
+                raise NotFound('No se encontraron resultados')
+            except NotFound as e:
+                return Response({'success':False, 'detail':'No se encontraron resultados', 'data': []}, status=status.HTTP_404_NOT_FOUND)
 
 
 class GetNumeroEntrada(generics.ListAPIView):
@@ -648,10 +666,10 @@ class GetNumeroEntrada(generics.ListAPIView):
             '-numero_entrada_almacen').first()
         if not entrada:
             numero_entrada = 1
-            return Response({'success': True, 'numero_entrada': numero_entrada})
+            return Response({'success':True, 'numero_entrada': numero_entrada})
         numero_entrada = entrada.numero_entrada_almacen + 1
 
-        return Response({'success': True, 'numero_entrada': numero_entrada})
+        return Response({'success':True, 'numero_entrada': numero_entrada})
 
 
 class CreateEntradaandItemsEntrada(generics.CreateAPIView):
@@ -667,25 +685,25 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
         # VALIDACION QUE EN EL CAMPO CANTIDAD INGRESE POR LO MENOS UN ELEMENTO
         cantidad_list = [item['cantidad'] for item in items_entrada if item['cantidad'] == None or item['cantidad'] == "" or item['cantidad'] < 1]
         if cantidad_list:
-            return Response({'success': False, 'detail': 'Debe ingresar una cantidad en todos los items de la entrada, y debe ser mayor a cero'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('Debe ingresar una cantidad en todos los items de la entrada, y debe ser mayor a cero')
 
         # VALIDACIÓN QUE TODOS LOS ID_BIEN PADRES Y ID_BIEN ENVIADOS EXISTAN Y SEAN DE NIVEL 5
         id_bienes_enviados_validar = [item['id_bien'] for item in items_entrada if item['id_bien'] != None]
         id_bien_padre_enviados = [item['id_bien_padre'] for item in items_entrada if item['id_bien_padre'] != None]
         bienes_nodo_cinco = CatalogoBienes.objects.filter(id_bien__in=id_bienes_enviados_validar)
         if len(set(id_bienes_enviados_validar)) != len(bienes_nodo_cinco):
-            return Response({'success': False, 'detail': 'Verificar que todos los id bien enviados existan'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Verificar que todos los id bien enviados existan')
         bienes_padre_nodo_cinco = CatalogoBienes.objects.filter( id_bien__in=id_bien_padre_enviados)
         for bien in bienes_nodo_cinco:
             if bien.nivel_jerarquico != 5:
-                return Response({'success': False, 'detail': 'No se pueden seleccionar nodos que no sean nivel 5'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('No se pueden seleccionar nodos que no sean nivel 5')
         for bien in bienes_padre_nodo_cinco:
             if bien.nivel_jerarquico != 5:
-                return Response({'success': False, 'detail': 'No se pueden seleccionar nodos que no sean nivel 5'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('No se pueden seleccionar nodos que no sean nivel 5')
 
         # VALIDACIÓN QUE TODAS LAS ENTRADAS DEBAN TENER UN ITEM
         if not len(items_entrada):
-            return Response({'success': False, 'detail': 'No se puede guardar una entrada sin minimo un item de entrada'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se puede guardar una entrada sin minimo un item de entrada')
         entrada_data['id_creador'] = request.user.persona.id_persona
         id_entrada = entrada_data.get('id_entrada_almacen')
 
@@ -693,56 +711,56 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
         id_proveedor = entrada_data.get('id_proveedor')
         proveedor = Personas.objects.filter(id_persona=id_proveedor).first()
         if not proveedor:
-            return Response({'success': False, 'detail': 'No se puede crear una entrada con un id_proveedor que no exista'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se puede crear una entrada con un id_proveedor que no exista')
 
         # VALIDACIÓN DE EXISTENCIA DE TIPO ENTRADA
         id_tipo_entrada = entrada_data.get('id_tipo_entrada')
         tipo_entrada = Personas.objects.filter(id_persona=id_proveedor).first()
         if not tipo_entrada:
-            return Response({'success': False, 'detail': 'No se puede crear una entrada con un tipo de entrada que no exista'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se puede crear una entrada con un tipo de entrada que no exista')
 
         # VALIDACIÓN DE FECHAS EN LA ENTRADA
         fecha_entrada = entrada_data.get('fecha_entrada')
         if fecha_entrada > str(datetime.now()):
-            return Response({'success': False, 'detail': 'No se puede crear una entrada con una fecha superior a la actual'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se puede crear una entrada con una fecha superior a la actual')
 
         # VALIDACIÓN DE EXITENCIA DE BODEGA PARA ENTRADA
         id_bodega_entrada = entrada_data['id_bodega']
         bodega_entrada = Bodegas.objects.filter(id_bodega=id_bodega_entrada).first()
         if not bodega_entrada:
-            return Response({'success': False, 'detail': 'La bodega seleccionada para la entrada no existe'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('La bodega seleccionada para la entrada no existe')
 
         # VALIDACIÓN DE EXISTENCIA DE BODEGAS
         id_bodegas_list = [item['id_bodega'] for item in items_entrada]
         if len(id_bodegas_list) != len(items_entrada):
-            return Response({'success': False, 'detail': 'Todos los items deben estar asociados a una bodega'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Todos los items deben estar asociados a una bodega')
         bodega = Bodegas.objects.filter(id_bodega__in=id_bodegas_list)
         if len(set(id_bodegas_list)) != len(bodega):
-            return Response({'success': False, 'detail': 'Todas las bodegas enviadas en los items deben existir'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Todas las bodegas enviadas en los items deben existir')
         if not bodega:
-            return Response({'success': False, 'detail': 'No existe ninguna bodega con los parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe ninguna bodega con los parámetro ingresado')
 
         # VALIDACIÓN QUE EL PORCENTAJE DE IVA EXISTA
         id_porcentajes_list = [item['porcentaje_iva'] for item in items_entrada]
         porcentajes_iva = PorcentajesIVA.objects.filter(id_porcentaje_iva__in=id_porcentajes_list)
         if len(set(id_porcentajes_list)) != len(porcentajes_iva):
-            return Response({'success': False, 'detail': 'Todas los porcentajes iva enviados deben existir'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Todas los porcentajes iva enviados deben existir')
 
         # VALIDACIÓN QUE EL ID_UNIDAD_MEDIDA EXISTA
         unidad_medida_list = [item['id_unidad_medida_vida_util'] for item in items_entrada if item['id_bien_padre'] != None]
         unidades_medida = UnidadesMedida.objects.filter(id_unidad_medida__in=unidad_medida_list)
         if len(set(unidad_medida_list)) != len(unidades_medida):
-            return Response({'success': False, 'detail': 'Todas las unidades de medida enviadas deben existir'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Todas las unidades de medida enviadas deben existir')
 
         # VALIDACIÓN QUE EL NUMERO POSICION NO VENGA REPETIDO
         numero_posicion_list = [item['numero_posicion'] for item in items_entrada]
         if len(set(numero_posicion_list)) != len(numero_posicion_list):
-            return Response({'success': False, 'detail': 'Todas los numeros de posicion deben ser unicos'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Todas los numeros de posicion deben ser unicos')
 
         # VALIDACION EN CAMPO TIENE HOJA DE VIDA
         tiene_hoja_vida_list = [item['tiene_hoja_vida'] for item in items_entrada if item['id_bien_padre'] != None and item['tiene_hoja_vida'] != True and item['tiene_hoja_vida'] != False]
         if tiene_hoja_vida_list:
-            return Response({'success': False, 'detail': 'Debe ser enviado un valor válido en el campo tiene hoja de vida'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Debe ser enviado un valor válido en el campo tiene hoja de vida')
 
         # VALIDACIÓN DEL NÚMERO DE ENTRADA
         numero_entrada_exist = EntradasAlmacen.objects.all().order_by('-numero_entrada_almacen').first()
@@ -782,7 +800,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
                 fecha_ingreso_existente = None
             if id_bien_inventario and fecha_ingreso_existente:
                 if fecha_entrega < fecha_ingreso_existente:
-                    return Response({'success': False, 'detail': 'la fecha de entrada tiene que ser posterior a la fecha de ingreso del bien en el inventario'})
+                    raise ValidationError('la fecha de entrada tiene que ser posterior a la fecha de ingreso del bien en el inventario')
                 
         # CREACIÓN DE CONSUMOS
         items_guardados = []
@@ -812,7 +830,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
                 case 8:
                     tipo_doc_ultimo_movimiento = 'E_INC'
                 case _:
-                    return Response({'success': False, 'detail': 'El tipo de entrada ingresado no es valido'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('El tipo de entrada ingresado no es valido')
 
             # CREA EL BIEN CONSUMO EN INVENTARIO O MODIFICA LA CANTIDAD POR BODEGA
             bien = CatalogoBienes.objects.filter(id_bien=id_bien_).first()
@@ -858,7 +876,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
             bien_padre = CatalogoBienes.objects.filter(id_bien=id_bien_padre).first()
             
             if not bien_padre:
-                return Response({'success':False, 'detail':'El bien padre ingresado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El bien padre ingresado no existe')
             
             bien_padre_serializado = CatalogoBienesSerializer(bien_padre)
             
@@ -957,7 +975,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
             "valores_creados_detalles": valores_creados_detalles
         }
         Util.save_auditoria_maestro_detalle(auditoria_data)
-        return Response({'success': True, 'data_entrada_creada': entrada_serializada.data, 'data_items_creados': items_guardados_data})
+        return Response({'success':True, 'data_entrada_creada': entrada_serializada.data, 'data_items_creados': items_guardados_data})
 
 
 class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
@@ -971,7 +989,7 @@ class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
         # VALIDAR QUE TODOS LOS ITEMS ENVIADOS DEBEN PERTENECER A LA MISMA ENTRADA
         id_entrada = [item['id_entrada_almacen'] for item in items_enviados]
         if len(set(id_entrada)) > 1:
-            return Response({'success': False, 'detail': 'Todos los items por eliminar deben pertenecer a la misma entrada'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('Todos los items por eliminar deben pertenecer a la misma entrada')
 
         # VALIDAR QUE TODOS LOS ID_ITEMS_ENVIADOS ENVIADOS PARA ELIMINAR EXISTAN
         ids_items_enviados = [item['id_item_entrada_almacen']
@@ -979,7 +997,7 @@ class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
         items_existentes = ItemEntradaAlmacen.objects.filter(
             id_item_entrada_almacen__in=ids_items_enviados)
         if len(set(ids_items_enviados)) != len(items_existentes):
-            return Response({'success': False, 'detail': 'Todos los id_items enviados para eliminar deben existir'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Todos los id_items enviados para eliminar deben existir')
 
         # VALIDAR QUE LA ENTRADA NO SE VAYA A QUEDAR SIN ITEMS
         items_entrada = ItemEntradaAlmacen.objects.filter(
@@ -987,7 +1005,7 @@ class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
         id_items_entrada_existentes = [
             item.id_item_entrada_almacen for item in items_entrada]
         if len(ids_items_enviados) == len(id_items_entrada_existentes):
-            return Response({'success': False, 'detail': 'No se puede eliminar ya que una entrada no puede quedar sin items'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No se puede eliminar ya que una entrada no puede quedar sin items')
 
         # VALIDACIÓN SI LA ENTRADA FUE EL ÚLTIMO MOVIMIENTO EN INVENTARIO
         id_bienes_enviados = [item['id_bien'] for item in items_enviados]
@@ -997,7 +1015,7 @@ class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
             item_entrada_instance = ItemEntradaAlmacen.objects.filter(
                 id_bien=item.id_bien.id_bien).first()
             if str(item_entrada_instance.id_entrada_almacen.id_entrada_almacen) != str(item.id_registro_doc_ultimo_movimiento):
-                return Response({'success': False, 'detail': 'No se puede eliminar este item si la entrada no fue su último movimiento'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('No se puede eliminar este item si la entrada no fue su último movimiento')
 
         # VALIDACIÓN SI TIENE HOJA DE VIDA
         valores_eliminados_detalles = []
@@ -1017,7 +1035,7 @@ class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
                 item_hv_oac = HojaDeVidaOtrosActivos.objects.filter(
                     id_articulo=item_instance.id_bien.id_bien).first()
                 if item_hv_comp or item_hv_veh or item_hv_oac:
-                    return Response({'success': False, 'detail': 'No se puede eliminar por que tiene hoja de vida'}, status=status.HTTP_403_FORBIDDEN)
+                    raise PermissionDenied('No se puede eliminar por que tiene hoja de vida')
 
                 bien_eliminar = CatalogoBienes.objects.filter(
                     id_bien=item_instance.id_bien.id_bien).first()
@@ -1053,7 +1071,7 @@ class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
         }
         Util.save_auditoria_maestro_detalle(auditoria_data)
 
-        return Response({'success': True, 'detail': 'Se ha eliminado correctamente'}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Se ha eliminado correctamente'}, status=status.HTTP_200_OK)
 
 
 class UpdateEntrada(generics.RetrieveUpdateAPIView):
@@ -1068,20 +1086,20 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
         entrada = EntradasAlmacen.objects.filter(
             id_entrada_almacen=id_entrada).first()
         if not entrada:
-            return Response({'success': False, 'detail': 'No se encontró ninguna entrada con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontró ninguna entrada con el parámetro ingresado')
 
         # VALIDACIÓN QUE EL TIPO ENTRADA ENVIADA EXISTA
         cod_tipo_entrada = data['id_tipo_entrada']
         tipo_entrada_instance = TiposEntradas.objects.filter(
             cod_tipo_entrada=cod_tipo_entrada).first()
         if not tipo_entrada_instance:
-            return Response({'success': False, 'detail': 'No se encontró ningún tipo de entrada con el parámetro ingresado'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se encontró ningún tipo de entrada con el parámetro ingresado')
 
         # VALIDACIÓN QUE EL ID PROVEEDOR ENVIADO EXISTA
         id_proveedor = data['id_proveedor']
         proveedor = Personas.objects.filter(id_persona=id_proveedor).first()
         if not proveedor:
-            return Response({'success': False, 'detail': 'No existe el proveedor enviado'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No existe el proveedor enviado')
 
         # SI EL USUARIO ACTUALIZA EL TIPO DE ENTRADA
         if cod_tipo_entrada != entrada.id_tipo_entrada:
@@ -1111,7 +1129,7 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
                 bien_inventario = Inventario.objects.filter(
                     id_bien=id_bien).first()
                 if str(bien_inventario.id_registro_doc_ultimo_movimiento) != str(entrada.id_entrada_almacen):
-                    return Response({'success': False, 'detail': 'No se puede actualizar ya que los items asociados a esta entrada no tienen como último movimiento la entrada'}, status=status.HTTP_403_FORBIDDEN)
+                    raise PermissionDenied('No se puede actualizar ya que los items asociados a esta entrada no tienen como último movimiento la entrada')
 
             # ACTUALIZA EL TIPO DE ENTRADA EN CADA UNO DE LOS ITEMS
             for id_bien in id_bien_items_list:
@@ -1132,8 +1150,16 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
         serializer = EntradaUpdateSerializer(entrada, data=data, many=False)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({'success': True, 'detail': 'Actualización de entrada exitosa', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        return Response({'success':True, 'detail':'Actualización de entrada exitosa', 'data': serializer.data}, status=status.HTTP_201_CREATED)
 
+class GetTiposEntradas(generics.ListAPIView):
+    serializer_class = TiposEntradasSerializer
+    queryset = TiposEntradas.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        serializer = self.serializer_class(self.queryset.all(), many=True)
+        return Response({'success':True, 'detail':'Se encontraron los siguientes tipos de entrada', 'data':serializer.data}, status=status.HTTP_200_OK)
 
 class GetEntradas(generics.ListAPIView):
     serializer_class = EntradaSerializer
@@ -1147,13 +1173,13 @@ class GetEntradas(generics.ListAPIView):
         if not id_entrada:
             entradas = EntradasAlmacen.objects.all()
             serializer = self.serializer_class(entradas, many=True)
-            return Response({'success': True, 'detail': 'Obtenido exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+            return Response({'success':True, 'detail':'Obtenido exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
 
         # SI NO EXISTE EL ID_ENTRADA ENVIADO
         entrada_instance = EntradasAlmacen.objects.filter(
             id_entrada_almacen=id_entrada).first()
         if not entrada_instance:
-            return Response({'success': False, 'detail': 'No se encontró ninguna entrada con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontró ninguna entrada con el parámetro ingresado')
 
         # SERIALIZAR LAS INSTANCIAS DE LOS ITEMS DE LA ENTRADA ENVIADA
         items_entrada_instance = ItemEntradaAlmacen.objects.filter(
@@ -1164,7 +1190,7 @@ class GetEntradas(generics.ListAPIView):
 
         entrada = {'info_entrada': serializer.data,
                    'info_items_entrada': serializer_items.data}
-        return Response({'success': True, 'detail': 'Búsqueda exitosa', 'data': entrada}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Búsqueda exitosa', 'data': entrada}, status=status.HTTP_200_OK)
 
 
 class UpdateItemsEntrada(generics.UpdateAPIView):
@@ -1177,7 +1203,7 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
         entrada_almacen = EntradasAlmacen.objects.filter(
             id_entrada_almacen=id_entrada).first()
         if not entrada_almacen:
-            return Response({'success': False, 'detail': 'La entrada ingresada no existe'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('La entrada ingresada no existe')
 
         # VALIDACIÓN DE QUE TODOS LOS ID_ITEMS ENVIADOS EXISTAN
         items_actualizar = [item['id_item_entrada_almacen']
@@ -1185,26 +1211,26 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
         items_entrada_actualizar = ItemEntradaAlmacen.objects.filter(
             id_item_entrada_almacen__in=items_actualizar)
         if len(set(items_actualizar)) != len(items_entrada_actualizar):
-            return Response({'success': False, 'detail': 'Todos los id_items enviados deben existir'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Todos los id_items enviados deben existir')
 
         # VALIDACIÓN QUE LAS CANTIDADES ENVIADAS DEBEN SER MAYORES A 0
         cantidades_list = [item['cantidad'] for item in data if item['cantidad']
                            == None or item['cantidad'] == "" or item['cantidad'] == 0]
         if cantidades_list:
-            return Response({'success': False, 'detail': 'Todos las cantidades enviadas deben ser mayores a cero'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Todos las cantidades enviadas deben ser mayores a cero')
 
         # VALIDACIÓN QUE EL NÚMERO DE POSICIÓN SEA ÚNICO EN LA ENTRADA
         numero_posicion = [item['numero_posicion'] for item in data]
         if len(numero_posicion) != len(set(numero_posicion)):
-            return Response({'success': False, 'detail': 'Todos los numero de posición deben ser únicos'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Todos los numero de posición deben ser únicos')
 
         # VALIDAR QUE EL ID_ENTRADA SEA EL MISMO
         items_entrada_id_list = [item['id_entrada_almacen'] for item in data]
         if len(set(items_entrada_id_list)) != 1:
-            return Response({'success': False, 'detail': 'Debe validar que los items de las entradas pertenezcan a una misma entrada'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Debe validar que los items de las entradas pertenezcan a una misma entrada')
         else:
             if items_entrada_id_list[0] != int(id_entrada):
-                return Response({'success': False, 'detail': 'El id_entrada de los items de la petición debe ser igual al enviado en url'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El id_entrada de los items de la petición debe ser igual al enviado en url')
 
         # VALIDACIÓN DE EXISTENCIA DE UNIDADES MEDIDAS VIDA UTIL
         unidades_medida_vida_util_list = [item['id_unidad_medida_vida_util']
@@ -1212,20 +1238,20 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
         unidades_medida_vida_util_existe = UnidadesMedida.objects.filter(
             id_unidad_medida__in=unidades_medida_vida_util_list)
         if unidades_medida_vida_util_existe.count() != len(set(unidades_medida_vida_util_list)):
-            return Response({'success': False, 'detail': 'Una o varias unidades de medida que está asociando en los items no existen'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Una o varias unidades de medida que está asociando en los items no existen')
 
         # VALIDACIÓN DE EXISTENCIA DE BODEGAS
         bodegas_list = [item['id_bodega'] for item in data]
         bodegas_existe = Bodegas.objects.filter(id_bodega__in=bodegas_list)
         if bodegas_existe.count() != len(set(bodegas_list)):
-            return Response({'success': False, 'detail': 'Una o varias bodegas que están asociando en los items no existen'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Una o varias bodegas que están asociando en los items no existen')
 
         # VALIDACIÓN DE EXISTENCIA PORCENTAJES IVA
         porcentajes_iva_list = [item['porcentaje_iva'] for item in data]
         porcentajes_iva_existe = PorcentajesIVA.objects.filter(
             id_porcentaje_iva__in=porcentajes_iva_list)
         if porcentajes_iva_existe.count() != len(set(porcentajes_iva_list)):
-            return Response({'success': False, 'detail': 'Uno o varios porcentajes iva que están asociando en los items no existen'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Uno o varios porcentajes iva que están asociando en los items no existen')
 
         # VALIDACIÓN DE EXISTENCIA BIENES Y BIENES PADRE
         bienes_list = [item['id_bien']
@@ -1235,7 +1261,7 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
         bienes_list.extend(bienes_padre_list)
         bienes_existe = CatalogoBienes.objects.filter(id_bien__in=bienes_list)
         if bienes_existe.count() != len(set(bienes_list)):
-            return Response({'success': False, 'detail': 'Uno o varios bienes que están asociando en los items no existen'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Uno o varios bienes que están asociando en los items no existen')
 
         # CONOCER LOS QUE SE VAN A CREAR
         items_por_crear = [
@@ -1252,9 +1278,9 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
                                      for item in data if item['doc_identificador_bien'] != None]
         doc_identificadores_existentes.extend(docs_identificadores_list)
         if len(set(doc_identificadores_existentes)) != len(doc_identificadores_existentes):
-            return Response({'success': False, 'detail': 'Todos los documentos identificadores deben ser únicos'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Todos los documentos identificadores deben ser únicos')
         if len(docs_identificadores_list) != len(set(docs_identificadores_list)):
-            return Response({'success': False, 'detail': 'Todos los documentos identificadores deben ser únicos'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Todos los documentos identificadores deben ser únicos')
 
         # TOTAL VALOR ENTRADA
         valor_total_items_actualizar_list = [
@@ -1556,7 +1582,7 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
         }
         Util.save_auditoria_maestro_detalle(auditoria_data)
 
-        return Response({'success': True, 'detail': 'Actualizado exitosamente', 'data': items_guardados}, status=status.HTTP_201_CREATED)
+        return Response({'success':True, 'detail':'Actualizado exitosamente', 'data': items_guardados}, status=status.HTTP_201_CREATED)
 
 
 class AnularEntrada(generics.UpdateAPIView):
@@ -1572,12 +1598,12 @@ class AnularEntrada(generics.UpdateAPIView):
         items_entrada = ItemEntradaAlmacen.objects.filter(
             id_entrada_almacen=id_entrada)
         if entrada_anular.entrada_anulada == True:
-            return Response({'success': False, 'detail': 'Esta entrada ya ha sido anulada'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Esta entrada ya ha sido anulada')
         if not entrada_anular:
-            return Response({'success': False, 'detail': 'No se encontro una entrada asociada al ID que ingresó'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se encontro una entrada asociada al ID que ingresó')
 
         if not items_entrada:
-            return Response({'success': False, 'detail': 'No hay items asociados a la entrada'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No hay items asociados a la entrada')
 
         activos_fijos = [
             i.id_bien.id_bien for i in items_entrada if i.id_bien.cod_tipo_bien == 'A']
@@ -1589,7 +1615,7 @@ class AnularEntrada(generics.UpdateAPIView):
         for i in activos_fijos:
             aux = Inventario.objects.filter(id_bien=i).first()
             if not aux:
-                return Response({'success': False, 'detail': 'Uno de los items no tiene registro en iventairo'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('Uno de los items no tiene registro en iventairo')
             hdv_computadores = HojaDeVidaComputadores.objects.filter(
                 id_articulo=i).first()
             hdv_vehivulos = HojaDeVidaVehiculos.objects.filter(
@@ -1597,9 +1623,9 @@ class AnularEntrada(generics.UpdateAPIView):
             hdv_otro_activos = HojaDeVidaOtrosActivos.objects.filter(
                 id_articulo=i).first()
             if aux.id_registro_doc_ultimo_movimiento != entrada_anular.id_entrada_almacen or aux.cod_tipo_entrada != entrada_anular.id_tipo_entrada:
-                return Response({'success': False, 'detail': 'Uno de los items de la entrada a anular ya registra movimientos posteriores'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('Uno de los items de la entrada a anular ya registra movimientos posteriores')
             if hdv_computadores or hdv_vehivulos or hdv_otro_activos:
-                return Response({'success': False, 'detail': 'Uno de los items de la entrada a anular ya tiene hoja de vida, no se pueden anular entradas con items que tengan hoja de vida'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('Uno de los items de la entrada a anular ya tiene hoja de vida, no se pueden anular entradas con items que tengan hoja de vida')
         instancia_items_entrada_eliminar = ItemEntradaAlmacen.objects.filter(
             Q(id_bien__in=activos_fijos) & Q(id_entrada_almacen=id_entrada))
         instancia_inventario_eliminar = Inventario.objects.filter(Q(id_bien__in=activos_fijos) & Q(
@@ -1631,7 +1657,7 @@ class AnularEntrada(generics.UpdateAPIView):
             "valores_eliminados_detalles": valores_eliminados_detalles
         }
         Util.save_auditoria_maestro_detalle(auditoria_data)
-        return Response({'success': True, 'detail': 'Solicitud anulada exitosamente'}, status=status.HTTP_201_CREATED)
+        return Response({'success':True, 'detail':'Solicitud anulada exitosamente'}, status=status.HTTP_201_CREATED)
 
 
 class ValidacionCodigoBien(generics.ListAPIView):
@@ -1641,49 +1667,49 @@ class ValidacionCodigoBien(generics.ListAPIView):
     
     def get(self,request,nivel,codigo_bien):
         if not codigo_bien.isdigit():
-            return Response({'success': False, 'detail': 'El códgio debe ser un número'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('El códgio debe ser un número')
         match nivel:
             case '1':
                 if len(codigo_bien) != 1:
-                    return Response({'success': False, 'detail': 'El nivel 1 solo puede tener un caracter'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('El nivel 1 solo puede tener un caracter')
                 if int(codigo_bien) < 1 or int(codigo_bien) > 9:
-                    return Response({'success': False, 'detail': 'El nivel 1 debe ser un número entre 1 y 9'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('El nivel 1 debe ser un número entre 1 y 9')
             case '2':
                 if len(codigo_bien) != 2:
-                    return Response({'success': False, 'detail': 'El nivel 2 debe ser de 2 caracteres'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('El nivel 2 debe ser de 2 caracteres')
                 codigo_padre = codigo_bien[0]
                 bien_padre = CatalogoBienes.objects.filter(
                     codigo_bien=codigo_padre)
                 if not bien_padre:
-                    return Response({'success': False, 'detail': 'El padre no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('El padre no existe')
             case '3':
                 if len(codigo_bien) != 4:
-                    return Response({'success': False, 'detail': 'El nivel 3 debe ser de 4 caracteres'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('El nivel 3 debe ser de 4 caracteres')
                 codigo_padre = codigo_bien[0:2]
                 bien_padre = CatalogoBienes.objects.filter(
                     codigo_bien=codigo_padre)
                 if not bien_padre:
-                    return Response({'success': False, 'detail': 'El padre no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('El padre no existe')
             case '4':
                 if len(codigo_bien) != 7:
-                    return Response({'success': False, 'detail': 'El nivel 4 debe ser de 7 caracteres'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('El nivel 4 debe ser de 7 caracteres')
                 codigo_padre = codigo_bien[0:4]
                 bien_padre = CatalogoBienes.objects.filter(
                     codigo_bien=codigo_padre)
                 if not bien_padre:
-                    return Response({'success': False, 'detail': 'El padre no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('El padre no existe')
             case '5':
                 if len(codigo_bien) != 12:
-                    return Response({'success': False, 'detail': 'El nivel 5 debe ser de 12 caracteres'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('El nivel 5 debe ser de 12 caracteres')
                 codigo_padre = codigo_bien[0:7]
                 bien_padre = CatalogoBienes.objects.filter(
                     codigo_bien=codigo_padre)
                 if not bien_padre:
-                    return Response({'success': False, 'detail': 'El padre no existe'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('El padre no existe')
             case _:
-                return Response({'success': False, 'detail': 'Ingrese un nivel válido, un numero entre 1 y 5'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('Ingrese un nivel válido, un numero entre 1 y 5')
 
         aux_bien = CatalogoBienes.objects.filter(codigo_bien=codigo_bien)
         if aux_bien:
-            return Response({'success': False, 'detail': 'El código ingresado ya existe'}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({'success': True, 'detail': 'Codigo de bien válido'}, status=status.HTTP_201_CREATED)
+            raise ValidationError('El código ingresado ya existe')
+        return Response({'success':True, 'detail':'Codigo de bien válido'}, status=status.HTTP_201_CREATED)

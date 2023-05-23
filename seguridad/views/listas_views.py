@@ -1,3 +1,4 @@
+from django.db.models import F
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -28,68 +29,81 @@ from seguridad.lists.cod_naturaleza_empresa_list import cod_naturaleza_empresa_L
 
 class GetListTipoDocumento(APIView):
     def get(self, request):
-        return Response({'success': True, 'detail': 'Los tipos de documento son los siguientes', 'data': tipo_documento_LIST}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Los tipos de documento son los siguientes', 'data': tipo_documento_LIST}, status=status.HTTP_200_OK)
 
 
 class GetListTipoPersona(APIView):
     def get(self, request):
-        return Response({'success': True, 'detail': 'Los tipos de persona son los siguientes', 'data': tipo_persona_LIST}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Los tipos de persona son los siguientes', 'data': tipo_persona_LIST}, status=status.HTTP_200_OK)
     
 class GetListTipoUsuario(APIView):
     def get(self, request):
-        return Response({'success': True, 'detail': 'Los tipos de usuarios son los siguientes', 'data': tipo_usuario_LIST}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Los tipos de usuarios son los siguientes', 'data': tipo_usuario_LIST}, status=status.HTTP_200_OK)
 
 class GetLisClaseTercero(APIView):
     def get(self, request):
-        return Response({'success': True, 'detail': 'Los tipos de clase tercero son los siguientes', 'data': clase_tercero_LIST}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Los tipos de clase tercero son los siguientes', 'data': clase_tercero_LIST}, status=status.HTTP_200_OK)
     
 class GetLisCodPermiso(APIView):
     def get(self, request):
-        return Response({'success': True, 'detail': 'Los tipos de codigo permiso son los siguientes', 'data': cod_permiso_LIST}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Los tipos de codigo permiso son los siguientes', 'data': cod_permiso_LIST}, status=status.HTTP_200_OK)
     
 class GetLisEstadoCivil(APIView):
     def get(self, request):
-        return Response({'success': True, 'detail': 'Los tipos de estado civil son los siguientes', 'data': estado_civil_LIST}, status=status.HTTP_200_OK) 
+        return Response({'success':True, 'detail':'Los tipos de estado civil son los siguientes', 'data': estado_civil_LIST}, status=status.HTTP_200_OK) 
 
 class GetLisOpcUsuario(APIView):
     def get(self, request):
-        return Response({'success': True, 'detail': 'Los tipos de opciones de usuario son los siguientes', 'data': opciones_usuario_LIST}, status=status.HTTP_200_OK) 
+        return Response({'success':True, 'detail':'Los tipos de opciones de usuario son los siguientes', 'data': opciones_usuario_LIST}, status=status.HTTP_200_OK) 
 
 class GetLisSexo(APIView):
     def get(self, request):
-        return Response({'success': True, 'detail': 'Los tipos de sexo son los siguientes', 'data': sexo_LIST}, status=status.HTTP_200_OK) 
+        return Response({'success':True, 'detail':'Los tipos de sexo son los siguientes', 'data': sexo_LIST}, status=status.HTTP_200_OK) 
 
 class GetLisSubsistema(APIView):
     def get(self, request):
-        return Response({'success': True, 'detail': 'Los tipos de subsistema son los siguientes', 'data': subsistemas_LIST}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Los tipos de subsistema son los siguientes', 'data': subsistemas_LIST}, status=status.HTTP_200_OK)
     
 class GetLisTipoDireccion(APIView):
     def get(self, request):
-        return Response({'success': True, 'detail': 'Los tipos de direccion son las siguientes', 'data': tipo_direccion_LIST}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Los tipos de direccion son las siguientes', 'data': tipo_direccion_LIST}, status=status.HTTP_200_OK)
 
 class GetLisDirecciones(APIView):
     def get(self, request):
-        return Response({'success': True, 'detail': 'Las direeciones son las siguientes', 'data': direcciones_LIST}, status=status.HTTP_200_OK) 
+        return Response({'success':True, 'detail':'Las direeciones son las siguientes', 'data': direcciones_LIST}, status=status.HTTP_200_OK) 
         
 class GetLisIndicativoPais(APIView):
     def get(self, request):
-        return Response({'success': True, 'detail': 'Los indicativos por pais son los siguientes', 'data': indicativo_paises_LIST}, status=status.HTTP_200_OK)
-    
-class GetListPaises(APIView):
+        return Response({'success':True, 'detail':'Los indicativos por pais son los siguientes', 'data': indicativo_paises_LIST}, status=status.HTTP_200_OK)
+
+class GetListPaises(generics.ListAPIView):
+    queryset = Paises.objects.all()
+
     def get(self, request):
-        return Response({'success': True, 'detail': 'Los indicativos por pais son los siguientes', 'data': paises_LIST}, status=status.HTTP_200_OK)
-    
+        paises = self.queryset.exclude(cod_pais='CO').values(value=F('cod_pais'), label=F('nombre'))
+        colombia = self.queryset.filter(cod_pais='CO').values(value=F('cod_pais'), label=F('nombre')).first()
+        
+        paises = list(paises)
+        paises.insert(0, colombia)
+        
+        return Response({'success':True, 'detail':'Los paises son los siguientes', 'data': paises}, status=status.HTTP_200_OK)
+
 class GetListDepartamentos(generics.ListAPIView):
     queryset = Departamento.objects.all()
     serializer_class = DepartamentosSerializer
 
     def get(self, request):
         pais = request.query_params.get('pais', '')
-        departamentos = self.queryset.all().filter(pais__icontains=pais)
+        departamentos = self.queryset.all().filter(pais__icontains=pais).exclude(cod_departamento='50')
+        meta = self.queryset.filter(cod_departamento='50').values(label=F('nombre'),value=F('cod_departamento')).first()
+        
         serializer = self.serializer_class(departamentos, many=True)
-        return Response({'success': True, 'detail': 'Se encontraron los siguientes departamentos', 'data': serializer.data}, status=status.HTTP_200_OK)
-
-
+        
+        data = serializer.data
+        if data and (pais=='CO' or pais==''):
+            data.insert(0, meta)
+        
+        return Response({'success':True, 'detail':'Se encontraron los siguientes departamentos', 'data': data}, status=status.HTTP_200_OK)
 
 class GetListMunicipios(generics.ListAPIView):
     queryset = Municipio.objects.all()
@@ -98,12 +112,17 @@ class GetListMunicipios(generics.ListAPIView):
     def get(self, request):
         cod_departamento = request.query_params.get('cod_departamento', '')
 
-        municipios = self.queryset.all().filter(
-            cod_departamento__icontains=cod_departamento)
+        municipios = self.queryset.all().filter(cod_departamento__icontains=cod_departamento).exclude(cod_municipio='50001')
+        villavicencio = self.queryset.filter(cod_municipio='50001').values(label=F('nombre'),value=F('cod_municipio')).first()
 
         serializer = self.serializer_class(municipios, many=True)
-        return Response({'success': True, 'detail': 'Se encontraron los siguientes municipios', 'data': serializer.data}, status=status.HTTP_200_OK)
+        
+        data = serializer.data
+        if data and (cod_departamento=='50' or cod_departamento==''):
+            data.insert(0, villavicencio)
+        
+        return Response({'success':True, 'detail':'Se encontraron los siguientes municipios', 'data':data}, status=status.HTTP_200_OK)
 
 class GetLisCodNaturalezEmpresa(APIView):
     def get(self, request):
-        return Response({'success': True, 'detail': 'Los códigos de la naturaleza de una empresa son los siguientes', 'data': cod_naturaleza_empresa_LIST}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Los códigos de la naturaleza de una empresa son los siguientes', 'data': cod_naturaleza_empresa_LIST}, status=status.HTTP_200_OK)

@@ -4,7 +4,7 @@ from conservacion.models.solicitudes_models import (
     SolicitudesViveros,
     ItemSolicitudViveros
 )
-from almacen.models.organigrama_models import (
+from transversal.models.organigrama_models import (
     UnidadesOrganizacionales
 )
 from conservacion.models.inventario_models import (
@@ -35,15 +35,23 @@ class GetSolicitudesViverosSerializer(serializers.ModelSerializer):
         model = SolicitudesViveros
         fields = '__all__'
 
-class ItemSolicitudViverosSerializer(serializers.ModelSerializer):
+class ListarSolicitudIDSerializer(serializers.ModelSerializer):
+    cod_tipo_elemento_vivero = serializers.ReadOnlyField(source='id_bien.cod_tipo_elemento_vivero', default=None)
+    codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
     class Meta:
         model= ItemSolicitudViveros
-        fields = '__all__'
-
-class ListarSolicitudIDSerializer(serializers.ModelSerializer):
-    class Meta:
-        model= SolicitudesViveros
-        fields = '__all__'
+        fields = (
+            'id_item_solicitud_viveros',
+            'id_solicitud_viveros',
+            'nro_posicion',
+            'id_bien',
+            'cod_tipo_elemento_vivero',
+            'codigo_bien',
+            'nombre_bien',
+            'cantidad',
+            'observaciones',
+        )
 
 class CreateSolicitudViverosSerializer(serializers.ModelSerializer):
     class Meta:
@@ -65,7 +73,8 @@ class CreateSolicitudViverosSerializer(serializers.ModelSerializer):
             'fecha_retiro_material',
             'ruta_archivo_info_tecnico',
             'id_persona_solicita',
-            'id_unidad_org_del_solicitante'
+            'id_unidad_org_del_solicitante',
+            "id_persona_coord_viveros"
         )
         extra_kwargs = {
             'nro_solicitud': {'required': True},
@@ -154,4 +163,29 @@ class CreateItemsSolicitudSerializer(serializers.ModelSerializer):
             'nro_posicion',
             'cod_tipo_elemento_vivero',
             'codigo_bien'
+        )
+
+
+class UpdateItemsSolicitudSerializer(serializers.ModelSerializer):
+    class Meta:
+        model= ItemSolicitudViveros
+        fields = '__all__'
+
+
+class DeleteItemsSolicitudSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ItemSolicitudViveros
+        fields = '__all__'
+
+
+class CerrarSolicitudNoDisponibilidadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SolicitudesViveros
+        fields = (
+            'observacion_cierre_no_dispo_viveros',
+            'fecha_cierre_no_dispo',
+            'id_persona_cierre_no_dispo_viveros',
+            'solicitud_abierta',
+            'fecha_cierra_solicitud',
+            'gestionada_viveros'
         )

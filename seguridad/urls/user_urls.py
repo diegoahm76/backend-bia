@@ -6,6 +6,7 @@ urlpatterns = [
     
     path('login/', views.LoginApiView.as_view(), name='token_obtain_pair'),
     path('upload/', views.uploadImage, name="image-upload"),
+    path('recuperar-nombre-usuario/',views.RecuperarNombreDeUsuario.as_view(),name='recuperar-nombre-de-usuario'),
 
     path('register/', views.RegisterView.as_view(), name='register'),
     path('register-externo/', views.RegisterExternoView.as_view(), name='register-externo'),
@@ -27,8 +28,9 @@ urlpatterns = [
     path('delegate-rol-super-usuario/<str:id_persona>/', views.AsignarRolSuperUsuario.as_view(), name='delegar-rol-super-usuario'),
     path('get-nuevo-super-usuario/<str:tipo_documento>/<str:numero_documento>/', views.GetNuevoSuperUsuario.as_view(), name='get-nuevo-super-usuario'),
     path('get-nuevo-super-usuario-filters/', views.GetNuevoSuperUsuarioFilters.as_view(),name='get-nuevo-super-usuario-filters'),
-    path('get-user-by-nombre-de-usuario/',views.BusquedaNombreUsuario.as_view(),name='get-user-by-nombre-de-usuario'),
-    path('get-buscar-by-id-persona/<str:id_persona>/',views.BuscarIdPersona.as_view(),name='get-buscar-id-persona'),#creado 5
+    path('get-user-by-nombre-de-usuario/',views.BusquedaByNombreUsuario.as_view(),name='get-user-by-nombre-de-usuario'),
+    path('get-buscar-by-id-persona/<str:id_persona>/',views.BuscarByIdPersona.as_view(),name='get-buscar-id-persona'),
+    path('get-by-pk/<str:id_usuario>/',views.GetByIdUsuario.as_view(),name='get-by-pk'),
     path('unblock/', views.UnblockUser.as_view(), name='unblock-user'),
     path('password-unblock-complete/', views.UnBlockUserPassword.as_view(), name='password-unblock-complete'),
     path('reenviar-correo-verificacion-usuario/<str:id_usuario>/', views.ReenviarCorreoVerificacionDeUsuario.as_view(), name='reenviar-correo-verificacion-usuario'),

@@ -1,4 +1,5 @@
 from django.core import signing
+from urllib.parse import quote_plus, unquote_plus
 from holidays_co import get_colombia_holidays_by_year
 from backend.settings.base import FRONTEND_URL
 from django.urls import reverse
@@ -24,7 +25,7 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import status
 import jwt
 from django.conf import settings
-from seguridad.serializers.user_serializers import EmailVerificationSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserPutAdminSerializer,  UserPutSerializer, UserSerializer, UserSerializerWithToken, UserRolesSerializer, RegisterSerializer  ,LoginSerializer, DesbloquearUserSerializer, SetNewPasswordUnblockUserSerializer, HistoricoActivacionSerializers, UsuarioInternoAExternoSerializers, GetBusquedaNombreUsuario,GetBuscarIdPersona
+from seguridad.serializers.user_serializers import EmailVerificationSerializer, RecuperarUsuarioSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserPutAdminSerializer,  UserPutSerializer, UserSerializer, UserSerializerWithToken, UserRolesSerializer, RegisterSerializer  ,LoginSerializer, DesbloquearUserSerializer, SetNewPasswordUnblockUserSerializer, HistoricoActivacionSerializers, UsuarioBasicoSerializer, UsuarioFullSerializer, UsuarioInternoAExternoSerializers
 from rest_framework.generics import RetrieveUpdateAPIView
 from django.contrib.auth.hashers import make_password
 from rest_framework import status
@@ -38,6 +39,7 @@ from django.utils import encoding, http
 import copy, re
 from django.http import HttpResponsePermanentRedirect
 from django.contrib.sessions.models import Session
+from rest_framework.exceptions import NotFound,ValidationError, PermissionDenied
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -87,118 +89,152 @@ class UpdateUserProfile(generics.UpdateAPIView):
 
             Util.save_auditoria(auditoria_data)
 
-        return Response({'success': True,'data': user_serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success':True,'data': user_serializer.data}, status=status.HTTP_200_OK)
 
 
 class UpdateUser(generics.RetrieveUpdateAPIView):
-    http_method_names = ["patch"]
     serializer_class = UserPutAdminSerializer
     queryset = User.objects.all()
-    permission_classes = [IsAuthenticated, PermisoActualizarUsuarios]
+    permission_classes = [IsAuthenticated]
 
     def patch(self, request, pk):
         user_loggedin = request.user.id_usuario
 
+        if int(pk) == 1:
+            raise ValidationError('No se puede actualizar el super usuario')
+
         if int(user_loggedin) != int(pk):
             user = User.objects.filter(id_usuario=pk).first()
-            id_usuario_afectado = user.id_usuario
             id_usuario_operador = request.user.id_usuario
             fecha_operacion = datetime.now()
-            justificacion = request.data.get('justificacion', '')
+            justificacion_activacion = request.data.get('justificacion_activacion', '')
+            justificacion_bloqueo = request.data.get('justificacion_bloqueo', '')
             previous_user = copy.copy(user)
 
             if user:
+                id_usuario_afectado = user.id_usuario
+                
                 user_serializer = self.serializer_class(user, data=request.data)
                 user_serializer.is_valid(raise_exception=True)
                 tipo_usuario_ant = user.tipo_usuario
                 tipo_usuario_act = user_serializer.validated_data.get('tipo_usuario')
 
-                # VALIDACIÓN DE PERSONAS JURIDICAS 
-                if tipo_usuario_act == 'J' and tipo_usuario_ant != 'E':
-                    return Response({'success': False, 'detail': 'Las personas jurídicas solo pueden ser usuarios externos'}, status=status.HTTP_400_BAD_REQUEST)
-                    
                 # VALIDACIÓN NO SE PUEDE INTERNO A EXTERNO
                 if tipo_usuario_ant == 'I' and tipo_usuario_act == 'E':
-                    return Response({'success': False,'detail': 'No se puede actualizar el usuario de interno a externo'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('No se puede actualizar el usuario de interno a externo')
 
                 # VALIDACIÓN EXTERNO INACTIVO PASA A INTERNO ACTIVO
                 if tipo_usuario_ant == 'E' and tipo_usuario_act == 'I':
-                    if not user.is_active:
-                        user.is_active = True
-                        user_serializer.validated_data['is_active'] = True
-                        user.tipo_usuario = 'I'
-                        user.save()
-                        return Response({'success': False, 'detail': 'La persona ahora es interna y se encuentra activa'}, status=status.HTTP_400_BAD_REQUEST)
-
+                    
+                    persona = Personas.objects.get(user=user)
+                    
+                    if persona.id_cargo is None or persona.fecha_a_finalizar_cargo_actual <= datetime.now():
+                        raise PermissionDenied('La persona propietaria del usuario no tiene cargo actual o la fecha final del cargo ha vencido')
+                    
+                    if persona.tipo_persona == 'J':
+                        raise PermissionDenied('Una persona jurídica no puede tener un usuario de tipo interno')
+                    
                 # Validación NO desactivar externo activo
-                if user.tipo_usuario == 'E' and user.is_active and 'is_active' in request.data and request.data['is_active'] == False:
-                    return Response({'success': False,'detail': 'No se puede desactivar un usuario externo activo'}, status=status.HTTP_400_BAD_REQUEST)
+                if user.tipo_usuario == 'E' and user.is_active and 'is_active' in request.data and str(request.data['is_active']).lower() == "false":
+                    raise PermissionDenied('No se puede desactivar un usuario externo activo')
 
                 # Validación SE PUEDE desactivar interno
-                if user.tipo_usuario == 'I' and 'is_active' in request.data and request.data['is_active'] == False:
-                    user.is_active = False
-                    return Response({'success': False,'detail': 'Usuario interno desactivado'}, status=status.HTTP_400_BAD_REQUEST)
+                if user.tipo_usuario == 'I' and str(user.is_active).lower() != str(request.data['is_active']).lower():
+                    # user.is_active = False
+                    if not user.is_active:
+                        if user.persona.id_cargo is None or user.persona.fecha_a_finalizar_cargo_actual <= datetime.now():
+                            raise PermissionDenied('La persona propietaria del usuario no tiene cargo actual o la fecha final del cargo ha vencido, por lo cual no puede activar su usuario')
+                        
+                    if 'justificacion_activacion' not in request.data or not request.data['justificacion_activacion']:
+                        raise ValidationError('Se requiere una justificación para cambiar el estado de activación del usuario')
+                    justificacion = request.data['justificacion_activacion']
                 
-                user_serializer.save()
-                roles = user_serializer.validated_data.get("roles")
-                roles_actuales = UsuariosRol.objects.filter(id_usuario=pk).values('id_rol')
-                roles_previous = copy.copy(roles_actuales)
+                # Validación bloqueo/desbloqueo usuario
+                if str(user.is_blocked).lower() != str(request.data['is_blocked']).lower():
+                    # user.is_active = False  
+                    if 'justificacion_bloqueo' not in request.data or not request.data['justificacion_bloqueo']:
+                        raise ValidationError('Se requiere una justificación para cambiar el estado de bloqueo del usuario')
+                    justificacion = request.data['justificacion_bloqueo']
+                
 
-                roles_asignados = {}
-
-                # ASIGNAR ROLES NUEVOS A USUARIO
-                for rol in roles:
-                    rol_existe = UsuariosRol.objects.filter(id_usuario=pk, id_rol=rol["id_rol"])
-                    if not rol_existe:
-                        rol_instance = Roles.objects.filter(id_rol=rol["id_rol"]).first()
-                        roles_asignados["nombre_rol_"+str(rol_instance.id_rol)] = rol_instance.nombre_rol
-                        UsuariosRol.objects.create(
-                            id_usuario = user,
-                            id_rol = rol_instance
-                        )
-
-                # ELIMINAR ROLES A USUARIO
-                roles_eliminados = {}
-                roles_list = [rol['id_rol'] for rol in roles]
-                roles_eliminar = UsuariosRol.objects.filter(id_usuario=pk).exclude(id_rol__in=roles_list)
-
-                for rol in roles_eliminar:
-                    roles_eliminados["nombre_rol_"+str(rol.id_rol.id_rol)] = rol.id_rol.nombre_rol
-                roles_eliminar.delete()
+                # ASIGNAR ROLES
+                roles_actuales = UsuariosRol.objects.filter(id_usuario=pk)
+                
+                lista_roles_bd = [rol.id_rol.id_rol for rol in roles_actuales]
+                lista_roles_json = request.data.getlist("roles")
+                
+                lista_roles_json = [int(a) for a in lista_roles_json]
+                
+                if 1 in lista_roles_json:
+                    lista_roles_json.remove(1)
+                
+                if tipo_usuario_ant == 'E' and tipo_usuario_act == 'E':
+                    lista_roles_json = [2]
             
-                # ACTUALIZAR FOTO DE USUARIO
-                foto_usuario = request.data.get('profile_img', None)
-                if foto_usuario:
-                    user.profile_img = foto_usuario
-                    user.save()
-                    previous_user.profile_img = foto_usuario
-                    return Response({'message': 'Foto de usuario actualizada correctamente.'}, status=status.HTTP_200_OK)
+                valores_creados_detalles=[]
+                valores_eliminados_detalles = []
 
-                # ACTUALIZAR ESTADO DE BLOQUEO 
-                is_blocked_act = user_serializer.validated_data.get('is_blocked')
-                if is_blocked_act is not None:
-                    user.is_blocked = is_blocked_act
+                dirip = Util.get_client_ip(request)
+                descripcion = {'nombre_de_usuario': user.nombre_de_usuario}
+
+                if set(lista_roles_bd) != set(lista_roles_json):
+                    roles = Roles.objects.filter(id_rol__in=lista_roles_json)
+                    if len(set(lista_roles_json)) != len(roles):
+                        raise ValidationError('Debe validar que todos los roles elegidos existan')
+                    
+                    for rol in roles:
+                        if rol.id_rol not in lista_roles_bd:
+                            UsuariosRol.objects.create(
+                                id_usuario=user, 
+                                id_rol=rol
+                            )
+
+                            descripcion={'nombre':rol.nombre_rol}
+                            valores_creados_detalles.append(descripcion)
+                
+                    # ELIMINAR ROLES
+                    for rol in lista_roles_bd:
+                        if rol not in lista_roles_json:
+                            
+                            if rol == 2:
+                                raise PermissionDenied('El rol de ciudadano no puede ser eliminado')
+                            else:
+                                roles_actuales_borrar = roles_actuales.filter(id_usuario=user.id_usuario, id_rol=rol).first()
+                                diccionario = {'nombre': roles_actuales_borrar.id_rol.nombre_rol}
+                                valores_eliminados_detalles.append(diccionario)
+                                roles_actuales_borrar.delete()
+                    
+                    valores_actualizados = {'current': user, 'previous': previous_user}
+                    #AUDITORIA DEL SERVICIO DE ACTUALIZADO PARA DETALLES
+                    auditoria_data = {
+                        "id_usuario" : user_loggedin,
+                        "id_modulo" : 2,
+                        "cod_permiso": "AC",
+                        "subsistema": 'SEGU',
+                        "dirip": dirip,
+                        "descripcion": descripcion,
+                        "valores_actualizados_maestro": valores_actualizados, 
+                        "valores_eliminados_detalles":valores_eliminados_detalles,
+                        "valores_creados_detalles":valores_creados_detalles
+                    }
+                    Util.save_auditoria_maestro_detalle(auditoria_data)
+                
+                user_actualizado = user_serializer.save()
 
                 # HISTORICO 
                 usuario_afectado = User.objects.get(id_usuario=id_usuario_afectado)
                 usuario_operador = User.objects.get(id_usuario=id_usuario_operador)
                 cod_operacion = ""
 
-                if user.is_active != previous_user.is_active:
-                    cod_operacion += "A" if user.is_active else "I"
-
-                if user.is_blocked != previous_user.is_blocked:
-                    cod_operacion += "B" if user.is_blocked else "D"
-
-                if tipo_usuario_ant != tipo_usuario_act:
-                    if tipo_usuario_ant == 'E' and tipo_usuario_act == 'I':
-                        cod_operacion = "A"
-                        justificacion = "Activación automática por cambio de usuario externo a usuario interno"
-                    elif tipo_usuario_ant == 'I' and tipo_usuario_act == 'E':
-                        cod_operacion = "I"
-                        justificacion = " "
-
-                if cod_operacion:
+                if previous_user.tipo_usuario == 'E' and user_actualizado.tipo_usuario == 'I' and not previous_user.is_active:
+                    cod_operacion = "A"
+                    justificacion = "Activación automática por cambio de usuario externo a usuario interno"
+                    
+                    subject = "Verificación exitosa"
+                    template = "verificacion-cuenta.html"
+                    absurl = FRONTEND_URL+"#/auth/login"
+                    Util.notificacion(user_actualizado.persona,subject,template,absurl=absurl)
+                    
                     HistoricoActivacion.objects.create(
                         id_usuario_afectado = usuario_afectado,
                         cod_operacion = cod_operacion,
@@ -206,87 +242,38 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                         justificacion = justificacion,
                         usuario_operador = usuario_operador,
                     )
-                
-                user.save()
-
-                # AUDITORIA AL ACTUALIZAR USUARIO
-
-                dirip = Util.get_client_ip(request)
-                descripcion = {'nombre_de_usuario': user.nombre_de_usuario}
-                valores_actualizados = {'current': user, 'previous': previous_user}
-                
-                auditoria_user = {
-                    'id_usuario': user_loggedin,
-                    'id_modulo': 2,
-                    'cod_permiso': 'AC',
-                    'subsistema': 'SEGU',
-                    'dirip': dirip,
-                    'descripcion': descripcion,
-                    'valores_actualizados': valores_actualizados
-                }
-                
-                Util.save_auditoria(auditoria_user)
-                
-                # AUDITORIA AL ACTUALIZAR ROLES
-                
-                usuario = User.objects.get(id_usuario=user_loggedin)
-                modulo = Modulos.objects.get(id_modulo = 5)
-                permiso = Permisos.objects.get(cod_permiso = 'AC')
-                
-                descripcion_roles = 'nombre_de_usuario:' + user.nombre_de_usuario
-                
-                if roles_previous:
-                    for rol in roles_previous:
-                        rol_previous = Roles.objects.filter(id_rol=rol['id_rol']).first()
-                        descripcion_roles += '|' + 'nombre_rol:' + rol_previous.nombre_rol
-                    descripcion_roles += '.'
-                else:
-                    descripcion_roles += '.'
-                
-                if roles_asignados:
-                    valores_actualizados = 'Se agregó en el detalle el rol '
-                    for field, value in roles_asignados.items():
-                        valores_actualizados += '' if not valores_actualizados else '|'
-                        valores_actualizados += field + ":" + str(value)
-                        
-                    valores_actualizados += '.'
                     
-                    auditoria_user = Auditorias.objects.create(
-                        id_usuario = usuario,
-                        id_modulo = modulo,
-                        id_cod_permiso_accion = permiso,
-                        subsistema = 'SEGU',
-                        dirip = dirip,
-                        descripcion = descripcion_roles,
-                        valores_actualizados = valores_actualizados
+                elif user_actualizado.is_active != previous_user.is_active:
+                    cod_operacion = "A" if user_actualizado.is_active else "I"
+                    subject = "Verificación exitosa"
+                    template = "verificacion-cuenta.html"
+                    absurl = FRONTEND_URL+"#/auth/login"
+                    Util.notificacion(user_actualizado.persona,subject,template,absurl=absurl)
+                    
+                    HistoricoActivacion.objects.create(
+                        id_usuario_afectado = usuario_afectado,
+                        cod_operacion = cod_operacion,
+                        fecha_operacion = fecha_operacion,
+                        justificacion = justificacion_activacion,
+                        usuario_operador = usuario_operador,
                     )
                     
-                    auditoria_user.save()
-                
-                if roles_eliminados:
-                    valores_actualizados = 'Se eliminó en el detalle el rol '
-                    for field, value in roles_eliminados.items():
-                        valores_actualizados += '' if not valores_actualizados else '|'
-                        valores_actualizados += field + ":" + str(value)
-                        
-                    valores_actualizados += '.'
+                if user_actualizado.is_blocked != previous_user.is_blocked:
+                    cod_operacion = "B" if user_actualizado.is_blocked else "D"
                     
-                    auditoria_user = Auditorias.objects.create(
-                        id_usuario = usuario,
-                        id_modulo = modulo,
-                        id_cod_permiso_accion = permiso,
-                        subsistema = 'SEGU',
-                        dirip = dirip,
-                        descripcion = descripcion_roles,
-                        valores_actualizados = valores_actualizados
+                    HistoricoActivacion.objects.create(
+                        id_usuario_afectado = usuario_afectado,
+                        cod_operacion = cod_operacion,
+                        fecha_operacion = fecha_operacion,
+                        justificacion = justificacion_bloqueo,
+                        usuario_operador = usuario_operador,
                     )
-                    
-                    auditoria_user.save()
-                return Response({'success': True, 'detail':'Actualización exitosa','data': user_serializer.data}, status=status.HTTP_200_OK)
+
+                return Response({'success':True, 'detail':'Actualización exitosa','data': user_serializer.data}, status=status.HTTP_200_OK)
             else:
-                return Response({'success': False,'detail': 'No se encontró el usuario'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('No se encontró el usuario')
         else:
-            return Response({'success': False,'detail': 'No puede realizar esa acción'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No puede actualizar sus propios datos por este módulo')
 
 @api_view(['GET'])
 def roles(request):
@@ -319,7 +306,7 @@ def getUserById(request, pk):
         user = User.objects.get(id_usuario=pk)
         pass
     except:
-        return Response({'success':False,'detail': 'No existe ningún usuario con este ID'}, status=status.HTTP_404_NOT_FOUND)
+        raise NotFound('No existe ningún usuario con este ID')
     serializer = UserSerializer(user, many=False)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -341,7 +328,7 @@ class GetUserByPersonDocument(generics.ListAPIView):
                 serializador = PersonasSerializer(persona, many=False)
                 return Response({'success':True,'Persona': serializador.data}, status=status.HTTP_200_OK)
         except:
-            return Response({'success':False,'detail': 'No se encuentra persona con este numero de documento'}, status=status.HTTP_200_OK)
+            raise NotFound('No se encuentra persona con este numero de documento')
 
 
 class GetUserByEmail(generics.ListAPIView):
@@ -353,13 +340,13 @@ class GetUserByEmail(generics.ListAPIView):
             persona = Personas.objects.get(email=email)
             pass
         except:
-            return Response({'success':False,'detail': 'No se encuentra ninguna persona con este email'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encuentra ninguna persona con este email')
         try:
             user = User.objects.get(persona=persona.id_persona)
             serializer = self.serializer_class(user, many=False)
             return Response({'success':True,'Usuario': serializer.data}, status=status.HTTP_200_OK)
         except:
-            return Response({'success':False,'detail': 'Este email está conectado a una persona, pero esa persona no tiene asociado un usuario'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('Este email está conectado a una persona, pero esa persona no tiene asociado un usuario')
 
 """@api_view(['PUT'])
 @permission_classes([IsAuthenticated])
@@ -392,17 +379,25 @@ class AsignarRolSuperUsuario(generics.CreateAPIView):
         persona = Personas.objects.filter(id_persona=id_persona).first()
         
         if not persona:
-            return Response({'success':False,'detail': 'No existe la persona'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe la persona')
 
         usuario_delegado = User.objects.filter(persona=persona.id_persona).exclude(id_usuario=1).first()
         
         if not usuario_delegado or usuario_delegado.tipo_usuario != 'I': 
-            return Response({'success':False,'detail': 'Esta persona no tiene un usuario interno, por lo tanto no puede asignarle este rol'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('Esta persona no tiene un usuario interno, por lo tanto no puede asignarle este rol')
         
        #Delegación del super usuario       
     
         usuario_delegante = User.objects.filter(id_usuario=user_logeado).first()
         previous_usuario_delegante = copy.copy(usuario_delegante)
+
+        #EMAIL para DELEGANTE
+        template = 'delegar-superusuario-delegante.html'
+        subject = 'Delegación de rol exitosa'
+        absurl = FRONTEND_URL+"#/auth/login"
+        
+        Util.notificacion(usuario_delegante.persona,subject,template,absurl=absurl)
+
         usuario_delegante.persona = persona
         usuario_delegante.save()
 
@@ -421,17 +416,14 @@ class AsignarRolSuperUsuario(generics.CreateAPIView):
         }
         Util.save_auditoria(auditoria_data)
         
-        #EMAIL para DELEGANTE
-        template = 'email-delegate-superuser.html'
-        subject = 'Delegación de rol exitosa'
-        
-        Util.notificacion(usuario_delegante.persona,subject,template)
-        
         #EMAIL para DELEGADO
+        template = 'delegar-superusuario-delegado.html'
+        subject = 'Delegación de rol exitosa'
+        absurl = FRONTEND_URL+"#/auth/login"
         
-        Util.notificacion(usuario_delegado.persona,subject,template)
+        Util.notificacion(usuario_delegado.persona,subject,template,absurl=absurl)
         
-        return Response({'success':True,'detail': 'Delegación y notificación exitosa'}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Delegación y notificación exitosa'}, status=status.HTTP_200_OK)
 
 class UnblockUser(generics.CreateAPIView):
     serializer_class = DesbloquearUserSerializer
@@ -449,7 +441,7 @@ class UnblockUser(generics.CreateAPIView):
             usuario_bloqueado
             pass
         except:
-            return Response({'success':False,'detail': 'Los datos ingresados de usuario son incorrectos, intenta nuevamente'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Los datos ingresados de usuario son incorrectos, intenta nuevamente')
         
         uidb64 = signing.dumps({'user': str(usuario_bloqueado.id_usuario)})
         token = PasswordResetTokenGenerator().make_token(usuario_bloqueado)
@@ -458,13 +450,14 @@ class UnblockUser(generics.CreateAPIView):
         relative_link = reverse('password-reset-confirm', kwargs={'uidb64': uidb64, 'token': token})
 
         redirect_url = request.data.get('redirect_url', '')
+        redirect_url=quote_plus(redirect_url)
         absurl = 'http://' + current_site + relative_link
 
         try:
             persona_usuario_bloqueado = Personas.objects.get( Q(id_persona=usuario_bloqueado.persona.id_persona))
             pass
         except:
-            return Response({'success':False,'detail': 'Los datos ingresados de usuario-persona son incorrectos, intenta nuevamente' }, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Los datos ingresados de usuario-persona son incorrectos, intenta nuevamente')
         
         tipo_persona = persona_usuario_bloqueado.tipo_persona
         if tipo_persona == 'N':    
@@ -478,19 +471,12 @@ class UnblockUser(generics.CreateAPIView):
                                                                 )
                 pass
             except:
-                return Response({'success':False,'detail': 'Los datos ingresados de persona natural son incorrectos, intenta nuevamente'}, status=status.HTTP_400_BAD_REQUEST)
-            short_url = Util.get_short_url(request, absurl+'?redirect-url='+redirect_url)
-            sms = 'Puedes desbloquear tu usuario en el siguiente link ' + short_url
-            context = {'primer_nombre': persona_usuario_bloqueado.primer_nombre, 'primer_apellido': persona_usuario_bloqueado.primer_apellido, 'absurl': absurl+'?redirect-url='+ redirect_url}
-            template = render_to_string(('email-unblock-user-naturalperson.html'), context)
-            subject = 'Desbloquea tu usuario' + persona_usuario_bloqueado.primer_nombre
-            data = {'template': template, 'email_subject': subject, 'to_email': persona_usuario_bloqueado.email}
-            Util.send_email(data)
-            try:
-                Util.send_sms(persona_usuario_bloqueado.telefono_celular, sms)
-            except:
-                return Response({'success':True, 'detail':'No se pudo enviar sms de confirmacion'}, status=status.HTTP_200_OK)
-            pass 
+                raise ValidationError('Los datos ingresados de persona natural son incorrectos, intenta nuevamente')
+            
+            subject = "Desbloquea tu usuario"
+            template = "desbloqueo-de-usuario.html"
+
+            Util.notificacion(persona_usuario_bloqueado,subject,template,absurl=absurl+'?redirect-url='+ redirect_url)
 
         else:
             try:
@@ -502,20 +488,13 @@ class UnblockUser(generics.CreateAPIView):
                                                                 )
                 pass
             except:
-                return Response({'success':False,'detail': 'Los datos ingresados de persona juridica son incorrectos, intenta nuevamente'}, status=status.HTTP_400_BAD_REQUEST)                                 
-            short_url = Util.get_short_url(request, absurl+'?redirect-url='+redirect_url)
-            sms = 'Puedes desbloquear tu usuario en el siguiente link ' + short_url
-            context = {'razon_social': persona_usuario_bloqueado.razon_social, 'absurl': absurl+'?redirect-url='+ redirect_url}
-            template = render_to_string(('email-unblock-user-naturaljuridica.html'), context)
-            subject = 'Desbloquea tu usuario' + persona_usuario_bloqueado.razon_social
-            data = {'template': template, 'email_subject': subject, 'to_email': persona_usuario_bloqueado.email}
-            Util.send_email(data)
-            try:
-                Util.send_sms(persona_usuario_bloqueado.telefono_celular_empresa, sms)
-            except:
-                return Response({'success':True, 'detail':'No se pudo enviar sms de confirmacion'}, status=status.HTTP_200_OK)
-            pass
-        return Response({'success': True, 'detail': 'Email y sms enviado para desbloquear usuario'}, status=status.HTTP_200_OK)
+                raise ValidationError('Los datos ingresados de persona juridica son incorrectos, intenta nuevamente')                                 
+            subject = "Desbloquea tu usuario"
+            template = "desbloqueo-de-usuario.html"
+
+            Util.notificacion(persona_usuario_bloqueado,subject,template,absurl=absurl+'?redirect-url='+ redirect_url)
+
+        return Response({'success':True, 'detail':'Email y sms enviado para desbloquear usuario'}, status=status.HTTP_200_OK)
 
 class UnBlockUserPassword(generics.GenericAPIView):
     serializer_class = SetNewPasswordUnblockUserSerializer
@@ -523,111 +502,98 @@ class UnBlockUserPassword(generics.GenericAPIView):
     def patch(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        return Response({'success': True, 'detail': 'Usuario Desbloqueado'}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Usuario Desbloqueado'}, status=status.HTTP_200_OK)
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
-    # renderer_classes = (UserRender,)
-    permission_classes = [IsAuthenticated, PermisoCrearUsuarios]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        user_logeado = request.user.id_usuario
         data = request.data
-        redirect_url=request.data.get('redirect_url','')
-        tipo_usuario = data.get('tipo_usuario')
-        fecha_actual = datetime.today()
-        
-        if " " in data['nombre_de_usuario']:
-            return Response({'success':False,'detail':'No puede contener espacios en el nombre de usuario'},status=status.HTTP_403_FORBIDDEN)
-
+        data._mutable = True
+        usuario_logueado = request.user.id_usuario
         persona = Personas.objects.filter(id_persona=data['persona']).first()
         
-        if not persona:
-            return Response ({'success':False,'detail':'No existe la persona'},status=status.HTTP_404_NOT_FOUND)
+        # ASIGNAR USUARIO CREADO COMO ID_USUARIO_CREADOR
+        data['id_usuario_creador'] = usuario_logueado
         
-        if not persona.email:
-                return Response({'success':False,'detail':'La persona no tiene un correo electrónico de notificación asociado, debe acercarse a Cormacarena y realizar una actualizacion  de datos para proceder con la creación del usuario en el sistema'},status=status.HTTP_403_FORBIDDEN)
-    
-        usuario = persona.user_set.exclude(id_usuario=1)
-
-        if usuario:
-            return Response ({'success':False,'detail':'la persona ya posee un usuario en el sistema, en caso de pérdida de credenciales debe usar las opciones de recuperación'},status=status.HTTP_403_FORBIDDEN)
-
-        # VALIDACIÓN DE CARGO ACTUAL SI EL TIPO DE USUARIO ES INTERNO
-        if tipo_usuario == 'I':
-            cargo_actual = persona.id_cargo
-            fecha_fin_cargo_actual = persona.fecha_a_finalizar_cargo_actual
-            if not cargo_actual or not fecha_fin_cargo_actual or fecha_fin_cargo_actual <= fecha_actual:
-                return Response({'success': False,'detail': 'La persona no tiene un cargo actual o el cargo actual está vencido, no se puede crear el usuario'}, status=status.HTTP_403_FORBIDDEN)
-
-        #CREAR USUARIO
-        serializer = self.serializer_class(data=data, many=False)
+        serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
-        nombre_usuario_creado = serializer.validated_data.get('nombre_de_usuario')
-        tipo_usuario = serializer.validated_data.get('tipo_usuario')
-        if tipo_usuario != 'I':
-            return Response({'success':False,'detail': 'El tipo de usuario debe ser interno'}, status=status.HTTP_403_FORBIDDEN)
-
-        serializador = serializer.save()
-
-        #AUDITORIA CREAR USUARIO
-        dirip = Util.get_client_ip(request)
-        descripcion = {'nombre_de_usuario': serializador.nombre_de_usuario}
-        auditoria_data = {
-            'id_usuario': user_logeado,
-            'id_modulo': 2,
-            'cod_permiso': 'CR',
-            'subsistema': 'SEGU',
-            'dirip': dirip,
-            'descripcion': descripcion
-        }
-        Util.save_auditoria(auditoria_data)
-
-        #ASIGNACIÓN DE ROLES AL USUARIO
-        roles = request.data['roles']
-        for rol in roles:
-            try:
-                consulta_rol = Roles.objects.get(id_rol=rol['id_rol'])
-                descripcion["Rol" + str(rol['id_rol'])] = str(consulta_rol.nombre_rol)
-                if consulta_rol:
-                    UsuariosRol.objects.create(
-                        id_rol = consulta_rol,
-                        id_usuario = serializador
-                    )    
-
-                    #Auditoria Asignación de Roles    
-                    dirip = Util.get_client_ip(request)
-                    auditoria_data = {
-                        'id_usuario': user_logeado,
-                        'id_modulo': 5,
-                        'cod_permiso': 'CR',
-                        'subsistema': 'SEGU',
-                        'dirip': dirip,
-                        'descripcion': descripcion,
-                    }
-                    Util.save_auditoria(auditoria_data)
-                else:
-                    return Response({'success':False,'detail':'No se puede asignar este rol por que no existe'}, status=status.HTTP_400_BAD_REQUEST)
-            except:
-                return Response({'success':False,'detail':'No se puede consultar por que no existe este rol'}, status=status.HTTP_400_BAD_REQUEST)
         
-        token = RefreshToken.for_user(serializador)
-        current_site=get_current_site(request).domain
+        #VALIDACION DE USUARIO EXISTENTE A LA PERSONA
+        usuario = persona.user_set.exclude(id_usuario=1).first()
 
-        relativeLink= reverse('verify')
-        absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
-        short_url = Util.get_short_url(request, absurl)
+        print("usuario",usuario)
+        if usuario:
+            if usuario.is_active:
+                raise PermissionDenied('La persona ya posee un usuario en el sistema')
+            elif not usuario.is_active:
+                raise PermissionDenied('La persona ya posee un usuario en el sistema pero está inactivo')
+        
+        if data["tipo_usuario"] == "I":
+            # VALIDAR QUE PERSONA NO SEA JURIDICA
+            if persona.tipo_persona == 'J':
+                raise PermissionDenied('No puede registrar una persona jurídica como un usuario interno')
+                
+            # VALIDAR QUE TENGA CARGO
+            if not persona.id_cargo:
+                raise PermissionDenied('La persona no tiene un cargo asociado')
+            
+            # VALIDAR QUE ESTE VIGENTE EL CARGO
+            if not persona.fecha_a_finalizar_cargo_actual or persona.fecha_a_finalizar_cargo_actual <= datetime.now():
+                raise PermissionDenied('La fecha de finalización del cargo actual no es vigente')
+        
+        valores_creados_detalles = []
+        # ASIGNACIÓN DE ROLES
+        roles_por_asignar = data.getlist("roles")
+        
+        if not roles_por_asignar:
+            raise ValidationError('Debe enviar mínimo un rol para asignar al usuario')
+        
+        roles_por_asignar = [int(a) for a in roles_por_asignar]
+        roles_por_asignar= set(roles_por_asignar)
+    
+        if data["tipo_usuario"] == "I":
+            if 2 not in roles_por_asignar:
+                roles_por_asignar.append(2)
+            if 1 in roles_por_asignar:
+                roles_por_asignar.remove(1)
+        elif data["tipo_usuario"] == "E":
+            roles_por_asignar = [2]
+        
+        roles = Roles.objects.filter(id_rol__in=roles_por_asignar)
+        
+        if len(roles) != len(set(roles_por_asignar)):
+            raise ValidationError('Deben existir todos los roles asignados')
+
+        user_serializer=serializer.save()
+
+        for rol in roles:
+            UsuariosRol.objects.create(
+                id_usuario=user_serializer,
+                id_rol=rol
+            )
+            descripcion={'nombre':rol.nombre_rol}
+            valores_creados_detalles.append(descripcion)
+
+
+        uidb64 =signing.dumps({'user':str(user_serializer.id_usuario)})
+        token = PasswordResetTokenGenerator().make_token(user_serializer)
+        current_site=get_current_site(request=request).domain
+        relativeLink=reverse('password-reset-confirm',kwargs={'uidb64':uidb64,'token':token})
+        redirect_url= request.data.get('redirect_url','')
+        redirect_url=quote_plus(redirect_url)
+        absurl='http://'+ current_site + relativeLink + '?redirect-url='+ redirect_url
         
         subject = "Verifica tu usuario"
-        template = "email-verification.html"
+        template = "activación-de-usuario.html"
 
-        Util.notificacion(persona,subject,template,absurl=absurl)
+        Util.notificacion(persona,subject,template,absurl=absurl,email=persona.email)
         
-        return Response({'success':True,'detail': 'Usuario creado exitosamente, se ha enviado un correo a '+persona.email+', con la información para la activación del usuario en el sistema', 'usuario': serializer.data, 'Roles': roles, "redirect:":redirect_url}, status=status.HTTP_201_CREATED)
+        return Response({'success':True, 'detail':'Usuario creado exitosamente, se ha enviado un correo a ' + persona.email + ', con la información para la activación del usuario en el sistema', 'data': serializer.data}, status=status.HTTP_201_CREATED)
 
 class RegisterExternoView(generics.CreateAPIView):
     serializer_class = RegisterExternoSerializer
-    # renderer_classes = (UserRender,)
 
     def post(self, request):
         user = request.data
@@ -635,24 +601,27 @@ class RegisterExternoView(generics.CreateAPIView):
         persona = Personas.objects.filter(id_persona=user['persona']).first()
         
         if not persona:
-            return Response({'success':False,'detail':'No existe la persona'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe la persona')
         
         if not persona.email:
-            return Response({'success':False,'detail':'La persona no tiene un correo electrónico de notificación asociado, debe acercarse a Cormacarena y realizar una actualizacion  de datos para proceder con la creación del usuario en el sistema'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('La persona no tiene un correo electrónico de notificación asociado, debe acercarse a Cormacarena y realizar una actualizacion  de datos para proceder con la creación del usuario en el sistema')
     
         usuario = persona.user_set.exclude(id_usuario=1).first()
 
         if usuario:
-            if usuario.is_active == True or usuario.tipo_usuario == "I":
-                return Response({'success':False,'detail':'La persona ya posee un usuario en el sistema, en caso de pérdida de credenciales debe usar las opciones de recuperación'},status=status.HTTP_403_FORBIDDEN)
-
-            if usuario.is_active == False:
-                return Response({'success':False,'detail':"La persona ya posee un usuario en el sistema, pero no se encuentra activado, ¿desea reenviar el correo de activación?","modal":True,"id_usuario":usuario.id_usuario},status=status.HTTP_403_FORBIDDEN)
+            if usuario.is_active or usuario.tipo_usuario == "I":
+                raise PermissionDenied('La persona ya posee un usuario en el sistema, en caso de pérdida de credenciales debe usar las opciones de recuperación')
+            elif not usuario.is_active and usuario.tipo_usuario == "E" :
+                try:
+                    raise PermissionDenied('La persona ya posee un usuario en el sistema, pero no se encuentra activado, ¿desea reenviar el correo de activación?')
+                except PermissionDenied as e:
+                    return Response({'success':False, 'detail':'La persona ya posee un usuario en el sistema, pero no se encuentra activado, ¿desea reenviar el correo de activación?',"modal":True,"id_usuario":usuario.id_usuario}, status=status.HTTP_403_FORBIDDEN)
 
         redirect_url=request.data.get('redirect_url','')
+        redirect_url=quote_plus(redirect_url)
         
         if " " in user['nombre_de_usuario']:
-            return Response({'success':False,'detail':'No puede contener espacios en el nombre de usuario'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No puede contener espacios en el nombre de usuario')
         
         user['creado_por_portal'] = True
         
@@ -698,23 +667,17 @@ class RegisterExternoView(generics.CreateAPIView):
         }
         Util.save_auditoria(auditoria_data)
 
-        #user = User.objects.get(email=user_data['email'])
-
         token = RefreshToken.for_user(serializer_response)
 
         current_site=get_current_site(request).domain
 
-        #persona = Personas.objects.get(id_persona = request.data['persona'])
-
         relativeLink= reverse('verify')
         absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
-
-        # short_url = Util.get_short_url(request, absurl)
         
         subject = "Verifica tu usuario"
-        template = "email-verification.html"
+        template = "activación-de-usuario.html"
 
-        Util.notificacion(persona,subject,template,absurl=absurl)
+        Util.notificacion(persona,subject,template,absurl=absurl,email=persona.email)
     
         return Response({'success':True, 'detail':'Usuario creado exitosamente, se ha enviado un correo a '+persona.email+', con la información para la activación del usuario en el sistema', 'data':user_data}, status=status.HTTP_201_CREATED)
 
@@ -727,50 +690,48 @@ class Verify(views.APIView):
     def get(self, request):
         token = request.GET.get('token')
         redirect_url= request.query_params.get('redirect-url')
+        redirect_url=unquote_plus(redirect_url)
         try:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms='HS256')
             user = User.objects.get(id_usuario=payload['user_id'])
             if not user.is_active:
                 user.is_active = True
+                user.activated_at = datetime.now()
                 user.save()
-                if user.persona.tipo_persona == 'N':
-                    context = {'primer_nombre': user.persona.primer_nombre}
-                    template = render_to_string(('email-verified.html'), context)
-                    subject = 'Verificación exitosa ' + user.nombre_de_usuario
-                    data = {'template': template, 'email_subject': subject, 'to_email': user.persona.email}
-                    Util.send_email(data)
-                else:
-                    context = {'razon_social': user.persona.razon_social}
-                    template = render_to_string(('email-verified.html'), context)
-                    subject = 'Verificación exitosa ' + user.nombre_de_usuario
-                    data = {'template': template, 'email_subject': subject, 'to_email': user.persona.email}
-                    Util.send_email(data)
+                
+                HistoricoActivacion.objects.create(
+                    id_usuario_afectado=user,
+                    justificacion='Activación Inicial del Usuario',
+                    usuario_operador=user,
+                    cod_operacion='A'
+                )
+                
+                subject = "Verificación exitosa"
+                template = "verificacion-cuenta.html"
+                absurl = FRONTEND_URL+"#/auth/login"
+                Util.notificacion(user.persona,subject,template,absurl=absurl)
             
             # ELIMINAR DIRECCIÓN CORTA SI EXISTE
             current_site=get_current_site(request).domain
 
             relativeLink= reverse('verify')
             absurl= 'http://'+ current_site + relativeLink + "?token="+ token + '&redirect-url=' + redirect_url
-            print("absurl: ", absurl)
             short_url = Shortener.objects.filter(long_url=absurl).first()
-            print("SHORT_URL: ", short_url)
             if short_url:
                 short_url.delete()
-        
-            return redirect(redirect_url)
+            redirect_url = redirect_url + '&' if '?' in redirect_url else redirect_url + '?'
+            return redirect(redirect_url + "success=True")
         except jwt.ExpiredSignatureError as identifier:
             # ELIMINAR DIRECCIÓN CORTA SI EXISTE
             current_site=get_current_site(request).domain
 
             relativeLink= reverse('verify')
             absurl= 'http://'+ current_site + relativeLink + "?token="+ token + '&redirect-url=' + redirect_url
-            print("absurl: ", absurl)
             short_url = Shortener.objects.filter(long_url=absurl).first()
-            print("SHORT_URL: ", short_url)
             if short_url:
                 short_url.delete()
-                
-            return redirect(redirect_url)
+            redirect_url = redirect_url + '&' if '?' in redirect_url else redirect_url + '?'
+            return redirect(redirect_url + "success=False")
 
         except jwt.exceptions.DecodeError as identifier:
             # ELIMINAR DIRECCIÓN CORTA SI EXISTE
@@ -778,13 +739,11 @@ class Verify(views.APIView):
 
             relativeLink= reverse('verify')
             absurl= 'http://'+ current_site + relativeLink + "?token="+ token + '&redirect-url=' + redirect_url
-            print("absurl: ", absurl)
             short_url = Shortener.objects.filter(long_url=absurl).first()
-            print("SHORT_URL: ", short_url)
             if short_url:
                 short_url.delete()
-                
-            return redirect(redirect_url)
+            redirect_url = redirect_url + '&' if '?' in redirect_url else redirect_url + '?'
+            return redirect(redirect_url + "success=False")
 
 class LoginConsultarApiViews(generics.RetrieveAPIView):
     serializer_class=LoginSerializers
@@ -812,7 +771,7 @@ class DeactivateUsers(generics.ListAPIView):
             
             return Response({'success':True, 'detail':'Se eliminó la sesión del usuario elegido'}, status=status.HTTP_200_OK)
         else:
-            return Response({'success':False, 'detail':'No se encontró el usuario para la persona ingresada'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se encontró el usuario para la persona ingresada')
 
 #__________________LoginErroneo
 
@@ -826,6 +785,7 @@ class LoginErroneoListApiViews(generics.ListAPIView):
 
 class LoginApiView(generics.CreateAPIView):
     serializer_class=LoginSerializer
+
     def post(self, request):
         data = request.data
         user = User.objects.filter(nombre_de_usuario=data['nombre_de_usuario']).first()
@@ -874,7 +834,7 @@ class LoginApiView(generics.CreateAPIView):
                         Util.send_sms(user.persona.telefono_celular, sms)
                     else:
                         subject = "Login exitoso"
-                        template = "email-login.html"
+                        template = "notificacion-login.html"
                         Util.notificacion(user.persona,subject,template,nombre_de_usuario=user.nombre_de_usuario)
                     
                     return Response({'userinfo':user_info}, status=status.HTTP_200_OK)
@@ -894,20 +854,36 @@ class LoginApiView(generics.CreateAPIView):
                             if login_error.contador == 3:
                                 user.is_blocked = True
                                 user.save()
-                                return Response({'success':False,'detail':'Su usuario ha sido bloqueado'}, status=status.HTTP_403_FORBIDDEN)
+                        
+                                HistoricoActivacion.objects.create(
+                                    id_usuario_afectado = user,
+                                    cod_operacion = 'B',
+                                    fecha_operacion = datetime.now(),
+                                    justificacion = 'Usuario bloqueado por exceder los intentos incorrectos en el login',
+                                    usuario_operador = user,
+                                )
+                                
+
+                                raise PermissionDenied('Su usuario ha sido bloqueado')
                             serializer = LoginErroneoPostSerializers(login_error, many=False)
-                            return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
+                            try:
+                                raise ValidationError('La contraseña es invalida')
+                            except ValidationError as e:
+                                return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
                         else:
                             if user.is_blocked:
-                                return Response({'success':False, 'detail':'Su usuario está bloqueado, debe comunicarse con el administrador'}, status=status.HTTP_403_FORBIDDEN)
+                                raise PermissionDenied('Su usuario está bloqueado, debe comunicarse con el administrador')
                             else:
                                 login_error.contador = 1
                                 login_error.save()
                                 serializer = LoginErroneoPostSerializers(login_error, many=False)
-                                return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
+                                try:
+                                    raise ValidationError('La contraseña es invalida')
+                                except ValidationError as e:
+                                    return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
                     else:
                         if user.is_blocked:
-                            return Response({'success':False, 'detail':'Su usuario está bloqueado, debe comunicarse con el administrador'}, status=status.HTTP_403_FORBIDDEN)
+                            raise PermissionDenied('Su usuario está bloqueado, debe comunicarse con el administrador')
                         else:
                             login_error = LoginErroneo.objects.create(
                                 id_usuario = user,
@@ -917,53 +893,23 @@ class LoginApiView(generics.CreateAPIView):
                             )
                         login_error.restantes = 3 - login_error.contador
                         serializer = LoginErroneoPostSerializers(login_error, many=False)
-                        return Response({'success':False,'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
+                        try:
+                            raise ValidationError('La contraseña es invalida')
+                        except ValidationError as e:
+                            return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
             else:
-                return Response({'success':False, 'detail':'Usuario no activado', 'data':{'modal':True, 'id_usuario':user.id_usuario, 'tipo_usuario':user.tipo_usuario}}, status=status.HTTP_403_FORBIDDEN)
+                try:
+                    raise PermissionDenied('Usuario no activado')
+                except PermissionDenied as e:
+                    return Response({'success':False, 'detail':'Usuario no activado', 'data':{'modal':True, 'id_usuario':user.id_usuario, 'tipo_usuario':user.tipo_usuario}}, status=status.HTTP_403_FORBIDDEN)
         else:
             UsuarioErroneo.objects.create(
                 campo_usuario = data['nombre_de_usuario'],
                 dirip = str(ip),
                 dispositivo_conexion = device
             )
-            return Response({'success':False,'detail':'No existe el nombre de usuario ingresado'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No existe el nombre de usuario ingresado')
 
-# class RequestPasswordResetEmail(generics.GenericAPIView):
-#     serializer_class = ResetPasswordEmailRequestSerializer
-
-#     def post(self,request):
-#         serializer=self.serializer_class(data=request.data)
-#         email = request.data['email']
-        
-#         if User.objects.filter(persona__email=email).exists():
-#             user = User.objects.get(persona__email=email)
-#             uidb64 =signing.dumps({'user':str(user.id_usuario)})
-#             print(uidb64)
-#             token = PasswordResetTokenGenerator().make_token(user)
-#             current_site=get_current_site(request=request).domain
-#             relativeLink=reverse('password-reset-confirm',kwargs={'uidb64':uidb64,'token':token})
-#             redirect_url= request.data.get('redirect_url','')
-#             absurl='http://'+ current_site + relativeLink 
-#             if user.persona.tipo_persona == 'N':
-#                 context = {
-#                 'primer_nombre': user.persona.primer_nombre,
-#                 'primer_apellido':user.persona.primer_apellido,
-#                 'absurl': absurl + '?redirect-url='+ redirect_url,
-#                 }
-#                 template = render_to_string(('email-resetpassword.html'), context)
-#                 subject = 'Actualiza tu contraseña ' + user.persona.primer_nombre
-#                 data = {'template': template, 'email_subject': subject, 'to_email': user.persona.email}
-#                 Util.send_email(data)
-#             else:
-#                 context = {
-#                 'razon_social': user.persona.razon_social,
-#                 'absurl': absurl + '?redirect-url='+ redirect_url,
-#                 }
-#                 template = render_to_string(('email-resetpassword.html'), context)
-#                 subject = 'Actualiza tu contraseña ' + user.persona.razon_social
-#                 data = {'template': template, 'email_subject': subject, 'to_email': user.persona.email}
-#                 Util.send_email(data)
-#         return Response( {'success':True,'detail':'Te enviamos el link para poder actualizar tu contraseña'},status=status.HTTP_200_OK)
 
 class RequestPasswordResetEmail(generics.CreateAPIView):
     serializer_class = ResetPasswordEmailRequestSerializer
@@ -983,6 +929,7 @@ class RequestPasswordResetEmail(generics.CreateAPIView):
             current_site=get_current_site(request=request).domain
             relativeLink=reverse('password-reset-confirm',kwargs={'uidb64':uidb64,'token':token})
             redirect_url= request.data.get('redirect_url','')
+            redirect_url=quote_plus(redirect_url)
             absurl='http://'+ current_site + relativeLink 
 
             data_email = None
@@ -990,27 +937,16 @@ class RequestPasswordResetEmail(generics.CreateAPIView):
             nro_telefono = None
             
             if usuario.persona.tipo_persona == "N":
-                context = {
-                    'primer_nombre': usuario.persona.primer_nombre,
-                    'primer_apellido':usuario.persona.primer_apellido,
-                    'absurl': absurl + '?redirect-url='+ redirect_url,
-                }
-                template = render_to_string(('email-resetpassword.html'), context)
-                subject = 'Actualiza tu contraseña ' + usuario.persona.primer_nombre
-                data_email = {'template': template, 'email_subject': subject, 'to_email': usuario.persona.email}
-                
+                template = 'recuperar-contraseña.html'
+                subject = 'Actualiza tu contraseña'
+
                 short_url = Util.get_short_url(request, absurl+'?redirect-url='+redirect_url)
                 sms = subject + ' ' + short_url
                 
                 nro_telefono = usuario.persona.telefono_celular
             else:
-                context = {
-                    'razon_social': usuario.persona.razon_social,
-                    'absurl': absurl + '?redirect-url='+ redirect_url,
-                }
-                template = render_to_string(('email-resetpassword.html'), context)
-                subject = 'Actualiza tu contraseña ' + usuario.persona.razon_social
-                data_email = {'template': template, 'email_subject': subject, 'to_email': usuario.persona.email}
+                template = 'recuperar-contraseña.html'
+                subject = 'Actualiza tu contraseña'
             
                 short_url = Util.get_short_url(request, absurl+'?redirect-url='+redirect_url)
                 sms = subject + ' ' + short_url
@@ -1018,7 +954,7 @@ class RequestPasswordResetEmail(generics.CreateAPIView):
                 nro_telefono = usuario.persona.telefono_celular_empresa
             
             if usuario.persona.email and not nro_telefono:
-                Util.send_email(data_email)
+                Util.notificacion(usuario.persona,subject,template,absurl=absurl + '?redirect-url='+ redirect_url)
             else:
                 if not data.get('tipo_envio') or data.get('tipo_envio') == '':
 
@@ -1027,53 +963,51 @@ class RequestPasswordResetEmail(generics.CreateAPIView):
                         'sms': nro_telefono
                     }   
                     
-                    return Response({'success':True,'detail':'Selecciona uno de los medios para la recuperación de contraseña', 'data':data_persona},status=status.HTTP_200_OK)
+                    return Response({'success':True, 'detail':'Selecciona uno de los medios para la recuperación de contraseña', 'data':data_persona},status=status.HTTP_200_OK)
                 else:
                     if data.get('tipo_envio') == 'email':
-                        Util.send_email(data_email)
+                        Util.notificacion(usuario.persona,subject,template,absurl=absurl + '?redirect-url='+ redirect_url)
                     elif data.get('tipo_envio') == 'sms':
                         Util.send_sms(nro_telefono, sms)
                     else:
-                        return Response({'success':False,'detail':'Debe elegir un tipo de envío valido'},status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('Debe elegir un tipo de envío valido')
                     
-            return Response({'success':True,'detail':'Se ha enviado correctamente la notificación de la recuperación de contraseña'},status=status.HTTP_200_OK)
+            return Response({'success':True, 'detail':'Se ha enviado correctamente la notificación de la recuperación de contraseña'},status=status.HTTP_200_OK)
         else:
-            return Response({'success':False,'detail':'No se encontró ningún usuario por el nombre de usuario ingresado'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontró ningún usuario por el nombre de usuario ingresado')
 
 class PasswordTokenCheckApi(generics.GenericAPIView):
     serializer_class=UserSerializer
     def get(self,request,uidb64,token):
         redirect_url= request.query_params.get('redirect-url')
+        redirect_url=unquote_plus(redirect_url)
         try:
             id = int(signing.loads(uidb64)['user'])
             user = User.objects.get(id_usuario=id)
+            redirect_url = redirect_url + '&' if '?' in redirect_url else redirect_url + '?'
             if not PasswordResetTokenGenerator().check_token(user,token):
                 if len(redirect_url)>3:
-                    return redirect(redirect_url+'?token-valid=False')
+                    return redirect(redirect_url+'token-valid=False')
                 else:
-                    return redirect(FRONTEND_URL+redirect_url+'?token-valid=False')
-                
+                    return redirect(FRONTEND_URL+redirect_url+'token-valid=False')
+            
             # ELIMINAR DIRECCIÓN CORTA SI EXISTE
             current_site=get_current_site(request=request).domain
             relativeLink=reverse('password-reset-confirm',kwargs={'uidb64':uidb64,'token':token})
             
             absurl='http://'+ current_site + relativeLink + '?redirect-url=' + redirect_url
-            print("absurl: ", absurl)
             short_url = Shortener.objects.filter(long_url=absurl).first()
-            print("SHORT_URL: ", short_url)
             if short_url:
                 short_url.delete()
-                
-            return redirect(redirect_url+'?token-valid=True&?message=Credentials-valid?&uidb64='+uidb64+'&?token='+token)
+            redirect_url = redirect_url + '&' if '?' in redirect_url else redirect_url + '?'
+            return redirect(redirect_url+'token-valid=True&message=Credentials-valid&uidb64='+uidb64+'&token='+token)
         except encoding.DjangoUnicodeDecodeError as identifier:
             # ELIMINAR DIRECCIÓN CORTA SI EXISTE
             current_site=get_current_site(request=request).domain
             relativeLink=reverse('password-reset-confirm',kwargs={'uidb64':uidb64,'token':token})
             
             absurl='http://'+ current_site + relativeLink + '?redirect-url=' + redirect_url
-            print("absurl: ", absurl)
             short_url = Shortener.objects.filter(long_url=absurl).first()
-            print("SHORT_URL: ", short_url)
             if short_url:
                 short_url.delete()
                 
@@ -1083,22 +1017,49 @@ class PasswordTokenCheckApi(generics.GenericAPIView):
                 relativeLink=reverse('password-reset-confirm',kwargs={'uidb64':uidb64,'token':token})
                 
                 absurl='http://'+ current_site + relativeLink + '?redirect-url=' + redirect_url
-                print("absurl: ", absurl)
                 short_url = Shortener.objects.filter(long_url=absurl).first()
-                print("SHORT_URL: ", short_url)
                 if short_url:
                     short_url.delete()
-                    
-                return redirect(redirect_url+'?token-valid=False')
+                redirect_url = redirect_url + '&' if '?' in redirect_url else redirect_url + '?'
+                return redirect(redirect_url+'token-valid=False')
 
 
 class SetNewPasswordApiView(generics.GenericAPIView):
     serializer_class=SetNewPasswordSerializer
+    
     def patch(self,request):
-        
         serializer=self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        return Response({'success':True,'message':'Contraseña actualizada'},status=status.HTTP_200_OK)
+        
+        password = request.data.get('password')
+        uidb64 = request.data.get('uidb64')
+        id = int(signing.loads(uidb64)['user'])
+        user = User.objects.filter(id_usuario=id).first()
+        
+        if user.password and user.password != "":
+            message = 'Contraseña actualizada'
+        else:
+            user.is_active = True
+            user.activated_at = datetime.now()
+            
+            HistoricoActivacion.objects.create(
+                id_usuario_afectado=user,
+                justificacion='Activación Inicial del Usuario',
+                usuario_operador=user,
+                cod_operacion='A'
+            )
+            
+            subject = "Verificación exitosa"
+            template = "verificacion-cuenta.html"
+            absurl = FRONTEND_URL+"#/auth/login"
+            Util.notificacion(user.persona,subject,template,absurl=absurl)
+            
+            message = 'Usuario activado correctamente'
+        
+        user.set_password(password)
+        user.save()
+        
+        return Response({'success':True, 'detail':message},status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 def uploadImage(request):
@@ -1126,7 +1087,7 @@ class GetNuevoSuperUsuario(generics.RetrieveAPIView):
             serializador = self.serializer_class(nuevo_super_usuario)
             return Response({'succes':True, 'detail':'Los datos coincidieron con la búsqueda realizada','data':serializador.data},status=status.HTTP_200_OK)
         else: 
-            return Response({'succes':False, 'detail':'La persona no existe o no tiene cargo actual'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('La persona no existe o no tiene cargo actual')
 
 class GetNuevoSuperUsuarioFilters(generics.ListAPIView):
     serializer_class = PersonasFilterSerializer
@@ -1143,7 +1104,7 @@ class GetNuevoSuperUsuarioFilters(generics.ListAPIView):
                         filter[key+'__icontains'] = value
                 elif key == 'numero_documento':
                     if value != '':
-                        filter[key+'__startswith'] = value
+                        filter[key+'__icontains'] = value
                 else:
                     if value != '':
                         filter[key] = value
@@ -1166,6 +1127,7 @@ class ReenviarCorreoVerificacionDeUsuario(generics.UpdateAPIView):
         if user.is_active == False and user.tipo_usuario == "E":
             
             redirect_url=request.data.get('redirect_url','')
+            redirect_url=quote_plus(redirect_url)
 
             token = RefreshToken.for_user(user)
 
@@ -1176,16 +1138,15 @@ class ReenviarCorreoVerificacionDeUsuario(generics.UpdateAPIView):
             relativeLink= reverse('verify')
             absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
 
-            # short_url = Util.get_short_url(request, absurl)
             subject = "Verifica tu usuario"
-            template = "email-verification.html"
+            template = "activación-de-usuario.html"
 
-            Util.notificacion(persona,subject,template,absurl=absurl)
+            Util.notificacion(persona,subject,template,absurl=absurl,email=persona.email)
             
-            return Response({"success":True,'detail':"Se ha enviado un correo a "+persona.email+" con la información para la activación del usuario en el sistema"})
+            return Response({"success":True, 'detail':"Se ha enviado un correo a "+persona.email+" con la información para la activación del usuario en el sistema"})
             
         else: 
-            return Response ({'success':False,'detail':'El usuario ya se encuentra activado'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('El usuario ya se encuentra activado o es un usuario interno')
 
 class BusquedaHistoricoActivacion(generics.ListAPIView):
     serializer_class = HistoricoActivacionSerializers
@@ -1201,25 +1162,13 @@ class BusquedaHistoricoActivacion(generics.ListAPIView):
         if queryset.exists():
             serializer = self.get_serializer(queryset, many=True)
             data = serializer.data
-            for item in data:
-                id_usuario_operador = item['usuario_operador']
-                try:
-                    user = User.objects.get(id_usuario=id_usuario_operador)
-                    persona = user.persona
-                    item['primer_nombre'] = persona.primer_nombre
-                    item['primer_apellido'] = persona.primer_apellido
-                except User.DoesNotExist:
-                    # Si el usuario no existe, se asignan valores vacíos
-                    item['primer_nombre'] = ''
-                    item['primer_apellido'] = ''
-            return Response({'success': True, 'detail': 'Se encontró el siguiente historico de activación para ese usuario', 'data': data}, status=status.HTTP_200_OK)
+            return Response({'success':True, 'detail':'Se encontró el siguiente historico de activación para ese usuario', 'data': data}, status=status.HTTP_200_OK)
         else:
-            return Response({'success': False, 'detail': 'No se encontro historico de activación para ese usuario'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontro historico de activación para ese usuario')
 
 class UsuarioInternoAExterno(generics.UpdateAPIView):
     serializer_class = UsuarioInternoAExternoSerializers
     queryset = User.objects.all()
-    permission_classes = [IsAuthenticated]
 
     def put(self, request, id_usuario):
         user_loggedin = request.user
@@ -1231,53 +1180,85 @@ class UsuarioInternoAExterno(generics.UpdateAPIView):
             usuario.save()
             HistoricoActivacion.objects.create(
                 id_usuario_afectado=usuario,
-                justificacion='Usuario interno desactivado y convertido en externo activo',
+                justificacion='Usuario activado desde el portal, con cambio de INTERNO a EXTERNO',
                 usuario_operador=user_loggedin,
                 cod_operacion='A'
             )
-            return Response({'success': True, 'detail': 'Se activo como usuario externo', 'data': serializador.data}, status=status.HTTP_200_OK)
+
+            subject = "Cambio a usuario externo"
+            template = "cambio-tipo-de-usuario.html"
+            Util.notificacion(usuario.persona,subject,template,nombre_de_usuario=usuario.nombre_de_usuario)
+
+            return Response({'success':True, 'detail':'Se activo como usuario externo', 'data': serializador.data}, status=status.HTTP_200_OK)
         else:
-            return Response({'success': False, 'detail': 'El usuario no existe o no cumple con los requisitos para ser convertido en usuario externo'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('El usuario no existe o no cumple con los requisitos para ser convertido en usuario externo')
+        
 #BUSQUEDA DE USUARIOS ENTREGA 18 UD.11
 
-class BusquedaNombreUsuario(generics.ListAPIView):
-    serializer_class = GetBusquedaNombreUsuario
+class BusquedaByNombreUsuario(generics.ListAPIView):
+    serializer_class = UsuarioBasicoSerializer
     queryset = User.objects.all()
         
     def get(self,request):
         
         nombre_de_usuario = request.query_params.get('nombre_de_usuario')
         
-        busqueda_usuario = User.objects.filter(nombre_de_usuario__icontains=nombre_de_usuario)
+        busqueda_usuario = self.queryset.all().filter(nombre_de_usuario__icontains=nombre_de_usuario)
         
-        if busqueda_usuario:
-            serializador = self.serializer_class(busqueda_usuario,many=True)
-            return Response({'succes':True,'detail':'Se encontraron los siguientes usuarios.','data':serializador.data},status=status.HTTP_200_OK)
+        serializador = self.serializer_class(busqueda_usuario,many=True, context = {'request':request})
         
-        else:
-            return Response({'succes':False,'detail':'No se encontro ningun resultado con los criterios de busqueda.'},status=status.HTTP_200_OK)
+        return Response({'succes':True, 'detail':'Se encontraron los siguientes usuarios.','data':serializador.data},status=status.HTTP_200_OK)
 
 #BUSQUEDA ID PERSONA Y RETORNE LOS DATOS DE LA TABLA USUARIOS
 
-class BuscarIdPersona(generics.RetrieveAPIView):
-    serializer_class = GetBuscarIdPersona
+class BuscarByIdPersona(generics.RetrieveAPIView):
+    serializer_class = UsuarioBasicoSerializer
     queryset = User.objects.all()
     
     def get(self,request,id_persona):
-        persona = Personas.objects.filter(id_persona = id_persona).first()
-        usuarios = User.objects.filter(persona=persona)
-        print(usuarios)
-        
-        #ESTOS SON OTROS DOS METODOS DE BUSQUEDA
-        
-        # (metodo-1)usuarios = User.objects.filter(persona__id_persona = id_persona)
-        
-        # (metodo-2)personau = Personas.objects.filter(id_persona = id_persona).first()
-        # usuarios = personauu.user_set.all()    
-
-        if usuarios:
-            serializador = self.serializer_class(usuarios,many=True)
-            return Response({'succes':True,'detail':'Se encontraron los siguientes usuarios.','data':serializador.data},status=status.HTTP_200_OK)
-        else:
-            return Response({'succes':False,'detail':'No se encontro ningun resultado.'},status=status.HTTP_200_OK)
+        usuarios = self.queryset.all().filter(persona=id_persona)
+            
+        serializador = self.serializer_class(usuarios,many=True, context = {'request':request})
+        return Response({'succes':True, 'detail':'Se encontraron los siguientes usuarios.','data':serializador.data},status=status.HTTP_200_OK)
     
+class GetByIdUsuario(generics.RetrieveAPIView):
+    serializer_class = UsuarioFullSerializer
+    queryset = User.objects.all()
+    
+    def get(self,request,id_usuario):
+        usuario = self.queryset.all().filter(id_usuario=id_usuario).first()
+        
+        if not usuario:
+            raise NotFound('No se encontró el usuario ingresado')
+        
+        serializador = self.serializer_class(usuario, context = {'request':request})
+        return Response({'succes':True, 'detail':'Se encontró la información del usuario', 'data':serializador.data},status=status.HTTP_200_OK)
+    
+
+class RecuperarNombreDeUsuario(generics.UpdateAPIView):
+    serializer_class = RecuperarUsuarioSerializer
+    queryset = User.objects.all()
+    
+    def put(self,request):
+        data = request.data
+        
+        if not data.get('tipo_documento') or not data.get('numero_documento') or not data.get('email'):
+            raise ValidationError('Debe ingresar los parámetros respectivos: tipo de documento, número de documento, email')
+        
+        persona = Personas.objects.filter(tipo_documento=data['tipo_documento'], numero_documento=data['numero_documento'], email=data['email']).first()
+        
+        if persona:
+            usuario = self.queryset.all().filter(persona = persona.id_persona).exclude(id_usuario=1).first()
+            
+            if usuario:
+                
+                subject = "Verifica tu usuario"
+                template = "recuperar-usuario.html"
+
+                Util.notificacion(persona,subject,template,nombre_de_usuario=usuario.nombre_de_usuario)
+
+                return Response({'success':True, 'detail':'Se ha enviado el correo'},status=status.HTTP_200_OK)
+            
+            else:
+                raise NotFound('No existe usuario') 
+        raise NotFound('No existe usuario')
