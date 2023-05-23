@@ -244,7 +244,7 @@ class GetBienInsumosByCodigoAndName(generics.ListAPIView):
                     filter['nombre__icontains'] = value
             elif key in ['codigo_bien']:
                 if value != '' and value != None:
-                    filter['codigo_bien__startswith'] = value
+                    filter['codigo_bien__icontains'] = value
                     
         filter['cod_tipo_elemento_vivero'] = "IN"
         

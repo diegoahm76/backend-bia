@@ -13,7 +13,8 @@ from almacen.serializers.bienes_serializers import (
     ItemEntradaSerializer,
     EntradaSerializer,
     CatalogoBienesActivoFijoPutSerializer,
-    SerializerItemEntradaConsumoPut
+    SerializerItemEntradaConsumoPut,
+    TiposEntradasSerializer
 )
 from almacen.models.hoja_de_vida_models import (
     HojaDeVidaComputadores,
@@ -1151,6 +1152,14 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
         serializer.save()
         return Response({'success':True, 'detail':'Actualización de entrada exitosa', 'data': serializer.data}, status=status.HTTP_201_CREATED)
 
+class GetTiposEntradas(generics.ListAPIView):
+    serializer_class = TiposEntradasSerializer
+    queryset = TiposEntradas.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        serializer = self.serializer_class(self.queryset.all(), many=True)
+        return Response({'success':True, 'detail':'Se encontraron los siguientes tipos de entrada', 'data':serializer.data}, status=status.HTTP_200_OK)
 
 class GetEntradas(generics.ListAPIView):
     serializer_class = EntradaSerializer

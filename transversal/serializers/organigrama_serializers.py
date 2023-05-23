@@ -9,7 +9,8 @@ from gestion_documental.serializers.trd_serializers import TRDSerializer
 from transversal.models.organigrama_models import (
     Organigramas,
     NivelesOrganigrama,
-    UnidadesOrganizacionales
+    UnidadesOrganizacionales,
+    TemporalPersonasUnidad
 )
 from seguridad.models import User, Personas
 
@@ -65,6 +66,7 @@ class UnidadesGetSerializer(serializers.ModelSerializer):
         model = UnidadesOrganizacionales
         fields = '__all__'
 
+
 class PersonaOrgSerializer(serializers.ModelSerializer):
     nombre_completo = serializers.SerializerMethodField()
     tiene_usuario = serializers.SerializerMethodField()
@@ -98,6 +100,12 @@ class OrganigramaSerializer(serializers.ModelSerializer):
     tipo_documento = serializers.ReadOnlyField(source='id_persona_cargo.tipo_documento.cod_tipo_documento',default=None)
     numero_documento = serializers.ReadOnlyField(source='id_persona_cargo.numero_documento',default=None) 
     nombre_completo = serializers.SerializerMethodField()
+    usado = serializers.SerializerMethodField()
+    
+    def get_usado(self,obj):
+        ccd = obj.cuadrosclasificaciondocumental_set.all()
+        usado = True if ccd else False
+        return usado
     
     def get_nombre_completo(self, obj):
         nombre_completo = None
@@ -120,7 +128,8 @@ class OrganigramaSerializer(serializers.ModelSerializer):
                   'id_persona_cargo',
                   'tipo_documento',
                   'numero_documento',
-                  'nombre_completo'
+                  'nombre_completo',
+                  'usado'
                 ]
         read_only_fields = ['actual']
 
@@ -187,3 +196,44 @@ class CCDSerializer_(serializers.ModelSerializer):
     class Meta:
         fields = ['id_ccd','id_organigrama','version','nombre','fecha_terminado','fecha_puesta_produccion','fecha_retiro_produccion','justificacion','ruta_soporte','actual','valor_aumento_serie','valor_aumento_subserie','trd','tca']
         model = CuadrosClasificacionDocumental
+
+class ActUnidadOrgAntiguaSerializer(serializers.ModelSerializer):
+    nombre_completo = serializers.SerializerMethodField()
+    nombre_unidad_organizacional = serializers.SerializerMethodField()
+
+    def get_nombre_completo(self, obj):
+        return f"{obj.primer_nombre} {obj.segundo_nombre} {obj.primer_apellido} {obj.segundo_apellido}"
+
+    def get_nombre_unidad_organizacional(self, obj):
+        return obj.id_unidad_organizacional_actual.nombre
+
+    class Meta:
+        model = Personas
+        fields = ['id_persona', 'nombre_completo', 'id_unidad_organizacional_actual', 'nombre_unidad_organizacional', 'es_unidad_organizacional_actual', 'fecha_asignacion_unidad']
+
+class TemporalPersonasUnidadSerializer(serializers.ModelSerializer):
+    nombre_completo = serializers.SerializerMethodField()
+    id_unidad_organizacional_actual = serializers.SerializerMethodField()
+    nombre_unidad_organizacional = serializers.SerializerMethodField()
+    es_unidad_organizacional_actual = serializers.SerializerMethodField()
+    fecha_asignacion_unidad = serializers.SerializerMethodField()
+
+    def get_nombre_completo(self, obj):
+        return f"{obj.id_persona.primer_nombre} {obj.id_persona.segundo_nombre} {obj.id_persona.primer_apellido} {obj.id_persona.segundo_apellido}"
+    
+    def get_id_unidad_organizacional_actual(self, obj):
+        return obj.id_unidad_org_anterior.id_unidad_organizacional
+    
+    def get_nombre_unidad_organizacional(self, obj):
+        return obj.id_unidad_org_anterior.nombre
+    
+    def get_es_unidad_organizacional_actual(self,obj):
+        return obj.id_persona.es_unidad_organizacional_actual
+    
+    def get_fecha_asignacion_unidad(self,obj):
+        return obj.id_persona.fecha_asignacion_unidad
+    
+    class Meta:
+        model = TemporalPersonasUnidad
+        fields = ['id_persona', 'nombre_completo','id_unidad_organizacional_actual','nombre_unidad_organizacional','es_unidad_organizacional_actual','fecha_asignacion_unidad']
+

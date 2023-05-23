@@ -2,6 +2,7 @@ from rest_framework import serializers
 from recaudo.models.garantias_models import Garantias, RolesGarantias
 from recaudo.models.base_models import TiposBien
 from recaudo.models.procesos_models import Bienes
+from recaudo.models.pagos_models import GarantiasFacilidad
 
 
 class RolesGarantiasSerializer(serializers.ModelSerializer):
@@ -29,6 +30,18 @@ class BienSerializer(serializers.ModelSerializer):
 
 
 class BienesDeudorSerializer(serializers.ModelSerializer):
+    ubicacion = serializers.SerializerMethodField()
+    
+    def get_ubicacion(self, obj):
+        ubicacion = obj.ubicacion_id.nombre
+        return ubicacion
+    
     class Meta:
         model = Bienes
-        fields = ('id_tipo_bien','descripcion','documento_soporte')
+        fields = ('id_tipo_bien','descripcion','documento_soporte','ubicacion')
+
+
+class GarantiasFacilidadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GarantiasFacilidad
+        fields = '__all__'

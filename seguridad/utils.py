@@ -20,7 +20,6 @@ class Util:
         
         email.content_subtype ='html'
         response = email.send(fail_silently=True)
-        print(response)
         return response
 
         # url = "https://dashboard.360nrs.com/api/rest/mailing"
@@ -202,7 +201,8 @@ class Util:
                 auditoria_user.save()
         
             return True
-        except:
+        except Exception as err:
+            print("Error: " + repr(err))
             return False
         
     @staticmethod
@@ -345,7 +345,6 @@ class Util:
                 
             #Validación de tipo documento
             tipo_documento = data.get('tipo_documento')
-            print(tipo_documento)
             if tipo_documento == 'NT':
                 return {'success':False,'detail':'El tipo de documento debe ser el de una persona natural', 'status':status.HTTP_400_BAD_REQUEST}
 
@@ -353,14 +352,14 @@ class Util:
             email_secundario = data.get('email_empresarial')
 
             #Validación emails dns
-            validate_email = Util.validate_dns(email_principal)
-            if validate_email == False:
-                return {'success':False,'detail':'Valide que el email principal ingresado exista', 'status':status.HTTP_400_BAD_REQUEST}
+            # validate_email = Util.validate_dns(email_principal)
+            # if validate_email == False:
+            #     return {'success':False,'detail':'Valide que el email principal ingresado exista', 'status':status.HTTP_400_BAD_REQUEST}
 
-            if email_secundario:
-                validate_second_email = Util.validate_dns(email_secundario)
-                if validate_second_email == False:
-                    return {'success':False,'detail':'Valide que el email secundario ingresado exista', 'status':status.HTTP_400_BAD_REQUEST}
+            # if email_secundario:
+            #     validate_second_email = Util.validate_dns(email_secundario)
+            #     if validate_second_email == False:
+            #         return {'success':False,'detail':'Valide que el email secundario ingresado exista', 'status':status.HTTP_400_BAD_REQUEST}
 
             if email_principal == email_secundario:
                 return {'success':False,'detail':'El email principal no puede ser el mismo email empresarial', 'status':status.HTTP_400_BAD_REQUEST}
@@ -391,14 +390,14 @@ class Util:
             email_secundario = data.get('email_empresarial')
 
             #Validación emails dns
-            validate_email = Util.validate_dns(email_principal)
-            if validate_email == False:
-                return {'success':False,'detail':'Valide que el email principal ingresado exista', 'status':status.HTTP_400_BAD_REQUEST}
+            # validate_email = Util.validate_dns(email_principal)
+            # if validate_email == False:
+            #     return {'success':False,'detail':'Valide que el email principal ingresado exista', 'status':status.HTTP_400_BAD_REQUEST}
 
-            if email_secundario:
-                validate_second_email = Util.validate_dns(email_secundario)
-                if validate_second_email == False:
-                    return {'success':False,'detail':'Valide que el email secundario ingresado exista', 'status':status.HTTP_400_BAD_REQUEST}
+            # if email_secundario:
+            #     validate_second_email = Util.validate_dns(email_secundario)
+            #     if validate_second_email == False:
+            #         return {'success':False,'detail':'Valide que el email secundario ingresado exista', 'status':status.HTTP_400_BAD_REQUEST}
 
             if email_principal == email_secundario:
                 return {'success':False,'detail':'El email principal no puede ser el mismo email empresarial', 'status':status.HTTP_400_BAD_REQUEST}

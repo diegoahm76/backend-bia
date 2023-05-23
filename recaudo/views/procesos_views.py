@@ -16,7 +16,8 @@ from recaudo.serializers.procesos_serializers import (
     ValoresProcesoPostSerializer,
     ProcesosSerializer,
     ProcesosPostSerializer,
-    AtributosEtapasPostSerializer
+    AtributosEtapasPostSerializer,
+    AvaluosSerializer
 )
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
@@ -166,3 +167,14 @@ class ProcesosView(generics.ListAPIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    
+class AvaluosBienesView(generics.CreateAPIView):
+    serializer_class = AvaluosSerializer
+
+    def post(self, request):
+        data = request.data
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail':'Se agregar los avaluos del bien que da el deudor', 'data':serializer.data},status=status.HTTP_200_OK)
+    

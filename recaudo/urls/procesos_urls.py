@@ -13,4 +13,5 @@ urlpatterns = [
     path('procesos-sin-finalizar/', views.ProcesosView.as_view(), name='procesos-sin-finalizar'),
     path('crear-proceso/', views.ProcesosView.as_view(), name='crear-proceso'),
     path('atributos/', views.AtributosEtapasView.as_view(), name='atributos-etapas-agregar'),
+    path('avaluos-bienes/', views.AvaluosBienesView.as_view(), name='avaluos-bienes'),
 ]

@@ -5,7 +5,8 @@ from recaudo.models.procesos_models import (
     TiposAtributos,
     FlujoProceso,
     ValoresProceso,
-    Procesos
+    Procesos,
+    Avaluos
 )
 from recaudo.serializers.cobros_serializers import (
     CarteraSerializer
@@ -78,4 +79,10 @@ class ProcesosSerializer(serializers.ModelSerializer):
 class ProcesosPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Procesos
+        fields = '__all__'
+
+
+class AvaluosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Avaluos
         fields = '__all__'
