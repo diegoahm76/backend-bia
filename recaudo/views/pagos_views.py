@@ -236,10 +236,13 @@ class ListadoFacilidadesPagoViews(generics.ListAPIView):
 class ConsultaFacilidadesPagosViews(generics.ListAPIView):
     serializer_class = ConsultaFacilidadesPagosSerializer
     
-    def get_queryset(self):
-        id_facilidades = self.kwargs['id']
-        queryset = FacilidadesPago.objects.filter(id=id_facilidades)
-        return queryset
+    def get(self, request, id):
+        queryset = FacilidadesPago.objects.filter(id=id).first()
+        if not queryset:
+            raise NotFound('No se encontró ningun registro con el parámetro ingresado')
+        serializer = self.serializer_class(queryset, many=False)
+        return Response({'success': True, 'detail':'Se muestra los datos la facilidad de pago', 'data': serializer.data}, status=status.HTTP_200_OK)   
+        
 
 
 class ListadoDeudoresViews(generics.ListAPIView):
