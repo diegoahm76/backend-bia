@@ -19,6 +19,7 @@ urlpatterns = [
     path('requisitos-actuacion/<int:id>/', views.RequisitosActuacionView.as_view(), name='requisitos-actuacion'),
     path('cumplimiento-requisitos/', views.AgregarDocumentosRequisitosView.as_view(), name='cumplimiento-requisitos'),
     path('cumplimiento-requisitos-cargados/<int:id>/', views.DocumentosRequisitosView.as_view(), name='cumplimiento-requisitos-cargados'),
+    path('respuesta-funcionario/', views.RespuestaSolicitudFacilidadView.as_view(), name='respuesta-funcionario'),
     
     ]
     
