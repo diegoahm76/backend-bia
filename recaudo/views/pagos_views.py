@@ -25,7 +25,8 @@ from recaudo.serializers.pagos_serializers import (
     ListadoFacilidadesPagoSerializer,
     ConsultaFacilidadesPagosSerializer,
     ListadoDeudoresUltSerializer,
-    AutorizacionNotificacionesSerializer
+    AutorizacionNotificacionesSerializer,
+    RespuestaSolicitudFacilidadSerializer
 )
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -123,6 +124,7 @@ class FuncionariosView(generics.ListAPIView):
         serializer = self.serializer_class(funcionarios, many=True)
         return Response({'success': True, 'detail':'Se muestra los funcionarios para facilidades de pago', 'data':serializer.data}, status=status.HTTP_200_OK)
 
+
 class ListadoObligacionesViews(generics.ListAPIView):
     serializer_class = ObligacionesSerializer
     permission_classes = [IsAuthenticated]
@@ -136,7 +138,6 @@ class ListadoObligacionesViews(generics.ListAPIView):
             for cartera in carteras:
                 intereses_total += cartera.valor_intereses
         return monto_total, intereses_total, monto_total + intereses_total
-
     
     def get(self, request):
         user = request.user
@@ -145,7 +146,7 @@ class ListadoObligacionesViews(generics.ListAPIView):
             deudor = Deudores.objects.get(identificacion=numero_identificacion)
         except ObjectDoesNotExist:
             raise NotFound('No se encontró un objeto deudor para este usuario.')
-        nombre_completo = user.persona.primer_nombre + ' ' + user.persona.segundo_nombre + ' ' + user.persona.primer_apellido + ' ' + user.persona.segundo_apellido
+        nombre_completo = deudor.nombres + ' ' + deudor.apellidos
         obligaciones = Obligaciones.objects.filter(id_expediente__cod_deudor=deudor)
         serializer = self.serializer_class(obligaciones, many=True)
         
@@ -158,9 +159,9 @@ class ListadoObligacionesViews(generics.ListAPIView):
             'monto_total': monto_total,
             'intereses_total': intereses_total,
             'monto_total_con_intereses': monto_total_con_intereses
-
         }
         return Response(data)
+
 
 class ConsultaObligacionesViews(generics.ListAPIView):
     serializer_class = ConsultaObligacionesSerializer
@@ -173,6 +174,7 @@ class ConsultaObligacionesViews(generics.ListAPIView):
             raise NotFound("La obligación consultada no existe")
         return queryset
     
+
 class ConsultaObligacionesDeudoresViews(generics.ListAPIView):
     serializer_class = ObligacionesSerializer
     permission_classes = [IsAuthenticated]
@@ -208,12 +210,14 @@ class ConsultaObligacionesDeudoresViews(generics.ListAPIView):
         except Deudores.DoesNotExist:
             raise NotFound(detail='No se encontraron resultados')
 
+
 class ListadoFacilidadesPagoViews(generics.ListAPIView):
     serializer_class = ListadoFacilidadesPagoSerializer
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         filter = {}
+
         for key, value in request.query_params.items():
             if key == 'identificacion':
                 filter['id_deudor_actuacion__identificacion__icontains'] = value
@@ -224,9 +228,10 @@ class ListadoFacilidadesPagoViews(generics.ListAPIView):
         
         if not facilidades_pago.exists():
             raise NotFound("La facilidad de pagos consultada no existe")
-        
+
         serializer = ListadoFacilidadesPagoSerializer(facilidades_pago, many=True)
         return Response({'success':True, 'detail':'Se muestra las facilidades de pago del deudor', 'data':serializer.data},status=status.HTTP_200_OK)
+
 
 class ConsultaFacilidadesPagosViews(generics.ListAPIView):
     serializer_class = ConsultaFacilidadesPagosSerializer
@@ -235,6 +240,7 @@ class ConsultaFacilidadesPagosViews(generics.ListAPIView):
         id_facilidades = self.kwargs['id']
         queryset = FacilidadesPago.objects.filter(id=id_facilidades)
         return queryset
+
 
 class ListadoDeudoresViews(generics.ListAPIView):
     serializer_class = ListadoDeudoresUltSerializer
@@ -268,7 +274,8 @@ class ListadoDeudoresViews(generics.ListAPIView):
     
         data = [{'identificacion': item['identificacion'], 'nombre_contribuyente': f"{item['nombres']} {item['apellidos']}"} for item in queryset]
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
-    
+
+
 class ListadoFacilidadesPagoFuncionariosViews(generics.ListAPIView):
     serializer_class = ListadoFacilidadesPagoSerializer
     permission_classes = [IsAuthenticated]
@@ -284,6 +291,7 @@ class ListadoFacilidadesPagoFuncionariosViews(generics.ListAPIView):
         serializer = ListadoFacilidadesPagoSerializer(facilidades_pago, many=True)
         return Response( {'success': True, 'detail':'Se le asignaron las siguientes facilidades de pago','data':serializer.data},status=status.HTTP_200_OK)
 
+
 class RequisitosActuacionView(generics.ListAPIView):
     serializer_class = RequisitosActuacionSerializer
     queryset = RequisitosActuacion
@@ -292,6 +300,7 @@ class RequisitosActuacionView(generics.ListAPIView):
         queryset = RequisitosActuacion.objects.filter(id_tipo_actuacion=id)
         serializer = self.serializer_class(queryset, many=True)
         return Response({'success': True, 'detail':'Se muestra los requisitos deltipo de actuacion del deudor',  'data': serializer.data}, status=status.HTTP_200_OK)
+
 
 class AgregarDocumentosRequisitosView(generics.CreateAPIView):
     serializer_class = CumplimientoRequisitosSerializer
@@ -303,7 +312,8 @@ class AgregarDocumentosRequisitosView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'success': True, 'detail':'Se agregar los documentos requeridos para el deudor actuacion', 'data':serializer.data},status=status.HTTP_200_OK)
-    
+
+
 class AutorizacionNotificacionesView(generics.RetrieveUpdateAPIView):
     serializer_class = AutorizacionNotificacionesSerializer
     queryset = FacilidadesPago.objects.all()
@@ -331,3 +341,15 @@ class DocumentosRequisitosView(generics.ListAPIView):
         queryset = CumplimientoRequisitos.objects.filter(id_facilidad_pago=id)
         serializer = self.serializer_class(queryset, many=True)
         return Response({'success': True, 'detail':'Se muestra los documentos del tipo de actuacion del deudor',  'data': serializer.data}, status=status.HTTP_200_OK) 
+
+
+class RespuestaSolicitudFacilidadView(generics.CreateAPIView):
+    serializer_class = RespuestaSolicitudFacilidadSerializer
+
+    def post(self, request):
+        data = request.data
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail':'Se registra la respuesta la respuesta dada por el funcionario', 'data':serializer.data},status=status.HTTP_200_OK)
+  
