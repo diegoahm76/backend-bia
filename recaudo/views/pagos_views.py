@@ -146,7 +146,7 @@ class ListadoObligacionesViews(generics.ListAPIView):
             deudor = Deudores.objects.get(identificacion=numero_identificacion)
         except ObjectDoesNotExist:
             raise NotFound('No se encontró un objeto deudor para este usuario.')
-        nombre_completo = user.persona.primer_nombre + ' ' + user.persona.segundo_nombre + ' ' + user.persona.primer_apellido + ' ' + user.persona.segundo_apellido
+        nombre_completo = deudor.nombres + ' ' + deudor.apellidos
         obligaciones = Obligaciones.objects.filter(id_expediente__cod_deudor=deudor)
         serializer = self.serializer_class(obligaciones, many=True)
         
@@ -217,6 +217,7 @@ class ListadoFacilidadesPagoViews(generics.ListAPIView):
 
     def get(self, request):
         filter = {}
+
         for key, value in request.query_params.items():
             if key == 'identificacion':
                 filter['id_deudor_actuacion__identificacion__icontains'] = value
@@ -227,7 +228,7 @@ class ListadoFacilidadesPagoViews(generics.ListAPIView):
         
         if not facilidades_pago.exists():
             raise NotFound("La facilidad de pagos consultada no existe")
-        
+
         serializer = ListadoFacilidadesPagoSerializer(facilidades_pago, many=True)
         return Response({'success':True, 'detail':'Se muestra las facilidades de pago del deudor', 'data':serializer.data},status=status.HTTP_200_OK)
 
