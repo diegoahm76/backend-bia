@@ -176,9 +176,16 @@ class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
 
 
 class ConsultaFacilidadesPagosSerializer(serializers.ModelSerializer):
+    tipo_actuacion = serializers.ReadOnlyField(source='id_tipo_actuacion.descripcion',default=None)
+
     class Meta:
         model = FacilidadesPago
-        fields = '__all__'
+        fields = ('id', 'id_deudor_actuacion', 'tipo_actuacion', 'fecha_generacion',
+                  'observaciones', 'periodicidad', 'cuotas', 'id_tasas_interes',
+                  'documento_soporte', 'consignacion_soporte', 'documento_garantia', 
+                  'documento_no_enajenacion', 'id_funcionario','notificaciones',
+                  )
+
 
 class ListadoDeudoresUltSerializer(serializers.ModelSerializer):
     nombre_contribuyente = serializers.SerializerMethodField()
