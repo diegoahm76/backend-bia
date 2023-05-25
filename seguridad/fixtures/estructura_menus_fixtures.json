@@ -538,5 +538,161 @@
       "orden_por_padre":1,
       "subsistema":"ALMA"
     }
+  },
+  {
+    "model": "seguridad.EstructuraMenus",
+    "pk": 46,
+    "fields": {
+      "id_menu": 46,
+      "nombre": "Gestor de Requerimientos",
+      "nivel_jerarquico":1,
+      "id_menu_padre":null,
+      "orden_por_padre":1,
+      "subsistema":"RECU"
+    }
+  },
+  {
+    "model": "seguridad.EstructuraMenus",
+    "pk": 47,
+    "fields": {
+      "id_menu": 47,
+      "nombre": "Aguas Superficiales",
+      "nivel_jerarquico":1,
+      "id_menu_padre":null,
+      "orden_por_padre":2,
+      "subsistema":"RECU"
+    }
+  },
+  {
+    "model": "seguridad.EstructuraMenus",
+    "pk": 48,
+    "fields": {
+      "id_menu": 48,
+      "nombre": "Aguas Subterraneas",
+      "nivel_jerarquico":1,
+      "id_menu_padre":null,
+      "orden_por_padre":3,
+      "subsistema":"RECU"
+    }
+  },
+  {
+    "model": "seguridad.EstructuraMenus",
+    "pk": 49,
+    "fields": {
+      "id_menu": 49,
+      "nombre": "Estaciones Meteorológicas",
+      "nivel_jerarquico":1,
+      "id_menu_padre":null,
+      "orden_por_padre":4,
+      "subsistema":"RECU"
+    }
+  },
+  {
+    "model": "seguridad.EstructuraMenus",
+    "pk": 50,
+    "fields": {
+      "id_menu": 50,
+      "nombre": "Calidad del Agua",
+      "nivel_jerarquico":1,
+      "id_menu_padre":null,
+      "orden_por_padre":5,
+      "subsistema":"RECU"
+    }
+  },
+  {
+    "model": "seguridad.EstructuraMenus",
+    "pk": 51,
+    "fields": {
+      "id_menu": 51,
+      "nombre": "Notificaciones y Alertas",
+      "nivel_jerarquico":1,
+      "id_menu_padre":null,
+      "orden_por_padre":6,
+      "subsistema":"RECU"
+    }
+  },
+  {
+    "model": "seguridad.EstructuraMenus",
+    "pk": 52,
+    "fields": {
+      "id_menu": 52,
+      "nombre": "Reportes, Indicadores y Analítica",
+      "nivel_jerarquico":1,
+      "id_menu_padre":null,
+      "orden_por_padre":7,
+      "subsistema":"RECU"
+    }
+  },
+  {
+    "model": "seguridad.EstructuraMenus",
+    "pk": 53,
+    "fields": {
+      "id_menu": 53,
+      "nombre": "Reportes",
+      "nivel_jerarquico":2,
+      "id_menu_padre":52,
+      "orden_por_padre":1,
+      "subsistema":"RECU"
+    }
+  },
+  {
+    "model": "seguridad.EstructuraMenus",
+    "pk": 54,
+    "fields": {
+      "id_menu": 54,
+      "nombre": "Estaciones",
+      "nivel_jerarquico":3,
+      "id_menu_padre":53,
+      "orden_por_padre":1,
+      "subsistema":"RECU"
+    }
+  },
+  {
+    "model": "seguridad.EstructuraMenus",
+    "pk": 55,
+    "fields": {
+      "id_menu": 55,
+      "nombre": "Indicadores",
+      "nivel_jerarquico":2,
+      "id_menu_padre":52,
+      "orden_por_padre":2,
+      "subsistema":"RECU"
+    }
+  },
+  {
+    "model": "seguridad.EstructuraMenus",
+    "pk": 56,
+    "fields": {
+      "id_menu": 56,
+      "nombre": "Analítica",
+      "nivel_jerarquico":2,
+      "id_menu_padre":52,
+      "orden_por_padre":3,
+      "subsistema":"RECU"
+    }
+  },
+  {
+    "model": "seguridad.EstructuraMenus",
+    "pk": 57,
+    "fields": {
+      "id_menu": 57,
+      "nombre": "Configuración y Datos Básicos",
+      "nivel_jerarquico":1,
+      "id_menu_padre":null,
+      "orden_por_padre":8,
+      "subsistema":"RECU"
+    }
+  },
+  {
+    "model": "seguridad.EstructuraMenus",
+    "pk": 58,
+    "fields": {
+      "id_menu": 58,
+      "nombre": "Estaciones Meteorológicas",
+      "nivel_jerarquico":2,
+      "id_menu_padre":57,
+      "orden_por_padre":1,
+      "subsistema":"RECU"
+    }
   }
 ]

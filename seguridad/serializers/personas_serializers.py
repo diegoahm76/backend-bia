@@ -17,7 +17,9 @@ from seguridad.models import (
     ClasesTerceroPersona,
     Cargos,
     HistoricoCargosUndOrgPersona,
-    HistoricoCambiosIDPersonas
+    HistoricoCambiosIDPersonas,
+    HistoricoAutirzacionesNotis,
+    HistoricoRepresentLegales
 )
 
 
@@ -292,7 +294,7 @@ class PersonaNaturalPostSerializer(serializers.ModelSerializer):
             'estado_civil': {'required': True,'allow_null':False},
             'cod_municipio_expedicion_id': {'required': True,'allow_null':False},
             'pais_residencia': {'required': True,'allow_null':False},
-            'direccion_residencia': {'required': True,'allow_null':False, 'allow_blank':False},
+            'direccion_residencia': {'required': False,'allow_null':True, 'allow_blank':False},
             'direccion_notificaciones': {'required': True,'allow_null':False, 'allow_blank':False},
             'cod_municipio_notificacion_nal': {'required': True,'allow_null':False},
             'acepta_notificacion_sms': {'required': True,'allow_null':False},
@@ -885,3 +887,25 @@ class UpdatePersonasJuridicasSerializer(serializers.ModelSerializer):
                     message = 'Ya existe un registro con ese número de documento ingresado'    
                 )
             ]
+
+class HistoricoNotificacionesSerializer(serializers.ModelSerializer):
+    nombre_completo = serializers.SerializerMethodField()
+    
+    def get_nombre_completo(self, obj):
+        return f"{obj.id_persona.primer_nombre} {obj.id_persona.segundo_nombre} {obj.id_persona.primer_apellido} {obj.id_persona.segundo_apellido}"
+        
+    class Meta:
+        model = HistoricoAutirzacionesNotis
+        fields = '__all__'
+
+class HistoricoRepresentLegalSerializer(serializers.ModelSerializer):
+    nombre_comercial = serializers.CharField(source='id_persona_empresa.nombre_comercial', read_only=True)
+    razon_social = serializers.CharField(source='id_persona_empresa.razon_social', read_only=True)
+    nombre_completo_replegal = serializers.SerializerMethodField()
+
+    def get_nombre_completo_replegal(self, obj):
+        return f"{obj.id_persona_represent_legal.primer_nombre} {obj.id_persona_represent_legal.segundo_nombre} {obj.id_persona_represent_legal.primer_apellido} {obj.id_persona_represent_legal.segundo_apellido}"
+        
+    class Meta:
+        model = HistoricoRepresentLegales
+        fields = ['id_historico_represent_legal', 'consec_representacion', 'fecha_cambio_sistema', 'fecha_inicio_cargo', 'id_persona_empresa', 'nombre_comercial', 'razon_social','id_persona_represent_legal','nombre_completo_replegal']

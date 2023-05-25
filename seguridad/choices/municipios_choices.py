@@ -1,4 +1,6 @@
 municipios_CHOICES = (
+#MUNICIPIO INICIAL
+('50001', 'Villavicencio'),
 #AMAZONAS
 ('91263', 'El Encanto'),
 ('91405', 'La Chorrera'),
@@ -770,7 +772,6 @@ municipios_CHOICES = (
 ('50590', 'Puerto Rico'),
 ('50683', 'San Juan De Arama'),
 ('50711', 'Vista Hermosa'),
-('50001', 'Villavicencio'),
 ('50006', 'Acacias'),
 ('50110', 'Barranca De Upia'),
 ('50150', 'Castilla La Nueva'),

@@ -342,8 +342,6 @@ class ValidarFechasProgramacion(generics.CreateAPIView):
                     raise NotFound('Elija entre true o false')
                 if datos_ingresados['incluir_fds'] != 'true' and datos_ingresados['incluir_fds'] != 'false':
                     raise NotFound('Elija entre true o false')
-                if not (datos_ingresados['cada']).isdigit():
-                    raise NotFound('Debe ingresar un numero en (cada)')
                 try:
                     aux_v_f_p = datos_ingresados['desde'].split("-")
                     aux_v_f_p_2 = datos_ingresados['hasta'].split("-")
@@ -503,8 +501,8 @@ class ValidarFechasProgramacion(generics.CreateAPIView):
                     raise ValidationError('Debe ingresar el id de un articulo existente')
                 if vehiculo['cod_tipo_activo'] != 'Veh':
                     raise ValidationError('No se puedeprogramar por kilometraje un tipo de activo diferente a un vehículo')
-                if not datos_ingresados['desde'].isdigit() or not datos_ingresados['hasta'].isdigit() or not datos_ingresados['cada'].isdigit():
-                    raise ValidationError('En desde, cada o hasta debe ingresar un número entero')
+                # if not datos_ingresados['desde'].isdigit() or not datos_ingresados['hasta'].isdigit() or not datos_ingresados['cada'].isdigit():
+                #     raise ValidationError('En desde, cada o hasta debe ingresar un número entero')
                 kilometraje_actual = HojaDeVidaVehiculos.objects.filter(id_articulo=vehiculo['id_bien']).values().first()
                 if not kilometraje_actual:
                     raise ValidationError('El vehiculo ingresado no tiene hoja de vida registrada')
@@ -556,8 +554,8 @@ class CreateProgramacionMantenimiento(generics.CreateAPIView):
             elif i['tipo_programacion'] == "kilometraje":
                 if i['kilometraje_programado'] == None:
                     raise NotFound('Si eligió programación por kilometraje debe ingresar un valor de kilometraje')
-                if not (i['kilometraje_programado'].isdigit()):
-                    raise NotFound('El valor del kilometraje debe ser un string que contenga solo números')
+                # if not (i['kilometraje_programado'].isdigit()):
+                #     raise NotFound('El valor del kilometraje debe ser un string que contenga solo números')
                 if i['fecha_programada'] != None:
                     raise NotFound('Si eligió programación por kilometraje el campo fecha_programada debe estar en null')
             #VALIDACION FORMATE DE FECHAS ENTRANTES
@@ -693,18 +691,21 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
         datos_ingresados['fecha_registrado'] = datetime.now()
         fecha_registrado = datos_ingresados['fecha_registrado'].date()
         fecha_ejecutado = (datetime.strptime(datos_ingresados['fecha_ejecutado'], '%Y-%m-%d')).date()
+        
         diferencia_dias = fecha_registrado - fecha_ejecutado
+        diferencia_dias = diferencia_dias.days if fecha_registrado != fecha_ejecutado else 1
+        
         cod_estado_final = EstadosArticulo.objects.filter(cod_estado=datos_ingresados['cod_estado_final'])
         persona_realiza = Personas.objects.filter(id_persona=datos_ingresados['id_persona_realiza']).values().filter()
         datos_ingresados['id_persona_diligencia'] = request.user.id_usuario
         if not articulo:
             raise NotFound('Ingrese un id de articulo válido')
-        if diferencia_dias.days < 0:
+        if diferencia_dias < 0:
             raise NotFound('La fecha del registro del mantenimiento debe ser mayor o igual a la fecha de la ejecución del mantenimiento')
-        if not (datos_ingresados['dias_empleados']).isdigit() or int(datos_ingresados['dias_empleados']) <= 0:
+        if int(datos_ingresados['dias_empleados']) <= 0:
             raise NotFound('Cantidad de días debe ser un número entero mayor a cero')
-        if int(datos_ingresados['dias_empleados']) > diferencia_dias.days:
-            raise NotFound('La diferecia de fecha registrado y fecha ejecutado no puede ser mayor a la cantidad de días empleados')
+        if int(datos_ingresados['dias_empleados']) > diferencia_dias:
+            raise NotFound('La diferencia de fecha registrado y fecha ejecutado no puede ser mayor a la cantidad de días empleados')
         articulo = CatalogoBienes.objects.filter(id_bien=id_articulo).values().first()
         if datos_ingresados['cod_tipo_mantenimiento'] != 'P' and datos_ingresados['cod_tipo_mantenimiento'] != 'C':
             raise NotFound('El tipo de mantenimiento debe ser P (preventivo) o C (correctivo)')

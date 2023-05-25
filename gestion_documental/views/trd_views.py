@@ -558,10 +558,13 @@ class CreateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
                 valores_creados_detalles = [
                     {
                         'NombreUnidad':serializado.id_cat_serie_und.id_unidad_organizacional.nombre, 
-                        'NombreSerie':serializado.id_cat_serie_und.id_catalogo_serie.id_serie_doc.nombre,
-                        'NombreSubserie':serializado.id_cat_serie_und.id_catalogo_serie.id_subserie_doc.nombre
+                        'NombreSerie':serializado.id_cat_serie_und.id_catalogo_serie.id_serie_doc.nombre
                     }
                 ]
+                
+                if serializado.id_cat_serie_und.id_catalogo_serie.id_subserie_doc:
+                    valores_creados_detalles[0]['NombreSubserie'] = serializado.id_cat_serie_und.id_catalogo_serie.id_subserie_doc.nombre
+                
                 direccion=Util.get_client_ip(request)
                 auditoria_data = {
                     "id_usuario" : request.user.id_usuario,

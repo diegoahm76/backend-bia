@@ -286,7 +286,7 @@ class GetTrasladosByIdTraslados(generics.ListAPIView):
         if not instancia_items_traslado:
             raise ValidationError('Este traslado no tiene items registrados')
         serializador = self.serializer_class(instancia_traslado, many=False)
-        serializador_items = self.serializer_item_class(instancia_items_traslado, many=True)
+        serializador_items = self.serializer_item_class(instancia_items_traslado, many=True,  context = {'request':request})
         salida['info_traslado'] = serializador.data
         salida['items_traslado'] = serializador_items.data
         return Response({'success':True, 'detail':'Ok', 'data':salida}, status=status.HTTP_200_OK)
@@ -334,7 +334,7 @@ class GetItemsTrasladoByIdTraslado(generics.ListAPIView):
         instancia_items_traslado = ItemsTrasladoViveros.objects.filter(id_traslado=id_traslado_entrante)
         if not instancia_items_traslado:
             raise ValidationError('El traslado no existe o no no tiene items registrados')
-        serializer = self.serializer_class(instancia_items_traslado, many=True)
+        serializer = self.serializer_class(instancia_items_traslado, many=True , context = {'request':request})
         return Response({'success':True, 'detail':'Ok', 'data':serializer.data}, status=status.HTTP_200_OK)
 
 class TrasladosActualizar(generics.UpdateAPIView):
@@ -508,9 +508,9 @@ class TrasladosActualizar(generics.UpdateAPIView):
                     raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +' la etapa de destino no puede ser germinación')
                 
                 # SE ASIGNA EL AÑO DEL LOTE Y EL NÚMERO DEL LOTE
-                i['agno_lote_destino_MV'] = instancia_traslado.fecha_traslado.year
                 aux_get_ultimo_nro_lote_by_agno = InventarioViveros.objects.filter(id_bien=i['id_bien_origen'],agno_lote=i['agno_lote_destino_MV']).order_by('nro_lote').last()
                 if instancia_bien.cod_tipo_elemento_vivero == 'MV'and instancia_bien.es_semilla_vivero == False:
+                    i['agno_lote_destino_MV'] = instancia_traslado.fecha_traslado.year
                     if not aux_get_ultimo_nro_lote_by_agno:
                         i['nro_lote_destino_MV'] = 1
                     else:

@@ -82,7 +82,7 @@ class GetMaterialVegetalByLupa(generics.ListAPIView):
         for key,value in request.query_params.items():
             if key in ['codigo_bien','nombre','cod_etapa_lote']:
                 if key == 'codigo_bien':
-                    filter['id_bien__'+key+'__startswith'] = value
+                    filter['id_bien__'+key+'__icontains'] = value
                 elif key =='nombre':
                     filter['id_bien__'+key+'__icontains'] = value
                 else:
@@ -340,7 +340,7 @@ class GetElementoYMezclaByLupa(generics.ListAPIView):
                 if tipo_bien == 'id_bien' and key == 'nombre':
                     filter['id_bien__' + key+ '__icontains'] = value
                 elif tipo_bien == 'id_bien' and key == 'codigo_bien':
-                    filter['id_bien__' + key+ '__startswith'] = value
+                    filter['id_bien__' + key+ '__icontains'] = value
                 elif tipo_bien == 'id_mezcla' and key != 'codigo_bien':
                     filter['id_mezcla__'+key+'__icontains'] = value
             

@@ -1,4 +1,5 @@
 paises_CHOICES = (
+    ('CO', 'Colombia'),
     ('AF', 'Afganistán'),
     ('AL', 'Albania'),
     ('DE', 'Alemania'),
@@ -42,7 +43,6 @@ paises_CHOICES = (
     ('CN', 'China'),
     ('CY', 'Chipre'),
     ('VA', 'Ciudad del Vaticano'),
-    ('CO', 'Colombia'),
     ('KM', 'Comoras'),
     ('CG', 'República del Congo'),
     ('CD', 'República Democrática del Congo'),

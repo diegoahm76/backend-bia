@@ -348,7 +348,7 @@ class Roles(models.Model):
         verbose_name_plural = 'Roles'
 
 class EstructuraMenus(models.Model): 
-    id_menu = models.AutoField(primary_key=True, editable=False, db_column='TzIdMenu')
+    id_menu = models.SmallAutoField(primary_key=True, editable=False, db_column='TzIdMenu')
     nombre = models.CharField(max_length=50, db_column='Tznombre')
     nivel_jerarquico = models.SmallIntegerField(db_column='TznivelJerarquico')
     id_menu_padre = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, db_column='TzId_MenuPadre')
@@ -371,7 +371,7 @@ class Modulos(models.Model):
     descripcion = models.CharField(max_length=255, db_column='Tzdescripcion')
     ruta_formulario = models.CharField(default='/test', max_length=255, db_column='TzrutaFormulario')
     nombre_icono = models.CharField(default='test', max_length=30, db_column='TznombreIcono')
-    id_menu = models.ForeignKey(EstructuraMenus, on_delete=models.SET_NULL, null=True, blank=True, db_column='TzIdMenu')
+    id_menu = models.ForeignKey(EstructuraMenus, on_delete=models.SET_NULL, null=True, blank=True, db_column='TzId_Menu')
     
     def __str__(self):
         return str(self.nombre_modulo)

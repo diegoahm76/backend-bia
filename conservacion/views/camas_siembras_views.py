@@ -837,9 +837,11 @@ class GetBusquedaBienesConsumidosView(generics.ListAPIView):
         for key, value in request.query_params.items():
             if key in ['cod_tipo_elemento_vivero', 'codigo_bien', 'nombre']:
                 if key != 'cod_tipo_elemento_vivero':
-                    filter['id_bien__' + key + '__icontains'] = value
+                    if value != '':
+                        filter['id_bien__' + key + '__icontains'] = value
                 else:
-                    filter['id_bien__' + key] = value
+                    if value != '':
+                        filter['id_bien__' + key] = value
 
         bienes_por_consumir = InventarioViveros.objects.filter(id_vivero=id_vivero, id_siembra_lote_germinacion=None)
         bienes_filtrados = bienes_por_consumir.filter(**filter).exclude(id_bien__cod_tipo_elemento_vivero='HE').exclude(id_bien__cod_tipo_elemento_vivero=None).exclude(id_bien__cod_tipo_elemento_vivero='MV', id_bien__es_semilla_vivero=False)

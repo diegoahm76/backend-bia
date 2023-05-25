@@ -33,7 +33,8 @@ class GetViveroActivo (generics.ListAPIView):
                 if key != "cod_municipio":
                     filter[key+"__icontains"] = value
                 else:
-                    filter[key] = value
+                    if value != '':
+                        filter[key] = value
                     
         filter['activo'] = True
         filter['fecha_cierre_actual'] = None
@@ -90,7 +91,7 @@ class GetCuarentenaMaterialVegetalByLupa(generics.ListAPIView):
         for key,value in request.query_params.items():
             if key in ['codigo_bien','nombre','cod_etapa_lote','agno_lote']:
                 if key == 'codigo_bien':
-                    filtro["id_bien__"+key+"__startswith"] = value
+                    filtro["id_bien__"+key+"__icontains"] = value
                 elif key == 'nombre':
                     filtro["id_bien__"+key+"__icontains"] = value
                 else: 
@@ -287,7 +288,7 @@ class GetAnulacionCuarentenaMaterialVegetalByLupa(generics.ListAPIView):
         for key,value in request.query_params.items():
             if key in ['codigo_bien','nombre','cod_etapa_lote','agno_lote']:
                 if key == 'codigo_bien':
-                    filtro["id_bien__"+key+"__startswith"] = value
+                    filtro["id_bien__"+key+"__icontains"] = value
                 elif key == 'nombre':
                     filtro["id_bien__"+key+"__icontains"] = value
                 else: 
