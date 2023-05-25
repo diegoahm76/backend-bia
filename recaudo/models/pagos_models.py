@@ -29,8 +29,8 @@ class FacilidadesPago(models.Model):
     id_tasas_interes = models.ForeignKey(TasasInteres, on_delete=models.CASCADE, db_column='T426id_tasa_interes')
     documento_soporte = models.FileField(db_column='T426documento_soporte')
     consignacion_soporte = models.FileField(db_column='T426consignacion_soporte')
-    documento_garantia = models.FileField(db_column='T426documento_garantia')
-    documento_no_enajenacion = models.FileField(db_column='T426documento_no_enajenacion')
+    # documento_garantia = models.FileField(db_column='T426documento_garantia')
+    # documento_no_enajenacion = models.FileField(db_column='T426documento_no_enajenacion')
     id_funcionario = models.IntegerField(db_column='T426id_funcionario')
     notificaciones = models.BooleanField(db_column='T426id_notificaciones')
 
@@ -68,6 +68,7 @@ class DetallesFacilidadPago(models.Model):
     id = models.AutoField(primary_key=True, db_column='T430id')
     id_cartera = models.ForeignKey('recaudo.Cartera', on_delete=models.CASCADE, db_column='T430id_cartera')
     id_facilidad_pago = models.ForeignKey(FacilidadesPago, on_delete=models.CASCADE, db_column='T430id_facilidad_pago')
+    tipo_cobro = models.CharField(max_length=255, db_column='T430tipo_cobro')
 
     class Meta:
         db_table = 'T430detalles_facilidad_pago'
