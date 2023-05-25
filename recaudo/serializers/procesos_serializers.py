@@ -59,7 +59,7 @@ class ValoresProcesoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ValoresProceso
-        fields = ('id', 'id_atributo', 'valor')
+        fields = ('id', 'id_atributo', 'valor', 'documento')
 
 
 class ValoresProcesoPostSerializer(serializers.ModelSerializer):
