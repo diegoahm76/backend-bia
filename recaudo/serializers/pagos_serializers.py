@@ -6,9 +6,9 @@ from recaudo.models.pagos_models import (
     RequisitosActuacion,
     CumplimientoRequisitos,
     DetallesFacilidadPago,
-    GarantiasFacilidad,
     PlanPagos,
-    TasasInteres
+    TasasInteres,
+    RespuestaSolicitud
 )
 from recaudo.models.cobros_models import Obligaciones, Cartera, Deudores
 from seguridad.models import Personas, Municipio
@@ -160,10 +160,11 @@ class ConsultaObligacionesSerializer(serializers.ModelSerializer):
 class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
     identificacion = serializers.ReadOnlyField(source='id_deudor_actuacion.identificacion',default=None)
     nombre_de_usuario = serializers.SerializerMethodField()
+    id_facilidad = serializers.ReadOnlyField(source='id', default=None)
 
     class Meta:
         model = FacilidadesPago
-        fields = ('nombre_de_usuario','identificacion', 'fecha_generacion')
+        fields = ('id_facilidad','nombre_de_usuario','identificacion', 'fecha_generacion')
 
     def get_nombre_de_usuario(self, obj):
         nombre_de_usuario = None
@@ -195,3 +196,7 @@ class AutorizacionNotificacionesSerializer(serializers.ModelSerializer):
         fields = ['notificaciones']
 
 
+class RespuestaSolicitudFacilidadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RespuestaSolicitud
+        fields = '__all__'

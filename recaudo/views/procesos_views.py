@@ -4,7 +4,9 @@ from recaudo.models.procesos_models import (
     AtributosEtapas,
     FlujoProceso,
     ValoresProceso,
-    Procesos
+    Procesos, 
+    Bienes,
+    Avaluos
 )
 from recaudo.serializers.procesos_serializers import (
     EtapasProcesoSerializer,
@@ -19,10 +21,13 @@ from recaudo.serializers.procesos_serializers import (
     AtributosEtapasPostSerializer,
     AvaluosSerializer
 )
+from recaudo.models.base_models import TiposBien
+
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
 from rest_framework.response import Response
-import datetime
+from datetime import datetime, timedelta, date
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
 
 class EtapasProcesoView(generics.ListAPIView):
@@ -170,11 +175,10 @@ class ProcesosView(generics.ListAPIView):
     
 class AvaluosBienesView(generics.CreateAPIView):
     serializer_class = AvaluosSerializer
-
+    
     def post(self, request):
         data = request.data
         serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'success': True, 'detail':'Se agregar los avaluos del bien que da el deudor', 'data':serializer.data},status=status.HTTP_200_OK)
-    

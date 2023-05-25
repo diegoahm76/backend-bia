@@ -100,8 +100,7 @@ class PostTablaControlAcceso(generics.CreateAPIView):
 
         #Validación de seleccionar solo ccd terminados
         trd = serializer.validated_data.get('id_trd')
-        trd_instance = TablaRetencionDocumental.objects.filter(id_ccd=trd.id_trd).first()
-        if trd_instance:
+        if trd:
             serializado = serializer.save()
 
             # AUDITORIA CREAR TCA

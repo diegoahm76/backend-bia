@@ -149,19 +149,19 @@ class SubseriesDocPutSerializer(serializers.ModelSerializer):
         ]  
 
 class CCDSerializer(serializers.ModelSerializer):
-    series = serializers.SerializerMethodField()
-    subseries = serializers.SerializerMethodField()
+    # series = serializers.SerializerMethodField()
+    # subseries = serializers.SerializerMethodField()
     usado = serializers.SerializerMethodField()
     
-    def get_series(self,obj):
-        series = SeriesDoc.objects.filter(id_ccd=obj.id_ccd)
-        serializer_series = SeriesDocPostSerializer(series, many=True)
-        return serializer_series.data
+    # def get_series(self,obj):
+    #     series = SeriesDoc.objects.filter(id_ccd=obj.id_ccd)
+    #     serializer_series = SeriesDocPostSerializer(series, many=True)
+    #     return serializer_series.data
     
-    def get_subseries(self,obj):
-        subseries = SubseriesDoc.objects.filter(id_serie_doc__id_ccd=obj.id_ccd)
-        serializer_subseries = SeriesDocPostSerializer(subseries, many=True)
-        return serializer_subseries.data
+    # def get_subseries(self,obj):
+    #     subseries = SubseriesDoc.objects.filter(id_serie_doc__id_ccd=obj.id_ccd)
+    #     serializer_subseries = SeriesDocPostSerializer(subseries, many=True)
+    #     return serializer_subseries.data
     
     def get_usado(self,obj):
         trd = TablaRetencionDocumental.objects.filter(id_ccd=obj.id_ccd)
@@ -182,9 +182,9 @@ class CCDSerializer(serializers.ModelSerializer):
             'fecha_retiro_produccion',
             'justificacion',
             'ruta_soporte',
-            'actual',
-            'series',
-            'subseries',
+            'actual'
+            # 'series',
+            # 'subseries',
         )
         
 class CCDPosiblesSerializer(serializers.ModelSerializer):
