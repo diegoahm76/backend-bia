@@ -6,7 +6,7 @@ class Deudores(models.Model):
     codigo = models.AutoField(primary_key=True, db_column='T410codigo')
     identificacion = models.CharField(max_length=255, db_column='T410identificacion')
     nombres = models.CharField(max_length=255, db_column='T410nombres')
-    apellidos = models.CharField(max_length=255, db_column='T410apellidos')
+    apellidos = models.CharField(null=True, blank=True, max_length=255, db_column='T410apellidos')
     telefono = models.CharField(max_length=255, db_column='T410telefono')
     email = models.CharField(max_length=255, db_column='T410email')
     ubicacion_id = models.ForeignKey(Ubicaciones, on_delete=models.CASCADE, db_column='T410ubicacion_id')
