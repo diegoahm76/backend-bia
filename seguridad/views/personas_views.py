@@ -1104,7 +1104,7 @@ class CreatePersonaJuridicaAndUsuario(generics.CreateAPIView):
         
         serializer = self.serializer_class_usuario(data=data)
         serializer.is_valid(raise_exception=True)
-        nombre_de_usuario = serializer.validated_data.get('nombre_de_usuario')
+        nombre_de_usuario = str(serializer.validated_data.get('nombre_de_usuario', '')).lower()
         serializer_response = serializer.save()
         
         #ASIGNARLE ROL USUARIO EXTERNO POR DEFECTO
@@ -1118,7 +1118,7 @@ class CreatePersonaJuridicaAndUsuario(generics.CreateAPIView):
         # AUDITORIA AL REGISTRAR USUARIO
 
         dirip = Util.get_client_ip(request)
-        descripcion = {'nombre_de_usuario': request.data["nombre_de_usuario"]}
+        descripcion = {'NombreUsuario': str(request.data["nombre_de_usuario"]).lower()}
 
         auditoria_data = {
             'id_usuario': serializer_response.pk,
@@ -1132,7 +1132,7 @@ class CreatePersonaJuridicaAndUsuario(generics.CreateAPIView):
 
         #AUDITORIA AL ASIGNARLE ROL DE USUARIO EXTERNO POR DEFECTO
         dirip = Util.get_client_ip(request)
-        descripcion = {'nombre_de_usuario': request.data["nombre_de_usuario"], 'Rol': rol}
+        descripcion = {'NombreUsuario': str(request.data["nombre_de_usuario"]).lower(), 'Rol': rol}
         auditoria_data = {
             'id_usuario': serializer_response.pk,
             'id_modulo': 5,
@@ -1213,7 +1213,7 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
         serializer = self.serializer_class_usuario(data=data)
         serializer.is_valid(raise_exception=True)
         
-        nombre_de_usuario = serializer.validated_data.get('nombre_de_usuario')
+        nombre_de_usuario = str(serializer.validated_data.get('nombre_de_usuario', '')).lower()
         
         serializer_response = serializer.save()
         serializer_response.id_usuario_creador = serializer_response
@@ -1242,7 +1242,7 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
 
         # AUDITORIA AL REGISTRAR USUARIO
 
-        descripcion = {'NombreUsuario': request.data["nombre_de_usuario"]}
+        descripcion = {'NombreUsuario': str(request.data["nombre_de_usuario"]).lower()}
         valores_creados_detalles = [{"NombreRol": rol.nombre_rol}]
         auditoria_data = {
             'id_usuario': serializer_response.pk,

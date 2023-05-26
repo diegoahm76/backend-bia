@@ -11,7 +11,7 @@ class CustomUserManager(BaseUserManager):
         if not nombre_de_usuario:
             raise ValueError(_('Users must have an email address'))
         # email = self.normalize_email(email)
-        user = self.model(nombre_de_usuario=nombre_de_usuario, **extra_fields)
+        user = self.model(nombre_de_usuario=str(nombre_de_usuario).lower(), **extra_fields)
         user.set_password(password)
         user.save()
         return user
@@ -25,4 +25,4 @@ class CustomUserManager(BaseUserManager):
             raise ValueError(_('Superuser must have is_staff=True.'))
         if extra_fields.get('is_superuser') is not True:
             raise ValueError(_('Superuser must have is_superuser=True.'))
-        return self.create_user(nombre_de_usuario, password, **extra_fields)
+        return self.create_user(str(nombre_de_usuario).lower(), password, **extra_fields)

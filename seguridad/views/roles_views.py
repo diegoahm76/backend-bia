@@ -83,7 +83,7 @@ class DeleteUserRol(DestroyAPIView):
         if id_usuarios_rol:
             id_usuarios_rol.delete()
             usuario = request.user.id_usuario
-            descripcion =  {"id_usuarios_rol" : str(pk), "Usuario" : str(id_usuarios_rol.id_usuario.nombre_de_usuario), "Rol" : str(id_usuarios_rol.id_rol.nombre_rol)}
+            descripcion =  {"IdUsuariosRol" : str(pk), "NombreUsuario" : str(id_usuarios_rol.id_usuario.nombre_de_usuario), "Rol" : str(id_usuarios_rol.id_rol.nombre_rol)}
             dirip = Util.get_client_ip(request)
         
             auditoria_data = {
