@@ -7,7 +7,7 @@
             "persona": 1,
             "password": "pbkdf2_sha256$390000$Ed9eugBOEtCakdqop0qMbA$SFvOEYw8gZtmjj/H0kHzHautbhqEVYS6VkKjQVRzKG0=",
             "last_login": null,
-            "nombre_de_usuario": "SuperUsuario",
+            "nombre_de_usuario": "superusuario",
             "is_active": true,
             "is_staff": true,
             "is_superuser": true,
