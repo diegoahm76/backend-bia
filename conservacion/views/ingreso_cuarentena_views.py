@@ -113,9 +113,11 @@ class GetLotesEtapaLupaView(generics.ListAPIView):
         for key, value in request.query_params.items():
             if key in ['codigo_bien', 'nombre', 'agno_lote', 'cod_etapa_lote']:
                 if key == 'codigo_bien' or key == 'nombre':
-                    filter['id_bien__' + key + '__icontains'] = value
+                    if value != '':
+                        filter['id_bien__' + key + '__icontains'] = value
                 else:
-                    filter[key] = value
+                    if value != '':
+                        filter[key] = value
 
         #VALIDACIÓN QUE EL CODIGO ENVIADO EXISTA EN ALGÚN BIEN EN INVENTARIO VIVEROS
         etapas_lotes_in_vivero = InventarioViveros.objects.filter(id_vivero=id_vivero, id_siembra_lote_germinacion=None).exclude(~Q(id_bien__cod_tipo_elemento_vivero='MV')).exclude(id_bien__cod_tipo_elemento_vivero='MV', id_bien__es_semilla_vivero=True).filter(**filter)
