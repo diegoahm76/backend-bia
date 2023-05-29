@@ -9,7 +9,8 @@ from gestion_documental.serializers.trd_serializers import TRDSerializer
 from transversal.models.organigrama_models import (
     Organigramas,
     NivelesOrganigrama,
-    UnidadesOrganizacionales
+    UnidadesOrganizacionales,
+    TemporalPersonasUnidad
 )
 from seguridad.models import User, Personas
 
@@ -65,6 +66,7 @@ class UnidadesGetSerializer(serializers.ModelSerializer):
         model = UnidadesOrganizacionales
         fields = '__all__'
 
+
 class PersonaOrgSerializer(serializers.ModelSerializer):
     nombre_completo = serializers.SerializerMethodField()
     tiene_usuario = serializers.SerializerMethodField()
@@ -98,6 +100,12 @@ class OrganigramaSerializer(serializers.ModelSerializer):
     tipo_documento = serializers.ReadOnlyField(source='id_persona_cargo.tipo_documento.cod_tipo_documento',default=None)
     numero_documento = serializers.ReadOnlyField(source='id_persona_cargo.numero_documento',default=None) 
     nombre_completo = serializers.SerializerMethodField()
+    usado = serializers.SerializerMethodField()
+    
+    def get_usado(self,obj):
+        ccd = obj.cuadrosclasificaciondocumental_set.all()
+        usado = True if ccd else False
+        return usado
     
     def get_nombre_completo(self, obj):
         nombre_completo = None
@@ -116,11 +124,13 @@ class OrganigramaSerializer(serializers.ModelSerializer):
                   'fecha_retiro_produccion',
                   'justificacion_nueva_version',
                   'version',
+                  'actual',
                   'ruta_resolucion',
                   'id_persona_cargo',
                   'tipo_documento',
                   'numero_documento',
-                  'nombre_completo'
+                  'nombre_completo',
+                  'usado'
                 ]
         read_only_fields = ['actual']
 
@@ -187,3 +197,42 @@ class CCDSerializer_(serializers.ModelSerializer):
     class Meta:
         fields = ['id_ccd','id_organigrama','version','nombre','fecha_terminado','fecha_puesta_produccion','fecha_retiro_produccion','justificacion','ruta_soporte','actual','valor_aumento_serie','valor_aumento_subserie','trd','tca']
         model = CuadrosClasificacionDocumental
+
+class ActUnidadOrgAntiguaSerializer(serializers.ModelSerializer):
+    nombre_completo = serializers.SerializerMethodField()
+    nombre_unidad_organizacional_actual = serializers.ReadOnlyField(source='id_unidad_organizacional_actual.nombre', default=None)
+    id_nueva_unidad_organizacional = serializers.ReadOnlyField(default=None)
+    nombre_nueva_unidad_organizacional = serializers.ReadOnlyField(default=None)
+
+    def get_nombre_completo(self, obj):
+        nombre_completo = None
+        nombre_list = [obj.primer_nombre, obj.segundo_nombre,
+                        obj.primer_apellido, obj.segundo_apellido]
+        nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo = nombre_completo if nombre_completo != "" else None
+        return nombre_completo
+
+    class Meta:
+        model = Personas
+        fields = ['id_persona', 'nombre_completo', 'id_unidad_organizacional_actual', 'nombre_unidad_organizacional_actual', 'es_unidad_organizacional_actual', 'id_nueva_unidad_organizacional', 'nombre_nueva_unidad_organizacional']
+
+class TemporalPersonasUnidadSerializer(serializers.ModelSerializer):
+    nombre_completo = serializers.SerializerMethodField()
+    id_unidad_organizacional_actual = serializers.ReadOnlyField(source='id_unidad_org_anterior.id_unidad_organizacional', default=None)
+    nombre_unidad_organizacional_actual = serializers.ReadOnlyField(source='id_unidad_org_anterior.nombre', default=None)
+    es_unidad_organizacional_actual = serializers.ReadOnlyField(source='id_persona.es_unidad_organizacional_actual', default=None)
+    id_nueva_unidad_organizacional = serializers.ReadOnlyField(source='id_unidad_org_nueva.id_unidad_organizacional', default=None)
+    nombre_nueva_unidad_organizacional = serializers.ReadOnlyField(source='id_unidad_org_nueva.nombre', default=None)
+
+    def get_nombre_completo(self, obj):
+        nombre_completo = None
+        nombre_list = [obj.id_persona.primer_nombre, obj.id_persona.segundo_nombre,
+                        obj.id_persona.primer_apellido, obj.id_persona.segundo_apellido]
+        nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo = nombre_completo if nombre_completo != "" else None
+        return nombre_completo
+    
+    class Meta:
+        model = TemporalPersonasUnidad
+        fields = ['id_persona', 'nombre_completo','id_unidad_organizacional_actual','nombre_unidad_organizacional_actual','es_unidad_organizacional_actual', 'id_nueva_unidad_organizacional', 'nombre_nueva_unidad_organizacional']
+

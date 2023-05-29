@@ -482,9 +482,22 @@ class CreateSolicitud(generics.UpdateAPIView):
         return Response({'success':True, 'detail':'Solicitud registrada con éxito', 'Numero solicitud' : info_solicitud["nro_solicitud_por_tipo"]},status=status.HTTP_200_OK)
 
 class GetSolicitudesPendentesPorAprobar(generics.ListAPIView):
-# ESTA FUNCIONALIDAD PERMITE LISTAR LAS SOLICITUDES PENDIENTES DE APORVACIÓN PORL SUPERVISOR DESIGNADO
+# ESTA FUNCIONALIDAD PERMITE LISTAR LAS SOLICITUDES PENDIENTES DE APROBACION POR EL SUPERVISOR DESIGNADO
     serializer_class = CrearSolicitudesPostSerializer
     queryset=SolicitudesConsumibles.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        persona_responsable = request.user.persona    
+        solicitudes_por_aprobar = SolicitudesConsumibles.objects.filter(Q(id_funcionario_responsable_unidad=persona_responsable.id_persona) & Q(revisada_responsable = False))
+        serializer = self.serializer_class(solicitudes_por_aprobar, many=True)
+        return Response({'success':True, 'detail':serializer.data, },status=status.HTTP_200_OK)
+
+class GetSolicitudesPendentesPorAprobarDocumento(generics.ListAPIView):
+# ESTA FUNCIONALIDAD PERMITE LISTAR LAS SOLICITUDES PENDIENTES DE APROBACION POR EL SUPERVISOR DESIGNADO
+    serializer_class = CrearSolicitudesPostSerializer
+    queryset=SolicitudesConsumibles.objects.all()
+    permission_classes = [IsAuthenticated]
     
     def get(self, request, tipodocumento, numerodocumento):
         persona_responsable = Personas.objects.get(Q(tipo_documento=tipodocumento) & Q(numero_documento=numerodocumento) & Q(tipo_persona='N'))
@@ -494,7 +507,6 @@ class GetSolicitudesPendentesPorAprobar(generics.ListAPIView):
         solicitudes_por_aprobar = SolicitudesConsumibles.objects.filter(Q(id_funcionario_responsable_unidad=persona_responsable.id_persona) & Q(revisada_responsable = False))
         serializer = self.serializer_class(solicitudes_por_aprobar, many=True)
         return Response({'success':True, 'detail':serializer.data, },status=status.HTTP_200_OK)
-
 
 class GetSolicitudesNoAprobadas(generics.ListAPIView):
 # ESTA FUNCIONALIDAD PERMITE LISTAR LAS SOLICITUDES PENDIENTES DE APORVACIÓN PORL SUPERVISOR DESIGNADO

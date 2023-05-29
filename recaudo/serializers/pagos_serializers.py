@@ -6,12 +6,12 @@ from recaudo.models.pagos_models import (
     RequisitosActuacion,
     CumplimientoRequisitos,
     DetallesFacilidadPago,
-    GarantiasFacilidad,
     PlanPagos,
-    TasasInteres
+    TasasInteres,
+    RespuestaSolicitud
 )
 from recaudo.models.cobros_models import Obligaciones, Cartera, Deudores
-from seguridad.models import Personas
+from seguridad.models import Personas, Municipio
 
 
 class TipoPagoSerializer(serializers.ModelSerializer):
@@ -43,12 +43,6 @@ class DetallesFacilidadPagoSerializer(serializers.ModelSerializer):
         model =DetallesFacilidadPago
         fields = '__all__'
 
-
-class GarantiasFacilidadSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = GarantiasFacilidad
-        fields = '__all__'
-    
     
 class PlanPagosSerializer(serializers.ModelSerializer):
     class Meta:
@@ -72,6 +66,19 @@ class DeudorFacilidadPagoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Deudores
         fields = ('codigo', 'identificacion', 'nombres', 'apellidos', 'email', 'ubicacion')
+
+
+class DatosContactoDeudorSerializer(serializers.ModelSerializer):
+    ciudad = serializers.SerializerMethodField()
+
+    def get_ciudad(self, obj):
+        ubicacion = Municipio.objects.filter(cod_municipio=obj.municipio_residencia).first()
+        ubicacion = ubicacion.nombre
+        return ubicacion
+        
+    class Meta:
+        model = Personas
+        fields = ('direccion_notificaciones', 'ciudad', 'telefono_celular')
         
 
 class FacilidadesPagoSerializer(serializers.ModelSerializer):
@@ -84,7 +91,8 @@ class FacilidadesPagoSerializer(serializers.ModelSerializer):
             'id_deudor_actuacion': {'required': True},
             'id_tipo_actuacion': {'required': True},
             'id_tasas_interes': {'required': True},
-            'documento_soporte': {'required': True}
+            'documento_soporte': {'required': True},
+            'consignacion_soporte': {'required':True}
         }
 
 
@@ -115,17 +123,33 @@ class CarteraSerializer(serializers.ModelSerializer):
 
 
 class ObligacionesSerializer(serializers.ModelSerializer):
-    carteras = serializers.SerializerMethodField()
+    valor_intereses = serializers.SerializerMethodField()
+    dias_mora = serializers.SerializerMethodField()
 
     def get_carteras(self, obj):
         carteras = obj.cartera_set.filter(fin__isnull=True)
-        carteras_serializer = CarteraSerializer(carteras, many=True)
-        carteras_data = carteras_serializer.data if carteras_serializer else []
-        return carteras_data
-    
+        if carteras.exists():
+            return carteras.first()
+        else:
+            return None
+
+    def get_valor_intereses(self, obj):
+        cartera = self.get_carteras(obj)
+        if cartera:
+            return cartera.valor_intereses
+        else:
+            return None
+
+    def get_dias_mora(self, obj):
+        cartera = self.get_carteras(obj)
+        if cartera:
+            return cartera.dias_mora
+        else:
+            return None
+
     class Meta:
         model = Obligaciones
-        fields = ('id','fecha_inicio', 'id_expediente','monto_inicial','carteras')
+        fields = ('nombre','fecha_inicio', 'id_expediente','monto_inicial','valor_intereses', 'dias_mora')
 
 
 class ConsultaObligacionesSerializer(serializers.ModelSerializer):
@@ -133,27 +157,50 @@ class ConsultaObligacionesSerializer(serializers.ModelSerializer):
         model = Obligaciones
         fields = '__all__'
 
+# class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
+#     identificacion = serializers.ReadOnlyField(source='id_deudor_actuacion.identificacion',default=None)
+#     nombre_de_usuario = serializers.SerializerMethodField()
+#     id_facilidad = serializers.ReadOnlyField(source='id', default=None)
+
+#     class Meta:
+#         model = FacilidadesPago
+#         fields = ('id_facilidad','nombre_de_usuario','identificacion', 'fecha_generacion')
+
+#     def get_nombre_de_usuario(self, obj):
+#         nombre_de_usuario = None
+#         persona = Personas.objects.filter(numero_documento=obj.id_deudor_actuacion.identificacion).first()
+#         if persona: 
+#             usuario = persona.user_set.exclude(id_usuario=1).first() 
+#             nombre_de_usuario = usuario.nombre_de_usuario if usuario else None
+#         return nombre_de_usuario
+
+
 class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
     identificacion = serializers.ReadOnlyField(source='id_deudor_actuacion.identificacion',default=None)
     nombre_de_usuario = serializers.SerializerMethodField()
+    id_facilidad = serializers.ReadOnlyField(source='id', default=None)
 
     class Meta:
         model = FacilidadesPago
-        fields = ('id', 'nombre_de_usuario','identificacion', 'fecha_generacion')
+        fields = ('id_facilidad','nombre_de_usuario','identificacion', 'fecha_generacion')
 
     def get_nombre_de_usuario(self, obj):
-        nombre_de_usuario = None
-        persona = Personas.objects.filter(numero_documento=obj.id_deudor_actuacion.identificacion).first()
-        if persona: 
-            usuario = persona.user_set.exclude(id_usuario=1).first() 
-            nombre_de_usuario = usuario.nombre_de_usuario if usuario else None
-        return nombre_de_usuario
+        return f"{obj.id_deudor_actuacion.nombres} {obj.id_deudor_actuacion.apellidos}"
+
+
 
 
 class ConsultaFacilidadesPagosSerializer(serializers.ModelSerializer):
+    tipo_actuacion = serializers.ReadOnlyField(source='id_tipo_actuacion.descripcion',default=None)
+
     class Meta:
         model = FacilidadesPago
-        fields = '__all__'
+        fields = ('id', 'id_deudor_actuacion', 'tipo_actuacion', 'fecha_generacion',
+                  'observaciones', 'periodicidad', 'cuotas', 'id_tasas_interes',
+                  'documento_soporte', 'consignacion_soporte', 'documento_garantia', 
+                  'documento_no_enajenacion', 'id_funcionario','notificaciones',
+                  )
+
 
 class ListadoDeudoresUltSerializer(serializers.ModelSerializer):
     nombre_contribuyente = serializers.SerializerMethodField()
@@ -161,10 +208,18 @@ class ListadoDeudoresUltSerializer(serializers.ModelSerializer):
     class Meta:
         model = Deudores
         fields = ('nombre_contribuyente','identificacion')
+        #fields = ('nombres','apellidos','identificacion')
 
-    def get_nombre_completo(self, obj):
+    def get_nombre_contribuyente(self, obj):
         return f"{obj.nombres} {obj.apellidos}"
 
+class AutorizacionNotificacionesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FacilidadesPago
+        fields = ['notificaciones']
 
 
-
+class RespuestaSolicitudFacilidadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RespuestaSolicitud
+        fields = '__all__'

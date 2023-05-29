@@ -39,7 +39,7 @@ from django.utils import encoding, http
 import copy, re
 from django.http import HttpResponsePermanentRedirect
 from django.contrib.sessions.models import Session
-from rest_framework.exceptions import NotFound,ValidationError
+from rest_framework.exceptions import NotFound,ValidationError, PermissionDenied
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -59,7 +59,7 @@ class MyTokenObtainPairView(TokenObtainPairView):
 class UpdateUserProfile(generics.UpdateAPIView):
     serializer_class = UserPutSerializer
     queryset = User.objects.all()
-    permission_classes = [IsAuthenticated, PermisoActualizarInterno]
+    permission_classes = [IsAuthenticated]
 
     def patch(self, request):
         user_loggedin = self.request.user.id_usuario
@@ -74,7 +74,7 @@ class UpdateUserProfile(generics.UpdateAPIView):
             # AUDITORIA AL ACTUALIZAR USUARIO PROPIO
 
             dirip = Util.get_client_ip(request)
-            descripcion = {'nombre_de_usuario': user.nombre_de_usuario}
+            descripcion = {'NombreUsuario': user.nombre_de_usuario}
             valores_actualizados = {'current': user, 'previous': previous_user}
 
             auditoria_data = {
@@ -89,7 +89,7 @@ class UpdateUserProfile(generics.UpdateAPIView):
 
             Util.save_auditoria(auditoria_data)
 
-        return Response({'success': True,'data': user_serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success':True,'data': user_serializer.data}, status=status.HTTP_200_OK)
 
 
 class UpdateUser(generics.RetrieveUpdateAPIView):
@@ -101,7 +101,7 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
         user_loggedin = request.user.id_usuario
 
         if int(pk) == 1:
-            return Response({'success': False,'detail': 'No se puede actualizar el super usuario'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se puede actualizar el super usuario')
 
         if int(user_loggedin) != int(pk):
             user = User.objects.filter(id_usuario=pk).first()
@@ -121,7 +121,7 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
 
                 # VALIDACIÓN NO SE PUEDE INTERNO A EXTERNO
                 if tipo_usuario_ant == 'I' and tipo_usuario_act == 'E':
-                    return Response({'success': False,'detail': 'No se puede actualizar el usuario de interno a externo'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError('No se puede actualizar el usuario de interno a externo')
 
                 # VALIDACIÓN EXTERNO INACTIVO PASA A INTERNO ACTIVO
                 if tipo_usuario_ant == 'E' and tipo_usuario_act == 'I':
@@ -129,43 +129,34 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                     persona = Personas.objects.get(user=user)
                     
                     if persona.id_cargo is None or persona.fecha_a_finalizar_cargo_actual <= datetime.now():
-                        return Response({'success':False, 'detail':'La persona propietaria del usuario no tiene cargo actual o la fecha final del cargo ha vencido'}, status=status.HTTP_403_FORBIDDEN)
+                        raise PermissionDenied('La persona propietaria del usuario no tiene cargo actual o la fecha final del cargo ha vencido')
                     
                     if persona.tipo_persona == 'J':
-                        return Response({'success':False, 'detail':'Una persona jurídica no puede tener un usuario de tipo interno'}, status=status.HTTP_403_FORBIDDEN)
+                        raise PermissionDenied('Una persona jurídica no puede tener un usuario de tipo interno')
                     
                 # Validación NO desactivar externo activo
                 if user.tipo_usuario == 'E' and user.is_active and 'is_active' in request.data and str(request.data['is_active']).lower() == "false":
-                    return Response({'success': False,'detail': 'No se puede desactivar un usuario externo activo'}, status=status.HTTP_403_FORBIDDEN)
+                    raise PermissionDenied('No se puede desactivar un usuario externo activo')
 
                 # Validación SE PUEDE desactivar interno
                 if user.tipo_usuario == 'I' and str(user.is_active).lower() != str(request.data['is_active']).lower():
                     # user.is_active = False
                     if not user.is_active:
                         if user.persona.id_cargo is None or user.persona.fecha_a_finalizar_cargo_actual <= datetime.now():
-                            return Response({'success':False, 'detail':'La persona propietaria del usuario no tiene cargo actual o la fecha final del cargo ha vencido, por lo cual no puede activar su usuario'}, status=status.HTTP_403_FORBIDDEN)
+                            raise PermissionDenied('La persona propietaria del usuario no tiene cargo actual o la fecha final del cargo ha vencido, por lo cual no puede activar su usuario')
                         
                     if 'justificacion_activacion' not in request.data or not request.data['justificacion_activacion']:
-                        return Response({'success': False,'detail': 'Se requiere una justificación para cambiar el estado de activación del usuario'}, status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('Se requiere una justificación para cambiar el estado de activación del usuario')
                     justificacion = request.data['justificacion_activacion']
                 
                 # Validación bloqueo/desbloqueo usuario
                 if str(user.is_blocked).lower() != str(request.data['is_blocked']).lower():
                     # user.is_active = False  
                     if 'justificacion_bloqueo' not in request.data or not request.data['justificacion_bloqueo']:
-                        return Response({'success': False,'detail': 'Se requiere una justificación para cambiar el estado de bloqueo del usuario'}, status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('Se requiere una justificación para cambiar el estado de bloqueo del usuario')
                     justificacion = request.data['justificacion_bloqueo']
                 
-                # ACTUALIZAR FOTO DE USUARIO
-                # foto_usuario = request.data.get('profile_img', None)
-                # if foto_usuario:
-                #     user.profile_img = foto_usuario
-                
-                # ACTUALIZAR ESTADO DE BLOQUEO 
-                # is_blocked_act = user_serializer.validated_data.get('is_blocked')
-                # if is_blocked_act is not None:
-                #     user.is_blocked = is_blocked_act
-                    
+
                 # ASIGNAR ROLES
                 roles_actuales = UsuariosRol.objects.filter(id_usuario=pk)
                 
@@ -184,12 +175,12 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                 valores_eliminados_detalles = []
 
                 dirip = Util.get_client_ip(request)
-                descripcion = {'nombre_de_usuario': user.nombre_de_usuario}
+                descripcion = {'NombreUsuario': user.nombre_de_usuario}
 
                 if set(lista_roles_bd) != set(lista_roles_json):
                     roles = Roles.objects.filter(id_rol__in=lista_roles_json)
                     if len(set(lista_roles_json)) != len(roles):
-                        return Response({'success':False, 'detail':'Debe validar que todos los roles elegidos existan'},status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('Debe validar que todos los roles elegidos existan')
                     
                     for rol in roles:
                         if rol.id_rol not in lista_roles_bd:
@@ -206,7 +197,7 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                         if rol not in lista_roles_json:
                             
                             if rol == 2:
-                                return Response({'success': False, 'detail': 'El rol de ciudadano no puede ser eliminado'}, status=status.HTTP_403_FORBIDDEN)
+                                raise PermissionDenied('El rol de ciudadano no puede ser eliminado')
                             else:
                                 roles_actuales_borrar = roles_actuales.filter(id_usuario=user.id_usuario, id_rol=rol).first()
                                 diccionario = {'nombre': roles_actuales_borrar.id_rol.nombre_rol}
@@ -229,7 +220,6 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                     Util.save_auditoria_maestro_detalle(auditoria_data)
                 
                 user_actualizado = user_serializer.save()
-                # user.save()
 
                 # HISTORICO 
                 usuario_afectado = User.objects.get(id_usuario=id_usuario_afectado)
@@ -279,11 +269,11 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                         usuario_operador = usuario_operador,
                     )
 
-                return Response({'success': True, 'detail':'Actualización exitosa','data': user_serializer.data}, status=status.HTTP_200_OK)
+                return Response({'success':True, 'detail':'Actualización exitosa','data': user_serializer.data}, status=status.HTTP_200_OK)
             else:
-                return Response({'success': False,'detail': 'No se encontró el usuario'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('No se encontró el usuario')
         else:
-            return Response({'success': False,'detail': 'No puede actualizar sus propios datos por este módulo'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No puede actualizar sus propios datos por este módulo')
 
 @api_view(['GET'])
 def roles(request):
@@ -316,7 +306,7 @@ def getUserById(request, pk):
         user = User.objects.get(id_usuario=pk)
         pass
     except:
-        return Response({'success':False,'detail': 'No existe ningún usuario con este ID'}, status=status.HTTP_404_NOT_FOUND)
+        raise NotFound('No existe ningún usuario con este ID')
     serializer = UserSerializer(user, many=False)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -338,7 +328,7 @@ class GetUserByPersonDocument(generics.ListAPIView):
                 serializador = PersonasSerializer(persona, many=False)
                 return Response({'success':True,'Persona': serializador.data}, status=status.HTTP_200_OK)
         except:
-            return Response({'success':False,'detail': 'No se encuentra persona con este numero de documento'}, status=status.HTTP_200_OK)
+            raise NotFound('No se encuentra persona con este numero de documento')
 
 
 class GetUserByEmail(generics.ListAPIView):
@@ -350,13 +340,13 @@ class GetUserByEmail(generics.ListAPIView):
             persona = Personas.objects.get(email=email)
             pass
         except:
-            return Response({'success':False,'detail': 'No se encuentra ninguna persona con este email'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encuentra ninguna persona con este email')
         try:
             user = User.objects.get(persona=persona.id_persona)
             serializer = self.serializer_class(user, many=False)
             return Response({'success':True,'Usuario': serializer.data}, status=status.HTTP_200_OK)
         except:
-            return Response({'success':False,'detail': 'Este email está conectado a una persona, pero esa persona no tiene asociado un usuario'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('Este email está conectado a una persona, pero esa persona no tiene asociado un usuario')
 
 """@api_view(['PUT'])
 @permission_classes([IsAuthenticated])
@@ -389,12 +379,12 @@ class AsignarRolSuperUsuario(generics.CreateAPIView):
         persona = Personas.objects.filter(id_persona=id_persona).first()
         
         if not persona:
-            return Response({'success':False,'detail': 'No existe la persona'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe la persona')
 
         usuario_delegado = User.objects.filter(persona=persona.id_persona).exclude(id_usuario=1).first()
         
         if not usuario_delegado or usuario_delegado.tipo_usuario != 'I': 
-            return Response({'success':False,'detail': 'Esta persona no tiene un usuario interno, por lo tanto no puede asignarle este rol'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('Esta persona no tiene un usuario interno, por lo tanto no puede asignarle este rol')
         
        #Delegación del super usuario       
     
@@ -414,7 +404,7 @@ class AsignarRolSuperUsuario(generics.CreateAPIView):
         #Auditoria Delegación de Rol Super Usuario
         valores_actualizados = {'previous':previous_usuario_delegante,'current':usuario_delegante}
         dirip = Util.get_client_ip(request)
-        descripcion = {'nombre_de_usuario': usuario_delegante.nombre_de_usuario}
+        descripcion = {'NombreUsuario': usuario_delegante.nombre_de_usuario}
         auditoria_data = {
             'id_usuario': user_logeado,
             'id_modulo': 8,
@@ -433,7 +423,7 @@ class AsignarRolSuperUsuario(generics.CreateAPIView):
         
         Util.notificacion(usuario_delegado.persona,subject,template,absurl=absurl)
         
-        return Response({'success':True,'detail': 'Delegación y notificación exitosa'}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Delegación y notificación exitosa'}, status=status.HTTP_200_OK)
 
 class UnblockUser(generics.CreateAPIView):
     serializer_class = DesbloquearUserSerializer
@@ -447,11 +437,11 @@ class UnblockUser(generics.CreateAPIView):
         fecha_nacimiento = request.data['fecha_nacimiento']
 
         try:
-            usuario_bloqueado = User.objects.get(nombre_de_usuario=nombre_de_usuario)
+            usuario_bloqueado = User.objects.get(nombre_de_usuario=str(nombre_de_usuario).lower())
             usuario_bloqueado
             pass
         except:
-            return Response({'success':False,'detail': 'Los datos ingresados de usuario son incorrectos, intenta nuevamente'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Los datos ingresados de usuario son incorrectos, intenta nuevamente')
         
         uidb64 = signing.dumps({'user': str(usuario_bloqueado.id_usuario)})
         token = PasswordResetTokenGenerator().make_token(usuario_bloqueado)
@@ -467,7 +457,7 @@ class UnblockUser(generics.CreateAPIView):
             persona_usuario_bloqueado = Personas.objects.get( Q(id_persona=usuario_bloqueado.persona.id_persona))
             pass
         except:
-            return Response({'success':False,'detail': 'Los datos ingresados de usuario-persona son incorrectos, intenta nuevamente' }, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Los datos ingresados de usuario-persona son incorrectos, intenta nuevamente')
         
         tipo_persona = persona_usuario_bloqueado.tipo_persona
         if tipo_persona == 'N':    
@@ -481,7 +471,7 @@ class UnblockUser(generics.CreateAPIView):
                                                                 )
                 pass
             except:
-                return Response({'success':False,'detail': 'Los datos ingresados de persona natural son incorrectos, intenta nuevamente'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('Los datos ingresados de persona natural son incorrectos, intenta nuevamente')
             
             subject = "Desbloquea tu usuario"
             template = "desbloqueo-de-usuario.html"
@@ -498,13 +488,13 @@ class UnblockUser(generics.CreateAPIView):
                                                                 )
                 pass
             except:
-                return Response({'success':False,'detail': 'Los datos ingresados de persona juridica son incorrectos, intenta nuevamente'}, status=status.HTTP_400_BAD_REQUEST)                                 
+                raise ValidationError('Los datos ingresados de persona juridica son incorrectos, intenta nuevamente')                                 
             subject = "Desbloquea tu usuario"
             template = "desbloqueo-de-usuario.html"
 
             Util.notificacion(persona_usuario_bloqueado,subject,template,absurl=absurl+'?redirect-url='+ redirect_url)
 
-        return Response({'success': True, 'detail': 'Email y sms enviado para desbloquear usuario'}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Email y sms enviado para desbloquear usuario'}, status=status.HTTP_200_OK)
 
 class UnBlockUserPassword(generics.GenericAPIView):
     serializer_class = SetNewPasswordUnblockUserSerializer
@@ -512,7 +502,7 @@ class UnBlockUserPassword(generics.GenericAPIView):
     def patch(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        return Response({'success': True, 'detail': 'Usuario Desbloqueado'}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Usuario Desbloqueado'}, status=status.HTTP_200_OK)
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
@@ -536,29 +526,29 @@ class RegisterView(generics.CreateAPIView):
         print("usuario",usuario)
         if usuario:
             if usuario.is_active:
-                return Response({'success':False,'detail':'La persona ya posee un usuario en el sistema'},status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('La persona ya posee un usuario en el sistema')
             elif not usuario.is_active:
-                return Response({'success':False,'detail':'La persona ya posee un usuario en el sistema pero está inactivo'},status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('La persona ya posee un usuario en el sistema pero está inactivo')
         
         if data["tipo_usuario"] == "I":
             # VALIDAR QUE PERSONA NO SEA JURIDICA
             if persona.tipo_persona == 'J':
-                return Response({'success':False,'detail':'No puede registrar una persona jurídica como un usuario interno'},status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('No puede registrar una persona jurídica como un usuario interno')
                 
             # VALIDAR QUE TENGA CARGO
             if not persona.id_cargo:
-                return Response({'success':False,'detail':'La persona no tiene un cargo asociado'},status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('La persona no tiene un cargo asociado')
             
             # VALIDAR QUE ESTE VIGENTE EL CARGO
             if not persona.fecha_a_finalizar_cargo_actual or persona.fecha_a_finalizar_cargo_actual <= datetime.now():
-                return Response({'success':False,'detail':'La fecha de finalización del cargo actual no es vigente'},status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('La fecha de finalización del cargo actual no es vigente')
         
         valores_creados_detalles = []
         # ASIGNACIÓN DE ROLES
         roles_por_asignar = data.getlist("roles")
         
         if not roles_por_asignar:
-            return Response( {'success':False, 'detail':'Debe enviar mínimo un rol para asignar al usuario'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Debe enviar mínimo un rol para asignar al usuario')
         
         roles_por_asignar = [int(a) for a in roles_por_asignar]
         roles_por_asignar= set(roles_por_asignar)
@@ -574,7 +564,7 @@ class RegisterView(generics.CreateAPIView):
         roles = Roles.objects.filter(id_rol__in=roles_por_asignar)
         
         if len(roles) != len(set(roles_por_asignar)):
-            return Response( {'success':False, 'detail':'Deben existir todos los roles asignados'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Deben existir todos los roles asignados')
 
         user_serializer=serializer.save()
 
@@ -586,28 +576,7 @@ class RegisterView(generics.CreateAPIView):
             descripcion={'nombre':rol.nombre_rol}
             valores_creados_detalles.append(descripcion)
 
-        # # Crear registro de auditoría para el maestro detalle de Roles
-        # descripcion = {'nombre_de_usuario': request.data["nombre_de_usuario"]}
-        # dirip = Util.get_client_ip(request)
-        # auditoria_data = {
-        #     "id_usuario": user_serializer.pk,
-        #     "id_modulo": 5,  
-        #     "cod_permiso": "CR",
-        #     "subsistema": "SEGU",
-        #     "dirip": dirip,
-        #     "descripcion": descripcion,
-        #     "valores_creados_detalles": valores_creados_detalles,
-        # }
-        # Util.save_auditoria_maestro_detalle(auditoria_data)
 
-        # redirect_url=request.data.get('redirect_url','')
-        # token = RefreshToken.for_user(user_serializer)
-        # current_site=get_current_site(request).domain
-
-        # relativeLink= reverse('verify')
-        # absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
-        # short_url = Util.get_short_url(request, absurl)
-        
         uidb64 =signing.dumps({'user':str(user_serializer.id_usuario)})
         token = PasswordResetTokenGenerator().make_token(user_serializer)
         current_site=get_current_site(request=request).domain
@@ -621,11 +590,10 @@ class RegisterView(generics.CreateAPIView):
 
         Util.notificacion(persona,subject,template,absurl=absurl,email=persona.email)
         
-        return Response({'success':True,'detail': 'Usuario creado exitosamente, se ha enviado un correo a ' + persona.email + ', con la información para la activación del usuario en el sistema', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        return Response({'success':True, 'detail':'Usuario creado exitosamente, se ha enviado un correo a ' + persona.email + ', con la información para la activación del usuario en el sistema', 'data': serializer.data}, status=status.HTTP_201_CREATED)
 
 class RegisterExternoView(generics.CreateAPIView):
     serializer_class = RegisterExternoSerializer
-    # renderer_classes = (UserRender,)
 
     def post(self, request):
         user = request.data
@@ -633,30 +601,33 @@ class RegisterExternoView(generics.CreateAPIView):
         persona = Personas.objects.filter(id_persona=user['persona']).first()
         
         if not persona:
-            return Response({'success':False,'detail':'No existe la persona'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe la persona')
         
         if not persona.email:
-            return Response({'success':False,'detail':'La persona no tiene un correo electrónico de notificación asociado, debe acercarse a Cormacarena y realizar una actualizacion  de datos para proceder con la creación del usuario en el sistema'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('La persona no tiene un correo electrónico de notificación asociado, debe acercarse a Cormacarena y realizar una actualizacion  de datos para proceder con la creación del usuario en el sistema')
     
         usuario = persona.user_set.exclude(id_usuario=1).first()
 
         if usuario:
             if usuario.is_active or usuario.tipo_usuario == "I":
-                return Response({'success':False,'detail':'La persona ya posee un usuario en el sistema, en caso de pérdida de credenciales debe usar las opciones de recuperación'},status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('La persona ya posee un usuario en el sistema, en caso de pérdida de credenciales debe usar las opciones de recuperación')
             elif not usuario.is_active and usuario.tipo_usuario == "E" :
-                return Response({'success':False,'detail':"La persona ya posee un usuario en el sistema, pero no se encuentra activado, ¿desea reenviar el correo de activación?","modal":True,"id_usuario":usuario.id_usuario},status=status.HTTP_403_FORBIDDEN)
+                try:
+                    raise PermissionDenied('La persona ya posee un usuario en el sistema, pero no se encuentra activado, ¿desea reenviar el correo de activación?')
+                except PermissionDenied as e:
+                    return Response({'success':False, 'detail':'La persona ya posee un usuario en el sistema, pero no se encuentra activado, ¿desea reenviar el correo de activación?',"modal":True,"id_usuario":usuario.id_usuario}, status=status.HTTP_403_FORBIDDEN)
 
         redirect_url=request.data.get('redirect_url','')
         redirect_url=quote_plus(redirect_url)
         
         if " " in user['nombre_de_usuario']:
-            return Response({'success':False,'detail':'No puede contener espacios en el nombre de usuario'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('No puede contener espacios en el nombre de usuario')
         
         user['creado_por_portal'] = True
         
         serializer = self.serializer_class(data=user)
         serializer.is_valid(raise_exception=True)
-        nombre_de_usuario = serializer.validated_data.get('nombre_de_usuario')
+        nombre_de_usuario = str(serializer.validated_data.get('nombre_de_usuario', '')).lower()
         serializer_response = serializer.save()
         user_data = serializer.data
         
@@ -671,7 +642,7 @@ class RegisterExternoView(generics.CreateAPIView):
         # AUDITORIA AL REGISTRAR USUARIO
 
         dirip = Util.get_client_ip(request)
-        descripcion = {'nombre_de_usuario': request.data["nombre_de_usuario"]}
+        descripcion = {'NombreUsuario': str(request.data["nombre_de_usuario"]).lower()}
 
         auditoria_data = {
             'id_usuario': serializer_response.pk,
@@ -685,7 +656,7 @@ class RegisterExternoView(generics.CreateAPIView):
 
         #AUDITORIA AL ASIGNARLE ROL DE USUARIO EXTERNO POR DEFECTO
         dirip = Util.get_client_ip(request)
-        descripcion = {'nombre_de_usuario': request.data["nombre_de_usuario"], 'Rol': rol}
+        descripcion = {'NombreUsuario': str(request.data["nombre_de_usuario"]).lower(), 'Rol': rol}
         auditoria_data = {
             'id_usuario': serializer_response.pk,
             'id_modulo': 5,
@@ -696,18 +667,12 @@ class RegisterExternoView(generics.CreateAPIView):
         }
         Util.save_auditoria(auditoria_data)
 
-        #user = User.objects.get(email=user_data['email'])
-
         token = RefreshToken.for_user(serializer_response)
 
         current_site=get_current_site(request).domain
 
-        #persona = Personas.objects.get(id_persona = request.data['persona'])
-
         relativeLink= reverse('verify')
         absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
-
-        # short_url = Util.get_short_url(request, absurl)
         
         subject = "Verifica tu usuario"
         template = "activación-de-usuario.html"
@@ -806,7 +771,7 @@ class DeactivateUsers(generics.ListAPIView):
             
             return Response({'success':True, 'detail':'Se eliminó la sesión del usuario elegido'}, status=status.HTTP_200_OK)
         else:
-            return Response({'success':False, 'detail':'No se encontró el usuario para la persona ingresada'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se encontró el usuario para la persona ingresada')
 
 #__________________LoginErroneo
 
@@ -823,7 +788,7 @@ class LoginApiView(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
-        user = User.objects.filter(nombre_de_usuario=data['nombre_de_usuario']).first()
+        user = User.objects.filter(nombre_de_usuario=str(data['nombre_de_usuario']).lower()).first()
         
         ip = Util.get_client_ip(request)
         device = Util.get_client_device(request)
@@ -899,20 +864,26 @@ class LoginApiView(generics.CreateAPIView):
                                 )
                                 
 
-                                return Response({'success':False,'detail':'Su usuario ha sido bloqueado'}, status=status.HTTP_403_FORBIDDEN)
+                                raise PermissionDenied('Su usuario ha sido bloqueado')
                             serializer = LoginErroneoPostSerializers(login_error, many=False)
-                            return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
+                            try:
+                                raise ValidationError('La contraseña es invalida')
+                            except ValidationError as e:
+                                return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
                         else:
                             if user.is_blocked:
-                                return Response({'success':False, 'detail':'Su usuario está bloqueado, debe comunicarse con el administrador'}, status=status.HTTP_403_FORBIDDEN)
+                                raise PermissionDenied('Su usuario está bloqueado, debe comunicarse con el administrador')
                             else:
                                 login_error.contador = 1
                                 login_error.save()
                                 serializer = LoginErroneoPostSerializers(login_error, many=False)
-                                return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
+                                try:
+                                    raise ValidationError('La contraseña es invalida')
+                                except ValidationError as e:
+                                    return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
                     else:
                         if user.is_blocked:
-                            return Response({'success':False, 'detail':'Su usuario está bloqueado, debe comunicarse con el administrador'}, status=status.HTTP_403_FORBIDDEN)
+                            raise PermissionDenied('Su usuario está bloqueado, debe comunicarse con el administrador')
                         else:
                             login_error = LoginErroneo.objects.create(
                                 id_usuario = user,
@@ -922,53 +893,23 @@ class LoginApiView(generics.CreateAPIView):
                             )
                         login_error.restantes = 3 - login_error.contador
                         serializer = LoginErroneoPostSerializers(login_error, many=False)
-                        return Response({'success':False,'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
+                        try:
+                            raise ValidationError('La contraseña es invalida')
+                        except ValidationError as e:
+                            return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
             else:
-                return Response({'success':False, 'detail':'Usuario no activado', 'data':{'modal':True, 'id_usuario':user.id_usuario, 'tipo_usuario':user.tipo_usuario}}, status=status.HTTP_403_FORBIDDEN)
+                try:
+                    raise PermissionDenied('Usuario no activado')
+                except PermissionDenied as e:
+                    return Response({'success':False, 'detail':'Usuario no activado', 'data':{'modal':True, 'id_usuario':user.id_usuario, 'tipo_usuario':user.tipo_usuario}}, status=status.HTTP_403_FORBIDDEN)
         else:
             UsuarioErroneo.objects.create(
-                campo_usuario = data['nombre_de_usuario'],
+                campo_usuario = str(data['nombre_de_usuario']).lower(),
                 dirip = str(ip),
                 dispositivo_conexion = device
             )
-            return Response({'success':False,'detail':'No existe el nombre de usuario ingresado'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No existe el nombre de usuario ingresado')
 
-# class RequestPasswordResetEmail(generics.GenericAPIView):
-#     serializer_class = ResetPasswordEmailRequestSerializer
-
-#     def post(self,request):
-#         serializer=self.serializer_class(data=request.data)
-#         email = request.data['email']
-        
-#         if User.objects.filter(persona__email=email).exists():
-#             user = User.objects.get(persona__email=email)
-#             uidb64 =signing.dumps({'user':str(user.id_usuario)})
-#             print(uidb64)
-#             token = PasswordResetTokenGenerator().make_token(user)
-#             current_site=get_current_site(request=request).domain
-#             relativeLink=reverse('password-reset-confirm',kwargs={'uidb64':uidb64,'token':token})
-#             redirect_url= request.data.get('redirect_url','')
-#             absurl='http://'+ current_site + relativeLink 
-#             if user.persona.tipo_persona == 'N':
-#                 context = {
-#                 'primer_nombre': user.persona.primer_nombre,
-#                 'primer_apellido':user.persona.primer_apellido,
-#                 'absurl': absurl + '?redirect-url='+ redirect_url,
-#                 }
-#                 template = render_to_string(('recuperar-contraseña.html'), context)
-#                 subject = 'Actualiza tu contraseña ' + user.persona.primer_nombre
-#                 data = {'template': template, 'email_subject': subject, 'to_email': user.persona.email}
-#                 Util.send_email(data)
-#             else:
-#                 context = {
-#                 'razon_social': user.persona.razon_social,
-#                 'absurl': absurl + '?redirect-url='+ redirect_url,
-#                 }
-#                 template = render_to_string(('recuperar-contraseña.html'), context)
-#                 subject = 'Actualiza tu contraseña ' + user.persona.razon_social
-#                 data = {'template': template, 'email_subject': subject, 'to_email': user.persona.email}
-#                 Util.send_email(data)
-#         return Response( {'success':True,'detail':'Te enviamos el link para poder actualizar tu contraseña'},status=status.HTTP_200_OK)
 
 class RequestPasswordResetEmail(generics.CreateAPIView):
     serializer_class = ResetPasswordEmailRequestSerializer
@@ -978,7 +919,7 @@ class RequestPasswordResetEmail(generics.CreateAPIView):
         
         data = request.data
         
-        usuario = self.queryset.all().filter(nombre_de_usuario=data['nombre_de_usuario']).first()
+        usuario = self.queryset.all().filter(nombre_de_usuario=str(data['nombre_de_usuario']).lower()).first()
         
         if usuario:
             
@@ -1022,18 +963,18 @@ class RequestPasswordResetEmail(generics.CreateAPIView):
                         'sms': nro_telefono
                     }   
                     
-                    return Response({'success':True,'detail':'Selecciona uno de los medios para la recuperación de contraseña', 'data':data_persona},status=status.HTTP_200_OK)
+                    return Response({'success':True, 'detail':'Selecciona uno de los medios para la recuperación de contraseña', 'data':data_persona},status=status.HTTP_200_OK)
                 else:
                     if data.get('tipo_envio') == 'email':
                         Util.notificacion(usuario.persona,subject,template,absurl=absurl + '?redirect-url='+ redirect_url)
                     elif data.get('tipo_envio') == 'sms':
                         Util.send_sms(nro_telefono, sms)
                     else:
-                        return Response({'success':False,'detail':'Debe elegir un tipo de envío valido'},status=status.HTTP_400_BAD_REQUEST)
+                        raise ValidationError('Debe elegir un tipo de envío valido')
                     
-            return Response({'success':True,'detail':'Se ha enviado correctamente la notificación de la recuperación de contraseña'},status=status.HTTP_200_OK)
+            return Response({'success':True, 'detail':'Se ha enviado correctamente la notificación de la recuperación de contraseña'},status=status.HTTP_200_OK)
         else:
-            return Response({'success':False,'detail':'No se encontró ningún usuario por el nombre de usuario ingresado'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontró ningún usuario por el nombre de usuario ingresado')
 
 class PasswordTokenCheckApi(generics.GenericAPIView):
     serializer_class=UserSerializer
@@ -1118,7 +1059,7 @@ class SetNewPasswordApiView(generics.GenericAPIView):
         user.set_password(password)
         user.save()
         
-        return Response({'success':True,'detail':message},status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':message},status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 def uploadImage(request):
@@ -1146,7 +1087,7 @@ class GetNuevoSuperUsuario(generics.RetrieveAPIView):
             serializador = self.serializer_class(nuevo_super_usuario)
             return Response({'succes':True, 'detail':'Los datos coincidieron con la búsqueda realizada','data':serializador.data},status=status.HTTP_200_OK)
         else: 
-            return Response({'succes':False, 'detail':'La persona no existe o no tiene cargo actual'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('La persona no existe o no tiene cargo actual')
 
 class GetNuevoSuperUsuarioFilters(generics.ListAPIView):
     serializer_class = PersonasFilterSerializer
@@ -1163,7 +1104,7 @@ class GetNuevoSuperUsuarioFilters(generics.ListAPIView):
                         filter[key+'__icontains'] = value
                 elif key == 'numero_documento':
                     if value != '':
-                        filter[key+'__startswith'] = value
+                        filter[key+'__icontains'] = value
                 else:
                     if value != '':
                         filter[key] = value
@@ -1197,16 +1138,15 @@ class ReenviarCorreoVerificacionDeUsuario(generics.UpdateAPIView):
             relativeLink= reverse('verify')
             absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
 
-            # short_url = Util.get_short_url(request, absurl)
             subject = "Verifica tu usuario"
             template = "activación-de-usuario.html"
 
             Util.notificacion(persona,subject,template,absurl=absurl,email=persona.email)
             
-            return Response({"success":True,'detail':"Se ha enviado un correo a "+persona.email+" con la información para la activación del usuario en el sistema"})
+            return Response({"success":True, 'detail':"Se ha enviado un correo a "+persona.email+" con la información para la activación del usuario en el sistema"})
             
         else: 
-            return Response ({'success':False,'detail':'El usuario ya se encuentra activado o es un usuario interno'},status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('El usuario ya se encuentra activado o es un usuario interno')
 
 class BusquedaHistoricoActivacion(generics.ListAPIView):
     serializer_class = HistoricoActivacionSerializers
@@ -1222,14 +1162,13 @@ class BusquedaHistoricoActivacion(generics.ListAPIView):
         if queryset.exists():
             serializer = self.get_serializer(queryset, many=True)
             data = serializer.data
-            return Response({'success': True, 'detail': 'Se encontró el siguiente historico de activación para ese usuario', 'data': data}, status=status.HTTP_200_OK)
+            return Response({'success':True, 'detail':'Se encontró el siguiente historico de activación para ese usuario', 'data': data}, status=status.HTTP_200_OK)
         else:
-            return Response({'success': False, 'detail': 'No se encontro historico de activación para ese usuario'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontro historico de activación para ese usuario')
 
 class UsuarioInternoAExterno(generics.UpdateAPIView):
     serializer_class = UsuarioInternoAExternoSerializers
     queryset = User.objects.all()
-    # permission_classes = [IsAuthenticated]
 
     def put(self, request, id_usuario):
         user_loggedin = request.user
@@ -1250,9 +1189,9 @@ class UsuarioInternoAExterno(generics.UpdateAPIView):
             template = "cambio-tipo-de-usuario.html"
             Util.notificacion(usuario.persona,subject,template,nombre_de_usuario=usuario.nombre_de_usuario)
 
-            return Response({'success': True, 'detail': 'Se activo como usuario externo', 'data': serializador.data}, status=status.HTTP_200_OK)
+            return Response({'success':True, 'detail':'Se activo como usuario externo', 'data': serializador.data}, status=status.HTTP_200_OK)
         else:
-            return Response({'success': False, 'detail': 'El usuario no existe o no cumple con los requisitos para ser convertido en usuario externo'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('El usuario no existe o no cumple con los requisitos para ser convertido en usuario externo')
         
 #BUSQUEDA DE USUARIOS ENTREGA 18 UD.11
 
@@ -1262,13 +1201,13 @@ class BusquedaByNombreUsuario(generics.ListAPIView):
         
     def get(self,request):
         
-        nombre_de_usuario = request.query_params.get('nombre_de_usuario')
+        nombre_de_usuario = str(request.query_params.get('nombre_de_usuario', '')).lower()
         
         busqueda_usuario = self.queryset.all().filter(nombre_de_usuario__icontains=nombre_de_usuario)
         
         serializador = self.serializer_class(busqueda_usuario,many=True, context = {'request':request})
         
-        return Response({'succes':True,'detail':'Se encontraron los siguientes usuarios.','data':serializador.data},status=status.HTTP_200_OK)
+        return Response({'succes':True, 'detail':'Se encontraron los siguientes usuarios.','data':serializador.data},status=status.HTTP_200_OK)
 
 #BUSQUEDA ID PERSONA Y RETORNE LOS DATOS DE LA TABLA USUARIOS
 
@@ -1280,7 +1219,7 @@ class BuscarByIdPersona(generics.RetrieveAPIView):
         usuarios = self.queryset.all().filter(persona=id_persona)
             
         serializador = self.serializer_class(usuarios,many=True, context = {'request':request})
-        return Response({'succes':True,'detail':'Se encontraron los siguientes usuarios.','data':serializador.data},status=status.HTTP_200_OK)
+        return Response({'succes':True, 'detail':'Se encontraron los siguientes usuarios.','data':serializador.data},status=status.HTTP_200_OK)
     
 class GetByIdUsuario(generics.RetrieveAPIView):
     serializer_class = UsuarioFullSerializer
@@ -1290,7 +1229,7 @@ class GetByIdUsuario(generics.RetrieveAPIView):
         usuario = self.queryset.all().filter(id_usuario=id_usuario).first()
         
         if not usuario:
-            return Response({'succes':False, 'detail':'No se encontró el usuario ingresado'},status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontró el usuario ingresado')
         
         serializador = self.serializer_class(usuario, context = {'request':request})
         return Response({'succes':True, 'detail':'Se encontró la información del usuario', 'data':serializador.data},status=status.HTTP_200_OK)
@@ -1318,7 +1257,7 @@ class RecuperarNombreDeUsuario(generics.UpdateAPIView):
 
                 Util.notificacion(persona,subject,template,nombre_de_usuario=usuario.nombre_de_usuario)
 
-                return Response({'success':True,'detail':'Se ha enviado el correo'},status=status.HTTP_200_OK)
+                return Response({'success':True, 'detail':'Se ha enviado el correo'},status=status.HTTP_200_OK)
             
             else:
                 raise NotFound('No existe usuario') 

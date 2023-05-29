@@ -1,15 +1,15 @@
 from django.db import models
-from recaudo.models.base_models import VariablesBase, NaturalezaJuridica, Ubicaciones
+from recaudo.models.base_models import NaturalezaJuridica, Ubicaciones
 
 
 class Deudores(models.Model):
     codigo = models.AutoField(primary_key=True, db_column='T410codigo')
     identificacion = models.CharField(max_length=255, db_column='T410identificacion')
     nombres = models.CharField(max_length=255, db_column='T410nombres')
-    apellidos = models.CharField(max_length=255, db_column='T410apellidos')
+    apellidos = models.CharField(null=True, blank=True, max_length=255, db_column='T410apellidos')
     telefono = models.CharField(max_length=255, db_column='T410telefono')
     email = models.CharField(max_length=255, db_column='T410email')
-    ubicacion_id= models.ForeignKey(Ubicaciones, on_delete=models.CASCADE, db_column='T410ubicacion_id')
+    ubicacion_id = models.ForeignKey(Ubicaciones, on_delete=models.CASCADE, db_column='T410ubicacion_id')
     naturaleza_juridica_id = models.ForeignKey(NaturalezaJuridica, on_delete=models.CASCADE, db_column='T410naturaleza_juridica_id')
 
     class Meta:
@@ -22,6 +22,7 @@ class Expedientes(models.Model):
     id = models.AutoField(primary_key=True, db_column='T407id')
     codigo_expediente = models.IntegerField(db_column='T407codigo_expediente')
     cod_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T407cod_deudor')
+    numero_resolucion = models.CharField(max_length=255, db_column='T407resolucion')
 
     class Meta:
         db_table = 'T407expedientes'

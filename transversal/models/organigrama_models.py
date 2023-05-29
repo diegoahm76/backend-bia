@@ -2,6 +2,7 @@ from django.db import models
 from transversal.choices.agrupacion_documental_choices import agrupacion_documental_CHOICES
 from transversal.choices.tipo_unidad_choices import tipo_unidad_CHOICES
 
+
 class Organigramas(models.Model):
     id_organigrama = models.AutoField(primary_key=True, editable=False, db_column='T017IdOrganigrama')
     nombre = models.CharField(max_length=50, unique=True, db_column='T017nombre')
@@ -59,3 +60,27 @@ class UnidadesOrganizacionales(models.Model):
         verbose_name_plural= 'Unidad organizacionales'        
         unique_together = (('id_organigrama','nombre'), ('id_organigrama','codigo'))
         ordering = ['id_nivel_organigrama']
+
+class CambiosUnidadMasivos(models.Model):
+    id_cambio_unidad_masivo=models.AutoField(primary_key=True,editable=False,db_column='T025IdCambioUnidadMasivo')
+    consecutivo=models.SmallIntegerField(db_column='T025consecutivo')
+    fecha_cambio=models.DateTimeField(auto_now_add=True, db_column='T025fechaCambio')
+    id_persona_cambio=models.ForeignKey('seguridad.Personas', on_delete=models.CASCADE, db_column='T025Id_PersonaCambio')
+    tipo_cambio=models.CharField(max_length=50, db_column='T025tipoCambio')
+    justificacion=models.CharField(max_length=255,db_column='T025justificacion')
+ 
+    class Meta:
+        db_table = "T025CambiosUnidadMasivos"
+        verbose_name = 'Cambios masivos de unidad'
+        verbose_name_plural = 'Cambios masivos de unidad'
+
+class TemporalPersonasUnidad(models.Model):
+    id_temporal_personas=models.AutoField(primary_key=True,editable=False,db_column='T026IdTemporalPersonasUnidad')
+    id_persona=models.OneToOneField('seguridad.Personas', on_delete=models.CASCADE, db_column='T026Id_Persona')
+    id_unidad_org_anterior=models.ForeignKey(UnidadesOrganizacionales, related_name='UnidadOrgAnterior', on_delete=models.CASCADE, db_column='T026Id_UnidadOrgAnterior')
+    id_unidad_org_nueva=models.ForeignKey(UnidadesOrganizacionales, related_name='UnidadOrgNueva', on_delete=models.CASCADE, db_column='T026Id_UnidadOrgNueva')
+    
+    class Meta:
+        db_table = "T026TemporalPersonasUnidad"
+        verbose_name = 'Temporal Persona Unidad'
+        verbose_name_plural = 'Temporal Personas Unidades'        

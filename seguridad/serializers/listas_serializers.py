@@ -1,6 +1,4 @@
 from rest_framework import serializers
-from conservacion.models.mezclas_models import Mezclas, PreparacionMezclas, ItemsPreparacionMezcla
-from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from seguridad.models import (
     Municipio,
     Departamento,

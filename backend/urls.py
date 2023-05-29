@@ -78,6 +78,7 @@ urlpatterns = [
     path('api/almacen/entregas/', include('almacen.urls.entregas_urls')),
     path('api/almacen/choices/', include('almacen.urls.choices_urls')),
     path('api/almacen/mantenimientos/', include('almacen.urls.mantenimientos_urls')),
+    path('api/almacen/vehiculos/', include('almacen.urls.vehiculos_urls')),
     
     # CONSERVACIÓN
     path('api/conservacion/choices/', include('conservacion.urls.choices_urls')),
@@ -107,11 +108,15 @@ urlpatterns = [
 
     #FACILIDADES PAGOS
     path('api/recaudo/pagos/', include('recaudo.urls.pagos_urls')),
-    path('api/recaudo/pagos/', include('recaudo.urls.garantias_urls')),
+    path('api/recaudo/garantias/', include('recaudo.urls.garantias_urls')),
+    path('api/recaudo/reportes/', include('recaudo.urls.reportes_urls')),
 
     #Recaudo
     path('api/recaudo/liquidaciones/', include('recaudo.urls.liquidaciones_urls')),
     path('api/recaudo/procesos/', include('recaudo.urls.procesos_urls')),
+    
+    #RECURSO HIDRICO
+    path('api/hidrico/programas/',include('recurso_hidrico.urls.programas_urls')),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

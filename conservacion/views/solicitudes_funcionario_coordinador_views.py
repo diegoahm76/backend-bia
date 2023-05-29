@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from seguridad.utils import Util  
 from django.db.models import Q, F, Sum
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime, time, timedelta
 from datetime import timezone
@@ -82,7 +82,7 @@ class DetailSolicitudView(generics.GenericAPIView):
     def get(self, request, id_solicitud):
         solicitud = SolicitudesViveros.objects.filter(id_solicitud_vivero=id_solicitud).first()
         if not solicitud:
-            return Response({'success': False, 'detail': 'No existe la solicitud seleccionada'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound ('No existe la solicitud seleccionada')
         items_solicitud = ItemSolicitudViveros.objects.filter(id_solicitud_viveros=solicitud.id_solicitud_vivero)
         
         serializer = self.serializer_class(solicitud)
@@ -103,13 +103,13 @@ class GestionarSolicitudSupervisorView(generics.RetrieveUpdateAPIView):
         #VALIDAR SI LA SOLICITUD ENVIADA EXISTE
         solicitud = SolicitudesViveros.objects.filter(id_solicitud_vivero=id_solicitud).first()
         if not solicitud:
-            return Response({'success': False, 'detail': 'No existe la solicitud seleccionada'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound ('No existe la solicitud seleccionada')
 
         solicitud_copy = copy.copy(solicitud)
 
         #VALIDAR QUE LA SOLICITUD NO HAYA SIDO GESTIONADA ANTES
         if solicitud.revisada_responsable != False:
-            return Response({'success': False, 'detail': 'Esta solicitud ya fue gestionada por el supervisor, no es posible gestionarla nuevamente'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Esta solicitud ya fue gestionada por el supervisor, no es posible gestionarla nuevamente')
 
         #ASIGNACIÓN DE DATA SEGÚN CASOS
         if data['estado_aprobacion_responsable'] == 'A':
@@ -166,18 +166,18 @@ class GestionarSolicitudesVencidasSupervisorView(generics.RetrieveUpdateAPIView)
         data = request.data
         
         if data['estado_aprobacion_responsable'] != 'R':
-            return Response({'success': False, 'detail': 'El estado de aprobación no puede ser diferente a rechazada para una solicitud vencida'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('El estado de aprobación no puede ser diferente a rechazada para una solicitud vencida')
 
         #VALIDAR SI LA SOLICITUD ENVIADA EXISTE
         solicitud = SolicitudesViveros.objects.filter(id_solicitud_vivero=id_solicitud).first()
         if not solicitud:
-            return Response({'success': False, 'detail': 'No existe la solicitud seleccionada'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe la solicitud seleccionada')
 
         solicitud_copy = copy.copy(solicitud)
 
         #VALIDAR QUE LA SOLICITUD NO HAYA SIDO GESTIONADA ANTES
         if solicitud.revisada_responsable != False:
-            return Response({'success': False, 'detail': 'Esta solicitud ya fue gestionada por el supervisor, no es posible gestionarla nuevamente'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Esta solicitud ya fue gestionada por el supervisor, no es posible gestionarla nuevamente')
         
         data['fecha_aprobacion_responsable'] = datetime.now()
         data['revisada_responsable'] = True
@@ -236,13 +236,13 @@ class GestionarSolicitudCoordinadorView(generics.RetrieveUpdateAPIView):
         #VALIDAR SI LA SOLICITUD ENVIADA EXISTE
         solicitud = SolicitudesViveros.objects.filter(id_solicitud_vivero=id_solicitud).first()
         if not solicitud:
-            return Response({'success': False, 'detail': 'No existe la solicitud seleccionada'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe la solicitud seleccionada')
 
         solicitud_copy = copy.copy(solicitud)
 
         #VALIDAR QUE LA SOLICITUD NO HAYA SIDO GESTIONADA ANTES
         if solicitud.revisada_coord_viveros != False:
-            return Response({'success': False, 'detail': 'Esta solicitud ya fue gestionada por el supervisor, no es posible gestionarla nuevamente'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Esta solicitud ya fue gestionada por el supervisor, no es posible gestionarla nuevamente')
 
         #ASIGNACIÓN DE DATA SEGÚN CASOS
         if data['estado_aprobacion_coord_viveros'] == 'A':

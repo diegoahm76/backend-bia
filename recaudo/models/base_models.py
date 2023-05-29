@@ -38,8 +38,8 @@ class Ubicaciones(models.Model):
 class RangosEdad(models.Model):
     id = models.AutoField(primary_key=True, db_column='T411id')
     descripcion = models.CharField(max_length=255, db_column='T411descripcion')
-    inicial = models.DateTimeField(db_column='T411inicial')
-    final = models.DateTimeField(db_column='T411final')
+    inicial = models.IntegerField(db_column='T411inicial')
+    final = models.IntegerField(db_column='T411final')
 
     class Meta:
         db_table = 'T411rangos_edad'
@@ -50,7 +50,7 @@ class RangosEdad(models.Model):
 class TiposBien(models.Model):
     id = models.AutoField(primary_key=True, db_column='T415id')
     descripcion = models.CharField(max_length=255, db_column='T415descripcion')
-    vigencia = models.IntegerField(db_column='T415vigencia')
+    vigencia_avaluo = models.IntegerField(db_column='T415vigencia_avaluo')
 
     class Meta:
         db_table = 'T415tipos_bien'

@@ -137,16 +137,14 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("El nombre de usuario solo debe tener caracteres alfanumericos")
         if " " in value:
             raise serializers.ValidationError("No puede contener espacios en el nombre de usuario")
+        
+        value = str(value).lower()
+        
         return value
     
     def validate_persona(self, value):
         if not value.email:
             raise serializers.ValidationError("La persona no tiene un correo electrónico de notificación asociado, debe acercarse a Cormacarena y realizar una actualizacion de datos para proceder con la creación del usuario en el sistema")
-        return value
-    
-    def validate_nombre_usuario(self, value):
-        if not value.isalnum():
-            raise serializers.ValidationError("El Nombre de usuario solo debe tener caracteres alfanumericos")
         return value
     
     class Meta:
@@ -171,6 +169,9 @@ class RegisterExternoSerializer(serializers.ModelSerializer):
         # redirect_url=attrs.get('redirect_url','')
         if not nombre_de_usuario.isalnum():
             raise serializers.ValidationError("El Nombre de usuario solo debe tener caracteres alfanumericos")
+        
+        attrs['nombre_de_usuario'] = str(attrs['nombre_de_usuario']).lower()
+        
         return attrs
     
     def create(self, validated_data):
@@ -223,7 +224,7 @@ class LoginSerializer(serializers.ModelSerializer):
         fields= ['email', 'password', 'nombre_de_usuario', 'nombre', 'tokens', 'is_superuser', 'id_usuario', 'tipo_usuario', 'id_persona', 'tipo_persona', 'id_unidad_organizacional_actual', 'nombre_unidad_organizacional', 'activated_at', 'profile_img', 'permisos', 'representante_legal']
     
     def validate(self, attrs):
-        nombre_de_usuario = attrs.get('nombre_de_usuario', '')
+        nombre_de_usuario = attrs.get('nombre_de_usuario', '').lower()
         password = attrs.get('password', '')
         user= auth.authenticate(nombre_de_usuario=nombre_de_usuario, password=password)
         tokens = None

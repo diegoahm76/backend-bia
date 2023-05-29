@@ -1,4 +1,5 @@
 from almacen.models.generics_models import UnidadesMedida
+from almacen.models.inventario_models import TiposEntradas
 from seguridad.serializers.personas_serializers import PersonasSerializer
 from almacen.models.generics_models import Magnitudes
 from almacen.models.inventario_models import Inventario
@@ -175,6 +176,10 @@ class ItemEntradaSerializer(serializers.ModelSerializer):
         model= ItemEntradaAlmacen
         fields = '__all__'
 
+class TiposEntradasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TiposEntradas
+        fields = '__all__'
 
 class EntradaSerializer(serializers.ModelSerializer):
     class Meta:

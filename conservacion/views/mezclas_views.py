@@ -7,6 +7,7 @@ from conservacion.serializers.mezclas_serializers import (
 )
 from conservacion.models.mezclas_models import Mezclas
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
 class CrearMezcla(generics.CreateAPIView):
     serializer_class = MezclasSerializador
@@ -37,7 +38,7 @@ class ActualizarMezcla(generics.RetrieveUpdateAPIView):
             serializer.save()
             return Response({'success':True, 'detail':'Registro actualizado exitosamente'}, status=status.HTTP_201_CREATED)
         else:
-            return Response({'success': False, 'detail': 'No existe la mezcla'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe la mezcla')
 
 class EliminarMezcla(generics.DestroyAPIView):
     serializer_class = MezclasSerializador
@@ -48,12 +49,12 @@ class EliminarMezcla(generics.DestroyAPIView):
         mezcla = self.queryset.all().filter(id_mezcla=id_mezcla).first()
         if mezcla:
             if mezcla.item_ya_usado:
-                return Response({'success':False, 'detail':'Esta mezcla ya está siendo usada, no se puede eliminar'}, status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied('Esta mezcla ya está siendo usada, no se puede eliminar')
 
             mezcla.delete()
             return Response({'success': True, 'detail': 'Esta mezcla ha sido eliminada exitosamente'}, status=status.HTTP_200_OK)
         else:
-            return Response({'success': False, 'detail':'No existe la mezcla'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No existe la mezcla')
 
 class GetListMezclas(generics.ListAPIView):
     serializer_class = MezclasGetListSerializador

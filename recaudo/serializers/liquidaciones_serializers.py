@@ -8,7 +8,6 @@ from recaudo.models.liquidaciones_models import (
 )
 
 
-
 class OpcionesLiquidacionBaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = OpcionesLiquidacionBase

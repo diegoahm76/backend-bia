@@ -38,6 +38,7 @@ class DetalleDocumentosCobro(models.Model):
 
 class Obligaciones(models.Model):
     id = models.AutoField(primary_key=True, db_column='T416id')
+    nombre = models.CharField(max_length=255, db_column='T416nombre')
     cod_factura = models.CharField(max_length=255, db_column='T416cod_factura')
     fecha_inicio = models.DateField(db_column='T416fecha_inicio')
     monto_inicial = models.DecimalField(max_digits=30, decimal_places=2, db_column='T416monto_inicial')
@@ -50,6 +51,15 @@ class Obligaciones(models.Model):
         verbose_name = 'Obligación'
         verbose_name_plural = 'Obligaciones'
 
+class ConceptoContable(models.Model):
+    id = models.AutoField(primary_key=True, db_column='T436id')
+    codigo_contable = models.CharField(max_length=255, db_column='T436codigo_contable')
+    descripcion = models.CharField(max_length=255, db_column='T436descripcion')
+
+    class Meta: 
+        db_table = 'T436concepto_contable'
+        verbose_name = 'Concepto contable'
+        verbose_name_plural = 'Conceptos contables'
 
 class Cartera(models.Model):
     id = models.AutoField(primary_key=True, db_column='T417id')
@@ -60,11 +70,15 @@ class Cartera(models.Model):
     inicio = models.DateField(db_column='T417inicio')
     fin = models.DateField(null=True, blank=True,db_column='T417fin')
     id_rango = models.ForeignKey(RangosEdad, on_delete=models.CASCADE, db_column='T417id_rango')
-    codigo_contable = models.CharField(max_length=255, db_column='T417codigo_contable')
+    codigo_contable = models.ForeignKey(ConceptoContable, on_delete=models.CASCADE, db_column='T417codigo_contable')
     fecha_facturacion = models.DateField(db_column='T417fecha_facturacion')
     numero_factura = models.CharField(max_length=255, db_column='T417numero_factura')
+
+    def calcular_valor_total(self):
+        return self.valor_sancion + self.valor_intereses
 
     class Meta:
         db_table = 'T417cartera'
         verbose_name = 'Cartera'
         verbose_name_plural = 'Cartera'
+

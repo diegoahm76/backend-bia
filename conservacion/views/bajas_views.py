@@ -35,6 +35,7 @@ from conservacion.models.inventario_models import (
     InventarioViveros
 )
 from conservacion.utils import UtilConservacion
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
 class CreateBajasVivero(generics.UpdateAPIView):
     serializer_class = BajasViveroPostSerializer
@@ -66,10 +67,10 @@ class CreateBajasVivero(generics.UpdateAPIView):
         instancia_vivero = Vivero.objects.filter(id_vivero=info_baja['id_vivero']).first()
         
         if instancia_vivero.activo == False:
-            return Response({'succes' : 'False', 'detail' : 'El vivero ingresado no se encuentra activo'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError ('El vivero ingresado no se encuentra activo')
         
         if instancia_vivero.fecha_ultima_apertura == None and instancia_vivero.fecha_cierre_actual != None and instancia_vivero.id_persona_cierra != None and instancia_vivero.justificacion_cierre != None:
-            return Response({'succes' : 'False', 'detail' : 'El vivero no está abierto'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError ('El vivero no está abierto')
         
         # SE VALIDA QUE LA QUE LA FECHA DE BAJA SEA DE MENOS DE UN DÍA DE ANTIGÜEDAD
         info_baja['fecha_baja'] = datetime.strptime(info_baja['fecha_baja'], '%Y-%m-%d %H:%M:%S')
@@ -78,16 +79,16 @@ class CreateBajasVivero(generics.UpdateAPIView):
         ultima_fecha_de_baja = bajas_existentes.order_by('fecha_baja').last()
         if ultima_fecha_de_baja:
             if info_baja['fecha_baja'] < ultima_fecha_de_baja.fecha_baja:
-                return Response({'success':False,'detail':'No es posible crear la baja porque hay un registro de bajas con fecha posterior al ingresado.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError ('No es posible crear la baja porque hay un registro de bajas con fecha posterior al ingresado')
             
         # SE OBTIENEN LAS HORAS EXACTAS QUE HAN TRANSCURRIDO DESDE LA FECHA DE BAJA HASTA LA FECHA ACTUAL
         fecha_posible = datetime.now() - timedelta(days=1)
         if info_baja['fecha_baja'] < fecha_posible:
-            return Response({'success':False,'detail':'No es posible registrar una baja con más de un día de anterioridad.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError ('No es posible registrar una baja con más de un día de anterioridad.')
         
         # SE VALIDA QUE POR LO MENOS LLEGUE UN ITEM EN LA PETICIÓN
         if len(items_baja) <= 0:
-             return Response({'success':False,'detail':'Debe ingresr al menos un bien para registrar una baja.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError ("'Debe ingresr al menos un bien para registrar una baja")
         
         # VALIDACIONES DE LOS ITEMS A DAR DE BAJA
         aux_nro_posicion = []
@@ -99,26 +100,26 @@ class CreateBajasVivero(generics.UpdateAPIView):
             
             # SE VALIDA LA EXISTENCIA DEL BIEN
             if not instancia_bien:
-                return Response({'success':False,'detail':'El bien  con número de posición ' + str(i['nro_posicion']) +  'no existe.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError ('El bien  con número de posición ' + str(i['nro_posicion']) +  'no existe')
             if not instancia_bien_vivero:
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +  'no tiene registros en el inventario del vivero.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError ('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +  'no tiene registros en el inventario del vivero')
             
             # SE VALIDA QUE EL NÚMERO DE POSICIÓN SEA ÚNICO
             if i['id_bien'] in aux_valores_repetidos:
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' No se puede ingresar dos veces un mismo bien dentro de una solicitud.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError ('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' No se puede ingresar dos veces un mismo bien dentro de una solicitud')
             
             # SE VALIDA QUE EL NÚMERO DE POSICIÓN SEA ÚNICO
             if i['nro_posicion'] in aux_nro_posicion:
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene un número de posición que ya existe.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError ('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene un número de posición que ya existe')
             
             # SE VALIDA QUE LA CANTIDAD DEL BIEN A DAR DE BAJA SEA MAYOR QUE CERO
             if i['cantidad_baja'] <= 0:
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene como cantidad de baja cero, la cantidad debe ser mayor que cero.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError ('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene como cantidad de baja cero, la cantidad debe ser mayor que cero')
             
             # SE VALIDA QUE HAYA SALDO DISPONIBLE
             saldo_disponible = UtilConservacion.get_cantidad_disponible_F(instancia_bien, instancia_bien_vivero) 
             if i['cantidad_baja'] > saldo_disponible:
-                return Response({'success':False,'detail':'En el bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' no tiene saldo disponible para suplir la cantidad de bajas ingresada.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError ('En el bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' no tiene saldo disponible para suplir la cantidad de bajas ingresada')
             
             # SE GUARDAN EL NÚMERO DE POSICIÓN Y EL ID DE BIEN EN LISTAS PARA VALIDAR SI SE REPITEN
             aux_nro_posicion.append(i['nro_posicion'])
@@ -187,16 +188,16 @@ class ActualizarBajasVivero(generics.UpdateAPIView):
         
         instancia_baja = BajasVivero.objects.filter(id_baja=info_baja['id_baja']).first()
         if not instancia_baja:
-            return Response({'success':False,'detail':'No existe una baja con ese id.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError ('No existe una baja con ese id')
         
         # SE VALIDA QUE NO SE ACTUALICE UNA BAJA CON MÁS DE 30 DÍAS DE ANTIGÜEDAD
         fecha_posible = datetime.now() - timedelta(days=30)
         if (datetime.now()) < fecha_posible:
-            return Response({'success':False,'detail':'No es posible actualizar una baja con más 30 días de anterioridad.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError ('No es posible actualizar una baja con más 30 días de anterioridad')
         
         # SE VALIDA QUE POR LO MENOS LLEGUE UN ITEM EN LA PETICIÓN
         if len(items_baja) <= 0:
-             return Response({'success':False,'detail':'No es posible eliminar todos los items de una baja.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError ('No es posible eliminar todos los items de una baja')
         
         # SE OBTIENEN LOS ITEMS ITEMS QUE SE VAN A AÑADIR
         items_nuevos = [i for i in items_baja if i['id_item_baja_viveros'] == None]
@@ -217,26 +218,26 @@ class ActualizarBajasVivero(generics.UpdateAPIView):
         for i in items_actualizar:
             instancia_item_baja = ItemsBajasVivero.objects.filter(id_item_baja_viveros=i['id_item_baja_viveros']).first()
             if not instancia_item_baja:
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' no existe el registro de la baja.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError ('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' no existe el registro de la baja')
             instancia_bien = CatalogoBienes.objects.filter(id_bien=instancia_item_baja.id_bien.id_bien).first()
             if not instancia_bien:
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' no existe registrado en el sistema como bien.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError ('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' no existe registrado en el sistema como bien')
             instancia_bien_vivero = InventarioViveros.objects.filter(id_bien=instancia_bien.id_bien,id_vivero=instancia_baja.id_vivero).first()
             if not instancia_bien_vivero:
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' no existe en el inventario del vivero.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError ('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' no existe en el inventario del vivero.')
             
             if i['cantidad_baja'] != instancia_bien_vivero.cantidad_bajas:
                 fecha_posible = datetime.now() - timedelta(days=1)
                 if instancia_baja.fecha_baja < fecha_posible:
-                    return Response({'success':False,'detail':'No es posible actualizar la cantidad de una baja con más de un día de anterioridad.'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError ('No es posible actualizar la cantidad de una baja con más de un día de anterioridad.')
                 aux_cantidad = i['cantidad_baja'] - instancia_item_baja.cantidad_baja
                 #instancia_bien_vivero.cantidad_bajas = instancia_bien_vivero.cantidad_bajas + aux_cantidad
                 saldo_disponible = UtilConservacion.get_cantidad_disponible_F(instancia_bien, instancia_bien_vivero) - aux_cantidad
                 if saldo_disponible <= 0:
-                    return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ', not tiene saldo disponible para cubrir la cantidad de bajas ingresada.'}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError ('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ', not tiene saldo disponible para cubrir la cantidad de bajas ingresada')
                 
             if i['cantidad_baja'] == 0:
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene cantidad igual a cero, la cantidad debe ser mayor que cero.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError ('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene cantidad igual a cero, la cantidad debe ser mayor que cero')
         
         aux_valores_repetidos = [i.id_bien.id_bien for i in items_existentes]
         aux_nro_posicion = [i.nro_posicion for i in items_existentes]
@@ -249,26 +250,25 @@ class ActualizarBajasVivero(generics.UpdateAPIView):
             
             # SE VALIDA LA EXISTENCIA DEL BIEN
             if not instancia_bien:
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +  'no existe.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError ('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +  'no existe.')
             if not instancia_bien_vivero:
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +  'no tiene registros en el inventario del vivero.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError ('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +  'no tiene registros en el inventario del vivero.')
             
             # SE VALIDA QUE EL NÚMERO DE POSICIÓN SEA ÚNICO
             if i['id_bien'] in aux_valores_repetidos:
-                return Response({'success':False,'detail':'Error en el bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' No se puede ingresar dos veces un mismo bien dentro de una solicitud.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError ('Error en el bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' No se puede ingresar dos veces un mismo bien dentro de una solicitud.')
             
             # SE VALIDA QUE EL NÚMERO DE POSICIÓN SEA ÚNICO
             if i['nro_posicion'] in aux_nro_posicion:
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene un número de posición que ya existe.'}, status=status.HTTP_400_BAD_REQUEST)
-            
+                raise ValidationError ('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene un número de posición que ya existe.')            
             # SE VALIDA QUE LA CANTIDAD DEL BIEN A DAR DE BAJA SEA MAYOR QUE CERO
             if i['cantidad_baja'] <= 0:
-                return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene como cantidad de baja cero, la cantidad debe ser mayor que cero.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError ('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene como cantidad de baja cero, la cantidad debe ser mayor que cero.')
             
             # SE VALIDA QUE HAYA SALDO DISPONIBLE
             saldo_disponible = UtilConservacion.get_cantidad_disponible_F(instancia_bien, instancia_bien_vivero) 
             if i['cantidad_baja'] > saldo_disponible:
-                return Response({'success':False,'detail':'En el bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' no tiene saldo disponible para suplir la cantidad de bajas ingresada.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError ('En el bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' no tiene saldo disponible para suplir la cantidad de bajas ingresada.')
             
             # SE GUARDAN EL NÚMERO DE POSICIÓN Y EL ID DE BIEN EN LISTAS PARA VALIDAR SI SE REPITEN
             aux_nro_posicion.append(i['nro_posicion'])
@@ -355,26 +355,26 @@ class AnularBajasVivero(generics.UpdateAPIView):
         baja_a_anular = queryset.filter(id_baja=id_baja_anular).first()
                 
         if not baja_a_anular:
-            return Response({'success':False,'detail':'No se encontró ninguna baja de insumos, herramientas y semillas con el número que ingresó'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError ('No se encontró ninguna baja de insumos, herramientas y semillas con el número que ingresó')
         if baja_a_anular.tipo_baja != 'B':
-            return Response({'success':False,'detail':'En este módulo solo se pueden anular bajas para insumos, herramientas y semillas.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError ('En este módulo solo se pueden anular bajas para insumos, herramientas y semillas.')
         if baja_a_anular.baja_anulado == True:
-            return Response({'success':False,'detail':'Esta baja ya fue anulada.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError ('Esta baja ya fue anulada.')
         
         items_baja_a_anular = ItemsBajasVivero.objects.filter(id_baja=baja_a_anular.id_baja)
         if not items_baja_a_anular:
-            return Response({'success':False,'detail':'Esta baja no registra items.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError ('Esta baja no registra items.')
         
         # SE OBTIENE LA ÚLTIMA BAJA REGISTRADA Y SE CONTRASTA CON EL NRO DE BAJA INGRESADO
         ultimo_nro_baja = queryset.filter(tipo_baja='B', ).order_by('nro_baja_por_tipo').last()
         if ultimo_nro_baja.nro_baja_por_tipo != baja_a_anular.nro_baja_por_tipo:
-            return Response({'success':False,'detail':'Solo se puede anular la última baja registrada.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError ('Solo se puede anular la última baja registrada.')
              
         # SE RESTA LA CANTIDAD DE LOS ITEMS DE LAS BAJAS AL INVENTARIO DE VIVERO
         for i in items_baja_a_anular:
             instancia_inventario_vivero = InventarioViveros.objects.filter(id_bien=i.id_bien.id_bien, id_vivero=baja_a_anular.id_vivero).first()
             if not instancia_inventario_vivero:
-                return Response({'success':False,'detail':'El bien con número de posición ' + str(i.nro_posicion) +  'no tiene registro en el inventario del vivero.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError ('El bien con número de posición ' + str(i.nro_posicion) +  'no tiene registro en el inventario del vivero.')
             instancia_inventario_vivero.cantidad_bajas = instancia_inventario_vivero.cantidad_bajas if instancia_inventario_vivero.cantidad_bajas else 0
             instancia_inventario_vivero.cantidad_bajas = instancia_inventario_vivero.cantidad_bajas - i.cantidad_baja
             instancia_inventario_vivero.save()
@@ -424,21 +424,21 @@ class GetBienesBajas(generics.ListAPIView):
         # SE VALIDA LA EXISTENCIA DEL BIEN
         instancia_bien = CatalogoBienes.objects.filter(codigo_bien=codigo_entrante).first()
         if not instancia_bien:
-            return Response({'success':False,'detail':'No existe ningún bien asociado con el código ingresado.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError ('No existe ningún bien asociado con el código ingresado.')
         
         # SE VALIDA QUE EL BIEN SEA INSUMO, HERRAMIENTA O SEMILLA
         if instancia_bien.es_semilla_vivero == False and instancia_bien.cod_tipo_elemento_vivero == 'MV':
-            return Response({'success':False,'detail':'El bien que intenta seleccionar no es del tipo herramienta, insumo o semilla.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError ('El bien que intenta seleccionar no es del tipo herramienta, insumo o semilla.')
         
         # SE VALIDA LA EXISTENCIA DEL BIEN EN EL INVENTARIO
         instancia_bien_vivero = InventarioViveros.objects.filter(id_bien=instancia_bien.id_bien,id_vivero=vivero_origen).first()
         if not instancia_bien_vivero:
-            return Response({'success':False,'detail':'El bien que intenta seleccionar no tiene registros en el inventario del vivero.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError ('El bien que intenta seleccionar no tiene registros en el inventario del vivero.')
         
         # SE VALIDA QUE HAYA SALDO DISPONIBLE PARA REALIZAR UNA BAJA
         saldo_disponible = UtilConservacion.get_cantidad_disponible_F(instancia_bien, instancia_bien_vivero)
         if saldo_disponible <= 0:
-            return Response({'success':False,'detail':'El bien ' + str(instancia_bien.nombre) + ', no cuenta con saldo disponible para realizar bajas.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError ('El bien ' + str(instancia_bien.nombre) + ', no cuenta con saldo disponible para realizar bajas.')
         
         serializer = self.serializer_class(instancia_bien, many=False)
         
@@ -453,7 +453,7 @@ class BusquedaAvanzadaBienesBajas(generics.ListAPIView):
         filter = {}
         cod_tipo_elemento_vivero = request.query_params.get('cod_tipo_elemento_vivero')
         if not cod_tipo_elemento_vivero or cod_tipo_elemento_vivero == '':
-            return Response({'success':False, 'detail':'Es obligatorio ingresar el tipo de bien.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError ('Es obligatorio ingresar el tipo de bien.')
         
         for key, value in request.query_params.items():
             if key in ['cod_tipo_elemento_vivero', 'nombre', 'codigo_bien']:
@@ -468,7 +468,7 @@ class BusquedaAvanzadaBienesBajas(generics.ListAPIView):
         for i in resultados_busqueda:
             instancia_bien_vivero = InventarioViveros.objects.filter(id_bien=i.id_bien,id_vivero=vivero_origen).first()
             if not instancia_bien_vivero:
-                return Response({'success':False,'detail':'El bien que intenta seleccionar no tiene registros en el inventario del vivero.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError ('El bien que intenta seleccionar no tiene registros en el inventario del vivero.')
             i.saldo_disponible = UtilConservacion.get_cantidad_disponible_F(i, instancia_bien_vivero) 
                 
         serializer = self.serializer_class(resultados_busqueda, many=True)
@@ -485,13 +485,13 @@ class GetBajasParaAnulacionPorNumeroBaja(generics.ListAPIView):
         resultado_busqueda = queryset.filter(nro_baja_por_tipo=nro_baja).first()
         
         if not resultado_busqueda:
-            return Response({'success':False,'detail':'No se encontró ninguna baja de insumos, herramientas y semillas con el número que ingresó'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError ('No se encontró ninguna baja de insumos, herramientas y semillas con el número que ingresó')
         if resultado_busqueda.tipo_baja != 'B':
-            return Response({'success':False,'detail':'En este módulo solo se pueden anular bajas para insumos, herramientas y semillas.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError ('En este módulo solo se pueden anular bajas para insumos, herramientas y semillas.')
         ultimo_nro_baja = queryset.filter(tipo_baja='B', ).order_by('nro_baja_por_tipo').last()
         # SE OBTIENE LA ÚLTIMA BAJA REGISTRADA Y SE CONTRASTA CON EL NRO DE BAJA INGRESADO
         if ultimo_nro_baja.nro_baja_por_tipo != resultado_busqueda.nro_baja_por_tipo:
-            return Response({'success':False,'detail':'Solo se puede anular la última baja registrada.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError ('Solo se puede anular la última baja registrada.')
         
         serializer = self.serializer_class(resultado_busqueda, many=False)
         

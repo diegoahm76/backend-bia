@@ -4,7 +4,9 @@ from recaudo.models.procesos_models import (
     AtributosEtapas,
     FlujoProceso,
     ValoresProceso,
-    Procesos
+    Procesos, 
+    Bienes,
+    Avaluos
 )
 from recaudo.serializers.procesos_serializers import (
     EtapasProcesoSerializer,
@@ -14,12 +16,16 @@ from recaudo.serializers.procesos_serializers import (
     FlujoProcesoPostSerializer,
     ValoresProcesoSerializer,
     ValoresProcesoPostSerializer,
-    ProcesosSerializer
+    ProcesosSerializer,
+    AvaluosSerializer
 )
+from recaudo.models.base_models import TiposBien
+
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
 from rest_framework.response import Response
-import datetime
+from datetime import datetime, timedelta, date
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
 
 class EtapasProcesoView(generics.ListAPIView):
@@ -82,9 +88,10 @@ class GraficaView(generics.ListAPIView):
         nuevasEtapas = []
         nuevoFlujo = []
         for item in querysetEtapas:
-            nuevasEtapas.append({'id': item.pk, 'data': {'nombre': item.etapa, 'descripcion': item.descripcion, 'fecha': ''}})
+            nuevasEtapas.append({'id': item.pk, 'data': {'etapa': item.etapa, 'descripcion': item.descripcion}})
         for item in querysetFlujos:
-            nuevoFlujo.append({'id': item.pk, 'source': item.id_etapa_origen.pk, 'target': item.id_etapa_destino.pk})
+            data = {'fecha_flujo': item.fecha_flujo, 'descripcion': item.descripcion, 'requisitos': item.requisitos}
+            nuevoFlujo.append({'id': item.pk, 'source': item.id_etapa_origen.pk, 'target': item.id_etapa_destino.pk, 'data': data})
         response = {
             'nodes': nuevasEtapas,
             'edges': nuevoFlujo
@@ -148,3 +155,4 @@ class ProcesosView(generics.ListAPIView):
         queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+
