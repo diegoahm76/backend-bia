@@ -157,6 +157,24 @@ class ConsultaObligacionesSerializer(serializers.ModelSerializer):
         model = Obligaciones
         fields = '__all__'
 
+# class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
+#     identificacion = serializers.ReadOnlyField(source='id_deudor_actuacion.identificacion',default=None)
+#     nombre_de_usuario = serializers.SerializerMethodField()
+#     id_facilidad = serializers.ReadOnlyField(source='id', default=None)
+
+#     class Meta:
+#         model = FacilidadesPago
+#         fields = ('id_facilidad','nombre_de_usuario','identificacion', 'fecha_generacion')
+
+#     def get_nombre_de_usuario(self, obj):
+#         nombre_de_usuario = None
+#         persona = Personas.objects.filter(numero_documento=obj.id_deudor_actuacion.identificacion).first()
+#         if persona: 
+#             usuario = persona.user_set.exclude(id_usuario=1).first() 
+#             nombre_de_usuario = usuario.nombre_de_usuario if usuario else None
+#         return nombre_de_usuario
+
+
 class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
     identificacion = serializers.ReadOnlyField(source='id_deudor_actuacion.identificacion',default=None)
     nombre_de_usuario = serializers.SerializerMethodField()
@@ -167,18 +185,22 @@ class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
         fields = ('id_facilidad','nombre_de_usuario','identificacion', 'fecha_generacion')
 
     def get_nombre_de_usuario(self, obj):
-        nombre_de_usuario = None
-        persona = Personas.objects.filter(numero_documento=obj.id_deudor_actuacion.identificacion).first()
-        if persona: 
-            usuario = persona.user_set.exclude(id_usuario=1).first() 
-            nombre_de_usuario = usuario.nombre_de_usuario if usuario else None
-        return nombre_de_usuario
+        return f"{obj.id_deudor_actuacion.nombres} {obj.id_deudor_actuacion.apellidos}"
+
+
 
 
 class ConsultaFacilidadesPagosSerializer(serializers.ModelSerializer):
+    tipo_actuacion = serializers.ReadOnlyField(source='id_tipo_actuacion.descripcion',default=None)
+
     class Meta:
         model = FacilidadesPago
-        fields = '__all__'
+        fields = ('id', 'id_deudor_actuacion', 'tipo_actuacion', 'fecha_generacion',
+                  'observaciones', 'periodicidad', 'cuotas', 'id_tasas_interes',
+                  'documento_soporte', 'consignacion_soporte', 'documento_garantia', 
+                  'documento_no_enajenacion', 'id_funcionario','notificaciones',
+                  )
+
 
 class ListadoDeudoresUltSerializer(serializers.ModelSerializer):
     nombre_contribuyente = serializers.SerializerMethodField()
@@ -186,8 +208,9 @@ class ListadoDeudoresUltSerializer(serializers.ModelSerializer):
     class Meta:
         model = Deudores
         fields = ('nombre_contribuyente','identificacion')
+        #fields = ('nombres','apellidos','identificacion')
 
-    def get_nombre_completo(self, obj):
+    def get_nombre_contribuyente(self, obj):
         return f"{obj.nombres} {obj.apellidos}"
 
 class AutorizacionNotificacionesSerializer(serializers.ModelSerializer):

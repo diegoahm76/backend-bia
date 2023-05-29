@@ -31,6 +31,8 @@ from recaudo.serializers.pagos_serializers import (
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
+from django.db.models import Value as V
+from django.db.models.functions import Concat
 from seguridad.models import Personas, ClasesTerceroPersona, User
 from recaudo.models.base_models import TipoActuacion, TiposPago
 from recaudo.models.cobros_models import Obligaciones, Expedientes, Deudores, Cartera
@@ -39,6 +41,7 @@ from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 class DatosDeudorView(generics.ListAPIView):
@@ -216,15 +219,27 @@ class ListadoFacilidadesPagoViews(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        filter = {}
 
-        for key, value in request.query_params.items():
-            if key == 'identificacion':
-                filter['id_deudor_actuacion__identificacion__icontains'] = value
-            elif key == 'nombres' or key == 'apellidos':
-                if value != '':
-                    filter['id_deudor_actuacion__' + key + '__icontains'] = value
-        facilidades_pago = FacilidadesPago.objects.filter(**filter)
+
+        # filter = {}
+        #
+        # for key, value in request.query_params.items():
+        #     if key == 'identificacion':
+        #         filter['id_deudor_actuacion__identificacion__icontains'] = value
+        #     elif key == 'nombres' or key == 'apellidos':
+        #         if value != '':
+        #             filter['id_deudor_actuacion__' + key + '__icontains'] = value
+        # facilidades_pago = FacilidadesPago.objects.filter(**filter)
+
+        facilidades_pago = FacilidadesPago.objects.annotate(nombre_de_usuario=Concat('id_deudor_actuacion__nombres', V(' '), 'id_deudor_actuacion__apellidos'))
+        identificacion = self.request.query_params.get('identificacion', '')
+        nombre_de_usuario = self.request.query_params.get('nombre_de_usuario', '')
+        facilidades_pago = facilidades_pago.filter(id_deudor_actuacion__identificacion__icontains=identificacion)
+        nombres_apellidos = nombre_de_usuario.split()
+        
+        for x in range(len(nombres_apellidos)):
+            facilidades_pago = facilidades_pago.filter(nombre_de_usuario__icontains=nombres_apellidos[x])
+        
         
         if not facilidades_pago.exists():
             raise NotFound("La facilidad de pagos consultada no existe")
@@ -236,30 +251,30 @@ class ListadoFacilidadesPagoViews(generics.ListAPIView):
 class ConsultaFacilidadesPagosViews(generics.ListAPIView):
     serializer_class = ConsultaFacilidadesPagosSerializer
     
-    def get_queryset(self):
-        id_facilidades = self.kwargs['id']
-        queryset = FacilidadesPago.objects.filter(id=id_facilidades)
-        return queryset
-
+    def get(self, request, id):
+        queryset = FacilidadesPago.objects.filter(id=id).first()
+        if not queryset:
+            raise NotFound('No se encontró ningun registro con el parámetro ingresado')
+        serializer = self.serializer_class(queryset, many=False)
+        return Response({'success': True, 'detail':'Se muestra los datos la facilidad de pago', 'data': serializer.data}, status=status.HTTP_200_OK)   
+        
 
 class ListadoDeudoresViews(generics.ListAPIView):
+    queryset = Deudores.objects.all()
     serializer_class = ListadoDeudoresUltSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        filter = {}
-        for key, value in self.request.query_params.items():
-            if key == 'identificacion':
-                filter[key + '__icontains'] = value
-            elif key == 'nombre_contribuyente':
-                if value != '':
-                    nombres_apellidos = value.split()
-                    if len(nombres_apellidos) >= 2:
-                        nombres = ' '.join(nombres_apellidos[:-1])
-                        apellidos = nombres_apellidos[-1]
-                        filter['nombres__icontains'] = nombres
-                        filter['apellidos__icontains'] = apellidos
-        return Deudores.objects.filter(**filter).values('identificacion', 'nombres', 'apellidos')
+
+        identificacion = self.request.query_params.get('identificacion', '')
+        nombre_contribuyente = self.request.query_params.get('nombre_contribuyente', '')
+        deudores = Deudores.objects.annotate(nombre_contribuyente=Concat('nombres', V(' '), 'apellidos')).filter(identificacion__icontains=identificacion)
+        nombres_apellidos = nombre_contribuyente.split()
+        
+        for x in range(len(nombres_apellidos)):
+            deudores = deudores.filter(nombre_contribuyente__icontains=nombres_apellidos[x])
+
+        return deudores.values('identificacion', 'nombres', 'apellidos')
 
     def list(self, request, *args, **kwargs):
         current_user = self.request.user
@@ -276,20 +291,40 @@ class ListadoDeudoresViews(generics.ListAPIView):
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
 
 
+# class ListadoFacilidadesPagoFuncionariosViews(generics.ListAPIView):
+#     serializer_class = ListadoFacilidadesPagoSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self, request):
+#         user = self.request.user
+#         facilidades_pago = FacilidadesPago.objects.filter(id_funcionario=user.pk)
+#         for key, value in request.query_params.items():
+#             if key == 'identificacion':
+#                 facilidades_pago = facilidades_pago.filter(id_deudor_actuacion__identificacion__icontains=value)
+#             elif key == 'nombre_de_usuario':
+#                 facilidades_pago = facilidades_pago.filter(id_deudor_actuacion__usuario__primer_nombre__icontains=value)
+#         serializer = ListadoFacilidadesPagoSerializer(facilidades_pago, many=True)
+#         return Response( {'success': True, 'detail':'Se le asignaron las siguientes facilidades de pago','data':serializer.data},status=status.HTTP_200_OK)
+
 class ListadoFacilidadesPagoFuncionariosViews(generics.ListAPIView):
     serializer_class = ListadoFacilidadesPagoSerializer
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = self.request.user
-        facilidades_pago = FacilidadesPago.objects.filter(id_funcionario=user.pk)
-        for key, value in request.query_params.items():
-            if key == 'identificacion':
-                facilidades_pago = facilidades_pago.filter(id_deudor_actuacion__identificacion__icontains=value)
-            elif key == 'nombre_de_usuario':
-                facilidades_pago = facilidades_pago.filter(id_deudor_actuacion__usuario__primer_nombre__icontains=value)
+        facilidades_pago = FacilidadesPago.objects.annotate(nombre_de_usuario=Concat('id_deudor_actuacion__nombres', V(' '), 'id_deudor_actuacion__apellidos')).filter(id_funcionario=user.pk)
+        identificacion = self.request.query_params.get('identificacion', '')
+        nombre_de_usuario = self.request.query_params.get('nombre_de_usuario', '')
+        facilidades_pago = facilidades_pago.filter(id_deudor_actuacion__identificacion__icontains=identificacion)
+        nombres_apellidos = nombre_de_usuario.split()
+        
+        for x in range(len(nombres_apellidos)):
+            facilidades_pago = facilidades_pago.filter(nombre_de_usuario__icontains=nombres_apellidos[x])
+        
         serializer = ListadoFacilidadesPagoSerializer(facilidades_pago, many=True)
         return Response( {'success': True, 'detail':'Se le asignaron las siguientes facilidades de pago','data':serializer.data},status=status.HTTP_200_OK)
+
+
 
 
 class RequisitosActuacionView(generics.ListAPIView):

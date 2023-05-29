@@ -74,7 +74,7 @@ class UpdateUserProfile(generics.UpdateAPIView):
             # AUDITORIA AL ACTUALIZAR USUARIO PROPIO
 
             dirip = Util.get_client_ip(request)
-            descripcion = {'nombre_de_usuario': user.nombre_de_usuario}
+            descripcion = {'NombreUsuario': user.nombre_de_usuario}
             valores_actualizados = {'current': user, 'previous': previous_user}
 
             auditoria_data = {
@@ -175,7 +175,7 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                 valores_eliminados_detalles = []
 
                 dirip = Util.get_client_ip(request)
-                descripcion = {'nombre_de_usuario': user.nombre_de_usuario}
+                descripcion = {'NombreUsuario': user.nombre_de_usuario}
 
                 if set(lista_roles_bd) != set(lista_roles_json):
                     roles = Roles.objects.filter(id_rol__in=lista_roles_json)
@@ -404,7 +404,7 @@ class AsignarRolSuperUsuario(generics.CreateAPIView):
         #Auditoria Delegación de Rol Super Usuario
         valores_actualizados = {'previous':previous_usuario_delegante,'current':usuario_delegante}
         dirip = Util.get_client_ip(request)
-        descripcion = {'nombre_de_usuario': usuario_delegante.nombre_de_usuario}
+        descripcion = {'NombreUsuario': usuario_delegante.nombre_de_usuario}
         auditoria_data = {
             'id_usuario': user_logeado,
             'id_modulo': 8,
@@ -437,7 +437,7 @@ class UnblockUser(generics.CreateAPIView):
         fecha_nacimiento = request.data['fecha_nacimiento']
 
         try:
-            usuario_bloqueado = User.objects.get(nombre_de_usuario=nombre_de_usuario)
+            usuario_bloqueado = User.objects.get(nombre_de_usuario=str(nombre_de_usuario).lower())
             usuario_bloqueado
             pass
         except:
@@ -627,7 +627,7 @@ class RegisterExternoView(generics.CreateAPIView):
         
         serializer = self.serializer_class(data=user)
         serializer.is_valid(raise_exception=True)
-        nombre_de_usuario = serializer.validated_data.get('nombre_de_usuario')
+        nombre_de_usuario = str(serializer.validated_data.get('nombre_de_usuario', '')).lower()
         serializer_response = serializer.save()
         user_data = serializer.data
         
@@ -642,7 +642,7 @@ class RegisterExternoView(generics.CreateAPIView):
         # AUDITORIA AL REGISTRAR USUARIO
 
         dirip = Util.get_client_ip(request)
-        descripcion = {'nombre_de_usuario': request.data["nombre_de_usuario"]}
+        descripcion = {'NombreUsuario': str(request.data["nombre_de_usuario"]).lower()}
 
         auditoria_data = {
             'id_usuario': serializer_response.pk,
@@ -656,7 +656,7 @@ class RegisterExternoView(generics.CreateAPIView):
 
         #AUDITORIA AL ASIGNARLE ROL DE USUARIO EXTERNO POR DEFECTO
         dirip = Util.get_client_ip(request)
-        descripcion = {'nombre_de_usuario': request.data["nombre_de_usuario"], 'Rol': rol}
+        descripcion = {'NombreUsuario': str(request.data["nombre_de_usuario"]).lower(), 'Rol': rol}
         auditoria_data = {
             'id_usuario': serializer_response.pk,
             'id_modulo': 5,
@@ -788,7 +788,7 @@ class LoginApiView(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
-        user = User.objects.filter(nombre_de_usuario=data['nombre_de_usuario']).first()
+        user = User.objects.filter(nombre_de_usuario=str(data['nombre_de_usuario']).lower()).first()
         
         ip = Util.get_client_ip(request)
         device = Util.get_client_device(request)
@@ -904,7 +904,7 @@ class LoginApiView(generics.CreateAPIView):
                     return Response({'success':False, 'detail':'Usuario no activado', 'data':{'modal':True, 'id_usuario':user.id_usuario, 'tipo_usuario':user.tipo_usuario}}, status=status.HTTP_403_FORBIDDEN)
         else:
             UsuarioErroneo.objects.create(
-                campo_usuario = data['nombre_de_usuario'],
+                campo_usuario = str(data['nombre_de_usuario']).lower(),
                 dirip = str(ip),
                 dispositivo_conexion = device
             )
@@ -919,7 +919,7 @@ class RequestPasswordResetEmail(generics.CreateAPIView):
         
         data = request.data
         
-        usuario = self.queryset.all().filter(nombre_de_usuario=data['nombre_de_usuario']).first()
+        usuario = self.queryset.all().filter(nombre_de_usuario=str(data['nombre_de_usuario']).lower()).first()
         
         if usuario:
             
@@ -1201,7 +1201,7 @@ class BusquedaByNombreUsuario(generics.ListAPIView):
         
     def get(self,request):
         
-        nombre_de_usuario = request.query_params.get('nombre_de_usuario')
+        nombre_de_usuario = str(request.query_params.get('nombre_de_usuario', '')).lower()
         
         busqueda_usuario = self.queryset.all().filter(nombre_de_usuario__icontains=nombre_de_usuario)
         
