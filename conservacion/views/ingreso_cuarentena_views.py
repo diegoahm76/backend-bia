@@ -83,13 +83,10 @@ class GetLotesEtapaView(generics.ListAPIView):
 
 
             if etapa_lote.cod_etapa_lote == 'G':
-                etapa_lote.cod_etapa_lote = 'Germinación'
                 etapa_lote.saldo_disponible = 100 - porc_cuarentena_lote_germinacion
             if etapa_lote.cod_etapa_lote == 'P':
-                etapa_lote.cod_etapa_lote = 'Producción'
                 etapa_lote.saldo_disponible = cantidad_entrante - cantidad_bajas - cantidad_traslados_lote_produccion_distribucion - cantidad_salidas - cantidad_lote_cuarentena
             if etapa_lote.cod_etapa_lote == 'D':
-                etapa_lote.cod_etapa_lote = 'Distribución'
                 etapa_lote.saldo_disponible = cantidad_entrante - cantidad_bajas - cantidad_salidas - cantidad_lote_cuarentena
 
         serializer = self.serializer_class(etapas_lotes_in_vivero, many=True)
@@ -135,13 +132,10 @@ class GetLotesEtapaLupaView(generics.ListAPIView):
 
 
             if etapa_lote.cod_etapa_lote == 'G':
-                etapa_lote.cod_etapa_lote = 'Germinación'
                 etapa_lote.saldo_disponible = 100 - porc_cuarentena_lote_germinacion
             if etapa_lote.cod_etapa_lote == 'P':
-                etapa_lote.cod_etapa_lote = 'Producción'
                 etapa_lote.saldo_disponible = cantidad_entrante - cantidad_bajas - cantidad_traslados_lote_produccion_distribucion - cantidad_salidas - cantidad_lote_cuarentena
             if etapa_lote.cod_etapa_lote == 'D':
-                etapa_lote.cod_etapa_lote = 'Distribución'
                 etapa_lote.saldo_disponible = cantidad_entrante - cantidad_bajas - cantidad_salidas - cantidad_lote_cuarentena
 
 
