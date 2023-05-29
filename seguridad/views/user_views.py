@@ -59,7 +59,7 @@ class MyTokenObtainPairView(TokenObtainPairView):
 class UpdateUserProfile(generics.UpdateAPIView):
     serializer_class = UserPutSerializer
     queryset = User.objects.all()
-    permission_classes = [IsAuthenticated, PermisoActualizarInterno]
+    permission_classes = [IsAuthenticated]
 
     def patch(self, request):
         user_loggedin = self.request.user.id_usuario
