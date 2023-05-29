@@ -926,10 +926,14 @@ class ActualizacionUnidadOrganizacionalAntigua(generics.UpdateAPIView):
     serializer_class = ActUnidadOrgAntiguaSerializer
 
     def put(self, request, *args, **kwargs):
-        nueva_id_unidad_organizacional = request.data.get('nueva_id_unidad_organizacional')
+        nueva_id_unidad_organizacional = request.data.get('id_nueva_unidad_organizacional')
         lista_id_personas = request.data.get('personas', [])
         user = request.user
         nombre_de_usuario = user.nombre_de_usuario
+        
+        cambios_temporal = TemporalPersonasUnidad.objects.all().exists()
+        if cambios_temporal:
+            raise PermissionDenied('No puede realizar estos cambios. Aún hay cambios de unidades organizacionales pendientes por procesar')
 
         try:
             unidad_organizacional = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=nueva_id_unidad_organizacional)
@@ -1113,7 +1117,7 @@ class GuardarActualizacionUnidadOrganizacional(generics.UpdateAPIView):
         
         
         personas_enviadas = [persona_nueva_unidad.get('id_persona') for persona_nueva_unidad in personas_nuevas_unidades]
-        unidades_enviadas = [persona_nueva_unidad.get('nueva_id_unidad_organizacional') for persona_nueva_unidad in personas_nuevas_unidades]
+        unidades_enviadas = [persona_nueva_unidad.get('id_nueva_unidad_organizacional') for persona_nueva_unidad in personas_nuevas_unidades]
         
         # VALIDAR PERSONAS TENGAN UNIDAD ASIGNADA Y DEL ORGANIGRAMA ACTUAL
         unidades_actual_personas = Personas.objects.filter(id_persona__in=personas_enviadas, es_unidad_organizacional_actual=True)
@@ -1129,7 +1133,7 @@ class GuardarActualizacionUnidadOrganizacional(generics.UpdateAPIView):
 
         for persona_nueva_unidad in personas_nuevas_unidades:
             id_persona = persona_nueva_unidad.get('id_persona')
-            nueva_id_unidad_organizacional = persona_nueva_unidad.get('nueva_id_unidad_organizacional')
+            nueva_id_unidad_organizacional = persona_nueva_unidad.get('id_nueva_unidad_organizacional')
             try:
                 persona = Personas.objects.get(id_persona=id_persona)
             except Personas.DoesNotExist:
@@ -1171,7 +1175,7 @@ class ProcederActualizacionUnidad(generics.UpdateAPIView):
             try:
                 for persona_nueva_unidad in personas_nuevas_unidades:
                     id_persona = persona_nueva_unidad.get('id_persona')
-                    nueva_id_unidad_organizacional = persona_nueva_unidad.get('nueva_id_unidad_organizacional')
+                    nueva_id_unidad_organizacional = persona_nueva_unidad.get('id_nueva_unidad_organizacional')
                     
                     try:
                         persona = Personas.objects.get(id_persona=id_persona)
@@ -1219,6 +1223,6 @@ class ProcederActualizacionUnidad(generics.UpdateAPIView):
                 TemporalPersonasUnidad.objects.all().delete()
                 
             except Exception as e:
-                return Response({'error': str(e)}, status=500)
+                raise ValidationError('Error: ' + str(e))
         
         return Response({'success': True, 'detail': 'Las personas han sido actualizadas exitosamente'}, status=status.HTTP_200_OK)
