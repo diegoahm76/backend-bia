@@ -1003,9 +1003,12 @@ class GetUnidadOrgDesactualizada(generics.ListAPIView):
     def get(self, request):
         id_unidad_organizacional_actual = self.request.data.get('id_unidad_organizacional_actual')
         fecha_actual = datetime.now()
-        organigrama_actual = Organigramas.objects.filter(fecha_retiro_produccion__lte=fecha_actual).order_by('-fecha_retiro_produccion').first()
+        ultimo_organigrama_retirado = Organigramas.objects.filter(fecha_retiro_produccion__lte=fecha_actual).order_by('-fecha_retiro_produccion').first()
+        
+        if not ultimo_organigrama_retirado:
+            raise PermissionDenied('Aún no se ha retirado ningún organigrama')
 
-        if organigrama_actual.fecha_retiro_produccion and organigrama_actual.actual:
+        if ultimo_organigrama_retirado.fecha_retiro_produccion and ultimo_organigrama_retirado.actual:
             raise ValidationError('El organigrama está fuera de producción y no puede ser el actual')
 
         if id_unidad_organizacional_actual:
@@ -1014,14 +1017,14 @@ class GetUnidadOrgDesactualizada(generics.ListAPIView):
                 queryset = Personas.objects.filter(
                     id_unidad_organizacional_actual=id_unidad_organizacional_actual,
                     es_unidad_organizacional_actual=False,
-                    id_unidad_organizacional_actual__id_organigrama=organigrama_actual.id_organigrama
+                    id_unidad_organizacional_actual__id_organigrama=ultimo_organigrama_retirado.id_organigrama
                 )
             except ValueError:
                 return Personas.objects.none()
         else:
             queryset = Personas.objects.filter(
                 es_unidad_organizacional_actual=False,
-                id_unidad_organizacional_actual__id_organigrama=organigrama_actual.id_organigrama
+                id_unidad_organizacional_actual__id_organigrama=ultimo_organigrama_retirado.id_organigrama
             )
             
         if not queryset.exists():
@@ -1035,12 +1038,15 @@ class GetUnidadesOrganigramaRetiradoReciente(generics.ListAPIView):
     queryset = UnidadesOrganizacionales.objects.all()
 
     def get(self, request):
-        organigramas = Organigramas.objects.filter(actual=False).order_by('-fecha_retiro_produccion')
+        organigramas = Organigramas.objects.filter(actual=False).exclude(fecha_retiro_produccion=None).order_by('-fecha_retiro_produccion')
+        
         if not organigramas:
             raise NotFound('No existe organigramas retirados de produccion')
         
         organigrama_retirado = organigramas.first()
+        
         unidades_organigrama_retirado = UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama_retirado.id_organigrama)
+        
         serializer = self.serializer_class(unidades_organigrama_retirado, many=True)
         return Response({'success':True, 'detail':'Consulta Organigrama Retirado Reciente Exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
 
@@ -1083,6 +1089,8 @@ class ListadoPersonasOrganigramaActual(generics.ListAPIView):
             id_unidad_organizacional_actual__in=unidades_activas,
             es_unidad_organizacional_actual=True
         )
+        personas_unidad_temp = TemporalPersonasUnidad.objects.all().values_list('id_persona', flat=True)
+        queryset = queryset.exclude(id_persona__in=personas_unidad_temp)
         return queryset
 
     def list(self, request, *args, **kwargs):
@@ -1096,15 +1104,28 @@ class ListadoPersonasOrganigramaActual(generics.ListAPIView):
 class GuardarActualizacionUnidadOrganizacional(generics.UpdateAPIView):
     serializer_class = ActUnidadOrgAntiguaSerializer
 
-    def put(self, request, *args, **kwargs):
+    def put(self, request, id_organigrama):
         personas_nuevas_unidades = request.data
         if not isinstance(personas_nuevas_unidades, list):
             raise ValidationError('El cuerpo de la solicitud debe ser una lista de objetos')
         
-        personas_enviadas = [persona_nueva_unidad.get('id_persona') for persona_nueva_unidad in personas_nuevas_unidades]
-        TemporalPersonasUnidad.objects.exclude(id_persona__in=personas_enviadas).delete()
+        organigrama_cambio = Organigramas.objects.filter(id_organigrama=id_organigrama, fecha_retiro_produccion=None, fecha_puesta_produccion=None).exclude(fecha_terminado=None).first()
         
-        personas_actualizadas = []
+        
+        personas_enviadas = [persona_nueva_unidad.get('id_persona') for persona_nueva_unidad in personas_nuevas_unidades]
+        unidades_enviadas = [persona_nueva_unidad.get('nueva_id_unidad_organizacional') for persona_nueva_unidad in personas_nuevas_unidades]
+        
+        # VALIDAR PERSONAS TENGAN UNIDAD ASIGNADA Y DEL ORGANIGRAMA ACTUAL
+        unidades_actual_personas = Personas.objects.filter(id_persona__in=personas_enviadas, es_unidad_organizacional_actual=True)
+        if len(personas_enviadas) != len(unidades_actual_personas):
+            raise ValidationError('Debe enviar personas existentes y que tengan asignado una unidad organizacional del organigrama actual')
+        
+        # VALIDAR UNIDADES PERTENEZCAN A MISMA UNIDAD
+        unidades_organigrama = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional__in=unidades_enviadas, id_organigrama=id_organigrama)
+        if len(set(unidades_enviadas)) != len(unidades_organigrama):
+            raise ValidationError('Las unidades a las cuales desea realizar el cambio deben pertenecer a un mismo organigrama terminado')
+        
+        TemporalPersonasUnidad.objects.exclude(id_persona__in=personas_enviadas).delete()
 
         for persona_nueva_unidad in personas_nuevas_unidades:
             id_persona = persona_nueva_unidad.get('id_persona')
@@ -1124,15 +1145,12 @@ class GuardarActualizacionUnidadOrganizacional(generics.UpdateAPIView):
                     temporal_persona.id_unidad_org_nueva = nueva_unidad
                     temporal_persona.save()
             else:
-                unidad_anterior = persona.id_unidad_organizacional_actual.id_unidad_organizacional
-                unidad_anterior_obj = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=unidad_anterior)
+                unidad_anterior = persona.id_unidad_organizacional_actual
                 TemporalPersonasUnidad.objects.create(
                     id_persona=persona,
-                    id_unidad_org_anterior=unidad_anterior_obj,
+                    id_unidad_org_anterior=unidad_anterior,
                     id_unidad_org_nueva=nueva_unidad
                 )
-
-            personas_actualizadas.append(persona)
 
         return Response({'success': True, 'detail': 'Las personas han sido guardadas exitosamente'}, status=status.HTTP_201_CREATED)
 

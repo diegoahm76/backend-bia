@@ -37,7 +37,7 @@ urlpatterns = [
     path('get-unidad-organizacional-after/', views.ListadoUnidadOrgDesactSinTemporal.as_view(), name='get-unidad-after'),
     path('listado-registro-temporal/', views.ListaTemporalPersonasUnidad.as_view(), name='listado-temporal'),
     path('listado-personas-organigrama/', views.ListadoPersonasOrganigramaActual.as_view(), name='listado-temporal'),
-    path('guardar-actualizacion-unidad/', views.GuardarActualizacionUnidadOrganizacional.as_view(), name='guardar-unidad'),
+    path('guardar-actualizacion-unidad/<str:id_organigrama>/', views.GuardarActualizacionUnidadOrganizacional.as_view(), name='guardar-unidad'),
     path('finalizar-actualizacion-unidad/', views.ProcederActualizacionUnidad.as_view(), name='finalizar-unidad'),
 ]
 
