@@ -141,6 +141,12 @@ class UpdateMantenimientoProgramado(generics.RetrieveUpdateAPIView):
     def put(self, request, id_mantenimiento):
         mantenimiento = ProgramacionMantenimientos.objects.filter(id_programacion_mtto=id_mantenimiento).first()
         if mantenimiento:
+            id_articulo = mantenimiento.id_articulo_id
+            articulo = CatalogoBienes.objects.filter(id_bien=id_articulo).values().first()
+            if not articulo:
+                raise NotFound('El mantenimiento está relacionado con un artículo inválido')
+            if not articulo['tiene_hoja_vida']:
+                raise NotFound('El artículo no tiene hoja de vida')
             serializer = self.serializer_class(mantenimiento, data=request.data, many=False)
             serializer.is_valid(raise_exception=True)
             serializer.save()
@@ -521,9 +527,6 @@ class ValidarFechasProgramacion(generics.CreateAPIView):
                 return Response({'success':True, 'detail':kilometros_mantenimientos}, status=status.HTTP_200_OK)
             case other:
                 return Response({'success':True, 'detail':'Para (programacion) elija una opción entre kilometraje o automatica'}, status=status.HTTP_200_OK)
-        
-        
-        
             
 class CreateProgramacionMantenimiento(generics.CreateAPIView):
     serializer_class = SerializerProgramacionMantenimientosPost
@@ -538,6 +541,8 @@ class CreateProgramacionMantenimiento(generics.CreateAPIView):
             articulo = CatalogoBienes.objects.filter(id_bien=id_articulo).values().first()
             if not articulo:
                 raise NotFound('Ingrese un id de articulo válido')
+            if not articulo['tiene_hoja_vida']:
+                raise NotFound('El artículo no tiene hoja de vida por lo que no se puede programar mantenimiento')
             if articulo['cod_tipo_bien'] != 'A':
                 raise NotFound('Para programar un mantenimiento el bien debe ser un activo fijo')
             if articulo['cod_tipo_activo'] != 'Com' and articulo['cod_tipo_activo'] != 'Veh' and articulo['cod_tipo_activo'] != 'OAc':
@@ -700,6 +705,8 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
         datos_ingresados['id_persona_diligencia'] = request.user.id_usuario
         if not articulo:
             raise NotFound('Ingrese un id de articulo válido')
+        if not articulo['tiene_hoja_vida']:
+            raise NotFound('El artículo no tiene hoja de vida por lo que no se puede registrar mantenimiento')
         if diferencia_dias < 0:
             raise NotFound('La fecha del registro del mantenimiento debe ser mayor o igual a la fecha de la ejecución del mantenimiento')
         if int(datos_ingresados['dias_empleados']) <= 0:
