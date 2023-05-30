@@ -864,12 +864,13 @@ class LoginApiView(generics.CreateAPIView):
                                 )
                                 
 
-                                raise PermissionDenied('Su usuario ha sido bloqueado')
+                                # raise PermissionDenied('Su usuario ha sido bloqueado')
+                                return Response({'success':False, 'detail':'Su usuario ha sido bloqueado'}, status=status.HTTP_403_FORBIDDEN)
                             serializer = LoginErroneoPostSerializers(login_error, many=False)
-                            try:
-                                raise ValidationError('La contraseña es invalida')
-                            except ValidationError as e:
-                                return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
+                            # try:
+                            #     raise ValidationError('La contraseña es invalida')
+                            # except ValidationError as e:
+                            return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
                         else:
                             if user.is_blocked:
                                 raise PermissionDenied('Su usuario está bloqueado, debe comunicarse con el administrador')
@@ -877,10 +878,10 @@ class LoginApiView(generics.CreateAPIView):
                                 login_error.contador = 1
                                 login_error.save()
                                 serializer = LoginErroneoPostSerializers(login_error, many=False)
-                                try:
-                                    raise ValidationError('La contraseña es invalida')
-                                except ValidationError as e:
-                                    return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
+                                # try:
+                                #     raise ValidationError('La contraseña es invalida')
+                                # except ValidationError as e:
+                                return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
                     else:
                         if user.is_blocked:
                             raise PermissionDenied('Su usuario está bloqueado, debe comunicarse con el administrador')
@@ -893,10 +894,10 @@ class LoginApiView(generics.CreateAPIView):
                             )
                         login_error.restantes = 3 - login_error.contador
                         serializer = LoginErroneoPostSerializers(login_error, many=False)
-                        try:
-                            raise ValidationError('La contraseña es invalida')
-                        except ValidationError as e:
-                            return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
+                        # try:
+                        #     raise ValidationError('La contraseña es invalida')
+                        # except ValidationError as e:
+                        return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 try:
                     raise PermissionDenied('Usuario no activado')
@@ -908,8 +909,7 @@ class LoginApiView(generics.CreateAPIView):
                 dirip = str(ip),
                 dispositivo_conexion = device
             )
-            raise ValidationError('No existe el nombre de usuario ingresado')
-
+            return Response({'success':False, 'detail':'No existe el nombre de usuario ingresado'}, status=status.HTTP_400_BAD_REQUEST)
 
 class RequestPasswordResetEmail(generics.CreateAPIView):
     serializer_class = ResetPasswordEmailRequestSerializer
