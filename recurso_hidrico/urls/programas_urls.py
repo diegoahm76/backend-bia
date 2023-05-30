@@ -13,5 +13,6 @@ urlpatterns = [
     path('eliminar/proyecto/<str:pk>/',views.EliminarProyecto.as_view(),name='eliminar-proyecto'),
     path('actualizar/actividad/<str:pk>/',views.ActualizarActividades.as_view(),name='actualizar-actividades'),
     path('eliminar/actividad/<str:pk>/',views.EliminarActividades.as_view(),name='eliminar-actividad'),
-    path('registro/avance/proyecto/',views.RegistroAvance.as_view(),name='registro-avance-proyecto')
+    path('registro/avance/proyecto/',views.RegistroAvance.as_view(),name='registro-avance-proyecto'),
+    path('get/avanzada/avances/',views.BusquedaAvanzadaAvances.as_view(),name='get-avanzada-avances'),
 ]
