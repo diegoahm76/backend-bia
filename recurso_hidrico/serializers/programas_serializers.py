@@ -2,7 +2,7 @@ from rest_framework import serializers
 from unittest.util import _MAX_LENGTH
 from wsgiref.validate import validator
 
-from recurso_hidrico.models.programas_models import ActividadesProyectos, ProgramasPORH, ProyectosPORH
+from recurso_hidrico.models.programas_models import ActividadesProyectos, AvancesProyecto, ProgramasPORH, ProyectosPORH
 
 class RegistroProgramaPORHSerializer(serializers.ModelSerializer):
     class Meta:
@@ -55,4 +55,9 @@ class ActualizarActividadesSerializers(serializers.ModelSerializer):
 class EliminarActividadesSerializers(serializers.ModelSerializer):
     class Meta:
         model = ActividadesProyectos
+        fields = '__all__'
+        
+class RegistrarAvanceSerializers(serializers.ModelSerializer):
+    class Meta:
+        model: AvancesProyecto
         fields = '__all__'

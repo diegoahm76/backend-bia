@@ -5,8 +5,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from datetime import datetime,date,timedelta
 
-from recurso_hidrico.models.programas_models import ActividadesProyectos, ProgramasPORH, ProyectosPORH
-from recurso_hidrico.serializers.programas_serializers import ActualizarActividadesSerializers, ActualizarProyectosSerializers, BusquedaAvanzadaSerializers, EliminarActividadesSerializers, EliminarProyectoSerializers, GetActividadesporProyectosSerializers, GetProgramasporPORHSerializers, GetProyectosPORHSerializers, RegistroProgramaPORHSerializer
+from recurso_hidrico.models.programas_models import ActividadesProyectos, AvancesProyecto, ProgramasPORH, ProyectosPORH
+from recurso_hidrico.serializers.programas_serializers import ActualizarActividadesSerializers, ActualizarProyectosSerializers, BusquedaAvanzadaSerializers, EliminarActividadesSerializers, EliminarProyectoSerializers, GetActividadesporProyectosSerializers, GetProgramasporPORHSerializers, GetProyectosPORHSerializers, RegistrarAvanceSerializers, RegistroProgramaPORHSerializer
 
 class RegistroProgramaPORH(generics.CreateAPIView):
     serializer_class = RegistroProgramaPORHSerializer
@@ -288,3 +288,18 @@ class EliminarActividades(generics.DestroyAPIView):
         actividad.delete()
         
         return Response({'success':True,'detail':'Se elimino la Actividad seleccionada.'},status=status.HTTP_200_OK)
+    
+class RegistroAvance(generics.CreateAPIView):
+    serializer_class = RegistrarAvanceSerializers
+    queryset = AvancesProyecto.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def post(self,request):
+        data = request.data
+        
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        creacion_avance = serializer.save()
+        
+        return Response({'success':True,'detail':'Se crea el avance del proyecto correctamente.','data':serializer.data},status=status.HTTP_201_CREATED)
+    
