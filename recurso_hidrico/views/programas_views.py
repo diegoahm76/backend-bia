@@ -5,8 +5,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from datetime import datetime,date,timedelta
 
-from recurso_hidrico.models.programas_models import ActividadesProyectos, ProgramasPORH, ProyectosPORH
-from recurso_hidrico.serializers.programas_serializers import ActualizarActividadesSerializers, ActualizarProyectosSerializers, BusquedaAvanzadaSerializers, EliminarActividadesSerializers, EliminarProyectoSerializers, GetActividadesporProyectosSerializers, GetProgramasporPORHSerializers, GetProyectosPORHSerializers, RegistroProgramaPORHSerializer
+from recurso_hidrico.models.programas_models import ActividadesProyectos, AvancesProyecto, ProgramasPORH, ProyectosPORH
+from recurso_hidrico.serializers.programas_serializers import ActualizarActividadesSerializers, ActualizarProyectosSerializers, BusquedaAvanzadaSerializers, EliminarActividadesSerializers, EliminarProyectoSerializers, GetActividadesporProyectosSerializers, GetProgramasporPORHSerializers, GetProyectosPORHSerializers, RegistrarAvanceSerializers, RegistroProgramaPORHSerializer, BusquedaAvanzadaAvancesSerializers
+
 
 class RegistroProgramaPORH(generics.CreateAPIView):
     serializer_class = RegistroProgramaPORHSerializer
@@ -288,3 +289,42 @@ class EliminarActividades(generics.DestroyAPIView):
         actividad.delete()
         
         return Response({'success':True,'detail':'Se elimino la Actividad seleccionada.'},status=status.HTTP_200_OK)
+    
+class RegistroAvance(generics.CreateAPIView):
+    serializer_class = RegistrarAvanceSerializers
+    queryset = AvancesProyecto.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def post(self,request):
+        data = request.data
+        
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        creacion_avance = serializer.save()
+        
+        return Response({'success':True,'detail':'Se crea el avance del proyecto correctamente.','data':serializer.data},status=status.HTTP_201_CREATED)
+    
+
+class BusquedaAvanzadaAvances(generics.ListAPIView):
+    serializer_class = BusquedaAvanzadaAvancesSerializers
+    queryset = AvancesProyecto.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        filter = {}
+        
+        for key, value in request.query_params.items():
+            if key == 'nombre_programa':
+                if value != '':
+                    filter['id_proyecto__id_programa__nombre__icontains'] = value
+            if key == 'nombre_proyecto':
+                if value != '':
+                    filter['id_proyecto__nombre__icontains'] = value
+            if key == 'nombre_avance': 
+                if value != '':
+                    filter['descripcion__icontains'] = value
+        
+        programas = self.queryset.all().filter(**filter)
+        serializador = self.serializer_class(programas, many=True)
+        
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializador.data}, status=status.HTTP_200_OK)

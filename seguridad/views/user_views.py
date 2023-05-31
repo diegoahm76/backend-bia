@@ -74,14 +74,13 @@ class UpdateUserProfile(generics.UpdateAPIView):
 
             # AUDITORIA AL ACTUALIZAR USUARIO PROPIO
             dirip = Util.get_client_ip(request)
-            descripcion = {'nombre_de_usuario': instance.nombre_de_usuario}
+            descripcion = {'NombreUsuario': instance.nombre_de_usuario}
             valores_actualizados = {'current': instance, 'previous': previous_user}
 
             auditoria_data = {
-                'id_usuario': self.request.user,
+                'id_usuario': request.user.id_usuario,
                 'id_modulo': 2,
                 'cod_permiso': 'AC',
-
                 'subsistema': 'SEGU',
                 'dirip': dirip,
                 'descripcion': descripcion,

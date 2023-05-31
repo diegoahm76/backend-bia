@@ -121,10 +121,10 @@ class GetBienByFilterSerializer(serializers.ModelSerializer):
         )
 
 
-class DeleteItemsSolicitudSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ItemSolicitudViveros
-        fields = '__all__'
+# class DeleteItemsSolicitudSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = ItemSolicitudViveros
+#         fields = '__all__'
 
 class AnulacionSolicitudesSerializer(serializers.ModelSerializer):
     class Meta:
@@ -169,13 +169,13 @@ class CreateItemsSolicitudSerializer(serializers.ModelSerializer):
 class UpdateItemsSolicitudSerializer(serializers.ModelSerializer):
     class Meta:
         model= ItemSolicitudViveros
-        fields = '__all__'
+        fields = ['cantidad', 'observaciones']
 
 
-class DeleteItemsSolicitudSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ItemSolicitudViveros
-        fields = '__all__'
+# class DeleteItemsSolicitudSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = ItemSolicitudViveros
+#         fields = '__all__'
 
 
 class CerrarSolicitudNoDisponibilidadSerializer(serializers.ModelSerializer):

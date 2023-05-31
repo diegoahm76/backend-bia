@@ -73,3 +73,8 @@ class MezclasGetListSerializador(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Mezclas
+
+class GetItemsSerializador(serializers.ModelSerializer):
+    class Meta:
+        model = ItemsPreparacionMezcla
+        fields = '__all__'
