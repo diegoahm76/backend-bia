@@ -1,3 +1,4 @@
+import json
 from rest_framework.exceptions import ValidationError
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -5,9 +6,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from datetime import datetime,date,timedelta
 
-from recurso_hidrico.models.programas_models import ActividadesProyectos, AvancesProyecto, ProgramasPORH, ProyectosPORH
-from recurso_hidrico.serializers.programas_serializers import ActualizarActividadesSerializers, ActualizarProyectosSerializers, BusquedaAvanzadaSerializers, EliminarActividadesSerializers, EliminarProyectoSerializers, GetActividadesporProyectosSerializers, GetProgramasporPORHSerializers, GetProyectosPORHSerializers, RegistrarAvanceSerializers, RegistroProgramaPORHSerializer, BusquedaAvanzadaAvancesSerializers
-
+from recurso_hidrico.models.programas_models import ActividadesProyectos, AvancesProyecto, EvidenciasAvance, ProgramasPORH, ProyectosPORH
+from recurso_hidrico.serializers.programas_serializers import ActualizarActividadesSerializers, ActualizarAvanceEvidenciaSerializers, ActualizarProyectosSerializers, BusquedaAvanzadaSerializers, EliminarActividadesSerializers, EliminarProyectoSerializers, GetActividadesporProyectosSerializers, GetProgramasporPORHSerializers, GetProyectosPORHSerializers, RegistrarAvanceSerializers, RegistroEvidenciaSerializers, RegistroProgramaPORHSerializer,BusquedaAvanzadaAvancesSerializers
 
 class RegistroProgramaPORH(generics.CreateAPIView):
     serializer_class = RegistroProgramaPORHSerializer
@@ -295,13 +295,38 @@ class RegistroAvance(generics.CreateAPIView):
     queryset = AvancesProyecto.objects.all()
     permission_classes = [IsAuthenticated]
     
-    def post(self,request):
+    def post(self,request,id_proyecto):
         data = request.data
+        
+        proyecto = ProyectosPORH.objects.filter(id_proyecto=id_proyecto).first()
+        
+        if not proyecto:
+            raise ValidationError("No hay proyecto.")
+        
+        archivos =request.FILES.getlist('evidencia')
+        
+        nombre_archivos =request.data.getlist('nombre_archivo')
+        
+        if len(archivos)!= len(nombre_archivos):
+            raise ValidationError("Todos los archivos deben tener nombre.")
+
+        persona_logueada = request.user.persona.id_persona
+        data['id_persona_registra'] = persona_logueada
+        
+        data['id_proyecto'] = id_proyecto
         
         serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
+    
         creacion_avance = serializer.save()
         
+        for i in range(len(archivos)):
+            EvidenciasAvance.objects.create(
+                id_avance = creacion_avance,
+                nombre_archivo = nombre_archivos[i],                
+                id_archivo = i
+            )
+  
         return Response({'success':True,'detail':'Se crea el avance del proyecto correctamente.','data':serializer.data},status=status.HTTP_201_CREATED)
     
 
@@ -328,3 +353,70 @@ class BusquedaAvanzadaAvances(generics.ListAPIView):
         serializador = self.serializer_class(programas, many=True)
         
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializador.data}, status=status.HTTP_200_OK)
+
+class RegistroEvidencia(generics.CreateAPIView):
+    serializer_class = RegistroEvidenciaSerializers
+    queryset = EvidenciasAvance.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def post(self,request,id_evidencia):
+        
+        data = request.data
+        evidencia = AvancesProyecto.objects.filter(id_avance=id_evidencia).first()
+        
+        if not evidencia:
+            return ValidationError("No existe el registro al cual se intenta adicionar el registro.")
+        
+        data['id_avance'] = id_evidencia
+        
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        
+        creacion_evidencia = serializer.save()
+        
+        return Response({'success':True,'detail':'Se ha creado el registro exitosamente.','data':serializer.data},status=status.HTTP_201_CREATED)
+
+class ActualizarAvanceEvidencia(generics.UpdateAPIView):
+    serializer_class = ActualizarAvanceEvidenciaSerializers
+    queryset = AvancesProyecto.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def put(self,request,pk):
+        data = request.data
+        avance = AvancesProyecto.objects.filter(id_avance=pk).first()
+        
+        if not avance:
+            raise ValidationError("No existe el registro que desea actualizar.")
+        
+        archivos = request.FILES.getlist('evidencia')
+        nombre_archivo = request.data.getlist('nombre_archivo')
+        
+        # data['id_avance'] = pk
+        
+        serializer = self.serializer_class(avance,data=data)
+        serializer.is_valid(raise_exception=True)
+        
+        serializer.save()
+        
+        nombre_actualizar = request.data.get('nombre_actualizar')
+        nombre_actualizar = json.loads(nombre_actualizar)
+        # nombre_actualizar_list = [nombre['id_evidencia']for nombre in nombre_actualizar]
+        
+        for nombre_data in nombre_actualizar:
+            evidencia_update = EvidenciasAvance.objects.filter(id_evidencia_avance=nombre_data['id_evidencia_avance']).first()
+            if not evidencia_update:
+                raise ValidationError('Debe enviar evidencias exitentes')
+            if nombre_data['nombre_archivo'] == '':
+                raise ValidationError('No puede actualizar el nombre de un archivo a vacío')
+            evidencia_update.nombre_archivo = nombre_data['nombre_archivo']
+            evidencia_update.save()
+
+        
+        for i in range(len(archivos)):
+            EvidenciasAvance.objects.create(
+                id_avance = avance,
+                nombre_archivo = nombre_archivo[i],
+                id_archivo = i
+            )
+        
+        return Response({'success':True,'detail':'Se ha realizado la actualizacion correctamente.'},status=status.HTTP_200_OK)
