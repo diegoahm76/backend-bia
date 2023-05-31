@@ -87,7 +87,8 @@ class ValoresProceso(models.Model):
     id = models.AutoField(primary_key=True, db_column='T423id')
     id_proceso = models.ForeignKey(Procesos, on_delete=models.CASCADE, db_column='T423id_proceso')
     id_atributo = models.ForeignKey(AtributosEtapas, on_delete=models.CASCADE, db_column='T423id_atributo')
-    valor = models.TextField(db_column='T423valor')
+    valor = models.TextField(db_column='T423valor', null=True, blank=True)
+    documento = models.FileField(db_column='T423documento', null=True, blank=True)
 
     class Meta:
         db_table = 'T423valores_proceso'
