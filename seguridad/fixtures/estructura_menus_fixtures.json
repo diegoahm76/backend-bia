@@ -1,698 +1,640 @@
 [
-  {
-    "model": "seguridad.EstructuraMenus",
+{
+    "model": "seguridad.estructuramenus",
     "pk": 1,
     "fields": {
-      "id_menu": 1,
-      "nombre": "Personas",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":1,
-      "subsistema":"TRSV"
+        "nombre": "Personas",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 1,
+        "subsistema": "TRSV"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 2,
     "fields": {
-      "id_menu": 2,
-      "nombre": "Corporativo",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":2,
-      "subsistema":"TRSV"
+        "nombre": "Corporativo",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 2,
+        "subsistema": "TRSV"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 3,
     "fields": {
-      "id_menu": 3,
-      "nombre": "Procesos",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":3,
-      "subsistema":"TRSV"
+        "nombre": "Procesos",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 3,
+        "subsistema": "TRSV"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 4,
     "fields": {
-      "id_menu": 4,
-      "nombre": "Configuración y Datos Básicos",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":4,
-      "subsistema":"TRSV"
+        "nombre": "Configuración y Datos Básicos",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 4,
+        "subsistema": "TRSV"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 5,
     "fields": {
-      "id_menu": 5,
-      "nombre": "Datos Básicos",
-      "nivel_jerarquico":2,
-      "id_menu_padre":4,
-      "orden_por_padre":1,
-      "subsistema":"TRSV"
+        "nombre": "Datos Básicos",
+        "nivel_jerarquico": 2,
+        "id_menu_padre": 4,
+        "orden_por_padre": 1,
+        "subsistema": "TRSV"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 6,
     "fields": {
-      "id_menu": 6,
-      "nombre": "Perfil (Usuario Interno)",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":1,
-      "subsistema":"SEGU"
+        "nombre": "Perfil (Usuario Interno)",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 1,
+        "subsistema": "SEGU"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 7,
     "fields": {
-      "id_menu": 7,
-      "nombre": "Perfil (Usuario Externo)",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":2,
-      "subsistema":"SEGU"
+        "nombre": "Perfil (Usuario Externo)",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 2,
+        "subsistema": "SEGU"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 8,
     "fields": {
-      "id_menu": 8,
-      "nombre": "Seguridad",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":3,
-      "subsistema":"SEGU"
+        "nombre": "Seguridad",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 3,
+        "subsistema": "SEGU"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 9,
     "fields": {
-      "id_menu": 9,
-      "nombre": "Auditoría",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":4,
-      "subsistema":"SEGU"
+        "nombre": "Auditoría",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 4,
+        "subsistema": "SEGU"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 10,
     "fields": {
-      "id_menu": 10,
-      "nombre": "Ventanilla Única",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":1,
-      "subsistema":"GEST"
+        "nombre": "Ventanilla Única",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 1,
+        "subsistema": "GEST"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 11,
     "fields": {
-      "id_menu": 11,
-      "nombre": "Gestión Documental",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":2,
-      "subsistema":"GEST"
+        "nombre": "Gestión Documental",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 2,
+        "subsistema": "GEST"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 12,
     "fields": {
-      "id_menu": 12,
-      "nombre": "Instrumentos Archivísticos",
-      "nivel_jerarquico":1,
-      "id_menu_padre":11,
-      "orden_por_padre":1,
-      "subsistema":"GEST"
+        "nombre": "Instrumentos Archivísticos",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": 11,
+        "orden_por_padre": 1,
+        "subsistema": "GEST"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 13,
     "fields": {
-      "id_menu": 13,
-      "nombre": "Procesos",
-      "nivel_jerarquico":1,
-      "id_menu_padre":11,
-      "orden_por_padre":2,
-      "subsistema":"GEST"
+        "nombre": "Procesos",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": 11,
+        "orden_por_padre": 2,
+        "subsistema": "GEST"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 14,
     "fields": {
-      "id_menu": 14,
-      "nombre": "Notificaciones y Alertas",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":3,
-      "subsistema":"GEST"
+        "nombre": "Notificaciones y Alertas",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 3,
+        "subsistema": "GEST"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 15,
     "fields": {
-      "id_menu": 15,
-      "nombre": "Reportes, Indicadores y Analítica",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":4,
-      "subsistema":"GEST"
+        "nombre": "Reportes, Indicadores y Analítica",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 4,
+        "subsistema": "GEST"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 16,
     "fields": {
-      "id_menu": 16,
-      "nombre": "Reportes",
-      "nivel_jerarquico":1,
-      "id_menu_padre":15,
-      "orden_por_padre":1,
-      "subsistema":"GEST"
+        "nombre": "Reportes",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": 15,
+        "orden_por_padre": 1,
+        "subsistema": "GEST"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 17,
     "fields": {
-      "id_menu": 17,
-      "nombre": "Indicadores",
-      "nivel_jerarquico":1,
-      "id_menu_padre":15,
-      "orden_por_padre":2,
-      "subsistema":"GEST"
+        "nombre": "Indicadores",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": 15,
+        "orden_por_padre": 2,
+        "subsistema": "GEST"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 18,
     "fields": {
-      "id_menu": 18,
-      "nombre": "Analítica",
-      "nivel_jerarquico":1,
-      "id_menu_padre":15,
-      "orden_por_padre":3,
-      "subsistema":"GEST"
+        "nombre": "Analítica",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": 15,
+        "orden_por_padre": 3,
+        "subsistema": "GEST"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 19,
     "fields": {
-      "id_menu": 19,
-      "nombre": "Configuración y Datos Básicos",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":5,
-      "subsistema":"GEST"
+        "nombre": "Configuración y Datos Básicos",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 5,
+        "subsistema": "GEST"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 20,
     "fields": {
-      "id_menu": 20,
-      "nombre": "Gestor de Viveros",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":1,
-      "subsistema":"CONS"
+        "nombre": "Gestor de Viveros",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 1,
+        "subsistema": "CONS"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 21,
     "fields": {
-      "id_menu": 21,
-      "nombre": "Material Vegetal",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":2,
-      "subsistema":"CONS"
+        "nombre": "Material Vegetal",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 2,
+        "subsistema": "CONS"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 22,
     "fields": {
-      "id_menu": 22,
-      "nombre": "Producción",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":3,
-      "subsistema":"CONS"
+        "nombre": "Producción",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 3,
+        "subsistema": "CONS"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 23,
     "fields": {
-      "id_menu": 23,
-      "nombre": "Solicitudes de Material",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":4,
-      "subsistema":"CONS"
+        "nombre": "Solicitudes de Material",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 4,
+        "subsistema": "CONS"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 24,
     "fields": {
-      "id_menu": 24,
-      "nombre": "Distribución",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":5,
-      "subsistema":"CONS"
+        "nombre": "Distribución",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 5,
+        "subsistema": "CONS"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 25,
     "fields": {
-      "id_menu": 25,
-      "nombre": "Notificaciones y Alertas",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":6,
-      "subsistema":"CONS"
+        "nombre": "Notificaciones y Alertas",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 6,
+        "subsistema": "CONS"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 26,
     "fields": {
-      "id_menu": 26,
-      "nombre": "Reportes, Indicadores y Analítica",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":7,
-      "subsistema":"CONS"
+        "nombre": "Reportes, Indicadores y Analítica",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 7,
+        "subsistema": "CONS"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 27,
     "fields": {
-      "id_menu": 27,
-      "nombre": "Reportes",
-      "nivel_jerarquico":1,
-      "id_menu_padre":26,
-      "orden_por_padre":1,
-      "subsistema":"CONS"
+        "nombre": "Reportes",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": 26,
+        "orden_por_padre": 1,
+        "subsistema": "CONS"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 28,
     "fields": {
-      "id_menu": 28,
-      "nombre": "Indicadores",
-      "nivel_jerarquico":1,
-      "id_menu_padre":26,
-      "orden_por_padre":2,
-      "subsistema":"CONS"
+        "nombre": "Indicadores",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": 26,
+        "orden_por_padre": 2,
+        "subsistema": "CONS"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 29,
     "fields": {
-      "id_menu": 29,
-      "nombre": "Analítica",
-      "nivel_jerarquico":1,
-      "id_menu_padre":26,
-      "orden_por_padre":3,
-      "subsistema":"CONS"
+        "nombre": "Analítica",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": 26,
+        "orden_por_padre": 3,
+        "subsistema": "CONS"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 30,
     "fields": {
-      "id_menu": 30,
-      "nombre": "Configuración y Datos Básicos",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":8,
-      "subsistema":"CONS"
+        "nombre": "Configuración y Datos Básicos",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 8,
+        "subsistema": "CONS"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 31,
     "fields": {
-      "id_menu": 31,
-      "nombre": "Gestión de Inventario",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":1,
-      "subsistema":"ALMA"
+        "nombre": "Gestión de Inventario",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 1,
+        "subsistema": "ALMA"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 32,
     "fields": {
-      "id_menu": 32,
-      "nombre": "Movimientos",
-      "nivel_jerarquico":1,
-      "id_menu_padre":31,
-      "orden_por_padre":1,
-      "subsistema":"ALMA"
+        "nombre": "Movimientos",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": 31,
+        "orden_por_padre": 1,
+        "subsistema": "ALMA"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 33,
     "fields": {
-      "id_menu": 33,
-      "nombre": "Respuesta a Solicitudes",
-      "nivel_jerarquico":1,
-      "id_menu_padre":32,
-      "orden_por_padre":1,
-      "subsistema":"ALMA"
+        "nombre": "Respuesta a Solicitudes",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 1,
+        "subsistema": "ALMA"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 34,
     "fields": {
-      "id_menu": 34,
-      "nombre": "Hojas de Vida de Activos Fijos",
-      "nivel_jerarquico":1,
-      "id_menu_padre":31,
-      "orden_por_padre":2,
-      "subsistema":"ALMA"
+        "nombre": "Hojas de Vida de Activos Fijos",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 2,
+        "subsistema": "ALMA"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 35,
     "fields": {
-      "id_menu": 35,
-      "nombre": "Mantenimiento de Equipos",
-      "nivel_jerarquico":1,
-      "id_menu_padre":31,
-      "orden_por_padre":3,
-      "subsistema":"ALMA"
+        "nombre": "Mantenimiento de Equipos",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 3,
+        "subsistema": "ALMA"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 36,
     "fields": {
-      "id_menu": 36,
-      "nombre": "Entrada de Almacén",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":2,
-      "subsistema":"ALMA"
+        "nombre": "Entrada de Almacén",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 2,
+        "subsistema": "ALMA"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 37,
     "fields": {
-      "id_menu": 37,
-      "nombre": "Registro de Solicitudes de Almacén",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":3,
-      "subsistema":"ALMA"
+        "nombre": "Registro de Solicitudes de Almacén",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 3,
+        "subsistema": "ALMA"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 38,
     "fields": {
-      "id_menu": 38,
-      "nombre": "Notificaciones y Alertas",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":4,
-      "subsistema":"ALMA"
+        "nombre": "Notificaciones y Alertas",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 4,
+        "subsistema": "ALMA"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 39,
     "fields": {
-      "id_menu": 39,
-      "nombre": "Tableros de Control",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":5,
-      "subsistema":"ALMA"
+        "nombre": "Tableros de Control",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 5,
+        "subsistema": "ALMA"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 40,
     "fields": {
-      "id_menu": 40,
-      "nombre": "Reportes, Indicadores y Analítica",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":6,
-      "subsistema":"ALMA"
+        "nombre": "Reportes, Indicadores y Analítica",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 6,
+        "subsistema": "ALMA"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 41,
     "fields": {
-      "id_menu": 41,
-      "nombre": "Reportes",
-      "nivel_jerarquico":1,
-      "id_menu_padre":40,
-      "orden_por_padre":1,
-      "subsistema":"ALMA"
+        "nombre": "Reportes",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": 40,
+        "orden_por_padre": 1,
+        "subsistema": "ALMA"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 42,
     "fields": {
-      "id_menu": 42,
-      "nombre": "Indicadores",
-      "nivel_jerarquico":1,
-      "id_menu_padre":40,
-      "orden_por_padre":2,
-      "subsistema":"ALMA"
+        "nombre": "Indicadores",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": 40,
+        "orden_por_padre": 2,
+        "subsistema": "ALMA"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 43,
     "fields": {
-      "id_menu": 43,
-      "nombre": "Analítica",
-      "nivel_jerarquico":1,
-      "id_menu_padre":40,
-      "orden_por_padre":3,
-      "subsistema":"ALMA"
+        "nombre": "Analítica",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": 40,
+        "orden_por_padre": 3,
+        "subsistema": "ALMA"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 44,
     "fields": {
-      "id_menu": 44,
-      "nombre": "Configuración y Datos Básicos",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":7,
-      "subsistema":"ALMA"
+        "nombre": "Configuración y Datos Básicos",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 7,
+        "subsistema": "ALMA"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 45,
     "fields": {
-      "id_menu": 45,
-      "nombre": "Datos Básicos",
-      "nivel_jerarquico":1,
-      "id_menu_padre":44,
-      "orden_por_padre":1,
-      "subsistema":"ALMA"
+        "nombre": "Datos Básicos",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": 44,
+        "orden_por_padre": 1,
+        "subsistema": "ALMA"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 46,
     "fields": {
-      "id_menu": 46,
-      "nombre": "Gestor de Requerimientos",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":1,
-      "subsistema":"RECU"
+        "nombre": "Gestor de Requerimientos",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 1,
+        "subsistema": "RECU"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 47,
     "fields": {
-      "id_menu": 47,
-      "nombre": "Aguas Superficiales",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":2,
-      "subsistema":"RECU"
+        "nombre": "Aguas Superficiales",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 2,
+        "subsistema": "RECU"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 48,
     "fields": {
-      "id_menu": 48,
-      "nombre": "Aguas Subterraneas",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":3,
-      "subsistema":"RECU"
+        "nombre": "Aguas Subterraneas",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 3,
+        "subsistema": "RECU"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 49,
     "fields": {
-      "id_menu": 49,
-      "nombre": "Estaciones Meteorológicas",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":4,
-      "subsistema":"RECU"
+        "nombre": "Estaciones Meteorológicas",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 4,
+        "subsistema": "RECU"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 50,
     "fields": {
-      "id_menu": 50,
-      "nombre": "Calidad del Agua",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":5,
-      "subsistema":"RECU"
+        "nombre": "Calidad del Agua",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 5,
+        "subsistema": "RECU"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 51,
     "fields": {
-      "id_menu": 51,
-      "nombre": "Notificaciones y Alertas",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":6,
-      "subsistema":"RECU"
+        "nombre": "Notificaciones y Alertas",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 6,
+        "subsistema": "RECU"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 52,
     "fields": {
-      "id_menu": 52,
-      "nombre": "Reportes, Indicadores y Analítica",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":7,
-      "subsistema":"RECU"
+        "nombre": "Reportes, Indicadores y Analítica",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 7,
+        "subsistema": "RECU"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 53,
     "fields": {
-      "id_menu": 53,
-      "nombre": "Reportes",
-      "nivel_jerarquico":2,
-      "id_menu_padre":52,
-      "orden_por_padre":1,
-      "subsistema":"RECU"
+        "nombre": "Reportes",
+        "nivel_jerarquico": 2,
+        "id_menu_padre": 52,
+        "orden_por_padre": 1,
+        "subsistema": "RECU"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 54,
     "fields": {
-      "id_menu": 54,
-      "nombre": "Estaciones",
-      "nivel_jerarquico":3,
-      "id_menu_padre":53,
-      "orden_por_padre":1,
-      "subsistema":"RECU"
+        "nombre": "Estaciones",
+        "nivel_jerarquico": 3,
+        "id_menu_padre": 53,
+        "orden_por_padre": 1,
+        "subsistema": "RECU"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 55,
     "fields": {
-      "id_menu": 55,
-      "nombre": "Indicadores",
-      "nivel_jerarquico":2,
-      "id_menu_padre":52,
-      "orden_por_padre":2,
-      "subsistema":"RECU"
+        "nombre": "Indicadores",
+        "nivel_jerarquico": 2,
+        "id_menu_padre": 52,
+        "orden_por_padre": 2,
+        "subsistema": "RECU"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 56,
     "fields": {
-      "id_menu": 56,
-      "nombre": "Analítica",
-      "nivel_jerarquico":2,
-      "id_menu_padre":52,
-      "orden_por_padre":3,
-      "subsistema":"RECU"
+        "nombre": "Analítica",
+        "nivel_jerarquico": 2,
+        "id_menu_padre": 52,
+        "orden_por_padre": 3,
+        "subsistema": "RECU"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 57,
     "fields": {
-      "id_menu": 57,
-      "nombre": "Configuración y Datos Básicos",
-      "nivel_jerarquico":1,
-      "id_menu_padre":null,
-      "orden_por_padre":8,
-      "subsistema":"RECU"
+        "nombre": "Configuración y Datos Básicos",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 8,
+        "subsistema": "RECU"
     }
-  },
-  {
-    "model": "seguridad.EstructuraMenus",
+},
+{
+    "model": "seguridad.estructuramenus",
     "pk": 58,
     "fields": {
-      "id_menu": 58,
-      "nombre": "Estaciones Meteorológicas",
-      "nivel_jerarquico":2,
-      "id_menu_padre":57,
-      "orden_por_padre":1,
-      "subsistema":"RECU"
+        "nombre": "Estaciones Meteorológicas",
+        "nivel_jerarquico": 2,
+        "id_menu_padre": 57,
+        "orden_por_padre": 1,
+        "subsistema": "RECU"
     }
-  }
+}
 ]
