@@ -15,8 +15,8 @@ services: # the different images that will be running as containers
       - POSTGRES_DB=bia
     ports:
       - 5435:5432
-    # networks:
-    #   - db_network
+    networks:
+      - db_network
     restart: "on-failure"
 
   db_estaciones: # service name
@@ -32,14 +32,14 @@ services: # the different images that will be running as containers
       - POSTGRES_DB=bia_estaciones
     ports:
       - 5436:5432
-    # networks:
-    #   - db_network
+    networks:
+      - db_network
     restart: "on-failure"
 
 volumes:
   postgres_data:
   postgres_data_estaciones:
 
-# networks:
-#   db_network:
-#     driver: bridge
+networks:
+  db_network:
+    driver: bridge
