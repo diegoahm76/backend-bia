@@ -10,6 +10,6 @@ urlpatterns = [
     path('delete/<int:id_rol>/', views.DeleteRol.as_view(), name='rol-delete'),  
     path('delete_rol_de_usuario/<int:pk>/', views.DeleteUserRol.as_view(), name='rol-delete'),  
     path('detail_roles_usuario/', views.GetRolesByUser.as_view(), name='roles-por-usuario-ver'),
-    path('detail_usuarios_rol/', views.GetUsersByRol.as_view(), name='usuarios-por-rol-ver'),
+    path('detail_usuarios_rol/<str:id_rol>/', views.GetUsersByRol.as_view(), name='usuarios-por-rol-ver'),
     path('get-roles-by-id-usuario/<str:id_usuario>/', views.GetRolesByIdPersona.as_view(), name='get-roles-by-id-usuario')
 ]

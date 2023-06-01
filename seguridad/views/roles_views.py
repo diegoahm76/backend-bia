@@ -26,22 +26,16 @@ class GetRolesByUser(ListAPIView):
             queryset = queryset.filter(id_usuario = query)
             return queryset
         except:
-            return [] 
+            return []
+        
 class GetUsersByRol(ListAPIView):
     serializer_class = UsuarioRolesLookSerializers
-    def get_queryset(self):
-        try:
-            queryset = UsuariosRol.objects.all()
-            query = self.request.query_params.get('keyword')
-            if query == None:
-                query = ''
-            queryset = queryset.filter(
-                Q(id_rol = query)
-            )
-            return queryset
-        except:
-            return []
-
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_rol):
+        queryset = UsuariosRol.objects.filter(id_rol=id_rol)
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success':True, 'detail':'Se encontraron los siguientes usuarios por el rol elegido', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
 class GetRolById(RetrieveAPIView):
