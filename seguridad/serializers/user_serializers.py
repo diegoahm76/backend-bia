@@ -120,10 +120,26 @@ class UserPutAdminSerializer(serializers.ModelSerializer):
         fields = ['is_active', 'is_blocked', 'tipo_usuario', 'profile_img', 'justificacion']
 
 class UsuarioRolesLookSerializers(serializers.ModelSerializer):
-    id_usuario = UserSerializer(read_only=True)
+    nombre_usuario = serializers.ReadOnlyField(source='id_usuario.nombre_de_usuario', default=None)
+    id_persona = serializers.ReadOnlyField(source='id_usuario.persona.id_persona', default=None)
+    nombre_persona = serializers.SerializerMethodField()
+    
+    def get_nombre_persona(self, obj):
+        nombre_persona = None
+        if obj.id_usuario:
+            if obj.id_usuario.persona:
+                if obj.id_usuario.persona.tipo_persona == 'N':
+                    nombre_list = [obj.id_usuario.persona.primer_nombre, obj.id_usuario.persona.segundo_nombre,
+                                   obj.id_usuario.persona.primer_apellido, obj.id_usuario.persona.segundo_apellido]
+                    nombre_persona = ' '.join(item for item in nombre_list if item is not None)
+                    nombre_persona = nombre_persona if nombre_persona != "" else None
+                else:
+                    nombre_persona = obj.id_usuario.persona.razon_social
+        return nombre_persona
+    
     class Meta:
         model=UsuariosRol
-        fields='__all__'
+        fields=['id_rol', 'id_usuario', 'nombre_usuario', 'id_persona', 'nombre_persona']
         
 class RolesSerializers(serializers.ModelSerializer):
     nombre_rol = serializers.ReadOnlyField(source='id_rol.nombre_rol', default=None)
