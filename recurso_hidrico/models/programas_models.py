@@ -72,7 +72,7 @@ class AvancesProyecto(models.Model):
 
 class EvidenciasAvance(models.Model):
     id_evidencia_avance = models.AutoField(primary_key=True,editable=False,db_column="T604IdEvidencia_Avance_Py_Pg_PORH")
-    id_avance = models.ForeignKey(ProgramasPORH,on_delete=models.CASCADE,db_column="T603Id_Avance_Py_Pg_PORH")
+    id_avance = models.ForeignKey(AvancesProyecto,on_delete=models.CASCADE,db_column="T603Id_Avance_Py_Pg_PORH")
     nombre_archivo = models.CharField(max_length=255,db_column="T603nombreArchivo")
     id_archivo = models.IntegerField(db_column="T603Id_Archivo")
     
@@ -83,3 +83,4 @@ class EvidenciasAvance(models.Model):
         db_table = 'T604Evidencias_Avance_Py_Pg_PORH'
         verbose_name = 'Evidencias_Avance_Py_Pg_PORH'
         verbose_name_plural = 'Evidencias_Avance_Py_Pg_PORHS'
+        unique_together = ['id_avance','nombre_archivo']

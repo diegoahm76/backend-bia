@@ -73,6 +73,7 @@ class Cartera(models.Model):
     codigo_contable = models.ForeignKey(ConceptoContable, on_delete=models.CASCADE, db_column='T417codigo_contable')
     fecha_facturacion = models.DateField(db_column='T417fecha_facturacion')
     numero_factura = models.CharField(max_length=255, db_column='T417numero_factura')
+    monto_inicial = models.DecimalField(max_digits=30, decimal_places=2, db_column='T417monto_inicial')
 
     def calcular_valor_total(self):
         return self.valor_sancion + self.valor_intereses

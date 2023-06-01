@@ -15,4 +15,8 @@ urlpatterns = [
     path('eliminar/actividad/<str:pk>/',views.EliminarActividades.as_view(),name='eliminar-actividad'),
     path('registro/avance/proyecto/',views.RegistroAvance.as_view(),name='registro-avance-proyecto'),
     path('get/avanzada/avances/',views.BusquedaAvanzadaAvances.as_view(),name='get-avanzada-avances'),
+    path('registro/avance/proyecto/<str:id_proyecto>/',views.RegistroAvance.as_view(),name='registro-avance-proyecto'),
+    path('crear/evidencia/avance/proyecto/<str:id_evidencia>/',views.RegistroEvidencia.as_view(),name='crear-evidencia-avance-proyecto'),
+    path('actualizar/evidencia/avance/proyecto/<str:pk>/',views.ActualizarAvanceEvidencia.as_view(),name='crear-evidencia-avance-proyecto'),
+
 ]
