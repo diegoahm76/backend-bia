@@ -47,9 +47,11 @@ class FiltroBienSolicitableVivero(generics.ListAPIView):
         for key,value in request.query_params.items():
             if key in ['nombre','codigo_bien','nombre_cientifico','cod_tipo_elemento_vivero']:
                 if key != 'cod_tipo_elemento_vivero':
-                    filter[key+'__icontains']=value
-                else: 
-                    filter[key]=value
+                    if value != '':
+                        filter[key+'__icontains']=value
+                else:
+                    if value != '':
+                        filter[key]=value
         nodos=[2,3,4,5]
         filter['nivel_jerarquico__in'] = nodos
         filter['solicitable_vivero'] = True
