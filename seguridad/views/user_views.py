@@ -81,6 +81,7 @@ class UpdateUserProfile(generics.UpdateAPIView):
                 'id_usuario': request.user.id_usuario,
                 'id_modulo': 2,
                 'cod_permiso': 'AC',
+
                 'subsistema': 'SEGU',
                 'dirip': dirip,
                 'descripcion': descripcion,
