@@ -495,6 +495,28 @@ class GetSolicitudesPendentesPorAprobar(generics.ListAPIView):
         serializer = self.serializer_class(solicitudes_por_aprobar, many=True)
         return Response({'success':True, 'detail':serializer.data, },status=status.HTTP_200_OK)
 
+class GetSolicitudesRechazadas(generics.ListAPIView):
+# ESTA FUNCIONALIDAD PERMITE LISTAR LAS SOLICITUDES PENDIENTES DE APROBACION POR EL SUPERVISOR DESIGNADO
+    serializer_class = CrearSolicitudesPostSerializer
+    queryset=SolicitudesConsumibles.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        persona_responsable = request.user.persona
+        
+        fecha_inicio = request.query_params.get('fecha_inicio', '')
+        fecha_fin = request.query_params.get('fecha_fin', '') 
+        
+        solicitudes_rechazadas = self.queryset.filter(
+            id_funcionario_responsable_unidad=persona_responsable.id_persona,
+            revisada_responsable = False,
+            estado_aprobacion_responsable = 'R',
+            fecha_rechazo_almacen__range=[fecha_inicio, fecha_fin]
+        )
+        
+        serializer = self.serializer_class(solicitudes_rechazadas, many=True)
+        return Response({'success':True, 'detail':'Las solicitudes rechazadas por el usuario logueado son', 'data':serializer.data, },status=status.HTTP_200_OK)
+
 class GetSolicitudesPendentesPorAprobarDocumento(generics.ListAPIView):
 # ESTA FUNCIONALIDAD PERMITE LISTAR LAS SOLICITUDES PENDIENTES DE APROBACION POR EL SUPERVISOR DESIGNADO
     serializer_class = CrearSolicitudesPostSerializer
