@@ -444,18 +444,21 @@ class GetCuarentenasByLoteEtapa(generics.ListAPIView):
 
     def get(self, request):
         filter = {}
+        
         for key, value in request.query_params.items():
             if key in ['codigo_bien','agno_lote', 'cod_etapa_lote', 'nombre']:
                 if key == 'codigo_bien' or key == 'nombre':
-                    filter[key + '__icontains'] = value
+                    if value != '':
+                        filter['id_bien__' + key + '__icontains'] = value
                 else:
-                    filter[key] = value
-        cuarentenas = self.queryset.all().filter().filter(**filter)
+                    if value != '':
+                        filter[key] = value
+                        
+        cuarentenas = self.queryset.all().filter(**filter)
+        
         if cuarentenas: 
             serializer = self.serializer_class(cuarentenas, many=True, context = {'request':request} )
             data = serializer.data
         else:
             data = []
         return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': data}, status=status.HTTP_200_OK)
-
-        

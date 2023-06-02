@@ -13,8 +13,8 @@ urlpatterns = [
     path('get-listar-solicitudes/', views.GetSolicitudesView.as_view(), name='get-listar-solicitudes'),
     path('get-listar-solicitudes-by-id/<str:id_solicitud>/', views.GetItemsSolicitudView.as_view(), name='get-listar-solicitudes-id'),
     path('update-solicitud/<str:id_solicitud>/', views.UpdateSolicitudesView.as_view(), name='update-solicitud'),
-    path('update-items-solicitud/<str:id_solicitud>/', views.UpdateItemsSolicitudView.as_view(), name='update-items-solicitud'),
-    path('delete-items-solicitud/<str:id_solicitud>/', views.DeleteItemsSolicitudView.as_view(), name='delete-items-solicitud'),
+    # path('update-items-solicitud/<str:id_solicitud>/', views.UpdateItemsSolicitudView.as_view(), name='update-items-solicitud'),
+    # path('delete-items-solicitud/<str:id_solicitud>/', views.DeleteItemsSolicitudView.as_view(), name='delete-items-solicitud'),
     path('anular-solicitud/<str:solicitudsita>/', views.AnulacionSolicitudesView.as_view(), name='anulacion-solicitud'),
 
     #Cerrar Solicitud Por No Disponibilidad

@@ -1,5 +1,7 @@
 from django.db import models
 
+from seguridad.models import Personas
+
 
 class ProgramasPORH(models.Model):
     id_programa = models.AutoField(primary_key=True,editable=False,db_column="T600IdPrograma_PORH")
@@ -50,5 +52,35 @@ class ActividadesProyectos(models.Model):
         verbose_name = 'Actividades_Py_Pg_PORH'
         verbose_name_plural = 'Actividades_Py_Pg_PORHS'
         unique_together = ['id_proyecto','nombre']
+        
+class AvancesProyecto(models.Model):
+    id_avance = models.AutoField(primary_key=True,editable=False,db_column="T603IdAvance_Py_Pg_PORH")
+    id_proyecto = models.ForeignKey(ProyectosPORH, on_delete=models.CASCADE,db_column="T603IdProyecto_Pg_PORH")
+    fecha_reporte = models.DateField(db_column="T603fechaReporte")
+    accion = models.CharField(max_length=255,db_column="T603accion")
+    descripcion = models.CharField(max_length=255,db_column="T603descripcion")
+    id_persona_registra = models.ForeignKey(Personas,on_delete=models.CASCADE,db_column="T603IdPersonaRegistra")
+    fecha_registro = models.DateField(auto_now_add=True,db_column="T603fechaRegistro")
+    
+    def __str__(self):
+        return str(self.id_avance)
+    
+    class Meta:
+        db_table = 'T603Avances_Py_Pg_PORH'
+        verbose_name = 'Avances_Py_Pg_PORH'
+        verbose_name_plural = 'Avances_Py_Pg_PORHS'
 
-# Create your models here.
+class EvidenciasAvance(models.Model):
+    id_evidencia_avance = models.AutoField(primary_key=True,editable=False,db_column="T604IdEvidencia_Avance_Py_Pg_PORH")
+    id_avance = models.ForeignKey(AvancesProyecto,on_delete=models.CASCADE,db_column="T603Id_Avance_Py_Pg_PORH")
+    nombre_archivo = models.CharField(max_length=255,db_column="T603nombreArchivo")
+    id_archivo = models.IntegerField(db_column="T603Id_Archivo")
+    
+    def __str__(self):
+        return str(self.id_evidencia_avance)
+    
+    class Meta:
+        db_table = 'T604Evidencias_Avance_Py_Pg_PORH'
+        verbose_name = 'Evidencias_Avance_Py_Pg_PORH'
+        verbose_name_plural = 'Evidencias_Avance_Py_Pg_PORHS'
+        unique_together = ['id_avance','nombre_archivo']

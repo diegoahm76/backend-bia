@@ -58,27 +58,27 @@ class MyTokenObtainPairView(TokenObtainPairView):
 
 class UpdateUserProfile(generics.UpdateAPIView):
     serializer_class = UserPutSerializer
-    queryset = User.objects.all()
     permission_classes = [IsAuthenticated]
 
-    def patch(self, request):
-        user_loggedin = self.request.user.id_usuario
-        user = User.objects.filter(id_usuario = user_loggedin).first()
-        previous_user = copy.copy(user)
-        
-        if user:
-            user_serializer = self.serializer_class(user, data=request.data)
-            user_serializer.is_valid(raise_exception=True)
-            user_serializer.save()
+    def get_object(self):
+        return self.request.user
+
+    def patch(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        if 'password' not in request.data:
+            serializer.validated_data.pop('password', None)
+            previous_user = copy.copy(instance)
 
             # AUDITORIA AL ACTUALIZAR USUARIO PROPIO
-
             dirip = Util.get_client_ip(request)
-            descripcion = {'NombreUsuario': user.nombre_de_usuario}
-            valores_actualizados = {'current': user, 'previous': previous_user}
+            descripcion = {'NombreUsuario': instance.nombre_de_usuario}
+            valores_actualizados = {'current': instance, 'previous': previous_user}
 
             auditoria_data = {
-                'id_usuario': user_loggedin,
+                'id_usuario': request.user.id_usuario,
                 'id_modulo': 2,
                 'cod_permiso': 'AC',
                 'subsistema': 'SEGU',
@@ -89,7 +89,8 @@ class UpdateUserProfile(generics.UpdateAPIView):
 
             Util.save_auditoria(auditoria_data)
 
-        return Response({'success':True,'data': user_serializer.data}, status=status.HTTP_200_OK)
+        self.perform_update(serializer)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class UpdateUser(generics.RetrieveUpdateAPIView):
@@ -864,12 +865,13 @@ class LoginApiView(generics.CreateAPIView):
                                 )
                                 
 
-                                raise PermissionDenied('Su usuario ha sido bloqueado')
+                                # raise PermissionDenied('Su usuario ha sido bloqueado')
+                                return Response({'success':False, 'detail':'Su usuario ha sido bloqueado'}, status=status.HTTP_403_FORBIDDEN)
                             serializer = LoginErroneoPostSerializers(login_error, many=False)
-                            try:
-                                raise ValidationError('La contraseña es invalida')
-                            except ValidationError as e:
-                                return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
+                            # try:
+                            #     raise ValidationError('La contraseña es invalida')
+                            # except ValidationError as e:
+                            return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
                         else:
                             if user.is_blocked:
                                 raise PermissionDenied('Su usuario está bloqueado, debe comunicarse con el administrador')
@@ -877,10 +879,10 @@ class LoginApiView(generics.CreateAPIView):
                                 login_error.contador = 1
                                 login_error.save()
                                 serializer = LoginErroneoPostSerializers(login_error, many=False)
-                                try:
-                                    raise ValidationError('La contraseña es invalida')
-                                except ValidationError as e:
-                                    return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
+                                # try:
+                                #     raise ValidationError('La contraseña es invalida')
+                                # except ValidationError as e:
+                                return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
                     else:
                         if user.is_blocked:
                             raise PermissionDenied('Su usuario está bloqueado, debe comunicarse con el administrador')
@@ -893,10 +895,10 @@ class LoginApiView(generics.CreateAPIView):
                             )
                         login_error.restantes = 3 - login_error.contador
                         serializer = LoginErroneoPostSerializers(login_error, many=False)
-                        try:
-                            raise ValidationError('La contraseña es invalida')
-                        except ValidationError as e:
-                            return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
+                        # try:
+                        #     raise ValidationError('La contraseña es invalida')
+                        # except ValidationError as e:
+                        return Response({'success':False, 'detail':'La contraseña es invalida', 'login_erroneo': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 try:
                     raise PermissionDenied('Usuario no activado')
@@ -908,8 +910,7 @@ class LoginApiView(generics.CreateAPIView):
                 dirip = str(ip),
                 dispositivo_conexion = device
             )
-            raise ValidationError('No existe el nombre de usuario ingresado')
-
+            return Response({'success':False, 'detail':'No existe el nombre de usuario ingresado'}, status=status.HTTP_400_BAD_REQUEST)
 
 class RequestPasswordResetEmail(generics.CreateAPIView):
     serializer_class = ResetPasswordEmailRequestSerializer

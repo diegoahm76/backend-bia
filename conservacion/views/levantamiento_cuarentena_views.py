@@ -91,11 +91,14 @@ class GetCuarentenaMaterialVegetalByLupa(generics.ListAPIView):
         for key,value in request.query_params.items():
             if key in ['codigo_bien','nombre','cod_etapa_lote','agno_lote']:
                 if key == 'codigo_bien':
-                    filtro["id_bien__"+key+"__icontains"] = value
+                    if value != '':
+                        filtro["id_bien__"+key+"__icontains"] = value
                 elif key == 'nombre':
-                    filtro["id_bien__"+key+"__icontains"] = value
-                else: 
-                    filtro[key] = value
+                    if value != '':
+                        filtro["id_bien__"+key+"__icontains"] = value
+                else:
+                    if value != '':
+                        filtro[key] = value
                     
         filtro['cuarentena_anulada'] = False
         filtro['cuarentena_abierta'] = True
@@ -115,7 +118,7 @@ class GetCuarentenaMaterialVegetalByLupa(generics.ListAPIView):
 
         serializador = self.serializer_class(material_vegetal,many=True)
         
-        return Response({'success':True,'detail':'se encontraron elementos','data':serializador.data},status=status.HTTP_200_OK)
+        return Response({'success':True,'detail':'Se encontraron elementos','data':serializador.data},status=status.HTTP_200_OK)
     
 class GetCuarentenaMaterialVegetalById(generics.ListAPIView):
     serializer_class = CuarentenaMaterialVegetalSerializer
