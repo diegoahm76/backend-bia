@@ -83,13 +83,10 @@ class GetLotesEtapaView(generics.ListAPIView):
 
 
             if etapa_lote.cod_etapa_lote == 'G':
-                etapa_lote.cod_etapa_lote = 'Germinación'
                 etapa_lote.saldo_disponible = 100 - porc_cuarentena_lote_germinacion
             if etapa_lote.cod_etapa_lote == 'P':
-                etapa_lote.cod_etapa_lote = 'Producción'
                 etapa_lote.saldo_disponible = cantidad_entrante - cantidad_bajas - cantidad_traslados_lote_produccion_distribucion - cantidad_salidas - cantidad_lote_cuarentena
             if etapa_lote.cod_etapa_lote == 'D':
-                etapa_lote.cod_etapa_lote = 'Distribución'
                 etapa_lote.saldo_disponible = cantidad_entrante - cantidad_bajas - cantidad_salidas - cantidad_lote_cuarentena
 
         serializer = self.serializer_class(etapas_lotes_in_vivero, many=True)
@@ -113,9 +110,11 @@ class GetLotesEtapaLupaView(generics.ListAPIView):
         for key, value in request.query_params.items():
             if key in ['codigo_bien', 'nombre', 'agno_lote', 'cod_etapa_lote']:
                 if key == 'codigo_bien' or key == 'nombre':
-                    filter['id_bien__' + key + '__icontains'] = value
+                    if value != '':
+                        filter['id_bien__' + key + '__icontains'] = value
                 else:
-                    filter[key] = value
+                    if value != '':
+                        filter[key] = value
 
         #VALIDACIÓN QUE EL CODIGO ENVIADO EXISTA EN ALGÚN BIEN EN INVENTARIO VIVEROS
         etapas_lotes_in_vivero = InventarioViveros.objects.filter(id_vivero=id_vivero, id_siembra_lote_germinacion=None).exclude(~Q(id_bien__cod_tipo_elemento_vivero='MV')).exclude(id_bien__cod_tipo_elemento_vivero='MV', id_bien__es_semilla_vivero=True).filter(**filter)
@@ -133,13 +132,10 @@ class GetLotesEtapaLupaView(generics.ListAPIView):
 
 
             if etapa_lote.cod_etapa_lote == 'G':
-                etapa_lote.cod_etapa_lote = 'Germinación'
                 etapa_lote.saldo_disponible = 100 - porc_cuarentena_lote_germinacion
             if etapa_lote.cod_etapa_lote == 'P':
-                etapa_lote.cod_etapa_lote = 'Producción'
                 etapa_lote.saldo_disponible = cantidad_entrante - cantidad_bajas - cantidad_traslados_lote_produccion_distribucion - cantidad_salidas - cantidad_lote_cuarentena
             if etapa_lote.cod_etapa_lote == 'D':
-                etapa_lote.cod_etapa_lote = 'Distribución'
                 etapa_lote.saldo_disponible = cantidad_entrante - cantidad_bajas - cantidad_salidas - cantidad_lote_cuarentena
 
 
@@ -448,18 +444,21 @@ class GetCuarentenasByLoteEtapa(generics.ListAPIView):
 
     def get(self, request):
         filter = {}
+        
         for key, value in request.query_params.items():
             if key in ['codigo_bien','agno_lote', 'cod_etapa_lote', 'nombre']:
                 if key == 'codigo_bien' or key == 'nombre':
-                    filter[key + '__icontains'] = value
+                    if value != '':
+                        filter['id_bien__' + key + '__icontains'] = value
                 else:
-                    filter[key] = value
-        cuarentenas = self.queryset.all().filter().filter(**filter)
+                    if value != '':
+                        filter[key] = value
+                        
+        cuarentenas = self.queryset.all().filter(**filter)
+        
         if cuarentenas: 
             serializer = self.serializer_class(cuarentenas, many=True, context = {'request':request} )
             data = serializer.data
         else:
             data = []
         return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': data}, status=status.HTTP_200_OK)
-
-        

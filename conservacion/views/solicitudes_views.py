@@ -27,14 +27,14 @@ from conservacion.serializers.solicitudes_serializers import (
     CreateSolicitudViverosSerializer,
     GetBienByCodigoViveroSerializer,
     GetBienByFilterSerializer,
-    DeleteItemsSolicitudSerializer,
+    # DeleteItemsSolicitudSerializer,
     GetSolicitudesViverosSerializer,
     ListarSolicitudIDSerializer,
     AnulacionSolicitudesSerializer,
     UpdateSolicitudesSerializer,
     CreateItemsSolicitudSerializer,
     UpdateItemsSolicitudSerializer,
-    DeleteItemsSolicitudSerializer,
+    # DeleteItemsSolicitudSerializer,
     CerrarSolicitudNoDisponibilidadSerializer
 )
 from conservacion.models.viveros_models import (
@@ -522,10 +522,11 @@ class GetItemsSolicitudView(generics.ListAPIView):
 
 class UpdateSolicitudesView(generics.UpdateAPIView):
     serializer_class = UpdateSolicitudesSerializer
+    serializer_class_items = UpdateItemsSolicitudSerializer
     queryset = SolicitudesViveros.objects.all()
     permission_classes = [IsAuthenticated]
 
-    def put(self, request, id_solicitud):
+    def update_maestro(self, request, id_solicitud):
         data_solicitud = json.loads(request.data['data_solicitud'])
         data_solicitud['ruta_archivo_info_tecnico'] = request.FILES.get('ruta_archivo_info_tecnico')
 
@@ -576,193 +577,58 @@ class UpdateSolicitudesView(generics.UpdateAPIView):
         serializer = self.serializer_class(solicitud_act, data=data_solicitud, many=False)
         serializer.is_valid(raise_exception=True)
         serializador = serializer.save()
-
-        instancia_post_save = SolicitudesViveros.objects.filter(id_solicitud_vivero=serializador.id_solicitud_vivero).first()
-        serializador_post_save = GetSolicitudesViverosSerializer(instancia_post_save, many=False)
-
-       # AUDITORIA ACTUALIZAR SOLICITUD
-        usuario = request.user.id_usuario
-        direccion = Util.get_client_ip(request)
-        descripcion = {"numero_solicitud": str(instancia_post_save.nro_solicitud)}
+        
         valores_actualizados = {'current': serializador, 'previous': solicitud_copy}
-        auditoria_data = {
-            "id_usuario" : usuario,
-            "id_modulo" : 60,
-            "cod_permiso": "AC",
-            "subsistema": 'CONS',
-            "dirip": direccion,
-            "descripcion": descripcion, 
-            "valores_actualizados": valores_actualizados
-        }
-        Util.save_auditoria(auditoria_data)
 
-        return Response({'success':True, 'detail':'Actualización exitosa', 'data': serializador_post_save.data}, status=status.HTTP_201_CREATED) 
+        return solicitud_act, valores_actualizados
 
-
-class AnulacionSolicitudesView(generics.RetrieveUpdateAPIView):
-    serializer_class = AnulacionSolicitudesSerializer
-    queryset = SolicitudesViveros.objects.all()
-    permission_classes = [IsAuthenticated]
-
-    def put(self, request, solicitudsita):   
-        #VALIDACIÓN QUE LA SOLICITUD SELECCIONADA EXISTA            
-        solicitud_anular = SolicitudesViveros.objects.filter(id_solicitud_vivero=solicitudsita).first()
-        copia_solicitud = copy.copy(solicitud_anular)
-        if not solicitud_anular.solicitud_abierta == True and not solicitud_anular.gestionada_viveros == False:
-            return Response({'success':False, 'detail':'La solicitud ya ha sido gestionada por viveros y no puede ser anulada'}, status=status.HTTP_200_OK)
-        
-        # ASIGNACIÓN DE INFORMACIÓN A SOLICITUD
-        solicitud_anular.solicitud_anulada_solicitante = True
-        solicitud_anular.justificacion_anulacion_solicitante = request.data['justificacion']
-        solicitud_anular.fecha_anulacion_solicitante = datetime.now()
-        solicitud_anular.solicitud_abierta = False
-        solicitud_anular.save()
-
-        # ELIMINACIÓN DE ITEMS DE SOLICITUD
-        items_anulacion = ItemSolicitudViveros.objects.filter(id_solicitud_viveros=solicitud_anular)
-        valores_eliminados_detalles = []
-        for item in items_anulacion:
-            valores_eliminados_detalles.append({'nombre' : item.id_bien.nombre})
-            item.delete()  
-
-        # AUDITORIA ANULAR SOLICITUD
-        usuario = request.user.id_usuario
-        direccion = Util.get_client_ip(request)
-        descripcion = {"numero_solicitud": str(copia_solicitud.nro_solicitud)}
-        auditoria_data = {
-            "id_usuario" : usuario,
-            "id_modulo" : 60,
-            "cod_permiso": "AN",
-            "subsistema": 'CONS',
-            "dirip": direccion,
-            "descripcion": descripcion, 
-            "valores_eliminados_detalles": valores_eliminados_detalles
-        }
-        Util.save_auditoria_maestro_detalle(auditoria_data)
-
-        return Response({'success':True, 'detail':'La solicitud ha sido anulada con éxito'}, status=status.HTTP_200_OK)             
-            
-
-class DeleteItemsSolicitudView(generics.RetrieveDestroyAPIView):
-    serializer_class = DeleteItemsSolicitudSerializer
-    queryset = ItemSolicitudViveros.objects.all()
-    permission_classes = [IsAuthenticated]
-
-    def delete(self, request, id_solicitud):
-        data_items = request.data
-
-        #VALIDACIÓN QUE LA SOLICITUD ENVIADA EXISTA
-        solicitud = SolicitudesViveros.objects.filter(id_solicitud_vivero=id_solicitud).first()
-        if not solicitud:
-            return Response({'success': False, 'detail': 'No se encontró ningún vivero con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
-        
-        #VALIDACIÓN QUE LA PERSONA QUE HACE LA SOLICITUD TENGA UNIDAD ORGANIZACIONAL Y SEA USUARIO INTERNO
-        usuario_logeado = request.user
-        persona_logeada = request.user.persona
-        
-        if not persona_logeada.id_unidad_organizacional_actual:
-            raise ValidationError('La persona que realiza la acción debe estar asociada a una unidad organizacional')
-        if usuario_logeado.tipo_usuario != "I":
-            raise ValidationError('La persona que realiza la acción debe ser usuario interno')
-
-        # VALIDACIÓN QUE LA SOLICITUD SELECCIONADA EXISTA
-        solicitud_instance = SolicitudesViveros.objects.filter(id_solicitud_vivero=id_solicitud).first()
-        if not solicitud_instance:
-            raise ValidationError('La solicitud seleccionada no existe') 
-        solicitud_copy = copy.copy(solicitud_instance)
-
-        # VALIDACIÓN QUE LA PERSONA QUE ACTUALIZA ES LA MISMA QUE CREÓ LA SOLICITUD
-        if solicitud_instance.id_persona_solicita.id_persona != persona_logeada.id_persona:
-            raise PermissionDenied('Solo la persona que realizó el registro de solicitud puede realizar actualizaciones') 
-        
-        # VALIDACIÓN QUE LA ACTUALIZACIÓN NO SE HAGA EN UN TIEMPO SUPERIOR A DOS DIAS
-        if datetime.now() > (solicitud_instance.fecha_solicitud + timedelta(hours=48)):
-            raise PermissionDenied('No se pueden realizar actualizaciones en solicitudes que tienen más de 2 días de haber sido creadas') 
-        
-        # VALIDACIÓN ESTADO DE LA APROBACIÓN DEL RESPONSABLE DE LA UNIDAD
-        if solicitud_instance.revisada_responsable != False:
-            raise PermissionDenied('No se pueden realizar actualizaciones en solicitudes que ya fueron aprobadas o rechazadas por el responsable de la unidad')
-
-        #VALIDACIÓN QUE TODOS LOS ID DE LOS ITEMS ENVIADOS EXISTAN
-        id_items_list = [item['id_item_solicitud_viveros'] for item in data_items]
-        id_items_list_instance = ItemSolicitudViveros.objects.filter(id_item_solicitud_viveros__in=id_items_list)
-        if len(set(id_items_list)) != len(id_items_list_instance):
-            raise ValidationError('Los items seleccionados para eliminar deben existir')
-
-        #VALIDACIÓN QUE TODOS LOS ITEMS ENVIADOS PERTENEZCAN A LA SOLICITUD ENVIADA
-        id_solicitud_list = [item.id_solicitud_viveros.id_solicitud_vivero for item in id_items_list_instance]
-        if len(set(id_solicitud_list)) > 1:
-            raise ValidationError('Todos los items seleccionados deben pertenecer a una sola solicitud')
-        if id_solicitud_list[0] != int(id_solicitud):
-            raise ValidationError('Todos los items por eliminar deben pertenecer a la solicitud seleccionada')
+    def delete_items(self, id_solicitud, data_items_solicitados):
+        id_items_list = [item['id_item_solicitud_viveros'] for item in data_items_solicitados]
         
         #VALIDACIÓN QUE NO ELIMINE TODOS LOS ITEMS DE LA SOLICITUD ENVIADOS
-        items_solicitud = ItemSolicitudViveros.objects.filter(id_solicitud_viveros=id_solicitud)
-        if len(items_solicitud) == len(id_items_list):
+        items_solicitud_eliminar = ItemSolicitudViveros.objects.filter(id_solicitud_viveros=id_solicitud).exclude(id_item_solicitud_viveros__in=id_items_list)
+        if not id_items_list:
             raise PermissionDenied('No se pueden eliminar todos los items de una solicitud')
         
-        #ELIMINACION DE TODOS LOS ITEMS ENVIADOS
+        #ELIMINACION DE ITEMS
         valores_eliminados_detalles = []
-        for item in id_items_list_instance:
-            valores_eliminados_detalles.append({'nombre' : item.id_bien.nombre})
+        for item in items_solicitud_eliminar:
+            valores_eliminados_detalles.append({'NombreBien' : item.id_bien.nombre})
             item.delete()
 
-        # AUDITORIA ELIMINACIÓN DE ITEMS SOLICITUD
-        descripcion = ({"numero_solicitud": str(solicitud.nro_solicitud)})
-        direccion=Util.get_client_ip(request)
-        auditoria_data = {
-            "id_usuario" : request.user.id_usuario,
-            "id_modulo" : 60,
-            "cod_permiso": "AC",
-            "subsistema": 'ALMA',
-            "dirip": direccion,
-            "descripcion": descripcion,
-            "valores_eliminados_detalles": valores_eliminados_detalles
-        }
-        Util.save_auditoria_maestro_detalle(auditoria_data)
+        return valores_eliminados_detalles
 
-        return Response({'success': True, 'detail': 'Items eliminados exitosamente'}, status=status.HTTP_200_OK)
-
-class UpdateItemsSolicitudView(generics.RetrieveUpdateAPIView):
-    serializer_class = UpdateItemsSolicitudSerializer
-    permission_classes = [IsAuthenticated]
-    queryset = ItemSolicitudViveros.objects.all()
-    lookup_field = 'id_solicitud'
-    lookup_url_kwarg = 'id_solicitud'
-    
-    def patch(self, request, id_solicitud):
-        data = request.data
-
-        #VALIDACIÓN QUE LA PERSONA QUE HACE LA SOLICITUD TENGA UNIDAD ORGANIZACIONAL Y SEA USUARIO INTERNO
-        usuario_logeado = request.user
-        persona_logeada = request.user.persona
+    def put(self, request, id_solicitud):
+        data_solicitud = json.loads(request.data['data_solicitud'])
+        data_solicitud['ruta_archivo_info_tecnico'] = request.FILES.get('ruta_archivo_info_tecnico')
+        data_items_solicitados = json.loads(request.data['data_items_solicitados'])
         
-        if not persona_logeada.id_unidad_organizacional_actual:
-            raise ValidationError('La persona que realiza la acción debe estar asociada a una unidad organizacional')
-        if usuario_logeado.tipo_usuario != "I":
-            raise ValidationError('La persona que realiza la acción debe ser usuario interno')
+        maestro_update, valores_actualizados_maestro = self.update_maestro(request, id_solicitud)
+        valores_eliminados_detalles = self.delete_items(id_solicitud, data_items_solicitados)
 
-        # VALIDACIÓN QUE LA SOLICITUD SELECCIONADA EXISTA
-        solicitud_instance = SolicitudesViveros.objects.filter(id_solicitud_vivero=id_solicitud).first()
-        if not solicitud_instance:
-            raise ValidationError('La solicitud seleccionada no existe') 
-        solicitud_copy = copy.copy(solicitud_instance)
-
-        # VALIDACIÓN QUE LA PERSONA QUE ACTUALIZA ES LA MISMA QUE CREÓ LA SOLICITUD
-        if solicitud_instance.id_persona_solicita.id_persona != persona_logeada.id_persona:
-            raise PermissionDenied('Solo la persona que realizó el registro de solicitud puede realizar actualizaciones') 
-        
-        # VALIDACIÓN QUE LA ACTUALIZACIÓN NO SE HAGA EN UN TIEMPO SUPERIOR A DOS DIAS
-        if datetime.now() > (solicitud_instance.fecha_solicitud + timedelta(hours=48)):
-            raise PermissionDenied('No se pueden realizar actualizaciones en solicitudes que tienen más de 2 días de haber sido creadas') 
-        
-        # VALIDACIÓN ESTADO DE LA APROBACIÓN DEL RESPONSABLE DE LA UNIDAD
-        if solicitud_instance.revisada_responsable != False:
-            raise PermissionDenied('No se pueden realizar actualizaciones en solicitudes que ya fueron aprobadas o rechazadas por el responsable de la unidad')
-        
         #SEPARACIÓN DE DATA ENTRE LO QUE SE ACTUALIZA Y LO QUE SE CREA
-        data_items_actualizacion = [item for item in data if item['id_item_solicitud_viveros'] != None and item['id_item_solicitud_viveros'] != '']
-        data_items_creacion = [item for item in data if item['id_item_solicitud_viveros'] == None or item['id_item_solicitud_viveros'] == '']
+        data_items_actualizacion = [item for item in data_items_solicitados if item['id_item_solicitud_viveros'] != None and item['id_item_solicitud_viveros'] != '']
+        data_items_creacion = [item for item in data_items_solicitados if item['id_item_solicitud_viveros'] == None or item['id_item_solicitud_viveros'] == '']
+
+        #INICIA PROCESO DE ACTUALIZACION
+
+        valores_actualizados_detalles = []
+        
+        instances_items_actualizacion = self.queryset.filter(id_item_solicitud_viveros__in=data_items_actualizacion)
+        if len(set(data_items_actualizacion)) != len(instances_items_actualizacion):
+            raise ValidationError('Debe enviar items de solicitud existentes para actualizar')
+        
+        for item_inst in instances_items_actualizacion:
+            item_data = [item for item in data_items_actualizacion if item['id_item_solicitud_viveros'] == item_inst.id_item_solicitud_viveros][0]
+            if item_data['cantidad'] != item_inst.cantidad and item_data['cantidad'] == 0:
+                raise ValidationError('No se podrá disminuir la cantidad solicitada a 0, para eso se debe borrar el ítem solicitado')
+            item_inst_previous = copy.copy(item_inst)
+            
+            serializer_update = self.serializer_class_items(item_inst, data=item_data)
+            serializer_update.is_valid(raise_exception=True)
+            serializer_update.save()
+            
+            valores_actualizados_detalles.append({'previous':item_inst_previous, 'current':item_inst, 'descripcion': {'NombreBien': item_inst.id_bien.nombre}})
 
         #INICIA PROCESO DE VALIDACIONES PARA CREACIÓN
 
@@ -773,13 +639,12 @@ class UpdateItemsSolicitudView(generics.RetrieveUpdateAPIView):
             raise ValidationError('Todos los bienes seleccionados deben existir')
         
         #VALIDACIÓN QUE EL NUMERO DE POSICIÓN SEA ÚNICO POR ITEM
-        nro_posicion_list = [bien['nro_posicion'] for bien in data]
+        nro_posicion_list = [bien['nro_posicion'] for bien in data_items_solicitados]
         if len(nro_posicion_list) != len(set(nro_posicion_list)):
             raise ValidationError('El numero de posición debe ser único para todos los items solicitados')
             
         for biensito in data_items_creacion:
-            print('revienta acpa')
-            bien = InventarioViveros.objects.filter(id_bien__codigo_bien=biensito['codigo_bien'], id_vivero=solicitud_instance.id_vivero_solicitud.id_vivero)
+            bien = InventarioViveros.objects.filter(id_bien__codigo_bien=biensito['codigo_bien'], id_vivero=maestro_update.id_vivero_solicitud.id_vivero)
             if not bien:
                 raise PermissionDenied('El bien seleccionado no se encuentra relacionado al vivero seleccionado')
              
@@ -826,7 +691,6 @@ class UpdateItemsSolicitudView(generics.RetrieveUpdateAPIView):
                 if not bien.saldo_disponible > 0:
                     raise PermissionDenied (f'El bien {bien.nombre} de tipo insumo no tiene cantidades disponibles para solicitar')
 
-
         #GUARDADO DE ITEMS QUE SE ESTÁN CREANDO
         serializador_items = CreateItemsSolicitudSerializer(data=data_items_creacion, many=True)
         serializador_items.is_valid(raise_exception=True)
@@ -838,22 +702,299 @@ class UpdateItemsSolicitudView(generics.RetrieveUpdateAPIView):
         # AUDITORIA SOLICITUDES A VIVEROS
         valores_creados_detalles = []
         for bien in items_guardados:
-            valores_creados_detalles.append({'nombre_bien': bien.id_bien.nombre})
+            valores_creados_detalles.append({'NombreBien': bien.id_bien.nombre})
 
-        descripcion = {"numero_solicitud": str(solicitud_instance.nro_solicitud)}
+        descripcion = {"NumeroSolicitud": str(maestro_update.nro_solicitud)}
         direccion=Util.get_client_ip(request)
         auditoria_data = {
             "id_usuario" : request.user.id_usuario,
             "id_modulo" : 60,
-            "cod_permiso": "CR",
+            "cod_permiso": "AC",
             "subsistema": 'CONS',
             "dirip": direccion,
             "descripcion": descripcion,
-            "valores_creados_detalles": valores_creados_detalles
+            "valores_actualizados_maestro": valores_actualizados_maestro,
+            "valores_creados_detalles": valores_creados_detalles,
+            "valores_actualizados_detalles": valores_actualizados_detalles,
+            "valores_eliminados_detalles": valores_eliminados_detalles
         }
         Util.save_auditoria_maestro_detalle(auditoria_data)
         return Response({'success': True, 'detail': 'Actualización exitosa', 'data': serializador.data}, status=status.HTTP_201_CREATED)
 
+class AnulacionSolicitudesView(generics.RetrieveUpdateAPIView):
+    serializer_class = AnulacionSolicitudesSerializer
+    queryset = SolicitudesViveros.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, solicitudsita):   
+        #VALIDACIÓN QUE LA SOLICITUD SELECCIONADA EXISTA            
+        solicitud_anular = SolicitudesViveros.objects.filter(id_solicitud_vivero=solicitudsita).first()
+        copia_solicitud = copy.copy(solicitud_anular)
+        if not solicitud_anular.solicitud_abierta == True and not solicitud_anular.gestionada_viveros == False:
+            return Response({'success':False, 'detail':'La solicitud ya ha sido gestionada por viveros y no puede ser anulada'}, status=status.HTTP_200_OK)
+        
+        # ASIGNACIÓN DE INFORMACIÓN A SOLICITUD
+        solicitud_anular.solicitud_anulada_solicitante = True
+        solicitud_anular.justificacion_anulacion_solicitante = request.data['justificacion']
+        solicitud_anular.fecha_anulacion_solicitante = datetime.now()
+        solicitud_anular.solicitud_abierta = False
+        solicitud_anular.save()
+
+        # ELIMINACIÓN DE ITEMS DE SOLICITUD
+        items_anulacion = ItemSolicitudViveros.objects.filter(id_solicitud_viveros=solicitud_anular)
+        valores_eliminados_detalles = []
+        for item in items_anulacion:
+            valores_eliminados_detalles.append({'nombre' : item.id_bien.nombre})
+            item.delete()  
+
+        # AUDITORIA ANULAR SOLICITUD
+        usuario = request.user.id_usuario
+        direccion = Util.get_client_ip(request)
+        descripcion = {"numero_solicitud": str(copia_solicitud.nro_solicitud)}
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 60,
+            "cod_permiso": "AN",
+            "subsistema": 'CONS',
+            "dirip": direccion,
+            "descripcion": descripcion, 
+            "valores_eliminados_detalles": valores_eliminados_detalles
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
+
+        return Response({'success':True, 'detail':'La solicitud ha sido anulada con éxito'}, status=status.HTTP_200_OK)             
+            
+
+# class DeleteItemsSolicitudView(generics.RetrieveDestroyAPIView):
+#     serializer_class = DeleteItemsSolicitudSerializer
+#     queryset = ItemSolicitudViveros.objects.all()
+#     permission_classes = [IsAuthenticated]
+
+#     def delete(self, request, id_solicitud):
+#         data_items = request.data
+
+#         #VALIDACIÓN QUE LA SOLICITUD ENVIADA EXISTA
+#         solicitud = SolicitudesViveros.objects.filter(id_solicitud_vivero=id_solicitud).first()
+#         if not solicitud:
+#             return Response({'success': False, 'detail': 'No se encontró ningún vivero con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
+        
+#         #VALIDACIÓN QUE LA PERSONA QUE HACE LA SOLICITUD TENGA UNIDAD ORGANIZACIONAL Y SEA USUARIO INTERNO
+#         usuario_logeado = request.user
+#         persona_logeada = request.user.persona
+        
+#         if not persona_logeada.id_unidad_organizacional_actual:
+#             raise ValidationError('La persona que realiza la acción debe estar asociada a una unidad organizacional')
+#         if usuario_logeado.tipo_usuario != "I":
+#             raise ValidationError('La persona que realiza la acción debe ser usuario interno')
+
+#         # VALIDACIÓN QUE LA SOLICITUD SELECCIONADA EXISTA
+#         solicitud_instance = SolicitudesViveros.objects.filter(id_solicitud_vivero=id_solicitud).first()
+#         if not solicitud_instance:
+#             raise ValidationError('La solicitud seleccionada no existe') 
+#         solicitud_copy = copy.copy(solicitud_instance)
+
+#         # VALIDACIÓN QUE LA PERSONA QUE ACTUALIZA ES LA MISMA QUE CREÓ LA SOLICITUD
+#         if solicitud_instance.id_persona_solicita.id_persona != persona_logeada.id_persona:
+#             raise PermissionDenied('Solo la persona que realizó el registro de solicitud puede realizar actualizaciones') 
+        
+#         # VALIDACIÓN QUE LA ACTUALIZACIÓN NO SE HAGA EN UN TIEMPO SUPERIOR A DOS DIAS
+#         if datetime.now() > (solicitud_instance.fecha_solicitud + timedelta(hours=48)):
+#             raise PermissionDenied('No se pueden realizar actualizaciones en solicitudes que tienen más de 2 días de haber sido creadas') 
+        
+#         # VALIDACIÓN ESTADO DE LA APROBACIÓN DEL RESPONSABLE DE LA UNIDAD
+#         if solicitud_instance.revisada_responsable != False:
+#             raise PermissionDenied('No se pueden realizar actualizaciones en solicitudes que ya fueron aprobadas o rechazadas por el responsable de la unidad')
+
+#         #VALIDACIÓN QUE TODOS LOS ID DE LOS ITEMS ENVIADOS EXISTAN
+#         id_items_list = [item['id_item_solicitud_viveros'] for item in data_items]
+#         id_items_list_instance = ItemSolicitudViveros.objects.filter(id_item_solicitud_viveros__in=id_items_list)
+#         if len(set(id_items_list)) != len(id_items_list_instance):
+#             raise ValidationError('Los items seleccionados para eliminar deben existir')
+
+#         #VALIDACIÓN QUE TODOS LOS ITEMS ENVIADOS PERTENEZCAN A LA SOLICITUD ENVIADA
+#         id_solicitud_list = [item.id_solicitud_viveros.id_solicitud_vivero for item in id_items_list_instance]
+#         if len(set(id_solicitud_list)) > 1:
+#             raise ValidationError('Todos los items seleccionados deben pertenecer a una sola solicitud')
+#         if id_solicitud_list[0] != int(id_solicitud):
+#             raise ValidationError('Todos los items por eliminar deben pertenecer a la solicitud seleccionada')
+        
+#         #VALIDACIÓN QUE NO ELIMINE TODOS LOS ITEMS DE LA SOLICITUD ENVIADOS
+#         items_solicitud = ItemSolicitudViveros.objects.filter(id_solicitud_viveros=id_solicitud)
+#         if len(items_solicitud) == len(id_items_list):
+#             raise PermissionDenied('No se pueden eliminar todos los items de una solicitud')
+        
+#         #ELIMINACION DE TODOS LOS ITEMS ENVIADOS
+#         valores_eliminados_detalles = []
+#         for item in id_items_list_instance:
+#             valores_eliminados_detalles.append({'nombre' : item.id_bien.nombre})
+#             item.delete()
+
+#         # AUDITORIA ELIMINACIÓN DE ITEMS SOLICITUD
+#         descripcion = ({"numero_solicitud": str(solicitud.nro_solicitud)})
+#         direccion=Util.get_client_ip(request)
+#         auditoria_data = {
+#             "id_usuario" : request.user.id_usuario,
+#             "id_modulo" : 60,
+#             "cod_permiso": "AC",
+#             "subsistema": 'ALMA',
+#             "dirip": direccion,
+#             "descripcion": descripcion,
+#             "valores_eliminados_detalles": valores_eliminados_detalles
+#         }
+#         Util.save_auditoria_maestro_detalle(auditoria_data)
+
+#         return Response({'success': True, 'detail': 'Items eliminados exitosamente'}, status=status.HTTP_200_OK)
+
+# class UpdateItemsSolicitudView(generics.RetrieveUpdateAPIView):
+#     serializer_class = UpdateItemsSolicitudSerializer
+#     permission_classes = [IsAuthenticated]
+#     queryset = ItemSolicitudViveros.objects.all()
+#     lookup_field = 'id_solicitud'
+#     lookup_url_kwarg = 'id_solicitud'
+    
+#     def patch(self, request, id_solicitud):
+#         data = request.data
+
+#         #VALIDACIÓN QUE LA PERSONA QUE HACE LA SOLICITUD TENGA UNIDAD ORGANIZACIONAL Y SEA USUARIO INTERNO
+#         usuario_logeado = request.user
+#         persona_logeada = request.user.persona
+        
+#         if not persona_logeada.id_unidad_organizacional_actual:
+#             raise ValidationError('La persona que realiza la acción debe estar asociada a una unidad organizacional')
+#         if usuario_logeado.tipo_usuario != "I":
+#             raise ValidationError('La persona que realiza la acción debe ser usuario interno')
+
+#         # VALIDACIÓN QUE LA SOLICITUD SELECCIONADA EXISTA
+#         solicitud_instance = SolicitudesViveros.objects.filter(id_solicitud_vivero=id_solicitud).first()
+#         if not solicitud_instance:
+#             raise ValidationError('La solicitud seleccionada no existe') 
+#         solicitud_copy = copy.copy(solicitud_instance)
+
+#         # VALIDACIÓN QUE LA PERSONA QUE ACTUALIZA ES LA MISMA QUE CREÓ LA SOLICITUD
+#         if solicitud_instance.id_persona_solicita.id_persona != persona_logeada.id_persona:
+#             raise PermissionDenied('Solo la persona que realizó el registro de solicitud puede realizar actualizaciones') 
+        
+#         # VALIDACIÓN QUE LA ACTUALIZACIÓN NO SE HAGA EN UN TIEMPO SUPERIOR A DOS DIAS
+#         if datetime.now() > (solicitud_instance.fecha_solicitud + timedelta(hours=48)):
+#             raise PermissionDenied('No se pueden realizar actualizaciones en solicitudes que tienen más de 2 días de haber sido creadas') 
+        
+#         # VALIDACIÓN ESTADO DE LA APROBACIÓN DEL RESPONSABLE DE LA UNIDAD
+#         if solicitud_instance.revisada_responsable != False:
+#             raise PermissionDenied('No se pueden realizar actualizaciones en solicitudes que ya fueron aprobadas o rechazadas por el responsable de la unidad')
+        
+#         #SEPARACIÓN DE DATA ENTRE LO QUE SE ACTUALIZA Y LO QUE SE CREA
+#         data_items_actualizacion = [item for item in data if item['id_item_solicitud_viveros'] != None and item['id_item_solicitud_viveros'] != '']
+#         data_items_creacion = [item for item in data if item['id_item_solicitud_viveros'] == None or item['id_item_solicitud_viveros'] == '']
+
+#         #INICIA PROCESO DE ACTUALIZACION
+
+#         valores_actualizados_detalles = []
+        
+#         instances_items_actualizacion = self.queryset.filter(id_item_solicitud_viveros__in=data_items_actualizacion)
+#         if len(set(data_items_actualizacion)) != len(instances_items_actualizacion):
+#             raise ValidationError('Debe enviar items de solicitud existentes para actualizar')
+        
+#         for item_inst in instances_items_actualizacion:
+#             item_data = [item for item in data_items_actualizacion if item['id_item_solicitud_viveros'] == item_inst.id_item_solicitud_viveros][0]
+#             if item_data['cantidad'] != item_inst.cantidad and item_data['cantidad'] == 0:
+#                 raise ValidationError('No se podrá disminuir la cantidad solicitada a 0, para eso se debe borrar el ítem solicitado')
+#             item_inst_previous = copy.copy(item_inst)
+            
+#             serializer_update = self.serializer_class(item_inst, data=item_data)
+#             serializer_update.is_valid(raise_exception=True)
+#             serializer_update.save()
+            
+#             valores_actualizados_detalles.append({'previous':item_inst_previous, 'current':item_inst, 'descripcion': {'NombreBien': item_inst.id_bien.nombre}})
+
+#         #INICIA PROCESO DE VALIDACIONES PARA CREACIÓN
+
+#         # VALIDACIÓN QUE EL ID BIEN ENVIADO CUMPLA CON LAS CONDICIONES DADAS POR EL EQUIPO DE MODELADO
+#         id_bienes = [bien['codigo_bien'] for bien in data_items_creacion]
+#         id_bienes_instance = CatalogoBienes.objects.filter(codigo_bien__in=id_bienes)
+#         if len(set(id_bienes)) != len(id_bienes_instance):
+#             raise ValidationError('Todos los bienes seleccionados deben existir')
+        
+#         #VALIDACIÓN QUE EL NUMERO DE POSICIÓN SEA ÚNICO POR ITEM
+#         nro_posicion_list = [bien['nro_posicion'] for bien in data]
+#         if len(nro_posicion_list) != len(set(nro_posicion_list)):
+#             raise ValidationError('El numero de posición debe ser único para todos los items solicitados')
+            
+#         for biensito in data_items_creacion:
+#             bien = InventarioViveros.objects.filter(id_bien__codigo_bien=biensito['codigo_bien'], id_vivero=solicitud_instance.id_vivero_solicitud.id_vivero)
+#             if not bien:
+#                 raise PermissionDenied('El bien seleccionado no se encuentra relacionado al vivero seleccionado')
+             
+#             if bien[0].id_bien.solicitable_vivero != True:
+#                 raise PermissionDenied('El bien seleccionado no es solicitable por vivero')
+            
+#             if bien[0].id_bien.cod_tipo_bien != 'C':
+#                 raise PermissionDenied('El bien seleccionado no es consumible')
+                
+#             if bien[0].id_bien.cod_tipo_elemento_vivero == 'HE':
+#                 raise PermissionDenied('El bien seleccionado debe ser de tipo insumo o material vegetal')
+
+#             if bien[0].id_bien.cod_tipo_elemento_vivero == 'MV' and bien[0].id_bien.es_semilla_vivero == True:
+#                 raise PermissionDenied('El bien seleccionado debe ser material vegetal que no sea semilla')
+
+#             if bien[0].id_bien.cod_tipo_elemento_vivero == 'MV':
+
+#                 #VALIDACIÓN QUE LOS BIENES ESTÉN EN ALGUN LOTE ETAPA DE DISTRIBUCIÓN O PRODUCCIÓN
+#                 bien_in_inventario_no_germinacion = []
+#                 for biensito in bien:
+#                     if biensito.cod_etapa_lote != 'G':
+#                         bien_in_inventario_no_germinacion.append(biensito)
+
+#                 if not bien_in_inventario_no_germinacion:
+#                     raise PermissionDenied('El bien seleccionado no tiene lotes que cumplan las condiciones para ser solicitado') 
+
+#                 #VALIDACIÓN QUE EL BIEN EN ALGÚN LOTE TENGA SALDO DISPONIBLE
+#                 saldo_disponible = False
+#                 for bien in bien_in_inventario_no_germinacion:
+#                     bien.id_bien.saldo_disponible = UtilConservacion.get_saldo_disponible_solicitud_viveros(bien)
+#                     if bien.id_bien.saldo_disponible > 0:
+#                         saldo_disponible = True
+#                         pass
+                
+#                 if saldo_disponible == False:
+#                     raise PermissionDenied('El bien seleccionado no tiene ningun saldo disponible en viveros')
+        
+#             elif bien[0].id_bien.cod_tipo_elemento_vivero == 'IN':
+
+#                 #VALIDACIÓN QUE EL BIEN TENGA SALDO DISPONIBLE
+#                 bien_in_inventario = bien.first()
+#                 bien = bien_in_inventario.id_bien
+#                 bien.saldo_disponible = UtilConservacion.get_saldo_disponible_solicitud_viveros(bien_in_inventario)    
+#                 if not bien.saldo_disponible > 0:
+#                     raise PermissionDenied (f'El bien {bien.nombre} de tipo insumo no tiene cantidades disponibles para solicitar')
+
+
+#         #GUARDADO DE ITEMS QUE SE ESTÁN CREANDO
+#         serializador_items = CreateItemsSolicitudSerializer(data=data_items_creacion, many=True)
+#         serializador_items.is_valid(raise_exception=True)
+#         items_guardados = serializador_items.save()
+
+#         items_finales = ItemSolicitudViveros.objects.filter(id_solicitud_viveros=id_solicitud).order_by('nro_posicion')
+#         serializador = ListarSolicitudIDSerializer(items_finales, many=True)
+        
+#         # AUDITORIA SOLICITUDES A VIVEROS
+#         valores_creados_detalles = []
+#         for bien in items_guardados:
+#             valores_creados_detalles.append({'NombreBien': bien.id_bien.nombre})
+
+#         descripcion = {"NumeroSolicitud": str(solicitud_instance.nro_solicitud)}
+#         direccion=Util.get_client_ip(request)
+#         auditoria_data = {
+#             "id_usuario" : request.user.id_usuario,
+#             "id_modulo" : 60,
+#             "cod_permiso": "AC",
+#             "subsistema": 'CONS',
+#             "dirip": direccion,
+#             "descripcion": descripcion,
+#             "valores_creados_detalles": valores_creados_detalles,
+#             "valores_actualizados_detalles": valores_actualizados_detalles
+#         }
+#         Util.save_auditoria_maestro_detalle(auditoria_data)
+#         return Response({'success': True, 'detail': 'Actualización exitosa', 'data': serializador.data}, status=status.HTTP_201_CREATED)
 
 class CerrarSolicitudNoDisponibilidadView(generics.RetrieveUpdateAPIView):
     serializer_class = CerrarSolicitudNoDisponibilidadSerializer

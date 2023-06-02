@@ -3,9 +3,10 @@ from rest_framework.response import Response
 from conservacion.serializers.mezclas_serializers import (
     MezclasSerializador,
     MezclasPutSerializador,
-    MezclasGetListSerializador
+    MezclasGetListSerializador,
+    GetItemsSerializador
 )
-from conservacion.models.mezclas_models import Mezclas
+from conservacion.models.mezclas_models import Mezclas, ItemsPreparacionMezcla, PreparacionMezclas
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
@@ -66,3 +67,22 @@ class GetListMezclas(generics.ListAPIView):
         serializador = self.serializer_class(mezclas,many=True)
         
         return Response ({'success':True, 'detail':'Las mezclas registradas actualmente son las siguientes', 'data':serializador.data}, status=status.HTTP_200_OK)
+
+class ItemsMezclaView(generics.ListAPIView):
+    serializer_class = GetItemsSerializador
+
+    def get(self, request):
+        id_preparacion_mezcla = request.query_params.get('id_preparacion_mezcla')
+
+        if not id_preparacion_mezcla:
+            return Response({'success': False, 'detail': 'Debe proporcionar el ID de la preparación de la mezcla.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            preparacion_mezcla = PreparacionMezclas.objects.get(id_preparacion_mezcla=id_preparacion_mezcla)
+        except PreparacionMezclas.DoesNotExist:
+            return Response({'success': False, 'detail': 'La preparación de la mezcla no existe.'}, status=status.HTTP_404_NOT_FOUND)
+
+        queryset = ItemsPreparacionMezcla.objects.filter(id_preparacion_mezcla=preparacion_mezcla)
+        serializer = self.serializer_class(queryset, many=True)
+        
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes items para la preparación de la mezcla', 'data': serializer.data}, status=status.HTTP_200_OK)

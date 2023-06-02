@@ -4,9 +4,8 @@ from conservacion.utils import UtilConservacion
 
 class MaterialVegetalCuarentenaSerializer(serializers.ModelSerializer):
     cantidad_por_levantar = serializers.SerializerMethodField()
-    nombre_mat_veg = serializers.ReadOnlyField(source='id_bien.nombre',default=None)
-    codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien',default=None)
-    id_material_vegetal = serializers.ReadOnlyField(source='id_bien.id_bien',default=None)
+    codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
     
     def get_cantidad_por_levantar(self,obj):
         cantidad_por_levantar = UtilConservacion.get_saldo_por_levantar(obj)
@@ -14,7 +13,7 @@ class MaterialVegetalCuarentenaSerializer(serializers.ModelSerializer):
         
     class Meta:
         model = CuarentenaMatVegetal
-        fields = ['id_cuarentena_mat_vegetal','nombre_mat_veg','id_material_vegetal','codigo_bien','consec_cueren_por_lote_etapa','fecha_cuarentena','descrip_corta_diferenciable','cantidad_por_levantar','cod_etapa_lote','agno_lote']
+        fields = '__all__'
         
 
 class ItemsLevantamientoCuarentenaSerializer(serializers.ModelSerializer):
