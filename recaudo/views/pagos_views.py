@@ -220,17 +220,6 @@ class ListadoFacilidadesPagoViews(generics.ListAPIView):
 
     def get(self, request):
 
-
-        # filter = {}
-        #
-        # for key, value in request.query_params.items():
-        #     if key == 'identificacion':
-        #         filter['id_deudor_actuacion__identificacion__icontains'] = value
-        #     elif key == 'nombres' or key == 'apellidos':
-        #         if value != '':
-        #             filter['id_deudor_actuacion__' + key + '__icontains'] = value
-        # facilidades_pago = FacilidadesPago.objects.filter(**filter)
-
         facilidades_pago = FacilidadesPago.objects.annotate(nombre_de_usuario=Concat('id_deudor_actuacion__nombres', V(' '), 'id_deudor_actuacion__apellidos'))
         identificacion = self.request.query_params.get('identificacion', '')
         nombre_de_usuario = self.request.query_params.get('nombre_de_usuario', '')
@@ -291,21 +280,6 @@ class ListadoDeudoresViews(generics.ListAPIView):
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
 
 
-# class ListadoFacilidadesPagoFuncionariosViews(generics.ListAPIView):
-#     serializer_class = ListadoFacilidadesPagoSerializer
-#     permission_classes = [IsAuthenticated]
-
-#     def get(self, request):
-#         user = self.request.user
-#         facilidades_pago = FacilidadesPago.objects.filter(id_funcionario=user.pk)
-#         for key, value in request.query_params.items():
-#             if key == 'identificacion':
-#                 facilidades_pago = facilidades_pago.filter(id_deudor_actuacion__identificacion__icontains=value)
-#             elif key == 'nombre_de_usuario':
-#                 facilidades_pago = facilidades_pago.filter(id_deudor_actuacion__usuario__primer_nombre__icontains=value)
-#         serializer = ListadoFacilidadesPagoSerializer(facilidades_pago, many=True)
-#         return Response( {'success': True, 'detail':'Se le asignaron las siguientes facilidades de pago','data':serializer.data},status=status.HTTP_200_OK)
-
 class ListadoFacilidadesPagoFuncionariosViews(generics.ListAPIView):
     serializer_class = ListadoFacilidadesPagoSerializer
     permission_classes = [IsAuthenticated]
@@ -323,8 +297,6 @@ class ListadoFacilidadesPagoFuncionariosViews(generics.ListAPIView):
         
         serializer = ListadoFacilidadesPagoSerializer(facilidades_pago, many=True)
         return Response( {'success': True, 'detail':'Se le asignaron las siguientes facilidades de pago','data':serializer.data},status=status.HTTP_200_OK)
-
-
 
 
 class RequisitosActuacionView(generics.ListAPIView):
