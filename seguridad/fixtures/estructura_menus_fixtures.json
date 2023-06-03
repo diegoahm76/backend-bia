@@ -126,7 +126,7 @@
     "fields": {
         "nombre": "Instrumentos Archivísticos",
         "nivel_jerarquico": 1,
-        "id_menu_padre": 11,
+        "id_menu_padre": null,
         "orden_por_padre": 1,
         "subsistema": "GEST"
     }
@@ -137,7 +137,7 @@
     "fields": {
         "nombre": "Procesos",
         "nivel_jerarquico": 1,
-        "id_menu_padre": 11,
+        "id_menu_padre": null,
         "orden_por_padre": 2,
         "subsistema": "GEST"
     }
@@ -577,7 +577,7 @@
     "fields": {
         "nombre": "Reportes",
         "nivel_jerarquico": 2,
-        "id_menu_padre": 52,
+        "id_menu_padre": null,
         "orden_por_padre": 1,
         "subsistema": "RECU"
     }
@@ -586,9 +586,9 @@
     "model": "seguridad.estructuramenus",
     "pk": 54,
     "fields": {
-        "nombre": "Estaciones",
+        "nombre": "Reportes",
         "nivel_jerarquico": 3,
-        "id_menu_padre": 53,
+        "id_menu_padre": null,
         "orden_por_padre": 1,
         "subsistema": "RECU"
     }
@@ -599,7 +599,7 @@
     "fields": {
         "nombre": "Indicadores",
         "nivel_jerarquico": 2,
-        "id_menu_padre": 52,
+        "id_menu_padre": null,
         "orden_por_padre": 2,
         "subsistema": "RECU"
     }
@@ -610,7 +610,7 @@
     "fields": {
         "nombre": "Analítica",
         "nivel_jerarquico": 2,
-        "id_menu_padre": 52,
+        "id_menu_padre": null,
         "orden_por_padre": 3,
         "subsistema": "RECU"
     }
@@ -630,11 +630,88 @@
     "model": "seguridad.estructuramenus",
     "pk": 58,
     "fields": {
-        "nombre": "Estaciones Meteorológicas",
+        "nombre": "Configuración",
         "nivel_jerarquico": 2,
-        "id_menu_padre": 57,
+        "id_menu_padre": null,
         "orden_por_padre": 1,
         "subsistema": "RECU"
+    }
+},
+{
+    "model": "seguridad.estructuramenus",
+    "pk": 59,
+    "fields": {
+        "nombre": "Gestor de Deudores",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 2,
+        "subsistema": "RECA"
+    }
+},
+{
+    "model": "seguridad.estructuramenus",
+    "pk": 60,
+    "fields": {
+        "nombre": "Facilidades de Pago",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 3,
+        "subsistema": "RECA"
+    }
+},
+{
+    "model": "seguridad.estructuramenus",
+    "pk": 61,
+    "fields": {
+        "nombre": "Portal de Deudores",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 4,
+        "subsistema": "RECA"
+    }
+},
+{
+    "model": "seguridad.estructuramenus",
+    "pk": 62,
+    "fields": {
+        "nombre": "Notificaciones y Alertas",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 5,
+        "subsistema": "RECA"
+    }
+},
+{
+    "model": "seguridad.estructuramenus",
+    "pk": 63,
+    "fields": {
+        "nombre": "Reportes, Indicadores y Analítica",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 6,
+        "subsistema": "RECA"
+    }
+},
+{
+    "model": "seguridad.estructuramenus",
+    "pk": 64,
+    "fields": {
+        "nombre": "Configuración y Datos Básicos",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 7,
+        "subsistema": "RECA"
+    }
+},
+{
+    "model": "seguridad.estructuramenus",
+    "pk": 65,
+    "fields": {
+        "nombre": "Gestor de Recaudo",
+        "nivel_jerarquico": 1,
+        "id_menu_padre": null,
+        "orden_por_padre": 1,
+        "subsistema": "RECA"
     }
 }
 ]
