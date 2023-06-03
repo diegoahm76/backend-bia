@@ -510,9 +510,11 @@ class GetSolicitudesRechazadas(generics.ListAPIView):
         solicitudes_rechazadas = self.queryset.filter(
             id_funcionario_responsable_unidad=persona_responsable.id_persona,
             revisada_responsable = False,
-            estado_aprobacion_responsable = 'R',
-            fecha_rechazo_almacen__range=[fecha_inicio, fecha_fin]
+            estado_aprobacion_responsable = 'R'
         )
+        
+        if fecha_inicio != '' and fecha_fin != '':
+            solicitudes_rechazadas = solicitudes_rechazadas.filter(fecha_rechazo_almacen__range=[fecha_inicio, fecha_fin])
         
         serializer = self.serializer_class(solicitudes_rechazadas, many=True)
         return Response({'success':True, 'detail':'Las solicitudes rechazadas por el usuario logueado son', 'data':serializer.data, },status=status.HTTP_200_OK)
