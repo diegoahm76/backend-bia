@@ -28,6 +28,7 @@ from almacen.models.inventario_models import (
     Inventario,
     TiposEntradas
 )
+from almacen.utils import UtilAlmacen
 from seguridad.models import (
     Personas
 )
@@ -978,100 +979,100 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
         return Response({'success':True, 'data_entrada_creada': entrada_serializada.data, 'data_items_creados': items_guardados_data})
 
 
-class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
-    serializer_class = ItemEntradaSerializer
-    queryset = ItemEntradaAlmacen.objects.all()
-    permission_classes = [IsAuthenticated]
+# class DeleteItemsEntrada(generics.RetrieveDestroyAPIView):
+#     serializer_class = ItemEntradaSerializer
+#     queryset = ItemEntradaAlmacen.objects.all()
+#     permission_classes = [IsAuthenticated]
 
-    def delete(self, request):
-        items_enviados = request.data
+#     def delete(self, request):
+#         items_enviados = request.data
 
-        # VALIDAR QUE TODOS LOS ITEMS ENVIADOS DEBEN PERTENECER A LA MISMA ENTRADA
-        id_entrada = [item['id_entrada_almacen'] for item in items_enviados]
-        if len(set(id_entrada)) > 1:
-            raise PermissionDenied('Todos los items por eliminar deben pertenecer a la misma entrada')
+#         # VALIDAR QUE TODOS LOS ITEMS ENVIADOS DEBEN PERTENECER A LA MISMA ENTRADA
+#         id_entrada = [item['id_entrada_almacen'] for item in items_enviados]
+#         if len(set(id_entrada)) > 1:
+#             raise PermissionDenied('Todos los items por eliminar deben pertenecer a la misma entrada')
 
-        # VALIDAR QUE TODOS LOS ID_ITEMS_ENVIADOS ENVIADOS PARA ELIMINAR EXISTAN
-        ids_items_enviados = [item['id_item_entrada_almacen']
-                              for item in items_enviados]
-        items_existentes = ItemEntradaAlmacen.objects.filter(
-            id_item_entrada_almacen__in=ids_items_enviados)
-        if len(set(ids_items_enviados)) != len(items_existentes):
-            raise ValidationError('Todos los id_items enviados para eliminar deben existir')
+#         # VALIDAR QUE TODOS LOS ID_ITEMS_ENVIADOS ENVIADOS PARA ELIMINAR EXISTAN
+#         ids_items_enviados = [item['id_item_entrada_almacen']
+#                               for item in items_enviados]
+#         items_existentes = ItemEntradaAlmacen.objects.filter(
+#             id_item_entrada_almacen__in=ids_items_enviados)
+#         if len(set(ids_items_enviados)) != len(items_existentes):
+#             raise ValidationError('Todos los id_items enviados para eliminar deben existir')
 
-        # VALIDAR QUE LA ENTRADA NO SE VAYA A QUEDAR SIN ITEMS
-        items_entrada = ItemEntradaAlmacen.objects.filter(
-            id_entrada_almacen=id_entrada[0])
-        id_items_entrada_existentes = [
-            item.id_item_entrada_almacen for item in items_entrada]
-        if len(ids_items_enviados) == len(id_items_entrada_existentes):
-            raise PermissionDenied('No se puede eliminar ya que una entrada no puede quedar sin items')
+#         # VALIDAR QUE LA ENTRADA NO SE VAYA A QUEDAR SIN ITEMS
+#         items_entrada = ItemEntradaAlmacen.objects.filter(
+#             id_entrada_almacen=id_entrada[0])
+#         id_items_entrada_existentes = [
+#             item.id_item_entrada_almacen for item in items_entrada]
+#         if len(ids_items_enviados) == len(id_items_entrada_existentes):
+#             raise PermissionDenied('No se puede eliminar ya que una entrada no puede quedar sin items')
 
-        # VALIDACIÓN SI LA ENTRADA FUE EL ÚLTIMO MOVIMIENTO EN INVENTARIO
-        id_bienes_enviados = [item['id_bien'] for item in items_enviados]
-        inventario_item_instance = Inventario.objects.filter(
-            id_bien__in=id_bienes_enviados)
-        for item in inventario_item_instance:
-            item_entrada_instance = ItemEntradaAlmacen.objects.filter(
-                id_bien=item.id_bien.id_bien).first()
-            if str(item_entrada_instance.id_entrada_almacen.id_entrada_almacen) != str(item.id_registro_doc_ultimo_movimiento):
-                raise PermissionDenied('No se puede eliminar este item si la entrada no fue su último movimiento')
+#         # VALIDACIÓN SI LA ENTRADA FUE EL ÚLTIMO MOVIMIENTO EN INVENTARIO
+#         id_bienes_enviados = [item['id_bien'] for item in items_enviados]
+#         inventario_item_instance = Inventario.objects.filter(
+#             id_bien__in=id_bienes_enviados)
+#         for item in inventario_item_instance:
+#             item_entrada_instance = ItemEntradaAlmacen.objects.filter(
+#                 id_bien=item.id_bien.id_bien).first()
+#             if str(item_entrada_instance.id_entrada_almacen.id_entrada_almacen) != str(item.id_registro_doc_ultimo_movimiento):
+#                 raise PermissionDenied('No se puede eliminar este item si la entrada no fue su último movimiento')
 
-        # VALIDACIÓN SI TIENE HOJA DE VIDA
-        valores_eliminados_detalles = []
-        id_entrada = 0
+#         # VALIDACIÓN SI TIENE HOJA DE VIDA
+#         valores_eliminados_detalles = []
+#         id_entrada = 0
 
-        objects_items_enviado = [item for item in items_enviados]
-        for item in objects_items_enviado:
-            item_instance = ItemEntradaAlmacen.objects.filter(
-                id_item_entrada_almacen=item['id_item_entrada_almacen']).first()
-            id_entrada = item_instance.id_entrada_almacen.id_entrada_almacen
+#         objects_items_enviado = [item for item in items_enviados]
+#         for item in objects_items_enviado:
+#             item_instance = ItemEntradaAlmacen.objects.filter(
+#                 id_item_entrada_almacen=item['id_item_entrada_almacen']).first()
+#             id_entrada = item_instance.id_entrada_almacen.id_entrada_almacen
 
-            if item_instance.id_bien.cod_tipo_bien == 'A':
-                item_hv_comp = HojaDeVidaComputadores.objects.filter(
-                    id_articulo=item_instance.id_bien.id_bien).first()
-                item_hv_veh = HojaDeVidaVehiculos.objects.filter(
-                    id_articulo=item_instance.id_bien.id_bien).first()
-                item_hv_oac = HojaDeVidaOtrosActivos.objects.filter(
-                    id_articulo=item_instance.id_bien.id_bien).first()
-                if item_hv_comp or item_hv_veh or item_hv_oac:
-                    raise PermissionDenied('No se puede eliminar por que tiene hoja de vida')
+#             if item_instance.id_bien.cod_tipo_bien == 'A':
+#                 item_hv_comp = HojaDeVidaComputadores.objects.filter(
+#                     id_articulo=item_instance.id_bien.id_bien).first()
+#                 item_hv_veh = HojaDeVidaVehiculos.objects.filter(
+#                     id_articulo=item_instance.id_bien.id_bien).first()
+#                 item_hv_oac = HojaDeVidaOtrosActivos.objects.filter(
+#                     id_articulo=item_instance.id_bien.id_bien).first()
+#                 if item_hv_comp or item_hv_veh or item_hv_oac:
+#                     raise PermissionDenied('No se puede eliminar por que tiene hoja de vida')
 
-                bien_eliminar = CatalogoBienes.objects.filter(
-                    id_bien=item_instance.id_bien.id_bien).first()
-                inventario_item_instance_delete = Inventario.objects.filter(
-                    id_bien=item_instance.id_bien.id_bien)
+#                 bien_eliminar = CatalogoBienes.objects.filter(
+#                     id_bien=item_instance.id_bien.id_bien).first()
+#                 inventario_item_instance_delete = Inventario.objects.filter(
+#                     id_bien=item_instance.id_bien.id_bien)
 
-                # ELIMINA EL REGISTRO EN INVENTARIO, CATALOGO DE BIENES E ITEM ENTRADA
-                inventario_item_instance_delete.delete()
+#                 # ELIMINA EL REGISTRO EN INVENTARIO, CATALOGO DE BIENES E ITEM ENTRADA
+#                 inventario_item_instance_delete.delete()
 
-                valores_eliminados_detalles.append(
-                    {'nombre': bien_eliminar.nombre})
+#                 valores_eliminados_detalles.append(
+#                     {'nombre': bien_eliminar.nombre})
 
-                bien_eliminar.delete()
-                item_instance.delete()
+#                 bien_eliminar.delete()
+#                 item_instance.delete()
 
-        entrada = EntradasAlmacen.objects.filter(
-            id_entrada_almacen=id_entrada).first()
+#         entrada = EntradasAlmacen.objects.filter(
+#             id_entrada_almacen=id_entrada).first()
 
-        usuario = request.user.id_usuario
-        descripcion = {"numero_entrada_almacen": str(
-            entrada.numero_entrada_almacen), "fecha_entrada": str(entrada.fecha_entrada)}
-        direccion = Util.get_client_ip(request)
+#         usuario = request.user.id_usuario
+#         descripcion = {"numero_entrada_almacen": str(
+#             entrada.numero_entrada_almacen), "fecha_entrada": str(entrada.fecha_entrada)}
+#         direccion = Util.get_client_ip(request)
 
-        # AUDITORIA MAESTRO DETALLE
-        auditoria_data = {
-            "id_usuario": usuario,
-            "id_modulo": 34,
-            "cod_permiso": "AC",
-            "subsistema": 'ALMA',
-            "dirip": direccion,
-            "descripcion": descripcion,
-            "valores_eliminados_detalles": valores_eliminados_detalles
-        }
-        Util.save_auditoria_maestro_detalle(auditoria_data)
+#         # AUDITORIA MAESTRO DETALLE
+#         auditoria_data = {
+#             "id_usuario": usuario,
+#             "id_modulo": 34,
+#             "cod_permiso": "AC",
+#             "subsistema": 'ALMA',
+#             "dirip": direccion,
+#             "descripcion": descripcion,
+#             "valores_eliminados_detalles": valores_eliminados_detalles
+#         }
+#         Util.save_auditoria_maestro_detalle(auditoria_data)
 
-        return Response({'success':True, 'detail':'Se ha eliminado correctamente'}, status=status.HTTP_200_OK)
+#         return Response({'success':True, 'detail':'Se ha eliminado correctamente'}, status=status.HTTP_200_OK)
 
 
 class UpdateEntrada(generics.RetrieveUpdateAPIView):
@@ -1079,12 +1080,13 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
     queryset = EntradasAlmacen.objects.all()
     permission_classes = [IsAuthenticated]
 
-    def put(self, request, id_entrada):
-        data = request.data
+    def update_maestro(self, request, id_entrada):
+        data = request.data.get('info_entrada')
 
         # VALIDACIÓN QUE LA ENTRADA SELECCIONADA EXISTA
         entrada = EntradasAlmacen.objects.filter(
             id_entrada_almacen=id_entrada).first()
+        entrada_previous = copy.copy(entrada)
         if not entrada:
             raise NotFound('No se encontró ninguna entrada con el parámetro ingresado')
 
@@ -1150,7 +1152,459 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
         serializer = EntradaUpdateSerializer(entrada, data=data, many=False)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({'success':True, 'detail':'Actualización de entrada exitosa', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        
+        valores_actualizados_maestro = {'previous':entrada_previous, 'current':entrada}
+        
+        return valores_actualizados_maestro
+
+    def delete_items(self, request, id_entrada):
+        items_enviados = request.data.get('info_items_entrada')
+
+        id_items_enviados = [item_enviado['id_item_entrada_almacen'] for item_enviado in items_enviados if item_enviado['id_item_entrada_almacen']!=None]
+        instances_items_eliminar = ItemEntradaAlmacen.objects.filter(id_entrada_almacen=id_entrada).exclude(id_item_entrada_almacen__in=id_items_enviados)
+        
+        # VALIDAR QUE LA ENTRADA NO SE VAYA A QUEDAR SIN ITEMS
+        if not id_items_enviados:
+            raise PermissionDenied('No se puede eliminar ya que una entrada no puede quedar sin items')
+
+        # VALIDACIÓN SI LA ENTRADA FUE EL ÚLTIMO MOVIMIENTO EN INVENTARIO
+        id_bienes_enviados = [item.id_bien.id_bien for item in instances_items_eliminar]
+        inventario_item_instance = Inventario.objects.filter(
+            id_bien__in=id_bienes_enviados)
+        for item in inventario_item_instance:
+            item_entrada_instance = ItemEntradaAlmacen.objects.filter(
+                id_bien=item.id_bien.id_bien).first()
+            if str(item_entrada_instance.id_entrada_almacen.id_entrada_almacen) != str(item.id_registro_doc_ultimo_movimiento):
+                raise PermissionDenied('No se puede eliminar este item si la entrada no fue su último movimiento')
+
+        # VALIDACIÓN SI TIENE HOJA DE VIDA
+        valores_eliminados_detalles = []
+        id_entrada = 0
+
+        objects_items_enviado = [item for item in instances_items_eliminar]
+        for item_instance in objects_items_enviado:
+            id_entrada = item_instance.id_entrada_almacen.id_entrada_almacen
+
+            if item_instance.id_bien.cod_tipo_bien == 'A':
+                item_hv_comp = HojaDeVidaComputadores.objects.filter(
+                    id_articulo=item_instance.id_bien.id_bien).first()
+                item_hv_veh = HojaDeVidaVehiculos.objects.filter(
+                    id_articulo=item_instance.id_bien.id_bien).first()
+                item_hv_oac = HojaDeVidaOtrosActivos.objects.filter(
+                    id_articulo=item_instance.id_bien.id_bien).first()
+                if item_hv_comp or item_hv_veh or item_hv_oac:
+                    raise PermissionDenied('No se puede eliminar por que tiene hoja de vida')
+
+                bien_eliminar = CatalogoBienes.objects.filter(
+                    id_bien=item_instance.id_bien.id_bien).first()
+                inventario_item_instance_delete = Inventario.objects.filter(
+                    id_bien=item_instance.id_bien.id_bien)
+
+                # ELIMINA EL REGISTRO EN INVENTARIO, CATALOGO DE BIENES E ITEM ENTRADA
+                inventario_item_instance_delete.delete()
+
+                valores_eliminados_detalles.append(
+                    {'nombre': bien_eliminar.nombre})
+
+                bien_eliminar.delete()
+                item_instance.delete()
+
+        return valores_eliminados_detalles
+
+    def put(self, request, id_entrada):
+        data = request.data.get('info_items_entrada')
+        entrada_almacen = EntradasAlmacen.objects.filter(
+            id_entrada_almacen=id_entrada).first()
+        if not entrada_almacen:
+            raise NotFound('La entrada ingresada no existe')
+        
+        valores_actualizados_maestro = self.update_maestro(request, id_entrada)
+        valores_eliminados_detalles = self.delete_items(request, id_entrada)
+
+        # VALIDACIÓN DE QUE TODOS LOS ID_ITEMS ENVIADOS EXISTAN
+        items_actualizar = [item['id_item_entrada_almacen']
+                            for item in data if item['id_item_entrada_almacen'] != None]
+        items_entrada_actualizar = ItemEntradaAlmacen.objects.filter(
+            id_item_entrada_almacen__in=items_actualizar)
+        if len(set(items_actualizar)) != len(items_entrada_actualizar):
+            raise ValidationError('Todos los id_items enviados deben existir')
+
+        # VALIDACIÓN QUE LAS CANTIDADES ENVIADAS DEBEN SER MAYORES A 0
+        cantidades_list = [item['cantidad'] for item in data if item['cantidad']
+                           == None or item['cantidad'] == "" or item['cantidad'] == 0]
+        if cantidades_list:
+            raise ValidationError('Todos las cantidades enviadas deben ser mayores a cero')
+
+        # VALIDACIÓN QUE EL NÚMERO DE POSICIÓN SEA ÚNICO EN LA ENTRADA
+        numero_posicion = [item['numero_posicion'] for item in data]
+        if len(numero_posicion) != len(set(numero_posicion)):
+            raise ValidationError('Todos los numero de posición deben ser únicos')
+
+        # VALIDAR QUE EL ID_ENTRADA SEA EL MISMO
+        items_entrada_id_list = [item['id_entrada_almacen'] for item in data]
+        if len(set(items_entrada_id_list)) != 1:
+            raise ValidationError('Debe validar que los items de las entradas pertenezcan a una misma entrada')
+        else:
+            if items_entrada_id_list[0] != int(id_entrada):
+                raise ValidationError('El id_entrada de los items de la petición debe ser igual al enviado en url')
+
+        # VALIDACIÓN DE EXISTENCIA DE UNIDADES MEDIDAS VIDA UTIL
+        unidades_medida_vida_util_list = [item['id_unidad_medida_vida_util']
+                                          for item in data if item['id_unidad_medida_vida_util'] != None]
+        unidades_medida_vida_util_existe = UnidadesMedida.objects.filter(
+            id_unidad_medida__in=unidades_medida_vida_util_list)
+        if unidades_medida_vida_util_existe.count() != len(set(unidades_medida_vida_util_list)):
+            raise ValidationError('Una o varias unidades de medida que está asociando en los items no existen')
+
+        # VALIDACIÓN DE EXISTENCIA DE BODEGAS
+        bodegas_list = [item['id_bodega'] for item in data]
+        bodegas_existe = Bodegas.objects.filter(id_bodega__in=bodegas_list)
+        if bodegas_existe.count() != len(set(bodegas_list)):
+            raise ValidationError('Una o varias bodegas que están asociando en los items no existen')
+
+        # VALIDACIÓN DE EXISTENCIA PORCENTAJES IVA
+        porcentajes_iva_list = [item['porcentaje_iva'] for item in data]
+        porcentajes_iva_existe = PorcentajesIVA.objects.filter(
+            id_porcentaje_iva__in=porcentajes_iva_list)
+        if porcentajes_iva_existe.count() != len(set(porcentajes_iva_list)):
+            raise ValidationError('Uno o varios porcentajes iva que están asociando en los items no existen')
+
+        # VALIDACIÓN DE EXISTENCIA BIENES Y BIENES PADRE
+        bienes_list = [item['id_bien']
+                       for item in data if item['id_bien'] != None]
+        bienes_padre_list = [item['id_bien_padre']
+                             for item in data if item['id_item_entrada_almacen'] == None and item['id_bien_padre'] != None]
+        bienes_list.extend(bienes_padre_list)
+        bienes_existe = CatalogoBienes.objects.filter(id_bien__in=bienes_list)
+        if bienes_existe.count() != len(set(bienes_list)):
+            raise ValidationError('Uno o varios bienes que están asociando en los items no existen')
+
+        # CONOCER LOS QUE SE VAN A CREAR
+        items_por_crear = [
+            item for item in data if item['id_item_entrada_almacen'] == None]
+
+        # CONOCER LOS QUE EXISTEN Y NO SE VAN A ACTUALIZAR
+        items_existen_sin_actualizar = ItemEntradaAlmacen.objects.filter(
+            id_entrada_almacen=id_entrada).exclude(id_item_entrada_almacen__in=items_actualizar)
+
+        # VALIDACIÓN QUE EL DOC_IDENTIFICADOR SEA ÚNICO EN LA ENTRADA
+        doc_identificadores_existentes = [
+            item.doc_identificador_bien for item in items_existen_sin_actualizar if item.doc_identificador_bien != None]
+        docs_identificadores_list = [item['doc_identificador_bien']
+                                     for item in data if item['doc_identificador_bien'] != None]
+        doc_identificadores_existentes.extend(docs_identificadores_list)
+        if len(set(doc_identificadores_existentes)) != len(doc_identificadores_existentes):
+            raise ValidationError('Todos los documentos identificadores deben ser únicos')
+        if len(docs_identificadores_list) != len(set(docs_identificadores_list)):
+            raise ValidationError('Todos los documentos identificadores deben ser únicos')
+
+        # TOTAL VALOR ENTRADA
+        valor_total_items_actualizar_list = [
+            float(item.valor_total_item) for item in items_entrada_actualizar]
+        valor_total_item_existen_list = [
+            float(item.valor_total_item) for item in items_existen_sin_actualizar]
+        valor_total_item_crear_list = [
+            float(item['valor_total_item']) for item in items_por_crear]
+        valor_total_entrada = valor_total_items_actualizar_list + \
+            valor_total_item_existen_list + valor_total_item_crear_list
+        valor_total_entrada = sum(valor_total_entrada)
+
+        # SEPARAR LO QUE SE CREA EN ACTIVOS FIJOS Y DE CONSUMO
+        items_activos_fijos_crear_list = [
+            item for item in items_por_crear if item['id_bien_padre'] != None and item['id_bien'] == None]
+        items_consumo_crear_list = [
+            item for item in items_por_crear if item['id_bien_padre'] == None and item['id_bien'] != None]
+
+        # OBTENER TIPO DOC ULTIMO MOVIMIENTO DE ENTRADA
+        tipo_doc_ultimo_movimiento = ''
+        match entrada_almacen.id_tipo_entrada.cod_tipo_entrada:
+            case 1:
+                tipo_doc_ultimo_movimiento = 'E_CPR'
+            case 2:
+                tipo_doc_ultimo_movimiento = 'E_DON'
+            case 3:
+                tipo_doc_ultimo_movimiento = 'E_RES'
+            case 4:
+                tipo_doc_ultimo_movimiento = 'E_CPS'
+            case 5:
+                tipo_doc_ultimo_movimiento = 'E_CMD'
+            case 6:
+                tipo_doc_ultimo_movimiento = 'E_CNV'
+            case 7:
+                tipo_doc_ultimo_movimiento = 'E_EMB'
+            case 8:
+                tipo_doc_ultimo_movimiento = 'E_INC'
+
+        # VARIABLES AUDITORIAS
+        valores_creados_detalles = []
+        valores_actualizados_detalles = []
+
+        # CREACIÓN ACTIVOS FIJOS
+        items_guardados = []
+        for item in items_activos_fijos_crear_list:
+            id_bien_padre = item.get('id_bien_padre')
+            doc_identificador_bien = item.get('doc_identificador_bien')
+            id_porcentaje_iva = item.get('porcentaje_iva')
+            cantidad_vida_util = item.get('cantidad_vida_util')
+            id_unidad_medida_vida_util = item.get('id_unidad_medida_vida_util')
+            valor_residual = item.get('valor_residual')
+            tiene_hoja_vida = item.get('tiene_hoja_vida')
+            id_bodega = item.get('id_bodega')
+            valor_total_item = item.get('valor_total_item')
+            cod_estado = item.get('cod_estado')
+
+            # CREACIÓN DE UN ITEM ACTIVO FIJO EN BASE A CAMPOS HEREDADOS DEL PADRE
+            bien_padre = CatalogoBienes.objects.filter(
+                id_bien=id_bien_padre).first()
+            bien_padre_serializado = CatalogoBienesSerializer(bien_padre)
+
+            # ASIGNACIÓN DEL ÚLTIMO NÚMERO DEL ELEMENTO
+            ultimo_numero_elemento = CatalogoBienes.objects.filter(Q(codigo_bien=bien_padre.codigo_bien) & ~Q(
+                nro_elemento_bien=None)).order_by('-nro_elemento_bien').first()
+            numero_elemento = 1
+            if ultimo_numero_elemento:
+                numero_elemento = ultimo_numero_elemento.nro_elemento_bien + 1
+
+            # ASIGNACIÓN DE INFORMACIÓN PARA LA CREACIÓN DEL ELEMENTO
+            data_create = bien_padre_serializado.data
+            data_create['nro_elemento_bien'] = numero_elemento
+            data_create['doc_identificador_nro'] = doc_identificador_bien
+            data_create['id_porcentaje_iva'] = id_porcentaje_iva
+            data_create['cantidad_vida_util'] = cantidad_vida_util
+            data_create['id_unidad_medida_vida_util'] = id_unidad_medida_vida_util
+            data_create['valor_residual'] = valor_residual
+            data_create['tiene_hoja_vida'] = tiene_hoja_vida
+            data_create['id_bien_padre'] = id_bien_padre
+            del data_create['id_bien']
+            del data_create['maneja_hoja_vida']
+            del data_create['visible_solicitudes']
+            serializer = CatalogoBienesSerializer(data=data_create, many=False)
+            serializer.is_valid(raise_exception=True)
+            elemento_creado = serializer.save()
+
+            # REGISTRAR LA ENTRADA EN INVENTARIO
+            bodega = Bodegas.objects.filter(id_bodega=id_bodega).first()
+
+            registro_inventario = Inventario.objects.create(
+                id_bien=elemento_creado,
+                id_bodega=bodega,
+                cod_tipo_entrada=entrada_almacen.id_tipo_entrada,
+                fecha_ingreso=entrada_almacen.fecha_entrada,
+                id_persona_origen=entrada_almacen.id_proveedor,
+                numero_doc_origen=entrada_almacen.numero_entrada_almacen,
+                valor_ingreso=valor_total_item,
+                ubicacion_en_bodega=True,
+                cod_estado_activo=cod_estado,
+                fecha_ultimo_movimiento=datetime.now(),
+                tipo_doc_ultimo_movimiento=tipo_doc_ultimo_movimiento,
+                id_registro_doc_ultimo_movimiento=entrada_almacen.id_entrada_almacen
+            )
+            if tiene_hoja_vida == True:
+                match bien_padre.cod_tipo_activo:
+                    case 'Com':
+                        create_hoja_vida = HojaDeVidaComputadores.objects.create(
+                            id_articulo=elemento_creado
+                        )
+                    case 'Veh':
+                        create_hoja_vida = HojaDeVidaVehiculos.objects.create(
+                            id_articulo=elemento_creado
+                        )
+                    case 'OAc':
+                        create_hoja_vida = HojaDeVidaOtrosActivos.objects.create(
+                            id_articulo=elemento_creado
+                        )
+            item['id_bien'] = elemento_creado.id_bien
+            serializador_item_entrada = SerializerItemEntradaActivosFijos(
+                data=item, many=False)
+            serializador_item_entrada.is_valid(raise_exception=True)
+            serializador_item_entrada.save()
+            items_guardados.append(serializador_item_entrada.data)
+            valores_creados_detalles.append({'nombre': elemento_creado.nombre})
+
+        # CREACIÓN DE CONSUMO
+        for item in items_consumo_crear_list:
+            id_bien_ = item.get('id_bien')
+            cantidad = item.get('cantidad')
+            id_bodega = item.get('id_bodega')
+
+            # REALIZAR EL GUARDADO DE LOS ITEMS TIPO BIEN CONSUMO EN INVENTARIO
+            bodega = Bodegas.objects.filter(id_bodega=id_bodega).first()
+
+            # CREA EL BIEN CONSUMO EN INVENTARIO O MODIFICA LA CANTIDAD POR BODEGA
+            bien = CatalogoBienes.objects.filter(id_bien=id_bien_).first()
+            id_bien_inventario = Inventario.objects.filter(
+                id_bien=bien.id_bien, id_bodega=bodega.id_bodega).first()
+
+            # SUMA EL REGISTRO SI ESTABA ESE BIEN EN ESA BODEGA EN INVENTARIO
+            if id_bien_inventario:
+                if id_bien_inventario.cantidad_entrante_consumo != None:
+                    suma = id_bien_inventario.cantidad_entrante_consumo + cantidad
+                    id_bien_inventario.cantidad_entrante_consumo = suma
+                    id_bien_inventario.save()
+                else:
+                    id_bien_inventario.cantidad_entrante_consumo = cantidad
+                    id_bien_inventario.save()
+            else:
+                registro_inventario = Inventario.objects.create(
+                    id_bien=bien,
+                    id_bodega=bodega,
+                    cod_tipo_entrada=entrada_almacen.id_tipo_entrada,
+                    cantidad_entrante_consumo=cantidad,
+                    fecha_ingreso=entrada_almacen.fecha_entrada
+                )
+            serializador_item_entrada_consumo = SerializerItemEntradaConsumo(
+                data=item, many=False)
+            serializador_item_entrada_consumo.is_valid(raise_exception=True)
+            serializador_item_entrada_consumo.save()
+            items_guardados.append(serializador_item_entrada_consumo.data)
+
+            valores_creados_detalles.append({'nombre': bien.nombre})
+
+        # SEPARAR LO QUE SE ACTUALIZA EN ACTIVOS FIJOS Y DE CONSUMO
+        items_activos_fijos_actualizar_list = [
+            item for item in items_entrada_actualizar if item.id_bien.cod_tipo_bien == 'A']
+        items_consumo_actualizar_list = [
+            item for item in items_entrada_actualizar if item.id_bien.cod_tipo_bien == 'C']
+
+        # ACTUALIZAR ACTIVOS FIJOS
+        items_activos_fijos_actualizar_id_list = [
+            item.id_bien.id_bien for item in items_activos_fijos_actualizar_list]
+        catalogo_bienes_fijos_actualizar = CatalogoBienes.objects.filter(
+            id_bien__in=items_activos_fijos_actualizar_id_list)
+        inventario_fijos_actualizar = Inventario.objects.filter(
+            id_bien__in=items_activos_fijos_actualizar_id_list)
+        items_actualizables = [inventario for inventario in inventario_fijos_actualizar if str(inventario.id_registro_doc_ultimo_movimiento) == str(
+            entrada_almacen.id_entrada_almacen) and str(inventario.tipo_doc_ultimo_movimiento) == str(tipo_doc_ultimo_movimiento)]
+        items_no_actualizables = [inventario for inventario in inventario_fijos_actualizar if str(inventario.id_registro_doc_ultimo_movimiento) != str(
+            entrada_almacen.id_entrada_almacen) or str(inventario.tipo_doc_ultimo_movimiento) != str(tipo_doc_ultimo_movimiento)]
+        id_bien_items_actualizables = [
+            item.id_bien.id_bien for item in items_actualizables]
+        item_data_por_actualizar = [
+            item for item in data if item['id_bien'] in id_bien_items_actualizables]
+
+        for item in item_data_por_actualizar:
+            # SE ACTUALIZA EN CATALOGO BIENES
+            catalogo_bien_instance_actualizar = catalogo_bienes_fijos_actualizar.filter(
+                id_bien=item['id_bien']).first()
+            item['id_porcentaje_iva'] = item['porcentaje_iva']
+            serializer_catalogo_bien = CatalogoBienesActivoFijoPutSerializer(
+                catalogo_bien_instance_actualizar, data=item)
+            serializer_catalogo_bien.is_valid(raise_exception=True)
+            serializer_catalogo_bien.save()
+
+            descripcion_item_actualizado = {
+                'nombre': serializer_catalogo_bien.data['nombre']}
+
+            # SE ACTUALIZA EN INVENTARIO
+            inventario_instance_actualizar = inventario_fijos_actualizar.filter(
+                id_bien=item['id_bien']).first()
+            serializer_inventario = SerializerUpdateInventariosActivosFijos(
+                inventario_instance_actualizar, data=item)
+            serializer_inventario.is_valid(raise_exception=True)
+            serializer_inventario.save()
+
+            previous_item_actualizado = copy.copy(item_instance)
+
+            # SE ACTUALIZA ITEM ENTRADA
+            item_instance = items_entrada_actualizar.filter(
+                id_item_entrada_almacen=item['id_item_entrada_almacen']).first()
+            
+            serializer_item = SerializerUpdateItemEntradaActivosFijos(
+                item_instance, data=item)
+            serializer_item.is_valid(raise_exception=True)
+            serializer_item.save()
+
+            items_guardados.append(serializer_item.data)
+
+            valores_actualizados_detalles.append(
+                {'descripcion': descripcion_item_actualizado, 'previous': previous_item_actualizado, 'current': item_instance})
+
+        # ACTUALIZAR ITEMS DE CONSUMO
+        items_consumo_actualizar_id_list = [
+            item.id_bien.id_bien for item in items_consumo_actualizar_list]
+        inventario_consumo_actualizar = Inventario.objects.filter(
+            id_bien__in=items_consumo_actualizar_id_list)
+        item_data_por_actualizar_consumo = [
+            item for item in data if item['id_bien'] in items_consumo_actualizar_id_list]
+
+        for item in item_data_por_actualizar_consumo:
+            item_consumo_instance = items_entrada_actualizar.filter(
+                id_bien=item['id_bien']).first()
+
+            # CANTIDAD AUMENTA
+            if item['cantidad'] >= item_consumo_instance.cantidad:
+                inventario_instance_actualizar = inventario_consumo_actualizar.filter(
+                    id_bien=item['id_bien'], id_bodega=item['id_bodega']).first()
+
+                if item['id_bodega'] == inventario_instance_actualizar.id_bodega.id_bodega:
+                    # SE ACTUALIZA EN INVENTARIO
+                    item_instance = items_entrada_actualizar.filter(
+                        id_item_entrada_almacen=item['id_item_entrada_almacen']).first()
+
+                    item['cantidad_entrante_consumo'] = inventario_instance_actualizar.cantidad_entrante_consumo + \
+                        abs((item_instance.cantidad - item['cantidad']))
+                    serializer_inventario = SerializerUpdateInventariosConsumo(
+                        inventario_instance_actualizar, data=item)
+                    serializer_inventario.is_valid(raise_exception=True)
+                    serializer_inventario.save()
+
+                    bien_actualizado = bienes_existe.filter(
+                        id_bien=item['id_bien']).first()
+                    descripcion_item_actualizado = {
+                        'nombre': bien_actualizado.nombre}
+                    previous_item_actualizado = copy.copy(item_instance)
+
+                    # SE ACTUALIZA ITEM ENTRADA
+                    serializer_item = SerializerItemEntradaConsumoPut(
+                        item_instance, data=item)
+                    serializer_item.is_valid(raise_exception=True)
+                    serializer_item.save()
+
+                    items_guardados.append(serializer_item.data)
+
+                    valores_actualizados_detalles.append(
+                        {'descripcion': descripcion_item_actualizado, 'previous': previous_item_actualizado, 'current': item_instance})
+
+                else:
+                    pass
+            # CANTIDAD REDUCE
+            else:
+                if item['cantidad'] < item_consumo_instance.cantidad:
+                    valor_minimo_posible = UtilAlmacen.get_valor_minimo_entradas(item_consumo_instance.id_bien.id_bien, item_consumo_instance.id_bodega.id_bodega, item_consumo_instance.id_entrada_almacen.id_entrada_almacen)
+                    if item['cantidad'] < valor_minimo_posible:
+                        raise PermissionDenied('No puede reducir la cantidad del bien ' + item_consumo_instance.id_bien.nombre + ' hasta la cantidad ingresada. La cantidad mínima posible a la que puede quedar es ' + valor_minimo_posible)
+            
+        # SE ACTUALIZA VALOR TOTAL ENTRADA MODIFICADO
+        entrada_almacen.valor_total_entrada = valor_total_entrada
+
+        # VALIDACIÓN PERSONA ACTUALIZA
+        persona_actualiza = request.user.persona
+        if (persona_actualiza.id_persona != entrada_almacen.id_creador.id_persona):
+            entrada_almacen.id_persona_ult_act_dif_creador = persona_actualiza
+            entrada_almacen.fecha_ultima_actualizacion_diferente_creador = datetime.now()
+
+        entrada_almacen.save()
+
+        descripcion = {"numero_entrada_almacen": str(
+            entrada_almacen.numero_entrada_almacen), "fecha_entrada": str(entrada_almacen.fecha_entrada)}
+        direccion = Util.get_client_ip(request)
+
+        # AUDITORIAS
+        auditoria_data = {
+            "id_usuario": request.user.id_usuario,
+            "id_modulo": 34,
+            "cod_permiso": "AC",
+            "subsistema": 'ALMA',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_actualizados_maestro": valores_actualizados_maestro,
+            "valores_actualizados_detalles": valores_actualizados_detalles,
+            "valores_creados_detalles": valores_creados_detalles,
+            "valores_eliminados_detalles": valores_eliminados_detalles
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
+
+        return Response({'success':True, 'detail':'Actualizado exitosamente', 'data': items_guardados}, status=status.HTTP_201_CREATED)
 
 class GetTiposEntradas(generics.ListAPIView):
     serializer_class = TiposEntradasSerializer
