@@ -21,6 +21,7 @@ from conservacion.models.viveros_models import (
 )
 from conservacion.serializers.bajas_serializers import (
     BajasViveroPostSerializer,
+    ItemsBajasViveroGetSerializer,
     ItemsBajasViveroPostSerializer,
     ViveroBajasSerializer,
     CatalogoBienesBajasSerializer,
@@ -161,6 +162,8 @@ class CreateBajasVivero(generics.UpdateAPIView):
             instancia_bien_vivero.cantidad_bajas = instancia_bien_vivero.cantidad_bajas if instancia_bien_vivero.cantidad_bajas else 0
             instancia_bien_vivero.cantidad_bajas = instancia_bien_vivero.cantidad_bajas + i['cantidad_baja']
             instancia_bien_vivero.save()
+        
+        print("AAAAAAAAAAAAAAAAAAAA", aux_ultimo)
         
         return Response({'succes' : True, 'detail' : 'Baja creada con éxito'}, status=status.HTTP_200_OK)
 
@@ -493,6 +496,32 @@ class GetBajasParaAnulacionPorNumeroBaja(generics.ListAPIView):
         if ultimo_nro_baja.nro_baja_por_tipo != resultado_busqueda.nro_baja_por_tipo:
             raise ValidationError ('Solo se puede anular la última baja registrada.')
         
-        serializer = self.serializer_class(resultado_busqueda, many=False)
+        serializer = self.serializer_class(resultado_busqueda, many=False, context = {'request':request})
         
         return Response({'succes':True, 'detail':'Ok', 'data':serializer.data}, status=status.HTTP_200_OK)
+    
+class GetBajasPorFiltro(generics.ListAPIView):
+    serializer_class = GetBajaByNumeroSerializer
+    queryset = BajasVivero.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        nro_baja = request.query_params.get('nro_baja', '')
+        print(nro_baja)
+        resultado_busqueda = self.queryset.filter(nro_baja_por_tipo__icontains=nro_baja, tipo_baja='B').order_by('nro_baja_por_tipo')
+        
+        serializer = self.serializer_class(resultado_busqueda, many=True, context = {'request':request})
+        
+        return Response({'succes':True, 'detail':'Se encontraron las siguientes coincidencias', 'data':serializer.data}, status=status.HTTP_200_OK)
+    
+class GetItemsByBaja(generics.ListAPIView):
+    serializer_class = ItemsBajasViveroGetSerializer
+    queryset = ItemsBajasVivero.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_baja):
+        resultado_busqueda = self.queryset.filter(id_baja=id_baja, id_baja__tipo_baja='B')
+        
+        serializer = self.serializer_class(resultado_busqueda, many=True)
+        
+        return Response({'succes':True, 'detail':'Se encontraron los siguientes items para la baja ingresada', 'data':serializer.data}, status=status.HTTP_200_OK)

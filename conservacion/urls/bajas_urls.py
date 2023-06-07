@@ -7,6 +7,8 @@ urlpatterns = [
     path('anualar-bajas-vivero/<str:id_baja_anular>/', views.AnularBajasVivero.as_view(), name='anular-bajas-vivero'),
     path('get-viveros/', views.GetVivero.as_view(), name='get-viveros'),
     path('get-baja-by-numero-baja/<str:nro_baja>/', views.GetBajasParaAnulacionPorNumeroBaja.as_view(), name='get-baja-by-numero-baja'),
+    path('get-bajas-by-filter/', views.GetBajasPorFiltro.as_view(), name='get-bajas-by-filter'),
+    path('get-items-by-baja/<str:id_baja>/', views.GetItemsByBaja.as_view(), name='get-items-by-baja'),
     path('get-bienes-bajas/<str:codigo_entrante>/<str:vivero_origen>/', views.GetBienesBajas.as_view(), name='get-bienes_bajas'),
     path('busqueda-avanzada-bienes-bajas/<str:vivero_origen>/', views.BusquedaAvanzadaBienesBajas.as_view(), name='busqueda-avanzada-bienes-bajas'),
 ]
