@@ -114,6 +114,9 @@ urlpatterns = [
     #Recaudo
     path('api/recaudo/liquidaciones/', include('recaudo.urls.liquidaciones_urls')),
     path('api/recaudo/procesos/', include('recaudo.urls.procesos_urls')),
+
+    #NOTIFICACIONES
+    path('api/recaudo/notificaciones/', include('recaudo.urls.notificaciones_urls')),
     
     #RECURSO HIDRICO
     path('api/hidrico/programas/',include('recurso_hidrico.urls.programas_urls')),
