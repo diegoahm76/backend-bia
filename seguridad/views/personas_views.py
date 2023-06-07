@@ -107,7 +107,7 @@ from seguridad.serializers.personas_serializers import (
 class GetEstadoCivil(generics.ListAPIView):
     serializer_class = EstadoCivilSerializer
     permission_classes = [IsAuthenticated, PermisoConsultarEstadoCivil]
-    # queryset = EstadoCivil.objects.filter(activo=True)
+    queryset = EstadoCivil.objects.all()
 
 
 class GetEstadoCivilById(generics.RetrieveAPIView):
