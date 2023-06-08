@@ -419,6 +419,59 @@ class ActualizarEntregaView(generics.RetrieveUpdateAPIView):
     serializer_class = ActualizarEntregaSerializer
     queryset = DespachoConsumo.objects.all()
     permission_classes = [IsAuthenticated]
+    
+    def delete_items(self, items_entrega, id_entrega):
+        #VALIDACIÓN QUE LA ENTREGA ENVIADA EN LA URL EXISTA
+        entrega = DespachoConsumo.objects.filter(id_despacho_consumo=id_entrega).first()
+        if not entrega:
+            raise NotFound('No se encontró ninguna entrega con el parámetro enviado')
+        despacho_entrante = DespachoEntrantes.objects.filter(id_despacho_consumo_alm=entrega.id_despacho_consumo).first()
+
+        #VALIDACIÓN PARA PODER ACTUALIZAR UNA ENTREGA SOLO HASTA 45 DÍAS HACIA ATRÁS
+        if (entrega.fecha_despacho + timedelta(days=45))  < datetime.now():
+            raise PermissionDenied('No se puede actualizar una entrega despues de 45 días')
+
+        #VALIDACIÓN QUE TODOS LOS ITEMS ENVIADOS PARA ELIMINAR EXISTAN
+        items_entrega_list = [item['id_item_despacho_consumo'] for item in items_entrega if item['id_item_despacho_consumo']!=None]
+        items_entrega = ItemDespachoConsumo.objects.filter(id_despacho_consumo=id_entrega).exclude(id_item_despacho_consumo__in=items_entrega_list) 
+
+        #VALIDACIÓN QUE EL DESPACHO ENTRANTE NO HAYA SIDO DISTRIBUIDO
+        despacho_entrante = DespachoEntrantes.objects.filter(id_despacho_consumo_alm=entrega.id_despacho_consumo).first()
+        if despacho_entrante.distribucion_confirmada == True:
+            raise PermissionDenied('No se puede eliminar un item de una entrega que ya fue distribuido')
+        
+        #VALIDACIÓN QUE NO INTENTE ELIMINAR TODOS LOS ITEMS DE LA ENTREGA
+        if not items_entrega_list:
+            raise PermissionDenied('No se pueden eliminar todos los items de una entrega, debe anularla')
+
+        valores_eliminados_detalles = []
+        for item_entrega in items_entrega:
+            item_despacho_entrante = ItemsDespachoEntrante.objects.filter(id_bien=item_entrega.id_bien_despachado.id_bien, id_entrada_alm_del_bien=item_entrega.id_entrada_almacen_bien.id_entrada_almacen, id_despacho_entrante=despacho_entrante.id_despacho_entrante).first()
+            
+            #CASO 1. SI EN DESPACHOS ENTRANTES SE SUMARON DOS ITEMS DESPACHO CONSUMO
+            if item_despacho_entrante.cantidad_entrante > item_entrega.cantidad_despachada:
+                #ACTUALIZA EN CANTIDAD ENTRANTE, EN INVENTARIO Y ELIMINA EL ITEM EN ITEM DESPACHO CONSUMO
+                item_despacho_entrante.cantidad_entrante = item_despacho_entrante.cantidad_entrante - item_entrega.cantidad_despachada
+                item_despacho_entrante.save()
+
+                item_in_inventario = Inventario.objects.filter(id_bien=item_entrega.id_bien_despachado.id_bien, id_bodega=item_entrega.id_bodega.id_bodega).first()
+                item_in_inventario.cantidad_saliente_consumo = item_in_inventario.cantidad_saliente_consumo - item_entrega.cantidad_despachada
+                item_in_inventario.save()
+                valores_eliminados_detalles.append({'nombre' : item_entrega.id_bien_despachado.nombre})
+                item_entrega.delete()
+
+
+            #CASO 2. SI EN DESPACHOS ENTRANTES SOLO LLEGÓ ESE ITEM POR ELIMINAR
+            else:
+                #ACTUALIZA EN INVENTARIO, ELIMINA EL ITEM ENTRANTE Y EL ITEM CONSUMO
+                item_in_inventario = Inventario.objects.filter(id_bien=item_entrega.id_bien_despachado.id_bien, id_bodega=item_entrega.id_bodega.id_bodega).first()
+                item_in_inventario.cantidad_saliente_consumo = item_in_inventario.cantidad_saliente_consumo - item_entrega.cantidad_despachada
+                item_in_inventario.save()
+                item_despacho_entrante.delete()
+                valores_eliminados_detalles.append({'nombre' : item_entrega.id_bien_despachado.nombre})
+                item_entrega.delete()
+
+        return valores_eliminados_detalles
 
     def patch(self, request, id_entrega):
         data_entrega = request.data['data_entrega']
@@ -542,12 +595,23 @@ class ActualizarEntregaView(generics.RetrieveUpdateAPIView):
         for numero in numeros_posicion_items:
             if numero in numeros_posicion:
                 raise ValidationError('Los números de posición de los items deben ser únicos')
+            
+        # ACTUALIZAR MAESTRO
+        previous_maestro = copy.copy(entrega)
+        
+        serializer_maestro = self.serializer_class(entrega, data=data_entrega)
+        serializer_maestro.is_valid(raise_exception=True)
+        serializer_maestro.save()
+        
+        valores_actualizados_maestro = {'previous':previous_maestro, 'current':entrega}
 
         """
         
             Inicia proceso de Creación de Nuevos Items
         
         """
+        #DELETE ITEMS ENTREGA
+        valores_eliminados_detalles = self.delete_items(data_items_entrega, id_entrega)
 
         #CREACIÓN DE ENTREGA DETALLE
         for item in items_entrega_crear:
@@ -678,8 +742,10 @@ class ActualizarEntregaView(generics.RetrieveUpdateAPIView):
             "subsistema": 'ALMA',
             "dirip": direccion,
             "descripcion": descripcion,
+            "valores_actualizados_maestro": valores_actualizados_maestro,
             "valores_creados_detalles": valores_creados_detalles,
-            "valores_actualizados_detalles": items_actualizados
+            "valores_actualizados_detalles": items_actualizados,
+            "valores_eliminados_detalles": valores_eliminados_detalles
             }
         Util.save_auditoria_maestro_detalle(auditoria_data)
 
@@ -720,89 +786,89 @@ class GetItemsEntradasEntregasView(generics.ListAPIView):
             raise PermissionDenied('Ninguno de los items de esta entrada tiene cantidades faltantes por entregar')
         return Response({'success':True, 'detail':'Items encontrados exitosamente', 'data': item_con_disponibilidad}, status=status.HTTP_200_OK)
 
-class DeleteItemsEntregaView(generics.RetrieveDestroyAPIView):
-    serializer_class = DeleteItemsEntregaSerializer
-    queryset = ItemDespachoConsumo.objects.all()
-    permission_classes = [IsAuthenticated]
+# class DeleteItemsEntregaView(generics.RetrieveDestroyAPIView):
+#     serializer_class = DeleteItemsEntregaSerializer
+#     queryset = ItemDespachoConsumo.objects.all()
+#     permission_classes = [IsAuthenticated]
 
-    def delete(self, request, id_entrega):
-        items_eliminar = request.data
+#     def delete(self, request, id_entrega):
+#         items_eliminar = request.data
 
-        #VALIDACIÓN QUE LA ENTREGA ENVIADA EN LA URL EXISTA
-        entrega = DespachoConsumo.objects.filter(id_despacho_consumo=id_entrega).first()
-        if not entrega:
-            raise NotFound('No se encontró ninguna entrega con el parámetro enviado')
-        despacho_entrante = DespachoEntrantes.objects.filter(id_despacho_consumo_alm=entrega.id_despacho_consumo).first()
+#         #VALIDACIÓN QUE LA ENTREGA ENVIADA EN LA URL EXISTA
+#         entrega = DespachoConsumo.objects.filter(id_despacho_consumo=id_entrega).first()
+#         if not entrega:
+#             raise NotFound('No se encontró ninguna entrega con el parámetro enviado')
+#         despacho_entrante = DespachoEntrantes.objects.filter(id_despacho_consumo_alm=entrega.id_despacho_consumo).first()
 
-        #VALIDACIÓN PARA PODER ACTUALIZAR UNA ENTREGA SOLO HASTA 45 DÍAS HACIA ATRÁS
-        if (entrega.fecha_despacho + timedelta(days=45))  < datetime.now():
-            raise PermissionDenied('No se puede actualizar una entrega despues de 45 días')
+#         #VALIDACIÓN PARA PODER ACTUALIZAR UNA ENTREGA SOLO HASTA 45 DÍAS HACIA ATRÁS
+#         if (entrega.fecha_despacho + timedelta(days=45))  < datetime.now():
+#             raise PermissionDenied('No se puede actualizar una entrega despues de 45 días')
 
-        #VALIDACIÓN QUE TODOS LOS ITEMS ENVIADOS PARA ELIMINAR EXISTAN
-        items_entrega_list = [item['id_item_despacho_consumo'] for item in items_eliminar]
-        items_entrega = ItemDespachoConsumo.objects.filter(id_item_despacho_consumo__in=items_entrega_list)
-        items_entrega_id = [item.id_item_despacho_consumo for item in items_entrega]
-        for item in items_entrega_list:
-            if item not in items_entrega_id:
-                raise ValidationError('Todos los items por eliminar deben existir')
+#         #VALIDACIÓN QUE TODOS LOS ITEMS ENVIADOS PARA ELIMINAR EXISTAN
+#         items_entrega_list = [item['id_item_despacho_consumo'] for item in items_eliminar]
+#         items_entrega = ItemDespachoConsumo.objects.filter(id_item_despacho_consumo__in=items_entrega_list)
+#         items_entrega_id = [item.id_item_despacho_consumo for item in items_entrega]
+#         for item in items_entrega_list:
+#             if item not in items_entrega_id:
+#                 raise ValidationError('Todos los items por eliminar deben existir')
 
-        #VALIDACIÓN QUE TODOS LOS ITEMS ENVIADOS PERTENEZCAN A LA ENTREGA ENVIADA EN LA URL
-        entrega_items_list = [item['id_despacho_consumo'] for item in items_eliminar]
-        if len(set(entrega_items_list)) > 1:
-            raise ValidationError('Todos los items enviados deben pertenecer a la entrega seleccionada') 
-        if int(entrega_items_list[0]) !=  entrega.id_despacho_consumo:
-            raise ValidationError('Todos los items a eliminar deben pertenecer a la entrega seleccionada') 
+#         #VALIDACIÓN QUE TODOS LOS ITEMS ENVIADOS PERTENEZCAN A LA ENTREGA ENVIADA EN LA URL
+#         entrega_items_list = [item['id_despacho_consumo'] for item in items_eliminar]
+#         if len(set(entrega_items_list)) > 1:
+#             raise ValidationError('Todos los items enviados deben pertenecer a la entrega seleccionada') 
+#         if int(entrega_items_list[0]) !=  entrega.id_despacho_consumo:
+#             raise ValidationError('Todos los items a eliminar deben pertenecer a la entrega seleccionada') 
 
-        #VALIDACIÓN QUE EL DESPACHO ENTRANTE NO HAYA SIDO DISTRIBUIDO
-        despacho_entrante = DespachoEntrantes.objects.filter(id_despacho_consumo_alm=entrega.id_despacho_consumo).first()
-        if despacho_entrante.distribucion_confirmada == True:
-            raise PermissionDenied('No se puede eliminar un item de una entrega que ya fue distribuido')
+#         #VALIDACIÓN QUE EL DESPACHO ENTRANTE NO HAYA SIDO DISTRIBUIDO
+#         despacho_entrante = DespachoEntrantes.objects.filter(id_despacho_consumo_alm=entrega.id_despacho_consumo).first()
+#         if despacho_entrante.distribucion_confirmada == True:
+#             raise PermissionDenied('No se puede eliminar un item de una entrega que ya fue distribuido')
         
-        #VALIDACIÓN QUE NO INTENTE ELIMINAR TODOS LOS ITEMS DE LA ENTREGA
-        items_entrega_todos = ItemDespachoConsumo.objects.filter(id_despacho_consumo=id_entrega)
-        if len(items_entrega_list) == len(items_entrega_todos):
-            raise PermissionDenied('No se pueden eliminar todos los items de una entrega, debe anularla')
+#         #VALIDACIÓN QUE NO INTENTE ELIMINAR TODOS LOS ITEMS DE LA ENTREGA
+#         items_entrega_todos = ItemDespachoConsumo.objects.filter(id_despacho_consumo=id_entrega)
+#         if len(items_entrega_list) == len(items_entrega_todos):
+#             raise PermissionDenied('No se pueden eliminar todos los items de una entrega, debe anularla')
 
-        valores_eliminados_detalles = []
-        for item in items_eliminar:
-            item_entrega = ItemDespachoConsumo.objects.filter(id_item_despacho_consumo=item['id_item_despacho_consumo']).first()
-            item_despacho_entrante = ItemsDespachoEntrante.objects.filter(id_bien=item_entrega.id_bien_despachado.id_bien, id_entrada_alm_del_bien=item_entrega.id_entrada_almacen_bien.id_entrada_almacen, id_despacho_entrante=despacho_entrante.id_despacho_entrante).first()
+#         valores_eliminados_detalles = []
+#         for item in items_eliminar:
+#             item_entrega = ItemDespachoConsumo.objects.filter(id_item_despacho_consumo=item['id_item_despacho_consumo']).first()
+#             item_despacho_entrante = ItemsDespachoEntrante.objects.filter(id_bien=item_entrega.id_bien_despachado.id_bien, id_entrada_alm_del_bien=item_entrega.id_entrada_almacen_bien.id_entrada_almacen, id_despacho_entrante=despacho_entrante.id_despacho_entrante).first()
             
-            #CASO 1. SI EN DESPACHOS ENTRANTES SE SUMARON DOS ITEMS DESPACHO CONSUMO
-            if item_despacho_entrante.cantidad_entrante > item_entrega.cantidad_despachada:
-                #ACTUALIZA EN CANTIDAD ENTRANTE, EN INVENTARIO Y ELIMINA EL ITEM EN ITEM DESPACHO CONSUMO
-                item_despacho_entrante.cantidad_entrante = item_despacho_entrante.cantidad_entrante - item_entrega.cantidad_despachada
-                item_despacho_entrante.save()
+#             #CASO 1. SI EN DESPACHOS ENTRANTES SE SUMARON DOS ITEMS DESPACHO CONSUMO
+#             if item_despacho_entrante.cantidad_entrante > item_entrega.cantidad_despachada:
+#                 #ACTUALIZA EN CANTIDAD ENTRANTE, EN INVENTARIO Y ELIMINA EL ITEM EN ITEM DESPACHO CONSUMO
+#                 item_despacho_entrante.cantidad_entrante = item_despacho_entrante.cantidad_entrante - item_entrega.cantidad_despachada
+#                 item_despacho_entrante.save()
 
-                item_in_inventario = Inventario.objects.filter(id_bien=item_entrega.id_bien_despachado.id_bien, id_bodega=item_entrega.id_bodega.id_bodega).first()
-                item_in_inventario.cantidad_saliente_consumo = item_in_inventario.cantidad_saliente_consumo - item_entrega.cantidad_despachada
-                item_in_inventario.save()
-                valores_eliminados_detalles.append({'nombre' : item_entrega.id_bien_despachado.nombre})
-                item_entrega.delete()
+#                 item_in_inventario = Inventario.objects.filter(id_bien=item_entrega.id_bien_despachado.id_bien, id_bodega=item_entrega.id_bodega.id_bodega).first()
+#                 item_in_inventario.cantidad_saliente_consumo = item_in_inventario.cantidad_saliente_consumo - item_entrega.cantidad_despachada
+#                 item_in_inventario.save()
+#                 valores_eliminados_detalles.append({'nombre' : item_entrega.id_bien_despachado.nombre})
+#                 item_entrega.delete()
 
 
-            #CASO 2. SI EN DESPACHOS ENTRANTES SOLO LLEGÓ ESE ITEM POR ELIMINAR
-            else:
-                #ACTUALIZA EN INVENTARIO, ELIMINA EL ITEM ENTRANTE Y EL ITEM CONSUMO
-                item_in_inventario = Inventario.objects.filter(id_bien=item_entrega.id_bien_despachado.id_bien, id_bodega=item_entrega.id_bodega.id_bodega).first()
-                item_in_inventario.cantidad_saliente_consumo = item_in_inventario.cantidad_saliente_consumo - item_entrega.cantidad_despachada
-                item_in_inventario.save()
-                item_despacho_entrante.delete()
-                valores_eliminados_detalles.append({'nombre' : item_entrega.id_bien_despachado.nombre})
-                item_entrega.delete()
+#             #CASO 2. SI EN DESPACHOS ENTRANTES SOLO LLEGÓ ESE ITEM POR ELIMINAR
+#             else:
+#                 #ACTUALIZA EN INVENTARIO, ELIMINA EL ITEM ENTRANTE Y EL ITEM CONSUMO
+#                 item_in_inventario = Inventario.objects.filter(id_bien=item_entrega.id_bien_despachado.id_bien, id_bodega=item_entrega.id_bodega.id_bodega).first()
+#                 item_in_inventario.cantidad_saliente_consumo = item_in_inventario.cantidad_saliente_consumo - item_entrega.cantidad_despachada
+#                 item_in_inventario.save()
+#                 item_despacho_entrante.delete()
+#                 valores_eliminados_detalles.append({'nombre' : item_entrega.id_bien_despachado.nombre})
+#                 item_entrega.delete()
 
-        # AUDITORIA ELIMINACIÓN DE ITEMS ENTREGA
-        descripcion = {"numero_despacho_almacen": str(entrega.numero_despacho_consumo), "es_despacho_conservacion": str(entrega.es_despacho_conservacion),"fecha_despacho": str(entrega.fecha_despacho)}
-        direccion=Util.get_client_ip(request)
-        auditoria_data = {
-            "id_usuario" : request.user.id_usuario,
-            "id_modulo" : 46,
-            "cod_permiso": "BO",
-            "subsistema": 'ALMA',
-            "dirip": direccion,
-            "descripcion": descripcion,
-            "valores_eliminados_detalles": valores_eliminados_detalles
-        }
-        Util.save_auditoria_maestro_detalle(auditoria_data)
+#         # AUDITORIA ELIMINACIÓN DE ITEMS ENTREGA
+#         descripcion = {"numero_despacho_almacen": str(entrega.numero_despacho_consumo), "es_despacho_conservacion": str(entrega.es_despacho_conservacion),"fecha_despacho": str(entrega.fecha_despacho)}
+#         direccion=Util.get_client_ip(request)
+#         auditoria_data = {
+#             "id_usuario" : request.user.id_usuario,
+#             "id_modulo" : 46,
+#             "cod_permiso": "BO",
+#             "subsistema": 'ALMA',
+#             "dirip": direccion,
+#             "descripcion": descripcion,
+#             "valores_eliminados_detalles": valores_eliminados_detalles
+#         }
+#         Util.save_auditoria_maestro_detalle(auditoria_data)
 
-        return Response({'success':True, 'detail':'Items Eliminados Exitosamente'}, status=status.HTTP_200_OK)
+#         return Response({'success':True, 'detail':'Items Eliminados Exitosamente'}, status=status.HTTP_200_OK)
