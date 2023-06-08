@@ -2051,10 +2051,10 @@ class AnularEntrada(generics.UpdateAPIView):
             id_entrada_almacen=id_entrada).first()
         items_entrada = ItemEntradaAlmacen.objects.filter(
             id_entrada_almacen=id_entrada)
-        if entrada_anular.entrada_anulada == True:
-            raise ValidationError('Esta entrada ya ha sido anulada')
         if not entrada_anular:
             raise ValidationError('No se encontro una entrada asociada al ID que ingresó')
+        if entrada_anular.entrada_anulada == True:
+            raise ValidationError('Esta entrada ya ha sido anulada')
 
         if not items_entrada:
             raise ValidationError('No hay items asociados a la entrada')
