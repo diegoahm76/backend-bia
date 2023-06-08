@@ -15,8 +15,15 @@ class RegistroProgramaPORH(generics.CreateAPIView):
     queryset = ProgramasPORH.objects.all()
     
     def post(self,request):
-        data = request.data
-        
+        data_in = request.data
+        data = {
+            'id_instrumento': 1, 
+            'nombre': data_in['nombre'],
+            'fecha_inicio': data_in['fecha_inicio'],
+            'fecha_fin': data_in['fecha_fin'],
+            'proyectos': data_in['proyectos']
+        }
+
         serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
         
