@@ -9,6 +9,17 @@ class RegistroProgramaPORHSerializer(serializers.ModelSerializer):
         model = ProgramasPORH
         fields = '__all__'
 
+class ProyectosPORHSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProyectosPORH
+        fields = '__all__'
+
+class ActividadesProyectos(serializers.ModelSerializer):
+    class Meta:
+        model = ActividadesProyectos
+        fields = '__all__'
+
+
 class GetProgramasporPORHSerializers(serializers.ModelSerializer):
     class Meta:
         model = ProgramasPORH
