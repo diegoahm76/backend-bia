@@ -12,7 +12,7 @@ class RegistroProgramaPORHSerializer(serializers.ModelSerializer):
 class GetProgramasporPORHSerializers(serializers.ModelSerializer):
     class Meta:
         model = ProgramasPORH
-        fields = ['nombre','fecha_inicio','fecha_fin']
+        fields = ['id_programa','nombre','fecha_inicio','fecha_fin']
         
 class GetProyectosPORHSerializers(serializers.ModelSerializer):
     class Meta:
