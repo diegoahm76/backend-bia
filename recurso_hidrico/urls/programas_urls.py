@@ -3,7 +3,10 @@ from recurso_hidrico.views import programas_views as views
 
 urlpatterns = [
     path('programa/recurso/hidrico/create/',views.RegistroProgramaPORH.as_view(),name='programa-recurso-hidrico-create'),
+    path('recurso-hidrico/create/programa/',views.CreateProgramaPORH.as_view(),name='programa-recurso-hidrico-create-programa-individual'),
     path('get/programas/<str:pk>/',views.GetProgramasporPORH.as_view(),name='get-programas'),
+    path('recurso-hidrico/create/proyecto/',views.CreateProyectosPORH.as_view(),name='programa-recurso-hidrico-proyecto-create-individual'),
+    
     path('get/proyectos/por/programas/<str:pk>/',views.GetProyectosporProgramas.as_view(),name='get-proyectos-por-programas'),
     path('get/actividades/por/proyectos/<str:pk>/',views.GetActividadesporProyectos.as_view(),name='get-actividades-por-proyectos'),
     path('get/avanzada/programas/',views.BusquedaAvanzada.as_view(),name='get-avanzada-programas'),

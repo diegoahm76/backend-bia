@@ -7,7 +7,7 @@ from rest_framework import status
 from datetime import datetime,date,timedelta
 
 from recurso_hidrico.models.programas_models import ActividadesProyectos, AvancesProyecto, EvidenciasAvance, ProgramasPORH, ProyectosPORH
-from recurso_hidrico.serializers.programas_serializers import ActualizarActividadesSerializers, ActualizarAvanceEvidenciaSerializers, ActualizarProyectosSerializers, BusquedaAvanzadaSerializers, EliminarActividadesSerializers, EliminarProyectoSerializers, GetActividadesporProyectosSerializers, GetProgramasporPORHSerializers, GetProyectosPORHSerializers, RegistrarAvanceSerializers, RegistroEvidenciaSerializers, RegistroProgramaPORHSerializer,BusquedaAvanzadaAvancesSerializers
+from recurso_hidrico.serializers.programas_serializers import ActualizarActividadesSerializers, ActualizarAvanceEvidenciaSerializers, ActualizarProyectosSerializers, BusquedaAvanzadaSerializers, EliminarActividadesSerializers, EliminarProyectoSerializers, GetActividadesporProyectosSerializers, GetProgramasporPORHSerializers, GetProyectosPORHSerializers, RegistrarAvanceSerializers, RegistroEvidenciaSerializers, RegistroProgramaPORHSerializer,BusquedaAvanzadaAvancesSerializers,ProyectosPORHSerializer
 
 class RegistroProgramaPORH(generics.CreateAPIView):
     serializer_class = RegistroProgramaPORHSerializer
@@ -60,6 +60,51 @@ class RegistroProgramaPORH(generics.CreateAPIView):
             
         return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
 
+class CreateProgramaPORH(generics.CreateAPIView):
+    serializer_class = RegistroProgramaPORHSerializer
+    queryset = ProgramasPORH.objects.all()
+    permission_classes = [IsAuthenticated]
+    def post(self, request, *args, **kwargs):
+        
+        # data = request.data
+        data_in = request.data
+        data = {
+            'id_instrumento': 1, 
+            'nombre': data_in['nombre'],
+            'fecha_inicio': data_in['fecha_inicio'],
+            'fecha_fin': data_in['fecha_fin'],
+        }
+        serializer = self.serializer_class(data=data)
+        try:
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            #print(self.queryset)
+            return Response({'success': True, 'detail':'Se creo un programa exitosamente', 'data':serializer.data},status=status.HTTP_200_OK)
+        except ValidationError as e:
+            raise ValidationError('Error en los datos del formulario')
+
+class CreateProyectosPORH(generics.CreateAPIView):
+    serializer_class = ProyectosPORHSerializer
+    queryset = ProyectosPORH.objects.all()
+    # permission_classes = [IsAuthenticated]
+    def post(self, request, *args, **kwargs):
+        
+        data = request.data
+        # data_in = request.data
+        # data = {
+        #     'id_instrumento': 1, 
+        #     'nombre': data_in['nombre'],
+        #     'fecha_inicio': data_in['fecha_inicio'],
+        #     'fecha_fin': data_in['fecha_fin'],
+        # }
+        serializer = self.serializer_class(data=data)
+        try:
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            print(self.queryset)
+            return Response({'success': True, 'detail':'Se creo un proyecto exitosamente', 'data':serializer.data},status=status.HTTP_200_OK)
+        except ValidationError as e:
+            raise ValidationError('Error en los datos del formulario')
 class GetProgramasporPORH(generics.ListAPIView):
     serializer_class = GetProgramasporPORHSerializers
     queryset = ProgramasPORH.objects.all()
