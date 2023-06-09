@@ -151,10 +151,12 @@ class ListadoObligacionesViews(generics.ListAPIView):
             raise NotFound('No se encontró un objeto deudor para este usuario.')
         nombre_completo = deudor.nombres + ' ' + deudor.apellidos
         obligaciones = Obligaciones.objects.filter(id_expediente__cod_deudor=deudor)
+        id_deudor = deudor.codigo
         serializer = self.serializer_class(obligaciones, many=True)
         
         monto_total, intereses_total, monto_total_con_intereses = self.get_monto_total(obligaciones)
         data = {
+            'id_deudor': id_deudor,
             'nombre_completo': nombre_completo,
             'numero_identificacion': numero_identificacion,
             'email': user.persona.email,
@@ -263,7 +265,7 @@ class ListadoDeudoresViews(generics.ListAPIView):
         for x in range(len(nombres_apellidos)):
             deudores = deudores.filter(nombre_contribuyente__icontains=nombres_apellidos[x])
 
-        return deudores.values('identificacion', 'nombres', 'apellidos')
+        return deudores.values('codigo','identificacion', 'nombres', 'apellidos')
 
     def list(self, request, *args, **kwargs):
         current_user = self.request.user
@@ -276,7 +278,7 @@ class ListadoDeudoresViews(generics.ListAPIView):
         if not queryset.exists():
             raise NotFound('No se encontraron resultados.')
     
-        data = [{'identificacion': item['identificacion'], 'nombre_contribuyente': f"{item['nombres']} {item['apellidos']}"} for item in queryset]
+        data = [{'id_deudor': item['codigo'],'identificacion': item['identificacion'], 'nombre_contribuyente': f"{item['nombres']} {item['apellidos']}"} for item in queryset]
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
 
 
