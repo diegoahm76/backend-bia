@@ -40,6 +40,12 @@ class GetActividadesporProyectosSerializers(serializers.ModelSerializer):
         model = ActividadesProyectos
         #fields = ['id_proyecto','nombre','fecha_registro']
         fields = '__all__'
+
+class GetAvancesporProyectosSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = AvancesProyecto
+        #fields = ['id_proyecto','nombre','fecha_registro']
+        fields = '__all__'
 class BusquedaAvanzadaSerializers(serializers.ModelSerializer):
     
     nombre_programa = serializers.ReadOnlyField(source='id_programa.nombre',default=None)
@@ -70,7 +76,8 @@ class EliminarActividadesSerializers(serializers.ModelSerializer):
         
 class RegistrarAvanceSerializers(serializers.ModelSerializer):
     class Meta:
-        model: AvancesProyecto
+        model=AvancesProyecto
+        fields='__all__'
 
 class BusquedaAvanzadaAvancesSerializers(serializers.ModelSerializer):
     nombre_programa = serializers.ReadOnlyField(source='id_proyecto.id_programa.nombre', default=None)

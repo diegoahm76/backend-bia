@@ -7,7 +7,7 @@ from rest_framework import status
 from datetime import datetime,date,timedelta
 
 from recurso_hidrico.models.programas_models import ActividadesProyectos, AvancesProyecto, EvidenciasAvance, ProgramasPORH, ProyectosPORH
-from recurso_hidrico.serializers.programas_serializers import ActualizarActividadesSerializers, ActualizarAvanceEvidenciaSerializers, ActualizarProyectosSerializers, BusquedaAvanzadaSerializers, EliminarActividadesSerializers, EliminarProyectoSerializers, GetActividadesporProyectosSerializers, GetProgramasporPORHSerializers, GetProyectosPORHSerializers, RegistrarAvanceSerializers, RegistroEvidenciaSerializers, RegistroProgramaPORHSerializer,BusquedaAvanzadaAvancesSerializers,ProyectosPORHSerializer
+from recurso_hidrico.serializers.programas_serializers import ActualizarActividadesSerializers, ActualizarAvanceEvidenciaSerializers, ActualizarProyectosSerializers, BusquedaAvanzadaSerializers, EliminarActividadesSerializers, EliminarProyectoSerializers, GetActividadesporProyectosSerializers, GetProgramasporPORHSerializers, GetProyectosPORHSerializers, RegistrarAvanceSerializers, RegistroEvidenciaSerializers, RegistroProgramaPORHSerializer,BusquedaAvanzadaAvancesSerializers,ProyectosPORHSerializer,GetAvancesporProyectosSerializers
 
 class RegistroProgramaPORH(generics.CreateAPIView):
     serializer_class = RegistroProgramaPORHSerializer
@@ -168,6 +168,21 @@ class GetActividadesporProyectos(generics.ListAPIView):
         
         return Response({'success':True,'detail':'Se encontraron los siguientes registros de actividades.','data':serializer.data},status=status.HTTP_200_OK)
     
+
+class GetAvanceporProyectos(generics.ListAPIView):
+    serializer_class = GetAvancesporProyectosSerializers
+    queryset = AvancesProyecto.objects.all()
+    #permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        avances = AvancesProyecto.objects.filter(id_proyecto=pk)
+        serializer = self.serializer_class(avances,many=True)
+        
+        if not avances:
+            raise ValidationError('El registro de avances que busca, no se encuentra registrado')
+        
+        return Response({'success':True,'detail':'Se encontraron los siguientes registros de avances.','data':serializer.data},status=status.HTTP_200_OK)
+  
 class BusquedaAvanzada(generics.ListAPIView):
     serializer_class = BusquedaAvanzadaSerializers
     queryset = ProyectosPORH.objects.all()

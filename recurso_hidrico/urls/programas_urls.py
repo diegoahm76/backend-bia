@@ -9,6 +9,8 @@ urlpatterns = [
     
     path('get/proyectos/por/programas/<str:pk>/',views.GetProyectosporProgramas.as_view(),name='get-proyectos-por-programas'),
     path('get/actividades/por/proyectos/<str:pk>/',views.GetActividadesporProyectos.as_view(),name='get-actividades-por-proyectos'),
+    path('get/avances/por/proyectos/<str:pk>/',views.GetAvanceporProyectos.as_view(),name='get-avances-por-proyectos'),
+    
     path('get/avanzada/programas/',views.BusquedaAvanzada.as_view(),name='get-avanzada-programas'),
     path('actualizar/programa/<str:pk>/',views.ActualizarPrograma.as_view(),name='actualizar-programa'),
     path('eliminar/programa/<str:pk>/',views.EliminarPrograma.as_view(),name='eliminar-programa'),
