@@ -115,11 +115,12 @@ urlpatterns = [
     path('api/recaudo/liquidaciones/', include('recaudo.urls.liquidaciones_urls')),
     path('api/recaudo/procesos/', include('recaudo.urls.procesos_urls')),
 
-    # #NOTIFICACIONES
-    # path('api/recaudo/notificaciones/', include('recaudo.urls.notificaciones_urls')),
-    
     #RECURSO HIDRICO
     path('api/hidrico/programas/',include('recurso_hidrico.urls.programas_urls')),
+
+    #NOTIFICACIONES
+    path('api/transversal/notificaciones/', include('transversal.urls.notificaciones_urls')),
+    
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

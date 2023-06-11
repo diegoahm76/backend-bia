@@ -1,7 +1,10 @@
 from rest_framework import serializers
 
 from transversal.models.notificaciones_models import (
-    MedioNotificacion
+    MedioNotificacion,
+    Notificacion,
+    DespachoNotificacion,
+    RespuestaNotificacion
 )
 
 from seguridad.models import Personas
@@ -25,5 +28,26 @@ class DatosRemitenteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Deudores
         fields = ('codigo', 'identificacion', 'nombres', 'apellidos', 'email', 'ubicacion')
+
+
+class NotificacionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Notificacion
+        fields = '__all__'
+
+
+class DespachoNotificacionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = DespachoNotificacion
+        fields = '__all__'
+
+    
+class RespuestaNotificacionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = RespuestaNotificacion
+        fields = '__all__'
 
 
