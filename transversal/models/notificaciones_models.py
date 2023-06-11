@@ -17,7 +17,7 @@ class MedioNotificacion(models.Model):
 class Notificacion(models.Model):
         
     id_notificacion = models.BigAutoField(primary_key=True, db_column='T031IdNotificacion')
-    doc_asociado = models.CharField(max_length=255, db_column='T031DocAsociado')
+    doc_asociado = models.FileField(db_column='T031DocAsociado')
     observaciones = models.CharField(max_length=255, db_column='T031observacion')
     fecha_creacion = models.DateTimeField(auto_now=True, db_column='T031fechaCreacionRegistro')
     email = models.CharField(max_length=255, db_column='T031Email')
@@ -55,7 +55,7 @@ class DespachoNotificacion(models.Model):
 class RespuestaNotificacion(models.Model):
 
     id_respuesta_notificacion = models.BigAutoField(primary_key=True, db_column='T033Id_respuestaNotificacion')
-    doc_asociado = models.CharField(max_length=255, blank=True, null=True, db_column='T033docAsociado')
+    doc_asociado = models.FileField(blank=True, null=True, db_column='T033docAsociado')
     numero_guia = models.CharField(max_length=255, db_column='T033nroGuia')
     fecha_prestacion = models.DateTimeField(blank=True, null=True, db_column='T033fechaPresentacionCorm')
     funcionario_entrega = models.CharField(max_length=255, db_column='T033funcionarioEntrega')
