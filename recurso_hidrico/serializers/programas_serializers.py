@@ -14,7 +14,7 @@ class ProyectosPORHSerializer(serializers.ModelSerializer):
         model = ProyectosPORH
         fields = '__all__'
 
-class ActividadesProyectos(serializers.ModelSerializer):
+class ActividadesProyectosSerializer(serializers.ModelSerializer):
     class Meta:
         model = ActividadesProyectos
         fields = '__all__'
@@ -33,13 +33,19 @@ class GetProyectosPORHSerializers(serializers.ModelSerializer):
 class ActualizarProyectosSerializers(serializers.ModelSerializer):
     class Meta:
         model = ProyectosPORH
-        fields = ['nombre','vigencia_inicial','vigencia_final','inversion']
-        
+        #fields = ['nombre','vigencia_inicial','vigencia_final','inversion']
+        fields = '__all__'
 class GetActividadesporProyectosSerializers(serializers.ModelSerializer):
     class Meta:
         model = ActividadesProyectos
-        fields = ['id_proyecto','nombre','fecha_registro']
-        
+        #fields = ['id_proyecto','nombre','fecha_registro']
+        fields = '__all__'
+
+class GetAvancesporProyectosSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = AvancesProyecto
+        #fields = ['id_proyecto','nombre','fecha_registro']
+        fields = '__all__'
 class BusquedaAvanzadaSerializers(serializers.ModelSerializer):
     
     nombre_programa = serializers.ReadOnlyField(source='id_programa.nombre',default=None)
@@ -70,7 +76,8 @@ class EliminarActividadesSerializers(serializers.ModelSerializer):
         
 class RegistrarAvanceSerializers(serializers.ModelSerializer):
     class Meta:
-        model: AvancesProyecto
+        model=AvancesProyecto
+        fields='__all__'
 
 class BusquedaAvanzadaAvancesSerializers(serializers.ModelSerializer):
     nombre_programa = serializers.ReadOnlyField(source='id_proyecto.id_programa.nombre', default=None)
