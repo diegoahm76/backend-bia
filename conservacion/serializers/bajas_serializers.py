@@ -109,12 +109,14 @@ class CatalogoBienesSerializerBusquedaAvanzada(serializers.ModelSerializer):
     tipo_bien = serializers.SerializerMethodField()
     
     def get_tipo_bien(self, obj):
+        cod_tipo_elemento_vivero = None
         if obj.cod_tipo_elemento_vivero == 'HE':
             cod_tipo_elemento_vivero = 'Herramienta'
         elif obj.cod_tipo_elemento_vivero == 'IN':
             cod_tipo_elemento_vivero = 'Insumo'
-        elif obj.cod_tipo_elemento_vivero == 'MV' and obj.es_semilla_vivero == True:
-            cod_tipo_elemento_vivero = 'Semillas'
+        # elif obj.cod_tipo_elemento_vivero == 'MV' and obj.es_semilla_vivero == True:
+        elif obj.cod_tipo_elemento_vivero == 'MV':
+            cod_tipo_elemento_vivero = 'Material Vegetal'
         return cod_tipo_elemento_vivero
     
     class Meta:
@@ -123,7 +125,9 @@ class CatalogoBienesSerializerBusquedaAvanzada(serializers.ModelSerializer):
             'id_bien',
             'codigo_bien',
             'nombre',
+            'cod_tipo_elemento_vivero',
             'tipo_bien',
+            'es_semilla_vivero',
             'saldo_disponible',
             'unidad_medida'
         )
