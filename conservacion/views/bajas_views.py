@@ -106,20 +106,20 @@ class CreateBajasVivero(generics.UpdateAPIView):
                 raise ValidationError ('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +  'no tiene registros en el inventario del vivero')
             
             # SE VALIDA QUE EL NÚMERO DE POSICIÓN SEA ÚNICO
-            if i['id_bien'] in aux_valores_repetidos:
+            if int(i['id_bien']) in aux_valores_repetidos:
                 raise ValidationError ('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' No se puede ingresar dos veces un mismo bien dentro de una solicitud')
             
             # SE VALIDA QUE EL NÚMERO DE POSICIÓN SEA ÚNICO
-            if i['nro_posicion'] in aux_nro_posicion:
+            if int(i['nro_posicion']) in aux_nro_posicion:
                 raise ValidationError ('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene un número de posición que ya existe')
             
             # SE VALIDA QUE LA CANTIDAD DEL BIEN A DAR DE BAJA SEA MAYOR QUE CERO
-            if i['cantidad_baja'] <= 0:
+            if int(i['cantidad_baja']) <= 0:
                 raise ValidationError ('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene como cantidad de baja cero, la cantidad debe ser mayor que cero')
             
             # SE VALIDA QUE HAYA SALDO DISPONIBLE
             saldo_disponible = UtilConservacion.get_cantidad_disponible_F(instancia_bien, instancia_bien_vivero) 
-            if i['cantidad_baja'] > saldo_disponible:
+            if int(i['cantidad_baja']) > saldo_disponible:
                 raise ValidationError ('En el bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' no tiene saldo disponible para suplir la cantidad de bajas ingresada')
             
             # SE GUARDAN EL NÚMERO DE POSICIÓN Y EL ID DE BIEN EN LISTAS PARA VALIDAR SI SE REPITEN
@@ -162,8 +162,6 @@ class CreateBajasVivero(generics.UpdateAPIView):
             instancia_bien_vivero.cantidad_bajas = instancia_bien_vivero.cantidad_bajas if instancia_bien_vivero.cantidad_bajas else 0
             instancia_bien_vivero.cantidad_bajas = instancia_bien_vivero.cantidad_bajas + i['cantidad_baja']
             instancia_bien_vivero.save()
-        
-        print("AAAAAAAAAAAAAAAAAAAA", aux_ultimo)
         
         return Response({'succes' : True, 'detail' : 'Baja creada con éxito'}, status=status.HTTP_200_OK)
 
@@ -461,15 +459,17 @@ class BusquedaAvanzadaBienesBajas(generics.ListAPIView):
         for key, value in request.query_params.items():
             if key in ['cod_tipo_elemento_vivero', 'nombre', 'codigo_bien']:
                 if key != 'cod_tipo_elemento_vivero':
-                    filter[key + '__icontains'] = value
+                    if value != '':
+                        filter[key + '__icontains'] = value
                 else:
-                    filter[key] = value
+                    if value != '':
+                        filter[key] = value
                     
         resultados_busqueda = CatalogoBienes.objects.filter(**filter)
         
         # SE LE AGRAGA EL SALDO DISPONIBLE AL RESULTADO DE BUSQUEDA
         for i in resultados_busqueda:
-            instancia_bien_vivero = InventarioViveros.objects.filter(id_bien=i.id_bien,id_vivero=vivero_origen).first()
+            instancia_bien_vivero = InventarioViveros.objects.filter(id_bien=i.id_bien,id_vivero=int(vivero_origen)).first()
             if not instancia_bien_vivero:
                 raise ValidationError ('El bien que intenta seleccionar no tiene registros en el inventario del vivero.')
             i.saldo_disponible = UtilConservacion.get_cantidad_disponible_F(i, instancia_bien_vivero) 
