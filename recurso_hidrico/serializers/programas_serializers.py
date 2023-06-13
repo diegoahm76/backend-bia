@@ -28,7 +28,7 @@ class GetProgramasporPORHSerializers(serializers.ModelSerializer):
 class GetProyectosPORHSerializers(serializers.ModelSerializer):
     class Meta:
         model = ProyectosPORH
-        fields = ['id_programa','nombre','vigencia_inicial','vigencia_final']
+        fields = '__all__'
 
 class ActualizarProyectosSerializers(serializers.ModelSerializer):
     class Meta:
