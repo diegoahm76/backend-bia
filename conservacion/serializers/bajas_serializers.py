@@ -40,6 +40,9 @@ class ItemsBajasViveroPostSerializer(serializers.ModelSerializer):
             )
         
 class ItemsBajasViveroGetSerializer(serializers.ModelSerializer):
+    codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
+    nombre = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
+    
     class Meta:
         model = ItemsBajasVivero
         fields = '__all__'
