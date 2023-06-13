@@ -40,6 +40,9 @@ class ItemsBajasViveroPostSerializer(serializers.ModelSerializer):
             )
         
 class ItemsBajasViveroGetSerializer(serializers.ModelSerializer):
+    codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
+    nombre = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
+    
     class Meta:
         model = ItemsBajasVivero
         fields = '__all__'
@@ -87,6 +90,7 @@ class GetBajaByNumeroSerializer(serializers.ModelSerializer):
     class Meta:
         model = BajasVivero
         fields = [
+            'id_baja',
             'tipo_baja',
             'nro_baja_por_tipo',
             'fecha_baja',
