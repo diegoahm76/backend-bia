@@ -87,6 +87,7 @@ class GetBajaByNumeroSerializer(serializers.ModelSerializer):
     class Meta:
         model = BajasVivero
         fields = [
+            'id_baja',
             'tipo_baja',
             'nro_baja_por_tipo',
             'fecha_baja',
