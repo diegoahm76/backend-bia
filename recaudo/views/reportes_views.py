@@ -25,7 +25,10 @@ class ReporteCarteraGeneralView(generics.ListAPIView):
     def get(self, request, *args, **kwargs):
         fecha_corte_str = self.kwargs['fin']
         fecha_corte = datetime.strptime(fecha_corte_str, '%Y-%m-%d').date()
-        queryset = Cartera.objects.filter(fin=fecha_corte).order_by('-valor_sancion')
+        queryset = Cartera.objects.filter(fin=fecha_corte).order_by('-valor_sancion').values('id','id_obligacion','dias_mora',
+                'valor_intereses','valor_sancion','inicio','fin','id_rango','codigo_contable','fecha_facturacion','fecha_notificacion',
+                'fecha_ejecutoriado','numero_factura','monto_inicial'
+            )
         
         if queryset.exists():
             serializer = self.serializer_class(queryset, many=True)
@@ -42,7 +45,10 @@ class ReporteCarteraGeneralDetalleView(generics.ListAPIView):
     serializer_class = CarteraGeneralDetalleSerializer
 
     def get(self, request, *args, **kwargs):
-        queryset = Cartera.objects.all()
+        queryset = Cartera.objects.all().values('id','id_obligacion','dias_mora',
+                'valor_intereses','valor_sancion','inicio','fin','id_rango','codigo_contable','fecha_facturacion','fecha_notificacion',
+                'fecha_ejecutoriado','numero_factura','monto_inicial'
+            )
         codigo_contable = request.GET.get('codigo_contable')
         nombre_deudor = request.GET.get('nombre_deudor')
 
@@ -64,7 +70,10 @@ class ReporteCarteraEdadesView(generics.ListAPIView):
 
     def get_queryset(self):
         rango_edad = self.request.query_params.get('rango_edad', None)
-        queryset = Cartera.objects.all()
+        queryset = Cartera.objects.all().values('id','id_obligacion','dias_mora',
+                'valor_intereses','valor_sancion','inicio','fin','id_rango','codigo_contable','fecha_facturacion','fecha_notificacion',
+                'fecha_ejecutoriado','numero_factura','monto_inicial'
+            )
 
         if rango_edad == '0 a 180 días':
             queryset = queryset.filter(id_rango__inicial__gte=0, id_rango__final__lte=180)
