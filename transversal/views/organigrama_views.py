@@ -708,6 +708,8 @@ class CambioDeOrganigramaActual(generics.UpdateAPIView):
         tca_actual = TablasControlAcceso.objects.filter(id_trd__id_ccd=ccd_actual).first()
         previous_activacion_organigrama = copy.copy(organigrama_seleccionado)
         
+        temporal_all = TemporalPersonasUnidad.objects.all()
+        
         if not ccd_actual:
             organigrama_seleccionado.justificacion_nueva_version = data['justificacion']
             organigrama_seleccionado.actual = True
@@ -719,6 +721,12 @@ class CambioDeOrganigramaActual(generics.UpdateAPIView):
                 organigrama_actual.actual = False
                 organigrama_actual.save()
                 
+                if temporal_all:
+                    organigrama_anterior = list(temporal_all.values_list('id_unidad_org_anterior__id_organigrama__id_organigrama', flat=True).distinct())
+                    id_organigrama_anterior = organigrama_anterior[0]
+                    if organigrama_actual.id_organigrama != id_organigrama_anterior:
+                        temporal_all.delete()
+                
                 # Auditoria Organigrama desactivado
                 descripcion = {"NombreOrganigrama":str(organigrama_actual.nombre),"VersionOrganigrama":str(organigrama_actual.version)}
                 valores_actualizados={'previous':previous_desactivacion_organigrama, 'current':organigrama_actual}
@@ -726,6 +734,11 @@ class CambioDeOrganigramaActual(generics.UpdateAPIView):
                 Util.save_auditoria(auditoria_data)
             
             organigrama_seleccionado.save()
+            if temporal_all:
+                organigrama_nuevo = list(temporal_all.values_list('id_unidad_org_nueva__id_organigrama__id_organigrama', flat=True).distinct())
+                id_organigrama_nuevo = organigrama_nuevo[0]
+                if organigrama_seleccionado.id_organigrama != id_organigrama_nuevo:
+                    temporal_all.delete()
 
             # Auditoria Organigrama activado
             descripcion = {"NombreOrganigrama":str(organigrama_seleccionado.nombre),"VersionOrganigrama":str(organigrama_seleccionado.version)}
@@ -812,6 +825,18 @@ class CambioDeOrganigramaActual(generics.UpdateAPIView):
             tca_actual.id_trd.id_ccd.save()
             tca_actual.id_trd.save()
             tca_actual.save()
+            
+            if temporal_all:
+                organigrama_anterior = list(temporal_all.values_list('id_unidad_org_anterior__id_organigrama__id_organigrama', flat=True).distinct())
+                id_organigrama_anterior = organigrama_anterior[0]
+                if tca_actual.id_trd.id_ccd.id_organigrama.id_organigrama != id_organigrama_anterior:
+                    temporal_all.delete()
+                    
+                organigrama_nuevo = list(temporal_all.values_list('id_unidad_org_nueva__id_organigrama__id_organigrama', flat=True).distinct())
+                id_organigrama_nuevo = organigrama_nuevo[0]
+                if organigrama_seleccionado.id_organigrama != id_organigrama_nuevo:
+                    temporal_all.delete()
+            
             
             # Auditoria Organigrama desactivado
             descripcion = {"NombreOrganigrama":str(tca_actual.id_trd.id_ccd.id_organigrama.nombre),"VersionOrganigrama":str(tca_actual.id_trd.id_ccd.id_organigrama.version)}
@@ -1074,13 +1099,41 @@ class ListadoUnidadOrgDesactSinTemporal(generics.ListAPIView):
 
 class ListaTemporalPersonasUnidad(generics.ListAPIView):
     serializer_class = TemporalPersonasUnidadSerializer
-    queryset = TemporalPersonasUnidad.objects.all()
+    queryset = TemporalPersonasUnidad.objects.all().order_by('id_unidad_org_nueva__nombre')
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         if queryset.exists():
+            id_organigrama_nuevo = self.queryset.all().values_list('id_unidad_org_nueva__id_organigrama__id_organigrama', flat=True).distinct()
+            id_organigrama_nuevo = list(id_organigrama_nuevo)
+            id_organigrama_nuevo = id_organigrama_nuevo[0] if id_organigrama_nuevo else None
+            
+            id_organigrama_anterior = self.queryset.all().values_list('id_unidad_org_anterior__id_organigrama__id_organigrama', flat=True).distinct()
+            id_organigrama_anterior = list(id_organigrama_anterior)
+            id_organigrama_anterior = id_organigrama_anterior[0] if id_organigrama_anterior else None
+            
+            nombre_organigrama_nuevo = None
+            if id_organigrama_nuevo:
+                nombre_organigrama_nuevo = Organigramas.objects.filter(id_organigrama=id_organigrama_nuevo).first()
+                nombre_organigrama_nuevo = nombre_organigrama_nuevo.nombre
+                
+            nombre_organigrama_anterior = None
+            if id_organigrama_anterior:
+                nombre_organigrama_anterior = Organigramas.objects.filter(id_organigrama=id_organigrama_anterior).first()
+                nombre_organigrama_anterior = nombre_organigrama_anterior.nombre
+            
             serializer = self.get_serializer(queryset, many=True)
-            return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
+            return Response(
+                {
+                    'success': True,
+                    'detail': 'Resultados de la búsqueda',
+                    'id_organigrama_anterior': id_organigrama_anterior,
+                    'nombre_organigrama_anterior': nombre_organigrama_anterior,
+                    'id_organigrama_nuevo': id_organigrama_nuevo,
+                    'nombre_organigrama_nuevo': nombre_organigrama_nuevo,
+                    'data': serializer.data
+                }, status=status.HTTP_200_OK
+            )
         else:
             raise ValidationError('No hay ninguna persona en proceso de actualización de unidad organizacional')
 
@@ -1107,14 +1160,15 @@ class ListadoPersonasOrganigramaActual(generics.ListAPIView):
 
 class GuardarActualizacionUnidadOrganizacional(generics.UpdateAPIView):
     serializer_class = ActUnidadOrgAntiguaSerializer
-
+    
     def put(self, request, id_organigrama):
         personas_nuevas_unidades = request.data
         if not isinstance(personas_nuevas_unidades, list):
             raise ValidationError('El cuerpo de la solicitud debe ser una lista de objetos')
         
         organigrama_cambio = Organigramas.objects.filter(id_organigrama=id_organigrama, fecha_retiro_produccion=None, fecha_puesta_produccion=None).exclude(fecha_terminado=None).first()
-        
+        if not organigrama_cambio:
+            raise ValidationError('No puede realizar el guardado parcial para el organigrama elegido. Debe seleccionar un organigrama valido')
         
         personas_enviadas = [persona_nueva_unidad.get('id_persona') for persona_nueva_unidad in personas_nuevas_unidades]
         unidades_enviadas = [persona_nueva_unidad.get('id_nueva_unidad_organizacional') for persona_nueva_unidad in personas_nuevas_unidades]
@@ -1129,7 +1183,14 @@ class GuardarActualizacionUnidadOrganizacional(generics.UpdateAPIView):
         if len(set(unidades_enviadas)) != len(unidades_organigrama):
             raise ValidationError('Las unidades a las cuales desea realizar el cambio deben pertenecer a un mismo organigrama terminado')
         
+        # ELIMINAR CAMBIOS PARCIALES DESELECCIONADOS
         TemporalPersonasUnidad.objects.exclude(id_persona__in=personas_enviadas).delete()
+        
+        # VALIDAR SI CAMBIAN ORGANIGRAMA
+        temporal_all = TemporalPersonasUnidad.objects.all()
+        temporal_all_list = list(temporal_all.values_list('id_unidad_org_nueva__id_organigrama__id_organigrama', flat=True).distinct())
+        if temporal_all_list[0] != int(id_organigrama):
+            raise ValidationError('Si desea cambiar el organigrama nuevo debe desmarcar a todas las personas con cambios parciales antes de continuar')
 
         for persona_nueva_unidad in personas_nuevas_unidades:
             id_persona = persona_nueva_unidad.get('id_persona')
@@ -1140,13 +1201,13 @@ class GuardarActualizacionUnidadOrganizacional(generics.UpdateAPIView):
                 raise ValidationError(f'La persona con ID {id_persona} no existe')
 
             # Verificar si existe un registro en TemporalPersonasUnidad para la persona actual
-            temporal_persona = TemporalPersonasUnidad.objects.filter(id_persona=persona).first()
+            temporal_persona = temporal_all.filter(id_persona=persona).first()
 
-            nueva_unidad = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=nueva_id_unidad_organizacional)
+            nueva_unidad = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=nueva_id_unidad_organizacional).first()
 
             if temporal_persona:
-                if temporal_persona.id_unidad_org_nueva != nueva_unidad:
-                    temporal_persona.id_unidad_org_nueva = nueva_unidad
+                if temporal_persona.id_unidad_org_nueva != nueva_unidad.id_unidad_organizacional:
+                    temporal_persona.id_unidad_org_nueva = nueva_unidad.id_unidad_organizacional
                     temporal_persona.save()
             else:
                 unidad_anterior = persona.id_unidad_organizacional_actual
@@ -1216,7 +1277,7 @@ class ProcederActualizacionUnidad(generics.UpdateAPIView):
                         fecha_cambio=fecha_actual,
                         id_persona_cambio=user.persona,
                         tipo_cambio='UnidadesTodas',
-                        justificacion=f'Se realizó un cambio masivo de unidad organizacional a {len(personas_actualizadas)} personas',
+                        justificacion=f'Se trasladaron {len(personas_actualizadas)} personas',
                     )
                     cambio_unidad_masivo.save()
                         
@@ -1224,5 +1285,11 @@ class ProcederActualizacionUnidad(generics.UpdateAPIView):
                 
             except Exception as e:
                 raise ValidationError('Error: ' + str(e))
+        
+        # Auditoria Traslado Masivo de Unidades por Entidad
+        # dirip = Util.get_client_ip(request)
+        # descripcion = {"NombreOrganigrama":str(tca_actual.id_trd.id_ccd.id_organigrama.nombre),"VersionOrganigrama":str(tca_actual.id_trd.id_ccd.id_organigrama.version)}
+        # auditoria_data = {'id_usuario': user.id_usuario,'id_modulo': 114,'cod_permiso': 'EJ','subsistema': 'TRSV','dirip': dirip, 'descripcion': descripcion}
+        # Util.save_auditoria(auditoria_data)
         
         return Response({'success': True, 'detail': 'Las personas han sido actualizadas exitosamente'}, status=status.HTTP_200_OK)
