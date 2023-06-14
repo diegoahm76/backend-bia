@@ -29,8 +29,8 @@ class FacilidadesPago(models.Model):
     id_tasas_interes = models.ForeignKey(TasasInteres, on_delete=models.CASCADE, db_column='T426id_tasa_interes')
     documento_soporte = models.FileField(db_column='T426documento_soporte')
     consignacion_soporte = models.FileField(db_column='T426consignacion_soporte')
-    # documento_garantia = models.FileField(db_column='T426documento_garantia')
-    # documento_no_enajenacion = models.FileField(db_column='T426documento_no_enajenacion')
+    documento_garantia = models.FileField(db_column='T426documento_garantia')
+    documento_no_enajenacion = models.FileField(db_column='T426documento_no_enajenacion')
     id_funcionario = models.IntegerField(db_column='T426id_funcionario')
     notificaciones = models.BooleanField(db_column='T426id_notificaciones')
 
@@ -113,7 +113,8 @@ class RespuestaSolicitud(models.Model):
     estado = models.CharField(max_length=255, db_column='T435estado')
     aprobacion = models.BooleanField(db_column='T435aprobacion')
     observacion = models.CharField(max_length=255, db_column='T435observacion')
-    consulta_dbme = models.FileField(db_column='T435consulta_dbme')
+    informe_dbme = models.FileField(db_column='T435informe_dbme')
+    reportado_dbme = models.BooleanField(db_column='T435reportado_dbme')
 
     class Meta:
         db_table = 'T435respuesta_solicitud'

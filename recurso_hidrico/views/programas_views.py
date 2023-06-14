@@ -1,5 +1,5 @@
 import json
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -7,7 +7,7 @@ from rest_framework import status
 from datetime import datetime,date,timedelta
 
 from recurso_hidrico.models.programas_models import ActividadesProyectos, AvancesProyecto, EvidenciasAvance, ProgramasPORH, ProyectosPORH
-from recurso_hidrico.serializers.programas_serializers import ActualizarActividadesSerializers, ActualizarAvanceEvidenciaSerializers, ActualizarProyectosSerializers, BusquedaAvanzadaSerializers, EliminarActividadesSerializers, EliminarProyectoSerializers, GetActividadesporProyectosSerializers, GetProgramasporPORHSerializers, GetProyectosPORHSerializers, RegistrarAvanceSerializers, RegistroEvidenciaSerializers, RegistroProgramaPORHSerializer,BusquedaAvanzadaAvancesSerializers
+from recurso_hidrico.serializers.programas_serializers import ActualizarActividadesSerializers, ActualizarAvanceEvidenciaSerializers, ActualizarProyectosSerializers, BusquedaAvanzadaSerializers, EliminarActividadesSerializers, EliminarProyectoSerializers, GetActividadesporProyectosSerializers, GetProgramasporPORHSerializers, GetProyectosPORHSerializers, RegistrarAvanceSerializers, RegistroEvidenciaSerializers, RegistroProgramaPORHSerializer,BusquedaAvanzadaAvancesSerializers,ProyectosPORHSerializer,GetAvancesporProyectosSerializers
 
 class RegistroProgramaPORH(generics.CreateAPIView):
     serializer_class = RegistroProgramaPORHSerializer
@@ -15,44 +15,116 @@ class RegistroProgramaPORH(generics.CreateAPIView):
     queryset = ProgramasPORH.objects.all()
     
     def post(self,request):
-        data = request.data
-        
-        serializer = self.serializer_class(data=data)
-        serializer.is_valid(raise_exception=True)
-        
-        if data['fecha_inicio'] > data['fecha_fin']:
-            raise ValidationError("La fecha de inicio del programa no puede ser mayor a la fecha final del mismo.")
-        
-        creacion_programa = serializer.save()
+        data_in = request.data
+        instancia_programa = None
+        instancia_proyecto =None
+        if not data_in['id_programa']:
+            data_in['id_instrumento'] = 1
+            # data = {
+            #     'id_instrumento': 1, 
+            #     'nombre': data_in['nombre'],
+            #     'fecha_inicio': data_in['fecha_inicio'],
+            #     'fecha_fin': data_in['fecha_fin'],
+            # }
+            #'proyectos': data_in['proyectos']
+
+            # if 'proyectos' in data_in:
+            #     data['proyectos'] = data_in['proyectos']
+
+            serializer = self.serializer_class(data=data_in)
+            serializer.is_valid(raise_exception=True)
+            
+            if data_in['fecha_inicio'] > data_in['fecha_fin']:
+                raise ValidationError("La fecha de inicio del programa no puede ser mayor a la fecha final del mismo.")
+            
+            instancia_programa = serializer.save()
+        else:
+            instancia_programa = ProgramasPORH.objects.filter(id_programa=data_in['id_programa']).first()
+            if not instancia_programa:
+                raise NotFound("El programa ingresado no existe")
         
         #CREACION DE PROYECTOS
-        if data['proyectos']:    
+        
+        if 'proyectos' in data_in: 
                 
-            for proyecto in data['proyectos']: 
-                if proyecto['vigencia_inicial']> proyecto['vigencia_final']:
-                    raise ValidationError("La fecha inicial del proyecto no puede superar la fecha final del mismo proyecto.")
-                if proyecto['vigencia_inicial'] < data["fecha_inicio"]:
-                    raise ValidationError("La fecha de inicio del proyecto no puede ser inferior a la fecha de inicio del programa al que pertenece.")
-                if proyecto['vigencia_final'] > data['fecha_fin']:
-                    raise ValidationError('La fecha final del proyecto no puede ser mayor que la fecha final del programa.')
-                
-                proyecto_creado = ProyectosPORH.objects.create(
-                    id_programa = creacion_programa,
-                    nombre = proyecto['nombre'],
-                    vigencia_inicial = proyecto['vigencia_inicial'],
-                    vigencia_final = proyecto['vigencia_final'],
-                    inversion = proyecto['inversion']                    
-                )
-                if proyecto['actividades']:
+            for proyecto in data_in['proyectos']: 
+
+                if not proyecto['id_proyecto']:
+                    if proyecto['vigencia_inicial']> proyecto['vigencia_final']:
+                        raise ValidationError("La fecha inicial del proyecto no puede superar la fecha final del mismo proyecto.")
+                    if proyecto['vigencia_inicial'] < data_in["fecha_inicio"]:
+                        raise ValidationError("La fecha de inicio del proyecto no puede ser inferior a la fecha de inicio del programa al que pertenece.")
+                    if proyecto['vigencia_final'] > data_in['fecha_fin']:
+                        raise ValidationError('La fecha final del proyecto no puede ser mayor que la fecha final del programa.')
+                    
+                    instancia_proyecto = ProyectosPORH.objects.create(
+                        id_programa = instancia_programa,
+                        nombre = proyecto['nombre'],
+                        vigencia_inicial = proyecto['vigencia_inicial'],
+                        vigencia_final = proyecto['vigencia_final'],
+                        inversion = proyecto['inversion']                    
+                    )
+                else:
+                    instancia_proyecto = ProyectosPORH.objects.filter(id_proyecto=proyecto['id_proyecto']).first()
+                    if not instancia_programa:
+                        raise NotFound("El proyecto ingresado no existe")
+                #if 'proyectos' in data_in and 'actividades' in data_in['proyectos']:
+                if 'actividades' in proyecto:
+                #if proyecto['actividades']:
                 
                     for actividad in proyecto['actividades']:
                         actividades = ActividadesProyectos.objects.create(
-                            id_proyecto = proyecto_creado,
+                            id_proyecto = instancia_proyecto,
                             nombre = actividad['nombre']
                         )
-            
-        return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+                          
+        return Response({'success':True,'detail':'Se crearon los registros correctamente','data':data_in},status=status.HTTP_201_CREATED)
 
+class CreateProgramaPORH(generics.CreateAPIView):
+    serializer_class = RegistroProgramaPORHSerializer
+    queryset = ProgramasPORH.objects.all()
+    permission_classes = [IsAuthenticated]
+    def post(self, request, *args, **kwargs):
+        
+        # data = request.data
+        data_in = request.data
+        data = {
+            'id_instrumento': 1, 
+            'nombre': data_in['nombre'],
+            'fecha_inicio': data_in['fecha_inicio'],
+            'fecha_fin': data_in['fecha_fin'],
+        }
+        serializer = self.serializer_class(data=data)
+        try:
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            #print(self.queryset)
+            return Response({'success': True, 'detail':'Se creo un programa exitosamente', 'data':serializer.data},status=status.HTTP_200_OK)
+        except ValidationError as e:
+            raise ValidationError('Error en los datos del formulario')
+
+class CreateProyectosPORH(generics.CreateAPIView):
+    serializer_class = ProyectosPORHSerializer
+    queryset = ProyectosPORH.objects.all()
+    # permission_classes = [IsAuthenticated]
+    def post(self, request, *args, **kwargs):
+        
+        data = request.data
+        # data_in = request.data
+        # data = {
+        #     'id_instrumento': 1, 
+        #     'nombre': data_in['nombre'],
+        #     'fecha_inicio': data_in['fecha_inicio'],
+        #     'fecha_fin': data_in['fecha_fin'],
+        # }
+        serializer = self.serializer_class(data=data)
+        try:
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            print(self.queryset)
+            return Response({'success': True, 'detail':'Se creo un proyecto exitosamente', 'data':serializer.data},status=status.HTTP_200_OK)
+        except ValidationError as e:
+            raise ValidationError('Error en los datos del formulario')
 class GetProgramasporPORH(generics.ListAPIView):
     serializer_class = GetProgramasporPORHSerializers
     queryset = ProgramasPORH.objects.all()
@@ -96,6 +168,21 @@ class GetActividadesporProyectos(generics.ListAPIView):
         
         return Response({'success':True,'detail':'Se encontraron los siguientes registros de actividades.','data':serializer.data},status=status.HTTP_200_OK)
     
+
+class GetAvanceporProyectos(generics.ListAPIView):
+    serializer_class = GetAvancesporProyectosSerializers
+    queryset = AvancesProyecto.objects.all()
+    #permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        avances = AvancesProyecto.objects.filter(id_proyecto=pk)
+        serializer = self.serializer_class(avances,many=True)
+        
+        if not avances:
+            raise ValidationError('El registro de avances que busca, no se encuentra registrado')
+        
+        return Response({'success':True,'detail':'Se encontraron los siguientes registros de avances.','data':serializer.data},status=status.HTTP_200_OK)
+  
 class BusquedaAvanzada(generics.ListAPIView):
     serializer_class = BusquedaAvanzadaSerializers
     queryset = ProyectosPORH.objects.all()

@@ -207,7 +207,7 @@ class ListadoDeudoresUltSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Deudores
-        fields = ('nombre_contribuyente','identificacion')
+        fields = ('codigo','nombre_contribuyente','identificacion')
         #fields = ('nombres','apellidos','identificacion')
 
     def get_nombre_contribuyente(self, obj):

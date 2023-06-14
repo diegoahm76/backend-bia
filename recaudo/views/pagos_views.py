@@ -151,10 +151,12 @@ class ListadoObligacionesViews(generics.ListAPIView):
             raise NotFound('No se encontró un objeto deudor para este usuario.')
         nombre_completo = deudor.nombres + ' ' + deudor.apellidos
         obligaciones = Obligaciones.objects.filter(id_expediente__cod_deudor=deudor)
+        id_deudor = deudor.codigo
         serializer = self.serializer_class(obligaciones, many=True)
         
         monto_total, intereses_total, monto_total_con_intereses = self.get_monto_total(obligaciones)
         data = {
+            'id_deudor': id_deudor,
             'nombre_completo': nombre_completo,
             'numero_identificacion': numero_identificacion,
             'email': user.persona.email,
@@ -220,17 +222,6 @@ class ListadoFacilidadesPagoViews(generics.ListAPIView):
 
     def get(self, request):
 
-
-        # filter = {}
-        #
-        # for key, value in request.query_params.items():
-        #     if key == 'identificacion':
-        #         filter['id_deudor_actuacion__identificacion__icontains'] = value
-        #     elif key == 'nombres' or key == 'apellidos':
-        #         if value != '':
-        #             filter['id_deudor_actuacion__' + key + '__icontains'] = value
-        # facilidades_pago = FacilidadesPago.objects.filter(**filter)
-
         facilidades_pago = FacilidadesPago.objects.annotate(nombre_de_usuario=Concat('id_deudor_actuacion__nombres', V(' '), 'id_deudor_actuacion__apellidos'))
         identificacion = self.request.query_params.get('identificacion', '')
         nombre_de_usuario = self.request.query_params.get('nombre_de_usuario', '')
@@ -274,7 +265,7 @@ class ListadoDeudoresViews(generics.ListAPIView):
         for x in range(len(nombres_apellidos)):
             deudores = deudores.filter(nombre_contribuyente__icontains=nombres_apellidos[x])
 
-        return deudores.values('identificacion', 'nombres', 'apellidos')
+        return deudores.values('codigo','identificacion', 'nombres', 'apellidos')
 
     def list(self, request, *args, **kwargs):
         current_user = self.request.user
@@ -287,24 +278,9 @@ class ListadoDeudoresViews(generics.ListAPIView):
         if not queryset.exists():
             raise NotFound('No se encontraron resultados.')
     
-        data = [{'identificacion': item['identificacion'], 'nombre_contribuyente': f"{item['nombres']} {item['apellidos']}"} for item in queryset]
+        data = [{'id_deudor': item['codigo'],'identificacion': item['identificacion'], 'nombre_contribuyente': f"{item['nombres']} {item['apellidos']}"} for item in queryset]
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
 
-
-# class ListadoFacilidadesPagoFuncionariosViews(generics.ListAPIView):
-#     serializer_class = ListadoFacilidadesPagoSerializer
-#     permission_classes = [IsAuthenticated]
-
-#     def get(self, request):
-#         user = self.request.user
-#         facilidades_pago = FacilidadesPago.objects.filter(id_funcionario=user.pk)
-#         for key, value in request.query_params.items():
-#             if key == 'identificacion':
-#                 facilidades_pago = facilidades_pago.filter(id_deudor_actuacion__identificacion__icontains=value)
-#             elif key == 'nombre_de_usuario':
-#                 facilidades_pago = facilidades_pago.filter(id_deudor_actuacion__usuario__primer_nombre__icontains=value)
-#         serializer = ListadoFacilidadesPagoSerializer(facilidades_pago, many=True)
-#         return Response( {'success': True, 'detail':'Se le asignaron las siguientes facilidades de pago','data':serializer.data},status=status.HTTP_200_OK)
 
 class ListadoFacilidadesPagoFuncionariosViews(generics.ListAPIView):
     serializer_class = ListadoFacilidadesPagoSerializer
@@ -323,8 +299,6 @@ class ListadoFacilidadesPagoFuncionariosViews(generics.ListAPIView):
         
         serializer = ListadoFacilidadesPagoSerializer(facilidades_pago, many=True)
         return Response( {'success': True, 'detail':'Se le asignaron las siguientes facilidades de pago','data':serializer.data},status=status.HTTP_200_OK)
-
-
 
 
 class RequisitosActuacionView(generics.ListAPIView):

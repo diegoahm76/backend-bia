@@ -10,6 +10,6 @@ urlpatterns = [
     path('create-entrega/',views.CrearEntregaView.as_view(),name='entrega-create'),
     path('anular-entrega/<str:id_entrega>/',views.AnularEntregaView.as_view(),name='entrega-anular'),
     path('actualizar-entrega/<str:id_entrega>/',views.ActualizarEntregaView.as_view(),name='entrega-actualizar'),
-    path('delete-items-entrega/<str:id_entrega>/',views.DeleteItemsEntregaView.as_view(),name='entrega-eliminar'),
+    # path('delete-items-entrega/<str:id_entrega>/',views.DeleteItemsEntregaView.as_view(),name='entrega-eliminar'),
 
 ]

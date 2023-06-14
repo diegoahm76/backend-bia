@@ -274,7 +274,7 @@ class RegistrarMortalidad(generics.CreateAPIView):
                 
                 # VALIDACION DETALLES CON FECHA_INCIDENCIA
                 item_incidencia = incidencias.filter(
-                    id_bien_sembrado = item['id_bien'],
+                    id_bien = item['id_bien'],
                     agno_lote = item['agno_lote'],
                     nro_lote = item['nro_lote'],
                     fecha_incidencia__gt = fecha_baja

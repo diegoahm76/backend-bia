@@ -18,7 +18,7 @@
         "nombre_modulo": "Administración de Usuarios",
         "subsistema": "SEGU",
         "descripcion": "Permite administrar las credenciales de acceso de las personas al sistema",
-        "ruta_formulario": "/#/app/transversal/personas/administracion_personas",
+        "ruta_formulario": "/#/app/transversal/administracion_personas",
         "nombre_icono": "test",
         "id_menu": 8
     }
@@ -32,7 +32,7 @@
         "descripcion": "Permite administrar a una persona que tiene un usuario interno, los datos de su usuario y datos personales desde el sistema - Sólo para usuarios internos",
         "ruta_formulario": "/*",
         "nombre_icono": "test",
-        "id_menu": 6
+        "id_menu": null
     }
 },
 {
@@ -44,7 +44,7 @@
         "descripcion": "Permite administrar a una persona que tiene un usuario externo, los datos de su usuario y datos personales desde el portal web - Sólo para usuarios externos",
         "ruta_formulario": "/*",
         "nombre_icono": "test",
-        "id_menu": 7
+        "id_menu": null
     }
 },
 {
@@ -66,7 +66,7 @@
         "nombre_modulo": "Estado Civil",
         "subsistema": "TRSV",
         "descripcion": "Permite administrar la información básica de los Estados Civiles del sistema",
-        "ruta_formulario": "/#/app/transversal/configuracion/datos_basicos/estado_civil",
+        "ruta_formulario": "/#/app/seguridad/configuraciones_basicas/estado_civil",
         "nombre_icono": "test",
         "id_menu": 5
     }
@@ -78,7 +78,7 @@
         "nombre_modulo": "Tipos de Documentos de ID",
         "subsistema": "TRSV",
         "descripcion": "Permite administrar los tipos de documentos de identificación",
-        "ruta_formulario": "/#/app/transversal/configuracion/datos_basicos/tipos_documento",
+        "ruta_formulario": "/#/app/seguridad/configuraciones_basicas/tipos_documento",
         "nombre_icono": "test",
         "id_menu": 5
     }
@@ -90,7 +90,7 @@
         "nombre_modulo": "Delegación del Rol de SuperUsuario",
         "subsistema": "SEGU",
         "descripcion": "Proceso que permite a un SuperUsuario delegar dicha función a otra persona",
-        "ruta_formulario": "/#/app/seguridad/superusuario",
+        "ruta_formulario": "/#/app/seguridad/delegacion_superusuario",
         "nombre_icono": "test",
         "id_menu": 8
     }
@@ -174,7 +174,7 @@
         "nombre_modulo": "Organigramas",
         "subsistema": "TRSV",
         "descripcion": "Permite administrar los organigramas del sistema",
-        "ruta_formulario": "/#/app/transversal/corporativo/organigramas",
+        "ruta_formulario": "/#/app/gestor_documental/organigrama/crear",
         "nombre_icono": "test",
         "id_menu": 2
     }
@@ -198,7 +198,7 @@
         "nombre_modulo": "Cargos",
         "subsistema": "TRSV",
         "descripcion": "Permite administrar los cargos disponibles en el sistema",
-        "ruta_formulario": "/#/app/transversal/configuracion/datos_basicos/cargos",
+        "ruta_formulario": "/#/app/seguridad/configuraciones_basicas/cargos",
         "nombre_icono": "test",
         "id_menu": 5
     }
@@ -498,7 +498,7 @@
         "nombre_modulo": "Tipificación de Bienes de Consumo de Viveros",
         "subsistema": "CONS",
         "descripcion": "Permite tipificar los bienes de consumo utilizables en viveros para la producción",
-        "ruta_formulario": "/#/app/conservacion/configuracion/administrar_camas_germinacion",
+        "ruta_formulario": "/#/app/conservacion/configuracion/tipificacion_bienes",
         "nombre_icono": "test",
         "id_menu": 30
     }
@@ -558,7 +558,7 @@
         "nombre_modulo": "Administración de Camas de Germinación",
         "subsistema": "CONS",
         "descripcion": "Permite administrar las camas de germinación para los diferntes viveros de la entidad",
-        "ruta_formulario": "/#/app/conservacion/configuracion/tipificacion_bienes",
+        "ruta_formulario": "/#/app/conservacion/configuracion/administrar_camas_germinacion",
         "nombre_icono": "test",
         "id_menu": 30
     }
@@ -810,7 +810,7 @@
         "nombre_modulo": "Autorización de Notificaciones Otras Cuentas",
         "subsistema": "TRSV",
         "descripcion": "Permite administrar a una persona las autorizaciones de las personas acerca de las notificaciones de la entidad",
-        "ruta_formulario": "/#/app/transversal/personas/autorizacion_notificaciones_cuentas",
+        "ruta_formulario": "/#/app/usuario/autorizacion_notificacion",
         "nombre_icono": "test",
         "id_menu": 1
     }
@@ -834,7 +834,7 @@
         "nombre_modulo": "Vinculación de Colaboradores",
         "subsistema": "TRSV",
         "descripcion": "Permite vincular o desvincular personas como colaboradores de la entidad en el sistema",
-        "ruta_formulario": "/#/app/transversal/personas/vinculacion_colaboradores",
+        "ruta_formulario": "/#/app/transversal/vinculacion_colaboradores/vinculacion",
         "nombre_icono": "test",
         "id_menu": 1
     }
@@ -846,7 +846,7 @@
         "nombre_modulo": "Datos Personales de Modificación Restringida",
         "subsistema": "TRSV",
         "descripcion": "Permite actualizar los Datos Personales de modificación restringida en el sistema a cualquier persona creada en el mismo",
-        "ruta_formulario": "/#/app/transversal/personas/datos_personales_modificacion_restringida",
+        "ruta_formulario": "/#/app/transversal/datos_restringidos",
         "nombre_icono": "test",
         "id_menu": 1
     }
@@ -894,7 +894,7 @@
         "nombre_modulo": "Auditoría",
         "subsistema": "SEGU",
         "descripcion": "Módulo para realizar la auditoría del sistema",
-        "ruta_formulario": "/*",
+        "ruta_formulario": "/#/app/seguridad/auditoria",
         "nombre_icono": "test",
         "id_menu": 9
     }
@@ -903,7 +903,7 @@
     "model": "seguridad.modulos",
     "pk": 78,
     "fields": {
-        "nombre_modulo": "Estaciones Hidrometeorológicas",
+        "nombre_modulo": "Agregar Estación",
         "subsistema": "RECU",
         "descripcion": "Permite administrar las Estaciones Hidrometeorológicas controladas por el sistema",
         "ruta_formulario": "/#/app/recurso_hidrico/estaciones/estacion",
@@ -1038,9 +1038,321 @@
         "nombre_modulo": "Comparativa Variable de Estación en Rango de Fechas",
         "subsistema": "RECU",
         "descripcion": "Módulo que permite comparar el comportamiento de una variable de una Estación Meteorológica entre 2 rangos de fechas",
-        "ruta_formulario": "/#/app/recurso_hidrico/estaciones/analitica_datos",
+        "ruta_formulario": "/#/app/recurso_hidrico/estaciones/analitica",
         "nombre_icono": "test",
         "id_menu": 56
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 90,
+    "fields": {
+        "nombre_modulo": "Constructor de Fórmulas para Liquidación",
+        "subsistema": "RECA",
+        "descripcion": "Permite crear de manera gráfica, fórmulas matemáticas para utilizarlas en el proceso de liquidación.",
+        "ruta_formulario": "/#/app/recaudo/liquidacion",
+        "nombre_icono": "test",
+        "id_menu": 64
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 91,
+    "fields": {
+        "nombre_modulo": "Listado de Obligaciones",
+        "subsistema": "RECA",
+        "descripcion": "Permite visualizar el listado de obligaciones pendientes por pago del usuario externo.",
+        "ruta_formulario": "/#/app/recaudo/facilidades_pago",
+        "nombre_icono": "test",
+        "id_menu": 61
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 92,
+    "fields": {
+        "nombre_modulo": "Consulta de Deudores",
+        "subsistema": "RECA",
+        "descripcion": "Permite consultar el listado de los deudores de la corporación y sus obligaciones pendientes por pago.",
+        "ruta_formulario": "/#/app/recaudo/facilidades_pago/consulta",
+        "nombre_icono": "test",
+        "id_menu": 59
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 93,
+    "fields": {
+        "nombre_modulo": "Solicitud de Facilidad de Pago",
+        "subsistema": "RECA",
+        "descripcion": "Permite a un usuario interno crear una solicitud de facilidad de pago para un deudor, o a un usuario externo hacer una a nombre propio.  Se ingresa a través de la funcionalidad de \"Consulta Deudores\" o \"Listado de Obligaciones\".",
+        "ruta_formulario": "/#/app/recaudo/facilidades_pago/registro",
+        "nombre_icono": "test",
+        "id_menu": null
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 94,
+    "fields": {
+        "nombre_modulo": "Solicitudes de Facilidades de Pago Pendientes",
+        "subsistema": "RECA",
+        "descripcion": "Lista las solicitudes de facilidades de pago pendientes por gestionar y permite asignar su gestión a colaboradores del área.",
+        "ruta_formulario": "/#/app/recaudo/facilidades_pago/admin",
+        "nombre_icono": "test",
+        "id_menu": 60
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 95,
+    "fields": {
+        "nombre_modulo": "Solicitudes de Facilidad de Pago Asignadas",
+        "subsistema": "RECA",
+        "descripcion": "Le permite a un usuario interno ver el listado de las solicitudes de facilidades de pago que le han asignado para su gestión.",
+        "ruta_formulario": "/#/app/recaudo/facilidades_pago/asignadas",
+        "nombre_icono": "test",
+        "id_menu": 60
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 96,
+    "fields": {
+        "nombre_modulo": "Gestión de Solicitud de Facilidad de Pago.",
+        "subsistema": "RECA",
+        "descripcion": "Permite a un usuario interno dar respuesta a  una solicitud de facilidad de pago que le ha sido previamente asignada.  Se ingresa a través de la funcionalidad de \"Solicitudes de Facilidad de Pago Asignadas\".",
+        "ruta_formulario": "/#/app/recaudo/facilidades_pago/solicitud",
+        "nombre_icono": "test",
+        "id_menu": null
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 97,
+    "fields": {
+        "nombre_modulo": "Creación de Plan de Pagos",
+        "subsistema": "RECA",
+        "descripcion": "Permite a un usuario interno crear un plan de pagos basado en una solicitud de facilidad de pago.  Se ingresa a través de la funcionalidad de \"Gestión de Solicitud de Facilidad de Pago\".",
+        "ruta_formulario": "/#/app/recaudo/facilidades_pago/amortizacion",
+        "nombre_icono": "test",
+        "id_menu": null
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 98,
+    "fields": {
+        "nombre_modulo": "Creación de Resolución de Facilidad de Pago",
+        "subsistema": "RECA",
+        "descripcion": "Permite a un usuario interno crear la resolución de aprobación de una facilidad de pago como respuesta a una solicitud de facilidad de pago.  Se ingresa a través de la funcionalidad de \"Gestión de Solicitud de Facilidad de Pago\".",
+        "ruta_formulario": "/#/app/recaudo/facilidades_pago/resolucion",
+        "nombre_icono": "test",
+        "id_menu": null
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 99,
+    "fields": {
+        "nombre_modulo": "Listado de Facilidades de Pago",
+        "subsistema": "RECA",
+        "descripcion": "Permite al usuario externo ver un listado de sus facilidades de pago solicitadas, aprobadas y canceladas.",
+        "ruta_formulario": "/#/app/recaudo/facilidades_pago/autorizadas",
+        "nombre_icono": "test",
+        "id_menu": 61
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 100,
+    "fields": {
+        "nombre_modulo": "Detalle de Facilidad de Pago",
+        "subsistema": "RECA",
+        "descripcion": "Permite al usuario externo consultar la trazabilidad de lo ocurrido con una solicitud de facilidad de pago. Se ingresa a través de la funcionalidad de \"Listado de Facilidades de Pago\".",
+        "ruta_formulario": "/#/app/recaudo/facilidades_pago/seguimiento",
+        "nombre_icono": "test",
+        "id_menu": null
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 101,
+    "fields": {
+        "nombre_modulo": "Compendio Datos Recaudo",
+        "subsistema": "RECA",
+        "descripcion": "Permite visualizar de forma rápida un compendio de los datos de Cartera",
+        "ruta_formulario": "/#/app/recaudo/datos",
+        "nombre_icono": "test",
+        "id_menu": 65
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 102,
+    "fields": {
+        "nombre_modulo": "Etapas del Proceso de Rentas",
+        "subsistema": "RECA",
+        "descripcion": "Permite visualizar las etapas de cada proceso generado en rentas y administrar sus atributos.",
+        "ruta_formulario": "/#/app/recaudo/estados_proceso",
+        "nombre_icono": "test",
+        "id_menu": 65
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 103,
+    "fields": {
+        "nombre_modulo": "Flujo del Proceso",
+        "subsistema": "RECA",
+        "descripcion": "Permite administrar el flujo bpmn de los procesos generados en recaudo.",
+        "ruta_formulario": "/#/app/recaudo/flujo_proceso",
+        "nombre_icono": "test",
+        "id_menu": 65
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 104,
+    "fields": {
+        "nombre_modulo": "Gestión de Cartera",
+        "subsistema": "RECA",
+        "descripcion": "Permite cambiar de estado la cartera de un deudor.",
+        "ruta_formulario": "/#/app/recaudo/gestion_cartera",
+        "nombre_icono": "test",
+        "id_menu": 59
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 105,
+    "fields": {
+        "nombre_modulo": "Facilidades de Pago",
+        "subsistema": "RECA",
+        "descripcion": "Permite visualizar en detalle las facilidades de pago creadas.",
+        "ruta_formulario": "#/app/recaudo/reportes/facilidad_pago",
+        "nombre_icono": "test",
+        "id_menu": 63
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 106,
+    "fields": {
+        "nombre_modulo": "Listado de Cartera Detallado",
+        "subsistema": "RECA",
+        "descripcion": "Permite visualizar un listado de Cartera detallada",
+        "ruta_formulario": "#/app/recaudo/reportes/cartera_detallada",
+        "nombre_icono": "test",
+        "id_menu": 63
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 107,
+    "fields": {
+        "nombre_modulo": "Cartera Totalizada a Fecha",
+        "subsistema": "RECA",
+        "descripcion": "Permite visualizar un informe de la Cartera totalizadad a una fecha elegida.",
+        "ruta_formulario": "/#/app/recaudo/reportes/cartera_general",
+        "nombre_icono": "test",
+        "id_menu": 63
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 108,
+    "fields": {
+        "nombre_modulo": "Vehículos Arrendados",
+        "subsistema": "ALMA",
+        "descripcion": "Permite administrar los vehículos arrendados con que cuenta la entidad.",
+        "ruta_formulario": "/#/app/almacen/administracion_vehiculo/arriendo_vehiculos",
+        "nombre_icono": "test",
+        "id_menu": 31
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 109,
+    "fields": {
+        "nombre_modulo": "Configuración de la Entidad",
+        "subsistema": "TRSV",
+        "descripcion": "Permite configurar los valores básicos de la entidad requeridos para la operación del sistema.",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 4
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 110,
+    "fields": {
+        "nombre_modulo": "Contenido Programático PORH",
+        "subsistema": "RECU",
+        "descripcion": "Permite registrar el contenido programático a Planes de Ordenamiento de Recurso Hídrico",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 46
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 111,
+    "fields": {
+        "nombre_modulo": "Registro de Avances de Proyectos",
+        "subsistema": "RECU",
+        "descripcion": "Permite registrar los avances a los proyectos pertenecientes a los programas de los PORH",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 46
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 112,
+    "fields": {
+        "nombre_modulo": "Configuración de Alertas de Recurso Hídrico",
+        "subsistema": "RECU",
+        "descripcion": "Permite configurar las Alertas disponbiles para el subsistema de Recurso Hídrico",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 8
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 113,
+    "fields": {
+        "nombre_modulo": "Sucursales de la Entidad",
+        "subsistema": "TRSV",
+        "descripcion": "Permite administrar las sucursales con que cuenta la entidad usuaria del software.",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 4
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 114,
+    "fields": {
+        "nombre_modulo": "Traslado Masivo de Unidades por Entidad (previo)",
+        "subsistema": "TRSV",
+        "descripcion": "Permite realizar un cambio masivo de las unidades organizacionales a las que pertenecen los colaboradores de la entidad antes y después de activar un nuevo organigrama",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 3
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 115,
+    "fields": {
+        "nombre_modulo": "Traslado Masivo de Unidad a Unidad",
+        "subsistema": "TRSV",
+        "descripcion": "Permite realizar un cambio masivo de unidades organizacionales a las que pertenecen los colaboradores de la entidad, de una unidad en particular, después de activar un nuevo organigrama",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 3
     }
 }
 ]

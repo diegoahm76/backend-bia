@@ -106,8 +106,8 @@ from seguridad.serializers.personas_serializers import (
 
 class GetEstadoCivil(generics.ListAPIView):
     serializer_class = EstadoCivilSerializer
-    permission_classes = [IsAuthenticated, PermisoConsultarEstadoCivil]
-    queryset = EstadoCivil.objects.filter(activo=True)
+    permission_classes = [IsAuthenticated] #PermisoConsultarEstadoCivil]
+    queryset = EstadoCivil.objects.all()
 
 
 class GetEstadoCivilById(generics.RetrieveAPIView):
@@ -169,8 +169,8 @@ class UpdateEstadoCivil(generics.RetrieveUpdateAPIView):
 
 class GetTipoDocumento(generics.ListAPIView):
     serializer_class = TipoDocumentoSerializer
-    permission_classes = [IsAuthenticated, PermisoConsultarTipoDocumento]
-    queryset = TipoDocumento.objects.filter(activo=True)
+    permission_classes = [IsAuthenticated] # PermisoConsultarTipoDocumento]
+    queryset = TipoDocumento.objects.all()
 
 
 class GetTipoDocumentoById(generics.RetrieveAPIView):

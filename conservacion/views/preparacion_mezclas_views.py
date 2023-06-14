@@ -110,20 +110,20 @@ class CreatePreparacionMezclas(generics.UpdateAPIView):
             if instancia_bien.cod_tipo_elemento_vivero != "IN":
                 raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +  ' no es un insumo.')
             # SE VALIDA QUE EL NÚMERO DE POSICIÓN SEA ÚNICO
-            if i['id_bien_usado'] in aux_valores_repetidos:
+            if int(i['id_bien_usado']) in aux_valores_repetidos:
                 raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' No se puede ingresar dos veces un mismo bien dentro de una preparación de mezclas.')
             
             # SE VALIDA QUE EL NÚMERO DE POSICIÓN SEA ÚNICO
-            if i['nro_posicion'] in aux_nro_posicion:
+            if int(i['nro_posicion']) in aux_nro_posicion:
                 raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene un número de posición que ya existe.')
             
             # SE VALIDA QUE LA CANTIDAD USADA SEA MAYOR QUE CERO
-            if i['cantidad_usada'] <= 0:
+            if int(i['cantidad_usada']) <= 0:
                 raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene como cantidad de usada cero, la cantidad debe ser mayor que cero.')
             
             # SE VALIDA QUE HAYA SALDO DISPONIBLE
             saldo_disponible = UtilConservacion.get_cantidad_disponible_F(instancia_bien, instancia_bien_vivero)
-            if i['cantidad_usada'] > saldo_disponible:
+            if int(i['cantidad_usada']) > saldo_disponible:
                 raise ValidationError ('En el bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' no tiene saldo disponible para suplir la cantidad usada.')
             
             # SE GUARDAN EL NÚMERO DE POSICIÓN Y EL ID DE BIEN EN LISTAS PARA VALIDAR SI SE REPITEN
@@ -379,20 +379,20 @@ class UpdatePreparacionMezclas(generics.UpdateAPIView):
                 raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +  ' no es un insumo.')
             
             # SE VALIDA QUE EL BIEN USADO SEA UNICO DENTRO LA PREPARACION DE MEZCLA
-            if i['id_bien_usado'] in aux_valores_repetidos:
+            if int(i['id_bien_usado']) in aux_valores_repetidos:
                 raise ValidationError('Error en el bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + '. No se puede ingresar dos veces un mismo bien dentro de una preparación de mezclas.')
             
             # SE VALIDA QUE EL NÚMERO DE POSICIÓN SEA ÚNICO
-            if i['nro_posicion'] in aux_nro_posicion:
+            if int(i['nro_posicion']) in aux_nro_posicion:
                 raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene un número de posición que ya existe.')
             
             # SE VALIDA QUE LA CANTIDAD DEL BIEN USADO SEA MAYOR QUE CERO
-            if i['cantidad_usada'] <= 0:
+            if int(i['cantidad_usada']) <= 0:
                 raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene como cantidad de usada cero, la cantidad debe ser mayor que cero.')
             
             # SE VALIDA QUE HAYA SALDO DISPONIBLE
             saldo_disponible = UtilConservacion.get_cantidad_disponible_F(instancia_bien, instancia_bien_vivero)
-            if i['cantidad_usada'] > saldo_disponible:
+            if int(i['cantidad_usada']) > saldo_disponible:
                 raise ValidationError('En el bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' no tiene saldo disponible para suplir la cantidad usada.')
             
             # SE GUARDAN EL NÚMERO DE POSICIÓN Y EL ID DE BIEN EN LISTAS PARA VALIDAR SI SE REPITEN
@@ -418,7 +418,7 @@ class UpdatePreparacionMezclas(generics.UpdateAPIView):
                 raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' no existe en el inventario del vivero.')
             
             # SE VALIDA QUE LA FECHA DE ACTUALIZACIÓN DE LA CANTIDAD USADA NO SEA SUPERIOR A DOS DÍAS DE ANTERIORIDAD
-            if i['cantidad_usada'] != instancia_item_preparacion.cantidad_usada:
+            if int(i['cantidad_usada']) != instancia_item_preparacion.cantidad_usada:
                 fecha_posible = datetime.now() - timedelta(days=2)
                 if instancia_preparacion.fecha_preparacion < fecha_posible:
                     raise ValidationError('No es posible actualizar una cantidad usada de una prepracación con más de dos días de anterioridad.')
@@ -431,7 +431,7 @@ class UpdatePreparacionMezclas(generics.UpdateAPIView):
                     raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ', no tiene saldo disponible para cubrir la cantidad usada ingresada.')
                 
             # SE VALIDA QUE LA CANTIDAD ACTUALIZADA NO SE VALIDE POR CERO
-            if i['cantidad_usada'] <= 0:
+            if int(i['cantidad_usada']) <= 0:
                 raise ValidationError('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene cantidad igual a cero, la cantidad debe ser mayor que cero.')
                        
 #----------------------------------------------------> ACTUALIZACION DE LOS VALORES DEL INVENTARIO VIVEROS <----------------------------#

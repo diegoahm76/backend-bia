@@ -18,9 +18,9 @@ urlpatterns = [
     path('entradas/get-list/', views.GetEntradas.as_view(), name='entrada-get-list'),
     path('entradas/update/<str:id_entrada>/', views.UpdateEntrada.as_view(), name='entrada-update'),
     path('entradas/search-bienes/', views.SearchArticulos.as_view(), name='catalogo-bienes-search-bienes'),
-    path('entradas/items/delete/', views.DeleteItemsEntrada.as_view(), name='item-entrada-delete'),
+    # path('entradas/items/delete/', views.DeleteItemsEntrada.as_view(), name='item-entrada-delete'),
     path('entradas/get-numero_entrada/', views.GetNumeroEntrada.as_view(), name='get_numero_entrada'),
-    path('entradas/items/update/<str:id_entrada>/', views.UpdateItemsEntrada.as_view(), name='item-entrada-update'),
+    # path('entradas/items/update/<str:id_entrada>/', views.UpdateItemsEntrada.as_view(), name='item-entrada-update'),
     path('entradas/anular/<str:id_entrada>/', views.AnularEntrada.as_view(), name='entrada-entrada'),
     path('entradas/get-by-codigo/', views.GetCatalogoBienesByCodigo.as_view(), name='catalogo-bienes-codigo-get'),
 ]
