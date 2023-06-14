@@ -66,7 +66,7 @@
         "nombre_modulo": "Estado Civil",
         "subsistema": "TRSV",
         "descripcion": "Permite administrar la información básica de los Estados Civiles del sistema",
-        "ruta_formulario": "/#/app/transversal/configuracion/datos_basicos/estado_civil",
+        "ruta_formulario": "/#/app/seguridad/configuraciones_basicas/estado_civil",
         "nombre_icono": "test",
         "id_menu": 5
     }
@@ -78,7 +78,7 @@
         "nombre_modulo": "Tipos de Documentos de ID",
         "subsistema": "TRSV",
         "descripcion": "Permite administrar los tipos de documentos de identificación",
-        "ruta_formulario": "/#/app/transversal/configuracion/datos_basicos/tipos_documento",
+        "ruta_formulario": "/#/app/seguridad/configuraciones_basicas/tipos_documento",
         "nombre_icono": "test",
         "id_menu": 5
     }
@@ -198,7 +198,7 @@
         "nombre_modulo": "Cargos",
         "subsistema": "TRSV",
         "descripcion": "Permite administrar los cargos disponibles en el sistema",
-        "ruta_formulario": "/#/app/transversal/configuracion/datos_basicos/cargos",
+        "ruta_formulario": "/#/app/seguridad/configuraciones_basicas/cargos",
         "nombre_icono": "test",
         "id_menu": 5
     }
@@ -1269,6 +1269,90 @@
         "ruta_formulario": "/#/app/almacen/administracion_vehiculo/arriendo_vehiculos",
         "nombre_icono": "test",
         "id_menu": 31
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 109,
+    "fields": {
+        "nombre_modulo": "Configuración de la Entidad",
+        "subsistema": "TRSV",
+        "descripcion": "Permite configurar los valores básicos de la entidad requeridos para la operación del sistema.",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 4
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 110,
+    "fields": {
+        "nombre_modulo": "Contenido Programático PORH",
+        "subsistema": "RECU",
+        "descripcion": "Permite registrar el contenido programático a Planes de Ordenamiento de Recurso Hídrico",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 46
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 111,
+    "fields": {
+        "nombre_modulo": "Registro de Avances de Proyectos",
+        "subsistema": "RECU",
+        "descripcion": "Permite registrar los avances a los proyectos pertenecientes a los programas de los PORH",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 46
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 112,
+    "fields": {
+        "nombre_modulo": "Configuración de Alertas de Recurso Hídrico",
+        "subsistema": "RECU",
+        "descripcion": "Permite configurar las Alertas disponbiles para el subsistema de Recurso Hídrico",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 8
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 113,
+    "fields": {
+        "nombre_modulo": "Sucursales de la Entidad",
+        "subsistema": "TRSV",
+        "descripcion": "Permite administrar las sucursales con que cuenta la entidad usuaria del software.",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 4
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 114,
+    "fields": {
+        "nombre_modulo": "Traslado Masivo de Unidades por Entidad (previo)",
+        "subsistema": "TRSV",
+        "descripcion": "Permite realizar un cambio masivo de las unidades organizacionales a las que pertenecen los colaboradores de la entidad antes y después de activar un nuevo organigrama",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 3
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 115,
+    "fields": {
+        "nombre_modulo": "Traslado Masivo de Unidad a Unidad",
+        "subsistema": "TRSV",
+        "descripcion": "Permite realizar un cambio masivo de unidades organizacionales a las que pertenecen los colaboradores de la entidad, de una unidad en particular, después de activar un nuevo organigrama",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 3
     }
 }
 ]
