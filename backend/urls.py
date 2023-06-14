@@ -59,7 +59,7 @@ urlpatterns = [
     path('api/transversal/choices/', include('transversal.urls.choices_urls')),
     path('api/transversal/vinculacion/',include('transversal.urls.vinculacion_urls')),
     path('api/transversal/organigrama/', include('transversal.urls.organigrama_urls')),
-
+    path('api/transversal/configuracion/',include('transversal.urls.configuracionEntidades_urls')),
     #GESTOR DOCUMENTAL
     path('api/gestor/ccd/', include('gestion_documental.urls.ccd_urls')),
     path('api/gestor/activar/', include('gestion_documental.urls.finalizar_urls')),
