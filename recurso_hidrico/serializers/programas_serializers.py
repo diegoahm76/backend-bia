@@ -33,8 +33,8 @@ class GetProyectosPORHSerializers(serializers.ModelSerializer):
 class ActualizarProyectosSerializers(serializers.ModelSerializer):
     class Meta:
         model = ProyectosPORH
-        #fields = ['nombre','vigencia_inicial','vigencia_final','inversion']
-        fields = '__all__'
+        fields = ['nombre','vigencia_inicial','vigencia_final','inversion']
+        #fields = '__all__'
 class GetActividadesporProyectosSerializers(serializers.ModelSerializer):
     class Meta:
         model = ActividadesProyectos
