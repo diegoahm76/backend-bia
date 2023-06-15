@@ -15,45 +15,55 @@ from almacen.models.bienes_models import (
 )
 
 class GetSolicitudesViverosFuncionarioSerializer(serializers.ModelSerializer):
-    primer_nombre_persona_solicita = serializers.ReadOnlyField(source='id_persona_solicita.primer_nombre', default=None)
-    primer_apellido_persona_solicita = serializers.ReadOnlyField(source='id_persona_solicita.primer_apellido', default=None)
-    nombre_unidad_para_la_que_solicita = serializers.ReadOnlyField(source='id_unidad_para_la_que_solicita.nombre', default=None)
+    persona_solicita = serializers.SerializerMethodField()
+    persona_responsable = serializers.SerializerMethodField()
+    nombre_unidad_organizacional_destino = serializers.ReadOnlyField(source='id_unidad_para_la_que_solicita.nombre', default=None)
+    
+    def get_persona_solicita(self, obj):
+        nombre_completo_solicita = None
+        nombre_list = [obj.id_persona_solicita.primer_nombre, obj.id_persona_solicita.segundo_nombre,
+                        obj.id_persona_solicita.primer_apellido, obj.id_persona_solicita.segundo_apellido]
+        nombre_completo_solicita = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo_solicita = nombre_completo_solicita if nombre_completo_solicita != "" else None
+        return nombre_completo_solicita
+    
+    def get_persona_responsable(self, obj):
+        nombre_completo_responsable = None
+        nombre_list = [obj.id_funcionario_responsable_und_destino.primer_nombre, obj.id_funcionario_responsable_und_destino.segundo_nombre,
+                        obj.id_funcionario_responsable_und_destino.primer_apellido, obj.id_funcionario_responsable_und_destino.segundo_apellido]
+        nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+        return nombre_completo_responsable
+    
     class Meta:
         model = SolicitudesViveros
-        fields = (
-            "id_solicitud_vivero",
-            "nro_solicitud",
-            "fecha_solicitud",
-            "id_persona_solicita",
-            "primer_nombre_persona_solicita",
-            "primer_apellido_persona_solicita",
-            "id_unidad_para_la_que_solicita",
-            "nombre_unidad_para_la_que_solicita",
-        )
+        fields = '__all__'
 
 
 class GetSolicitudesViveroResponsableSerializer(serializers.ModelSerializer):
-    primer_nombre_persona_solicita = serializers.ReadOnlyField(source='id_persona_solicita.primer_nombre', default=None)
-    primer_apellido_persona_solicita = serializers.ReadOnlyField(source='id_persona_solicita.primer_apellido', default=None)
-    primer_nombre_persona_responsable = serializers.ReadOnlyField(source='id_funcionario_responsable_und_destino.primer_nombre', default=None)
-    primer_apellido_persona_responsable = serializers.ReadOnlyField(source='id_funcionario_responsable_und_destino.primer_apellido', default=None)
-    nombre_unidad_para_la_que_solicita = serializers.ReadOnlyField(source='id_unidad_para_la_que_solicita.nombre', default=None)
+    persona_solicita = serializers.SerializerMethodField()
+    persona_responsable = serializers.SerializerMethodField()
+    nombre_unidad_organizacional_destino = serializers.ReadOnlyField(source='id_unidad_para_la_que_solicita.nombre', default=None)
+    
+    def get_persona_solicita(self, obj):
+        nombre_completo_solicita = None
+        nombre_list = [obj.id_persona_solicita.primer_nombre, obj.id_persona_solicita.segundo_nombre,
+                        obj.id_persona_solicita.primer_apellido, obj.id_persona_solicita.segundo_apellido]
+        nombre_completo_solicita = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo_solicita = nombre_completo_solicita if nombre_completo_solicita != "" else None
+        return nombre_completo_solicita
+    
+    def get_persona_responsable(self, obj):
+        nombre_completo_responsable = None
+        nombre_list = [obj.id_funcionario_responsable_und_destino.primer_nombre, obj.id_funcionario_responsable_und_destino.segundo_nombre,
+                        obj.id_funcionario_responsable_und_destino.primer_apellido, obj.id_funcionario_responsable_und_destino.segundo_apellido]
+        nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+        return nombre_completo_responsable
+    
     class Meta:
         model = SolicitudesViveros
-        fields = (
-            "id_solicitud_vivero",
-            "nro_solicitud",
-            "fecha_solicitud",
-            "id_persona_solicita",
-            "primer_nombre_persona_solicita",
-            "primer_apellido_persona_solicita",
-            "id_funcionario_responsable_und_destino",
-            "primer_nombre_persona_responsable",
-            "primer_apellido_persona_responsable",
-            "fecha_aprobacion_responsable",
-            "id_unidad_para_la_que_solicita",
-            "nombre_unidad_para_la_que_solicita",
-        )
+        fields = '__all__'
 
 
 class GestionarSolicitudResponsableSerializer(serializers.ModelSerializer):
