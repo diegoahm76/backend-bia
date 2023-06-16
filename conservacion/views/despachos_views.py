@@ -830,26 +830,26 @@ class GetSolicitudesVivero(generics.ListAPIView):
         # SI SE INGRESA NÚMERO DE SOLICITUD SE BUSCA POR EL NÚMERO DE SOLICITUD, EL ID VIVERO Y QUE LA SOLICITUD SEA MENOR LA FECHA DE DESPACHO
         if nro_solicitud:
             instancia_solicitudes = queryset.filter(nro_solicitud=nro_solicitud,estado_aprobacion_responsable='A',solicitud_abierta=True)
-            if not instancia_solicitudes:
-                raise NotFound('No se encontraron coincidencias con ese número de solicitud')
+            # if not instancia_solicitudes:
+            #     raise NotFound('No se encontraron coincidencias con ese número de solicitud')
             
-            instancia_solicitudes = instancia_solicitudes.filter(id_vivero_solicitud=id_vivero)
-            if not instancia_solicitudes:
-                raise NotFound('El número de solicitud ingresado no está registrada dentro del vivero ingresado')
+            instancia_solicitudes = instancia_solicitudes.filter(id_vivero_solicitud=id_vivero) if instancia_solicitudes else []
+            # if not instancia_solicitudes:
+            #     raise NotFound('El número de solicitud ingresado no está registrada dentro del vivero ingresado')
             
-            instancia_solicitudes = instancia_solicitudes.filter(fecha_aprobacion_coord_viv__lte=fecha_despacho).order_by('-fecha_aprobacion_coord_viv')
-            if not instancia_solicitudes:
-                raise NotFound('La fecha del despacho debe ser superior a la fecha de la solicitud')
+            instancia_solicitudes = instancia_solicitudes.filter(fecha_aprobacion_responsable__lte=fecha_despacho).order_by('-fecha_aprobacion_responsable') if instancia_solicitudes else []
+            # if not instancia_solicitudes:
+            #     raise NotFound('La fecha del despacho debe ser superior a la fecha de la solicitud')
         
         # SI SE NO INGRESA NÚMERO DE SOLICITUD SE BUSCA POR EL ID VIVERO Y QUE LA SOLICITUD SEA MENOR LA FECHA DE DESPACHO
         else:
             instancia_solicitudes = queryset.filter(id_vivero_solicitud=id_vivero,estado_aprobacion_responsable='A',solicitud_abierta=True)
-            if not instancia_solicitudes:
-                raise NotFound('El viero ingresado no tiene solicitudes registradas o no existe.')
+            # if not instancia_solicitudes:
+            #     raise NotFound('El vivero ingresado no tiene solicitudes registradas o no existe.')
             
-            instancia_solicitudes = instancia_solicitudes.filter(fecha_aprobacion_coord_viv__lte=fecha_despacho).order_by('-fecha_aprobacion_coord_viv')
-            if not instancia_solicitudes:
-                raise NotFound('La fecha del despacho debe ser superior a la fecha de la solicitud')
+            instancia_solicitudes = instancia_solicitudes.filter(fecha_aprobacion_responsable__lte=fecha_despacho).order_by('-fecha_aprobacion_responsable') if instancia_solicitudes else []
+            # if not instancia_solicitudes:
+            #     raise NotFound('La fecha del despacho debe ser superior a la fecha de la solicitud')
         serializador=self.serializer_class(instancia_solicitudes,many=True)
         
         return Response ({'success':True,'detail':'Datos encontrados','data':serializador.data},status=status.HTTP_200_OK)

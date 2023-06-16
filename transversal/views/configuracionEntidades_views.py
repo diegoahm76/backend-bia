@@ -32,14 +32,14 @@ class UpdateConfiguracionEntidad(generics.UpdateAPIView):
     serializer_class = ConfiguracionEntidadSerializer
     queryset = ConfiguracionEntidad.objects.all()
     lookup_field = 'id_persona_entidad'
-    
+    permission_classes = [IsAuthenticated]
     def buscarConsecutivo(self,cod_perfil_histo):
         max_valor = HistoricoPerfilesEntidad.objects.filter(cod_tipo_perfil_histo=cod_perfil_histo).aggregate(max_valor=Max('consec_asignacion_perfil_histo'))
         print("dato maximo de "+str(cod_perfil_histo))
         print(max_valor)
         if not max_valor['max_valor']:
             print("NO EXISTE REGISTRO")
-            return(1)
+            return(0)
         else:
 
             print(max_valor['max_valor'])
@@ -47,7 +47,7 @@ class UpdateConfiguracionEntidad(generics.UpdateAPIView):
         
 
     
-    def registrarHistoricoPerfilesEntidad(self,cod_tipo_perfil,consec,id_persona,fecha_inicio_periodo,observaciones):
+    def registrarHistoricoPerfilesEntidad(self,cod_tipo_perfil,consec,id_persona,fecha_inicio_periodo,observaciones,funcionario):
         
         consecutivo=self.buscarConsecutivo(cod_tipo_perfil)
         print(consecutivo)
@@ -59,7 +59,7 @@ class UpdateConfiguracionEntidad(generics.UpdateAPIView):
                             fecha_inicio_periodo=fecha_inicio_periodo,
                             fecha_fin_periodo=timezone.now(),
                             observaciones_cambio=observaciones,
-                            id_persona_cambia_id=1
+                            id_persona_cambia_id=funcionario
                             )
         historico_perfil.save()
 
@@ -70,7 +70,8 @@ class UpdateConfiguracionEntidad(generics.UpdateAPIView):
         instance = self.get_object()  # Obtener la instancia del objeto a actualizar
         data_nueva = request.data
         data_in = request.data
-
+        funcionario = request.user.persona.id_persona
+        
         ##si el dato que cambia es el director
         if instance.id_persona_director_actual:##si existe
             
@@ -86,7 +87,7 @@ class UpdateConfiguracionEntidad(generics.UpdateAPIView):
                 id_persona=instance.id_persona_director_actual
                 fecha_inicio_periodo=instance.fecha_inicio_dir_actual
                 observaciones=request.data.get('observaciones_de_cambio_director')
-                self.registrarHistoricoPerfilesEntidad(cod_tipo_perfil,consec,id_persona,fecha_inicio_periodo,observaciones)
+                self.registrarHistoricoPerfilesEntidad(cod_tipo_perfil,consec,id_persona,fecha_inicio_periodo,observaciones,funcionario)
 
             else:#sino no no cambia la fecha
                 data_nueva['fecha_inicio_dir_actual']=instance.fecha_inicio_dir_actual
@@ -111,7 +112,7 @@ class UpdateConfiguracionEntidad(generics.UpdateAPIView):
                 id_persona=instance.id_persona_coord_almacen_actual
                 fecha_inicio_periodo=instance.fecha_inicio_coord_alm_actual
                 observaciones=request.data.get('observaciones_de_cambio_coord_almacen')
-                self.registrarHistoricoPerfilesEntidad(cod_tipo_perfil,consec,id_persona,fecha_inicio_periodo,observaciones)
+                self.registrarHistoricoPerfilesEntidad(cod_tipo_perfil,consec,id_persona,fecha_inicio_periodo,observaciones,funcionario)
 
             else:#sino no no cambia la fecha
                 data_nueva['fecha_inicio_coord_alm_actual']=instance.fecha_inicio_coord_alm_actual
@@ -137,7 +138,7 @@ class UpdateConfiguracionEntidad(generics.UpdateAPIView):
                 id_persona=instance.id_persona_respon_transporte_actual
                 fecha_inicio_periodo=instance.fecha_inicio_respon_trans_actual
                 observaciones=request.data.get('observaciones_de_cambio_respon_transporte')
-                self.registrarHistoricoPerfilesEntidad(cod_tipo_perfil,consec,id_persona,fecha_inicio_periodo,observaciones)
+                self.registrarHistoricoPerfilesEntidad(cod_tipo_perfil,consec,id_persona,fecha_inicio_periodo,observaciones,funcionario)
 
             else:#sino no no cambia la fecha
                 data_nueva['fecha_inicio_respon_trans_actual']=instance.fecha_inicio_respon_trans_actual
@@ -163,7 +164,7 @@ class UpdateConfiguracionEntidad(generics.UpdateAPIView):
                 id_persona=instance.id_persona_coord_viveros_actual
                 fecha_inicio_periodo=instance.fecha_inicio_coord_viv_actual
                 observaciones=request.data.get('observaciones_de_cambio_coord_viveros')
-                self.registrarHistoricoPerfilesEntidad(cod_tipo_perfil,consec,id_persona,fecha_inicio_periodo,observaciones)
+                self.registrarHistoricoPerfilesEntidad(cod_tipo_perfil,consec,id_persona,fecha_inicio_periodo,observaciones,funcionario)
 
             else:#sino no no cambia la fecha
                 data_nueva['fecha_inicio_coord_viv_actual']=instance.fecha_inicio_coord_viv_actual
@@ -173,13 +174,38 @@ class UpdateConfiguracionEntidad(generics.UpdateAPIView):
                     instance.fecha_inicio_coord_viv_actual = timezone.now()
                     data_nueva['fecha_inicio_coord_viv_actual']=timezone.now()
 
+    ##si el dato que cambia es el almacenista
+
+        if instance.id_persona_almacenista:##si existe
+            
+            #si existe verifica que sea diferente
+            if int(instance.id_persona_almacenista.id_persona) != int(data_nueva['id_persona_almacenista']) :
+                #instance.fecha_inicio_almacenista = timezone.now()
+                data_nueva['fecha_inicio_almacenista']=timezone.now()
+                print(instance.fecha_inicio_almacenista)
+
+                 #realiza el registro en historial
+                cod_tipo_perfil='Alma'   
+                consec=0
+                id_persona=instance.id_persona_almacenista
+                fecha_inicio_periodo=instance.fecha_inicio_almacenista
+                observaciones=request.data.get('observaciones_de_cambio_almacenista')
+                self.registrarHistoricoPerfilesEntidad(cod_tipo_perfil,consec,id_persona,fecha_inicio_periodo,observaciones,funcionario)
+
+            else:#sino no no cambia la fecha
+                data_nueva['fecha_inicio_almacenista']=instance.fecha_inicio_almacenista
+        else:#sino existe lo crea 
+        
+                if data_nueva['id_persona_almacenista']:
+                    instance.fecha_inicio_almacenista = timezone.now()
+                    data_nueva['fecha_inicio_almacenista']=timezone.now()
 
         serializer = self.get_serializer(instance, data=data_nueva, partial=True)
         serializer.is_valid(raise_exception=True)
+        
         self.perform_update(serializer)  # Guardar los cambios
 
-        
 
-        return Response(serializer.data)
+        return Response({'success':True,'detail':"Se realizo la configuracion  correctamente.","data":serializer.data},status=status.HTTP_200_OK)
 
     
