@@ -547,7 +547,7 @@ class SearchArticuloByDocIdentificador(generics.ListAPIView):
         if not filter.get('cod_tipo_activo'):
             raise NotFound('Debe enviar el parametro del tipo de activo')
 
-        bien = CatalogoBienes.objects.filter(**filter).first()
+        bien = CatalogoBienes.objects.filter(**filter).filter(nivel_jerarquico=5).exclude(nro_elemento_bien=None).first()
         if bien:
             serializer = self.serializer_class(bien)
             data_serializado = serializer.data
@@ -580,7 +580,7 @@ class SearchArticulosByNombreDocIdentificador(generics.ListAPIView):
                     filter[key] = value
         if not filter.get('cod_tipo_activo'):
             raise NotFound('Debe enviar el parametro del tipo de activo')
-        bien = CatalogoBienes.objects.filter(**filter)
+        bien = CatalogoBienes.objects.filter(**filter).filter(nivel_jerarquico=5).exclude(nro_elemento_bien=None)
         if bien:
             serializer = self.serializer_class(bien, many=True)
             data_serializado = serializer.data
