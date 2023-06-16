@@ -837,7 +837,7 @@ class GetSolicitudesVivero(generics.ListAPIView):
             # if not instancia_solicitudes:
             #     raise NotFound('El número de solicitud ingresado no está registrada dentro del vivero ingresado')
             
-            instancia_solicitudes = instancia_solicitudes.filter(fecha_aprobacion_coord_viv__lte=fecha_despacho).order_by('-fecha_aprobacion_coord_viv') if instancia_solicitudes else []
+            instancia_solicitudes = instancia_solicitudes.filter(fecha_aprobacion_responsable__lte=fecha_despacho).order_by('-fecha_aprobacion_responsable') if instancia_solicitudes else []
             # if not instancia_solicitudes:
             #     raise NotFound('La fecha del despacho debe ser superior a la fecha de la solicitud')
         
@@ -847,7 +847,7 @@ class GetSolicitudesVivero(generics.ListAPIView):
             # if not instancia_solicitudes:
             #     raise NotFound('El vivero ingresado no tiene solicitudes registradas o no existe.')
             
-            instancia_solicitudes = instancia_solicitudes.filter(fecha_aprobacion_coord_viv__lte=fecha_despacho).order_by('-fecha_aprobacion_coord_viv') if instancia_solicitudes else []
+            instancia_solicitudes = instancia_solicitudes.filter(fecha_aprobacion_responsable__lte=fecha_despacho).order_by('-fecha_aprobacion_responsable') if instancia_solicitudes else []
             # if not instancia_solicitudes:
             #     raise NotFound('La fecha del despacho debe ser superior a la fecha de la solicitud')
         serializador=self.serializer_class(instancia_solicitudes,many=True)
