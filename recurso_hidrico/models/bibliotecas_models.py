@@ -18,8 +18,8 @@ class Secciones(models.Model):
         unique_together = ['nombre']
 
 class Subsecciones(models.Model):
-    Subseccion_Seccion = models.AutoField(primary_key=True,db_column="T606IdSubseccion_Seccion")
-    id_Seccion = models.ForeignKey(Secciones, on_delete=models.CASCADE,db_column="T606Id_Seccion")
+    id_subseccion = models.AutoField(primary_key=True,db_column="T606IdSubseccion_Seccion")
+    id_seccion = models.ForeignKey(Secciones, on_delete=models.CASCADE,db_column="T606Id_Seccion")
     nombre = models.CharField(max_length=255,db_column="T606nombre")
     descripcion = models.CharField(max_length=255,db_column="T606descripcion")
     fechaCreacion = models.DateTimeField(auto_now_add=True,db_column="T606fechaCreacion")
@@ -29,7 +29,7 @@ class Subsecciones(models.Model):
         return self.T606nombre
 
     class Meta:
-        db_table = 'T606Subsecciones_Seccion				'
+        db_table = 'T606Subsecciones_Seccion'
         verbose_name = 'subseccion'
         verbose_name_plural = 'subsecciones'
-        unique_together = ['id_Seccion', 'nombre']
+        unique_together = ['id_seccion', 'nombre']

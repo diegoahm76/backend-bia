@@ -44,3 +44,4 @@ class HistoricoPerfilesEntidad(models.Model):
         db_table = 'T028HistoricoPerfiles_Entidad'
         verbose_name = 'Histórico de Perfil de Entidad'
         verbose_name_plural = 'Históricos de Perfiles de Entidad'
+        unique_together = ['id_persona_entidad', 'cod_tipo_perfil_histo','consec_asignacion_perfil_histo']

@@ -19,3 +19,8 @@ class GetSubseccionesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subsecciones
         fields = '__all__'
+
+class ActualizarSubseccionesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subsecciones
+        fields = '__all__'

@@ -1,4 +1,4 @@
-from copy import deepcopy
+import copy
 from django.forms import ValidationError
 from django.db.models import Max
 from django.utils import timezone
@@ -6,6 +6,7 @@ from rest_framework import generics, status
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from seguridad.utils import Util
 
 from transversal.serializers.entidades_serializers import ConfiguracionEntidadSerializer
 from transversal.models import ConfiguracionEntidad,HistoricoPerfilesEntidad
@@ -71,7 +72,7 @@ class UpdateConfiguracionEntidad(generics.UpdateAPIView):
         data_nueva = request.data
         data_in = request.data
         funcionario = request.user.persona.id_persona
-        
+        instance_previous=copy.copy(instance)
         ##si el dato que cambia es el director
         if instance.id_persona_director_actual:##si existe
             
@@ -200,11 +201,28 @@ class UpdateConfiguracionEntidad(generics.UpdateAPIView):
                     instance.fecha_inicio_almacenista = timezone.now()
                     data_nueva['fecha_inicio_almacenista']=timezone.now()
 
+
         serializer = self.get_serializer(instance, data=data_nueva, partial=True)
         serializer.is_valid(raise_exception=True)
         
         self.perform_update(serializer)  # Guardar los cambios
+        
+        #AUDITORÍA
+        usuario = request.user.id_usuario
+        direccion=Util.get_client_ip(request)
+        descripcion = {"NombreEntidad": str(3) }
+        valores_actualizados = {'current': instance, 'previous': instance_previous}
 
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 109,
+            "cod_permiso": "AC",
+            "subsistema": 'TRSV',
+            "dirip": direccion,
+            "descripcion": descripcion, 
+            "valores_actualizados": valores_actualizados
+        }
+        Util.save_auditoria(auditoria_data)        
 
         return Response({'success':True,'detail':"Se realizo la configuracion  correctamente.","data":serializer.data},status=status.HTTP_200_OK)
 
