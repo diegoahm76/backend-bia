@@ -90,6 +90,23 @@ class PersonaOrgSerializer(serializers.ModelSerializer):
                   'tiene_usuario']
         
 class NewUserOrganigramaSerializer(serializers.ModelSerializer):
+    tipo_documento = serializers.ReadOnlyField(source='id_persona_cargo.tipo_documento.cod_tipo_documento',default=None)
+    numero_documento = serializers.ReadOnlyField(source='id_persona_cargo.numero_documento',default=None) 
+    nombre_completo = serializers.SerializerMethodField()
+    usado = serializers.SerializerMethodField()
+    
+    def get_usado(self,obj):
+        ccd = obj.cuadrosclasificaciondocumental_set.all()
+        usado = True if ccd else False
+        return usado
+    
+    def get_nombre_completo(self, obj):
+        nombre_completo = None
+        if obj.id_persona_cargo:
+            nombre_list = [obj.id_persona_cargo.primer_nombre, obj.id_persona_cargo.segundo_nombre, obj.id_persona_cargo.primer_apellido, obj.id_persona_cargo.segundo_apellido]
+            nombre_completo = ' '.join(item for item in nombre_list if item is not None).upper()
+        return nombre_completo
+    
     class Meta:
         model= Organigramas
         fields='__all__'
