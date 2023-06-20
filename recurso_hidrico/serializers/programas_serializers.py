@@ -46,6 +46,8 @@ class GetAvancesporProyectosSerializers(serializers.ModelSerializer):
         model = AvancesProyecto
         #fields = ['id_proyecto','nombre','fecha_registro']
         fields = '__all__'
+
+
 class BusquedaAvanzadaSerializers(serializers.ModelSerializer):
     
     nombre_programa = serializers.ReadOnlyField(source='id_programa.nombre',default=None)

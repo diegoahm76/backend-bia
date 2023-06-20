@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from itertools import groupby
 from gestion_documental.models.tca_models import TablasControlAcceso
 from gestion_documental.serializers.ccd_serializers import CCDSerializer
+from seguridad.permissions.permissions_gestor import PermisoActualizarOrganigramas
 from seguridad.utils import Util
 from django.db.models import Q, F
 from datetime import datetime
@@ -45,9 +46,11 @@ from rest_framework.exceptions import ValidationError, NotFound, PermissionDenie
 class UpdateNiveles(generics.UpdateAPIView):
     serializer_class = NivelesUpdateSerializer
     queryset = NivelesOrganigrama.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, id_organigrama):
         data = request.data
+        persona_logueada = request.user.persona.id_persona
 
         #VALIDACION DE ORGANIGRAMA
         try:
@@ -56,6 +59,10 @@ class UpdateNiveles(generics.UpdateAPIView):
         except:
             raise ValidationError('No se pudo encontrar un organigrama con el parámetro ingresado')
         
+        if organigrama.id_persona_cargo:
+            if organigrama.id_persona_cargo.id_persona != persona_logueada:
+                raise PermissionDenied('Este organigrama actualmente solo podrá ser editado por ' + organigrama.id_persona_cargo.primer_nombre + ' ' + organigrama.id_persona_cargo.primer_apellido)
+            
         #VALIDA SI NO HA CREADO NINGÚN NIVEL
         if not data:
             raise ValidationError('No se puede guardar sin crear al menos un nivel')
@@ -148,11 +155,19 @@ class GetNivelesByOrganigrama(generics.ListAPIView):
 class UpdateUnidades(generics.UpdateAPIView):
     serializer_class=UnidadesPutSerializer
     queryset=UnidadesOrganizacionales.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
         data = request.data
+        persona_logueada = request.user.persona.id_persona
+        
         organigrama=Organigramas.objects.filter(id_organigrama=pk).first()
+        
         if organigrama:
+            if organigrama.id_persona_cargo:
+                if organigrama.id_persona_cargo.id_persona != persona_logueada:
+                    raise PermissionDenied('Este organigrama actualmente solo podrá ser editado por ' + organigrama.id_persona_cargo.primer_nombre + ' ' + organigrama.id_persona_cargo.primer_apellido)
+            
             if not organigrama.fecha_terminado:
                 if data:
                     nivel_unidades = sorted(data, key=itemgetter('id_nivel_organigrama'))
@@ -353,11 +368,17 @@ class GetUnidadesOrganigramaActual(generics.ListAPIView):
 class FinalizarOrganigrama(generics.UpdateAPIView):
     serializer_class=OrganigramaSerializer
     queryset=Organigramas.objects.all()
+    permission_classes = [IsAuthenticated]
     
     def put(self,request,pk):
+        persona_logueada = request.user.persona.id_persona
         confirm = request.query_params.get('confirm')
         organigrama_a_finalizar=Organigramas.objects.filter(id_organigrama=pk).first()
         if organigrama_a_finalizar:
+            if organigrama_a_finalizar.id_persona_cargo:
+                if organigrama_a_finalizar.id_persona_cargo.id_persona != persona_logueada:
+                    raise PermissionDenied('Este organigrama actualmente solo podrá ser editado por ' + organigrama_a_finalizar.id_persona_cargo.primer_nombre + ' ' + organigrama_a_finalizar.id_persona_cargo.primer_apellido)
+        
             if not organigrama_a_finalizar.fecha_terminado:
                 niveles=NivelesOrganigrama.objects.filter(id_organigrama=pk) 
                 unidades=UnidadesOrganizacionales.objects.filter(id_organigrama=pk) 
@@ -447,10 +468,21 @@ class UpdateOrganigrama(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, id_organigrama):
-        organigrama = Organigramas.objects.get(id_organigrama=id_organigrama)   
+        persona_logueada = request.user.persona.id_persona
+        
+        organigrama = Organigramas.objects.filter(id_organigrama=id_organigrama).first()
+        if not organigrama:
+            raise NotFound('El organigrama ingresado no existe')
+        
         previous_organigrama = copy.copy(organigrama)
+        
         if organigrama.fecha_terminado:
-            raise PermissionDenied('No se puede actualizar un organigrama que ya está terminado')   
+            raise PermissionDenied('No se puede actualizar un organigrama que ya está terminado') 
+        
+        if organigrama.id_persona_cargo:
+            if organigrama.id_persona_cargo.id_persona != persona_logueada:
+                raise PermissionDenied('Este organigrama actualmente solo podrá ser editado por ' + organigrama.id_persona_cargo.primer_nombre + ' ' + organigrama.id_persona_cargo.primer_apellido)
+        
         ccd = list(CuadrosClasificacionDocumental.objects.filter(id_organigrama=organigrama.id_organigrama).values())
         if not len(ccd):
             serializer = self.serializer_class(organigrama, data=request.data)
@@ -661,8 +693,10 @@ class AsignarOrganigramaUser(generics.CreateAPIView):
 class ReanudarOrganigrama(generics.RetrieveUpdateAPIView):
     serializer_class = NewUserOrganigramaSerializer
     queryset = Organigramas.objects.all()
+    permission_classes = [IsAuthenticated, PermisoActualizarOrganigramas]
     
     def put(self, request, id_organigrama):
+        persona_logueada = request.user.persona
                 
         organigrama = Organigramas.objects.filter(id_organigrama=id_organigrama).first()
         
@@ -683,6 +717,7 @@ class ReanudarOrganigrama(generics.RetrieveUpdateAPIView):
             raise NotFound('El Organigrama ya esta siendo utilizado por un CCD.')             
         
         organigrama.fecha_terminado = None
+        organigrama.id_persona_cargo = persona_logueada
         
         organigrama.save()
         return Response({'succes': True, 'detail':'Se reanudo correctamente el organigrama.'}, status=status.HTTP_200_OK)

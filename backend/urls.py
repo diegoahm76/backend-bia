@@ -117,6 +117,7 @@ urlpatterns = [
 
     #RECURSO HIDRICO
     path('api/hidrico/programas/',include('recurso_hidrico.urls.programas_urls')),
+    path('api/hidrico/bibliotecas/',include('recurso_hidrico.urls.bibliotecas_urls')),
 
     #NOTIFICACIONES
     path('api/transversal/notificaciones/', include('transversal.urls.notificaciones_urls')),
