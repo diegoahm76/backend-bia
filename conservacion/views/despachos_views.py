@@ -829,7 +829,7 @@ class GetSolicitudesVivero(generics.ListAPIView):
         
         # SI SE INGRESA NÚMERO DE SOLICITUD SE BUSCA POR EL NÚMERO DE SOLICITUD, EL ID VIVERO Y QUE LA SOLICITUD SEA MENOR LA FECHA DE DESPACHO
         if nro_solicitud:
-            instancia_solicitudes = queryset.filter(nro_solicitud=nro_solicitud,estado_aprobacion_responsable='A',solicitud_abierta=True)
+            instancia_solicitudes = queryset.filter(nro_solicitud=nro_solicitud,estado_aprobacion_responsable='A',solicitud_abierta=True,revisada_coord_viveros=True,estado_aprobacion_coord_viveros='A')
             # if not instancia_solicitudes:
             #     raise NotFound('No se encontraron coincidencias con ese número de solicitud')
             
@@ -843,7 +843,7 @@ class GetSolicitudesVivero(generics.ListAPIView):
         
         # SI SE NO INGRESA NÚMERO DE SOLICITUD SE BUSCA POR EL ID VIVERO Y QUE LA SOLICITUD SEA MENOR LA FECHA DE DESPACHO
         else:
-            instancia_solicitudes = queryset.filter(id_vivero_solicitud=id_vivero,estado_aprobacion_responsable='A',solicitud_abierta=True)
+            instancia_solicitudes = queryset.filter(id_vivero_solicitud=id_vivero,estado_aprobacion_responsable='A',solicitud_abierta=True,revisada_coord_viveros=True,estado_aprobacion_coord_viveros='A')
             # if not instancia_solicitudes:
             #     raise NotFound('El vivero ingresado no tiene solicitudes registradas o no existe.')
             
