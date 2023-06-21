@@ -425,7 +425,7 @@ class BusquedaAvanzadaAvances(generics.ListAPIView):
 
     def get(self, request):
         filter = {}
-        
+
         for key, value in request.query_params.items():
             if key == 'nombre_programa':
                 if value != '':
@@ -433,14 +433,15 @@ class BusquedaAvanzadaAvances(generics.ListAPIView):
             if key == 'nombre_proyecto':
                 if value != '':
                     filter['id_proyecto__nombre__icontains'] = value
-            if key == 'nombre_avance': 
+            if key == 'nombre_avances': 
                 if value != '':
-                    filter['descripcion__icontains'] = value
+                    
+                    filter['accion__icontains'] = value
         
-        #programas = self.queryset.all().filter(**filter)
-        #serializador = self.serializer_class(programas, many=True)
-        avances = self.queryset.filter(**filter).select_related('id_proyecto')
-        serializador = self.serializer_class(avances, many=True)
+        programas = self.queryset.all().filter(**filter)
+        serializador = self.serializer_class(programas, many=True)
+        # avances = self.queryset.filter(**filter).select_related('id_proyecto')
+        # serializador = self.serializer_class(avances, many=True)
         
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializador.data}, status=status.HTTP_200_OK)
 

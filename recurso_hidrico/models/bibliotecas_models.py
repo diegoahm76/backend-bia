@@ -23,10 +23,10 @@ class Subsecciones(models.Model):
     nombre = models.CharField(max_length=255,db_column="T606nombre")
     descripcion = models.CharField(max_length=255,db_column="T606descripcion")
     fechaCreacion = models.DateTimeField(auto_now_add=True,db_column="T606fechaCreacion")
-    id_PersonaCrea = models.ForeignKey(Personas, on_delete=models.CASCADE,db_column="T606Id_PersonaCrea")
+    id_persona_creada = models.ForeignKey(Personas, on_delete=models.CASCADE,db_column="T606Id_PersonaCrea")
 
     def __str__(self):
-        return self.T606nombre
+        return self.nombre
 
     class Meta:
         db_table = 'T606Subsecciones_Seccion'

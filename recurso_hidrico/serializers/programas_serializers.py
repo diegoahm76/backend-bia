@@ -115,15 +115,12 @@ class ActualizarAvanceEvidenciaSerializers(serializers.ModelSerializer):
 class AvanceConEvidenciasSerializer(serializers.ModelSerializer):
     evidencias = serializers.SerializerMethodField()
     nombre_programa = serializers.ReadOnlyField(source='id_proyecto.id_programa.nombre', default=None)
-    nombre_PORH = serializers.ReadOnlyField(source='id_proyecto.nombre', default=None)
-    nombre = serializers.ReadOnlyField(source='id_proyecto.nombre', default=None)
-    nombre_avance = serializers.ReadOnlyField(source='descripcion', default=None)  # Agregado: nombre del avance
-
+    nombre_proyecto = serializers.ReadOnlyField(source='id_proyecto.nombre', default=None)
+    nombre_PORH = serializers.ReadOnlyField(source='id_proyecto.id_programa.id_instrumento', default=None)
     class Meta:
         model = AvancesProyecto
-        fields = ['nombre_PORH', 'nombre_programa', 'nombre', 'nombre_avance', 'id_avance', 'id_proyecto', 'accion', 'id_persona_registra', 'fecha_registro','evidencias']
-        #model= AvancesProyecto
-        #fields = '__all__'
+        fields = ['nombre_PORH', 'nombre_programa', 'nombre_proyecto', 'descripcion', 'id_avance', 'id_proyecto', 'accion', 'id_persona_registra', 'fecha_registro','evidencias']
+
 
     def get_evidencias(self, avance):
         evidencias = avance.evidenciasavance_set.all()
