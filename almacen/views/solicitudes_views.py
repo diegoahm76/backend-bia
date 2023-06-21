@@ -33,6 +33,7 @@ from datetime import datetime, date
 from almacen.serializers.solicitudes_serialiers import ( 
     CrearSolicitudesPostSerializer,
     CrearItemsSolicitudConsumiblePostSerializer,
+    GetListSolicitudesSerializer,
     PersonasResponsablesFilterSerializer
     )
 from almacen.serializers.solicitudes_serialiers import SolicitudesPendientesAprobarSerializer
@@ -485,7 +486,7 @@ class CreateSolicitud(generics.UpdateAPIView):
 
 class GetSolicitudesPendentesPorAprobar(generics.ListAPIView):
 # ESTA FUNCIONALIDAD PERMITE LISTAR LAS SOLICITUDES PENDIENTES DE APROBACION POR EL SUPERVISOR DESIGNADO
-    serializer_class = CrearSolicitudesPostSerializer
+    serializer_class = GetListSolicitudesSerializer
     queryset=SolicitudesConsumibles.objects.all()
     permission_classes = [IsAuthenticated]
     
@@ -521,7 +522,7 @@ class GetSolicitudesRechazadas(generics.ListAPIView):
 
 class GetSolicitudesPendentesPorAprobarDocumento(generics.ListAPIView):
 # ESTA FUNCIONALIDAD PERMITE LISTAR LAS SOLICITUDES PENDIENTES DE APROBACION POR EL SUPERVISOR DESIGNADO
-    serializer_class = CrearSolicitudesPostSerializer
+    serializer_class = GetListSolicitudesSerializer
     queryset=SolicitudesConsumibles.objects.all()
     permission_classes = [IsAuthenticated]
     
