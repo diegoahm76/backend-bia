@@ -1256,6 +1256,7 @@ class GuardarActualizacionUnidadOrganizacional(generics.UpdateAPIView):
 
 class ProcederActualizacionUnidad(generics.UpdateAPIView):
     serializer_class = ActUnidadOrgAntiguaSerializer
+    permission_classes = [IsAuthenticated]
     
     def put(self, request, format=None):
         personas_nuevas_unidades = request.data
@@ -1315,16 +1316,24 @@ class ProcederActualizacionUnidad(generics.UpdateAPIView):
                         justificacion=f'Se trasladaron {len(personas_actualizadas)} personas',
                     )
                     cambio_unidad_masivo.save()
+                    
+                    # AUDITORIA DE UPDATE DE ORGANIGRAMA
+                    user_logeado = request.user.id_usuario
+                    dirip = Util.get_client_ip(request)
+                    descripcion = {'TipoCambio':'UnidadesTodas', 'Consecutivo':str(consecutivo_actual), 'FechaCambio':str(fecha_actual)}
+                    auditoria_data = {
+                        'id_usuario': user_logeado,
+                        'id_modulo': 114,
+                        'cod_permiso': 'EJ',
+                        'subsistema': 'TRSV',
+                        'dirip': dirip,
+                        'descripcion': descripcion
+                    }
+                    Util.save_auditoria(auditoria_data)
                         
                 TemporalPersonasUnidad.objects.all().delete()
                 
             except Exception as e:
                 raise ValidationError('Error: ' + str(e))
-        
-        # Auditoria Traslado Masivo de Unidades por Entidad
-        # dirip = Util.get_client_ip(request)
-        # descripcion = {"NombreOrganigrama":str(tca_actual.id_trd.id_ccd.id_organigrama.nombre),"VersionOrganigrama":str(tca_actual.id_trd.id_ccd.id_organigrama.version)}
-        # auditoria_data = {'id_usuario': user.id_usuario,'id_modulo': 114,'cod_permiso': 'EJ','subsistema': 'TRSV','dirip': dirip, 'descripcion': descripcion}
-        # Util.save_auditoria(auditoria_data)
         
         return Response({'success': True, 'detail': 'Las personas han sido actualizadas exitosamente'}, status=status.HTTP_200_OK)
