@@ -131,3 +131,10 @@ class EvidenciaAvanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = EvidenciasAvance
         fields = ('id_evidencia_avance', 'nombre_archivo', )
+
+
+
+class EliminarSeccionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProyectosPORH
+        fields = '__all__'
