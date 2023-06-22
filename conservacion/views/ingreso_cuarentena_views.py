@@ -239,12 +239,12 @@ class CreateIngresoCuarentenaView(generics.CreateAPIView):
         if lote_etapa_inventario.cod_etapa_lote == 'G':
             porcentaje_actual = lote_etapa_inventario.porc_cuarentena_lote_germinacion if lote_etapa_inventario.porc_cuarentena_lote_germinacion else 0
             lote_etapa_inventario.porc_cuarentena_lote_germinacion = porcentaje_actual + serializador.cantidad_cuarentena
-            lote_etapa_inventario.save()
 
         else:
             cantidad_actual = lote_etapa_inventario.cantidad_lote_cuarentena if lote_etapa_inventario.cantidad_lote_cuarentena else 0
             lote_etapa_inventario.cantidad_lote_cuarentena = cantidad_actual + serializador.cantidad_cuarentena
-            lote_etapa_inventario.save()
+        
+        lote_etapa_inventario.save()
 
         # AUDITORIA ELIMINACIÓN DE CREAR CUARENTENA
         descripcion = {"nombre_vivero": str(serializador.id_bien.nombre), "nombre_bien": str(serializador.id_vivero.id_vivero), "agno": str(serializador.agno_lote), "nro_lote": str(serializador.nro_lote), "etapa_lote": str(serializador.cod_etapa_lote), "fecha_hora_cuarentena": str(serializador.fecha_cuarentena)}

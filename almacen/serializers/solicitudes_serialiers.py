@@ -46,6 +46,25 @@ class SolicitudesPendientesAprobarSerializer(serializers.ModelSerializer):
     responsable_vinculacion_vencida = serializers.SerializerMethodField()
     responsable_unidad = serializers.SerializerMethodField()
     responsable_funcionario = serializers.SerializerMethodField()
+    persona_solicita = serializers.SerializerMethodField()
+    persona_responsable = serializers.SerializerMethodField()
+    nombre_unidad_organizacional_destino = serializers.ReadOnlyField(source='id_unidad_para_la_que_solicita.nombre', default=None)
+    
+    def get_persona_solicita(self, obj):
+        nombre_completo_solicita = None
+        nombre_list = [obj.id_persona_solicita.primer_nombre, obj.id_persona_solicita.segundo_nombre,
+                        obj.id_persona_solicita.primer_apellido, obj.id_persona_solicita.segundo_apellido]
+        nombre_completo_solicita = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo_solicita = nombre_completo_solicita if nombre_completo_solicita != "" else None
+        return nombre_completo_solicita
+    
+    def get_persona_responsable(self, obj):
+        nombre_completo_responsable = None
+        nombre_list = [obj.id_funcionario_responsable_unidad.primer_nombre, obj.id_funcionario_responsable_unidad.segundo_nombre,
+                        obj.id_funcionario_responsable_unidad.primer_apellido, obj.id_funcionario_responsable_unidad.segundo_apellido]
+        nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+        return nombre_completo_responsable
     
     #verificar de que el solicitante este vinculado en la corporacion    
     def get_responsable_vinculado(self, obj):
