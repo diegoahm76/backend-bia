@@ -16,6 +16,7 @@ import copy
 from operator import itemgetter
 from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
 from transversal.serializers.organigrama_serializers import ( 
+    GetCambiosUnidadMasivosSerializer,
     NewUserOrganigramaSerializer,
     OrganigramaCambioDeOrganigramaActualSerializer,
     OrganigramaSerializer,
@@ -984,6 +985,7 @@ class ObtenerOrganigramasPosibles(generics.ListAPIView):
 
 class ActualizacionUnidadOrganizacionalAntigua(generics.UpdateAPIView):
     serializer_class = ActUnidadOrgAntiguaSerializer
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, *args, **kwargs):
         nueva_id_unidad_organizacional = request.data.get('id_nueva_unidad_organizacional')
@@ -995,9 +997,8 @@ class ActualizacionUnidadOrganizacionalAntigua(generics.UpdateAPIView):
         if cambios_temporal:
             raise PermissionDenied('No puede realizar estos cambios. Aún hay cambios de unidades organizacionales pendientes por procesar')
 
-        try:
-            unidad_organizacional = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=nueva_id_unidad_organizacional)
-        except UnidadesOrganizacionales.DoesNotExist:
+        unidad_organizacional = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=nueva_id_unidad_organizacional).first()
+        if not unidad_organizacional:
             raise ValidationError('La nueva unidad organizacional que estás asignando no existe')
 
         # Obtener la fecha de retiro de producción más actual
@@ -1010,7 +1011,13 @@ class ActualizacionUnidadOrganizacionalAntigua(generics.UpdateAPIView):
         personas = Personas.objects.filter(id_persona__in=lista_id_personas, id_unidad_organizacional_actual__id_organigrama=organigrama_actual.id_organigrama)
         if len(set(lista_id_personas)) != len(personas):
             raise ValidationError('Debe asegurarse de que todas las personas tengan asignadas una unidad del último organigrama retirado de la producción')
+        
+        lista_id_unidades = [persona.id_unidad_organizacional_actual.id_unidad_organizacional for persona in personas]
+        if len(set(lista_id_unidades)) > 1:
+            raise ValidationError('Debe asegurarse de que todas las personas elegidas pertenezcan a una misma unidad')
 
+        instance_unidad_anterior = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=lista_id_unidades[0]).first()
+        
         queryset = Personas.objects.filter(
             es_unidad_organizacional_actual=False,
             id_persona__in=lista_id_personas
@@ -1020,7 +1027,7 @@ class ActualizacionUnidadOrganizacionalAntigua(generics.UpdateAPIView):
             personas_actualizadas = []
 
             # Obtener el consecutivo actual
-            consecutivo_actual = CambiosUnidadMasivos.objects.aggregate(max_consecutivo=Max('consecutivo'))['max_consecutivo'] or 0
+            consecutivo_actual = CambiosUnidadMasivos.objects.filter(tipo_cambio='UnidadAUnidad').aggregate(max_consecutivo=Max('consecutivo'))['max_consecutivo'] or 0
 
             for persona in queryset:
                 historico = HistoricoCargosUndOrgPersona(
@@ -1030,7 +1037,7 @@ class ActualizacionUnidadOrganizacionalAntigua(generics.UpdateAPIView):
                     fecha_inicial_historico=persona.fecha_asignacion_unidad,
                     fecha_final_historico=fecha_actual,
                     observaciones_vinculni_cargo=None,
-                    justificacion_cambio_und_org=f'Cambio masivo de unidad organizacional por {nombre_de_usuario} el {fecha_actual.strftime("%Y-%m-%d %H:%M:%S")}',
+                    justificacion_cambio_und_org=f'Cambio masivo de unidad organizacional por {nombre_de_usuario} el {fecha_actual.strftime("%Y-%m-%d %H:%M:%S")} mediante proceso del sistema de Traslado Masivo de Unidad a Unidad',
                     desvinculado=False
                 )
                 historico.save()
@@ -1051,9 +1058,23 @@ class ActualizacionUnidadOrganizacionalAntigua(generics.UpdateAPIView):
                     fecha_cambio=fecha_actual,
                     id_persona_cambio=user.persona,
                     tipo_cambio='UnidadAUnidad',
-                    justificacion=f'Se realizó un cambio masivo de unidad organizacional a {len(personas_actualizadas)} personas',
+                    justificacion=f'Se realizó el traslado masivo de {len(personas_actualizadas)} personas desde la unidad del organigrama anterior {instance_unidad_anterior.nombre} hasta la unidad del organigrama nuevo {unidad_organizacional.nombre}',
                 )
                 cambio_unidad_masivo.save()
+                
+                # Auditoria traslado masivo de unidades por entidad
+                user_logeado = user.id_usuario
+                dirip = Util.get_client_ip(request)
+                descripcion = {'TipoCambio':'UnidadAUnidad', 'Consecutivo':str(consecutivo_actual), 'FechaCambio':str(fecha_actual)}
+                auditoria_data = {
+                    'id_usuario': user_logeado,
+                    'id_modulo': 115,
+                    'cod_permiso': 'EJ',
+                    'subsistema': 'TRSV',
+                    'dirip': dirip,
+                    'descripcion': descripcion
+                }
+                Util.save_auditoria(auditoria_data)
 
                 return Response({'success': True, 'detail': 'Las personas han sido actualizadas exitosamente'}, status=status.HTTP_200_OK)
             else:
@@ -1256,6 +1277,7 @@ class GuardarActualizacionUnidadOrganizacional(generics.UpdateAPIView):
 
 class ProcederActualizacionUnidad(generics.UpdateAPIView):
     serializer_class = ActUnidadOrgAntiguaSerializer
+    permission_classes = [IsAuthenticated]
     
     def put(self, request, format=None):
         personas_nuevas_unidades = request.data
@@ -1286,7 +1308,7 @@ class ProcederActualizacionUnidad(generics.UpdateAPIView):
                         fecha_inicial_historico = persona.fecha_asignacion_unidad,
                         fecha_final_historico = fecha_actual,
                         observaciones_vinculni_cargo = None,
-                        justificacion_cambio_und_org = f'Cambio masivo de unidad organizacional por {nombre_de_usuario} el {fecha_actual.strftime("%Y-%m-%d %H:%M:%S")}',
+                        justificacion_cambio_und_org = f'Cambio masivo de unidad organizacional por {nombre_de_usuario} el {fecha_actual.strftime("%Y-%m-%d %H:%M:%S")} mediante proceso del sistema de Traslado Masivo de Unidad por Entidad',
                         desvinculado = False
                     )
                     historico.save()
@@ -1301,7 +1323,7 @@ class ProcederActualizacionUnidad(generics.UpdateAPIView):
 
                 if personas_actualizadas:
                     # Obtener el consecutivo actual
-                    consecutivo_actual = CambiosUnidadMasivos.objects.aggregate(max_consecutivo=Max('consecutivo'))['max_consecutivo'] or 0
+                    consecutivo_actual = CambiosUnidadMasivos.objects.filter(tipo_cambio='UnidadesTodas').aggregate(max_consecutivo=Max('consecutivo'))['max_consecutivo'] or 0
 
                     # Incrementar el consecutivo
                     consecutivo_actual += 1
@@ -1315,16 +1337,44 @@ class ProcederActualizacionUnidad(generics.UpdateAPIView):
                         justificacion=f'Se trasladaron {len(personas_actualizadas)} personas',
                     )
                     cambio_unidad_masivo.save()
+                    
+                    # Auditoria traslado masivo de unidades por entidad
+                    user_logeado = request.user.id_usuario
+                    dirip = Util.get_client_ip(request)
+                    descripcion = {'TipoCambio':'UnidadesTodas', 'Consecutivo':str(consecutivo_actual), 'FechaCambio':str(fecha_actual)}
+                    auditoria_data = {
+                        'id_usuario': user_logeado,
+                        'id_modulo': 114,
+                        'cod_permiso': 'EJ',
+                        'subsistema': 'TRSV',
+                        'dirip': dirip,
+                        'descripcion': descripcion
+                    }
+                    Util.save_auditoria(auditoria_data)
                         
                 TemporalPersonasUnidad.objects.all().delete()
                 
             except Exception as e:
                 raise ValidationError('Error: ' + str(e))
         
-        # Auditoria Traslado Masivo de Unidades por Entidad
-        # dirip = Util.get_client_ip(request)
-        # descripcion = {"NombreOrganigrama":str(tca_actual.id_trd.id_ccd.id_organigrama.nombre),"VersionOrganigrama":str(tca_actual.id_trd.id_ccd.id_organigrama.version)}
-        # auditoria_data = {'id_usuario': user.id_usuario,'id_modulo': 114,'cod_permiso': 'EJ','subsistema': 'TRSV','dirip': dirip, 'descripcion': descripcion}
-        # Util.save_auditoria(auditoria_data)
-        
         return Response({'success': True, 'detail': 'Las personas han sido actualizadas exitosamente'}, status=status.HTTP_200_OK)
+
+class GetHistoricoUnidadAUnidad(generics.ListAPIView):
+    serializer_class = GetCambiosUnidadMasivosSerializer
+    queryset = CambiosUnidadMasivos.objects.filter(tipo_cambio='UnidadAUnidad')
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        queryset = self.queryset.all()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success':True, 'detail':'Se encontró el siguiente histórico de traslados masivos de unidad a unidad', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class GetHistoricoUnidadEntidad(generics.ListAPIView):
+    serializer_class = GetCambiosUnidadMasivosSerializer
+    queryset = CambiosUnidadMasivos.objects.filter(tipo_cambio='UnidadesTodas')
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        queryset = self.queryset.all()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success':True, 'detail':'Se encontró el siguiente histórico de traslados masivos de unidad por entidad', 'data': serializer.data}, status=status.HTTP_200_OK)
