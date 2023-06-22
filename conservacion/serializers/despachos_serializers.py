@@ -51,6 +51,25 @@ class DistribucionesItemPreDistribuidoSerializer(serializers.ModelSerializer):
         fields = ['id_distribucion_item_despacho_entrante','id_vivero','id_bien','cantidad_asignada','cod_etapa_lote_al_ingresar','id_item_despacho_entrante','vivero_nombre','unidad_medida','codigo_bien','nombre_bien']
 
 class SolicitudesParaDespachoSerializer(serializers.ModelSerializer):
+    persona_solicita = serializers.SerializerMethodField()
+    persona_responsable = serializers.SerializerMethodField()
+    nombre_unidad_organizacional_destino = serializers.ReadOnlyField(source='id_unidad_para_la_que_solicita.nombre', default=None)
+    
+    def get_persona_solicita(self, obj):
+        nombre_completo_solicita = None
+        nombre_list = [obj.id_persona_solicita.primer_nombre, obj.id_persona_solicita.segundo_nombre,
+                        obj.id_persona_solicita.primer_apellido, obj.id_persona_solicita.segundo_apellido]
+        nombre_completo_solicita = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo_solicita = nombre_completo_solicita if nombre_completo_solicita != "" else None
+        return nombre_completo_solicita
+    
+    def get_persona_responsable(self, obj):
+        nombre_completo_responsable = None
+        nombre_list = [obj.id_funcionario_responsable_und_destino.primer_nombre, obj.id_funcionario_responsable_und_destino.segundo_nombre,
+                        obj.id_funcionario_responsable_und_destino.primer_apellido, obj.id_funcionario_responsable_und_destino.segundo_apellido]
+        nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+        return nombre_completo_responsable
     
     class Meta:
         model = SolicitudesViveros
