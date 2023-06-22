@@ -9,6 +9,7 @@ from datetime import datetime,date,timedelta
 
 from recurso_hidrico.models.bibliotecas_models import Secciones,Subsecciones
 from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, GetSeccionesSerializer,GetSubseccionesSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, SeccionSerializer, SeccionesSerializer
+from recurso_hidrico.serializers.programas_serializers import EliminarSeccionSerializer
 
 
 class GetSecciones(generics.ListAPIView):
@@ -100,11 +101,11 @@ class ActualizarSeccion(generics.UpdateAPIView):
         
         if 'subsecciones' in data_in: 
             if  not data_in['subsecciones']:
-                print(data_in['subsecciones'])
-                print("NO SUBSECCIONES")
+                print('')
+                #print("NO SUBSECCIONES")
             else:
                 for subseccion in data_in['subsecciones']: 
-                    print(subseccion)
+                    #print(subseccion)
 
                     if subseccion['id_subseccion']:#si existe la actualiza 
                         instancia_subseccion = Subsecciones.objects.filter(id_subseccion=subseccion['id_subseccion']).first()
@@ -117,7 +118,7 @@ class ActualizarSeccion(generics.UpdateAPIView):
                         instancia_subseccion.descripcion=subseccion['descripcion']
                         instancia_subseccion.save()
                     else:#si id_subseccion es nula se creada
-                        print('hola')
+                    
                         #REGISTRO DE BITACORA
                         instancia_subseccion = Subsecciones.objects.create(
                         id_seccion=seccion,
@@ -171,6 +172,7 @@ class ActualizarSubsecciones(generics.UpdateAPIView):
     
 
 class GetSeccionSubseccion(generics.RetrieveAPIView):
+
     serializer_class = SeccionSerializer
     queryset = Secciones.objects.all()
     permission_classes = [IsAuthenticated]
@@ -191,3 +193,29 @@ class GetSeccionSubseccion(generics.RetrieveAPIView):
             'detail': 'Se encontró la siguiente sección.',
             'data': serializer.data
         }, status=status.HTTP_200_OK)
+    
+
+
+
+class EliminarSeccion(generics.DestroyAPIView):
+    serializer_class = EliminarSeccionSerializer
+    queryset = Secciones.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self,request,pk):
+        
+        seccion = Secciones.objects.filter(id_seccion=pk).first()
+        subseccion = Subsecciones.objects.filter(id_seccion=pk).first()
+        
+        if not seccion:
+            raise ValidationError("No existe la seccion a eliminar")
+        
+        if subseccion:
+            raise ValidationError("No se puede Eliminar una seccion, si tiene subsecciones asignadas.")
+        
+        if seccion.registroPrecargado:
+            raise ValidationError("No se puede Eliminar una seccion, si fue precargada.")
+        
+        seccion.delete()
+        
+        return Response({'success':True,'detail':'Se elimino la Seccion seleccionada.'},status=status.HTTP_200_OK)

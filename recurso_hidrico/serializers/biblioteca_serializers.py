@@ -7,18 +7,20 @@ from seguridad.models import Personas
 
 
 class SeccionesSerializer(serializers.ModelSerializer):
-    primer_nombre = serializers.CharField(source='id_persona_creada.primer_nombre')
-    segundo_nombre = serializers.CharField(source='id_persona_creada.segundo_nombre')
-    primer_apellido = serializers.CharField(source='id_persona_creada.primer_apellido')
-    segundo_apellido = serializers.CharField(source='id_persona_creada.segundo_apellido')
+
     id_persona = serializers.IntegerField(source='id_persona_creada.id_persona')
+    nombre_completo = serializers.SerializerMethodField()
     nombre_comercial = serializers.CharField(source='id_persona_creada.nombre_comercial')
 
     class Meta:
         model = Secciones
         fields = ['id_seccion', 'nombre', 'descripcion', 'fecha_creacion', 'id_persona_creada',
-                  'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido',
-                  'id_persona', 'nombre_comercial']
+                  'id_persona','nombre_completo','nombre_comercial']
+    def get_nombre_completo(self, obj):
+        primer_nombre = obj.id_persona_creada.primer_nombre
+        primer_apellido = obj.id_persona_creada.primer_apellido
+        return f'{primer_nombre} {primer_apellido}'
+    
 class GetSeccionesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Secciones
