@@ -107,6 +107,10 @@ class DespachosViveroSerializer(serializers.ModelSerializer):
         fields = '__all__'
     
 class ItemsDespachoViveroSerializer(serializers.ModelSerializer):
+    codigo_bien=serializers.ReadOnlyField(source='id_bien.codigo_bien',default=None)
+    nombre_bien=serializers.ReadOnlyField(source='id_bien.nombre',default=None)
+    unidad_medida= serializers.ReadOnlyField(source='id_bien.id_unidad_medida.abreviatura',default=None)
+    cod_tipo_elemento_vivero= serializers.ReadOnlyField(source='id_bien.cod_tipo_elemento_vivero',default=None)
     
     class Meta:
         model = ItemsDespachoViveros
@@ -117,7 +121,7 @@ class GetInsumoSerializer(serializers.ModelSerializer):
     nombre=serializers.ReadOnlyField(source='id_bien.nombre',default=None)
     cantidad_disponible = serializers.IntegerField(read_only=True, default=None)
     disponible= serializers.BooleanField(read_only=True,default=None)
-    unidad_medida= serializers.ReadOnlyField(source='id_bien.id_unidad_medida.abreviatura')
+    unidad_medida= serializers.ReadOnlyField(source='id_bien.id_unidad_medida.abreviatura',default=None)
     
     class Meta:
         model=InventarioViveros
