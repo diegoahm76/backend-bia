@@ -1,5 +1,8 @@
 from django.db import models
 
+from seguridad.choices.municipios_choices import municipios_CHOICES
+from seguridad.choices.paises_choices import paises_CHOICES
+
 
 class ConfiguracionEntidad(models.Model):
     id_persona_entidad = models.IntegerField(primary_key=True, editable=False, db_column='T027IdPersonaEntidad')
@@ -45,3 +48,31 @@ class HistoricoPerfilesEntidad(models.Model):
         verbose_name = 'Histórico de Perfil de Entidad'
         verbose_name_plural = 'Históricos de Perfiles de Entidad'
         unique_together = ['id_persona_entidad', 'cod_tipo_perfil_histo','consec_asignacion_perfil_histo']
+
+
+class SucursalesEmpresas(models.Model):
+    id_sucursal_empresa = models.AutoField(primary_key=True, editable=False, db_column='T012IdSucursalEmpresa')
+    id_persona_empresa = models.ForeignKey('seguridad.Personas',on_delete=models.CASCADE,  db_column='T012Id_PersonaEmpresa')
+    numero_sucursal = models.SmallIntegerField(db_column='T012nroSucursal')
+    descripcion_sucursal = models.CharField(max_length=255, db_column='T012descripcionSucursal')
+    direccion = models.CharField(max_length=255, db_column='T012dirSucursal')
+    direccion_sucursal_georeferenciada = models.CharField(max_length=50, null=True, blank=True, db_column='T012dirSucursalGeoref')
+    municipio = models.CharField(max_length=5, choices=municipios_CHOICES, null=True, blank=True, db_column='T012Cod_MunicipioSucursalNal')
+    pais_sucursal_exterior = models.CharField(max_length=2, choices=paises_CHOICES, null=True, blank=True, db_column='T012Cod_PaisSucursalExterior')
+    direccion_notificacion = models.CharField(max_length=255, null=True, blank=True, db_column='T012dirNotificacionNal')
+    direccion_notificacion_referencia = models.CharField(max_length=255, null=True, blank=True, db_column='T012dirNotificacionNalReferencia')
+    municipio_notificacion = models.CharField(max_length=5, choices=municipios_CHOICES, null=True, blank=True, db_column='T012Cod_MunicipioNotificacionNal') 
+    email_sucursal = models.EmailField(max_length=100, null=True, blank=True, db_column='T012emailSucursal')
+    telefono_sucursal = models.CharField(max_length=15, null=True, blank=True, db_column='T012telContactoSucursal')
+    es_principal = models.BooleanField(default=False, db_column='T012esPrincipal')
+    activo = models.BooleanField(default=True, db_column='T012activo')
+    item_ya_usado = models.BooleanField(default=False, db_column='T012itemYaUsado')
+    
+    def __str__(self):
+        return str(self.descripcion_sucursal)
+    
+    class Meta:
+        db_table = 'T012SucursalesEmpresa'
+        verbose_name = 'Sucursal'
+        verbose_name_plural = 'Sucursales'
+        unique_together = ['id_persona_empresa', 'numero_sucursal','descripcion_sucursal']

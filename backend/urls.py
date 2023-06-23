@@ -37,6 +37,7 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
+
     path('admin/', admin.site.urls),
     path('', TemplateView.as_view(template_name='index.html')),
 
@@ -60,6 +61,9 @@ urlpatterns = [
     path('api/transversal/vinculacion/',include('transversal.urls.vinculacion_urls')),
     path('api/transversal/organigrama/', include('transversal.urls.organigrama_urls')),
     path('api/transversal/configuracion/',include('transversal.urls.configuracionEntidades_urls')),
+    path('api/transversal/sucursales/',include('transversal.urls.sucursalesEmpresas_urls')),
+
+
     #GESTOR DOCUMENTAL
     path('api/gestor/ccd/', include('gestion_documental.urls.ccd_urls')),
     path('api/gestor/activar/', include('gestion_documental.urls.finalizar_urls')),
