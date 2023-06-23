@@ -22,7 +22,7 @@ class InventarioViverosSerializer(serializers.ModelSerializer):
     
     class Meta:
         model =  InventarioViveros
-        fields = ['id_inventario_vivero','id_bien','codigo_bien','nombre','agno_lote','nro_lote','cod_etapa_lote','etapa_lote','cantidad_disponible']
+        fields = ['id_inventario_vivero','id_bien','codigo_bien','nombre','agno_lote','nro_lote','cod_etapa_lote','etapa_lote','siembra_lote_cerrada','cantidad_disponible']
 
 class GuardarCambioEtapaSerializer(serializers.ModelSerializer):
     cod_etapa_lote_origen = serializers.ChoiceField(choices=cod_etapa_lote_CHOICES)
