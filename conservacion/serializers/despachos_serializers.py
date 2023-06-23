@@ -119,23 +119,25 @@ class ItemsDespachoViveroSerializer(serializers.ModelSerializer):
 class GetInsumoSerializer(serializers.ModelSerializer):
     codigo_bien=serializers.ReadOnlyField(source='id_bien.codigo_bien',default=None)
     nombre=serializers.ReadOnlyField(source='id_bien.nombre',default=None)
+    cod_tipo_elemento_vivero=serializers.ReadOnlyField(source='id_bien.cod_tipo_elemento_vivero',default=None)
     cantidad_disponible = serializers.IntegerField(read_only=True, default=None)
     disponible= serializers.BooleanField(read_only=True,default=None)
     unidad_medida= serializers.ReadOnlyField(source='id_bien.id_unidad_medida.abreviatura',default=None)
     
     class Meta:
         model=InventarioViveros
-        fields=('id_inventario_vivero', 'id_bien', 'codigo_bien', 'nombre', 'cantidad_disponible','disponible','unidad_medida')
+        fields=('id_inventario_vivero', 'id_bien', 'codigo_bien', 'nombre', 'cod_tipo_elemento_vivero', 'cantidad_disponible','disponible','unidad_medida')
 
 
 class GetPlantaSerializer(serializers.ModelSerializer):
     codigo_bien=serializers.ReadOnlyField(source='id_bien.codigo_bien',default=None)
     nombre=serializers.ReadOnlyField(source='id_bien.nombre',default=None)
+    cod_tipo_elemento_vivero=serializers.ReadOnlyField(source='id_bien.cod_tipo_elemento_vivero',default=None)
     cantidad_disponible = serializers.IntegerField(read_only=True, default=None)
     disponible= serializers.BooleanField(read_only=True,default=None)
     unidad_medida= serializers.ReadOnlyField(source='id_bien.id_unidad_medida.abreviatura')
     
     class Meta:
         model=InventarioViveros
-        fields=('id_inventario_vivero', 'id_bien', 'codigo_bien', 'nombre', 'agno_lote', 'nro_lote', 'cantidad_disponible', 'es_produccion_propia_lote', 'disponible','unidad_medida', 'cod_tipo_entrada_alm_lote', 'nro_entrada_alm_lote')
+        fields=('id_inventario_vivero', 'id_bien', 'codigo_bien', 'nombre', 'cod_tipo_elemento_vivero', 'agno_lote', 'nro_lote', 'cantidad_disponible', 'es_produccion_propia_lote', 'disponible','unidad_medida', 'cod_tipo_entrada_alm_lote', 'nro_entrada_alm_lote')
 
