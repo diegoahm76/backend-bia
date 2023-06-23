@@ -193,7 +193,7 @@ class CreateIngresoCuarentenaView(generics.CreateAPIView):
                 raise PermissionDenied('La fecha del ingreso a cuarentena debe ser mayor a la fecha de la última cuarentena para este lote')
 
         #VALIDACIÓN QUE LA FECHA SEA SUPERIOR AL INGRESO DEL LOTE EN LA ETAPA
-        lote_etapa_inventario = InventarioViveros.objects.filter(id_vivero=data_cuarentena['id_vivero'], id_bien=data_cuarentena['id_bien'], agno_lote=data_cuarentena['agno_lote'], nro_lote=data_cuarentena['nro_lote']).first()
+        lote_etapa_inventario = InventarioViveros.objects.filter(id_vivero=data_cuarentena['id_vivero'], id_bien=data_cuarentena['id_bien'], agno_lote=data_cuarentena['agno_lote'], nro_lote=data_cuarentena['nro_lote'], cod_etapa_lote=data_cuarentena['cod_etapa_lote']).first()
         if fecha_strptime <= lote_etapa_inventario.fecha_ingreso_lote_etapa:
             raise PermissionDenied('La fecha del ingreso a cuarentena debe ser posterior a la fecha de ingreso del lote en la etapa')
 
@@ -235,16 +235,16 @@ class CreateIngresoCuarentenaView(generics.CreateAPIView):
         serializer = self.serializer_class(data=data_cuarentena, many=False)
         serializer.is_valid(raise_exception=True)
         serializador = serializer.save()
-
+        
         if lote_etapa_inventario.cod_etapa_lote == 'G':
             porcentaje_actual = lote_etapa_inventario.porc_cuarentena_lote_germinacion if lote_etapa_inventario.porc_cuarentena_lote_germinacion else 0
             lote_etapa_inventario.porc_cuarentena_lote_germinacion = porcentaje_actual + serializador.cantidad_cuarentena
-            lote_etapa_inventario.save()
 
         else:
             cantidad_actual = lote_etapa_inventario.cantidad_lote_cuarentena if lote_etapa_inventario.cantidad_lote_cuarentena else 0
             lote_etapa_inventario.cantidad_lote_cuarentena = cantidad_actual + serializador.cantidad_cuarentena
-            lote_etapa_inventario.save()
+        
+        lote_etapa_inventario.save()
 
         # AUDITORIA ELIMINACIÓN DE CREAR CUARENTENA
         descripcion = {"nombre_vivero": str(serializador.id_bien.nombre), "nombre_bien": str(serializador.id_vivero.id_vivero), "agno": str(serializador.agno_lote), "nro_lote": str(serializador.nro_lote), "etapa_lote": str(serializador.cod_etapa_lote), "fecha_hora_cuarentena": str(serializador.fecha_cuarentena)}
@@ -357,7 +357,7 @@ class UpdateIngresoCuarentenaView(generics.RetrieveUpdateAPIView):
             raise PermissionDenied('No se puede actualizar un ingreso a cuarentena si ha tenido mortalidad')
         
         #VALIDACIÓN SI ACTUALIZAN CANTIDADES O NO
-        lote_etapa_in_inventario_viveros = InventarioViveros.objects.filter(id_vivero=cuarentena.id_vivero.id_vivero, id_bien=cuarentena.id_bien.id_bien, agno_lote=cuarentena.agno_lote, nro_lote=cuarentena.nro_lote, id_siembra_lote_germinacion=None).first()
+        lote_etapa_in_inventario_viveros = InventarioViveros.objects.filter(id_vivero=cuarentena.id_vivero.id_vivero, id_bien=cuarentena.id_bien.id_bien, agno_lote=cuarentena.agno_lote, nro_lote=cuarentena.nro_lote, cod_etapa_lote=cuarentena.cod_etapa_lote, id_siembra_lote_germinacion=None).first()
         if data['cantidad_cuarentena'] != cuarentena.cantidad_cuarentena:
             if data['fecha_actualizacion'] > (cuarentena.fecha_cuarentena + timedelta(hours=48)):
                 raise ValidationError('La cantidad en cuarentena solo se puede modificar hasta 48 horas despues de la creación')

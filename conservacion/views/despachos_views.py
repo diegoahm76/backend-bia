@@ -295,7 +295,7 @@ class CreateDespacho(generics.UpdateAPIView):
         fecha_despacho = datetime.strptime(info_despacho.get('fecha_despacho'), "%Y-%m-%d %H:%M:%S")
         aux_validacion_fechas = info_despacho['fecha_registro'] - fecha_despacho
         if int(aux_validacion_fechas.days) > 8 or int(aux_validacion_fechas.days) < 0:
-            raise NotFound('La fecha ingresada no es permita dentro de los parametros existentes')
+            raise NotFound('La fecha ingresada no es permitida dentro de los parametros existentes')
         
         fecha_aprobacion_solicitud = instancia_solicitud.fecha_aprobacion_coord_viv
         if fecha_aprobacion_solicitud == None:
@@ -1041,6 +1041,10 @@ class AnularPreparacionMezclas(generics.UpdateAPIView):
             instancia_bien_vivero = InventarioViveros.objects.filter(id_bien=i.id_bien,id_vivero=despacho_a_anular.id_vivero).first()
             instancia_bien_vivero.cantidad_salidas = instancia_bien_vivero.cantidad_salidas if instancia_bien_vivero.cantidad_salidas else 0
             instancia_bien_vivero.cantidad_salidas = instancia_bien_vivero.cantidad_salidas - i.cantidad_despachada
+            
+            if instancia_bien_vivero.cantidad_salidas < 0:
+                raise ValidationError(f'La cantidad de salidas no puede ser negativa ({str(instancia_bien_vivero.cantidad_salidas)})')
+            
             instancia_bien_vivero.save()    
         
         # SE INSERTAN LOS DATOS CORRESPONDIENTES EN LA TABLA DESPACHOS
