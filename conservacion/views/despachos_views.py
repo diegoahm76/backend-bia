@@ -1041,6 +1041,10 @@ class AnularPreparacionMezclas(generics.UpdateAPIView):
             instancia_bien_vivero = InventarioViveros.objects.filter(id_bien=i.id_bien,id_vivero=despacho_a_anular.id_vivero).first()
             instancia_bien_vivero.cantidad_salidas = instancia_bien_vivero.cantidad_salidas if instancia_bien_vivero.cantidad_salidas else 0
             instancia_bien_vivero.cantidad_salidas = instancia_bien_vivero.cantidad_salidas - i.cantidad_despachada
+            
+            if instancia_bien_vivero.cantidad_salidas < 0:
+                raise ValidationError(f'La cantidad de salidas no puede ser negativa ({str(instancia_bien_vivero.cantidad_salidas)})')
+            
             instancia_bien_vivero.save()    
         
         # SE INSERTAN LOS DATOS CORRESPONDIENTES EN LA TABLA DESPACHOS
