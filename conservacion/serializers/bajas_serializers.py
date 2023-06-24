@@ -42,6 +42,8 @@ class ItemsBajasViveroPostSerializer(serializers.ModelSerializer):
 class ItemsBajasViveroGetSerializer(serializers.ModelSerializer):
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
     nombre = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
+    cod_tipo_elemento_vivero = serializers.ReadOnlyField(source='id_bien.cod_tipo_elemento_vivero', default=None)
+    es_semilla_vivero = serializers.ReadOnlyField(source='id_bien.es_semilla_vivero', default=None)
     
     class Meta:
         model = ItemsBajasVivero
@@ -108,9 +110,9 @@ class CatalogoBienesSerializerBusquedaAvanzada(serializers.ModelSerializer):
             cod_tipo_elemento_vivero = 'Herramienta'
         elif obj.cod_tipo_elemento_vivero == 'IN':
             cod_tipo_elemento_vivero = 'Insumo'
-        # elif obj.cod_tipo_elemento_vivero == 'MV' and obj.es_semilla_vivero == True:
-        elif obj.cod_tipo_elemento_vivero == 'MV':
-            cod_tipo_elemento_vivero = 'Material Vegetal'
+        elif obj.cod_tipo_elemento_vivero == 'MV' and obj.es_semilla_vivero == True:
+        # elif obj.cod_tipo_elemento_vivero == 'MV':
+            cod_tipo_elemento_vivero = 'Semillas'
         return cod_tipo_elemento_vivero
     
     class Meta:

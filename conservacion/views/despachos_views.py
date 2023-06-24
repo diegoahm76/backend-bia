@@ -397,8 +397,8 @@ class CreateDespacho(generics.UpdateAPIView):
                 raise NotFound('Error en el bien (' + instancia_bien.nombre + ') con número de posición (' + str(i['nro_posicion_en_despacho']) + '). Si la cantidad despachada es igual a cero no debe ingresar ninguna subfila')
             
             # SE VALIDA QUE CUANDO SE INGRESE UNA CANTIDAD DESPACHADA IGUAL A CERO SE CUMPLAN LOS REQUERIMIENTOS EXIGIDOS POR MODELADO
-            if i['cantidad_despachada'] >= i['cantidad_solicitada']:
-                raise NotFound('Error en el bien (' + instancia_bien.nombre + ') con número de posición (' + str(i['nro_posicion_en_despacho']) + '). La cantidad despachada debe ser menor a la cantidad solicitada.')
+            if i['cantidad_despachada'] > i['cantidad_solicitada']:
+                raise NotFound('Error en el bien (' + instancia_bien.nombre + ') con número de posición (' + str(i['nro_posicion_en_despacho']) + '). La cantidad despachada debe ser menor o igual a la cantidad solicitada.')
             
             aux_validacion_bienes_despachados_repetidos.append([i['id_bien'], i["agno_lote"], i["nro_lote"], i["cod_etapa_lote"]])
             valores_creados_detalles.append({'nombre' : instancia_inventario.id_bien.nombre})
@@ -655,8 +655,8 @@ class UpdatePreparacionMezclas(generics.UpdateAPIView):
                 raise NotFound('Error en el bien (' + instancia_bien.nombre + ') con número de posición (' + str(i['nro_posicion_en_despacho']) + '). Si la cantidad despachada es igual a cero no debe ingresar ninguna subfila')
             
             # SE VALIDA QUE CUANDO SE INGRESE UNA CANTIDAD DESPACHADA IGUAL A CERO SE CUMPLAN LOS REQUERIMIENTOS EXIGIDOS POR MODELADO
-            if i['cantidad_despachada'] >= i['cantidad_solicitada']:
-                raise NotFound('Error en el bien (' + instancia_bien.nombre + ') con número de posición (' + str(i['nro_posicion_en_despacho']) + '). La cantidad despachada debe ser menor a la cantidad solicitada.')
+            if i['cantidad_despachada'] > i['cantidad_solicitada']:
+                raise NotFound('Error en el bien (' + instancia_bien.nombre + ') con número de posición (' + str(i['nro_posicion_en_despacho']) + '). La cantidad despachada debe ser menor o igual a la cantidad solicitada.')
             
             aux_validacion_bienes_despachados_repetidos.append([i['id_bien'], i["agno_lote"], i["nro_lote"], i["cod_etapa_lote"]])
             valores_creados_detalles.append({'nombre' : instancia_inventario.id_bien.nombre})
