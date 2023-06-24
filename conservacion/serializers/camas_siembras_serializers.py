@@ -102,16 +102,14 @@ class GetBienesPorConsumirSerializer(serializers.ModelSerializer):
 
     def get_tipo_bien(self, obj):
         if obj.id_bien:
-            if obj.id_bien.cod_tipo_elemento_vivero == 'HE':
-                cod_tipo_elemento_vivero = 'Herramienta'
-            elif obj.id_bien.cod_tipo_elemento_vivero == 'IN':
-                cod_tipo_elemento_vivero = 'Insumo'
+            if obj.id_bien.cod_tipo_elemento_vivero == 'IN':
+                tipo_bien = 'Insumo'
             elif obj.id_bien.cod_tipo_elemento_vivero == 'MV' and obj.id_bien.es_semilla_vivero == True:
-                cod_tipo_elemento_vivero = 'Semilla'
+                tipo_bien = 'Semilla'
         else:
-            cod_tipo_elemento_vivero = 'Mezcla'
+            tipo_bien = 'Mezcla'
             
-        return cod_tipo_elemento_vivero
+        return tipo_bien
 
     class Meta:
         model = InventarioViveros
