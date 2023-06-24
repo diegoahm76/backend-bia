@@ -364,11 +364,18 @@ class CreateSiembraView(generics.CreateAPIView):
 
         
         #VALIDACIÓN QUE EL ID_BIEN ENVIADO EXISTA EN INVENTARIO VIVERO
-        id_bien = [bien['id_bien_consumido'] for bien in data_bienes_consumidos]
+        id_bien = [bien['id_bien_consumido'] for bien in data_bienes_consumidos if bien.get('id_bien_consumido')]
 
         bien_in_inventario_viveros = InventarioViveros.objects.filter(id_bien__in=id_bien, id_siembra_lote_germinacion=None, id_vivero=siembra_creada.id_vivero.id_vivero).distinct('id_bien','id_siembra_lote_germinacion','id_vivero')         
         if len(set(id_bien)) != len(bien_in_inventario_viveros):
             raise NotFound('Todos los bienes enviados deben existir')
+        
+        #VALIDACIÓN QUE EL ID_MEZCLA ENVIADO EXISTA EN INVENTARIO VIVERO
+        id_mezclas = [bien['id_mezcla_consumida'] for bien in data_bienes_consumidos if bien.get('id_mezcla_consumida')]
+
+        mezlca_in_inventario_viveros = InventarioViveros.objects.filter(id_mezcla__in=id_mezclas, id_siembra_lote_germinacion=None, id_vivero=siembra_creada.id_vivero.id_vivero).distinct('id_mezcla','id_siembra_lote_germinacion','id_vivero')         
+        if len(set(id_mezclas)) != len(mezlca_in_inventario_viveros):
+            raise NotFound('Todas las mezclas enviadas deben existir')
 
         #VALIDACIÓN QUE EN LOS BIENES ENVIADOS SOLO HAYA UNA SEMILLA
         bienes_semilla = []
@@ -381,12 +388,19 @@ class CreateSiembraView(generics.CreateAPIView):
 
         #VALIDACIÓN QUE SI TENGA LA CANTIDAD ENVIADA COMO DISPONIBLE POR CONSUMIR
         for one_bien in data_bienes_consumidos:
-            bien = InventarioViveros.objects.filter(id_bien=one_bien['id_bien_consumido'], id_siembra_lote_germinacion=None, id_vivero=siembra_creada.id_vivero.id_vivero).first()
-            if bien.id_bien.cod_tipo_elemento_vivero == 'MV' or bien.id_bien.cod_tipo_elemento_vivero == 'IN':
-                bien.cantidad_disponible_bien = UtilConservacion.get_cantidad_disponible_consumir(bien)
-                if one_bien['cantidad'] > int(bien.cantidad_disponible_bien):
-                    one_bien['cantidad_disponible'] = bien.cantidad_disponible_bien
-                    raise ValidationError('No se puede despachar un bien que no tiene cantidades disponibles')
+            if one_bien.get('id_bien_consumido'):
+                bien = InventarioViveros.objects.filter(id_bien=one_bien['id_bien_consumido'], id_siembra_lote_germinacion=None, id_vivero=siembra_creada.id_vivero.id_vivero).first()
+                if bien.id_bien.cod_tipo_elemento_vivero == 'MV' or bien.id_bien.cod_tipo_elemento_vivero == 'IN':
+                    bien.cantidad_disponible_bien = UtilConservacion.get_cantidad_disponible_consumir(bien)
+                    if one_bien['cantidad'] > int(bien.cantidad_disponible_bien):
+                        one_bien['cantidad_disponible'] = bien.cantidad_disponible_bien
+                        raise ValidationError(f'La cantidad del bien {bien.id_bien.nombre} elegido no puede superar su cantidad disponible {str(bien.cantidad_disponible_bien)}')
+            else:
+                mezcla = InventarioViveros.objects.filter(id_mezcla=one_bien['id_mezcla_consumida'], id_siembra_lote_germinacion=None, id_vivero=siembra_creada.id_vivero.id_vivero).first()
+                mezcla.cantidad_disponible_bien = UtilConservacion.get_cantidad_disponible_mezclas_siembras(bien)
+                if one_bien['cantidad'] > int(mezcla.cantidad_disponible_bien):
+                    one_bien['cantidad_disponible'] = mezcla.cantidad_disponible_bien
+                    raise ValidationError(f'La cantidad de la mezcla {mezcla.id_mezcla.nombre} elegida no puede superar su cantidad disponible {str(mezcla.cantidad_disponible_bien)}')
 
         # #VALIDACIÓN QUE NO VENGA ID BIEN Y ID MEZCLA CONSUMIDA POR EL MISMO BIEN
         #    if one_bien['id_bien_consumido'] and one_bien['id_mezcla_consumida']:
@@ -396,19 +410,31 @@ class CreateSiembraView(generics.CreateAPIView):
         bienes_consumidos_no_existentes = []
         valores_creados_detalles = []
         for bien in data_bienes_consumidos:
-            bien_consumido = ConsumosSiembra.objects.filter(id_siembra=bien['id_siembra'], id_bien_consumido=bien['id_bien_consumido'], id_mezcla_consumida=bien['id_mezcla_consumida']).first()
+            bien_consumido = None
+            
+            if bien.get('id_bien_consumido'):
+                bien_consumido = ConsumosSiembra.objects.filter(id_siembra=bien['id_siembra'], id_bien_consumido=bien['id_bien_consumido']).first()
+            else:
+                bien_consumido = ConsumosSiembra.objects.filter(id_siembra=bien['id_siembra'], id_mezcla_consumida=bien['id_mezcla_consumida']).first()
+            
             if bien_consumido:
                 bien_consumido.cantidad = bien_consumido.cantidad if bien_consumido.cantidad else 0
                 bien_consumido.cantidad = bien_consumido.cantidad + bien['cantidad']
                 bien_consumido.save()
 
                 #SE AFECTA CANTIDAD CONSUMO INTERNO EN INVENTARIO VIVEROS
-                bien_in_inventario_viveros_serializador = InventarioViveros.objects.filter(id_bien=bien['id_bien_consumido'], id_vivero=siembra_creada.id_vivero.id_vivero, id_siembra_lote_germinacion=None).first()
+                bien_in_inventario_viveros_serializador = None
+                
+                if bien.get('id_bien_consumido'):
+                    bien_in_inventario_viveros_serializador = InventarioViveros.objects.filter(id_bien=bien['id_bien_consumido'], id_vivero=siembra_creada.id_vivero.id_vivero, id_siembra_lote_germinacion=None).first()
+                else:
+                    bien_in_inventario_viveros_serializador = InventarioViveros.objects.filter(id_mezcla=bien['id_mezcla_consumida'], id_vivero=siembra_creada.id_vivero.id_vivero, id_siembra_lote_germinacion=None).first()
+                
                 cantidad_existente_consumida = bien_in_inventario_viveros_serializador.cantidad_consumos_internos if bien_in_inventario_viveros_serializador.cantidad_consumos_internos else 0
                 bien_in_inventario_viveros_serializador.cantidad_consumos_internos = cantidad_existente_consumida + bien['cantidad']
                 bien_in_inventario_viveros_serializador.save()
 
-                valores_creados_detalles.append({'nombre_bien_consumido': bien_consumido.id_bien_consumido.nombre})
+                valores_creados_detalles.append({'NombreBienConsumido': bien_consumido.id_bien_consumido.nombre if bien_consumido.id_bien_consumido else bien_consumido.id_mezcla_consumida.nombre})
             else:
                 bienes_consumidos_no_existentes.append(bien)
 
@@ -417,17 +443,17 @@ class CreateSiembraView(generics.CreateAPIView):
         serializador = serializer.save()
 
         #SE AFECTA LA CANTIDAD DISPONIBLE EN INVENTARIO VIVEROS
-        for bien in serializador:
-            bien_in_inventario_viveros_serializador = InventarioViveros.objects.filter(id_bien=bien.id_bien_consumido.id_bien, id_vivero=siembra_creada.id_vivero.id_vivero, id_siembra_lote_germinacion=None).first()
-            cantidad_existente_consumida = bien_in_inventario_viveros_serializador.cantidad_consumos_internos if bien_in_inventario_viveros_serializador.cantidad_consumos_internos else 0
-            bien_in_inventario_viveros_serializador.cantidad_consumos_internos = cantidad_existente_consumida + bien.cantidad
-            bien_in_inventario_viveros_serializador.save()
+        # for bien in serializador:
+        #     bien_in_inventario_viveros_serializador = InventarioViveros.objects.filter(id_bien=bien.id_bien_consumido.id_bien, id_vivero=siembra_creada.id_vivero.id_vivero, id_siembra_lote_germinacion=None).first()
+        #     cantidad_existente_consumida = bien_in_inventario_viveros_serializador.cantidad_consumos_internos if bien_in_inventario_viveros_serializador.cantidad_consumos_internos else 0
+        #     bien_in_inventario_viveros_serializador.cantidad_consumos_internos = cantidad_existente_consumida + bien.cantidad
+        #     bien_in_inventario_viveros_serializador.save()
 
-        # AUDITORIA BIENES CONSUMIDOS DETALLE SIEMBRAS
-        for bien in serializador:
-            valores_creados_detalles.append({'nombre_bien_consumido': bien.id_bien_consumido.nombre})
+        # # AUDITORIA BIENES CONSUMIDOS DETALLE SIEMBRAS
+        # for bien in serializador:
+        #     valores_creados_detalles.append({'nombre_bien_consumido': bien.id_bien_consumido.nombre})
 
-        descripcion = {"nombre_bien_sembrado": str(siembra_creada.id_bien_sembrado.nombre), "vivero": str(siembra_creada.id_vivero.id_vivero),"agno": str(siembra_creada.agno_lote), "nro_lote": str(siembra_creada.nro_lote)}
+        descripcion = {"NombreBienSembrado": str(siembra_creada.id_bien_sembrado.nombre), "Vivero": str(siembra_creada.id_vivero.id_vivero),"Agno": str(siembra_creada.agno_lote), "NroLote": str(siembra_creada.nro_lote)}
         direccion=Util.get_client_ip(request)
         auditoria_data = {
             "id_usuario" : request.user.id_usuario,
@@ -618,10 +644,17 @@ class UpdateSiembraView(generics.RetrieveUpdateAPIView):
                 raise ValidationError('Todos los bienes consumidos deben asociarse a la siembra seleccionada')
             
             #VALIDACIÓN QUE EL ID_BIEN ENVIADO EXISTA EN INVENTARIO VIVERO
-            id_bien = [bien['id_bien_consumido'] for bien in data_bienes_consumidos]
+            id_bien = [bien['id_bien_consumido'] for bien in data_bienes_consumidos if bien.get('id_bien_consumido')]
             bien_in_inventario_viveros = InventarioViveros.objects.filter(id_bien__in=id_bien, id_siembra_lote_germinacion=None, id_vivero=instancia_siembra_actualizada.id_vivero.id_vivero)
             if len(set(id_bien)) != len(bien_in_inventario_viveros):
                 raise ValidationError('Todos los bienes por consumir deben existir')
+            
+            #VALIDACIÓN QUE EL ID_MEZCLA ENVIADO EXISTA EN INVENTARIO VIVERO
+            id_mezclas = [bien['id_mezcla_consumida'] for bien in data_bienes_consumidos if bien.get('id_mezcla_consumida')]
+
+            mezlca_in_inventario_viveros = InventarioViveros.objects.filter(id_mezcla__in=id_mezclas, id_siembra_lote_germinacion=None, id_vivero=instancia_siembra_actualizada.id_vivero.id_vivero)       
+            if len(set(id_mezclas)) != len(mezlca_in_inventario_viveros):
+                raise NotFound('Todas las mezclas enviadas deben existir')
         
             #VALIDACIÓN QUE EN LOS BIENES ENVIADOS SOLO HAYA UNA SEMILLA
             bienes_semilla = []
@@ -638,12 +671,19 @@ class UpdateSiembraView(generics.RetrieveUpdateAPIView):
 
         #VALIDACIÓN QUE SI TENGA LA CANTIDAD ENVIADA COMO DISPONIBLE POR CONSUMIR
         for one_bien in bienes_crear:
-            bien = InventarioViveros.objects.filter(id_bien=one_bien['id_bien_consumido'], id_siembra_lote_germinacion=None, id_vivero=instancia_siembra_actualizada.id_vivero.id_vivero).first()
-            if bien.id_bien.cod_tipo_elemento_vivero == 'MV' or bien.id_bien.cod_tipo_elemento_vivero == 'IN':
-                bien.cantidad_disponible_bien = UtilConservacion.get_cantidad_disponible_consumir(bien)
-                if one_bien['cantidad'] > int(bien.cantidad_disponible_bien):
-                    one_bien['cantidad_disponible'] = bien.cantidad_disponible_bien
-                    raise ValidationError(f"El bien {bien.id_bien.nombre} no tiene disponible la cantidad que se quiere despachar, actualmente tiene {one_bien['cantidad_disponible']} unidades disponibles")
+            if one_bien.get('id_bien_consumido'):
+                bien = InventarioViveros.objects.filter(id_bien=one_bien['id_bien_consumido'], id_siembra_lote_germinacion=None, id_vivero=instancia_siembra_actualizada.id_vivero.id_vivero).first()
+                if bien.id_bien.cod_tipo_elemento_vivero == 'MV' or bien.id_bien.cod_tipo_elemento_vivero == 'IN':
+                    bien.cantidad_disponible_bien = UtilConservacion.get_cantidad_disponible_consumir(bien)
+                    if one_bien['cantidad'] > int(bien.cantidad_disponible_bien):
+                        one_bien['cantidad_disponible'] = bien.cantidad_disponible_bien
+                        raise ValidationError(f'La cantidad del bien {bien.id_bien.nombre} elegido no puede superar su cantidad disponible {str(bien.cantidad_disponible_bien)}')
+            else:
+                mezcla = InventarioViveros.objects.filter(id_mezcla=one_bien['id_mezcla_consumida'], id_siembra_lote_germinacion=None, id_vivero=instancia_siembra_actualizada.id_vivero.id_vivero).first()
+                mezcla.cantidad_disponible_bien = UtilConservacion.get_cantidad_disponible_mezclas_siembras(bien)
+                if one_bien['cantidad'] > int(mezcla.cantidad_disponible_bien):
+                    one_bien['cantidad_disponible'] = mezcla.cantidad_disponible_bien
+                    raise ValidationError(f'La cantidad de la mezcla {mezcla.id_mezcla.nombre} elegida no puede superar su cantidad disponible {str(mezcla.cantidad_disponible_bien)}')
 
         #VALIDACIÓN QUE LOS BIENES CONSUMIDOS POR ACTUALIZAR EXISTAN
         bienes_actualizar_id = [bien['id_consumo_siembra'] for bien in bienes_actualizar]
@@ -653,11 +693,18 @@ class UpdateSiembraView(generics.RetrieveUpdateAPIView):
 
         #VALIDAR CANTIDADES DE LOS QUE SE QUIEREN ACTUALIZAR
         for bien_actualizar in bienes_actualizar:
-            bien_cantidad_disponible = InventarioViveros.objects.filter(id_bien=bien_actualizar['id_bien_consumido'], id_siembra_lote_germinacion=None, id_vivero=instancia_siembra_actualizada.id_vivero.id_vivero).first()
-            cantidad_disponible = UtilConservacion.get_cantidad_disponible_consumir(bien_cantidad_disponible)
-            if cantidad_disponible < bien_actualizar['cantidad']:
-                raise ValidationError(f'El bien {bien_cantidad_disponible.id_bien.nombre} no tiene cantidades disponibles para consumirse')
-
+            bien_cantidad_disponible = None
+            if bien_actualizar.get('id_bien_consumido'):
+                bien_cantidad_disponible = InventarioViveros.objects.filter(id_bien=bien_actualizar['id_bien_consumido'], id_siembra_lote_germinacion=None, id_vivero=instancia_siembra_actualizada.id_vivero.id_vivero).first()
+                cantidad_disponible = UtilConservacion.get_cantidad_disponible_consumir(bien_cantidad_disponible)
+                if cantidad_disponible < bien_actualizar['cantidad']:
+                    raise ValidationError(f'El bien {bien_cantidad_disponible.id_bien.nombre} no tiene cantidades disponibles para consumirse')
+            else:
+                bien_cantidad_disponible = InventarioViveros.objects.filter(id_mezcla=bien_actualizar['id_mezcla_consumida'], id_siembra_lote_germinacion=None, id_vivero=instancia_siembra_actualizada.id_vivero.id_vivero).first()
+                cantidad_disponible = UtilConservacion.get_cantidad_disponible_mezclas_siembras(bien_cantidad_disponible)
+                if cantidad_disponible < bien_actualizar['cantidad']:
+                    raise ValidationError(f'La mezcla {bien_cantidad_disponible.id_mezcla.nombre} no tiene cantidades disponibles para consumirse')
+            
         """
         
         Inicia el proceso de actualización
@@ -669,7 +716,13 @@ class UpdateSiembraView(generics.RetrieveUpdateAPIView):
         for bien_actualizar in bienes_actualizar:
             bien_instance = ConsumosSiembra.objects.filter(id_consumo_siembra=bien_actualizar['id_consumo_siembra'], id_siembra=id_siembra).first()
             bien_instance_copy = copy.copy(bien_instance)
-            bien_in_inventario_viveros_serializador = InventarioViveros.objects.filter(id_bien=bien_actualizar['id_bien_consumido'], id_vivero=instancia_siembra_actualizada.id_vivero.id_vivero, id_siembra_lote_germinacion=None).first()
+            
+            bien_in_inventario_viveros_serializador = None
+            
+            if bien_actualizar.get('id_bien_consumido'):
+                bien_in_inventario_viveros_serializador = InventarioViveros.objects.filter(id_bien=bien_actualizar['id_bien_consumido'], id_vivero=instancia_siembra_actualizada.id_vivero.id_vivero, id_siembra_lote_germinacion=None).first()
+            else:
+                bien_in_inventario_viveros_serializador = InventarioViveros.objects.filter(id_mezcla=bien_actualizar['id_mezcla_consumida'], id_vivero=instancia_siembra_actualizada.id_vivero.id_vivero, id_siembra_lote_germinacion=None).first()
             
             if bien_actualizar['cantidad'] > bien_instance.cantidad:
                 cantidad_anterior = bien_instance.cantidad
@@ -695,7 +748,7 @@ class UpdateSiembraView(generics.RetrieveUpdateAPIView):
                 bien_instance.observaciones = bien_actualizar['observaciones']
                 bien_instance.save()
             
-            valores_actualizados_detalles.append({'descripcion': {'nombre' : bien_instance.id_bien_consumido.nombre},'previous':bien_instance_copy,'current':bien_instance})
+            valores_actualizados_detalles.append({'descripcion': {'NombreBienConsumido' : bien_instance.id_bien_consumido.nombre if bien_instance.id_bien_consumido else bien_instance.id_mezcla_consumida.nombre},'previous':bien_instance_copy,'current':bien_instance})
         
         """
         
@@ -707,19 +760,31 @@ class UpdateSiembraView(generics.RetrieveUpdateAPIView):
         bienes_consumidos_no_existentes = []
         valores_creados_detalles = []
         for bien in bienes_crear:
-            bien_consumido = ConsumosSiembra.objects.filter(id_siembra=bien['id_siembra'], id_bien_consumido=bien['id_bien_consumido'], id_mezcla_consumida=bien['id_mezcla_consumida']).first()
+            bien_consumido = None
+            
+            if bien.get('id_bien_consumido'):
+                bien_consumido = ConsumosSiembra.objects.filter(id_siembra=bien['id_siembra'], id_bien_consumido=bien['id_bien_consumido']).first()
+            else:
+                bien_consumido = ConsumosSiembra.objects.filter(id_siembra=bien['id_siembra'], id_mezcla_consumida=bien['id_mezcla_consumida']).first()
+            
             if bien_consumido:
                 bien_consumido.cantidad = bien_consumido.cantidad if bien_consumido.cantidad else 0
                 bien_consumido.cantidad = bien_consumido.cantidad + bien['cantidad']
                 bien_consumido.save()
 
                 #SE AFECTA CANTIDAD CONSUMO INTERNO EN INVENTARIO VIVEROS
-                bien_in_inventario_viveros_serializador = InventarioViveros.objects.filter(id_bien=bien['id_bien_consumido'], id_vivero=instancia_siembra_actualizada.id_vivero.id_vivero, id_siembra_lote_germinacion=None).first()
+                bien_in_inventario_viveros_serializador = None
+                
+                if bien.get('id_bien_consumido'):
+                    bien_in_inventario_viveros_serializador = InventarioViveros.objects.filter(id_bien=bien['id_bien_consumido'], id_vivero=instancia_siembra_actualizada.id_vivero.id_vivero, id_siembra_lote_germinacion=None).first()
+                else:
+                    bien_in_inventario_viveros_serializador = InventarioViveros.objects.filter(id_mezcla=bien['id_mezcla_consumida'], id_vivero=instancia_siembra_actualizada.id_vivero.id_vivero, id_siembra_lote_germinacion=None).first()
+                
                 cantidad_existente_consumida = bien_in_inventario_viveros_serializador.cantidad_consumos_internos if bien_in_inventario_viveros_serializador.cantidad_consumos_internos else 0
                 bien_in_inventario_viveros_serializador.cantidad_consumos_internos = cantidad_existente_consumida + bien['cantidad']
                 bien_in_inventario_viveros_serializador.save()
 
-                valores_creados_detalles.append({'NombreBienConsumido': bien_consumido.id_bien_consumido.nombre})
+                valores_creados_detalles.append({'NombreBienConsumido': bien_consumido.id_bien_consumido.nombre if bien_consumido.id_bien_consumido else bien_consumido.id_mezcla_consumida.nombre})
             else:
                 bienes_consumidos_no_existentes.append(bien)
 
@@ -730,15 +795,15 @@ class UpdateSiembraView(generics.RetrieveUpdateAPIView):
         serializador = serializer.save()
 
         #SE AFECTA LA CANTIDAD DISPONIBLE EN INVENTARIO VIVEROS
-        for bien in serializador:
-            bien_in_inventario_viveros_serializador = InventarioViveros.objects.filter(id_bien=bien.id_bien_consumido.id_bien, id_vivero=instancia_siembra_actualizada.id_vivero.id_vivero, id_siembra_lote_germinacion=None).first()
-            cantidad_existente_consumida = bien_in_inventario_viveros_serializador.cantidad_consumos_internos if bien_in_inventario_viveros_serializador.cantidad_consumos_internos else 0
-            bien_in_inventario_viveros_serializador.cantidad_consumos_internos = cantidad_existente_consumida + bien.cantidad
-            bien_in_inventario_viveros_serializador.save()
+        # for bien in serializador:
+        #     bien_in_inventario_viveros_serializador = InventarioViveros.objects.filter(id_bien=bien.id_bien_consumido.id_bien, id_vivero=instancia_siembra_actualizada.id_vivero.id_vivero, id_siembra_lote_germinacion=None).first()
+        #     cantidad_existente_consumida = bien_in_inventario_viveros_serializador.cantidad_consumos_internos if bien_in_inventario_viveros_serializador.cantidad_consumos_internos else 0
+        #     bien_in_inventario_viveros_serializador.cantidad_consumos_internos = cantidad_existente_consumida + bien.cantidad
+        #     bien_in_inventario_viveros_serializador.save()
 
-        # AUDITORIA BIENES CONSUMIDOS DETALLE SIEMBRAS
-        for bien in serializador:
-            valores_creados_detalles.append({'NombreBienConsumido': bien.id_bien_consumido.nombre})
+        # # AUDITORIA BIENES CONSUMIDOS DETALLE SIEMBRAS
+        # for bien in serializador:
+        #     valores_creados_detalles.append({'NombreBienConsumido': bien.id_bien_consumido.nombre})
 
         descripcion = {"NombreBienSembrado": str(instancia_siembra_actualizada.id_bien_sembrado.nombre), "NombreVivero": str(instancia_siembra_actualizada.id_vivero.id_vivero),"AñoLote": str(instancia_siembra_actualizada.agno_lote), "NroLote": str(instancia_siembra_actualizada.nro_lote)}
         direccion=Util.get_client_ip(request)
@@ -832,16 +897,39 @@ class GetBusquedaBienesConsumidosView(generics.ListAPIView):
         if not vivero:
             raise NotFound('No se encontró ningún vivero con el parámetro ingresado')
         
+        tipo_bien = request.query_params.get('cod_tipo_elemento_vivero')
+        if tipo_bien:
+            tipo_bien = 'id_mezcla' if tipo_bien == 'MZ' else 'id_bien'
+        
         #CREACIÓN DE FILTROS SEGÚN QUERYPARAMS
         filter = {}
         for key, value in request.query_params.items():
             if key in ['cod_tipo_elemento_vivero', 'codigo_bien', 'nombre']:
-                if key != 'cod_tipo_elemento_vivero':
-                    if value != '':
-                        filter['id_bien__' + key + '__icontains'] = value
+                if tipo_bien:
+                    if tipo_bien == 'id_bien' and key == 'nombre':
+                        if value != '':
+                            filter['id_bien__' + key+ '__icontains'] = value
+                    elif tipo_bien == 'id_bien' and key == 'codigo_bien':
+                        if value != '':
+                            filter['id_bien__' + key+ '__icontains'] = value
+                    elif tipo_bien == 'id_mezcla' and key == 'nombre':
+                        if value != '':
+                            filter['id_mezcla__'+key+'__icontains'] = value
+                    elif tipo_bien == 'id_bien' and key == 'cod_tipo_elemento_vivero':
+                        if value != '':
+                            filter['id_bien__' + key] = value
+                    elif tipo_bien == 'id_mezcla' and key == 'cod_tipo_elemento_vivero':
+                        if value != '':
+                            filter['id_bien__isnull'] = True
                 else:
-                    if value != '':
-                        filter['id_bien__' + key] = value
+                    if key != 'cod_tipo_elemento_vivero':
+                        if key == 'nombre':
+                            if value != '':
+                                filter['id_bien__' + key + '__icontains'] = value
+                                filter['id_mezcla__' + key + '__icontains'] = value
+                    else:
+                        if value != '':
+                            filter['id_bien__' + key] = value
 
         bienes_por_consumir = InventarioViveros.objects.filter(id_vivero=id_vivero, id_siembra_lote_germinacion=None)
         bienes_filtrados = bienes_por_consumir.filter(**filter).exclude(id_bien__cod_tipo_elemento_vivero='HE').exclude(id_bien__cod_tipo_elemento_vivero=None).exclude(id_bien__cod_tipo_elemento_vivero='MV', id_bien__es_semilla_vivero=False)
@@ -851,8 +939,15 @@ class GetBusquedaBienesConsumidosView(generics.ListAPIView):
         #CAMBIAR VALORES EN CANTIDAD DISPONIBLE BIEN
         bien_con_cantidades = []
         for bien in bienes_filtrados:
-            if bien.id_bien.cod_tipo_elemento_vivero == 'MV' or bien.id_bien.cod_tipo_elemento_vivero == 'IN':
-                bien.cantidad_disponible_bien = UtilConservacion.get_cantidad_disponible_consumir(bien)
+            if bien.id_bien:
+                if bien.id_bien.cod_tipo_elemento_vivero == 'MV' or bien.id_bien.cod_tipo_elemento_vivero == 'IN':
+                    bien.cantidad_disponible_bien = UtilConservacion.get_cantidad_disponible_consumir(bien)
+                    
+                    #VALIDACIÓN QUE LA CANTIDAD DISPONIBLE SEA MAYOR A 0
+                    if bien.cantidad_disponible_bien > 0:
+                        bien_con_cantidades.append(bien)
+            else:
+                bien.cantidad_disponible_bien = UtilConservacion.get_cantidad_disponible_mezclas_siembras(bien)
                 
                 #VALIDACIÓN QUE LA CANTIDAD DISPONIBLE SEA MAYOR A 0
                 if bien.cantidad_disponible_bien > 0:
@@ -921,7 +1016,13 @@ class DeleteSiembraView(generics.RetrieveDestroyAPIView):
         
         consumos_siembra = ConsumosSiembra.objects.filter(id_siembra=id_siembra)
         for bien_consumido in consumos_siembra:
-            bien_in_inventario_viveros_serializador = InventarioViveros.objects.filter(id_bien=bien_consumido.id_bien_consumido.id_bien, id_vivero=siembra.id_vivero.id_vivero, id_siembra_lote_germinacion=None).first()
+            bien_in_inventario_viveros_serializador = None
+            
+            if bien_consumido.id_bien_consumido:
+                bien_in_inventario_viveros_serializador = InventarioViveros.objects.filter(id_bien=bien_consumido.id_bien_consumido.id_bien, id_vivero=siembra.id_vivero.id_vivero, id_siembra_lote_germinacion=None).first()
+            else:
+                bien_in_inventario_viveros_serializador = InventarioViveros.objects.filter(id_bien=bien_consumido.id_mezcla_consumida.id_mezcla, id_vivero=siembra.id_vivero.id_vivero, id_siembra_lote_germinacion=None).first()
+            
             cantidad_existente = bien_in_inventario_viveros_serializador.cantidad_consumos_internos if bien_in_inventario_viveros_serializador.cantidad_consumos_internos else 0
             bien_in_inventario_viveros_serializador.cantidad_consumos_internos = cantidad_existente - bien_consumido.cantidad
             bien_in_inventario_viveros_serializador.save()
@@ -930,12 +1031,12 @@ class DeleteSiembraView(generics.RetrieveDestroyAPIView):
         # AUDITORIA BIENES CONSUMIDOS DETALLE SIEMBRAS
         valores_eliminados_detalles = []
         for bien in consumos_siembra:
-            valores_eliminados_detalles.append({'nombre_bien_consumido': bien.id_bien_consumido.nombre})
+            valores_eliminados_detalles.append({'NombreBienConsumido': bien.id_bien_consumido.nombre})
         
         for cama in camas_siembra:
-            valores_eliminados_detalles.append({'nombre_cama': cama.id_cama_germinacion_vivero.nombre})
+            valores_eliminados_detalles.append({'NombreCama': cama.id_cama_germinacion_vivero.nombre})
             
-        descripcion = {"nombre_bien_sembrado": str(siembra.id_bien_sembrado.nombre), "vivero": str(siembra.id_vivero.id_vivero),"agno": str(siembra.agno_lote), "nro_lote": str(siembra.nro_lote)}
+        descripcion = {"NombreBienSembrado": str(siembra.id_bien_sembrado.nombre), "Vivero": str(siembra.id_vivero.id_vivero),"Agno": str(siembra.agno_lote), "NroLote": str(siembra.nro_lote)}
         direccion=Util.get_client_ip(request)
         auditoria_data = {
             "id_usuario" : request.user.id_usuario,

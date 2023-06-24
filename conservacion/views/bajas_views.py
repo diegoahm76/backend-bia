@@ -24,7 +24,6 @@ from conservacion.serializers.bajas_serializers import (
     ItemsBajasViveroGetSerializer,
     ItemsBajasViveroPostSerializer,
     ViveroBajasSerializer,
-    CatalogoBienesBajasSerializer,
     CatalogoBienesSerializerBusquedaAvanzada,
     ItemsBajasActualizarViveroPostSerializer,
     GetBajaByNumeroSerializer
@@ -417,7 +416,7 @@ class GetVivero(generics.ListAPIView):
         return Response({'succes':True, 'detail':'Ok', 'data':serializer.data}, status=status.HTTP_200_OK)
 
 class GetBienesBajas(generics.ListAPIView):
-    serializer_class = CatalogoBienesBajasSerializer
+    serializer_class = CatalogoBienesSerializerBusquedaAvanzada
     queryset = InventarioViveros.objects.all()
     permission_classes = [IsAuthenticated]
     
@@ -440,6 +439,8 @@ class GetBienesBajas(generics.ListAPIView):
         saldo_disponible = UtilConservacion.get_cantidad_disponible_F(instancia_bien, instancia_bien_vivero)
         if saldo_disponible <= 0:
             raise ValidationError ('El bien ' + str(instancia_bien.nombre) + ', no cuenta con saldo disponible para realizar bajas.')
+        
+        instancia_bien.saldo_disponible = saldo_disponible
         
         serializer = self.serializer_class(instancia_bien, many=False)
         

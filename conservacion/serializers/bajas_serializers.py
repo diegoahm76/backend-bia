@@ -54,16 +54,6 @@ class ViveroBajasSerializer(serializers.ModelSerializer):
             'id_vivero',
             'nombre',
         )
-
-class CatalogoBienesBajasSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CatalogoBienes
-        fields = (
-            'id_bien',
-            'nombre',
-            'es_semilla_vivero',
-            'cod_tipo_elemento_vivero'
-        )
     
 class GetBajaByNumeroSerializer(serializers.ModelSerializer):
     nombre_vivero = serializers.ReadOnlyField(source='id_vivero.nombre', default=None)

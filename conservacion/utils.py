@@ -289,6 +289,14 @@ class UtilConservacion:
         
         return cantidad_disponible
     
+    def get_cantidad_disponible_mezclas_siembras(bien):
+        cantidad_entrante = bien.cantidad_entrante if bien.cantidad_entrante else 0
+        cantidad_bajas = bien.cantidad_bajas if bien.cantidad_bajas else 0
+        cantidad_consumos_internos = bien.cantidad_consumos_internos if bien.cantidad_consumos_internos else 0
+        cantidad_disponible = cantidad_entrante - cantidad_bajas - cantidad_consumos_internos
+        
+        return cantidad_disponible
+    
     @staticmethod
     def get_cantidad_disponible_mezclas(bien):
         cantidad_entrante = bien.cantidad_entrante if bien.cantidad_entrante else 0
