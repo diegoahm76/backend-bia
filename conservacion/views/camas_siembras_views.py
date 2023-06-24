@@ -898,6 +898,9 @@ class GetBusquedaBienesConsumidosView(generics.ListAPIView):
             raise NotFound('No se encontró ningún vivero con el parámetro ingresado')
         
         tipo_bien = request.query_params.get('cod_tipo_elemento_vivero')
+        codigo_bien = request.query_params.get('codigo_bien', '')
+        nombre = request.query_params.get('nombre', '')
+        
         if tipo_bien:
             tipo_bien = 'id_mezcla' if tipo_bien == 'MZ' else 'id_bien'
         
@@ -921,24 +924,31 @@ class GetBusquedaBienesConsumidosView(generics.ListAPIView):
                     elif tipo_bien == 'id_mezcla' and key == 'cod_tipo_elemento_vivero':
                         if value != '':
                             filter['id_bien__isnull'] = True
-                else:
-                    if key != 'cod_tipo_elemento_vivero':
-                        if key == 'nombre':
-                            if value != '':
-                                filter['id_bien__' + key + '__icontains'] = value
-                                filter['id_mezcla__' + key + '__icontains'] = value
-                    else:
-                        if value != '':
-                            filter['id_bien__' + key] = value
 
         bienes_por_consumir = InventarioViveros.objects.filter(id_vivero=id_vivero, id_siembra_lote_germinacion=None)
-        bienes_filtrados = bienes_por_consumir.filter(**filter).exclude(id_bien__cod_tipo_elemento_vivero='HE').exclude(id_bien__cod_tipo_elemento_vivero=None).exclude(id_bien__cod_tipo_elemento_vivero='MV', id_bien__es_semilla_vivero=False)
+        bienes_filtrados = bienes_por_consumir.filter(**filter)
+        bienes_filtrado_final = []
+        for bien in bienes_filtrados:
+            if bien.id_bien:
+                if bien.id_bien.cod_tipo_elemento_vivero != 'HE' and bien.id_bien.cod_tipo_elemento_vivero != None and (bien.id_bien.cod_tipo_elemento_vivero=='IN' or (bien.id_bien.cod_tipo_elemento_vivero=='MV' and bien.id_bien.es_semilla_vivero==True)):
+                    if not tipo_bien:
+                        if codigo_bien in bien.id_bien.codigo_bien and nombre.lower() in bien.id_bien.nombre.lower():
+                            bienes_filtrado_final.append(bien)
+                    else:
+                        bienes_filtrado_final.append(bien)
+            elif bien.id_mezcla:
+                if not tipo_bien:
+                    if nombre.lower() in bien.id_mezcla.nombre.lower():
+                        bienes_filtrado_final.append(bien)
+                else:
+                    bienes_filtrado_final.append(bien)
+        
         if not bienes_filtrados:
             raise ValidationError('No existe ningún bien que se pueda consumir')
     
         #CAMBIAR VALORES EN CANTIDAD DISPONIBLE BIEN
         bien_con_cantidades = []
-        for bien in bienes_filtrados:
+        for bien in bienes_filtrado_final:
             if bien.id_bien:
                 if bien.id_bien.cod_tipo_elemento_vivero == 'MV' or bien.id_bien.cod_tipo_elemento_vivero == 'IN':
                     bien.cantidad_disponible_bien = UtilConservacion.get_cantidad_disponible_consumir(bien)
