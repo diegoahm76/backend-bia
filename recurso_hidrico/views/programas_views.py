@@ -7,7 +7,7 @@ from rest_framework import status
 from datetime import datetime,date,timedelta
 
 from recurso_hidrico.models.programas_models import ActividadesProyectos, AvancesProyecto, EvidenciasAvance, ProgramasPORH, ProyectosPORH
-from recurso_hidrico.serializers.programas_serializers import ActualizarActividadesSerializers, ActualizarAvanceEvidenciaSerializers, ActualizarProyectosSerializers, BusquedaAvanzadaSerializers, EliminarActividadesSerializers, EliminarProyectoSerializers, GetActividadesporProyectosSerializers, GetProgramasporPORHSerializers, GetProyectosPORHSerializers, RegistrarAvanceSerializers, RegistroEvidenciaSerializers, RegistroProgramaPORHSerializer,BusquedaAvanzadaAvancesSerializers,ProyectosPORHSerializer,GetAvancesporProyectosSerializers
+from recurso_hidrico.serializers.programas_serializers import ActualizarActividadesSerializers, ActualizarAvanceEvidenciaSerializers, ActualizarProyectosSerializers, AvanceConEvidenciasSerializer, BusquedaAvanzadaSerializers, EliminarActividadesSerializers, EliminarProyectoSerializers, GetActividadesporProyectosSerializers, GetProgramasporPORHSerializers, GetProyectosPORHSerializers, RegistrarAvanceSerializers, RegistroEvidenciaSerializers, RegistroProgramaPORHSerializer,BusquedaAvanzadaAvancesSerializers,ProyectosPORHSerializer,GetAvancesporProyectosSerializers
 
 class RegistroProgramaPORH(generics.CreateAPIView):
     serializer_class = RegistroProgramaPORHSerializer
@@ -418,13 +418,14 @@ class RegistroAvance(generics.CreateAPIView):
     
 
 class BusquedaAvanzadaAvances(generics.ListAPIView):
-    serializer_class = BusquedaAvanzadaAvancesSerializers
+    #serializer_class = BusquedaAvanzadaAvancesSerializers
+    serializer_class = AvanceConEvidenciasSerializer
     queryset = AvancesProyecto.objects.all()
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         filter = {}
-        
+
         for key, value in request.query_params.items():
             if key == 'nombre_programa':
                 if value != '':
@@ -432,12 +433,15 @@ class BusquedaAvanzadaAvances(generics.ListAPIView):
             if key == 'nombre_proyecto':
                 if value != '':
                     filter['id_proyecto__nombre__icontains'] = value
-            if key == 'nombre_avance': 
+            if key == 'nombre_avances': 
                 if value != '':
-                    filter['descripcion__icontains'] = value
+                    
+                    filter['accion__icontains'] = value
         
         programas = self.queryset.all().filter(**filter)
         serializador = self.serializer_class(programas, many=True)
+        # avances = self.queryset.filter(**filter).select_related('id_proyecto')
+        # serializador = self.serializer_class(avances, many=True)
         
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializador.data}, status=status.HTTP_200_OK)
 

@@ -37,6 +37,7 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
+
     path('admin/', admin.site.urls),
     path('', TemplateView.as_view(template_name='index.html')),
 
@@ -59,6 +60,9 @@ urlpatterns = [
     path('api/transversal/choices/', include('transversal.urls.choices_urls')),
     path('api/transversal/vinculacion/',include('transversal.urls.vinculacion_urls')),
     path('api/transversal/organigrama/', include('transversal.urls.organigrama_urls')),
+    path('api/transversal/configuracion/',include('transversal.urls.configuracionEntidades_urls')),
+    path('api/transversal/sucursales/',include('transversal.urls.sucursalesEmpresas_urls')),
+
 
     #GESTOR DOCUMENTAL
     path('api/gestor/ccd/', include('gestion_documental.urls.ccd_urls')),
@@ -117,6 +121,7 @@ urlpatterns = [
 
     #RECURSO HIDRICO
     path('api/hidrico/programas/',include('recurso_hidrico.urls.programas_urls')),
+    path('api/hidrico/bibliotecas/',include('recurso_hidrico.urls.bibliotecas_urls')),
 
     #NOTIFICACIONES
     path('api/transversal/notificaciones/', include('transversal.urls.notificaciones_urls')),

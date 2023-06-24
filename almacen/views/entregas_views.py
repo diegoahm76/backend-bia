@@ -278,7 +278,7 @@ class CrearEntregaView(generics.CreateAPIView):
                 id_despacho_entrante = despacho_entrante,
                 id_bien = item_despacho.id_bien_despachado,
                 id_entrada_alm_del_bien = item_despacho.id_entrada_almacen_bien,
-                cantidad_entrante = int(id_bien_items_serializador_instance[0]['cantidad_despachada']),
+                cantidad_entrante = int(item_despacho.cantidad_despachada),
                 cantidad_distribuida = 0,
                 fecha_ingreso = serializador.fecha_despacho
                 )

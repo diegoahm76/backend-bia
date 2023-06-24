@@ -83,10 +83,19 @@ class GuardarCambioEtapa(generics.CreateAPIView):
             raise ValidationError('La fecha de cambio no puede superar 30 días de antiguedad')
         
         # VALIDAR EXISTENCIA DE CAMBIO DE ETAPA DE MV GERMINACION
-        cambio_etapa=CambiosDeEtapa.objects.filter(id_bien=inventario_vivero.id_bien.id_bien,id_vivero=inventario_vivero.id_vivero.id_vivero,agno_lote=inventario_vivero.agno_lote,nro_lote=inventario_vivero.nro_lote).filter(~Q(cambio_anulado=True))
+        cambio_etapa = CambiosDeEtapa.objects.filter(id_bien=inventario_vivero.id_bien.id_bien,id_vivero=inventario_vivero.id_vivero.id_vivero,agno_lote=inventario_vivero.agno_lote,nro_lote=inventario_vivero.nro_lote)
+        cambio_etapa_all = cambio_etapa
+        cambio_etapa = cambio_etapa.filter(~Q(cambio_anulado=True))
         if data['cod_etapa_lote_origen'] == 'G':
             data['cantidad_disponible_al_crear'] = 0
-            data['consec_por_lote_etapa'] = 1
+            
+            cambio_etapa_g=cambio_etapa_all.filter(cod_etapa_lote_origen='G').last()
+            consec_por_lote_etapa_g = 1
+            if cambio_etapa_g:
+                consec_por_lote_etapa_g = cambio_etapa_g.consec_por_lote_etapa + 1
+            
+            data['consec_por_lote_etapa'] = consec_por_lote_etapa_g
+            
             cambio_etapa_germinacion = cambio_etapa.filter(cod_etapa_lote_origen='G').last()
             if cambio_etapa_germinacion:
                 raise PermissionDenied('Ya se realizó un cambio de etapa de germinación a producción del material vegetal elegido')
@@ -169,13 +178,12 @@ class GuardarCambioEtapa(generics.CreateAPIView):
                 if int(data['cantidad_movida']) > cantidad_disponible:
                     raise ValidationError('La cantidad movida no puede superar la cantidad disponible actual')
             
-            cambio_etapa=cambio_etapa.filter(cod_etapa_lote_origen='P').last()
-            consec_por_lote_etapa = 1
-            if cambio_etapa:
-                consec_por_lote_etapa = cambio_etapa.consec_por_lote_etapa + 1
+            cambio_etapa_p=cambio_etapa_all.filter(cod_etapa_lote_origen='P').last()
+            consec_por_lote_etapa_p = 1
+            if cambio_etapa_p:
+                consec_por_lote_etapa_p = cambio_etapa_p.consec_por_lote_etapa + 1
             
-            data['consec_por_lote_etapa'] = consec_por_lote_etapa
-            
+            data['consec_por_lote_etapa'] = consec_por_lote_etapa_p
             
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)

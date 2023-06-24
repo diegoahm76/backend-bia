@@ -254,9 +254,14 @@ class FilterInventarioVivero(generics.ListAPIView):
     def get(self, request, id_vivero_entrante):
         filter={}
         for key,value in request.query_params.items():
-            if key in ['nombre','codigo_bien','cod_tipo_elemento_vivero']:
+            if key in ['nombre','codigo_bien','cod_tipo_elemento_vivero','es_semilla_vivero']:
                 if key != 'cod_tipo_elemento_vivero':
-                    filter['id_bien__'+key+'__icontains']=value
+                    if value != '':
+                        if key == 'es_semilla_vivero':
+                            value = True if value == 'true' else False
+                            filter['id_bien__'+key]=value
+                        else:
+                            filter['id_bien__'+key+'__icontains']=value
                 else:
                     if value != '':
                         filter['id_bien__'+key]=value

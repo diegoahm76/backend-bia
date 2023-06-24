@@ -220,7 +220,7 @@ class ListSolicitudesCoordinadorView(generics.ListAPIView):
     def get(self, request):
         usuario_logeado = request.user.persona.id_persona
 
-        solicitudes = self.queryset.filter(id_persona_coord_viveros=usuario_logeado, revisada_responsable=True, estado_aprobacion_responsable='A')
+        solicitudes = self.queryset.filter(revisada_responsable=True, estado_aprobacion_responsable='A')
         serializer = self.serializer_class(solicitudes, many=True)
         return Response({'success': True, 'detail': 'Busqueda exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
 

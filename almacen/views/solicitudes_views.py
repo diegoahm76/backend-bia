@@ -33,6 +33,7 @@ from datetime import datetime, date
 from almacen.serializers.solicitudes_serialiers import ( 
     CrearSolicitudesPostSerializer,
     CrearItemsSolicitudConsumiblePostSerializer,
+    GetListSolicitudesSerializer,
     PersonasResponsablesFilterSerializer
     )
 from almacen.serializers.solicitudes_serialiers import SolicitudesPendientesAprobarSerializer
@@ -485,7 +486,7 @@ class CreateSolicitud(generics.UpdateAPIView):
 
 class GetSolicitudesPendentesPorAprobar(generics.ListAPIView):
 # ESTA FUNCIONALIDAD PERMITE LISTAR LAS SOLICITUDES PENDIENTES DE APROBACION POR EL SUPERVISOR DESIGNADO
-    serializer_class = CrearSolicitudesPostSerializer
+    serializer_class = GetListSolicitudesSerializer
     queryset=SolicitudesConsumibles.objects.all()
     permission_classes = [IsAuthenticated]
     
@@ -521,7 +522,7 @@ class GetSolicitudesRechazadas(generics.ListAPIView):
 
 class GetSolicitudesPendentesPorAprobarDocumento(generics.ListAPIView):
 # ESTA FUNCIONALIDAD PERMITE LISTAR LAS SOLICITUDES PENDIENTES DE APROBACION POR EL SUPERVISOR DESIGNADO
-    serializer_class = CrearSolicitudesPostSerializer
+    serializer_class = GetListSolicitudesSerializer
     queryset=SolicitudesConsumibles.objects.all()
     permission_classes = [IsAuthenticated]
     
@@ -607,7 +608,7 @@ class SolicitudesPendientesDespachar(generics.ListAPIView):
     queryset=SolicitudesConsumibles.objects.all()
     
     def get(self, request):
-        pendientes_por_despachar = SolicitudesConsumibles.objects.filter(Q(estado_aprobacion_responsable='A') & Q(gestionada_almacen=False))
+        pendientes_por_despachar = SolicitudesConsumibles.objects.filter(Q(estado_aprobacion_responsable='A') & Q(gestionada_almacen=False)).exclude(solicitud_anulada_solicitante=True)
         serializer = self.serializer_class(pendientes_por_despachar, many=True)
         return Response({'success':True,'Solicitudes pendientes por despahcar':serializer.data, },status=status.HTTP_200_OK)
 

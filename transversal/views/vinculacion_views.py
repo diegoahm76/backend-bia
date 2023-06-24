@@ -393,6 +393,9 @@ class Desvinculacion_persona(generics.UpdateAPIView):
                 Util.save_auditoria_maestro_detalle(auditoria_data)    
         
                 persona.save()
+
+
+            #SI LA PERSONA SE ENCUENTRA EN LA CONFIGURACION DE LA ENTIDAD
         
         return Response({'succes':True,'detail':'Se realiza la desvinculación.'},status=status.HTTP_200_OK)
     
