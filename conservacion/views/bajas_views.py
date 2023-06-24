@@ -462,6 +462,8 @@ class BusquedaAvanzadaBienesBajas(generics.ListAPIView):
                 if key != 'cod_tipo_elemento_vivero':
                     if value != '':
                         filter[key + '__icontains'] = value
+                        if value == 'MV':
+                            filter['es_semilla_vivero'] = True
                 else:
                     if value != '':
                         filter[key] = value
