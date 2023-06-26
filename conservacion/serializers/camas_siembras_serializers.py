@@ -155,8 +155,28 @@ class DeleteBienesConsumidosSerializer(serializers.ModelSerializer):
 
 class GetBienesConsumidosSiembraSerializer(serializers.ModelSerializer):
     codigo_bien = serializers.ReadOnlyField(source='id_bien_consumido.codigo_bien', default=None)
-    nombre_bien = serializers.ReadOnlyField(source='id_bien_consumido.nombre', default=None)
-    tipo_bien = serializers.ReadOnlyField(source='id_bien_consumido.cod_tipo_elemento_vivero', default=None)
+    nombre_bien = serializers.SerializerMethodField()
+    tipo_bien = serializers.SerializerMethodField()
+    
+    def get_nombre_bien(self,obj):
+        if obj.id_bien_consumido:
+            nombre_bien = obj.id_bien_consumido.nombre
+        else:
+            nombre_bien = obj.id_mezcla_consumida.nombre
+            
+        return nombre_bien
+    
+    def get_tipo_bien(self, obj):
+        if obj.id_bien_consumido:
+            if obj.id_bien_consumido.cod_tipo_elemento_vivero == 'IN':
+                tipo_bien = 'Insumo'
+            elif obj.id_bien_consumido.cod_tipo_elemento_vivero == 'MV' and obj.id_bien_consumido.es_semilla_vivero == True:
+                tipo_bien = 'Semilla'
+        else:
+            tipo_bien = 'Mezcla'
+            
+        return tipo_bien
+    
     class Meta:
         model = ConsumosSiembra
         fields = (
@@ -168,7 +188,7 @@ class GetBienesConsumidosSiembraSerializer(serializers.ModelSerializer):
             'id_mezcla_consumida',
             'codigo_bien',
             'nombre_bien',
-            'tipo_bien'
+            'tipo_bien',
         )
 
 class GetSiembrasSerializer(serializers.ModelSerializer):
