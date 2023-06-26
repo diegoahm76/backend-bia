@@ -25,3 +25,12 @@ class SucursalesEmpresasPostSerializer(serializers.ModelSerializer):
                 'direccion': {'required': True},
             }
         
+class SucursalesEmpresasPutSerializer(serializers.ModelSerializer):    
+    class Meta:
+        model = SucursalesEmpresas
+        fields = ['descripcion_sucursal','direccion','direccion_sucursal_georeferenciada','municipio','pais_sucursal_exterior',
+                  'direccion_notificacion','direccion_notificacion_referencia','municipio_notificacion','email_sucursal',
+                  'telefono_sucursal','es_principal','activo']
+        
+        
+
