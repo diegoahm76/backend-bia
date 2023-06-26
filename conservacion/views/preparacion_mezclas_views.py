@@ -256,14 +256,16 @@ class GetBienInsumosByCodigoAndName(generics.ListAPIView):
         if not resultados_busqueda:
             raise ValidationError('No se encontró ningún insumo con el código ingresado.')
         
+        resultados_posibles = []
         # SE LE AGRAGA EL SALDO DISPONIBLE AL RESULTADO DE BUSQUEDA
         for i in resultados_busqueda:
             instancia_bien_vivero = InventarioViveros.objects.filter(id_bien=i.id_bien,id_vivero=id_vivero).first()
-            if not instancia_bien_vivero:
-                raise ValidationError('El bien que intenta seleccionar no tiene registros en el inventario del vivero.')
-            i.saldo_disponible = UtilConservacion.get_cantidad_disponible_F(i, instancia_bien_vivero) 
+            if instancia_bien_vivero:
+                # raise ValidationError('El bien que intenta seleccionar no tiene registros en el inventario del vivero.')
+                i.saldo_disponible = UtilConservacion.get_cantidad_disponible_F(i, instancia_bien_vivero)
+                resultados_posibles.append(i)
                 
-        serializer = self.serializer_class(resultados_busqueda, many=True)
+        serializer = self.serializer_class(resultados_posibles, many=True)
         
         return Response ({'success':True, 'detail':'Se encontraron los siguientes resultados', 'data':serializer.data}, status=status.HTTP_200_OK)
 

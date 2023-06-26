@@ -75,6 +75,11 @@ class MezclasGetListSerializador(serializers.ModelSerializer):
         model = Mezclas
 
 class GetItemsSerializador(serializers.ModelSerializer):
+    codigo_bien = serializers.ReadOnlyField(source='id_bien_usado.codigo_bien', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_bien_usado.nombre', default=None)
+    cod_tipo_elemento_vivero = serializers.ReadOnlyField(source='id_bien_usado.cod_tipo_elemento_vivero', default=None)
+    es_semilla_vivero = serializers.ReadOnlyField(source='id_bien_usado.es_semilla_vivero', default=None)
+    
     class Meta:
         model = ItemsPreparacionMezcla
         fields = '__all__'
