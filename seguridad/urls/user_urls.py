@@ -45,4 +45,5 @@ urlpatterns = [
     path('historico-activacion/<str:id_usuario_afectado>/', views.BusquedaHistoricoActivacion.as_view(),name='historico-activacion'),
     path('usuario/interno-a-externo/<str:id_usuario>/', views.UsuarioInternoAExterno.as_view(), name='usuario-interno-a-externo'),
 
+    
 ]
