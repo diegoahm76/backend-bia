@@ -6,7 +6,8 @@ from recaudo.models.procesos_models import (
     FlujoProceso,
     ValoresProceso,
     Procesos,
-    Avaluos
+    Avaluos,
+    CategoriaAtributo
 )
 from recaudo.serializers.cobros_serializers import (
     CarteraSerializer
@@ -25,12 +26,19 @@ class TiposAtributosSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class CategoriaAtributoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CategoriaAtributo
+        fields = '__all__'
+
+
 class AtributosEtapasSerializer(serializers.ModelSerializer):
     id_tipo = TiposAtributosSerializer(many=False)
+    id_categoria = CategoriaAtributoSerializer(many=False)
 
     class Meta:
         model = AtributosEtapas
-        fields = ('id', 'descripcion', 'obligatorio', 'id_tipo')
+        fields = ('id', 'descripcion', 'obligatorio', 'id_tipo', 'id_categoria')
 
 
 class AtributosEtapasPostSerializer(serializers.ModelSerializer):
@@ -71,6 +79,8 @@ class ValoresProcesoPostSerializer(serializers.ModelSerializer):
 class ProcesosSerializer(serializers.ModelSerializer):
     id_cartera = CarteraSerializer(many=False)
     id_etapa = EtapasProcesoSerializer(many=False)
+    id_categoria = CategoriaAtributoSerializer(many=False)
+
     class Meta:
         model = Procesos
         fields = '__all__'

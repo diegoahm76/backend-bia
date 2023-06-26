@@ -4,7 +4,8 @@ from recaudo.models.procesos_models import (
     AtributosEtapas,
     FlujoProceso,
     ValoresProceso,
-    Procesos, 
+    Procesos,
+    CategoriaAtributo,
     Bienes,
     Avaluos
 )
@@ -19,7 +20,8 @@ from recaudo.serializers.procesos_serializers import (
     ProcesosSerializer,
     ProcesosPostSerializer,
     AtributosEtapasPostSerializer,
-    AvaluosSerializer
+    AvaluosSerializer,
+    CategoriaAtributoSerializer
 )
 from recaudo.models.base_models import TiposBien
 
@@ -182,3 +184,14 @@ class AvaluosBienesView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'success': True, 'detail':'Se agregar los avaluos del bien que da el deudor', 'data':serializer.data},status=status.HTTP_200_OK)
+
+
+class CategoriaAtributoView(generics.ListAPIView):
+    queryset = CategoriaAtributo.objects.all()
+    serializer_class = CategoriaAtributoSerializer
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
