@@ -28,7 +28,6 @@ class ConfiguracionEntidad(models.Model):
         verbose_name_plural = 'Configuraciones de Entidad'
 
 
-
 class HistoricoPerfilesEntidad(models.Model):
     id_historico_perfil_entidad = models.AutoField(primary_key=True, db_column='T028IdHistoricoPerfil_Entidad')
     id_persona_entidad = models.ForeignKey(ConfiguracionEntidad, on_delete=models.CASCADE, db_column='T028Id_PersonaEntidad')
@@ -64,7 +63,7 @@ class SucursalesEmpresas(models.Model):
     municipio_notificacion = models.CharField(max_length=5, choices=municipios_CHOICES, null=True, blank=True, db_column='T012Cod_MunicipioNotificacionNal') 
     email_sucursal = models.EmailField(max_length=100, null=True, blank=True, db_column='T012emailSucursal')
     telefono_sucursal = models.CharField(max_length=15, null=True, blank=True, db_column='T012telContactoSucursal')
-    es_principal = models.BooleanField(default=False, db_column='T012esPrincipal')
+    es_principal = models.BooleanField(default=True, db_column='T012esPrincipal')
     activo = models.BooleanField(default=True, db_column='T012activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T012itemYaUsado')
     
@@ -75,4 +74,4 @@ class SucursalesEmpresas(models.Model):
         db_table = 'T012SucursalesEmpresa'
         verbose_name = 'Sucursal'
         verbose_name_plural = 'Sucursales'
-        unique_together = ['id_persona_empresa', 'numero_sucursal','descripcion_sucursal']
+        unique_together = [('id_persona_empresa','descripcion_sucursal'), ('numero_sucursal','id_persona_empresa')]
