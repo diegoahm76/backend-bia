@@ -23,6 +23,16 @@ class SerializersItemDespachoConsumo(serializers.ModelSerializer):
         model=ItemDespachoConsumo
         exclude=('id_entrada_almacen_bien',)
 
+class SerializersItemsSolicitudConsumible(serializers.ModelSerializer):
+   # nombre = serializers.CharField(validators=[UniqueValidator(queryset=Marcas.objects.all())])
+    codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
+    unidad_medida = serializers.ReadOnlyField(source='id_unidad_medida.abreviatura')
+        
+    class Meta:
+        model=ItemsSolicitudConsumible
+        fields=('__all__')
+
 class SerializersSolicitudesConsumibles(serializers.ModelSerializer):
     #nombre = serializers.CharField(validators=[UniqueValidator(queryset=Marcas.objects.all())])
     nombre_completo_responsable = serializers.SerializerMethodField()
@@ -30,6 +40,8 @@ class SerializersSolicitudesConsumibles(serializers.ModelSerializer):
     unidad_para_la_que_solicita=serializers.ReadOnlyField(source='id_unidad_para_la_que_solicita.nombre',default=None)
     unidad_org_del_responsable=serializers.ReadOnlyField(source='id_unidad_org_del_responsable.nombre',default=None)
     unidad_org_del_solicitante=serializers.ReadOnlyField(source='id_unidad_org_del_solicitante.nombre',default=None)
+    items = serializers.SerializerMethodField()
+    
     def get_nombre_completo_responsable(self, obj):
         nombre_completo_responsable = None
         nombre_list = [obj.id_funcionario_responsable_unidad.primer_nombre, obj.id_funcionario_responsable_unidad.segundo_nombre,
@@ -45,17 +57,14 @@ class SerializersSolicitudesConsumibles(serializers.ModelSerializer):
         nombre_completo_solicitante = nombre_completo_solicitante if nombre_completo_solicitante != "" else None
         return nombre_completo_solicitante
     
+    def get_items(self, obj):
+        items_instances = ItemsSolicitudConsumible.objects.filter(id_solicitud_consumibles=obj.id_solicitud_consumibles)
+        serializer_items = SerializersItemsSolicitudConsumible(items_instances, many=True)
+        return serializer_items.data
         
-
     class Meta:
         model=SolicitudesConsumibles
-        fields=('__all__')
-
-class SerializersItemsSolicitudConsumible(serializers.ModelSerializer):
-   # nombre = serializers.CharField(validators=[UniqueValidator(queryset=Marcas.objects.all())])
-    class Meta:
-        model=ItemsSolicitudConsumible
-        fields=('__all__')
+        fields='__all__'
 
 
 class CerrarSolicitudDebidoInexistenciaSerializer(serializers.ModelSerializer):

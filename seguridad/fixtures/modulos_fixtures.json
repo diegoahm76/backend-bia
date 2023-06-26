@@ -1,1133 +1,1358 @@
 [
-    {
-      "model": "seguridad.Modulos",
-      "pk": 1,
-      "fields": {
-        "id_modulo": 1,
+{
+    "model": "seguridad.modulos",
+    "pk": 1,
+    "fields": {
         "nombre_modulo": "Administración de Personas",
-        "subsistema":"TRSV",
-        "descripcion":"Permite administrar las personas registradas en el sistema",
-        "ruta_formulario":"/#/app/transversal/personas/administracion_personas",
-        "nombre_icono":"test",
+        "subsistema": "TRSV",
+        "descripcion": "Permite administrar las personas registradas en el sistema",
+        "ruta_formulario": "/#/app/seguridad/administracion_usuarios",
+        "nombre_icono": "test",
         "id_menu": 1
-      }
-    },
-    {
-      "model": "seguridad.Modulos",
-      "pk": 2,
-      "fields": {
-        "id_modulo": 2,
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 2,
+    "fields": {
         "nombre_modulo": "Administración de Usuarios",
-        "subsistema":"SEGU",
-        "descripcion":"Permite administrar las credenciales de acceso de las personas al sistema",
-        "ruta_formulario":"/#/app/seguridad/administracion_usuarios",
-        "nombre_icono":"test",
+        "subsistema": "SEGU",
+        "descripcion": "Permite administrar las credenciales de acceso de las personas al sistema",
+        "ruta_formulario": "/#/app/transversal/administracion_personas",
+        "nombre_icono": "test",
         "id_menu": 8
-      }
-    },
-    {
-      "model": "seguridad.Modulos",
-      "pk": 3,
-      "fields": {
-        "id_modulo": 3,
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 3,
+    "fields": {
         "nombre_modulo": "Administración de Datos Cuenta Propia Usuario Interno",
-        "subsistema":"SEGU",
-        "descripcion":"Permite administrar a una persona que tiene un usuario interno, los datos de su usuario y datos personales desde el sistema - Sólo para usuarios internos",
-        "ruta_formulario":"/*",
-        "nombre_icono":"test",
-        "id_menu": 6
-      }
-    },
-    {
-      "model": "seguridad.Modulos",
-      "pk": 4,
-      "fields": {
-        "id_modulo": 4,
+        "subsistema": "SEGU",
+        "descripcion": "Permite administrar a una persona que tiene un usuario interno, los datos de su usuario y datos personales desde el sistema - Sólo para usuarios internos",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": null
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 4,
+    "fields": {
         "nombre_modulo": "Administración de Datos Cuenta Propia Usuario Externo",
-        "subsistema":"SEGU",
-        "descripcion":"Permite administrar a una persona que tiene un usuario externo, los datos de su usuario y datos personales desde el portal web - Sólo para usuarios externos",
-        "ruta_formulario":"/*",
-        "nombre_icono":"test",
-        "id_menu": 7
-      }
-    },
-    {
-      "model": "seguridad.Modulos",
-      "pk": 5,
-      "fields": {
-        "id_modulo": 5,
+        "subsistema": "SEGU",
+        "descripcion": "Permite administrar a una persona que tiene un usuario externo, los datos de su usuario y datos personales desde el portal web - Sólo para usuarios externos",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": null
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 5,
+    "fields": {
         "nombre_modulo": "Roles",
-        "subsistema":"SEGU",
-        "descripcion":"Permite administrar los roles del sistema",
-        "ruta_formulario":"/#/app/seguridad/roles",
-        "nombre_icono":"test",
+        "subsistema": "SEGU",
+        "descripcion": "Permite administrar los roles del sistema",
+        "ruta_formulario": "/#/app/seguridad/roles",
+        "nombre_icono": "test",
         "id_menu": 8
-      }
-    },
-    {
-      "model": "seguridad.Modulos",
-      "pk": 6,
-      "fields": {
-        "id_modulo": 6,
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 6,
+    "fields": {
         "nombre_modulo": "Estado Civil",
-        "subsistema":"TRSV",
-        "descripcion":"Permite administrar la información básica de los Estados Civiles del sistema",
-        "ruta_formulario":"/#/app/transversal/configuracion/datos_basicos/estado_civil",
-        "nombre_icono":"test",
+        "subsistema": "TRSV",
+        "descripcion": "Permite administrar la información básica de los Estados Civiles del sistema",
+        "ruta_formulario": "/#/app/seguridad/configuraciones_basicas/estado_civil",
+        "nombre_icono": "test",
         "id_menu": 5
-      }
-    },
-    {
-        "model": "seguridad.Modulos",
-        "pk": 7,
-        "fields": {
-          "id_modulo": 7,
-          "nombre_modulo": "Tipos de Documentos de ID",
-          "subsistema":"TRSV",
-          "descripcion":"Permite administrar los tipos de documentos de identificación",
-          "ruta_formulario":"/#/app/transversal/configuracion/datos_basicos/tipos_documento",
-          "nombre_icono":"test",
-          "id_menu": 5
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 8,
-        "fields": {
-          "id_modulo": 8,
-          "nombre_modulo": "Delegación del Rol de SuperUsuario",
-          "subsistema":"SEGU",
-          "descripcion":"Proceso que permite a un SuperUsuario delegar dicha función a otra persona",
-          "ruta_formulario":"/#/app/seguridad/superusuario",
-          "nombre_icono":"test",
-          "id_menu": 8
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 9,
-        "fields": {
-          "id_modulo": 9,
-          "nombre_modulo": "Creación Persona Vía Portal",
-          "subsistema":"SEGU",
-          "descripcion":"Permite crear una persona vía Portal",
-          "ruta_formulario":"/*",
-          "nombre_icono":"test",
-          "id_menu": null
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 10,
-        "fields": {
-          "id_modulo": 10,
-          "nombre_modulo": "Creación Usuario Vía Portal",
-          "subsistema":"SEGU",
-          "descripcion":"Permite crear un usuario vía Portal",
-          "ruta_formulario":"/*",
-          "nombre_icono":"test",
-          "id_menu": null
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 11,
-        "fields": {
-          "id_modulo": 11,
-          "nombre_modulo": "Marcas",
-          "subsistema":"ALMA",
-          "descripcion":"Permite administrar la información básica de las Marcas de artículos activos fijos",
-          "ruta_formulario":"/#/app/almacen/configuracion/marca",
-          "nombre_icono":"test",
-          "id_menu": 45
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 12,
-        "fields": {
-          "id_modulo": 12,
-          "nombre_modulo": "Bodegas",
-          "subsistema":"ALMA",
-          "descripcion":"Permite administrar las bodegas del Almacén creadas en el sistema",
-          "ruta_formulario":"/#/app/almacen/configuracion_datos_basicos/bodegas",
-          "nombre_icono":"test",
-          "id_menu": 44
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 13,
-        "fields": {
-          "id_modulo": 13,
-          "nombre_modulo": "Porcentajes de IVA",
-          "subsistema":"ALMA",
-          "descripcion":"Permite administrar la información básica de los porcentajes de IVA que manejará el sistema",
-          "ruta_formulario":"/#/app/almacen/configuracion/porcentaje",
-          "nombre_icono":"test",
-          "id_menu": 45
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 14,
-        "fields": {
-          "id_modulo": 14,
-          "nombre_modulo": "Unidades de Medida",
-          "subsistema":"ALMA",
-          "descripcion":"Permite administrar la información básica de las unidades de medida que manejará el sistema",
-          "ruta_formulario":"/#/app/almacen/configuracion_datos_basicos/datos_basicos/unidades_medida",
-          "nombre_icono":"test",
-          "id_menu": 45
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 15,
-        "fields": {
-          "id_modulo": 15,
-          "nombre_modulo": "Organigramas",
-          "subsistema":"TRSV",
-          "descripcion":"Permite administrar los organigramas del sistema",
-          "ruta_formulario":"/#/app/transversal/corporativo/organigramas",
-          "nombre_icono":"test",
-          "id_menu": 2
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 16,
-        "fields": {
-          "id_modulo": 16,
-          "nombre_modulo": "Cambio de Organigrama Actual",
-          "subsistema":"TRSV",
-          "descripcion":"Permite adoptar un nuevo organigrama de la entidad en el sistema",
-          "ruta_formulario":"/#/app/transversal/procesos/cambio_organigrama_actual",
-          "nombre_icono":"test",
-          "id_menu": 3
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 17,
-        "fields": {
-          "id_modulo": 17,
-          "nombre_modulo": "Cargos",
-          "subsistema":"TRSV",
-          "descripcion":"Permite administrar los cargos disponibles en el sistema",
-          "ruta_formulario":"/#/app/transversal/configuracion/datos_basicos/cargos",
-          "nombre_icono":"test",
-          "id_menu": 5
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 18,
-        "fields": {
-          "id_modulo": 18,
-          "nombre_modulo": "Hoja de Vida Computadores",
-          "subsistema":"ALMA",
-          "descripcion":"Permite administrar la información de las hojas de vidas de los computadores",
-          "ruta_formulario":"/#/app/almacen/gestion_inventario/hv_activos_fijos/hv_computadores",
-          "nombre_icono":"test",
-          "id_menu": 34
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 19,
-        "fields": {
-          "id_modulo": 19,
-          "nombre_modulo": "Hoja de Vida Vehículos",
-          "subsistema":"ALMA",
-          "descripcion":"Permite administrar la información de las hojas de vidas de los vehículos",
-          "ruta_formulario":"/#/app/almacen/gestion_inventario/hv_activos_fijos/hv_vehiculos",
-          "nombre_icono":"test",
-          "id_menu": 34
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 20,
-        "fields": {
-          "id_modulo": 20,
-          "nombre_modulo": "Hoja de Vida Otros Activos",
-          "subsistema":"ALMA",
-          "descripcion":"Permite administrar la información de las hojas de vidas de otros activos",
-          "ruta_formulario":"/#/app/almacen/gestion_inventario/hv_activos_fijos/hv_otros_activos",
-          "nombre_icono":"test",
-          "id_menu": 34
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 21,
-        "fields": {
-          "id_modulo": 21,
-          "nombre_modulo": "Programación de Mantenimiento de Computadores",
-          "subsistema":"ALMA",
-          "descripcion":"Permite administrar la información de las programaciones de mantenimiento de computadores",
-          "ruta_formulario":"/#/app/almacen/gestion_inventario/mantenimiento_equipos/programacion_mantenimiento_computadores",
-          "nombre_icono":"test",
-          "id_menu": 35
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 22,
-        "fields": {
-          "id_modulo": 22,
-          "nombre_modulo": "Programación de Mantenimiento de Vehículos",
-          "subsistema":"ALMA",
-          "descripcion":"Permite administrar la información de las programaciones de mantenimiento de vehículos",
-          "ruta_formulario":"/#/app/almacen/gestion_inventario/mantenimiento_equipos/programacion_mantenimiento_vehiculos",
-          "nombre_icono":"test",
-          "id_menu": 35
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 23,
-        "fields": {
-          "id_modulo": 23,
-          "nombre_modulo": "Programación de Mantenimiento de Otros activos",
-          "subsistema":"ALMA",
-          "descripcion":"Permite administrar la información de las programaciones de mantenimiento de otros activos",
-          "ruta_formulario":"/#/app/almacen/gestion_inventario/mantenimiento_equipos/programacion_mantenimiento_otros_activos",
-          "nombre_icono":"test",
-          "id_menu": 35
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 24,
-        "fields": {
-          "id_modulo": 24,
-          "nombre_modulo": "Ejecución de Mantenimiento de Computadores",
-          "subsistema":"ALMA",
-          "descripcion":"Permite administrar la información de las ejecuciones de mantenimiento de computadores",
-          "ruta_formulario":"/#/app/almacen/gestion_inventario/mantenimiento_equipos/ejecucion_mantenimiento_computadores",
-          "nombre_icono":"test",
-          "id_menu": 35
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 25,
-        "fields": {
-          "id_modulo": 25,
-          "nombre_modulo": "Ejecución de Mantenimiento de Vehículos",
-          "subsistema":"ALMA",
-          "descripcion":"Permite administrar la información de las ejecuciones de mantenimiento de vehículos",
-          "ruta_formulario":"/#/app/almacen/gestion_inventario/mantenimiento_equipos/ejecucion_mantenimiento_vehiculos",
-          "nombre_icono":"test",
-          "id_menu": 35
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 26,
-        "fields": {
-          "id_modulo": 26,
-          "nombre_modulo": "Ejecución de Mantenimiento de Otros activos",
-          "subsistema":"ALMA",
-          "descripcion":"Permite administrar la información de las ejecuciones de mantenimiento de otros activos",
-          "ruta_formulario":"/#/app/almacen/gestion_inventario/mantenimiento_equipos/ejecucion_mantenimiento_otros_activos",
-          "nombre_icono":"test",
-          "id_menu": 35
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 27,
-        "fields": {
-          "id_modulo": 27,
-          "nombre_modulo": "Cuadro de clasificación documental",
-          "subsistema":"GEST",
-          "descripcion":"Permite administrar los Cuadros de Clasificación Documental de la entidad en el sistema",
-          "ruta_formulario":"/#/app/gestor_documental/gestion/instrumentos_archivisticos/ccd",
-          "nombre_icono":"test",
-          "id_menu": 12
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 28,
-        "fields": {
-          "id_modulo": 28,
-          "nombre_modulo": "Activación Instrumentos Archivísticos",
-          "subsistema":"GEST",
-          "descripcion":"Permite adoptar una nueva versión de los Instrumentos Archivísticos de la entidad en el sistema",
-          "ruta_formulario":"/*",
-          "nombre_icono":"test",
-          "id_menu": 13
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 29,
-        "fields": {
-          "id_modulo": 29,
-          "nombre_modulo": "Tabla de Retención Documental",
-          "subsistema":"GEST",
-          "descripcion":"Permite administrar las Tablas de Retención Documental de la entidad en el sistema",
-          "ruta_formulario":"/#/app/gestor_documental/gestion/instrumentos_archivisticos/trd",
-          "nombre_icono":"test",
-          "id_menu": 12
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 31,
-        "fields": {
-          "id_modulo": 31,
-          "nombre_modulo": "Tabla de Control de Acceso",
-          "subsistema":"GEST",
-          "descripcion":"Permite administrar las Tablas de Control de Acceso de la entidad en el sistema",
-          "ruta_formulario":"/#/app/gestor_documental/gestion/instrumentos_archivisticos/tca",
-          "nombre_icono":"test",
-          "id_menu": 12
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 33,
-        "fields": {
-          "id_modulo": 33,
-          "nombre_modulo": "Catálogo de Bienes",
-          "subsistema":"ALMA",
-          "descripcion":"Permite administrar el catálogo de los bienes de la entidad a manejar en el subsistema de Almacén",
-          "ruta_formulario":"/#/app/almacen/entrada_y_salida_de_articulos/catalogo_bienes",
-          "nombre_icono":"test",
-          "id_menu": 31
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 34,
-        "fields": {
-          "id_modulo": 34,
-          "nombre_modulo": "Entrada de Bienes de Almacén",
-          "subsistema":"ALMA",
-          "descripcion":"Permite ingresar bienes al Almacén de la entidad para su control",
-          "ruta_formulario":"/#/app/almacen/entrada_almacen/entrada_bienes_almacen",
-          "nombre_icono":"test",
-          "id_menu": 36
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 35,
-        "fields": {
-          "id_modulo": 35,
-          "nombre_modulo": "Solicitud de Bienes de Consumo",
-          "subsistema":"ALMA",
-          "descripcion":"Permite solicitar bienes de consumo por parte de la entidad al almacén de la misma",
-          "ruta_formulario":"/#/app/almacen/registro_solicitudes_almacen/solicitud_bienes_consumo",
-          "nombre_icono":"test",
-          "id_menu": 37
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 36,
-        "fields": {
-          "id_modulo": 36,
-          "nombre_modulo": "Solicitud de Bienes de Consumo para Viveros",
-          "subsistema":"ALMA",
-          "descripcion":"Permite solicitar bienes de consumo para uso en la actividad misional de Viveros por parte del personal de Viveros al Almacén de la entidad",
-          "ruta_formulario":"/#/app/almacen/registro_solicitudes_almacen/solicitud_bienes_consumo_viveros",
-          "nombre_icono":"test",
-          "id_menu": 37
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 37,
-        "fields": {
-          "id_modulo": 37,
-          "nombre_modulo": "Aprobación de Solicitudes de Bienes",
-          "subsistema":"ALMA",
-          "descripcion":"Permite aprobar o rechazar solicitudes de bienes de las cuales se le elijió como responsable por parte del solicitante",
-          "ruta_formulario":"/#/app/almacen/registro_solicitudes_almacen/aprobacion_solicitud_bienes",
-          "nombre_icono":"test",
-          "id_menu": 37
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 38,
-        "fields": {
-          "id_modulo": 38,
-          "nombre_modulo": "Aprobación de Solicitudes de Consumo para Vivero",
-          "subsistema":"ALMA",
-          "descripcion":"Permite aprobar o rechazar solicitudes de bienes de Consumo para la actividad misional de Vivero y sobre las cuales se le elijió como responsable por parte del solicitante",
-          "ruta_formulario":"/#/app/almacen/registro_solicitudes_almacen/aprobacion_solicitud_consumo_vivero",
-          "nombre_icono":"test",
-          "id_menu": 37
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 39,
-        "fields": {
-          "id_modulo": 39,
-          "nombre_modulo": "Rechazo de Solicitudes de Bienes desde Almacén",
-          "subsistema":"ALMA",
-          "descripcion":"Permite rechazar por parte de Almacén, solicitudes de bienes realizadas por las diferentes áreas de la entidad",
-          "ruta_formulario":"/#/app/almacen/gestion_inventario/movimientos/respuesta_solicitudes/rechazo_solicitudes_bienes_almacen",
-          "nombre_icono":"test",
-          "id_menu": 33
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 40,
-        "fields": {
-          "id_modulo": 40,
-          "nombre_modulo": "Listado de Solicitudes de Bienes Pendientes por Despachar",
-          "subsistema":"ALMA",
-          "descripcion":"Lista todas las solicitudes realizadas por la empresa y que no han sido gestionadas por Almacén",
-          "ruta_formulario":"/#/app/almacen/gestion_inventario/movimientos/respuesta_solicitudes/listado_solicitudes_bienes_pendientes_por_despachar",
-          "nombre_icono":"test",
-          "id_menu": 33
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 41,
-        "fields": {
-          "id_modulo": 41,
-          "nombre_modulo": "Administración de Viveros",
-          "subsistema":"CONS",
-          "descripcion":"Permite administrar los Viveros de la entidad",
-          "ruta_formulario":"/#/app/conservacion/gestor_vivero/administrar_viveros",
-          "nombre_icono":"test",
-          "id_menu": 20
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 42,
-        "fields": {
-          "id_modulo": 42,
-          "nombre_modulo": "Ingresar/Retirar de Cuarentena un Vivero",
-          "subsistema":"CONS",
-          "descripcion":"módulo que permite ingresar o sacar de cuarentena un vivero de la entidad",
-          "ruta_formulario":"/#/app/conservacion/gestor_vivero/cuarentena",
-          "nombre_icono":"test",
-          "id_menu": 20
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 43,
-        "fields": {
-          "id_modulo": 43,
-          "nombre_modulo": "Aperturar/Cerrar un Vivero",
-          "subsistema":"CONS",
-          "descripcion":"módulo que permite aperturar o cerrar un vivero existente de la entidad",
-          "ruta_formulario":"/#/app/conservacion/gestor_vivero/apertura_cierre",
-          "nombre_icono":"test",
-          "id_menu": 20
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 44,
-        "fields": {
-          "id_modulo": 44,
-          "nombre_modulo": "Tipificación de Bienes de Consumo de Viveros",
-          "subsistema":"CONS",
-          "descripcion":"Permite tipificar los bienes de consumo utilizables en viveros para la producción",
-          "ruta_formulario":"/#/app/conservacion/configuracion/administrar_camas_germinacion",
-          "nombre_icono":"test",
-          "id_menu": 30
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 45,
-        "fields": {
-          "id_modulo": 45,
-          "nombre_modulo": "Despacho de Bienes de Consumo",
-          "subsistema":"ALMA",
-          "descripcion":"Permite a Almacén despachar los bienes de consumo de la entidad basados en una solicitud",
-          "ruta_formulario":"/#/app/almacen/gestion_inventario/movimientos/respuesta_solicitudes/despacho_bienes_consumo",
-          "nombre_icono":"test",
-          "id_menu": 32
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 46,
-        "fields": {
-          "id_modulo": 46,
-          "nombre_modulo": "Entrega de Donaciones, Resarcimientos y Compensaciones a Viveros",
-          "subsistema":"ALMA",
-          "descripcion":"permite a Almacén entregar los bienes de consumo de Viveros que ingresaron a la entidad mediante una Donación, Resarcimiento o Compensación",
-          "ruta_formulario":"/#/app/almacen/gestion_inventario/movimientos/entrega_donaciones_resarcimientos_compensaciones_viveros",
-          "nombre_icono":"test",
-          "id_menu": 32
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 47,
-        "fields": {
-          "id_modulo": 47,
-          "nombre_modulo": "Cierre de Solicitudes de Bienes por No Disponibilidad",
-          "subsistema":"ALMA",
-          "descripcion":"Permite cerrar por parte de Almacén una solicitud de bienes por no tener disponibilidad de ninguno de los items solicitados",
-          "ruta_formulario":"/#/app/almacen/gestion_inventario/movimientos/respuesta_solicitudes/cierre_solicitudes_bienes_no_disponibilidad",
-          "nombre_icono":"test",
-          "id_menu": 33
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 48,
-        "fields": {
-          "id_modulo": 48,
-          "nombre_modulo": "Recepción y Distribución de Despachos Entrantes a Vivero",
-          "subsistema":"CONS",
-          "descripcion":"Permite Distribuir las entradas de bienes de consumo de Viveros en los diferentes viveros de la entidad",
-          "ruta_formulario":"/#/app/conservacion/gestor_vivero/recepcion_distribucion",
-          "nombre_icono":"test",
-          "id_menu": 20
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 49,
-        "fields": {
-          "id_modulo": 49,
-          "nombre_modulo": "Administración de Camas de Germinación",
-          "subsistema":"CONS",
-          "descripcion":"Permite administrar las camas de germinación para los diferntes viveros de la entidad",
-          "ruta_formulario":"/#/app/conservacion/configuracion/tipificacion_bienes",
-          "nombre_icono":"test",
-          "id_menu": 30
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 50,
-        "fields": {
-          "id_modulo": 50,
-          "nombre_modulo": "Siembra de Semillas",
-          "subsistema":"CONS",
-          "descripcion":"Permite crear y administrar las siembras de semillas de material vegetal realizadas en los diferentes viveros de la entidad",
-          "ruta_formulario":"/#/app/conservacion/material_vegetal/siembra_semilla",
-          "nombre_icono":"test",
-          "id_menu": 21
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 51,
-        "fields": {
-          "id_modulo": 51,
-          "nombre_modulo": "Cambio de Etapa del Material Vegetal",
-          "subsistema":"CONS",
-          "descripcion":"Permite realizar el cambio de etapa de unidades de material vegetal de un lote específico",
-          "ruta_formulario":"/#/app/conservacion/produccion/cambio_etapa",
-          "nombre_icono":"test",
-          "id_menu": 22
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 52,
-        "fields": {
-          "id_modulo": 52,
-          "nombre_modulo": "Traslados entre viveros",
-          "subsistema":"CONS",
-          "descripcion":"Permite trasladar bienes entre viveros",
-          "ruta_formulario":"/#/app/conservacion/distribucion/traslado",
-          "nombre_icono":"test",
-          "id_menu": 24
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 53,
-        "fields": {
-          "id_modulo": 53,
-          "nombre_modulo": "Ingreso a Cuarentena de Material Vegetal",
-          "subsistema":"CONS",
-          "descripcion":"Permite registrar el ingreso de plantas y plántulas de un lote de un vivero a cuarentena",
-          "ruta_formulario":"/#/app/conservacion/material_vegetal/ingreso_cuarentena",
-          "nombre_icono":"test",
-          "id_menu": 21
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 54,
-        "fields": {
-          "id_modulo": 54,
-          "nombre_modulo": "Levantamiento de Cuarentena de Material Vegetal",
-          "subsistema":"CONS",
-          "descripcion":"Permite registrar el levantamiento de cuarentena de plantas y plántulas de un lote de un vivero que está en cuarentena",
-          "ruta_formulario":"/#/app/conservacion/material_vegetal/levantamiento_cuarentena",
-          "nombre_icono":"test",
-          "id_menu": 21
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 55,
-        "fields": {
-          "id_modulo": 55,
-          "nombre_modulo": "Bajas de Herramientas, Insumos y Semillas",
-          "subsistema":"CONS",
-          "descripcion":"Permite dar de baja elementos del tipo Herramientas, Insumos y Semillas del inventario de un vivero",
-          "ruta_formulario":"/#/app/conservacion/gestor_vivero/bajas",
-          "nombre_icono":"test",
-          "id_menu": 20
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 56,
-        "fields": {
-          "id_modulo": 56,
-          "nombre_modulo": "Mortalidad de Plantas y Plántulas",
-          "subsistema":"CONS",
-          "descripcion":"Permite registrar la mortalidad de plantas y plántulas de un vivero",
-          "ruta_formulario":"/#/app/conservacion/produccion/mortalidad_plantas",
-          "nombre_icono":"test",
-          "id_menu": 22
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 57,
-        "fields": {
-          "id_modulo": 57,
-          "nombre_modulo": "Mezclas",
-          "subsistema":"CONS",
-          "descripcion":"Permite administrar los nombres de las mezclas que se podrán crear en el sistema",
-          "ruta_formulario":"/#/app/conservacion/configuracion/tipos_mezcla",
-          "nombre_icono":"test",
-          "id_menu": 30
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 58,
-        "fields": {
-          "id_modulo": 58,
-          "nombre_modulo": "Preparación para mezclas",
-          "subsistema":"CONS",
-          "descripcion":"Permite registrar la preparación de mezclas a utilizar en un vivero",
-          "ruta_formulario":"/#/app/conservacion/produccion/preparacion_mezcla",
-          "nombre_icono":"test",
-          "id_menu": 22
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 59,
-        "fields": {
-          "id_modulo": 59,
-          "nombre_modulo": "Registrar Incidencias de Material Vegetal",
-          "subsistema":"CONS",
-          "descripcion":"'Permite registrar incidencias que se realicen o presenten sobre un lote de material vegetal de unvivero",
-          "ruta_formulario":"/#/app/conservacion/produccion/incidencia_material_vegetal",
-          "nombre_icono":"test",
-          "id_menu": 22
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 60,
-        "fields": {
-          "id_modulo": 60,
-          "nombre_modulo": "Solicitudes de Plantas e Insumos a Viveros",
-          "subsistema":"CONS",
-          "descripcion":"Permite registrar las solicitudes de Plantas e Insumos a un Vivero determinado",
-          "ruta_formulario":"/#/app/conservacion/solicitud_material/plantas_insumos",
-          "nombre_icono":"test",
-          "id_menu": 23
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 61,
-        "fields": {
-          "id_modulo": 61,
-          "nombre_modulo": "Despachos de Plantas e Insumos de Viveros",
-          "subsistema":"CONS",
-          "descripcion":"Permite registrar los Despachos de Solicitudes de Plantas e Insumos a un Vivero determinado",
-          "ruta_formulario":"/*",
-          "nombre_icono":"test",
-          "id_menu": 24
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 62,
-        "fields": {
-          "id_modulo": 62,
-          "nombre_modulo": "Listado de Solicitudes pendientes de Aprobación (Funcionario)",
-          "subsistema":"CONS",
-          "descripcion":"Permite consultar las solicitudes realizadas a viveros pendientes de aprobación",
-          "ruta_formulario":"/#/app/conservacion/solicitud_material/funcionario/solicitudes_pendientes",
-          "nombre_icono":"test",
-          "id_menu": 23
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 63,
-        "fields": {
-          "id_modulo": 63,
-          "nombre_modulo": "Aprobación de Solicitudes a Viveros (Funcionario)",
-          "subsistema":"CONS",
-          "descripcion":"Permite aprobar o rechazar por parte del funcionario responsable las solicitudes a viveros.",
-          "ruta_formulario":"/#/app/conservacion/solicitud_material/funcionario/aprobar_solicitud",
-          "nombre_icono":"test",
-          "id_menu": 23
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 64,
-        "fields": {
-          "id_modulo": 64,
-          "nombre_modulo": "Listado de Solicitudes pendientes de Aprobación (Coordinador Viveros)",
-          "subsistema":"CONS",
-          "descripcion":"Permite consultar las solicitudes realizadas a viveros pendientes de aprobación ya aprobadas por funcionario responsable",
-          "ruta_formulario":"/#/app/conservacion/solicitud_material/coordinador/solicitudes_pendientes",
-          "nombre_icono":"test",
-          "id_menu": 23
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 65,
-        "fields": {
-          "id_modulo": 65,
-          "nombre_modulo": "Aprobación de Solicitudes a Viveros (Coordinador de Viveros)",
-          "subsistema":"CONS",
-          "descripcion":"Permite aprobar o rechazar por parte del coordinador de viveros las solicitudes a viveros.",
-          "ruta_formulario":"/#/app/conservacion/solicitud_material/coordinador/aprobar_solicitud",
-          "nombre_icono":"test",
-          "id_menu": 23
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 66,
-        "fields": {
-          "id_modulo": 66,
-          "nombre_modulo": "Cierre de Solicitudes a Viveros por No Disponibilidad",
-          "subsistema":"CONS",
-          "descripcion":"Permite cerrar una solicitud a viveros por no tener disponibilidad de ninguno de los items solicitados",
-          "ruta_formulario":"/#/app/conservacion/distribucion/cierre_solicitudes",
-          "nombre_icono":"test",
-          "id_menu": 24
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 67,
-        "fields": {
-          "id_modulo": 67,
-          "nombre_modulo": "Despacho de Viveros",
-          "subsistema":"CONS",
-          "descripcion":"Permite despachar elementos desde viveros en base a una solicitud",
-          "ruta_formulario":"/#/app/conservacion/distribucion/despacho",
-          "nombre_icono":"test",
-          "id_menu": 24
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 68,
-        "fields": {
-          "id_modulo": 68,
-          "nombre_modulo": "Responsables de Viveros",
-          "subsistema":"CONS",
-          "descripcion":"Permite configurar los responsables de cada vivero en la entidad",
-          "ruta_formulario":"/#/app/conservacion/solicitud-material/responsable_viveros",
-          "nombre_icono":"test",
-          "id_menu": 20
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 69,
-        "fields": {
-          "id_modulo": 69,
-          "nombre_modulo": "Autorización de Notificaciones Cuenta Propia",
-          "subsistema":"SEGU",
-          "descripcion":"Permite administrar a una persona sus autorizaciones acerca de las notificaciones de la entidad",
-          "ruta_formulario":"/*",
-          "nombre_icono":"test",
-          "id_menu": 6
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 70,
-        "fields": {
-          "id_modulo": 70,
-          "nombre_modulo": "Autorización de Notificaciones Otras Cuentas",
-          "subsistema":"TRSV",
-          "descripcion":"Permite administrar a una persona las autorizaciones de las personas acerca de las notificaciones de la entidad",
-          "ruta_formulario":"/#/app/transversal/personas/autorizacion_notificaciones_cuentas",
-          "nombre_icono":"test",
-          "id_menu": 1
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 71,
-        "fields": {
-          "id_modulo": 71,
-          "nombre_modulo": "Creación de Personas desde Ventanilla",
-          "subsistema":"GEST",
-          "descripcion":"Permite crear personas que van a solicitar desde la ventanilla algún servicio a la entidad",
-          "ruta_formulario":"/#/app/gestor_documental/ventanilla_unica/creacion_persona",
-          "nombre_icono":"test",
-          "id_menu": 10
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 72,
-        "fields": {
-          "id_modulo": 72,
-          "nombre_modulo": "Vinculación de Colaboradores",
-          "subsistema":"TRSV",
-          "descripcion":"Permite vincular o desvincular personas como colaboradores de la entidad en el sistema",
-          "ruta_formulario":"/#/app/transversal/personas/vinculacion_colaboradores",
-          "nombre_icono":"test",
-          "id_menu": 1
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 73,
-        "fields": {
-          "id_modulo": 73,
-          "nombre_modulo": "Datos Personales de Modificación Restringida",
-          "subsistema":"TRSV",
-          "descripcion":"Permite actualizar los Datos Personales de modificación restringida en el sistema a cualquier persona creada en el mismo",
-          "ruta_formulario":"/#/app/transversal/personas/datos_personales_modificacion_restringida",
-          "nombre_icono":"test",
-          "id_menu": 1
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 74,
-        "fields": {
-          "id_modulo": 74,
-          "nombre_modulo": "Tipologías Documentales",
-          "subsistema":"GEST",
-          "descripcion":"Permite administrar las tipologías documentales de la entidad a manejar en el sistema",
-          "ruta_formulario":"/*",
-          "nombre_icono":"test",
-          "id_menu": 19
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 75,
-        "fields": {
-          "id_modulo": 75,
-          "nombre_modulo": "Formatos Documentales",
-          "subsistema":"GEST",
-          "descripcion":"Permite administrar las formatos de los documentos para medios físicos y digitales a manejar en el sistema",
-          "ruta_formulario":"/*",
-          "nombre_icono":"test",
-          "id_menu": 19
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 76,
-        "fields": {
-          "id_modulo": 76,
-          "nombre_modulo": "Permisos por Catálogo del TCA",
-          "subsistema":"GEST",
-          "descripcion":"Permite administrar los Permisos que tendrán los diferentes Cargo-Unidad Organizacional sobre las tipologías documentales de los catálogos disponibles de una TCA de la entidad en el sistema",
-          "ruta_formulario":"/*",
-          "nombre_icono":"test",
-          "id_menu": 13
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 77,
-        "fields": {
-          "id_modulo": 77,
-          "nombre_modulo": "Auditoría",
-          "subsistema":"SEGU",
-          "descripcion":"Módulo para realizar la auditoría del sistema",
-          "ruta_formulario":"/*",
-          "nombre_icono":"test",
-          "id_menu": 9
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 78,
-        "fields": {
-          "id_modulo": 78,
-          "nombre_modulo": "Estaciones Hidrometeorológicas",
-          "subsistema":"RECU",
-          "descripcion":"Permite administrar las Estaciones Hidrometeorológicas controladas por el sistema",
-          "ruta_formulario":"/#/app/recurso_hidrico/estaciones/estacion",
-          "nombre_icono":"test",
-          "id_menu": 58
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 79,
-        "fields": {
-          "id_modulo": 79,
-          "nombre_modulo": "Parámetros de Referencia Sensores",
-          "subsistema":"RECU",
-          "descripcion":"Permite administrar los valores de referencia de cada una de las variables monitorizadas por Estación Hidrometeorológica controlada por el sistema",
-          "ruta_formulario":"/#/app/recurso_hidrico/estaciones/alertas",
-          "nombre_icono":"test",
-          "id_menu": 58
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 80,
-        "fields": {
-          "id_modulo": 80,
-          "nombre_modulo": "Mensajes de Alerta Externos",
-          "subsistema":"RECU",
-          "descripcion":"Permite crear y configurar los mensajes de las alertas generadas por las Estaciones Hidrometeorológicas que se enviarán a los interesados desde el sistema",
-          "ruta_formulario":"/#/app/recurso_hidrico/estaciones/alertas",
-          "nombre_icono":"test",
-          "id_menu": 58
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 81,
-        "fields": {
-          "id_modulo": 81,
-          "nombre_modulo": "Usuarios por Estación",
-          "subsistema":"RECU",
-          "descripcion":"Permite administrar a las personas interesadas en recibir reportes de las Estaciones Meteorológicas registradas en el sistema",
-          "ruta_formulario":"/#/app/recurso_hidrico/estaciones/usuarios",
-          "nombre_icono":"test",
-          "id_menu": 58
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 82,
-        "fields": {
-          "id_modulo": 82,
-          "nombre_modulo": "Geolocalización",
-          "subsistema":"RECU",
-          "descripcion":"Permite visualizar la ubicación geográfica de las Estaciones Meteorológicas y sus últimos datos, registradas en el sistema",
-          "ruta_formulario":"/#/app/recurso_hidrico/estaciones/geolocalizacion",
-          "nombre_icono":"test",
-          "id_menu": 49
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 83,
-        "fields": {
-          "id_modulo": 83,
-          "nombre_modulo": "Emisión de Datos Sensor",
-          "subsistema":"RECU",
-          "descripcion":"Reporte que muestra cuando se emitieron datos y cuando no de cada uno de los sensores de una Estación Meteorológica registrada en el sistema",
-          "ruta_formulario":"/#/app/recurso_hidrico/estaciones/reportes",
-          "nombre_icono":"test",
-          "id_menu": 54
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 84,
-        "fields": {
-          "id_modulo": 84,
-          "nombre_modulo": "Valores Extremos Sensor",
-          "subsistema":"RECU",
-          "descripcion":"Reporte que muestra los valores máximo, mínimo y promedio emitidos para cada variable por cada sensor de una Estación Meteorológica registrada en el sistema",
-          "ruta_formulario":"/#/app/recurso_hidrico/estaciones/reportes",
-          "nombre_icono":"test",
-          "id_menu": 54
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 85,
-        "fields": {
-          "id_modulo": 85,
-          "nombre_modulo": "Historial de Datos",
-          "subsistema":"RECU",
-          "descripcion":"Reporte que muestra el historial por mes de los valores generados por cada Estación Meteorológica monitorizada en el sistema",
-          "ruta_formulario":"/#/app/recurso_hidrico/estaciones/historial",
-          "nombre_icono":"test",
-          "id_menu": 54
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 86,
-        "fields": {
-          "id_modulo": 86,
-          "nombre_modulo": "Historial de Alertas Emitidas a Interesados",
-          "subsistema":"RECU",
-          "descripcion":"Reporte que muestra el historial por mes de las alertas emitidas a la población interesada, a causa de los datos generados por los diferentes sensores de las Estaciones Meteorológicas monitorizadas en el sistema",
-          "ruta_formulario":"/#/app/recurso_hidrico/estaciones/historial",
-          "nombre_icono":"test",
-          "id_menu": 54
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 87,
-        "fields": {
-          "id_modulo": 87,
-          "nombre_modulo": "Historial de Alertas Internas",
-          "subsistema":"RECU",
-          "descripcion":"Reporte que muestra el historial por mes de las alertas emitidas hacia la corporación a causa de los datos generados por los diferentes sensores de las Estaciones Meteorológicas monitorizadas en el sistema",
-          "ruta_formulario":"/#/app/recurso_hidrico/estaciones/historial",
-          "nombre_icono":"test",
-          "id_menu": 54
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 88,
-        "fields": {
-          "id_modulo": 88,
-          "nombre_modulo": "Comportamiento Variables de Estación",
-          "subsistema":"RECU",
-          "descripcion":"Módulo que permite observar el comportamiento de una variable de una Estación Meteorológica en un rango de fechas",
-          "ruta_formulario":"/#/app/recurso_hidrico/estaciones/dashboard",
-          "nombre_icono":"test",
-          "id_menu": 56
-        }
-      },
-      {
-        "model": "seguridad.Modulos",
-        "pk": 89,
-        "fields": {
-          "id_modulo": 89,
-          "nombre_modulo": "Comparativa Variable de Estación en Rango de Fechas",
-          "subsistema":"RECU",
-          "descripcion":"Módulo que permite comparar el comportamiento de una variable de una Estación Meteorológica entre 2 rangos de fechas",
-          "ruta_formulario":"/#/app/recurso_hidrico/estaciones/analitica_datos",
-          "nombre_icono":"test",
-          "id_menu": 56
-        }
-      }
-  ]
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 7,
+    "fields": {
+        "nombre_modulo": "Tipos de Documentos de ID",
+        "subsistema": "TRSV",
+        "descripcion": "Permite administrar los tipos de documentos de identificación",
+        "ruta_formulario": "/#/app/seguridad/configuraciones_basicas/tipos_documento",
+        "nombre_icono": "test",
+        "id_menu": 5
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 8,
+    "fields": {
+        "nombre_modulo": "Delegación del Rol de SuperUsuario",
+        "subsistema": "SEGU",
+        "descripcion": "Proceso que permite a un SuperUsuario delegar dicha función a otra persona",
+        "ruta_formulario": "/#/app/seguridad/delegacion_superusuario",
+        "nombre_icono": "test",
+        "id_menu": 8
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 9,
+    "fields": {
+        "nombre_modulo": "Creación Persona Vía Portal",
+        "subsistema": "SEGU",
+        "descripcion": "Permite crear una persona vía Portal",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": null
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 10,
+    "fields": {
+        "nombre_modulo": "Creación Usuario Vía Portal",
+        "subsistema": "SEGU",
+        "descripcion": "Permite crear un usuario vía Portal",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": null
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 11,
+    "fields": {
+        "nombre_modulo": "Marcas",
+        "subsistema": "ALMA",
+        "descripcion": "Permite administrar la información básica de las Marcas de artículos activos fijos",
+        "ruta_formulario": "/#/app/almacen/configuracion/crear_marca",
+        "nombre_icono": "test",
+        "id_menu": 44
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 12,
+    "fields": {
+        "nombre_modulo": "Bodegas",
+        "subsistema": "ALMA",
+        "descripcion": "Permite administrar las bodegas del Almacén creadas en el sistema",
+        "ruta_formulario": "/#/app/almacen/configuracion/crear_bodega",
+        "nombre_icono": "test",
+        "id_menu": 44
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 13,
+    "fields": {
+        "nombre_modulo": "Porcentajes de IVA",
+        "subsistema": "ALMA",
+        "descripcion": "Permite administrar la información básica de los porcentajes de IVA que manejará el sistema",
+        "ruta_formulario": "/#/app/almacen/configuracion/crear_marca_\nporcentajes",
+        "nombre_icono": "test",
+        "id_menu": 44
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 14,
+    "fields": {
+        "nombre_modulo": "Unidades de Medida",
+        "subsistema": "ALMA",
+        "descripcion": "Permite administrar la información básica de las unidades de medida que manejará el sistema",
+        "ruta_formulario": "/#/app/almacen/configuracion/crear_marca_unidad_medida",
+        "nombre_icono": "test",
+        "id_menu": 44
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 15,
+    "fields": {
+        "nombre_modulo": "Organigramas",
+        "subsistema": "TRSV",
+        "descripcion": "Permite administrar los organigramas del sistema",
+        "ruta_formulario": "/#/app/gestor_documental/organigrama/crear",
+        "nombre_icono": "test",
+        "id_menu": 2
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 16,
+    "fields": {
+        "nombre_modulo": "Cambio de Organigrama Actual",
+        "subsistema": "TRSV",
+        "descripcion": "Permite adoptar un nuevo organigrama de la entidad en el sistema",
+        "ruta_formulario": "/#/app/transversal/procesos/cambio_organigrama_actual",
+        "nombre_icono": "test",
+        "id_menu": 3
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 17,
+    "fields": {
+        "nombre_modulo": "Cargos",
+        "subsistema": "TRSV",
+        "descripcion": "Permite administrar los cargos disponibles en el sistema",
+        "ruta_formulario": "/#/app/seguridad/configuraciones_basicas/cargos",
+        "nombre_icono": "test",
+        "id_menu": 5
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 18,
+    "fields": {
+        "nombre_modulo": "Hoja de Vida Computadores",
+        "subsistema": "ALMA",
+        "descripcion": "Permite administrar la información de las hojas de vidas de los computadores",
+        "ruta_formulario": "/#/app/almacen/gestion_inventario/cv_computo",
+        "nombre_icono": "test",
+        "id_menu": 34
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 19,
+    "fields": {
+        "nombre_modulo": "Hoja de Vida Vehículos",
+        "subsistema": "ALMA",
+        "descripcion": "Permite administrar la información de las hojas de vidas de los vehículos",
+        "ruta_formulario": "/#/app/almacen/gestion_inventario/cv_vehiculo",
+        "nombre_icono": "test",
+        "id_menu": 34
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 20,
+    "fields": {
+        "nombre_modulo": "Hoja de Vida Otros Activos",
+        "subsistema": "ALMA",
+        "descripcion": "Permite administrar la información de las hojas de vidas de otros activos",
+        "ruta_formulario": "/#/app/almacen/gestion_inventario/cv_otros_activos",
+        "nombre_icono": "test",
+        "id_menu": 34
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 21,
+    "fields": {
+        "nombre_modulo": "Programación de Mantenimiento de Computadores",
+        "subsistema": "ALMA",
+        "descripcion": "Permite administrar la información de las programaciones de mantenimiento de computadores",
+        "ruta_formulario": "/#/app/almacen/gestion_inventario/mantenimiento_equipos/programacion_mantenimiento_computadores",
+        "nombre_icono": "test",
+        "id_menu": 35
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 22,
+    "fields": {
+        "nombre_modulo": "Programación de Mantenimiento de Vehículos",
+        "subsistema": "ALMA",
+        "descripcion": "Permite administrar la información de las programaciones de mantenimiento de vehículos",
+        "ruta_formulario": "/#/app/almacen/gestion_inventario/mantenimiento_equipos/programacion_mantenimiento_vehiculos",
+        "nombre_icono": "test",
+        "id_menu": 35
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 23,
+    "fields": {
+        "nombre_modulo": "Programación de Mantenimiento de Otros activos",
+        "subsistema": "ALMA",
+        "descripcion": "Permite administrar la información de las programaciones de mantenimiento de otros activos",
+        "ruta_formulario": "/#/app/almacen/gestion_inventario/mantenimiento_equipos/programacion_mantenimiento_otros_activos",
+        "nombre_icono": "test",
+        "id_menu": 35
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 24,
+    "fields": {
+        "nombre_modulo": "Ejecución de Mantenimiento de Computadores",
+        "subsistema": "ALMA",
+        "descripcion": "Permite administrar la información de las ejecuciones de mantenimiento de computadores",
+        "ruta_formulario": "/#/app/almacen/gestion_inventario/mantenimiento_equipos/ejecucion_mantenimiento_computadores",
+        "nombre_icono": "test",
+        "id_menu": 35
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 25,
+    "fields": {
+        "nombre_modulo": "Ejecución de Mantenimiento de Vehículos",
+        "subsistema": "ALMA",
+        "descripcion": "Permite administrar la información de las ejecuciones de mantenimiento de vehículos",
+        "ruta_formulario": "/#/app/almacen/gestion_inventario/mantenimiento_equipos/ejecucion_mantenimiento_vehiculos",
+        "nombre_icono": "test",
+        "id_menu": 35
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 26,
+    "fields": {
+        "nombre_modulo": "Ejecución de Mantenimiento de Otros activos",
+        "subsistema": "ALMA",
+        "descripcion": "Permite administrar la información de las ejecuciones de mantenimiento de otros activos",
+        "ruta_formulario": "/#/app/almacen/gestion_inventario/mantenimiento_equipos/ejecucion_mantenimiento_otros_activos",
+        "nombre_icono": "test",
+        "id_menu": 35
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 27,
+    "fields": {
+        "nombre_modulo": "Cuadro de clasificación documental",
+        "subsistema": "GEST",
+        "descripcion": "Permite administrar los Cuadros de Clasificación Documental de la entidad en el sistema",
+        "ruta_formulario": "/#/app/gestor_documental/gestion/instrumentos_archivisticos/ccd",
+        "nombre_icono": "test",
+        "id_menu": 12
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 28,
+    "fields": {
+        "nombre_modulo": "Activación Instrumentos Archivísticos",
+        "subsistema": "GEST",
+        "descripcion": "Permite adoptar una nueva versión de los Instrumentos Archivísticos de la entidad en el sistema",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 13
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 29,
+    "fields": {
+        "nombre_modulo": "Tabla de Retención Documental",
+        "subsistema": "GEST",
+        "descripcion": "Permite administrar las Tablas de Retención Documental de la entidad en el sistema",
+        "ruta_formulario": "/#/app/gestor_documental/gestion/instrumentos_archivisticos/trd",
+        "nombre_icono": "test",
+        "id_menu": 12
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 31,
+    "fields": {
+        "nombre_modulo": "Tabla de Control de Acceso",
+        "subsistema": "GEST",
+        "descripcion": "Permite administrar las Tablas de Control de Acceso de la entidad en el sistema",
+        "ruta_formulario": "/#/app/gestor_documental/gestion/instrumentos_archivisticos/tca",
+        "nombre_icono": "test",
+        "id_menu": 12
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 33,
+    "fields": {
+        "nombre_modulo": "Catálogo de Bienes",
+        "subsistema": "ALMA",
+        "descripcion": "Permite administrar el catálogo de los bienes de la entidad a manejar en el subsistema de Almacén",
+        "ruta_formulario": "/#/app/almacen/entrada_salida_articulos/catalogo_bienes",
+        "nombre_icono": "test",
+        "id_menu": 31
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 34,
+    "fields": {
+        "nombre_modulo": "Entrada de Bienes de Almacén",
+        "subsistema": "ALMA",
+        "descripcion": "Permite ingresar bienes al Almacén de la entidad para su control",
+        "ruta_formulario": "/#/app/almacen/entrada_almacen/entrada_bienes_almacen",
+        "nombre_icono": "test",
+        "id_menu": 36
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 35,
+    "fields": {
+        "nombre_modulo": "Solicitud de Bienes de Consumo",
+        "subsistema": "ALMA",
+        "descripcion": "Permite solicitar bienes de consumo por parte de la entidad al almacén de la misma",
+        "ruta_formulario": "/#/app/almacen/solicitud_consumo",
+        "nombre_icono": "test",
+        "id_menu": 37
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 36,
+    "fields": {
+        "nombre_modulo": "Solicitud de Bienes de Consumo para Viveros",
+        "subsistema": "ALMA",
+        "descripcion": "Permite solicitar bienes de consumo para uso en la actividad misional de Viveros por parte del personal de Viveros al Almacén de la entidad",
+        "ruta_formulario": "/#/app/almacen/solicitud_consumo_vivero",
+        "nombre_icono": "test",
+        "id_menu": 37
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 37,
+    "fields": {
+        "nombre_modulo": "Aprobación de Solicitudes de Bienes",
+        "subsistema": "ALMA",
+        "descripcion": "Permite aprobar o rechazar solicitudes de bienes de las cuales se le elijió como responsable por parte del solicitante",
+        "ruta_formulario": "/#/app/almacen/aprobacion_solicitud_consumo",
+        "nombre_icono": "test",
+        "id_menu": 37
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 38,
+    "fields": {
+        "nombre_modulo": "Aprobación de Solicitudes de Consumo para Vivero",
+        "subsistema": "ALMA",
+        "descripcion": "Permite aprobar o rechazar solicitudes de bienes de Consumo para la actividad misional de Vivero y sobre las cuales se le elijió como responsable por parte del solicitante",
+        "ruta_formulario": "/#/app/almacen/aprobacion_solicitud_consumo_vivero",
+        "nombre_icono": "test",
+        "id_menu": 37
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 39,
+    "fields": {
+        "nombre_modulo": "Rechazo de Solicitudes de Bienes desde Almacén",
+        "subsistema": "ALMA",
+        "descripcion": "Permite rechazar por parte de Almacén, solicitudes de bienes realizadas por las diferentes áreas de la entidad",
+        "ruta_formulario": "/#/app/almacen/gestion_inventario/movimientos/respuesta_solicitudes/rechazo_solicitudes_bienes_almacen",
+        "nombre_icono": "test",
+        "id_menu": 33
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 40,
+    "fields": {
+        "nombre_modulo": "Listado de Solicitudes de Bienes Pendientes por Despachar",
+        "subsistema": "ALMA",
+        "descripcion": "Lista todas las solicitudes realizadas por la empresa y que no han sido gestionadas por Almacén",
+        "ruta_formulario": "/#/app/almacen/gestion_inventario/movimientos/respuesta_solicitudes/listado_solicitudes_bienes_pendientes_por_despachar",
+        "nombre_icono": "test",
+        "id_menu": 33
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 41,
+    "fields": {
+        "nombre_modulo": "Administración de Viveros",
+        "subsistema": "CONS",
+        "descripcion": "Permite administrar los Viveros de la entidad",
+        "ruta_formulario": "/#/app/conservacion/gestor_vivero/administrar_viveros",
+        "nombre_icono": "test",
+        "id_menu": 20
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 42,
+    "fields": {
+        "nombre_modulo": "Ingresar/Retirar de Cuarentena un Vivero",
+        "subsistema": "CONS",
+        "descripcion": "módulo que permite ingresar o sacar de cuarentena un vivero de la entidad",
+        "ruta_formulario": "/#/app/conservacion/gestor_vivero/cuarentena",
+        "nombre_icono": "test",
+        "id_menu": 20
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 43,
+    "fields": {
+        "nombre_modulo": "Aperturar/Cerrar un Vivero",
+        "subsistema": "CONS",
+        "descripcion": "módulo que permite aperturar o cerrar un vivero existente de la entidad",
+        "ruta_formulario": "/#/app/conservacion/gestor_vivero/apertura_cierre",
+        "nombre_icono": "test",
+        "id_menu": 20
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 44,
+    "fields": {
+        "nombre_modulo": "Tipificación de Bienes de Consumo de Viveros",
+        "subsistema": "CONS",
+        "descripcion": "Permite tipificar los bienes de consumo utilizables en viveros para la producción",
+        "ruta_formulario": "/#/app/conservacion/configuracion/tipificacion_bienes",
+        "nombre_icono": "test",
+        "id_menu": 30
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 45,
+    "fields": {
+        "nombre_modulo": "Despacho de Bienes de Consumo",
+        "subsistema": "ALMA",
+        "descripcion": "Permite a Almacén despachar los bienes de consumo de la entidad basados en una solicitud",
+        "ruta_formulario": "/#/app/almacen/despacho_solicitud_aprobada",
+        "nombre_icono": "test",
+        "id_menu": 33
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 46,
+    "fields": {
+        "nombre_modulo": "Entrega de Donaciones, Resarcimientos y Compensaciones a Viveros",
+        "subsistema": "ALMA",
+        "descripcion": "permite a Almacén entregar los bienes de consumo de Viveros que ingresaron a la entidad mediante una Donación, Resarcimiento o Compensación",
+        "ruta_formulario": "/#/app/almacen/gestion_inventario/movimientos/entrega_donaciones_resarcimientos_compensaciones_viveros",
+        "nombre_icono": "test",
+        "id_menu": 33
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 47,
+    "fields": {
+        "nombre_modulo": "Cierre de Solicitudes de Bienes por No Disponibilidad",
+        "subsistema": "ALMA",
+        "descripcion": "Permite cerrar por parte de Almacén una solicitud de bienes por no tener disponibilidad de ninguno de los items solicitados",
+        "ruta_formulario": "/#/app/almacen/gestion_inventario/movimientos/respuesta_solicitudes/cierre_solicitudes_bienes_no_disponibilidad",
+        "nombre_icono": "lock",
+        "id_menu": 33
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 48,
+    "fields": {
+        "nombre_modulo": "Recepción y Distribución de Despachos Entrantes a Vivero",
+        "subsistema": "CONS",
+        "descripcion": "Permite Distribuir las entradas de bienes de consumo de Viveros en los diferentes viveros de la entidad",
+        "ruta_formulario": "/#/app/conservacion/gestor_vivero/recepcion_distribucion",
+        "nombre_icono": "test",
+        "id_menu": 20
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 49,
+    "fields": {
+        "nombre_modulo": "Administración de Camas de Germinación",
+        "subsistema": "CONS",
+        "descripcion": "Permite administrar las camas de germinación para los diferntes viveros de la entidad",
+        "ruta_formulario": "/#/app/conservacion/configuracion/administrar_camas_germinacion",
+        "nombre_icono": "test",
+        "id_menu": 30
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 50,
+    "fields": {
+        "nombre_modulo": "Siembra de Semillas",
+        "subsistema": "CONS",
+        "descripcion": "Permite crear y administrar las siembras de semillas de material vegetal realizadas en los diferentes viveros de la entidad",
+        "ruta_formulario": "/#/app/conservacion/material_vegetal/siembra_semilla",
+        "nombre_icono": "test",
+        "id_menu": 21
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 51,
+    "fields": {
+        "nombre_modulo": "Cambio de Etapa del Material Vegetal",
+        "subsistema": "CONS",
+        "descripcion": "Permite realizar el cambio de etapa de unidades de material vegetal de un lote específico",
+        "ruta_formulario": "/#/app/conservacion/produccion/cambio_etapa",
+        "nombre_icono": "test",
+        "id_menu": 22
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 52,
+    "fields": {
+        "nombre_modulo": "Traslados entre viveros",
+        "subsistema": "CONS",
+        "descripcion": "Permite trasladar bienes entre viveros",
+        "ruta_formulario": "/#/app/conservacion/distribucion/traslado",
+        "nombre_icono": "test",
+        "id_menu": 24
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 53,
+    "fields": {
+        "nombre_modulo": "Ingreso a Cuarentena de Material Vegetal",
+        "subsistema": "CONS",
+        "descripcion": "Permite registrar el ingreso de plantas y plántulas de un lote de un vivero a cuarentena",
+        "ruta_formulario": "/#/app/conservacion/material_vegetal/ingreso_cuarentena",
+        "nombre_icono": "test",
+        "id_menu": 21
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 54,
+    "fields": {
+        "nombre_modulo": "Levantamiento de Cuarentena de Material Vegetal",
+        "subsistema": "CONS",
+        "descripcion": "Permite registrar el levantamiento de cuarentena de plantas y plántulas de un lote de un vivero que está en cuarentena",
+        "ruta_formulario": "/#/app/conservacion/material_vegetal/levantamiento_cuarentena",
+        "nombre_icono": "test",
+        "id_menu": 21
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 55,
+    "fields": {
+        "nombre_modulo": "Bajas de Herramientas, Insumos y Semillas",
+        "subsistema": "CONS",
+        "descripcion": "Permite dar de baja elementos del tipo Herramientas, Insumos y Semillas del inventario de un vivero",
+        "ruta_formulario": "/#/app/conservacion/gestor_vivero/bajas",
+        "nombre_icono": "test",
+        "id_menu": 20
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 56,
+    "fields": {
+        "nombre_modulo": "Mortalidad de Plantas y Plántulas",
+        "subsistema": "CONS",
+        "descripcion": "Permite registrar la mortalidad de plantas y plántulas de un vivero",
+        "ruta_formulario": "/#/app/conservacion/produccion/mortalidad_plantas",
+        "nombre_icono": "test",
+        "id_menu": 22
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 57,
+    "fields": {
+        "nombre_modulo": "Mezclas",
+        "subsistema": "CONS",
+        "descripcion": "Permite administrar los nombres de las mezclas que se podrán crear en el sistema",
+        "ruta_formulario": "/#/app/conservacion/configuracion/tipos_mezcla",
+        "nombre_icono": "test",
+        "id_menu": 30
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 58,
+    "fields": {
+        "nombre_modulo": "Preparación para mezclas",
+        "subsistema": "CONS",
+        "descripcion": "Permite registrar la preparación de mezclas a utilizar en un vivero",
+        "ruta_formulario": "/#/app/conservacion/produccion/preparacion_mezcla",
+        "nombre_icono": "test",
+        "id_menu": 22
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 59,
+    "fields": {
+        "nombre_modulo": "Registrar Incidencias de Material Vegetal",
+        "subsistema": "CONS",
+        "descripcion": "'Permite registrar incidencias que se realicen o presenten sobre un lote de material vegetal de unvivero",
+        "ruta_formulario": "/#/app/conservacion/produccion/incidencia_material_vegetal",
+        "nombre_icono": "test",
+        "id_menu": 22
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 60,
+    "fields": {
+        "nombre_modulo": "Solicitudes de Plantas e Insumos a Viveros",
+        "subsistema": "CONS",
+        "descripcion": "Permite registrar las solicitudes de Plantas e Insumos a un Vivero determinado",
+        "ruta_formulario": "/#/app/conservacion/solicitud_material/solicitudes",
+        "nombre_icono": "test",
+        "id_menu": 23
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 61,
+    "fields": {
+        "nombre_modulo": "Despachos de Plantas e Insumos de Viveros",
+        "subsistema": "CONS",
+        "descripcion": "Permite registrar los Despachos de Solicitudes de Plantas e Insumos a un Vivero determinado",
+        "ruta_formulario": "/#/app/conservacion/distribucion/despacho",
+        "nombre_icono": "test",
+        "id_menu": 24
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 62,
+    "fields": {
+        "nombre_modulo": "Listado de Solicitudes pendientes de Aprobación (Funcionario)",
+        "subsistema": "CONS",
+        "descripcion": "Permite consultar las solicitudes realizadas a viveros pendientes de aprobación",
+        "ruta_formulario": "/#/app/conservacion/solicitud_material/funcionario/solicitudes_pendientes",
+        "nombre_icono": "test",
+        "id_menu": null
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 63,
+    "fields": {
+        "nombre_modulo": "Aprobación de Solicitudes a Viveros (Funcionario)",
+        "subsistema": "CONS",
+        "descripcion": "Permite aprobar o rechazar por parte del funcionario responsable las solicitudes a viveros.",
+        "ruta_formulario": "/#/app/conservacion/solicitud_material/funcionario/aprobar_solicitud",
+        "nombre_icono": "test",
+        "id_menu": 23
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 64,
+    "fields": {
+        "nombre_modulo": "Listado de Solicitudes pendientes de Aprobación (Coordinador Viveros)",
+        "subsistema": "CONS",
+        "descripcion": "Permite consultar las solicitudes realizadas a viveros pendientes de aprobación ya aprobadas por funcionario responsable",
+        "ruta_formulario": "/#/app/conservacion/solicitud_material/coordinador/solicitudes_pendientes",
+        "nombre_icono": "test",
+        "id_menu": null
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 65,
+    "fields": {
+        "nombre_modulo": "Aprobación de Solicitudes a Viveros (Coordinador de Viveros)",
+        "subsistema": "CONS",
+        "descripcion": "Permite aprobar o rechazar por parte del coordinador de viveros las solicitudes a viveros.",
+        "ruta_formulario": "/#/app/conservacion/solicitud_material/coordinador/aprobar_solicitud",
+        "nombre_icono": "test",
+        "id_menu": 23
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 66,
+    "fields": {
+        "nombre_modulo": "Cierre de Solicitudes a Viveros por No Disponibilidad",
+        "subsistema": "CONS",
+        "descripcion": "Permite cerrar una solicitud a viveros por no tener disponibilidad de ninguno de los items solicitados",
+        "ruta_formulario": "/#/app/conservacion/distribucion/cierre_solicitudes",
+        "nombre_icono": "test",
+        "id_menu": 24
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 67,
+    "fields": {
+        "nombre_modulo": "Despacho de Viveros",
+        "subsistema": "CONS",
+        "descripcion": "Permite despachar elementos desde viveros en base a una solicitud",
+        "ruta_formulario": "/#/app/conservacion/distribucion/despacho",
+        "nombre_icono": "test",
+        "id_menu": null
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 68,
+    "fields": {
+        "nombre_modulo": "Responsables de Viveros",
+        "subsistema": "CONS",
+        "descripcion": "Permite configurar los responsables de cada vivero en la entidad",
+        "ruta_formulario": "/#/app/conservacion/gestor_vivero/viverista",
+        "nombre_icono": "test",
+        "id_menu": 20
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 69,
+    "fields": {
+        "nombre_modulo": "Autorización de Notificaciones Cuenta Propia",
+        "subsistema": "SEGU",
+        "descripcion": "Permite administrar a una persona sus autorizaciones acerca de las notificaciones de la entidad",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 6
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 70,
+    "fields": {
+        "nombre_modulo": "Autorización de Notificaciones Otras Cuentas",
+        "subsistema": "TRSV",
+        "descripcion": "Permite administrar a una persona las autorizaciones de las personas acerca de las notificaciones de la entidad",
+        "ruta_formulario": "/#/app/usuario/autorizacion_notificacion",
+        "nombre_icono": "test",
+        "id_menu": 1
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 71,
+    "fields": {
+        "nombre_modulo": "Creación de Personas desde Ventanilla",
+        "subsistema": "GEST",
+        "descripcion": "Permite crear personas que van a solicitar desde la ventanilla algún servicio a la entidad",
+        "ruta_formulario": "/#/app/gestor_documental/ventanilla_unica/creacion_persona",
+        "nombre_icono": "test",
+        "id_menu": 10
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 72,
+    "fields": {
+        "nombre_modulo": "Vinculación de Colaboradores",
+        "subsistema": "TRSV",
+        "descripcion": "Permite vincular o desvincular personas como colaboradores de la entidad en el sistema",
+        "ruta_formulario": "/#/app/transversal/vinculacion_colaboradores/vinculacion",
+        "nombre_icono": "test",
+        "id_menu": 1
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 73,
+    "fields": {
+        "nombre_modulo": "Datos Personales de Modificación Restringida",
+        "subsistema": "TRSV",
+        "descripcion": "Permite actualizar los Datos Personales de modificación restringida en el sistema a cualquier persona creada en el mismo",
+        "ruta_formulario": "/#/app/transversal/datos_restringidos",
+        "nombre_icono": "test",
+        "id_menu": 1
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 74,
+    "fields": {
+        "nombre_modulo": "Tipologías Documentales",
+        "subsistema": "GEST",
+        "descripcion": "Permite administrar las tipologías documentales de la entidad a manejar en el sistema",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 19
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 75,
+    "fields": {
+        "nombre_modulo": "Formatos Documentales",
+        "subsistema": "GEST",
+        "descripcion": "Permite administrar las formatos de los documentos para medios físicos y digitales a manejar en el sistema",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 19
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 76,
+    "fields": {
+        "nombre_modulo": "Permisos por Catálogo del TCA",
+        "subsistema": "GEST",
+        "descripcion": "Permite administrar los Permisos que tendrán los diferentes Cargo-Unidad Organizacional sobre las tipologías documentales de los catálogos disponibles de una TCA de la entidad en el sistema",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 13
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 77,
+    "fields": {
+        "nombre_modulo": "Auditoría",
+        "subsistema": "SEGU",
+        "descripcion": "Módulo para realizar la auditoría del sistema",
+        "ruta_formulario": "/#/app/seguridad/auditoria",
+        "nombre_icono": "test",
+        "id_menu": 9
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 78,
+    "fields": {
+        "nombre_modulo": "Agregar Estación",
+        "subsistema": "RECU",
+        "descripcion": "Permite administrar las Estaciones Hidrometeorológicas controladas por el sistema",
+        "ruta_formulario": "/#/app/recurso_hidrico/estaciones/estacion",
+        "nombre_icono": "test",
+        "id_menu": 58
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 79,
+    "fields": {
+        "nombre_modulo": "Parámetros de Referencia Sensores",
+        "subsistema": "RECU",
+        "descripcion": "Permite administrar los valores de referencia de cada una de las variables monitorizadas por Estación Hidrometeorológica controlada por el sistema",
+        "ruta_formulario": "/#/app/recurso_hidrico/estaciones/alertas",
+        "nombre_icono": "test",
+        "id_menu": 58
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 80,
+    "fields": {
+        "nombre_modulo": "Mensajes de Alerta Externos",
+        "subsistema": "RECU",
+        "descripcion": "Permite crear y configurar los mensajes de las alertas generadas por las Estaciones Hidrometeorológicas que se enviarán a los interesados desde el sistema",
+        "ruta_formulario": "/#/app/recurso_hidrico/estaciones/alertas",
+        "nombre_icono": "test",
+        "id_menu": 58
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 81,
+    "fields": {
+        "nombre_modulo": "Usuarios por Estación",
+        "subsistema": "RECU",
+        "descripcion": "Permite administrar a las personas interesadas en recibir reportes de las Estaciones Meteorológicas registradas en el sistema",
+        "ruta_formulario": "/#/app/recurso_hidrico/estaciones/usuarios",
+        "nombre_icono": "test",
+        "id_menu": 58
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 82,
+    "fields": {
+        "nombre_modulo": "Geolocalización",
+        "subsistema": "RECU",
+        "descripcion": "Permite visualizar la ubicación geográfica de las Estaciones Meteorológicas y sus últimos datos, registradas en el sistema",
+        "ruta_formulario": "/#/app/recurso_hidrico/estaciones/geolocalizacion",
+        "nombre_icono": "test",
+        "id_menu": 49
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 83,
+    "fields": {
+        "nombre_modulo": "Emisión de Datos Sensor",
+        "subsistema": "RECU",
+        "descripcion": "Reporte que muestra cuando se emitieron datos y cuando no de cada uno de los sensores de una Estación Meteorológica registrada en el sistema",
+        "ruta_formulario": "/#/app/recurso_hidrico/estaciones/reportes",
+        "nombre_icono": "test",
+        "id_menu": 54
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 84,
+    "fields": {
+        "nombre_modulo": "Valores Extremos Sensor",
+        "subsistema": "RECU",
+        "descripcion": "Reporte que muestra los valores máximo, mínimo y promedio emitidos para cada variable por cada sensor de una Estación Meteorológica registrada en el sistema",
+        "ruta_formulario": "/#/app/recurso_hidrico/estaciones/reportes",
+        "nombre_icono": "test",
+        "id_menu": 54
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 85,
+    "fields": {
+        "nombre_modulo": "Historial de Datos",
+        "subsistema": "RECU",
+        "descripcion": "Reporte que muestra el historial por mes de los valores generados por cada Estación Meteorológica monitorizada en el sistema",
+        "ruta_formulario": "/#/app/recurso_hidrico/estaciones/historial",
+        "nombre_icono": "test",
+        "id_menu": 54
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 86,
+    "fields": {
+        "nombre_modulo": "Historial de Alertas Emitidas a Interesados",
+        "subsistema": "RECU",
+        "descripcion": "Reporte que muestra el historial por mes de las alertas emitidas a la población interesada, a causa de los datos generados por los diferentes sensores de las Estaciones Meteorológicas monitorizadas en el sistema",
+        "ruta_formulario": "/#/app/recurso_hidrico/estaciones/historial",
+        "nombre_icono": "test",
+        "id_menu": 54
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 87,
+    "fields": {
+        "nombre_modulo": "Historial de Alertas Internas",
+        "subsistema": "RECU",
+        "descripcion": "Reporte que muestra el historial por mes de las alertas emitidas hacia la corporación a causa de los datos generados por los diferentes sensores de las Estaciones Meteorológicas monitorizadas en el sistema",
+        "ruta_formulario": "/#/app/recurso_hidrico/estaciones/historial",
+        "nombre_icono": "test",
+        "id_menu": 54
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 88,
+    "fields": {
+        "nombre_modulo": "Comportamiento Variables de Estación",
+        "subsistema": "RECU",
+        "descripcion": "Módulo que permite observar el comportamiento de una variable de una Estación Meteorológica en un rango de fechas",
+        "ruta_formulario": "/#/app/recurso_hidrico/estaciones/dashboard",
+        "nombre_icono": "test",
+        "id_menu": 56
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 89,
+    "fields": {
+        "nombre_modulo": "Comparativa Variable de Estación en Rango de Fechas",
+        "subsistema": "RECU",
+        "descripcion": "Módulo que permite comparar el comportamiento de una variable de una Estación Meteorológica entre 2 rangos de fechas",
+        "ruta_formulario": "/#/app/recurso_hidrico/estaciones/analitica",
+        "nombre_icono": "test",
+        "id_menu": 56
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 90,
+    "fields": {
+        "nombre_modulo": "Constructor de Fórmulas para Liquidación",
+        "subsistema": "RECA",
+        "descripcion": "Permite crear de manera gráfica, fórmulas matemáticas para utilizarlas en el proceso de liquidación.",
+        "ruta_formulario": "/#/app/recaudo/liquidacion",
+        "nombre_icono": "test",
+        "id_menu": 64
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 91,
+    "fields": {
+        "nombre_modulo": "Listado de Obligaciones",
+        "subsistema": "RECA",
+        "descripcion": "Permite visualizar el listado de obligaciones pendientes por pago del usuario externo.",
+        "ruta_formulario": "/#/app/recaudo/facilidades_pago",
+        "nombre_icono": "test",
+        "id_menu": 61
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 92,
+    "fields": {
+        "nombre_modulo": "Consulta de Deudores",
+        "subsistema": "RECA",
+        "descripcion": "Permite consultar el listado de los deudores de la corporación y sus obligaciones pendientes por pago.",
+        "ruta_formulario": "/#/app/recaudo/facilidades_pago/consulta",
+        "nombre_icono": "test",
+        "id_menu": 59
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 93,
+    "fields": {
+        "nombre_modulo": "Solicitud de Facilidad de Pago",
+        "subsistema": "RECA",
+        "descripcion": "Permite a un usuario interno crear una solicitud de facilidad de pago para un deudor, o a un usuario externo hacer una a nombre propio.  Se ingresa a través de la funcionalidad de \"Consulta Deudores\" o \"Listado de Obligaciones\".",
+        "ruta_formulario": "/#/app/recaudo/facilidades_pago/registro",
+        "nombre_icono": "test",
+        "id_menu": null
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 94,
+    "fields": {
+        "nombre_modulo": "Solicitudes de Facilidades de Pago Pendientes",
+        "subsistema": "RECA",
+        "descripcion": "Lista las solicitudes de facilidades de pago pendientes por gestionar y permite asignar su gestión a colaboradores del área.",
+        "ruta_formulario": "/#/app/recaudo/facilidades_pago/admin",
+        "nombre_icono": "test",
+        "id_menu": 60
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 95,
+    "fields": {
+        "nombre_modulo": "Solicitudes de Facilidad de Pago Asignadas",
+        "subsistema": "RECA",
+        "descripcion": "Le permite a un usuario interno ver el listado de las solicitudes de facilidades de pago que le han asignado para su gestión.",
+        "ruta_formulario": "/#/app/recaudo/facilidades_pago/asignadas",
+        "nombre_icono": "test",
+        "id_menu": 60
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 96,
+    "fields": {
+        "nombre_modulo": "Gestión de Solicitud de Facilidad de Pago.",
+        "subsistema": "RECA",
+        "descripcion": "Permite a un usuario interno dar respuesta a  una solicitud de facilidad de pago que le ha sido previamente asignada.  Se ingresa a través de la funcionalidad de \"Solicitudes de Facilidad de Pago Asignadas\".",
+        "ruta_formulario": "/#/app/recaudo/facilidades_pago/solicitud",
+        "nombre_icono": "test",
+        "id_menu": null
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 97,
+    "fields": {
+        "nombre_modulo": "Creación de Plan de Pagos",
+        "subsistema": "RECA",
+        "descripcion": "Permite a un usuario interno crear un plan de pagos basado en una solicitud de facilidad de pago.  Se ingresa a través de la funcionalidad de \"Gestión de Solicitud de Facilidad de Pago\".",
+        "ruta_formulario": "/#/app/recaudo/facilidades_pago/amortizacion",
+        "nombre_icono": "test",
+        "id_menu": null
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 98,
+    "fields": {
+        "nombre_modulo": "Creación de Resolución de Facilidad de Pago",
+        "subsistema": "RECA",
+        "descripcion": "Permite a un usuario interno crear la resolución de aprobación de una facilidad de pago como respuesta a una solicitud de facilidad de pago.  Se ingresa a través de la funcionalidad de \"Gestión de Solicitud de Facilidad de Pago\".",
+        "ruta_formulario": "/#/app/recaudo/facilidades_pago/resolucion",
+        "nombre_icono": "test",
+        "id_menu": null
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 99,
+    "fields": {
+        "nombre_modulo": "Listado de Facilidades de Pago",
+        "subsistema": "RECA",
+        "descripcion": "Permite al usuario externo ver un listado de sus facilidades de pago solicitadas, aprobadas y canceladas.",
+        "ruta_formulario": "/#/app/recaudo/facilidades_pago/autorizadas",
+        "nombre_icono": "test",
+        "id_menu": 61
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 100,
+    "fields": {
+        "nombre_modulo": "Detalle de Facilidad de Pago",
+        "subsistema": "RECA",
+        "descripcion": "Permite al usuario externo consultar la trazabilidad de lo ocurrido con una solicitud de facilidad de pago. Se ingresa a través de la funcionalidad de \"Listado de Facilidades de Pago\".",
+        "ruta_formulario": "/#/app/recaudo/facilidades_pago/seguimiento",
+        "nombre_icono": "test",
+        "id_menu": null
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 101,
+    "fields": {
+        "nombre_modulo": "Compendio Datos Recaudo",
+        "subsistema": "RECA",
+        "descripcion": "Permite visualizar de forma rápida un compendio de los datos de Cartera",
+        "ruta_formulario": "/#/app/recaudo/datos",
+        "nombre_icono": "test",
+        "id_menu": 65
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 102,
+    "fields": {
+        "nombre_modulo": "Etapas del Proceso de Rentas",
+        "subsistema": "RECA",
+        "descripcion": "Permite visualizar las etapas de cada proceso generado en rentas y administrar sus atributos.",
+        "ruta_formulario": "/#/app/recaudo/estados_proceso",
+        "nombre_icono": "test",
+        "id_menu": 65
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 103,
+    "fields": {
+        "nombre_modulo": "Flujo del Proceso",
+        "subsistema": "RECA",
+        "descripcion": "Permite administrar el flujo bpmn de los procesos generados en recaudo.",
+        "ruta_formulario": "/#/app/recaudo/flujo_proceso",
+        "nombre_icono": "test",
+        "id_menu": 65
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 104,
+    "fields": {
+        "nombre_modulo": "Gestión de Cartera",
+        "subsistema": "RECA",
+        "descripcion": "Permite cambiar de estado la cartera de un deudor.",
+        "ruta_formulario": "/#/app/recaudo/gestion_cartera",
+        "nombre_icono": "test",
+        "id_menu": 59
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 105,
+    "fields": {
+        "nombre_modulo": "Facilidades de Pago",
+        "subsistema": "RECA",
+        "descripcion": "Permite visualizar en detalle las facilidades de pago creadas.",
+        "ruta_formulario": "#/app/recaudo/reportes/facilidad_pago",
+        "nombre_icono": "test",
+        "id_menu": 63
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 106,
+    "fields": {
+        "nombre_modulo": "Listado de Cartera Detallado",
+        "subsistema": "RECA",
+        "descripcion": "Permite visualizar un listado de Cartera detallada",
+        "ruta_formulario": "#/app/recaudo/reportes/cartera_detallada",
+        "nombre_icono": "test",
+        "id_menu": 63
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 107,
+    "fields": {
+        "nombre_modulo": "Cartera Totalizada a Fecha",
+        "subsistema": "RECA",
+        "descripcion": "Permite visualizar un informe de la Cartera totalizadad a una fecha elegida.",
+        "ruta_formulario": "/#/app/recaudo/reportes/cartera_general",
+        "nombre_icono": "test",
+        "id_menu": 63
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 108,
+    "fields": {
+        "nombre_modulo": "Vehículos Arrendados",
+        "subsistema": "ALMA",
+        "descripcion": "Permite administrar los vehículos arrendados con que cuenta la entidad.",
+        "ruta_formulario": "/#/app/almacen/administracion_vehiculo/arriendo_vehiculos",
+        "nombre_icono": "test",
+        "id_menu": 31
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 109,
+    "fields": {
+        "nombre_modulo": "Configuración de la Entidad",
+        "subsistema": "TRSV",
+        "descripcion": "Permite configurar los valores básicos de la entidad requeridos para la operación del sistema.",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 4
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 110,
+    "fields": {
+        "nombre_modulo": "Contenido Programático PORH",
+        "subsistema": "RECU",
+        "descripcion": "Permite registrar el contenido programático a Planes de Ordenamiento de Recurso Hídrico",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 46
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 111,
+    "fields": {
+        "nombre_modulo": "Registro de Avances de Proyectos",
+        "subsistema": "RECU",
+        "descripcion": "Permite registrar los avances a los proyectos pertenecientes a los programas de los PORH",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 46
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 112,
+    "fields": {
+        "nombre_modulo": "Configuración de Alertas de Recurso Hídrico",
+        "subsistema": "RECU",
+        "descripcion": "Permite configurar las Alertas disponbiles para el subsistema de Recurso Hídrico",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 8
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 113,
+    "fields": {
+        "nombre_modulo": "Sucursales de la Entidad",
+        "subsistema": "TRSV",
+        "descripcion": "Permite administrar las sucursales con que cuenta la entidad usuaria del software.",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 4
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 114,
+    "fields": {
+        "nombre_modulo": "Traslado Masivo de Unidades por Entidad (previo)",
+        "subsistema": "TRSV",
+        "descripcion": "Permite realizar un cambio masivo de las unidades organizacionales a las que pertenecen los colaboradores de la entidad antes y después de activar un nuevo organigrama",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 3
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 115,
+    "fields": {
+        "nombre_modulo": "Traslado Masivo de Unidad a Unidad",
+        "subsistema": "TRSV",
+        "descripcion": "Permite realizar un cambio masivo de unidades organizacionales a las que pertenecen los colaboradores de la entidad, de una unidad en particular, después de activar un nuevo organigrama",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 3
+    }
+}
+]

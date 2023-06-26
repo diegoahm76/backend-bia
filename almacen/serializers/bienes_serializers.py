@@ -172,6 +172,10 @@ class SerializerUpdateItemEntradaActivosFijos(serializers.ModelSerializer):
 
 
 class ItemEntradaSerializer(serializers.ModelSerializer):
+    codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
+    unidad_medida = serializers.ReadOnlyField(source='id_unidad_medida.abreviatura',default=None)
+    
     class Meta:
         model= ItemEntradaAlmacen
         fields = '__all__'

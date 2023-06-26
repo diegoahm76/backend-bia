@@ -7,7 +7,6 @@ from .models import (
     HistoricoDireccion,
     Personas,
     HistoricoEmails,
-    SucursalesEmpresas,
     ApoderadoPersona,
     TipoDocumento,
     ClasesTercero,
@@ -108,17 +107,6 @@ class HistoricoEmailsAdmin(admin.ModelAdmin):
         'cod_pais_exterior',
     )
 
-
-@admin.register(SucursalesEmpresas)
-class SucursalesEmpresasAdmin(admin.ModelAdmin):
-    list_display = ('id_persona_empresa','sucursal','email_sucursal', 'telefono_sucursal', 'es_principal',)
-    list_display_links = list_display
-    search_fields = (
-        'sucursal',
-        'direccion',
-        'telefono_sucursal',
-    )
-    
     
 @admin.register(ApoderadoPersona)
 class ApoderadoPersonaAdmin(admin.ModelAdmin):

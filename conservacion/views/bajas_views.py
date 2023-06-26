@@ -21,9 +21,9 @@ from conservacion.models.viveros_models import (
 )
 from conservacion.serializers.bajas_serializers import (
     BajasViveroPostSerializer,
+    ItemsBajasViveroGetSerializer,
     ItemsBajasViveroPostSerializer,
     ViveroBajasSerializer,
-    CatalogoBienesBajasSerializer,
     CatalogoBienesSerializerBusquedaAvanzada,
     ItemsBajasActualizarViveroPostSerializer,
     GetBajaByNumeroSerializer
@@ -105,20 +105,20 @@ class CreateBajasVivero(generics.UpdateAPIView):
                 raise ValidationError ('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) +  'no tiene registros en el inventario del vivero')
             
             # SE VALIDA QUE EL NÚMERO DE POSICIÓN SEA ÚNICO
-            if i['id_bien'] in aux_valores_repetidos:
+            if int(i['id_bien']) in aux_valores_repetidos:
                 raise ValidationError ('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' No se puede ingresar dos veces un mismo bien dentro de una solicitud')
             
             # SE VALIDA QUE EL NÚMERO DE POSICIÓN SEA ÚNICO
-            if i['nro_posicion'] in aux_nro_posicion:
+            if int(i['nro_posicion']) in aux_nro_posicion:
                 raise ValidationError ('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene un número de posición que ya existe')
             
             # SE VALIDA QUE LA CANTIDAD DEL BIEN A DAR DE BAJA SEA MAYOR QUE CERO
-            if i['cantidad_baja'] <= 0:
+            if int(i['cantidad_baja']) <= 0:
                 raise ValidationError ('El bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' tiene como cantidad de baja cero, la cantidad debe ser mayor que cero')
             
             # SE VALIDA QUE HAYA SALDO DISPONIBLE
             saldo_disponible = UtilConservacion.get_cantidad_disponible_F(instancia_bien, instancia_bien_vivero) 
-            if i['cantidad_baja'] > saldo_disponible:
+            if int(i['cantidad_baja']) > saldo_disponible:
                 raise ValidationError ('En el bien ' + str(instancia_bien.nombre) + ' con número de posición ' + str(i['nro_posicion']) + ' no tiene saldo disponible para suplir la cantidad de bajas ingresada')
             
             # SE GUARDAN EL NÚMERO DE POSICIÓN Y EL ID DE BIEN EN LISTAS PARA VALIDAR SI SE REPITEN
@@ -416,7 +416,7 @@ class GetVivero(generics.ListAPIView):
         return Response({'succes':True, 'detail':'Ok', 'data':serializer.data}, status=status.HTTP_200_OK)
 
 class GetBienesBajas(generics.ListAPIView):
-    serializer_class = CatalogoBienesBajasSerializer
+    serializer_class = CatalogoBienesSerializerBusquedaAvanzada
     queryset = InventarioViveros.objects.all()
     permission_classes = [IsAuthenticated]
     
@@ -440,6 +440,8 @@ class GetBienesBajas(generics.ListAPIView):
         if saldo_disponible <= 0:
             raise ValidationError ('El bien ' + str(instancia_bien.nombre) + ', no cuenta con saldo disponible para realizar bajas.')
         
+        instancia_bien.saldo_disponible = saldo_disponible
+        
         serializer = self.serializer_class(instancia_bien, many=False)
         
         return Response({'succes':True, 'detail':'Ok', 'data':serializer.data}, status=status.HTTP_200_OK)
@@ -458,20 +460,26 @@ class BusquedaAvanzadaBienesBajas(generics.ListAPIView):
         for key, value in request.query_params.items():
             if key in ['cod_tipo_elemento_vivero', 'nombre', 'codigo_bien']:
                 if key != 'cod_tipo_elemento_vivero':
-                    filter[key + '__icontains'] = value
+                    if value != '':
+                        filter[key + '__icontains'] = value
+                        if value == 'MV':
+                            filter['es_semilla_vivero'] = True
                 else:
-                    filter[key] = value
+                    if value != '':
+                        filter[key] = value
                     
         resultados_busqueda = CatalogoBienes.objects.filter(**filter)
+        resultados_posibles = []
         
         # SE LE AGRAGA EL SALDO DISPONIBLE AL RESULTADO DE BUSQUEDA
         for i in resultados_busqueda:
-            instancia_bien_vivero = InventarioViveros.objects.filter(id_bien=i.id_bien,id_vivero=vivero_origen).first()
-            if not instancia_bien_vivero:
-                raise ValidationError ('El bien que intenta seleccionar no tiene registros en el inventario del vivero.')
-            i.saldo_disponible = UtilConservacion.get_cantidad_disponible_F(i, instancia_bien_vivero) 
+            instancia_bien_vivero = InventarioViveros.objects.filter(id_bien=i.id_bien,id_vivero=int(vivero_origen)).first()
+            if instancia_bien_vivero:
+                # raise ValidationError ('El bien que intenta seleccionar no tiene registros en el inventario del vivero.')
+                i.saldo_disponible = UtilConservacion.get_cantidad_disponible_F(i, instancia_bien_vivero)
+                resultados_posibles.append(i)
                 
-        serializer = self.serializer_class(resultados_busqueda, many=True)
+        serializer = self.serializer_class(resultados_posibles, many=True)
         
         return Response({'succes':True, 'detail':'Ok', 'data':serializer.data}, status=status.HTTP_200_OK)
 
@@ -482,17 +490,42 @@ class GetBajasParaAnulacionPorNumeroBaja(generics.ListAPIView):
     
     def get(self, request, nro_baja):
         queryset = self.queryset.all()
-        resultado_busqueda = queryset.filter(nro_baja_por_tipo=nro_baja).first()
+        resultado_busqueda = queryset.filter(nro_baja_por_tipo=nro_baja, tipo_baja='B').first()
         
         if not resultado_busqueda:
-            raise ValidationError ('No se encontró ninguna baja de insumos, herramientas y semillas con el número que ingresó')
-        if resultado_busqueda.tipo_baja != 'B':
-            raise ValidationError ('En este módulo solo se pueden anular bajas para insumos, herramientas y semillas.')
+            raise ValidationError('No se encontró ninguna baja de insumos, herramientas y semillas con el número que ingresó')
+        
         ultimo_nro_baja = queryset.filter(tipo_baja='B', ).order_by('nro_baja_por_tipo').last()
         # SE OBTIENE LA ÚLTIMA BAJA REGISTRADA Y SE CONTRASTA CON EL NRO DE BAJA INGRESADO
         if ultimo_nro_baja.nro_baja_por_tipo != resultado_busqueda.nro_baja_por_tipo:
             raise ValidationError ('Solo se puede anular la última baja registrada.')
         
-        serializer = self.serializer_class(resultado_busqueda, many=False)
+        serializer = self.serializer_class(resultado_busqueda, many=False, context = {'request':request})
         
         return Response({'succes':True, 'detail':'Ok', 'data':serializer.data}, status=status.HTTP_200_OK)
+    
+class GetBajasPorFiltro(generics.ListAPIView):
+    serializer_class = GetBajaByNumeroSerializer
+    queryset = BajasVivero.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        nro_baja = request.query_params.get('nro_baja', '')
+        print(nro_baja)
+        resultado_busqueda = self.queryset.filter(nro_baja_por_tipo__icontains=nro_baja, tipo_baja='B').order_by('nro_baja_por_tipo')
+        
+        serializer = self.serializer_class(resultado_busqueda, many=True, context = {'request':request})
+        
+        return Response({'succes':True, 'detail':'Se encontraron las siguientes coincidencias', 'data':serializer.data}, status=status.HTTP_200_OK)
+    
+class GetItemsByBaja(generics.ListAPIView):
+    serializer_class = ItemsBajasViveroGetSerializer
+    queryset = ItemsBajasVivero.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_baja):
+        resultado_busqueda = self.queryset.filter(id_baja=id_baja, id_baja__tipo_baja='B')
+        
+        serializer = self.serializer_class(resultado_busqueda, many=True)
+        
+        return Response({'succes':True, 'detail':'Se encontraron los siguientes items para la baja ingresada', 'data':serializer.data}, status=status.HTTP_200_OK)

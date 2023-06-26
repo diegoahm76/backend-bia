@@ -18,8 +18,6 @@ class Garantias(models.Model):
     id_rol = models.ForeignKey(RolesGarantias, on_delete=models.CASCADE, db_column='T424id_rol')
     id_bien = models.ForeignKey(Bienes, on_delete=models.CASCADE, db_column='T424id_bien')
     valor = models.DecimalField(max_digits=30, decimal_places=2, db_column='T424valor')
-    documento_garantia = models.FileField(db_column='T424documento_garantia')
-    documento_enajenacion = models.FileField(db_column='T424documento_enajenacion')
 
     class Meta:
         db_table = 'T424garantias'

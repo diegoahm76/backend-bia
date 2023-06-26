@@ -26,22 +26,16 @@ class GetRolesByUser(ListAPIView):
             queryset = queryset.filter(id_usuario = query)
             return queryset
         except:
-            return [] 
+            return []
+        
 class GetUsersByRol(ListAPIView):
     serializer_class = UsuarioRolesLookSerializers
-    def get_queryset(self):
-        try:
-            queryset = UsuariosRol.objects.all()
-            query = self.request.query_params.get('keyword')
-            if query == None:
-                query = ''
-            queryset = queryset.filter(
-                Q(id_rol = query)
-            )
-            return queryset
-        except:
-            return []
-
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_rol):
+        queryset = UsuariosRol.objects.filter(id_rol=id_rol)
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success':True, 'detail':'Se encontraron los siguientes usuarios por el rol elegido', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
 class GetRolById(RetrieveAPIView):
@@ -83,7 +77,7 @@ class DeleteUserRol(DestroyAPIView):
         if id_usuarios_rol:
             id_usuarios_rol.delete()
             usuario = request.user.id_usuario
-            descripcion =  {"id_usuarios_rol" : str(pk), "Usuario" : str(id_usuarios_rol.id_usuario.nombre_de_usuario), "Rol" : str(id_usuarios_rol.id_rol.nombre_rol)}
+            descripcion =  {"IdUsuariosRol" : str(pk), "NombreUsuario" : str(id_usuarios_rol.id_usuario.nombre_de_usuario), "Rol" : str(id_usuarios_rol.id_rol.nombre_rol)}
             dirip = Util.get_client_ip(request)
         
             auditoria_data = {
@@ -167,29 +161,54 @@ def registerRol(request):
         message = {'detail': ''}
         return Response(message, status=status.HTTP_400_BAD_REQUEST)
 
+# class UpdateRol(RetrieveUpdateAPIView):
+#     queryset=Roles.objects.all()
+#     permission_classes = [IsAuthenticated, PermisoActualizarRoles]
+#     serializer_class=RolesSerializer
+
+#     def put(self, request, pk):
+#         usuario_rol = UsuariosRol.objects.filter(id_rol=pk).first()
+        
+#         if usuario_rol:
+#             raise PermissionDenied('No puede actualizar el rol porque ya está asignado a un usuario')
+#         else:
+#             rol = Roles.objects.filter(id_rol=pk).first()
+            
+#             if rol:
+#                 if rol.Rol_sistema == False:
+#                     serializer = self.serializer_class(rol, data=request.data, many=False)
+#                     serializer.is_valid(raise_exception=True)
+#                     serializer.save()
+#                     return Response({'success':True, 'detail':'El rol fue actualizado'},status=status.HTTP_201_CREATED)
+#                 else:
+#                     raise PermissionDenied('No se puede actualizar un rol precargado')
+#             else:
+#                 raise NotFound('No existe el rol ingresado')
+            
+
 class UpdateRol(RetrieveUpdateAPIView):
     queryset=Roles.objects.all()
     permission_classes = [IsAuthenticated, PermisoActualizarRoles]
     serializer_class=RolesSerializer
 
     def put(self, request, pk):
-        usuario_rol = UsuariosRol.objects.filter(id_rol=pk).first()
+        # usuario_rol = UsuariosRol.objects.filter(id_rol=pk).first()
         
-        if usuario_rol:
-            raise PermissionDenied('No puede actualizar el rol porque ya está asignado a un usuario')
-        else:
-            rol = Roles.objects.filter(id_rol=pk).first()
-            
-            if rol:
-                if rol.Rol_sistema == False:
-                    serializer = self.serializer_class(rol, data=request.data, many=False)
-                    serializer.is_valid(raise_exception=True)
-                    serializer.save()
-                    return Response({'success':True, 'detail':'El rol fue actualizado'},status=status.HTTP_201_CREATED)
-                else:
-                    raise PermissionDenied('No se puede actualizar un rol precargado')
+        # if usuario_rol:
+        #     raise PermissionDenied('No puede actualizar el rol porque ya está asignado a un usuario')
+        # else:
+        rol = Roles.objects.filter(id_rol=pk).first()
+        
+        if rol:
+            if rol.Rol_sistema == False:
+                serializer = self.serializer_class(rol, data=request.data, many=False)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                return Response({'success':True, 'detail':'El rol fue actualizado'},status=status.HTTP_201_CREATED)
             else:
-                raise NotFound('No existe el rol ingresado')
+                raise PermissionDenied('No se puede actualizar un rol precargado')
+        else:
+            raise NotFound('No existe el rol ingresado')
             
 
 class GetRolesByIdPersona(generics.ListAPIView):

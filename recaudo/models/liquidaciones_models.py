@@ -6,7 +6,7 @@ class Deudores(models.Model):
     codigo = models.AutoField(primary_key=True, db_column='T410codigo')
     identificacion = models.CharField(max_length=255, db_column='T410identificacion')
     nombres = models.CharField(max_length=255, db_column='T410nombres')
-    apellidos = models.CharField(max_length=255, db_column='T410apellidos')
+    apellidos = models.CharField(null=True, blank=True, max_length=255, db_column='T410apellidos')
     telefono = models.CharField(max_length=255, db_column='T410telefono')
     email = models.CharField(max_length=255, db_column='T410email')
     ubicacion_id = models.ForeignKey(Ubicaciones, on_delete=models.CASCADE, db_column='T410ubicacion_id')
@@ -20,10 +20,11 @@ class Deudores(models.Model):
 
 class Expedientes(models.Model):
     id = models.AutoField(primary_key=True, db_column='T407id')
-    codigo_expediente = models.IntegerField(db_column='T407codigo_expediente')
+    codigo_expediente = models.CharField(max_length=255, db_column='T407codigo_expediente')
     cod_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T407cod_deudor')
     numero_resolucion = models.CharField(max_length=255, db_column='T407resolucion')
-
+    cod_auto = models.CharField(max_length=255, db_column='T407auto')
+    cod_recurso = models.CharField(max_length=255, db_column='T407recurso')
     class Meta:
         db_table = 'T407expedientes'
         verbose_name = 'Expediente'

@@ -120,10 +120,26 @@ class UserPutAdminSerializer(serializers.ModelSerializer):
         fields = ['is_active', 'is_blocked', 'tipo_usuario', 'profile_img', 'justificacion']
 
 class UsuarioRolesLookSerializers(serializers.ModelSerializer):
-    id_usuario = UserSerializer(read_only=True)
+    nombre_usuario = serializers.ReadOnlyField(source='id_usuario.nombre_de_usuario', default=None)
+    id_persona = serializers.ReadOnlyField(source='id_usuario.persona.id_persona', default=None)
+    nombre_persona = serializers.SerializerMethodField()
+    
+    def get_nombre_persona(self, obj):
+        nombre_persona = None
+        if obj.id_usuario:
+            if obj.id_usuario.persona:
+                if obj.id_usuario.persona.tipo_persona == 'N':
+                    nombre_list = [obj.id_usuario.persona.primer_nombre, obj.id_usuario.persona.segundo_nombre,
+                                   obj.id_usuario.persona.primer_apellido, obj.id_usuario.persona.segundo_apellido]
+                    nombre_persona = ' '.join(item for item in nombre_list if item is not None)
+                    nombre_persona = nombre_persona if nombre_persona != "" else None
+                else:
+                    nombre_persona = obj.id_usuario.persona.razon_social
+        return nombre_persona
+    
     class Meta:
         model=UsuariosRol
-        fields='__all__'
+        fields=['id_rol', 'id_usuario', 'nombre_usuario', 'id_persona', 'nombre_persona']
         
 class RolesSerializers(serializers.ModelSerializer):
     nombre_rol = serializers.ReadOnlyField(source='id_rol.nombre_rol', default=None)
@@ -137,16 +153,14 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("El nombre de usuario solo debe tener caracteres alfanumericos")
         if " " in value:
             raise serializers.ValidationError("No puede contener espacios en el nombre de usuario")
+        
+        value = str(value).lower()
+        
         return value
     
     def validate_persona(self, value):
         if not value.email:
             raise serializers.ValidationError("La persona no tiene un correo electrónico de notificación asociado, debe acercarse a Cormacarena y realizar una actualizacion de datos para proceder con la creación del usuario en el sistema")
-        return value
-    
-    def validate_nombre_usuario(self, value):
-        if not value.isalnum():
-            raise serializers.ValidationError("El Nombre de usuario solo debe tener caracteres alfanumericos")
         return value
     
     class Meta:
@@ -171,6 +185,9 @@ class RegisterExternoSerializer(serializers.ModelSerializer):
         # redirect_url=attrs.get('redirect_url','')
         if not nombre_de_usuario.isalnum():
             raise serializers.ValidationError("El Nombre de usuario solo debe tener caracteres alfanumericos")
+        
+        attrs['nombre_de_usuario'] = str(attrs['nombre_de_usuario']).lower()
+        
         return attrs
     
     def create(self, validated_data):
@@ -223,7 +240,7 @@ class LoginSerializer(serializers.ModelSerializer):
         fields= ['email', 'password', 'nombre_de_usuario', 'nombre', 'tokens', 'is_superuser', 'id_usuario', 'tipo_usuario', 'id_persona', 'tipo_persona', 'id_unidad_organizacional_actual', 'nombre_unidad_organizacional', 'activated_at', 'profile_img', 'permisos', 'representante_legal']
     
     def validate(self, attrs):
-        nombre_de_usuario = attrs.get('nombre_de_usuario', '')
+        nombre_de_usuario = attrs.get('nombre_de_usuario', '').lower()
         password = attrs.get('password', '')
         user= auth.authenticate(nombre_de_usuario=nombre_de_usuario, password=password)
         tokens = None

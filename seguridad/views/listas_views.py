@@ -2,7 +2,7 @@ from django.db.models import F
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from seguridad.models import Municipio, Departamento, Paises
+from seguridad.models import EstadoCivil, Municipio, Departamento, Paises, TipoDocumento
 from rest_framework.permissions import IsAuthenticated
 from seguridad.serializers.listas_serializers import (
     MunicipiosSerializer,
@@ -27,10 +27,12 @@ from seguridad.lists.municipios_list import municipios_LIST
 from seguridad.lists.paises_list import paises_LIST
 from seguridad.lists.cod_naturaleza_empresa_list import cod_naturaleza_empresa_LIST
 
-class GetListTipoDocumento(APIView):
+class GetListTipoDocumento(generics.ListAPIView):
+    queryset = TipoDocumento.objects.all()
+    
     def get(self, request):
-        return Response({'success':True, 'detail':'Los tipos de documento son los siguientes', 'data': tipo_documento_LIST}, status=status.HTTP_200_OK)
-
+        tipos_documento = self.queryset.filter(activo=True).values(value=F('cod_tipo_documento'), label=F('nombre'))
+        return Response({'success':True, 'detail':'Los tipos de documento son los siguientes', 'data': tipos_documento}, status=status.HTTP_200_OK)
 
 class GetListTipoPersona(APIView):
     def get(self, request):
@@ -48,9 +50,12 @@ class GetLisCodPermiso(APIView):
     def get(self, request):
         return Response({'success':True, 'detail':'Los tipos de codigo permiso son los siguientes', 'data': cod_permiso_LIST}, status=status.HTTP_200_OK)
     
-class GetLisEstadoCivil(APIView):
+class GetLisEstadoCivil(generics.ListAPIView):
+    queryset = EstadoCivil.objects.all()
+    
     def get(self, request):
-        return Response({'success':True, 'detail':'Los tipos de estado civil son los siguientes', 'data': estado_civil_LIST}, status=status.HTTP_200_OK) 
+        estados_civil = self.queryset.filter(activo=True).values(value=F('cod_estado_civil'), label=F('nombre'))
+        return Response({'success':True, 'detail':'Los tipos de estado civil son los siguientes', 'data': estados_civil}, status=status.HTTP_200_OK) 
 
 class GetLisOpcUsuario(APIView):
     def get(self, request):
