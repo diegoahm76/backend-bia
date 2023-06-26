@@ -126,7 +126,7 @@
         "nombre_modulo": "Marcas",
         "subsistema": "ALMA",
         "descripcion": "Permite administrar la información básica de las Marcas de artículos activos fijos",
-        "ruta_formulario": "/#/app/almacen/configuracion/crear_marca_porcentaje_medida",
+        "ruta_formulario": "/#/app/almacen/configuracion/crear_marca",
         "nombre_icono": "test",
         "id_menu": 44
     }
@@ -150,7 +150,7 @@
         "nombre_modulo": "Porcentajes de IVA",
         "subsistema": "ALMA",
         "descripcion": "Permite administrar la información básica de los porcentajes de IVA que manejará el sistema",
-        "ruta_formulario": "/#/app/almacen/configuracion/crear_marca_porcentaje_medida",
+        "ruta_formulario": "/#/app/almacen/configuracion/crear_marca_\nporcentajes",
         "nombre_icono": "test",
         "id_menu": 44
     }
@@ -162,7 +162,7 @@
         "nombre_modulo": "Unidades de Medida",
         "subsistema": "ALMA",
         "descripcion": "Permite administrar la información básica de las unidades de medida que manejará el sistema",
-        "ruta_formulario": "/#/app/almacen/configuracion/crear_marca_porcentaje_medida",
+        "ruta_formulario": "/#/app/almacen/configuracion/crear_marca_unidad_medida",
         "nombre_icono": "test",
         "id_menu": 44
     }
@@ -510,7 +510,7 @@
         "nombre_modulo": "Despacho de Bienes de Consumo",
         "subsistema": "ALMA",
         "descripcion": "Permite a Almacén despachar los bienes de consumo de la entidad basados en una solicitud",
-        "ruta_formulario": "/#/app/almacen/gestion_inventario/movimientos/respuesta_solicitudes/despacho_bienes_consumo",
+        "ruta_formulario": "/#/app/almacen/despacho_solicitud_aprobada",
         "nombre_icono": "test",
         "id_menu": 33
     }
@@ -690,7 +690,7 @@
         "nombre_modulo": "Solicitudes de Plantas e Insumos a Viveros",
         "subsistema": "CONS",
         "descripcion": "Permite registrar las solicitudes de Plantas e Insumos a un Vivero determinado",
-        "ruta_formulario": "/#/app/conservacion/solicitud_material/plantas_insumos",
+        "ruta_formulario": "/#/app/conservacion/solicitud_material/solicitudes",
         "nombre_icono": "test",
         "id_menu": 23
     }
@@ -716,7 +716,7 @@
         "descripcion": "Permite consultar las solicitudes realizadas a viveros pendientes de aprobación",
         "ruta_formulario": "/#/app/conservacion/solicitud_material/funcionario/solicitudes_pendientes",
         "nombre_icono": "test",
-        "id_menu": 23
+        "id_menu": null
     }
 },
 {
@@ -740,7 +740,7 @@
         "descripcion": "Permite consultar las solicitudes realizadas a viveros pendientes de aprobación ya aprobadas por funcionario responsable",
         "ruta_formulario": "/#/app/conservacion/solicitud_material/coordinador/solicitudes_pendientes",
         "nombre_icono": "test",
-        "id_menu": 23
+        "id_menu": null
     }
 },
 {
@@ -776,7 +776,7 @@
         "descripcion": "Permite despachar elementos desde viveros en base a una solicitud",
         "ruta_formulario": "/#/app/conservacion/distribucion/despacho",
         "nombre_icono": "test",
-        "id_menu": 24
+        "id_menu": null
     }
 },
 {
@@ -786,7 +786,7 @@
         "nombre_modulo": "Responsables de Viveros",
         "subsistema": "CONS",
         "descripcion": "Permite configurar los responsables de cada vivero en la entidad",
-        "ruta_formulario": "/#/app/conservacion/solicitud-material/responsable_viveros",
+        "ruta_formulario": "/#/app/conservacion/gestor_vivero/viverista",
         "nombre_icono": "test",
         "id_menu": 20
     }
