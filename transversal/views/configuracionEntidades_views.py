@@ -24,7 +24,7 @@ class GetConfiguracionEntidadByID(generics.GenericAPIView):
         serializer = self.serializer_class(confEntidad,many=True)
         
         if not confEntidad:
-            raise ValidationError("El registro de configuracion  que busca no existe")
+            raise NotFound("El registro de configuracion  que busca no existe")
         
         return Response({'success':True,'detail':"Se encontro el siguiente registro.",'data':serializer.data},status=status.HTTP_200_OK)
             
