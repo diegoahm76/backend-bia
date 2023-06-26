@@ -462,6 +462,8 @@ class BusquedaAvanzadaBienesBajas(generics.ListAPIView):
                 if key != 'cod_tipo_elemento_vivero':
                     if value != '':
                         filter[key + '__icontains'] = value
+                        if value == 'MV':
+                            filter['es_semilla_vivero'] = True
                 else:
                     if value != '':
                         filter[key] = value
@@ -488,12 +490,11 @@ class GetBajasParaAnulacionPorNumeroBaja(generics.ListAPIView):
     
     def get(self, request, nro_baja):
         queryset = self.queryset.all()
-        resultado_busqueda = queryset.filter(nro_baja_por_tipo=nro_baja).first()
+        resultado_busqueda = queryset.filter(nro_baja_por_tipo=nro_baja, tipo_baja='B').first()
         
         if not resultado_busqueda:
-            raise ValidationError ('No se encontró ninguna baja de insumos, herramientas y semillas con el número que ingresó')
-        if resultado_busqueda.tipo_baja != 'B':
-            raise ValidationError ('En este módulo solo se pueden anular bajas para insumos, herramientas y semillas.')
+            raise ValidationError('No se encontró ninguna baja de insumos, herramientas y semillas con el número que ingresó')
+        
         ultimo_nro_baja = queryset.filter(tipo_baja='B', ).order_by('nro_baja_por_tipo').last()
         # SE OBTIENE LA ÚLTIMA BAJA REGISTRADA Y SE CONTRASTA CON EL NRO DE BAJA INGRESADO
         if ultimo_nro_baja.nro_baja_por_tipo != resultado_busqueda.nro_baja_por_tipo:

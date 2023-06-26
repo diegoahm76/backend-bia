@@ -43,7 +43,6 @@ class ReporteCarteraGeneralDetalleView(generics.ListAPIView):
 
     def get(self, request, *args, **kwargs):
         queryset = Cartera.objects.all()
-        
         codigo_contable = request.GET.get('codigo_contable')
         nombre_deudor = request.GET.get('nombre_deudor')
 
