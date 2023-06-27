@@ -15,7 +15,8 @@ from recaudo.models.cobros_models import (
     DetalleDocumentosCobro,
     Deudores,
     Obligaciones,
-    Cartera
+    Cartera,
+    ConceptoContable
 )
 
 from recaudo.models.garantias_models import (
@@ -69,6 +70,7 @@ admin.site.register(Deudores),
 admin.site.register(Expedientes),
 admin.site.register(Obligaciones),
 admin.site.register(Cartera),
+admin.site.register(ConceptoContable),
 
 #Garantias
 admin.site.register(RolesGarantias),
