@@ -809,8 +809,8 @@ class UpdateCatalogoUnidad(generics.UpdateAPIView):
                 }
             
             if cat_unidad_actual_eliminar.id_catalogo_serie.id_subserie_doc:
-                descripcion_registros_creados["NombreSubSerie"]=str(cat_unidad_actual_eliminar.id_catalogo_serie.id_subserie_doc.nombre)
-                descripcion_registros_creados["CodigoSubSerie"]=str(cat_unidad_actual_eliminar.id_catalogo_serie.id_subserie_doc.codigo)
+                descripcion_registros_eliminados["NombreSubSerie"]=str(cat_unidad_actual_eliminar.id_catalogo_serie.id_subserie_doc.nombre)
+                descripcion_registros_eliminados["CodigoSubSerie"]=str(cat_unidad_actual_eliminar.id_catalogo_serie.id_subserie_doc.codigo)
             
             valores_eliminados_detalles.append(descripcion_registros_eliminados) #para insertar en una lista
             
