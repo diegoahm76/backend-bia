@@ -150,6 +150,7 @@ class ActualizarEtapaProceso(generics.ListAPIView):
                     id_cartera=procesoActual.id_cartera,
                     id_etapa=flujo_nuevo.id_etapa_destino,
                     id_funcionario=procesoActual.id_funcionario,
+                    id_categoria=procesoActual.id_categoria,
                     inicio=datetime.date.today()
                 )
                 proceso_nuevo.save()
