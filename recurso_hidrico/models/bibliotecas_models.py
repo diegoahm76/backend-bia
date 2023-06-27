@@ -33,3 +33,21 @@ class Subsecciones(models.Model):
         verbose_name = 'subseccion'
         verbose_name_plural = 'subsecciones'
         unique_together = ['id_seccion', 'nombre']
+
+
+class Instrumentos(models.Model):
+    id_instrumento = models.AutoField(primary_key=True, db_column='T607IdInstrumento')
+    nombre = models.CharField(max_length=255, db_column='T607nombre')
+    id_seccion = models.ForeignKey(Secciones, on_delete=models.CASCADE, db_column='T607Id_Seccion')
+    id_subseccion = models.ForeignKey(Subsecciones, on_delete=models.CASCADE, db_column='T607Id_Subseccion', related_name='instrumentos')
+    id_resolucion = models.IntegerField(blank=True, null=True, db_column='T607Id_Resolucion')#falta la tabla resolucion
+    id_persona_registra = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T607Id_PersonaRegistra')
+    fecha_registro = models.DateTimeField(db_column='T607fechaRegistro')
+    fecha_creacion_instrumento = models.DateTimeField(auto_now=True,db_column='T607fechaCreacionInstrumento')
+    fecha_fin_vigencia = models.DateTimeField(blank=True, null=True, db_column='T607fechaFinVigencia')
+    
+    class Meta:
+        db_table = 'T607Instrumentos'
+        verbose_name = 'instrumento'
+        verbose_name_plural='instrumentos'
+        unique_together = ('nombre', 'id_subseccion',)

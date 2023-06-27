@@ -2,7 +2,7 @@ from rest_framework import serializers
 from unittest.util import _MAX_LENGTH
 from wsgiref.validate import validator
 
-from recurso_hidrico.models.bibliotecas_models import Secciones,Subsecciones
+from recurso_hidrico.models.bibliotecas_models import Instrumentos, Secciones,Subsecciones
 from seguridad.models import Personas
 
 
@@ -88,4 +88,20 @@ class SeccionSerializer(serializers.ModelSerializer):
         primer_apellido = obj.id_persona_creada.primer_apellido
         return f'{primer_nombre} {primer_apellido}'
 
+class InstrumentosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Instrumentos
+        fields = ['id_instrumento', 'nombre', 'id_seccion', 'id_subseccion', 'id_resolucion', 'id_persona_registra', 'fecha_registro', 'fecha_creacion_instrumento', 'fecha_fin_vigencia']
+
+
+
+class SubseccionContarInstrumentosSerializer(serializers.ModelSerializer):
+    instrumentos_count = serializers.SerializerMethodField()
+
+    def get_instrumentos_count(self, obj):
+        return obj.instrumentos.count()
+
+    class Meta:
+        model = Subsecciones
+        fields = ['id_subseccion', 'id_seccion', 'nombre', 'descripcion', 'fechaCreacion', 'id_persona_creada', 'instrumentos_count']
 
