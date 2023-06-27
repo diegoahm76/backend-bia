@@ -323,9 +323,9 @@ class CreateDespacho(generics.UpdateAPIView):
             raise NotFound('El número de posición debe ser único')
         
         # SE VALIDA QUE NO TODOS LOS ITEMS TENGAN CANTIDAD IGUAL A CERO
-        validacion_ceros = [i['cantidad_despachada'] for i in items_despacho]
+        validacion_ceros = [i['cantidad_despachada'] for i in items_despacho if i['cantidad_despachada'] == 0]
         
-        if len(set(validacion_ceros)) <= 1 and len(items_despacho)!=1:
+        if len(validacion_ceros) > 0:
             raise NotFound('No todos las cantidades despachadas de los items pueden estar en cero')
         
         # SE VALIDA QUE EL DESPACHO TENGA AL MENOS UN ITEMS
@@ -513,9 +513,9 @@ class UpdatePreparacionMezclas(generics.UpdateAPIView):
             raise NotFound('El número de posición debe ser único')
         
         # SE VALIDA QUE NO TODOS LOS ITEMS TENGAN CANTIDAD IGUAL A CERO
-        validacion_ceros = [i['cantidad_despachada'] for i in items_despacho]
+        validacion_ceros = [i['cantidad_despachada'] for i in items_despacho if i['cantidad_despachada'] == 0]
         
-        if len(set(validacion_ceros)) <= 1 and len(items_despacho)!=1:
+        if len(validacion_ceros) >= 0:
             raise NotFound('No todos las cantidades despachadas de los items pueden estar en cero')
         
         # SE VALIDA QUE EL DESPACHO TENGA AL MENOS UN ITEMS
