@@ -28,7 +28,7 @@ from recaudo.models.base_models import TiposBien
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
 from rest_framework.response import Response
-from datetime import datetime, timedelta, date
+import datetime
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
 
