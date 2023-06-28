@@ -1,6 +1,6 @@
 from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, ItemEntradaAlmacen
 from almacen.serializers.bienes_serializers import CatalogoBienesSerializer
-from almacen.serializers.despachos_serializers import SerializersDespachoConsumo, SerializersItemDespachoConsumo, SerializersSolicitudesConsumibles, SerializersItemsSolicitudConsumible, SearchBienInventarioSerializer
+from almacen.serializers.despachos_serializers import SerializersDespachoConsumo, SerializersDespachoConsumoConItems, SerializersItemDespachoConsumo, SerializersSolicitudesConsumibles, SerializersItemsSolicitudConsumible, SearchBienInventarioSerializer
 from rest_framework import generics,status
 from rest_framework.response import Response
 from seguridad.models import Personas, User
@@ -755,7 +755,7 @@ class SearchSolicitudesAprobadasYAbiertos(generics.ListAPIView):
             raise NotFound('No se encontraron solicitudes') 
         
 class GetDespachoConsumoByNumeroDespacho(generics.ListAPIView):
-    serializer_class= SerializersDespachoConsumo
+    serializer_class= SerializersDespachoConsumoConItems
     queryset=DespachoConsumo.objects.all()
     permission_classes = [IsAuthenticated]
     

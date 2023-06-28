@@ -8,7 +8,7 @@ from rest_framework import status
 from datetime import datetime,date,timedelta
 
 from recurso_hidrico.models.bibliotecas_models import Instrumentos, Secciones,Subsecciones
-from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentosSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionContarInstrumentosSerializer
+from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentosSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionContarInstrumentosSerializer
 from recurso_hidrico.serializers.programas_serializers import EliminarSeccionSerializer
 
 
@@ -50,19 +50,53 @@ class RegistroSeccion(generics.CreateAPIView):
     
     def post(self,request):
         data_in = request.data
-        instancia_seccion = None
+        
        
-        if not data_in['id_seccion']:
-            data_in['registroPrecargado']=False
-            data_in['id_persona_creada']=request.user.persona.id_persona
-            serializer = self.serializer_class(data=data_in)
-            serializer.is_valid(raise_exception=True)
+        data_in['registroPrecargado']=False
+        data_in['id_persona_creada']=request.user.persona.id_persona
+        serializer = self.serializer_class(data=data_in)
+        serializer.is_valid(raise_exception=True)
             
-            instancia_seccion = serializer.save()
+        serializer.save()
         return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+    
+class RegistroSubSeccion(generics.CreateAPIView):
+    serializer_class = RegistrarSubSeccionesSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = Subsecciones.objects.all()
+    
+    def crear_subseccion(self,request,data):
+        instancia_seccion = None
+
+        #data['id_subseccion']=instancia_seccion.id_seccion
+        data['id_persona_creada']=request.user.persona.id_persona
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializador =serializer.save()
+
+        return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+        return 0
 
 
-class RegistroSeccionSubseccion(generics.CreateAPIView):
+    def post(self,request):
+        data_in = request.data
+        instancia_seccion = None
+
+        instancia_seccion = Secciones.objects.filter(id_seccion=data_in['id_seccion']).first()
+    
+        if not instancia_seccion:
+            raise NotFound("La seccion ingresada no existe")
+        
+        data_in['id_subseccion']=instancia_seccion.id_seccion
+        #data_in['id_persona_creada']=request.user.persona.id_persona
+
+        self.crear_subseccion(request,data_in)
+        print("AQUI NO LLEGO")
+
+        #return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+
+
+class RegistroSeccionSubseccionx(generics.CreateAPIView):
     serializer_class = RegistrarSeccionesSerializer
     permission_classes = [IsAuthenticated]
     queryset = Secciones.objects.all()
@@ -102,6 +136,46 @@ class RegistroSeccionSubseccion(generics.CreateAPIView):
 
                           
         return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+
+
+#PRUEBAS MODULAR DE REGISTRO DE SUBSECCION
+
+
+class RegistroSeccionSubseccion(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = RegistrarSeccionesSerializer
+    queryset = Secciones.objects.all()
+
+    def post(self, request):
+        data_in = request.data
+        
+        # Creación de la sección
+        registro_seccion = RegistroSeccion()
+        response_seccion = registro_seccion.post(request)
+        if response_seccion.status_code != status.HTTP_201_CREATED:
+            return response_seccion
+
+
+        instancia_seccion = response_seccion.data.get('data')
+  
+        print(instancia_seccion)
+        
+        # Creación de las subsecciones
+        subsecciones = data_in.get('subsecciones', [])
+        if subsecciones:
+            for subseccion in subsecciones:
+                subseccion_data = {
+                    'id_seccion': instancia_seccion['id_seccion'],
+                    'nombre': subseccion['nombre'],
+                    'descripcion': subseccion['descripcion'],
+                    'id_persona_creada': request.user.persona.id_persona
+                }
+                registro_subseccion = RegistroSubSeccion()
+                response_subseccion = registro_subseccion.crear_subseccion(request,subseccion_data)
+                if response_subseccion.status_code != status.HTTP_201_CREATED:
+                    return response_subseccion
+
+        return Response({'success': True, 'detail': 'Se crearon los registros correctamente', 'data': instancia_seccion}, status=status.HTTP_201_CREATED)
 
 
 class ActualizarSeccion(generics.UpdateAPIView):

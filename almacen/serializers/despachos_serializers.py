@@ -116,3 +116,20 @@ class GetItemOtrosOrigenesSerializers(serializers.ModelSerializer):
     class Meta:
         model=ItemEntradaAlmacen
         fields=('id_bien', 'nombre','tipo_documento','numero_documento','cantidad_por_distribuir','codigo_bien_desp','unidad_medida')
+
+
+class SerializersDespachoConsumoConItems(serializers.ModelSerializer):
+    #nombre = serializers.CharField(validators=[UniqueValidator(queryset=Marcas.objects.all())])
+    items_despacho_consumo = serializers.SerializerMethodField()
+    class Meta:
+        model=DespachoConsumo
+    
+        fields = ('id_despacho_consumo', 'numero_despacho_consumo', 'id_solicitud_consumo', 'numero_solicitud_por_tipo', 'fecha_solicitud', 'fecha_despacho', 'fecha_registro', 'id_persona_despacha', 'motivo', 'id_persona_solicita', 'id_unidad_para_la_que_solicita', 'id_funcionario_responsable_unidad', 'es_despacho_conservacion', 'id_entrada_almacen_cv', 'id_bodega_general', 'despacho_anulado', 'justificacion_anulacion', 'fecha_anulacion', 'id_persona_anula', 'ruta_archivo_doc_con_recibido','items_despacho_consumo')
+        #fields=('__all__')
+
+    
+
+    
+    def get_items_despacho_consumo(self, obj):
+        items = obj.itemdespachoconsumo_set.all()
+        return SerializersItemDespachoConsumo(items, many=True).data

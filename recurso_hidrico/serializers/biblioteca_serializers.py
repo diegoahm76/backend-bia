@@ -30,7 +30,10 @@ class RegistrarSeccionesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Secciones
         fields = '__all__'
-
+class RegistrarSubSeccionesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subsecciones
+        fields = '__all__'
 
 # class GetSubseccionesSerializer(serializers.ModelSerializer):
 #     class Meta:
