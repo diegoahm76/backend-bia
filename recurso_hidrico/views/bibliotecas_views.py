@@ -41,7 +41,28 @@ class GetSubseccionesPorSecciones(generics.ListAPIView):
         return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)
     
 
+
+
 class RegistroSeccion(generics.CreateAPIView):
+    serializer_class = RegistrarSeccionesSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = Secciones.objects.all()
+    
+    def post(self,request):
+        data_in = request.data
+        instancia_seccion = None
+       
+        if not data_in['id_seccion']:
+            data_in['registroPrecargado']=False
+            data_in['id_persona_creada']=request.user.persona.id_persona
+            serializer = self.serializer_class(data=data_in)
+            serializer.is_valid(raise_exception=True)
+            
+            instancia_seccion = serializer.save()
+        return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+
+
+class RegistroSeccionSubseccion(generics.CreateAPIView):
     serializer_class = RegistrarSeccionesSerializer
     permission_classes = [IsAuthenticated]
     queryset = Secciones.objects.all()
