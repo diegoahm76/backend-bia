@@ -1,11 +1,13 @@
 from django.db import models
+from recurso_hidrico.models.bibliotecas_models import Instrumentos
 
 from seguridad.models import Personas
 
 
 class ProgramasPORH(models.Model):
     id_programa = models.AutoField(primary_key=True,editable=False,db_column="T600IdPrograma_PORH")
-    id_instrumento = models.IntegerField(db_column="T600Id_Instrumento_PORH")
+    #id_instrumento = models.IntegerField(db_column="T600Id_Instrumento_PORH")
+    id_instrumento = models.ForeignKey(Instrumentos, on_delete=models.CASCADE, db_column="T600Id_Instrumento_PORH")
     nombre = models.CharField(max_length=255,db_column="T600nombre")
     fecha_creacion = models.DateField(auto_now_add=True,db_column="T600fechaRegistro")
     fecha_inicio = models.DateField(db_column="T600fechaInicio")

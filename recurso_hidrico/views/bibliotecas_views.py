@@ -7,8 +7,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from datetime import datetime,date,timedelta
 
-from recurso_hidrico.models.bibliotecas_models import Secciones,Subsecciones
-from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, GetSeccionesSerializer,GetSubseccionesSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, SeccionSerializer, SeccionesSerializer
+from recurso_hidrico.models.bibliotecas_models import Instrumentos, Secciones,Subsecciones
+from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentosSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionContarInstrumentosSerializer
 from recurso_hidrico.serializers.programas_serializers import EliminarSeccionSerializer
 
 
@@ -36,7 +36,7 @@ class GetSubseccionesPorSecciones(generics.ListAPIView):
         serializer = self.serializer_class(subSeccion,many=True)
         
         if not subSeccion:
-            raise ValidationError("El registro del seccion que busca, no se encuentra subsecciones")
+            raise NotFound("El registro del seccion que busca, no se encuentra subsecciones")
         
         return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)
     
@@ -219,3 +219,37 @@ class EliminarSeccion(generics.DestroyAPIView):
         seccion.delete()
         
         return Response({'success':True,'detail':'Se elimino la Seccion seleccionada.'},status=status.HTTP_200_OK)
+    
+
+class GetSubseccionesContInstrumentos(generics.ListAPIView):
+    queryset = Subsecciones.objects.all()
+    serializer_class = SubseccionContarInstrumentosSerializer
+
+
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        subSeccion = Subsecciones.objects.filter(id_seccion=pk)
+        serializer = self.serializer_class(subSeccion,many=True)
+        
+        if not subSeccion:
+            raise NotFound("No se encuentran subsecciones en la seccion suministrada")
+        
+        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)
+
+
+class GetInstrumentosPorSeccionSubseccion(generics.ListAPIView):
+
+    queryset = Instrumentos.objects.all()
+    serializer_class = InstrumentosSerializer
+    permission_classes = [IsAuthenticated]
+    def get(self,request,pk,sub):
+        seccion = pk
+        idsubseccion = sub
+        subSeccion = Instrumentos.objects.filter(id_seccion=seccion,id_subseccion=idsubseccion)
+        serializer = self.serializer_class(subSeccion,many=True)
+        
+        if not subSeccion:
+            raise NotFound("No se encuentran Instrumentos con este requisito.")
+        
+        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)  

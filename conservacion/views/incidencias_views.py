@@ -695,7 +695,7 @@ class GetIncidenciasByVivero (generics.ListAPIView):
         if not vivero:
             raise ValidationError('No existe el vivero seleccionado')
         
-        incidencias = self.queryset.all().filter(incidencia_anulacion = False,id_viver=vivero.id_vivero)
+        incidencias = self.queryset.all().filter(incidencia_anulacion = False,id_vivero=vivero.id_vivero)
         
         if incidencias:
             

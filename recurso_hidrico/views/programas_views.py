@@ -179,7 +179,7 @@ class GetProgramasporPORH(generics.ListAPIView):
         serializer = self.serializer_class(programa,many=True)
         
         if not programa:
-            raise ValidationError("El registro del programa que busca no existe")
+            raise NotFound("El registro del programa que busca no existe")
         
         return Response({'success':True,'detail':"Se encontro el siguiente registro.",'data':serializer.data},status=status.HTTP_200_OK)
     
@@ -193,7 +193,7 @@ class GetProyectosporProgramas(generics.ListAPIView):
         serializer = self.serializer_class(proyecto,many=True)
         
         if not proyecto:
-            raise ValidationError("El registro del Proyecto que busca, no se encuentra registrado")
+            raise NotFound("El registro del Proyecto que busca, no se encuentra registrado")
         
         return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)
     
@@ -207,7 +207,7 @@ class GetActividadesporProyectos(generics.ListAPIView):
         serializer = self.serializer_class(actividades,many=True)
         
         if not actividades:
-            raise ValidationError('El registro de Actividades que busca, no se encuentra registrado')
+            raise NotFound('El registro de Actividades que busca, no se encuentra registrado')
         
         return Response({'success':True,'detail':'Se encontraron los siguientes registros de actividades.','data':serializer.data},status=status.HTTP_200_OK)
     
@@ -222,7 +222,7 @@ class GetAvanceporProyectos(generics.ListAPIView):
         serializer = self.serializer_class(avances,many=True)
         
         if not avances:
-            raise ValidationError('El registro de avances que busca, no se encuentra registrado')
+            raise NotFound('El registro de avances que busca, no se encuentra registrado')
         
         return Response({'success':True,'detail':'Se encontraron los siguientes registros de avances.','data':serializer.data},status=status.HTTP_200_OK)
   
@@ -261,7 +261,7 @@ class ActualizarPrograma(generics.UpdateAPIView):
             proyecto = ProyectosPORH.objects.filter(id_programa=pk).order_by('vigencia_final').last()
             
             if not programa:
-                raise ValidationError("No se encuentra el Programa que busca para su modificación.")
+                raise NotFound("No se encuentra el Programa que busca para su modificación.")
             
             serializer = self.serializer_class(programa,data=data)
             serializer.is_valid(raise_exception=True)
@@ -305,7 +305,7 @@ class EliminarPrograma(generics.DestroyAPIView):
         proyecto = ProyectosPORH.objects.filter(id_programa=pk).first()
         
         if not programa:
-            raise ValidationError("No existe el programa que desea eliminar.")
+            raise NotFound("No existe el programa que desea eliminar.")
         
         fecha_sistema = datetime.now()        
         
@@ -332,7 +332,7 @@ class ActualizarProyectos(generics.UpdateAPIView):
         programa = ProyectosPORH.objects.filter(id_programa=pk).first()
         
         if not proyecto:
-            raise ValidationError("No se encuentra el Proyecto a modificar.")
+            raise NotFound("No se encuentra el Proyecto a modificar.")
         
         serializer = self.serializer_class(proyecto,data=data)
         serializer.is_valid(raise_exception=True)
@@ -371,7 +371,7 @@ class EliminarProyecto(generics.DestroyAPIView):
         actividad = ActividadesProyectos.objects.filter(id_actividades=pk).first()
         
         if not proyecto:
-            raise ValidationError("No existe el Proyecto a eliminar")
+            raise NotFound("No existe el Proyecto a eliminar")
         
         fecha_sistema = datetime.now()
         
@@ -396,7 +396,7 @@ class ActualizarActividades(generics.UpdateAPIView):
         actividad = ActividadesProyectos.objects.filter(id_actividades=pk).first()
         
         if not actividad:
-            raise ValidationError("No se existe la actividad que trata de Actualizar.")
+            raise NotFound("No se existe la actividad que trata de Actualizar.")
         
         serializer = self.serializer_class(actividad,data=data)
         serializer.is_valid(raise_exception=True)
@@ -415,7 +415,7 @@ class EliminarActividades(generics.DestroyAPIView):
         actividad = ActividadesProyectos.objects.filter(id_actividades=pk).first()
         
         if not actividad:
-            raise ValidationError("No existe la Actividad a eliminar.")
+            raise NotFound("No existe la Actividad a eliminar.")
         
         fecha_sistema = datetime.now()
         
@@ -437,7 +437,7 @@ class RegistroAvance(generics.CreateAPIView):
         proyecto = ProyectosPORH.objects.filter(id_proyecto=id_proyecto).first()
         
         if not proyecto:
-            raise ValidationError("No hay proyecto.")
+            raise NotFound("No hay proyecto.")
         
         archivos =request.FILES.getlist('evidencia')
         
@@ -505,7 +505,7 @@ class RegistroEvidencia(generics.CreateAPIView):
         evidencia = AvancesProyecto.objects.filter(id_avance=id_evidencia).first()
         
         if not evidencia:
-            return ValidationError("No existe el registro al cual se intenta adicionar el registro.")
+            return NotFound("No existe el registro al cual se intenta adicionar el registro.")
         
         data['id_avance'] = id_evidencia
         
