@@ -1,4 +1,5 @@
 import json
+
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from rest_framework import generics
@@ -91,8 +92,7 @@ class RegistroSubSeccion(generics.CreateAPIView):
         #data_in['id_persona_creada']=request.user.persona.id_persona
 
         self.crear_subseccion(request,data_in)
-        print("AQUI NO LLEGO")
-
+        
         #return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
 
 
@@ -147,36 +147,42 @@ class RegistroSeccionSubseccion(generics.CreateAPIView):
     queryset = Secciones.objects.all()
 
     def post(self, request):
-        data_in = request.data
-        
-        # Creación de la sección
-        registro_seccion = RegistroSeccion()
-        response_seccion = registro_seccion.post(request)
-        if response_seccion.status_code != status.HTTP_201_CREATED:
-            return response_seccion
+        try:
+
+            data_in = request.data
+            
+            # Creación de la sección
+            registro_seccion = RegistroSeccion()
+            response_seccion = registro_seccion.post(request)
+            if response_seccion.status_code != status.HTTP_201_CREATED:
+                return response_seccion
 
 
-        instancia_seccion = response_seccion.data.get('data')
-  
-        print(instancia_seccion)
-        
-        # Creación de las subsecciones
-        subsecciones = data_in.get('subsecciones', [])
-        if subsecciones:
-            for subseccion in subsecciones:
-                subseccion_data = {
-                    'id_seccion': instancia_seccion['id_seccion'],
-                    'nombre': subseccion['nombre'],
-                    'descripcion': subseccion['descripcion'],
-                    'id_persona_creada': request.user.persona.id_persona
-                }
-                registro_subseccion = RegistroSubSeccion()
-                response_subseccion = registro_subseccion.crear_subseccion(request,subseccion_data)
-                if response_subseccion.status_code != status.HTTP_201_CREATED:
-                    return response_subseccion
+            instancia_seccion = response_seccion.data.get('data')
+    
+            print(instancia_seccion)
+            
+            # Creación de las subsecciones
+            subsecciones = data_in.get('subsecciones', [])
+            if subsecciones:
+                for subseccion in subsecciones:
+                    subseccion_data = {
+                        'id_seccion': instancia_seccion['id_seccion'],
+                        'nombre': subseccion['nombre'],
+                        'descripcion': subseccion['descripcion'],
+                        'id_persona_creada': request.user.persona.id_persona
+                    }
+                    registro_subseccion = RegistroSubSeccion()
+                    response_subseccion = registro_subseccion.crear_subseccion(request,subseccion_data)
+                    if response_subseccion.status_code != status.HTTP_201_CREATED:
+                        return response_subseccion
 
-        return Response({'success': True, 'detail': 'Se crearon los registros correctamente', 'data': instancia_seccion}, status=status.HTTP_201_CREATED)
-
+            return Response({'success': True, 'detail': 'Se crearon los registros correctamente', 'data': instancia_seccion}, status=status.HTTP_201_CREATED)
+        except ValidationError  as e:
+            
+            #error_message = json.loads(str(e))
+            error_message = {'error': e.detail}
+            return Response(error_message, status=status.HTTP_400_BAD_REQUEST)
 
 class ActualizarSeccion(generics.UpdateAPIView):
     
