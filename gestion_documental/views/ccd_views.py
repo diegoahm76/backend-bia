@@ -797,8 +797,6 @@ class UpdateCatalogoUnidad(generics.UpdateAPIView):
         for cat_unidad in cat_unidad_eliminar:
             cat_unidad_actual_eliminar = cat_unidad_actual.filter(id_unidad_organizacional=cat_unidad['id_unidad_organizacional'], id_catalogo_serie=cat_unidad['id_catalogo_serie']).first() 
             
-            ############
-            descripcion = {'Nombre':ccd.nombre,'Versión':ccd.version}
             descripcion_registros_eliminados = {
                 'NombreUnidadOrg':str(cat_unidad_actual_eliminar.id_unidad_organizacional.nombre), 
                 'CodigoUnidadOrg':str(cat_unidad_actual_eliminar.id_unidad_organizacional.codigo),
@@ -832,8 +830,6 @@ class UpdateCatalogoUnidad(generics.UpdateAPIView):
             cat_unidad_creados = serializador.save()
             
             for cat_unidad in cat_unidad_creados:
-                descripcion = {'Nombre':ccd.nombre,'Versión':ccd.version}
-                
                 descripcion_registros_creados = {
                 'NombreUnidadOrg':str(cat_unidad.id_unidad_organizacional.nombre), 
                 'CodigoUnidadOrg':str(cat_unidad.id_unidad_organizacional.codigo),
@@ -848,7 +844,7 @@ class UpdateCatalogoUnidad(generics.UpdateAPIView):
                 
                 valores_creados_detalles.append(descripcion_registros_creados) #para insertar en una lista
 
-        
+        descripcion = {'Nombre':ccd.nombre,'Versión':ccd.version}
         direccion=Util.get_client_ip(request)
         auditoria_data = {
         "id_usuario" : request.user.id_usuario,

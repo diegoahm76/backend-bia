@@ -130,6 +130,9 @@ class FiltroVisibleBySolicitud(generics.ListAPIView):
         filter['nivel_jerarquico__in'] = nodos
         filter['nro_elemento_bien']=None
         filter['cod_tipo_bien'] = 'C'
+        
+        filter['solicitable_vivero'] = False
+        
         bien_especial=CatalogoBienes.objects.filter(**filter)
         # filter['nivel_jerarquico__in'] = nodos
         filter['visible_solicitudes']= True
@@ -492,7 +495,7 @@ class GetSolicitudesPendentesPorAprobar(generics.ListAPIView):
     
     def get(self, request):
         persona_responsable = request.user.persona    
-        solicitudes_por_aprobar = SolicitudesConsumibles.objects.filter(Q(id_funcionario_responsable_unidad=persona_responsable.id_persona) & Q(revisada_responsable = False))
+        solicitudes_por_aprobar = SolicitudesConsumibles.objects.filter(Q(id_funcionario_responsable_unidad=persona_responsable.id_persona) & Q(revisada_responsable = False)).exclude(solicitud_anulada_solicitante=True)
         serializer = self.serializer_class(solicitudes_por_aprobar, many=True)
         return Response({'success':True, 'detail':serializer.data, },status=status.HTTP_200_OK)
 
@@ -531,7 +534,7 @@ class GetSolicitudesPendentesPorAprobarDocumento(generics.ListAPIView):
         usuario = User.objects.filter(persona = persona_responsable.id_persona).first()
         if not usuario:
             raise ValidationError('Debe ingresar un usuario válido')        
-        solicitudes_por_aprobar = SolicitudesConsumibles.objects.filter(Q(id_funcionario_responsable_unidad=persona_responsable.id_persona) & Q(revisada_responsable = False))
+        solicitudes_por_aprobar = SolicitudesConsumibles.objects.filter(Q(id_funcionario_responsable_unidad=persona_responsable.id_persona) & Q(revisada_responsable = False)).exclude(solicitud_anulada_solicitante=True)
         serializer = self.serializer_class(solicitudes_por_aprobar, many=True)
         return Response({'success':True, 'detail':serializer.data, },status=status.HTTP_200_OK)
 
