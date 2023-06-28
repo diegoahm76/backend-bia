@@ -5,7 +5,7 @@ from recaudo.models.liquidaciones_models import Deudores
 
 class Bienes(models.Model):
     id = models.AutoField(primary_key=True, db_column='T419IdBien')
-    id_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T419I_Deudor')
+    id_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T419Id_Deudor')
     descripcion = models.CharField(max_length=255, db_column='T419descripcion')
     direccion = models.CharField(max_length=255, db_column='T419direccion')
     id_tipo_bien = models.ForeignKey(TiposBien, on_delete=models.CASCADE, db_column='T419Id_TipoBien')
@@ -23,7 +23,7 @@ class Avaluos(models.Model):
     id_bien = models.ForeignKey(Bienes, on_delete=models.CASCADE, db_column='T420Id_Bien')
     fecha_avaluo = models.DateField(auto_now_add=True, db_column='T420fechaAvaluo')
     fecha_fin_vigencia = models.DateField(db_column='T420fechaFinVigencia')
-    cod_funcionario_perito = models.IntegerField(db_column='T420id_FuncionarioPerito')
+    cod_funcionario_perito = models.IntegerField(db_column='T420Id_FuncionarioPerito')
     valor = models.DecimalField(max_digits=30, decimal_places=2, db_column='T420valor')
     inicio = models.DateField(null=True, blank= True, db_column='T420inicio')
     fin = models.DateField(null=True, blank= True, db_column='T420fin')

@@ -92,12 +92,12 @@ class DeudorFacilidadPagoSerializer(serializers.ModelSerializer):
     ubicacion = serializers.SerializerMethodField()
     
     def get_ubicacion(self, obj):
-        ubicacion = obj.ubicacion_id.nombre
+        ubicacion = obj.id_ubicacion.nombre
         return ubicacion
 
     class Meta:
         model = Deudores
-        fields = ('codigo', 'identificacion', 'nombres', 'apellidos', 'email', 'ubicacion')
+        fields = ('id', 'identificacion', 'nombres', 'apellidos', 'email', 'ubicacion')
 
 
 class DatosContactoDeudorSerializer(serializers.ModelSerializer):
@@ -114,13 +114,13 @@ class DatosContactoDeudorSerializer(serializers.ModelSerializer):
         
 
 class FacilidadesPagoSerializer(serializers.ModelSerializer):
-    id_deudor_actuacion = DeudorFacilidadPagoSerializer
+    id_deudor = DeudorFacilidadPagoSerializer
 
     class Meta:
         model = FacilidadesPago
         fields = '__all__'
         extra_kwargs = {
-            'id_deudor_actuacion': {'required': True},
+            'id_deudor': {'required': True},
             'id_tipo_actuacion': {'required': True},
             'id_tasas_interes': {'required': True},
             'documento_soporte': {'required': True},
@@ -189,7 +189,7 @@ class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
         fields = ('id_facilidad','nombre_de_usuario','identificacion','numero_radicacion','fecha_generacion','nombre_funcionario')
 
     def get_nombre_de_usuario(self, obj):
-        return f"{obj.id_deudor_actuacion.nombres} {obj.id_deudor_actuacion.apellidos}"
+        return f"{obj.id_deudor.nombres} {obj.id_deudor.apellidos}"
 
 
     def get_nombre_funcionario(self, obj):
@@ -204,7 +204,7 @@ class ConsultaFacilidadesPagosSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FacilidadesPago
-        fields = ('id', 'id_deudor_actuacion', 'tipo_actuacion', 'fecha_generacion',
+        fields = ('id', 'id_deudor', 'tipo_actuacion', 'fecha_generacion',
                   'observaciones', 'periodicidad', 'cuotas', 'id_tasas_interes',
                   'documento_soporte', 'consignacion_soporte', 'documento_garantia', 
                   'documento_no_enajenacion', 'id_funcionario','notificaciones',
@@ -216,7 +216,7 @@ class ListadoDeudoresUltSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Deudores
-        fields = ('codigo','nombre_contribuyente','identificacion')
+        fields = ('id','nombre_contribuyente','identificacion')
         #fields = ('nombres','apellidos','identificacion')
 
     def get_nombre_contribuyente(self, obj):
