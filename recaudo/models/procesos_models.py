@@ -8,7 +8,6 @@ class Bienes(models.Model):
     cod_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T419cod_deudor')
     descripcion = models.CharField(max_length=255, db_column='T419descripcion')
     direccion = models.CharField(max_length=255, db_column='T419direccion')
-    estado = models.CharField(max_length=255, db_column='T419estado')
     id_tipo_bien = models.ForeignKey(TiposBien, on_delete=models.CASCADE, db_column='T419id_tipo_bien')
     documento_soporte = models.FileField(db_column='T419documento_soporte')
     id_ubicacion = models.ForeignKey(Ubicaciones, on_delete=models.CASCADE, db_column='T419id_ubicacion')
