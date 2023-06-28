@@ -1,3 +1,4 @@
+import copy
 import json
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from rest_framework import generics
@@ -260,9 +261,11 @@ class ActualizarPrograma(generics.UpdateAPIView):
             programa = ProgramasPORH.objects.filter(id_programa=pk).first()
             proyecto = ProyectosPORH.objects.filter(id_programa=pk).order_by('vigencia_final').last()
             
+            
             if not programa:
                 raise NotFound("No se encuentra el Programa que busca para su modificación.")
             
+            instance_previous=copy.copy(programa)
             serializer = self.serializer_class(programa,data=data)
             serializer.is_valid(raise_exception=True)
             
@@ -286,7 +289,24 @@ class ActualizarPrograma(generics.UpdateAPIView):
             
             serializer.save()
 
-            ##AUDITORIA 
+    
+            #AUDITORÍA
+            usuario = request.user.id_usuario
+            direccion=Util.get_client_ip(request)
+            descripcion = {"IdInstrumentoPORH":programa.id_instrumento.id_instrumento,"Nombre":programa.nombre}
+            
+            valores_actualizados = {'current': programa, 'previous': instance_previous}
+            #print(valores_actualizados)
+            auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 110,
+                "cod_permiso": "AC",
+                "subsistema": 'RECU',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+                "valores_actualizados": valores_actualizados
+            }
+            Util.save_auditoria(auditoria_data) 
 
             
 
@@ -316,6 +336,21 @@ class EliminarPrograma(generics.DestroyAPIView):
             raise ValidationError("No se puede eliminar el programa si tiene un proyecto asignado.")
         
         programa.delete()
+        #AUDITORIA BORRAR PROGRAMA
+        usuario = request.user.id_usuario
+        direccion=Util.get_client_ip(request)
+        descripcion = {"IdInstrumentoPORH":programa.id_instrumento.id_instrumento,"Nombre":programa.nombre}
+        auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 110,
+                "cod_permiso": "BO",
+                "subsistema": 'RECU',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+                
+            }
+        Util.save_auditoria(auditoria_data) 
+        
         
         return Response({'success':True,'detail':'Se elimino correctamente el programa seleccionado.'},status=status.HTTP_200_OK)
 
@@ -331,9 +366,12 @@ class ActualizarProyectos(generics.UpdateAPIView):
         actividades = ActividadesProyectos.objects.filter(id_proyecto=pk).first()
         programa = ProyectosPORH.objects.filter(id_programa=pk).first()
         
+        
+
         if not proyecto:
             raise NotFound("No se encuentra el Proyecto a modificar.")
         
+        instance_previous=copy.copy(proyecto)
         serializer = self.serializer_class(proyecto,data=data)
         serializer.is_valid(raise_exception=True)
         
@@ -357,6 +395,31 @@ class ActualizarProyectos(generics.UpdateAPIView):
                 raise ValidationError("No se puede actualizar el nombre del Proyecto, si tiene Actividades ligadas.")
         
         serializer.save()
+
+        #AUDITORÍA ACTUALIZAR PROYECTO
+        usuario = request.user.id_usuario
+        direccion=Util.get_client_ip(request)
+        descripcion = {"IdProgramaPORH":proyecto.id_programa.id_programa,"Nombre":proyecto.nombre}
+            
+        valores_actualizados = {'current': proyecto, 'previous': instance_previous}
+        auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 110,
+                "cod_permiso": "AC",
+                "subsistema": 'RECU',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+                "valores_actualizados": valores_actualizados
+        }
+        Util.save_auditoria(auditoria_data) 
+
+
+
+
+
+            
+
+
         
         return Response({'success':True,'detail':"Se realizo la modificacion del proyecto correctamente."},status=status.HTTP_200_OK)
 
@@ -382,6 +445,22 @@ class EliminarProyecto(generics.DestroyAPIView):
             raise ValidationError("No se puede Eliminar un proyecto, si tiene actividades asignadas.")
         
         proyecto.delete()
+
+        #AUDITORIA ELIMINAR PROYECTO
+        usuario = request.user.id_usuario
+        direccion=Util.get_client_ip(request)
+        descripcion = {"IdProgramaPORH":proyecto.id_programa.id_programa,"Nombre":proyecto.nombre}
+            
+        auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 110,
+                "cod_permiso": "BO",
+                "subsistema": 'RECU',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+                
+        }
+        Util.save_auditoria(auditoria_data)
         
         return Response({'success':True,'detail':'Se elimino el Proyecto seleccionado.'},status=status.HTTP_200_OK)
 
@@ -398,11 +477,28 @@ class ActualizarActividades(generics.UpdateAPIView):
         if not actividad:
             raise NotFound("No se existe la actividad que trata de Actualizar.")
         
+        instance_previous=copy.copy(actividad)
         serializer = self.serializer_class(actividad,data=data)
         serializer.is_valid(raise_exception=True)
         
         serializer.save()
-        
+
+        #AUDITORIA ACTUALIZAR ACTIVIDAD
+        usuario = request.user.id_usuario
+        direccion=Util.get_client_ip(request)
+        descripcion = {"IdProgramaPgPORH":actividad.id_proyecto.id_proyecto,"Nombre":actividad.nombre}
+        valores_actualizados = {'current': actividad, 'previous': instance_previous}
+        auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 110,
+                "cod_permiso": "AC",
+                "subsistema": 'RECU',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+                "valores_actualizados": valores_actualizados
+            }
+        Util.save_auditoria(auditoria_data) 
+
         return Response({'success':True,'detail':"Se actualizo la actividad Correctamente."},status=status.HTTP_200_OK)
 
 class EliminarActividades(generics.DestroyAPIView):
@@ -423,6 +519,21 @@ class EliminarActividades(generics.DestroyAPIView):
             raise ValidationError("No se puede eliminar una actividad si al proyecto que esta ligado ya vencio.")
         
         actividad.delete()
+
+        #AUDITORIA ELIMINAR ACTIVIDAD 
+        usuario = request.user.id_usuario
+        direccion=Util.get_client_ip(request)
+        descripcion = {"IdProgramaPgPORH":actividad.id_proyecto.id_proyecto,"Nombre":actividad.nombre}
+        
+        auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 110,
+                "cod_permiso": "BO",
+                "subsistema": 'RECU',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+            }
+        Util.save_auditoria(auditoria_data) 
         
         return Response({'success':True,'detail':'Se elimino la Actividad seleccionada.'},status=status.HTTP_200_OK)
     
@@ -560,3 +671,9 @@ class ActualizarAvanceEvidencia(generics.UpdateAPIView):
             )
         
         return Response({'success':True,'detail':'Se ha realizado la actualizacion correctamente.'},status=status.HTTP_200_OK)
+
+
+
+
+
+
