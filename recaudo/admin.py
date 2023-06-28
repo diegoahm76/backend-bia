@@ -15,7 +15,8 @@ from recaudo.models.cobros_models import (
     DetalleDocumentosCobro,
     Deudores,
     Obligaciones,
-    Cartera
+    Cartera,
+    ConceptoContable
 )
 
 from recaudo.models.garantias_models import (
@@ -31,7 +32,8 @@ from recaudo.models.procesos_models import (
     Procesos,
     ValoresProceso,
     FlujoProceso,
-    TiposAtributos
+    TiposAtributos,
+    CategoriaAtributo
 )
 
 from recaudo.models.pagos_models import (
@@ -68,6 +70,7 @@ admin.site.register(Deudores),
 admin.site.register(Expedientes),
 admin.site.register(Obligaciones),
 admin.site.register(Cartera),
+admin.site.register(ConceptoContable),
 
 #Garantias
 admin.site.register(RolesGarantias),
@@ -96,4 +99,5 @@ admin.site.register(AtributosEtapas),
 admin.site.register(Procesos),
 admin.site.register(ValoresProceso),
 admin.site.register(FlujoProceso),
-admin.site.register(TiposAtributos)
+admin.site.register(TiposAtributos),
+admin.site.register(CategoriaAtributo)
