@@ -571,8 +571,9 @@ class UpdateSolicitudesView(generics.UpdateAPIView):
 
         # VALIDACIÓN QUE LA FECHA SELECCIONADA SEA SUPERIOR A LA EXISTENTE
         fecha_strp = datetime.strptime(data_solicitud['fecha_retiro_material'], '%Y-%m-%d')
-        if solicitud_act.fecha_solicitud <= fecha_strp:
-            raise PermissionDenied('La fecha seleccionada no es superior a la existente')
+        if solicitud_act.fecha_retiro_material != fecha_strp:
+            if solicitud_act.fecha_retiro_material > fecha_strp:
+                raise PermissionDenied('La fecha seleccionada no es superior a la existente')
 
         serializer = self.serializer_class(solicitud_act, data=data_solicitud, many=False)
         serializer.is_valid(raise_exception=True)

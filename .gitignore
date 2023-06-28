@@ -182,3 +182,5 @@ migrations/
 # Dockerfile
 # .dockerignore
 # docker-compose.yml
+# docker-compose-db.yml
+# docker-compose-back.yml

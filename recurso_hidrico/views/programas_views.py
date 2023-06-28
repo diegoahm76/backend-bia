@@ -1,13 +1,15 @@
+import copy
 import json
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from datetime import datetime,date,timedelta
+from seguridad.utils import Util
 
 from recurso_hidrico.models.programas_models import ActividadesProyectos, AvancesProyecto, EvidenciasAvance, ProgramasPORH, ProyectosPORH
-from recurso_hidrico.serializers.programas_serializers import ActualizarActividadesSerializers, ActualizarAvanceEvidenciaSerializers, ActualizarProyectosSerializers, BusquedaAvanzadaSerializers, EliminarActividadesSerializers, EliminarProyectoSerializers, GetActividadesporProyectosSerializers, GetProgramasporPORHSerializers, GetProyectosPORHSerializers, RegistrarAvanceSerializers, RegistroEvidenciaSerializers, RegistroProgramaPORHSerializer,BusquedaAvanzadaAvancesSerializers
+from recurso_hidrico.serializers.programas_serializers import ActualizarActividadesSerializers, ActualizarAvanceEvidenciaSerializers, ActualizarProyectosSerializers, AvanceConEvidenciasSerializer, BusquedaAvanzadaSerializers, EliminarActividadesSerializers, EliminarProyectoSerializers, GetActividadesporProyectosSerializers, GetProgramasporPORHSerializers, GetProyectosPORHSerializers, RegistrarAvanceSerializers, RegistroEvidenciaSerializers, RegistroProgramaPORHSerializer,BusquedaAvanzadaAvancesSerializers,ProyectosPORHSerializer,GetAvancesporProyectosSerializers
 
 class RegistroProgramaPORH(generics.CreateAPIView):
     serializer_class = RegistroProgramaPORHSerializer
@@ -15,44 +17,158 @@ class RegistroProgramaPORH(generics.CreateAPIView):
     queryset = ProgramasPORH.objects.all()
     
     def post(self,request):
-        data = request.data
-        
-        serializer = self.serializer_class(data=data)
-        serializer.is_valid(raise_exception=True)
-        
-        if data['fecha_inicio'] > data['fecha_fin']:
-            raise ValidationError("La fecha de inicio del programa no puede ser mayor a la fecha final del mismo.")
-        
-        creacion_programa = serializer.save()
+        data_in = request.data
+        instancia_programa = None
+        instancia_proyecto =None
+        if not data_in['id_programa']:
+            data_in['id_instrumento'] = 1
+           
+
+
+            serializer = self.serializer_class(data=data_in)
+            serializer.is_valid(raise_exception=True)
+            
+            if data_in['fecha_inicio'] > data_in['fecha_fin']:
+                raise ValidationError("La fecha de inicio del programa no puede ser mayor a la fecha final del mismo.")
+            
+            instancia_programa = serializer.save()
+
+            #AUDITORIA CREAR PROGRAMA
+
+            usuario = request.user.id_usuario
+            direccion=Util.get_client_ip(request)
+            descripcion = {"IdInstrumentoPORH":instancia_programa.id_instrumento,"Nombre":instancia_programa.nombre}
+            #valores_actualizados = {'current': instance, 'previous': instance_previous}
+            auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 110,
+                "cod_permiso": "CR",
+                "subsistema": 'RECU',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+                #"valores_actualizados": valores_actualizados
+            }
+            Util.save_auditoria(auditoria_data)
+
+        else:
+            instancia_programa = ProgramasPORH.objects.filter(id_programa=data_in['id_programa']).first()
+            if not instancia_programa:
+                raise NotFound("El programa ingresado no existe")
         
         #CREACION DE PROYECTOS
-        if data['proyectos']:    
+        
+        if 'proyectos' in data_in: 
                 
-            for proyecto in data['proyectos']: 
-                if proyecto['vigencia_inicial']> proyecto['vigencia_final']:
-                    raise ValidationError("La fecha inicial del proyecto no puede superar la fecha final del mismo proyecto.")
-                if proyecto['vigencia_inicial'] < data["fecha_inicio"]:
-                    raise ValidationError("La fecha de inicio del proyecto no puede ser inferior a la fecha de inicio del programa al que pertenece.")
-                if proyecto['vigencia_final'] > data['fecha_fin']:
-                    raise ValidationError('La fecha final del proyecto no puede ser mayor que la fecha final del programa.')
-                
-                proyecto_creado = ProyectosPORH.objects.create(
-                    id_programa = creacion_programa,
-                    nombre = proyecto['nombre'],
-                    vigencia_inicial = proyecto['vigencia_inicial'],
-                    vigencia_final = proyecto['vigencia_final'],
-                    inversion = proyecto['inversion']                    
-                )
-                if proyecto['actividades']:
+            for proyecto in data_in['proyectos']: 
+
+                if not proyecto['id_proyecto']:
+                    if proyecto['vigencia_inicial']> proyecto['vigencia_final']:
+                        raise ValidationError("La fecha inicial del proyecto no puede superar la fecha final del mismo proyecto.")
+                    if proyecto['vigencia_inicial'] < data_in["fecha_inicio"]:
+                        raise ValidationError("La fecha de inicio del proyecto no puede ser inferior a la fecha de inicio del programa al que pertenece.")
+                    if proyecto['vigencia_final'] > data_in['fecha_fin']:
+                        raise ValidationError('La fecha final del proyecto no puede ser mayor que la fecha final del programa.')
+                    
+                    instancia_proyecto = ProyectosPORH.objects.create(
+                        id_programa = instancia_programa,
+                        nombre = proyecto['nombre'],
+                        vigencia_inicial = proyecto['vigencia_inicial'],
+                        vigencia_final = proyecto['vigencia_final'],
+                        inversion = proyecto['inversion']                    
+                    )
+
+                    #AUDITORIA PROYECTO
+                    usuario = request.user.id_usuario
+                    direccion=Util.get_client_ip(request)
+                    descripcion = {"IdProgramaPORH":instancia_proyecto.id_programa.id_programa,"Nombre":instancia_proyecto.nombre}
+                    #valores_actualizados = {'current': instance, 'previous': instance_previous}
+                    auditoria_data = {
+                        "id_usuario" : usuario,
+                        "id_modulo" : 110,
+                        "cod_permiso": "CR",
+                        "subsistema": 'RECU',
+                        "dirip": direccion,
+                        "descripcion": descripcion, 
+                        #"valores_actualizados": valores_actualizados
+                    }
+                    Util.save_auditoria(auditoria_data)
+                else:
+                    instancia_proyecto = ProyectosPORH.objects.filter(id_proyecto=proyecto['id_proyecto']).first()
+                    if not instancia_programa:
+                        raise NotFound("El proyecto ingresado no existe")
+                #if 'proyectos' in data_in and 'actividades' in data_in['proyectos']:
+                if 'actividades' in proyecto:
+                #if proyecto['actividades']:
                 
                     for actividad in proyecto['actividades']:
                         actividades = ActividadesProyectos.objects.create(
-                            id_proyecto = proyecto_creado,
+                            id_proyecto = instancia_proyecto,
                             nombre = actividad['nombre']
                         )
-            
-        return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
 
+                        #AUDITORIA ACTIVIDAD
+                        usuario = request.user.id_usuario
+                        direccion=Util.get_client_ip(request)
+                        descripcion = {"IdProyectoPgPORH":actividades.id_proyecto.id_proyecto,"Nombre":actividades.nombre}
+                        #valores_actualizados = {'current': instance, 'previous': instance_previous}
+                        auditoria_data = {
+                            "id_usuario" : usuario,
+                            "id_modulo" : 110,
+                            "cod_permiso": "CR",
+                            "subsistema": 'RECU',
+                            "dirip": direccion,
+                            "descripcion": descripcion, 
+                            #"valores_actualizados": valores_actualizados
+                        }
+                        Util.save_auditoria(auditoria_data)
+                          
+        return Response({'success':True,'detail':'Se crearon los registros correctamente','data':data_in},status=status.HTTP_201_CREATED)
+
+class CreateProgramaPORH(generics.CreateAPIView):
+    serializer_class = RegistroProgramaPORHSerializer
+    queryset = ProgramasPORH.objects.all()
+    permission_classes = [IsAuthenticated]
+    def post(self, request, *args, **kwargs):
+        
+        # data = request.data
+        data_in = request.data
+        data = {
+            'id_instrumento': 1, 
+            'nombre': data_in['nombre'],
+            'fecha_inicio': data_in['fecha_inicio'],
+            'fecha_fin': data_in['fecha_fin'],
+        }
+        serializer = self.serializer_class(data=data)
+        try:
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            #print(self.queryset)
+            return Response({'success': True, 'detail':'Se creo un programa exitosamente', 'data':serializer.data},status=status.HTTP_200_OK)
+        except ValidationError as e:
+            raise ValidationError('Error en los datos del formulario')
+
+class CreateProyectosPORH(generics.CreateAPIView):
+    serializer_class = ProyectosPORHSerializer
+    queryset = ProyectosPORH.objects.all()
+    # permission_classes = [IsAuthenticated]
+    def post(self, request, *args, **kwargs):
+        
+        data = request.data
+        # data_in = request.data
+        # data = {
+        #     'id_instrumento': 1, 
+        #     'nombre': data_in['nombre'],
+        #     'fecha_inicio': data_in['fecha_inicio'],
+        #     'fecha_fin': data_in['fecha_fin'],
+        # }
+        serializer = self.serializer_class(data=data)
+        try:
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            print(self.queryset)
+            return Response({'success': True, 'detail':'Se creo un proyecto exitosamente', 'data':serializer.data},status=status.HTTP_200_OK)
+        except ValidationError as e:
+            raise ValidationError('Error en los datos del formulario')
 class GetProgramasporPORH(generics.ListAPIView):
     serializer_class = GetProgramasporPORHSerializers
     queryset = ProgramasPORH.objects.all()
@@ -64,7 +180,7 @@ class GetProgramasporPORH(generics.ListAPIView):
         serializer = self.serializer_class(programa,many=True)
         
         if not programa:
-            raise ValidationError("El registro del programa que busca no existe")
+            raise NotFound("El registro del programa que busca no existe")
         
         return Response({'success':True,'detail':"Se encontro el siguiente registro.",'data':serializer.data},status=status.HTTP_200_OK)
     
@@ -78,7 +194,7 @@ class GetProyectosporProgramas(generics.ListAPIView):
         serializer = self.serializer_class(proyecto,many=True)
         
         if not proyecto:
-            raise ValidationError("El registro del Proyecto que busca, no se encuentra registrado")
+            raise NotFound("El registro del Proyecto que busca, no se encuentra registrado")
         
         return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)
     
@@ -92,10 +208,25 @@ class GetActividadesporProyectos(generics.ListAPIView):
         serializer = self.serializer_class(actividades,many=True)
         
         if not actividades:
-            raise ValidationError('El registro de Actividades que busca, no se encuentra registrado')
+            raise NotFound('El registro de Actividades que busca, no se encuentra registrado')
         
         return Response({'success':True,'detail':'Se encontraron los siguientes registros de actividades.','data':serializer.data},status=status.HTTP_200_OK)
     
+
+class GetAvanceporProyectos(generics.ListAPIView):
+    serializer_class = GetAvancesporProyectosSerializers
+    queryset = AvancesProyecto.objects.all()
+    #permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        avances = AvancesProyecto.objects.filter(id_proyecto=pk)
+        serializer = self.serializer_class(avances,many=True)
+        
+        if not avances:
+            raise NotFound('El registro de avances que busca, no se encuentra registrado')
+        
+        return Response({'success':True,'detail':'Se encontraron los siguientes registros de avances.','data':serializer.data},status=status.HTTP_200_OK)
+  
 class BusquedaAvanzada(generics.ListAPIView):
     serializer_class = BusquedaAvanzadaSerializers
     queryset = ProyectosPORH.objects.all()
@@ -130,9 +261,11 @@ class ActualizarPrograma(generics.UpdateAPIView):
             programa = ProgramasPORH.objects.filter(id_programa=pk).first()
             proyecto = ProyectosPORH.objects.filter(id_programa=pk).order_by('vigencia_final').last()
             
-            if not programa:
-                raise ValidationError("No se encuentra el Programa que busca para su modificación.")
             
+            if not programa:
+                raise NotFound("No se encuentra el Programa que busca para su modificación.")
+            
+            instance_previous=copy.copy(programa)
             serializer = self.serializer_class(programa,data=data)
             serializer.is_valid(raise_exception=True)
             
@@ -155,6 +288,29 @@ class ActualizarPrograma(generics.UpdateAPIView):
                     raise ValidationError("No se puede actualizar si la fecha de inicio del programa, si la fecha del proyecto al que esta ligada es mayor.")
             
             serializer.save()
+
+    
+            #AUDITORÍA
+            usuario = request.user.id_usuario
+            direccion=Util.get_client_ip(request)
+            descripcion = {"IdInstrumentoPORH":programa.id_instrumento.id_instrumento,"Nombre":programa.nombre}
+            
+            valores_actualizados = {'current': programa, 'previous': instance_previous}
+            #print(valores_actualizados)
+            auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 110,
+                "cod_permiso": "AC",
+                "subsistema": 'RECU',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+                "valores_actualizados": valores_actualizados
+            }
+            Util.save_auditoria(auditoria_data) 
+
+            
+
+            
             
             return Response({'success':True,'detail':"Se realiza la actualización correctamente"},status=status.HTTP_200_OK)
         
@@ -169,7 +325,7 @@ class EliminarPrograma(generics.DestroyAPIView):
         proyecto = ProyectosPORH.objects.filter(id_programa=pk).first()
         
         if not programa:
-            raise ValidationError("No existe el programa que desea eliminar.")
+            raise NotFound("No existe el programa que desea eliminar.")
         
         fecha_sistema = datetime.now()        
         
@@ -180,6 +336,21 @@ class EliminarPrograma(generics.DestroyAPIView):
             raise ValidationError("No se puede eliminar el programa si tiene un proyecto asignado.")
         
         programa.delete()
+        #AUDITORIA BORRAR PROGRAMA
+        usuario = request.user.id_usuario
+        direccion=Util.get_client_ip(request)
+        descripcion = {"IdInstrumentoPORH":programa.id_instrumento.id_instrumento,"Nombre":programa.nombre}
+        auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 110,
+                "cod_permiso": "BO",
+                "subsistema": 'RECU',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+                
+            }
+        Util.save_auditoria(auditoria_data) 
+        
         
         return Response({'success':True,'detail':'Se elimino correctamente el programa seleccionado.'},status=status.HTTP_200_OK)
 
@@ -195,9 +366,12 @@ class ActualizarProyectos(generics.UpdateAPIView):
         actividades = ActividadesProyectos.objects.filter(id_proyecto=pk).first()
         programa = ProyectosPORH.objects.filter(id_programa=pk).first()
         
-        if not proyecto:
-            raise ValidationError("No se encuentra el Proyecto a modificar.")
         
+
+        if not proyecto:
+            raise NotFound("No se encuentra el Proyecto a modificar.")
+        
+        instance_previous=copy.copy(proyecto)
         serializer = self.serializer_class(proyecto,data=data)
         serializer.is_valid(raise_exception=True)
         
@@ -221,6 +395,31 @@ class ActualizarProyectos(generics.UpdateAPIView):
                 raise ValidationError("No se puede actualizar el nombre del Proyecto, si tiene Actividades ligadas.")
         
         serializer.save()
+
+        #AUDITORÍA ACTUALIZAR PROYECTO
+        usuario = request.user.id_usuario
+        direccion=Util.get_client_ip(request)
+        descripcion = {"IdProgramaPORH":proyecto.id_programa.id_programa,"Nombre":proyecto.nombre}
+            
+        valores_actualizados = {'current': proyecto, 'previous': instance_previous}
+        auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 110,
+                "cod_permiso": "AC",
+                "subsistema": 'RECU',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+                "valores_actualizados": valores_actualizados
+        }
+        Util.save_auditoria(auditoria_data) 
+
+
+
+
+
+            
+
+
         
         return Response({'success':True,'detail':"Se realizo la modificacion del proyecto correctamente."},status=status.HTTP_200_OK)
 
@@ -235,7 +434,7 @@ class EliminarProyecto(generics.DestroyAPIView):
         actividad = ActividadesProyectos.objects.filter(id_actividades=pk).first()
         
         if not proyecto:
-            raise ValidationError("No existe el Proyecto a eliminar")
+            raise NotFound("No existe el Proyecto a eliminar")
         
         fecha_sistema = datetime.now()
         
@@ -246,6 +445,22 @@ class EliminarProyecto(generics.DestroyAPIView):
             raise ValidationError("No se puede Eliminar un proyecto, si tiene actividades asignadas.")
         
         proyecto.delete()
+
+        #AUDITORIA ELIMINAR PROYECTO
+        usuario = request.user.id_usuario
+        direccion=Util.get_client_ip(request)
+        descripcion = {"IdProgramaPORH":proyecto.id_programa.id_programa,"Nombre":proyecto.nombre}
+            
+        auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 110,
+                "cod_permiso": "BO",
+                "subsistema": 'RECU',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+                
+        }
+        Util.save_auditoria(auditoria_data)
         
         return Response({'success':True,'detail':'Se elimino el Proyecto seleccionado.'},status=status.HTTP_200_OK)
 
@@ -260,13 +475,30 @@ class ActualizarActividades(generics.UpdateAPIView):
         actividad = ActividadesProyectos.objects.filter(id_actividades=pk).first()
         
         if not actividad:
-            raise ValidationError("No se existe la actividad que trata de Actualizar.")
+            raise NotFound("No se existe la actividad que trata de Actualizar.")
         
+        instance_previous=copy.copy(actividad)
         serializer = self.serializer_class(actividad,data=data)
         serializer.is_valid(raise_exception=True)
         
         serializer.save()
-        
+
+        #AUDITORIA ACTUALIZAR ACTIVIDAD
+        usuario = request.user.id_usuario
+        direccion=Util.get_client_ip(request)
+        descripcion = {"IdProgramaPgPORH":actividad.id_proyecto.id_proyecto,"Nombre":actividad.nombre}
+        valores_actualizados = {'current': actividad, 'previous': instance_previous}
+        auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 110,
+                "cod_permiso": "AC",
+                "subsistema": 'RECU',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+                "valores_actualizados": valores_actualizados
+            }
+        Util.save_auditoria(auditoria_data) 
+
         return Response({'success':True,'detail':"Se actualizo la actividad Correctamente."},status=status.HTTP_200_OK)
 
 class EliminarActividades(generics.DestroyAPIView):
@@ -279,7 +511,7 @@ class EliminarActividades(generics.DestroyAPIView):
         actividad = ActividadesProyectos.objects.filter(id_actividades=pk).first()
         
         if not actividad:
-            raise ValidationError("No existe la Actividad a eliminar.")
+            raise NotFound("No existe la Actividad a eliminar.")
         
         fecha_sistema = datetime.now()
         
@@ -287,6 +519,21 @@ class EliminarActividades(generics.DestroyAPIView):
             raise ValidationError("No se puede eliminar una actividad si al proyecto que esta ligado ya vencio.")
         
         actividad.delete()
+
+        #AUDITORIA ELIMINAR ACTIVIDAD 
+        usuario = request.user.id_usuario
+        direccion=Util.get_client_ip(request)
+        descripcion = {"IdProgramaPgPORH":actividad.id_proyecto.id_proyecto,"Nombre":actividad.nombre}
+        
+        auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 110,
+                "cod_permiso": "BO",
+                "subsistema": 'RECU',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+            }
+        Util.save_auditoria(auditoria_data) 
         
         return Response({'success':True,'detail':'Se elimino la Actividad seleccionada.'},status=status.HTTP_200_OK)
     
@@ -301,7 +548,7 @@ class RegistroAvance(generics.CreateAPIView):
         proyecto = ProyectosPORH.objects.filter(id_proyecto=id_proyecto).first()
         
         if not proyecto:
-            raise ValidationError("No hay proyecto.")
+            raise NotFound("No hay proyecto.")
         
         archivos =request.FILES.getlist('evidencia')
         
@@ -331,13 +578,14 @@ class RegistroAvance(generics.CreateAPIView):
     
 
 class BusquedaAvanzadaAvances(generics.ListAPIView):
-    serializer_class = BusquedaAvanzadaAvancesSerializers
+    #serializer_class = BusquedaAvanzadaAvancesSerializers
+    serializer_class = AvanceConEvidenciasSerializer
     queryset = AvancesProyecto.objects.all()
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         filter = {}
-        
+
         for key, value in request.query_params.items():
             if key == 'nombre_programa':
                 if value != '':
@@ -345,12 +593,15 @@ class BusquedaAvanzadaAvances(generics.ListAPIView):
             if key == 'nombre_proyecto':
                 if value != '':
                     filter['id_proyecto__nombre__icontains'] = value
-            if key == 'nombre_avance': 
+            if key == 'nombre_avances': 
                 if value != '':
-                    filter['descripcion__icontains'] = value
+                    
+                    filter['accion__icontains'] = value
         
         programas = self.queryset.all().filter(**filter)
         serializador = self.serializer_class(programas, many=True)
+        # avances = self.queryset.filter(**filter).select_related('id_proyecto')
+        # serializador = self.serializer_class(avances, many=True)
         
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializador.data}, status=status.HTTP_200_OK)
 
@@ -365,7 +616,7 @@ class RegistroEvidencia(generics.CreateAPIView):
         evidencia = AvancesProyecto.objects.filter(id_avance=id_evidencia).first()
         
         if not evidencia:
-            return ValidationError("No existe el registro al cual se intenta adicionar el registro.")
+            return NotFound("No existe el registro al cual se intenta adicionar el registro.")
         
         data['id_avance'] = id_evidencia
         
@@ -420,3 +671,9 @@ class ActualizarAvanceEvidencia(generics.UpdateAPIView):
             )
         
         return Response({'success':True,'detail':'Se ha realizado la actualizacion correctamente.'},status=status.HTTP_200_OK)
+
+
+
+
+
+

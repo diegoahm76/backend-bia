@@ -9,8 +9,8 @@ from recaudo.models.garantias_models import RolesGarantias
 class TasasInteres(models.Model):
     id = models.BigAutoField(primary_key=True, db_column='T433id')
     valor = models.DecimalField(max_digits=30, decimal_places=2, db_column='T433valor')
-    vigencia_desde = models.DateTimeField(db_column='T433vigencia_desde')
-    vigencia_hasta = models.DateTimeField(db_column='T433vigencia_hasta')
+    vigencia_desde = models.DateField(db_column='T433vigencia_desde')
+    vigencia_hasta = models.DateField(db_column='T433vigencia_hasta')
 
     class Meta:
         db_table = 'T433tasas_interes'
@@ -26,13 +26,13 @@ class FacilidadesPago(models.Model):
     observaciones = models.TextField(db_column='T426observaciones')
     periodicidad = models.IntegerField(db_column='T426periodicidad')
     cuotas = models.IntegerField(db_column='T426cuotas')
-    id_tasas_interes = models.ForeignKey(TasasInteres, on_delete=models.CASCADE, db_column='T426id_tasa_interes')
     documento_soporte = models.FileField(db_column='T426documento_soporte')
     consignacion_soporte = models.FileField(db_column='T426consignacion_soporte')
-    # documento_garantia = models.FileField(db_column='T426documento_garantia')
-    # documento_no_enajenacion = models.FileField(db_column='T426documento_no_enajenacion')
+    documento_garantia = models.FileField(db_column='T426documento_garantia')
+    documento_no_enajenacion = models.FileField(db_column='T426documento_no_enajenacion')
     id_funcionario = models.IntegerField(db_column='T426id_funcionario')
     notificaciones = models.BooleanField(db_column='T426id_notificaciones')
+    numero_radicacion = models.CharField(max_length=255, db_column='T426numero_radicacion')
 
     class Meta:
         db_table = 'T426facilidades_pago'
@@ -68,7 +68,6 @@ class DetallesFacilidadPago(models.Model):
     id = models.AutoField(primary_key=True, db_column='T430id')
     id_cartera = models.ForeignKey('recaudo.Cartera', on_delete=models.CASCADE, db_column='T430id_cartera')
     id_facilidad_pago = models.ForeignKey(FacilidadesPago, on_delete=models.CASCADE, db_column='T430id_facilidad_pago')
-    tipo_cobro = models.CharField(max_length=255, db_column='T430tipo_cobro')
 
     class Meta:
         db_table = 'T430detalles_facilidad_pago'
@@ -91,8 +90,8 @@ class GarantiasFacilidad(models.Model):
 class PlanPagos(models.Model):
     id = models.BigAutoField(primary_key=True, db_column='T432id')
     id_facilidad_pago = models.ForeignKey(FacilidadesPago, on_delete=models.CASCADE, db_column='T432id_facilidad_pago')
-    fecha_proyectada = models.DateTimeField(db_column='T432fecha_proyectada')
-    fecha_pago = models.DateTimeField(db_column='T432fecha_pago')
+    fecha_proyectada = models.DateField(db_column='T432fecha_proyectada')
+    fecha_pago = models.DateField(db_column='T432fecha_pago')
     valor = models.DecimalField(max_digits=30, decimal_places=2, db_column='T432valor')
     id_tipo_pago = models.ForeignKey(TiposPago, on_delete=models.CASCADE, db_column='T432id_tipo_pago')
     verificado = models.IntegerField(db_column='T432verificado')
@@ -113,7 +112,8 @@ class RespuestaSolicitud(models.Model):
     estado = models.CharField(max_length=255, db_column='T435estado')
     aprobacion = models.BooleanField(db_column='T435aprobacion')
     observacion = models.CharField(max_length=255, db_column='T435observacion')
-    consulta_dbme = models.FileField(db_column='T435consulta_dbme')
+    informe_dbme = models.FileField(db_column='T435informe_dbme')
+    reportado_dbme = models.BooleanField(db_column='T435reportado_dbme')
 
     class Meta:
         db_table = 'T435respuesta_solicitud'

@@ -71,7 +71,7 @@ class ReporteCarteraEdadesView(generics.ListAPIView):
         elif rango_edad == '181 a 360 días':
             queryset = queryset.filter(id_rango__inicial__gte=181, id_rango__final__lte=360)
         elif rango_edad == 'mayor a 361 días':
-            queryset = queryset.filter(id_rango__inicial__gt=361)
+            queryset = queryset.filter(id_rango__inicial__gte=361)
         return queryset
 
     def list(self, request, *args, **kwargs):

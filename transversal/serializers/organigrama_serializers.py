@@ -10,7 +10,8 @@ from transversal.models.organigrama_models import (
     Organigramas,
     NivelesOrganigrama,
     UnidadesOrganizacionales,
-    TemporalPersonasUnidad
+    TemporalPersonasUnidad,
+    CambiosUnidadMasivos
 )
 from seguridad.models import User, Personas
 
@@ -90,6 +91,23 @@ class PersonaOrgSerializer(serializers.ModelSerializer):
                   'tiene_usuario']
         
 class NewUserOrganigramaSerializer(serializers.ModelSerializer):
+    tipo_documento = serializers.ReadOnlyField(source='id_persona_cargo.tipo_documento.cod_tipo_documento',default=None)
+    numero_documento = serializers.ReadOnlyField(source='id_persona_cargo.numero_documento',default=None) 
+    nombre_completo = serializers.SerializerMethodField()
+    usado = serializers.SerializerMethodField()
+    
+    def get_usado(self,obj):
+        ccd = obj.cuadrosclasificaciondocumental_set.all()
+        usado = True if ccd else False
+        return usado
+    
+    def get_nombre_completo(self, obj):
+        nombre_completo = None
+        if obj.id_persona_cargo:
+            nombre_list = [obj.id_persona_cargo.primer_nombre, obj.id_persona_cargo.segundo_nombre, obj.id_persona_cargo.primer_apellido, obj.id_persona_cargo.segundo_apellido]
+            nombre_completo = ' '.join(item for item in nombre_list if item is not None).upper()
+        return nombre_completo
+    
     class Meta:
         model= Organigramas
         fields='__all__'
@@ -200,6 +218,7 @@ class CCDSerializer_(serializers.ModelSerializer):
 
 class ActUnidadOrgAntiguaSerializer(serializers.ModelSerializer):
     nombre_completo = serializers.SerializerMethodField()
+    cargo = serializers.ReadOnlyField(source='id_cargo.nombre', default=None)
     nombre_unidad_organizacional_actual = serializers.ReadOnlyField(source='id_unidad_organizacional_actual.nombre', default=None)
     id_nueva_unidad_organizacional = serializers.ReadOnlyField(default=None)
     nombre_nueva_unidad_organizacional = serializers.ReadOnlyField(default=None)
@@ -214,10 +233,12 @@ class ActUnidadOrgAntiguaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Personas
-        fields = ['id_persona', 'nombre_completo', 'id_unidad_organizacional_actual', 'nombre_unidad_organizacional_actual', 'es_unidad_organizacional_actual', 'id_nueva_unidad_organizacional', 'nombre_nueva_unidad_organizacional']
+        fields = ['id_persona', 'nombre_completo', 'id_cargo', 'cargo', 'id_unidad_organizacional_actual', 'nombre_unidad_organizacional_actual', 'es_unidad_organizacional_actual', 'id_nueva_unidad_organizacional', 'nombre_nueva_unidad_organizacional']
 
 class TemporalPersonasUnidadSerializer(serializers.ModelSerializer):
     nombre_completo = serializers.SerializerMethodField()
+    id_cargo = serializers.ReadOnlyField(source='id_persona.id_cargo.id_cargo', default=None)
+    cargo = serializers.ReadOnlyField(source='id_persona.id_cargo.nombre', default=None)
     id_unidad_organizacional_actual = serializers.ReadOnlyField(source='id_unidad_org_anterior.id_unidad_organizacional', default=None)
     nombre_unidad_organizacional_actual = serializers.ReadOnlyField(source='id_unidad_org_anterior.nombre', default=None)
     es_unidad_organizacional_actual = serializers.ReadOnlyField(source='id_persona.es_unidad_organizacional_actual', default=None)
@@ -234,5 +255,19 @@ class TemporalPersonasUnidadSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = TemporalPersonasUnidad
-        fields = ['id_persona', 'nombre_completo','id_unidad_organizacional_actual','nombre_unidad_organizacional_actual','es_unidad_organizacional_actual', 'id_nueva_unidad_organizacional', 'nombre_nueva_unidad_organizacional']
+        fields = ['id_persona', 'nombre_completo', 'id_cargo', 'cargo', 'id_unidad_organizacional_actual','nombre_unidad_organizacional_actual','es_unidad_organizacional_actual', 'id_nueva_unidad_organizacional', 'nombre_nueva_unidad_organizacional']
 
+class GetCambiosUnidadMasivosSerializer(serializers.ModelSerializer):
+    persona_cambio = serializers.SerializerMethodField()
+    
+    def get_persona_cambio(self, obj):
+        nombre_completo_solicita = None
+        nombre_list = [obj.id_persona_cambio.primer_nombre, obj.id_persona_cambio.segundo_nombre,
+                        obj.id_persona_cambio.primer_apellido, obj.id_persona_cambio.segundo_apellido]
+        nombre_completo_solicita = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo_solicita = nombre_completo_solicita if nombre_completo_solicita != "" else None
+        return nombre_completo_solicita
+    
+    class Meta:
+        model = CambiosUnidadMasivos
+        fields = '__all__'

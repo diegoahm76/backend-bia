@@ -679,17 +679,17 @@ class DeleteCatalogoSerieSubserie(generics.DestroyAPIView):
     def delete(self, request, id_catalogo_serie):
         cat_serie_subserie = self.queryset.all().filter(id_catalogo_serie=id_catalogo_serie).first()
         
+        if not cat_serie_subserie:
+            raise NotFound('No existe el catalogo de la serie y subserie elegida')
+        elif cat_serie_subserie.id_subserie_doc:
+            raise PermissionDenied('Solo puede eliminar series independientes del catalogo')
+        
         if cat_serie_subserie.id_serie_doc.id_ccd.actual:
             raise PermissionDenied('No puede eliminar del catalogo de series y subseries a un CCD actual')
         elif cat_serie_subserie.id_serie_doc.id_ccd.fecha_terminado:
             raise PermissionDenied('El CCD elegido se encuentra terminado. Por favor intente reanudarlo antes de continuar')
         elif cat_serie_subserie.id_serie_doc.id_ccd.fecha_retiro_produccion:
             raise PermissionDenied('No puede realizar esta acción a un CCD retirado de producción')
-        
-        if not cat_serie_subserie:
-            raise NotFound('No existe el catalogo de la serie y subserie elegida')
-        elif cat_serie_subserie.id_subserie_doc:
-            raise PermissionDenied('Solo puede eliminar series independientes del catalogo')
         
         # ELIMINAR DEL CATALOGO
         cat_serie_subserie.delete()
@@ -809,8 +809,8 @@ class UpdateCatalogoUnidad(generics.UpdateAPIView):
                 }
             
             if cat_unidad_actual_eliminar.id_catalogo_serie.id_subserie_doc:
-                descripcion_registros_creados["NombreSubSerie"]=str(cat_unidad_actual_eliminar.id_catalogo_serie.id_subserie_doc.nombre)
-                descripcion_registros_creados["CodigoSubSerie"]=str(cat_unidad_actual_eliminar.id_catalogo_serie.id_subserie_doc.codigo)
+                descripcion_registros_eliminados["NombreSubSerie"]=str(cat_unidad_actual_eliminar.id_catalogo_serie.id_subserie_doc.nombre)
+                descripcion_registros_eliminados["CodigoSubSerie"]=str(cat_unidad_actual_eliminar.id_catalogo_serie.id_subserie_doc.codigo)
             
             valores_eliminados_detalles.append(descripcion_registros_eliminados) #para insertar en una lista
             

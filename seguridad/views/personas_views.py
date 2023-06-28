@@ -45,7 +45,6 @@ from seguridad.models import (
     TipoDocumento,
     EstadoCivil,
     ApoderadoPersona,
-    SucursalesEmpresas,
     HistoricoEmails,
     HistoricoDireccion,
     ClasesTercero,
@@ -83,8 +82,6 @@ from seguridad.serializers.personas_serializers import (
     PersonaJuridicaUpdateUserPermissionsSerializer,
     ApoderadoPersonaSerializer,
     ApoderadoPersonaPostSerializer,
-    SucursalesEmpresasSerializer,
-    SucursalesEmpresasPostSerializer,
     HistoricoEmailsSerializer,
     HistoricoDireccionSerializer,
     ClasesTerceroSerializer,
@@ -106,8 +103,8 @@ from seguridad.serializers.personas_serializers import (
 
 class GetEstadoCivil(generics.ListAPIView):
     serializer_class = EstadoCivilSerializer
-    permission_classes = [IsAuthenticated, PermisoConsultarEstadoCivil]
-    queryset = EstadoCivil.objects.filter(activo=True)
+    permission_classes = [IsAuthenticated] #PermisoConsultarEstadoCivil]
+    queryset = EstadoCivil.objects.all()
 
 
 class GetEstadoCivilById(generics.RetrieveAPIView):
@@ -169,8 +166,8 @@ class UpdateEstadoCivil(generics.RetrieveUpdateAPIView):
 
 class GetTipoDocumento(generics.ListAPIView):
     serializer_class = TipoDocumentoSerializer
-    permission_classes = [IsAuthenticated, PermisoConsultarTipoDocumento]
-    queryset = TipoDocumento.objects.filter(activo=True)
+    permission_classes = [IsAuthenticated] # PermisoConsultarTipoDocumento]
+    queryset = TipoDocumento.objects.all()
 
 
 class GetTipoDocumentoById(generics.RetrieveAPIView):
@@ -703,108 +700,108 @@ class UpdatePersonaJuridicaBySelf(generics.UpdateAPIView):
 # Views for Sucursales Empresas
 
 
-class getSucursalesEmpresas(generics.ListAPIView):
-    serializer_class = SucursalesEmpresasSerializer
-    queryset = SucursalesEmpresas.objects.all()
+# class getSucursalesEmpresas(generics.ListAPIView):
+#     serializer_class = SucursalesEmpresasSerializer
+#     queryset = SucursalesEmpresas.objects.all()
 
 
-class getSucursalEmpresaById(generics.RetrieveAPIView):
-    serializer_class = SucursalesEmpresasSerializer
-    queryset = SucursalesEmpresas.objects.all()
+# class getSucursalEmpresaById(generics.RetrieveAPIView):
+#     serializer_class = SucursalesEmpresasSerializer
+#     queryset = SucursalesEmpresas.objects.all()
 
 
-class deleteSucursalEmpresa(generics.DestroyAPIView):
-    serializer_class = SucursalesEmpresasSerializer
-    queryset = SucursalesEmpresas.objects.all()
-    permission_classes = [IsAuthenticated]
+# class deleteSucursalEmpresa(generics.DestroyAPIView):
+#     serializer_class = SucursalesEmpresasSerializer
+#     queryset = SucursalesEmpresas.objects.all()
+#     permission_classes = [IsAuthenticated]
     
-    def delete(self,request,pk):
-        sucursal=SucursalesEmpresas.objects.filter(id_sucursal_empresa=pk).first()
+#     def delete(self,request,pk):
+#         sucursal=SucursalesEmpresas.objects.filter(id_sucursal_empresa=pk).first()
 
-        if sucursal:
-            persona_empresa=sucursal.id_persona_empresa
-            sucursal.delete()
-            persona=Personas.objects.get(id_persona=persona_empresa.id_persona)
-            usuario = request.user.id_usuario
-            dirip = Util.get_client_ip(request)
-            descripcion ={ "nombre razón social": str(persona.razon_social),"sucursal" :str(sucursal.sucursal)}
-            auditoria_data = {
-                'id_usuario': usuario,
-                'id_modulo': 1,
-                'cod_permiso': 'BO',
-                'subsistema': 'TRSV',
-                'dirip': dirip,
-                'descripcion': descripcion,
-            }
+#         if sucursal:
+#             persona_empresa=sucursal.id_persona_empresa
+#             sucursal.delete()
+#             persona=Personas.objects.get(id_persona=persona_empresa.id_persona)
+#             usuario = request.user.id_usuario
+#             dirip = Util.get_client_ip(request)
+#             descripcion ={ "nombre razón social": str(persona.razon_social),"sucursal" :str(sucursal.sucursal)}
+#             auditoria_data = {
+#                 'id_usuario': usuario,
+#                 'id_modulo': 1,
+#                 'cod_permiso': 'BO',
+#                 'subsistema': 'TRSV',
+#                 'dirip': dirip,
+#                 'descripcion': descripcion,
+#             }
             
-            Util.save_auditoria(auditoria_data)
+#             Util.save_auditoria(auditoria_data)
 
-            return Response({'success':True, 'detail':'La sucursal empresa fue eliminada'}, status=status.HTTP_200_OK)
-        else:
-            raise ValidationError('No existe sucursal')
+#             return Response({'success':True, 'detail':'La sucursal empresa fue eliminada'}, status=status.HTTP_200_OK)
+#         else:
+#             raise ValidationError('No existe sucursal')
             
-class updateSucursalEmpresa(generics.RetrieveUpdateAPIView):
-    serializer_class = SucursalesEmpresasPostSerializer
-    queryset = SucursalesEmpresas.objects.all()
-    permission_classes = [IsAuthenticated]
+# class updateSucursalEmpresa(generics.RetrieveUpdateAPIView):
+#     serializer_class = SucursalesEmpresasPostSerializer
+#     queryset = SucursalesEmpresas.objects.all()
+#     permission_classes = [IsAuthenticated]
     
-    def put(self, request,pk=None):
-        sucursal = SucursalesEmpresas.objects.filter(id_sucursal_empresa= pk).first()
-        previous_sucursal = copy.copy(sucursal)
-        if sucursal:
-            sucursal_serializer = self.serializer_class(sucursal, data=request.data)
-            sucursal_serializer.is_valid(raise_exception=True)
-            sucursal_serializer.save()
+#     def put(self, request,pk=None):
+#         sucursal = SucursalesEmpresas.objects.filter(id_sucursal_empresa= pk).first()
+#         previous_sucursal = copy.copy(sucursal)
+#         if sucursal:
+#             sucursal_serializer = self.serializer_class(sucursal, data=request.data)
+#             sucursal_serializer.is_valid(raise_exception=True)
+#             sucursal_serializer.save()
             
-            usuario = request.user.id_usuario
-            persona=Personas.objects.get(id_persona=request.data['id_persona_empresa'])
-            dirip = Util.get_client_ip(request)
-            descripcion ={ "nombre razón social": str(persona.razon_social),"sucursal" :str(sucursal.sucursal)}
-            valores_actualizados={'current':sucursal, 'previous':previous_sucursal}
+#             usuario = request.user.id_usuario
+#             persona=Personas.objects.get(id_persona=request.data['id_persona_empresa'])
+#             dirip = Util.get_client_ip(request)
+#             descripcion ={ "nombre razón social": str(persona.razon_social),"sucursal" :str(sucursal.sucursal)}
+#             valores_actualizados={'current':sucursal, 'previous':previous_sucursal}
 
-            auditoria_data = {
-                'id_usuario': usuario,
-                'id_modulo': 1,
-                'cod_permiso': 'AC',
-                'subsistema': 'TRSV',
-                'dirip': dirip,
-                'descripcion': descripcion,
-                'valores_actualizados': valores_actualizados
-            }
+#             auditoria_data = {
+#                 'id_usuario': usuario,
+#                 'id_modulo': 1,
+#                 'cod_permiso': 'AC',
+#                 'subsistema': 'TRSV',
+#                 'dirip': dirip,
+#                 'descripcion': descripcion,
+#                 'valores_actualizados': valores_actualizados
+#             }
             
-            Util.save_auditoria(auditoria_data)
-            return Response({'success':True, 'detail':'la sucursal empresa actualizada'}, status=status.HTTP_201_CREATED)
-        else:
-            raise ValidationError('No existe sucursal')
+#             Util.save_auditoria(auditoria_data)
+#             return Response({'success':True, 'detail':'la sucursal empresa actualizada'}, status=status.HTTP_201_CREATED)
+#         else:
+#             raise ValidationError('No existe sucursal')
 
-class registerSucursalEmpresa(generics.CreateAPIView):
-    serializer_class = SucursalesEmpresasPostSerializer 
-    queryset = SucursalesEmpresas.objects.all()
-    permission_classes = [IsAuthenticated]
+# class registerSucursalEmpresa(generics.CreateAPIView):
+#     serializer_class = SucursalesEmpresasPostSerializer 
+#     queryset = SucursalesEmpresas.objects.all()
+#     permission_classes = [IsAuthenticated]
     
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+#     def create(self, request, *args, **kwargs):
+#         serializer = self.get_serializer(data=request.data)
+#         serializer.is_valid(raise_exception=True)
 
-        serializador=serializer.save()
-        usuario = request.user.id_usuario
+#         serializador=serializer.save()
+#         usuario = request.user.id_usuario
 
-        persona=Personas.objects.get(id_persona=request.data['id_persona_empresa'])
-        dirip = Util.get_client_ip(request)
-        descripcion ={ "nombre razón social": str(persona.razon_social),"sucursal" :str(serializador.sucursal)}
+#         persona=Personas.objects.get(id_persona=request.data['id_persona_empresa'])
+#         dirip = Util.get_client_ip(request)
+#         descripcion ={ "nombre razón social": str(persona.razon_social),"sucursal" :str(serializador.sucursal)}
 
-        auditoria_data = {
-            'id_usuario': usuario,
-            'id_modulo': 1,
-            'cod_permiso': 'CR',
-            'subsistema': 'TRSV',
-            'dirip': dirip,
-            'descripcion': descripcion,
-        }
+#         auditoria_data = {
+#             'id_usuario': usuario,
+#             'id_modulo': 1,
+#             'cod_permiso': 'CR',
+#             'subsistema': 'TRSV',
+#             'dirip': dirip,
+#             'descripcion': descripcion,
+#         }
         
-        Util.save_auditoria(auditoria_data)
-        headers = self.get_success_headers(serializer.data)
-        return Response({'success':True},serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+#         Util.save_auditoria(auditoria_data)
+#         headers = self.get_success_headers(serializer.data)
+#         return Response({'success':True},serializer.data, status=status.HTTP_201_CREATED, headers=headers)
     
 
 # Views for Historico Emails

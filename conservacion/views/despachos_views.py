@@ -295,7 +295,7 @@ class CreateDespacho(generics.UpdateAPIView):
         fecha_despacho = datetime.strptime(info_despacho.get('fecha_despacho'), "%Y-%m-%d %H:%M:%S")
         aux_validacion_fechas = info_despacho['fecha_registro'] - fecha_despacho
         if int(aux_validacion_fechas.days) > 8 or int(aux_validacion_fechas.days) < 0:
-            raise NotFound('La fecha ingresada no es permita dentro de los parametros existentes')
+            raise NotFound('La fecha ingresada no es permitida dentro de los parametros existentes')
         
         fecha_aprobacion_solicitud = instancia_solicitud.fecha_aprobacion_coord_viv
         if fecha_aprobacion_solicitud == None:
@@ -323,9 +323,9 @@ class CreateDespacho(generics.UpdateAPIView):
             raise NotFound('El número de posición debe ser único')
         
         # SE VALIDA QUE NO TODOS LOS ITEMS TENGAN CANTIDAD IGUAL A CERO
-        validacion_ceros = [i['cantidad_despachada'] for i in items_despacho]
+        validacion_ceros = [i['cantidad_despachada'] for i in items_despacho if i['cantidad_despachada'] == 0]
         
-        if len(set(validacion_ceros)) <= 1 and len(items_despacho)!=1:
+        if len(validacion_ceros) > 0:
             raise NotFound('No todos las cantidades despachadas de los items pueden estar en cero')
         
         # SE VALIDA QUE EL DESPACHO TENGA AL MENOS UN ITEMS
@@ -397,8 +397,8 @@ class CreateDespacho(generics.UpdateAPIView):
                 raise NotFound('Error en el bien (' + instancia_bien.nombre + ') con número de posición (' + str(i['nro_posicion_en_despacho']) + '). Si la cantidad despachada es igual a cero no debe ingresar ninguna subfila')
             
             # SE VALIDA QUE CUANDO SE INGRESE UNA CANTIDAD DESPACHADA IGUAL A CERO SE CUMPLAN LOS REQUERIMIENTOS EXIGIDOS POR MODELADO
-            if i['cantidad_despachada'] >= i['cantidad_solicitada']:
-                raise NotFound('Error en el bien (' + instancia_bien.nombre + ') con número de posición (' + str(i['nro_posicion_en_despacho']) + '). La cantidad despachada debe ser menor a la cantidad solicitada.')
+            if i['cantidad_despachada'] > i['cantidad_solicitada']:
+                raise NotFound('Error en el bien (' + instancia_bien.nombre + ') con número de posición (' + str(i['nro_posicion_en_despacho']) + '). La cantidad despachada debe ser menor o igual a la cantidad solicitada.')
             
             aux_validacion_bienes_despachados_repetidos.append([i['id_bien'], i["agno_lote"], i["nro_lote"], i["cod_etapa_lote"]])
             valores_creados_detalles.append({'nombre' : instancia_inventario.id_bien.nombre})
@@ -513,9 +513,9 @@ class UpdatePreparacionMezclas(generics.UpdateAPIView):
             raise NotFound('El número de posición debe ser único')
         
         # SE VALIDA QUE NO TODOS LOS ITEMS TENGAN CANTIDAD IGUAL A CERO
-        validacion_ceros = [i['cantidad_despachada'] for i in items_despacho]
+        validacion_ceros = [i['cantidad_despachada'] for i in items_despacho if i['cantidad_despachada'] == 0]
         
-        if len(set(validacion_ceros)) <= 1 and len(items_despacho)!=1:
+        if len(validacion_ceros) >= 0:
             raise NotFound('No todos las cantidades despachadas de los items pueden estar en cero')
         
         # SE VALIDA QUE EL DESPACHO TENGA AL MENOS UN ITEMS
@@ -655,8 +655,8 @@ class UpdatePreparacionMezclas(generics.UpdateAPIView):
                 raise NotFound('Error en el bien (' + instancia_bien.nombre + ') con número de posición (' + str(i['nro_posicion_en_despacho']) + '). Si la cantidad despachada es igual a cero no debe ingresar ninguna subfila')
             
             # SE VALIDA QUE CUANDO SE INGRESE UNA CANTIDAD DESPACHADA IGUAL A CERO SE CUMPLAN LOS REQUERIMIENTOS EXIGIDOS POR MODELADO
-            if i['cantidad_despachada'] >= i['cantidad_solicitada']:
-                raise NotFound('Error en el bien (' + instancia_bien.nombre + ') con número de posición (' + str(i['nro_posicion_en_despacho']) + '). La cantidad despachada debe ser menor a la cantidad solicitada.')
+            if i['cantidad_despachada'] > i['cantidad_solicitada']:
+                raise NotFound('Error en el bien (' + instancia_bien.nombre + ') con número de posición (' + str(i['nro_posicion_en_despacho']) + '). La cantidad despachada debe ser menor o igual a la cantidad solicitada.')
             
             aux_validacion_bienes_despachados_repetidos.append([i['id_bien'], i["agno_lote"], i["nro_lote"], i["cod_etapa_lote"]])
             valores_creados_detalles.append({'nombre' : instancia_inventario.id_bien.nombre})
@@ -829,27 +829,27 @@ class GetSolicitudesVivero(generics.ListAPIView):
         
         # SI SE INGRESA NÚMERO DE SOLICITUD SE BUSCA POR EL NÚMERO DE SOLICITUD, EL ID VIVERO Y QUE LA SOLICITUD SEA MENOR LA FECHA DE DESPACHO
         if nro_solicitud:
-            instancia_solicitudes = queryset.filter(nro_solicitud=nro_solicitud,estado_aprobacion_responsable='A',solicitud_abierta=True)
-            if not instancia_solicitudes:
-                raise NotFound('No se encontraron coincidencias con ese número de solicitud')
+            instancia_solicitudes = queryset.filter(nro_solicitud=nro_solicitud,estado_aprobacion_responsable='A',solicitud_abierta=True,revisada_coord_viveros=True,estado_aprobacion_coord_viveros='A')
+            # if not instancia_solicitudes:
+            #     raise NotFound('No se encontraron coincidencias con ese número de solicitud')
             
-            instancia_solicitudes = instancia_solicitudes.filter(id_vivero_solicitud=id_vivero)
-            if not instancia_solicitudes:
-                raise NotFound('El número de solicitud ingresado no está registrada dentro del vivero ingresado')
+            instancia_solicitudes = instancia_solicitudes.filter(id_vivero_solicitud=id_vivero) if instancia_solicitudes else []
+            # if not instancia_solicitudes:
+            #     raise NotFound('El número de solicitud ingresado no está registrada dentro del vivero ingresado')
             
-            instancia_solicitudes = instancia_solicitudes.filter(fecha_aprobacion_coord_viv__lte=fecha_despacho).order_by('-fecha_aprobacion_coord_viv')
-            if not instancia_solicitudes:
-                raise NotFound('La fecha del despacho debe ser superior a la fecha de la solicitud')
+            instancia_solicitudes = instancia_solicitudes.filter(fecha_aprobacion_responsable__lte=fecha_despacho).order_by('-fecha_aprobacion_responsable') if instancia_solicitudes else []
+            # if not instancia_solicitudes:
+            #     raise NotFound('La fecha del despacho debe ser superior a la fecha de la solicitud')
         
         # SI SE NO INGRESA NÚMERO DE SOLICITUD SE BUSCA POR EL ID VIVERO Y QUE LA SOLICITUD SEA MENOR LA FECHA DE DESPACHO
         else:
-            instancia_solicitudes = queryset.filter(id_vivero_solicitud=id_vivero,estado_aprobacion_responsable='A',solicitud_abierta=True)
-            if not instancia_solicitudes:
-                raise NotFound('El viero ingresado no tiene solicitudes registradas o no existe.')
+            instancia_solicitudes = queryset.filter(id_vivero_solicitud=id_vivero,estado_aprobacion_responsable='A',solicitud_abierta=True,revisada_coord_viveros=True,estado_aprobacion_coord_viveros='A')
+            # if not instancia_solicitudes:
+            #     raise NotFound('El vivero ingresado no tiene solicitudes registradas o no existe.')
             
-            instancia_solicitudes = instancia_solicitudes.filter(fecha_aprobacion_coord_viv__lte=fecha_despacho).order_by('-fecha_aprobacion_coord_viv')
-            if not instancia_solicitudes:
-                raise NotFound('La fecha del despacho debe ser superior a la fecha de la solicitud')
+            instancia_solicitudes = instancia_solicitudes.filter(fecha_aprobacion_responsable__lte=fecha_despacho).order_by('-fecha_aprobacion_responsable') if instancia_solicitudes else []
+            # if not instancia_solicitudes:
+            #     raise NotFound('La fecha del despacho debe ser superior a la fecha de la solicitud')
         serializador=self.serializer_class(instancia_solicitudes,many=True)
         
         return Response ({'success':True,'detail':'Datos encontrados','data':serializador.data},status=status.HTTP_200_OK)
@@ -1041,6 +1041,10 @@ class AnularPreparacionMezclas(generics.UpdateAPIView):
             instancia_bien_vivero = InventarioViveros.objects.filter(id_bien=i.id_bien,id_vivero=despacho_a_anular.id_vivero).first()
             instancia_bien_vivero.cantidad_salidas = instancia_bien_vivero.cantidad_salidas if instancia_bien_vivero.cantidad_salidas else 0
             instancia_bien_vivero.cantidad_salidas = instancia_bien_vivero.cantidad_salidas - i.cantidad_despachada
+            
+            if instancia_bien_vivero.cantidad_salidas < 0:
+                raise ValidationError(f'La cantidad de salidas no puede ser negativa ({str(instancia_bien_vivero.cantidad_salidas)})')
+            
             instancia_bien_vivero.save()    
         
         # SE INSERTAN LOS DATOS CORRESPONDIENTES EN LA TABLA DESPACHOS

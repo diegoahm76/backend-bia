@@ -542,38 +542,38 @@ class CreateProgramacionMantenimiento(generics.CreateAPIView):
             if not articulo:
                 raise NotFound('Ingrese un id de articulo válido')
             if not articulo['tiene_hoja_vida']:
-                raise NotFound('El artículo no tiene hoja de vida por lo que no se puede programar mantenimiento')
+                raise ValidationError('El artículo no tiene hoja de vida por lo que no se puede programar mantenimiento')
             if articulo['cod_tipo_bien'] != 'A':
-                raise NotFound('Para programar un mantenimiento el bien debe ser un activo fijo')
+                raise ValidationError('Para programar un mantenimiento el bien debe ser un activo fijo')
             if articulo['cod_tipo_activo'] != 'Com' and articulo['cod_tipo_activo'] != 'Veh' and articulo['cod_tipo_activo'] != 'OAc':
-                raise NotFound('Para programar un mantenimiento el bien debe ser de tipo computador, vehiculo u otro tipo de activo')
+                raise ValidationError('Para programar un mantenimiento el bien debe ser de tipo computador, vehiculo u otro tipo de activo')
             if articulo['nivel_jerarquico'] != 5:
-                raise NotFound('Para programar un mantenimiento el bien debe ser de nivel 5')
+                raise ValidationError('Para programar un mantenimiento el bien debe ser de nivel 5')
             if i['kilometraje_programado'] != None and i['fecha_programada'] != None:
-                raise NotFound('Debe programar por kilometraje o por fecha, no las dos opciones a la vez')
+                raise ValidationError('Debe programar por kilometraje o por fecha, no las dos opciones a la vez')
             if i['tipo_programacion'] == "fecha":
                 if i['fecha_programada'] == None:
-                    raise NotFound('Si eligió programación por fecha debe ingresar una fecha en (fecha_programada)')
+                    raise ValidationError('Si eligió programación por fecha debe ingresar una fecha en (fecha_programada)')
                 if i['kilometraje_programado'] != None:
-                    raise NotFound('Si eligió programación por fecha el campo kilometraje debe estar en null')
+                    raise ValidationError('Si eligió programación por fecha el campo kilometraje debe estar en null')
             elif i['tipo_programacion'] == "kilometraje":
                 if i['kilometraje_programado'] == None:
-                    raise NotFound('Si eligió programación por kilometraje debe ingresar un valor de kilometraje')
+                    raise ValidationError('Si eligió programación por kilometraje debe ingresar un valor de kilometraje')
                 # if not (i['kilometraje_programado'].isdigit()):
                 #     raise NotFound('El valor del kilometraje debe ser un string que contenga solo números')
                 if i['fecha_programada'] != None:
-                    raise NotFound('Si eligió programación por kilometraje el campo fecha_programada debe estar en null')
+                    raise ValidationError('Si eligió programación por kilometraje el campo fecha_programada debe estar en null')
             #VALIDACION FORMATE DE FECHAS ENTRANTES
             if i['tipo_programacion'] == 'fecha':
                 try:
                     aux_v_f_p = i['fecha_programada'].split("-")
                     aux_v_f_p_2 = i['fecha_solicitud'].split("-")
                 except:
-                    raise NotFound('Formato de fecha no válido')
+                    raise ValidationError('Formato de fecha no válido')
                 if not (aux_v_f_p[0]).isdigit() or not (aux_v_f_p[1]).isdigit() or not (aux_v_f_p[2]).isdigit() or not (aux_v_f_p_2[0]).isdigit() or not (aux_v_f_p_2[1]).isdigit() or not (aux_v_f_p_2[2]).isdigit():
-                    raise NotFound('Formato de fecha no válido')
+                    raise ValidationError('Formato de fecha no válido')
                 if len(aux_v_f_p) != 3 or len(aux_v_f_p_2) != 3:
-                    raise NotFound('Formato de fecha no válido')
+                    raise ValidationError('Formato de fecha no válido')
                 a = (len(aux_v_f_p[0]) != 4)
                 b = (len(aux_v_f_p[1]) <= 2 and len(aux_v_f_p[1]) >= 1)
                 c = (len(aux_v_f_p[2]) <= 2 and len(aux_v_f_p[2]) >= 1)
@@ -582,10 +582,10 @@ class CreateProgramacionMantenimiento(generics.CreateAPIView):
                 f = (len(aux_v_f_p[2]) <= 2 and len(aux_v_f_p[2]) >= 1)
                 
                 if a or not b or not c or d or not e or not f:
-                    raise NotFound('Formato de fecha no válido')
+                    raise ValidationError('Formato de fecha no válido')
 
                 if int(aux_v_f_p[1]) <= 0 or int(aux_v_f_p[1]) >= 13 or int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 32 or int(aux_v_f_p_2[1]) <= 0 or int(aux_v_f_p_2[1]) >= 13 or int(aux_v_f_p_2[2]) <= 0 or int(aux_v_f_p_2[2]) >= 32:
-                    raise NotFound('Formato de fecha no válido, debe ingresar un mes entre 1 y 12 y un día entre 1 y 31')
+                    raise ValidationError('Formato de fecha no válido, debe ingresar un mes entre 1 y 12 y un día entre 1 y 31')
                 mes = int(aux_v_f_p[1])
                 anio = int(aux_v_f_p[0])
                 mes_2 = int(aux_v_f_p_2[1])
@@ -593,36 +593,36 @@ class CreateProgramacionMantenimiento(generics.CreateAPIView):
                 if mes == 2:
                     if anio % 4 == 0 and (anio % 100 != 0 or anio % 400 == 0):
                         if int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 30:
-                            raise NotFound('En año bisiesto Febrero sólo puede tener hasta 29 días')
+                            raise ValidationError('En año bisiesto Febrero sólo puede tener hasta 29 días')
                     else:
                         if int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 29:
-                            raise NotFound('Para le año ingresado Febrero solo puede tener hasta 28 días')
+                            raise ValidationError('Para le año ingresado Febrero solo puede tener hasta 28 días')
                 if mes == 1 or mes == 3 or mes == 5 or mes == 7 or mes == 8 or mes == 10 or mes == 12:
                     if int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 32:
-                            raise NotFound('Enero, Marzo, Mayo, Julio, Agosto, Octubre y Diciebre solo pueden tener entre 1 y 31 días')
+                            raise ValidationError('Enero, Marzo, Mayo, Julio, Agosto, Octubre y Diciebre solo pueden tener entre 1 y 31 días')
                 if mes == 4 or mes == 6 or mes == 9 or mes == 11:
                     if int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 31:
-                            raise NotFound('Abril, Junio, Septiembre y Noviembre ssolo pueden tener entre 1 y 30 días')
+                            raise ValidationError('Abril, Junio, Septiembre y Noviembre ssolo pueden tener entre 1 y 30 días')
                 
                 if mes_2 == 2:
                     if anio_2 % 4 == 0 and (anio_2 % 100 != 0 or anio_2 % 400 == 0):
                         if int(aux_v_f_p_2[2]) <= 0 or int(aux_v_f_p_2[2]) >= 30:
-                            raise NotFound('En año bisiesto Febrero sólo puede tener hasta 29 días')
+                            raise ValidationError('En año bisiesto Febrero sólo puede tener hasta 29 días')
                     else:
                         if int(aux_v_f_p_2[2]) <= 0 or int(aux_v_f_p_2[2]) >= 29:
-                            raise NotFound('Para le año ingresado Febrero solo puede tener hasta 28 días')
+                            raise ValidationError('Para el año ingresado Febrero solo puede tener hasta 28 días')
                 if mes_2 == 1 or mes_2 == 3 or mes_2 == 5 or mes_2 == 7 or mes_2 == 8 or mes_2 == 10 or mes_2 == 12:
                     if int(aux_v_f_p_2[2]) <= 0 or int(aux_v_f_p_2[2]) >= 32:
-                            raise NotFound('Enero, Marzo, Mayo, Julio, Agosto, Octubre y Diciebre solo pueden tener entre 1 y 31 días')
+                            raise ValidationError('Enero, Marzo, Mayo, Julio, Agosto, Octubre y Diciembre solo pueden tener entre 1 y 31 días')
                 if mes_2 == 4 or mes_2 == 6 or mes_2 == 9 or mes_2 == 11:
                     if int(aux_v_f_p_2[2]) <= 0 or int(aux_v_f_p_2[2]) >= 31:
-                            raise NotFound('Abril, Junio, Septiembre y Noviembre ssolo pueden tener entre 1 y 30 días')
+                            raise ValidationError('Abril, Junio, Septiembre y Noviembre solo pueden tener entre 1 y 30 días')
                 i['fecha_programada'] = (datetime.strptime(i['fecha_programada'], '%Y-%m-%d')).date()
                 i['fecha_generada'] = date.today()
                 i['fecha_solicitud'] = (datetime.strptime(i['fecha_solicitud'], '%Y-%m-%d')).date()
                 a = i['fecha_generada'] - i['fecha_programada']
                 if (i['fecha_generada'] > i['fecha_solicitud']) or (i['fecha_generada'] > i['fecha_programada']) or (i['fecha_solicitud'] > i['fecha_programada']):
-                    raise NotFound('La fecha de programación y la fecha de solicitud no pueden ser menores a la fecha de hoy')
+                    raise ValidationError('La fecha de programación y la fecha de solicitud no pueden ser menores a la fecha de hoy')
                 
             i['fecha_generada'] = date.today()
             
@@ -658,11 +658,11 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
         try:
             aux_v_f_p = datos_ingresados['fecha_ejecutado'].split("-")
         except:
-            raise NotFound('Formato de fecha no válido')
+            raise ValidationError('Formato de fecha no válido')
         if not (aux_v_f_p[0]).isdigit() or not (aux_v_f_p[1]).isdigit() or not (aux_v_f_p[2]).isdigit():
-            raise NotFound('Formato de fecha no válido')
+            raise ValidationError('Formato de fecha no válido')
         if len(aux_v_f_p) != 3:
-            raise NotFound('Formato de fecha no válido')
+            raise ValidationError('Formato de fecha no válido')
         a = (len(aux_v_f_p[0]) != 4)
         b = (len(aux_v_f_p[1]) <= 2 and len(aux_v_f_p[1]) >= 1)
         c = (len(aux_v_f_p[2]) <= 2 and len(aux_v_f_p[2]) >= 1)
@@ -671,28 +671,28 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
         f = (len(aux_v_f_p[2]) <= 2 and len(aux_v_f_p[2]) >= 1)
         
         if a or not b or not c or d or not e or not f:
-            raise NotFound('Formato de fecha no válido')
+            raise ValidationError('Formato de fecha no válido')
 
         if int(aux_v_f_p[1]) <= 0 or int(aux_v_f_p[1]) >= 13 or int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 32:
-            raise NotFound('Formato de fecha no válido, debe ingresar un mes entre 1 y 12 y un día entre 1 y 31')
+            raise ValidationError('Formato de fecha no válido, debe ingresar un mes entre 1 y 12 y un día entre 1 y 31')
         mes = int(aux_v_f_p[1])
         anio = int(aux_v_f_p[0])
         if mes == 2:
             if anio % 4 == 0 and (anio % 100 != 0 or anio % 400 == 0):
                 if int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 30:
-                    raise NotFound('En año bisiesto Febrero sólo puede tener hasta 29 días')
+                    raise ValidationError('En año bisiesto Febrero sólo puede tener hasta 29 días')
             else:
                 if int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 29:
-                    raise NotFound('Para le año ingresado Febrero solo puede tener hasta 28 días')
+                    raise ValidationError('Para le año ingresado Febrero solo puede tener hasta 28 días')
         if mes == 1 or mes == 3 or mes == 5 or mes == 7 or mes == 8 or mes == 10 or mes == 12:
             if int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 32:
-                    raise NotFound('Enero, Marzo, Mayo, Julio, Agosto, Octubre y Diciebre solo pueden tener entre 1 y 31 días')
+                    raise ValidationError('Enero, Marzo, Mayo, Julio, Agosto, Octubre y Diciembre solo pueden tener entre 1 y 31 días')
         if mes == 4 or mes == 6 or mes == 9 or mes == 11:
             if int(aux_v_f_p[2]) <= 0 or int(aux_v_f_p[2]) >= 31:
-                    raise NotFound('Abril, Junio, Septiembre y Noviembre ssolo pueden tener entre 1 y 30 días')
+                    raise ValidationError('Abril, Junio, Septiembre y Noviembre ssolo pueden tener entre 1 y 30 días')
         
         id_articulo = datos_ingresados['id_articulo']
-        articulo = CatalogoBienes.objects.filter(id_bien = id_articulo).first()
+        articulo = CatalogoBienes.objects.filter(id_bien=id_articulo).exclude(nro_elemento_bien=None).values().first()
         datos_ingresados['fecha_registrado'] = datetime.now()
         fecha_registrado = datos_ingresados['fecha_registrado'].date()
         fecha_ejecutado = (datetime.strptime(datos_ingresados['fecha_ejecutado'], '%Y-%m-%d')).date()
@@ -704,24 +704,30 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
         persona_realiza = Personas.objects.filter(id_persona=datos_ingresados['id_persona_realiza']).values().filter()
         datos_ingresados['id_persona_diligencia'] = request.user.id_usuario
         if not articulo:
-            raise NotFound('Ingrese un id de articulo válido')
+            raise NotFound('Ingrese un articulo válido. Debe ser activo fijo, de nivel jerarquico 5 y un elemento')
         if not articulo['tiene_hoja_vida']:
-            raise NotFound('El artículo no tiene hoja de vida por lo que no se puede registrar mantenimiento')
+            raise PermissionDenied('El artículo no tiene hoja de vida por lo que no se puede registrar mantenimiento')
+        if articulo['cod_tipo_bien'] != 'A':
+            raise NotFound('Para registrar un mantenimiento el bien debe ser un activo fijo')
+        if articulo['cod_tipo_activo'] != 'Com' and articulo['cod_tipo_activo'] != 'Veh' and articulo['cod_tipo_activo'] != 'OAc':
+            raise NotFound('Para registrar un mantenimiento el bien debe ser de tipo computador, vehiculo u otro tipo de activo')
+        if articulo['nivel_jerarquico'] != 5:
+            raise NotFound('Para registrar un mantenimiento el bien debe ser de nivel 5')
         if diferencia_dias < 0:
-            raise NotFound('La fecha del registro del mantenimiento debe ser mayor o igual a la fecha de la ejecución del mantenimiento')
+            raise PermissionDenied('La fecha del registro del mantenimiento debe ser mayor o igual a la fecha de la ejecución del mantenimiento')
         if int(datos_ingresados['dias_empleados']) <= 0:
-            raise NotFound('Cantidad de días debe ser un número entero mayor a cero')
+            raise ValidationError('Cantidad de días debe ser un número entero mayor a cero')
         if int(datos_ingresados['dias_empleados']) > diferencia_dias:
-            raise NotFound('La diferencia de fecha registrado y fecha ejecutado no puede ser mayor a la cantidad de días empleados')
+            raise ValidationError('La diferencia de fecha registrado y fecha ejecutado no puede ser mayor a la cantidad de días empleados')
         articulo = CatalogoBienes.objects.filter(id_bien=id_articulo).values().first()
         if datos_ingresados['cod_tipo_mantenimiento'] != 'P' and datos_ingresados['cod_tipo_mantenimiento'] != 'C':
-            raise NotFound('El tipo de mantenimiento debe ser P (preventivo) o C (correctivo)')
+            raise ValidationError('El tipo de mantenimiento debe ser P (preventivo) o C (correctivo)')
         if datos_ingresados['id_programacion_mtto'] != None and datos_ingresados['id_programacion_mtto'] != '':
             programacion_mantenimientos = ProgramacionMantenimientos.objects.filter(id_programacion_mtto = datos_ingresados['id_programacion_mtto']).values().first() 
             if not programacion_mantenimientos:
                 raise NotFound('El id de programación de mantenimientos no existe')
             if programacion_mantenimientos['id_articulo_id'] != id_articulo:
-                raise NotFound('El id de programación de mantenimientos no tiene relación con el artículo enviado')
+                raise ValidationError('El id de programación de mantenimientos no tiene relación con el artículo enviado')
         else:
             programacion_mantenimientos = None
         if not cod_estado_final:
@@ -741,9 +747,9 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
         else:
             aux_fecha = None
         if aux_fecha == None:
-            raise NotFound ('El bien seleeccionado no tiene movimientos registrados')
+            raise NotFound('El bien seleeccionado no tiene movimientos registrados')
         if aux_fecha.days < 0:
-            raise NotFound('No se puede registrar el mantenimiento debido a que La fecha del registro del mantenimiento debe ser POSTERIOR O IGUAL a la fecha en la cual fue actualizado el estado anterior del activo')
+            raise PermissionDenied('No se puede registrar el mantenimiento debido a que La fecha del registro del mantenimiento debe ser POSTERIOR O IGUAL a la fecha en la cual fue actualizado el estado anterior del activo')
         datos_ingresados['cod_estado_anterior'] = inventario.cod_estado_activo
         datos_ingresados['fecha_estado_anterior'] = inventario.fecha_ultimo_movimiento
         inventario.fecha_ultimo_movimiento = datos_ingresados['fecha_registrado']
