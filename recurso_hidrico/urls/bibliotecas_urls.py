@@ -10,6 +10,7 @@ urlpatterns = [
     path('secciones/update/<str:pk>/',views.ActualizarSeccion.as_view(),name='actualizar-seccion'),
     path('secciones/create/',views.RegistroSeccion.as_view(),name='create-seccion'),
     path('subsecciones/create/',views.RegistroSubSeccion.as_view(),name='create-subseccion'),
+    path('subsecciones/delete/<str:pk>/',views.EliminarSubseccion.as_view(),name='eliminar-subseccion'),
     path('secciones-subsecciones/create/',views.RegistroSeccionSubseccion.as_view(),name='create-seccion-subsecciones'),
     path('secciones/delete/<str:pk>/',views.EliminarSeccion.as_view(),name='eliminar-seccion'),
     path('get/subsecciones-cont-instrumentos/<str:pk>/',views.GetSubseccionesContInstrumentos.as_view() ,name='get-subseccion-cont'),

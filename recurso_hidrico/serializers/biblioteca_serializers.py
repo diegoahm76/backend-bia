@@ -55,6 +55,8 @@ class GetSubseccionesSerializer(serializers.ModelSerializer):
         return f'{primer_nombre} {primer_apellido}'
 
 class ActualizarSubseccionesSerializer(serializers.ModelSerializer):
+    id_seccion = serializers.PrimaryKeyRelatedField(read_only=True)
+    id_persona_creada = serializers.PrimaryKeyRelatedField(read_only=True)
     class Meta:
         model = Subsecciones
         fields = '__all__'
@@ -108,3 +110,15 @@ class SubseccionContarInstrumentosSerializer(serializers.ModelSerializer):
         model = Subsecciones
         fields = ['id_subseccion', 'id_seccion', 'nombre', 'descripcion', 'fechaCreacion', 'id_persona_creada', 'instrumentos_count']
 
+
+
+class EliminarSubseccionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subsecciones
+        fields = '__all__'
+
+
+class EliminarSeccionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Secciones
+        fields = '__all__'

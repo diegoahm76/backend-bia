@@ -63,6 +63,7 @@ urlpatterns = [
     path('api/transversal/notificaciones/', include('transversal.urls.notificaciones_urls')),
     path('api/transversal/configuracion/',include('transversal.urls.configuracionEntidades_urls')),
     path('api/transversal/sucursales/',include('transversal.urls.sucursalesEmpresas_urls')),
+    path('api/transversal/lideres/',include('transversal.urls.lideres_urls')),
 
 
     #GESTOR DOCUMENTAL
