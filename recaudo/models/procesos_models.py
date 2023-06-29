@@ -55,12 +55,23 @@ class EtapasProceso(models.Model):
         verbose_name_plural = 'Etapas procesos'
 
 
+class CategoriaAtributo(models.Model):
+    id = models.AutoField(primary_key=True, db_column='T437IdCategroiaAtributo')
+    categoria = models.CharField(max_length=255, db_column='T437categoriaAtributo')
+
+    class Meta:
+        db_table = 'T437CategoriasAtributos'
+        verbose_name = 'Categoria atributo'
+        verbose_name_plural = 'Categorias atributos'
+
+
 class AtributosEtapas(models.Model):
     id = models.AutoField(primary_key=True, db_column='T421IdAtributoEtapa')
     descripcion = models.CharField(max_length=255, db_column='T421descripcion')
     obligatorio = models.IntegerField(db_column='T421obligatorio')
     id_tipo = models.ForeignKey(TiposAtributos, on_delete=models.CASCADE, db_column='T421tipo')
     id_etapa = models.ForeignKey(EtapasProceso, on_delete=models.CASCADE, db_column='T421Id_EtapaProceso')
+    id_categoria = models.ForeignKey(CategoriaAtributo, on_delete=models.CASCADE, db_column='T421Id_CategoriaAtributo')
 
     class Meta:
         db_table = 'T421AtributosEtapas'
@@ -73,6 +84,7 @@ class Procesos(models.Model):
     id_cartera = models.ForeignKey('recaudo.Cartera', on_delete=models.CASCADE, db_column='T422Id_Cartera')
     id_etapa = models.ForeignKey(EtapasProceso, on_delete=models.CASCADE, db_column='T422Id_EtapaProceso')
     id_funcionario = models.IntegerField(db_column='T422Id_Funcionario')
+    id_categoria = models.ForeignKey(CategoriaAtributo, on_delete=models.CASCADE, db_column='T422Id_CategoriaAtributo')
     inicio = models.DateField(db_column='T422inicio')
     fin = models.DateField(db_column='T422fin', null=True, blank=True)
 
