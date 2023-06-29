@@ -25,14 +25,14 @@ class CarteraGeneralDetalleSerializer(serializers.ModelSerializer):
 
     def get_nombre_deudor(self, obj):
         try:
-            deudor = Deudores.objects.get(id=obj.id_obligacion.id_expediente.id_deudor.id)
+            deudor = Deudores.objects.get(codigo=obj.id_obligacion.id_expediente.cod_deudor.codigo)
             return f"{deudor.nombres} {deudor.apellidos}"
         except ObjectDoesNotExist:
             return None
         
     def get_identificacion(self, obj):
         try:
-            deudor = Deudores.objects.get(codigo=obj.id_obligacion.id_expediente.id_deudor.id)
+            deudor = Deudores.objects.get(codigo=obj.id_obligacion.id_expediente.cod_deudor.codigo)
             return f"{deudor.identificacion}"
         except ObjectDoesNotExist:
             return None
@@ -61,7 +61,7 @@ class CarteraEdadesSerializer(serializers.ModelSerializer):
 
     def get_identificacion(self, obj):
         try:
-            deudor = Deudores.objects.get(id=obj.id_obligacion.id_expediente.id_deudor.id)
+            deudor = Deudores.objects.get(codigo=obj.id_obligacion.id_expediente.cod_deudor.codigo)
             return f"{deudor.identificacion}"
         except ObjectDoesNotExist:
             return None
@@ -77,7 +77,7 @@ class CarteraEdadesSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         try:
-            deudor = Deudores.objects.get(codigo=instance.id_obligacion.id_expediente.id_deudor.id)
+            deudor = Deudores.objects.get(codigo=instance.id_obligacion.id_expediente.cod_deudor.codigo)
             representation['nombre_deudor'] = f"{deudor.nombres} {deudor.apellidos}"
         except ObjectDoesNotExist:
             representation['nombre_deudor'] = None

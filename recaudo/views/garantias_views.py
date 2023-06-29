@@ -86,9 +86,10 @@ class ListaBienesDeudorView(generics.ListAPIView):
     queryset = Bienes.objects.all()
 
     def get(self, request, id):
-        bienes_deudor = Bienes.objects.filter(id_deudor=id)
+        bienes_deudor = Bienes.objects.filter(cod_deudor=id)
         bienes_deudor = [bien_deudor for bien_deudor in bienes_deudor]
         if not bienes_deudor:
             return Response({'success': False, 'detail': 'No se encontró ningun registro con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.serializer_class(bienes_deudor, many=True)
         return Response({'success': True, 'detail': 'Se muestra todos los bienes del deudor', 'data': serializer.data}, status=status.HTTP_200_OK) 
+    

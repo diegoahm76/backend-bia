@@ -6,7 +6,7 @@ from recaudo.models.base_models import RangosEdad
 
 class DocumentosCobro(models.Model):
     id = models.AutoField(primary_key=True, db_column='T405IdDocumentoCobro')
-    id_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T405Id_Deudor')
+    cod_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T405Id_Deudor')
     fecha_cobro = models.DateField(db_column='T405fechaCobro')
     vencimiento = models.DateField(db_column='T405vencimiento')
     valor_deuda = models.FloatField(default=0, db_column='T405valorDeuda')

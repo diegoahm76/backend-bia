@@ -66,12 +66,12 @@ class ListadoObligacionesViews(generics.ListAPIView):
         except ObjectDoesNotExist:
             raise NotFound('No se encontró un objeto deudor para este usuario.')
         
-        facilidad = FacilidadesPago.objects.filter(id_deudor=deudor.id)
+        facilidad = FacilidadesPago.objects.filter(id_deudor_actuacion=deudor.codigo)
 
         if not facilidad:
             nombre_completo = deudor.nombres + ' ' + deudor.apellidos
-            obligaciones = Obligaciones.objects.filter(id_expediente__id_deudor=deudor)
-            id_deudor = deudor.id
+            obligaciones = Obligaciones.objects.filter(id_expediente__cod_deudor=deudor)
+            id_deudor = deudor.codigo
             serializer = self.serializer_class(obligaciones, many=True)
             
             monto_total, intereses_total, monto_total_con_intereses = self.get_monto_total(obligaciones)
@@ -90,12 +90,18 @@ class ListadoObligacionesViews(generics.ListAPIView):
             raise PermissionDenied('El usuario no puede crear una facilidad de pago porque ya se encuentra en una.')
 
 
+
+
+
+
+
+
 class DatosDeudorView(generics.ListAPIView):
     queryset = Deudores.objects.all()
     serializer_class = DeudorFacilidadPagoSerializer
 
     def get(self, request, id):
-        queryset = Deudores.objects.filter(id=id).first()
+        queryset = Deudores.objects.filter(codigo=id).first()
         if not queryset:
             raise NotFound('No se encontró ningun registro con el parámetro ingresado')
         serializer = self.serializer_class(queryset)
@@ -106,7 +112,7 @@ class DatosContactoDeudorView(generics.ListAPIView):
     serializer_class = DatosContactoDeudorSerializer
 
     def get(self, request, id):
-        queryset = Deudores.objects.filter(id=id).first()
+        queryset = Deudores.objects.filter(codigo=id).first()
         if not queryset:
             raise NotFound('No se encontró ningun registro con el parámetro ingresado')
         queryset = Personas.objects.filter(numero_documento = queryset.identificacion).first()
@@ -203,7 +209,7 @@ class ConsultaObligacionesDeudoresViews(generics.ListAPIView):
     def get_queryset(self):
         identificacion = self.kwargs['identificacion']
         deudor = Deudores.objects.get(identificacion=identificacion)
-        return Obligaciones.objects.filter(id_expediente__id_deudor=deudor)
+        return Obligaciones.objects.filter(id_expediente__cod_deudor=deudor)
     
     def get(self, request, identificacion):
         try:
@@ -231,7 +237,7 @@ class ListadoFacilidadesPagoViews(generics.ListAPIView):
         facilidades_pago = FacilidadesPago.objects.annotate(nombre_de_usuario=Concat('id_deudor_actuacion__nombres', V(' '), 'id_deudor_actuacion__apellidos'))
         identificacion = self.request.query_params.get('identificacion', '')
         nombre_de_usuario = self.request.query_params.get('nombre_de_usuario', '')
-        facilidades_pago = facilidades_pago.filter(id_deudor__identificacion__icontains=identificacion)
+        facilidades_pago = facilidades_pago.filter(id_deudor_actuacion__identificacion__icontains=identificacion)
         nombres_apellidos = nombre_de_usuario.split()
         
         for x in range(len(nombres_apellidos)):
@@ -270,7 +276,7 @@ class ListadoDeudoresViews(generics.ListAPIView):
         for x in range(len(nombres_apellidos)):
             deudores = deudores.filter(nombre_contribuyente__icontains=nombres_apellidos[x])
 
-        return deudores.values('id','identificacion', 'nombres', 'apellidos')
+        return deudores.values('codigo','identificacion', 'nombres', 'apellidos')
 
     def list(self, request, *args, **kwargs):
         current_user = self.request.user
@@ -283,7 +289,7 @@ class ListadoDeudoresViews(generics.ListAPIView):
         if not queryset.exists():
             raise NotFound('No se encontraron resultados.')
     
-        data = [{'id_deudor': item['id'],'identificacion': item['identificacion'], 'nombre_contribuyente': f"{item['nombres']} {item['apellidos']}"} for item in queryset]
+        data = [{'id_deudor': item['codigo'],'identificacion': item['identificacion'], 'nombre_contribuyente': f"{item['nombres']} {item['apellidos']}"} for item in queryset]
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
 
 
@@ -366,4 +372,4 @@ class RespuestaSolicitudFacilidadView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'success': True, 'detail':'Se registra la respuesta la respuesta dada por el funcionario', 'data':serializer.data},status=status.HTTP_200_OK)
-  
+   

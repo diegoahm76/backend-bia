@@ -50,7 +50,7 @@ class ReporteCarteraGeneralDetalleView(generics.ListAPIView):
             queryset = queryset.filter(codigo_contable=codigo_contable)
 
         if nombre_deudor: 
-            queryset = queryset.annotate(nombre_deudor=Concat('id_obligacion__id_expediente__id_deudor__nombres', V(' '), 'id_obligacion__id_expediente__id_deudor__apellidos')).filter(nombre_deudor__icontains=nombre_deudor)
+            queryset = queryset.annotate(nombre_deudor=Concat('id_obligacion__id_expediente__cod_deudor__nombres', V(' '), 'id_obligacion__id_expediente__cod_deudor__apellidos')).filter(nombre_deudor__icontains=nombre_deudor)
 
         if not queryset.exists():
             raise NotFound("No se encontraron reportes en la búsqueda")
@@ -129,13 +129,13 @@ class ReporteFacilidadesPagosDetalleView(generics.ListAPIView):
 
         if identificacion:
             detalles_facilidad_pago = detalles_facilidad_pago.filter(
-                id_facilidad_pago__id_deudor__identificacion=identificacion
+                id_facilidad_pago__id_deudor_actuacion__identificacion=identificacion
             )
 
         if nombre_deudor:
             detalles_facilidad_pago = detalles_facilidad_pago.annotate(
-                nombre_deudor=Concat('id_facilidad_pago__id_deudor__nombres', V(' '),
-                                     'id_facilidad_pago__id_deudor__apellidos')
+                nombre_deudor=Concat('id_facilidad_pago__id_deudor_actuacion__nombres', V(' '),
+                                     'id_facilidad_pago__id_deudor_actuacion__apellidos')
             ).filter(nombre_deudor__icontains=nombre_deudor)
 
         if codigo_expediente:
@@ -157,7 +157,7 @@ class ReporteFacilidadesPagosDetalleView(generics.ListAPIView):
 
         for detalle in detalles_facilidad_pago:
             facilidad_pago = detalle.id_facilidad_pago
-            deudor = facilidad_pago.id_deudor
+            deudor = facilidad_pago.id_deudor_actuacion
             cartera = detalle.id_cartera
             expediente = cartera.id_obligacion.id_expediente
 
@@ -187,3 +187,4 @@ class ReporteFacilidadesPagosDetalleView(generics.ListAPIView):
         serializer = self.get_serializer(resultados, many=True)
 
         return Response({'success': True,'detail': 'Resultados de la búsqueda','data': serializer.data,'total_cobro_coactivo': total_cobro_coactivo,'total_cobro_persuasivo': total_cobro_persuasivo,'total_general': total_cobro_coactivo + total_cobro_persuasivo}, status=status.HTTP_200_OK)
+    

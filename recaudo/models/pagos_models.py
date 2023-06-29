@@ -20,7 +20,7 @@ class TasasInteres(models.Model):
 
 class FacilidadesPago(models.Model):
     id = models.AutoField(primary_key=True, db_column='T426IdFacilidadPago')
-    id_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T426Id_Deudor')
+    id_deudor_actuacion = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T426Id_Deudor')
     id_tipo_actuacion = models.ForeignKey(TipoActuacion, on_delete=models.CASCADE, db_column='T426Id_TipoActuacion')
     fecha_generacion = models.DateTimeField(auto_now_add=True, db_column='T426fechaGeneracion')
     observaciones = models.TextField(db_column='T426observaciones')

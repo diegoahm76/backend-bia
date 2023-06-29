@@ -3,14 +3,14 @@ from recaudo.models.base_models import NaturalezaJuridica, Ubicaciones
 
 
 class Deudores(models.Model):
-    id = models.AutoField(primary_key=True, db_column='T410IdDeudor')
+    codigo = models.AutoField(primary_key=True, db_column='T410IdDeudor')
     identificacion = models.CharField(max_length=255, db_column='T410identificacion')
     nombres = models.CharField(max_length=255, db_column='T410nombres')
     apellidos = models.CharField(null=True, blank=True, max_length=255, db_column='T410apellidos')
     telefono = models.CharField(max_length=255, db_column='T410telefono')
     email = models.CharField(max_length=255, db_column='T410email')
-    id_ubicacion = models.ForeignKey(Ubicaciones, on_delete=models.CASCADE, db_column='T410Id_Ubicacion')
-    id_naturaleza_juridica = models.ForeignKey(NaturalezaJuridica, on_delete=models.CASCADE, db_column='T410Id_NaturalezaJuridica')
+    ubicacion_id = models.ForeignKey(Ubicaciones, on_delete=models.CASCADE, db_column='T410Id_Ubicacion')
+    naturaleza_juridica_id = models.ForeignKey(NaturalezaJuridica, on_delete=models.CASCADE, db_column='T410Id_NaturalezaJuridica')
 
     class Meta:
         db_table = 'T410Deudores'
@@ -21,7 +21,7 @@ class Deudores(models.Model):
 class Expedientes(models.Model):
     id = models.AutoField(primary_key=True, db_column='T407IdExpediente')
     codigo_expediente = models.CharField(max_length=255, db_column='T407codigoExpediente')
-    id_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T407Id_Deudor')
+    cod_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T407Id_Deudor')
     numero_resolucion = models.CharField(max_length=255, db_column='T407resolucion')
     cod_auto = models.CharField(max_length=255, db_column='T407auto')
     cod_recurso = models.CharField(max_length=255, db_column='T407recurso')
@@ -48,8 +48,8 @@ class OpcionesLiquidacionBase(models.Model):
 
 class LiquidacionesBase(models.Model):
     id = models.AutoField(primary_key=True, db_column="T403IdLiquidacionBase")
-    id_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column="T403Id_Deudor")
-    id_expediente = models.ForeignKey(Expedientes, on_delete=models.CASCADE, db_column="T403Id_Expediente")
+    cod_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column="T403Id_Deudor")
+    cod_expediente = models.ForeignKey(Expedientes, on_delete=models.CASCADE, db_column="T403Id_Expediente")
     fecha_liquidacion = models.DateTimeField(db_column="T403fechaLiquidacion")
     vencimiento = models.DateTimeField(db_column="T403vencimiento")
     periodo_liquidacion = models.CharField(max_length=255, db_column="T403periodoLiquidacion")
