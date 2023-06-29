@@ -4,7 +4,8 @@ from recaudo.models.procesos_models import (
     AtributosEtapas,
     FlujoProceso,
     ValoresProceso,
-    Procesos, 
+    Procesos,
+    CategoriaAtributo,
     Bienes,
     Avaluos
 )
@@ -19,14 +20,15 @@ from recaudo.serializers.procesos_serializers import (
     ProcesosSerializer,
     ProcesosPostSerializer,
     AtributosEtapasPostSerializer,
-    AvaluosSerializer
+    AvaluosSerializer,
+    CategoriaAtributoSerializer
 )
 from recaudo.models.base_models import TiposBien
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
 from rest_framework.response import Response
-from datetime import datetime, timedelta, date
+import datetime
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
 
@@ -148,6 +150,7 @@ class ActualizarEtapaProceso(generics.ListAPIView):
                     id_cartera=procesoActual.id_cartera,
                     id_etapa=flujo_nuevo.id_etapa_destino,
                     id_funcionario=procesoActual.id_funcionario,
+                    id_categoria=procesoActual.id_categoria,
                     inicio=datetime.date.today()
                 )
                 proceso_nuevo.save()
@@ -182,3 +185,14 @@ class AvaluosBienesView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'success': True, 'detail':'Se agregar los avaluos del bien que da el deudor', 'data':serializer.data},status=status.HTTP_200_OK)
+
+
+class CategoriaAtributoView(generics.ListAPIView):
+    queryset = CategoriaAtributo.objects.all()
+    serializer_class = CategoriaAtributoSerializer
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
