@@ -205,7 +205,7 @@ class ConsultaFacilidadesPagosSerializer(serializers.ModelSerializer):
     class Meta:
         model = FacilidadesPago
         fields = ('id', 'id_deudor_actuacion', 'tipo_actuacion', 'fecha_generacion',
-                  'observaciones', 'periodicidad', 'cuotas', 'id_tasas_interes',
+                  'observaciones', 'periodicidad', 'cuotas',
                   'documento_soporte', 'consignacion_soporte', 'documento_garantia', 
                   'documento_no_enajenacion', 'id_funcionario','notificaciones',
                   )

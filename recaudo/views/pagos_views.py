@@ -372,4 +372,4 @@ class RespuestaSolicitudFacilidadView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'success': True, 'detail':'Se registra la respuesta la respuesta dada por el funcionario', 'data':serializer.data},status=status.HTTP_200_OK)
-  
+   
