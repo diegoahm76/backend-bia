@@ -134,7 +134,6 @@ class EvidenciaAvanceSerializer(serializers.ModelSerializer):
 
 
 
-class EliminarSeccionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ProyectosPORH
-        fields = '__all__'
+
+
+

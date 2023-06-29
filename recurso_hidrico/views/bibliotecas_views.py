@@ -9,8 +9,8 @@ from rest_framework import status
 from datetime import datetime,date,timedelta
 
 from recurso_hidrico.models.bibliotecas_models import Instrumentos, Secciones,Subsecciones
-from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentosSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionContarInstrumentosSerializer
-from recurso_hidrico.serializers.programas_serializers import EliminarSeccionSerializer
+from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentosSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
+
 
 
 class GetSecciones(generics.ListAPIView):
@@ -76,7 +76,7 @@ class RegistroSubSeccion(generics.CreateAPIView):
         serializador =serializer.save()
 
         return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
-        return 0
+        
 
 
     def post(self,request):
@@ -157,10 +157,9 @@ class RegistroSeccionSubseccion(generics.CreateAPIView):
             if response_seccion.status_code != status.HTTP_201_CREATED:
                 return response_seccion
 
-
             instancia_seccion = response_seccion.data.get('data')
     
-            print(instancia_seccion)
+            #print(instancia_seccion)
             
             # Creación de las subsecciones
             subsecciones = data_in.get('subsecciones', [])
@@ -184,11 +183,17 @@ class RegistroSeccionSubseccion(generics.CreateAPIView):
             error_message = {'error': e.detail}
             return Response(error_message, status=status.HTTP_400_BAD_REQUEST)
 
+
+
+
+
 class ActualizarSeccion(generics.UpdateAPIView):
     
     serializer_class = ActualizarSeccionesSerializer
     queryset = Secciones.objects.all()
     permission_classes = [IsAuthenticated]
+
+   
     
     def put(self,request,pk):
     
@@ -254,23 +259,51 @@ class ActualizarSubsecciones(generics.UpdateAPIView):
     queryset = Subsecciones.objects.all()
     permission_classes = [IsAuthenticated]
     
+    def actualizar_subseccion(self,data,subseccion):
+        instancia_seccion = None
+
+        serializer = self.serializer_class(subseccion, data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.update(subseccion, serializer.validated_data)
+
+        return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+        
+
     def put(self,request,pk):
     
         data = request.data
         subseccion = Subsecciones.objects.filter(id_subseccion=pk).first()
         
         if not subseccion:
-            raise ValidationError("No se existe la subseccion que trata de Actualizar.")
+            raise NotFound("No se existe la subseccion que trata de Actualizar.")
         
         #pendiente validacion de instrumentos
 
-        serializer = self.serializer_class(subseccion,data=data)
-        serializer.is_valid(raise_exception=True)
-        
-        serializer.save()
+        self.actualizar_subseccion(data,subseccion)
         
         return Response({'success':True,'detail':"Se actualizo la subseccion Correctamente."},status=status.HTTP_200_OK)
     
+
+class EliminarSubseccion(generics.DestroyAPIView):
+    serializer_class = EliminarSubseccionSerializer
+    queryset = Subsecciones.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self,request,pk):
+        
+        subseccion = Subsecciones.objects.filter(id_subseccion=pk).first()
+        Instrumento = Instrumentos.objects.filter(id_subseccion=pk).first()
+        
+        if not subseccion:
+            raise ValidationError("No existe la Subseccion a eliminar")
+        
+        if Instrumento:
+            raise ValidationError("No se puede Eliminar una subseccion, si tiene instrumentos asignados.")
+        
+
+        subseccion.delete()
+        
+        return Response({'success':True,'detail':'Se elimino la Subseccion seleccionada.'},status=status.HTTP_200_OK)
 
 class GetSeccionSubseccion(generics.RetrieveAPIView):
 
