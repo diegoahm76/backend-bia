@@ -326,7 +326,7 @@ class CreateDespacho(generics.UpdateAPIView):
         validacion_ceros = [i['cantidad_despachada'] for i in items_despacho if i['cantidad_despachada'] == 0]
         
         if len(validacion_ceros) > 0:
-            raise NotFound('No todos las cantidades despachadas de los items pueden estar en cero')
+            raise NotFound('No todas las cantidades despachadas de los items pueden estar en cero')
         
         # SE VALIDA QUE EL DESPACHO TENGA AL MENOS UN ITEMS
         if len(items_despacho) == 0:
@@ -515,8 +515,8 @@ class UpdatePreparacionMezclas(generics.UpdateAPIView):
         # SE VALIDA QUE NO TODOS LOS ITEMS TENGAN CANTIDAD IGUAL A CERO
         validacion_ceros = [i['cantidad_despachada'] for i in items_despacho if i['cantidad_despachada'] == 0]
         
-        if len(validacion_ceros) >= 0:
-            raise NotFound('No todos las cantidades despachadas de los items pueden estar en cero')
+        if len(validacion_ceros) > 0:
+            raise NotFound('No todas las cantidades despachadas de los items pueden estar en cero')
         
         # SE VALIDA QUE EL DESPACHO TENGA AL MENOS UN ITEMS
         if len(items_despacho) == 0:
