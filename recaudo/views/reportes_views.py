@@ -187,3 +187,4 @@ class ReporteFacilidadesPagosDetalleView(generics.ListAPIView):
         serializer = self.get_serializer(resultados, many=True)
 
         return Response({'success': True,'detail': 'Resultados de la búsqueda','data': serializer.data,'total_cobro_coactivo': total_cobro_coactivo,'total_cobro_persuasivo': total_cobro_persuasivo,'total_general': total_cobro_coactivo + total_cobro_persuasivo}, status=status.HTTP_200_OK)
+    
