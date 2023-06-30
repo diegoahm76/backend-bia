@@ -105,10 +105,10 @@ class GuardarCambioEtapa(generics.CreateAPIView):
             
             # VALIDACIONES FECHA CAMBIO SI ETAPA LOTE ES GERMINACIÓN
             if data['cod_etapa_lote_origen'] == 'G':
-                if fecha_cambio < inventario_vivero.fecha_ingreso_lote_etapa or fecha_cambio < inventario_vivero.fecha_ult_altura_lote:
+                if fecha_cambio < inventario_vivero.fecha_ingreso_lote_etapa or (inventario_vivero.fecha_ult_altura_lote and fecha_cambio < inventario_vivero.fecha_ult_altura_lote):
                     raise ValidationError('La fecha de cambio debe ser posterior a la fecha de ingreso al lote y posterior a la fecha de la última altura del material elegido')
                 
-                if fecha_cambio < inventario_vivero.fecha_ingreso_lote_etapa or fecha_cambio < inventario_vivero.fecha_ult_altura_lote:
+                if fecha_cambio < inventario_vivero.fecha_ingreso_lote_etapa or (inventario_vivero.fecha_ult_altura_lote and fecha_cambio < inventario_vivero.fecha_ult_altura_lote):
                     raise ValidationError('La fecha de cambio debe ser posterior a la fecha de ingreso')
                 
                 # VALIDAR QUE LA FECHA DE CAMBIO NO SEA INFERIOR A NINGÚN REGISTRO DE CUARENTENA
@@ -195,19 +195,34 @@ class GuardarCambioEtapa(generics.CreateAPIView):
             inventario_vivero.siembra_lote_cerrada = True
             inventario_vivero.save()
             
-            # NUEVO REGISTRO
-            InventarioViveros.objects.create(
-                id_vivero = inventario_vivero.id_vivero,
-                id_bien = inventario_vivero.id_bien,
-                agno_lote = inventario_vivero.agno_lote,
-                nro_lote = inventario_vivero.nro_lote,
-                cod_etapa_lote = 'P',
-                es_produccion_propia_lote = True,
-                fecha_ingreso_lote_etapa = fecha_cambio,
-                ult_altura_lote = data['altura_lote_en_cms'],
-                fecha_ult_altura_lote = fecha_cambio,
-                cantidad_entrante = data['cantidad_movida']
-            )
+            # VALIDAR Y CREAR REGISTRO SI ES NECESARIO
+            inventario_vivero_prod = InventarioViveros.objects.filter(
+                id_vivero=data['id_vivero'],
+                id_bien=data['id_bien'],
+                agno_lote=data['agno_lote'],
+                nro_lote=data['nro_lote'],
+                cod_etapa_lote='P'
+            ).first()
+            
+            if inventario_vivero_prod:
+                inventario_vivero_prod.cantidad_entrante = inventario_vivero_prod.cantidad_entrante + int(data['cantidad_movida']) if inventario_vivero_prod.cantidad_entrante else data['cantidad_movida']
+                inventario_vivero_prod.ult_altura_lote = data['altura_lote_en_cms']
+                inventario_vivero_prod.fecha_ult_altura_lote = fecha_cambio
+                inventario_vivero_prod.save()
+            else:
+                # NUEVO REGISTRO
+                InventarioViveros.objects.create(
+                    id_vivero = inventario_vivero.id_vivero,
+                    id_bien = inventario_vivero.id_bien,
+                    agno_lote = inventario_vivero.agno_lote,
+                    nro_lote = inventario_vivero.nro_lote,
+                    cod_etapa_lote = 'P',
+                    es_produccion_propia_lote = True,
+                    fecha_ingreso_lote_etapa = fecha_cambio,
+                    ult_altura_lote = data['altura_lote_en_cms'],
+                    fecha_ult_altura_lote = fecha_cambio,
+                    cantidad_entrante = data['cantidad_movida']
+                )
         else:
             # ACTUALIZAR LOTE ACTUAL PRODUCCIÓN
             inventario_vivero.cantidad_traslados_lote_produccion_distribucion = inventario_vivero.cantidad_traslados_lote_produccion_distribucion + int(data['cantidad_movida']) if inventario_vivero.cantidad_traslados_lote_produccion_distribucion else data['cantidad_movida']

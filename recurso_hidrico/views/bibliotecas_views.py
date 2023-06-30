@@ -68,7 +68,6 @@ class RegistroSubSeccion(generics.CreateAPIView):
     
     def crear_subseccion(self,request,data):
         instancia_seccion = None
-
         #data['id_subseccion']=instancia_seccion.id_seccion
         data['id_persona_creada']=request.user.persona.id_persona
         serializer = self.serializer_class(data=data)
@@ -148,25 +147,36 @@ class RegistroSeccionSubseccion(generics.CreateAPIView):
 
     def post(self, request):
         try:
-
+            response_data=[]
             data_in = request.data
-            
+            id_seccion=''
             # Creación de la sección
-            registro_seccion = RegistroSeccion()
-            response_seccion = registro_seccion.post(request)
-            if response_seccion.status_code != status.HTTP_201_CREATED:
-                return response_seccion
-
-            instancia_seccion = response_seccion.data.get('data')
+            instancia_seccion=''
+            seccion = Secciones.objects.filter(id_seccion=data_in['id_seccion']).first()
+            serializer=None
+            
+            if not seccion:
     
-            #print(instancia_seccion)
+                registro_seccion = RegistroSeccion()
+                response_seccion = registro_seccion.post(request)
+
+                if response_seccion.status_code != status.HTTP_201_CREATED:
+                    return response_seccion
+
+                response_data.append(response_seccion.data.get('data', {}))
+                id_seccion = response_seccion.data.get('data', {}).get('id_seccion')
+            
+            else:
+                id_seccion=seccion.id_seccion
+               
             
             # Creación de las subsecciones
             subsecciones = data_in.get('subsecciones', [])
+
             if subsecciones:
                 for subseccion in subsecciones:
                     subseccion_data = {
-                        'id_seccion': instancia_seccion['id_seccion'],
+                        'id_seccion': id_seccion,
                         'nombre': subseccion['nombre'],
                         'descripcion': subseccion['descripcion'],
                         'id_persona_creada': request.user.persona.id_persona
@@ -175,11 +185,12 @@ class RegistroSeccionSubseccion(generics.CreateAPIView):
                     response_subseccion = registro_subseccion.crear_subseccion(request,subseccion_data)
                     if response_subseccion.status_code != status.HTTP_201_CREATED:
                         return response_subseccion
+                    response_data.append(response_subseccion.data)
+            serializador=self.get_serializer()
 
-            return Response({'success': True, 'detail': 'Se crearon los registros correctamente', 'data': instancia_seccion}, status=status.HTTP_201_CREATED)
+            return Response({'success': True, 'detail': 'Se crearon los registros correctamente', 'data':  response_data}, status=status.HTTP_201_CREATED)
         except ValidationError  as e:
             
-            #error_message = json.loads(str(e))
             error_message = {'error': e.detail}
             return Response(error_message, status=status.HTTP_400_BAD_REQUEST)
 
@@ -187,7 +198,7 @@ class RegistroSeccionSubseccion(generics.CreateAPIView):
 
 
 
-class ActualizarSeccion(generics.UpdateAPIView):
+class ActualizarSeccionSubseccion(generics.UpdateAPIView):
     
     serializer_class = ActualizarSeccionesSerializer
     queryset = Secciones.objects.all()
@@ -218,14 +229,14 @@ class ActualizarSeccion(generics.UpdateAPIView):
                         if not instancia_subseccion:
                             raise NotFound("La subseccion con el codigo : "+str(subseccion['id_subseccion']) +" no existe en esta seccion")
                         
-                        #REGISTRO DE CAMBIOS
+                        
                         
                         instancia_subseccion.nombre=subseccion['nombre']
                         instancia_subseccion.descripcion=subseccion['descripcion']
                         instancia_subseccion.save()
                     else:#si id_subseccion es nula se creada
                     
-                        #REGISTRO DE BITACORA
+                        
                         instancia_subseccion = Subsecciones.objects.create(
                         id_seccion=seccion,
                         nombre=subseccion['nombre'],
@@ -252,6 +263,36 @@ class ActualizarSeccion(generics.UpdateAPIView):
     
 
 
+class ActualizarSecciones(generics.UpdateAPIView):
+    
+    serializer_class = ActualizarSeccionesSerializer
+    queryset = Secciones.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def actualizar_seccion(self,data,seccion):
+        
+
+        serializer = self.serializer_class(seccion, data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.update(seccion, serializer.validated_data)
+
+        return Response({'success':True,'detail':'Se actualizaron los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+        
+
+    def put(self,request,pk):
+    
+        data = request.data
+        Seccione = Secciones.objects.filter(id_seccion=pk).first()
+        
+        if  not Seccione:
+            print('HOLAA')
+            raise NotFound("No se existe la seccion que trata de Actualizar.")
+
+        self.actualizar_seccion(data,Seccione)
+        
+        return Response({'success':True,'detail':"Se actualizo la seccion Correctamente."},status=status.HTTP_200_OK)
+
+
 
 class ActualizarSubsecciones(generics.UpdateAPIView):
     
@@ -266,7 +307,7 @@ class ActualizarSubsecciones(generics.UpdateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.update(subseccion, serializer.validated_data)
 
-        return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+        return Response({'success':True,'detail':'Se actualizaron los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
         
 
     def put(self,request,pk):

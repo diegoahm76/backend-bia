@@ -92,3 +92,4 @@ class ListaBienesDeudorView(generics.ListAPIView):
             return Response({'success': False, 'detail': 'No se encontró ningun registro con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.serializer_class(bienes_deudor, many=True)
         return Response({'success': True, 'detail': 'Se muestra todos los bienes del deudor', 'data': serializer.data}, status=status.HTTP_200_OK) 
+    
