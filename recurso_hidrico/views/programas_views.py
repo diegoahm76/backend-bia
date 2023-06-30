@@ -431,7 +431,7 @@ class EliminarProyecto(generics.DestroyAPIView):
     def delete(self,request,pk):
         
         proyecto = ProyectosPORH.objects.filter(id_proyecto=pk).first()
-        actividad = ActividadesProyectos.objects.filter(id_actividades=pk).first()
+        actividad = ActividadesProyectos.objects.filter(id_proyecto=pk).first()
         
         if not proyecto:
             raise NotFound("No existe el Proyecto a eliminar")
