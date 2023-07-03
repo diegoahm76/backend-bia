@@ -318,7 +318,7 @@
         "nombre_modulo": "Cuadro de clasificación documental",
         "subsistema": "GEST",
         "descripcion": "Permite administrar los Cuadros de Clasificación Documental de la entidad en el sistema",
-        "ruta_formulario": "/#/app/gestor_documental/gestion/instrumentos_archivisticos/ccd",
+        "ruta_formulario": "/#/app/gestor_documental/ccd",
         "nombre_icono": "test",
         "id_menu": 12
     }
@@ -342,7 +342,7 @@
         "nombre_modulo": "Tabla de Retención Documental",
         "subsistema": "GEST",
         "descripcion": "Permite administrar las Tablas de Retención Documental de la entidad en el sistema",
-        "ruta_formulario": "/#/app/gestor_documental/gestion/instrumentos_archivisticos/trd",
+        "ruta_formulario": "/#/app/gestor_documental/trd",
         "nombre_icono": "test",
         "id_menu": 12
     }
@@ -354,7 +354,7 @@
         "nombre_modulo": "Tabla de Control de Acceso",
         "subsistema": "GEST",
         "descripcion": "Permite administrar las Tablas de Control de Acceso de la entidad en el sistema",
-        "ruta_formulario": "/#/app/gestor_documental/gestion/instrumentos_archivisticos/tca",
+        "ruta_formulario": "/#/app/gestor_documental/tca",
         "nombre_icono": "test",
         "id_menu": 12
     }
@@ -764,7 +764,7 @@
         "descripcion": "Permite cerrar una solicitud a viveros por no tener disponibilidad de ninguno de los items solicitados",
         "ruta_formulario": "/#/app/conservacion/distribucion/cierre_solicitudes",
         "nombre_icono": "test",
-        "id_menu": 24
+        "id_menu": null
     }
 },
 {
@@ -1290,7 +1290,7 @@
         "nombre_modulo": "Contenido Programático PORH",
         "subsistema": "RECU",
         "descripcion": "Permite registrar el contenido programático a Planes de Ordenamiento de Recurso Hídrico",
-        "ruta_formulario": "/*",
+        "ruta_formulario": "/#/app/recurso_hidrico/porh/contenido_programatico",
         "nombre_icono": "test",
         "id_menu": 46
     }
@@ -1302,7 +1302,7 @@
         "nombre_modulo": "Registro de Avances de Proyectos",
         "subsistema": "RECU",
         "descripcion": "Permite registrar los avances a los proyectos pertenecientes a los programas de los PORH",
-        "ruta_formulario": "/*",
+        "ruta_formulario": "/#/app/recurso_hidrico/proyectos/avances",
         "nombre_icono": "test",
         "id_menu": 46
     }
@@ -1353,6 +1353,42 @@
         "ruta_formulario": "/*",
         "nombre_icono": "test",
         "id_menu": 3
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 116,
+    "fields": {
+        "nombre_modulo": "Líderes por Unidad Organizacional",
+        "subsistema": "TRSV",
+        "descripcion": "Permite administrar la asignación de líderes a las unidades organizacionales del organigrama de la entidad",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 2
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 117,
+    "fields": {
+        "nombre_modulo": "Bandeja Personal de Alertas",
+        "subsistema": "TRSV",
+        "descripcion": "Permite administrar a la persona la bandeja de alertas que el sistema le ha generado",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": null
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 118,
+    "fields": {
+        "nombre_modulo": "Registro de Secciones de Biblioteca",
+        "subsistema": "RECU",
+        "descripcion": "Permite registrar las secciones con sus subsecciones de la biblioteca de Recurso Hídrico",
+        "ruta_formulario": "/#/app/recurso_hidrico/biblioteca/registro_secion_sub_seccion",
+        "nombre_icono": "test",
+        "id_menu": 66
     }
 }
 ]

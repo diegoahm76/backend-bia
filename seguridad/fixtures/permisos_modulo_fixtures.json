@@ -2526,5 +2526,29 @@
         "id_modulo": 115,
         "cod_permiso": "EJ"
     }
+},
+{
+    "model": "seguridad.permisosmodulo",
+    "pk": 324,
+    "fields": {
+        "id_modulo": 116,
+        "cod_permiso": "CR"
+    }
+},
+{
+    "model": "seguridad.permisosmodulo",
+    "pk": 325,
+    "fields": {
+        "id_modulo": 116,
+        "cod_permiso": "AC"
+    }
+},
+{
+    "model": "seguridad.permisosmodulo",
+    "pk": 326,
+    "fields": {
+        "id_modulo": 116,
+        "cod_permiso": "CO"
+    }
 }
 ]
