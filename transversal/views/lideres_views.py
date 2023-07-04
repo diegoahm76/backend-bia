@@ -11,7 +11,7 @@ from seguridad.serializers.personas_serializers import PersonasFilterSerializer
 from seguridad.utils import Util
 from transversal.models.organigrama_models import Organigramas
 from transversal.models.lideres_models import LideresUnidadesOrg
-from transversal.serializers.lideres_serializers import BusquedaAvanzadaOrganigramasSerializer, GetListLideresAsignadosSerializer
+from transversal.serializers.lideres_serializers import BusquedaAvanzadaOrganigramasSerializer, CreateAsignacionSerializer, GetListLideresAsignadosSerializer, UpdateAsignacionSerializer
 
 class BusquedaAvanzadaOrganigramasView(generics.ListAPIView):
     serializer_class = BusquedaAvanzadaOrganigramasSerializer
@@ -64,7 +64,10 @@ class BuscarLideresAsignadosFilterView(generics.ListAPIView):
                         filter['id_unidad_organizacional__' + key[0] + '__icontains']=value
                 elif key in ['tipo_documento','numero_documento','primer_nombre','segundo_nombre','primer_apellido','segundo_apellido']:
                     if value != '':
-                        filter['id_persona__' + key + '__icontains']=value
+                        if key == 'tipo_documento':
+                            filter['id_persona__tipo_documento']=value
+                        else:
+                            filter['id_persona__' + key + '__icontains']=value
                 else:
                     if value != '':
                         filter[key+'__icontains']=value
@@ -77,6 +80,7 @@ class BuscarLideresAsignadosFilterView(generics.ListAPIView):
 class GetPersonaLiderByNumeroDocumento(generics.ListAPIView):
     serializer_class = PersonasFilterSerializer
     queryset = Personas.objects.all()
+    permission_classes = [IsAuthenticated]
     
     def get(self,request):
         filter = {}
@@ -102,6 +106,7 @@ class GetPersonaLiderByNumeroDocumento(generics.ListAPIView):
 class GetPersonaLiderFiltro(generics.ListAPIView):
     serializer_class = PersonasFilterSerializer
     queryset = Personas.objects.all()
+    permission_classes = [IsAuthenticated]
     
     def get(self,request):
         filter={}
@@ -120,3 +125,77 @@ class GetPersonaLiderFiltro(generics.ListAPIView):
         serializador = self.serializer_class(personas, many=True)
         
         return Response ({'success':True,'detail':'Se encontraron las siguientes personas','data':serializador.data}, status=status.HTTP_200_OK)
+    
+class CreateAsignacionView(generics.CreateAPIView):
+    serializer_class = CreateAsignacionSerializer
+    queryset = LideresUnidadesOrg.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def post(self,request):
+        persona_logueada = request.user.persona.id_persona
+        data = request.data
+        data['id_persona_asigna'] = persona_logueada
+        
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        lider_asignado = serializer.save()
+        
+        # Auditoria traslado masivo de unidades por entidad
+        user_logeado = request.user.id_usuario
+        dirip = Util.get_client_ip(request)
+        descripcion = {'NombreUnidadOrganizacional':lider_asignado.id_unidad_organizacional.nombre, 'NombreOrganigrama':lider_asignado.id_unidad_organizacional.id_organigrama.nombre, 'VersionOrganigrama':lider_asignado.id_unidad_organizacional.id_organigrama.version}
+        auditoria_data = {
+            'id_usuario': user_logeado,
+            'id_modulo': 116,
+            'cod_permiso': 'CR',
+            'subsistema': 'TRSV',
+            'dirip': dirip,
+            'descripcion': descripcion
+        }
+        Util.save_auditoria(auditoria_data)
+        
+        return Response({'success':True, 'detail':'Se ha realizado la asignación del líder correctamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+
+class UpdateAsignacionView(generics.UpdateAPIView):
+    serializer_class = UpdateAsignacionSerializer
+    queryset = LideresUnidadesOrg.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def put(self,request,id_lider_unidad_org):
+        persona_logueada = request.user.persona.id_persona
+        data = request.data
+        current_date = datetime.now()
+        
+        asignacion_lider = self.queryset.filter(id_lider_unidad_org=id_lider_unidad_org).first()
+        if not asignacion_lider:
+            raise ValidationError('La asignación de lider elegida no existe')
+        
+        asignacion_lider_previous = copy.copy(asignacion_lider)
+        
+        persona_lider = data.get('id_persona')
+        
+        if persona_lider and asignacion_lider.id_persona.id_persona != persona_lider:
+            data['id_persona_asigna'] = persona_logueada
+            data['fecha_asignacion'] = current_date
+        
+        serializer = self.serializer_class(asignacion_lider, data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        
+        # Auditoria traslado masivo de unidades por entidad
+        user_logeado = request.user.id_usuario
+        dirip = Util.get_client_ip(request)
+        descripcion = {'NombreUnidadOrganizacional':asignacion_lider_previous.id_unidad_organizacional.nombre, 'NombreOrganigrama':asignacion_lider_previous.id_unidad_organizacional.id_organigrama.nombre, 'VersionOrganigrama':asignacion_lider_previous.id_unidad_organizacional.id_organigrama.version}
+        valores_actualizados = {'previous':asignacion_lider_previous, 'current':asignacion_lider}
+        auditoria_data = {
+            'id_usuario': user_logeado,
+            'id_modulo': 116,
+            'cod_permiso': 'AC',
+            'subsistema': 'TRSV',
+            'dirip': dirip,
+            'descripcion': descripcion,
+            'valores_actualizados':valores_actualizados
+        }
+        Util.save_auditoria(auditoria_data)
+        
+        return Response({'success':True, 'detail':'Se ha realizado la actualización de la asignación del líder correctamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)
