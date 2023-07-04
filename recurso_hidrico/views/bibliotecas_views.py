@@ -192,7 +192,7 @@ class RegistroSeccionSubseccion(generics.CreateAPIView):
         except ValidationError  as e:
             
             error_message = {'error': e.detail}
-            return Response(error_message, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError  (error_message)
 
 
 

@@ -216,7 +216,7 @@ class GetActividadesporProyectos(generics.ListAPIView):
 class GetAvanceporProyectos(generics.ListAPIView):
     serializer_class = GetAvancesporProyectosSerializers
     queryset = AvancesProyecto.objects.all()
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     
     def get(self,request,pk):
         avances = AvancesProyecto.objects.filter(id_proyecto=pk)
@@ -412,13 +412,6 @@ class ActualizarProyectos(generics.UpdateAPIView):
                 "valores_actualizados": valores_actualizados
         }
         Util.save_auditoria(auditoria_data) 
-
-
-
-
-
-            
-
 
         
         return Response({'success':True,'detail':"Se realizo la modificacion del proyecto correctamente."},status=status.HTTP_200_OK)
