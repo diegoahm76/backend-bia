@@ -156,12 +156,12 @@ class CreateAsignacionView(generics.CreateAPIView):
         
         return Response({'success':True, 'detail':'Se ha realizado la asignación del líder correctamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 
-class UpdateAsignacionView(generics.CreateAPIView):
+class UpdateAsignacionView(generics.UpdateAPIView):
     serializer_class = UpdateAsignacionSerializer
     queryset = LideresUnidadesOrg.objects.all()
     permission_classes = [IsAuthenticated]
     
-    def post(self,request,id_lider_unidad_org):
+    def put(self,request,id_lider_unidad_org):
         persona_logueada = request.user.persona.id_persona
         data = request.data
         current_date = datetime.now()
@@ -198,4 +198,4 @@ class UpdateAsignacionView(generics.CreateAPIView):
         }
         Util.save_auditoria(auditoria_data)
         
-        return Response({'success':True, 'detail':'Se ha realizado la asignación del líder correctamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+        return Response({'success':True, 'detail':'Se ha realizado la actualización de la asignación del líder correctamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)

@@ -60,7 +60,7 @@ class UpdateAsignacionSerializer(CreateAsignacionSerializer):
         model =  LideresUnidadesOrg
         fields = CreateAsignacionSerializer.Meta.fields
         extra_kwargs = CreateAsignacionSerializer.Meta.extra_kwargs | {
-            'fecha_asignacion': {'read_only': False},
+            'fecha_asignacion': {'required': False, 'read_only': False},
             'id_unidad_organizacional': {'read_only': True},
             'id_persona_asigna': {'required': False}
         }
