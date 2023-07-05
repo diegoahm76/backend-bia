@@ -73,6 +73,7 @@ urlpatterns = [
     path('api/gestor/tca/', include('gestion_documental.urls.tca_urls')),
     path('api/gestor/choices/', include('gestion_documental.urls.choices_urls')),
     path('api/gestor/ventanilla/',include('gestion_documental.urls.ventanilla_urls')),
+    path('api/gestor/deposito-de-archivos/',include('gestion_documental.urls.depositos_de_archivo_urls')),
     
     #ALMACEN
     path('api/almacen/hoja-de-vida/', include('almacen.urls.hoja_de_vida_urls')),
