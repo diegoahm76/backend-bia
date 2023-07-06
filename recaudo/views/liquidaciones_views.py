@@ -132,3 +132,26 @@ class ExpedientesView(generics.ListAPIView):
         serializer = self.serializer_class(queryset, many=True)
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
     
+
+class ClonarOpcionLiquidacionView(generics.ListAPIView):
+    queryset = OpcionesLiquidacionBase.objects.all()
+    serializer_class = OpcionesLiquidacionBaseSerializer
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        opcion = OpcionesLiquidacionBase.objects.filter(pk=pk)
+        if len(opcion) == 0:
+            return Response({'success': False, 'detail': 'No existen opción de liquidación para clonar'}, status=status.HTTP_200_OK)
+        else:
+            opcion_actual = opcion.get()
+            opcion_nueva = OpcionesLiquidacionBase(
+                nombre='Copia ' + opcion_actual.nombre,
+                estado=opcion_actual.estado,
+                version=opcion_actual.version,
+                funcion=opcion_actual.funcion,
+                variables=opcion_actual.variables,
+                bloques=opcion_actual.bloques
+            )
+            opcion_nueva.save()
+            serializer = self.serializer_class(opcion_nueva, many=False)
+            return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
