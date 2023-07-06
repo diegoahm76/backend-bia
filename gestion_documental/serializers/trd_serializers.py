@@ -55,6 +55,7 @@ class BuscarTipologiaSerializer(serializers.ModelSerializer):
 
 class BusquedaTRDNombreVersionSerializer(serializers.ModelSerializer):
     usado = serializers.SerializerMethodField()
+    id_organigrama = serializers.ReadOnlyField(source='id_ccd.id_organigrama', default=None)
     
     def get_usado(self,obj):
         tca = TablasControlAcceso.objects.filter(id_trd=obj.id_trd)
