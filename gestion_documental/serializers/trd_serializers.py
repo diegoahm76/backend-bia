@@ -65,7 +65,7 @@ class BusquedaTRDNombreVersionSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = TablaRetencionDocumental
-        fields = ['id_trd','id_ccd','id_organigrama','version','nombre','fecha_terminado','fecha_puesta_produccion','fecha_retiro_produccion','actual']
+        fields = ['id_trd','id_ccd','id_organigrama','version','nombre','fecha_terminado','fecha_puesta_produccion','fecha_retiro_produccion','actual','usado']
         
 class ModificarTRDNombreVersionSerializer(serializers.ModelSerializer):
     class Meta:
