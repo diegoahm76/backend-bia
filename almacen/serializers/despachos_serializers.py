@@ -21,10 +21,13 @@ class SerializersItemDespachoConsumo(serializers.ModelSerializer):
     #nombre = serializers.CharField(validators=[UniqueValidator(queryset=Marcas.objects.all())])
     unidad_medida = serializers.ReadOnlyField(source='id_unidad_medida_solicitada.nombre', default=None)
     nombre_bien_despacho = serializers.ReadOnlyField(source='id_bien_despachado.nombre', default=None)
+    codigo_bien_despacho = serializers.ReadOnlyField(source='id_bien_despachado.codigo_bien', default=None)
     nombre_bien_solicitado = serializers.ReadOnlyField(source='id_bien_solicitado.nombre', default=None)
+    codigo_bien_solicitado = serializers.ReadOnlyField(source='id_bien_solicitado.codigo_bien', default=None)
+    
     class Meta:
         model=ItemDespachoConsumo
-        fields = ('id_item_despacho_consumo', 'id_despacho_consumo', 'id_bien_despachado', 'nombre_bien_despacho','id_bien_solicitado', 'nombre_bien_solicitado','id_entrada_almacen_bien', 'id_bodega', 'cantidad_solicitada', 'id_unidad_medida_solicitada', 'cantidad_despachada', 'observacion', 'numero_posicion_despacho','unidad_medida')
+        fields = ('id_item_despacho_consumo', 'id_despacho_consumo', 'id_bien_despachado', 'nombre_bien_despacho', 'codigo_bien_despacho', 'id_bien_solicitado', 'nombre_bien_solicitado', 'codigo_bien_solicitado', 'id_entrada_almacen_bien', 'id_bodega', 'cantidad_solicitada', 'id_unidad_medida_solicitada', 'cantidad_despachada', 'observacion', 'numero_posicion_despacho','unidad_medida')
         #exclude=('id_entrada_almacen_bien',)
 
 class SerializersItemsSolicitudConsumible(serializers.ModelSerializer):
@@ -125,17 +128,13 @@ class GetItemOtrosOrigenesSerializers(serializers.ModelSerializer):
 class SerializersDespachoConsumoConItems(serializers.ModelSerializer):
     #nombre = serializers.CharField(validators=[UniqueValidator(queryset=Marcas.objects.all())])
     items_despacho_consumo = serializers.SerializerMethodField()
-    class Meta:
-        model=DespachoConsumo
-    
-        fields = ('id_despacho_consumo', 'numero_despacho_consumo', 'id_solicitud_consumo', 'numero_solicitud_por_tipo', 'fecha_solicitud', 'fecha_despacho', 'fecha_registro', 'id_persona_despacha', 'motivo', 'id_persona_solicita', 'id_unidad_para_la_que_solicita', 'id_funcionario_responsable_unidad', 'es_despacho_conservacion', 'id_entrada_almacen_cv', 'id_bodega_general', 'despacho_anulado', 'justificacion_anulacion', 'fecha_anulacion', 'id_persona_anula', 'ruta_archivo_doc_con_recibido','items_despacho_consumo')
-        #fields=('__all__')
-
-    
-
     
     def get_items_despacho_consumo(self, obj):
         items = obj.itemdespachoconsumo_set.all()
         return SerializersItemDespachoConsumo(items, many=True).data
     
-
+    class Meta:
+        model=DespachoConsumo
+    
+        fields = ('id_despacho_consumo', 'numero_despacho_consumo', 'id_solicitud_consumo', 'numero_solicitud_por_tipo', 'fecha_solicitud', 'fecha_despacho', 'fecha_registro', 'id_persona_despacha', 'motivo', 'id_persona_solicita', 'id_unidad_para_la_que_solicita', 'id_funcionario_responsable_unidad', 'es_despacho_conservacion', 'id_entrada_almacen_cv', 'id_bodega_general', 'despacho_anulado', 'justificacion_anulacion', 'fecha_anulacion', 'id_persona_anula', 'ruta_archivo_doc_con_recibido','items_despacho_consumo')
+        #fields=('__all__')

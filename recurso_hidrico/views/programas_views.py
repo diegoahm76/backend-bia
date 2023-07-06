@@ -1,5 +1,6 @@
 import copy
 import json
+from collections import Counter
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -16,100 +17,91 @@ class RegistroProgramaPORH(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     queryset = ProgramasPORH.objects.all()
     
+    def obtener_repetido(self,lista_archivos):
+        contador = Counter(lista_archivos)
+        for archivo, cantidad in contador.items():
+            if cantidad > 1:
+                return archivo
+        return None
+
     def post(self,request):
-        data_in = request.data
-        instancia_programa = None
-        instancia_proyecto =None
-        if not data_in['id_programa']:
-            data_in['id_instrumento'] = 1
-           
-
-
-            serializer = self.serializer_class(data=data_in)
-            serializer.is_valid(raise_exception=True)
+        try:
+            data_in = request.data
+            instancia_programa = None
+            instancia_proyecto =None
+            if not data_in['id_programa']:
+                data_in['id_instrumento'] = 1
             
-            if data_in['fecha_inicio'] > data_in['fecha_fin']:
-                raise ValidationError("La fecha de inicio del programa no puede ser mayor a la fecha final del mismo.")
+
+
+                serializer = self.serializer_class(data=data_in)
+                serializer.is_valid(raise_exception=True)
+                
+                if data_in['fecha_inicio'] > data_in['fecha_fin']:
+                    raise ValidationError("La fecha de inicio del programa no puede ser mayor a la fecha final del mismo.")
+                
+                instancia_programa = serializer.save()
+
+                #AUDITORIA CREAR PROGRAMA
+
+                usuario = request.user.id_usuario
+                direccion=Util.get_client_ip(request)
+                descripcion = {"IdInstrumentoPORH":instancia_programa.id_instrumento,"Nombre":instancia_programa.nombre}
+                #valores_actualizados = {'current': instance, 'previous': instance_previous}
+                auditoria_data = {
+                    "id_usuario" : usuario,
+                    "id_modulo" : 110,
+                    "cod_permiso": "CR",
+                    "subsistema": 'RECU',
+                    "dirip": direccion,
+                    "descripcion": descripcion, 
+                    #"valores_actualizados": valores_actualizados
+                }
+                Util.save_auditoria(auditoria_data)
+
+            else:
+                instancia_programa = ProgramasPORH.objects.filter(id_programa=data_in['id_programa']).first()
+                if not instancia_programa:
+                    raise NotFound("El programa ingresado no existe")
             
-            instancia_programa = serializer.save()
+            #CREACION DE PROYECTOS
 
-            #AUDITORIA CREAR PROGRAMA
+            
+            
+            if 'proyectos' in data_in: 
 
-            usuario = request.user.id_usuario
-            direccion=Util.get_client_ip(request)
-            descripcion = {"IdInstrumentoPORH":instancia_programa.id_instrumento,"Nombre":instancia_programa.nombre}
-            #valores_actualizados = {'current': instance, 'previous': instance_previous}
-            auditoria_data = {
-                "id_usuario" : usuario,
-                "id_modulo" : 110,
-                "cod_permiso": "CR",
-                "subsistema": 'RECU',
-                "dirip": direccion,
-                "descripcion": descripcion, 
-                #"valores_actualizados": valores_actualizados
-            }
-            Util.save_auditoria(auditoria_data)
+                nombres_p=data_in['proyectos']
+                #print(data_in['proyectos'])
+                nombres_proyectos = [proyecto['nombre'] for proyecto in nombres_p]
+                #print(nombres_proyectos)
 
-        else:
-            instancia_programa = ProgramasPORH.objects.filter(id_programa=data_in['id_programa']).first()
-            if not instancia_programa:
-                raise NotFound("El programa ingresado no existe")
-        
-        #CREACION DE PROYECTOS
-        
-        if 'proyectos' in data_in: 
+                existen_repetidos=self.obtener_repetido(nombres_proyectos)
+                #print(existen_repetidos)
+                if existen_repetidos:
+                    raise ValidationError("Existe mas de un proyecto con el nombre:"+str(existen_repetidos))
                 
-            for proyecto in data_in['proyectos']: 
+                for proyecto in data_in['proyectos']: 
 
-                if not proyecto['id_proyecto']:
-                    if proyecto['vigencia_inicial']> proyecto['vigencia_final']:
-                        raise ValidationError("La fecha inicial del proyecto no puede superar la fecha final del mismo proyecto.")
-                    if proyecto['vigencia_inicial'] < data_in["fecha_inicio"]:
-                        raise ValidationError("La fecha de inicio del proyecto no puede ser inferior a la fecha de inicio del programa al que pertenece.")
-                    if proyecto['vigencia_final'] > data_in['fecha_fin']:
-                        raise ValidationError('La fecha final del proyecto no puede ser mayor que la fecha final del programa.')
-                    
-                    instancia_proyecto = ProyectosPORH.objects.create(
-                        id_programa = instancia_programa,
-                        nombre = proyecto['nombre'],
-                        vigencia_inicial = proyecto['vigencia_inicial'],
-                        vigencia_final = proyecto['vigencia_final'],
-                        inversion = proyecto['inversion']                    
-                    )
-
-                    #AUDITORIA PROYECTO
-                    usuario = request.user.id_usuario
-                    direccion=Util.get_client_ip(request)
-                    descripcion = {"IdProgramaPORH":instancia_proyecto.id_programa.id_programa,"Nombre":instancia_proyecto.nombre}
-                    #valores_actualizados = {'current': instance, 'previous': instance_previous}
-                    auditoria_data = {
-                        "id_usuario" : usuario,
-                        "id_modulo" : 110,
-                        "cod_permiso": "CR",
-                        "subsistema": 'RECU',
-                        "dirip": direccion,
-                        "descripcion": descripcion, 
-                        #"valores_actualizados": valores_actualizados
-                    }
-                    Util.save_auditoria(auditoria_data)
-                else:
-                    instancia_proyecto = ProyectosPORH.objects.filter(id_proyecto=proyecto['id_proyecto']).first()
-                    if not instancia_programa:
-                        raise NotFound("El proyecto ingresado no existe")
-                #if 'proyectos' in data_in and 'actividades' in data_in['proyectos']:
-                if 'actividades' in proyecto:
-                #if proyecto['actividades']:
-                
-                    for actividad in proyecto['actividades']:
-                        actividades = ActividadesProyectos.objects.create(
-                            id_proyecto = instancia_proyecto,
-                            nombre = actividad['nombre']
+                    if not proyecto['id_proyecto']:
+                        if proyecto['vigencia_inicial']> proyecto['vigencia_final']:
+                            raise ValidationError("La fecha inicial del proyecto no puede superar la fecha final del mismo proyecto.")
+                        if proyecto['vigencia_inicial'] < data_in["fecha_inicio"]:
+                            raise ValidationError("La fecha de inicio del proyecto no puede ser inferior a la fecha de inicio del programa al que pertenece.")
+                        if proyecto['vigencia_final'] > data_in['fecha_fin']:
+                            raise ValidationError('La fecha final del proyecto no puede ser mayor que la fecha final del programa.')
+                        
+                        instancia_proyecto = ProyectosPORH.objects.create(
+                            id_programa = instancia_programa,
+                            nombre = proyecto['nombre'],
+                            vigencia_inicial = proyecto['vigencia_inicial'],
+                            vigencia_final = proyecto['vigencia_final'],
+                            inversion = proyecto['inversion']                    
                         )
 
-                        #AUDITORIA ACTIVIDAD
+                        #AUDITORIA PROYECTO
                         usuario = request.user.id_usuario
                         direccion=Util.get_client_ip(request)
-                        descripcion = {"IdProyectoPgPORH":actividades.id_proyecto.id_proyecto,"Nombre":actividades.nombre}
+                        descripcion = {"IdProgramaPORH":instancia_proyecto.id_programa.id_programa,"Nombre":instancia_proyecto.nombre}
                         #valores_actualizados = {'current': instance, 'previous': instance_previous}
                         auditoria_data = {
                             "id_usuario" : usuario,
@@ -121,8 +113,53 @@ class RegistroProgramaPORH(generics.CreateAPIView):
                             #"valores_actualizados": valores_actualizados
                         }
                         Util.save_auditoria(auditoria_data)
-                          
-        return Response({'success':True,'detail':'Se crearon los registros correctamente','data':data_in},status=status.HTTP_201_CREATED)
+                    else:
+                        instancia_proyecto = ProyectosPORH.objects.filter(id_proyecto=proyecto['id_proyecto']).first()
+                        if not instancia_programa:
+                            raise NotFound("El proyecto ingresado no existe")
+                    #if 'proyectos' in data_in and 'actividades' in data_in['proyectos']:
+                    if 'actividades' in proyecto:
+                    
+                        nombres_a=proyecto['actividades']
+                        #print(data_in['proyectos'])
+                        nombres_actividad = [proyecto['nombre'] for proyecto in nombres_a]
+
+                        
+                        existen_repetidos=None
+                        existen_repetidos=self.obtener_repetido(nombres_actividad)
+                        #print(existen_repetidos)
+                        if existen_repetidos:
+                            raise ValidationError("Existe mas de una actividad con el nombre: "+str(existen_repetidos))
+                    
+
+                        for actividad in proyecto['actividades']:
+
+                            actividades = ActividadesProyectos.objects.create(
+                                id_proyecto = instancia_proyecto,
+                                nombre = actividad['nombre']
+                            )
+                            
+                            #AUDITORIA ACTIVIDAD
+                            usuario = request.user.id_usuario
+                            direccion=Util.get_client_ip(request)
+                            descripcion = {"IdProyectoPgPORH":actividades.id_proyecto.id_proyecto,"Nombre":actividades.nombre}
+                            #valores_actualizados = {'current': instance, 'previous': instance_previous}
+                            auditoria_data = {
+                                "id_usuario" : usuario,
+                                "id_modulo" : 110,
+                                "cod_permiso": "CR",
+                                "subsistema": 'RECU',
+                                "dirip": direccion,
+                                "descripcion": descripcion, 
+                                #"valores_actualizados": valores_actualizados
+                            }
+                            Util.save_auditoria(auditoria_data)
+                            
+            return Response({'success':True,'detail':'Se crearon los registros correctamente','data':data_in},status=status.HTTP_201_CREATED)
+        
+        except ValidationError  as e:
+            error_message = {'error': e.detail}
+            raise ValidationError  (e.detail)    
 
 class CreateProgramaPORH(generics.CreateAPIView):
     serializer_class = RegistroProgramaPORHSerializer
@@ -165,7 +202,7 @@ class CreateProyectosPORH(generics.CreateAPIView):
         try:
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            print(self.queryset)
+            #print(self.queryset)
             return Response({'success': True, 'detail':'Se creo un proyecto exitosamente', 'data':serializer.data},status=status.HTTP_200_OK)
         except ValidationError as e:
             raise ValidationError('Error en los datos del formulario')
@@ -216,7 +253,7 @@ class GetActividadesporProyectos(generics.ListAPIView):
 class GetAvanceporProyectos(generics.ListAPIView):
     serializer_class = GetAvancesporProyectosSerializers
     queryset = AvancesProyecto.objects.all()
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     
     def get(self,request,pk):
         avances = AvancesProyecto.objects.filter(id_proyecto=pk)
@@ -413,13 +450,6 @@ class ActualizarProyectos(generics.UpdateAPIView):
         }
         Util.save_auditoria(auditoria_data) 
 
-
-
-
-
-            
-
-
         
         return Response({'success':True,'detail':"Se realizo la modificacion del proyecto correctamente."},status=status.HTTP_200_OK)
 
@@ -471,36 +501,41 @@ class ActualizarActividades(generics.UpdateAPIView):
     
     def put(self,request,pk):
     
-        data = request.data
-        actividad = ActividadesProyectos.objects.filter(id_actividades=pk).first()
-        
-        if not actividad:
-            raise NotFound("No se existe la actividad que trata de Actualizar.")
-        
-        instance_previous=copy.copy(actividad)
-        serializer = self.serializer_class(actividad,data=data)
-        serializer.is_valid(raise_exception=True)
-        
-        serializer.save()
+        try:    
+            data = request.data
+            actividad = ActividadesProyectos.objects.filter(id_actividades=pk).first()
+            
+            if not actividad:
+                raise NotFound("No se existe la actividad que trata de Actualizar.")
+            
+            instance_previous=copy.copy(actividad)
+            serializer = self.serializer_class(actividad,data=data)
+            serializer.is_valid(raise_exception=True)
+            
+            serializer.save()
 
-        #AUDITORIA ACTUALIZAR ACTIVIDAD
-        usuario = request.user.id_usuario
-        direccion=Util.get_client_ip(request)
-        descripcion = {"IdProgramaPgPORH":actividad.id_proyecto.id_proyecto,"Nombre":actividad.nombre}
-        valores_actualizados = {'current': actividad, 'previous': instance_previous}
-        auditoria_data = {
-                "id_usuario" : usuario,
-                "id_modulo" : 110,
-                "cod_permiso": "AC",
-                "subsistema": 'RECU',
-                "dirip": direccion,
-                "descripcion": descripcion, 
-                "valores_actualizados": valores_actualizados
-            }
-        Util.save_auditoria(auditoria_data) 
+            #AUDITORIA ACTUALIZAR ACTIVIDAD
+            usuario = request.user.id_usuario
+            direccion=Util.get_client_ip(request)
+            descripcion = {"IdProgramaPgPORH":actividad.id_proyecto.id_proyecto,"Nombre":actividad.nombre}
+            valores_actualizados = {'current': actividad, 'previous': instance_previous}
+            auditoria_data = {
+                    "id_usuario" : usuario,
+                    "id_modulo" : 110,
+                    "cod_permiso": "AC",
+                    "subsistema": 'RECU',
+                    "dirip": direccion,
+                    "descripcion": descripcion, 
+                    "valores_actualizados": valores_actualizados
+                }
+            Util.save_auditoria(auditoria_data) 
 
-        return Response({'success':True,'detail':"Se actualizo la actividad Correctamente."},status=status.HTTP_200_OK)
-
+            return Response({'success':True,'detail':"Se actualizo la actividad Correctamente."},status=status.HTTP_200_OK)
+        
+        except ValidationError  as e:
+            error_message = {'error': e.detail}
+            raise ValidationError  (e.detail)    
+        
 class EliminarActividades(generics.DestroyAPIView):
     serializer_class = EliminarActividadesSerializers
     queryset = ActividadesProyectos.objects.all()
@@ -542,40 +577,55 @@ class RegistroAvance(generics.CreateAPIView):
     queryset = AvancesProyecto.objects.all()
     permission_classes = [IsAuthenticated]
     
-    def post(self,request,id_proyecto):
-        data = request.data
-        
-        proyecto = ProyectosPORH.objects.filter(id_proyecto=id_proyecto).first()
-        
-        if not proyecto:
-            raise NotFound("No hay proyecto.")
-        
-        archivos =request.FILES.getlist('evidencia')
-        
-        nombre_archivos =request.data.getlist('nombre_archivo')
-        
-        if len(archivos)!= len(nombre_archivos):
-            raise ValidationError("Todos los archivos deben tener nombre.")
+    def obtener_archivo_repetido(self,lista_archivos):
+        contador = Counter(lista_archivos)
+        for archivo, cantidad in contador.items():
+            if cantidad > 1:
+                return archivo
+        return None
 
-        persona_logueada = request.user.persona.id_persona
-        data['id_persona_registra'] = persona_logueada
+    def post(self,request,id_proyecto):
+        try:    
+            data = request.data
+            
+            proyecto = ProyectosPORH.objects.filter(id_proyecto=id_proyecto).first()
+            
+            if not proyecto:
+                raise NotFound("No hay proyecto.")
+            
+            archivos =request.FILES.getlist('evidencia')
+            
+            nombre_archivos =request.data.getlist('nombre_archivo')
+            
+            if len(archivos)!= len(nombre_archivos):
+                raise ValidationError("Todos los archivos deben tener nombre.")
+
+            persona_logueada = request.user.persona.id_persona
+            data['id_persona_registra'] = persona_logueada
+            
+            data['id_proyecto'] = id_proyecto
+            
+            serializer = self.serializer_class(data=data)
+            serializer.is_valid(raise_exception=True)
         
-        data['id_proyecto'] = id_proyecto
-        
-        serializer = self.serializer_class(data=data)
-        serializer.is_valid(raise_exception=True)
+            creacion_avance = serializer.save()
+            repetido=self.obtener_archivo_repetido(nombre_archivos)
+            if repetido:
+                raise ValidationError("Existe mas de un archivo con el nombre: "+repetido)
+            else:
+
+                for i in range(len(archivos)):
+                    print("")
+                    EvidenciasAvance.objects.create(
+                        id_avance = creacion_avance,
+                        nombre_archivo = nombre_archivos[i],                
+                        id_archivo = i
+                    )
     
-        creacion_avance = serializer.save()
-        
-        for i in range(len(archivos)):
-            EvidenciasAvance.objects.create(
-                id_avance = creacion_avance,
-                nombre_archivo = nombre_archivos[i],                
-                id_archivo = i
-            )
-  
-        return Response({'success':True,'detail':'Se crea el avance del proyecto correctamente.','data':serializer.data},status=status.HTTP_201_CREATED)
-    
+            return Response({'success':True,'detail':'Se crea el avance del proyecto correctamente.','data':serializer.data},status=status.HTTP_201_CREATED)
+        except ValidationError  as e:
+            error_message = {'error': e.detail}
+            raise ValidationError  (e.detail)
 
 class BusquedaAvanzadaAvances(generics.ListAPIView):
     #serializer_class = BusquedaAvanzadaAvancesSerializers
@@ -631,47 +681,73 @@ class ActualizarAvanceEvidencia(generics.UpdateAPIView):
     serializer_class = ActualizarAvanceEvidenciaSerializers
     queryset = AvancesProyecto.objects.all()
     permission_classes = [IsAuthenticated]
+
+    def obtener_archivo_repetido(self,lista_archivos):
+        contador = Counter(lista_archivos)
+        for archivo, cantidad in contador.items():
+            if cantidad > 1:
+                return archivo
+        return None
     
     def put(self,request,pk):
-        data = request.data
-        avance = AvancesProyecto.objects.filter(id_avance=pk).first()
-        
-        if not avance:
-            raise ValidationError("No existe el registro que desea actualizar.")
-        
-        archivos = request.FILES.getlist('evidencia')
-        nombre_archivo = request.data.getlist('nombre_archivo')
-        
-        # data['id_avance'] = pk
-        
-        serializer = self.serializer_class(avance,data=data)
-        serializer.is_valid(raise_exception=True)
-        
-        serializer.save()
-        
-        nombre_actualizar = request.data.get('nombre_actualizar')
-        nombre_actualizar = json.loads(nombre_actualizar)
-        # nombre_actualizar_list = [nombre['id_evidencia']for nombre in nombre_actualizar]
-        
-        for nombre_data in nombre_actualizar:
-            evidencia_update = EvidenciasAvance.objects.filter(id_evidencia_avance=nombre_data['id_evidencia_avance']).first()
-            if not evidencia_update:
-                raise ValidationError('Debe enviar evidencias exitentes')
-            if nombre_data['nombre_archivo'] == '':
-                raise ValidationError('No puede actualizar el nombre de un archivo a vacío')
-            evidencia_update.nombre_archivo = nombre_data['nombre_archivo']
-            evidencia_update.save()
+        try:
+            data = request.data
+            avance = AvancesProyecto.objects.filter(id_avance=pk).first()
+            
+            if not avance:
+                raise ValidationError("No existe el registro que desea actualizar.")
+            
+            archivos = request.FILES.getlist('evidencia')
+            nombre_archivo = request.data.getlist('nombre_archivo')
+            
+            # data['id_avance'] = pk
+            
+            serializer = self.serializer_class(avance,data=data)
+            serializer.is_valid(raise_exception=True)
+            
+            serializer.save()
+            
+            nombre_actualizar = request.data.get('nombre_actualizar')
+            nombre_actualizar = json.loads(nombre_actualizar)
+            # nombre_actualizar_list = [nombre['id_evidencia']for nombre in nombre_actualizar]
+            
+            for nombre_data in nombre_actualizar:
+                evidencia_update = EvidenciasAvance.objects.filter(id_evidencia_avance=nombre_data['id_evidencia_avance']).first()
+                if not evidencia_update:
+                    raise ValidationError('Debe enviar evidencias exitentes')
+                if nombre_data['nombre_archivo'] == '':
+                    raise ValidationError('No puede actualizar el nombre de un archivo a vacío')
+                evidencia_update.nombre_archivo = nombre_data['nombre_archivo']
+                evidencia_update.save()
 
-        
-        for i in range(len(archivos)):
-            EvidenciasAvance.objects.create(
-                id_avance = avance,
-                nombre_archivo = nombre_archivo[i],
-                id_archivo = i
-            )
-        
-        return Response({'success':True,'detail':'Se ha realizado la actualizacion correctamente.'},status=status.HTTP_200_OK)
 
+
+            
+            repetido=self.obtener_archivo_repetido(nombre_archivo)
+            if repetido:
+                 raise ValidationError("Existe mas de un archivo con el nombre: "+repetido)
+
+
+            #validacion de evidencias existentes
+            evidencias_existentes=EvidenciasAvance.objects.filter(id_avance=avance)
+            for evidencia in evidencias_existentes:
+                for i in range(len(nombre_archivo)):
+                    if evidencia.nombre_archivo==nombre_archivo[i]:
+                        raise ValidationError("El archivo :``"+str(nombre_archivo[i])+"´´ ya existe en este avance")
+
+            for i in range(len(archivos)):
+                EvidenciasAvance.objects.create(
+                    id_avance = avance,
+                    nombre_archivo = nombre_archivo[i],
+                    id_archivo = i
+                )
+            return Response({'success':True,'detail':'Se ha realizado la actualizacion correctamente.'},status=status.HTTP_200_OK)
+
+        except ValidationError  as e:
+            error_message = {'error': e.detail}
+            raise ValidationError  (e.detail)    
+        
+        
 
 
 
