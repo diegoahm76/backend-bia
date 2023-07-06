@@ -114,13 +114,13 @@ class DatosContactoDeudorSerializer(serializers.ModelSerializer):
         
 
 class FacilidadesPagoSerializer(serializers.ModelSerializer):
-    id_deudor_actuacion = DeudorFacilidadPagoSerializer
+    id_deudor = DeudorFacilidadPagoSerializer
 
     class Meta:
         model = FacilidadesPago
         fields = '__all__'
         extra_kwargs = {
-            'id_deudor_actuacion': {'required': True},
+            'id_deudor': {'required': True},
             'id_tipo_actuacion': {'required': True},
             'id_tasas_interes': {'required': True},
             'documento_soporte': {'required': True},
@@ -161,7 +161,7 @@ class ConsultaObligacionesSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 # class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
-#     identificacion = serializers.ReadOnlyField(source='id_deudor_actuacion.identificacion',default=None)
+#     identificacion = serializers.ReadOnlyField(source='id_deudor.identificacion',default=None)
 #     nombre_de_usuario = serializers.SerializerMethodField()
 #     id_facilidad = serializers.ReadOnlyField(source='id', default=None)
 
@@ -171,7 +171,7 @@ class ConsultaObligacionesSerializer(serializers.ModelSerializer):
 
 #     def get_nombre_de_usuario(self, obj):
 #         nombre_de_usuario = None
-#         persona = Personas.objects.filter(numero_documento=obj.id_deudor_actuacion.identificacion).first()
+#         persona = Personas.objects.filter(numero_documento=obj.id_deudor.identificacion).first()
 #         if persona: 
 #             usuario = persona.user_set.exclude(id_usuario=1).first() 
 #             nombre_de_usuario = usuario.nombre_de_usuario if usuario else None
@@ -179,7 +179,7 @@ class ConsultaObligacionesSerializer(serializers.ModelSerializer):
 
 
 class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
-    identificacion = serializers.ReadOnlyField(source='id_deudor_actuacion.identificacion',default=None)
+    identificacion = serializers.ReadOnlyField(source='id_deudor.identificacion',default=None)
     nombre_de_usuario = serializers.SerializerMethodField()
     nombre_funcionario = serializers.SerializerMethodField()
     id_facilidad = serializers.ReadOnlyField(source='id', default=None)
@@ -189,7 +189,7 @@ class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
         fields = ('id_facilidad','nombre_de_usuario','identificacion','numero_radicacion','fecha_generacion','nombre_funcionario')
 
     def get_nombre_de_usuario(self, obj):
-        return f"{obj.id_deudor_actuacion.nombres} {obj.id_deudor_actuacion.apellidos}"
+        return f"{obj.id_deudor.nombres} {obj.id_deudor.apellidos}"
 
 
     def get_nombre_funcionario(self, obj):
@@ -204,7 +204,7 @@ class ConsultaFacilidadesPagosSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FacilidadesPago
-        fields = ('id', 'id_deudor_actuacion', 'tipo_actuacion', 'fecha_generacion',
+        fields = ('id', 'id_deudor', 'tipo_actuacion', 'fecha_generacion',
                   'observaciones', 'periodicidad', 'cuotas',
                   'documento_soporte', 'consignacion_soporte', 'documento_garantia', 
                   'documento_no_enajenacion', 'id_funcionario','notificaciones',

@@ -66,11 +66,11 @@ class ListadoObligacionesViews(generics.ListAPIView):
         except ObjectDoesNotExist:
             raise NotFound('No se encontró un objeto deudor para este usuario.')
         
-        facilidad = FacilidadesPago.objects.filter(id_deudor_actuacion=deudor.codigo)
+        facilidad = FacilidadesPago.objects.filter(id_deudor=deudor.codigo)
 
         if not facilidad:
             nombre_completo = deudor.nombres + ' ' + deudor.apellidos
-            obligaciones = Obligaciones.objects.filter(id_expediente__cod_deudor=deudor)
+            obligaciones = Obligaciones.objects.filter(id_expediente__id_deudor=deudor)
             id_deudor = deudor.codigo
             serializer = self.serializer_class(obligaciones, many=True)
             
@@ -209,7 +209,7 @@ class ConsultaObligacionesDeudoresViews(generics.ListAPIView):
     def get_queryset(self):
         identificacion = self.kwargs['identificacion']
         deudor = Deudores.objects.get(identificacion=identificacion)
-        return Obligaciones.objects.filter(id_expediente__cod_deudor=deudor)
+        return Obligaciones.objects.filter(id_expediente__id_deudor=deudor)
     
     def get(self, request, identificacion):
         try:
@@ -234,10 +234,10 @@ class ListadoFacilidadesPagoViews(generics.ListAPIView):
 
     def get(self, request):
 
-        facilidades_pago = FacilidadesPago.objects.annotate(nombre_de_usuario=Concat('id_deudor_actuacion__nombres', V(' '), 'id_deudor_actuacion__apellidos'))
+        facilidades_pago = FacilidadesPago.objects.annotate(nombre_de_usuario=Concat('id_deudor__nombres', V(' '), 'id_deudor__apellidos'))
         identificacion = self.request.query_params.get('identificacion', '')
         nombre_de_usuario = self.request.query_params.get('nombre_de_usuario', '')
-        facilidades_pago = facilidades_pago.filter(id_deudor_actuacion__identificacion__icontains=identificacion)
+        facilidades_pago = facilidades_pago.filter(id_deudor__identificacion__icontains=identificacion)
         nombres_apellidos = nombre_de_usuario.split()
         
         for x in range(len(nombres_apellidos)):
@@ -299,10 +299,10 @@ class ListadoFacilidadesPagoFuncionariosViews(generics.ListAPIView):
 
     def get(self, request):
         user = self.request.user
-        facilidades_pago = FacilidadesPago.objects.annotate(nombre_de_usuario=Concat('id_deudor_actuacion__nombres', V(' '), 'id_deudor_actuacion__apellidos')).filter(id_funcionario=user.pk)
+        facilidades_pago = FacilidadesPago.objects.annotate(nombre_de_usuario=Concat('id_deudor__nombres', V(' '), 'id_deudor__apellidos')).filter(id_funcionario=user.pk)
         identificacion = self.request.query_params.get('identificacion', '')
         nombre_de_usuario = self.request.query_params.get('nombre_de_usuario', '')
-        facilidades_pago = facilidades_pago.filter(id_deudor_actuacion__identificacion__icontains=identificacion)
+        facilidades_pago = facilidades_pago.filter(id_deudor__identificacion__icontains=identificacion)
         nombres_apellidos = nombre_de_usuario.split()
         
         for x in range(len(nombres_apellidos)):
