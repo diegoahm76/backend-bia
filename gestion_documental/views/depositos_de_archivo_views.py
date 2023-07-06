@@ -1,14 +1,16 @@
 import copy
+from django.http import JsonResponse
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from django.db.models import Max 
 from datetime import datetime,date,timedelta
 from gestion_documental.models.depositos_models import Deposito, EstanteDeposito
 
-from gestion_documental.serializers.depositos_serializers import DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer
+from gestion_documental.serializers.depositos_serializers import DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer
 from seguridad.utils import Util
 
 
@@ -23,12 +25,20 @@ class DepositoCreate(generics.CreateAPIView):
         try:
             data_in = request.data
             #data_in['activo']=True
+            orden_siguiente = DepositoGetOrden()
+            response_orden = orden_siguiente.get(request)
+
+            if response_orden.status_code != status.HTTP_200_OK:
+                return response_orden
+            maximo_orden = response_orden.data.get('orden_siguiente')
+            print(maximo_orden)
+            data_in['orden_ubicacion_por_entidad']=maximo_orden+1
             serializer = self.serializer_class(data=data_in)
             serializer.is_valid(raise_exception=True)
             deposito =serializer.save()
 
-            #AUDITORIA 
 
+            #AUDITORIA 
             usuario = request.user.id_usuario
             direccion=Util.get_client_ip(request)
             descripcion = {"IdDeposito":deposito.id_deposito,"NombreDeposito":deposito.nombre_deposito}
@@ -131,7 +141,50 @@ class DepositoUpdate(generics.UpdateAPIView):
             error_message = {'error': e.detail}
             raise ValidationError  (e.detail)
 
-#CRUD DEPOSTIO
+class DepositoGet(generics.ListAPIView):
+    serializer_class = DepositoGetSerializer
+    queryset = Deposito.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes registros.',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+
+class DepositoGetById(generics.ListAPIView):
+    serializer_class = DepositoGetSerializer
+    queryset = Deposito.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        deposito = Deposito.objects.filter(id_deposito=pk)
+        serializer = self.serializer_class(deposito,many=True)
+        
+        if not Deposito:
+            raise NotFound("El registro del deposito que busca, no se encuentra registrado")
+        
+        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)
+    
+class DepositoGetOrden(generics.ListAPIView):
+    serializer_class = DepositoGetSerializer
+    queryset = Deposito.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request):
+        maximo_orden = Deposito.objects.aggregate(max_orden=Max('orden_ubicacion_por_entidad'))
+        #serializer = self.serializer_class(deposito,many=True)
+        
+        if not maximo_orden:
+            raise NotFound("El registro del deposito que busca, no se encuentra registrado")
+        return Response({'success':True,'orden_siguiente':maximo_orden['max_orden']},status=status.HTTP_200_OK)
+        #return JsonResponse({'maximo_orden': maximo_orden['max_orden']+1},status=status.HTTP_200_OK)
+        #return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)
+
+#CRUD ESTANTE DEPOSITO
 class EstanteDepositoCreate(generics.CreateAPIView):
     serializer_class = EstanteDepositoCreateSerializer
     permission_classes = [IsAuthenticated]
