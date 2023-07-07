@@ -100,9 +100,9 @@ class PlanPagos(models.Model):
     id_tasa_interes = models.ForeignKey(TasasInteres, on_delete=models.CASCADE, db_column='T432Id_TasaInteres')
 
     class Meta:
-        db_table = 'T432PlanPagos'
-        verbose_name = 'Plan pago'
-        verbose_name_plural = 'Plan pagos'
+        db_table = 'T432PlanesPago'
+        verbose_name = 'Plan de pagos'
+        verbose_name_plural = 'Planes de pago'
 
 
 class RespuestaSolicitud(models.Model):

@@ -10,7 +10,7 @@ class DocumentosCobro(models.Model):
     fecha_cobro = models.DateField(db_column='T405fechaCobro')
     vencimiento = models.DateField(db_column='T405vencimiento')
     valor_deuda = models.FloatField(default=0, db_column='T405valorDeuda')
-    tasa_interes = models.ForeignKey(TasasInteres, on_delete=models.CASCADE, default=0, db_column='T405tasaInteres')
+    tasa_interes = models.ForeignKey(TasasInteres, on_delete=models.CASCADE, default=0, db_column='T405Id_TasaInteres')
     valor_mora = models.FloatField(default=0, db_column='T405valorMora')
     porcentaje_descuento = models.FloatField(default=0, db_column='T405porcentajeDescuento')
     valor_descuento = models.FloatField(default=0, db_column='T405valorDescuento')
@@ -82,7 +82,7 @@ class Cartera(models.Model):
         return self.valor_sancion + self.valor_intereses
 
     class Meta:
-        db_table = 'T417Cartera'
+        db_table = 'T417Carteras'
         verbose_name = 'Cartera'
         verbose_name_plural = 'Cartera'
 
