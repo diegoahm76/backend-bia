@@ -69,16 +69,26 @@ class RegistroProgramaPORH(generics.CreateAPIView):
             
             
             if 'proyectos' in data_in: 
-
+                
+                proyectos_existentes=ProyectosPORH.objects.filter(id_programa=instancia_programa.id_programa).values_list('nombre', flat=True)
+                
                 nombres_p=data_in['proyectos']
-                #print(data_in['proyectos'])
-                nombres_proyectos = [proyecto['nombre'] for proyecto in nombres_p]
-                #print(nombres_proyectos)
+                
+                nombres_proyectos = [proyecto['nombre'] for proyecto in nombres_p if 'nombre' in proyecto]
+      
+                
+                elementos_comunes = list(set(list(proyectos_existentes)) & set(nombres_proyectos))
+        
+
+                if elementos_comunes:
+                    raise ValidationError(f"Este programa ya tiene proyectos con estos nombres : {', '.join(str(x) for x in elementos_comunes)}")
+                    #raise ValidationError("Este programa ya tiene proyectos con estos nombres." )
 
                 existen_repetidos=self.obtener_repetido(nombres_proyectos)
-                #print(existen_repetidos)
+        
                 if existen_repetidos:
-                    raise ValidationError("Existe mas de un proyecto con el nombre:"+str(existen_repetidos))
+                    raise ValidationError("Existen mas de un proyecto con el nombre: "+ existen_repetidos)
+                    
                 
                 for proyecto in data_in['proyectos']: 
 
@@ -121,16 +131,26 @@ class RegistroProgramaPORH(generics.CreateAPIView):
                     if 'actividades' in proyecto:
                     
                         nombres_a=proyecto['actividades']
-                        #print(data_in['proyectos'])
+
                         nombres_actividad = [proyecto['nombre'] for proyecto in nombres_a]
 
-                        
                         existen_repetidos=None
                         existen_repetidos=self.obtener_repetido(nombres_actividad)
                         #print(existen_repetidos)
                         if existen_repetidos:
-                            raise ValidationError("Existe mas de una actividad con el nombre: "+str(existen_repetidos))
-                    
+                            
+                            raise ValidationError("Intenta crear  mas de una actividad con el nombre: "+str(existen_repetidos))
+                            
+                        
+                        actividades_base=ActividadesProyectos.objects.filter(id_proyecto=instancia_proyecto.id_proyecto).values_list('nombre', flat=True)
+                        elementos_comunes=None
+                        elementos_comunes = list(set(list(actividades_base)) & set(nombres_actividad))
+        
+
+                        if elementos_comunes:
+                            raise ValidationError(f"Estas actividades ya existen:  {', '.join(str(x) for x in elementos_comunes)}")
+                           
+
 
                         for actividad in proyecto['actividades']:
 
@@ -182,7 +202,7 @@ class CreateProgramaPORH(generics.CreateAPIView):
             #print(self.queryset)
             return Response({'success': True, 'detail':'Se creo un programa exitosamente', 'data':serializer.data},status=status.HTTP_200_OK)
         except ValidationError as e:
-            raise ValidationError('Error en los datos del formulario')
+            raise ValidationError(e.detail)
 
 class CreateProyectosPORH(generics.CreateAPIView):
     serializer_class = ProyectosPORHSerializer
@@ -205,7 +225,7 @@ class CreateProyectosPORH(generics.CreateAPIView):
             #print(self.queryset)
             return Response({'success': True, 'detail':'Se creo un proyecto exitosamente', 'data':serializer.data},status=status.HTTP_200_OK)
         except ValidationError as e:
-            raise ValidationError('Error en los datos del formulario')
+            raise ValidationError(e.detail)
 class GetProgramasporPORH(generics.ListAPIView):
     serializer_class = GetProgramasporPORHSerializers
     queryset = ProgramasPORH.objects.all()
@@ -298,10 +318,16 @@ class ActualizarPrograma(generics.UpdateAPIView):
             programa = ProgramasPORH.objects.filter(id_programa=pk).first()
             proyecto = ProyectosPORH.objects.filter(id_programa=pk).order_by('vigencia_final').last()
             
-            
+            existe_programa = ProgramasPORH.objects.filter(id_instrumento=programa.id_instrumento, nombre=data['nombre']).first()
+            print(programa)
+            if existe_programa:
+                raise ValidationError("Ya existe un programa con este nombre.")
             if not programa:
                 raise NotFound("No se encuentra el Programa que busca para su modificación.")
             
+
+
+
             instance_previous=copy.copy(programa)
             serializer = self.serializer_class(programa,data=data)
             serializer.is_valid(raise_exception=True)

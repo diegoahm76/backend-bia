@@ -1,5 +1,5 @@
 import json
-
+from collections import Counter
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from rest_framework import generics
@@ -69,13 +69,17 @@ class RegistroSubSeccion(generics.CreateAPIView):
     def crear_subseccion(self,request,data):
         instancia_seccion = None
         #data['id_subseccion']=instancia_seccion.id_seccion
-        data['id_persona_creada']=request.user.persona.id_persona
-        serializer = self.serializer_class(data=data)
-        serializer.is_valid(raise_exception=True)
-        serializador =serializer.save()
+        try:
+            data['id_persona_creada']=request.user.persona.id_persona
+            serializer = self.serializer_class(data=data)
+            serializer.is_valid(raise_exception=True)
+            serializador =serializer.save()
 
-        return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
-        
+            return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+        except ValidationError  as e:
+            
+            error_message = {'error': e.detail}
+            raise ValidationError  (e.detail)   
 
 
     def post(self,request):
@@ -192,7 +196,7 @@ class RegistroSeccionSubseccion(generics.CreateAPIView):
         except ValidationError  as e:
             
             error_message = {'error': e.detail}
-            raise ValidationError  (error_message)
+            raise ValidationError  (e.detail)
 
 
 
@@ -204,10 +208,15 @@ class ActualizarSeccionSubseccion(generics.UpdateAPIView):
     queryset = Secciones.objects.all()
     permission_classes = [IsAuthenticated]
 
-   
+    def obtener_repetido(self,lista_archivos):
+        contador = Counter(lista_archivos)
+        for archivo, cantidad in contador.items():
+            if cantidad > 1:
+                return archivo
+        return None
     
     def put(self,request,pk):
-    
+        operaciones=[]
         data_in = request.data
         seccion = Secciones.objects.filter(id_seccion=pk).first()
         
@@ -221,37 +230,79 @@ class ActualizarSeccionSubseccion(generics.UpdateAPIView):
                 print('')
                 #print("NO SUBSECCIONES")
             else:
+
+                # nombres_s=data_in['subsecciones']
+                
+                # nombre_subsecciones = [subseccion['nombre'] for subseccion in nombres_s if 'nombre' in subseccion]
+                # existen_repetidos=self.obtener_repetido(nombre_subsecciones)
+                # #verifica si en los que se van a crear existen repetidos
+                # if existen_repetidos:
+                #     raise ValidationError("Existe mas de una subseccion  con el nombre: "+str(existen_repetidos))
+                
+                # #verifica si los nombres de las subsecciones que van a crear no existan en la base de datos
+                # subsecciones_existentes=Subsecciones.objects.filter(id_seccion=seccion.id_seccion).values_list('nombre', flat=True)
+                
+
+                # if subsecciones_existentes:
+                #     elementos_comunes = list(set(list(subsecciones_existentes)) & set(nombre_subsecciones))
+                    
+                #     print(len(elementos_comunes))
+                #     if len(elementos_comunes)>0:
+                        
+                #         raise ValidationError(f"Ya existe una subseccion con estos nombres: {', '.join(str(x) for x in elementos_comunes)}")
+
                 for subseccion in data_in['subsecciones']: 
                     #print(subseccion)
 
                     if subseccion['id_subseccion']:#si existe la actualiza 
-                        instancia_subseccion = Subsecciones.objects.filter(id_subseccion=subseccion['id_subseccion']).first()
-                        if not instancia_subseccion:
-                            raise NotFound("La subseccion con el codigo : "+str(subseccion['id_subseccion']) +" no existe en esta seccion")
-                        
-                        
-                        
-                        instancia_subseccion.nombre=subseccion['nombre']
-                        instancia_subseccion.descripcion=subseccion['descripcion']
-                        instancia_subseccion.save()
+
+                        subseccion_data = {
+                            'id_seccion': seccion.id_seccion,
+                            'nombre': subseccion['nombre'],
+                            'descripcion': subseccion['descripcion'],
+                            'id_persona_creada': request.user.persona.id_persona
+                        }
+                        registro_subseccion = ActualizarSubsecciones()
+                        response_subseccion = registro_subseccion.actualizar_subseccion(subseccion_data,subseccion['id_subseccion'])
+                        if response_subseccion.status_code != status.HTTP_200_OK:
+                            return response_subseccion
+
+                        # instancia_subseccion = Subsecciones.objects.filter(id_subseccion=subseccion['id_subseccion']).first()
+                        # if not instancia_subseccion:
+                        #     raise NotFound("La subseccion con el codigo : "+str(subseccion['id_subseccion']) +" no existe.")
+                        # instancia_subseccion.nombre=subseccion['nombre']
+                        # instancia_subseccion.descripcion=subseccion['descripcion']
+                        # instancia_subseccion.save()
                     else:#si id_subseccion es nula se creada
                     
-                        
-                        instancia_subseccion = Subsecciones.objects.create(
-                        id_seccion=seccion,
-                        nombre=subseccion['nombre'],
-                        descripcion=subseccion["descripcion"],
-                        id_persona_creada=request.user.persona
-                    )
+                        subseccion_data = {
+                            'id_seccion': seccion.id_seccion,
+                            'nombre': subseccion['nombre'],
+                            'descripcion': subseccion['descripcion'],
+                            'id_persona_creada': request.user.persona.id_persona
+                        }
+                        registro_subseccion = RegistroSubSeccion()
+                        response_subseccion = registro_subseccion.crear_subseccion(request,subseccion_data)
+                        if response_subseccion.status_code != status.HTTP_201_CREATED:
+                            return response_subseccion
+
+                        # instancia_subseccion = Subsecciones.objects.create(
+                        # id_seccion=seccion,
+                        # nombre=subseccion['nombre'],
+                        # descripcion=subseccion["descripcion"],
+                        # id_persona_creada=request.user.persona
+                    # )
 
         if 'subsecciones_eliminar'  in data_in:
             if data_in['subsecciones_eliminar']:
                 for eliminar in data_in['subsecciones_eliminar']:
-                    instancia_subseccion = Subsecciones.objects.filter(id_subseccion=eliminar).first()
-                    if not instancia_subseccion:
-                        raise NotFound("La subseccion con el codigo : "+str(subseccion['id_subseccion']) +" no existe en esta seccion")
-                    #REGISTRO DE CAMBIOS
-                    instancia_subseccion.delete()
+
+                    eliminarSubseccion = EliminarSubseccion()
+                    
+                    response_subseccion=eliminarSubseccion.delete(request,eliminar)
+                    if response_subseccion.status_code == status.HTTP_400_BAD_REQUEST:
+                        return response_subseccion
+
 
 
         serializer = self.serializer_class(seccion,data=data_in)
@@ -285,7 +336,7 @@ class ActualizarSecciones(generics.UpdateAPIView):
         Seccione = Secciones.objects.filter(id_seccion=pk).first()
         
         if  not Seccione:
-            print('HOLAA')
+            #print('HOLAA')
             raise NotFound("No se existe la seccion que trata de Actualizar.")
 
         self.actualizar_seccion(data,Seccione)
@@ -300,14 +351,33 @@ class ActualizarSubsecciones(generics.UpdateAPIView):
     queryset = Subsecciones.objects.all()
     permission_classes = [IsAuthenticated]
     
-    def actualizar_subseccion(self,data,subseccion):
+    def actualizar_subseccion(self,data,pk):
         instancia_seccion = None
+        subseccion = Subsecciones.objects.filter(id_subseccion=pk).first()
+        nombre_existente = Subsecciones.objects.filter(id_seccion=subseccion.id_seccion,nombre=data['nombre']).first()
 
+        #print(nombre_existente)
         serializer = self.serializer_class(subseccion, data=data)
-        serializer.is_valid(raise_exception=True)
-        serializer.update(subseccion, serializer.validated_data)
 
-        return Response({'success':True,'detail':'Se actualizaron los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+      
+        
+        if not subseccion:
+            raise NotFound("No  existe la subseccion que trata de Actualizar.")
+        
+        if nombre_existente  :
+            if str(nombre_existente.id_subseccion)!= str(pk):
+       
+                raise ValidationError("Ya existe una subseccion con este nombre")
+
+        try:
+            serializer.is_valid(raise_exception=True)
+            serializer.update(subseccion, serializer.validated_data)
+
+        except ValidationError  as e:
+           
+            raise ValidationError  (e.detail)
+        
+        return Response({'success':True,'detail':'Se actualizaron los registros correctamente','data':serializer.data},status=status.HTTP_200_OK)
         
 
     def put(self,request,pk):
@@ -316,13 +386,16 @@ class ActualizarSubsecciones(generics.UpdateAPIView):
         subseccion = Subsecciones.objects.filter(id_subseccion=pk).first()
         
         if not subseccion:
-            raise NotFound("No se existe la subseccion que trata de Actualizar.")
+            raise NotFound("No  existe la subseccion que trata de Actualizar.")
         
         #pendiente validacion de instrumentos
 
-        self.actualizar_subseccion(data,subseccion)
+        response_subseccion =self.actualizar_subseccion(data,pk)
+       
+        if response_subseccion != status.HTTP_200_OK:
+            return response_subseccion
         
-        return Response({'success':True,'detail':"Se actualizo la subseccion Correctamente."},status=status.HTTP_200_OK)
+        return Response(response_subseccion.data,status=status.HTTP_200_OK)
     
 
 class EliminarSubseccion(generics.DestroyAPIView):
