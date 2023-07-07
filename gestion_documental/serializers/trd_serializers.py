@@ -55,6 +55,7 @@ class BuscarTipologiaSerializer(serializers.ModelSerializer):
 
 class BusquedaTRDNombreVersionSerializer(serializers.ModelSerializer):
     usado = serializers.SerializerMethodField()
+    id_organigrama = serializers.ReadOnlyField(source='id_ccd.id_organigrama.id_organigrama', default=None)
     
     def get_usado(self,obj):
         tca = TablasControlAcceso.objects.filter(id_trd=obj.id_trd)
@@ -64,8 +65,8 @@ class BusquedaTRDNombreVersionSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = TablaRetencionDocumental
-        fields = '__all__'
-        
+        fields = ['id_trd','id_ccd','id_organigrama','version','nombre','fecha_terminado','fecha_puesta_produccion','fecha_retiro_produccion','actual','usado']
+
 class ModificarTRDNombreVersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = TablaRetencionDocumental
