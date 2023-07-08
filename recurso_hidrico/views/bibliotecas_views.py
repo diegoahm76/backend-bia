@@ -8,8 +8,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from datetime import datetime,date,timedelta
 
-from recurso_hidrico.models.bibliotecas_models import Instrumentos, Secciones,Subsecciones
-from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentosSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
+from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, CuencasInstrumento, Instrumentos, Secciones,Subsecciones
+from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoCuencasGetSerializer, InstrumentosSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
 
 
 
@@ -468,16 +468,18 @@ class EliminarSeccion(generics.DestroyAPIView):
         
         return Response({'success':True,'detail':'Se elimino la Seccion seleccionada.'},status=status.HTTP_200_OK)
     
+#CONSULTA BIBLIOTECA 
 
-class GetSubseccionesContInstrumentos(generics.ListAPIView):
+
+class SubseccionesContInstrumentosGet(generics.ListAPIView):
     queryset = Subsecciones.objects.all()
     serializer_class = SubseccionContarInstrumentosSerializer
 
 
     permission_classes = [IsAuthenticated]
     
-    def get(self,request,pk):
-        subSeccion = Subsecciones.objects.filter(id_seccion=pk)
+    def get(self,request,sec):
+        subSeccion = Subsecciones.objects.filter(id_seccion=sec)
         serializer = self.serializer_class(subSeccion,many=True)
         
         if not subSeccion:
@@ -486,7 +488,7 @@ class GetSubseccionesContInstrumentos(generics.ListAPIView):
         return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)
 
 
-class GetInstrumentosPorSeccionSubseccion(generics.ListAPIView):
+class InstrumentosSeccionSubseccionGet(generics.ListAPIView):
 
     queryset = Instrumentos.objects.all()
     serializer_class = InstrumentosSerializer
@@ -501,3 +503,95 @@ class GetInstrumentosPorSeccionSubseccion(generics.ListAPIView):
             raise NotFound("No se encuentran Instrumentos con este requisito.")
         
         return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)  
+    
+
+
+class InstrumentoCuencasGet(generics.ListAPIView):
+
+    queryset = Instrumentos.objects.all()
+    serializer_class = InstrumentoCuencasGetSerializer
+    permission_classes = [IsAuthenticated]
+    def get(self,request,sec,sub):
+        seccion = sec
+        idsubseccion = sub
+        
+        instrumento_ids = Instrumentos.objects.filter(id_seccion=seccion, id_subseccion=idsubseccion).values_list('id_instrumento', flat=True)
+        lista_instrumentos=list(instrumento_ids)
+
+        resultados = CuencasInstrumento.objects.filter(id_instrumento__in=lista_instrumentos)
+
+        serializer = self.serializer_class(resultados,many=True)
+        
+        if not instrumento_ids:
+            raise NotFound("No se encuentran Instrumentos con este requisito.")
+        
+        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)  
+    
+  
+    
+class InstrumentosGetById(generics.RetrieveAPIView):
+    queryset = Instrumentos.objects.all()
+    serializer_class = InstrumentosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            instrumento = self.get_object()
+        except Instrumentos.DoesNotExist:
+            raise NotFound("No se encontró instrumento con esta id.")
+        
+        serializer = self.serializer_class(instrumento)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+class CuencasInstrumentoGet(generics.ListAPIView):
+
+    queryset = CuencasInstrumento.objects.all()
+    serializer_class = InstrumentoCuencasGetSerializer
+    permission_classes = [IsAuthenticated]
+    def get(self,request,ins):
+        id = ins
+         
+        #cuencas = Instrumentos.objects.filter(id_seccion=seccion, id_subseccion=idsubseccion).values_list('id_instrumento', flat=True)
+        cuencas=CuencasInstrumento.objects.filter(id_instrumento=id)
+
+
+        serializer = self.serializer_class(cuencas,many=True)
+        
+        if not cuencas:
+            raise NotFound("No se encuentran cuentas asociadas a este instrumento.")
+        
+        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)  
+    
+
+
+
+class ArchivosInstrumentoBusquedaAvanzadaGet(generics.ListAPIView):
+    #serializer_class = BusquedaAvanzadaAvancesSerializers
+    serializer_class = ArchivosInstrumentoBusquedaAvanzadaSerializer
+    queryset = ArchivosInstrumento.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        filter = {}
+
+        for key, value in request.query_params.items():
+            if key == 'nombre_seccion':
+                if value != '':
+                    filter['id_instrumento__id_seccion__nombre__icontains'] = value
+            if key == 'nombre_subseccion':
+                if value != '':
+                    filter['id_instrumento__id_subseccion__nombre__icontains'] = value
+            if key == 'nombre_instrumento': 
+                if value != '':
+                    filter['id_instrumento__nombre__icontains'] = value
+            if key == 'nombre_archivo': 
+                if value != '':
+                    filter['nombre_archivo__icontains'] = value
+        
+        archivos = self.queryset.all().filter(**filter)
+        serializador = self.serializer_class(archivos, many=True)
+        # avances = self.queryset.filter(**filter).select_related('id_proyecto')
+        # serializador = self.serializer_class(avances, many=True)
+        
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializador.data}, status=status.HTTP_200_OK)
