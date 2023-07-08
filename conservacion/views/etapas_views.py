@@ -204,18 +204,17 @@ class GuardarCambioEtapa(generics.CreateAPIView):
                 cod_etapa_lote='P'
             ).first()
             
+            nro_lote_prod = inventario_vivero.nro_lote
+            
             if inventario_vivero_prod:
-                inventario_vivero_prod.cantidad_entrante = inventario_vivero_prod.cantidad_entrante + int(data['cantidad_movida']) if inventario_vivero_prod.cantidad_entrante else data['cantidad_movida']
-                inventario_vivero_prod.ult_altura_lote = data['altura_lote_en_cms']
-                inventario_vivero_prod.fecha_ult_altura_lote = fecha_cambio
-                inventario_vivero_prod.save()
+                nro_lote_prod = inventario_vivero_prod.nro_lote + 1 if inventario_vivero_prod.nro_lote else 1
             else:
                 # NUEVO REGISTRO
                 InventarioViveros.objects.create(
                     id_vivero = inventario_vivero.id_vivero,
                     id_bien = inventario_vivero.id_bien,
                     agno_lote = inventario_vivero.agno_lote,
-                    nro_lote = inventario_vivero.nro_lote,
+                    nro_lote = nro_lote_prod,
                     cod_etapa_lote = 'P',
                     es_produccion_propia_lote = True,
                     fecha_ingreso_lote_etapa = fecha_cambio,
