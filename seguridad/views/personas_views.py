@@ -1,6 +1,5 @@
 from asyncio import exceptions
 from urllib.parse import quote_plus
-from django.forms import ValidationError
 from rest_framework.exceptions import APIException, ValidationError, NotFound, PermissionDenied
 from datetime import datetime, date, timedelta
 import copy
