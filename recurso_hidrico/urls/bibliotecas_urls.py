@@ -22,5 +22,6 @@ urlpatterns = [
     path('instrumentos/get-instrumento-id/<str:pk>/',views.InstrumentosGetById.as_view() ,name='get-instrumenos-by-id'),
     path('cuencas/get-cuencas-instrumento/<str:ins>/',views.CuencasInstrumentoGet.as_view() ,name='get-cuenca-by-instrumento'),
     path('archivosInstrumento/get-busqueda-avanzada/',views.ArchivosInstrumentoBusquedaAvanzadaGet.as_view(),name='get-avanzada-archivos-instrumento'),
+    path('ArchivosInstrumento/get-ArchivosInstrumento-instrumento/<str:ins>/',views.ArchivosInstrumentoGet.as_view() ,name='get-archivosInstrumento-by-instrumento'),
    
 ]
