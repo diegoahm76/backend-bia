@@ -247,10 +247,12 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                     
                 elif user_actualizado.is_active != previous_user.is_active:
                     cod_operacion = "A" if user_actualizado.is_active else "I"
-                    subject = "Verificación exitosa"
-                    template = "verificacion-cuenta.html"
-                    absurl = FRONTEND_URL+"#/auth/login"
-                    Util.notificacion(user_actualizado.persona,subject,template,absurl=absurl)
+                    
+                    if user_actualizado.is_active:
+                        subject = "Verificación exitosa"
+                        template = "verificacion-cuenta.html"
+                        absurl = FRONTEND_URL+"#/auth/login"
+                        Util.notificacion(user_actualizado.persona,subject,template,absurl=absurl)
                     
                     HistoricoActivacion.objects.create(
                         id_usuario_afectado = usuario_afectado,
