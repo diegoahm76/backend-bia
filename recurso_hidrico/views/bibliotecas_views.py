@@ -1,5 +1,5 @@
 import json
-
+from collections import Counter
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from rest_framework import generics
@@ -8,14 +8,14 @@ from rest_framework.response import Response
 from rest_framework import status
 from datetime import datetime,date,timedelta
 
-from recurso_hidrico.models.bibliotecas_models import Instrumentos, Secciones,Subsecciones
-from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentosSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
+from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, CuencasInstrumento, Instrumentos, Secciones,Subsecciones
+from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentosGetSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoCuencasGetSerializer, InstrumentosSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
 
 
 
 class GetSecciones(generics.ListAPIView):
     serializer_class = SeccionesSerializer
-    queryset = Secciones.objects.all()
+    queryset = Secciones.objects.all().order_by('-fecha_creacion')
     permission_classes = [IsAuthenticated]
     def get(self, request):
         queryset = self.get_queryset()
@@ -29,7 +29,7 @@ class GetSecciones(generics.ListAPIView):
     
 class GetSubseccionesPorSecciones(generics.ListAPIView):
     serializer_class = GetSubseccionesSerializer
-    queryset = Subsecciones.objects.all()
+    queryset = Subsecciones.objects.all().order_by('-fechaCreacion')
     permission_classes = [IsAuthenticated]
     
     def get(self,request,pk):
@@ -69,13 +69,17 @@ class RegistroSubSeccion(generics.CreateAPIView):
     def crear_subseccion(self,request,data):
         instancia_seccion = None
         #data['id_subseccion']=instancia_seccion.id_seccion
-        data['id_persona_creada']=request.user.persona.id_persona
-        serializer = self.serializer_class(data=data)
-        serializer.is_valid(raise_exception=True)
-        serializador =serializer.save()
+        try:
+            data['id_persona_creada']=request.user.persona.id_persona
+            serializer = self.serializer_class(data=data)
+            serializer.is_valid(raise_exception=True)
+            serializador =serializer.save()
 
-        return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
-        
+            return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+        except ValidationError  as e:
+            
+            error_message = {'error': e.detail}
+            raise ValidationError  (e.detail)   
 
 
     def post(self,request):
@@ -192,7 +196,7 @@ class RegistroSeccionSubseccion(generics.CreateAPIView):
         except ValidationError  as e:
             
             error_message = {'error': e.detail}
-            return Response(error_message, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError  (e.detail)
 
 
 
@@ -204,10 +208,15 @@ class ActualizarSeccionSubseccion(generics.UpdateAPIView):
     queryset = Secciones.objects.all()
     permission_classes = [IsAuthenticated]
 
-   
+    def obtener_repetido(self,lista_archivos):
+        contador = Counter(lista_archivos)
+        for archivo, cantidad in contador.items():
+            if cantidad > 1:
+                return archivo
+        return None
     
     def put(self,request,pk):
-    
+        operaciones=[]
         data_in = request.data
         seccion = Secciones.objects.filter(id_seccion=pk).first()
         
@@ -221,37 +230,79 @@ class ActualizarSeccionSubseccion(generics.UpdateAPIView):
                 print('')
                 #print("NO SUBSECCIONES")
             else:
+
+                # nombres_s=data_in['subsecciones']
+                
+                # nombre_subsecciones = [subseccion['nombre'] for subseccion in nombres_s if 'nombre' in subseccion]
+                # existen_repetidos=self.obtener_repetido(nombre_subsecciones)
+                # #verifica si en los que se van a crear existen repetidos
+                # if existen_repetidos:
+                #     raise ValidationError("Existe mas de una subseccion  con el nombre: "+str(existen_repetidos))
+                
+                # #verifica si los nombres de las subsecciones que van a crear no existan en la base de datos
+                # subsecciones_existentes=Subsecciones.objects.filter(id_seccion=seccion.id_seccion).values_list('nombre', flat=True)
+                
+
+                # if subsecciones_existentes:
+                #     elementos_comunes = list(set(list(subsecciones_existentes)) & set(nombre_subsecciones))
+                    
+                #     print(len(elementos_comunes))
+                #     if len(elementos_comunes)>0:
+                        
+                #         raise ValidationError(f"Ya existe una subseccion con estos nombres: {', '.join(str(x) for x in elementos_comunes)}")
+
                 for subseccion in data_in['subsecciones']: 
                     #print(subseccion)
 
                     if subseccion['id_subseccion']:#si existe la actualiza 
-                        instancia_subseccion = Subsecciones.objects.filter(id_subseccion=subseccion['id_subseccion']).first()
-                        if not instancia_subseccion:
-                            raise NotFound("La subseccion con el codigo : "+str(subseccion['id_subseccion']) +" no existe en esta seccion")
-                        
-                        
-                        
-                        instancia_subseccion.nombre=subseccion['nombre']
-                        instancia_subseccion.descripcion=subseccion['descripcion']
-                        instancia_subseccion.save()
+
+                        subseccion_data = {
+                            'id_seccion': seccion.id_seccion,
+                            'nombre': subseccion['nombre'],
+                            'descripcion': subseccion['descripcion'],
+                            'id_persona_creada': request.user.persona.id_persona
+                        }
+                        registro_subseccion = ActualizarSubsecciones()
+                        response_subseccion = registro_subseccion.actualizar_subseccion(subseccion_data,subseccion['id_subseccion'])
+                        if response_subseccion.status_code != status.HTTP_200_OK:
+                            return response_subseccion
+
+                        # instancia_subseccion = Subsecciones.objects.filter(id_subseccion=subseccion['id_subseccion']).first()
+                        # if not instancia_subseccion:
+                        #     raise NotFound("La subseccion con el codigo : "+str(subseccion['id_subseccion']) +" no existe.")
+                        # instancia_subseccion.nombre=subseccion['nombre']
+                        # instancia_subseccion.descripcion=subseccion['descripcion']
+                        # instancia_subseccion.save()
                     else:#si id_subseccion es nula se creada
                     
-                        
-                        instancia_subseccion = Subsecciones.objects.create(
-                        id_seccion=seccion,
-                        nombre=subseccion['nombre'],
-                        descripcion=subseccion["descripcion"],
-                        id_persona_creada=request.user.persona
-                    )
+                        subseccion_data = {
+                            'id_seccion': seccion.id_seccion,
+                            'nombre': subseccion['nombre'],
+                            'descripcion': subseccion['descripcion'],
+                            'id_persona_creada': request.user.persona.id_persona
+                        }
+                        registro_subseccion = RegistroSubSeccion()
+                        response_subseccion = registro_subseccion.crear_subseccion(request,subseccion_data)
+                        if response_subseccion.status_code != status.HTTP_201_CREATED:
+                            return response_subseccion
+
+                        # instancia_subseccion = Subsecciones.objects.create(
+                        # id_seccion=seccion,
+                        # nombre=subseccion['nombre'],
+                        # descripcion=subseccion["descripcion"],
+                        # id_persona_creada=request.user.persona
+                    # )
 
         if 'subsecciones_eliminar'  in data_in:
             if data_in['subsecciones_eliminar']:
                 for eliminar in data_in['subsecciones_eliminar']:
-                    instancia_subseccion = Subsecciones.objects.filter(id_subseccion=eliminar).first()
-                    if not instancia_subseccion:
-                        raise NotFound("La subseccion con el codigo : "+str(subseccion['id_subseccion']) +" no existe en esta seccion")
-                    #REGISTRO DE CAMBIOS
-                    instancia_subseccion.delete()
+
+                    eliminarSubseccion = EliminarSubseccion()
+                    
+                    response_subseccion=eliminarSubseccion.delete(request,eliminar)
+                    if response_subseccion.status_code == status.HTTP_400_BAD_REQUEST:
+                        return response_subseccion
+
 
 
         serializer = self.serializer_class(seccion,data=data_in)
@@ -285,7 +336,7 @@ class ActualizarSecciones(generics.UpdateAPIView):
         Seccione = Secciones.objects.filter(id_seccion=pk).first()
         
         if  not Seccione:
-            print('HOLAA')
+            #print('HOLAA')
             raise NotFound("No se existe la seccion que trata de Actualizar.")
 
         self.actualizar_seccion(data,Seccione)
@@ -300,14 +351,33 @@ class ActualizarSubsecciones(generics.UpdateAPIView):
     queryset = Subsecciones.objects.all()
     permission_classes = [IsAuthenticated]
     
-    def actualizar_subseccion(self,data,subseccion):
+    def actualizar_subseccion(self,data,pk):
         instancia_seccion = None
+        subseccion = Subsecciones.objects.filter(id_subseccion=pk).first()
+        nombre_existente = Subsecciones.objects.filter(id_seccion=subseccion.id_seccion,nombre=data['nombre']).first()
 
+        #print(nombre_existente)
         serializer = self.serializer_class(subseccion, data=data)
-        serializer.is_valid(raise_exception=True)
-        serializer.update(subseccion, serializer.validated_data)
 
-        return Response({'success':True,'detail':'Se actualizaron los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+      
+        
+        if not subseccion:
+            raise NotFound("No  existe la subseccion que trata de Actualizar.")
+        
+        if nombre_existente  :
+            if str(nombre_existente.id_subseccion)!= str(pk):
+       
+                raise ValidationError("Ya existe una subseccion con este nombre")
+
+        try:
+            serializer.is_valid(raise_exception=True)
+            serializer.update(subseccion, serializer.validated_data)
+
+        except ValidationError  as e:
+           
+            raise ValidationError  (e.detail)
+        
+        return Response({'success':True,'detail':'Se actualizaron los registros correctamente','data':serializer.data},status=status.HTTP_200_OK)
         
 
     def put(self,request,pk):
@@ -316,13 +386,16 @@ class ActualizarSubsecciones(generics.UpdateAPIView):
         subseccion = Subsecciones.objects.filter(id_subseccion=pk).first()
         
         if not subseccion:
-            raise NotFound("No se existe la subseccion que trata de Actualizar.")
+            raise NotFound("No  existe la subseccion que trata de Actualizar.")
         
         #pendiente validacion de instrumentos
 
-        self.actualizar_subseccion(data,subseccion)
+        response_subseccion =self.actualizar_subseccion(data,pk)
+       
+        if response_subseccion != status.HTTP_200_OK:
+            return response_subseccion
         
-        return Response({'success':True,'detail':"Se actualizo la subseccion Correctamente."},status=status.HTTP_200_OK)
+        return Response(response_subseccion.data,status=status.HTTP_200_OK)
     
 
 class EliminarSubseccion(generics.DestroyAPIView):
@@ -395,16 +468,18 @@ class EliminarSeccion(generics.DestroyAPIView):
         
         return Response({'success':True,'detail':'Se elimino la Seccion seleccionada.'},status=status.HTTP_200_OK)
     
+#CONSULTA BIBLIOTECA 
 
-class GetSubseccionesContInstrumentos(generics.ListAPIView):
+
+class SubseccionesContInstrumentosGet(generics.ListAPIView):
     queryset = Subsecciones.objects.all()
     serializer_class = SubseccionContarInstrumentosSerializer
 
 
     permission_classes = [IsAuthenticated]
     
-    def get(self,request,pk):
-        subSeccion = Subsecciones.objects.filter(id_seccion=pk)
+    def get(self,request,sec):
+        subSeccion = Subsecciones.objects.filter(id_seccion=sec)
         serializer = self.serializer_class(subSeccion,many=True)
         
         if not subSeccion:
@@ -413,7 +488,7 @@ class GetSubseccionesContInstrumentos(generics.ListAPIView):
         return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)
 
 
-class GetInstrumentosPorSeccionSubseccion(generics.ListAPIView):
+class InstrumentosSeccionSubseccionGet(generics.ListAPIView):
 
     queryset = Instrumentos.objects.all()
     serializer_class = InstrumentosSerializer
@@ -428,3 +503,122 @@ class GetInstrumentosPorSeccionSubseccion(generics.ListAPIView):
             raise NotFound("No se encuentran Instrumentos con este requisito.")
         
         return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)  
+    
+
+
+class InstrumentoCuencasGet(generics.ListAPIView):
+
+    queryset = Instrumentos.objects.all()
+    serializer_class = InstrumentoCuencasGetSerializer
+    permission_classes = [IsAuthenticated]
+    def get(self,request,sec,sub):
+        seccion = sec
+        idsubseccion = sub
+        
+        instrumento_ids = Instrumentos.objects.filter(id_seccion=seccion, id_subseccion=idsubseccion).values_list('id_instrumento', flat=True)
+        lista_instrumentos=list(instrumento_ids)
+
+        resultados = CuencasInstrumento.objects.filter(id_instrumento__in=lista_instrumentos)
+
+        serializer = self.serializer_class(resultados,many=True)
+        
+        if not instrumento_ids:
+            raise NotFound("No se encuentran Instrumentos con este requisito.")
+        
+        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)  
+    
+  
+    
+class InstrumentosGetById(generics.RetrieveAPIView):
+    queryset = Instrumentos.objects.all()
+    serializer_class = InstrumentosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            instrumento = self.get_object()
+        except Instrumentos.DoesNotExist:
+            raise NotFound("No se encontró instrumento con esta id.")
+        
+        serializer = self.serializer_class(instrumento)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+class CuencasInstrumentoGet(generics.ListAPIView):
+
+    queryset = CuencasInstrumento.objects.all()
+    serializer_class = InstrumentoCuencasGetSerializer
+    permission_classes = [IsAuthenticated]
+    def get(self,request,ins):
+        id = ins
+         
+        #cuencas = Instrumentos.objects.filter(id_seccion=seccion, id_subseccion=idsubseccion).values_list('id_instrumento', flat=True)
+        cuencas=CuencasInstrumento.objects.filter(id_instrumento=id)
+
+
+        serializer = self.serializer_class(cuencas,many=True)
+        
+        if not cuencas:
+            raise NotFound("No se encuentran cuentas asociadas a este instrumento.")
+        
+        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)  
+    
+
+
+
+class ArchivosInstrumentoBusquedaAvanzadaGet(generics.ListAPIView):
+    #serializer_class = BusquedaAvanzadaAvancesSerializers
+    serializer_class = ArchivosInstrumentoBusquedaAvanzadaSerializer
+    queryset = ArchivosInstrumento.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        filter = {}
+
+        for key, value in request.query_params.items():
+            if key == 'nombre_seccion':
+                if value != '':
+                    filter['id_instrumento__id_seccion__nombre__icontains'] = value
+            if key == 'nombre_subseccion':
+                if value != '':
+                    filter['id_instrumento__id_subseccion__nombre__icontains'] = value
+            if key == 'nombre_instrumento': 
+                if value != '':
+                    filter['id_instrumento__nombre__icontains'] = value
+            if key == 'nombre_archivo': 
+                if value != '':
+                    filter['nombre_archivo__icontains'] = value
+        
+        archivos = self.queryset.all().filter(**filter)
+        serializador = self.serializer_class(archivos, many=True)
+        # avances = self.queryset.filter(**filter).select_related('id_proyecto')
+        # serializador = self.serializer_class(avances, many=True)
+        
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializador.data}, status=status.HTTP_200_OK)
+    
+
+
+
+class ArchivosInstrumentoGet(generics.ListAPIView):
+
+
+    queryset = ArchivosInstrumento.objects.all()
+    serializer_class = ArchivosInstrumentosGetSerializer
+    permission_classes = [IsAuthenticated]
+    def get(self,request,ins):
+        id = ins
+         
+        archivos=ArchivosInstrumento.objects.filter(id_instrumento=id)
+
+
+        serializer = self.serializer_class(archivos,many=True)
+        
+        if not archivos:
+            raise NotFound("No se encuentran archivos asociadas a este instrumento.")
+        
+        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)  
+    
+
+
+
+##Registro de Instrumentos en Biblioteca

@@ -24,4 +24,6 @@ urlpatterns = [
     path('crear/evidencia/avance/proyecto/<str:id_evidencia>/',views.RegistroEvidencia.as_view(),name='crear-evidencia-avance-proyecto'),
     path('actualizar/evidencia/avance/proyecto/<str:pk>/',views.ActualizarAvanceEvidencia.as_view(),name='crear-evidencia-avance-proyecto'),
 
+     path('programasporh/get-busqueda-avanzada/',views.ProgramaPORHBusquedaAvanzadaGet.as_view(),name='get-avanzada-programa'),
+
 ]

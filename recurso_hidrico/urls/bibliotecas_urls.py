@@ -1,6 +1,7 @@
 from django.urls import path
 from recurso_hidrico.views import bibliotecas_views as views
 
+
 urlpatterns = [
 
     path('get/secciones/',views.GetSecciones.as_view(),name='get-secciones'),
@@ -14,7 +15,13 @@ urlpatterns = [
     path('subsecciones/delete/<str:pk>/',views.EliminarSubseccion.as_view(),name='eliminar-subseccion'),
     path('secciones-subsecciones/create/',views.RegistroSeccionSubseccion.as_view(),name='create-seccion-subsecciones'),
     path('secciones/delete/<str:pk>/',views.EliminarSeccion.as_view(),name='eliminar-seccion'),
-    path('get/subsecciones-cont-instrumentos/<str:pk>/',views.GetSubseccionesContInstrumentos.as_view() ,name='get-subseccion-cont'),
-    path('get/instrumentos-por-seccion-subseccion/<str:pk>/<str:sub>/',views.GetInstrumentosPorSeccionSubseccion.as_view() ,name='get-instrumenos'),
+    #consultar biblioteca
+    path('subsecciones/subsecciones-cont-instrumentos/<str:sec>/',views.SubseccionesContInstrumentosGet.as_view() ,name='get-subseccion-cont'),
+    path('instrumentos/get-instrumentos-seccion-subseccion/<str:pk>/<str:sub>/',views.InstrumentosSeccionSubseccionGet.as_view() ,name='get-instrumenos'),
+    path('instrumentos/get-instrumento-cuencas/<str:sec>/<str:sub>/',views.InstrumentoCuencasGet.as_view() ,name='get-instrumenos-cuencas'),
+    path('instrumentos/get-instrumento-id/<str:pk>/',views.InstrumentosGetById.as_view() ,name='get-instrumenos-by-id'),
+    path('cuencas/get-cuencas-instrumento/<str:ins>/',views.CuencasInstrumentoGet.as_view() ,name='get-cuenca-by-instrumento'),
+    path('archivosInstrumento/get-busqueda-avanzada/',views.ArchivosInstrumentoBusquedaAvanzadaGet.as_view(),name='get-avanzada-archivos-instrumento'),
+    path('ArchivosInstrumento/get-ArchivosInstrumento-instrumento/<str:ins>/',views.ArchivosInstrumentoGet.as_view() ,name='get-archivosInstrumento-by-instrumento'),
    
 ]

@@ -1,6 +1,5 @@
 from asyncio import exceptions
 from urllib.parse import quote_plus
-from django.forms import ValidationError
 from rest_framework.exceptions import APIException, ValidationError, NotFound, PermissionDenied
 from datetime import datetime, date, timedelta
 import copy
@@ -1179,92 +1178,100 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
     
     def post(self,request):
         
-        data = request.data
-        
-        #CREACION DE PERSONA
-        
-        serializer_persona = self.serializer_class(data=data)
-        serializer_persona.is_valid(raise_exception=True)
+        try:
 
-        validaciones_persona = Util.guardar_persona(data)
-        
-        if not validaciones_persona['success']:
-            return Response({'success':validaciones_persona['success'], 'detail':validaciones_persona['detail']}, status=validaciones_persona['status'])       
-        
-        #CREACION DE USUARIO
-        
-        redirect_url=request.data.get('redirect_url','')
-        redirect_url=quote_plus(redirect_url)
-        
-        if " " in data['nombre_de_usuario']:
-            raise PermissionDenied('No puede contener espacios en el nombre de usuario')
-        
-        #GUARDAR PERSONA
-        serializador = serializer_persona.save()
-        serializador.id_persona_crea = serializador
-        serializador.save()
-        
-        data['creado_por_portal'] = True
-        data['persona'] = serializador.id_persona
-        
-        serializer = self.serializer_class_usuario(data=data)
-        serializer.is_valid(raise_exception=True)
-        
-        nombre_de_usuario = str(serializer.validated_data.get('nombre_de_usuario', '')).lower()
-        
-        serializer_response = serializer.save()
-        serializer_response.id_usuario_creador = serializer_response
-        serializer_response.save()
-        
-        #ASIGNARLE ROL USUARIO EXTERNO POR DEFECTO
-        rol = Roles.objects.get(id_rol=2)
-        usuario_por_asignar = User.objects.get(nombre_de_usuario=nombre_de_usuario)     
-        UsuariosRol.objects.create(
-            id_rol = rol,
-            id_usuario = usuario_por_asignar
-        )
-        
-        # AUDITORIA CREACION PERSONA NATURAL
-        descripcion = {"TipodeDocumentoID": str(serializador.tipo_documento), "NumeroDocumentoID": str(serializador.numero_documento), "RazonSocial": str(serializador.razon_social), "NombreComercial": str(serializador.nombre_comercial)}
-        dirip = Util.get_client_ip(request)
-        auditoria_data = {
-            'id_usuario': serializer_response.pk,
-            "id_modulo" : 9,
-            "cod_permiso": "CR",
-            "subsistema": 'TRSV',
-            "dirip": dirip,
-            "descripcion": descripcion, 
-        }
-        Util.save_auditoria(auditoria_data)
+            data = request.data
+            
+            #CREACION DE PERSONA
+            
+            serializer_persona = self.serializer_class(data=data)
+            serializer_persona.is_valid(raise_exception=True)
 
-        # AUDITORIA AL REGISTRAR USUARIO
+            validaciones_persona = Util.guardar_persona(data)
+            
+            if not validaciones_persona['success']:
+                return Response({'success':validaciones_persona['success'], 'detail':validaciones_persona['detail']}, status=validaciones_persona['status'])       
+            
+            #CREACION DE USUARIO
+            
+            redirect_url=request.data.get('redirect_url','')
+            redirect_url=quote_plus(redirect_url)
+            
+            if " " in data['nombre_de_usuario']:
+                raise PermissionDenied('No puede contener espacios en el nombre de usuario')
+            
+            #GUARDAR PERSONA
+            serializador = serializer_persona.save()
+            serializador.id_persona_crea = serializador
+            serializador.save()
+            
+            data['creado_por_portal'] = True
+            data['persona'] = serializador.id_persona
+            
+            serializer = self.serializer_class_usuario(data=data)
+            serializer.is_valid(raise_exception=True)
+            
+            nombre_de_usuario = str(serializer.validated_data.get('nombre_de_usuario', '')).lower()
+            
+            serializer_response = serializer.save()
+            serializer_response.id_usuario_creador = serializer_response
+            serializer_response.save()
+            
+            #ASIGNARLE ROL USUARIO EXTERNO POR DEFECTO
+            rol = Roles.objects.get(id_rol=2)
+            usuario_por_asignar = User.objects.get(nombre_de_usuario=nombre_de_usuario)     
+            UsuariosRol.objects.create(
+                id_rol = rol,
+                id_usuario = usuario_por_asignar
+            )
+            
+            # AUDITORIA CREACION PERSONA NATURAL
+            descripcion = {"TipodeDocumentoID": str(serializador.tipo_documento), "NumeroDocumentoID": str(serializador.numero_documento), "RazonSocial": str(serializador.razon_social), "NombreComercial": str(serializador.nombre_comercial)}
+            dirip = Util.get_client_ip(request)
+            auditoria_data = {
+                'id_usuario': serializer_response.pk,
+                "id_modulo" : 9,
+                "cod_permiso": "CR",
+                "subsistema": 'TRSV',
+                "dirip": dirip,
+                "descripcion": descripcion, 
+            }
+            Util.save_auditoria(auditoria_data)
 
-        descripcion = {'NombreUsuario': str(request.data["nombre_de_usuario"]).lower()}
-        valores_creados_detalles = [{"NombreRol": rol.nombre_rol}]
-        auditoria_data = {
-            'id_usuario': serializer_response.pk,
-            'id_modulo': 10,
-            'cod_permiso': 'CR',
-            'subsistema': 'SEGU',
-            'dirip': dirip,
-            'descripcion': descripcion,
-            'valores_creados_detalles': valores_creados_detalles
-        }
-        Util.save_auditoria_maestro_detalle(auditoria_data)
+            # AUDITORIA AL REGISTRAR USUARIO
+
+            descripcion = {'NombreUsuario': str(request.data["nombre_de_usuario"]).lower()}
+            valores_creados_detalles = [{"NombreRol": rol.nombre_rol}]
+            auditoria_data = {
+                'id_usuario': serializer_response.pk,
+                'id_modulo': 10,
+                'cod_permiso': 'CR',
+                'subsistema': 'SEGU',
+                'dirip': dirip,
+                'descripcion': descripcion,
+                'valores_creados_detalles': valores_creados_detalles
+            }
+            Util.save_auditoria_maestro_detalle(auditoria_data)
+            
+            token = RefreshToken.for_user(serializer_response)
+
+            current_site=get_current_site(request).domain
+
+            relativeLink= reverse('verify')
+            absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
+            
+            subject = "Verifica tu usuario"
+            template = "activación-de-usuario.html"
+
+            Util.notificacion(serializador,subject,template,absurl=absurl,email=serializador.email)
         
-        token = RefreshToken.for_user(serializer_response)
-
-        current_site=get_current_site(request).domain
-
-        relativeLink= reverse('verify')
-        absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
-        
-        subject = "Verifica tu usuario"
-        template = "activación-de-usuario.html"
-
-        Util.notificacion(serializador,subject,template,absurl=absurl,email=serializador.email)
+            return Response({'success':True, 'detail':'Se creo la persona natural y el usuario correctamente'},status=status.HTTP_200_OK)
     
-        return Response({'success':True, 'detail':'Se creo la persona natural y el usuario correctamente'},status=status.HTTP_200_OK)
+        except ValidationError  as e:
+            error_message = {'error': e.detail}
+            raise ValidationError(error_message)
+
+
 
 class AutorizacionNotificacionesPersonas(generics.RetrieveUpdateAPIView):
     serializer_class = AutorizacionNotificacionesSerializer

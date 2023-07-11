@@ -49,7 +49,7 @@
     "fields": {
         "nombre": "Datos Básicos",
         "nivel_jerarquico": 2,
-        "id_menu_padre": 4,
+        "id_menu_padre": null,
         "orden_por_padre": 1,
         "subsistema": "TRSV"
     }
@@ -127,7 +127,7 @@
         "nombre": "Instrumentos Archivísticos",
         "nivel_jerarquico": 1,
         "id_menu_padre": null,
-        "orden_por_padre": 1,
+        "orden_por_padre": 3,
         "subsistema": "GEST"
     }
 },
@@ -138,7 +138,7 @@
         "nombre": "Procesos",
         "nivel_jerarquico": 1,
         "id_menu_padre": null,
-        "orden_por_padre": 2,
+        "orden_por_padre": 3,
         "subsistema": "GEST"
     }
 },
@@ -169,7 +169,7 @@
     "pk": 16,
     "fields": {
         "nombre": "Reportes",
-        "nivel_jerarquico": 1,
+        "nivel_jerarquico": 2,
         "id_menu_padre": 15,
         "orden_por_padre": 1,
         "subsistema": "GEST"
@@ -180,7 +180,7 @@
     "pk": 17,
     "fields": {
         "nombre": "Indicadores",
-        "nivel_jerarquico": 1,
+        "nivel_jerarquico": 2,
         "id_menu_padre": 15,
         "orden_por_padre": 2,
         "subsistema": "GEST"
@@ -191,7 +191,7 @@
     "pk": 18,
     "fields": {
         "nombre": "Analítica",
-        "nivel_jerarquico": 1,
+        "nivel_jerarquico": 2,
         "id_menu_padre": 15,
         "orden_por_padre": 3,
         "subsistema": "GEST"
@@ -712,6 +712,17 @@
         "id_menu_padre": null,
         "orden_por_padre": 1,
         "subsistema": "RECA"
+    }
+},
+{
+    "model": "seguridad.estructuramenus",
+    "pk": 66,
+    "fields": {
+        "nombre": "Biblioteca",
+        "nivel_jerarquico": 2,
+        "id_menu_padre": 46,
+        "orden_por_padre": 1,
+        "subsistema": "RECU"
     }
 }
 ]
