@@ -9,13 +9,13 @@ from rest_framework import status
 from datetime import datetime,date,timedelta
 
 from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, CuencasInstrumento, Instrumentos, Secciones,Subsecciones
-from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoCuencasGetSerializer, InstrumentosSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
+from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentosGetSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoCuencasGetSerializer, InstrumentosSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
 
 
 
 class GetSecciones(generics.ListAPIView):
     serializer_class = SeccionesSerializer
-    queryset = Secciones.objects.all()
+    queryset = Secciones.objects.all().order_by('-fecha_creacion')
     permission_classes = [IsAuthenticated]
     def get(self, request):
         queryset = self.get_queryset()
@@ -29,7 +29,7 @@ class GetSecciones(generics.ListAPIView):
     
 class GetSubseccionesPorSecciones(generics.ListAPIView):
     serializer_class = GetSubseccionesSerializer
-    queryset = Subsecciones.objects.all()
+    queryset = Subsecciones.objects.all().order_by('-fechaCreacion')
     permission_classes = [IsAuthenticated]
     
     def get(self,request,pk):
@@ -595,3 +595,30 @@ class ArchivosInstrumentoBusquedaAvanzadaGet(generics.ListAPIView):
         # serializador = self.serializer_class(avances, many=True)
         
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializador.data}, status=status.HTTP_200_OK)
+    
+
+
+
+class ArchivosInstrumentoGet(generics.ListAPIView):
+
+
+    queryset = ArchivosInstrumento.objects.all()
+    serializer_class = ArchivosInstrumentosGetSerializer
+    permission_classes = [IsAuthenticated]
+    def get(self,request,ins):
+        id = ins
+         
+        archivos=ArchivosInstrumento.objects.filter(id_instrumento=id)
+
+
+        serializer = self.serializer_class(archivos,many=True)
+        
+        if not archivos:
+            raise NotFound("No se encuentran archivos asociadas a este instrumento.")
+        
+        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)  
+    
+
+
+
+##Registro de Instrumentos en Biblioteca

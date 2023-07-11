@@ -46,6 +46,11 @@ class Instrumentos(models.Model):
     fecha_registro = models.DateTimeField(db_column='T607fechaRegistro')
     fecha_creacion_instrumento = models.DateTimeField(auto_now=True,db_column='T607fechaCreacionInstrumento')
     fecha_fin_vigencia = models.DateTimeField(blank=True, null=True, db_column='T607fechaFinVigencia')
+    cod_tipo_agua = models.CharField(max_length=3, choices=[
+        ('SUP', 'Superficial'),
+        ('SUB', 'Subterránea'),
+        ('OTR', 'Otros')
+    ], db_column='T607codTipoAgua')
     
     class Meta:
         db_table = 'T607Instrumentos'

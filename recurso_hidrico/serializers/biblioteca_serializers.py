@@ -44,15 +44,20 @@ class GetSubseccionesSerializer(serializers.ModelSerializer):
     id_persona = serializers.IntegerField(source='id_persona_creada.id_persona')
     nombre_comercial = serializers.CharField(source='id_persona_creada.nombre_comercial')
     nombre_completo = serializers.SerializerMethodField()
+    instrumentos_count = serializers.SerializerMethodField()
+
     class Meta:
         model = Subsecciones
-        fields = ['id_subseccion', 'id_seccion', 'nombre', 'descripcion', 'fechaCreacion', 'id_persona',
+        fields = ['id_subseccion', 'id_seccion', 'nombre', 'descripcion', 'fechaCreacion', 'id_persona','instrumentos_count',
                    'nombre_comercial','nombre_completo']
         
     def get_nombre_completo(self, obj):
         primer_nombre = obj.id_persona_creada.primer_nombre
         primer_apellido = obj.id_persona_creada.primer_apellido
         return f'{primer_nombre} {primer_apellido}'
+    
+    def get_instrumentos_count(self, obj):
+        return obj.instrumentos.count()
 
 class ActualizarSubseccionesSerializer(serializers.ModelSerializer):
     id_seccion = serializers.PrimaryKeyRelatedField(read_only=True)
@@ -155,3 +160,9 @@ class ArchivosInstrumentoBusquedaAvanzadaSerializer(serializers.ModelSerializer)
     class Meta:
         model=ArchivosInstrumento
         fields=['id_seccion','nombre_seccion','id_subseccion','nombre_subseccion','id_archivo_instrumento','id_instrumento','nombre_instrumento','nombre_archivo','ruta_archivo']
+
+
+class ArchivosInstrumentosGetSerializer(serializers.ModelSerializer):
+        class Meta:
+            model=ArchivosInstrumento
+            fields='__all__'

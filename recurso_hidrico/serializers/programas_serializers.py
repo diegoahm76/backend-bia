@@ -134,6 +134,10 @@ class EvidenciaAvanceSerializer(serializers.ModelSerializer):
 
 
 
-
+class GetAvanzadaProgramasporPORHSerializers(serializers.ModelSerializer):
+    nombre_PORH = serializers.ReadOnlyField(source='id_instrumento.nombre', default=None)
+    class Meta:
+        model = ProgramasPORH
+        fields = ['id_programa','nombre','fecha_inicio','fecha_fin','nombre_PORH']
 
 
