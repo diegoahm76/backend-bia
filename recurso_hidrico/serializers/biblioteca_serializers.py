@@ -2,7 +2,7 @@ from rest_framework import serializers
 from unittest.util import _MAX_LENGTH
 from wsgiref.validate import validator
 
-from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, Cuencas, CuencasInstrumento, Instrumentos, Pozos, Secciones,Subsecciones
+from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, Cuencas, CuencasInstrumento, Instrumentos, ParametrosLaboratorio, Pozos, Secciones,Subsecciones
 from seguridad.models import Personas
 
 
@@ -197,4 +197,40 @@ class CuencasUpdateSerializer(serializers.ModelSerializer):
 class PozosPostSerializer(serializers.ModelSerializer):
         class Meta:
             model=Pozos
+            fields='__all__'
+
+class PozosUpdateSerializer(serializers.ModelSerializer):
+        
+        
+        class Meta:
+       
+            model=Pozos
+            fields='__all__'
+
+
+class PozosGetSerializer(serializers.ModelSerializer):
+        class Meta:
+            model=Pozos
+            fields='__all__'
+
+
+class ParametrosLaboratorioPostSerializer(serializers.ModelSerializer):
+        class Meta:
+            model=ParametrosLaboratorio
+            fields='__all__'
+
+
+
+class ParametrosLaboratorioUpdateSerializer(serializers.ModelSerializer):
+        
+        
+        class Meta:
+       
+            model=ParametrosLaboratorio
+            fields='__all__'
+
+
+class ParametrosLaboratorioGetSerializer(serializers.ModelSerializer):
+        class Meta:
+            model=ParametrosLaboratorio
             fields='__all__'
