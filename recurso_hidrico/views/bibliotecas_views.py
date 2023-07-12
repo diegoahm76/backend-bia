@@ -8,8 +8,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from datetime import datetime,date,timedelta
 
-from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, CuencasInstrumento, Instrumentos, Secciones,Subsecciones
-from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentosGetSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoCuencasGetSerializer, InstrumentosSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
+from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, Cuencas, CuencasInstrumento, Instrumentos, Pozos, Secciones,Subsecciones
+from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentosGetSerializer, CuencasGetSerializer, CuencasPostSerializer, CuencasUpdateSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoCuencasGetSerializer, InstrumentosSerializer, PozosPostSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
 
 
 
@@ -622,3 +622,178 @@ class ArchivosInstrumentoGet(generics.ListAPIView):
 
 
 ##Registro de Instrumentos en Biblioteca
+#configuraciones basicas 
+
+
+class CuencaCreate(generics.CreateAPIView):
+    serializer_class = CuencasPostSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = Cuencas.objects.all()
+    
+    def post(self,request):
+        data_in = request.data
+        try:
+            data_in['registro_precargado']=False
+            data_in['item_ya_usado']=False
+            serializer = self.serializer_class(data=data_in)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        except ValidationError as e:       
+            raise ValidationError(e.detail)
+         
+        
+        return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+    
+
+
+class CuencaDelete(generics.DestroyAPIView):
+
+    serializer_class = CuencasPostSerializer
+    queryset = Cuencas.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self,request,pk):
+        
+        cuenca = Cuencas.objects.filter(id_cuenca=pk).first()
+        
+        if not cuenca:
+            raise NotFound("No existe la cuenca a eliminar.")
+        
+
+
+        if cuenca.registro_precargado:
+            raise ValidationError("No se puede eliminar una cuenca precargada.")
+        
+        if cuenca.item_ya_usado:
+            raise ValidationError("No se puede eliminar una cuenca que se encuentre en uso.")
+    
+        cuenca.delete()
+        
+        return Response({'success':True,'detail':'Se elimino la cuenca seleccionada.'},status=status.HTTP_200_OK)
+    
+
+class CeuncaGet(generics.ListAPIView):
+    serializer_class = CuencasGetSerializer
+    queryset = Cuencas.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request):
+        estado=False
+        for key, value in request.query_params.items():
+            if key == 'activo':
+                if value != '':
+                    if str(value)=='True':
+                        estado=True
+
+        if estado:
+            cuencas = Cuencas.objects.filter(activo=estado).order_by('id_cuenca')
+        else:
+            cuencas=Cuencas.objects.all().order_by('id_cuenca')
+
+        serializer = self.serializer_class(cuencas,many=True)
+        
+        if not cuencas:
+            raise NotFound("los registros de cuencas que busca no existen")
+        
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+    
+
+class CuencaGetById(generics.ListAPIView):
+
+    serializer_class = CuencasGetSerializer
+    queryset = Cuencas.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        
+        cuencas = Cuencas.objects.filter(id_cuenca=pk)
+                
+        serializer = self.serializer_class(cuencas,many=True)
+        
+        if not cuencas:
+            raise NotFound("La cuenca no existe.")
+        
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+    
+
+class CuencaUpdate(generics.UpdateAPIView):
+
+    
+    serializer_class = CuencasUpdateSerializer
+    queryset = Cuencas.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def put(self,request,pk):
+    
+        data = request.data
+        cuenca = Cuencas.objects.filter(id_cuenca=pk).first()
+       
+        if  not cuenca:
+
+            raise NotFound("No se existe la cuenca que trata de Actualizar.")
+        print(cuenca.item_ya_usado)
+        if cuenca.item_ya_usado==False:
+            print("EDITABLE")
+            serializer = self.serializer_class(cuenca, data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.update(cuenca, serializer.validated_data)
+        else:
+            
+            if 'activo' in data:
+                print(data['activo'])
+                cuenca.activo = data['activo']
+                cuenca.save()
+                return Response({'success':True,'detail':'Se cambio el estado de la cuenca.','data':self.serializer_class(cuenca).data},status=status.HTTP_200_OK)
+            else:
+                raise ValidationError("Se requiere proporcionar el campo 'activo' para actualizar la cuenca.")
+            
+            
+        return Response({'success':True,'detail':'Se actualizaron los registros correctamente','data':self.serializer_class(cuenca).data},status=status.HTTP_200_OK)
+    
+
+
+
+class PozoCreate(generics.CreateAPIView):
+    serializer_class = PozosPostSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = Pozos.objects.all()
+    
+    def post(self,request):
+        data_in = request.data
+        try:
+            data_in['registro_precargado']=False
+            data_in['item_ya_usado']=False
+            serializer = self.serializer_class(data=data_in)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        except ValidationError as e:       
+            raise ValidationError(e.detail)
+         
+        
+        return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+  
+
+class PozoDelete(generics.DestroyAPIView):
+
+    serializer_class = PozosPostSerializer
+    queryset = Pozos.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self,request,pk):
+        
+        pozo = Pozos.objects.filter(id_cuenca=pk).first()
+        
+        if not pozo:
+            raise NotFound("No existe el pozo a eliminar.")
+        
+
+
+        if pozo.registro_precargado:
+            raise ValidationError("No se puede eliminar un pozo precargada.")
+        
+        if pozo.item_ya_usado:
+            raise ValidationError("No se puede eliminar un pozo que se encuentre en uso.")
+    
+        pozo.delete()
+        
+        return Response({'success':True,'detail':'Se elimino el pozo seleccionada.'},status=status.HTTP_200_OK)

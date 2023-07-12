@@ -30,7 +30,7 @@ class RegistroProgramaPORH(generics.CreateAPIView):
             instancia_programa = None
             instancia_proyecto =None
             if not data_in['id_programa']:
-                data_in['id_instrumento'] = 1
+                #data_in['id_instrumento'] = 1
             
 
 
@@ -190,7 +190,7 @@ class CreateProgramaPORH(generics.CreateAPIView):
         # data = request.data
         data_in = request.data
         data = {
-            'id_instrumento': 1, 
+           'id_instrumento':data_in['id_instrumento'],
             'nombre': data_in['nombre'],
             'fecha_inicio': data_in['fecha_inicio'],
             'fecha_fin': data_in['fecha_fin'],
