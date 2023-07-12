@@ -2,7 +2,7 @@ from rest_framework import serializers
 from unittest.util import _MAX_LENGTH
 from wsgiref.validate import validator
 
-from recurso_hidrico.models.bibliotecas_models import Instrumentos, Secciones,Subsecciones
+from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, Cuencas, CuencasInstrumento, Instrumentos, Pozos, Secciones,Subsecciones
 from seguridad.models import Personas
 
 
@@ -44,15 +44,20 @@ class GetSubseccionesSerializer(serializers.ModelSerializer):
     id_persona = serializers.IntegerField(source='id_persona_creada.id_persona')
     nombre_comercial = serializers.CharField(source='id_persona_creada.nombre_comercial')
     nombre_completo = serializers.SerializerMethodField()
+    instrumentos_count = serializers.SerializerMethodField()
+
     class Meta:
         model = Subsecciones
-        fields = ['id_subseccion', 'id_seccion', 'nombre', 'descripcion', 'fechaCreacion', 'id_persona',
+        fields = ['id_subseccion', 'id_seccion', 'nombre', 'descripcion', 'fechaCreacion', 'id_persona','instrumentos_count',
                    'nombre_comercial','nombre_completo']
         
     def get_nombre_completo(self, obj):
         primer_nombre = obj.id_persona_creada.primer_nombre
         primer_apellido = obj.id_persona_creada.primer_apellido
         return f'{primer_nombre} {primer_apellido}'
+    
+    def get_instrumentos_count(self, obj):
+        return obj.instrumentos.count()
 
 class ActualizarSubseccionesSerializer(serializers.ModelSerializer):
     id_seccion = serializers.PrimaryKeyRelatedField(read_only=True)
@@ -92,12 +97,24 @@ class SeccionSerializer(serializers.ModelSerializer):
         primer_nombre = obj.id_persona_creada.primer_nombre
         primer_apellido = obj.id_persona_creada.primer_apellido
         return f'{primer_nombre} {primer_apellido}'
+    
+class EliminarSubseccionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subsecciones
+        fields = '__all__'
 
+
+class EliminarSeccionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Secciones
+        fields = '__all__'
+
+
+#CONSULTA-BIBLIOTECA
 class InstrumentosSerializer(serializers.ModelSerializer):
     class Meta:
         model = Instrumentos
         fields = ['id_instrumento', 'nombre', 'id_seccion', 'id_subseccion', 'id_resolucion', 'id_persona_registra', 'fecha_registro', 'fecha_creacion_instrumento', 'fecha_fin_vigencia']
-
 
 
 class SubseccionContarInstrumentosSerializer(serializers.ModelSerializer):
@@ -112,13 +129,72 @@ class SubseccionContarInstrumentosSerializer(serializers.ModelSerializer):
 
 
 
-class EliminarSubseccionSerializer(serializers.ModelSerializer):
+
+class InstrumentoCuencasGetSerializer(serializers.ModelSerializer):
+    id_instrumento=serializers.IntegerField(source='id_instrumento.id_instrumento')
+    instrumento = serializers.CharField(source='id_instrumento.nombre')
+    id_cuenca=serializers.IntegerField(source='id_cuenca.id_cuenca')
+    cuenca = serializers.CharField(source='id_cuenca.nombre')
     class Meta:
-        model = Subsecciones
-        fields = '__all__'
+        model=CuencasInstrumento
+        fields=['id_instrumento','instrumento','id_cuenca','cuenca']
 
 
-class EliminarSeccionSerializer(serializers.ModelSerializer):
+class CuencasGetSerializer(serializers.ModelSerializer):
+    id_instrumento=serializers.IntegerField(source='id_instrumento.id_instrumento')
+    
+    id_cuenca=serializers.IntegerField(source='id_cuenca.id_cuenca')
+    cuenca = serializers.CharField(source='id_cuenca.nombre')
     class Meta:
-        model = Secciones
-        fields = '__all__'
+        model=CuencasInstrumento
+        fields=['id_instrumento','id_cuenca','cuenca']
+
+
+
+class ArchivosInstrumentoBusquedaAvanzadaSerializer(serializers.ModelSerializer):
+    nombre_instrumento=serializers.CharField(source='id_instrumento.nombre')
+    id_seccion=serializers.IntegerField(source='id_instrumento.id_seccion.id_seccion')
+    nombre_seccion=serializers.CharField(source='id_instrumento.id_seccion.nombre')
+    id_subseccion=serializers.IntegerField(source='id_instrumento.id_subseccion.id_subseccion')
+    nombre_subseccion=serializers.CharField(source='id_instrumento.id_subseccion.nombre')
+    class Meta:
+        model=ArchivosInstrumento
+        fields=['id_seccion','nombre_seccion','id_subseccion','nombre_subseccion','id_archivo_instrumento','id_instrumento','nombre_instrumento','nombre_archivo','ruta_archivo']
+
+
+class ArchivosInstrumentosGetSerializer(serializers.ModelSerializer):
+        class Meta:
+            model=ArchivosInstrumento
+            fields='__all__'
+
+
+#Configuraciones basicas
+
+class CuencasPostSerializer(serializers.ModelSerializer):
+        class Meta:
+            model=Cuencas
+            fields='__all__'
+
+
+
+class CuencasGetSerializer(serializers.ModelSerializer):
+        class Meta:
+            model=Cuencas
+            fields='__all__'
+
+class CuencasUpdateSerializer(serializers.ModelSerializer):
+        
+        #item_ya_usado = serializers.ReadOnlyField()
+        class Meta:
+       
+            model=Cuencas
+            fields='__all__'
+        # def update(self, instance, validated_data):
+        #     validated_data.pop('item_ya_usado', None)  # Excluir el campo específico
+        #     return super().update(instance, validated_data)
+        
+
+class PozosPostSerializer(serializers.ModelSerializer):
+        class Meta:
+            model=Pozos
+            fields='__all__'

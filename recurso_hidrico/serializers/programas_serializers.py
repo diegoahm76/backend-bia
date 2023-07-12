@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from unittest.util import _MAX_LENGTH
 from wsgiref.validate import validator
-
+from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from recurso_hidrico.models.programas_models import ActividadesProyectos, AvancesProyecto, EvidenciasAvance, ProgramasPORH, ProyectosPORH
 
 class RegistroProgramaPORHSerializer(serializers.ModelSerializer):
@@ -24,6 +24,13 @@ class GetProgramasporPORHSerializers(serializers.ModelSerializer):
     class Meta:
         model = ProgramasPORH
         fields = ['id_programa','nombre','fecha_inicio','fecha_fin']
+        validators = [
+            UniqueTogetherValidator(
+                queryset=ProgramasPORH.objects.all(),
+                fields= ['id_instrumento','nombre'],
+                message='Ya existe un programa con este nombre.'
+            )
+        ]       
         
 class GetProyectosPORHSerializers(serializers.ModelSerializer):
     class Meta:
@@ -134,6 +141,10 @@ class EvidenciaAvanceSerializer(serializers.ModelSerializer):
 
 
 
-
+class GetAvanzadaProgramasporPORHSerializers(serializers.ModelSerializer):
+    nombre_PORH = serializers.ReadOnlyField(source='id_instrumento.nombre', default=None)
+    class Meta:
+        model = ProgramasPORH
+        fields = ['id_instrumento','id_programa','nombre','fecha_inicio','fecha_fin','nombre_PORH']
 
 

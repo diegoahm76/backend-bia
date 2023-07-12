@@ -51,6 +51,8 @@ class CreateItemsEntregaSerializer(serializers.ModelSerializer):
         )
 
 class GetEntradasEntregasSerializer(serializers.ModelSerializer):
+    tipo_entrada = serializers.ReadOnlyField(source='id_tipo_entrada.nombre', default=None)
+    
     class Meta:
         model = EntradasAlmacen
         fields = '__all__'
