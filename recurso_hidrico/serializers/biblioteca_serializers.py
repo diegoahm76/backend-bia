@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from unittest.util import _MAX_LENGTH
 from wsgiref.validate import validator
-
+from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, Cuencas, CuencasInstrumento, Instrumentos, ParametrosLaboratorio, Pozos, Secciones,Subsecciones
 from seguridad.models import Personas
 
@@ -239,3 +239,19 @@ class ParametrosLaboratorioGetSerializer(serializers.ModelSerializer):
         class Meta:
             model=ParametrosLaboratorio
             fields='__all__'
+
+
+#
+
+class InstrumentosPostSerializer(serializers.ModelSerializer):
+        fecha_registro = serializers.ReadOnlyField()
+        class Meta:
+            model=Instrumentos
+            fields='__all__'
+            validators = [
+                UniqueTogetherValidator(
+                queryset=Instrumentos.objects.all(),
+                fields= ['id_subseccion','nombre'],
+                message='Ya existe un programa con este nombre.'
+                )
+                ]   
