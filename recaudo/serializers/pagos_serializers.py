@@ -46,48 +46,6 @@ class ObligacionesSerializer(serializers.ModelSerializer):
         fields = ('nombre','fecha_inicio','nro_expediente','nro_resolucion','monto_inicial','valor_intereses', 'dias_mora')
 
 
-class TipoPagoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TiposPago
-        fields = ('id', 'descripcion')
-
-
-class TipoActuacionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TipoActuacion
-        fields = '__all__'
-
-
-class RequisitosActuacionSerializer (serializers.ModelSerializer):
-    class Meta:
-        model = RequisitosActuacion
-        fields = '__all__'
-
-
-class CumplimientoRequisitosSerializer (serializers.ModelSerializer):
-    class Meta:
-        model = CumplimientoRequisitos
-        fields = '__all__'
-
-
-class DetallesFacilidadPagoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model =DetallesFacilidadPago
-        fields = '__all__'
-
-    
-class PlanPagosSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PlanPagos
-        fields = '__all__'
-
-    
-class TasasInteresSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TasasInteres
-        fields = '__all__'
-
-
 class DeudorFacilidadPagoSerializer(serializers.ModelSerializer):
     ubicacion = serializers.SerializerMethodField()
     
@@ -97,7 +55,7 @@ class DeudorFacilidadPagoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Deudores
-        fields = ('codigo', 'identificacion', 'nombres', 'apellidos', 'email', 'ubicacion')
+        fields = ('id', 'identificacion', 'nombres', 'apellidos', 'email', 'ubicacion')
 
 
 class DatosContactoDeudorSerializer(serializers.ModelSerializer):
@@ -216,7 +174,7 @@ class ListadoDeudoresUltSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Deudores
-        fields = ('codigo','nombre_contribuyente','identificacion')
+        fields = ('id','nombre_contribuyente','identificacion')
         #fields = ('nombres','apellidos','identificacion')
 
     def get_nombre_contribuyente(self, obj):
@@ -231,4 +189,46 @@ class AutorizacionNotificacionesSerializer(serializers.ModelSerializer):
 class RespuestaSolicitudFacilidadSerializer(serializers.ModelSerializer):
     class Meta:
         model = RespuestaSolicitud
+        fields = '__all__'
+
+
+class TipoPagoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TiposPago
+        fields = ('id', 'descripcion')
+
+
+class TipoActuacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoActuacion
+        fields = '__all__'
+
+
+class RequisitosActuacionSerializer (serializers.ModelSerializer):
+    class Meta:
+        model = RequisitosActuacion
+        fields = '__all__'
+
+
+class CumplimientoRequisitosSerializer (serializers.ModelSerializer):
+    class Meta:
+        model = CumplimientoRequisitos
+        fields = '__all__'
+
+
+class DetallesFacilidadPagoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =DetallesFacilidadPago
+        fields = '__all__'
+
+    
+class PlanPagosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PlanPagos
+        fields = '__all__'
+
+    
+class TasasInteresSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TasasInteres
         fields = '__all__'

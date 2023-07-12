@@ -17,7 +17,7 @@ class OpcionesLiquidacionBaseSerializer(serializers.ModelSerializer):
 class DeudoresSerializer(serializers.ModelSerializer):
     class Meta:
         model = Deudores
-        fields = ('codigo', 'identificacion', 'nombres', 'apellidos')
+        fields = ('id', 'identificacion', 'nombres', 'apellidos')
 
 
 class DetallesLiquidacionBaseSerializer(serializers.ModelSerializer):

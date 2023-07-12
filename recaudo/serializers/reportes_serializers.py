@@ -25,14 +25,14 @@ class CarteraGeneralDetalleSerializer(serializers.ModelSerializer):
 
     def get_nombre_deudor(self, obj):
         try:
-            deudor = Deudores.objects.get(codigo=obj.id_obligacion.id_expediente.id_deudor.codigo)
+            deudor = Deudores.objects.get(codigo=obj.id_obligacion.id_expediente.id_deudor.id)
             return f"{deudor.nombres} {deudor.apellidos}"
         except ObjectDoesNotExist:
             return None
         
     def get_identificacion(self, obj):
         try:
-            deudor = Deudores.objects.get(codigo=obj.id_obligacion.id_expediente.id_deudor.codigo)
+            deudor = Deudores.objects.get(codigo=obj.id_obligacion.id_expediente.id_deudor.id)
             return f"{deudor.identificacion}"
         except ObjectDoesNotExist:
             return None
