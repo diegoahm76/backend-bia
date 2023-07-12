@@ -2,7 +2,7 @@ from rest_framework import serializers
 from unittest.util import _MAX_LENGTH
 from wsgiref.validate import validator
 
-from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, Cuencas, CuencasInstrumento, Instrumentos, Secciones,Subsecciones
+from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, Cuencas, CuencasInstrumento, Instrumentos, Pozos, Secciones,Subsecciones
 from seguridad.models import Personas
 
 
@@ -165,4 +165,36 @@ class ArchivosInstrumentoBusquedaAvanzadaSerializer(serializers.ModelSerializer)
 class ArchivosInstrumentosGetSerializer(serializers.ModelSerializer):
         class Meta:
             model=ArchivosInstrumento
+            fields='__all__'
+
+
+#Configuraciones basicas
+
+class CuencasPostSerializer(serializers.ModelSerializer):
+        class Meta:
+            model=Cuencas
+            fields='__all__'
+
+
+
+class CuencasGetSerializer(serializers.ModelSerializer):
+        class Meta:
+            model=Cuencas
+            fields='__all__'
+
+class CuencasUpdateSerializer(serializers.ModelSerializer):
+        
+        #item_ya_usado = serializers.ReadOnlyField()
+        class Meta:
+       
+            model=Cuencas
+            fields='__all__'
+        # def update(self, instance, validated_data):
+        #     validated_data.pop('item_ya_usado', None)  # Excluir el campo específico
+        #     return super().update(instance, validated_data)
+        
+
+class PozosPostSerializer(serializers.ModelSerializer):
+        class Meta:
+            model=Pozos
             fields='__all__'

@@ -65,7 +65,7 @@ class Cuencas(models.Model):
     nombre = models.CharField(max_length=255, db_column='T608nombre')
     activo = models.BooleanField(db_column='T608activo')
     item_ya_usado = models.BooleanField(db_column='T608itemYaUsado')
-
+    registro_precargado=models.BooleanField(default=False, db_column='T608registroPrecargado')
     class Meta:
         db_table = 'T608Cuencas'
         verbose_name = 'cuenca'
@@ -80,7 +80,7 @@ class Pozos(models.Model):
     descripcion = models.CharField(max_length=255, db_column='T609descripcion')
     activo = models.BooleanField(db_column='T609activo')
     item_ya_usado = models.BooleanField(db_column='T609itemYaUsado')
-
+    registro_precargado=models.BooleanField(default=False, db_column='T609registroPrecargado')
     class Meta:
         db_table = 'T609Pozos'
         verbose_name = 'pozo'
@@ -261,7 +261,7 @@ class ParametrosLaboratorio(models.Model):
     unidad_de_medida = models.CharField(max_length=100, db_column='T619unidadDeMedida')
     item_ya_usado = models.BooleanField(db_column='T619itemYaUsado')
     activo = models.BooleanField(db_column='T619activo')
-
+    registro_precargado=models.BooleanField(default=False, db_column='T619registroPrecargado')
     class Meta:
         db_table = 'T619Parametros_Laboratorio'
         verbose_name = 'parámetro de laboratorio'
