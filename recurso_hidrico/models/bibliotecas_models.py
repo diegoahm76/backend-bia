@@ -43,9 +43,10 @@ class Instrumentos(models.Model):
     id_subseccion = models.ForeignKey(Subsecciones, on_delete=models.CASCADE, db_column='T607Id_Subseccion', related_name='instrumentos')
     id_resolucion = models.IntegerField(blank=True, null=True, db_column='T607Id_Resolucion')#falta la tabla resolucion
     id_persona_registra = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T607Id_PersonaRegistra')
-    fecha_registro = models.DateTimeField(db_column='T607fechaRegistro')
-    fecha_creacion_instrumento = models.DateTimeField(auto_now=True,db_column='T607fechaCreacionInstrumento')
-    fecha_fin_vigencia = models.DateTimeField(blank=True, null=True, db_column='T607fechaFinVigencia')
+    fecha_registro = models.DateTimeField(auto_now=True,db_column='T607fechaRegistro')
+    fecha_creacion_instrumento = models.DateTimeField(db_column='T607fechaCreacionInstrumento')
+    fecha_fin_vigencia = models.DateField(blank=True, null=True, db_column='T607fechaFinVigencia')
+    id_pozo = models.ForeignKey('Pozos', null=True,on_delete=models.CASCADE, db_column='T607Id_Pozo')
     cod_tipo_agua = models.CharField(max_length=3, choices=[
         ('SUP', 'Superficial'),
         ('SUB', 'Subterránea'),

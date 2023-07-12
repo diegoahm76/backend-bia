@@ -17,7 +17,7 @@ class OpcionesLiquidacionBaseSerializer(serializers.ModelSerializer):
 class DeudoresSerializer(serializers.ModelSerializer):
     class Meta:
         model = Deudores
-        fields = ('codigo', 'identificacion', 'nombres', 'apellidos')
+        fields = ('id', 'identificacion', 'nombres', 'apellidos')
 
 
 class DetallesLiquidacionBaseSerializer(serializers.ModelSerializer):
@@ -35,13 +35,13 @@ class ExpedientesSerializer(serializers.ModelSerializer):
 
 
 class LiquidacionesBaseSerializer(serializers.ModelSerializer):
-    cod_deudor = DeudoresSerializer(many=False)
+    id_deudor = DeudoresSerializer(many=False)
     cod_expediente = ExpedientesSerializer(many=False)
     detalles = DetallesLiquidacionBaseSerializer(many=True)
 
     class Meta:
         model = LiquidacionesBase
-        fields = ('id', 'cod_deudor', 'cod_expediente', 'fecha_liquidacion', 'vencimiento', 'periodo_liquidacion', 'valor', 'estado', 'detalles')
+        fields = ('id', 'id_deudor', 'id_expediente', 'fecha_liquidacion', 'vencimiento', 'periodo_liquidacion', 'valor', 'estado', 'detalles')
 
 
 class LiquidacionesBasePostSerializer(serializers.ModelSerializer):

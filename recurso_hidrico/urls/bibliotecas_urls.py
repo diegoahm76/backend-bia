@@ -34,4 +34,15 @@ urlpatterns = [
     #pozos
     path('pozos/create/',views.PozoCreate.as_view(),name='create-pozos'),
     path('pozos/delete/<str:pk>/',views.PozoDelete.as_view(),name='delete-cuencas'),
+    path('pozos/update/<str:pk>/',views.PozoUpdate.as_view(),name='update-pozos'),
+    path('pozos/get/',views.PozoGet.as_view(),name='get-cuencas'),
+    path('pozos/get-id/<str:pk>/',views.PozoGetById.as_view(),name='get-pozos-id'),
+    #Parametro de laboratorio
+    path('parametros_laboratorio/create/',views.ParametrosLaboratorioCreate.as_view(),name='create-parametros-laboratorio'),
+    path('parametros_laboratorio/delete/<str:pk>/',views.ParametrosLaboratorioDelete.as_view(),name='delete-cuencas'),
+    path('parametros_laboratorio/update/<str:pk>/',views.ParametrosLaboratorioUpdate.as_view(),name='update-parametros-laboratorio'),
+    path('parametros_laboratorio/get/',views.ParametrosLaboratorioGet.as_view(),name='get-parametros_laboratorio'),
+    path('parametros_laboratorio/get-id/<str:pk>/',views.ParametrosLaboratorioGetById.as_view(),name='get-parametros_laboratorio-id'),
+    #Registro de Instrumentos en Biblioteca
+     path('instrumentos/create/',views.InstrumentoCreate.as_view(),name='create-instrumentos'),
 ]

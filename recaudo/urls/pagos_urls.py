@@ -3,10 +3,16 @@ from recaudo.views import pagos_views as views
 
 urlpatterns = [
     path('listado-obligaciones/', views.ListadoObligacionesViews.as_view(),name='listado-obligaciones'),
-
-
-
     path('facilidades-pagos-deudor/<int:id>/', views.DatosDeudorView.as_view(), name='facilidades-pagos-deudor'),
+    path('listado-deudores/', views.ListadoDeudoresViews.as_view(),name='listado-deudores'),
+    path('consulta-deudores-obligaciones/<int:identificacion>/', views.ConsultaObligacionesDeudoresViews.as_view(),name='consulta-deudores-obligaciones'),
+
+
+
+
+
+
+
     path('datos-contacto-deudor/<int:id>/', views.DatosContactoDeudorView.as_view(), name='datos-contacto-deudor'),
     path('tipos-calidad-actuacion/', views.TipoActuacionView.as_view(), name='tipos-calidad-actuacion'),
     path('crear-facilidad-pago/', views.CrearFacilidadPagoView.as_view(), name='crear-facilidad-pago'),
@@ -14,8 +20,8 @@ urlpatterns = [
     path('funcionarios/', views.FuncionariosView.as_view(), name='funcionarios'),
     
     path('consulta-obligaciones/<int:id_obligaciones>/', views.ConsultaObligacionesViews.as_view(), name='consulta-obligaciones'),
-    path('listado-deudores/', views.ListadoDeudoresViews.as_view(),name='listado-deudores'),
-    path('consulta-deudores-obligaciones/<int:identificacion>/', views.ConsultaObligacionesDeudoresViews.as_view(),name='consulta-deudores-obligaciones'),
+    
+    
     path('listado-facilidades-pagos/', views.ListadoFacilidadesPagoViews.as_view(),name='listado-facilidades-pagos'),
     path('consulta-facilidades-pagos/<int:id>/', views.ConsultaFacilidadesPagosViews.as_view(), name='consulta-facilidades'),
     path('listado-facilidades-funcionarios/', views.ListadoFacilidadesPagoFuncionariosViews.as_view(), name='listado-facilidades-funcionario'),
