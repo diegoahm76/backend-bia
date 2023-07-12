@@ -635,6 +635,7 @@ class CuencaCreate(generics.CreateAPIView):
         try:
             data_in['registro_precargado']=False
             data_in['item_ya_usado']=False
+            data_in['activo']=True
             serializer = self.serializer_class(data=data_in)
             serializer.is_valid(raise_exception=True)
             serializer.save()
@@ -723,39 +724,28 @@ class CuencaUpdate(generics.UpdateAPIView):
     queryset = Cuencas.objects.all()
     permission_classes = [IsAuthenticated]
     
-    def put(self,request,pk):
-    
 
+    def put(self, request, pk):
         try:
             data = request.data
             cuenca = Cuencas.objects.filter(id_cuenca=pk).first()
         
-            if  not cuenca:
-
+            if not cuenca:
                 raise NotFound("No se existe la cuenca que trata de Actualizar.")
         
-            if cuenca.item_ya_usado==False:
-        
+            if cuenca.item_ya_usado == False:
                 serializer = self.serializer_class(cuenca, data=data)
                 serializer.is_valid(raise_exception=True)
                 serializer.update(cuenca, serializer.validated_data)
             else:
-                
-                if 'activo' in data:
+                raise PermissionDenied('No puedes actualizar una cuenca que haya sido usada')
 
-                    if cuenca.activo == data['activo']:
-                        raise ValidationError("No se puede actualizar una cuenca que se encuentre en uso")
-                    
-                    cuenca.activo = data['activo']
-                    cuenca.save()
-                    return Response({'success':True,'detail':'Se cambio el estado de la cuenca.','data':self.serializer_class(cuenca).data},status=status.HTTP_200_OK)
-                else:
-                    raise ValidationError("Se requiere proporcionar el campo 'activo' para actualizar la cuenca.")
-                
-                
-            return Response({'success':True,'detail':'Se actualizaron los registros correctamente','data':self.serializer_class(cuenca).data},status=status.HTTP_200_OK)
-        except ValidationError as e:       
+            return Response({'success': True, 'detail': 'Se actualizaron los registros correctamente', 'data': self.serializer_class(cuenca).data}, status=status.HTTP_200_OK)
+        except ValidationError as e:
             raise ValidationError(e.detail)
+
+
+ 
 
 
 #POZOS
@@ -769,6 +759,7 @@ class PozoCreate(generics.CreateAPIView):
         try:
             data_in['registro_precargado']=False
             data_in['item_ya_usado']=False
+            data_in['activo']=True
             serializer = self.serializer_class(data=data_in)
             serializer.is_valid(raise_exception=True)
             serializer.save()
@@ -824,23 +815,15 @@ class PozoUpdate(generics.UpdateAPIView):
             if  not pozo:
 
                 raise NotFound("No se existe el pozo que trata de Actualizar.")
-            print(pozo.item_ya_usado)
-            if pozo.item_ya_usado==False:
-            
+           
+            if pozo.item_ya_usado:
+                raise PermissionDenied('No puedes actualizar un pozo que haya sido usada')
+                
+            else:
                 serializer = self.serializer_class(pozo, data=data)
                 serializer.is_valid(raise_exception=True)
                 serializer.update(pozo, serializer.validated_data)
-            else:
                 
-                if 'activo' in data:
-
-                    if pozo.activo == data['activo']:
-                        raise ValidationError("No se puede actualizar un pozo que se encuentre en uso")
-                    pozo.activo = data['activo']
-                    pozo.save()
-                    return Response({'success':True,'detail':'Se cambio el estado del pozo.','data':self.serializer_class(pozo).data},status=status.HTTP_200_OK)
-                else:
-                    raise ValidationError("Se requiere proporcionar el campo 'activo' para actualizar la pozo.")
                 
 
         except ValidationError as e:       
@@ -913,6 +896,7 @@ class ParametrosLaboratorioCreate(generics.CreateAPIView):
         try:
             data_in['registro_precargado']=False
             data_in['item_ya_usado']=False
+            data_in['activo']=True
             serializer = self.serializer_class(data=data_in)
             serializer.is_valid(raise_exception=True)
             serializer.save()
@@ -972,23 +956,23 @@ class ParametrosLaboratorioUpdate(generics.UpdateAPIView):
 
                 raise NotFound("No se existe el parametro de laboratorio que trata de Actualizar.")
             print(parametro.item_ya_usado)
-            if parametro.item_ya_usado==False:
-            
+            if parametro.item_ya_usado:
+                raise PermissionDenied('No puedes actualizar un parametro de laboratorio que haya sido usada')
+                # if 'activo' in data:
+
+                #     if parametro.activo == data['activo']:
+                #         raise ValidationError("No se puede actualizar un parametro de laboratorio que se encuentre en uso")
+                #     parametro.activo = data['activo']
+                #     parametro.save()
+                #     return Response({'success':True,'detail':'Se cambio el estado del parametro de laboratorio.','data':self.serializer_class(parametro).data},status=status.HTTP_200_OK)
+                # else:
+                #     raise ValidationError("Se requiere proporcionar el campo 'activo' para actualizar la parametro de laboratorio.")
+   
+            else:
+                
                 serializer = self.serializer_class(parametro, data=data)
                 serializer.is_valid(raise_exception=True)
                 serializer.update(parametro, serializer.validated_data)
-            else:
-                
-                if 'activo' in data:
-
-                    if parametro.activo == data['activo']:
-                        raise ValidationError("No se puede actualizar un parametro de laboratorio que se encuentre en uso")
-                    parametro.activo = data['activo']
-                    parametro.save()
-                    return Response({'success':True,'detail':'Se cambio el estado del parametro de laboratorio.','data':self.serializer_class(parametro).data},status=status.HTTP_200_OK)
-                else:
-                    raise ValidationError("Se requiere proporcionar el campo 'activo' para actualizar la parametro de laboratorio.")
-                
 
         except ValidationError as e:       
             raise ValidationError(e.detail)

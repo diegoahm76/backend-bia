@@ -184,14 +184,14 @@ class CuencasGetSerializer(serializers.ModelSerializer):
 
 class CuencasUpdateSerializer(serializers.ModelSerializer):
         
-        #item_ya_usado = serializers.ReadOnlyField()
+        item_ya_usado = serializers.ReadOnlyField()
         class Meta:
        
             model=Cuencas
             fields='__all__'
-        # def update(self, instance, validated_data):
-        #     validated_data.pop('item_ya_usado', None)  # Excluir el campo específico
-        #     return super().update(instance, validated_data)
+        def update(self, instance, validated_data):
+            validated_data.pop('item_ya_usado', None)  # Excluir el campo específico
+            return super().update(instance, validated_data)
         
 
 class PozosPostSerializer(serializers.ModelSerializer):
@@ -201,11 +201,15 @@ class PozosPostSerializer(serializers.ModelSerializer):
 
 class PozosUpdateSerializer(serializers.ModelSerializer):
         
-        
+        item_ya_usado = serializers.ReadOnlyField()
+        registro_precargado=serializers.ReadOnlyField()
         class Meta:
        
             model=Pozos
             fields='__all__'
+        def update(self, instance, validated_data):
+            validated_data.pop('item_ya_usado', None)  # Excluir el campo específico
+            return super().update(instance, validated_data)
 
 
 class PozosGetSerializer(serializers.ModelSerializer):
@@ -222,7 +226,8 @@ class ParametrosLaboratorioPostSerializer(serializers.ModelSerializer):
 
 
 class ParametrosLaboratorioUpdateSerializer(serializers.ModelSerializer):
-        
+        item_ya_usado = serializers.ReadOnlyField()
+        registro_precargado=serializers.ReadOnlyField()
         
         class Meta:
        
