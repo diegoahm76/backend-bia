@@ -283,3 +283,11 @@ class ArchivosInstrumentoPostSerializer(serializers.ModelSerializer):
                 )
                 ] 
 
+class SubseccionBusquedaAvanzadaSerializer(serializers.ModelSerializer):
+   
+    id_seccion=serializers.IntegerField(source='id_seccion.id_seccion')
+    nombre_seccion=serializers.CharField(source='id_seccion.nombre')
+
+    class Meta:
+        model=Subsecciones
+        fields=['id_seccion','nombre_seccion','id_subseccion','nombre']

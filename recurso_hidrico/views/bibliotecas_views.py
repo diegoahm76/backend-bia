@@ -9,7 +9,7 @@ from rest_framework import status
 from datetime import datetime,date,timedelta
 
 from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, Cuencas, CuencasInstrumento, Instrumentos, ParametrosLaboratorio, Pozos, Secciones,Subsecciones
-from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentosGetSerializer, CuencasGetSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoCuencasGetSerializer, InstrumentosPostSerializer, InstrumentosSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
+from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentosGetSerializer, CuencasGetSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoCuencasGetSerializer, InstrumentosPostSerializer, InstrumentosSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionBusquedaAvanzadaSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
 
 
 
@@ -1029,7 +1029,7 @@ class ParametrosLaboratorioGetById(generics.ListAPIView):
         
         return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
     
-
+#Archivos
 class ArchivosInstrumentoCreate(generics.CreateAPIView):
     queryset = ArchivosInstrumento.objects.all()
     serializer_class = ArchivosInstrumentoPostSerializer
@@ -1043,6 +1043,11 @@ class ArchivosInstrumentoCreate(generics.CreateAPIView):
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+#Instrumentos
+
+
 class InstrumentoCreate(generics.CreateAPIView):
     serializer_class = InstrumentosPostSerializer
     permission_classes = [IsAuthenticated]
@@ -1063,7 +1068,12 @@ class InstrumentoCreate(generics.CreateAPIView):
             data_in._mutable=True
             persona_logueada = request.user.persona.id_persona
             data_in['id_persona_registra']=persona_logueada
-
+            fecha_actual = datetime.now().date()
+            
+            formato = "%Y-%m-%dT%H:%M:%S"
+            fecha_datetime = datetime.strptime(data_in['fecha_creacion_instrumento'], formato).date()
+            if(fecha_datetime>fecha_actual):
+                raise ValidationError("La fecha de creacion no puese superar la actual.")
 
             serializer = self.serializer_class(data=data_in)
             serializer.is_valid(raise_exception=True)
@@ -1117,4 +1127,31 @@ class InstrumentoCreate(generics.CreateAPIView):
          
         
         return Response({'success':True,'detail':'Se crearon los registros correctamente','data':{"instrumento":serializer.data,"cuencas":cuencas_data,"archivos":serizalizador_archivos}},status=status.HTTP_201_CREATED)
+    
+
+
+##
+class SeccionSubseccionBusquedaAvanzadaGet(generics.ListAPIView):
+    #serializer_class = BusquedaAvanzadaAvancesSerializers
+    serializer_class = SubseccionBusquedaAvanzadaSerializer
+    queryset = Subsecciones.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        filter = {}
+
+        for key, value in request.query_params.items():
+            if key == 'nombre_seccion':
+                if value != '':
+                    filter['id_seccion__nombre__icontains'] = value
+            if key == 'nombre_subseccion':
+                if value != '':
+                    filter['nombre__icontains'] = value
+
+        subsecciones = self.queryset.all().filter(**filter)
+        serializador = self.serializer_class(subsecciones, many=True)
+        # avances = self.queryset.filter(**filter).select_related('id_proyecto')
+        # serializador = self.serializer_class(avances, many=True)
+        
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializador.data}, status=status.HTTP_200_OK)
     

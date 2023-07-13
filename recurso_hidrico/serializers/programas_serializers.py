@@ -32,6 +32,19 @@ class GetProgramasporPORHSerializers(serializers.ModelSerializer):
             )
         ]       
         
+
+class ProgramasporPORHUpdateSerializers(serializers.ModelSerializer):
+    id_instrumento=serializers.ReadOnlyField()
+    class Meta:
+        model = ProgramasPORH
+        fields = ['id_instrumento','id_programa','nombre','fecha_inicio','fecha_fin']
+        validators = [
+            UniqueTogetherValidator(
+                queryset=ProgramasPORH.objects.all(),
+                fields= ['id_instrumento','nombre'],
+                message='Ya existe un programa con este nombre.'
+            )
+        ]   
 class GetProyectosPORHSerializers(serializers.ModelSerializer):
     class Meta:
         model = ProyectosPORH
