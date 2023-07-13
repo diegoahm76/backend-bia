@@ -71,6 +71,12 @@ class DatosContactoDeudorSerializer(serializers.ModelSerializer):
         fields = ('direccion_notificaciones', 'ciudad', 'telefono_celular')
         
 
+
+
+
+
+
+
 class FacilidadesPagoSerializer(serializers.ModelSerializer):
     id_deudor = DeudorFacilidadPagoSerializer
 

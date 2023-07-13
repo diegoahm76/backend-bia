@@ -44,6 +44,7 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 
 
+# OBLIGACIONES
 class ObligacionesDeudorListViews(generics.ListAPIView):
     serializer_class = ObligacionesSerializer
 
@@ -63,7 +64,6 @@ class ObligacionesDeudorListViews(generics.ListAPIView):
         nombre_completo = deudor.nombres + ' ' + deudor.apellidos
         obligaciones = Obligaciones.objects.filter(id_expediente__id_deudor=deudor)
         serializer = self.serializer_class(obligaciones, many=True)
-        
         monto_total, intereses_total, monto_total_con_intereses = self.get_monto_total(obligaciones)
         data = {
             'id_deudor': deudor.id,
@@ -105,6 +105,7 @@ class DatosDeudorView(generics.ListAPIView):
 
     def get(self, request, id):
         queryset = Deudores.objects.filter(id=id).first()
+
         if not queryset:
             raise NotFound('No se encontró ningun registro con el parámetro ingresado')
         serializer = self.serializer_class(queryset)
@@ -115,8 +116,8 @@ class ConsultaObligacionesDeudoresViews(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, identificacion):
-
         numero_identificacion = identificacion
+
         try:
             deudor = Deudores.objects.get(identificacion=numero_identificacion)
         except ObjectDoesNotExist:
@@ -130,12 +131,14 @@ class ConsultaObligacionesDeudoresViews(generics.ListAPIView):
         else:
             raise ValidationError('El dato ingresado no es valido')
 
-        
+
+# FACILIDAD DE PAGO      
 class DatosContactoDeudorView(generics.ListAPIView):
     serializer_class = DatosContactoDeudorSerializer
 
     def get(self, request, id):
         queryset = Deudores.objects.filter(id=id).first()
+
         if not queryset:
             raise NotFound('No se encontró ningun registro con el parámetro ingresado')
         queryset = Personas.objects.filter(numero_documento = queryset.identificacion).first()
@@ -152,6 +155,32 @@ class TipoActuacionView(generics.ListAPIView):
         serializer = self.serializer_class(queryset, many=True)
         return Response({'success': True, 'detail':'Se muestran los tipos de actuacion de deudor', 'data': serializer.data}, status=status.HTTP_200_OK)
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class CrearFacilidadPagoView(generics.CreateAPIView):
     serializer_class = FacilidadesPagoSerializer
