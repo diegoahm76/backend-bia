@@ -44,5 +44,6 @@ urlpatterns = [
     path('parametros_laboratorio/get/',views.ParametrosLaboratorioGet.as_view(),name='get-parametros_laboratorio'),
     path('parametros_laboratorio/get-id/<str:pk>/',views.ParametrosLaboratorioGetById.as_view(),name='get-parametros_laboratorio-id'),
     #Registro de Instrumentos en Biblioteca
-     path('instrumentos/create/',views.InstrumentoCreate.as_view(),name='create-instrumentos'),
+    path('instrumentos/create/',views.InstrumentoCreate.as_view(),name='create-instrumentos'),
+    path('archivos_instrumento/create/',views.ArchivosInstrumentoCreate.as_view(),name='create-documento'),
 ]

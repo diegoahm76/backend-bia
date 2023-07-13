@@ -252,6 +252,34 @@ class InstrumentosPostSerializer(serializers.ModelSerializer):
                 UniqueTogetherValidator(
                 queryset=Instrumentos.objects.all(),
                 fields= ['id_subseccion','nombre'],
-                message='Ya existe un programa con este nombre.'
+                message='Ya existe un instrumento con este nombre.'
                 )
                 ]   
+            
+
+
+class CuencasInstrumentoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CuencasInstrumento
+        fields = '__all__'
+        validators = [
+                UniqueTogetherValidator(
+                queryset=CuencasInstrumento.objects.all(),
+                fields= ['id_instrumento','id_cuenca'],
+                message='Ya existe un instrumento con este nombre.'
+                )
+                ] 
+
+
+class ArchivosInstrumentoPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=ArchivosInstrumento
+        fields=('__all__')
+        validators = [
+                UniqueTogetherValidator(
+                queryset=ArchivosInstrumento.objects.all(),
+                fields= ['id_instrumento','nombre_archivo'],
+                message='Ya existe un archivo  con este nombre.'
+                )
+                ] 
+
