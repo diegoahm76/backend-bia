@@ -9,7 +9,7 @@ from rest_framework import status
 from datetime import datetime,date,timedelta
 
 from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, Cuencas, CuencasInstrumento, Instrumentos, ParametrosLaboratorio, Pozos, Secciones,Subsecciones
-from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentosGetSerializer, CuencasGetSerializer, CuencasPostSerializer, CuencasUpdateSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoCuencasGetSerializer, InstrumentosPostSerializer, InstrumentosSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
+from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentosGetSerializer, CuencasGetSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoCuencasGetSerializer, InstrumentosPostSerializer, InstrumentosSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionBusquedaAvanzadaSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
 
 
 
@@ -1029,6 +1029,23 @@ class ParametrosLaboratorioGetById(generics.ListAPIView):
         
         return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
     
+#Archivos
+class ArchivosInstrumentoCreate(generics.CreateAPIView):
+    queryset = ArchivosInstrumento.objects.all()
+    serializer_class = ArchivosInstrumentoPostSerializer
+    
+
+    def post(self, request, *args, **kwargs):
+        # Aquí puedes personalizar la lógica del método POST
+        # Puedes acceder a los datos enviados en la solicitud utilizando request.data
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+#Instrumentos
 
 
 class InstrumentoCreate(generics.CreateAPIView):
@@ -1036,16 +1053,105 @@ class InstrumentoCreate(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     queryset = Instrumentos.objects.all()
     
+
+    def obtener_repetido(self,lista_archivos):
+        
+        contador = Counter(lista_archivos)
+        for archivo, cantidad in contador.items():
+            if cantidad > 1:
+                return archivo
+        return None
     def post(self,request):
-        data_in = request.data
+        
         try:
+            data_in = request.data
+            data_in._mutable=True
+            persona_logueada = request.user.persona.id_persona
+            data_in['id_persona_registra']=persona_logueada
+            fecha_actual = datetime.now().date()
+            
+            formato = "%Y-%m-%dT%H:%M:%S"
+            fecha_datetime = datetime.strptime(data_in['fecha_creacion_instrumento'], formato).date()
+            if(fecha_datetime>fecha_actual):
+                raise ValidationError("La fecha de creacion no puese superar la actual.")
 
             serializer = self.serializer_class(data=data_in)
             serializer.is_valid(raise_exception=True)
             serializer.save()
+
+           #CUENCAS
+            cuencas_data=[]#guarda la informacion del serializador
+            id_instrumento=serializer.data['id_instrumento']
+            ids=[]
+            if "id_cuencas" in data_in:
+                cuencas=json.loads(request.data.get('id_cuencas'))
+                
+                for x in cuencas:
+                    ids.append(x["id_cuenca"])
+                    x["id_instrumento"]=id_instrumento
+            
+                if cuencas:
+                    if self.obtener_repetido(ids):
+                        raise ValidationError("Intenta insertar la misma cuenca varias veces")
+
+                cuencas_instrumento_serializer = CuencasInstrumentoSerializer(data=cuencas, many=True)
+                cuencas_instrumento_serializer.is_valid(raise_exception=True)
+                cuencas_instrumento_serializer.save()
+                cuencas_data=cuencas_instrumento_serializer.data
+            #archivos
+            archivos =request.FILES.getlist('archivo')
+            nombre_archivos =request.data.getlist('nombre_archivo')
+            if len(archivos)!= len(nombre_archivos):
+                raise ValidationError("Todos los archivos deben tener nombre.")
+             
+            archivos_data=[]
+
+
+            serizalizador_archivos=[]
+            for archivo, nombre_archivo in zip(archivos, nombre_archivos):
+                archivo_data = {
+                        'id_instrumento': id_instrumento,
+                        'cod_tipo_de_archivo': 'INS',
+                        'nombre_archivo': nombre_archivo,
+                        'ruta_archivo': archivo
+                    }
+                Archivos_serializer = ArchivosInstrumentoPostSerializer(data=archivo_data)
+                Archivos_serializer.is_valid(raise_exception=True)
+                Archivos_serializer.save()
+                serizalizador_archivos.append(Archivos_serializer.data)
+
+
+
         except ValidationError as e:       
             raise ValidationError(e.detail)
          
         
-        return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+        return Response({'success':True,'detail':'Se crearon los registros correctamente','data':{"instrumento":serializer.data,"cuencas":cuencas_data,"archivos":serizalizador_archivos}},status=status.HTTP_201_CREATED)
+    
+
+
+##
+class SeccionSubseccionBusquedaAvanzadaGet(generics.ListAPIView):
+    #serializer_class = BusquedaAvanzadaAvancesSerializers
+    serializer_class = SubseccionBusquedaAvanzadaSerializer
+    queryset = Subsecciones.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        filter = {}
+
+        for key, value in request.query_params.items():
+            if key == 'nombre_seccion':
+                if value != '':
+                    filter['id_seccion__nombre__icontains'] = value
+            if key == 'nombre_subseccion':
+                if value != '':
+                    filter['nombre__icontains'] = value
+
+        subsecciones = self.queryset.all().filter(**filter)
+        serializador = self.serializer_class(subsecciones, many=True)
+        # avances = self.queryset.filter(**filter).select_related('id_proyecto')
+        # serializador = self.serializer_class(avances, many=True)
+        
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializador.data}, status=status.HTTP_200_OK)
     

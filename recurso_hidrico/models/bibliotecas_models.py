@@ -110,8 +110,8 @@ class ArchivosInstrumento(models.Model):
         ('INS', 'Instrumento')
     ], db_column='T611codTipoDeArchivo')
     nombre_archivo = models.CharField(max_length=255, db_column='T611nombreArchivo')
-    ruta_archivo = models.CharField(max_length=255, db_column='T611rutaArchivo')
-    fecha_cargado = models.DateField(db_column='T611fechaCargado')
+    ruta_archivo = models.FileField( db_column='T611rutaArchivo')
+    fecha_cargado = models.DateField(auto_now=True,db_column='T611fechaCargado')
 
     class Meta:
         db_table = 'T611Archivos_Instrumento'
