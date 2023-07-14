@@ -36,7 +36,7 @@ from datetime import datetime
 from django.contrib import auth
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils import encoding, http
-import copy, re
+import copy, re, pytz
 from django.http import HttpResponsePermanentRedirect
 from django.contrib.sessions.models import Session
 from rest_framework.exceptions import NotFound,ValidationError, PermissionDenied
@@ -832,7 +832,7 @@ class LoginApiView(generics.CreateAPIView):
                     serializer_data = serializer.data
                     
                     user_info={'userinfo':serializer_data,'permisos':permisos_list,'representante_legal':representante_legal_list}
-                    sms = "Bia Cormacarena te informa que se ha registrado una conexion con el usuario " + user.nombre_de_usuario + " en la fecha " + str(datetime.now())
+                    sms = "Bia Cormacarena te informa que se ha registrado una conexion con el usuario " + user.nombre_de_usuario + " en la fecha " + str(datetime.now(pytz.timezone('America/Bogota')))
                     
                     if user.persona.telefono_celular:
                         Util.send_sms(user.persona.telefono_celular, sms)
