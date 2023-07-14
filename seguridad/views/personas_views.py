@@ -1268,8 +1268,8 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
             return Response({'success':True, 'detail':'Se creo la persona natural y el usuario correctamente'},status=status.HTTP_200_OK)
     
         except ValidationError  as e:
-            error_message = {'error': e.detail}
-            raise ValidationError(error_message)
+            #error_message = {'error': }
+            raise ValidationError(e.detail)
 
 
 

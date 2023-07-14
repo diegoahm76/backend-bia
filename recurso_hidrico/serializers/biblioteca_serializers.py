@@ -149,6 +149,15 @@ class CuencasGetSerializer(serializers.ModelSerializer):
         model=CuencasInstrumento
         fields=['id_instrumento','id_cuenca','cuenca']
 
+class CuencasGetByInstrumentoSerializer(serializers.ModelSerializer):
+    id_instrumento=serializers.IntegerField(source='id_instrumento.id_instrumento')
+    
+    id_cuenca=serializers.IntegerField(source='id_cuenca.id_cuenca')
+    cuenca = serializers.CharField(source='id_cuenca.nombre')
+    class Meta:
+        model=CuencasInstrumento
+        fields=['id_instrumento','id_cuenca','cuenca']
+
 
 
 class ArchivosInstrumentoBusquedaAvanzadaSerializer(serializers.ModelSerializer):
@@ -257,6 +266,25 @@ class InstrumentosPostSerializer(serializers.ModelSerializer):
                 ]   
             
 
+class InstrumentosUpdateSerializer(serializers.ModelSerializer):
+        fecha_registro = serializers.ReadOnlyField()
+        id_seccion=serializers.ReadOnlyField()
+        id_subseccion=serializers.ReadOnlyField()
+        id_persona_registra=serializers.ReadOnlyField()
+        fecha_registro=serializers.ReadOnlyField()
+        class Meta:
+            model=Instrumentos
+            fields='__all__'
+            validators = [
+                UniqueTogetherValidator(
+                queryset=Instrumentos.objects.all(),
+                fields= ['id_subseccion','nombre'],
+                message='Ya existe un instrumento con este nombre.'
+                )
+                ]   
+            
+
+
 
 class CuencasInstrumentoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -269,6 +297,11 @@ class CuencasInstrumentoSerializer(serializers.ModelSerializer):
                 message='Ya existe un instrumento con este nombre.'
                 )
                 ] 
+
+class CuencasInstrumentoDeleteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CuencasInstrumento
+        fields = '__all__'
 
 
 class ArchivosInstrumentoPostSerializer(serializers.ModelSerializer):
