@@ -9,7 +9,7 @@ from rest_framework import status
 from datetime import datetime,date,timedelta
 
 from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, Cuencas, CuencasInstrumento, Instrumentos, ParametrosLaboratorio, Pozos, Secciones,Subsecciones
-from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentosGetSerializer, CuencasGetByInstrumentoSerializer, CuencasGetSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoCuencasGetSerializer, InstrumentosPostSerializer, InstrumentosSerializer, InstrumentosUpdateSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionBusquedaAvanzadaSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
+from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentosGetSerializer, CuencasGetByInstrumentoSerializer, CuencasGetSerializer, CuencasInstrumentoDeleteSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoCuencasGetSerializer, InstrumentosPostSerializer, InstrumentosSerializer, InstrumentosUpdateSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionBusquedaAvanzadaSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
 
 
 
@@ -1062,7 +1062,6 @@ class ArchivosInstrumentoGetByInstrumento(generics.ListAPIView):
     
 #Instrumentos
 
-
 class InstrumentoCreate(generics.CreateAPIView):
     serializer_class = InstrumentosPostSerializer
     permission_classes = [IsAuthenticated]
@@ -1186,33 +1185,42 @@ class InstrumentoUpdate(generics.UpdateAPIView):
                 if instrumento.fecha_fin_vigencia:
                     if fecha_actual>instrumento.fecha_fin_vigencia:
                         raise NotFound("No se puede actualizar un instrumento que no se encuentre vigente.")
-                serializer = self.serializer_class(instrumento, data=data)
-                serializer.is_valid(raise_exception=True)
+                #serializer = self.serializer_class(instrumento, data=data)
+                #serializer.is_valid(raise_exception=True)
                 #serializer.update(instrumento, serializer.validated_data)
 
                 cuencas_asociadas = CuencasInstrumento.objects.filter(id_instrumento=pk).values_list('id_cuenca', flat=True)
                 lista_id_cuenca = list(cuencas_asociadas)
+                print("cuencas actuales")
                 print(lista_id_cuenca)
 
                 if "id_cuencas" in data:
                     string_data = request.data.get('id_cuencas')
                     data_nueva = eval(string_data)
+                    print("data nueva")
                     print(data_nueva)
                     if self.obtener_repetido(data_nueva):
                             raise ValidationError("Intenta insertar la misma cuenca varias veces")
-                   # Elementos que no están en base de datos pero sí se quieren insertar
+                   
+
+                   #ACTUALIZAR CUENCAS POR INSTRUMENTO
                     elementos_insertar = list(set(data_nueva)-set(lista_id_cuenca))
                     print(elementos_insertar)
                     elementos_eliminar=list(set(lista_id_cuenca)-set(data_nueva))
+                    print("datos a eliminar")
                     print(elementos_eliminar)
-                raise NotFound("Validaciones completas.")
+                    servicio_eliminar=CuencaInstrumentoDelete()
+
+                    for i in elementos_eliminar:
+                        servicio_eliminar.delete(request,i,instrumento.id_instrumento)
+               # raise NotFound("Validaciones completas.")
                 
 
         except ValidationError as e:       
             raise ValidationError(e.detail)
     
             
-        return Response({'success':True,'detail':'Se actualizaron los registros correctamente','data':self.serializer_class(instrumento).data},status=status.HTTP_200_OK)
+        return Response({'success':True,'detail':'Se actualizaron los registros correctamente'},status=status.HTTP_200_OK)
     
 
 
@@ -1258,3 +1266,21 @@ class SeccionSubseccionBusquedaAvanzadaGet(generics.ListAPIView):
         
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializador.data}, status=status.HTTP_200_OK)
     
+##CUENCAS INSTRUMENTOS
+class CuencaInstrumentoDelete(generics.DestroyAPIView):
+    serializer_class = CuencasInstrumentoDeleteSerializer
+    queryset = CuencasInstrumento.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self,request,cu,ins):
+        
+        cuenca_instrumento = CuencasInstrumento.objects.filter(id_cuenca=cu,id_instrumento=ins).first()
+        
+        if not cuenca_instrumento:
+            raise NotFound("Esta cuenca no se encuentra vinculado a este instrumento.")
+      
+        
+        cuenca_instrumento.delete()
+
+        
+        return Response({'success':True,'detail':'Se elimino la cuenca de este instrumento seleccionada.'},status=status.HTTP_200_OK)
