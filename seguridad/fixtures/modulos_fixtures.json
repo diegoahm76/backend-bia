@@ -128,7 +128,7 @@
         "descripcion": "Permite administrar la información básica de las Marcas de artículos activos fijos",
         "ruta_formulario": "/#/app/almacen/configuracion/crear_marca",
         "nombre_icono": "test",
-        "id_menu": 44
+        "id_menu": 45
     }
 },
 {
@@ -152,7 +152,7 @@
         "descripcion": "Permite administrar la información básica de los porcentajes de IVA que manejará el sistema",
         "ruta_formulario": "/#/app/almacen/configuracion/crear_marca_\nporcentajes",
         "nombre_icono": "test",
-        "id_menu": 44
+        "id_menu": 45
     }
 },
 {
@@ -164,7 +164,7 @@
         "descripcion": "Permite administrar la información básica de las unidades de medida que manejará el sistema",
         "ruta_formulario": "/#/app/almacen/configuracion/crear_marca_unidad_medida",
         "nombre_icono": "test",
-        "id_menu": 44
+        "id_menu": 45
     }
 },
 {
@@ -318,7 +318,7 @@
         "nombre_modulo": "Cuadro de clasificación documental",
         "subsistema": "GEST",
         "descripcion": "Permite administrar los Cuadros de Clasificación Documental de la entidad en el sistema",
-        "ruta_formulario": "/#/app/gestor_documental/gestion/instrumentos_archivisticos/ccd",
+        "ruta_formulario": "/#/app/gestor_documental/ccd",
         "nombre_icono": "test",
         "id_menu": 12
     }
@@ -342,7 +342,7 @@
         "nombre_modulo": "Tabla de Retención Documental",
         "subsistema": "GEST",
         "descripcion": "Permite administrar las Tablas de Retención Documental de la entidad en el sistema",
-        "ruta_formulario": "/#/app/gestor_documental/gestion/instrumentos_archivisticos/trd",
+        "ruta_formulario": "/#/app/gestor_documental/trd",
         "nombre_icono": "test",
         "id_menu": 12
     }
@@ -354,7 +354,7 @@
         "nombre_modulo": "Tabla de Control de Acceso",
         "subsistema": "GEST",
         "descripcion": "Permite administrar las Tablas de Control de Acceso de la entidad en el sistema",
-        "ruta_formulario": "/#/app/gestor_documental/gestion/instrumentos_archivisticos/tca",
+        "ruta_formulario": "/#/app/gestor_documental/tca",
         "nombre_icono": "test",
         "id_menu": 12
     }
@@ -438,7 +438,7 @@
         "nombre_modulo": "Rechazo de Solicitudes de Bienes desde Almacén",
         "subsistema": "ALMA",
         "descripcion": "Permite rechazar por parte de Almacén, solicitudes de bienes realizadas por las diferentes áreas de la entidad",
-        "ruta_formulario": "/#/app/almacen/gestion_inventario/movimientos/respuesta_solicitudes/rechazo_solicitudes_bienes_almacen",
+        "ruta_formulario": "/#/app/almacen/rechazo_solicitudes",
         "nombre_icono": "test",
         "id_menu": 33
     }
@@ -536,7 +536,7 @@
         "descripcion": "Permite cerrar por parte de Almacén una solicitud de bienes por no tener disponibilidad de ninguno de los items solicitados",
         "ruta_formulario": "/#/app/almacen/gestion_inventario/movimientos/respuesta_solicitudes/cierre_solicitudes_bienes_no_disponibilidad",
         "nombre_icono": "lock",
-        "id_menu": 33
+        "id_menu": null
     }
 },
 {
@@ -764,7 +764,7 @@
         "descripcion": "Permite cerrar una solicitud a viveros por no tener disponibilidad de ninguno de los items solicitados",
         "ruta_formulario": "/#/app/conservacion/distribucion/cierre_solicitudes",
         "nombre_icono": "test",
-        "id_menu": 24
+        "id_menu": null
     }
 },
 {
@@ -800,7 +800,7 @@
         "descripcion": "Permite administrar a una persona sus autorizaciones acerca de las notificaciones de la entidad",
         "ruta_formulario": "/*",
         "nombre_icono": "test",
-        "id_menu": 6
+        "id_menu": null
     }
 },
 {
@@ -1290,7 +1290,7 @@
         "nombre_modulo": "Contenido Programático PORH",
         "subsistema": "RECU",
         "descripcion": "Permite registrar el contenido programático a Planes de Ordenamiento de Recurso Hídrico",
-        "ruta_formulario": "/*",
+        "ruta_formulario": "/#/app/recurso_hidrico/porh/contenido_programatico",
         "nombre_icono": "test",
         "id_menu": 46
     }
@@ -1302,7 +1302,7 @@
         "nombre_modulo": "Registro de Avances de Proyectos",
         "subsistema": "RECU",
         "descripcion": "Permite registrar los avances a los proyectos pertenecientes a los programas de los PORH",
-        "ruta_formulario": "/*",
+        "ruta_formulario": "/#/app/recurso_hidrico/proyectos/avances",
         "nombre_icono": "test",
         "id_menu": 46
     }
@@ -1353,6 +1353,162 @@
         "ruta_formulario": "/*",
         "nombre_icono": "test",
         "id_menu": 3
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 116,
+    "fields": {
+        "nombre_modulo": "Líderes por Unidad Organizacional",
+        "subsistema": "TRSV",
+        "descripcion": "Permite administrar la asignación de líderes a las unidades organizacionales del organigrama de la entidad",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 2
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 117,
+    "fields": {
+        "nombre_modulo": "Bandeja Personal de Alertas",
+        "subsistema": "TRSV",
+        "descripcion": "Permite administrar a la persona la bandeja de alertas que el sistema le ha generado",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": null
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 118,
+    "fields": {
+        "nombre_modulo": "Registro de Secciones de Biblioteca",
+        "subsistema": "RECU",
+        "descripcion": "Permite registrar las secciones con sus subsecciones de la biblioteca de Recurso Hídrico",
+        "ruta_formulario": "/#/app/recurso_hidrico/biblioteca/registro_secion_sub_seccion",
+        "nombre_icono": "test",
+        "id_menu": 66
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 119,
+    "fields": {
+        "nombre_modulo": "Biblioteca Recurso Hídrico",
+        "subsistema": "RECU",
+        "descripcion": "Permite consultar la biblioteca de Recurso\nHídrico con sus secciones, subsecciones e instrumentos asociados.",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 66
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 120,
+    "fields": {
+        "nombre_modulo": "Configuración de Alertas de Recaudo",
+        "subsistema": "RECA",
+        "descripcion": "Permite configurar las Alertas disponbiles para el subsistema de Recaudo",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 64
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 121,
+    "fields": {
+        "nombre_modulo": "Depósitos de Archivo",
+        "subsistema": "GEST",
+        "descripcion": "Permite administrar los depósitos de archivo que se manejan en la entidad",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 19
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 122,
+    "fields": {
+        "nombre_modulo": "Administración de Instrumentos de Biblioteca",
+        "subsistema": "RECU",
+        "descripcion": "Permite administrar los instrumentos de cada sección y subsección de la Biblioteca de Recurso Hídrico.",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 66
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 123,
+    "fields": {
+        "nombre_modulo": "Registro de Cuencas",
+        "subsistema": "RECU",
+        "descripcion": "Permite registrar las Cuencas Hídricas de la Biblioteca de Recurso Hídrico",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 47
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 124,
+    "fields": {
+        "nombre_modulo": "Registro de Pozos",
+        "subsistema": "RECU",
+        "descripcion": "Permite registrar los Pozos de la Biblioteca de Recurso Hídrico",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 48
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 125,
+    "fields": {
+        "nombre_modulo": "Registro de Parámetros de Laboratorio",
+        "subsistema": "RECU",
+        "descripcion": "Permite registrar los Parámetros que se usan en los Resultados de Laboratorio",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 48
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 126,
+    "fields": {
+        "nombre_modulo": "Estantes por Depósitos de Archivo",
+        "subsistema": "GEST",
+        "descripcion": "Permite administrar los estantes que se encuentran en los depósitos de archivo que se manejan en la entidad",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 19
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 127,
+    "fields": {
+        "nombre_modulo": "Generación del Indice Electrónico en XML",
+        "subsistema": "GEST",
+        "descripcion": "Permite generar el Índice Electrónico de un expediente documental en formato XML",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 11
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 128,
+    "fields": {
+        "nombre_modulo": "Configuración de Alertas de Conservación",
+        "subsistema": "CONS",
+        "descripcion": "Permite configurar las alertas pertenecientes al subsistema de conservación.",
+        "ruta_formulario": "/*",
+        "nombre_icono": "test",
+        "id_menu": 30
     }
 }
 ]

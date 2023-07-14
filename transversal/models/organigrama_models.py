@@ -45,7 +45,7 @@ class UnidadesOrganizacionales(models.Model):
     id_unidad_organizacional=models.AutoField(primary_key=True,editable=False,db_column='T019IdUnidadOrganizacional')
     id_organigrama=models.ForeignKey(Organigramas, on_delete=models.CASCADE, db_column='T019Id_Organigrama')
     id_nivel_organigrama=models.ForeignKey(NivelesOrganigrama, on_delete=models.CASCADE, db_column='T019Id_NivelOrganigrama')
-    nombre=models.CharField(max_length=50, db_column='T019nombre')
+    nombre=models.CharField(max_length=255, db_column='T019nombre')
     codigo=models.CharField(max_length=10,db_column='T019codigo')
     cod_tipo_unidad=models.CharField(max_length=2,choices=tipo_unidad_CHOICES,db_column='T019codTipoUnidad')
     cod_agrupacion_documental=models.CharField(max_length=3, choices=agrupacion_documental_CHOICES, null=True, blank=True, db_column='T019codAgrupacionDocumental')

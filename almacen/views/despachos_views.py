@@ -1,6 +1,6 @@
 from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, ItemEntradaAlmacen
 from almacen.serializers.bienes_serializers import CatalogoBienesSerializer
-from almacen.serializers.despachos_serializers import SerializersDespachoConsumo, SerializersItemDespachoConsumo, SerializersSolicitudesConsumibles, SerializersItemsSolicitudConsumible, SearchBienInventarioSerializer
+from almacen.serializers.despachos_serializers import  SerializersDespachoConsumo, SerializersDespachoConsumoConItems, SerializersItemDespachoConsumo, SerializersSolicitudesConsumibles, SerializersItemsSolicitudConsumible, SearchBienInventarioSerializer
 from rest_framework import generics,status
 from rest_framework.response import Response
 from seguridad.models import Personas, User
@@ -136,7 +136,7 @@ class CreateDespachoMaestro(generics.UpdateAPIView):
             if bien_solicitado_instancia.cod_tipo_bien != 'C':
                 raise ValidationError('El bien (' + bien_solicitado_instancia.nombre + ') no es de consumo')
             item_solicitado_instancia = ItemsSolicitudConsumible.objects.filter(Q(id_solicitud_consumibles=info_despacho['id_solicitud_consumo']) & Q(id_bien=i['id_bien_solicitado'])).first()
-            if item_solicitado_instancia.cantidad != i['cantidad_solicitada'] or item_solicitado_instancia.id_unidad_medida.id_unidad_medida != i['id_unidad_medida_solicitada']:
+            if item_solicitado_instancia.cantidad != i['cantidad_solicitada']: # or item_solicitado_instancia.id_unidad_medida.id_unidad_medida != i['id_unidad_medida_solicitada']:
                 raise ValidationError('Error en el numero_posicion (' + str(i['numero_posicion_despacho']) + ') del despacho. La cantidad solicitada o la unidad de medida solicitada no corresponde a las registrada en la solicitud')
             # VALIDACION 94:
             if i['cantidad_despachada'] == 0:
@@ -405,7 +405,7 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
                     i['numero_posicion_despacho'] = instancia_item_a_actualizar_aux_5.numero_posicion_despacho
                 items_a_actualizar.append(i)
                 # VALIDACION 6: SE VALIDA QUE LA CANTIDAD DESPACHADA SEA CORRECTA (EN LOS ITEMS ACTUALIZADOS)
-                aux_validacion_cantidades_fecha_despacho = UtilAlmacen.get_cantidad_posible(i['id_bien_despachado'], i['id_bodega'], despacho_maestro_instancia.id_despacho_consumo)
+                aux_validacion_cantidades_fecha_despacho = UtilAlmacen.get_valor_maximo_despacho(i['id_bien_despachado'], i['id_bodega'], despacho_maestro_instancia.id_despacho_consumo)
                 if i['cantidad_despachada'] > aux_validacion_cantidades_fecha_despacho:
                     raise ValidationError('Verifique que las cantidades del bien a actualizar en el despacho, en la bodega ingresada en la fecha de despacho sean correctas')
                 aux_validacion_bienes_despachados_repetidos.append([i['id_bien_solicitado'], i['id_bien_despachado'], i['id_bodega']])
@@ -427,7 +427,7 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
                 if bien_solicitado_instancia.cod_tipo_bien != 'C':
                     raise ValidationError('El bien (' + bien_solicitado_instancia.nombre + ') no es de consumo')
                 item_solicitado_instancia = ItemsSolicitudConsumible.objects.filter(Q(id_solicitud_consumibles=solicitud_del_despacho_instancia.id_solicitud_consumibles) & Q(id_bien=i['id_bien_solicitado'])).first()
-                if item_solicitado_instancia.cantidad != i['cantidad_solicitada'] or item_solicitado_instancia.id_unidad_medida.id_unidad_medida != i['id_unidad_medida_solicitada']:
+                if item_solicitado_instancia.cantidad != i['cantidad_solicitada']:# or item_solicitado_instancia.id_unidad_medida.id_unidad_medida != i['id_unidad_medida_solicitada']:
                     raise ValidationError('Error en el numero_posicion (' + str(i['numero_posicion_despacho']) + ') del despacho. La cantidad solicitada o la unidad de medida solicitada no corresponde a las registrada en la solicitud')
                 # VALIDACION 94:
                 if i['cantidad_despachada'] == 0:
@@ -755,7 +755,7 @@ class SearchSolicitudesAprobadasYAbiertos(generics.ListAPIView):
             raise NotFound('No se encontraron solicitudes') 
         
 class GetDespachoConsumoByNumeroDespacho(generics.ListAPIView):
-    serializer_class= SerializersDespachoConsumo
+    serializer_class= SerializersDespachoConsumoConItems
     queryset=DespachoConsumo.objects.all()
     permission_classes = [IsAuthenticated]
     

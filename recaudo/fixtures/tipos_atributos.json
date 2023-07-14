@@ -1,0 +1,30 @@
+[
+  {
+    "model": "recaudo.TiposAtributos",
+    "pk" : 1,
+    "fields" : {
+      "tipo": "Documento"
+    }
+  },
+  {
+    "model": "recaudo.TiposAtributos",
+    "pk" : 2,
+    "fields" : {
+      "tipo": "Fecha"
+    }
+  },
+  {
+    "model": "recaudo.TiposAtributos",
+    "pk" : 3,
+    "fields" : {
+      "tipo": "Texto"
+    }
+  },
+  {
+    "model": "recaudo.TiposAtributos",
+    "pk" : 4,
+    "fields" : {
+      "tipo": "Opciones"
+    }
+  }
+]

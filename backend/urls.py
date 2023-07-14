@@ -63,6 +63,7 @@ urlpatterns = [
     path('api/transversal/notificaciones/', include('transversal.urls.notificaciones_urls')),
     path('api/transversal/configuracion/',include('transversal.urls.configuracionEntidades_urls')),
     path('api/transversal/sucursales/',include('transversal.urls.sucursalesEmpresas_urls')),
+    path('api/transversal/lideres/',include('transversal.urls.lideres_urls')),
 
 
     #GESTOR DOCUMENTAL
@@ -72,6 +73,7 @@ urlpatterns = [
     path('api/gestor/tca/', include('gestion_documental.urls.tca_urls')),
     path('api/gestor/choices/', include('gestion_documental.urls.choices_urls')),
     path('api/gestor/ventanilla/',include('gestion_documental.urls.ventanilla_urls')),
+    path('api/gestor/depositos-archivos/',include('gestion_documental.urls.depositos_archivo_urls')),
     
     #ALMACEN
     path('api/almacen/hoja-de-vida/', include('almacen.urls.hoja_de_vida_urls')),
