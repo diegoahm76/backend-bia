@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from seguridad.serializers.personas_serializers import PersonasSerializer
 from transversal.models.entidades_models import ConfiguracionEntidad, SucursalesEmpresas
+from seguridad.models import Personas
+
 
 
 class ConfiguracionEntidadSerializer(serializers.ModelSerializer):
@@ -8,6 +10,11 @@ class ConfiguracionEntidadSerializer(serializers.ModelSerializer):
         model = ConfiguracionEntidad
         fields = '__all__'
 
+
+class PersonaEntidadCormacarenaGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Personas
+        fields = ('id_persona', 'tipo_documento', 'numero_documento', 'digito_verificacion', 'razon_social')
         
 class SucursalesEmpresasSerializer(serializers.ModelSerializer):    
     class Meta:
