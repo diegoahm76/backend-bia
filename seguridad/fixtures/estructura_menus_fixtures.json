@@ -49,7 +49,7 @@
     "fields": {
         "nombre": "Datos Básicos",
         "nivel_jerarquico": 2,
-        "id_menu_padre": null,
+        "id_menu_padre": 4,
         "orden_por_padre": 1,
         "subsistema": "TRSV"
     }
@@ -125,9 +125,9 @@
     "pk": 12,
     "fields": {
         "nombre": "Instrumentos Archivísticos",
-        "nivel_jerarquico": 1,
-        "id_menu_padre": null,
-        "orden_por_padre": 3,
+        "nivel_jerarquico": 2,
+        "id_menu_padre": 11,
+        "orden_por_padre": 1,
         "subsistema": "GEST"
     }
 },
@@ -136,9 +136,9 @@
     "pk": 13,
     "fields": {
         "nombre": "Procesos",
-        "nivel_jerarquico": 1,
-        "id_menu_padre": null,
-        "orden_por_padre": 3,
+        "nivel_jerarquico": 2,
+        "id_menu_padre": 11,
+        "orden_por_padre": 2,
         "subsistema": "GEST"
     }
 },
@@ -290,7 +290,7 @@
     "pk": 27,
     "fields": {
         "nombre": "Reportes",
-        "nivel_jerarquico": 1,
+        "nivel_jerarquico": 2,
         "id_menu_padre": 26,
         "orden_por_padre": 1,
         "subsistema": "CONS"
@@ -301,7 +301,7 @@
     "pk": 28,
     "fields": {
         "nombre": "Indicadores",
-        "nivel_jerarquico": 1,
+        "nivel_jerarquico": 2,
         "id_menu_padre": 26,
         "orden_por_padre": 2,
         "subsistema": "CONS"
@@ -312,7 +312,7 @@
     "pk": 29,
     "fields": {
         "nombre": "Analítica",
-        "nivel_jerarquico": 1,
+        "nivel_jerarquico": 2,
         "id_menu_padre": 26,
         "orden_por_padre": 3,
         "subsistema": "CONS"
@@ -345,7 +345,7 @@
     "pk": 32,
     "fields": {
         "nombre": "Movimientos",
-        "nivel_jerarquico": 1,
+        "nivel_jerarquico": 2,
         "id_menu_padre": 31,
         "orden_por_padre": 1,
         "subsistema": "ALMA"
@@ -356,8 +356,8 @@
     "pk": 33,
     "fields": {
         "nombre": "Respuesta a Solicitudes",
-        "nivel_jerarquico": 1,
-        "id_menu_padre": null,
+        "nivel_jerarquico": 3,
+        "id_menu_padre": 32,
         "orden_por_padre": 1,
         "subsistema": "ALMA"
     }
@@ -367,8 +367,8 @@
     "pk": 34,
     "fields": {
         "nombre": "Hojas de Vida de Activos Fijos",
-        "nivel_jerarquico": 1,
-        "id_menu_padre": null,
+        "nivel_jerarquico": 2,
+        "id_menu_padre": 31,
         "orden_por_padre": 2,
         "subsistema": "ALMA"
     }
@@ -378,8 +378,8 @@
     "pk": 35,
     "fields": {
         "nombre": "Mantenimiento de Equipos",
-        "nivel_jerarquico": 1,
-        "id_menu_padre": null,
+        "nivel_jerarquico": 2,
+        "id_menu_padre": 31,
         "orden_por_padre": 3,
         "subsistema": "ALMA"
     }
@@ -444,7 +444,7 @@
     "pk": 41,
     "fields": {
         "nombre": "Reportes",
-        "nivel_jerarquico": 1,
+        "nivel_jerarquico": 2,
         "id_menu_padre": 40,
         "orden_por_padre": 1,
         "subsistema": "ALMA"
@@ -455,7 +455,7 @@
     "pk": 42,
     "fields": {
         "nombre": "Indicadores",
-        "nivel_jerarquico": 1,
+        "nivel_jerarquico": 2,
         "id_menu_padre": 40,
         "orden_por_padre": 2,
         "subsistema": "ALMA"
@@ -466,7 +466,7 @@
     "pk": 43,
     "fields": {
         "nombre": "Analítica",
-        "nivel_jerarquico": 1,
+        "nivel_jerarquico": 2,
         "id_menu_padre": 40,
         "orden_por_padre": 3,
         "subsistema": "ALMA"
@@ -488,7 +488,7 @@
     "pk": 45,
     "fields": {
         "nombre": "Datos Básicos",
-        "nivel_jerarquico": 1,
+        "nivel_jerarquico": 2,
         "id_menu_padre": 44,
         "orden_por_padre": 1,
         "subsistema": "ALMA"
@@ -577,7 +577,7 @@
     "fields": {
         "nombre": "Reportes",
         "nivel_jerarquico": 2,
-        "id_menu_padre": null,
+        "id_menu_padre": 52,
         "orden_por_padre": 1,
         "subsistema": "RECU"
     }
@@ -586,9 +586,9 @@
     "model": "seguridad.estructuramenus",
     "pk": 54,
     "fields": {
-        "nombre": "Reportes",
+        "nombre": "Estaciones",
         "nivel_jerarquico": 3,
-        "id_menu_padre": null,
+        "id_menu_padre": 53,
         "orden_por_padre": 1,
         "subsistema": "RECU"
     }
@@ -599,7 +599,7 @@
     "fields": {
         "nombre": "Indicadores",
         "nivel_jerarquico": 2,
-        "id_menu_padre": null,
+        "id_menu_padre": 52,
         "orden_por_padre": 2,
         "subsistema": "RECU"
     }
@@ -610,7 +610,7 @@
     "fields": {
         "nombre": "Analítica",
         "nivel_jerarquico": 2,
-        "id_menu_padre": null,
+        "id_menu_padre": 52,
         "orden_por_padre": 3,
         "subsistema": "RECU"
     }
@@ -630,9 +630,9 @@
     "model": "seguridad.estructuramenus",
     "pk": 58,
     "fields": {
-        "nombre": "Configuración",
+        "nombre": "Estaciones Meteorológicas",
         "nivel_jerarquico": 2,
-        "id_menu_padre": null,
+        "id_menu_padre": 57,
         "orden_por_padre": 1,
         "subsistema": "RECU"
     }

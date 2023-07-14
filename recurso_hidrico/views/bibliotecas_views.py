@@ -8,8 +8,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from datetime import datetime,date,timedelta
 
-from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, CuencasInstrumento, Instrumentos, Secciones,Subsecciones
-from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentosGetSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoCuencasGetSerializer, InstrumentosSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
+from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, Cuencas, CuencasInstrumento, Instrumentos, ParametrosLaboratorio, Pozos, Secciones,Subsecciones
+from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentosGetSerializer, CuencasGetByInstrumentoSerializer, CuencasGetSerializer, CuencasInstrumentoDeleteSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoCuencasGetSerializer, InstrumentosPostSerializer, InstrumentosSerializer, InstrumentosUpdateSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionBusquedaAvanzadaSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
 
 
 
@@ -622,3 +622,665 @@ class ArchivosInstrumentoGet(generics.ListAPIView):
 
 
 ##Registro de Instrumentos en Biblioteca
+#configuraciones basicas 
+
+
+class CuencaCreate(generics.CreateAPIView):
+    serializer_class = CuencasPostSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = Cuencas.objects.all()
+    
+    def post(self,request):
+        data_in = request.data
+        try:
+            data_in['registro_precargado']=False
+            data_in['item_ya_usado']=False
+            data_in['activo']=True
+            serializer = self.serializer_class(data=data_in)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        except ValidationError as e:       
+            raise ValidationError(e.detail)
+         
+        
+        return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+    
+
+
+class CuencaDelete(generics.DestroyAPIView):
+
+    serializer_class = CuencasPostSerializer
+    queryset = Cuencas.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self,request,pk):
+        
+        cuenca = Cuencas.objects.filter(id_cuenca=pk).first()
+        
+        if not cuenca:
+            raise NotFound("No existe la cuenca a eliminar.")
+        
+
+
+        if cuenca.registro_precargado:
+            raise ValidationError("No se puede eliminar una cuenca precargada.")
+        
+        if cuenca.item_ya_usado:
+            raise ValidationError("No se puede eliminar una cuenca que se encuentre en uso.")
+    
+        cuenca.delete()
+        
+        return Response({'success':True,'detail':'Se elimino la cuenca seleccionada.'},status=status.HTTP_200_OK)
+    
+
+class CeuncaGet(generics.ListAPIView):
+    serializer_class = CuencasGetSerializer
+    queryset = Cuencas.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request):
+        estado=False
+        for key, value in request.query_params.items():
+            if key == 'activo':
+                if value != '':
+                    if str(value)=='True':
+                        estado=True
+
+        if estado:
+            cuencas = Cuencas.objects.filter(activo=estado).order_by('id_cuenca')
+        else:
+            cuencas=Cuencas.objects.all().order_by('id_cuenca')
+
+        serializer = self.serializer_class(cuencas,many=True)
+        
+        if not cuencas:
+            raise NotFound("los registros de cuencas que busca no existen")
+        
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+    
+
+class CuencaGetById(generics.ListAPIView):
+
+    serializer_class = CuencasGetSerializer
+    queryset = Cuencas.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        
+        cuencas = Cuencas.objects.filter(id_cuenca=pk)
+                
+        serializer = self.serializer_class(cuencas,many=True)
+        
+        if not cuencas:
+            raise NotFound("La cuenca no existe.")
+        
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+    
+
+class CuencaUpdate(generics.UpdateAPIView):
+
+    
+    serializer_class = CuencasUpdateSerializer
+    queryset = Cuencas.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+
+    def put(self, request, pk):
+        try:
+            data = request.data
+            cuenca = Cuencas.objects.filter(id_cuenca=pk).first()
+        
+            if not cuenca:
+                raise NotFound("No se existe la cuenca que trata de Actualizar.")
+        
+            if cuenca.item_ya_usado == False:
+                serializer = self.serializer_class(cuenca, data=data)
+                serializer.is_valid(raise_exception=True)
+                serializer.update(cuenca, serializer.validated_data)
+            else:
+                raise PermissionDenied('No puedes actualizar una cuenca que haya sido usada')
+
+            return Response({'success': True, 'detail': 'Se actualizaron los registros correctamente', 'data': self.serializer_class(cuenca).data}, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            raise ValidationError(e.detail)
+
+
+ 
+
+
+#POZOS
+class PozoCreate(generics.CreateAPIView):
+    serializer_class = PozosPostSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = Pozos.objects.all()
+    
+    def post(self,request):
+        data_in = request.data
+        try:
+            data_in['registro_precargado']=False
+            data_in['item_ya_usado']=False
+            data_in['activo']=True
+            serializer = self.serializer_class(data=data_in)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        except ValidationError as e:       
+            raise ValidationError(e.detail)
+         
+        
+        return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+  
+
+class PozoDelete(generics.DestroyAPIView):
+
+    serializer_class = PozosPostSerializer
+    queryset = Pozos.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self,request,pk):
+        
+        pozo = Pozos.objects.filter(id_pozo=pk).first()
+        
+        if not pozo:
+            raise NotFound("No existe el pozo a eliminar.")
+        
+
+
+        if pozo.registro_precargado:
+            raise ValidationError("No se puede eliminar un pozo precargada.")
+        
+        if pozo.item_ya_usado:
+            raise ValidationError("No se puede eliminar un pozo que se encuentre en uso.")
+    
+        pozo.delete()
+        
+        return Response({'success':True,'detail':'Se elimino el pozo seleccionada.'},status=status.HTTP_200_OK)
+    
+
+class PozoUpdate(generics.UpdateAPIView):
+
+    
+    serializer_class = PozosUpdateSerializer
+    queryset = Pozos.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def put(self,request,pk):
+
+
+        try:
+
+            
+            data = request.data
+            pozo = Pozos.objects.filter(id_pozo=pk).first()
+        
+            if  not pozo:
+
+                raise NotFound("No se existe el pozo que trata de Actualizar.")
+           
+            if pozo.item_ya_usado:
+                raise PermissionDenied('No puedes actualizar un pozo que haya sido usada')
+                
+            else:
+                serializer = self.serializer_class(pozo, data=data)
+                serializer.is_valid(raise_exception=True)
+                serializer.update(pozo, serializer.validated_data)
+                
+                
+
+        except ValidationError as e:       
+            raise ValidationError(e.detail)
+    
+            
+        return Response({'success':True,'detail':'Se actualizaron los registros correctamente','data':self.serializer_class(pozo).data},status=status.HTTP_200_OK)
+    
+
+class PozoGet(generics.ListAPIView):
+    serializer_class = PozosGetSerializer
+    queryset = Pozos.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request):
+        estado=None
+        for key, value in request.query_params.items():
+            if key == 'activo':
+                if value != '':
+                    if str(value)=='True':
+                        estado=True
+            if key == 'activo':
+                if value != '':
+                    if str(value)=='False':
+                        estado=False    
+
+        if estado is None:  
+            pozos=Pozos.objects.all().order_by('id_pozo')
+        else:      
+
+                pozos = Pozos.objects.filter(activo=estado).order_by('id_pozo')
+    
+    
+
+        serializer = self.serializer_class(pozos,many=True)
+        
+        if not pozos:
+            raise NotFound("los registros de pozos que busca no existen")
+        
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+ 
+
+
+
+class PozoGetById(generics.ListAPIView):
+
+    serializer_class = PozosGetSerializer
+    queryset = Pozos.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        
+        pozos = Pozos.objects.filter(id_pozo=pk)
+                
+        serializer = self.serializer_class(pozos,many=True)
+        
+        if not pozos:
+            raise NotFound("El pozo no existe.")
+        
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+    
+#Parametros de laboratorio
+class ParametrosLaboratorioCreate(generics.CreateAPIView):
+    serializer_class = ParametrosLaboratorioPostSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = ParametrosLaboratorio.objects.all()
+    
+    def post(self,request):
+        data_in = request.data
+        try:
+            data_in['registro_precargado']=False
+            data_in['item_ya_usado']=False
+            data_in['activo']=True
+            serializer = self.serializer_class(data=data_in)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        except ValidationError as e:       
+            raise ValidationError(e.detail)
+         
+        
+        return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+  
+
+class ParametrosLaboratorioDelete(generics.DestroyAPIView):
+
+    serializer_class = ParametrosLaboratorioPostSerializer
+    queryset = ParametrosLaboratorio.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self,request,pk):
+        
+        parametro = ParametrosLaboratorio.objects.filter(id_parametro=pk).first()
+        
+        if not parametro:
+            raise NotFound("No existe el parametro de laboratorio a eliminar.")
+        
+
+
+        if parametro.registro_precargado:
+            raise ValidationError("No se puede eliminar un parametro de laboratorio precargada.")
+        
+        if parametro.item_ya_usado:
+            raise ValidationError("No se puede eliminar un parametro de laboratorio que se encuentre en uso.")
+    
+        parametro.delete()
+        
+        return Response({'success':True,'detail':'Se elimino el parametro de laboratorio seleccionada.'},status=status.HTTP_200_OK)
+    
+
+
+class ParametrosLaboratorioUpdate(generics.UpdateAPIView):
+
+    
+    serializer_class = ParametrosLaboratorioUpdateSerializer
+    queryset = ParametrosLaboratorio.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def put(self,request,pk):
+
+
+        try:
+
+            
+            data = request.data
+            parametro = ParametrosLaboratorio.objects.filter(id_parametro=pk).first()
+        
+            if  not parametro:
+
+                raise NotFound("No se existe el parametro de laboratorio que trata de Actualizar.")
+            print(parametro.item_ya_usado)
+            if parametro.item_ya_usado:
+                raise PermissionDenied('No puedes actualizar un parametro de laboratorio que haya sido usada')
+                # if 'activo' in data:
+
+                #     if parametro.activo == data['activo']:
+                #         raise ValidationError("No se puede actualizar un parametro de laboratorio que se encuentre en uso")
+                #     parametro.activo = data['activo']
+                #     parametro.save()
+                #     return Response({'success':True,'detail':'Se cambio el estado del parametro de laboratorio.','data':self.serializer_class(parametro).data},status=status.HTTP_200_OK)
+                # else:
+                #     raise ValidationError("Se requiere proporcionar el campo 'activo' para actualizar la parametro de laboratorio.")
+   
+            else:
+                
+                serializer = self.serializer_class(parametro, data=data)
+                serializer.is_valid(raise_exception=True)
+                serializer.update(parametro, serializer.validated_data)
+
+        except ValidationError as e:       
+            raise ValidationError(e.detail)
+    
+            
+        return Response({'success':True,'detail':'Se actualizaron los registros correctamente','data':self.serializer_class(parametro).data},status=status.HTTP_200_OK)
+    
+
+class ParametrosLaboratorioGet(generics.ListAPIView):
+    serializer_class = ParametrosLaboratorioGetSerializer
+    queryset = ParametrosLaboratorio.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request):
+        estado=None
+        for key, value in request.query_params.items():
+            if key == 'activo':
+                if value != '':
+                    if str(value)=='True':
+                        estado=True
+            if key == 'activo':
+                if value != '':
+                    if str(value)=='False':
+                        estado=False    
+
+        if estado is None:  
+            parametros=ParametrosLaboratorio.objects.all().order_by('id_parametro')
+        else:      
+
+                parametros = ParametrosLaboratorio.objects.filter(activo=estado).order_by('id_parametro')
+    
+    
+
+        serializer = self.serializer_class(parametros,many=True)
+        
+        if not parametros:
+            raise NotFound("los registros de parametros que busca no existen")
+        
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+ 
+
+class ParametrosLaboratorioGetById(generics.ListAPIView):
+
+    serializer_class = ParametrosLaboratorioGetSerializer
+    queryset = ParametrosLaboratorio.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        
+        parametros = ParametrosLaboratorio.objects.filter(id_parametro=pk)
+                
+        serializer = self.serializer_class(parametros,many=True)
+        
+        if not parametros:
+            raise NotFound("El parametro de laboratorio  no existe.")
+        
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+    
+#Archivos
+class ArchivosInstrumentoCreate(generics.CreateAPIView):
+    queryset = ArchivosInstrumento.objects.all()
+    serializer_class = ArchivosInstrumentoPostSerializer
+    
+
+    def post(self, request, *args, **kwargs):
+        # Aquí puedes personalizar la lógica del método POST
+        # Puedes acceder a los datos enviados en la solicitud utilizando request.data
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+class ArchivosInstrumentoGetByInstrumento(generics.ListAPIView):
+
+    serializer_class = ArchivosInstrumentosGetSerializer
+    queryset = ArchivosInstrumento.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        
+        archivos = ArchivosInstrumento.objects.filter(id_instrumento=pk)
+                
+        serializer = self.serializer_class(archivos,many=True)
+        
+        if not archivos:
+            raise NotFound("Este instrumento no cuenta con archivos.")
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+    
+#Instrumentos
+
+class InstrumentoCreate(generics.CreateAPIView):
+    serializer_class = InstrumentosPostSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = Instrumentos.objects.all()
+    
+
+    def obtener_repetido(self,lista_archivos):
+        
+        contador = Counter(lista_archivos)
+        for archivo, cantidad in contador.items():
+            if cantidad > 1:
+                return archivo
+        return None
+    def post(self,request):
+        
+        try:
+            data_in = request.data
+            data_in._mutable=True
+            persona_logueada = request.user.persona.id_persona
+            data_in['id_persona_registra']=persona_logueada
+            fecha_actual = datetime.now().date()
+            
+            formato = "%Y-%m-%dT%H:%M:%S"
+            fecha_datetime = datetime.strptime(data_in['fecha_creacion_instrumento'], formato).date()
+            if(fecha_datetime>fecha_actual):
+                raise ValidationError("La fecha de creacion no puese superar la actual.")
+            formato_fecha= '%Y-%m-%d'
+            fin_vigencia= datetime.strptime(data_in['fecha_fin_vigencia'], formato_fecha).date()
+
+            if(fin_vigencia<fecha_actual):
+                raise ValidationError("La fecha de fin de vigencia debe ser superor a la actual.")
+            serializer = self.serializer_class(data=data_in)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
+           #CUENCAS
+            cuencas_data=[]
+            id_instrumento=serializer.data['id_instrumento']
+            ids=[]
+
+            if "id_cuencas" in data_in:
+
+                string_data = request.data.get('id_cuencas')
+                integer_list = eval(string_data)
+                
+       
+                cuencas=[]
+                for x in integer_list:
+                    cuenca={"id_instrumento":id_instrumento,"id_cuenca":x}
+                    cuencas.append(cuenca)
+            
+               
+
+                if cuencas:
+                    if self.obtener_repetido(integer_list):
+                        raise ValidationError("Intenta insertar la misma cuenca varias veces")
+
+                cuencas_instrumento_serializer = CuencasInstrumentoSerializer(data=cuencas, many=True)
+                cuencas_instrumento_serializer.is_valid(raise_exception=True)
+                cuencas_instrumento_serializer.save()
+                cuencas_data=cuencas_instrumento_serializer.data
+
+            #archivos
+            archivos =request.FILES.getlist('archivo')
+            nombre_archivos =request.data.getlist('nombre_archivo')
+            if len(archivos)!= len(nombre_archivos):
+                raise ValidationError("Todos los archivos deben tener nombre.")
+             
+            archivos_data=[]
+
+
+            serizalizador_archivos=[]
+            for archivo, nombre_archivo in zip(archivos, nombre_archivos):
+                archivo_data = {
+                        'id_instrumento': id_instrumento,
+                        'cod_tipo_de_archivo': 'INS',
+                        'nombre_archivo': nombre_archivo,
+                        'ruta_archivo': archivo
+                    }
+                Archivos_serializer = ArchivosInstrumentoPostSerializer(data=archivo_data)
+                Archivos_serializer.is_valid(raise_exception=True)
+                Archivos_serializer.save()
+                serizalizador_archivos.append(Archivos_serializer.data)
+
+        except ValidationError as e:       
+            raise ValidationError(e.detail)
+         
+        
+        return Response({'success':True,'detail':'Se crearon los registros correctamente','data':{"instrumento":serializer.data,"cuencas":cuencas_data,"archivos":serizalizador_archivos}},status=status.HTTP_201_CREATED)
+    
+
+class InstrumentoUpdate(generics.UpdateAPIView):
+
+    serializer_class = InstrumentosUpdateSerializer
+    queryset = Instrumentos.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def obtener_repetido(self,lista_archivos):
+        
+        contador = Counter(lista_archivos)
+        for archivo, cantidad in contador.items():
+            if cantidad > 1:
+                return archivo
+        return None    
+
+    
+    def put(self,request,pk):
+
+        try:
+
+            data = request.data
+            instrumento = Instrumentos.objects.filter(id_instrumento=pk).first()
+        
+            if  not instrumento:
+
+                raise NotFound("No se existe el instrumento que trata de Actualizar.")
+            
+            
+            else:
+                fecha_actual = datetime.now().date()
+                if instrumento.fecha_fin_vigencia:
+                    if fecha_actual>instrumento.fecha_fin_vigencia:
+                        raise NotFound("No se puede actualizar un instrumento que no se encuentre vigente.")
+                #serializer = self.serializer_class(instrumento, data=data)
+                #serializer.is_valid(raise_exception=True)
+                #serializer.update(instrumento, serializer.validated_data)
+
+                cuencas_asociadas = CuencasInstrumento.objects.filter(id_instrumento=pk).values_list('id_cuenca', flat=True)
+                lista_id_cuenca = list(cuencas_asociadas)
+                print("cuencas actuales")
+                print(lista_id_cuenca)
+
+                if "id_cuencas" in data:
+                    string_data = request.data.get('id_cuencas')
+                    data_nueva = eval(string_data)
+                    print("data nueva")
+                    print(data_nueva)
+                    if self.obtener_repetido(data_nueva):
+                            raise ValidationError("Intenta insertar la misma cuenca varias veces")
+                   
+
+                   #ACTUALIZAR CUENCAS POR INSTRUMENTO
+                    elementos_insertar = list(set(data_nueva)-set(lista_id_cuenca))
+                    print(elementos_insertar)
+                    elementos_eliminar=list(set(lista_id_cuenca)-set(data_nueva))
+                    print("datos a eliminar")
+                    print(elementos_eliminar)
+                    servicio_eliminar=CuencaInstrumentoDelete()
+
+                    for i in elementos_eliminar:
+                        servicio_eliminar.delete(request,i,instrumento.id_instrumento)
+               # raise NotFound("Validaciones completas.")
+                
+
+        except ValidationError as e:       
+            raise ValidationError(e.detail)
+    
+            
+        return Response({'success':True,'detail':'Se actualizaron los registros correctamente'},status=status.HTTP_200_OK)
+    
+
+
+class CuencasGetByInstrumento(generics.ListAPIView):
+
+    serializer_class = CuencasGetByInstrumentoSerializer
+    queryset = CuencasInstrumento.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        
+        cuencas = CuencasInstrumento.objects.filter(id_instrumento=pk)
+                
+        serializer = self.serializer_class(cuencas,many=True)
+        
+        if not cuencas:
+            raise NotFound("Este instrumento no cuenta con cuencas.")
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+    
+
+##
+class SeccionSubseccionBusquedaAvanzadaGet(generics.ListAPIView):
+    #serializer_class = BusquedaAvanzadaAvancesSerializers
+    serializer_class = SubseccionBusquedaAvanzadaSerializer
+    queryset = Subsecciones.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        filter = {}
+
+        for key, value in request.query_params.items():
+            if key == 'nombre_seccion':
+                if value != '':
+                    filter['id_seccion__nombre__icontains'] = value
+            if key == 'nombre_subseccion':
+                if value != '':
+                    filter['nombre__icontains'] = value
+
+        subsecciones = self.queryset.all().filter(**filter)
+        serializador = self.serializer_class(subsecciones, many=True)
+        # avances = self.queryset.filter(**filter).select_related('id_proyecto')
+        # serializador = self.serializer_class(avances, many=True)
+        
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializador.data}, status=status.HTTP_200_OK)
+    
+##CUENCAS INSTRUMENTOS
+class CuencaInstrumentoDelete(generics.DestroyAPIView):
+    serializer_class = CuencasInstrumentoDeleteSerializer
+    queryset = CuencasInstrumento.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self,request,cu,ins):
+        
+        cuenca_instrumento = CuencasInstrumento.objects.filter(id_cuenca=cu,id_instrumento=ins).first()
+        
+        if not cuenca_instrumento:
+            raise NotFound("Esta cuenca no se encuentra vinculado a este instrumento.")
+      
+        
+        cuenca_instrumento.delete()
+
+        
+        return Response({'success':True,'detail':'Se elimino la cuenca de este instrumento seleccionada.'},status=status.HTTP_200_OK)

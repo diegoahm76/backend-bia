@@ -43,9 +43,10 @@ class Instrumentos(models.Model):
     id_subseccion = models.ForeignKey(Subsecciones, on_delete=models.CASCADE, db_column='T607Id_Subseccion', related_name='instrumentos')
     id_resolucion = models.IntegerField(blank=True, null=True, db_column='T607Id_Resolucion')#falta la tabla resolucion
     id_persona_registra = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T607Id_PersonaRegistra')
-    fecha_registro = models.DateTimeField(db_column='T607fechaRegistro')
-    fecha_creacion_instrumento = models.DateTimeField(auto_now=True,db_column='T607fechaCreacionInstrumento')
-    fecha_fin_vigencia = models.DateTimeField(blank=True, null=True, db_column='T607fechaFinVigencia')
+    fecha_registro = models.DateTimeField(auto_now=True,db_column='T607fechaRegistro')
+    fecha_creacion_instrumento = models.DateTimeField(db_column='T607fechaCreacionInstrumento')
+    fecha_fin_vigencia = models.DateField(blank=True, null=True, db_column='T607fechaFinVigencia')
+    id_pozo = models.ForeignKey('Pozos', null=True,on_delete=models.CASCADE, db_column='T607Id_Pozo')
     cod_tipo_agua = models.CharField(max_length=3, choices=[
         ('SUP', 'Superficial'),
         ('SUB', 'Subterránea'),
@@ -65,7 +66,7 @@ class Cuencas(models.Model):
     nombre = models.CharField(max_length=255, db_column='T608nombre')
     activo = models.BooleanField(db_column='T608activo')
     item_ya_usado = models.BooleanField(db_column='T608itemYaUsado')
-
+    registro_precargado=models.BooleanField(default=False, db_column='T608registroPrecargado')
     class Meta:
         db_table = 'T608Cuencas'
         verbose_name = 'cuenca'
@@ -80,7 +81,7 @@ class Pozos(models.Model):
     descripcion = models.CharField(max_length=255, db_column='T609descripcion')
     activo = models.BooleanField(db_column='T609activo')
     item_ya_usado = models.BooleanField(db_column='T609itemYaUsado')
-
+    registro_precargado=models.BooleanField(default=False, db_column='T609registroPrecargado')
     class Meta:
         db_table = 'T609Pozos'
         verbose_name = 'pozo'
@@ -109,8 +110,8 @@ class ArchivosInstrumento(models.Model):
         ('INS', 'Instrumento')
     ], db_column='T611codTipoDeArchivo')
     nombre_archivo = models.CharField(max_length=255, db_column='T611nombreArchivo')
-    ruta_archivo = models.CharField(max_length=255, db_column='T611rutaArchivo')
-    fecha_cargado = models.DateField(db_column='T611fechaCargado')
+    ruta_archivo = models.FileField( db_column='T611rutaArchivo')
+    fecha_cargado = models.DateField(auto_now=True,db_column='T611fechaCargado')
 
     class Meta:
         db_table = 'T611Archivos_Instrumento'
@@ -261,7 +262,7 @@ class ParametrosLaboratorio(models.Model):
     unidad_de_medida = models.CharField(max_length=100, db_column='T619unidadDeMedida')
     item_ya_usado = models.BooleanField(db_column='T619itemYaUsado')
     activo = models.BooleanField(db_column='T619activo')
-
+    registro_precargado=models.BooleanField(default=False, db_column='T619registroPrecargado')
     class Meta:
         db_table = 'T619Parametros_Laboratorio'
         verbose_name = 'parámetro de laboratorio'

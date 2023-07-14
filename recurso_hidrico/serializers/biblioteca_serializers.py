@@ -1,8 +1,8 @@
 from rest_framework import serializers
 from unittest.util import _MAX_LENGTH
 from wsgiref.validate import validator
-
-from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, Cuencas, CuencasInstrumento, Instrumentos, Secciones,Subsecciones
+from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
+from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, Cuencas, CuencasInstrumento, Instrumentos, ParametrosLaboratorio, Pozos, Secciones,Subsecciones
 from seguridad.models import Personas
 
 
@@ -149,6 +149,15 @@ class CuencasGetSerializer(serializers.ModelSerializer):
         model=CuencasInstrumento
         fields=['id_instrumento','id_cuenca','cuenca']
 
+class CuencasGetByInstrumentoSerializer(serializers.ModelSerializer):
+    id_instrumento=serializers.IntegerField(source='id_instrumento.id_instrumento')
+    
+    id_cuenca=serializers.IntegerField(source='id_cuenca.id_cuenca')
+    cuenca = serializers.CharField(source='id_cuenca.nombre')
+    class Meta:
+        model=CuencasInstrumento
+        fields=['id_instrumento','id_cuenca','cuenca']
+
 
 
 class ArchivosInstrumentoBusquedaAvanzadaSerializer(serializers.ModelSerializer):
@@ -166,3 +175,152 @@ class ArchivosInstrumentosGetSerializer(serializers.ModelSerializer):
         class Meta:
             model=ArchivosInstrumento
             fields='__all__'
+
+
+#Configuraciones basicas
+
+class CuencasPostSerializer(serializers.ModelSerializer):
+        class Meta:
+            model=Cuencas
+            fields='__all__'
+
+
+
+class CuencasGetSerializer(serializers.ModelSerializer):
+        class Meta:
+            model=Cuencas
+            fields='__all__'
+
+class CuencasUpdateSerializer(serializers.ModelSerializer):
+        
+        item_ya_usado = serializers.ReadOnlyField()
+        class Meta:
+       
+            model=Cuencas
+            fields='__all__'
+        def update(self, instance, validated_data):
+            validated_data.pop('item_ya_usado', None)  # Excluir el campo específico
+            return super().update(instance, validated_data)
+        
+
+class PozosPostSerializer(serializers.ModelSerializer):
+        class Meta:
+            model=Pozos
+            fields='__all__'
+
+class PozosUpdateSerializer(serializers.ModelSerializer):
+        
+        item_ya_usado = serializers.ReadOnlyField()
+        registro_precargado=serializers.ReadOnlyField()
+        class Meta:
+       
+            model=Pozos
+            fields='__all__'
+        def update(self, instance, validated_data):
+            validated_data.pop('item_ya_usado', None)  # Excluir el campo específico
+            return super().update(instance, validated_data)
+
+
+class PozosGetSerializer(serializers.ModelSerializer):
+        class Meta:
+            model=Pozos
+            fields='__all__'
+
+
+class ParametrosLaboratorioPostSerializer(serializers.ModelSerializer):
+        class Meta:
+            model=ParametrosLaboratorio
+            fields='__all__'
+
+
+
+class ParametrosLaboratorioUpdateSerializer(serializers.ModelSerializer):
+        item_ya_usado = serializers.ReadOnlyField()
+        registro_precargado=serializers.ReadOnlyField()
+        
+        class Meta:
+       
+            model=ParametrosLaboratorio
+            fields='__all__'
+
+
+class ParametrosLaboratorioGetSerializer(serializers.ModelSerializer):
+        class Meta:
+            model=ParametrosLaboratorio
+            fields='__all__'
+
+
+#
+
+class InstrumentosPostSerializer(serializers.ModelSerializer):
+        fecha_registro = serializers.ReadOnlyField()
+        class Meta:
+            model=Instrumentos
+            fields='__all__'
+            validators = [
+                UniqueTogetherValidator(
+                queryset=Instrumentos.objects.all(),
+                fields= ['id_subseccion','nombre'],
+                message='Ya existe un instrumento con este nombre.'
+                )
+                ]   
+            
+
+class InstrumentosUpdateSerializer(serializers.ModelSerializer):
+        fecha_registro = serializers.ReadOnlyField()
+        id_seccion=serializers.ReadOnlyField()
+        id_subseccion=serializers.ReadOnlyField()
+        id_persona_registra=serializers.ReadOnlyField()
+        fecha_registro=serializers.ReadOnlyField()
+        class Meta:
+            model=Instrumentos
+            fields='__all__'
+            validators = [
+                UniqueTogetherValidator(
+                queryset=Instrumentos.objects.all(),
+                fields= ['id_subseccion','nombre'],
+                message='Ya existe un instrumento con este nombre.'
+                )
+                ]   
+            
+
+
+
+class CuencasInstrumentoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CuencasInstrumento
+        fields = '__all__'
+        validators = [
+                UniqueTogetherValidator(
+                queryset=CuencasInstrumento.objects.all(),
+                fields= ['id_instrumento','id_cuenca'],
+                message='Ya existe un instrumento con este nombre.'
+                )
+                ] 
+
+class CuencasInstrumentoDeleteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CuencasInstrumento
+        fields = '__all__'
+
+
+class ArchivosInstrumentoPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=ArchivosInstrumento
+        fields=('__all__')
+        validators = [
+                UniqueTogetherValidator(
+                queryset=ArchivosInstrumento.objects.all(),
+                fields= ['id_instrumento','nombre_archivo'],
+                message='Ya existe un archivo  con este nombre.'
+                )
+                ] 
+
+class SubseccionBusquedaAvanzadaSerializer(serializers.ModelSerializer):
+   
+    id_seccion=serializers.IntegerField(source='id_seccion.id_seccion')
+    nombre_seccion=serializers.CharField(source='id_seccion.nombre')
+
+    class Meta:
+        model=Subsecciones
+        fields=['id_seccion','nombre_seccion','id_subseccion','nombre']

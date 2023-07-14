@@ -10,7 +10,7 @@ from datetime import datetime,date,timedelta
 from seguridad.utils import Util
 
 from recurso_hidrico.models.programas_models import ActividadesProyectos, AvancesProyecto, EvidenciasAvance, ProgramasPORH, ProyectosPORH
-from recurso_hidrico.serializers.programas_serializers import ActualizarActividadesSerializers, ActualizarAvanceEvidenciaSerializers, ActualizarProyectosSerializers, AvanceConEvidenciasSerializer, BusquedaAvanzadaSerializers, EliminarActividadesSerializers, EliminarProyectoSerializers, GetActividadesporProyectosSerializers, GetAvanzadaProgramasporPORHSerializers, GetProgramasporPORHSerializers, GetProyectosPORHSerializers, RegistrarAvanceSerializers, RegistroEvidenciaSerializers, RegistroProgramaPORHSerializer,BusquedaAvanzadaAvancesSerializers,ProyectosPORHSerializer,GetAvancesporProyectosSerializers
+from recurso_hidrico.serializers.programas_serializers import ActualizarActividadesSerializers, ActualizarAvanceEvidenciaSerializers, ActualizarProyectosSerializers, AvanceConEvidenciasSerializer, BusquedaAvanzadaSerializers, EliminarActividadesSerializers, EliminarProyectoSerializers, GetActividadesporProyectosSerializers, GetAvanzadaProgramasporPORHSerializers, GetProgramasporPORHSerializers, GetProyectosPORHSerializers, ProgramasporPORHUpdateSerializers, RegistrarAvanceSerializers, RegistroEvidenciaSerializers, RegistroProgramaPORHSerializer,BusquedaAvanzadaAvancesSerializers,ProyectosPORHSerializer,GetAvancesporProyectosSerializers
 
 class RegistroProgramaPORH(generics.CreateAPIView):
     serializer_class = RegistroProgramaPORHSerializer
@@ -30,7 +30,7 @@ class RegistroProgramaPORH(generics.CreateAPIView):
             instancia_programa = None
             instancia_proyecto =None
             if not data_in['id_programa']:
-                data_in['id_instrumento'] = 1
+                #data_in['id_instrumento'] = 1
             
 
 
@@ -190,7 +190,7 @@ class CreateProgramaPORH(generics.CreateAPIView):
         # data = request.data
         data_in = request.data
         data = {
-            'id_instrumento': 1, 
+           'id_instrumento':data_in['id_instrumento'],
             'nombre': data_in['nombre'],
             'fecha_inicio': data_in['fecha_inicio'],
             'fecha_fin': data_in['fecha_fin'],
@@ -309,7 +309,7 @@ class BusquedaAvanzada(generics.ListAPIView):
         return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializador.data},status=status.HTTP_200_OK)
         
 class ActualizarPrograma(generics.UpdateAPIView):  
-        serializer_class = GetProgramasporPORHSerializers
+        serializer_class = ProgramasporPORHUpdateSerializers
         queryset = ProgramasPORH.objects.all()
         permission_classes = [IsAuthenticated]
         
