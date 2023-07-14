@@ -298,6 +298,11 @@ class CuencasInstrumentoSerializer(serializers.ModelSerializer):
                 )
                 ] 
 
+class CuencasInstrumentoDeleteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CuencasInstrumento
+        fields = '__all__'
+
 
 class ArchivosInstrumentoPostSerializer(serializers.ModelSerializer):
     class Meta:
