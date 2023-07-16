@@ -9,7 +9,7 @@ from rest_framework import status
 from datetime import datetime,date,timedelta
 
 from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, Cuencas, CuencasInstrumento, Instrumentos, ParametrosLaboratorio, Pozos, Secciones,Subsecciones
-from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentosGetSerializer, CuencasGetByInstrumentoSerializer, CuencasGetSerializer, CuencasInstrumentoDeleteSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoCuencasGetSerializer, InstrumentosPostSerializer, InstrumentosSerializer, InstrumentosUpdateSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionBusquedaAvanzadaSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
+from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentoUpdateSerializer, ArchivosInstrumentosGetSerializer, CuencasGetByInstrumentoSerializer, CuencasGetSerializer, CuencasInstrumentoDeleteSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoCuencasGetSerializer, InstrumentosPostSerializer, InstrumentosSerializer, InstrumentosUpdateSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionBusquedaAvanzadaSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
 
 
 
@@ -1033,17 +1033,45 @@ class ParametrosLaboratorioGetById(generics.ListAPIView):
 class ArchivosInstrumentoCreate(generics.CreateAPIView):
     queryset = ArchivosInstrumento.objects.all()
     serializer_class = ArchivosInstrumentoPostSerializer
-    
+
+    def crear_archivo(self, data):
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return serializer.data
 
     def post(self, request, *args, **kwargs):
-        # Aquí puedes personalizar la lógica del método POST
-        # Puedes acceder a los datos enviados en la solicitud utilizando request.data
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        data = request.data
+        archivo_creado = self.crear_archivo(data)
+        return Response(archivo_creado, status=status.HTTP_201_CREATED)
 
+
+class ArchivosInstrumentoUpdate(generics.UpdateAPIView):
+    queryset = ArchivosInstrumento.objects.all()
+    serializer_class = ArchivosInstrumentoUpdateSerializer
+
+    def actualizar(self, pk, data):
+        instance = ArchivosInstrumento.objects.filter(id_archivo_instrumento=pk).first()
+        
+        if  not instance:
+
+            raise NotFound("No se existe el archivo  que trata de Actualizar.")
+        
+        serializer = self.get_serializer(instance, data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        #data actualizada
+        archivo = ArchivosInstrumento.objects.filter(id_archivo_instrumento=pk).first()
+        serializera = ArchivosInstrumentoUpdateSerializer(archivo)
+        return serializera.data
+
+    def put(self, request,pk):
+       
+        data = request.data
+        archivo_actualizado = self.actualizar(pk, data)
+       
+        return Response({'success':True,'detail':'Se actualizaron el archivo correctamente'},status=status.HTTP_200_OK)
 class ArchivosInstrumentoGetByInstrumento(generics.ListAPIView):
 
     serializer_class = ArchivosInstrumentosGetSerializer
@@ -1141,10 +1169,8 @@ class InstrumentoCreate(generics.CreateAPIView):
                         'nombre_archivo': nombre_archivo,
                         'ruta_archivo': archivo
                     }
-                Archivos_serializer = ArchivosInstrumentoPostSerializer(data=archivo_data)
-                Archivos_serializer.is_valid(raise_exception=True)
-                Archivos_serializer.save()
-                serizalizador_archivos.append(Archivos_serializer.data)
+                arch=ArchivosInstrumentoCreate()
+                serizalizador_archivos.append(arch.crear(archivo_data))
 
         except ValidationError as e:       
             raise ValidationError(e.detail)
@@ -1169,7 +1195,7 @@ class InstrumentoUpdate(generics.UpdateAPIView):
 
     
     def put(self,request,pk):
-
+        serializer=None
         try:
 
             data = request.data
@@ -1185,43 +1211,64 @@ class InstrumentoUpdate(generics.UpdateAPIView):
                 if instrumento.fecha_fin_vigencia:
                     if fecha_actual>instrumento.fecha_fin_vigencia:
                         raise NotFound("No se puede actualizar un instrumento que no se encuentre vigente.")
-                #serializer = self.serializer_class(instrumento, data=data)
-                #serializer.is_valid(raise_exception=True)
-                #serializer.update(instrumento, serializer.validated_data)
-
+                serializer = self.serializer_class(instrumento, data=data)
+                serializer.is_valid(raise_exception=True)
+                serializer.update(instrumento, serializer.validated_data)
+                
                 cuencas_asociadas = CuencasInstrumento.objects.filter(id_instrumento=pk).values_list('id_cuenca', flat=True)
                 lista_id_cuenca = list(cuencas_asociadas)
-                print("cuencas actuales")
-                print(lista_id_cuenca)
-
+      
+                cuencas_data=[]
                 if "id_cuencas" in data:
                     string_data = request.data.get('id_cuencas')
                     data_nueva = eval(string_data)
-                    print("data nueva")
-                    print(data_nueva)
+
                     if self.obtener_repetido(data_nueva):
                             raise ValidationError("Intenta insertar la misma cuenca varias veces")
                    
 
                    #ACTUALIZAR CUENCAS POR INSTRUMENTO
                     elementos_insertar = list(set(data_nueva)-set(lista_id_cuenca))
-                    print(elementos_insertar)
-                    elementos_eliminar=list(set(lista_id_cuenca)-set(data_nueva))
-                    print("datos a eliminar")
-                    print(elementos_eliminar)
-                    servicio_eliminar=CuencaInstrumentoDelete()
 
-                    for i in elementos_eliminar:
-                        servicio_eliminar.delete(request,i,instrumento.id_instrumento)
-               # raise NotFound("Validaciones completas.")
+                    cuencas=[]
+                    for x in elementos_insertar:
+                        cuenca={"id_instrumento":instrumento.id_instrumento,"id_cuenca":x}
+                        cuencas.append(cuenca)
                 
+                    cuencas_instrumento_serializer = CuencasInstrumentoSerializer(data=cuencas, many=True)
+                    cuencas_instrumento_serializer.is_valid(raise_exception=True)
+                    cuencas_instrumento_serializer.save()
+                    cuencas_data=cuencas_instrumento_serializer.data
 
+                #archivos
+            
+                archivos =request.FILES.getlist('archivo')
+                nombre_archivos =request.data.getlist('nombre_archivo')
+
+                if len(archivos)!= len(nombre_archivos):
+                    raise ValidationError("Todos los archivos deben tener nombre.")
+                
+                serizalizador_archivos=[]
+                for archivo, nombre_archivo in zip(archivos, nombre_archivos):
+                    archivo_data = {
+                            'id_instrumento': instrumento.id_instrumento,
+                            'cod_tipo_de_archivo': 'INS',
+                            'nombre_archivo': nombre_archivo,
+                            'ruta_archivo': archivo
+                        }
+                    arch=ArchivosInstrumentoCreate()
+                    serizalizador_archivos.append(arch.crear(archivo_data))
+
+                ##fin archivos
+                instrumento = Instrumentos.objects.filter(id_instrumento=pk).first()
+                serializera = InstrumentosSerializer(instrumento)
+                return Response({'success':True,'detail':'Se actualizaron los registros correctamente','data':{'instrumento':serializera.data},'cuencas':cuencas_data,'archivos':serizalizador_archivos},status=status.HTTP_200_OK)
+    
         except ValidationError as e:       
             raise ValidationError(e.detail)
     
             
-        return Response({'success':True,'detail':'Se actualizaron los registros correctamente'},status=status.HTTP_200_OK)
-    
+        
 
 
 class CuencasGetByInstrumento(generics.ListAPIView):

@@ -114,8 +114,8 @@ class EliminarSeccionSerializer(serializers.ModelSerializer):
 class InstrumentosSerializer(serializers.ModelSerializer):
     class Meta:
         model = Instrumentos
-        fields = ['id_instrumento', 'nombre', 'id_seccion', 'id_subseccion', 'id_resolucion', 'id_persona_registra', 'fecha_registro', 'fecha_creacion_instrumento', 'fecha_fin_vigencia']
-
+        #fields = ['id_instrumento', 'nombre', 'id_seccion', 'id_subseccion', 'id_resolucion', 'id_persona_registra', 'fecha_registro', 'fecha_creacion_instrumento', 'fecha_fin_vigencia']
+        fields = '__all__'
 
 class SubseccionContarInstrumentosSerializer(serializers.ModelSerializer):
     instrumentos_count = serializers.SerializerMethodField()
@@ -272,6 +272,10 @@ class InstrumentosUpdateSerializer(serializers.ModelSerializer):
         id_subseccion=serializers.ReadOnlyField()
         id_persona_registra=serializers.ReadOnlyField()
         fecha_registro=serializers.ReadOnlyField()
+        nombre=serializers.ReadOnlyField()
+        id_resolucion=serializers.ReadOnlyField()
+        fecha_creacion_instrumento=serializers.ReadOnlyField()
+        cod_tipo_agua=serializers.ReadOnlyField()
         class Meta:
             model=Instrumentos
             fields='__all__'
@@ -308,6 +312,20 @@ class ArchivosInstrumentoPostSerializer(serializers.ModelSerializer):
     class Meta:
         model=ArchivosInstrumento
         fields=('__all__')
+        validators = [
+                UniqueTogetherValidator(
+                queryset=ArchivosInstrumento.objects.all(),
+                fields= ['id_instrumento','nombre_archivo'],
+                message='Ya existe un archivo  con este nombre.'
+                )
+                ] 
+
+
+class ArchivosInstrumentoUpdateSerializer(serializers.ModelSerializer):
+    id_instrumento=serializers.ReadOnlyField()
+    class Meta:
+        model=ArchivosInstrumento
+        fields = ['id_instrumento','nombre_archivo']
         validators = [
                 UniqueTogetherValidator(
                 queryset=ArchivosInstrumento.objects.all(),
