@@ -8,8 +8,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from datetime import datetime,date,timedelta
 
-from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, Cuencas, CuencasInstrumento, Instrumentos, ParametrosLaboratorio, Pozos, Secciones,Subsecciones
-from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentoUpdateSerializer, ArchivosInstrumentosGetSerializer, CuencasGetByInstrumentoSerializer, CuencasGetSerializer, CuencasInstrumentoDeleteSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoCuencasGetSerializer, InstrumentosPostSerializer, InstrumentosSerializer, InstrumentosUpdateSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionBusquedaAvanzadaSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
+from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, Instrumentos, ParametrosLaboratorio, Pozos, Secciones,Subsecciones
+from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentoUpdateSerializer, ArchivosInstrumentosGetSerializer, CarteraAforosPostSerializer, CuencasGetByInstrumentoSerializer, CuencasGetSerializer, CuencasInstrumentoDeleteSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoBusquedaAvanzadaSerializer, InstrumentoCuencasGetSerializer, InstrumentosPostSerializer, InstrumentosSerializer, InstrumentosUpdateSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionBusquedaAvanzadaSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
 
 
 
@@ -1057,7 +1057,7 @@ class ArchivosInstrumentoUpdate(generics.UpdateAPIView):
 
             raise NotFound("No se existe el archivo  que trata de Actualizar.")
         
-        serializer = self.get_serializer(instance, data=data)
+        serializer = ArchivosInstrumentoUpdateSerializer(instance, data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
@@ -1263,7 +1263,8 @@ class InstrumentoUpdate(generics.UpdateAPIView):
                         }
                     arch=ArchivosInstrumentoCreate()
                     serizalizador_archivos.append(arch.crear_archivo(archivo_data))
-                    actualizar_a=ArchivosInstrumentoUpdate()
+                
+                actualizar_a=ArchivosInstrumentoUpdate()
 
 
                 #cambio de nombre a existentes
@@ -1271,21 +1272,19 @@ class InstrumentoUpdate(generics.UpdateAPIView):
                 if "nombre_actualizar" in data:
                     nombre_actualizar = request.data.get('nombre_actualizar')
                     nombre_actualizar = json.loads(nombre_actualizar)
-                
-                #actualizar(self, pk, data):
-                #for nombre_data in nombre_actualizar:
-                    #actualizar_a.actualizar(nombre_data['id_evidencia_avance'])
-                    # evidencia_update = EvidenciasAvance.objects.filter(id_evidencia_avance=nombre_data['id_evidencia_avance']).first()
-                    # if not evidencia_update:
-                    #     raise ValidationError('Debe enviar evidencias exitentes')
-                    # if nombre_data['nombre_archivo'] == '':
-                    #     raise ValidationError('No puede actualizar el nombre de un archivo a vacío')
-                    # evidencia_update.nombre_archivo = nombre_data['nombre_archivo']
-                    # evidencia_update.save()
-                ##fin archivos
+                    #print(nombre_actualizar)
+                    #actualizar(self, pk, data):
+                    for nombre_data in nombre_actualizar:
+                        archivo_data = {
+                            'nombre_archivo':nombre_data['nombre_archivo']
+                        }
+                        
+                        actualizar_a.actualizar(nombre_data['id_archivo'],archivo_data)
+
+                    ##fin archivos
                 instrumento = Instrumentos.objects.filter(id_instrumento=pk).first()
                 serializer = InstrumentosSerializer(instrumento)
-
+           
 
 
                 return Response({'success':True,'detail':'Se actualizaron los registros correctamente','data':{'instrumento':serializer.data},'cuencas':cuencas_data,'archivos':serizalizador_archivos},status=status.HTTP_200_OK)
@@ -1294,7 +1293,33 @@ class InstrumentoUpdate(generics.UpdateAPIView):
             raise ValidationError(e.detail)
     
             
+class InstrumentoBusquedaAvanzadaGet(generics.ListAPIView):
+    #serializer_class = BusquedaAvanzadaAvancesSerializers
+    serializer_class = InstrumentoBusquedaAvanzadaSerializer
+    queryset = Instrumentos.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        filter = {}
+
+        for key, value in request.query_params.items():
+            if key == 'id_seccion__nombre_seccion':
+                if value != '':
+                    filter['id_seccion__nombre__icontains'] = value
+            if key == 'nombre_subseccion':
+                if value != '':
+                    filter['id_subseccion__nombre__icontains'] = value
+            if key == 'nombre_instrumento': 
+                if value != '':
+                    filter['nombre__icontains'] = value
+
         
+        instrumento = self.queryset.all().filter(**filter)
+        serializador = self.serializer_class(instrumento, many=True)
+
+        
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializador.data}, status=status.HTTP_200_OK)
+         
 
 
 class CuencasGetByInstrumento(generics.ListAPIView):
@@ -1357,3 +1382,23 @@ class CuencaInstrumentoDelete(generics.DestroyAPIView):
 
         
         return Response({'success':True,'detail':'Se elimino la cuenca de este instrumento seleccionada.'},status=status.HTTP_200_OK)
+    
+
+
+##CARTERAS DE AFORO
+
+class CarteraAforosCreate(generics.CreateAPIView):
+    serializer_class = CarteraAforosPostSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = CarteraAforos.objects.all()
+    
+    def post(self,request):
+        data_in = request.data
+        
+
+        serializer = self.serializer_class(data=data_in)
+        serializer.is_valid(raise_exception=True)
+            
+        serializer.save()
+        return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+    

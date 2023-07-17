@@ -2,7 +2,7 @@ from rest_framework import serializers
 from unittest.util import _MAX_LENGTH
 from wsgiref.validate import validator
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
-from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, Cuencas, CuencasInstrumento, Instrumentos, ParametrosLaboratorio, Pozos, Secciones,Subsecciones
+from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, Instrumentos, ParametrosLaboratorio, Pozos, Secciones,Subsecciones
 from seguridad.models import Personas
 
 
@@ -250,7 +250,7 @@ class ParametrosLaboratorioGetSerializer(serializers.ModelSerializer):
             fields='__all__'
 
 
-#
+#Instrumentos
 
 class InstrumentosPostSerializer(serializers.ModelSerializer):
         fecha_registro = serializers.ReadOnlyField()
@@ -287,6 +287,17 @@ class InstrumentosUpdateSerializer(serializers.ModelSerializer):
                 )
                 ]   
             
+
+class InstrumentoBusquedaAvanzadaSerializer(serializers.ModelSerializer):
+   
+    id_seccion=serializers.IntegerField(source='id_seccion.id_seccion')
+    nombre_seccion=serializers.CharField(source='id_seccion.nombre')
+    id_subseccion=serializers.IntegerField(source='id_subseccion.id_subseccion')
+    nombre_subseccion=serializers.CharField(source='id_subseccion.nombre')
+    class Meta:
+        model=Instrumentos
+        fields = ('__all__')
+        #fields=['id_instrumento ','nombre ','id_seccion ','id_subseccion ','id_resolucion ','id_persona_registra ','fecha_registro ','fecha_creacion_instrumento ','fecha_fin_vigencia ','id_pozo ','cod_tipo_agua ','id_seccion','nombre_seccion','id_subseccion','nombre_subseccion']
 
 
 
@@ -342,3 +353,12 @@ class SubseccionBusquedaAvanzadaSerializer(serializers.ModelSerializer):
     class Meta:
         model=Subsecciones
         fields=['id_seccion','nombre_seccion','id_subseccion','nombre']
+
+
+
+
+
+class CarteraAforosPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=CarteraAforos
+        fields=('__all__')
