@@ -9,7 +9,6 @@ from recaudo.models.pagos_models import (
 )
 
 from recaudo.serializers.pagos_serializers import (
-    FacilidadesPagoSerializer,
     FacilidadesPagoPutSerializer,
     DeudorFacilidadPagoSerializer,
     TipoActuacionSerializer,
@@ -169,35 +168,6 @@ class TipoActuacionView(generics.ListAPIView):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-class CrearFacilidadPagoView(generics.CreateAPIView):
-    serializer_class = FacilidadesPagoSerializer
-    queryset = FacilidadesPago.objects.all()
-    
-    def post(self, request):
-        data = request.data
-        serializer = self.serializer_class(data=data)
-        serializer.is_valid(raise_exception=True)
-        periodicidad = serializer.validated_data.get('periodicidad')
-        cuotas = serializer.validated_data.get('cuotas')
-        total_plazos = periodicidad * cuotas
-        if total_plazos > 61:
-            raise PermissionDenied('Las cuotas deben ser menor de 60 meses')
-        else:
-            serializer.save()
-            return Response({'success': True, 'detail':'Se crea una facilidad de pago', 'data':serializer.data},status=status.HTTP_200_OK)
 
 
 class FacilidadPagoUpdateView(generics.UpdateAPIView):

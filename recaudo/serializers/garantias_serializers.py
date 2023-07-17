@@ -2,7 +2,6 @@ from rest_framework import serializers
 from recaudo.models.garantias_models import Garantias, RolesGarantias
 from recaudo.models.base_models import TiposBien
 from recaudo.models.procesos_models import Bienes, Avaluos
-from recaudo.models.pagos_models import GarantiasFacilidad
 
 
 class RolesGarantiasSerializer(serializers.ModelSerializer):
@@ -43,9 +42,3 @@ class BienesDeudorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bienes
         fields = ('nombre_tipo_bien','descripcion','valor','direccion','ubicacion','documento_soporte')
-
-
-class GarantiasFacilidadSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = GarantiasFacilidad
-        fields = '__all__'

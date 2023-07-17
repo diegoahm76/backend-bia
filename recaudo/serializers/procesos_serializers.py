@@ -90,9 +90,3 @@ class ProcesosPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Procesos
         fields = '__all__'
-
-
-class AvaluosSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Avaluos
-        fields = '__all__'

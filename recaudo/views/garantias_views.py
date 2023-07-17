@@ -5,7 +5,6 @@ from rest_framework.response import Response
 
 from recaudo.models.base_models import TiposBien
 from recaudo.models.procesos_models import Bienes
-from recaudo.serializers.procesos_serializers import AvaluosSerializer
 from recaudo.models.garantias_models import RolesGarantias
 from recaudo.serializers.garantias_serializers import (
     RolesGarantiasSerializer,
@@ -26,17 +25,6 @@ class RolesGarantiasView(generics.ListAPIView):
         queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
         return Response({'success': True, 'detail':'Se muestra los roles de garantias', 'data': serializer.data}, status=status.HTTP_200_OK)
-    
-
-class GarantiasFacilidadView(generics.CreateAPIView):
-    serializer_class = GarantiasFacilidadSerializer
-
-    def post(self, request):
-        data = request.data
-        serializer = self.serializer_class(data=data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response({'success': True, 'detail':'Se crea la relacion de facilidades de pago y bienes mediante garantias', 'data':serializer.data})
 
 
 class TiposBienesView(generics.ListAPIView):
@@ -47,38 +35,6 @@ class TiposBienesView(generics.ListAPIView):
         queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
         return Response({'success': True, 'detail': 'Se muestra los tipos de bienes', 'data': serializer.data}, status=status.HTTP_200_OK)
-
-
-class CrearBienView(generics.CreateAPIView):
-    serializer_class = BienSerializer
-    serializer_class_avaluos = AvaluosSerializer
-    
-    def crear_bien(self, data):
-        serializer = self.serializer_class(data=data)
-        serializer.is_valid(raise_exception=True)
-        bien_creado = serializer.save()
-        return bien_creado
-
-    def post(self, request):
-        data_in = request.data
-
-        # CREAR BIEN
-        bien = self.crear_bien(data_in)
-
-        # CREAR AVALUO
-        fecha_avaluo = date.today()
-        fecha_fin_vigencia = fecha_avaluo + timedelta(days=bien.id_tipo_bien.vigencia_avaluo)
-        data = {
-            'id_bien' : bien.id,
-            'fecha_avaluo': fecha_avaluo,
-            'fecha_fin_vigencia': fecha_fin_vigencia,
-            'cod_funcionario_perito': 1,
-            'valor': data_in['valor']
-        }
-        serializer = self.serializer_class_avaluos(data=data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response({'success': True, 'detail':'Se crea el bien que coloca el deudor'},status=status.HTTP_200_OK)
 
 
 class ListaBienesDeudorView(generics.ListAPIView):
