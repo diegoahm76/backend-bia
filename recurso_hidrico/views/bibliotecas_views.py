@@ -1172,7 +1172,7 @@ class InstrumentoCreate(generics.CreateAPIView):
                         'ruta_archivo': archivo
                     }
                 arch=ArchivosInstrumentoCreate()
-                serizalizador_archivos.append(arch.crear_(archivo_data))
+                serizalizador_archivos.append(arch.crear_archivo(archivo_data))
 
             
             
