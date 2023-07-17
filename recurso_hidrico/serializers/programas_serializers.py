@@ -62,11 +62,15 @@ class GetActividadesporProyectosSerializers(serializers.ModelSerializer):
         fields = '__all__'
 
 class GetAvancesporProyectosSerializers(serializers.ModelSerializer):
+    evidencias = serializers.SerializerMethodField()
     class Meta:
         model = AvancesProyecto
-        #fields = ['id_proyecto','nombre','fecha_registro']
-        fields = '__all__'
-
+        fields = ['id_avance','id_proyecto','fecha_reporte','accion','descripcion','id_persona_registra','fecha_registro','evidencias' ]
+        #fields = '__all__'
+        
+    def get_evidencias(self, avance):
+        evidencias = avance.evidenciasavance_set.all()
+        return EvidenciaAvanceSerializer(evidencias, many=True).data
 
 class BusquedaAvanzadaSerializers(serializers.ModelSerializer):
     
