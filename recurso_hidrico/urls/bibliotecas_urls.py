@@ -50,7 +50,8 @@ urlpatterns = [
     path('instrumentos/update/<str:pk>/',views.InstrumentoUpdate.as_view(),name='update-instrumentos'),
     
     path('archivos_instrumento/create/',views.ArchivosInstrumentoCreate.as_view(),name='create-archivo'),
+    path('archivos_instrumento/update/<str:pk>/',views.ArchivosInstrumentoUpdate.as_view(),name='update-archivo'),
     path('archivos_instrumento/get-by-instrumento/<str:pk>/',views.ArchivosInstrumentoGetByInstrumento.as_view(),name='get-archivo-by-instrumento'),
     path('cuencas_instrumento/get-by-instrumento/<str:pk>/',views.CuencasGetByInstrumento.as_view(),name='get-cuencas-by-instrumento'),
-     path('cuencas_instrumento/delete/<str:cu>/<str:ins>/',views.CuencaInstrumentoDelete.as_view(),name='delete-cuencas-instrumento'),
+    path('cuencas_instrumento/delete/<str:cu>/<str:ins>/',views.CuencaInstrumentoDelete.as_view(),name='delete-cuencas-instrumento'),
 ]   

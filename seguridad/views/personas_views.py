@@ -24,6 +24,8 @@ from django.template.loader import render_to_string
 from seguridad.utils import Util
 from rest_framework import status
 from django.db.models import Q
+from datetime import datetime
+#from dateutil.parser import parse
 from seguridad.permissions.permissions_user import PermisoActualizarExterno, PermisoActualizarInterno
 from seguridad.views.user_views import RegisterExternoView
 from seguridad.permissions.permissions_user_over_person import (
@@ -1179,9 +1181,22 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
     def post(self,request):
         
         try:
-
-            data = request.data
             
+            data = request.data
+            fecha_nacimiento_str = data['fecha_nacimiento']
+
+            try:
+                fecha_nacimiento = datetime.strptime(fecha_nacimiento_str, '%Y-%m-%d').date()
+            except ValueError:
+                raise ValidationError('Formato de fecha de nacimiento inválido')
+            
+            if fecha_nacimiento >= datetime.now().date():
+                raise ValidationError('La fecha de nacimiento es incorrecta')
+            
+            # fecha_nacimiento = parse(data['fecha_nacimiento']).date()
+            # if fecha_nacimiento >= datetime.now().date():
+            #     raise ValidationError('La fecha de nacimiento es incorrecta')
+
             #CREACION DE PERSONA
             
             serializer_persona = self.serializer_class(data=data)
