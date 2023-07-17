@@ -336,7 +336,7 @@ class ActualizarSecciones(generics.UpdateAPIView):
         Seccione = Secciones.objects.filter(id_seccion=pk).first()
         
         if  not Seccione:
-            #print('HOLAA')
+           
             raise NotFound("No se existe la seccion que trata de Actualizar.")
 
         self.actualizar_seccion(data,Seccione)
@@ -1035,7 +1035,7 @@ class ArchivosInstrumentoCreate(generics.CreateAPIView):
     serializer_class = ArchivosInstrumentoPostSerializer
 
     def crear_archivo(self, data):
-        serializer = self.get_serializer(data=data)
+        serializer = ArchivosInstrumentoPostSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return serializer.data
@@ -1070,7 +1070,9 @@ class ArchivosInstrumentoUpdate(generics.UpdateAPIView):
        
         data = request.data
         archivo_actualizado = self.actualizar(pk, data)
-       
+        print(archivo_actualizado)
+       # archivo = ArchivosInstrumento.objects.filter(id_archivo_instrumento=pk)
+        #data_archivo=ArchivosInstrumentoUpdateSerializer(archivo)
         return Response({'success':True,'detail':'Se actualizaron el archivo correctamente'},status=status.HTTP_200_OK)
 class ArchivosInstrumentoGetByInstrumento(generics.ListAPIView):
 
@@ -1170,7 +1172,10 @@ class InstrumentoCreate(generics.CreateAPIView):
                         'ruta_archivo': archivo
                     }
                 arch=ArchivosInstrumentoCreate()
-                serizalizador_archivos.append(arch.crear(archivo_data))
+                serizalizador_archivos.append(arch.crear_(archivo_data))
+
+            
+            
 
         except ValidationError as e:       
             raise ValidationError(e.detail)
@@ -1257,12 +1262,33 @@ class InstrumentoUpdate(generics.UpdateAPIView):
                             'ruta_archivo': archivo
                         }
                     arch=ArchivosInstrumentoCreate()
-                    serizalizador_archivos.append(arch.crear(archivo_data))
+                    serizalizador_archivos.append(arch.crear_archivo(archivo_data))
+                    actualizar_a=ArchivosInstrumentoUpdate()
 
+
+                #cambio de nombre a existentes
+
+                if "nombre_actualizar" in data:
+                    nombre_actualizar = request.data.get('nombre_actualizar')
+                    nombre_actualizar = json.loads(nombre_actualizar)
+                
+                #actualizar(self, pk, data):
+                #for nombre_data in nombre_actualizar:
+                    #actualizar_a.actualizar(nombre_data['id_evidencia_avance'])
+                    # evidencia_update = EvidenciasAvance.objects.filter(id_evidencia_avance=nombre_data['id_evidencia_avance']).first()
+                    # if not evidencia_update:
+                    #     raise ValidationError('Debe enviar evidencias exitentes')
+                    # if nombre_data['nombre_archivo'] == '':
+                    #     raise ValidationError('No puede actualizar el nombre de un archivo a vacío')
+                    # evidencia_update.nombre_archivo = nombre_data['nombre_archivo']
+                    # evidencia_update.save()
                 ##fin archivos
                 instrumento = Instrumentos.objects.filter(id_instrumento=pk).first()
-                serializera = InstrumentosSerializer(instrumento)
-                return Response({'success':True,'detail':'Se actualizaron los registros correctamente','data':{'instrumento':serializera.data},'cuencas':cuencas_data,'archivos':serizalizador_archivos},status=status.HTTP_200_OK)
+                serializer = InstrumentosSerializer(instrumento)
+
+
+
+                return Response({'success':True,'detail':'Se actualizaron los registros correctamente','data':{'instrumento':serializer.data},'cuencas':cuencas_data,'archivos':serizalizador_archivos},status=status.HTTP_200_OK)
     
         except ValidationError as e:       
             raise ValidationError(e.detail)
