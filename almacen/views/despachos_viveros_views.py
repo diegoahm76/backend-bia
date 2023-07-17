@@ -124,15 +124,18 @@ class CreateDespachoMaestroVivero(generics.UpdateAPIView):
         aux_validacion_bienes_repetidos = {}
         aux_validacion_unidades_dic = {}
         for i in items_despacho:
+            i['id_entrada_almacen_bien'] = i['id_entrada_bien']
             bien_solicitado = i.get('id_bien_solicitado')
-            instancia_entrada = EntradasAlmacen.objects.filter(id_entrada_almacen=i.get('id_entrada_almacen_bien')).first()
-            if not instancia_entrada:
-                raise NotFound('En el número de posición del despacho (' + str(i['numero_posicion_despacho']) + '), no existe el id_entrada_bien ingresado')
-            if (instancia_entrada.id_tipo_entrada.nombre != "Donación") and (instancia_entrada.id_tipo_entrada.nombre != "Resarcimiento") and (instancia_entrada.id_tipo_entrada.nombre != "Compensación"):
-                raise ValidationError('En el número de posición del despacho (' + str(i['numero_posicion_despacho']) + '), el tipo entrada de la entrada ingresada no es correcto para un despacho de bienes de consumo de solicitables por vivero')
-            instancia_item_entrada_alamacen = ItemEntradaAlmacen.objects.filter(id_bien=i.get('id_bien_despachado'), id_entrada_almacen=i.get('id_entrada_almacen_bien')).first()
-            if not instancia_item_entrada_alamacen:
-                raise NotFound('En el número de posición del despacho (' + str(i['numero_posicion_despacho']) + '), no existe el id_entrada_bien ingresado')
+            id_entrada_almacen_bien = i.get('id_entrada_almacen_bien')
+            if id_entrada_almacen_bien:
+                instancia_entrada = EntradasAlmacen.objects.filter(id_entrada_almacen=id_entrada_almacen_bien).first()
+                if not instancia_entrada:
+                    raise NotFound('En el número de posición del despacho (' + str(i['numero_posicion_despacho']) + '), no existe la entrada elegida')
+                if (instancia_entrada.id_tipo_entrada.nombre != "Donación") and (instancia_entrada.id_tipo_entrada.nombre != "Resarcimiento") and (instancia_entrada.id_tipo_entrada.nombre != "Compensación"):
+                    raise ValidationError('En el número de posición del despacho (' + str(i['numero_posicion_despacho']) + '), el tipo entrada de la entrada ingresada no es correcto para un despacho de bienes de consumo de solicitables por vivero')
+                instancia_item_entrada_alamacen = ItemEntradaAlmacen.objects.filter(id_bien=i.get('id_bien_despachado'), id_entrada_almacen=id_entrada_almacen_bien).first()
+                if not instancia_item_entrada_alamacen:
+                    raise NotFound('En el número de posición del despacho (' + str(i['numero_posicion_despacho']) + '), el bien ingresado no pertenece a la entrada elegida')
             if (bien_solicitado not in id_items_solicitud):
                 raise ValidationError('En el número de posición del despacho (' + str(i['numero_posicion_despacho']) + '), el bien ingresado no está dentro de la entrada seleccionada')
             if bien_solicitado == None:
@@ -145,7 +148,7 @@ class CreateDespachoMaestroVivero(generics.UpdateAPIView):
             if bien_solicitado_instancia.cod_tipo_bien != 'C':
                 raise ValidationError('El bien (' + bien_solicitado_instancia.nombre + ') no es de consumo')
             item_solicitado_instancia = ItemsSolicitudConsumible.objects.filter(Q(id_solicitud_consumibles=info_despacho['id_solicitud_consumo']) & Q(id_bien=i['id_bien_solicitado'])).first()
-            if item_solicitado_instancia.cantidad != i['cantidad_solicitada'] or item_solicitado_instancia.id_unidad_medida.id_unidad_medida != i['id_unidad_medida_solicitada']:
+            if item_solicitado_instancia.cantidad != i['cantidad_solicitada']: #or item_solicitado_instancia.id_unidad_medida.id_unidad_medida != i['id_unidad_medida_solicitada']:
                 raise ValidationError('Error en el numero_posicion (' + str(i['numero_posicion_despacho']) + ') del despacho. La cantidad solicitada o la unidad de medida solicitada no corresponde a las registrada en la solicitud')
             # VALIDACION 94:
             if i['cantidad_despachada'] == 0:
@@ -218,9 +221,10 @@ class CreateDespachoMaestroVivero(generics.UpdateAPIView):
                 cantidad_disponible = UtilAlmacen.get_cantidad_disponible(i['id_bien_despachado'], i['id_bodega'], fecha_despacho)
                 if i['cantidad_despachada'] > cantidad_disponible:
                     raise ValidationError('La cantidad disponible del bien (' + bien_despachado_instancia.nombre + ') es inferior a la cantidad a despachar')
-                cantidad_por_distribuir = UtilAlmacen.get_cantidad_por_distribuir(i['id_bien_despachado'], i['id_entrada_almacen_bien'], fecha_despacho)
-                if i['cantidad_despachada'] > cantidad_por_distribuir:
-                    raise ValidationError('La cantidad por distribuir de la entrada que intenta despachar es insuficiente en el nro posición (' + str(i['numero_posicion_despacho']) + ')')
+                if id_entrada_almacen_bien: 
+                    cantidad_por_distribuir = UtilAlmacen.get_cantidad_por_distribuir(i['id_bien_despachado'], id_entrada_almacen_bien, fecha_despacho)
+                    if i['cantidad_despachada'] > cantidad_por_distribuir:
+                        raise ValidationError('La cantidad por distribuir de la entrada que intenta despachar es insuficiente en el nro posición (' + str(i['numero_posicion_despacho']) + ')')
                 items_despachados_aux_val_97 = ItemDespachoConsumo.objects.filter(id_bien_despachado=i['id_bien_despachado'], id_despacho_consumo__fecha_despacho__gte=info_despacho['fecha_despacho'])
                 if items_despachados_aux_val_97:
                     try:
@@ -493,7 +497,7 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
                 if bien_solicitado_instancia.cod_tipo_bien != 'C':
                     raise ValidationError('El bien (' + bien_solicitado_instancia.nombre + ') no es de consumo')
                 item_solicitado_instancia = ItemsSolicitudConsumible.objects.filter(Q(id_solicitud_consumibles=solicitud_del_despacho_instancia.id_solicitud_consumibles) & Q(id_bien=i['id_bien_solicitado'])).first()
-                if item_solicitado_instancia.cantidad != i['cantidad_solicitada'] or item_solicitado_instancia.id_unidad_medida.id_unidad_medida != i['id_unidad_medida_solicitada']:
+                if item_solicitado_instancia.cantidad != i['cantidad_solicitada']:# or item_solicitado_instancia.id_unidad_medida.id_unidad_medida != i['id_unidad_medida_solicitada']:
                     raise ValidationError('Error en el numero_posicion (' + str(i['numero_posicion_despacho']) + ') del despacho. La cantidad solicitada o la unidad de medida solicitada no corresponde a las registrada en la solicitud')
                 # VALIDACION 94:
                 if i['cantidad_despachada'] == 0:
