@@ -124,7 +124,7 @@ class CarteraAforos(models.Model):
     id_cartera_aforos = models.AutoField(primary_key=True, db_column='T612IdCarteraAforos')
     id_instrumento = models.ForeignKey(Instrumentos, on_delete=models.CASCADE, db_column='T612Id_Instrumento')
     id_cuenca = models.ForeignKey(Cuencas, on_delete=models.CASCADE, db_column='T612Id_Cuenca')
-    fecha_registro = models.DateField(db_column='T612fechaRegistro')
+    fecha_registro = models.DateField(auto_now=True,db_column='T612fechaRegistro')
     ubicacion_aforo = models.CharField(max_length=255, db_column='T612ubicacionAforo')
     descripcion = models.CharField(max_length=255, blank=True, db_column='T612descripcion')
     #coordenadas = models.CharField(db_column='T612coordenadas')
