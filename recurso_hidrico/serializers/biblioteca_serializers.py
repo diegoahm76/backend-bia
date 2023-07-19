@@ -374,6 +374,7 @@ class ResultadosLaboratorioPostSerializer(serializers.ModelSerializer):
         fields=('__all__')
 
 class ResultadosLaboratorioGetSerializer(serializers.ModelSerializer):
+    #cod_clase=serializers.CharField(source='id_parametro.cod_tipo_parametro')
     class Meta:
         model=ResultadosLaboratorio
         fields=('__all__')
@@ -402,6 +403,7 @@ class DatosRegistroLaboratorioUpdateSerializer(serializers.ModelSerializer):
 
 
 class DatosRegistroLaboratorioGetSerializer(serializers.ModelSerializer):
+        cod_clase=serializers.CharField(source='id_parametro.cod_tipo_parametro')
         class Meta:
             model=DatosRegistroLaboratorio
             fields='__all__'

@@ -986,27 +986,36 @@ class ParametrosLaboratorioGet(generics.ListAPIView):
     
     def get(self,request):
         estado=None
+        # for key, value in request.query_params.items():
+        #     if key == 'activo':
+        #         if value != '':
+        #             if str(value)=='True':
+        #                 estado=True
+        #     if key == 'activo':
+        #         if value != '':
+        #             if str(value)=='False':
+        #                 estado=False    
+    ##
+        filter = {}
+
         for key, value in request.query_params.items():
+            if key == 'cod_tipo_parametro':
+                if value != '':
+                    filter['cod_tipo_parametro__icontains'] = value
             if key == 'activo':
                 if value != '':
-                    if str(value)=='True':
-                        estado=True
-            if key == 'activo':
+                    filter['activo__icontains'] = value
+            if key == 'nombre':
                 if value != '':
-                    if str(value)=='False':
-                        estado=False    
+                    filter['nombre__icontains'] = value
 
-        if estado is None:  
-            parametros=ParametrosLaboratorio.objects.all().order_by('id_parametro')
-        else:      
+        print(filter)
+        instrumento = self.queryset.all().filter(**filter)
 
-                parametros = ParametrosLaboratorio.objects.filter(activo=estado).order_by('id_parametro')
-    
-    
 
-        serializer = self.serializer_class(parametros,many=True)
+        serializer = self.serializer_class(instrumento,many=True)
         
-        if not parametros:
+        if not instrumento:
             raise NotFound("los registros de parametros que busca no existen")
         
         return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
@@ -1119,10 +1128,11 @@ class InstrumentoCreate(generics.CreateAPIView):
             if(fecha_datetime>fecha_actual):
                 raise ValidationError("La fecha de creacion no puese superar la actual.")
             formato_fecha= '%Y-%m-%d'
-            fin_vigencia= datetime.strptime(data_in['fecha_fin_vigencia'], formato_fecha).date()
+            if 'fecha_fin_vigencia' in data_in:
+                fin_vigencia= datetime.strptime(data_in['fecha_fin_vigencia'], formato_fecha).date()
 
-            if(fin_vigencia<fecha_actual):
-                raise ValidationError("La fecha de fin de vigencia debe ser superor a la actual.")
+                if(fin_vigencia<fecha_actual):
+                    raise ValidationError("La fecha de fin de vigencia debe ser superor a la actual.")
             serializer = self.serializer_class(data=data_in)
             serializer.is_valid(raise_exception=True)
             serializer.save()
@@ -1591,13 +1601,49 @@ class ResultadosLaboratorioGetByInstrumento(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def get(self,request,pk):
+
+        ##
+
+        #filter = {}
+
+        # for key, value in request.query_params.items():
+        #     if key == 'id_seccion__nombre_seccion':
+        #         if value != '':
+        #             filter['id_seccion__nombre__icontains'] = value
+        #     if key == 'nombre_subseccion':
+        #         if value != '':
+        #             filter['id_subseccion__nombre__icontains'] = value
+        #     if key == 'nombre_instrumento': 
+        #         if value != '':
+        #             filter['nombre__icontains'] = value
+
         
+#        instrumento = self.queryset.all().filter(**filter)
+       # serializador = self.serializer_class(instrumento, many=True)
+        ##            
         resultados = ResultadosLaboratorio.objects.filter(id_instrumento=pk)
                 
         serializer = self.serializer_class(resultados,many=True)
         
         if not resultados:
             raise NotFound("Este instrumento no cuenta con resultados.")
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+    
+
+class ResultadosLaboratorioGetById(generics.ListAPIView):
+
+    serializer_class = ResultadosLaboratorioGetSerializer
+    queryset = ResultadosLaboratorio.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        
+        resultados = ResultadosLaboratorio.objects.filter(id_resultado_laboratorio=pk)
+                
+        serializer = self.serializer_class(resultados,many=True)
+        
+        if not resultados:
+            raise NotFound("No se encontraron datos.")
         return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
     
 #DATOS DE REGISTRO DE LABORATORIO
@@ -1697,9 +1743,28 @@ class DatosRegistroLaboratorioByResultadosLaboratorioGet(generics.ListAPIView):
     queryset = DatosRegistroLaboratorio.objects.all()
     permission_classes = [IsAuthenticated]
     
-    def get(self,request,lab):
+    def get(self,request,lab,par):
         
-        datos_laboratorio = DatosRegistroLaboratorio.objects.filter(id_registro_laboratorio=lab)
+        if par=="FQ" or par=="MB":
+            datos_laboratorio = DatosRegistroLaboratorio.objects.filter(id_registro_laboratorio=lab,id_parametro__cod_tipo_parametro=par).order_by('id_dato_registro_laboratorio')
+        else:
+            datos_laboratorio = DatosRegistroLaboratorio.objects.filter(id_registro_laboratorio=lab).order_by('id_dato_registro_laboratorio')
+        serializer = self.serializer_class(datos_laboratorio,many=True)
+        
+        if not datos_laboratorio:
+            raise NotFound("Este resultado no tiene datos.")
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+
+
+class DatosRegistroLaboratorioByIdGet(generics.ListAPIView):
+
+    serializer_class = DatosRegistroLaboratorioGetSerializer
+    queryset = DatosRegistroLaboratorio.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        
+        datos_laboratorio = DatosRegistroLaboratorio.objects.filter(id_dato_registro_laboratorio=pk)
                 
         serializer = self.serializer_class(datos_laboratorio,many=True)
         

@@ -61,10 +61,12 @@ urlpatterns = [
     #Resultados de laboratorio
     path('resultados_laboratorio/create/',views.ResultadosLaboratorioCreate.as_view(),name='create-resultado_laboratorio'),
     path('resultados_laboratorio/get-by-instrumento/<str:pk>/',views.ResultadosLaboratorioGetByInstrumento.as_view(),name='get-resultados-by-instrumento'),
+    path('resultados_laboratorio/get-by-id/<str:pk>/',views.ResultadosLaboratorioGetById.as_view(),name='get-resultados-by-id'),
     path('resultados_laboratorio/update/<str:pk>/',views.ResultadosLaboratorioUpdate.as_view(),name='update-resultados-laboratorio'),
     #dato_registro_laboratorio
     path('dato_registro_laboratorio/create/',views.DatosRegistroLaboratorioCreate.as_view(),name='create-dato_registro_laboratorio'),
     path('dato_registro_laboratorio/delete/<str:pk>/',views.DatosRegistroLaboratorioDelete.as_view(),name='delete-dato_registro_laboratorio'),
     path('dato_registro_laboratorio/update/<str:pk>/',views.DatosRegistroLaboratorioUpdate.as_view(),name='update-dato_registro_laboratorio'),
-    path('dato_registro_laboratorio/get-by-resultado/<str:lab>/',views.DatosRegistroLaboratorioByResultadosLaboratorioGet.as_view(),name='get-dato_registro_laboratorio-by-resultado'),
+    path('dato_registro_laboratorio/get-by-resultado/<str:lab>/<str:par>/',views.DatosRegistroLaboratorioByResultadosLaboratorioGet.as_view(),name='get-dato_registro_laboratorio-by-resultado'),
+    path('dato_registro_laboratorio/get-by-id/<str:pk>/',views.DatosRegistroLaboratorioByIdGet.as_view(),name='get-dato_registro_laboratorio-by-id'),
 ]   
