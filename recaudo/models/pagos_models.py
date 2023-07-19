@@ -28,7 +28,6 @@ class FacilidadesPago(models.Model):
     cuotas = models.IntegerField(db_column='T426cuotas')
     documento_soporte = models.FileField(db_column='T426documentoSoporte')
     consignacion_soporte = models.FileField(db_column='T426consignacionSoporte')
-    documento_garantia = models.FileField(db_column='T426documentoGarantia')
     documento_no_enajenacion = models.FileField(db_column='T426documentoNoEnajenacion')
     id_funcionario = models.IntegerField(db_column='T426Id_Funcionario')
     notificaciones = models.BooleanField(db_column='T426notificaciones')
@@ -77,9 +76,9 @@ class DetallesFacilidadPago(models.Model):
 
 class GarantiasFacilidad(models.Model):
     id = models.AutoField(primary_key=True, db_column='T431IdGarantiaFacilidad')
-    id_bien = models.ForeignKey(Bienes, on_delete=models.CASCADE, db_column='T431Id_Bien')
     id_facilidad_pago = models.ForeignKey(FacilidadesPago, on_delete=models.CASCADE, db_column='T431Id_FacilidadPago')
     id_rol = models.ForeignKey(RolesGarantias, on_delete=models.CASCADE, db_column='T431Id_RolGarantia')
+    documento_garantia = models.FileField(db_column='T431documentoGarantia')
     
     class Meta:
         db_table = 'T431GarantiasFacilidad'
@@ -119,3 +118,14 @@ class RespuestaSolicitud(models.Model):
         db_table = 'T435RespuestasSolicitud'
         verbose_name = 'Respuesta Solicitud'
         verbose_name_plural = 'Respuestas Solicitud'
+
+
+class DetallesBienFacilidadPago(models.Model):
+    id = models.AutoField(primary_key=True, db_column='T438IdDetalle_BienFacilidadPago')
+    id_bien = models.ForeignKey(Bienes, on_delete=models.CASCADE, db_column='T438Id_Bien')
+    id_facilidad_pago = models.ForeignKey(FacilidadesPago, on_delete=models.CASCADE, db_column='T438Id_FacilidadPago')
+
+    class Meta:
+        db_table = 'T438Detalles_BienesFacilidadesPago'
+        verbose_name = 'Detalle bien facilidad pago'
+        verbose_name_plural = 'Detalles bienes facilidades pago'

@@ -226,7 +226,7 @@ class BuscarTipologia(generics.ListAPIView):
         buscar_tipologia = self.queryset.filter(nombre__icontains=nombre_tipologia) if nombre_tipologia else self.queryset.all()
         serializador = self.serializer_class(buscar_tipologia,many=True,context={'request':request})
         
-        return Response({'succes':True, 'detail':'Se encontraron los siguientes usuarios.','data':serializador.data}, status=status.HTTP_200_OK)
+        return Response({'succes':True, 'detail':'Se encontraron las siguientes tipologias','data':serializador.data}, status=status.HTTP_200_OK)
             
 
 #BUSQUEDA DE TRD POR NOMBRE Y VERSIÓN
