@@ -9,7 +9,6 @@ from recaudo.models.pagos_models import (
 )
 
 from recaudo.serializers.pagos_serializers import (
-    FacilidadesPagoSerializer,
     FacilidadesPagoPutSerializer,
     DeudorFacilidadPagoSerializer,
     TipoActuacionSerializer,
@@ -44,6 +43,7 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 
 
+# OBLIGACIONES
 class ObligacionesDeudorListViews(generics.ListAPIView):
     serializer_class = ObligacionesSerializer
 
@@ -63,7 +63,6 @@ class ObligacionesDeudorListViews(generics.ListAPIView):
         nombre_completo = deudor.nombres + ' ' + deudor.apellidos
         obligaciones = Obligaciones.objects.filter(id_expediente__id_deudor=deudor)
         serializer = self.serializer_class(obligaciones, many=True)
-        
         monto_total, intereses_total, monto_total_con_intereses = self.get_monto_total(obligaciones)
         data = {
             'id_deudor': deudor.id,
@@ -105,6 +104,7 @@ class DatosDeudorView(generics.ListAPIView):
 
     def get(self, request, id):
         queryset = Deudores.objects.filter(id=id).first()
+
         if not queryset:
             raise NotFound('No se encontró ningun registro con el parámetro ingresado')
         serializer = self.serializer_class(queryset)
@@ -115,8 +115,8 @@ class ConsultaObligacionesDeudoresViews(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, identificacion):
-
         numero_identificacion = identificacion
+
         try:
             deudor = Deudores.objects.get(identificacion=numero_identificacion)
         except ObjectDoesNotExist:
@@ -130,45 +130,20 @@ class ConsultaObligacionesDeudoresViews(generics.ListAPIView):
         else:
             raise ValidationError('El dato ingresado no es valido')
 
-        
-class DatosContactoDeudorView(generics.ListAPIView):
-    serializer_class = DatosContactoDeudorSerializer
 
-    def get(self, request, id):
-        queryset = Deudores.objects.filter(id=id).first()
-        if not queryset:
-            raise NotFound('No se encontró ningun registro con el parámetro ingresado')
-        queryset = Personas.objects.filter(numero_documento = queryset.identificacion).first()
-        serializer = self.serializer_class(queryset)
-        return Response({'success': True, 'detail':'Se muestra los datos de contacto del deudor', 'data': serializer.data}, status=status.HTTP_200_OK) 
+# FACILIDAD DE PAGO      
 
 
-class TipoActuacionView(generics.ListAPIView):
-    queryset = TipoActuacion.objects.all()
-    serializer_class = TipoActuacionSerializer
 
-    def get(self, request):
-        queryset = self.get_queryset()
-        serializer = self.serializer_class(queryset, many=True)
-        return Response({'success': True, 'detail':'Se muestran los tipos de actuacion de deudor', 'data': serializer.data}, status=status.HTTP_200_OK)
-    
 
-class CrearFacilidadPagoView(generics.CreateAPIView):
-    serializer_class = FacilidadesPagoSerializer
-    queryset = FacilidadesPago.objects.all()
-    
-    def post(self, request):
-        data = request.data
-        serializer = self.serializer_class(data=data)
-        serializer.is_valid(raise_exception=True)
-        periodicidad = serializer.validated_data.get('periodicidad')
-        cuotas = serializer.validated_data.get('cuotas')
-        total_plazos = periodicidad * cuotas
-        if total_plazos > 61:
-            raise PermissionDenied('Las cuotas deben ser menor de 60 meses')
-        else:
-            serializer.save()
-            return Response({'success': True, 'detail':'Se crea una facilidad de pago', 'data':serializer.data},status=status.HTTP_200_OK)
+
+
+
+
+
+
+
+
 
 
 class FacilidadPagoUpdateView(generics.UpdateAPIView):
