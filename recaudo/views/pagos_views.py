@@ -132,30 +132,6 @@ class ConsultaObligacionesDeudoresViews(generics.ListAPIView):
 
 
 # FACILIDAD DE PAGO      
-class DatosContactoDeudorView(generics.ListAPIView):
-    serializer_class = DatosContactoDeudorSerializer
-
-    def get(self, request, id):
-        queryset = Deudores.objects.filter(id=id).first()
-
-        if not queryset:
-            raise NotFound('No se encontró ningun registro con el parámetro ingresado')
-        queryset = Personas.objects.filter(numero_documento = queryset.identificacion).first()
-        serializer = self.serializer_class(queryset)
-        return Response({'success': True, 'detail':'Se muestra los datos de contacto del deudor', 'data': serializer.data}, status=status.HTTP_200_OK) 
-
-
-class TipoActuacionView(generics.ListAPIView):
-    queryset = TipoActuacion.objects.all()
-    serializer_class = TipoActuacionSerializer
-
-    def get(self, request):
-        queryset = self.get_queryset()
-        serializer = self.serializer_class(queryset, many=True)
-        return Response({'success': True, 'detail':'Se muestran los tipos de actuacion de deudor', 'data': serializer.data}, status=status.HTTP_200_OK)
-    
-
-
 
 
 
