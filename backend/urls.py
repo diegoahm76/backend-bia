@@ -117,6 +117,7 @@ urlpatterns = [
     path('api/recaudo/pagos/', include('recaudo.urls.pagos_urls')),
     path('api/recaudo/garantias/', include('recaudo.urls.garantias_urls')),
     path('api/recaudo/reportes/', include('recaudo.urls.reportes_urls')),
+    path('api/recaudo/facilidades-pagos/', include('recaudo.urls.facilidades_pagos_urls')),
 
     #Recaudo
     path('api/recaudo/liquidaciones/', include('recaudo.urls.liquidaciones_urls')),

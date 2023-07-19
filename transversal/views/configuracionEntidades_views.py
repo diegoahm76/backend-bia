@@ -8,9 +8,22 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from seguridad.utils import Util
 
-from transversal.serializers.entidades_serializers import ConfiguracionEntidadSerializer
+from transversal.serializers.entidades_serializers import ConfiguracionEntidadSerializer, PersonaEntidadCormacarenaGetSerializer
 from transversal.models import ConfiguracionEntidad,HistoricoPerfilesEntidad
 from seguridad.models import Personas
+
+
+class PersonaEntidadCormacarenaGetView(generics.GenericAPIView):
+    serializer_class = PersonaEntidadCormacarenaGetSerializer 
+    permission_classes = [IsAuthenticated]   
+    
+    def get(self, resquest):
+        queryset = Personas.objects.get(id_persona=3)
+        if not queryset:
+            raise NotFound('No se encontró entidad registrada con el parámetro ingresado')
+        serializer = self.serializer_class(queryset)
+        return Response({'success': True, 'detail':'Se muestra los datos de la entidad', 'data': serializer.data}, status=status.HTTP_200_OK) 
+
 
 class GetConfiguracionEntidadByID(generics.GenericAPIView):
 

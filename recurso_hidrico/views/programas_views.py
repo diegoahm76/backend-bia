@@ -7,10 +7,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from datetime import datetime,date,timedelta
+from recurso_hidrico.models.bibliotecas_models import Instrumentos
 from seguridad.utils import Util
 
 from recurso_hidrico.models.programas_models import ActividadesProyectos, AvancesProyecto, EvidenciasAvance, ProgramasPORH, ProyectosPORH
-from recurso_hidrico.serializers.programas_serializers import ActualizarActividadesSerializers, ActualizarAvanceEvidenciaSerializers, ActualizarProyectosSerializers, AvanceConEvidenciasSerializer, BusquedaAvanzadaSerializers, EliminarActividadesSerializers, EliminarProyectoSerializers, GetActividadesporProyectosSerializers, GetAvanzadaProgramasporPORHSerializers, GetProgramasporPORHSerializers, GetProyectosPORHSerializers, RegistrarAvanceSerializers, RegistroEvidenciaSerializers, RegistroProgramaPORHSerializer,BusquedaAvanzadaAvancesSerializers,ProyectosPORHSerializer,GetAvancesporProyectosSerializers
+from recurso_hidrico.serializers.programas_serializers import ActualizarActividadesSerializers, ActualizarAvanceEvidenciaSerializers, ActualizarProyectosSerializers, AvanceConEvidenciasSerializer, BusquedaAvanzadaSerializers, EliminarActividadesSerializers, EliminarProyectoSerializers, GetActividadesporProyectosSerializers, GetAvanzadaProgramasporPORHSerializers, GetProgramasporPORHSerializers, GetProyectosPORHSerializers, ProgramasporPORHUpdateSerializers, RegistrarAvanceSerializers, RegistroEvidenciaSerializers, RegistroProgramaPORHSerializer,BusquedaAvanzadaAvancesSerializers,ProyectosPORHSerializer,GetAvancesporProyectosSerializers
 
 class RegistroProgramaPORH(generics.CreateAPIView):
     serializer_class = RegistroProgramaPORHSerializer
@@ -309,7 +310,7 @@ class BusquedaAvanzada(generics.ListAPIView):
         return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializador.data},status=status.HTTP_200_OK)
         
 class ActualizarPrograma(generics.UpdateAPIView):  
-        serializer_class = GetProgramasporPORHSerializers
+        serializer_class = ProgramasporPORHUpdateSerializers
         queryset = ProgramasPORH.objects.all()
         permission_classes = [IsAuthenticated]
         
@@ -780,7 +781,7 @@ class ProgramaPORHBusquedaAvanzadaGet(generics.ListAPIView):
     #serializer_class = BusquedaAvanzadaAvancesSerializers
     #serializer_class = GetProgramasporPORHSerializers
     serializer_class=GetAvanzadaProgramasporPORHSerializers
-    queryset = ProgramasPORH.objects.all()
+    queryset = Instrumentos.objects.all()
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -789,7 +790,7 @@ class ProgramaPORHBusquedaAvanzadaGet(generics.ListAPIView):
         for key, value in request.query_params.items():
             if key == 'nombre':
                 if value != '':
-                    filter['id_instrumento__nombre__icontains'] = value
+                    filter['nombre__icontains'] = value
 
         
         programas = self.queryset.all().filter(**filter)

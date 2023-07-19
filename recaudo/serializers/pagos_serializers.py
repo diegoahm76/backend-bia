@@ -71,19 +71,11 @@ class DatosContactoDeudorSerializer(serializers.ModelSerializer):
         fields = ('direccion_notificaciones', 'ciudad', 'telefono_celular')
         
 
-class FacilidadesPagoSerializer(serializers.ModelSerializer):
-    id_deudor = DeudorFacilidadPagoSerializer
 
-    class Meta:
-        model = FacilidadesPago
-        fields = '__all__'
-        extra_kwargs = {
-            'id_deudor': {'required': True},
-            'id_tipo_actuacion': {'required': True},
-            'id_tasas_interes': {'required': True},
-            'documento_soporte': {'required': True},
-            'consignacion_soporte': {'required':True}
-        }
+
+
+
+
 
 
 class FacilidadesPagoPutSerializer(serializers.ModelSerializer):

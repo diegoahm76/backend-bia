@@ -7,7 +7,8 @@ from gestion_documental.models.trd_models import (
     TablaRetencionDocumental,
     FormatosTiposMedio,
     CatSeriesUnidadOrgCCDTRD,
-    SeriesSubSUnidadOrgTRDTipologias
+    SeriesSubSUnidadOrgTRDTipologias,
+    FormatosTiposMedioTipoDoc
 )
 from gestion_documental.choices.tipos_medios_formato_choices import tipos_medios_formato_CHOICES
 from transversal.models.organigrama_models import UnidadesOrganizacionales
@@ -48,10 +49,19 @@ class ModificarTipologiaDocumentalSerializer(serializers.ModelSerializer):
         model = TipologiasDoc
         fields = ['nombre','activo','cod_tipo_medio_doc']
         
+
 class BuscarTipologiaSerializer(serializers.ModelSerializer):
+    formatos = serializers.SerializerMethodField()
+
+    def get_formatos(self, obj):
+        formatos = FormatosTiposMedioTipoDoc.objects.filter(id_tipologia_doc=obj.id_tipologia_documental)
+        list_id_formatos = formatos.values_list('id_formato_tipo_medio__id_formato_tipo_medio', flat=True)
+        return list_id_formatos
+
     class Meta:
         model = TipologiasDoc
-        fields = '__all__'
+        fields = ['id_tipologia_documental', 'nombre', 'cod_tipo_medio_doc', 'activo', 'item_ya_usado', 'formatos']
+
 
 class BusquedaTRDNombreVersionSerializer(serializers.ModelSerializer):
     usado = serializers.SerializerMethodField()

@@ -152,8 +152,8 @@ class ModificarTipologiaDocumental(generics.UpdateAPIView):
         
         desactivar_tipologia = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_tipologia_doc=pk,activo=True,id_catserie_unidadorg_ccd_trd__id_trd__fecha_retiro_produccion=None).first()
         serializer = RetornarDatosTRDSerializador(desactivar_tipologia)  
-           
-        if desactivar_tipologia:
+        
+        if desactivar_tipologia and not data['activo']:
             try:
                 raise PermissionDenied('La Tipologia no se puede desactivar si se esta usando en una TRD.')
             except PermissionDenied as e:
@@ -226,7 +226,7 @@ class BuscarTipologia(generics.ListAPIView):
         buscar_tipologia = self.queryset.filter(nombre__icontains=nombre_tipologia) if nombre_tipologia else self.queryset.all()
         serializador = self.serializer_class(buscar_tipologia,many=True,context={'request':request})
         
-        return Response({'succes':True, 'detail':'Se encontraron los siguientes usuarios.','data':serializador.data}, status=status.HTTP_200_OK)
+        return Response({'succes':True, 'detail':'Se encontraron las siguientes tipologias','data':serializador.data}, status=status.HTTP_200_OK)
             
 
 #BUSQUEDA DE TRD POR NOMBRE Y VERSIÓN

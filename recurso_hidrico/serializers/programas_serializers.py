@@ -2,6 +2,7 @@ from rest_framework import serializers
 from unittest.util import _MAX_LENGTH
 from wsgiref.validate import validator
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
+from recurso_hidrico.models.bibliotecas_models import Instrumentos
 from recurso_hidrico.models.programas_models import ActividadesProyectos, AvancesProyecto, EvidenciasAvance, ProgramasPORH, ProyectosPORH
 
 class RegistroProgramaPORHSerializer(serializers.ModelSerializer):
@@ -32,6 +33,19 @@ class GetProgramasporPORHSerializers(serializers.ModelSerializer):
             )
         ]       
         
+
+class ProgramasporPORHUpdateSerializers(serializers.ModelSerializer):
+    id_instrumento=serializers.ReadOnlyField()
+    class Meta:
+        model = ProgramasPORH
+        fields = ['id_instrumento','id_programa','nombre','fecha_inicio','fecha_fin']
+        validators = [
+            UniqueTogetherValidator(
+                queryset=ProgramasPORH.objects.all(),
+                fields= ['id_instrumento','nombre'],
+                message='Ya existe un programa con este nombre.'
+            )
+        ]   
 class GetProyectosPORHSerializers(serializers.ModelSerializer):
     class Meta:
         model = ProyectosPORH
@@ -49,18 +63,22 @@ class GetActividadesporProyectosSerializers(serializers.ModelSerializer):
         fields = '__all__'
 
 class GetAvancesporProyectosSerializers(serializers.ModelSerializer):
+    evidencias = serializers.SerializerMethodField()
     class Meta:
         model = AvancesProyecto
-        #fields = ['id_proyecto','nombre','fecha_registro']
-        fields = '__all__'
-
+        fields = ['id_avance','id_proyecto','fecha_reporte','accion','descripcion','id_persona_registra','fecha_registro','evidencias' ]
+        #fields = '__all__'
+        
+    def get_evidencias(self, avance):
+        evidencias = avance.evidenciasavance_set.all()
+        return EvidenciaAvanceSerializer(evidencias, many=True).data
 
 class BusquedaAvanzadaSerializers(serializers.ModelSerializer):
     
     nombre_programa = serializers.ReadOnlyField(source='id_programa.nombre',default=None)
     fecha_inicio = serializers.ReadOnlyField(source='id_programa.fecha_inicio',default=None)
     fecha_fin = serializers.ReadOnlyField(source='id_programa.fecha_fin',default=None)
-    nombre_PORH = serializers.ReadOnlyField(source='id_instrumento.nombre',default=None)
+    nombre_PORH = serializers.ReadOnlyField(source='id_programa.id_instrumento.nombre',default=None)
     fecha_inicio = serializers.ReadOnlyField(source='id_instrumento.fecha_inicio',default=None)
     fecha_fin = serializers.ReadOnlyField(source='id_instrumento.fecha_fin',default=None)
     
@@ -141,10 +159,15 @@ class EvidenciaAvanceSerializer(serializers.ModelSerializer):
 
 
 
-class GetAvanzadaProgramasporPORHSerializers(serializers.ModelSerializer):
-    nombre_PORH = serializers.ReadOnlyField(source='id_instrumento.nombre', default=None)
-    class Meta:
-        model = ProgramasPORH
-        fields = ['id_instrumento','id_programa','nombre','fecha_inicio','fecha_fin','nombre_PORH']
+# class GetAvanzadaProgramasporPORHSerializers(serializers.ModelSerializer):
+#     nombre_PORH = serializers.ReadOnlyField(source='id_instrumento.nombre', default=None)
+#     class Meta:
+#         model = ProgramasPORH
+#         fields = ['id_instrumento','id_programa','nombre','fecha_inicio','fecha_fin','nombre_PORH']
 
+class GetAvanzadaProgramasporPORHSerializers(serializers.ModelSerializer):
+    #nombre_PORH = serializers.ReadOnlyField(source='nombre', default=None)
+    class Meta:
+        model = Instrumentos
+        fields = ('__all__')
 

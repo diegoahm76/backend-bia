@@ -2,7 +2,7 @@ from rest_framework import serializers
 from unittest.util import _MAX_LENGTH
 from wsgiref.validate import validator
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
-from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, Cuencas, CuencasInstrumento, Instrumentos, ParametrosLaboratorio, Pozos, Secciones,Subsecciones
+from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, DatosRegistroLaboratorio, Instrumentos, ParametrosLaboratorio, Pozos, ResultadosLaboratorio, Secciones,Subsecciones
 from seguridad.models import Personas
 
 
@@ -114,8 +114,8 @@ class EliminarSeccionSerializer(serializers.ModelSerializer):
 class InstrumentosSerializer(serializers.ModelSerializer):
     class Meta:
         model = Instrumentos
-        fields = ['id_instrumento', 'nombre', 'id_seccion', 'id_subseccion', 'id_resolucion', 'id_persona_registra', 'fecha_registro', 'fecha_creacion_instrumento', 'fecha_fin_vigencia']
-
+        #fields = ['id_instrumento', 'nombre', 'id_seccion', 'id_subseccion', 'id_resolucion', 'id_persona_registra', 'fecha_registro', 'fecha_creacion_instrumento', 'fecha_fin_vigencia']
+        fields = '__all__'
 
 class SubseccionContarInstrumentosSerializer(serializers.ModelSerializer):
     instrumentos_count = serializers.SerializerMethodField()
@@ -141,6 +141,15 @@ class InstrumentoCuencasGetSerializer(serializers.ModelSerializer):
 
 
 class CuencasGetSerializer(serializers.ModelSerializer):
+    id_instrumento=serializers.IntegerField(source='id_instrumento.id_instrumento')
+    
+    id_cuenca=serializers.IntegerField(source='id_cuenca.id_cuenca')
+    cuenca = serializers.CharField(source='id_cuenca.nombre')
+    class Meta:
+        model=CuencasInstrumento
+        fields=['id_instrumento','id_cuenca','cuenca']
+
+class CuencasGetByInstrumentoSerializer(serializers.ModelSerializer):
     id_instrumento=serializers.IntegerField(source='id_instrumento.id_instrumento')
     
     id_cuenca=serializers.IntegerField(source='id_cuenca.id_cuenca')
@@ -241,7 +250,7 @@ class ParametrosLaboratorioGetSerializer(serializers.ModelSerializer):
             fields='__all__'
 
 
-#
+#Instrumentos
 
 class InstrumentosPostSerializer(serializers.ModelSerializer):
         fecha_registro = serializers.ReadOnlyField()
@@ -257,6 +266,40 @@ class InstrumentosPostSerializer(serializers.ModelSerializer):
                 ]   
             
 
+class InstrumentosUpdateSerializer(serializers.ModelSerializer):
+        fecha_registro = serializers.ReadOnlyField()
+        id_seccion=serializers.ReadOnlyField()
+        id_subseccion=serializers.ReadOnlyField()
+        id_persona_registra=serializers.ReadOnlyField()
+        fecha_registro=serializers.ReadOnlyField()
+        nombre=serializers.ReadOnlyField()
+        id_resolucion=serializers.ReadOnlyField()
+        fecha_creacion_instrumento=serializers.ReadOnlyField()
+        cod_tipo_agua=serializers.ReadOnlyField()
+        class Meta:
+            model=Instrumentos
+            fields='__all__'
+            validators = [
+                UniqueTogetherValidator(
+                queryset=Instrumentos.objects.all(),
+                fields= ['id_subseccion','nombre'],
+                message='Ya existe un instrumento con este nombre.'
+                )
+                ]   
+            
+
+class InstrumentoBusquedaAvanzadaSerializer(serializers.ModelSerializer):
+   
+    id_seccion=serializers.IntegerField(source='id_seccion.id_seccion')
+    nombre_seccion=serializers.CharField(source='id_seccion.nombre')
+    id_subseccion=serializers.IntegerField(source='id_subseccion.id_subseccion')
+    nombre_subseccion=serializers.CharField(source='id_subseccion.nombre')
+    class Meta:
+        model=Instrumentos
+        fields = ('__all__')
+        #fields=['id_instrumento ','nombre ','id_seccion ','id_subseccion ','id_resolucion ','id_persona_registra ','fecha_registro ','fecha_creacion_instrumento ','fecha_fin_vigencia ','id_pozo ','cod_tipo_agua ','id_seccion','nombre_seccion','id_subseccion','nombre_subseccion']
+
+
 
 class CuencasInstrumentoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -269,6 +312,11 @@ class CuencasInstrumentoSerializer(serializers.ModelSerializer):
                 message='Ya existe un instrumento con este nombre.'
                 )
                 ] 
+
+class CuencasInstrumentoDeleteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CuencasInstrumento
+        fields = '__all__'
 
 
 class ArchivosInstrumentoPostSerializer(serializers.ModelSerializer):
@@ -283,3 +331,79 @@ class ArchivosInstrumentoPostSerializer(serializers.ModelSerializer):
                 )
                 ] 
 
+class ArchivosInstrumentoUpdateSerializer(serializers.ModelSerializer):
+    id_instrumento=serializers.ReadOnlyField()
+    class Meta:
+        model=ArchivosInstrumento
+        fields = ['id_instrumento','nombre_archivo']
+        validators = [
+                UniqueTogetherValidator(
+                queryset=ArchivosInstrumento.objects.all(),
+                fields= ['id_instrumento','nombre_archivo'],
+                message='Ya existe un archivo  con este nombre.'
+                )
+                ] 
+
+class SubseccionBusquedaAvanzadaSerializer(serializers.ModelSerializer):
+   
+    id_seccion=serializers.IntegerField(source='id_seccion.id_seccion')
+    nombre_seccion=serializers.CharField(source='id_seccion.nombre')
+
+    class Meta:
+        model=Subsecciones
+        fields=['id_seccion','nombre_seccion','id_subseccion','nombre']
+
+
+
+class CarteraAforosPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=CarteraAforos
+        fields=('__all__')
+
+class DatosCarteraAforosPostSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model=CarteraAforos
+        fields=('__all__')
+
+#Resultados de laboratorio
+
+class ResultadosLaboratorioPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=ResultadosLaboratorio
+        fields=('__all__')
+
+class ResultadosLaboratorioGetSerializer(serializers.ModelSerializer):
+    #cod_clase=serializers.CharField(source='id_parametro.cod_tipo_parametro')
+    class Meta:
+        model=ResultadosLaboratorio
+        fields=('__all__')
+class ResultadosLaboratorioUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=ResultadosLaboratorio
+        fields=('__all__')
+#Datos_Registro_laboratorio
+class DatosRegistroLaboratorioPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=DatosRegistroLaboratorio
+        fields=('__all__')
+
+class DatosRegistroLaboratorioDeleteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=DatosRegistroLaboratorio
+        fields=('__all__')
+
+class DatosRegistroLaboratorioUpdateSerializer(serializers.ModelSerializer):
+    id_dato_registro_laboratorio =serializers.ReadOnlyField()
+    #id_registro_laboratorio =serializers.ReadOnlyField()
+    class Meta:
+        model=DatosRegistroLaboratorio
+        fields=['id_dato_registro_laboratorio','id_parametro','metodo','resultado','fecha_analisis']
+        #fields=('__all__')
+
+
+class DatosRegistroLaboratorioGetSerializer(serializers.ModelSerializer):
+        cod_clase=serializers.CharField(source='id_parametro.cod_tipo_parametro')
+        class Meta:
+            model=DatosRegistroLaboratorio
+            fields='__all__'
