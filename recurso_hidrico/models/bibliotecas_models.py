@@ -235,7 +235,7 @@ class ResultadosLaboratorio(models.Model):
         ('SUB', 'Subterránea'),
         ('SUP', 'Superficial'),
     ], db_column='T617codClaseDeMuestra')
-    fecha_registro = models.DateTimeField(db_column='T617fechaRegistro')
+    fecha_registro = models.DateTimeField(auto_now=True,db_column='T617fechaRegistro')
     fecha_toma_muestra = models.DateField(db_column='T617fechaTomaMuestra')
     fecha_resultados_lab = models.DateField(db_column='T617fechaResultadosLab')
     fecha_envio_lab = models.DateField(db_column='T617fechaEnvioALab')

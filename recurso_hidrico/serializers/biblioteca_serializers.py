@@ -2,7 +2,7 @@ from rest_framework import serializers
 from unittest.util import _MAX_LENGTH
 from wsgiref.validate import validator
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
-from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, Instrumentos, ParametrosLaboratorio, Pozos, Secciones,Subsecciones
+from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, DatosRegistroLaboratorio, Instrumentos, ParametrosLaboratorio, Pozos, ResultadosLaboratorio, Secciones,Subsecciones
 from seguridad.models import Personas
 
 
@@ -331,7 +331,6 @@ class ArchivosInstrumentoPostSerializer(serializers.ModelSerializer):
                 )
                 ] 
 
-
 class ArchivosInstrumentoUpdateSerializer(serializers.ModelSerializer):
     id_instrumento=serializers.ReadOnlyField()
     class Meta:
@@ -356,9 +355,55 @@ class SubseccionBusquedaAvanzadaSerializer(serializers.ModelSerializer):
 
 
 
-
-
 class CarteraAforosPostSerializer(serializers.ModelSerializer):
     class Meta:
         model=CarteraAforos
         fields=('__all__')
+
+class DatosCarteraAforosPostSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model=CarteraAforos
+        fields=('__all__')
+
+#Resultados de laboratorio
+
+class ResultadosLaboratorioPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=ResultadosLaboratorio
+        fields=('__all__')
+
+class ResultadosLaboratorioGetSerializer(serializers.ModelSerializer):
+    #cod_clase=serializers.CharField(source='id_parametro.cod_tipo_parametro')
+    class Meta:
+        model=ResultadosLaboratorio
+        fields=('__all__')
+class ResultadosLaboratorioUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=ResultadosLaboratorio
+        fields=('__all__')
+#Datos_Registro_laboratorio
+class DatosRegistroLaboratorioPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=DatosRegistroLaboratorio
+        fields=('__all__')
+
+class DatosRegistroLaboratorioDeleteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=DatosRegistroLaboratorio
+        fields=('__all__')
+
+class DatosRegistroLaboratorioUpdateSerializer(serializers.ModelSerializer):
+    id_dato_registro_laboratorio =serializers.ReadOnlyField()
+    #id_registro_laboratorio =serializers.ReadOnlyField()
+    class Meta:
+        model=DatosRegistroLaboratorio
+        fields=['id_dato_registro_laboratorio','id_parametro','metodo','resultado','fecha_analisis']
+        #fields=('__all__')
+
+
+class DatosRegistroLaboratorioGetSerializer(serializers.ModelSerializer):
+        cod_clase=serializers.CharField(source='id_parametro.cod_tipo_parametro')
+        class Meta:
+            model=DatosRegistroLaboratorio
+            fields='__all__'
