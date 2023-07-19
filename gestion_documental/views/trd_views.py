@@ -152,8 +152,8 @@ class ModificarTipologiaDocumental(generics.UpdateAPIView):
         
         desactivar_tipologia = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_tipologia_doc=pk,activo=True,id_catserie_unidadorg_ccd_trd__id_trd__fecha_retiro_produccion=None).first()
         serializer = RetornarDatosTRDSerializador(desactivar_tipologia)  
-           
-        if desactivar_tipologia:
+        
+        if desactivar_tipologia and not data['activo']:
             try:
                 raise PermissionDenied('La Tipologia no se puede desactivar si se esta usando en una TRD.')
             except PermissionDenied as e:
