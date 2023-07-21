@@ -16,6 +16,7 @@ from gestion_documental.serializers.trd_serializers import (
     BusquedaTRDNombreVersionSerializer,
     CrearTipologiaDocumentalSerializer,
     EliminarCatSerieUndOrgCCDTRD218Serializer,
+    GetHistoricoTRDSerializer,
     ModificarTRDNombreVersionSerializer,
     ModificarTipologiaDocumentalSerializer,
     ReanudarTrdSerializer,
@@ -250,6 +251,22 @@ class BusquedaTRDNombreVersion(generics.ListAPIView):
         serializador = self.serializer_class(trd,many=True)
                          
         return Response({'succes':True, 'detail':'Se encontraron las siguientes TRD por Nombre y Versión','data':serializador.data}, status=status.HTTP_200_OK)
+
+class GetHistoricoTRD(generics.ListAPIView):
+    serializer_class = GetHistoricoTRDSerializer
+    queryset = HistoricosCatSeriesUnidadOrgCCDTRD.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request):
+        id_trd = request.data.get('id_trd')
+        queryset = self.queryset.all()
+        
+        if id_trd:
+            queryset = queryset.filter(id_catserie_unidadorg_ccd_trd__id_trd=id_trd)
+            
+        serializador = self.serializer_class(queryset, many=True)
+                         
+        return Response({'succes':True, 'detail':'Se encontró el siguiente histórico','data':serializador.data}, status=status.HTTP_200_OK)
 
 #MODIFICAR TDR NOMBRE Y VERSION
 

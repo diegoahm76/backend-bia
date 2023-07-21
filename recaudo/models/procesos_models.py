@@ -37,6 +37,7 @@ class Avaluos(models.Model):
 class TiposAtributos(models.Model):
     id = models.AutoField(primary_key=True, db_column='T434IdTipoAtributo')
     tipo = models.CharField(max_length=255, db_column='T434tipo')
+    notificacion = models.IntegerField(default=0, db_column='T434notificacion')
 
     class Meta:
         db_table = 'T434TiposAtributos'
