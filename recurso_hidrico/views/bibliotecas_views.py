@@ -8,8 +8,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from datetime import datetime,date,timedelta
 
-from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, Cuencas, CuencasInstrumento, Instrumentos, ParametrosLaboratorio, Pozos, Secciones,Subsecciones
-from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentoUpdateSerializer, ArchivosInstrumentosGetSerializer, CuencasGetByInstrumentoSerializer, CuencasGetSerializer, CuencasInstrumentoDeleteSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoCuencasGetSerializer, InstrumentosPostSerializer, InstrumentosSerializer, InstrumentosUpdateSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, SeccionSerializer, SeccionesSerializer, SubseccionBusquedaAvanzadaSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
+from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, DatosRegistroLaboratorio, Instrumentos, ParametrosLaboratorio, Pozos, ResultadosLaboratorio, Secciones,Subsecciones
+from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentoUpdateSerializer, ArchivosInstrumentosGetSerializer, CarteraAforosPostSerializer, CuencasGetByInstrumentoSerializer, CuencasGetSerializer, CuencasInstrumentoDeleteSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, DatosRegistroLaboratorioDeleteSerializer, DatosRegistroLaboratorioGetSerializer, DatosRegistroLaboratorioPostSerializer, DatosRegistroLaboratorioUpdateSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoBusquedaAvanzadaSerializer, InstrumentoCuencasGetSerializer, InstrumentosPostSerializer, InstrumentosSerializer, InstrumentosUpdateSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, ResultadosLaboratorioGetSerializer, ResultadosLaboratorioPostSerializer, ResultadosLaboratorioUpdateSerializer, SeccionSerializer, SeccionesSerializer, SubseccionBusquedaAvanzadaSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
 
 
 
@@ -953,7 +953,7 @@ class ParametrosLaboratorioUpdate(generics.UpdateAPIView):
             if  not parametro:
 
                 raise NotFound("No se existe el parametro de laboratorio que trata de Actualizar.")
-            print(parametro.item_ya_usado)
+            #print(parametro.item_ya_usado)
             if parametro.item_ya_usado:
                 raise PermissionDenied('No puedes actualizar un parametro de laboratorio que haya sido usada')
                 # if 'activo' in data:
@@ -986,27 +986,36 @@ class ParametrosLaboratorioGet(generics.ListAPIView):
     
     def get(self,request):
         estado=None
+        # for key, value in request.query_params.items():
+        #     if key == 'activo':
+        #         if value != '':
+        #             if str(value)=='True':
+        #                 estado=True
+        #     if key == 'activo':
+        #         if value != '':
+        #             if str(value)=='False':
+        #                 estado=False    
+    ##
+        filter = {}
+
         for key, value in request.query_params.items():
+            if key == 'cod_tipo_parametro':
+                if value != '':
+                    filter['cod_tipo_parametro__icontains'] = value
             if key == 'activo':
                 if value != '':
-                    if str(value)=='True':
-                        estado=True
-            if key == 'activo':
+                    filter['activo__icontains'] = value
+            if key == 'nombre':
                 if value != '':
-                    if str(value)=='False':
-                        estado=False    
+                    filter['nombre__icontains'] = value
 
-        if estado is None:  
-            parametros=ParametrosLaboratorio.objects.all().order_by('id_parametro')
-        else:      
+        print(filter)
+        instrumento = self.queryset.all().filter(**filter)
 
-                parametros = ParametrosLaboratorio.objects.filter(activo=estado).order_by('id_parametro')
-    
-    
 
-        serializer = self.serializer_class(parametros,many=True)
+        serializer = self.serializer_class(instrumento,many=True)
         
-        if not parametros:
+        if not instrumento:
             raise NotFound("los registros de parametros que busca no existen")
         
         return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
@@ -1057,7 +1066,7 @@ class ArchivosInstrumentoUpdate(generics.UpdateAPIView):
 
             raise NotFound("No se existe el archivo  que trata de Actualizar.")
         
-        serializer = self.get_serializer(instance, data=data)
+        serializer = ArchivosInstrumentoUpdateSerializer(instance, data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
@@ -1070,7 +1079,7 @@ class ArchivosInstrumentoUpdate(generics.UpdateAPIView):
        
         data = request.data
         archivo_actualizado = self.actualizar(pk, data)
-        print(archivo_actualizado)
+        #print(archivo_actualizado)
        # archivo = ArchivosInstrumento.objects.filter(id_archivo_instrumento=pk)
         #data_archivo=ArchivosInstrumentoUpdateSerializer(archivo)
         return Response({'success':True,'detail':'Se actualizaron el archivo correctamente'},status=status.HTTP_200_OK)
@@ -1119,10 +1128,11 @@ class InstrumentoCreate(generics.CreateAPIView):
             if(fecha_datetime>fecha_actual):
                 raise ValidationError("La fecha de creacion no puese superar la actual.")
             formato_fecha= '%Y-%m-%d'
-            fin_vigencia= datetime.strptime(data_in['fecha_fin_vigencia'], formato_fecha).date()
+            if 'fecha_fin_vigencia' in data_in:
+                fin_vigencia= datetime.strptime(data_in['fecha_fin_vigencia'], formato_fecha).date()
 
-            if(fin_vigencia<fecha_actual):
-                raise ValidationError("La fecha de fin de vigencia debe ser superor a la actual.")
+                if(fin_vigencia<fecha_actual):
+                    raise ValidationError("La fecha de fin de vigencia debe ser superor a la actual.")
             serializer = self.serializer_class(data=data_in)
             serializer.is_valid(raise_exception=True)
             serializer.save()
@@ -1263,7 +1273,8 @@ class InstrumentoUpdate(generics.UpdateAPIView):
                         }
                     arch=ArchivosInstrumentoCreate()
                     serizalizador_archivos.append(arch.crear_archivo(archivo_data))
-                    actualizar_a=ArchivosInstrumentoUpdate()
+                
+                actualizar_a=ArchivosInstrumentoUpdate()
 
 
                 #cambio de nombre a existentes
@@ -1271,21 +1282,19 @@ class InstrumentoUpdate(generics.UpdateAPIView):
                 if "nombre_actualizar" in data:
                     nombre_actualizar = request.data.get('nombre_actualizar')
                     nombre_actualizar = json.loads(nombre_actualizar)
-                
-                #actualizar(self, pk, data):
-                #for nombre_data in nombre_actualizar:
-                    #actualizar_a.actualizar(nombre_data['id_evidencia_avance'])
-                    # evidencia_update = EvidenciasAvance.objects.filter(id_evidencia_avance=nombre_data['id_evidencia_avance']).first()
-                    # if not evidencia_update:
-                    #     raise ValidationError('Debe enviar evidencias exitentes')
-                    # if nombre_data['nombre_archivo'] == '':
-                    #     raise ValidationError('No puede actualizar el nombre de un archivo a vacío')
-                    # evidencia_update.nombre_archivo = nombre_data['nombre_archivo']
-                    # evidencia_update.save()
-                ##fin archivos
+                    #print(nombre_actualizar)
+                    #actualizar(self, pk, data):
+                    for nombre_data in nombre_actualizar:
+                        archivo_data = {
+                            'nombre_archivo':nombre_data['nombre_archivo']
+                        }
+                        
+                        actualizar_a.actualizar(nombre_data['id_archivo'],archivo_data)
+
+                    ##fin archivos
                 instrumento = Instrumentos.objects.filter(id_instrumento=pk).first()
                 serializer = InstrumentosSerializer(instrumento)
-
+           
 
 
                 return Response({'success':True,'detail':'Se actualizaron los registros correctamente','data':{'instrumento':serializer.data},'cuencas':cuencas_data,'archivos':serizalizador_archivos},status=status.HTTP_200_OK)
@@ -1294,7 +1303,33 @@ class InstrumentoUpdate(generics.UpdateAPIView):
             raise ValidationError(e.detail)
     
             
+class InstrumentoBusquedaAvanzadaGet(generics.ListAPIView):
+    #serializer_class = BusquedaAvanzadaAvancesSerializers
+    serializer_class = InstrumentoBusquedaAvanzadaSerializer
+    queryset = Instrumentos.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        filter = {}
+
+        for key, value in request.query_params.items():
+            if key == 'id_seccion__nombre_seccion':
+                if value != '':
+                    filter['id_seccion__nombre__icontains'] = value
+            if key == 'nombre_subseccion':
+                if value != '':
+                    filter['id_subseccion__nombre__icontains'] = value
+            if key == 'nombre_instrumento': 
+                if value != '':
+                    filter['nombre__icontains'] = value
+
         
+        instrumento = self.queryset.all().filter(**filter)
+        serializador = self.serializer_class(instrumento, many=True)
+
+        
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializador.data}, status=status.HTTP_200_OK)
+         
 
 
 class CuencasGetByInstrumento(generics.ListAPIView):
@@ -1357,3 +1392,382 @@ class CuencaInstrumentoDelete(generics.DestroyAPIView):
 
         
         return Response({'success':True,'detail':'Se elimino la cuenca de este instrumento seleccionada.'},status=status.HTTP_200_OK)
+    
+
+
+##CARTERAS DE AFORO
+
+class CarteraAforosCreate(generics.CreateAPIView):
+    serializer_class = CarteraAforosPostSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = CarteraAforos.objects.all()
+    
+    def post(self,request):
+        data_in = request.data
+        
+
+        serializer = self.serializer_class(data=data_in)
+        serializer.is_valid(raise_exception=True)
+            
+        serializer.save()
+        return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+
+
+#RESULTADOS DE LABORATORIO
+
+class ResultadosLaboratorioCreate(generics.CreateAPIView):
+    serializer_class = ResultadosLaboratorioPostSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = ResultadosLaboratorio.objects.all()
+
+    def crear_resultado_laboratorio(self, data):
+
+        try:
+            serializer = ResultadosLaboratorioPostSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response({'success':True,
+                            'detail':'Se  registros correctamente',
+                            'data':serializer.data},
+                            status=status.HTTP_201_CREATED
+                            )
+        except ValidationError  as e:
+           
+            raise ValidationError  (e.detail)
+
+
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        id_resultado_laboratorio=None
+        resultado_laboratorio={}
+        datos_laboratorio=[]
+        if  not data['id_resultado_laboratorio']:
+            
+       
+            resultado_laboratorio_creado = self.crear_resultado_laboratorio(data)
+
+            if resultado_laboratorio_creado.status_code !=status.HTTP_201_CREATED:
+                return resultado_laboratorio_creado
+            
+           
+            id_resultado_laboratorio = resultado_laboratorio_creado.data.get('data', {}).get('id_resultado_laboratorio')
+            resultado_laboratorio=resultado_laboratorio_creado.data
+            #cracion de datos de laboratorio
+            #return resultado_laboratorio_creado
+        else:
+            resultado=ResultadosLaboratorio.objects.filter(id_resultado_laboratorio=data['id_resultado_laboratorio']).first()
+            if not resultado:
+                raise NotFound("No existe este registro de laboratorio")
+            
+            id_resultado_laboratorio=resultado.id_resultado_laboratorio
+
+        
+        if 'datos_registro_laboratorio' in data:
+            if   data['datos_registro_laboratorio']:
+                crear_datos=DatosRegistroLaboratorioCreate()
+                for datos in data['datos_registro_laboratorio'] : 
+                        datos_lab={
+                        "id_registro_laboratorio": id_resultado_laboratorio,
+                        "id_parametro": datos['id_parametro'],
+                        "metodo":datos['metodo'] ,
+                        "resultado": datos['resultado'],
+                        "fecha_analisis": datos['fecha_analisis']
+                        }
+                        response_datos=crear_datos.crear_dato_registro_laboratorio(datos_lab)
+                        if response_datos.status_code !=status.HTTP_201_CREATED:
+                            return response_datos
+                        datos_laboratorio.append(response_datos.data['data'])
+                        #print(response_datos)
+
+        return Response({'success':True,'detail':'Se  registros correctamente','data':{
+                        'resultados_laboratorio':resultado_laboratorio['data'],
+                        'datos_laboratoro':datos_laboratorio
+                        }},status=status.HTTP_201_CREATED)
+
+class ResultadosLaboratorioUpdate(generics.UpdateAPIView):
+    
+    serializer_class = ResultadosLaboratorioUpdateSerializer
+    queryset = DatosRegistroLaboratorio.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+
+    def obtener_repetido(self,lista_archivos):
+        contador = Counter(lista_archivos)
+        for archivo, cantidad in contador.items():
+            if cantidad > 1:
+                return archivo
+        return None
+
+    def actualizar_resultados_laboratorio(self,data,pk):
+        
+        dato = ResultadosLaboratorio.objects.filter(id_resultado_laboratorio=pk).first()
+
+        if not dato:
+            raise NotFound("No existe este registro de laboratorio")
+
+        serializer = self.serializer_class(dato, data=data)
+        try:
+            serializer.is_valid(raise_exception=True)
+            serializer.update(dato, serializer.validated_data)
+            
+            return Response({'success':True,'detail':'Se actualizaron los registros correctamente','data':serializer.data},status=status.HTTP_200_OK)
+        except ValidationError  as e:
+           
+            raise ValidationError  (e.detail)
+        
+
+    def put(self,request,pk):
+    
+        data = request.data
+      
+        response_resultado_lab =self.actualizar_resultados_laboratorio(data,pk)
+        response_datos=[]
+        response_datos_eliminados=[]
+        if response_resultado_lab.status_code !=status.HTTP_200_OK:
+            return response_resultado_lab
+        
+        #actualizar datos
+        
+        if 'datos_registro_laboratorio' in data:
+
+            if data['datos_registro_laboratorio']:
+
+                crear_dato_registro =DatosRegistroLaboratorioCreate()
+                actualizar_dato_registro =DatosRegistroLaboratorioUpdate()
+                
+                for datos_registro in data['datos_registro_laboratorio']:
+                
+
+                    if datos_registro['id_dato_registro_laboratorio']:#si se envia id ,se actualiza
+                       
+                        datos={
+                            
+                            "id_registro_laboratorio": datos_registro["id_registro_laboratorio"],
+                            "id_parametro": datos_registro["id_parametro"],
+                            "metodo": datos_registro["metodo"],
+                            "resultado": datos_registro["resultado"],
+                            "fecha_analisis": datos_registro["fecha_analisis"]
+                        }
+                        response_dato=actualizar_dato_registro.actualizar_datos_registro_laboratorio(datos,datos_registro['id_dato_registro_laboratorio'])
+                        
+                        if response_dato.status_code != status.HTTP_200_OK:
+                            return response_dato
+                        response_datos.append(response_dato.data['data'])
+
+                    else:
+                        datos={
+                            "id_registro_laboratorio": pk,
+                            "id_registro_laboratorio": datos_registro["id_registro_laboratorio"],
+                            "id_parametro": datos_registro["id_parametro"],
+                            "metodo": datos_registro["metodo"],
+                            "resultado": datos_registro["resultado"],
+                            "fecha_analisis": datos_registro["fecha_analisis"]
+                        }
+                        response_dato=crear_dato_registro.crear_dato_registro_laboratorio(datos)
+                        
+                        if response_dato.status_code != status.HTTP_201_CREATED:
+                            return response_dato
+                        response_datos.append(response_dato.data['data'])
+        #Eliminar archivos
+
+        if 'datos_registro_eliminar'  in data:
+            if data['datos_registro_eliminar']:
+
+                repetido=self.obtener_repetido(data['datos_registro_eliminar'])
+
+                if repetido:
+                    raise ValidationError("Intenta eliminar el  mismo dato varias veces.")
+                eliminar_datos_registro = DatosRegistroLaboratorioDelete()
+                for eliminar in data['datos_registro_eliminar']:
+                    
+                    response_subseccion=eliminar_datos_registro.delete(request,eliminar)
+                    if response_subseccion.status_code == status.HTTP_400_BAD_REQUEST:
+                        return response_subseccion
+                    response_datos_eliminados.append(response_subseccion.data['data'])
+
+
+        
+        return Response({'success':True,'detail':'Se actualizaron los registros correctamente',
+                         'data':{'resultados_laboratorio':response_resultado_lab.data['data'],
+                          'datos_registro_laboratorio':response_datos,
+                          'datos_registro_laboratorio_eliminados':response_datos_eliminados      
+                                 }},
+                         status=status.HTTP_200_OK)
+
+class ResultadosLaboratorioGetByInstrumento(generics.ListAPIView):
+
+    serializer_class = ResultadosLaboratorioGetSerializer
+    queryset = ResultadosLaboratorio.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+
+        ##
+
+        #filter = {}
+
+        # for key, value in request.query_params.items():
+        #     if key == 'id_seccion__nombre_seccion':
+        #         if value != '':
+        #             filter['id_seccion__nombre__icontains'] = value
+        #     if key == 'nombre_subseccion':
+        #         if value != '':
+        #             filter['id_subseccion__nombre__icontains'] = value
+        #     if key == 'nombre_instrumento': 
+        #         if value != '':
+        #             filter['nombre__icontains'] = value
+
+        
+#        instrumento = self.queryset.all().filter(**filter)
+       # serializador = self.serializer_class(instrumento, many=True)
+        ##            
+        resultados = ResultadosLaboratorio.objects.filter(id_instrumento=pk)
+                
+        serializer = self.serializer_class(resultados,many=True)
+        
+        if not resultados:
+            raise NotFound("Este instrumento no cuenta con resultados.")
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+    
+
+class ResultadosLaboratorioGetById(generics.ListAPIView):
+
+    serializer_class = ResultadosLaboratorioGetSerializer
+    queryset = ResultadosLaboratorio.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        
+        resultados = ResultadosLaboratorio.objects.filter(id_resultado_laboratorio=pk)
+                
+        serializer = self.serializer_class(resultados,many=True)
+        
+        if not resultados:
+            raise NotFound("No se encontraron datos.")
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+    
+#DATOS DE REGISTRO DE LABORATORIO
+class DatosRegistroLaboratorioCreate(generics.CreateAPIView):
+    serializer_class = DatosRegistroLaboratorioPostSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = DatosRegistroLaboratorio.objects.all()
+
+    def crear_dato_registro_laboratorio(self, data):
+
+        try:
+            serializer = DatosRegistroLaboratorioPostSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        
+            return Response({'success':True,'detail':'Se  registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+        
+        except ValidationError  as e:
+           
+            raise ValidationError  (e.detail)
+        
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        dato_registro_laboratorio_creado = self.crear_dato_registro_laboratorio(data)
+
+        #raise ValidationError(dato_registro_laboratorio_creado.status_code)
+        if dato_registro_laboratorio_creado.status_code !=status.HTTP_201_CREATED:
+            return dato_registro_laboratorio_creado
+
+
+        
+        return dato_registro_laboratorio_creado
+       
+    
+
+class DatosRegistroLaboratorioDelete(generics.DestroyAPIView):
+    serializer_class = DatosRegistroLaboratorioDeleteSerializer
+    queryset = DatosRegistroLaboratorio.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self,request,pk):
+        
+        dato = DatosRegistroLaboratorio.objects.filter(id_dato_registro_laboratorio=pk).first()
+      
+        
+        if not dato:
+            raise ValidationError("No existe El dato  a eliminar")
+        
+        
+        serializer = self.serializer_class(dato) 
+        dato.delete()
+
+
+        
+        return Response({'success':True,'detail':'Se elimino el Dato seleccionada.','data':serializer.data},status=status.HTTP_200_OK)
+    
+
+class DatosRegistroLaboratorioUpdate(generics.UpdateAPIView):
+    
+    serializer_class = DatosRegistroLaboratorioUpdateSerializer
+    queryset = DatosRegistroLaboratorio.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def actualizar_datos_registro_laboratorio(self,data,pk):
+        
+        dato = DatosRegistroLaboratorio.objects.filter(id_dato_registro_laboratorio=pk).first()
+
+        if not dato:
+            raise NotFound("No existe este registro de laboratorio")
+
+        serializer = self.serializer_class(dato, data=data)
+        try:
+            serializer.is_valid(raise_exception=True)
+            serializer.update(dato, serializer.validated_data)
+            
+            return Response({'success':True,'detail':'Se actualizaron los registros correctamente','data':serializer.data},status=status.HTTP_200_OK)
+        except ValidationError  as e:
+           
+            raise ValidationError  (e.detail)
+        
+
+    def put(self,request,pk):
+    
+        data = request.data
+      
+        response_subseccion =self.actualizar_datos_registro_laboratorio(data,pk)
+       
+        if response_subseccion != status.HTTP_200_OK:
+            return response_subseccion
+        
+        return Response(response_subseccion.data,status=status.HTTP_200_OK)
+    
+
+class DatosRegistroLaboratorioByResultadosLaboratorioGet(generics.ListAPIView):
+
+    serializer_class = DatosRegistroLaboratorioGetSerializer
+    queryset = DatosRegistroLaboratorio.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,lab,par):
+        
+        if par=="FQ" or par=="MB":
+            datos_laboratorio = DatosRegistroLaboratorio.objects.filter(id_registro_laboratorio=lab,id_parametro__cod_tipo_parametro=par).order_by('id_dato_registro_laboratorio')
+        else:
+            datos_laboratorio = DatosRegistroLaboratorio.objects.filter(id_registro_laboratorio=lab).order_by('id_dato_registro_laboratorio')
+        serializer = self.serializer_class(datos_laboratorio,many=True)
+        
+        if not datos_laboratorio:
+            raise NotFound("Este resultado no tiene datos.")
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+
+
+class DatosRegistroLaboratorioByIdGet(generics.ListAPIView):
+
+    serializer_class = DatosRegistroLaboratorioGetSerializer
+    queryset = DatosRegistroLaboratorio.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        
+        datos_laboratorio = DatosRegistroLaboratorio.objects.filter(id_dato_registro_laboratorio=pk)
+                
+        serializer = self.serializer_class(datos_laboratorio,many=True)
+        
+        if not datos_laboratorio:
+            raise NotFound("Este resultado no tiene datos.")
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)

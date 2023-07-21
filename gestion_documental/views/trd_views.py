@@ -16,6 +16,7 @@ from gestion_documental.serializers.trd_serializers import (
     BusquedaTRDNombreVersionSerializer,
     CrearTipologiaDocumentalSerializer,
     EliminarCatSerieUndOrgCCDTRD218Serializer,
+    GetHistoricoTRDSerializer,
     ModificarTRDNombreVersionSerializer,
     ModificarTipologiaDocumentalSerializer,
     ReanudarTrdSerializer,
@@ -152,8 +153,8 @@ class ModificarTipologiaDocumental(generics.UpdateAPIView):
         
         desactivar_tipologia = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_tipologia_doc=pk,activo=True,id_catserie_unidadorg_ccd_trd__id_trd__fecha_retiro_produccion=None).first()
         serializer = RetornarDatosTRDSerializador(desactivar_tipologia)  
-           
-        if desactivar_tipologia:
+        
+        if desactivar_tipologia and not data['activo']:
             try:
                 raise PermissionDenied('La Tipologia no se puede desactivar si se esta usando en una TRD.')
             except PermissionDenied as e:
@@ -226,7 +227,7 @@ class BuscarTipologia(generics.ListAPIView):
         buscar_tipologia = self.queryset.filter(nombre__icontains=nombre_tipologia) if nombre_tipologia else self.queryset.all()
         serializador = self.serializer_class(buscar_tipologia,many=True,context={'request':request})
         
-        return Response({'succes':True, 'detail':'Se encontraron los siguientes usuarios.','data':serializador.data}, status=status.HTTP_200_OK)
+        return Response({'succes':True, 'detail':'Se encontraron las siguientes tipologias','data':serializador.data}, status=status.HTTP_200_OK)
             
 
 #BUSQUEDA DE TRD POR NOMBRE Y VERSIÓN
@@ -250,6 +251,22 @@ class BusquedaTRDNombreVersion(generics.ListAPIView):
         serializador = self.serializer_class(trd,many=True)
                          
         return Response({'succes':True, 'detail':'Se encontraron las siguientes TRD por Nombre y Versión','data':serializador.data}, status=status.HTTP_200_OK)
+
+class GetHistoricoTRD(generics.ListAPIView):
+    serializer_class = GetHistoricoTRDSerializer
+    queryset = HistoricosCatSeriesUnidadOrgCCDTRD.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request):
+        id_trd = request.data.get('id_trd')
+        queryset = self.queryset.all()
+        
+        if id_trd:
+            queryset = queryset.filter(id_catserie_unidadorg_ccd_trd__id_trd=id_trd)
+            
+        serializador = self.serializer_class(queryset, many=True)
+                         
+        return Response({'succes':True, 'detail':'Se encontró el siguiente histórico','data':serializador.data}, status=status.HTTP_200_OK)
 
 #MODIFICAR TDR NOMBRE Y VERSION
 

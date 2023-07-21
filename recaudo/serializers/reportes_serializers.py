@@ -39,7 +39,7 @@ class CarteraGeneralDetalleSerializer(serializers.ModelSerializer):
     
     def get_expediente(self, obj):
         expediente = obj.id_obligacion.id_expediente
-        return expediente.codigo_expediente if expediente else None
+        return expediente.cod_expediente if expediente else None
 
     def get_resolucion(self, obj):
         resolucion = obj.id_obligacion.id_expediente.numero_resolucion
@@ -68,7 +68,7 @@ class CarteraEdadesSerializer(serializers.ModelSerializer):
         
     def get_expediente(self, obj):
         expediente = obj.id_obligacion.id_expediente
-        return expediente.codigo_expediente if expediente else None
+        return expediente.cod_expediente if expediente else None
 
     def get_resolucion(self, obj):
         resolucion = obj.id_obligacion.id_expediente.numero_resolucion
@@ -100,7 +100,7 @@ class ReporteFacilidadesPagosDetalleSerializer(serializers.ModelSerializer):
     tipo_cobro = serializers.CharField()
     identificacion = serializers.CharField()
     nombre_deudor = serializers.CharField()
-    codigo_expediente = serializers.CharField()
+    cod_expediente = serializers.CharField()
     numero_resolucion = serializers.CharField()
     numero_factura = serializers.CharField()
     valor_sancion = serializers.DecimalField(max_digits=30, decimal_places=2)
@@ -108,6 +108,6 @@ class ReporteFacilidadesPagosDetalleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DetallesFacilidadPago
-        fields = ('tipo_cobro', 'identificacion', 'nombre_deudor', 'concepto_deuda','codigo_expediente', 'numero_resolucion',
+        fields = ('tipo_cobro', 'identificacion', 'nombre_deudor', 'concepto_deuda','cod_expediente', 'numero_resolucion',
                   'numero_factura', 'valor_sancion')
 

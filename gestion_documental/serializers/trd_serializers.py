@@ -3,11 +3,13 @@ from rest_framework.serializers import ReadOnlyField
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from gestion_documental.models.tca_models import TablasControlAcceso
 from gestion_documental.models.trd_models import (
+    HistoricosCatSeriesUnidadOrgCCDTRD,
     TipologiasDoc,
     TablaRetencionDocumental,
     FormatosTiposMedio,
     CatSeriesUnidadOrgCCDTRD,
-    SeriesSubSUnidadOrgTRDTipologias
+    SeriesSubSUnidadOrgTRDTipologias,
+    FormatosTiposMedioTipoDoc
 )
 from gestion_documental.choices.tipos_medios_formato_choices import tipos_medios_formato_CHOICES
 from transversal.models.organigrama_models import UnidadesOrganizacionales
@@ -48,10 +50,19 @@ class ModificarTipologiaDocumentalSerializer(serializers.ModelSerializer):
         model = TipologiasDoc
         fields = ['nombre','activo','cod_tipo_medio_doc']
         
+
 class BuscarTipologiaSerializer(serializers.ModelSerializer):
+    formatos = serializers.SerializerMethodField()
+
+    def get_formatos(self, obj):
+        formatos = FormatosTiposMedioTipoDoc.objects.filter(id_tipologia_doc=obj.id_tipologia_documental)
+        list_id_formatos = formatos.values_list('id_formato_tipo_medio__id_formato_tipo_medio', flat=True)
+        return list_id_formatos
+
     class Meta:
         model = TipologiasDoc
-        fields = '__all__'
+        fields = ['id_tipologia_documental', 'nombre', 'cod_tipo_medio_doc', 'activo', 'item_ya_usado', 'formatos']
+
 
 class BusquedaTRDNombreVersionSerializer(serializers.ModelSerializer):
     usado = serializers.SerializerMethodField()
@@ -67,6 +78,22 @@ class BusquedaTRDNombreVersionSerializer(serializers.ModelSerializer):
         model = TablaRetencionDocumental
         fields = ['id_trd','id_ccd','id_organigrama','version','nombre','fecha_terminado','fecha_puesta_produccion','fecha_retiro_produccion','actual','usado']
 
+class GetHistoricoTRDSerializer(serializers.ModelSerializer):
+    persona_cambia = serializers.SerializerMethodField()
+    
+    def get_persona_cambia(self, obj):
+        persona_cambia = None
+        if obj.id_persona_cambia:
+            nombre_list = [obj.id_persona_cambia.primer_nombre, obj.id_persona_cambia.segundo_nombre,
+                            obj.id_persona_cambia.primer_apellido, obj.id_persona_cambia.segundo_apellido]
+            persona_cambia = ' '.join(item for item in nombre_list if item is not None)
+            persona_cambia = persona_cambia if persona_cambia != "" else None
+        return persona_cambia
+    
+    class Meta:
+        model = HistoricosCatSeriesUnidadOrgCCDTRD
+        fields = '__all__'
+        
 class ModificarTRDNombreVersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = TablaRetencionDocumental
