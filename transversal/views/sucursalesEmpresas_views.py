@@ -79,7 +79,7 @@ class CrearSucursalEmpresaView(generics.CreateAPIView):
         
         Util.save_auditoria(auditoria_data)
         headers = self.get_success_headers(serializer.data)
-        return Response({'success':True, 'detail':'la sucursal empresa actualizada','data':serializer.data}, status=status.HTTP_201_CREATED)
+        return Response({'success':True, 'detail':'la sucursal empresa ha sido creada','data':serializer.data}, status=status.HTTP_201_CREATED)
 
             
 class PutSucursalEmpresa(generics.RetrieveUpdateAPIView):
