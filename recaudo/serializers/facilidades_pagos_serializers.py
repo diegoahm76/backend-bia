@@ -8,15 +8,24 @@ from recaudo.models.pagos_models import (
     FacilidadesPago,
     GarantiasFacilidad,
     DetallesBienFacilidadPago,
-    CumplimientoRequisitos
+    CumplimientoRequisitos, 
+    RequisitosActuacion
 )
 
-from recaudo.models.base_models import TiposBien
+from recaudo.models.base_models import TiposBien, TipoActuacion
+
+from seguridad.models import Personas, Municipio
 
 
 class TipoBienSerializer(serializers.ModelSerializer):
     class Meta:
         model = TiposBien
+        fields = '__all__'
+
+
+class TipoActuacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoActuacion
         fields = '__all__'
 
 
@@ -29,6 +38,12 @@ class BienSerializer(serializers.ModelSerializer):
 class AvaluosSerializer(serializers.ModelSerializer):
     class Meta:
         model = Avaluos
+        fields = '__all__'
+
+
+class RequisitosActuacionSerializer (serializers.ModelSerializer):
+    class Meta:
+        model = RequisitosActuacion
         fields = '__all__'
 
 
@@ -50,6 +65,19 @@ class CumplimientoRequisitosSerializer (serializers.ModelSerializer):
         fields = '__all__'
 
 
+class DatosContactoDeudorSerializer(serializers.ModelSerializer):
+    ciudad = serializers.SerializerMethodField()
+
+    def get_ciudad(self, obj):
+        ubicacion = Municipio.objects.filter(cod_municipio=obj.municipio_residencia).first()
+        ubicacion = ubicacion.nombre
+        return ubicacion
+        
+    class Meta:
+        model = Personas
+        fields = ('direccion_notificaciones', 'ciudad', 'telefono_celular')
+
+
 class FacilidadesPagoSerializer(serializers.ModelSerializer):
     class Meta:
         model = FacilidadesPago
@@ -61,6 +89,26 @@ class FacilidadesPagoSerializer(serializers.ModelSerializer):
             'documento_soporte': {'required': True},
             'consignacion_soporte': {'required':True}
         }
+
+
+class FacilidadesPagoFuncionarioPutSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FacilidadesPago
+        fields = ('id','id_funcionario')
+
+
+class FuncionariosSerializer(serializers.ModelSerializer):
+    nombre_funcionario = serializers.SerializerMethodField()
+    
+    def get_nombre_funcionario(self, obj):
+        nombre_funcionario = None
+        nombre_list = [obj.primer_nombre, obj.primer_apellido]
+        nombre_funcionario = ' '.join(item for item in nombre_list if item is not None)
+        return nombre_funcionario
+    
+    class Meta:
+        model = Personas
+        fields = ('id_persona', 'nombre_funcionario')
 
 
 class BienesDeudorSerializer(serializers.ModelSerializer):

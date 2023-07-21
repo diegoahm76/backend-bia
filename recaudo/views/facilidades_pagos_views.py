@@ -1,16 +1,16 @@
-from recaudo.serializers.pagos_serializers import (
-    TipoActuacionSerializer,
-    DatosContactoDeudorSerializer,
-)
-
 from recaudo.serializers.facilidades_pagos_serializers import (
     AvaluosSerializer,
     FacilidadesPagoSerializer,
     GarantiasFacilidadSerializer,
+    RequisitosActuacionSerializer,
     DetallesBienFacilidadPagoSerializer,
     CumplimientoRequisitosSerializer,
     BienesDeudorSerializer,
     TipoBienSerializer,
+    TipoActuacionSerializer,
+    DatosContactoDeudorSerializer,
+    FacilidadesPagoFuncionarioPutSerializer,
+    FuncionariosSerializer,
     BienSerializer
 )
 
@@ -19,6 +19,8 @@ from recaudo.models.procesos_models import Bienes
 from recaudo.models.pagos_models import FacilidadesPago, RequisitosActuacion
 
 from recaudo.models.base_models import TiposBien
+
+from recaudo.models.garantias_models import RolesGarantias
 
 from datetime import timedelta, date
 
@@ -33,6 +35,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+
 
 import random
 import string
@@ -71,6 +74,17 @@ class DatosContactoDeudorView(generics.ListAPIView):
         }, status=status.HTTP_200_OK) 
 
 
+class RequisitosActuacionView(generics.ListAPIView):
+    serializer_class = RequisitosActuacionSerializer
+    queryset = RequisitosActuacion
+    
+    def get(self, request, id):
+        queryset = RequisitosActuacion.objects.filter(id_tipo_actuacion=id)
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'detail':'Se muestra los requisitos deltipo de actuacion del deudor',  'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+
 class TiposBienesView(generics.ListAPIView):
     serializer_class = TipoBienSerializer
     queryset = TiposBien.objects.all()
@@ -82,7 +96,7 @@ class TiposBienesView(generics.ListAPIView):
 
 
 
-### VISTAS QUE SE CREAN AL MOMENTO DE CREAR UNA FACILIDAD
+### SERVICION QUE CREAN AL MOMENTO DE HACER UNA FACILIDAD DE PAGO
 
 class AvaluoCreateView(generics.CreateAPIView):
     serializer_class = AvaluosSerializer
@@ -99,7 +113,7 @@ class AvaluoCreateView(generics.CreateAPIView):
             'id_bien' : bien.id,
             'fecha_avaluo': fecha_avaluo,
             'fecha_fin_vigencia': fecha_fin_vigencia,
-            'cod_funcionario_perito': data_in['cod_funcionario_perito'],
+            'id_funcionario_perito': data_in['id_funcionario_perito'],
             'valor': data_in['valor']
         }
         serializer = self.serializer_class(data=data)
@@ -144,6 +158,15 @@ class DetallesBienFacilidadPagoCreateView(generics.CreateAPIView):
     serializer_class = DetallesBienFacilidadPagoSerializer
 
     def crear_bienes_facilidad(self, data):
+        bien = Bienes.objects.filter(id=data['id_bien']).first()
+        facilidad_pago = FacilidadesPago.objects.filter(id=data['id_facilidad_pago']).first()
+        
+        if not bien:
+            raise NotFound('No existe bien relacionado con la informacion ingresada')
+        
+        if not facilidad_pago:
+            raise NotFound('No existe facilidad de pago relacionada con la informacion ingresada')
+        
         serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
         bienes_facilidad = serializer.save()
@@ -165,6 +188,15 @@ class GarantiasFacilidadCreateView(generics.CreateAPIView):
     serializer_class = GarantiasFacilidadSerializer
 
     def crear_garantias_facilidad(self, data):
+        rol = RolesGarantias.objects.filter(id=data['id_rol']).first()
+        facilidad_pago = FacilidadesPago.objects.filter(id=data['id_facilidad_pago']).first()
+        
+        if not rol:
+            raise NotFound('No existe rol de garantia relacionado con la informacion ingresada')
+        
+        if not facilidad_pago:
+            raise NotFound('No existe facilidad de pago relacionada con la informacion ingresada')
+
         serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
         garantias_facilidad = serializer.save()
@@ -186,6 +218,15 @@ class CumplimientoRequisitosCreateView(generics.CreateAPIView):
     serializer_class = CumplimientoRequisitosSerializer
 
     def crear_cumplimiento_requisitos(self, data):
+        requisito_actuacion = RequisitosActuacion.objects.filter(id=data['id_requisito_actuacion']).first()
+        facilidad_pago = FacilidadesPago.objects.filter(id=data['id_facilidad_pago']).first()
+        
+        if not requisito_actuacion:
+            raise NotFound('No existe requisito relacionado con la informacion ingresada')
+        
+        if not facilidad_pago:
+            raise NotFound('No existe facilidad de pago relacionada con la informacion ingresada')
+        
         serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
         cumplimiento_requisitos = serializer.save()
@@ -272,7 +313,7 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
 #         #             #CREAR AVALUO
 #         #             avaluo_data = {
 #         #                 'id_bien': bien.id,
-#         #                 'cod_funcionario_perito': data_in['id_funcionario'],
+#         #                 'id_funcionario_perito': data_in['id_funcionario'],
 #         #                 'valor': datos_bien['valor']
 #         #                 }
 #         #             avaluo = instancia_avaluo.crear_avaluo(avaluo_data)
@@ -329,7 +370,7 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
             # CREAR AVALUO
             avaluo_data = {
                 'id_bien': bien.id,
-                'cod_funcionario_perito': data_in['id_funcionario'],
+                'id_funcionario_perito': data_in['id_funcionario'],
                 'valor': valor
             }
             avaluo = instancia_avaluo.crear_avaluo(avaluo_data)
@@ -386,6 +427,53 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
             raise ValidationError('No se pudo crear la facilidad de pago')
 
         return Response({'success':True, 'detail':'Se crea la relación de facilidades de pago y bienes mediante garantías', 'data':self.serializer_class(facilidad_pago).data}, status=status.HTTP_201_CREATED)
+
+
+### ASIGNACION DE FUNCIONARIOS
+
+
+class FacilidadPagoFuncionarioUpdateView(generics.UpdateAPIView):
+    serializer_class = FacilidadesPagoFuncionarioPutSerializer
+
+    def update_funcionario(self, serializer):
+        id_funcionario = serializer.validated_data.get('id_funcionario')
+        id_funcionario = ClasesTerceroPersona.objects.filter(id_persona=id_funcionario, id_clase_tercero=2).first()
+
+        if id_funcionario:
+            serializer.save(update_fields=['id_funcionario'])
+            return True
+        return False
+
+    def put(self, request, id):
+        data = request.data
+        facilidad_de_pago = FacilidadesPago.objects.filter(id=id).first()
+
+        if not facilidad_de_pago:
+            raise NotFound('No existe facilidad de pago relacionada con la informacion ingresada')
+        
+        id_user = request.user.persona.id_persona
+        asignar = id_user == facilidad_de_pago.id_funcionario
+        serializer = self.serializer_class(facilidad_de_pago, data=data)
+        serializer.is_valid(raise_exception=True)
+
+        if self.update_funcionario(serializer):
+            data = serializer.data
+            data['asignar'] = asignar
+            return Response({'success': True, 'detail': 'Se le asigna el funcionario a la facilidad de pago', 'data': data}, status=status.HTTP_200_OK)
+        else:
+            raise PermissionDenied('El funcionario ingresado no tiene permisos')
+
+
+
+class FuncionariosView(generics.ListAPIView):
+    serializer_class = FuncionariosSerializer
+    queryset = Personas.objects.all()
+
+    def get(self, request):
+        funcionarios = ClasesTerceroPersona.objects.filter(id_clase_tercero=2)
+        funcionarios = [funcionario.id_persona for funcionario in funcionarios]
+        serializer = self.serializer_class(funcionarios, many=True)
+        return Response({'success': True, 'detail':'Se muestra los funcionarios para facilidades de pago', 'data':serializer.data}, status=status.HTTP_200_OK)
 
 
 

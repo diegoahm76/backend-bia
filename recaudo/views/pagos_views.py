@@ -9,22 +9,14 @@ from recaudo.models.pagos_models import (
 )
 
 from recaudo.serializers.pagos_serializers import (
-    FacilidadesPagoPutSerializer,
     DeudorFacilidadPagoSerializer,
-    TipoActuacionSerializer,
-    FuncionariosSerializer,    
-    RequisitosActuacionSerializer,
     CumplimientoRequisitosSerializer,
-    DatosContactoDeudorSerializer,
     DetallesFacilidadPagoSerializer,
-    PlanPagosSerializer,
-    TasasInteresSerializer,
     ObligacionesSerializer,
     ConsultaObligacionesSerializer,
     ListadoFacilidadesPagoSerializer,
     ConsultaFacilidadesPagosSerializer,
     ListadoDeudoresUltSerializer,
-    AutorizacionNotificacionesSerializer,
     RespuestaSolicitudFacilidadSerializer
 )
 
@@ -133,49 +125,7 @@ class ConsultaObligacionesDeudoresViews(generics.ListAPIView):
 
 # FACILIDAD DE PAGO      
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-class FacilidadPagoUpdateView(generics.UpdateAPIView):
-    serializer_class = FacilidadesPagoPutSerializer
-    queryset = FacilidadesPago.objects.all()
     
-    def put(self, request, id):
-        data = request.data
-        facilidad_de_pago = FacilidadesPago.objects.filter(id=id).first()
-        if facilidad_de_pago:
-            serializer = self.serializer_class(facilidad_de_pago, data=data, many=False)
-            serializer.is_valid(raise_exception=True)
-            id_funcionario = serializer.validated_data.get('id_funcionario')
-            id_funcionario = ClasesTerceroPersona.objects.filter(id_persona=id_funcionario, id_clase_tercero=2).first()
-            if id_funcionario:
-                serializer.save(update_fields=['id_funcionario'])
-                return Response({'success': True, 'detail':'Se le asigna el funcionario a la facilidad de pago', 'data':serializer.data}, status=status.HTTP_200_OK)
-            else:
-                raise PermissionDenied('El funcionario ingresado no tiene permisos')
-        else:
-            raise NotFound('La facilidad de pago ingresada no existe')
-    
-
-class FuncionariosView(generics.ListAPIView):
-    serializer_class = FuncionariosSerializer
-    queryset = Personas.objects.all()
-
-    def get(self, request):
-        funcionarios = ClasesTerceroPersona.objects.filter(id_clase_tercero=2)
-        funcionarios = [funcionario.id_persona for funcionario in funcionarios]
-        serializer = self.serializer_class(funcionarios, many=True)
-        return Response({'success': True, 'detail':'Se muestra los funcionarios para facilidades de pago', 'data':serializer.data}, status=status.HTTP_200_OK)
 
 
 class ConsultaObligacionesViews(generics.ListAPIView):
@@ -273,47 +223,6 @@ class ListadoFacilidadesPagoFuncionariosViews(generics.ListAPIView):
         serializer = ListadoFacilidadesPagoSerializer(facilidades_pago, many=True)
         return Response( {'success': True, 'detail':'Se le asignaron las siguientes facilidades de pago','data':serializer.data},status=status.HTTP_200_OK)
 
-
-class RequisitosActuacionView(generics.ListAPIView):
-    serializer_class = RequisitosActuacionSerializer
-    queryset = RequisitosActuacion
-    
-    def get(self, request, id):
-        queryset = RequisitosActuacion.objects.filter(id_tipo_actuacion=id)
-        serializer = self.serializer_class(queryset, many=True)
-        return Response({'success': True, 'detail':'Se muestra los requisitos deltipo de actuacion del deudor',  'data': serializer.data}, status=status.HTTP_200_OK)
-
-
-class AgregarDocumentosRequisitosView(generics.CreateAPIView):
-    serializer_class = CumplimientoRequisitosSerializer
-    queryset = CumplimientoRequisitos.objects.all()
-
-    def post(self, request):
-        data = request.data
-        serializer = self.serializer_class(data=data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response({'success': True, 'detail':'Se agregar los documentos requeridos para el deudor actuacion', 'data':serializer.data},status=status.HTTP_200_OK)
-
-
-class AutorizacionNotificacionesView(generics.RetrieveUpdateAPIView):
-    serializer_class = AutorizacionNotificacionesSerializer
-    queryset = FacilidadesPago.objects.all()
-
-    def put(self, request, *args, **kwargs):
-        facilidad_pago = self.get_object()
-        data = request.data
-        notificaciones = data.get('notificaciones')
-
-        if notificaciones:
-            facilidad_pago.notificaciones = True
-            facilidad_pago.save()
-            return Response({'success': True, 'detail': 'El usuario acepta las notificaciones por correo electrónico'}, status=status.HTTP_200_OK)
-        else:
-            facilidad_pago.notificaciones = False
-            facilidad_pago.save()
-            raise ValidationError('El usuario no acepta notificaciones por correo electrónico')
-    
 
 class DocumentosRequisitosView(generics.ListAPIView):
     serializer_class = CumplimientoRequisitosSerializer
