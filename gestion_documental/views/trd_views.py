@@ -976,11 +976,8 @@ class PostTablaRetencionDocumental(generics.CreateAPIView):
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
-        try:
-            serializer.is_valid(raise_exception=True)
-            pass
-        except:
-            raise ValidationError('Valide la información ingresada, el id_ccd es requerido, el nombre y la versión son requeridos y deben ser únicos')
+            
+        serializer.is_valid(raise_exception=True)
 
         #Validación de seleccionar solo ccd terminados
         ccd = serializer.validated_data.get('id_ccd')
