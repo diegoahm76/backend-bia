@@ -4,6 +4,7 @@ from recaudo.views import facilidades_pagos_views as views
 
 urlpatterns = [
 
+    # CREAR UNA SOLICITUD DE FACILIDAD DE PAGOS
     path('tipos-calidad-actuacion/', views.TipoActuacionView.as_view(), name='tipos-calidad-actuacion'),       
     path('datos-contacto-deudor/<int:id>/', views.DatosContactoDeudorView.as_view(), name='datos-contacto-deudor'),
     path('requisitos-actuacion/<int:id>/', views.RequisitosActuacionView.as_view(), name='requisitos-actuacion'),
@@ -15,8 +16,12 @@ urlpatterns = [
     path('cumplimiento-requisitos/create/', views.CumplimientoRequisitosCreateView.as_view(), name='crear-cumplimiento-requisitos'),
     path('create/', views.FacilidadPagoCreateView.as_view(), name='crear-facilidad-pago'),
 
-    path('asignar-funcionario/put/<int:id>/', views.FacilidadPagoFuncionarioUpdateView.as_view(), name='asignar-funcionario'),
+    # ASIGNAR UN FUNCIONARIO A LA FACILIDAD DE PAGOS
+    path('listado-administrador/list/', views.ListadoFacilidadesPagoAdminViews.as_view(),name='listado-facilidades-pagos-administrador'),
+    path('listado-funcionario/list/', views.ListadoFacilidadesPagoFuncionarioViews.as_view(),name='listado-facilidades-pagos-funcionario'),
     path('funcionarios/', views.FuncionariosView.as_view(), name='funcionarios'),
+    path('asignar-funcionario/put/<int:id>/', views.FacilidadPagoFuncionarioUpdateView.as_view(), name='asignar-funcionario'),
+
 
 
 
