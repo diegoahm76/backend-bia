@@ -9,6 +9,7 @@ from recaudo.serializers.facilidades_pagos_serializers import (
     TipoBienSerializer,
     TipoActuacionSerializer,
     DatosContactoDeudorSerializer,
+    ListadoFacilidadesPagoSerializer,
     FacilidadesPagoFuncionarioPutSerializer,
     FuncionariosSerializer,
     BienSerializer
@@ -35,8 +36,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-
-
+from django.db.models import Q, Value as V
 import random
 import string
 
@@ -84,7 +84,6 @@ class RequisitosActuacionView(generics.ListAPIView):
         return Response({'success': True, 'detail':'Se muestra los requisitos deltipo de actuacion del deudor',  'data': serializer.data}, status=status.HTTP_200_OK)
 
 
-
 class TiposBienesView(generics.ListAPIView):
     serializer_class = TipoBienSerializer
     queryset = TiposBien.objects.all()
@@ -93,7 +92,6 @@ class TiposBienesView(generics.ListAPIView):
         queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
         return Response({'success': True, 'detail': 'Se muestra los tipos de bienes', 'data': serializer.data}, status=status.HTTP_200_OK)
-
 
 
 ### SERVICION QUE CREAN AL MOMENTO DE HACER UNA FACILIDAD DE PAGO
@@ -431,6 +429,75 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
 
 ### ASIGNACION DE FUNCIONARIOS
 
+class ListadoFacilidadesPagoViews(generics.ListAPIView):
+    serializer_class = ListadoFacilidadesPagoSerializer
+
+    def lista_facilidades(self, data):
+        facilidades_pago = FacilidadesPago.objects.annotate(nombre_de_usuario=Concat('id_deudor__nombres', V(' '), 'id_deudor__apellidos'))
+        
+        identificacion = data['identificacion']
+        nombre_de_usuario = data['nombre_de_usuario']
+        nombres_apellidos = nombre_de_usuario.split()
+
+        if identificacion:
+            facilidades_pago = facilidades_pago.filter(id_deudor__identificacion__icontains=identificacion)
+
+        if nombres_apellidos:
+            q = Q()
+            for nombre_apellido in nombres_apellidos:
+                q |= Q(nombre_de_usuario__icontains=nombre_apellido)
+            facilidades_pago = facilidades_pago.filter(q)
+
+        return facilidades_pago
+    
+class ListadoFacilidadesPagoAdminViews(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ListadoFacilidadesPagoSerializer
+
+    def list(self, request):
+        data = {
+            'identificacion':self.request.query_params.get('identificacion', ''),
+            'nombre_de_usuario' : self.request.query_params.get('nombre_de_usuario', ''),
+        }
+        instancia_facilidad = ListadoFacilidadesPagoViews()
+        facilidades_pago = instancia_facilidad.lista_facilidades(data)
+
+        if not facilidades_pago.exists():
+            raise NotFound("Los datos ingresados con coinciden con las facilidades de pagos existentes")
+
+        serializer = self.serializer_class(facilidades_pago, many=True)
+        id_user = request.user.persona.id_persona
+        asignar = [id_user == facilidad.id_funcionario for facilidad in facilidades_pago]
+        data = serializer.data
+
+        for i in range(len(data)):
+            data[i]['asignar'] = asignar[i]
+        
+        return Response({'success': True, 'detail': 'Se muestra las facilidades de pago de los deudores', 'data':data}, status=status.HTTP_200_OK)
+
+
+class ListadoFacilidadesPagoFuncionarioViews(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ListadoFacilidadesPagoSerializer
+
+    def list(self, request):
+        data = {
+            'identificacion':self.request.query_params.get('identificacion', ''),
+            'nombre_de_usuario' : self.request.query_params.get('nombre_de_usuario', ''),
+        }
+        instancia_facilidad = ListadoFacilidadesPagoViews()
+        facilidades_pago = instancia_facilidad.lista_facilidades(data)
+
+        if not facilidades_pago.exists():
+            raise NotFound("Los datos ingresados con coinciden con las facilidades de pagos existentes")
+
+        id_user = request.user.persona.id_persona
+        data = [facilidad for facilidad in facilidades_pago if facilidad.id_funcionario==id_user]
+
+        serializer = self.serializer_class(data, many=True)
+        
+        return Response({'success': True, 'detail': 'Se muestra las facilidades de pago de los deudores', 'data':serializer.data}, status=status.HTTP_200_OK)
+
 
 class FacilidadPagoFuncionarioUpdateView(generics.UpdateAPIView):
     serializer_class = FacilidadesPagoFuncionarioPutSerializer
@@ -450,19 +517,14 @@ class FacilidadPagoFuncionarioUpdateView(generics.UpdateAPIView):
 
         if not facilidad_de_pago:
             raise NotFound('No existe facilidad de pago relacionada con la informacion ingresada')
-        
-        id_user = request.user.persona.id_persona
-        asignar = id_user == facilidad_de_pago.id_funcionario
+    
         serializer = self.serializer_class(facilidad_de_pago, data=data)
         serializer.is_valid(raise_exception=True)
 
         if self.update_funcionario(serializer):
-            data = serializer.data
-            data['asignar'] = asignar
-            return Response({'success': True, 'detail': 'Se le asigna el funcionario a la facilidad de pago', 'data': data}, status=status.HTTP_200_OK)
+            return Response({'success': True, 'detail': 'Se le asigna el funcionario a la facilidad de pago', 'data': serializer.data}, status=status.HTTP_200_OK)
         else:
             raise PermissionDenied('El funcionario ingresado no tiene permisos')
-
 
 
 class FuncionariosView(generics.ListAPIView):
