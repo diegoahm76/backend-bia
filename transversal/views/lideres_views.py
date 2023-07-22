@@ -40,8 +40,19 @@ class GetListLideresAsignadosView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def get(self,request,id_organigrama):
-        organigramas = self.queryset.filter(id_unidad_organizacional__id_organigrama=id_organigrama)
-        serializer = self.serializer_class(organigramas, many=True)
+        lideres = self.queryset.filter(id_unidad_organizacional__id_organigrama=id_organigrama)
+        serializer = self.serializer_class(lideres, many=True)
+        
+        return Response({'success':True,'detail':"Se encontraron los siguientes lideres asignados",'data':serializer.data}, status=status.HTTP_200_OK)
+
+class GetListLideresAsignadosActualView(generics.ListAPIView):
+    serializer_class = GetListLideresAsignadosSerializer
+    queryset = LideresUnidadesOrg.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        lideres = self.queryset.filter(id_unidad_organizacional__id_organigrama__actual=True)
+        serializer = self.serializer_class(lideres, many=True)
         
         return Response({'success':True,'detail':"Se encontraron los siguientes lideres asignados",'data':serializer.data}, status=status.HTTP_200_OK)
 
