@@ -12,9 +12,11 @@ class ConfiguracionEntidadSerializer(serializers.ModelSerializer):
 
 
 class PersonaEntidadCormacarenaGetSerializer(serializers.ModelSerializer):
+    nombre_tipo_documento = serializers.ReadOnlyField(source='tipo_documento.nombre', default=None)
+    
     class Meta:
         model = Personas
-        fields = ('id_persona', 'tipo_documento', 'numero_documento', 'digito_verificacion', 'razon_social')
+        fields = ('id_persona', 'tipo_documento', 'numero_documento', 'nombre_tipo_documento', 'digito_verificacion', 'razon_social')
         
 class SucursalesEmpresasSerializer(serializers.ModelSerializer):    
     class Meta:
