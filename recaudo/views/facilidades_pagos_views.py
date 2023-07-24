@@ -12,16 +12,24 @@ from recaudo.serializers.facilidades_pagos_serializers import (
     ListadoFacilidadesPagoSerializer,
     FacilidadesPagoFuncionarioPutSerializer,
     FuncionariosSerializer,
+    FacilidadPagoGetByIdSerializer,
     BienSerializer
 )
 
 from recaudo.models.procesos_models import Bienes
 
-from recaudo.models.pagos_models import FacilidadesPago, RequisitosActuacion
+from recaudo.models.pagos_models import (
+    FacilidadesPago,
+    RequisitosActuacion,
+    CumplimientoRequisitos,
+    GarantiasFacilidad
+)
 
 from recaudo.models.base_models import TiposBien
 
 from recaudo.models.garantias_models import RolesGarantias
+
+from recaudo.views.pagos_views import DatosDeudorView
 
 from datetime import timedelta, date
 
@@ -35,7 +43,6 @@ from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, Value as V
 import random
 import string
@@ -60,18 +67,18 @@ class TipoActuacionView(generics.ListAPIView):
 class DatosContactoDeudorView(generics.ListAPIView):
     serializer_class = DatosContactoDeudorSerializer
 
-    def get(self, request, id):
-        queryset = Deudores.objects.filter(id=id).first()
-
-        if not queryset:
+    def get_datos_deudor(self, id_deudor):
+        deudor = Deudores.objects.filter(id=id_deudor).first()
+        if not deudor:
             raise NotFound('No se encontró ningun registro con el parámetro ingresado')
-        queryset = Personas.objects.filter(numero_documento = queryset.identificacion).first()
-        serializer = self.serializer_class(queryset)
-        return Response({
-            'success': True, 
-            'detail':'Se muestra los datos de contacto del deudor', 
-            'data': serializer.data
-        }, status=status.HTTP_200_OK) 
+        deudor = Personas.objects.filter(numero_documento = deudor.identificacion).first()
+        serializer = self.serializer_class(deudor)
+        return serializer.data
+    
+    def get(self, request, id):
+        deudor = self.get_datos_deudor(id)
+        return Response({'success': True, 'detail':'Se muestra los datos de contacto del deudor', 'data': deudor}, status=status.HTTP_200_OK)   
+
 
 
 class RequisitosActuacionView(generics.ListAPIView):
@@ -450,6 +457,18 @@ class ListadoFacilidadesPagoViews(generics.ListAPIView):
 
         return facilidades_pago
     
+
+class FuncionariosView(generics.ListAPIView):
+    serializer_class = FuncionariosSerializer
+    queryset = Personas.objects.all()
+
+    def get(self, request):
+        funcionarios = ClasesTerceroPersona.objects.filter(id_clase_tercero=2)
+        funcionarios = [funcionario.id_persona for funcionario in funcionarios]
+        serializer = self.serializer_class(funcionarios, many=True)
+        return Response({'success': True, 'detail':'Se muestra los funcionarios para facilidades de pago', 'data':serializer.data}, status=status.HTTP_200_OK)
+
+    
 class ListadoFacilidadesPagoAdminViews(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ListadoFacilidadesPagoSerializer
@@ -527,30 +546,86 @@ class FacilidadPagoFuncionarioUpdateView(generics.UpdateAPIView):
             raise PermissionDenied('El funcionario ingresado no tiene permisos')
 
 
-class FuncionariosView(generics.ListAPIView):
-    serializer_class = FuncionariosSerializer
-    queryset = Personas.objects.all()
-
-    def get(self, request):
-        funcionarios = ClasesTerceroPersona.objects.filter(id_clase_tercero=2)
-        funcionarios = [funcionario.id_persona for funcionario in funcionarios]
-        serializer = self.serializer_class(funcionarios, many=True)
-        return Response({'success': True, 'detail':'Se muestra los funcionarios para facilidades de pago', 'data':serializer.data}, status=status.HTTP_200_OK)
-
-
-
-
 ### MOSTRAR LA FACILIDAD DE PAGO
+class CumplimientoRequisitosGetView(generics.ListAPIView):
+    serializer_class = CumplimientoRequisitosSerializer
+
+    def get_documentos_requisitos(self, id_facilidad_pago):
+        documentos_deudor = CumplimientoRequisitos.objects.filter(id_facilidad_pago=id_facilidad_pago)
+        if not documentos_deudor:
+            raise NotFound('No se encontró ningún registro con el parámetro ingresado')
+        serializer = self.serializer_class(documentos_deudor, many=True)
+        return serializer.data
+    
+    def get(self, request, id_facilidad_pago):
+        documentos_deudor = self.get_documentos_requisitos(id_facilidad_pago)
+        return Response({'success': True, 'detail':'Se muestra los datos del deudor', 'data':documentos_deudor}, status=status.HTTP_200_OK)  
+
+
+class GarantiasFacilidadGetView(generics.ListAPIView):
+    serializer_class = GarantiasFacilidadSerializer
+
+    def get_documento_garantia(self, id_facilidad_pago):
+        documento_garantia = GarantiasFacilidad.objects.filter(id_facilidad_pago=id_facilidad_pago).first()
+        if not documento_garantia:
+            raise NotFound('No se encontró ningún registro con el parámetro ingresado')
+        serializer = self.serializer_class(documento_garantia, many=False)
+        return serializer.data
+    
+    def get(self, request, id_facilidad_pago):
+        documento_garantia = self.get_documento_garantia(id_facilidad_pago)
+        return Response({'success': True, 'detail':'Se muestra los datos del deudor', 'data':documento_garantia}, status=status.HTTP_200_OK) 
+    
 
 class ListaBienesDeudorView(generics.ListAPIView):
     serializer_class = BienesDeudorSerializer
+
+    def get_bienes_deudor(self, id_deudor):
+        bienes_deudor = Bienes.objects.filter(id_deudor=id_deudor)
+        if not bienes_deudor:
+            raise NotFound('No se encontró ningún registro con el parámetro ingresado')
+        serializer = self.serializer_class(bienes_deudor, many=True)
+        return serializer.data
+
     queryset = Bienes.objects.all()
 
-    def get(self, request, id):
-        bienes_deudor = Bienes.objects.filter(id_deudor=id)
-        bienes_deudor = [bien_deudor for bien_deudor in bienes_deudor]
-        if not bienes_deudor:
-            return Response({'success': False, 'detail': 'No se encontró ningun registro con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = self.serializer_class(bienes_deudor, many=True)
-        return Response({'success': True, 'detail': 'Se muestra todos los bienes del deudor', 'data': serializer.data}, status=status.HTTP_200_OK) 
+    def get(self, request, id_deudor):
+        bienes_deudor = self.get_bienes_deudor(id_deudor)
+        return Response({'success': True, 'detail': 'Se muestra todos los bienes del deudor', 'data': bienes_deudor}, status=status.HTTP_200_OK) 
     
+
+class FacilidadPagoGetByIdView(generics.ListAPIView):
+    serializer_class = FacilidadPagoGetByIdSerializer
+
+    def get_facilidad_pago_by_id(self, id):
+        facilidad_pago = FacilidadesPago.objects.filter(id=id).first()
+        if not facilidad_pago:
+            raise NotFound('No se encontró ningún registro con el parámetro ingresado')
+        serializer = self.serializer_class(facilidad_pago, many=False)
+        return serializer.data
+    
+    def get(self, request, id):
+        facilidad_pago = self.get_facilidad_pago_by_id(id)
+        instancia_deudor = DatosDeudorView()
+        deudor = instancia_deudor.get_datos_deudor(facilidad_pago['id_deudor'])
+        instancia_documentos_deudor = CumplimientoRequisitosGetView()
+        documentos_deudor_actuacion = instancia_documentos_deudor.get_documentos_requisitos(facilidad_pago['id'])
+        # instancia_deudor_actuacion = DatosContactoDeudorView
+        # datos_deudor_actuacion = instancia_deudor_actuacion.get_datos_deudor(facilidad_pago['id_deudor'])
+        instancia_garantia = GarantiasFacilidadGetView()
+        documento_garanta = instancia_garantia.get_documento_garantia(facilidad_pago['id'])
+        instancia_bienes = ListaBienesDeudorView()
+        bienes = instancia_bienes.get_bienes_deudor(facilidad_pago['id_deudor'])
+
+        result_data = {
+            'facilidad_pago': facilidad_pago,
+            'deudor': deudor,
+            'documentos_deudor_actuacion': documentos_deudor_actuacion,
+            # 'datos_deudor_actuacion': datos_deudor_actuacion,
+            'documento_garantia': documento_garanta,
+            'bienes': bienes
+        }
+
+        return Response({'success': True, 'detail':'Se muestra los datos la facilidad de pago', 'data': result_data}, status=status.HTTP_200_OK)   
+        
+

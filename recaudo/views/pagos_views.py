@@ -93,13 +93,18 @@ class DatosDeudorView(generics.ListAPIView):
     queryset = Deudores.objects.all()
     serializer_class = DeudorFacilidadPagoSerializer
 
-    def get(self, request, id):
-        queryset = Deudores.objects.filter(id=id).first()
+    def get_datos_deudor(self, id):
+        deudor = Deudores.objects.filter(id=id).first()
 
-        if not queryset:
+        if not deudor:
             raise NotFound('No se encontró ningun registro con el parámetro ingresado')
-        serializer = self.serializer_class(queryset)
-        return Response({'success': True, 'detail':'Se muestra los datos del deudor', 'data': serializer.data}, status=status.HTTP_200_OK)   
+
+        serializer = self.serializer_class(deudor)
+        return serializer.data
+
+    def get(self, request, id):
+        deudor = self.get_datos_deudor(id)
+        return Response({'success': True, 'detail':'Se muestra los datos del deudor', 'data': deudor}, status=status.HTTP_200_OK)   
 
 
 class ConsultaObligacionesDeudoresViews(generics.ListAPIView):

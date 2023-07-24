@@ -22,6 +22,10 @@ urlpatterns = [
     path('funcionarios/', views.FuncionariosView.as_view(), name='funcionarios'),
     path('asignar-funcionario/put/<int:id>/', views.FacilidadPagoFuncionarioUpdateView.as_view(), name='asignar-funcionario'),
 
+    # MOSTRAR UNA FACILIDAD DE PAGOS
+    
+    path('get-id/<int:id>/', views.FacilidadPagoGetByIdView.as_view(), name='obtener-facilidad-pago'),
+
 
 
 

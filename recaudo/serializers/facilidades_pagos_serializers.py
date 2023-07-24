@@ -129,6 +129,16 @@ class FuncionariosSerializer(serializers.ModelSerializer):
         fields = ('id_persona', 'nombre_funcionario')
 
 
+class FacilidadPagoGetByIdSerializer(serializers.ModelSerializer):
+    tipo_actuacion = serializers.ReadOnlyField(source='id_tipo_actuacion.descripcion',default=None)
+
+    class Meta:
+        model = FacilidadesPago
+        fields = ('id', 'id_deudor', 'id_tipo_actuacion', 'tipo_actuacion', 'fecha_generacion',
+                  'observaciones', 'periodicidad', 'cuotas', 'documento_soporte', 'consignacion_soporte',
+                  'documento_no_enajenacion', 'id_funcionario','notificaciones', 'numero_radicacion'
+                  )
+
 class BienesDeudorSerializer(serializers.ModelSerializer):
     ubicacion = serializers.ReadOnlyField(source='id_ubicacion.nombre', default=None)
     nombre_tipo_bien = serializers.ReadOnlyField(source='id_tipo_bien.descripcion', default=None)
