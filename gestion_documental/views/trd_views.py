@@ -540,7 +540,7 @@ class CreateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
 
             #VALIDACION ENVIO COMPLETO DE LA INFORMACION
 
-            if cod_disposicion_final and digitalizacion_dis_final and tiempo_retencion_ag and tiempo_retencion_ac and descripcion_procedimiento != None:
+            if cod_disposicion_final and digitalizacion_dis_final!=None and tiempo_retencion_ag and tiempo_retencion_ac and descripcion_procedimiento != None:
                 tipologias_instance = TipologiasDoc.objects.filter(id_tipologia_documental__in = tipologias)
                 if len(tipologias) != tipologias_instance.count():
                     raise ValidationError('Todas las tipologias selecionadas deben existir')
