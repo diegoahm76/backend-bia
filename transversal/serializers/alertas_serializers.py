@@ -15,8 +15,8 @@ class FechaClaseAlertaPostSerializer(serializers.ModelSerializer):
             model=FechaClaseAlerta
             #fields=('__all__')
             fields=[    "cod_clase_alerta",
-    "dia_cumplimiento",
-    "mes_cumplimiento",]
+            "dia_cumplimiento",
+            "mes_cumplimiento",]
 
 
 class FechaClaseAlertaGetSerializer(serializers.ModelSerializer):

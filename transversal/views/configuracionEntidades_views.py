@@ -66,7 +66,7 @@ class UpdateConfiguracionEntidad(generics.UpdateAPIView):
         consecutivo=self.buscarConsecutivo(cod_tipo_perfil)
         print(consecutivo)
         historico_perfil = HistoricoPerfilesEntidad(
-                            id_persona_entidad_id=1,
+                            id_persona_entidad_id=3,
                             cod_tipo_perfil_histo=cod_tipo_perfil,
                             consec_asignacion_perfil_histo=consecutivo+1,
                             id_persona_perfil_histo_id=id_persona.id_persona,
