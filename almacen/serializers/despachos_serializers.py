@@ -1,5 +1,5 @@
 from almacen.models.generics_models import UnidadesMedida
-from seguridad.serializers.personas_serializers import PersonasSerializer
+from transversal.serializers.personas_serializers import PersonasSerializer
 from almacen.models.generics_models import Magnitudes
 from almacen.models.inventario_models import Inventario
 from almacen.models.solicitudes_models import DespachoConsumo, ItemDespachoConsumo, SolicitudesConsumibles, ItemsSolicitudConsumible

@@ -1,6 +1,6 @@
 from django.db import models
 #from django.contrib.gis.db import models
-from seguridad.models import Personas
+from transversal.models.personas_models import Personas
 
 class Secciones(models.Model):
     id_seccion = models.AutoField(primary_key=True,editable=False,db_column="T605IdSeccion")

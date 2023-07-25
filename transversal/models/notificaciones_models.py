@@ -22,8 +22,8 @@ class Notificacion(models.Model):
     fecha_creacion = models.DateTimeField(auto_now=True, db_column='T031fechaCreacionRegistro')
     email = models.CharField(max_length=255, db_column='T031Email')
     email_alterno = models.CharField(max_length=255, null=True, blank=True, db_column='T031EmailAlterno')
-    id_destinatario = models.ForeignKey('seguridad.Personas', on_delete=models.CASCADE, related_name='persona_destinatario', db_column='T031Id_Destinatario')
-    id_funcionario = models.ForeignKey('seguridad.Personas', on_delete=models.CASCADE, related_name='persona_funcionario', db_column='T031Id_Funcionario')
+    id_destinatario = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, related_name='persona_destinatario', db_column='T031Id_Destinatario')
+    id_funcionario = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, related_name='persona_funcionario', db_column='T031Id_Funcionario')
     id_expediente = models.ForeignKey(Expedientes, on_delete=models.SET_NULL, null=True, blank=True, db_column='T031Id_Expediente')
     id_medio_notificacion = models.ForeignKey(MedioNotificacion, on_delete=models.CASCADE, db_column='T031Id_MedioNotificacion')
     id_modulo_generador = models.ForeignKey('seguridad.Modulos', on_delete=models.CASCADE, db_column='T031Id_moduloGenerador')
@@ -43,7 +43,7 @@ class DespachoNotificacion(models.Model):
     funcionario_entrega = models.CharField( max_length=255, db_column='T032funcionarioEntrega')
     observaciones = models.CharField( max_length=255, blank=True, null=True, db_column='T032observacion')
     fecha_creacion = models.DateTimeField(auto_now=True, db_column='T032fechaCreacionRegistro')
-    id_funcionario = models.ForeignKey('seguridad.Personas', on_delete=models.CASCADE, db_column='T032Id_Funcionario')
+    id_funcionario = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T032Id_Funcionario')
     id_notificacion = models.ForeignKey(Notificacion, on_delete=models.CASCADE, db_column='T032Id_Notificacion')
 
     class Meta:

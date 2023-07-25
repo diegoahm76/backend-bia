@@ -1,6 +1,6 @@
 [
     {
-        "model": "seguridad.Personas",
+        "model": "transversal.Personas",
         "pk" : 1,
         "fields" : {
             "tipo_documento": "CC",

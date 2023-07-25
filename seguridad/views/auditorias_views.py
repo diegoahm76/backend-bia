@@ -4,7 +4,8 @@ from rest_framework.decorators import api_view,permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
 from rest_framework.generics import RetrieveUpdateAPIView
-from seguridad.models import Auditorias,Personas,Modulos,User
+from seguridad.models import Auditorias,Modulos,User
+from transversal.models.personas_models import Personas
 from seguridad.serializers.auditorias_serializers import AuditoriasSerializers,AuditoriasPostSerializers
 from rest_framework.response import Response
 from django.db.models import Q

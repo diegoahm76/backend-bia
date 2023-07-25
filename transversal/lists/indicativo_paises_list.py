@@ -1,4 +1,4 @@
-from seguridad.choices.indicativo_paises_choices import indicativo_paises_CHOICES
+from transversal.choices.indicativo_paises_choices import indicativo_paises_CHOICES
 
 indicativo_paises_LIST = []
 for choice in indicativo_paises_CHOICES:

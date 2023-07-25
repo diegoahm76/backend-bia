@@ -1,10 +1,16 @@
-from seguridad.models import HistoricoRepresentLegales
-from seguridad.models import HistoricoAutirzacionesNotis
 from django.db.models.signals import pre_save
 from django.db.models import Q
 from django.dispatch import receiver
 from datetime import datetime
-from seguridad.models import Personas, HistoricoEmails, HistoricoDireccion, Cargos, TipoDocumento, EstadoCivil
+from transversal.models.base_models import (
+    HistoricoEmails,
+    HistoricoDireccion,
+    HistoricoAutirzacionesNotis,
+    HistoricoRepresentLegales
+)
+from transversal.models.personas_models import Personas
+from transversal.models.base_models import Cargos
+from transversal.models.base_models import EstadoCivil, TipoDocumento
 
 @receiver(pre_save, sender=Personas)
 def create_historico_personas(sender, instance, **kwargs):
@@ -100,8 +106,8 @@ def create_historico_personas(sender, instance, **kwargs):
                     direccion = current.direccion_laboral
                 else:
                     direccion = ''
-                cod_municipio = current.cod_municipio_laboral_nal if previous.cod_municipio_laboral_nal!= current.cod_municipio_laboral_nal else None
-                cod_pais_exterior = current.pais_residencia if previous.pais_residencia!= current.pais_residencia else None
+                cod_municipio = current.cod_municipio_laboral_nal if previous.cod_municipio_laboral_nal.cod_municipio != current.cod_municipio_laboral_nal.cod_municipio else None
+                cod_pais_exterior = current.pais_residencia if previous.pais_residencia.cod_pais != current.pais_residencia.cod_pais else None
                 
                 historico_direccion = HistoricoDireccion.objects.create(
                     direccion = direccion,
@@ -117,8 +123,8 @@ def create_historico_personas(sender, instance, **kwargs):
                     direccion = current.direccion_residencia
                 else:
                     direccion = ''
-                cod_municipio = current.municipio_residencia if previous.municipio_residencia!= current.municipio_residencia else None
-                cod_pais_exterior = current.pais_residencia if previous.pais_residencia!= current.pais_residencia else None
+                cod_municipio = current.municipio_residencia if previous.municipio_residencia.cod_municipio != current.municipio_residencia.cod_municipio else None
+                cod_pais_exterior = current.pais_residencia if previous.pais_residencia.cod_pais != current.pais_residencia.cod_pais else None
                 
                 historico_direccion = HistoricoDireccion.objects.create(
                     direccion = direccion,
@@ -135,10 +141,10 @@ def create_historico_personas(sender, instance, **kwargs):
                 else:
                     direccion = ''
                 if current.tipo_persona == 'J':
-                    cod_pais_exterior = current.cod_pais_nacionalidad_empresa if previous.cod_pais_nacionalidad_empresa!= current.cod_pais_nacionalidad_empresa else None
+                    cod_pais_exterior = current.cod_pais_nacionalidad_empresa if previous.cod_pais_nacionalidad_empresa.cod_pais != current.cod_pais_nacionalidad_empresa.cod_pais else None
                 else:
-                    cod_pais_exterior = current.pais_residencia if previous.pais_residencia!= current.pais_residencia else None
-                cod_municipio = current.cod_municipio_notificacion_nal if previous.cod_municipio_notificacion_nal!= current.cod_municipio_notificacion_nal else None
+                    cod_pais_exterior = current.pais_residencia if previous.pais_residencia.cod_pais != current.pais_residencia.cod_pais else None
+                cod_municipio = current.cod_municipio_notificacion_nal if previous.cod_municipio_notificacion_nal.cod_municipio != current.cod_municipio_notificacion_nal.cod_municipio else None
                 
                 historico_direccion = HistoricoDireccion.objects.create(
                     direccion = direccion,

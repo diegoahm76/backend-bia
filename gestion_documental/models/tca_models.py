@@ -2,9 +2,12 @@ from django.db import models
 from gestion_documental.models.ccd_models import CatalogosSeriesUnidad, CuadrosClasificacionDocumental
 from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, TablaRetencionDocumental
 from gestion_documental.choices.tipo_clasificacion_choices import tipo_clasificacion_CHOICES
-from seguridad.models import Personas, Cargos
+from transversal.models.personas_models import Personas
 from transversal.models.organigrama_models import (
     UnidadesOrganizacionales
+)
+from transversal.models.base_models import (
+    Cargos
 )
 from rest_framework.exceptions import ValidationError
 

@@ -3,11 +3,16 @@ from rest_framework.response import Response
 from conservacion.models.viveros_models import HistoricoResponsableVivero, Vivero
 from almacen.models.generics_models import Bodegas
 from transversal.serializers.vinculacion_serializers import BusquedaHistoricoCargoUndSerializer, GetDesvinculacion_persona, VinculacionColaboradorSerializer, ConsultaVinculacionColaboradorSerializer, UpdateVinculacionColaboradorSerializer
-from seguridad.models import ClasesTerceroPersona, HistoricoActivacion, HistoricoCargosUndOrgPersona, Personas, User
+from seguridad.models import HistoricoActivacion, OperacionesSobreUsuario, User
+from transversal.models.base_models import (
+    ClasesTerceroPersona,
+    Cargos,
+    HistoricoCargosUndOrgPersona
+)
+from transversal.models.personas_models import Personas
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime, date, timedelta
 import copy
-from seguridad.models import Cargos, HistoricoCargosUndOrgPersona
 from transversal.models import UnidadesOrganizacionales
 from seguridad.utils import Util
 
@@ -298,10 +303,11 @@ class Desvinculacion_persona(generics.UpdateAPIView):
                     usuario.is_active = False
                     
                 #HISTORICO ACTIVACION
+                cod_operacion_instance = OperacionesSobreUsuario.objects.filter(cod_operacion='I').first()
                 
                 HistoricoActivacion.objects.create(
                     id_usuario_afectado = usuario,
-                    cod_operacion = 'I',
+                    cod_operacion = cod_operacion_instance,
                     fecha_operacion = fecha_desvinculacion,
                     justificacion = "Inactivación automática por acción de desvinculación de la corporación desde el módulo de Vinculación de Colaboradores",
                     usuario_operador = usuario_logueado                

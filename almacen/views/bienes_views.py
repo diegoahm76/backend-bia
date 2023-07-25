@@ -1,4 +1,4 @@
-from almacen.models.bienes_models import CatalogoBienes
+from almacen.models.bienes_models import CatalogoBienes, EstadosArticulo, MetodosValoracionArticulos, TiposActivo, TiposDepreciacionActivos
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from almacen.choices.estados_articulo_choices import estados_articulo_CHOICES
@@ -29,7 +29,7 @@ from almacen.models.inventario_models import (
     TiposEntradas
 )
 from almacen.utils import UtilAlmacen
-from seguridad.models import (
+from transversal.models.personas_models import (
     Personas
 )
 from almacen.serializers.inventario_serializers import (
@@ -89,10 +89,12 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
 
                 match data['cod_tipo_bien']:
                     case 'A':
+                        cod_tipo_activo_instance = TiposActivo.objects.filter(cod_tipo_activo=data['cod_tipo_activo']).first()
+                        cod_tipo_depreciacion_instance = TiposDepreciacionActivos.objects.filter(cod_tipo_depreciacion=data['cod_tipo_depreciacion']).first()
                         catalogo_bien.nombre = data['nombre']
-                        catalogo_bien.cod_tipo_activo = data['cod_tipo_activo']
+                        catalogo_bien.cod_tipo_activo = cod_tipo_activo_instance
                         catalogo_bien.id_porcentaje_iva = id_porcentaje_iva
-                        catalogo_bien.cod_tipo_depreciacion = data['cod_tipo_depreciacion']
+                        catalogo_bien.cod_tipo_depreciacion = cod_tipo_depreciacion_instance
                         catalogo_bien.id_unidad_medida_vida_util = id_unidad_medida_vida_util
                         catalogo_bien.cantidad_vida_util = data['cantidad_vida_util']
                         catalogo_bien.valor_residual = data['valor_residual']
@@ -105,8 +107,9 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                             catalogo_bien, many=False)
                         return Response(serializer.data, status=status.HTTP_200_OK)
                     case 'C':
+                        cod_metodo_valoracion_instance = MetodosValoracionArticulos.objects.filter(cod_metodo_valoracion=data['cod_metodo_valoracion']).first()
                         catalogo_bien.nombre = data['nombre']
-                        catalogo_bien.cod_metodo_valoracion = data['cod_metodo_valoracion']
+                        catalogo_bien.cod_metodo_valoracion = cod_metodo_valoracion_instance
                         catalogo_bien.descripcion = data['descripcion']
                         catalogo_bien.id_unidad_medida = id_unidad_medida
                         catalogo_bien.id_porcentaje_iva = id_porcentaje_iva
@@ -200,18 +203,21 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                     pass
                                 except:
                                     raise ValidationError('El id de marca ingresado no existe')
+                                
+                                cod_tipo_activo_instance = TiposActivo.objects.filter(cod_tipo_activo=data['cod_tipo_activo']).first()
+                                cod_tipo_depreciacion_instance = TiposDepreciacionActivos.objects.filter(cod_tipo_depreciacion=data['cod_tipo_depreciacion']).first()
                                 catalogo_bien = CatalogoBienes.objects.create(
                                     id_bien=data['id_bien'],
                                     codigo_bien=data['codigo_bien'],
                                     nombre=data['nombre'],
                                     cod_tipo_bien=data['cod_tipo_bien'],
-                                    cod_tipo_activo=data['cod_tipo_activo'],
+                                    cod_tipo_activo=cod_tipo_activo_instance,
                                     nivel_jerarquico=data['nivel_jerarquico'],
                                     descripcion=data['descripcion'],
                                     id_marca=id_marca,
                                     id_unidad_medida=id_unidad_medida,
                                     id_porcentaje_iva=id_porcentaje_iva,
-                                    cod_tipo_depreciacion=data['cod_tipo_depreciacion'],
+                                    cod_tipo_depreciacion=cod_tipo_depreciacion_instance,
                                     cantidad_vida_util=data['cantidad_vida_util'],
                                     id_unidad_medida_vida_util=id_unidad_medida_vida_util,
                                     valor_residual=data['valor_residual'],
@@ -247,18 +253,21 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                 pass
                             except:
                                 raise ValidationError('El id de marca ingresado no existe')
+                            
+                            cod_tipo_activo_instance = TiposActivo.objects.filter(cod_tipo_activo=data['cod_tipo_activo']).first()
+                            cod_tipo_depreciacion_instance = TiposDepreciacionActivos.objects.filter(cod_tipo_depreciacion=data['cod_tipo_depreciacion']).first()
                             catalogo_bien = CatalogoBienes.objects.create(
                                 id_bien=data['id_bien'],
                                 codigo_bien=data['codigo_bien'],
                                 nombre=data['nombre'],
                                 cod_tipo_bien=data['cod_tipo_bien'],
-                                cod_tipo_activo=data['cod_tipo_activo'],
+                                cod_tipo_activo=cod_tipo_activo_instance,
                                 nivel_jerarquico=data['nivel_jerarquico'],
                                 descripcion=data['descripcion'],
                                 id_marca=id_marca,
                                 id_unidad_medida=id_unidad_medida,
                                 id_porcentaje_iva=id_porcentaje_iva,
-                                cod_tipo_depreciacion=data['cod_tipo_depreciacion'],
+                                cod_tipo_depreciacion=cod_tipo_depreciacion_instance,
                                 cantidad_vida_util=data['cantidad_vida_util'],
                                 id_unidad_medida_vida_util=id_unidad_medida_vida_util,
                                 valor_residual=data['valor_residual'],
@@ -286,6 +295,8 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                 pass
                             except:
                                 raise ValidationError('El id de porcentaje de iva ingresado no existe')
+                            
+                            cod_metodo_valoracion_instance = MetodosValoracionArticulos.objects.filter(cod_metodo_valoracion=data['cod_metodo_valoracion']).first()
                             catalogo_bien = CatalogoBienes.objects.create(
                                 id_bien=data['id_bien'],
                                 codigo_bien=data['codigo_bien'],
@@ -296,7 +307,7 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                 descripcion=data['descripcion'],
                                 id_unidad_medida=id_unidad_medida,
                                 id_porcentaje_iva=id_porcentaje_iva,
-                                cod_metodo_valoracion=data['cod_metodo_valoracion'],
+                                cod_metodo_valoracion=cod_metodo_valoracion_instance,
                                 stock_minimo=data['stock_minimo'],
                                 stock_maximo=data['stock_maximo'],
                                 solicitable_vivero=data['solicitable_vivero'],
@@ -320,6 +331,7 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                         except:
                             raise ValidationError('El id de porcentaje de iva ingresado no existe')
 
+                        cod_metodo_valoracion_instance = MetodosValoracionArticulos.objects.filter(cod_metodo_valoracion=data['cod_metodo_valoracion']).first()
                         catalogo_bien = CatalogoBienes.objects.create(
                             id_bien=data['id_bien'],
                             codigo_bien=data['codigo_bien'],
@@ -330,7 +342,7 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                             descripcion=data['descripcion'],
                             id_unidad_medida=id_unidad_medida,
                             id_porcentaje_iva=id_porcentaje_iva,
-                            cod_metodo_valoracion=data['cod_metodo_valoracion'],
+                            cod_metodo_valoracion=cod_metodo_valoracion_instance,
                             stock_minimo=data['stock_minimo'],
                             stock_maximo=data['stock_maximo'],
                             solicitable_vivero=data['solicitable_vivero'],
@@ -556,7 +568,7 @@ class SearchArticuloByDocIdentificador(generics.ListAPIView):
             # transforma un choices en un diccionario
             diccionario_cod_estado_activo = dict(
                 (x, y) for x, y in estados_articulo_CHOICES)
-            estado = diccionario_cod_estado_activo[inventario.cod_estado_activo]
+            estado = diccionario_cod_estado_activo[inventario.cod_estado_activo.cod_estado]
             data_serializado['estado'] = estado
             return Response({'success':True, 'detail':'Se encontraron elementos', 'Elementos': data_serializado}, status=status.HTTP_200_OK)
         try:
@@ -594,7 +606,7 @@ class SearchArticulosByNombreDocIdentificador(generics.ListAPIView):
                 inventario_instance = inventario.filter(
                     id_bien=item['id_bien']).first()
                 estado = inventario_instance.cod_estado_activo if inventario_instance else None
-                item['estado'] = diccionario_cod_estado_activo[estado] if estado else None
+                item['estado'] = diccionario_cod_estado_activo[estado.cod_estado] if estado else None
 
             return Response({'success':True, 'detail':'Se encontraron elementos', 'Elementos': data_serializado}, status=status.HTTP_200_OK)
         try:
@@ -618,7 +630,7 @@ class SearchArticulos(generics.ListAPIView):
                     filter[key] = value
         filter['nro_elemento_bien'] = None
         filter['nivel_jerarquico'] = 5
-        bien = CatalogoBienes.objects.filter(**filter).filter(Q(cod_tipo_activo__in=['Com','Veh','OAc']) | Q(cod_tipo_activo=None))
+        bien = CatalogoBienes.objects.filter(**filter).filter(Q(cod_tipo_activo__cod_tipo_activo__in=['Com','Veh','OAc']) | Q(cod_tipo_activo=None))
         serializador = self.serializer_class(bien, many=True)
         if bien:
             return Response({'success':True, 'detail':'Se encontró los elementos', 'data': serializador.data}, status=status.HTTP_200_OK)
@@ -645,7 +657,7 @@ class GetCatalogoBienesByCodigo(generics.ListAPIView):
         filters['nivel_jerarquico'] = 5
         filters['nro_elemento_bien'] = None
 
-        bien = CatalogoBienes.objects.filter(**filters).filter(Q(cod_tipo_activo__in=['Com','Veh','OAc']) | Q(cod_tipo_activo=None)).first()
+        bien = CatalogoBienes.objects.filter(**filters).filter(Q(cod_tipo_activo__cod_tipo_activo__in=['Com','Veh','OAc']) | Q(cod_tipo_activo=None)).first()
         bien_serializer = self.serializer_class(bien)
 
         if bien:
@@ -875,6 +887,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
 
             # CREACIÓN DE UN ITEM ACTIVO FIJO EN BASE A CAMPOS HEREDADOS DEL PADRE
             bien_padre = CatalogoBienes.objects.filter(id_bien=id_bien_padre).first()
+            cod_estado_instance = EstadosArticulo.objects.filter(cod_estado=cod_estado).first()
             
             if not bien_padre:
                 raise ValidationError('El bien padre ingresado no existe')
@@ -933,25 +946,26 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
                 numero_doc_origen=entrada_creada.numero_entrada_almacen,
                 valor_ingreso=valor_total_item,
                 ubicacion_en_bodega=True,
-                cod_estado_activo=cod_estado,
+                cod_estado_activo=cod_estado_instance,
                 fecha_ultimo_movimiento=datetime.now(),
                 tipo_doc_ultimo_movimiento=tipo_doc_ultimo_movimiento,
                 id_registro_doc_ultimo_movimiento=entrada_creada.id_entrada_almacen
             )
             if tiene_hoja_vida == True:
-                match bien_padre.cod_tipo_activo:
-                    case 'Com':
-                        create_hoja_vida = HojaDeVidaComputadores.objects.create(
-                            id_articulo=elemento_creado
-                        )
-                    case 'Veh':
-                        create_hoja_vida = HojaDeVidaVehiculos.objects.create(
-                            id_articulo=elemento_creado
-                        )
-                    case 'OAc':
-                        create_hoja_vida = HojaDeVidaOtrosActivos.objects.create(
-                            id_articulo=elemento_creado
-                        )
+                if bien_padre.cod_tipo_activo:
+                    match bien_padre.cod_tipo_activo.cod_tipo_activo:
+                        case 'Com':
+                            create_hoja_vida = HojaDeVidaComputadores.objects.create(
+                                id_articulo=elemento_creado
+                            )
+                        case 'Veh':
+                            create_hoja_vida = HojaDeVidaVehiculos.objects.create(
+                                id_articulo=elemento_creado
+                            )
+                        case 'OAc':
+                            create_hoja_vida = HojaDeVidaOtrosActivos.objects.create(
+                                id_articulo=elemento_creado
+                            )
             item['id_bien'] = elemento_creado.id_bien
             serializador_item_entrada = SerializerItemEntradaActivosFijos(data=item, many=False)
             serializador_item_entrada.is_valid(raise_exception=True)
@@ -1352,6 +1366,8 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
             id_bodega = item.get('id_bodega')
             valor_total_item = item.get('valor_total_item')
             cod_estado = item.get('cod_estado')
+            
+            cod_estado_instance = EstadosArticulo.objects.filter(cod_estado=cod_estado).first()
 
             # CREACIÓN DE UN ITEM ACTIVO FIJO EN BASE A CAMPOS HEREDADOS DEL PADRE
             bien_padre = CatalogoBienes.objects.filter(
@@ -1394,7 +1410,7 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
                 numero_doc_origen=entrada_almacen.numero_entrada_almacen,
                 valor_ingreso=valor_total_item,
                 ubicacion_en_bodega=True,
-                cod_estado_activo=cod_estado,
+                cod_estado_activo=cod_estado_instance,
                 fecha_ultimo_movimiento=datetime.now(),
                 tipo_doc_ultimo_movimiento=tipo_doc_ultimo_movimiento,
                 id_registro_doc_ultimo_movimiento=entrada_almacen.id_entrada_almacen
@@ -1791,6 +1807,8 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
             valor_total_item = item.get('valor_total_item')
             cod_estado = item.get('cod_estado')
 
+            cod_estado_instance = EstadosArticulo.objects.filter(cod_estado=cod_estado).first()
+
             # CREACIÓN DE UN ITEM ACTIVO FIJO EN BASE A CAMPOS HEREDADOS DEL PADRE
             bien_padre = CatalogoBienes.objects.filter(
                 id_bien=id_bien_padre).first()
@@ -1832,25 +1850,26 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
                 numero_doc_origen=entrada_almacen.numero_entrada_almacen,
                 valor_ingreso=valor_total_item,
                 ubicacion_en_bodega=True,
-                cod_estado_activo=cod_estado,
+                cod_estado_activo=cod_estado_instance,
                 fecha_ultimo_movimiento=datetime.now(),
                 tipo_doc_ultimo_movimiento=tipo_doc_ultimo_movimiento,
                 id_registro_doc_ultimo_movimiento=entrada_almacen.id_entrada_almacen
             )
             if tiene_hoja_vida == True:
-                match bien_padre.cod_tipo_activo:
-                    case 'Com':
-                        create_hoja_vida = HojaDeVidaComputadores.objects.create(
-                            id_articulo=elemento_creado
-                        )
-                    case 'Veh':
-                        create_hoja_vida = HojaDeVidaVehiculos.objects.create(
-                            id_articulo=elemento_creado
-                        )
-                    case 'OAc':
-                        create_hoja_vida = HojaDeVidaOtrosActivos.objects.create(
-                            id_articulo=elemento_creado
-                        )
+                if bien_padre.cod_tipo_activo:
+                    match bien_padre.cod_tipo_activo.cod_tipo_activo:
+                        case 'Com':
+                            create_hoja_vida = HojaDeVidaComputadores.objects.create(
+                                id_articulo=elemento_creado
+                            )
+                        case 'Veh':
+                            create_hoja_vida = HojaDeVidaVehiculos.objects.create(
+                                id_articulo=elemento_creado
+                            )
+                        case 'OAc':
+                            create_hoja_vida = HojaDeVidaOtrosActivos.objects.create(
+                                id_articulo=elemento_creado
+                            )
             item['id_bien'] = elemento_creado.id_bien
             serializador_item_entrada = SerializerItemEntradaActivosFijos(
                 data=item, many=False)

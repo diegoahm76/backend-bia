@@ -41,26 +41,28 @@ from seguridad.permissions.permissions_user_over_person import (
     PermisoActualizarEstadoCivil,
     PermisoCrearTipoDocumento
     )
-from seguridad.models import (
-    Personas,
-    TipoDocumento,
+from transversal.models.base_models import (
+    Cargos,
     EstadoCivil,
+    TipoDocumento,
+    ClasesTercero,
+    ClasesTerceroPersona,
     ApoderadoPersona,
     HistoricoEmails,
     HistoricoDireccion,
-    ClasesTercero,
-    ClasesTerceroPersona,
-    Cargos,
-    User,
-    HistoricoCambiosIDPersonas,
-    UsuariosRol,
-    Roles,
-    HistoricoCargosUndOrgPersona,
     HistoricoAutirzacionesNotis,
-    HistoricoRepresentLegales
+    HistoricoRepresentLegales,
+    HistoricoCargosUndOrgPersona,
+    HistoricoCambiosIDPersonas
+)
+from transversal.models.personas_models import Personas
+from seguridad.models import (
+    User,
+    UsuariosRol,
+    Roles
 )
 
-from seguridad.serializers.personas_serializers import (
+from transversal.serializers.personas_serializers import (
     EstadoCivilSerializer,
     EstadoCivilPostSerializer,
     EstadoCivilPutSerializer,

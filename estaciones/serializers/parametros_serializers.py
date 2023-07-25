@@ -1,6 +1,6 @@
 from estaciones.models.estaciones_models import ParametrosReferencia
 from rest_framework import serializers
-from seguridad.models import Personas
+from transversal.models.personas_models import Personas
 
 class ParametrosEstacionesSerializer(serializers.ModelSerializer):
     nombre_estacion = serializers.ReadOnlyField(source='id_estacion.nombre_estacion', default=None)

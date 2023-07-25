@@ -15,7 +15,6 @@ from recaudo.models.liquidaciones_models import Deudores, Expedientes
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q, Value as V
 from django.db.models.functions import Concat
-from seguridad.models import Personas, ClasesTerceroPersona, User
 from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated

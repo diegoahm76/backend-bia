@@ -10,7 +10,7 @@ from seguridad.utils import Util
 
 from transversal.serializers.entidades_serializers import ConfiguracionEntidadSerializer, PersonaEntidadCormacarenaGetSerializer
 from transversal.models import ConfiguracionEntidad,HistoricoPerfilesEntidad
-from seguridad.models import Personas
+from transversal.models.personas_models import Personas
 
 
 class PersonaEntidadCormacarenaGetView(generics.GenericAPIView):

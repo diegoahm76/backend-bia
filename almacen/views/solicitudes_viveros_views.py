@@ -2,7 +2,7 @@ from almacen.models.bienes_models import CatalogoBienes
 from rest_framework import generics,status
 from rest_framework.response import Response
 from transversal.models import UnidadesOrganizacionales, NivelesOrganigrama
-from seguridad.models import Personas
+from transversal.models.personas_models import Personas
 from seguridad.utils import Util
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
@@ -21,7 +21,6 @@ from almacen.serializers.solicitudes_viveros_serializers import (
     CrearSolicitudesviverosPostSerializer,
     CrearItemsSolicitudViveroPostSerializer
     )
-from seguridad.serializers.personas_serializers import PersonasSerializer
 import copy
 
 class CreateSolicitudViveros(generics.UpdateAPIView):

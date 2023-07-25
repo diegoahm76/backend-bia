@@ -6,8 +6,9 @@ from almacen.models.solicitudes_models import (
     SolicitudesConsumibles,
     ItemsSolicitudConsumible
 )
-from seguridad.models import ClasesTerceroPersona, Personas
-from seguridad.serializers.personas_serializers import PersonasFilterSerializer
+from transversal.models.base_models import ClasesTerceroPersona
+from transversal.models.personas_models import Personas
+from transversal.serializers.personas_serializers import PersonasFilterSerializer
 
 class CrearSolicitudesPostSerializer(serializers.ModelSerializer):
     

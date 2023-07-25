@@ -2,7 +2,7 @@ from datetime import datetime
 from estaciones.models.estaciones_models import Estaciones, PersonasEstacionesEstacion
 from rest_framework import serializers
 from estaciones.serializers.personas_estaciones_serializers import PersonasEstacionesSerializer
-from seguridad.models import Personas
+from transversal.models.personas_models import Personas
 
 
 class EstacionesSerializer(serializers.ModelSerializer):

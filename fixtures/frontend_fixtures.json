@@ -1,6 +1,6 @@
 [
     {
-        "model": "seguridad.Personas",
+        "model": "transversal.Personas",
         "pk" : 2,
         "fields" : {
             "tipo_documento": "CC",
@@ -42,7 +42,7 @@
         }
     },
     {
-        "model": "seguridad.Personas",
+        "model": "transversal.Personas",
         "pk" : 3,
         "fields" : {
             "tipo_documento": "CC",
@@ -84,7 +84,7 @@
         }
     },
     {
-        "model": "seguridad.Personas",
+        "model": "transversal.Personas",
         "pk" : 4,
         "fields" : {
             "tipo_documento": "CC",
@@ -126,7 +126,7 @@
         }
     },
     {
-        "model": "seguridad.Personas",
+        "model": "transversal.Personas",
         "pk" : 5,
         "fields" : {
             "tipo_documento": "CC",
@@ -168,7 +168,7 @@
         }
     },
     {
-        "model": "seguridad.Personas",
+        "model": "transversal.Personas",
         "pk" : 6,
         "fields" : {
             "tipo_documento": "CC",
@@ -210,7 +210,7 @@
         }
     },
     {
-        "model": "seguridad.Personas",
+        "model": "transversal.Personas",
         "pk" : 7,
         "fields" : {
             "tipo_documento": "CC",
@@ -252,7 +252,7 @@
         }
     },
     {
-        "model": "seguridad.User",
+        "model": "transversal.User",
         "pk" : 2,
         "fields" : {
             "id_usuario_creador": null,
@@ -275,7 +275,7 @@
         }
     },
     {
-        "model": "seguridad.User",
+        "model": "transversal.User",
         "pk" : 3,
         "fields" : {
             "id_usuario_creador": null,
@@ -298,7 +298,7 @@
         }
     },
     {
-        "model": "seguridad.User",
+        "model": "transversal.User",
         "pk" : 4,
         "fields" : {
             "id_usuario_creador": null,
@@ -321,7 +321,7 @@
         }   
     },
     {
-        "model": "seguridad.User",
+        "model": "transversal.User",
         "pk" : 5,
         "fields" : {
             "id_usuario_creador": null,
@@ -344,7 +344,7 @@
         }
     },
     {
-        "model": "seguridad.User",
+        "model": "transversal.User",
         "pk" : 6,
         "fields" : {
             "id_usuario_creador": null,
@@ -367,7 +367,7 @@
         }
     },
     {
-        "model": "seguridad.User",
+        "model": "transversal.User",
         "pk" : 7,
         "fields" : {
             "id_usuario_creador": null,

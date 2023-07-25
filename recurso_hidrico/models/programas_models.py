@@ -1,7 +1,7 @@
 from django.db import models
 from recurso_hidrico.models.bibliotecas_models import Instrumentos
 
-from seguridad.models import Personas
+from transversal.models.personas_models import Personas
 
 
 class ProgramasPORH(models.Model):

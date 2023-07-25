@@ -1,6 +1,6 @@
 [
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "05",
         "fields": {
             "nombre": "ANTIOQUIA",
@@ -8,7 +8,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "08",
         "fields": {
             "nombre": "ATLÁNTICO",
@@ -16,7 +16,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "11",
         "fields": {
             "nombre": "BOGOTÁ. D.C.",
@@ -24,7 +24,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "13",
         "fields": {
             "nombre": "BOLÍVAR",
@@ -32,7 +32,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "15",
         "fields": {
             "nombre": "BOYACÁ",
@@ -40,7 +40,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "17",
         "fields": {
             "nombre": "CALDAS",
@@ -48,7 +48,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "18",
         "fields": {
             "nombre": "CAQUETÁ",
@@ -56,7 +56,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "19",
         "fields": {
             "nombre": "CAUCA",
@@ -64,7 +64,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "20",
         "fields": {
             "nombre": "CESAR",
@@ -72,7 +72,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "23",
         "fields": {
             "nombre": "CÓRDOBA",
@@ -80,7 +80,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "25",
         "fields": {
             "nombre": "CUNDINAMARCA",
@@ -88,7 +88,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "27",
         "fields": {
             "nombre": "CHOCÓ",
@@ -96,7 +96,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "41",
         "fields": {
             "nombre": "HUILA",
@@ -104,7 +104,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "44",
         "fields": {
             "nombre": "LA GUAJIRA",
@@ -112,7 +112,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "47",
         "fields": {
             "nombre": "MAGDALENA",
@@ -120,7 +120,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "50",
         "fields": {
             "nombre": "META",
@@ -128,7 +128,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "52",
         "fields": {
             "nombre": "NARIÑO",
@@ -136,7 +136,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "54",
         "fields": {
             "nombre": "NORTE DE SANTANDER",
@@ -144,7 +144,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "63",
         "fields": {
             "nombre": "QUINDÍO",
@@ -152,7 +152,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "66",
         "fields": {
             "nombre": "RISARALDA",
@@ -160,7 +160,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "68",
         "fields": {
             "nombre": "SANTANDER",
@@ -168,7 +168,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "70",
         "fields": {
             "nombre": "SUCRE",
@@ -176,7 +176,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "73",
         "fields": {
             "nombre": "TOLIMA",
@@ -184,7 +184,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "76",
         "fields": {
             "nombre": "VALLE DEL CAUCA",
@@ -192,7 +192,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "81",
         "fields": {
             "nombre": "ARAUCA",
@@ -200,7 +200,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "85",
         "fields": {
             "nombre": "CASANARE",
@@ -208,7 +208,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "86",
         "fields": {
             "nombre": "PUTUMAYO",
@@ -216,7 +216,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "88",
         "fields": {
             "nombre": "SAN ANDRÉS, PROVIDENCIA Y SANTA CATALINA",
@@ -224,7 +224,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "91",
         "fields": {
             "nombre": "AMAZONAS",
@@ -232,7 +232,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "94",
         "fields": {
             "nombre": "GUAINÍA",
@@ -240,7 +240,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "95",
         "fields": {
             "nombre": "GUAVIARE",
@@ -248,7 +248,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "97",
         "fields": {
             "nombre": "VAUPÉS",
@@ -256,7 +256,7 @@
         }
     },
     {
-        "model": "seguridad.departamento",
+        "model": "transversal.departamento",
         "pk": "99",
         "fields": {
             "nombre": "VICHADA",

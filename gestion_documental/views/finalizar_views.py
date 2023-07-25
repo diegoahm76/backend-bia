@@ -8,7 +8,7 @@ from seguridad.utils import Util
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import api_view, permission_classes
-from seguridad.models import Personas
+from transversal.models.personas_models import Personas
 from gestion_documental.models.tca_models import TablasControlAcceso
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from gestion_documental.serializers.trd_serializers import (
