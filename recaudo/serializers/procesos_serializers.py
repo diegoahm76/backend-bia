@@ -76,6 +76,12 @@ class ValoresProcesoPostSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class ValoresProcesoPutSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ValoresProceso
+        fields = ('valor', 'documento')
+
+
 class ProcesosSerializer(serializers.ModelSerializer):
     id_cartera = CarteraSerializer(many=False)
     id_etapa = EtapasProcesoSerializer(many=False)
