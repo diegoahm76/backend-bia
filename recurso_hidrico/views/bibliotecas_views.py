@@ -8,8 +8,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from datetime import datetime,date,timedelta
 
-from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, DatosCarteraAforos, DatosRegistroLaboratorio, Instrumentos, ParametrosLaboratorio, Pozos, ResultadosLaboratorio, Secciones,Subsecciones
-from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentoUpdateSerializer, ArchivosInstrumentosGetSerializer, CarteraAforosGetSerializer, CarteraAforosPostSerializer, CuencasGetByInstrumentoSerializer, CuencasGetSerializer, CuencasInstrumentoDeleteSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, DatosCarteraAforosDeleteSerializer, DatosCarteraAforosGetSerializer, DatosCarteraAforosPostSerializer, DatosCarteraAforosUpdateSerializer, DatosRegistroLaboratorioDeleteSerializer, DatosRegistroLaboratorioGetSerializer, DatosRegistroLaboratorioPostSerializer, DatosRegistroLaboratorioUpdateSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoBusquedaAvanzadaSerializer, InstrumentoCuencasGetSerializer, InstrumentosPostSerializer, InstrumentosSerializer, InstrumentosUpdateSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, ResultadosLaboratorioDeleteSerializer, ResultadosLaboratorioGetSerializer, ResultadosLaboratorioPostSerializer, ResultadosLaboratorioUpdateSerializer, SeccionSerializer, SeccionesSerializer, SubseccionBusquedaAvanzadaSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
+from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, DatosCarteraAforos, DatosRegistroLaboratorio, Instrumentos, ParametrosLaboratorio, Pozos, PruebasBombeo, ResultadosLaboratorio, Secciones,Subsecciones
+from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentoUpdateSerializer, ArchivosInstrumentosGetSerializer, CarteraAforosDeleteSerializer, CarteraAforosGetSerializer, CarteraAforosPostSerializer, CarteraAforosUpdateSerializer, CuencasGetByInstrumentoSerializer, CuencasGetSerializer, CuencasInstrumentoDeleteSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, DatosCarteraAforosDeleteSerializer, DatosCarteraAforosGetSerializer, DatosCarteraAforosPostSerializer, DatosCarteraAforosUpdateSerializer, DatosRegistroLaboratorioDeleteSerializer, DatosRegistroLaboratorioGetSerializer, DatosRegistroLaboratorioPostSerializer, DatosRegistroLaboratorioUpdateSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoBusquedaAvanzadaSerializer, InstrumentoCuencasGetSerializer, InstrumentosDeleteSerializer, InstrumentosPostSerializer, InstrumentosSerializer, InstrumentosUpdateSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, ResultadosLaboratorioDeleteSerializer, ResultadosLaboratorioGetSerializer, ResultadosLaboratorioPostSerializer, ResultadosLaboratorioUpdateSerializer, SeccionSerializer, SeccionesSerializer, SubseccionBusquedaAvanzadaSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
 
 
 
@@ -1312,7 +1312,49 @@ class InstrumentoUpdate(generics.UpdateAPIView):
         except ValidationError as e:       
             raise ValidationError(e.detail)
     
-            
+
+class InstrumentoDelete(generics.DestroyAPIView):
+    serializer_class = InstrumentosDeleteSerializer
+    queryset = Instrumentos.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self, request, pk):
+        
+        dato = Instrumentos.objects.filter(id_instrumento=pk).first()
+      
+        if not dato:
+            raise ValidationError("No existe el instrumento a eliminar.")
+        
+        archivos = ArchivosInstrumento.objects.filter(id_instrumento=pk)
+        if archivos:
+            raise ValidationError("No se puede eliminar instrumentos si tiene archivos asociados.")
+        
+        cuencas = CuencasInstrumento.objects.filter(id_instrumento=pk)
+        if cuencas:
+            raise ValidationError("No se puede eliminar instrumentos si tiene cuencas asociadas.")
+        
+        carteraAforos = CarteraAforos.objects.filter(id_instrumento=pk)
+        if carteraAforos:
+            raise ValidationError("No se puede eliminar instrumentos si tiene carteras de aforos asociadas.")
+        
+        pruebasBombeo = PruebasBombeo.objects.filter(id_instrumento=pk)
+        if pruebasBombeo:
+            raise ValidationError("No se puede eliminar instrumentos si tiene pruebas de bombeo asociadas.")
+        
+        resultadosLaboratorio = ResultadosLaboratorio.objects.filter(id_instrumento=pk)
+        if resultadosLaboratorio:
+            raise ValidationError("No se puede eliminar instrumentos si tiene resultados de laboratorio asociados.")
+        
+        if dato.fecha_fin_vigencia and dato.fecha_fin_vigencia <= date.today():
+            raise ValidationError("No se puede eliminar el instrumento si su fecha de vigencia ya ha expirado.")
+
+        
+        serializer = self.serializer_class(dato) 
+        dato.delete()
+
+        return Response({'success': True, 'detail': 'Se eliminó el dato seleccionado.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
 class InstrumentoBusquedaAvanzadaGet(generics.ListAPIView):
     #serializer_class = BusquedaAvanzadaAvancesSerializers
     serializer_class = InstrumentoBusquedaAvanzadaSerializer
@@ -1407,19 +1449,6 @@ class CuencaInstrumentoDelete(generics.DestroyAPIView):
 
 ##CARTERAS DE AFORO
 
-# class CarteraAforosCreate(generics.CreateAPIView):
-#     serializer_class = CarteraAforosPostSerializer
-#     permission_classes = [IsAuthenticated]
-#     queryset = CarteraAforos.objects.all()
-    
-#     def post(self,request):
-#         data_in = request.data
-    
-#         serializer = self.serializer_class(data=data_in)
-#         serializer.is_valid(raise_exception=True)
-            
-#         serializer.save()
-#         return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
 class CarteraAforosCreate(generics.CreateAPIView):
     serializer_class = CarteraAforosPostSerializer
     permission_classes = [IsAuthenticated]
@@ -1456,7 +1485,7 @@ class CarteraAforosCreate(generics.CreateAPIView):
             id_cartera = response.data.get('data', {}).get('id_cartera_aforos')
             cartera_creada=response.data
 
-        print("ID_CARTERAAA"+str(id_cartera))
+      
         #CREACION DE DATOS
         if 'datos_cartera_aforo' in data:
             if   data['datos_cartera_aforo']:
@@ -1504,6 +1533,149 @@ class CarteraAforosGetByInstrumento(generics.ListAPIView):
         if not resultados:
             raise NotFound("Este instrumento no cuenta con carteras de aforo.")
         return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+
+
+class CarteraAforosUpdate(generics.UpdateAPIView):
+    
+    serializer_class = CarteraAforosUpdateSerializer
+    queryset = CarteraAforos.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+
+    def obtener_repetido(self,lista_archivos):
+        contador = Counter(lista_archivos)
+        for archivo, cantidad in contador.items():
+            if cantidad > 1:
+                return archivo
+        return None
+
+    def actualizar_cartera_aforo(self,data,pk):
+        
+        dato = CarteraAforos.objects.filter(id_cartera_aforos=pk).first()
+
+        if not dato:
+            raise NotFound("No existe esta cartera de afoto")
+
+        serializer = self.serializer_class(dato, data=data)
+        try:
+            serializer.is_valid(raise_exception=True)
+            serializer.update(dato, serializer.validated_data)
+            
+            return Response({'success':True,'detail':'Se actualizaron los registros correctamente','data':serializer.data},status=status.HTTP_200_OK)
+        except ValidationError  as e:
+           
+            raise ValidationError  (e.detail)
+        
+
+    def put(self,request,pk):
+    
+        data = request.data
+      
+        response_cartera_aforo =self.actualizar_cartera_aforo(data,pk)
+        response_datos=[]
+        response_datos_eliminados=[]
+        if response_cartera_aforo.status_code !=status.HTTP_200_OK:
+            return response_cartera_aforo
+        
+        #actualizar datos
+        
+        if 'datos_cartera_aforo' in data:
+
+            if data['datos_cartera_aforo']:
+
+                crear_dato_cartera =DatosCarteraAforosCreate()
+                actualizar_dato_cartera =DatosCarteraAforosUpdate()
+                
+                for datos_registro in data['datos_cartera_aforo']:
+                
+                    
+                    if datos_registro['id_dato_cartera_aforos']:#si se envia id ,se actualiza
+                       
+                        datos={
+                            
+                            "distancia_a_la_orilla":datos_registro['distancia_a_la_orilla'],
+                            "profundidad":datos_registro['profundidad'],
+                            "velocidad_superficial":datos_registro['velocidad_superficial'],
+                            "velocidad_profunda":datos_registro['velocidad_profunda'],
+                            "transecto":datos_registro['transecto'],
+                            "profundidad_promedio":datos_registro['profundidad_promedio'],
+                            "velocidad_promedio":datos_registro['velocidad_promedio'],
+                            "velocidad_transecto":datos_registro['velocidad_transecto'],
+                            "caudal":datos_registro['caudal']
+                        }
+                        response_dato=actualizar_dato_cartera.actualizar_datos_cartera_aforos(datos,datos_registro['id_dato_cartera_aforos'])
+                        
+                        if response_dato.status_code != status.HTTP_200_OK:
+                            return response_dato
+                        response_datos.append(response_dato.data['data'])
+
+                    else:
+                        datos={
+                            "id_cartera_aforos": pk,
+                            "distancia_a_la_orilla":datos_registro['distancia_a_la_orilla'],
+                            "profundidad":datos_registro['profundidad'],
+                            "velocidad_superficial":datos_registro['velocidad_superficial'],
+                            "velocidad_profunda":datos_registro['velocidad_profunda'],
+                            "transecto":datos_registro['transecto'],
+                            "profundidad_promedio":datos_registro['profundidad_promedio'],
+                            "velocidad_promedio":datos_registro['velocidad_promedio'],
+                            "velocidad_transecto":datos_registro['velocidad_transecto'],
+                            "caudal":datos_registro['caudal']
+                        }
+                        response_dato=crear_dato_cartera.crear_datos_cartera_aforos(datos)
+                        
+                        if response_dato.status_code != status.HTTP_201_CREATED:
+                            return response_dato
+                        response_datos.append(response_dato.data['data'])
+        #Eliminar archivos
+
+        if 'datos_cartera_aforo_eliminados'  in data:
+            if data['datos_cartera_aforo_eliminados']:
+
+                repetido=self.obtener_repetido(data['datos_cartera_aforo_eliminados'])
+
+                if repetido:
+                     raise ValidationError("Intenta eliminar el  mismo dato varias veces.")
+                eliminar_datos_registro = DatosCarteraAforosDelete()
+                for eliminar in data['datos_cartera_aforo_eliminados']:
+                    
+                    response_dato=eliminar_datos_registro.delete(request,eliminar)
+                    if response_dato.status_code == status.HTTP_400_BAD_REQUEST:
+                        return response_dato
+                    response_datos_eliminados.append(response_dato.data['data'])
+
+
+        
+        return Response({'success':True,'detail':'Se actualizaron los registros correctamente',
+                         'data':{'cartera_aforo':response_cartera_aforo.data['data'],
+                          'datos_cartera_aforo':response_datos,
+                          'datos_cartera_aforo_eliminados':response_datos_eliminados      
+                                 }},
+                         status=status.HTTP_200_OK)
+
+
+class CarteraAforosDelete(generics.DestroyAPIView):
+    serializer_class = CarteraAforosDeleteSerializer
+    queryset = CarteraAforos.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self,request,pk):
+        
+        dato = CarteraAforos.objects.filter(id_cartera_aforos=pk).first()
+      
+        if not dato:
+            raise ValidationError("No existe El dato  a eliminar.")
+                
+        datos = DatosCarteraAforos.objects.filter(id_cartera_aforos=pk)
+
+        if datos:
+            raise ValidationError("No se puede eliminar una cartera de aforo que cuente con datos.")
+        serializer = self.serializer_class(dato) 
+        dato.delete()
+
+        return Response({'success':True,'detail':'Se elimino el Dato seleccionada.','data':serializer.data},status=status.HTTP_200_OK)
+    
+
 
 ##DatosCarteraAforos
 class DatosCarteraAforosCreate(generics.CreateAPIView):
@@ -1566,7 +1738,7 @@ class DatosCarteraAforosUpdate(generics.UpdateAPIView):
         dato = DatosCarteraAforos.objects.filter(id_dato_cartera_aforos=pk).first()
 
         if not dato:
-            raise NotFound("No existe esta cartera de aforo.")
+            raise NotFound("No existe este dato de  cartera de aforo.")
 
         serializer = self.serializer_class(dato, data=data)
         try:
@@ -1601,16 +1773,12 @@ class DatosCarteraAforosDelete(generics.DestroyAPIView):
         
         dato = DatosCarteraAforos.objects.filter(id_dato_cartera_aforos=pk).first()
       
-        
         if not dato:
             raise ValidationError("No existe El dato  a eliminar")
-        
-        
+                
         serializer = self.serializer_class(dato) 
         dato.delete()
 
-
-        
         return Response({'success':True,'detail':'Se elimino el Dato seleccionada.','data':serializer.data},status=status.HTTP_200_OK)
     
 ##
@@ -1977,12 +2145,19 @@ class DatosRegistroLaboratorioByResultadosLaboratorioGet(generics.ListAPIView):
     queryset = DatosRegistroLaboratorio.objects.all()
     permission_classes = [IsAuthenticated]
     
-    def get(self,request,lab,par):
+    def get(self,request,lab):
+
+        filter={}
+        for key, value in request.query_params.items():
+            if key == 'tipo':
+                if value != '':
+                    filter['id_parametro__cod_tipo_parametro'] = value
+           
         
-        if par=="FQ" or par=="MB":
-            datos_laboratorio = DatosRegistroLaboratorio.objects.filter(id_registro_laboratorio=lab,id_parametro__cod_tipo_parametro=par).order_by('id_dato_registro_laboratorio')
-        else:
-            datos_laboratorio = DatosRegistroLaboratorio.objects.filter(id_registro_laboratorio=lab).order_by('id_dato_registro_laboratorio')
+        
+        datos_laboratorio = self.queryset.all().filter(**filter).order_by('id_dato_registro_laboratorio')
+
+    
         serializer = self.serializer_class(datos_laboratorio,many=True)
         
         if not datos_laboratorio:
