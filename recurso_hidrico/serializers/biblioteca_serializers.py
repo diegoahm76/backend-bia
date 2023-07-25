@@ -2,7 +2,7 @@ from rest_framework import serializers
 from unittest.util import _MAX_LENGTH
 from wsgiref.validate import validator
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
-from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, DatosRegistroLaboratorio, Instrumentos, ParametrosLaboratorio, Pozos, ResultadosLaboratorio, Secciones,Subsecciones
+from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, DatosCarteraAforos, DatosRegistroLaboratorio, Instrumentos, ParametrosLaboratorio, Pozos, ResultadosLaboratorio, Secciones,Subsecciones
 from seguridad.models import Personas
 
 
@@ -299,7 +299,12 @@ class InstrumentoBusquedaAvanzadaSerializer(serializers.ModelSerializer):
         fields = ('__all__')
         #fields=['id_instrumento ','nombre ','id_seccion ','id_subseccion ','id_resolucion ','id_persona_registra ','fecha_registro ','fecha_creacion_instrumento ','fecha_fin_vigencia ','id_pozo ','cod_tipo_agua ','id_seccion','nombre_seccion','id_subseccion','nombre_subseccion']
 
-
+class InstrumentosDeleteSerializer(serializers.ModelSerializer):
+        #fecha_registro = serializers.ReadOnlyField()
+        class Meta:
+            model=Instrumentos
+            fields='__all__'
+ 
 
 class CuencasInstrumentoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -354,16 +359,57 @@ class SubseccionBusquedaAvanzadaSerializer(serializers.ModelSerializer):
         fields=['id_seccion','nombre_seccion','id_subseccion','nombre']
 
 
-
+##
 class CarteraAforosPostSerializer(serializers.ModelSerializer):
     class Meta:
         model=CarteraAforos
         fields=('__all__')
 
-class DatosCarteraAforosPostSerializer(serializers.ModelSerializer):
+
+class CarteraAforosUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=CarteraAforos
+        fields=('__all__')
+
+class CarteraAforosGetSerializer(serializers.ModelSerializer):
+    #cod_clase=serializers.CharField(source='id_parametro.cod_tipo_parametro')
+    class Meta:
+        model=CarteraAforos
+        fields=('__all__')
+
+
+
+class CarteraAforosDeleteSerializer(serializers.ModelSerializer):
     
     class Meta:
         model=CarteraAforos
+        fields=('__all__')
+
+##Datos carteras de aforo
+
+##
+
+class DatosCarteraAforosPostSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model=DatosCarteraAforos        
+        fields=('__all__')
+class DatosCarteraAforosGetSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model=DatosCarteraAforos        
+        fields=('__all__')
+
+class DatosCarteraAforosUpdateSerializer(serializers.ModelSerializer):
+    id_cartera_aforos = serializers.PrimaryKeyRelatedField(read_only=True)
+    class Meta:
+        model=DatosCarteraAforos
+        fields=('__all__')
+
+class DatosCarteraAforosDeleteSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model=DatosCarteraAforos
         fields=('__all__')
 
 #Resultados de laboratorio
@@ -382,12 +428,26 @@ class ResultadosLaboratorioUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model=ResultadosLaboratorio
         fields=('__all__')
+
+class ResultadosLaboratorioDeleteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=ResultadosLaboratorio
+        fields=('__all__')
+
+
 #Datos_Registro_laboratorio
 class DatosRegistroLaboratorioPostSerializer(serializers.ModelSerializer):
     class Meta:
         model=DatosRegistroLaboratorio
         fields=('__all__')
 
+
+##
+
+##
+
+
+##
 class DatosRegistroLaboratorioDeleteSerializer(serializers.ModelSerializer):
     class Meta:
         model=DatosRegistroLaboratorio
@@ -404,6 +464,18 @@ class DatosRegistroLaboratorioUpdateSerializer(serializers.ModelSerializer):
 
 class DatosRegistroLaboratorioGetSerializer(serializers.ModelSerializer):
         cod_clase=serializers.CharField(source='id_parametro.cod_tipo_parametro')
+        parametro=serializers.CharField(source='id_parametro.nombre')
+        unidad=serializers.CharField(source='id_parametro.unidad_de_medida')
         class Meta:
             model=DatosRegistroLaboratorio
-            fields='__all__'
+            fields = [
+            'cod_clase',
+            'parametro',
+            'unidad',
+            'id_dato_registro_laboratorio',
+            'id_registro_laboratorio',
+            'id_parametro',
+            'metodo',
+            'resultado',
+            'fecha_analisis',
+        ]

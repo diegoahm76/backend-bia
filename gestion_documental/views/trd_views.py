@@ -540,7 +540,7 @@ class CreateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
 
             #VALIDACION ENVIO COMPLETO DE LA INFORMACION
 
-            if cod_disposicion_final and digitalizacion_dis_final and tiempo_retencion_ag and tiempo_retencion_ac and descripcion_procedimiento != None:
+            if cod_disposicion_final and digitalizacion_dis_final!=None and tiempo_retencion_ag and tiempo_retencion_ac and descripcion_procedimiento != None:
                 tipologias_instance = TipologiasDoc.objects.filter(id_tipologia_documental__in = tipologias)
                 if len(tipologias) != tipologias_instance.count():
                     raise ValidationError('Todas las tipologias selecionadas deben existir')
@@ -976,11 +976,8 @@ class PostTablaRetencionDocumental(generics.CreateAPIView):
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
-        try:
-            serializer.is_valid(raise_exception=True)
-            pass
-        except:
-            raise ValidationError('Valide la información ingresada, el id_ccd es requerido, el nombre y la versión son requeridos y deben ser únicos')
+            
+        serializer.is_valid(raise_exception=True)
 
         #Validación de seleccionar solo ccd terminados
         ccd = serializer.validated_data.get('id_ccd')

@@ -3,17 +3,16 @@ from recaudo.models.procesos_models import (
     Avaluos, 
     Bienes
 )
-
 from recaudo.models.pagos_models import (
     FacilidadesPago,
     GarantiasFacilidad,
     DetallesBienFacilidadPago,
     CumplimientoRequisitos, 
-    RequisitosActuacion
+    RequisitosActuacion,
+    RespuestaSolicitud
 )
-
 from recaudo.models.base_models import TiposBien, TipoActuacion
-
+from recaudo.models.cobros_models import Deudores
 from seguridad.models import Personas, Municipio
 
 
@@ -65,6 +64,18 @@ class CumplimientoRequisitosSerializer (serializers.ModelSerializer):
         fields = '__all__'
 
 
+class DeudorFacilidadPagoSerializer(serializers.ModelSerializer):
+    ubicacion = serializers.SerializerMethodField()
+    
+    def get_ubicacion(self, obj):
+        ubicacion = obj.ubicacion_id.nombre
+        return ubicacion
+
+    class Meta:
+        model = Deudores
+        fields = ('id', 'identificacion', 'nombres', 'apellidos', 'email', 'ubicacion')
+
+
 class DatosContactoDeudorSerializer(serializers.ModelSerializer):
     ciudad = serializers.SerializerMethodField()
 
@@ -91,6 +102,24 @@ class FacilidadesPagoSerializer(serializers.ModelSerializer):
         }
 
 
+class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
+    identificacion = serializers.ReadOnlyField(source='id_deudor.identificacion',default=None)
+    nombre_de_usuario = serializers.SerializerMethodField()
+    nombre_funcionario = serializers.SerializerMethodField()
+    id_facilidad = serializers.ReadOnlyField(source='id', default=None)
+
+    def get_nombre_de_usuario(self, obj):
+        return f"{obj.id_deudor.nombres} {obj.id_deudor.apellidos}"
+
+    def get_nombre_funcionario(self, obj):
+        funcionario = Personas.objects.filter(id_persona=obj.id_funcionario).first()
+        return f"{funcionario.primer_nombre} {funcionario.primer_apellido}"
+    
+    class Meta:
+        model = FacilidadesPago
+        fields = ('id_facilidad','nombre_de_usuario','identificacion','numero_radicacion','fecha_generacion','nombre_funcionario')
+
+
 class FacilidadesPagoFuncionarioPutSerializer(serializers.ModelSerializer):
     class Meta:
         model = FacilidadesPago
@@ -111,6 +140,17 @@ class FuncionariosSerializer(serializers.ModelSerializer):
         fields = ('id_persona', 'nombre_funcionario')
 
 
+class FacilidadPagoGetByIdSerializer(serializers.ModelSerializer):
+    tipo_actuacion = serializers.ReadOnlyField(source='id_tipo_actuacion.descripcion',default=None)
+
+    class Meta:
+        model = FacilidadesPago
+        fields = ('id', 'id_deudor', 'id_tipo_actuacion', 'tipo_actuacion', 'fecha_generacion',
+                  'observaciones', 'periodicidad', 'cuotas', 'documento_soporte', 'consignacion_soporte',
+                  'documento_no_enajenacion', 'id_funcionario','notificaciones', 'numero_radicacion'
+                  )
+
+
 class BienesDeudorSerializer(serializers.ModelSerializer):
     ubicacion = serializers.ReadOnlyField(source='id_ubicacion.nombre', default=None)
     nombre_tipo_bien = serializers.ReadOnlyField(source='id_tipo_bien.descripcion', default=None)
@@ -121,7 +161,12 @@ class BienesDeudorSerializer(serializers.ModelSerializer):
         valora = valor_avaluo.valor
         return valora
 
-
     class Meta:
         model = Bienes
         fields = ('nombre_tipo_bien','descripcion','valor','direccion','ubicacion','documento_soporte')
+
+
+class RespuestaSolicitudSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RespuestaSolicitud
+        fields = '__all__'
