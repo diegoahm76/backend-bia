@@ -4,7 +4,7 @@ from gestion_documental.models.ccd_models import CatalogosSeriesUnidad, CuadrosC
 from gestion_documental.choices.disposicion_final_series_choices import disposicion_final_series_CHOICES
 from gestion_documental.choices.tipos_medios_doc_choices import tipos_medios_doc_CHOICES
 from gestion_documental.choices.tipos_medios_formato_choices import tipos_medios_formato_CHOICES
-from seguridad.models import Personas
+from transversal.models.personas_models import Personas
 
 
 class TablaRetencionDocumental(models.Model):

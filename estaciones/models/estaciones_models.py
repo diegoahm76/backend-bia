@@ -3,8 +3,8 @@ from estaciones.choices.estaciones_choices import (
     cod_tipo_estacion_choices
 )
 from estaciones.choices.variable_climatica_choices import variable_climatica_CHOICES
-from seguridad.choices.municipios_choices import municipios_CHOICES
-from seguridad.choices.tipo_documento_choices import tipo_documento_CHOICES
+from transversal.choices.municipios_choices import municipios_CHOICES
+from transversal.choices.tipo_documento_choices import tipo_documento_CHOICES
 
 
 class Estaciones(models.Model):

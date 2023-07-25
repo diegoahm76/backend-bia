@@ -6,14 +6,13 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from transversal.models.organigrama_models import UnidadesOrganizacionales, NivelesOrganigrama
 from almacen.utils import UtilAlmacen
-from seguridad.models import Personas, User
+from seguridad.models import User
+from transversal.models.personas_models import Personas
 from rest_framework.decorators import api_view
 from seguridad.utils import Util
 from rest_framework.permissions import IsAuthenticated
 from seguridad.models import (
-    Personas,
-    User,
-    ClasesTerceroPersona
+    User
 )
 from transversal.models.organigrama_models import (
     UnidadesOrganizacionales,
@@ -37,7 +36,9 @@ from almacen.serializers.solicitudes_serialiers import (
     PersonasResponsablesFilterSerializer
     )
 from almacen.serializers.solicitudes_serialiers import SolicitudesPendientesAprobarSerializer
-from seguridad.serializers.personas_serializers import PersonasSerializer
+from transversal.models.base_models import (
+    ClasesTerceroPersona
+)
 import copy
 
 class FiltroBienSolicitableVivero(generics.ListAPIView):

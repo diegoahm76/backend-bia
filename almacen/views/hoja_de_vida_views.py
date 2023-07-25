@@ -50,7 +50,7 @@ class CreateHojaDeVidaComputadores(generics.CreateAPIView):
             raise ValidationError('El bien ingresado no existe')
         if articulo_existentes.cod_tipo_bien == 'C':
             raise PermissionDenied('No se puede crear una hoja de vida a un bien tipo consumo')
-        if articulo_existentes.cod_tipo_activo != 'Com':
+        if articulo_existentes.cod_tipo_activo and articulo_existentes.cod_tipo_activo.cod_tipo_activo != 'Com':
             raise PermissionDenied('No se puede crear una hoja de vida a este bien ya que no es de la categoría computador')
         hoja_vida_articulo=HojaDeVidaComputadores.objects.filter(id_articulo=id_articulo).first()
         if hoja_vida_articulo:
@@ -90,7 +90,7 @@ class CreateHojaDeVidaVehiculos(generics.CreateAPIView):
             raise ValidationError('El bien ingresado no existe')
         if articulo_existentes.cod_tipo_bien == 'C':
             raise PermissionDenied('No se puede crear una hoja de vida a un bien tipo consumo')
-        if articulo_existentes.cod_tipo_activo != 'Veh':
+        if articulo_existentes.cod_tipo_activo and articulo_existentes.cod_tipo_activo.cod_tipo_activo != 'Veh':
             raise PermissionDenied('No se puede crear una hoja de vida a este bien ya que no es de la categoría de vehículo')
         hoja_vida_articulo=HojaDeVidaVehiculos.objects.filter(id_articulo=id_articulo)
         if hoja_vida_articulo:
@@ -131,7 +131,7 @@ class CreateHojaDeVidaOtros(generics.CreateAPIView):
             raise ValidationError('El bien ingresado no existe')
         if articulo_existentes.cod_tipo_bien == 'C':
             raise PermissionDenied('No se puede crear una hoja de vida a un bien tipo consumo')
-        if articulo_existentes.cod_tipo_activo != 'OAc':
+        if articulo_existentes.cod_tipo_activo and articulo_existentes.cod_tipo_activo.cod_tipo_activo != 'OAc':
             raise PermissionDenied('No se puede crear una hoja de vida a este bien ya que no es de la categoría otro activo')
         hoja_vida_articulo=HojaDeVidaOtrosActivos.objects.filter(id_articulo=id_articulo)
         if hoja_vida_articulo:
@@ -297,7 +297,7 @@ class UpdateHojaDeVidaComputadores(generics.UpdateAPIView):
             data_serializada['doc_identificador_nro'] = bien.doc_identificador_nro
             data_serializada['id_marca'] = marca
             data_serializada['marca'] = marca_existe.nombre
-            data_serializada['estado'] = diccionario_cod_estado_activo[estado] if estado else None
+            data_serializada['estado'] = diccionario_cod_estado_activo[estado.cod_estado] if estado else None
                 
             # Auditoria
             usuario = request.user.id_usuario
@@ -355,7 +355,7 @@ class UpdateHojaDeVidaVehiculos(generics.UpdateAPIView):
             data_serializada['doc_identificador_nro'] = bien.doc_identificador_nro
             data_serializada['id_marca'] = marca
             data_serializada['marca'] = marca_existe.nombre
-            data_serializada['estado'] = diccionario_cod_estado_activo[estado] if estado else None
+            data_serializada['estado'] = diccionario_cod_estado_activo[estado.cod_estado] if estado else None
             
             # Auditoria
             usuario = request.user.id_usuario
@@ -413,7 +413,7 @@ class UpdateHojaDeVidaOtrosActivos(generics.UpdateAPIView):
             data_serializada['doc_identificador_nro'] = bien.doc_identificador_nro
             data_serializada['id_marca'] = marca
             data_serializada['marca'] = marca_existe.nombre
-            data_serializada['estado'] = diccionario_cod_estado_activo[estado] if estado else None
+            data_serializada['estado'] = diccionario_cod_estado_activo[estado.cod_estado] if estado else None
             
             # Auditoria
             usuario = request.user.id_usuario
@@ -493,7 +493,7 @@ class GetHojaDeVidaComputadoresByIdBien(generics.RetrieveAPIView):
             data_serializada = serializador.data
             diccionario_cod_estado_activo=dict((x,y) for x,y in estados_articulo_CHOICES) # transforma un choices en un diccionario
             estado=inventario.cod_estado_activo if inventario else None
-            data_serializada['estado'] = diccionario_cod_estado_activo[estado] if estado else None
+            data_serializada['estado'] = diccionario_cod_estado_activo[estado.cod_estado] if estado else None
             
             return Response({'success':True, 'detail':'Se encontró la hoja de vida', 'data':data_serializada}, status=status.HTTP_200_OK)
         else:
@@ -515,7 +515,7 @@ class GetHojaDeVidaVehiculosByIdBien(generics.RetrieveAPIView):
             data_serializada = serializador.data
             diccionario_cod_estado_activo=dict((x,y) for x,y in estados_articulo_CHOICES) # transforma un choices en un diccionario
             estado=inventario.cod_estado_activo if inventario else None
-            data_serializada['estado'] = diccionario_cod_estado_activo[estado] if estado else None
+            data_serializada['estado'] = diccionario_cod_estado_activo[estado.cod_estado] if estado else None
             
             return Response({'success':True, 'detail':'Se encontró la hoja de vida', 'data':data_serializada}, status=status.HTTP_200_OK)
         else:
@@ -537,7 +537,7 @@ class GetHojaDeVidaOtrosActivosByIdBien(generics.RetrieveAPIView):
             data_serializada = serializador.data
             diccionario_cod_estado_activo=dict((x,y) for x,y in estados_articulo_CHOICES) # transforma un choices en un diccionario
             estado=inventario.cod_estado_activo if inventario else None
-            data_serializada['estado'] = diccionario_cod_estado_activo[estado] if estado else None
+            data_serializada['estado'] = diccionario_cod_estado_activo[estado.cod_estado] if estado else None
             
             return Response({'success':True, 'detail':'Se encontró la hoja de vida', 'data':data_serializada}, status=status.HTTP_200_OK)
         else:

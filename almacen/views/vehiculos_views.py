@@ -21,7 +21,7 @@ from almacen.serializers.vehiculos_serializers import (
     UpdateArrendarVehiculoSerializer,
     VehiculosAgendablesConductorSerializer
     )
-from seguridad.models import ClasesTerceroPersona
+from transversal.models.base_models import ClasesTerceroPersona
 from seguridad.utils import Util
 
 #TABLA T071 CREAR REGISTROS DE ARRENDAMIENTO

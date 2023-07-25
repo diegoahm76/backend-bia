@@ -10,7 +10,7 @@ from datetime import timezone
 from conservacion.models.inventario_models import InventarioViveros
 import copy
 import json
-from seguridad.models import Personas
+from transversal.models.personas_models import Personas
 from conservacion.choices.cod_etapa_lote import cod_etapa_lote_CHOICES
 from almacen.models.solicitudes_models import (
     DespachoConsumo
@@ -444,7 +444,7 @@ class CreateDespacho(generics.UpdateAPIView):
                 inventario_instancia.save()
         
         # INSERT EN LA TABLA SOLICITUDES DE CONSUMIBLES
-        instancia_solicitud.id_despacho_viveros = aux_ultimo.pk
+        instancia_solicitud.id_despacho_viveros = aux_ultimo
         instancia_solicitud.fecha_cierra_solicitud = info_despacho['fecha_registro']
         instancia_solicitud.gestionada_viveros = True
         instancia_solicitud.solicitud_abierta = False

@@ -1,4 +1,4 @@
-from seguridad.models import Personas
+from transversal.models.personas_models import Personas
 from rest_framework import serializers
 
 

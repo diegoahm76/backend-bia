@@ -39,7 +39,9 @@ from transversal.models.organigrama_models import (
     CambiosUnidadMasivos
     )
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from seguridad.models import User, Personas, HistoricoCargosUndOrgPersona
+from seguridad.models import User
+from transversal.models.base_models import HistoricoCargosUndOrgPersona
+from transversal.models.personas_models import Personas
 from datetime import datetime
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
