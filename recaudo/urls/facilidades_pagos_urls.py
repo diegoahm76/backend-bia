@@ -5,6 +5,7 @@ from recaudo.views import facilidades_pagos_views as views
 urlpatterns = [
 
     # CREAR UNA SOLICITUD DE FACILIDAD DE PAGOS
+    path('datos-deudor/<int:id>/', views.DatosDeudorView.as_view(), name='datos-deudor'), 
     path('tipos-calidad-actuacion/', views.TipoActuacionView.as_view(), name='tipos-calidad-actuacion'),       
     path('datos-contacto-deudor/<int:id>/', views.DatosContactoDeudorView.as_view(), name='datos-contacto-deudor'),
     path('requisitos-actuacion/<int:id>/', views.RequisitosActuacionView.as_view(), name='requisitos-actuacion'),
@@ -22,12 +23,14 @@ urlpatterns = [
     path('funcionarios/', views.FuncionariosView.as_view(), name='funcionarios'),
     path('asignar-funcionario/put/<int:id>/', views.FacilidadPagoFuncionarioUpdateView.as_view(), name='asignar-funcionario'),
 
+    # MOSTRAR UNA FACILIDAD DE PAGOS
+    path('documentos-deudor/get/<int:id_facilidad_pago>/', views.CumplimientoRequisitosGetView.as_view(), name='documentos-deudor-facilidad-pago'),
+    path('documento-garantia/get/<int:id_facilidad_pago>/', views.GarantiasFacilidadGetView.as_view(), name='documento-garantia-facilidad-pago'),
+    path('bienes-deudor/get/<int:id_deudor>/', views.ListaBienesDeudorView.as_view(), name='bienes-deudor'),
+    path('get-id/<int:id>/', views.FacilidadPagoGetByIdView.as_view(), name='obtener-facilidad-pago'),
 
-
-
-    path('listar-bienes-deudor/<int:id>', views.ListaBienesDeudorView.as_view(), name='listar-bienes-deudor'),
-    
-
+    # RESPUESTA FACILIDAD DE PAGO
+    path('respuesta-solicitud-funcionario/create/', views.RespuestaSolicitudFacilidadView.as_view(), name='respuesta-solicitud-funcionario'),
 
 
 
