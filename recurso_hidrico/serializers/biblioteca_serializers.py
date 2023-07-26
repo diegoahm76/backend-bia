@@ -488,9 +488,28 @@ class SesionesPruebaBombeoPostSerializer(serializers.ModelSerializer):
         model=SesionesPruebaBombeo
         fields=('__all__')
 
+class SesionesPruebaBombeoGetSerializer(serializers.ModelSerializer):
+    datos = serializers.SerializerMethodField()
+    class Meta:
+        model=SesionesPruebaBombeo
+        fields=[ 'id_sesion_prueba_bombeo',
+                'id_prueba_bombeo',
+                'consecutivo_sesion',
+                'fecha_inicio',
+                'cod_tipo_sesion',
+                'datos']
+
+    def get_datos(self, avance):
+        datos = avance.datossesionpruebabombeo_set.all().order_by('hora')
+        return DatosSesionPruebaBombeoGetSerializer(datos, many=True).data
 #DATOS SECCION PRUEBAS BOMBEO
 
 class DatosSesionPruebaBombeoPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=DatosSesionPruebaBombeo
+        fields=('__all__')
+
+class DatosSesionPruebaBombeoGetSerializer(serializers.ModelSerializer):
     class Meta:
         model=DatosSesionPruebaBombeo
         fields=('__all__')

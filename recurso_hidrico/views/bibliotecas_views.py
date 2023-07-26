@@ -1,5 +1,6 @@
 import json
 from collections import Counter
+from django.forms import model_to_dict
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from rest_framework import generics
@@ -9,7 +10,7 @@ from rest_framework import status
 from datetime import datetime,date,timedelta
 from django.db.models import Max
 from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, DatosCarteraAforos, DatosRegistroLaboratorio, DatosSesionPruebaBombeo, Instrumentos, ParametrosLaboratorio, Pozos, PruebasBombeo, ResultadosLaboratorio, Secciones, SesionesPruebaBombeo,Subsecciones
-from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentoUpdateSerializer, ArchivosInstrumentosGetSerializer, CarteraAforosDeleteSerializer, CarteraAforosGetSerializer, CarteraAforosPostSerializer, CarteraAforosUpdateSerializer, CuencasGetByInstrumentoSerializer, CuencasGetSerializer, CuencasInstrumentoDeleteSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, DatosCarteraAforosDeleteSerializer, DatosCarteraAforosGetSerializer, DatosCarteraAforosPostSerializer, DatosCarteraAforosUpdateSerializer, DatosRegistroLaboratorioDeleteSerializer, DatosRegistroLaboratorioGetSerializer, DatosRegistroLaboratorioPostSerializer, DatosRegistroLaboratorioUpdateSerializer, DatosSesionPruebaBombeoPostSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoBusquedaAvanzadaSerializer, InstrumentoCuencasGetSerializer, InstrumentosDeleteSerializer, InstrumentosPostSerializer, InstrumentosSerializer, InstrumentosUpdateSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer, PruebasBombeoPostSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, ResultadosLaboratorioDeleteSerializer, ResultadosLaboratorioGetSerializer, ResultadosLaboratorioPostSerializer, ResultadosLaboratorioUpdateSerializer, SeccionSerializer, SeccionesSerializer, SesionesPruebaBombeoPostSerializer, SubseccionBusquedaAvanzadaSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
+from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentoUpdateSerializer, ArchivosInstrumentosGetSerializer, CarteraAforosDeleteSerializer, CarteraAforosGetSerializer, CarteraAforosPostSerializer, CarteraAforosUpdateSerializer, CuencasGetByInstrumentoSerializer, CuencasGetSerializer, CuencasInstrumentoDeleteSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, DatosCarteraAforosDeleteSerializer, DatosCarteraAforosGetSerializer, DatosCarteraAforosPostSerializer, DatosCarteraAforosUpdateSerializer, DatosRegistroLaboratorioDeleteSerializer, DatosRegistroLaboratorioGetSerializer, DatosRegistroLaboratorioPostSerializer, DatosRegistroLaboratorioUpdateSerializer, DatosSesionPruebaBombeoPostSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoBusquedaAvanzadaSerializer, InstrumentoCuencasGetSerializer, InstrumentosDeleteSerializer, InstrumentosPostSerializer, InstrumentosSerializer, InstrumentosUpdateSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer, PruebasBombeoPostSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, ResultadosLaboratorioDeleteSerializer, ResultadosLaboratorioGetSerializer, ResultadosLaboratorioPostSerializer, ResultadosLaboratorioUpdateSerializer, SeccionSerializer, SeccionesSerializer, SesionesPruebaBombeoGetSerializer, SesionesPruebaBombeoPostSerializer, SubseccionBusquedaAvanzadaSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
 
 
 
@@ -2208,9 +2209,78 @@ class PruebasBombeoCreate(generics.CreateAPIView):
   
     def post(self, request, *args, **kwargs):
         data = request.data
-        responde = self.crear_prueba_bombeo(data)
-        
-        return responde
+        id_prueba=""
+        responde=None
+        dato_crear=DatosSeccionPruebasBombeoCreate()
+        sesion_crear=SesionesPruebaBombeoCreate()
+        data_sesiones=[]
+        data_datos_sesion=[]
+        data_prueba={}
+        #si suministra la id la busca 
+        if 'id_prueba_bombeo' in data and data['id_prueba_bombeo']:
+            instance_prueba=PruebasBombeo.objects.filter(id_prueba_bombeo=data['id_prueba_bombeo']).first()
+            if not instance_prueba:
+                raise NotFound('No existe la prueba de bombeo.')
+            data_prueba=model_to_dict(instance_prueba)
+            
+            id_prueba=instance_prueba.id_prueba_bombeo
+        else:   
+
+            responde = self.crear_prueba_bombeo(data)
+
+            data_prueba=responde.data['data']
+            if responde.status_code !=status.HTTP_201_CREATED:
+                        return responde
+            #SESION PRUEBA DE BOMBEO
+            serializador=PruebasBombeoPostSerializer(data=responde.data['data'])
+            serializador.is_valid(raise_exception=True)
+            id_prueba=responde.data.get('data', {}).get('id_prueba_bombeo')
+
+        if ('secciones_prueba_bombeo' in data) and (data['secciones_prueba_bombeo']):
+            
+            for sesion in data['secciones_prueba_bombeo']:
+                if 'id_sesion_prueba_bombeo' in sesion and sesion['id_sesion_prueba_bombeo']:
+                    print(sesion['id_sesion_prueba_bombeo'])
+                    instance_sesion=SesionesPruebaBombeo.objects.filter(id_sesion_prueba_bombeo=sesion['id_sesion_prueba_bombeo']).first()
+                    if not instance_sesion:
+                        raise NotFound('No existe la sesion de prueba de bombeo.')
+                    data_s=model_to_dict(instance_sesion)
+                    
+                    id_sesion=instance_sesion.id_sesion_prueba_bombeo
+                else:              
+                    dato_sesion={
+                        "id_prueba_bombeo":id_prueba,
+                        "fecha_inicio": sesion['fecha_inicio'],
+                        "cod_tipo_sesion": sesion['cod_tipo_sesion']
+                            }
+                    #print(dato_sesion)
+                    response_seccion=sesion_crear.crear_sesion_prueba_bombeo(dato_sesion)
+                    if response_seccion.status_code !=status.HTTP_201_CREATED:
+                        return response_seccion
+                    data_sesiones.append(response_seccion.data['data'])
+                    id_sesion=response_seccion.data.get('data', {}).get('id_sesion_prueba_bombeo')
+                #print(id_sesion)
+                
+                if ('datos_prueba_bombeo' in sesion) and (sesion['datos_prueba_bombeo']):
+                    for dato_sesion in sesion['datos_prueba_bombeo']:
+                        #print(dato_sesion)
+                        dato={    
+                            "id_sesion_prueba_bombeo":id_sesion,
+                            "tiempo_transcurrido":dato_sesion["tiempo_transcurrido"] ,
+                            "nivel": dato_sesion['nivel'],
+                            "resultado": dato_sesion['resultado'],
+                            "caudal":dato_sesion['caudal']
+                            }
+                        response_dato=dato_crear.crear_dato_seccion_prueba_bombeo(dato)
+                        if response_dato.status_code !=status.HTTP_201_CREATED:
+                            return response_dato
+                        data_datos_sesion.append(response_dato.data['data'])
+        #print()
+        return Response({'success':True,'detail':'Se  registros correctamente','data':{
+                        'prueba_bombeo':data_prueba,
+                        'sesiones_bombeo':data_sesiones,
+                        'datos_sesion':data_datos_sesion
+                        }},status=status.HTTP_201_CREATED)
     
 #SECCION PRUEBAS DE BOMBEO
 class SesionesPruebaBombeoCreate(generics.CreateAPIView):
@@ -2229,7 +2299,7 @@ class SesionesPruebaBombeoCreate(generics.CreateAPIView):
         else:
             return highest_consecutivo_sesion + 1
 
-    def crear_seccion_prueba_bombeo(self, data):
+    def crear_sesion_prueba_bombeo(self, data):
         try:
             id_prueba_bombeo = data.get('id_prueba_bombeo')
             consecutivo_sesion = self.get_highest_consecutivo_sesion(id_prueba_bombeo)
@@ -2246,41 +2316,33 @@ class SesionesPruebaBombeoCreate(generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
         data = request.data
-        response = self.crear_seccion_prueba_bombeo(data)
+        response = self.crear_sesion_prueba_bombeo(data)
 
         return response
     
 
 
+class SesionesPruebaBombeoGetByPrueba(generics.ListAPIView):
+
+    serializer_class = SesionesPruebaBombeoGetSerializer
+    queryset = SesionesPruebaBombeo.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pru):
+
+           
+        resultados = SesionesPruebaBombeo.objects.filter(id_prueba_bombeo=pru)
+                
+        serializer = self.serializer_class(resultados,many=True)
+        
+        if not resultados:
+            raise NotFound("Este instrumento no cuenta con carteras de aforo.")
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+
+
 
 #DATOS SECCION PRUEBA DE BOMBEO
 
-
-# class DatosSeccionPruebasBombeoCreate(generics.CreateAPIView):
-#     serializer_class = DatosSesionPruebaBombeoPostSerializer
-#     permission_classes = [IsAuthenticated]
-#     queryset = DatosSesionPruebaBombeo.objects.all()
-
-#     def crear_dato_seccion_prueba_bombeo(self, data):
-#         try:
-#             data_in=data
-#             hora=data['tiempo_transcurrido']
-#             print(hora)
-#             serializer = DatosSesionPruebaBombeoPostSerializer(data=data)
-#             serializer.is_valid(raise_exception=True)
-#             serializer.save()
-        
-#             return Response({'success':True,'detail':'Se  registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
-        
-#         except ValidationError  as e:
-           
-#             raise ValidationError  (e.detail)
-  
-#     def post(self, request, *args, **kwargs):
-#         data = request.data
-#         responde = self.crear_dato_seccion_prueba_bombeo(data)
-        
-#         return responde
 
 class DatosSeccionPruebasBombeoCreate(generics.CreateAPIView):
     serializer_class = DatosSesionPruebaBombeoPostSerializer
@@ -2303,6 +2365,7 @@ class DatosSeccionPruebasBombeoCreate(generics.CreateAPIView):
             serializer = DatosSesionPruebaBombeoPostSerializer(data=data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
+            
         
             return Response({'success':True, 'detail':'Se registró correctamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)
         

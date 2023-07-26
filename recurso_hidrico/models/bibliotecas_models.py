@@ -189,7 +189,7 @@ class SesionesPruebaBombeo(models.Model):
         db_table = 'T615Sesiones_PruebaBombeo'
         verbose_name = 'sesión de prueba de bombeo'
         verbose_name_plural = 'sesiones de prueba de bombeo'
-        unique_together = ('consecutivo_sesion', 'cod_tipo_sesion',)
+        unique_together = ('id_prueba_bombeo','consecutivo_sesion', 'cod_tipo_sesion',)
 
 
 class DatosSesionPruebaBombeo(models.Model):

@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from seguridad.utils import Util
 
-from transversal.serializers.entidades_serializers import ConfiguracionEntidadSerializer, PersonaEntidadCormacarenaGetSerializer
+from transversal.serializers.entidades_serializers import ConfiguracionEntidadSerializer, HistoricoPerfilesEntidadGetSerializer, PersonaEntidadCormacarenaGetSerializer
 from transversal.models import ConfiguracionEntidad,HistoricoPerfilesEntidad
 from seguridad.models import Personas
 
@@ -239,4 +239,20 @@ class UpdateConfiguracionEntidad(generics.UpdateAPIView):
 
         return Response({'success':True,'detail':"Se realizo la configuracion  correctamente.","data":serializer.data},status=status.HTTP_200_OK)
 
+
+class HistoricoPerfilesEntidadGet(generics.GenericAPIView):
+
+    serializer_class = HistoricoPerfilesEntidadGetSerializer
+    queryset = HistoricoPerfilesEntidad.objects.all()
+    permission_classes = [IsAuthenticated]
     
+    def get(self,request,para):
+        
+        confEntidad = HistoricoPerfilesEntidad.objects.filter(cod_tipo_perfil_histo=para)
+        serializer = self.serializer_class(confEntidad,many=True)
+        
+        if not confEntidad:
+            raise NotFound("El registro de configuracion  que busca no existe")
+        
+        return Response({'success':True,'detail':"Se encontraron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+            
