@@ -597,7 +597,7 @@ class CreateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
 
                 return Response({'succes':True, 'detail':'Creación exitosa','data': serializador.data}, status=status.HTTP_201_CREATED)
             else:
-                raise ValidationError('Debe enviar todas las especificaciones diligenciadas o todas las especificaciones vacias.')
+                raise ValidationError('Debe enviar todas las especificaciones diligenciadas y asociar mínimo una tipología.')
         else:
             raise NotFound('No existe Tabla de Retención Documental (TRD) con el parámetro ingresado')
 
@@ -698,11 +698,13 @@ class UpdateSerieSubSeriesUnidadesOrgTRD(generics.UpdateAPIView):
                             'previous':previous,'current':serie_subs_unidadorg_trd,
                             'descripcion': {
                                 'NombreUnidad':serie_subs_unidadorg_trd.id_cat_serie_und.id_unidad_organizacional.nombre, 
-                                'NombreSerie':serie_subs_unidadorg_trd.id_cat_serie_und.id_catalogo_serie.id_serie_doc.nombre,
-                                'NombreSubserie':serie_subs_unidadorg_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc.nombre
+                                'NombreSerie':serie_subs_unidadorg_trd.id_cat_serie_und.id_catalogo_serie.id_serie_doc.nombre
                             }
                         }
                     ]
+                    if serie_subs_unidadorg_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc:
+                        valores_actualizados_detalles[0]['NombreSubserie'] = serie_subs_unidadorg_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc.nombre
+                        
                     direccion=Util.get_client_ip(request)
                     auditoria_data = {
                         "id_usuario" : request.user.id_usuario,
@@ -910,10 +912,12 @@ class EliminarSerieUnidadTRD(generics.RetrieveDestroyAPIView):
             valores_eliminados_detalles = [
                 {
                     'NombreUnidad':eliminar_catalogo_trd.id_cat_serie_und.id_unidad_organizacional.nombre, 
-                    'NombreSerie':eliminar_catalogo_trd.id_cat_serie_und.id_catalogo_serie.id_serie_doc.nombre,
-                    'NombreSubserie':eliminar_catalogo_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc.nombre
+                    'NombreSerie':eliminar_catalogo_trd.id_cat_serie_und.id_catalogo_serie.id_serie_doc.nombre
                 }
             ]
+            if eliminar_catalogo_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc:
+                valores_eliminados_detalles[0]['NombreSubserie'] = eliminar_catalogo_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc.nombre
+                    
             direccion=Util.get_client_ip(request)
             auditoria_data = {
                 "id_usuario" : request.user.id_usuario,
