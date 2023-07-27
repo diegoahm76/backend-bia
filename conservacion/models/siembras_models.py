@@ -32,7 +32,7 @@ class Siembras(models.Model):
         db_table = 'T157Siembras'
         verbose_name = 'Siembras vivero'
         verbose_name_plural = 'Siembras vivero'
-        # unique_together = ['id_vivero', 'id_bien_sembrado', 'agno_lote', 'nro_lote']
+        unique_together = ['id_vivero', 'id_bien_sembrado', 'agno_lote', 'nro_lote']
         
 class ConsumosSiembra(models.Model):
     id_consumo_siembra = models.AutoField(primary_key=True, editable=False, db_column='T158IdConsumoSiembra')
