@@ -156,7 +156,7 @@ class PruebasBombeo(models.Model):
     id_instrumento = models.ForeignKey(Instrumentos, on_delete=models.CASCADE, db_column='T614Id_Instrumento')
     id_pozo = models.ForeignKey(Pozos, on_delete=models.CASCADE, db_column='T614Id_Pozo')
     descripcion = models.CharField(max_length=255, blank=True, db_column='T614descripcion')
-    fecha_registro = models.DateTimeField(db_column='T614fechaRegistro')
+    fecha_registro = models.DateTimeField(auto_now_add=True,db_column='T614fechaRegistro')
     fecha_prueba_bombeo = models.DateField(db_column='T614fechaPruebaBombeo')
     #coordenadas = models.PointField(db_column='T614coordenadas')
     

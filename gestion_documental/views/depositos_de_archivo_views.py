@@ -7,9 +7,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Max 
+from django.db.models import Q
 from datetime import datetime,date,timedelta
 from gestion_documental.models.depositos_models import Deposito, EstanteDeposito
-from gestion_documental.serializers.depositos_serializers import DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer
+from gestion_documental.serializers.depositos_serializers import DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoSearchSerializer
 from seguridad.utils import Util
 
 
@@ -212,4 +213,44 @@ class EstanteDepositoCreate(generics.CreateAPIView):
         except ValidationError  as e:
             error_message = {'error': e.detail}
             raise ValidationError  (e.detail)
+        
+#Servicios de buscar deposito en estante
+#Servicio de buscar por nombre, identificacion por identificacion, sucursal
 
+class EstanteDepositoSearch(generics.CreateAPIView):
+
+    serializer_class = EstanteDepositoSearchSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = Deposito.objects.all()
+     
+    def get(self, request, *args, **kwargs):
+        
+        nombre_deposito = request.query_params.get('nombre_deposito','').strip()
+        identificacion_por_entidad = request.query_params.get('identificacion_por_entidad','').strip()
+        nombre_sucursal = request.query_params.get('descripcion_sucursal','').strip()
+
+        # Filtrar por nombre_deposito, identificacion_por_entidad y nombre_sucursal (unión de parámetros)
+        depositos = Deposito.objects.all()
+
+        if nombre_deposito:
+            depositos = depositos.filter(nombre_deposito__icontains=nombre_deposito)
+
+        if identificacion_por_entidad:
+            depositos = depositos.filter(identificacion_por_entidad__icontains=identificacion_por_entidad)
+
+        if nombre_sucursal:
+            depositos = depositos.filter(descripcion_sucursal__icontains=nombre_sucursal)
+
+        if not depositos.exists():
+            return Response({
+                'success': True,
+                'detail': 'No se encontraron datos que coincidan con los criterios de búsqueda.',
+                'data': []
+            }, status=status.HTTP_200_OK)
+        serializer = EstanteDepositoSearchSerializer(depositos, many=True)
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes registros.',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)

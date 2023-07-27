@@ -6,6 +6,8 @@ from django.db.models import Max
 from gestion_documental.models.depositos_models import Deposito, EstanteDeposito
 
 
+#DEPOSITOS
+
 class DepositoCreateSerializer(serializers.ModelSerializer):
     
     class Meta:
@@ -71,16 +73,20 @@ class DepositoGetSerializer(serializers.ModelSerializer):
         model =  Deposito
         fields = ['nombre_deposito','identificacion_por_entidad','orden_ubicacion_por_entidad','direccion_deposito','cod_municipio_nal','cod_pais_exterior','id_sucursal_entidad','nombre_sucursal','municipio','activo']
 
-class DepositoChangeOrdenSerializer(serializers.ModelSerializer):
 
-    class Meta:
-        model = Deposito
-        fields = '__all__'
+#ESTANTES
 
-
-
+#Crear estante
 class EstanteDepositoCreateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model =  EstanteDeposito
         fields = '__all__'
+
+#Buscar_deposito
+class  EstanteDepositoSearchSerializer(serializers.ModelSerializer):
+    nombre_sucursal = serializers.ReadOnlyField(source='id_sucursal_entidad.descripcion_sucursal', default=None)
+    
+    class Meta:
+        model =  Deposito
+        fields = ['orden_ubicacion_por_entidad','nombre_deposito','identificacion_por_entidad','nombre_sucursal']
