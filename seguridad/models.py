@@ -157,7 +157,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     activated_at = models.DateTimeField(blank=True, null=True, db_column='TzfechaActivacionInicial')
     last_login = models.DateTimeField(blank=True, null=True, db_column='TzfechaUltimoLogin')
     tipo_usuario = models.CharField(max_length=1, default='E', choices=tipo_usuario_CHOICES, db_column='TztipoUsuario')
-    profile_img = models.ImageField(null=True, blank=True, default='/placeholder.png', upload_to='seguridad/usuarios/', db_column='tzrutaFoto') #Juan Camilo Text Choices
+    profile_img = models.ImageField(null=True, blank=True, default='/placeholder.png', upload_to='seguridad/usuarios/', db_column='TzrutaFoto') #Juan Camilo Text Choices
     # email = models.EmailField(blank=True,null=True db_column='TzemailUsuario') #Añadido por Juan
     
     USERNAME_FIELD = 'nombre_de_usuario'
@@ -251,7 +251,7 @@ class Auditorias(models.Model):
     subsistema = models.CharField(max_length=4, choices=subsistemas_CHOICES, db_column='Tzsubsistema')
     id_cod_permiso_accion = models.ForeignKey(Permisos, on_delete=models.CASCADE, db_column='TzCod_PermisoAccion')
     fecha_accion = models.DateTimeField(db_column='TzfechaAccion', auto_now=True)
-    dirip = models.GenericIPAddressField(db_column='Tzdirip')
+    dirip = models.GenericIPAddressField(db_column='TzdirIp')
     descripcion = models.TextField(db_column='Tzdescripcion')
     valores_actualizados = models.TextField(null=True, blank=True, db_column='TzvaloresActualizados')
 
