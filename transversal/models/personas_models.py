@@ -21,6 +21,7 @@ class Personas(models.Model):
     direccion_residencia = models.CharField(max_length=255, null=True, blank=True, db_column='T010dirResidencia')
     direccion_residencia_ref = models.CharField(max_length=255, null=True, blank=True, db_column='T010dirResidenciaReferencia')
     ubicacion_georeferenciada = models.DecimalField(max_digits=18, decimal_places=13, null=True, blank=True, db_column='T010dirResidenciaGeoref')
+    ubicacion_georeferenciada_lon = models.DecimalField(max_digits=18, decimal_places=13, null=True, blank=True, db_column='T010dirResidenciaGeoreLon')
     municipio_residencia = models.ForeignKey('transversal.Municipio', related_name='municipio_residencia', on_delete=models.SET_NULL, null=True, blank=True, db_column='T010Cod_MunicipioResidenciaNal')
     pais_residencia = models.ForeignKey('transversal.Paises', related_name='pais_residencia', on_delete=models.SET_NULL, null=True, blank=True, db_column='T010Cod_PaisResidenciaExterior')
     direccion_laboral = models.CharField(max_length=255, null=True, blank=True, db_column='T010dirLaboralNal')

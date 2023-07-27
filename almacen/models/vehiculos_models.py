@@ -10,8 +10,6 @@ class VehiculosArrendados(models.Model):
     descripcion = models.CharField(max_length=255, db_column="T071descripcion")
     placa = models.CharField(max_length=10, unique=True, db_column="T071placa")
     id_marca = models.ForeignKey(Marcas, on_delete=models.CASCADE, db_column="T071Id_Marca")
-    # fecha_inicio = models.DateField(db_column='T071fechaInicio')
-    # fecha_fin = models.DateField(db_column='T071fechaFin')
     empresa_contratista = models.CharField(max_length=50, db_column="T071empresaContratista")
     tiene_hoja_de_vida = models.BooleanField(default=True, db_column="T071tieneHojaDeVida")
     
