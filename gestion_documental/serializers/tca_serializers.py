@@ -163,9 +163,12 @@ class PermisosCargoUnidadSerieSubserieUnidadTCASerializer(serializers.ModelSeria
         fields = '__all__'
 
 class BusquedaTCASerializer(serializers.ModelSerializer):
+    id_ccd = serializers.SerializerMethodField(source='id_trd.id_ccd.id_ccd', default=None)
+    id_organigrama = serializers.SerializerMethodField(source='id_trd.id_ccd.id_organigrama.id_organigrama', default=None)
+    
     class Meta:
         model = TablasControlAcceso
-        fields =['nombre','version','actual','fecha_terminado','fecha_puesta_produccion','fecha_retiro_produccion']
+        fields =['id_trd','id_ccd','id_organigrama','nombre','version','actual','fecha_terminado','fecha_puesta_produccion','fecha_retiro_produccion']
 
 class GetClasifExpedientesSerializer(serializers.ModelSerializer):
     id_unidad_organizacional = serializers.ReadOnlyField(source='id_cat_serie_und_ccd_trd.id_cat_serie_und.id_unidad_organizacional.id_unidad_organizacional', default=None)
