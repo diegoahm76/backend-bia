@@ -10,11 +10,13 @@ from django.db.models import Max
 from django.db.models import Q
 from datetime import datetime,date,timedelta
 from gestion_documental.models.depositos_models import Deposito, EstanteDeposito
-from gestion_documental.serializers.depositos_serializers import DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoSearchSerializer
+from gestion_documental.serializers.depositos_serializers import DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer
 from seguridad.utils import Util
 
 
 ##CRUD DE DEPOSITO
+
+#CREAR_DEPOSITO
 class DepositoCreate(generics.CreateAPIView):
     serializer_class = DepositoCreateSerializer
     permission_classes = [IsAuthenticated]
@@ -58,7 +60,8 @@ class DepositoCreate(generics.CreateAPIView):
         except ValidationError  as e:
             error_message = {'error': e.detail}
             raise ValidationError  (e.detail)
-        
+
+ #BORRAR_DEPOSITO       
 class DepositoDelete(generics.DestroyAPIView):
     serializer_class = DepositoDeleteSerializer
     queryset = Deposito.objects.all()
@@ -105,6 +108,8 @@ class DepositoDelete(generics.DestroyAPIView):
         Util.save_auditoria(auditoria_data) 
         return Response({'success':True,'detail':'Se elimino el deposito seleccionada.'},status=status.HTTP_200_OK)
 
+
+#ACTUALIZAR_DEPOSITO
 class DepositoUpdate(generics.UpdateAPIView):
     serializer_class = DepositoUpdateSerializer
     queryset = Deposito.objects.all()
@@ -152,6 +157,8 @@ class DepositoUpdate(generics.UpdateAPIView):
             error_message = {'error': e.detail}
             raise ValidationError  (e.detail)
 
+
+#LISTAR_TODOS_LOS_DEPOSITOS
 class DepositoGet(generics.ListAPIView):
     serializer_class = DepositoGetSerializer
     queryset = Deposito.objects.all()
@@ -166,6 +173,7 @@ class DepositoGet(generics.ListAPIView):
             'data': serializer.data
         }, status=status.HTTP_200_OK)
 
+#LISTAR_DEPOSITOS_POR_ID
 class DepositoGetById(generics.ListAPIView):
     serializer_class = DepositoGetSerializer
     queryset = Deposito.objects.all()
@@ -180,6 +188,7 @@ class DepositoGetById(generics.ListAPIView):
         
         return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)
     
+#ORDEN_DEPOSITO    
 class DepositoGetOrden(generics.ListAPIView):
     serializer_class = DepositoGetSerializer
     queryset = Deposito.objects.all()
@@ -214,14 +223,14 @@ class EstanteDepositoCreate(generics.CreateAPIView):
             error_message = {'error': e.detail}
             raise ValidationError  (e.detail)
         
-#Servicios de buscar deposito en estante
-#Servicio de buscar por nombre, identificacion por identificacion, sucursal
 
+#BUSCAR DEPOSITO POR NOMBRE, IDENTIFICACION, SUCURSAL EN ESTANTE
 class EstanteDepositoSearch(generics.CreateAPIView):
 
     serializer_class = EstanteDepositoSearchSerializer
     permission_classes = [IsAuthenticated]
     queryset = Deposito.objects.all()
+    
      
     def get(self, request, *args, **kwargs):
         
@@ -254,3 +263,24 @@ class EstanteDepositoSearch(generics.CreateAPIView):
             'detail': 'Se encontraron los siguientes registros.',
             'data': serializer.data
         }, status=status.HTTP_200_OK)
+    
+
+
+#ORDEN ESTANTE
+class EstanteDepositoGetOrden(generics.ListAPIView):
+     
+    serializer_class = EstanteDepositoGetOrdenSerializer
+    queryset = EstanteDeposito.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request):
+        maximo_orden = EstanteDeposito.objects.aggregate(max_orden=Max('orden_ubicacion_por_deposito'))
+        #serializer = self.serializer_class(deposito,many=True)
+        
+        if not maximo_orden:
+            raise NotFound("El registro del deposito que busca, no se encuentra registrado")
+        return Response({
+            'success':True,
+            'orden_siguiente':maximo_orden['max_orden']},
+            status=status.HTTP_200_OK)
+        
