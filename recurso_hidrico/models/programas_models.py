@@ -5,11 +5,10 @@ from transversal.models.personas_models import Personas
 
 
 class ProgramasPORH(models.Model):
-    id_programa = models.AutoField(primary_key=True,editable=False,db_column="T600IdPrograma_PORH")
-    #id_instrumento = models.IntegerField(db_column="T600Id_Instrumento_PORH")
+    id_programa = models.AutoField(primary_key=True, editable=False, db_column="T600IdPrograma_PORH")
     id_instrumento = models.ForeignKey(Instrumentos, on_delete=models.CASCADE, db_column="T600Id_Instrumento_PORH")
-    nombre = models.CharField(max_length=255,db_column="T600nombre")
-    fecha_creacion = models.DateField(auto_now_add=True,db_column="T600fechaRegistro")
+    nombre = models.CharField(max_length=255, db_column="T600nombre")
+    fecha_creacion = models.DateField(auto_now_add=True, db_column="T600fechaRegistro")
     fecha_inicio = models.DateField(db_column="T600fechaInicio")
     fecha_fin = models.DateField(db_column="T600fechaFin")
     
@@ -24,13 +23,13 @@ class ProgramasPORH(models.Model):
 
 
 class ProyectosPORH(models.Model):
-    id_proyecto = models.AutoField(primary_key=True,editable=False,db_column="T601IdProyecto_Pg_PORH")
-    id_programa = models.ForeignKey(ProgramasPORH,on_delete=models.CASCADE,db_column="T601Id_Programa_PORH")
-    nombre = models.CharField(max_length=255,db_column="T601nombre")
+    id_proyecto = models.AutoField(primary_key=True, editable=False, db_column="T601IdProyecto_Pg_PORH")
+    id_programa = models.ForeignKey(ProgramasPORH, on_delete=models.CASCADE, db_column="T601Id_Programa_PORH")
+    nombre = models.CharField(max_length=255, db_column="T601nombre")
     vigencia_inicial = models.DateField(db_column="T601vigenciaInicial")
     vigencia_final = models.DateField(db_column="T601vigenciaFinal")
-    inversion = models.PositiveIntegerField(db_column="T601inversion")
-    fecha_registro = models.DateField(auto_now_add=True,db_column="T601fechaRegistro")
+    inversion = models.IntegerField(db_column="T601inversion")
+    fecha_registro = models.DateField(auto_now_add=True, db_column="T601fechaRegistro")
     
     def __str__(self):
         return str(self.nombre)
@@ -43,10 +42,10 @@ class ProyectosPORH(models.Model):
 
 
 class ActividadesProyectos(models.Model):
-    id_actividades = models.AutoField(primary_key=True,editable=False,db_column="T602IdActividad_Py_Pg_PORH")
-    id_proyecto = models.ForeignKey(ProyectosPORH,on_delete=models.CASCADE,db_column="T602Id_Proyecto_Pg_PORH")
-    nombre = models.CharField(max_length=255,db_column="T602nombre")
-    fecha_registro = models.DateField(auto_now_add=True,db_column="T602fechaRegistro")
+    id_actividades = models.AutoField(primary_key=True, editable=False, db_column="T602IdActividad_Py_Pg_PORH")
+    id_proyecto = models.ForeignKey(ProyectosPORH, on_delete=models.CASCADE, db_column="T602Id_Proyecto_Pg_PORH")
+    nombre = models.CharField(max_length=255, db_column="T602nombre")
+    fecha_registro = models.DateField(auto_now_add=True, db_column="T602fechaRegistro")
     
     def __str__(self):
         return str(self.nombre)
@@ -59,13 +58,13 @@ class ActividadesProyectos(models.Model):
 
 
 class AvancesProyecto(models.Model):
-    id_avance = models.AutoField(primary_key=True,editable=False,db_column="T603IdAvance_Py_Pg_PORH")
-    id_proyecto = models.ForeignKey(ProyectosPORH, on_delete=models.CASCADE,db_column="T603IdProyecto_Pg_PORH")
+    id_avance = models.AutoField(primary_key=True, editable=False, db_column="T603IdAvance_Py_Pg_PORH")
+    id_proyecto = models.ForeignKey(ProyectosPORH, on_delete=models.CASCADE, db_column="T603IdProyecto_Pg_PORH")
     fecha_reporte = models.DateField(db_column="T603fechaReporte")
-    accion = models.CharField(max_length=255,db_column="T603accion")
-    descripcion = models.CharField(max_length=255,db_column="T603descripcion")
-    id_persona_registra = models.ForeignKey(Personas,on_delete=models.CASCADE,db_column="T603Id_PersonaRegistra")
-    fecha_registro = models.DateField(auto_now_add=True,db_column="T603fechaRegistro")
+    accion = models.CharField(max_length=255, db_column="T603accion")
+    descripcion = models.CharField(max_length=255, db_column="T603descripcion")
+    id_persona_registra = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column="T603Id_PersonaRegistra")
+    fecha_registro = models.DateField(auto_now_add=True, db_column="T603fechaRegistro")
     
     def __str__(self):
         return str(self.id_avance)
@@ -77,10 +76,10 @@ class AvancesProyecto(models.Model):
 
 
 class EvidenciasAvance(models.Model):
-    id_evidencia_avance = models.AutoField(primary_key=True,editable=False,db_column="T604IdEvidencia_Avance_Py_Pg_PORH")
-    id_avance = models.ForeignKey(AvancesProyecto,on_delete=models.CASCADE,db_column="T603Id_Avance_Py_Pg_PORH")
-    nombre_archivo = models.CharField(max_length=255,db_column="T603nombreArchivo")
-    id_archivo = models.IntegerField(db_column="T603Id_Archivo")
+    id_evidencia_avance = models.AutoField(primary_key=True, editable=False, db_column="T604IdEvidencia_Avance_Py_Pg_PORH")
+    id_avance = models.ForeignKey(AvancesProyecto, on_delete=models.CASCADE, db_column="T604Id_Avance_Py_Pg_PORH")
+    nombre_archivo = models.CharField(max_length=255, db_column="T604nombreArchivo")
+    id_archivo = models.CharField(db_column="T604Id_Archivo", max_length=255)
     
     def __str__(self):
         return str(self.id_evidencia_avance)

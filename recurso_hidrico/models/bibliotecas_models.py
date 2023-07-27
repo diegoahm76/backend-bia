@@ -3,12 +3,13 @@ from django.db import models
 from transversal.models.personas_models import Personas
 
 class Secciones(models.Model):
-    id_seccion = models.AutoField(primary_key=True,editable=False,db_column="T605IdSeccion")
-    nombre = models.CharField(max_length=255,db_column="T605nombre")
-    descripcion = models.CharField(max_length=255,db_column="T605descripcion")
-    fecha_creacion = models.DateField(auto_now_add=True,db_column="T605fechaCreacion")
-    id_persona_creada = models.ForeignKey(Personas,on_delete=models.CASCADE,db_column="T605Id_PersonaCrea")
+    id_seccion = models.AutoField(primary_key=True, editable=False, db_column="T605IdSeccion")
+    nombre = models.CharField(max_length=255, unique=True, db_column="T605nombre")
+    descripcion = models.CharField(max_length=255, db_column="T605descripcion")
+    fecha_creacion = models.DateTimeField(auto_now_add=True, db_column="T605fechaCreacion")
+    id_persona_creada = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column="T605Id_PersonaCrea")
     registroPrecargado = models.BooleanField(db_column="T605registroPrecargado")
+    
     def __str__(self):
         return str(self.nombre)
     
@@ -16,15 +17,14 @@ class Secciones(models.Model):
         db_table = 'T605Seccion'
         verbose_name = 'Seccion'
         verbose_name_plural = 'Secciones'
-        unique_together = ['nombre']
 
 class Subsecciones(models.Model):
-    id_subseccion = models.AutoField(primary_key=True,db_column="T606IdSubseccion_Seccion")
-    id_seccion = models.ForeignKey(Secciones, on_delete=models.CASCADE,db_column="T606Id_Seccion")
-    nombre = models.CharField(max_length=255,db_column="T606nombre")
-    descripcion = models.CharField(max_length=255,db_column="T606descripcion")
-    fechaCreacion = models.DateTimeField(auto_now_add=True,db_column="T606fechaCreacion")
-    id_persona_creada = models.ForeignKey(Personas, on_delete=models.CASCADE,db_column="T606Id_PersonaCrea")
+    id_subseccion = models.AutoField(primary_key=True, db_column="T606IdSubseccion_Seccion")
+    id_seccion = models.ForeignKey(Secciones, on_delete=models.CASCADE, db_column="T606Id_Seccion")
+    nombre = models.CharField(max_length=255, db_column="T606nombre")
+    descripcion = models.CharField(max_length=255, db_column="T606descripcion")
+    fechaCreacion = models.DateTimeField(auto_now_add=True, db_column="T606fechaCreacion")
+    id_persona_creada = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column="T606Id_PersonaCrea")
 
     def __str__(self):
         return self.nombre
@@ -43,10 +43,10 @@ class Instrumentos(models.Model):
     id_subseccion = models.ForeignKey(Subsecciones, on_delete=models.CASCADE, db_column='T607Id_Subseccion', related_name='instrumentos')
     id_resolucion = models.IntegerField(blank=True, null=True, db_column='T607Id_Resolucion')#falta la tabla resolucion
     id_persona_registra = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T607Id_PersonaRegistra')
-    fecha_registro = models.DateTimeField(auto_now=True,db_column='T607fechaRegistro')
+    fecha_registro = models.DateTimeField(auto_now=True, db_column='T607fechaRegistro')
     fecha_creacion_instrumento = models.DateTimeField(db_column='T607fechaCreacionInstrumento')
     fecha_fin_vigencia = models.DateField(blank=True, null=True, db_column='T607fechaFinVigencia')
-    id_pozo = models.ForeignKey('Pozos', null=True,on_delete=models.CASCADE, db_column='T607Id_Pozo')
+    id_pozo = models.ForeignKey('Pozos', blank=True, null=True, on_delete=models.SET_NULL, db_column='T607Id_Pozo')
     cod_tipo_agua = models.CharField(max_length=3, choices=[
         ('SUP', 'Superficial'),
         ('SUB', 'Subterránea'),
@@ -63,15 +63,14 @@ class Instrumentos(models.Model):
 
 class Cuencas(models.Model):
     id_cuenca = models.AutoField(primary_key=True, db_column='T608IdCuenca')
-    nombre = models.CharField(max_length=255, db_column='T608nombre')
-    activo = models.BooleanField(db_column='T608activo')
-    item_ya_usado = models.BooleanField(db_column='T608itemYaUsado')
+    nombre = models.CharField(max_length=255, unique=True, db_column='T608nombre')
+    activo = models.BooleanField(default=True, db_column='T608activo')
+    item_ya_usado = models.BooleanField(default=False, db_column='T608itemYaUsado')
     registro_precargado=models.BooleanField(default=False, db_column='T608registroPrecargado')
     class Meta:
         db_table = 'T608Cuencas'
         verbose_name = 'cuenca'
         verbose_name_plural = 'cuencas'
-        unique_together = ['nombre']
 
 
 class Pozos(models.Model):
@@ -79,9 +78,10 @@ class Pozos(models.Model):
     cod_pozo = models.CharField(max_length=10, db_column='T609codPozo')
     nombre = models.CharField(max_length=255, db_column='T609nombre')
     descripcion = models.CharField(max_length=255, db_column='T609descripcion')
-    activo = models.BooleanField(db_column='T609activo')
-    item_ya_usado = models.BooleanField(db_column='T609itemYaUsado')
-    registro_precargado=models.BooleanField(default=False, db_column='T609registroPrecargado')
+    activo = models.BooleanField(default=True, db_column='T609activo')
+    item_ya_usado = models.BooleanField(default=False, db_column='T609itemYaUsado')
+    # registro_precargado=models.BooleanField(default=False, db_column='T609registroPrecargado')
+    
     class Meta:
         db_table = 'T609Pozos'
         verbose_name = 'pozo'
@@ -107,16 +107,12 @@ class CarteraAforos(models.Model):
     id_cartera_aforos = models.AutoField(primary_key=True, db_column='T612IdCarteraAforos')
     id_instrumento = models.ForeignKey(Instrumentos, on_delete=models.CASCADE, db_column='T612Id_Instrumento')
     id_cuenca = models.ForeignKey(Cuencas, on_delete=models.CASCADE, db_column='T612Id_Cuenca')
-    fecha_registro = models.DateField(auto_now=True,db_column='T612fechaRegistro')
+    fecha_registro = models.DateField(auto_now=True, db_column='T612fechaRegistro')
     ubicacion_aforo = models.CharField(max_length=255, db_column='T612ubicacionAforo')
-    descripcion = models.CharField(max_length=255, blank=True, db_column='T612descripcion')
+    descripcion = models.CharField(max_length=255, blank=True, null=True, db_column='T612descripcion')
     #coordenadas = models.CharField(db_column='T612coordenadas')
-    
-    latitud = models.DecimalField(
-        max_digits=18, decimal_places=13, db_column='T612latitud')
-    longitud = models.DecimalField(
-        max_digits=18, decimal_places=13, db_column='T612longitud')
-
+    longitud = models.DecimalField(max_digits=18, decimal_places=13, db_column='T612longitud')
+    latitud = models.DecimalField(max_digits=18, decimal_places=13, db_column='T612latitud')
     fecha_aforo = models.DateTimeField(db_column='T612fechaAforo')
     cod_tipo_aforo = models.CharField(max_length=2, choices=[
         ('VD', 'Vadea'),
@@ -128,22 +124,22 @@ class CarteraAforos(models.Model):
 
     class Meta:
         db_table = 'T612CarteraAforos'
-        verbose_name = 'cartera de aforos'
-        verbose_name_plural = 'carteras de aforos'
+        verbose_name = 'Cartera de aforos'
+        verbose_name_plural = 'Carteras de aforos'
 
 
 class DatosCarteraAforos(models.Model):
     id_dato_cartera_aforos = models.AutoField(primary_key=True, db_column='T613IdDato_CarteraAforos')
     id_cartera_aforos = models.ForeignKey(CarteraAforos, on_delete=models.CASCADE, db_column='T613Id_CarteraAforos')
-    distancia_a_la_orilla = models.DecimalField(max_digits=10, decimal_places=2, db_column='T613distanciaALaOrilla')
-    profundidad = models.DecimalField(max_digits=10, decimal_places=2, db_column='T613profundidad')
-    velocidad_superficial = models.DecimalField(max_digits=10, decimal_places=2, db_column='T613velocidadSuperficial')
-    velocidad_profunda = models.DecimalField(max_digits=10, decimal_places=2, db_column='T613velocidadProfunda')
-    transecto = models.DecimalField(max_digits=10, decimal_places=2, null=True, db_column='T613transecto')
-    profundidad_promedio = models.DecimalField(max_digits=10, decimal_places=2, null=True, db_column='T613profundidadPromedio')
-    velocidad_promedio = models.DecimalField(max_digits=10, decimal_places=2, null=True, db_column='T613velocidadPromedio')
-    velocidad_transecto = models.DecimalField(max_digits=10, decimal_places=2, db_column='T613velocidadTransecto')
-    caudal = models.DecimalField(max_digits=10, decimal_places=2, db_column='T613caudal')
+    distancia_a_la_orilla = models.DecimalField(max_digits=65535, decimal_places=65535, db_column='T613distanciaALaOrilla')
+    profundidad = models.DecimalField(max_digits=65535, decimal_places=65535, db_column='T613profundidad')
+    velocidad_superficial = models.DecimalField(max_digits=65535, decimal_places=65535, db_column='T613velocidadSuperficial')
+    velocidad_profunda = models.DecimalField(max_digits=65535, decimal_places=65535, db_column='T613velocidadProfunda')
+    transecto = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True, db_column='T613transecto')
+    profundidad_promedio = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True, db_column='T613profundidadPromedio')
+    velocidad_promedio = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True, db_column='T613velocidadPromedio')
+    velocidad_transecto = models.DecimalField(max_digits=65535, decimal_places=65535, db_column='T613velocidadTransecto')
+    caudal = models.DecimalField(max_digits=65535, decimal_places=65535, db_column='T613caudal')
 
     class Meta:
         db_table = 'T613Datos_CarteraAforos'
@@ -155,22 +151,18 @@ class PruebasBombeo(models.Model):
     id_prueba_bombeo = models.AutoField(primary_key=True, db_column='T614IdPruebaBombeo')
     id_instrumento = models.ForeignKey(Instrumentos, on_delete=models.CASCADE, db_column='T614Id_Instrumento')
     id_pozo = models.ForeignKey(Pozos, on_delete=models.CASCADE, db_column='T614Id_Pozo')
-    descripcion = models.CharField(max_length=255, blank=True, db_column='T614descripcion')
+    descripcion = models.CharField(max_length=255, blank=True, null=True, db_column='T614descripcion')
     fecha_registro = models.DateTimeField(auto_now_add=True,db_column='T614fechaRegistro')
     fecha_prueba_bombeo = models.DateField(db_column='T614fechaPruebaBombeo')
     #coordenadas = models.PointField(db_column='T614coordenadas')
-    
-    latitud = models.DecimalField(
-        max_digits=18, decimal_places=13, db_column='T614latitud')
-    longitud = models.DecimalField(
-        max_digits=18, decimal_places=13, db_column='T614longitud')
-
+    longitud = models.DecimalField(max_digits=18, decimal_places=13, db_column='T614longitud')
+    latitud = models.DecimalField(max_digits=18, decimal_places=13, db_column='T614latitud')
     ubicacion_prueba = models.CharField(max_length=255, db_column='T614ubicacionPrueba')
 
     class Meta:
         db_table = 'T614PruebasBombeo'
-        verbose_name = 'prueba de bombeo'
-        verbose_name_plural = 'pruebas de bombeo'
+        verbose_name = 'Prueba de bombeo'
+        verbose_name_plural = 'Pruebas de bombeo'
 
 
 class SesionesPruebaBombeo(models.Model):
@@ -195,16 +187,16 @@ class SesionesPruebaBombeo(models.Model):
 class DatosSesionPruebaBombeo(models.Model):
     id_dato_sesion_prueba_bombeo = models.AutoField(primary_key=True, db_column='T616IdDato_Sesion_PruebaBombeo')
     id_sesion_prueba_bombeo = models.ForeignKey(SesionesPruebaBombeo, on_delete=models.CASCADE, db_column='T616Id_Sesion_PruebaBombeo')
-    tiempo_transcurrido = models.DecimalField(max_digits=10, decimal_places=2, db_column='T616tiempoTranscurrido')
+    tiempo_transcurrido = models.DecimalField(max_digits=65535, decimal_places=65535, db_column='T616tiempoTranscurrido')
     hora = models.TimeField(db_column='T616hora')
-    nivel = models.DecimalField(max_digits=10, decimal_places=2, db_column='T616nivel')
-    resultado = models.DecimalField(max_digits=10, decimal_places=2, db_column='T616resultado')
-    caudal = models.DecimalField(max_digits=10, decimal_places=2, null=True, db_column='T616caudal')
+    nivel = models.DecimalField(max_digits=65535, decimal_places=65535, db_column='T616nivel')
+    resultado = models.DecimalField(max_digits=65535, decimal_places=65535, db_column='T616resultado')
+    caudal = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True, db_column='T616caudal')
 
     class Meta:
         db_table = 'T616Datos_Sesion_PruebaBombeo'
-        verbose_name = 'datos de sesión de prueba de bombeo'
-        verbose_name_plural = 'datos de sesiones de prueba de bombeo'
+        verbose_name = 'Datos de sesión de prueba de bombeo'
+        verbose_name_plural = 'Datos de sesiones de prueba de bombeo'
 
 
 class ResultadosLaboratorio(models.Model):
@@ -212,22 +204,19 @@ class ResultadosLaboratorio(models.Model):
     id_instrumento = models.ForeignKey(Instrumentos, on_delete=models.CASCADE, db_column='T617Id_Instrumento')
     id_cuenca = models.ForeignKey(Cuencas, null=True, blank=True, on_delete=models.CASCADE, db_column='T617Id_Cuenca')
     id_pozo = models.ForeignKey(Pozos, null=True, blank=True, on_delete=models.CASCADE, db_column='T617Id_Pozo')
-    descripcion = models.CharField(max_length=255, blank=True, db_column='T617descripcion')
+    descripcion = models.CharField(max_length=255, null=True, blank=True, db_column='T617descripcion')
     lugar_muestra = models.CharField(max_length=255, db_column='T617lugarMuestra')
     cod_clase_muestra = models.CharField(max_length=3, choices=[
         ('SUB', 'Subterránea'),
         ('SUP', 'Superficial'),
     ], db_column='T617codClaseDeMuestra')
-    fecha_registro = models.DateTimeField(auto_now=True,db_column='T617fechaRegistro')
+    fecha_registro = models.DateTimeField(auto_now=True, db_column='T617fechaRegistro')
     fecha_toma_muestra = models.DateField(db_column='T617fechaTomaMuestra')
     fecha_resultados_lab = models.DateField(db_column='T617fechaResultadosLab')
     fecha_envio_lab = models.DateField(db_column='T617fechaEnvioALab')
     #coordenadas = models.PointField(db_column='T617coordenadas')
-
-    latitud = models.DecimalField(
-        max_digits=18, decimal_places=13, db_column='T617latitud')
-    longitud = models.DecimalField(
-        max_digits=18, decimal_places=13, db_column='T617longitud')
+    longitud = models.DecimalField(max_digits=18, decimal_places=13, db_column='T617longitud')
+    latitud = models.DecimalField(max_digits=18, decimal_places=13, db_column='T617latitud')
 
     class Meta:
         db_table = 'T617ResultadosLaboratorio'
@@ -243,9 +232,10 @@ class ParametrosLaboratorio(models.Model):
     ], db_column='T619codTipoParametro')
     nombre = models.CharField(max_length=255, db_column='T619nombre')
     unidad_de_medida = models.CharField(max_length=100, db_column='T619unidadDeMedida')
-    item_ya_usado = models.BooleanField(db_column='T619itemYaUsado')
-    activo = models.BooleanField(db_column='T619activo')
+    item_ya_usado = models.BooleanField(default=False, db_column='T619itemYaUsado')
+    activo = models.BooleanField(default=True, db_column='T619activo')
     registro_precargado=models.BooleanField(default=False, db_column='T619registroPrecargado')
+    
     class Meta:
         db_table = 'T619Parametros_Laboratorio'
         verbose_name = 'parámetro de laboratorio'
@@ -261,8 +251,8 @@ class DatosRegistroLaboratorio(models.Model):
 
     class Meta:
         db_table = 'T618Datos_RegistroLaboratorio'
-        verbose_name = 'datos de registro de laboratorio'
-        verbose_name_plural = 'datos de registros de laboratorio'
+        verbose_name = 'Datos de registro de laboratorio'
+        verbose_name_plural = 'Datos de registros de laboratorio'
 
 class ArchivosInstrumento(models.Model):
     id_archivo_instrumento = models.AutoField(primary_key=True, db_column='T611IdArchivo_Instrumento')
@@ -274,11 +264,12 @@ class ArchivosInstrumento(models.Model):
         ('INS', 'Instrumento')
     ], db_column='T611codTipoDeArchivo')
     nombre_archivo = models.CharField(max_length=255, db_column='T611nombreArchivo')
-    ruta_archivo = models.FileField( db_column='T611rutaArchivo')
-    fecha_cargado = models.DateField(auto_now=True,db_column='T611fechaCargado')
+    ruta_archivo = models.FileField(max_length=255, upload_to='recurso_hidrico/archivos_instrumento/', db_column='T611rutaArchivo')
+    fecha_cargado = models.DateField(auto_now=True, db_column='T611fechaCargado')
     id_cartera_aforo = models.ForeignKey(CarteraAforos, null=True, blank=True, on_delete=models.CASCADE, db_column='T611Id_CarteraAforo')
     id_prueba_bombeo = models.ForeignKey(PruebasBombeo, null=True, blank=True, on_delete=models.CASCADE, db_column='T611Id_PruebaBombeo')
     id_resultado_laboratorio = models.ForeignKey(ResultadosLaboratorio, null=True, blank=True, on_delete=models.CASCADE, db_column='T611Id_ResultadoLaboratorio')
+    
     class Meta:
         db_table = 'T611Archivos_Instrumento'
         verbose_name = 'archivo instrumento'
