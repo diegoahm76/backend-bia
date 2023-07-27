@@ -84,7 +84,10 @@ urlpatterns = [
     path('pruebas_bombeo/create/',views.PruebasBombeoCreate.as_view(),name='create_pruebas_bombeo'),
     #seccion_prueba_bombeo
     path('sesiones_prueba_bombeo/create/',views.SesionesPruebaBombeoCreate.as_view(),name='create_sesiones_prueba_bombeo'),
+    path('sesiones_prueba_bombeo/update/<str:pk>/',views.SesionesPruebaBombeoUpdate.as_view(),name='update_sesiones_prueba_bombeo'),
     path('sesiones_prueba_bombeo/get-by-prueba-bombeo/<str:pru>/',views.SesionesPruebaBombeoGetByPrueba.as_view(),name='get_sesiones_prueba_bombeo_by_prueba'),
     #datos_seccion_prueba_bombeo
     path('datos_sesiones_prueba_bombeo/create/',views.DatosSeccionPruebasBombeoCreate.as_view(),name='create_datos_sesiones_prueba_bombeo'),
+    path('datos_sesiones_prueba_bombeo/update/<str:pk>/',views.DatosSeccionPruebasBombeoUpdate.as_view(),name='update_datos_sesiones_prueba_bombeo'),
+    path('datos_sesiones_prueba_bombeo/delete/<str:pk>/',views.DatosSesionPruebaBombeoDelete.as_view(),name='delete_datos_sesiones_prueba_bombeo'),
 ]   

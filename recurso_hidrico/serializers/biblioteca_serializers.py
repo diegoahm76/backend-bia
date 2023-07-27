@@ -481,12 +481,22 @@ class PruebasBombeoPostSerializer(serializers.ModelSerializer):
     class Meta:
         model=PruebasBombeo
         fields=('__all__')
+class PruebasBombeoDeleteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=PruebasBombeo
+        fields=('__all__')
 ##SECCIONES PRUEBA DE BOMBEO
 
 class SesionesPruebaBombeoPostSerializer(serializers.ModelSerializer):
     class Meta:
         model=SesionesPruebaBombeo
         fields=('__all__')
+
+class SesionesPruebaBombeoPutSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=SesionesPruebaBombeo
+        fields=('__all__')
+
 
 class SesionesPruebaBombeoGetSerializer(serializers.ModelSerializer):
     datos = serializers.SerializerMethodField()
@@ -510,6 +520,17 @@ class DatosSesionPruebaBombeoPostSerializer(serializers.ModelSerializer):
         fields=('__all__')
 
 class DatosSesionPruebaBombeoGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=DatosSesionPruebaBombeo
+        fields=('__all__')
+
+class DatosSesionPruebaBombeoPutSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=DatosSesionPruebaBombeo
+        fields=('__all__')
+
+
+class DatosSesionPruebaBombeoDeleteSerializer(serializers.ModelSerializer):
     class Meta:
         model=DatosSesionPruebaBombeo
         fields=('__all__')
