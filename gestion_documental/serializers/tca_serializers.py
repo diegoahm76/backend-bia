@@ -58,7 +58,7 @@ class TCAPutSerializer(serializers.ModelSerializer):
         }
 
 class ClasifSerieSubserieUnidadTCASerializer(serializers.ModelSerializer):
-    cod_clas_expediente = serializers.ChoiceField(choices=tipo_clasificacion_CHOICES)
+    # cod_clas_expediente = serializers.ChoiceField(choices=tipo_clasificacion_CHOICES)
 
     def validate_ruta_soporte(self, value):
         extension = value.name.split('.')[-1]
@@ -87,7 +87,7 @@ class ClasifSerieSubserieUnidadTCASerializer(serializers.ModelSerializer):
         ]     
 
 class ClasifSerieSubserieUnidadTCAPutSerializer(serializers.ModelSerializer):
-    cod_clas_expediente = serializers.ChoiceField(choices=tipo_clasificacion_CHOICES)
+    # cod_clas_expediente = serializers.ChoiceField(choices=tipo_clasificacion_CHOICES)
 
     def validate_ruta_soporte(self, value):
         extension = value.name.split('.')[-1]
@@ -109,7 +109,7 @@ class ClasifSerieSubserieUnidadTCAPutSerializer(serializers.ModelSerializer):
         }
 
 class ClasifSerieSubserieUnidadTCAPutSerializer(serializers.ModelSerializer):
-    cod_clas_expediente = serializers.ChoiceField(choices=tipo_clasificacion_CHOICES)
+    # cod_clas_expediente = serializers.ChoiceField(choices=tipo_clasificacion_CHOICES)
     
     class Meta:
         model = CatSeriesUnidadOrgCCD_TRD_TCA
