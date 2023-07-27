@@ -26,10 +26,6 @@ class Deposito(models.Model):
 
 
 
-
-
-
-
 class EstanteDeposito(models.Model):
     id_estante_deposito = models.AutoField(primary_key=True, db_column='T231IdEstante_Deposito')
     id_deposito = models.ForeignKey('Deposito', on_delete=models.CASCADE, db_column='T231Id_Deposito')
