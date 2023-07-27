@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from datetime import datetime,date,timedelta
+from recurso_hidrico.models.bibliotecas_models import Instrumentos
 from seguridad.utils import Util
 
 from recurso_hidrico.models.programas_models import ActividadesProyectos, AvancesProyecto, EvidenciasAvance, ProgramasPORH, ProyectosPORH
@@ -780,7 +781,7 @@ class ProgramaPORHBusquedaAvanzadaGet(generics.ListAPIView):
     #serializer_class = BusquedaAvanzadaAvancesSerializers
     #serializer_class = GetProgramasporPORHSerializers
     serializer_class=GetAvanzadaProgramasporPORHSerializers
-    queryset = ProgramasPORH.objects.all()
+    queryset = Instrumentos.objects.all()
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -789,7 +790,7 @@ class ProgramaPORHBusquedaAvanzadaGet(generics.ListAPIView):
         for key, value in request.query_params.items():
             if key == 'nombre':
                 if value != '':
-                    filter['id_instrumento__nombre__icontains'] = value
+                    filter['nombre__icontains'] = value
 
         
         programas = self.queryset.all().filter(**filter)

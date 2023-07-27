@@ -100,31 +100,14 @@ class CuencasInstrumento(models.Model):
         unique_together = ('id_instrumento', 'id_cuenca',)
 
 
-class ArchivosInstrumento(models.Model):
-    id_archivo_instrumento = models.AutoField(primary_key=True, db_column='T611IdArchivo_Instrumento')
-    id_instrumento = models.ForeignKey(Instrumentos, on_delete=models.CASCADE, db_column='T611Id_Instrumento')
-    cod_tipo_de_archivo = models.CharField(max_length=3, choices=[
-        ('CDA', 'Cartera de Aforo'),
-        ('LAB', 'Registro de Laboratorio'),
-        ('PDB', 'Prueba de Bombeo'),
-        ('INS', 'Instrumento')
-    ], db_column='T611codTipoDeArchivo')
-    nombre_archivo = models.CharField(max_length=255, db_column='T611nombreArchivo')
-    ruta_archivo = models.FileField( db_column='T611rutaArchivo')
-    fecha_cargado = models.DateField(auto_now=True,db_column='T611fechaCargado')
 
-    class Meta:
-        db_table = 'T611Archivos_Instrumento'
-        verbose_name = 'archivo instrumento'
-        verbose_name_plural = 'archivos instrumento'
-        unique_together = ('id_instrumento', 'nombre_archivo',)
 
 
 class CarteraAforos(models.Model):
     id_cartera_aforos = models.AutoField(primary_key=True, db_column='T612IdCarteraAforos')
     id_instrumento = models.ForeignKey(Instrumentos, on_delete=models.CASCADE, db_column='T612Id_Instrumento')
     id_cuenca = models.ForeignKey(Cuencas, on_delete=models.CASCADE, db_column='T612Id_Cuenca')
-    fecha_registro = models.DateField(db_column='T612fechaRegistro')
+    fecha_registro = models.DateField(auto_now=True,db_column='T612fechaRegistro')
     ubicacion_aforo = models.CharField(max_length=255, db_column='T612ubicacionAforo')
     descripcion = models.CharField(max_length=255, blank=True, db_column='T612descripcion')
     #coordenadas = models.CharField(db_column='T612coordenadas')
@@ -235,7 +218,7 @@ class ResultadosLaboratorio(models.Model):
         ('SUB', 'Subterránea'),
         ('SUP', 'Superficial'),
     ], db_column='T617codClaseDeMuestra')
-    fecha_registro = models.DateTimeField(db_column='T617fechaRegistro')
+    fecha_registro = models.DateTimeField(auto_now=True,db_column='T617fechaRegistro')
     fecha_toma_muestra = models.DateField(db_column='T617fechaTomaMuestra')
     fecha_resultados_lab = models.DateField(db_column='T617fechaResultadosLab')
     fecha_envio_lab = models.DateField(db_column='T617fechaEnvioALab')
@@ -280,3 +263,24 @@ class DatosRegistroLaboratorio(models.Model):
         db_table = 'T618Datos_RegistroLaboratorio'
         verbose_name = 'datos de registro de laboratorio'
         verbose_name_plural = 'datos de registros de laboratorio'
+
+class ArchivosInstrumento(models.Model):
+    id_archivo_instrumento = models.AutoField(primary_key=True, db_column='T611IdArchivo_Instrumento')
+    id_instrumento = models.ForeignKey(Instrumentos, on_delete=models.CASCADE, db_column='T611Id_Instrumento')
+    cod_tipo_de_archivo = models.CharField(max_length=3, choices=[
+        ('CDA', 'Cartera de Aforo'),
+        ('LAB', 'Registro de Laboratorio'),
+        ('PDB', 'Prueba de Bombeo'),
+        ('INS', 'Instrumento')
+    ], db_column='T611codTipoDeArchivo')
+    nombre_archivo = models.CharField(max_length=255, db_column='T611nombreArchivo')
+    ruta_archivo = models.FileField( db_column='T611rutaArchivo')
+    fecha_cargado = models.DateField(auto_now=True,db_column='T611fechaCargado')
+    id_cartera_aforo = models.ForeignKey(CarteraAforos, null=True, blank=True, on_delete=models.CASCADE, db_column='T611Id_CarteraAforo')
+    id_prueba_bombeo = models.ForeignKey(PruebasBombeo, null=True, blank=True, on_delete=models.CASCADE, db_column='T611Id_PruebaBombeo')
+    id_resultado_laboratorio = models.ForeignKey(ResultadosLaboratorio, null=True, blank=True, on_delete=models.CASCADE, db_column='T611Id_ResultadoLaboratorio')
+    class Meta:
+        db_table = 'T611Archivos_Instrumento'
+        verbose_name = 'archivo instrumento'
+        verbose_name_plural = 'archivos instrumento'
+        unique_together = ('id_instrumento', 'nombre_archivo',)

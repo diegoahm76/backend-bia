@@ -23,7 +23,7 @@ class Avaluos(models.Model):
     id_bien = models.ForeignKey(Bienes, on_delete=models.CASCADE, db_column='T420Id_Bien')
     fecha_avaluo = models.DateField(auto_now_add=True, db_column='T420fechaAvaluo')
     fecha_fin_vigencia = models.DateField(db_column='T420fechaFinVigencia')
-    cod_funcionario_perito = models.IntegerField(db_column='T420Id_FuncionarioPerito')
+    id_funcionario_perito = models.IntegerField(db_column='T420Id_FuncionarioPerito')
     valor = models.DecimalField(max_digits=30, decimal_places=2, db_column='T420valor')
     inicio = models.DateField(null=True, blank= True, db_column='T420inicio')
     fin = models.DateField(null=True, blank= True, db_column='T420fin')
@@ -37,6 +37,7 @@ class Avaluos(models.Model):
 class TiposAtributos(models.Model):
     id = models.AutoField(primary_key=True, db_column='T434IdTipoAtributo')
     tipo = models.CharField(max_length=255, db_column='T434tipo')
+    notificacion = models.IntegerField(default=0, db_column='T434notificacion')
 
     class Meta:
         db_table = 'T434TiposAtributos'

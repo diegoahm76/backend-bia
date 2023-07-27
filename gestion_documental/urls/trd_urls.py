@@ -24,6 +24,7 @@ urlpatterns = [
     # path('serie-subserie-unidad-trd/upload/document/<str:id_serie_subserie_uniorg_trd>/',views.uploadDocument, name='serie-subserie-unidad-trd-upload-document'),
     # path('confirmar-cambios/<str:id_trd>/',views.CambiosPorConfirmar.as_view(),name='confirmar-cambios-trd'),
     path('buscar/trd/nombre-version/',views.BusquedaTRDNombreVersion.as_view(),name='busqueda-usuario-nombre-version'),#
+    path('historico/',views.GetHistoricoTRD.as_view(),name='get-historico-trd'),
     path('update/<str:id_trd>/',views.ModificarNombreVersionTRD.as_view(),name='modificar-trd-nombre-version'),#
     path('reanudar/trd/<str:id_trd>/',views.ReanudarTRD.as_view(),name='reanudar-trd'),#
 

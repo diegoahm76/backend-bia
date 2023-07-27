@@ -45,13 +45,39 @@ urlpatterns = [
     path('parametros_laboratorio/get-id/<str:pk>/',views.ParametrosLaboratorioGetById.as_view(),name='get-parametros_laboratorio-id'),
     #Registro de Instrumentos en Biblioteca
     path('subsecciones/get-busqueda-avanzada/',views.SeccionSubseccionBusquedaAvanzadaGet.as_view(),name='get-avanzada-subsecciones'),
-
+    #Instrumentos
     path('instrumentos/create/',views.InstrumentoCreate.as_view(),name='create-instrumentos'),
     path('instrumentos/update/<str:pk>/',views.InstrumentoUpdate.as_view(),name='update-instrumentos'),
-    
+    path('instrumentos/delete/<str:pk>/',views.InstrumentoDelete.as_view(),name='delete-instrumentos'),
+    path('instrumentos/get-busqueda-avanzada/',views.InstrumentoBusquedaAvanzadaGet.as_view(),name='get-avanzada-instrumento'),
+    #Archivos_Instrumento
     path('archivos_instrumento/create/',views.ArchivosInstrumentoCreate.as_view(),name='create-archivo'),
     path('archivos_instrumento/update/<str:pk>/',views.ArchivosInstrumentoUpdate.as_view(),name='update-archivo'),
     path('archivos_instrumento/get-by-instrumento/<str:pk>/',views.ArchivosInstrumentoGetByInstrumento.as_view(),name='get-archivo-by-instrumento'),
+    path('archivos_instrumento/get-by-resultado_laboratorio/<str:lab>/',views.ArchivosInstrumentoGetByResultadosLaboratorio.as_view(),name='get-archivo-by-resultado-laboratorio'),
+    #Cuencas_instrumentos
     path('cuencas_instrumento/get-by-instrumento/<str:pk>/',views.CuencasGetByInstrumento.as_view(),name='get-cuencas-by-instrumento'),
     path('cuencas_instrumento/delete/<str:cu>/<str:ins>/',views.CuencaInstrumentoDelete.as_view(),name='delete-cuencas-instrumento'),
+    #Carteras_aforo
+    path('carteras_aforo/create/',views.CarteraAforosCreate.as_view(),name='create-carteras_aforo'),
+    path('carteras_aforo/update/<str:pk>/',views.CarteraAforosUpdate.as_view(),name='update-carteras-aforo'),
+    path('carteras_aforo/get-by-instrumento/<str:pk>/',views.CarteraAforosGetByInstrumento.as_view(),name='get-carteras-aforo-by-instrumento'),
+    path('cartera_aforos/delete/<str:pk>/',views.CarteraAforosDelete.as_view(),name='delete-cartera-aforo'),
+    ##Datos_Cartera_afoto
+    path('datos_cartera_aforos/create/',views.DatosCarteraAforosCreate.as_view(),name='create-dato_carteras_aforo'),
+    path('datos_cartera_aforos/update/<str:pk>/',views.DatosCarteraAforosUpdate.as_view(),name='update-dato-carteras-aforo'),
+    path('datos_cartera_aforos/delete/<str:pk>/',views.DatosCarteraAforosDelete.as_view(),name='delete-dato-cartera-aforo'),
+    path('datos_cartera_aforos/get-by-cartera-aforos/<str:ca>/',views.DatosCarteraAforosGetByCarteraAforos.as_view(),name='get-dato-carteras_aforo-by-carteras_aforo'),
+    #Resultados de laboratorio
+    path('resultados_laboratorio/create/',views.ResultadosLaboratorioCreate.as_view(),name='create-resultado_laboratorio'),
+    path('resultados_laboratorio/get-by-instrumento/<str:pk>/',views.ResultadosLaboratorioGetByInstrumento.as_view(),name='get-resultados-by-instrumento'),
+    path('resultados_laboratorio/get-by-id/<str:pk>/',views.ResultadosLaboratorioGetById.as_view(),name='get-resultados-by-id'),
+    path('resultados_laboratorio/update/<str:pk>/',views.ResultadosLaboratorioUpdate.as_view(),name='update-resultados-laboratorio'),
+    path('resultados_laboratorio/delete/<str:pk>/',views.ResultadosLaboratorioDelete.as_view(),name='delete-resultados-laboratorio'),
+    #dato_registro_laboratorio
+    path('dato_registro_laboratorio/create/',views.DatosRegistroLaboratorioCreate.as_view(),name='create-dato_registro_laboratorio'),
+    path('dato_registro_laboratorio/delete/<str:pk>/',views.DatosRegistroLaboratorioDelete.as_view(),name='delete-dato_registro_laboratorio'),
+    path('dato_registro_laboratorio/update/<str:pk>/',views.DatosRegistroLaboratorioUpdate.as_view(),name='update-dato_registro_laboratorio'),
+    path('dato_registro_laboratorio/get-by-resultado/<str:lab>/',views.DatosRegistroLaboratorioByResultadosLaboratorioGet.as_view(),name='get-dato_registro_laboratorio-by-resultado'),
+    path('dato_registro_laboratorio/get-by-id/<str:pk>/',views.DatosRegistroLaboratorioByIdGet.as_view(),name='get-dato_registro_laboratorio-by-id'),
 ]   

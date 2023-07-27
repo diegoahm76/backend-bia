@@ -8,6 +8,7 @@ class ConfiguracionClaseAlerta(models.Model):
     nombre_clase_alerta = models.CharField(max_length=50, unique=True, db_column='T040nombreClaseAlerta')
     descripcion_clase_alerta = models.CharField(max_length=255, db_column='T040descripcionClaseAlerta')
     cod_tipo_clase_alerta = models.CharField(max_length=3, db_column='T040codTipoClaseAlerta')
+    cod_categoria_clase_alerta = models.CharField(max_length=3, choices=[('Ale', 'Alerta'), ('Com', 'Comunicación')], db_column='T040codCategoriaClaseAlerta')
     cant_dias_previas = models.SmallIntegerField(null=True, blank=True, db_column='T040ctdadDiasAlertasPrevias')
     frecuencia_previas = models.SmallIntegerField(null=True, blank=True, db_column='T040frecuenciaAlertasPrevias')
     cant_dias_post = models.SmallIntegerField(null=True, blank=True, db_column='T040ctdadRepeticionesPost')
@@ -16,9 +17,16 @@ class ConfiguracionClaseAlerta(models.Model):
     mensaje_base_dia = models.CharField(max_length=255, db_column='T040mensajeBaseDelDia')
     mensaje_base_previo = models.CharField(null=True, blank=True, max_length=255, db_column='T040mensajeBasePrevio')
     mensaje_base_vencido = models.CharField(null=True, blank=True, max_length=255, db_column='T040mensajeBaseVencido')
-    nivel_prioridad = models.SmallIntegerField(db_column='T040nivelPrioridad')
+    NIVEL_PRIORIDAD_CHOICES = [
+        ('1', 'Máxima'),
+        ('2', 'Media'),
+        ('3', 'Baja'),
+    ]
+    nivel_prioridad = models.CharField(max_length=1, choices=NIVEL_PRIORIDAD_CHOICES, db_column='T040nivelPrioridad')#T040nivelPrioridad
     activa = models.BooleanField(default=True, db_column='T040activa')
-    asignar_respondable = models.BooleanField(default=False, db_column='T040asignarResponsableDirEnConfig')
+    asignar_responsable = models.BooleanField(default=False, db_column='T040asignarResponsableDirEnConfig')
+    id_modulo_destino = models.ForeignKey('seguridad.Modulos', db_column='T040Id_ModuloDestino', on_delete=models.DO_NOTHING, related_name='configuraciones_destino')
+    id_modulo_generador = models.ForeignKey('seguridad.Modulos', db_column='T040Id_ModuloGenerador', on_delete=models.DO_NOTHING,related_name='configuraciones_generador')
 
     def __str__(self):
         return str(self.nombre_clase_alerta)

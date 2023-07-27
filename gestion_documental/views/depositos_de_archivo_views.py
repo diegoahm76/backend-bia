@@ -9,7 +9,6 @@ from rest_framework import status
 from django.db.models import Max 
 from datetime import datetime,date,timedelta
 from gestion_documental.models.depositos_models import Deposito, EstanteDeposito
-
 from gestion_documental.serializers.depositos_serializers import DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer
 from seguridad.utils import Util
 
@@ -79,10 +78,15 @@ class DepositoDelete(generics.DestroyAPIView):
         if estantes:
             raise ValidationError("No se puede Eliminar una deposito, si tiene estantes asignadas.")
         
-        
+        #reordenar
+        depositos = Deposito.objects.filter(orden_ubicacion_por_entidad__gt=deposito.orden_ubicacion_por_entidad).order_by('orden_ubicacion_por_entidad') 
         deposito.delete()
         
-        #pendiente reordenar
+        for deposito in depositos:
+            deposito.orden_ubicacion_por_entidad = deposito.orden_ubicacion_por_entidad - 1
+            deposito.save()
+        
+      
 
 
         usuario = request.user.id_usuario
@@ -90,7 +94,7 @@ class DepositoDelete(generics.DestroyAPIView):
         descripcion = {"IdDeposito":deposito.id_deposito,"NombreDeposito":deposito.nombre_deposito}
         auditoria_data = {
                 "id_usuario" : usuario,
-                "id_modulo" : 110,
+                "id_modulo" : 121,
                 "cod_permiso": "BO",
                 "subsistema": 'GEST',
                 "dirip": direccion,
@@ -105,6 +109,8 @@ class DepositoUpdate(generics.UpdateAPIView):
     queryset = Deposito.objects.all()
     permission_classes = [IsAuthenticated]
     
+    
+
     def put(self,request,pk):
         try:
             data = request.data
@@ -116,6 +122,10 @@ class DepositoUpdate(generics.UpdateAPIView):
             instance_previous=copy.copy(deposito)
             serializer = self.serializer_class(deposito,data=data)
             serializer.is_valid(raise_exception=True)
+
+
+  
+
             
             serializer.save()
 
@@ -183,6 +193,7 @@ class DepositoGetOrden(generics.ListAPIView):
         return Response({'success':True,'orden_siguiente':maximo_orden['max_orden']},status=status.HTTP_200_OK)
         #return JsonResponse({'maximo_orden': maximo_orden['max_orden']+1},status=status.HTTP_200_OK)
         #return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)
+
 
 #CRUD ESTANTE DEPOSITO
 class EstanteDepositoCreate(generics.CreateAPIView):
