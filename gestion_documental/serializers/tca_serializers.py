@@ -163,8 +163,8 @@ class PermisosCargoUnidadSerieSubserieUnidadTCASerializer(serializers.ModelSeria
         fields = '__all__'
 
 class BusquedaTCASerializer(serializers.ModelSerializer):
-    id_ccd = serializers.SerializerMethodField(source='id_trd.id_ccd.id_ccd', default=None)
-    id_organigrama = serializers.SerializerMethodField(source='id_trd.id_ccd.id_organigrama.id_organigrama', default=None)
+    id_ccd = serializers.ReadOnlyField(source='id_trd.id_ccd.id_ccd', default=None)
+    id_organigrama = serializers.ReadOnlyField(source='id_trd.id_ccd.id_organigrama.id_organigrama', default=None)
     
     class Meta:
         model = TablasControlAcceso
