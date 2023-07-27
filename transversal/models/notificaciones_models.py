@@ -19,15 +19,14 @@ class Notificacion(models.Model):
     id_notificacion = models.AutoField(primary_key=True, db_column='T031IdNotificacion')
     id_modulo_generador = models.ForeignKey('seguridad.Modulos', on_delete=models.CASCADE, db_column='T031Id_moduloGenerador')
     id_funcionario = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, related_name='persona_funcionario', db_column='T031Id_Funcionario')
-    id_deudor = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, related_name='id_deudor_notificacion', db_column='T031Id_Deudor')
-    id_medio_notificacion = models.ForeignKey(MedioNotificacion, on_delete=models.CASCADE, db_column='T031Id_MedioNotificacion')
+    id_destinatario = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, related_name='persona_destinatario', db_column='T031Id_Destinatario')
     id_expediente = models.ForeignKey(Expedientes, on_delete=models.SET_NULL, null=True, blank=True, db_column='T031Id_Expediente')
-    doc_asociado = models.FileField(max_length=255, upload_to='recaudo/notificaciones/', db_column='T031DocAsociado')
+    id_medio_notificacion = models.ForeignKey(MedioNotificacion, on_delete=models.CASCADE, db_column='T031Id_MedioNotificacion')
+    doc_asociado = models.FileField(max_length=255, upload_to='recaudo/notificaciones/', db_column='T031docAsociado')
     observaciones = models.CharField(max_length=255, db_column='T031observacion')
     fecha_creacion = models.DateTimeField(auto_now=True, db_column='T031fechaCreacionRegistro')
-    email = models.CharField(max_length=255, db_column='T031Email')
-    email_alterno = models.CharField(max_length=255, null=True, blank=True, db_column='T031EmailAlterno')
-    id_destinatario = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, related_name='persona_destinatario', db_column='T031Id_Destinatario')
+    email = models.CharField(max_length=100, db_column='T031Email')
+    email_alterno = models.CharField(max_length=100, null=True, blank=True, db_column='T031EmailAlterno')
 
     class Meta:
         db_table = 'T031Notificacion'
@@ -42,8 +41,8 @@ class DespachoNotificacion(models.Model):
     id_notificacion = models.ForeignKey(Notificacion, on_delete=models.CASCADE, db_column='T032Id_Notificacion')
     id_funcionario = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T032Id_Funcionario')
     fecha_despacho = models.DateTimeField(db_column='T032fechaDespachoNotificacion')
-    empresa_entrega = models.CharField( max_length=255, db_column='T032EmpresaEntrega')
-    funcionario_entrega = models.CharField( max_length=255, db_column='T032funcionarioEntrega')
+    empresa_entrega = models.CharField( max_length=100, db_column='T032empresaEntrega')
+    funcionario_entrega = models.CharField( max_length=100, db_column='T032funcionarioEntrega')
     observaciones = models.CharField( max_length=255, blank=True, null=True, db_column='T032observacion')
     fecha_creacion = models.DateTimeField(auto_now=True, db_column='T032fechaCreacionRegistro')
 
@@ -59,9 +58,9 @@ class RespuestaNotificacion(models.Model):
     id_despacho_notificacion = models.ForeignKey(DespachoNotificacion, on_delete=models.CASCADE, db_column='T033Id_DespachoNotificacion')
     id_notificacion = models.ForeignKey(Notificacion, on_delete=models.CASCADE, db_column='T033Id_Notificacion')
     doc_asociado = models.FileField(max_length=255, upload_to='recaudo/respuesta_notificaciones/', db_column='T033docAsociado')
-    numero_guia = models.CharField(max_length=255, db_column='T033nroGuia')
+    numero_guia = models.CharField(max_length=100, db_column='T033nroGuia')
     fecha_prestacion = models.DateTimeField(db_column='T033fechaPresentacionCorm')
-    funcionario_entrega = models.CharField(max_length=255, db_column='T033funcionarioEntrega')
+    funcionario_entrega = models.CharField(max_length=100, db_column='T033funcionarioEntrega')
     observaciones = models.CharField(max_length=255, blank=True,  null=True, db_column='T033observacion')
     fecha_creacion = models.DateTimeField(auto_now=True, db_column='T033fechaCreacionRegistro')
 
