@@ -11,7 +11,7 @@ from datetime import datetime,date,timedelta
 from django.db.models import Max
 from django.db import transaction
 from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, DatosCarteraAforos, DatosRegistroLaboratorio, DatosSesionPruebaBombeo, Instrumentos, ParametrosLaboratorio, Pozos, PruebasBombeo, ResultadosLaboratorio, Secciones, SesionesPruebaBombeo,Subsecciones
-from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentoUpdateSerializer, ArchivosInstrumentosGetSerializer, CarteraAforosDeleteSerializer, CarteraAforosGetSerializer, CarteraAforosPostSerializer, CarteraAforosUpdateSerializer, CuencasGetByInstrumentoSerializer, CuencasGetSerializer, CuencasInstrumentoDeleteSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, DatosCarteraAforosDeleteSerializer, DatosCarteraAforosGetSerializer, DatosCarteraAforosPostSerializer, DatosCarteraAforosUpdateSerializer, DatosRegistroLaboratorioDeleteSerializer, DatosRegistroLaboratorioGetSerializer, DatosRegistroLaboratorioPostSerializer, DatosRegistroLaboratorioUpdateSerializer, DatosSesionPruebaBombeoDeleteSerializer, DatosSesionPruebaBombeoPostSerializer, DatosSesionPruebaBombeoPutSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoBusquedaAvanzadaSerializer, InstrumentoCuencasGetSerializer, InstrumentosDeleteSerializer, InstrumentosPostSerializer, InstrumentosSerializer, InstrumentosUpdateSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer, PruebasBombeoDeleteSerializer, PruebasBombeoPostSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, ResultadosLaboratorioDeleteSerializer, ResultadosLaboratorioGetSerializer, ResultadosLaboratorioPostSerializer, ResultadosLaboratorioUpdateSerializer, SeccionSerializer, SeccionesSerializer, SesionesPruebaBombeoGetSerializer, SesionesPruebaBombeoPostSerializer, SesionesPruebaBombeoPutSerializer, SubseccionBusquedaAvanzadaSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
+from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentoUpdateSerializer, ArchivosInstrumentosGetSerializer, CarteraAforosDeleteSerializer, CarteraAforosGetSerializer, CarteraAforosPostSerializer, CarteraAforosUpdateSerializer, CuencasGetByInstrumentoSerializer, CuencasGetSerializer, CuencasInstrumentoDeleteSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, DatosCarteraAforosDeleteSerializer, DatosCarteraAforosGetSerializer, DatosCarteraAforosPostSerializer, DatosCarteraAforosUpdateSerializer, DatosRegistroLaboratorioDeleteSerializer, DatosRegistroLaboratorioGetSerializer, DatosRegistroLaboratorioPostSerializer, DatosRegistroLaboratorioUpdateSerializer, DatosSesionPruebaBombeoDeleteSerializer, DatosSesionPruebaBombeoGetSerializer, DatosSesionPruebaBombeoPostSerializer, DatosSesionPruebaBombeoPutSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoBusquedaAvanzadaSerializer, InstrumentoCuencasGetSerializer, InstrumentosDeleteSerializer, InstrumentosPostSerializer, InstrumentosSerializer, InstrumentosUpdateSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer, PruebasBombeoDeleteSerializer, PruebasBombeoGetSerializer, PruebasBombeoPostSerializer, PruebasBombeoUpdateSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, ResultadosLaboratorioDeleteSerializer, ResultadosLaboratorioGetSerializer, ResultadosLaboratorioPostSerializer, ResultadosLaboratorioUpdateSerializer, SeccionSerializer, SeccionesSerializer, SesionesPruebaBombeoDeleteSerializer, SesionesPruebaBombeoGetSerializer, SesionesPruebaBombeoPostSerializer, SesionesPruebaBombeoPutSerializer, SubseccionBusquedaAvanzadaSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
 
 
 
@@ -1107,7 +1107,41 @@ class ArchivosInstrumentoGetByResultadosLaboratorio(generics.ListAPIView):
         serializer = self.serializer_class(archivos,many=True)
         
         if not archivos:
-            raise NotFound("Este instrumento no cuenta con archivos.")
+            raise NotFound("Este resultado de laboratorio no cuenta con archivos.")
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+    
+
+class ArchivosInstrumentoGetByPruebasBombeo(generics.ListAPIView):
+
+    serializer_class = ArchivosInstrumentosGetSerializer
+    queryset = PruebasBombeo.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pru):
+        
+        archivos = ArchivosInstrumento.objects.filter(id_prueba_bombeo=pru)
+                
+        serializer = self.serializer_class(archivos,many=True)
+        
+        if not archivos:
+            raise NotFound("Esta prueba de bombeo no cuenta con archivos.")
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+    
+
+class ArchivosInstrumentoGetByCarteraAforos(generics.ListAPIView):
+
+    serializer_class = ArchivosInstrumentosGetSerializer
+    queryset = ArchivosInstrumento.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,ca):
+        
+        archivos = ArchivosInstrumento.objects.filter(id_cartera_aforo=ca)
+                
+        serializer = self.serializer_class(archivos,many=True)
+        
+        if not archivos:
+            raise NotFound("Esta cartera de aforo no cuenta con archivos.")
         return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
     
 
@@ -2284,7 +2318,6 @@ class PruebasBombeoCreate(generics.CreateAPIView):
                             'datos_sesion':data_datos_sesion
                             }},status=status.HTTP_201_CREATED)
     
-
 class PruebaBombeoDelete(generics.DestroyAPIView):
     serializer_class = PruebasBombeoDeleteSerializer
     permission_classes = [IsAuthenticated]
@@ -2307,6 +2340,79 @@ class PruebaBombeoDelete(generics.DestroyAPIView):
             'detail': 'La Prueba de Bombeo se eliminó correctamente.',
             'data': self.serializer_class(prueba_bombeo).data
         }, status=status.HTTP_200_OK)
+
+class PruebaBombeoUpdate(generics.UpdateAPIView):
+    
+    serializer_class = PruebasBombeoUpdateSerializer
+    queryset = PruebasBombeo.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def actualizar_pruebas_bombeo(self,data,pk):
+        
+        dato = PruebasBombeo.objects.filter(id_prueba_bombeo=pk).first()
+
+        if not dato:
+            raise NotFound("No existe esta prueba de bombeo.")
+        
+        sesiones=SesionesPruebaBombeo.objects.filter(id_prueba_bombeo=pk)
+        print(sesiones)
+        if sesiones:
+             raise ValidationError("No se puede actualizar una prueba de bombeo que tenga sesiones de bombeo.")
+        serializer = self.serializer_class(dato, data=data)
+        try:
+            serializer.is_valid(raise_exception=True)
+            serializer.update(dato, serializer.validated_data)
+            
+            return Response({'success':True,'detail':'Se actualizaron los registros correctamente','data':serializer.data},status=status.HTTP_200_OK)
+        except ValidationError  as e:
+           
+            raise ValidationError  (e.detail)
+        
+
+    def put(self,request,pk):
+    
+        data = request.data
+      
+        response =self.actualizar_pruebas_bombeo(data,pk)
+       
+        if response != status.HTTP_200_OK:
+            return response
+        
+        return Response(response.data,status=status.HTTP_200_OK)
+
+class PruebasBombeoGetByInstrumento(generics.ListAPIView):
+
+    serializer_class = PruebasBombeoGetSerializer
+    queryset = PruebasBombeo.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+
+           
+        resultados = PruebasBombeo.objects.filter(id_instrumento=pk)
+                
+        serializer = self.serializer_class(resultados,many=True)
+        
+        if not resultados:
+            raise NotFound("Este instrumento no pruebas de bombeo.")
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+
+class PruebasBombeoGetById(generics.ListAPIView):
+
+    serializer_class = PruebasBombeoGetSerializer
+    queryset = PruebasBombeo.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        
+        prueba = PruebasBombeo.objects.filter(id_prueba_bombeo=pk)
+                
+        serializer = self.serializer_class(prueba,many=True)
+        
+        if not prueba:
+            raise NotFound("No existe prueba de bombeo asociada a esta id")
+        serializer = self.serializer_class(prueba,many=True)
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
 
 
 #SECCION PRUEBAS DE BOMBEO
@@ -2366,7 +2472,6 @@ class SesionesPruebaBombeoCreate(generics.CreateAPIView):
         return response
     
 
-
 class SesionesPruebaBombeoGetByPrueba(generics.ListAPIView):
 
     serializer_class = SesionesPruebaBombeoGetSerializer
@@ -2381,7 +2486,7 @@ class SesionesPruebaBombeoGetByPrueba(generics.ListAPIView):
         serializer = self.serializer_class(resultados,many=True)
         
         if not resultados:
-            raise NotFound("Este instrumento no cuenta con carteras de aforo.")
+            raise NotFound("Esta prueba de bombeo no existe.")
         return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
 
 
@@ -2446,6 +2551,49 @@ class SesionesPruebaBombeoUpdate(generics.UpdateAPIView):
         respuesta = self.actualizar_sesion_prueba_bombeo(data, pk)
 
         return respuesta
+
+
+class SesionesPruebaBombeoDelete(generics.DestroyAPIView):
+    serializer_class = SesionesPruebaBombeoDeleteSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = SesionesPruebaBombeo.objects.all()
+    def delete(self, request, pk):
+        sesion_prueba = SesionesPruebaBombeo.objects.filter(id_sesion_prueba_bombeo=pk).first()
+
+        if not sesion_prueba:
+            raise NotFound('No existe la sesion de prueba de bombeo especificada.')
+
+        datos = DatosSesionPruebaBombeo.objects.filter(id_sesion_prueba_bombeo=pk)
+    
+        if datos:
+            raise ValidationError("No se puede eliminar una sesion si tiene datos")
+
+        sesion_prueba.delete()
+        return Response({
+            'success': True,
+            'detail': 'La Sesion de Prueba de Bombeo se eliminó correctamente.',
+            'data': self.serializer_class(sesion_prueba).data
+        }, status=status.HTTP_200_OK)
+
+
+class SesionesPruebaBombeoGetById(generics.ListAPIView):
+
+    serializer_class = SesionesPruebaBombeoGetSerializer
+    queryset = SesionesPruebaBombeo.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+
+           
+        sesione = SesionesPruebaBombeo.objects.filter(id_sesion_prueba_bombeo=pk)
+                
+        serializer = self.serializer_class(sesione,many=True)
+        
+        if not sesione:
+            raise NotFound("No existe sesion asociada a esta id.")
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+
+
 #DATOS SECCION PRUEBA DE BOMBEO
 
 
@@ -2553,4 +2701,39 @@ class DatosSesionPruebaBombeoDelete(generics.DestroyAPIView):
         dato.delete()
 
         return Response({'success': True, 'detail': 'El dato ha sido eliminado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
-       
+
+
+class DatosSesionPruebaBombeoGetById(generics.ListAPIView):
+
+    serializer_class = DatosSesionPruebaBombeoGetSerializer
+    queryset = DatosSesionPruebaBombeo.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        
+        prueba = DatosSesionPruebaBombeo.objects.filter(id_dato_sesion_prueba_bombeo=pk)
+                
+        serializer = self.serializer_class(prueba,many=True)
+        
+        if not prueba:
+            raise NotFound("No existe el dato de sesion de prueba de bombeo asociado a esta id")
+        serializer = self.serializer_class(prueba,many=True)
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+
+
+class DatosSesionPruebaBombeoGetBySesion(generics.ListAPIView):
+
+    serializer_class = DatosSesionPruebaBombeoGetSerializer
+    queryset = DatosSesionPruebaBombeo.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        
+        datos = DatosSesionPruebaBombeo.objects.filter(id_sesion_prueba_bombeo=pk)
+                
+        serializer = self.serializer_class(datos,many=True)
+        
+        if not datos:
+            raise NotFound("La sesion de bombeo no cuenta con datos.")
+        serializer = self.serializer_class(datos,many=True)
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)

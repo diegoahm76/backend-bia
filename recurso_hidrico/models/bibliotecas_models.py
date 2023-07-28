@@ -86,7 +86,7 @@ class Pozos(models.Model):
         db_table = 'T609Pozos'
         verbose_name = 'pozo'
         verbose_name_plural = 'pozos'
-        unique_together = ('nombre', 'cod_pozo',)
+        unique_together = ( 'cod_pozo',)
 
 class CuencasInstrumento(models.Model):
     id_cuenca_instrumento = models.AutoField(primary_key=True, db_column='T610IdCuenca_Instrumento')

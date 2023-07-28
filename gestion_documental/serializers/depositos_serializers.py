@@ -90,3 +90,9 @@ class  EstanteDepositoSearchSerializer(serializers.ModelSerializer):
     class Meta:
         model =  Deposito
         fields = ['orden_ubicacion_por_entidad','nombre_deposito','identificacion_por_entidad','nombre_sucursal']
+
+#Listar_orden_siguiente_estante
+class  EstanteDepositoGetOrdenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  EstanteDeposito
+        fields = '__all__'

@@ -168,7 +168,7 @@ class BusquedaTCASerializer(serializers.ModelSerializer):
     
     class Meta:
         model = TablasControlAcceso
-        fields =['id_trd','id_ccd','id_organigrama','nombre','version','actual','fecha_terminado','fecha_puesta_produccion','fecha_retiro_produccion']
+        fields =['id_tca','id_trd','id_ccd','id_organigrama','nombre','version','actual','fecha_terminado','fecha_puesta_produccion','fecha_retiro_produccion']
 
 class GetClasifExpedientesSerializer(serializers.ModelSerializer):
     id_unidad_organizacional = serializers.ReadOnlyField(source='id_cat_serie_und_ccd_trd.id_cat_serie_und.id_unidad_organizacional.id_unidad_organizacional', default=None)

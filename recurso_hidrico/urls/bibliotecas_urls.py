@@ -55,6 +55,8 @@ urlpatterns = [
     path('archivos_instrumento/update/<str:pk>/',views.ArchivosInstrumentoUpdate.as_view(),name='update-archivo'),
     path('archivos_instrumento/get-by-instrumento/<str:pk>/',views.ArchivosInstrumentoGetByInstrumento.as_view(),name='get-archivo-by-instrumento'),
     path('archivos_instrumento/get-by-resultado_laboratorio/<str:lab>/',views.ArchivosInstrumentoGetByResultadosLaboratorio.as_view(),name='get-archivo-by-resultado-laboratorio'),
+    path('archivos_instrumento/get-by-prueba_bombeo/<str:pru>/',views.ArchivosInstrumentoGetByPruebasBombeo.as_view(),name='get-archivo-by-pruebas-bombeo'),
+    path('archivos_instrumento/get-by-cartera-aforo/<str:ca>/',views.ArchivosInstrumentoGetByCarteraAforos.as_view(),name='get-archivo-by-carteras-aforo'),
     #Cuencas_instrumentos
     path('cuencas_instrumento/get-by-instrumento/<str:pk>/',views.CuencasGetByInstrumento.as_view(),name='get-cuencas-by-instrumento'),
     path('cuencas_instrumento/delete/<str:cu>/<str:ins>/',views.CuencaInstrumentoDelete.as_view(),name='delete-cuencas-instrumento'),
@@ -82,12 +84,20 @@ urlpatterns = [
     path('dato_registro_laboratorio/get-by-id/<str:pk>/',views.DatosRegistroLaboratorioByIdGet.as_view(),name='get-dato_registro_laboratorio_by_id'),
     #pruebas_bombeo
     path('pruebas_bombeo/create/',views.PruebasBombeoCreate.as_view(),name='create_pruebas_bombeo'),
+    path('pruebas_bombeo/delete/<str:pk>/',views.PruebaBombeoDelete.as_view(),name='delete_pruebas_bombeo'),
+    path('pruebas_bombeo/update/<str:pk>/',views.PruebaBombeoUpdate.as_view(),name='update_pruebas_bombeo'),
+    path('pruebas_bombeo/get-by-instrumento/<str:pk>/',views.PruebasBombeoGetByInstrumento.as_view(),name='get-pruebas-bombeo-by-instrumento'),
+    path('pruebas_bombeo/get-by-id/<str:pk>/',views.PruebasBombeoGetById.as_view(),name='get-pruebas-bombeo-by-id'),
     #seccion_prueba_bombeo
     path('sesiones_prueba_bombeo/create/',views.SesionesPruebaBombeoCreate.as_view(),name='create_sesiones_prueba_bombeo'),
     path('sesiones_prueba_bombeo/update/<str:pk>/',views.SesionesPruebaBombeoUpdate.as_view(),name='update_sesiones_prueba_bombeo'),
+    path('sesiones_prueba_bombeo/delete/<str:pk>/',views.SesionesPruebaBombeoDelete.as_view(),name='delete_sesiones_prueba_bombeo'),
     path('sesiones_prueba_bombeo/get-by-prueba-bombeo/<str:pru>/',views.SesionesPruebaBombeoGetByPrueba.as_view(),name='get_sesiones_prueba_bombeo_by_prueba'),
+    path('sesiones_prueba_bombeo/get-by-id/<str:pk>/',views.SesionesPruebaBombeoGetById.as_view(),name='get_sesiones_prueba_bombeo_by_id'),
     #datos_seccion_prueba_bombeo
     path('datos_sesiones_prueba_bombeo/create/',views.DatosSeccionPruebasBombeoCreate.as_view(),name='create_datos_sesiones_prueba_bombeo'),
     path('datos_sesiones_prueba_bombeo/update/<str:pk>/',views.DatosSeccionPruebasBombeoUpdate.as_view(),name='update_datos_sesiones_prueba_bombeo'),
     path('datos_sesiones_prueba_bombeo/delete/<str:pk>/',views.DatosSesionPruebaBombeoDelete.as_view(),name='delete_datos_sesiones_prueba_bombeo'),
+    path('datos_sesiones_prueba_bombeo/get-by-id/<str:pk>/',views.DatosSesionPruebaBombeoGetById.as_view(),name='get-dato-sesion-pruebas-bombeo-by-id'),
+    path('datos_sesiones_prueba_bombeo/get-by-sesion/<str:pk>/',views.DatosSesionPruebaBombeoGetBySesion.as_view(),name='get-dato-sesion-pruebas-bombeo-by-sesion'),
 ]   
