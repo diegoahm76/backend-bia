@@ -2585,7 +2585,7 @@ class SesionesPruebaBombeoGetById(generics.ListAPIView):
     def get(self,request,pk):
 
            
-        sesione = SesionesPruebaBombeo.objects.filter(id_sesion_prueba_bombeo=pk)
+        sesione = SesionesPruebaBombeo.objects.filter(id_sesion_prueba_bombeo=pk).order_by("id_sesion_prueba_bombeo")
                 
         serializer = self.serializer_class(sesione,many=True)
         
@@ -2711,7 +2711,7 @@ class DatosSesionPruebaBombeoGetById(generics.ListAPIView):
     
     def get(self,request,pk):
         
-        prueba = DatosSesionPruebaBombeo.objects.filter(id_dato_sesion_prueba_bombeo=pk)
+        prueba = DatosSesionPruebaBombeo.objects.filter(id_dato_sesion_prueba_bombeo=pk).order_by("id_dato_sesion_prueba_bombeo")
                 
         serializer = self.serializer_class(prueba,many=True)
         
@@ -2729,7 +2729,7 @@ class DatosSesionPruebaBombeoGetBySesion(generics.ListAPIView):
     
     def get(self,request,pk):
         
-        datos = DatosSesionPruebaBombeo.objects.filter(id_sesion_prueba_bombeo=pk)
+        datos = DatosSesionPruebaBombeo.objects.filter(id_sesion_prueba_bombeo=pk).order_by('tiempo_transcurrido')
                 
         serializer = self.serializer_class(datos,many=True)
         
