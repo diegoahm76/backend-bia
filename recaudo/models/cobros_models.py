@@ -51,6 +51,7 @@ class Obligaciones(models.Model):
         verbose_name = 'Obligación'
         verbose_name_plural = 'Obligaciones'
 
+
 class ConceptoContable(models.Model):
     id = models.AutoField(primary_key=True, db_column='T436IdConceptoContable')
     codigo_contable = models.CharField(max_length=255, db_column='T436codigoContable')
@@ -60,6 +61,7 @@ class ConceptoContable(models.Model):
         db_table = 'T436ConceptosContable'
         verbose_name = 'Concepto contable'
         verbose_name_plural = 'Conceptos contables'
+
 
 class Cartera(models.Model):
     id = models.AutoField(primary_key=True, db_column='T417IdCartera')
@@ -77,6 +79,7 @@ class Cartera(models.Model):
     numero_factura = models.CharField(max_length=255, db_column='T417numeroFactura')
     monto_inicial = models.DecimalField(max_digits=30, decimal_places=2, db_column='T417montoInicial')
     tipo_cobro = models.CharField(max_length=255, db_column='T417tipoCobro')
+    id_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T417Id_Deudor')
 
     def calcular_valor_total(self):
         return self.valor_sancion + self.valor_intereses
@@ -85,4 +88,3 @@ class Cartera(models.Model):
         db_table = 'T417Carteras'
         verbose_name = 'Cartera'
         verbose_name_plural = 'Cartera'
-

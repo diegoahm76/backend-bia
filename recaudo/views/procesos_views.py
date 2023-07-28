@@ -202,6 +202,17 @@ class ProcesosGeneralView(generics.ListAPIView):
         serializer = self.serializer_class(queryset, many=True)
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
 
+
+class ProcesosGetGeneralView(generics.ListAPIView):
+    queryset = Procesos.objects.all()
+    serializer_class = ProcesosSerializer
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request, proceso):
+        queryset = Procesos.objects.filter(pk=proceso)
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+
     
 # class AvaluosBienesView(generics.CreateAPIView):
 #     serializer_class = AvaluosSerializer
