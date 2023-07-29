@@ -12,7 +12,6 @@ class CrearSolicitudesviverosPostSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class CrearItemsSolicitudViveroPostSerializer(serializers.ModelSerializer):
-    #nro_posicion = serializers.IntegerField(validators=[UniqueValidator(queryset=ItemsSolicitudConsumible.objects.all())])
     class Meta:
         model = ItemsSolicitudConsumible
         fields = '__all__'
