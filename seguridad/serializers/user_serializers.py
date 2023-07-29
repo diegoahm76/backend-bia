@@ -108,7 +108,6 @@ class UserPutSerializer(serializers.ModelSerializer):
         fields =['password','profile_img']
 
 class UserPutAdminSerializer(serializers.ModelSerializer):
-    # nombre_de_usuario = serializers.CharField(max_length=30, min_length=6, validators=[UniqueValidator(queryset=User.objects.all())])
     tipo_usuario = serializers.CharField(max_length=1, write_only=True)
     profile_img = serializers.ImageField(required=False)
     is_active = serializers.BooleanField(required=False)

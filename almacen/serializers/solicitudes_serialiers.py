@@ -89,7 +89,6 @@ class SolicitudesPendientesAprobarSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class CrearItemsSolicitudConsumiblePostSerializer(serializers.ModelSerializer):
-    #nro_posicion = serializers.IntegerField(validators=[UniqueValidator(queryset=ItemsSolicitudConsumible.objects.all())])
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None) 
     nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
     

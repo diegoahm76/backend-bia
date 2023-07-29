@@ -136,8 +136,6 @@ class TRDSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class TRDPostSerializer(serializers.ModelSerializer):
-    version = serializers.CharField(validators=[UniqueValidator(queryset=TablaRetencionDocumental.objects.all(), message='La versión de la Tabla de Retención Documental debe ser único')])
-    nombre = serializers.CharField(validators=[UniqueValidator(queryset=TablaRetencionDocumental.objects.all(), message='El nombre de la Tabla de Retención Documental debe ser único')])
 
     class Meta:
         model = TablaRetencionDocumental
@@ -150,8 +148,6 @@ class TRDPostSerializer(serializers.ModelSerializer):
 
 
 class TRDPutSerializer(serializers.ModelSerializer):
-    version = serializers.CharField(validators=[UniqueValidator(queryset=TablaRetencionDocumental.objects.all(), message='La versión de la Tabla de Retención Documental debe ser único')])
-    nombre = serializers.CharField(validators=[UniqueValidator(queryset=TablaRetencionDocumental.objects.all(), message='El nombre de la Tabla de Retención Documental debe ser único')])
 
     class Meta:
         model = TablaRetencionDocumental
