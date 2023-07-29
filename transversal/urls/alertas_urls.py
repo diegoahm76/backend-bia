@@ -12,5 +12,8 @@ urlpatterns = [
     path("personas_alertar/create/", views.PersonasAAlertarCreate.as_view(), name="create-persona-alerta"),
     path("personas_alertar/delete/<str:pk>/", views.PersonasAAlertarDelete.as_view(), name="delete-personas-alertar"),
     path("personas_alertar/get-by-configuracion/<str:cod>/", views.PersonasAAlertarGetByConfAlerta.as_view(), name="create-persona-alerta"),
+    #ALERTAS PROGRAMADAS
+    path("alertas_programadas/create/", views.AlertasProgramadasCreate.as_view(), name="create-alertas-programadas"),
+    
     #FIN RECURSO_HIDRICO
 ]
