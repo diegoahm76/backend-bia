@@ -22,9 +22,6 @@ class TCASerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class TCAPostSerializer(serializers.ModelSerializer):
-    version = serializers.CharField(validators=[UniqueValidator(queryset=TablasControlAcceso.objects.all(), message='La versión de la Tabla de Control de Acceso debe ser único')])
-    nombre = serializers.CharField(validators=[UniqueValidator(queryset=TablasControlAcceso.objects.all(), message='El nombre de la Tabla de Control de Acceso debe ser único')])
-
     def validate_id_trd(self, trd):
         if trd.fecha_terminado == None:
             raise serializers.ValidationError('No se puede seleccionar una TRD que no esté terminada')
@@ -46,9 +43,6 @@ class TCAPostSerializer(serializers.ModelSerializer):
         }
 
 class TCAPutSerializer(serializers.ModelSerializer):
-    version = serializers.CharField(validators=[UniqueValidator(queryset=TablasControlAcceso.objects.all(), message='La versión de la Tabla de Control de Acceso debe ser único')])
-    nombre = serializers.CharField(validators=[UniqueValidator(queryset=TablasControlAcceso.objects.all(), message='El nombre de la Tabla de Control de Acceso debe ser único')])
-
     class Meta:
         model = TablasControlAcceso
         fields = ['version', 'nombre']

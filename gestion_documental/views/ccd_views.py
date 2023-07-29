@@ -44,7 +44,7 @@ class CreateCuadroClasificacionDocumental(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
         
         #Validación de seleccionar solo organigramas terminados
@@ -258,7 +258,7 @@ class CreateSeriesDoc(generics.CreateAPIView):
         elif ccd.fecha_retiro_produccion:
             raise PermissionDenied('No puede realizar esta acción a un CCD retirado de producción')
         
-        ultima_serie = self.queryset.all().filter(id_ccd=data['id_ccd']).order_by('codigo').last()
+        ultima_serie = self.queryset.all().filter(id_ccd=data['id_ccd']).last()
         
         codigo_correcto = int(ultima_serie.codigo) + ccd.valor_aumento_serie if ultima_serie else ccd.valor_aumento_serie
         
@@ -266,14 +266,14 @@ class CreateSeriesDoc(generics.CreateAPIView):
         serie = self.queryset.all().filter(id_ccd=data['id_ccd'], codigo=int(data['codigo'])).first()
         if serie:
             # ACOMODAR CODIGOS DE SERIES POSTERIORES
-            series_posteriores = self.queryset.all().filter(id_ccd=data['id_ccd'],codigo__gte=int(data['codigo'])).order_by('-codigo')
-            
+            series_posteriores = [serie_instance for serie_instance in self.queryset.all().filter(id_ccd=data['id_ccd']) if int(serie_instance.codigo) >= int(data['codigo'])]
             for serie_posterior in series_posteriores:
                 serie_posterior.codigo = int(serie_posterior.codigo) + ccd.valor_aumento_serie
                 serie_posterior.save()
+                
         else:
             if int(data['codigo']) != codigo_correcto:
-                 raise ValidationError('El codigo ingresado no es correcto. Valide que siga el orden definido por el valor de aumento elegido para las series')
+                raise ValidationError('El codigo ingresado no es correcto. Valide que siga el orden definido por el valor de aumento elegido para las series')
         
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
