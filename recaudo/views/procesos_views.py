@@ -61,6 +61,45 @@ class TiposAtributosView(generics.ListAPIView):
         serializer = self.serializer_class(queryset, many=True)
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
 
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ActualizarTiposAtributosView(generics.ListAPIView):
+    queryset = TiposAtributos.objects.all()
+    serializer_class = TiposAtributosSerializer
+    #permission_classes = [IsAuthenticated]
+
+    def post(self, request, tipo):
+        tipo_actual = TiposAtributos.objects.filter(pk=tipo)
+        if len(tipo_actual) == 1:
+            tipo_actual = tipo_actual.get()
+            tipo_actual.tipo = request.data.get('tipo') if request.data.get('tipo') is not None else tipo_actual.tipo
+            tipo_actual.notificacion = request.data.get('notificacion') if request.data.get('notificacion') is not None else tipo_actual.notificacion
+            tipo_actual.save()
+            return Response({'success': True, 'data': 'Tipo de atributo actualizado con exito.'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success': False, 'data': 'No existe el tipo con el id enviado.'}, status=status.HTTP_200_OK)
+
+
+class EliminarTiposAtributosView(generics.ListAPIView):
+    queryset = TiposAtributos.objects.all()
+    serializer_class = TiposAtributosSerializer
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request, tipo):
+        tipo_actual = TiposAtributos.objects.filter(pk=tipo)
+        if len(tipo_actual) == 1:
+            tipo_actual = tipo_actual.get()
+            tipo_actual.delete()
+            return Response({'success': True, 'data': 'Tipo de atributo eliminado con exito.'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success': False, 'data': 'No existe el tipo con el id enviado.'}, status=status.HTTP_200_OK)
+
 
 class AtributosEtapasView(generics.ListAPIView):
     queryset = AtributosEtapas.objects.all()

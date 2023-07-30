@@ -5,6 +5,8 @@ from recaudo.views import facilidades_pagos_views as f_views
 urlpatterns = [
     path('etapas/', views.EtapasProcesoView.as_view(), name='etapas-proceso-todos'),
     path('tipos-atributos/', views.TiposAtributosView.as_view(), name='tipos-etapas-todos'),
+    path('actualizar-tipos-atributos/<int:tipo>/', views.ActualizarTiposAtributosView.as_view(), name='tipos-etapas-actualizar'),
+    path('eliminar-tipos-atributos/<int:tipo>/', views.EliminarTiposAtributosView.as_view(), name='tipos-etapas-eliminar'),
     path('atributos/<int:etapa>/', views.AtributosEtapasView.as_view(), name='atributos-etapas-todos'),
     path('flujos/', views.FlujoProcesoView.as_view(), name='flujos-todos'),
     path('grafica/', views.GraficaView.as_view(), name='grafica-flujo'),
