@@ -10,7 +10,7 @@ from django.db.models import Max
 from django.db.models import Q
 from datetime import datetime,date,timedelta
 from gestion_documental.models.depositos_models import Deposito, EstanteDeposito
-from gestion_documental.serializers.depositos_serializers import DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoChangeOrdenSerializer
+from gestion_documental.serializers.depositos_serializers import DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoChangeOrdenSerializer, EstanteDeleteSerializer, EstanteGetByDepositoSerializer
 from seguridad.utils import Util
 
 
@@ -178,7 +178,7 @@ class DepositoGetById(generics.ListAPIView):
         
         if not Deposito:
             raise NotFound("El registro del deposito que busca, no se encuentra registrado")
-        
+
         return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)
     
 #ORDEN_DEPOSITO    
@@ -275,7 +275,7 @@ class EstanteDepositoSearch(generics.CreateAPIView):
     
 
 
-#ORDEN ESTANTE
+#ORDEN ESTANTE ESTANTE
 class EstanteDepositoGetOrden(generics.ListAPIView):
      
     serializer_class = EstanteDepositoGetOrdenSerializer
@@ -293,8 +293,7 @@ class EstanteDepositoGetOrden(generics.ListAPIView):
             'orden_siguiente':maximo_orden['max_orden']},
             status=status.HTTP_200_OK)
         
-#CAMBIAR ORDEN
-
+#CAMBIAR ORDEN ESTANTE
 class EstanteDepositoChangeOrden(generics.ListAPIView):
     serializer_class = EstanteDepositoGetOrdenSerializer
     queryset = EstanteDeposito.objects.all()
@@ -312,3 +311,53 @@ class EstanteDepositoChangeOrden(generics.ListAPIView):
         serializer.save()
 
         return Response({'success': True, 'detail': 'Orden del estante cambiado correctamente.'}, status=status.HTTP_200_OK)
+
+#ELIMINAR_ESTANTE
+class EstanteDelete(generics.DestroyAPIView):
+    serializer_class = EstanteDeleteSerializer
+    queryset = EstanteDeposito.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self,request,pk):
+        
+        estantes = EstanteDeposito.objects.filter(id_estante_deposito=pk).first()
+       
+        
+        if not deposito:
+            raise ValidationError("No existe el deposito a eliminar")
+        
+
+        #pendiente validacion de cajas bandeja
+
+        if estantes:
+            raise ValidationError("No se puede Eliminar una deposito, si tiene estantes asignadas.")
+        
+        #reordenar
+        depositos = Deposito.objects.filter(orden_ubicacion_por_entidad__gt=deposito.orden_ubicacion_por_entidad).order_by('orden_ubicacion_por_entidad') 
+        deposito.delete()
+        
+        for deposito in depositos:
+            deposito.orden_ubicacion_por_entidad = deposito.orden_ubicacion_por_entidad - 1
+            deposito.save()
+        
+      
+        return Response({'success':True,'detail':'Se elimino el deposito seleccionada.'},status=status.HTTP_200_OK)
+
+#LISTADO DE ESTANTES POR DEPOSITO
+class EstanteGetByDeposito(generics.ListAPIView):
+    serializer_class = EstanteGetByDepositoSerializer
+    queryset = EstanteDeposito.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, pk):
+        estantes = EstanteDeposito.objects.filter(id_deposito=pk)
+        
+        if not estantes.exists():
+            raise NotFound("El registro del depósito que busca no se encuentra registrado.")
+        
+        serializer = self.serializer_class(estantes, many=True)
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes registros.',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)

@@ -49,14 +49,14 @@ class UpdateConfiguracionEntidad(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
     def buscarConsecutivo(self,cod_perfil_histo):
         max_valor = HistoricoPerfilesEntidad.objects.filter(cod_tipo_perfil_histo=cod_perfil_histo).aggregate(max_valor=Max('consec_asignacion_perfil_histo'))
-        print("dato maximo de "+str(cod_perfil_histo))
-        print(max_valor)
+        #print("dato maximo de "+str(cod_perfil_histo))
+        #print(max_valor)
         if not max_valor['max_valor']:
-            print("NO EXISTE REGISTRO")
+            #print("NO EXISTE REGISTRO")
             return(0)
         else:
 
-            print(max_valor['max_valor'])
+            #print(max_valor['max_valor'])
             return max_valor['max_valor']
         
 
@@ -64,7 +64,7 @@ class UpdateConfiguracionEntidad(generics.UpdateAPIView):
     def registrarHistoricoPerfilesEntidad(self,cod_tipo_perfil,consec,id_persona,fecha_inicio_periodo,observaciones,funcionario):
         
         consecutivo=self.buscarConsecutivo(cod_tipo_perfil)
-        print(consecutivo)
+        #print(consecutivo)
         historico_perfil = HistoricoPerfilesEntidad(
                             id_persona_entidad_id=3,
                             cod_tipo_perfil_histo=cod_tipo_perfil,
@@ -93,7 +93,7 @@ class UpdateConfiguracionEntidad(generics.UpdateAPIView):
             if int(instance.id_persona_director_actual.id_persona) != int(data_nueva['id_persona_director_actual']) :
                 #instance.fecha_inicio_dir_actual = timezone.now()
                 data_nueva['fecha_inicio_dir_actual']=timezone.now()
-                print(instance.fecha_inicio_dir_actual)
+                #print(instance.fecha_inicio_dir_actual)
 
                  #realiza el registro en historial
                 cod_tipo_perfil='Dire'   
@@ -118,7 +118,7 @@ class UpdateConfiguracionEntidad(generics.UpdateAPIView):
             if int(instance.id_persona_coord_almacen_actual.id_persona) != int(data_nueva['id_persona_coord_almacen_actual']) :
                 #instance.fecha_inicio_coord_alm_actual = timezone.now()
                 data_nueva['fecha_inicio_coord_alm_actual']=timezone.now()
-                print(instance.fecha_inicio_coord_alm_actual)
+                #print(instance.fecha_inicio_coord_alm_actual)
 
                  #realiza el registro en historial
                 cod_tipo_perfil='CAlm'   
@@ -144,7 +144,7 @@ class UpdateConfiguracionEntidad(generics.UpdateAPIView):
             if int(instance.id_persona_respon_transporte_actual.id_persona) != int(data_nueva['id_persona_respon_transporte_actual']) :
                 #instance.fecha_inicio_respon_trans_actual = timezone.now()
                 data_nueva['fecha_inicio_respon_trans_actual']=timezone.now()
-                print(instance.fecha_inicio_respon_trans_actual)
+                #print(instance.fecha_inicio_respon_trans_actual)
 
                  #realiza el registro en historial
                 cod_tipo_perfil='RTra'   
@@ -170,7 +170,7 @@ class UpdateConfiguracionEntidad(generics.UpdateAPIView):
             if int(instance.id_persona_coord_viveros_actual.id_persona) != int(data_nueva['id_persona_coord_viveros_actual']) :
                 #instance.fecha_inicio_coord_viv_actual = timezone.now()
                 data_nueva['fecha_inicio_coord_viv_actual']=timezone.now()
-                print(instance.fecha_inicio_coord_viv_actual)
+                #print(instance.fecha_inicio_coord_viv_actual)
 
                  #realiza el registro en historial
                 cod_tipo_perfil='CViv'   
@@ -196,7 +196,7 @@ class UpdateConfiguracionEntidad(generics.UpdateAPIView):
             if int(instance.id_persona_almacenista.id_persona) != int(data_nueva['id_persona_almacenista']) :
                 #instance.fecha_inicio_almacenista = timezone.now()
                 data_nueva['fecha_inicio_almacenista']=timezone.now()
-                print(instance.fecha_inicio_almacenista)
+                #print(instance.fecha_inicio_almacenista)
 
                  #realiza el registro en historial
                 cod_tipo_perfil='Alma'   
