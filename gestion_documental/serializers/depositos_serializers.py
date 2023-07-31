@@ -72,7 +72,7 @@ class DepositoGetSerializer(serializers.ModelSerializer):
 
 #ESTANTES
 
-#Crear estante
+#Crear_estante
 class EstanteDepositoCreateSerializer(serializers.ModelSerializer):
     
     class Meta:
@@ -134,4 +134,17 @@ class EstanteDepositoChangeOrdenSerializer(serializers.ModelSerializer):
         model =  EstanteDeposito
         fields = ['orden_ubicacion_por_deposito']
 
-        
+#Eliminar_Estante
+class EstanteDeleteSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  EstanteDeposito
+        fields = '__all__'
+
+#Listar_estantes_por_deposito
+
+class EstanteGetByDepositoSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  EstanteDeposito
+        fields = ['orden_ubicacion_por_deposito','identificacion_por_deposito']
