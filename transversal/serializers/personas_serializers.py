@@ -25,8 +25,6 @@ from transversal.models.base_models import (
 
 
 class EstadoCivilSerializer(serializers.ModelSerializer):
-    cod_estado_civil = serializers.CharField(max_length=1, validators=[UniqueValidator(queryset=EstadoCivil.objects.all(), message='El cod_estado_civil debe ser único')])
-
     class Meta:
         model = EstadoCivil
         fields = '__all__'
@@ -39,7 +37,6 @@ class EstadoCivilSerializer(serializers.ModelSerializer):
         }
 
 class EstadoCivilPostSerializer(serializers.ModelSerializer):
-    cod_estado_civil = serializers.CharField(max_length=1, validators=[UniqueValidator(queryset=EstadoCivil.objects.all(), message='El cod_estado_civil debe ser único')])
     class Meta:
         model = EstadoCivil
         fields = ['cod_estado_civil', 'nombre']
@@ -57,7 +54,6 @@ class EstadoCivilPutSerializer(serializers.ModelSerializer):
         }
         
 class TipoDocumentoSerializer(serializers.ModelSerializer):
-    cod_tipo_documento = serializers.CharField(max_length=2, validators=[UniqueValidator(queryset=TipoDocumento.objects.all(), message='El cod_tipo_documento debe ser único')])
     class Meta:
         model = TipoDocumento
         fields = '__all__'
@@ -70,7 +66,6 @@ class TipoDocumentoSerializer(serializers.ModelSerializer):
         }
 
 class TipoDocumentoPostSerializer(serializers.ModelSerializer):
-    cod_tipo_documento = serializers.CharField(max_length=2, validators=[UniqueValidator(queryset=TipoDocumento.objects.all(), message='El cod_tipo_documento debe ser único')])
     class Meta:
         model = TipoDocumento
         fields = ['cod_tipo_documento', 'nombre']
@@ -580,7 +575,6 @@ class PersonaNaturalPostByUserSerializer(serializers.ModelSerializer):
 
 
 class PersonaNaturalUpdateUserPermissionsSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(validators=[UniqueValidator(queryset=Personas.objects.all())])
     telefono_celular = serializers.CharField(max_length=15, min_length=10)
     ubicacion_georeferenciada = serializers.CharField(max_length=50, min_length=5)
 
@@ -752,7 +746,6 @@ class ClasesTerceroPersonapostSerializer(serializers.ModelSerializer):
             }
         
 class CargosSerializer(serializers.ModelSerializer):
-    nombre = serializers.CharField(max_length=50, validators=[UniqueValidator(queryset=Cargos.objects.all(), message='El nombre del cargo debe ser único')])
 
     class Meta:
         model = Cargos

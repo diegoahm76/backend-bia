@@ -441,11 +441,7 @@ class CreateOrgChart(generics.CreateAPIView):
         data['id_persona_cargo']=persona
         
         serializer = self.serializer_class(data=data)
-        try:
-            serializer.is_valid(raise_exception=True)
-            pass
-        except:
-            raise ValidationError('Validar la data ingresada, el nombre debe ser único y es requerido, la descripción y la versión son requeridos')
+        serializer.is_valid(raise_exception=True)
         serializador = serializer.save()
 
         #Auditoria Crear Organigrama
@@ -489,11 +485,7 @@ class UpdateOrganigrama(generics.RetrieveUpdateAPIView):
         ccd = list(CuadrosClasificacionDocumental.objects.filter(id_organigrama=organigrama.id_organigrama).values())
         if not len(ccd):
             serializer = self.serializer_class(organigrama, data=request.data)
-            try:
-                serializer.is_valid(raise_exception=True)
-                pass
-            except:
-                raise ValidationError('Validar la data ingresada, el nombre debe ser único y es requerido, la descripción y la versión son requeridos')    
+            serializer.is_valid(raise_exception=True)
             serializer.save()
 
             # AUDITORIA DE UPDATE DE ORGANIGRAMA

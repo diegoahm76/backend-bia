@@ -150,7 +150,7 @@ class PruebasBombeo(models.Model):
     id_instrumento = models.ForeignKey(Instrumentos, on_delete=models.CASCADE, db_column='T614Id_Instrumento')
     id_pozo = models.ForeignKey(Pozos, on_delete=models.CASCADE, db_column='T614Id_Pozo')
     descripcion = models.CharField(max_length=255, blank=True, null=True, db_column='T614descripcion')
-    fecha_registro = models.DateTimeField(db_column='T614fechaRegistro')
+    fecha_registro = models.DateTimeField(auto_now_add=True,db_column='T614fechaRegistro')
     fecha_prueba_bombeo = models.DateField(db_column='T614fechaPruebaBombeo')
     #coordenadas = models.PointField(db_column='T614coordenadas')
     longitud = models.DecimalField(max_digits=18, decimal_places=13, db_column='T614longitud')
@@ -179,7 +179,7 @@ class SesionesPruebaBombeo(models.Model):
         db_table = 'T615Sesiones_PruebaBombeo'
         verbose_name = 'sesión de prueba de bombeo'
         verbose_name_plural = 'sesiones de prueba de bombeo'
-        unique_together = ('consecutivo_sesion', 'cod_tipo_sesion',)
+        unique_together = ('id_prueba_bombeo','consecutivo_sesion', 'cod_tipo_sesion',)
 
 
 class DatosSesionPruebaBombeo(models.Model):

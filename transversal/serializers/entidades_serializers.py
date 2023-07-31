@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from transversal.serializers.personas_serializers import PersonasSerializer
-from transversal.models.entidades_models import ConfiguracionEntidad, SucursalesEmpresas
+from transversal.models.entidades_models import ConfiguracionEntidad, HistoricoPerfilesEntidad, SucursalesEmpresas
 from transversal.models.personas_models import Personas
 
 
@@ -43,3 +43,7 @@ class SucursalesEmpresasPutSerializer(serializers.ModelSerializer):
         
         
 
+class HistoricoPerfilesEntidadGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HistoricoPerfilesEntidad
+        fields = '__all__'

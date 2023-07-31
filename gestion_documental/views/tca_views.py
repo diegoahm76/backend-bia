@@ -14,6 +14,7 @@ from rest_framework.exceptions import ValidationError, NotFound, PermissionDenie
 from transversal.serializers.personas_serializers import CargosSerializer
 from gestion_documental.serializers.tca_serializers import (
     GetClasifExpedientesSerializer,
+    GetHistoricoTCASerializer,
     TCASerializer,
     TCAPostSerializer,
     TCAPutSerializer,
@@ -359,3 +360,19 @@ class GetClasifExpedientesTCA(generics.ListAPIView):
         serializer = self.get_serializer(queryset, many=True)
         data = serializer.data
         return Response({'success':True, 'detail':'Se encontraron los siguientes resultados', 'data': data}, status=status.HTTP_200_OK)
+    
+class GetHistoricoTCA(generics.ListAPIView):
+    serializer_class = GetHistoricoTCASerializer
+    queryset = HistoricoCatSeriesUnidadOrgCCD_TRD_TCA.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request):
+        id_tca = request.query_params.get('id_tca')
+        queryset = self.queryset.all()
+        
+        if id_tca:
+            queryset = queryset.filter(id_catserie_unidad_org__id_tca=id_tca)
+            
+        serializador = self.serializer_class(queryset, many=True)
+                         
+        return Response({'succes':True, 'detail':'Se encontró el siguiente histórico','data':serializador.data}, status=status.HTTP_200_OK)

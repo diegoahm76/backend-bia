@@ -50,8 +50,6 @@ class ActivarDesactivarSerializer(serializers.ModelSerializer):
         }
 
 class ViveroPostSerializer(serializers.ModelSerializer):
-    nombre = serializers.CharField(validators=[UniqueValidator(queryset=Vivero.objects.all(), message='El nombre del Vivero debe ser único')])
-    # cod_municipio = serializers.ChoiceField(choices=municipios_CHOICES)
     
     def validate_cod_municipio(self, value):
         if value == '':

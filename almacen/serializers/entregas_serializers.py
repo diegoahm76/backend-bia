@@ -15,6 +15,9 @@ class GetNumeroEntregas(serializers.ModelSerializer):
         fields = ['numero_despacho_consumo']
 
 class GetEntregasSerializer(serializers.ModelSerializer):
+    cod_tipo_entrada = serializers.ReadOnlyField(source='id_entrada_almacen_cv.id_tipo_entrada.cod_tipo_entrada', default=None)
+    tipo_entrada = serializers.ReadOnlyField(source='id_entrada_almacen_cv.id_tipo_entrada.nombre', default=None)
+    
     class Meta:
         model = DespachoConsumo
         fields = '__all__'
@@ -51,6 +54,7 @@ class CreateItemsEntregaSerializer(serializers.ModelSerializer):
         )
 
 class GetEntradasEntregasSerializer(serializers.ModelSerializer):
+    cod_tipo_entrada = serializers.ReadOnlyField(source='id_tipo_entrada.cod_tipo_entrada', default=None)
     tipo_entrada = serializers.ReadOnlyField(source='id_tipo_entrada.nombre', default=None)
     
     class Meta:
