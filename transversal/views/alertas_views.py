@@ -154,7 +154,7 @@ class PersonasAAlertarCreate(generics.CreateAPIView):
         ).exists()
 
         if registro_existente:
-            raise ValidationError("El destinatario ya existe en la base de datos.")
+            raise ValidationError("El destinatario ya existe en esta alerta.")
 
         if data_in['es_responsable_directo']:
                 
@@ -226,7 +226,7 @@ class AlertasProgramadasCreate(generics.CreateAPIView):
             serializer = AlertasProgramadasPostSerializer(data=data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            print(serializer.data)
+            #print(serializer.data)
             return Response({'success': True, 'detail': 'Alerta programada creada correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
         
         except ValidationError as e:
@@ -242,8 +242,7 @@ class AlertasProgramadasCreate(generics.CreateAPIView):
         if not fechas:
             ValidationError("No tiene fechas programadas.")
         
-        for fecha in fechas:
-            print(fecha)
+
 
         configuracion=ConfiguracionClaseAlerta.objects.filter(cod_clase_alerta=data_in['cod_clase_alerta']).first()
 
@@ -264,6 +263,23 @@ class AlertasProgramadasCreate(generics.CreateAPIView):
         if 'id_persona_implicada' in data_in:
             data_alerta_programada['id_persona_implicada']=data_in['id_persona_implicada']
         
+        #ASIGNACION DE ALERTAS A PERSONAS
+        #En caso de que se haya seleccionado una persona específica como responsable directo,
+
+        personas_alertar=PersonasAAlertar.objects.filter(cod_clase_alerta=data_in['cod_clase_alerta'])
+
+        if not personas_alertar:
+            raise NotFound('La alerta no tiene personal asignado.')
+
+        cadena=""
+        for persona in personas_alertar:
+            if persona.id_persona and persona.es_responsable_directo:
+               data_alerta_programada['id_persona_implicada']=persona.id_persona.id_persona
+               
+            if persona.id_unidad_org_lider and  persona.es_responsable_directo:
+                data_alerta_programada['id_und_org_lider_implicada']=persona.id_unidad_org_lider.id_unidad_organizacional
+            if persona.perfil_sistema and persona.es_responsable_directo:
+                data_alerta_programada['perfil_sistema_implicado']=persona.perfil_sistema
         
         for fecha in fechas:
             data_alerta_programada['cod_clase_alerta']=configuracion.cod_clase_alerta
@@ -272,7 +288,7 @@ class AlertasProgramadasCreate(generics.CreateAPIView):
             data_alerta_programada['mes_cumplimiento']=fecha.mes_cumplimiento
             
             if fecha.age_cumplimiento:
-                 data_alerta_programada['agno_cumplimiento']=fecha.agno_cumplimiento
+                 data_alerta_programada['agno_cumplimiento']=fecha.age_cumplimiento
             data_alerta_programada['mensaje_base_del_dia']=configuracion.mensaje_base_dia
             #nombre de la funcion
             #nivel_prioridad#formulario
@@ -286,7 +302,7 @@ class AlertasProgramadasCreate(generics.CreateAPIView):
             #id_und_org_lider_alertar#pendiente
             data_alerta_programada['activa']=configuracion.activa
             
-            print(data_alerta_programada)
+            #print(data_alerta_programada)
                 
             response = self.crear_alerta_programada(data_alerta_programada)
             #data_alerta_programada.clear()

@@ -16,6 +16,10 @@ urlpatterns = [
      path('estanteDeposito/crear/',views.EstanteDepositoCreate.as_view(), name='crear-estanteDeposito'),
      path('estanteDeposito/siguiente-orden/',views.EstanteDepositoGetOrden.as_view(), name='listar-orden-siguiente'),
      path('estanteDeposito/cambiar-orden-estante/<str:pk>/',views.EstanteDepositoChangeOrden.as_view(), name='cambiar-orden-estante'),
+     path('estanteDeposito/eliminar/<str:pk>/',views.EstanteDelete.as_view(),name='eliminar-estante'),
+     path('estanteDeposito/listar-por-deposito/<str:pk>/',views.EstanteGetByDeposito.as_view(),name='listar-por-deposito'),
+
+
 
 
 
