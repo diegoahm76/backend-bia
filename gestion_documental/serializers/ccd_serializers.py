@@ -279,6 +279,7 @@ class CCDPutSerializer(serializers.ModelSerializer):
         fields = ['id_ccd', 'id_organigrama', 'version', 'nombre', 'valor_aumento_serie', 'valor_aumento_subserie', 'ruta_soporte']
         extra_kwargs = {
             'id_ccd': {'read_only': True},
+            'id_organigrama': {'read_only': True},
             'version': {'required': True},
             'nombre': {'required': True},
             'valor_aumento_serie': {'required': True},
