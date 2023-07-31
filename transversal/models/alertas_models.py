@@ -146,7 +146,7 @@ class AlertasGeneradas(models.Model):
     id_alerta_generada = models.AutoField(primary_key=True, db_column='T044IdAlertaGenerada')
     nombre_clase_alerta = models.CharField(max_length=50, db_column='T044nombreClaseAlerta')
     mensaje = models.CharField(max_length=785, db_column='T044mensaje')
-    fecha_generada = models.DateTimeField(db_column='T044fechaGenerada')
+    fecha_generada = models.DateTimeField(auto_now=True,db_column='T044fechaGenerada')
     cod_tipo_alerta = models.CharField(max_length=3, db_column='T044codTipoAlerta')
     nivel_prioridad = models.SmallIntegerField(db_column='T044nivelPrioridad')
     id_modulo_destino = models.ForeignKey('seguridad.Modulos', related_name='modulo_destino_alertas_generadas', null=True, blank=True, on_delete=models.SET_NULL, db_column='T044Id_ModuloDestino')
