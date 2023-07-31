@@ -8,6 +8,7 @@ class ConfiguracionClaseAlerta(models.Model):
     nombre_clase_alerta = models.CharField(max_length=50, unique=True, db_column='T040nombreClaseAlerta')
     descripcion_clase_alerta = models.CharField(max_length=255, db_column='T040descripcionClaseAlerta')
     cod_tipo_clase_alerta = models.CharField(max_length=3, db_column='T040codTipoClaseAlerta')
+    cod_categoria_clase_alerta = models.CharField(max_length=3, choices=[('Ale', 'Alerta'), ('Com', 'Comunicación')], db_column='T040codCategoriaClaseAlerta')
     cant_dias_previas = models.SmallIntegerField(null=True, blank=True, db_column='T040ctdadDiasAlertasPrevias')
     frecuencia_previas = models.SmallIntegerField(null=True, blank=True, db_column='T040frecuenciaAlertasPrevias')
     cant_dias_post = models.SmallIntegerField(null=True, blank=True, db_column='T040ctdadRepeticionesPost')
@@ -16,9 +17,16 @@ class ConfiguracionClaseAlerta(models.Model):
     mensaje_base_dia = models.CharField(max_length=255, db_column='T040mensajeBaseDelDia')
     mensaje_base_previo = models.CharField(null=True, blank=True, max_length=255, db_column='T040mensajeBasePrevio')
     mensaje_base_vencido = models.CharField(null=True, blank=True, max_length=255, db_column='T040mensajeBaseVencido')
-    nivel_prioridad = models.SmallIntegerField(db_column='T040nivelPrioridad')
+    NIVEL_PRIORIDAD_CHOICES = [
+        ('1', 'Máxima'),
+        ('2', 'Media'),
+        ('3', 'Baja'),
+    ]
+    nivel_prioridad = models.CharField(max_length=1, choices=NIVEL_PRIORIDAD_CHOICES, db_column='T040nivelPrioridad')#T040nivelPrioridad
     activa = models.BooleanField(default=True, db_column='T040activa')
-    asignar_respondable = models.BooleanField(default=False, db_column='T040asignarResponsableDirEnConfig')
+    asignar_responsable = models.BooleanField(default=False, db_column='T040asignarResponsableDirEnConfig')
+    id_modulo_destino = models.ForeignKey('seguridad.Modulos', db_column='T040Id_ModuloDestino', on_delete=models.DO_NOTHING, related_name='configuraciones_destino')
+    id_modulo_generador = models.ForeignKey('seguridad.Modulos', db_column='T040Id_ModuloGenerador', on_delete=models.DO_NOTHING,related_name='configuraciones_generador')
 
     def __str__(self):
         return str(self.nombre_clase_alerta)
@@ -65,22 +73,42 @@ class PersonasAAlertar(models.Model):
         unique_together = ['cod_clase_alerta', 'id_persona','id_unidad_org_lider','perfil_sistema']
 
 
+# Choices para T043codCategoriaAlerta
+CATEGORIA_ALERTA_CHOICES = [
+    ('Ale', 'Alerta'),
+    ('Com', 'Comunicación'),
+]
+
+# Choices para T043nivelPrioridad
+NIVEL_PRIORIDAD_CHOICES = [
+    ('1', 'Máxima'),
+    ('2', 'Media'),
+    ('3', 'Baja'),
+]
+PERFIL_SISTEMA_IMPLICADO_CHOICES = [
+    ('Dire', 'Director'),
+    ('CViv', 'Coordinador de Viveros'),
+    ('RTra', 'Responsable de Transporte'),
+    ('CAlm', 'Coordinador de Almacén'),
+    ('Alma', 'Almacenista'),
+]
+
 class AlertasProgramadas(models.Model):
     id_alerta_programada = models.AutoField(primary_key=True, db_column='T043IdAlertaProgramada')
     cod_clase_alerta = models.ForeignKey(ConfiguracionClaseAlerta, on_delete=models.CASCADE, db_column='T043Cod_ClaseAlerta')
     nombre_clase_alerta = models.CharField(max_length=50, db_column='T043nombreClaseAlerta')
     dia_cumplimiento = models.SmallIntegerField(db_column='T043diaCumplimiento')
     mes_cumplimiento = models.SmallIntegerField(db_column='T043mesCumplimiento')
-    age_cumplimiento = models.SmallIntegerField(null=True, blank=True, db_column='T043agnoCumplimiento')
-    cant_dias_previas = models.SmallIntegerField(db_column='T043ctdadDiasAlertasPrevias')
-    frecuencia_previas = models.SmallIntegerField(db_column='T043frecuenciaAlertasPrevias')
-    cant_dias_post = models.SmallIntegerField(db_column='T043ctdadRepeticionesPost')
-    frecuencia_post = models.SmallIntegerField(db_column='T043frecuenciaRepeticionesPost')
-    mensaje_base_dia = models.CharField(max_length=255, db_column='T043mensajeBaseDelDia')
-    mensaje_base_previo = models.CharField(max_length=255, db_column='T043mensajeBasePrevio')
-    mensaje_base_vencido = models.CharField(max_length=255, db_column='T043mensajesBaseVencido')
+    agno_cumplimiento = models.SmallIntegerField(null=True, blank=True, db_column='T043agnoCumplimiento')
+    ctdad_dias_alertas_previas = models.SmallIntegerField(db_column='T043ctdadDiasAlertasPrevias')
+    frecuencia_alertas_previas = models.SmallIntegerField(db_column='T043frecuenciaAlertasPrevias')
+    ctdad_repeticiones_post = models.SmallIntegerField(db_column='T043ctdadRepeticionesPost')
+    frecuencia_repeticiones_post = models.SmallIntegerField(db_column='T043frecuenciaRepeticionesPost')
+    mensaje_base_del_dia = models.CharField(max_length=255, db_column='T043mensajeBaseDelDia')
+    mensaje_base_previo = models.CharField(max_length=255, null=True,blank=True,db_column='T043mensajeBasePrevio')
+    mensaje_base_vencido = models.CharField(max_length=255,null=True,blank=True, db_column='T043mensajeBaseVencido')
     complemento_mensaje = models.CharField(max_length=255, null=True, blank=True, db_column='T043complementoMensaje')
-    funcion_mensaje = models.CharField(max_length=255, null=True, blank=True, db_column='T043nombreFuncionParaCompleAMensaje')
+    nombre_funcion_comple_mensaje = models.CharField(max_length=255, null=True, blank=True, db_column='T043nombreFuncionParaCompleAMensaje')
     id_modulo_destino = models.ForeignKey('seguridad.Modulos', related_name='modulo_destino_alertas_programadas', null=True, blank=True, on_delete=models.SET_NULL, db_column='T043Id_ModuloDestino')
     id_elemento_implicado = models.IntegerField(null=True, blank=True, db_column='T043idElementoImplicado')
     valor_adicional = models.CharField(max_length=50, null=True, blank=True, db_column='T043valorAdicionalParaIdOrigenAlerta')
@@ -88,16 +116,22 @@ class AlertasProgramadas(models.Model):
     tiene_implicado = models.BooleanField(default=False, db_column='T043tienePersonaImplicada')
     id_persona_implicada = models.ForeignKey('seguridad.Personas', null=True, blank=True, on_delete=models.SET_NULL, db_column='T043Id_PersonaImplicada')
     id_und_org_lider_implicada = models.ForeignKey(UnidadesOrganizacionales, null=True, blank=True, on_delete=models.SET_NULL, db_column='T043IdUndOrgLider_Implicada')
-    perfil_sistema_implicado = models.CharField(null=True, blank=True, max_length=4, db_column='T043codPerfilSistema_Implicado')
+    perfil_sistema_implicado = models.CharField(
+        max_length=4,
+        choices=PERFIL_SISTEMA_IMPLICADO_CHOICES,
+        null=True,
+        blank=True,
+        db_column='T043codPerfilSistema_Implicado',
+    )
     id_personas_alertar = models.CharField(max_length=255, null=True, blank=True, db_column='T043idPersonasAAlertar')
     id_und_org_lider_alertar = models.CharField(max_length=255, null=True, blank=True, db_column='T043idUndOrgLideresAAlertar')
     id_perfiles_sistema_alertar = models.CharField(max_length=255, null=True, blank=True, db_column='T043codPerfilesSistemaAAlertar')
-    id_personas_suspen_alertar_sin_age = models.CharField(max_length=255, null=True, blank=True, db_column='T043idPersonasSuspendEnAlerSinAgno')
-    cod_tipo_alerta = models.CharField(max_length=3, db_column='T043codTipoAlerta')
-    req_envios_email = models.BooleanField(default=False, db_column='T043requiereEnvioEmail')	
-    nivel_prioridad = models.SmallIntegerField(db_column='T043nivelPrioridad')
+    id_personas_suspen_alertar_sin_agno = models.CharField(max_length=255, null=True, blank=True, db_column='T043idPersonasSuspendEnAlerSinAgno')
+    cod_categoria_alerta = models.CharField(max_length=3, choices=CATEGORIA_ALERTA_CHOICES, db_column='T043codCategoriaAlerta')
+    requiere_envio_email = models.BooleanField(default=False, db_column='T043requiereEnvioEmail')
+    nivel_prioridad = models.CharField(max_length=1, choices=NIVEL_PRIORIDAD_CHOICES, db_column='T043nivelPrioridad')
     existe_alertado_previo = models.BooleanField(default=False, db_column='T043existeAlertadoPrevioAEstaProgr')
-    activa = models.BooleanField(default=True, db_column='T043activa')
+    activa = models.BooleanField(default=False, db_column='T043activa')
 
     def __str__(self):
         return str(self.id_alerta_programada)

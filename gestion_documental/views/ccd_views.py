@@ -37,6 +37,8 @@ from gestion_documental.models.trd_models import (
 
 import copy
 
+from transversal.serializers.organigrama_serializers import UnidadesGetSerializer
+
 class CreateCuadroClasificacionDocumental(generics.CreateAPIView):
     serializer_class = CCDPostSerializer
     queryset = CuadrosClasificacionDocumental.objects.all()
@@ -44,7 +46,7 @@ class CreateCuadroClasificacionDocumental(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
         
         #Validación de seleccionar solo organigramas terminados
@@ -52,6 +54,11 @@ class CreateCuadroClasificacionDocumental(generics.CreateAPIView):
         if organigrama_instance:
             if organigrama_instance.fecha_terminado == None:
                 raise PermissionDenied('No se pueden seleccionar organigramas que no estén terminados')
+            
+            unidades_organigrama = organigrama_instance.unidadesorganizacionales_set.exclude(cod_agrupacion_documental=None)
+            if not unidades_organigrama:
+                raise ValidationError('Solo puede elegir organigramas que tengan unidades marcadas como sección o subsección')
+            
             serializador = serializer.save()
 
             #Auditoria Crear Cuadro de Clasificación Documental
@@ -114,8 +121,6 @@ class UpdateCuadroClasificacionDocumental(generics.RetrieveUpdateAPIView):
             # Verificar si se intentó cambiar el organigrama
             nuevo_organigrama = data.get('id_organigrama', ccd.id_organigrama.id_organigrama)
             if int(nuevo_organigrama) != ccd.id_organigrama.id_organigrama:
-                print ("ACTUAL",type(nuevo_organigrama))
-                print ("PASADO",type(ccd.id_organigrama.id_organigrama))
                 raise ValidationError('No puede cambiar el organigrama utilizado para crear el CCD')
     
             # CAMBIAR CODIGO DE LA ÚNICA SERIE
@@ -181,7 +186,20 @@ class FinalizarCuadroClasificacionDocumental(generics.RetrieveUpdateAPIView):
 
         cat_series_unidad = CatalogosSeriesUnidad.objects.filter(id_catalogo_serie__in=cat_series_subseries_list)
         cat_series_unidad_list = [cat_serie_unidad.id_catalogo_serie.id_catalogo_serie for cat_serie_unidad in cat_series_unidad]
-
+        
+        organigrama_unidades = UnidadesOrganizacionales.objects.filter(id_organigrama=ccd.id_organigrama).exclude(cod_agrupacion_documental=None)
+        organigrama_unidades_list = organigrama_unidades.values_list('id_unidad_organizacional', flat=True)
+        cat_series_unidades_list = [cat_serie_unidad.id_unidad_organizacional.id_unidad_organizacional for cat_serie_unidad in cat_series_unidad if cat_serie_unidad.id_unidad_organizacional.cod_agrupacion_documental != None]
+        
+        if not set(list(organigrama_unidades_list)).issubset(cat_series_unidades_list):
+            unidades_difference = list(set(list(organigrama_unidades_list)) - set(cat_series_unidades_list))
+            unidades_difference_instances = organigrama_unidades.filter(id_unidad_organizacional__in=unidades_difference)
+            serializer_unidades_difference = UnidadesGetSerializer(unidades_difference_instances, many=True)
+            try:
+                raise ValidationError('Debe relacionar todas las unidades que tienen agrupación documental en el catalogo')
+            except ValidationError as e:
+                return Response({'success':False, 'detail':'Debe relacionar todas las unidades que tienen agrupación documental en el catalogo', 'error_unidades':True, 'data': serializer_unidades_difference.data}, status=status.HTTP_400_BAD_REQUEST)
+        
         if not set(series_list).issubset(cat_series_list):
             # Mostrar las series sin asignar
             series_diff_list = [serie for serie in series_list if serie not in cat_series_list]
@@ -258,7 +276,7 @@ class CreateSeriesDoc(generics.CreateAPIView):
         elif ccd.fecha_retiro_produccion:
             raise PermissionDenied('No puede realizar esta acción a un CCD retirado de producción')
         
-        ultima_serie = self.queryset.all().filter(id_ccd=data['id_ccd']).order_by('codigo').last()
+        ultima_serie = self.queryset.all().filter(id_ccd=data['id_ccd']).last()
         
         codigo_correcto = int(ultima_serie.codigo) + ccd.valor_aumento_serie if ultima_serie else ccd.valor_aumento_serie
         
@@ -266,14 +284,14 @@ class CreateSeriesDoc(generics.CreateAPIView):
         serie = self.queryset.all().filter(id_ccd=data['id_ccd'], codigo=int(data['codigo'])).first()
         if serie:
             # ACOMODAR CODIGOS DE SERIES POSTERIORES
-            series_posteriores = self.queryset.all().filter(id_ccd=data['id_ccd'],codigo__gte=int(data['codigo'])).order_by('-codigo')
-            
+            series_posteriores = [serie_instance for serie_instance in self.queryset.all().filter(id_ccd=data['id_ccd']) if int(serie_instance.codigo) >= int(data['codigo'])]
             for serie_posterior in series_posteriores:
                 serie_posterior.codigo = int(serie_posterior.codigo) + ccd.valor_aumento_serie
                 serie_posterior.save()
+                
         else:
             if int(data['codigo']) != codigo_correcto:
-                 raise ValidationError('El codigo ingresado no es correcto. Valide que siga el orden definido por el valor de aumento elegido para las series')
+                raise ValidationError('El codigo ingresado no es correcto. Valide que siga el orden definido por el valor de aumento elegido para las series')
         
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)

@@ -118,7 +118,7 @@ class ReporteFacilidadesPagosDetalleView(generics.ListAPIView):
         tipo_cobro = request.GET.get('tipo_cobro')
         identificacion = request.GET.get('identificacion')
         nombre_deudor = request.GET.get('nombre_deudor')
-        codigo_expediente = request.GET.get('codigo_expediente')
+        cod_expediente = request.GET.get('cod_expediente')
         numero_resolucion = request.GET.get('numero_resolucion')
         numero_factura = request.GET.get('numero_factura')
 
@@ -138,9 +138,9 @@ class ReporteFacilidadesPagosDetalleView(generics.ListAPIView):
                                      'id_facilidad_pago__id_deudor__apellidos')
             ).filter(nombre_deudor__icontains=nombre_deudor)
 
-        if codigo_expediente:
+        if cod_expediente:
             detalles_facilidad_pago = detalles_facilidad_pago.filter(
-                id_cartera__id_obligacion__id_expediente__codigo_expediente=codigo_expediente
+                id_cartera__id_obligacion__id_expediente__cod_expediente=cod_expediente
             )
 
         if numero_resolucion:
@@ -171,7 +171,7 @@ class ReporteFacilidadesPagosDetalleView(generics.ListAPIView):
                 'identificacion': deudor.identificacion,
                 'nombre_deudor': f'{deudor.nombres} {deudor.apellidos}',
                 'concepto_deuda': cartera.codigo_contable.descripcion,
-                'codigo_expediente': expediente.codigo_expediente,
+                'cod_expediente': expediente.cod_expediente,
                 'numero_resolucion': expediente.numero_resolucion,
                 'numero_factura': cartera.numero_factura,
                 'valor_sancion': valor_total

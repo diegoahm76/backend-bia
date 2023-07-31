@@ -2,6 +2,7 @@ from rest_framework import serializers
 from rest_framework.serializers import ReadOnlyField
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from gestion_documental.models.tca_models import (
+    HistoricoCatSeriesUnidadOrgCCD_TRD_TCA,
     TablasControlAcceso,
     CatSeriesUnidadOrgCCD_TRD_TCA,
     PermisosCatSeriesUnidadOrgTCA,
@@ -22,9 +23,6 @@ class TCASerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class TCAPostSerializer(serializers.ModelSerializer):
-    version = serializers.CharField(validators=[UniqueValidator(queryset=TablasControlAcceso.objects.all(), message='La versión de la Tabla de Control de Acceso debe ser único')])
-    nombre = serializers.CharField(validators=[UniqueValidator(queryset=TablasControlAcceso.objects.all(), message='El nombre de la Tabla de Control de Acceso debe ser único')])
-
     def validate_id_trd(self, trd):
         if trd.fecha_terminado == None:
             raise serializers.ValidationError('No se puede seleccionar una TRD que no esté terminada')
@@ -46,9 +44,6 @@ class TCAPostSerializer(serializers.ModelSerializer):
         }
 
 class TCAPutSerializer(serializers.ModelSerializer):
-    version = serializers.CharField(validators=[UniqueValidator(queryset=TablasControlAcceso.objects.all(), message='La versión de la Tabla de Control de Acceso debe ser único')])
-    nombre = serializers.CharField(validators=[UniqueValidator(queryset=TablasControlAcceso.objects.all(), message='El nombre de la Tabla de Control de Acceso debe ser único')])
-
     class Meta:
         model = TablasControlAcceso
         fields = ['version', 'nombre']
@@ -163,9 +158,12 @@ class PermisosCargoUnidadSerieSubserieUnidadTCASerializer(serializers.ModelSeria
         fields = '__all__'
 
 class BusquedaTCASerializer(serializers.ModelSerializer):
+    id_ccd = serializers.ReadOnlyField(source='id_trd.id_ccd.id_ccd', default=None)
+    id_organigrama = serializers.ReadOnlyField(source='id_trd.id_ccd.id_organigrama.id_organigrama', default=None)
+    
     class Meta:
         model = TablasControlAcceso
-        fields =['nombre','version','actual','fecha_terminado','fecha_puesta_produccion','fecha_retiro_produccion']
+        fields =['id_tca','id_trd','id_ccd','id_organigrama','nombre','version','actual','fecha_terminado','fecha_puesta_produccion','fecha_retiro_produccion']
 
 class GetClasifExpedientesSerializer(serializers.ModelSerializer):
     id_unidad_organizacional = serializers.ReadOnlyField(source='id_cat_serie_und_ccd_trd.id_cat_serie_und.id_unidad_organizacional.id_unidad_organizacional', default=None)
@@ -182,3 +180,18 @@ class GetClasifExpedientesSerializer(serializers.ModelSerializer):
         model = CatSeriesUnidadOrgCCD_TRD_TCA
         fields = '__all__'
 
+class GetHistoricoTCASerializer(serializers.ModelSerializer):
+    persona_cambia = serializers.SerializerMethodField()
+    
+    def get_persona_cambia(self, obj):
+        persona_cambia = None
+        if obj.id_persona_cambia:
+            nombre_list = [obj.id_persona_cambia.primer_nombre, obj.id_persona_cambia.segundo_nombre,
+                            obj.id_persona_cambia.primer_apellido, obj.id_persona_cambia.segundo_apellido]
+            persona_cambia = ' '.join(item for item in nombre_list if item is not None)
+            persona_cambia = persona_cambia if persona_cambia != "" else None
+        return persona_cambia
+    
+    class Meta:
+        model = HistoricoCatSeriesUnidadOrgCCD_TRD_TCA
+        fields = '__all__'

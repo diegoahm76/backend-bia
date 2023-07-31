@@ -40,6 +40,7 @@ class RangosEdad(models.Model):
     descripcion = models.CharField(max_length=255, db_column='T411descripcion')
     inicial = models.IntegerField(db_column='T411inicial')
     final = models.IntegerField(db_column='T411final')
+    color = models.CharField(max_length=16, db_column='T411color')
 
     class Meta:
         db_table = 'T411RangosEdad'

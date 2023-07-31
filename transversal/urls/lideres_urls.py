@@ -4,6 +4,7 @@ from transversal.views import lideres_views as views
 urlpatterns = [
     path('busqueda-avanzada-organigramas/', views.BusquedaAvanzadaOrganigramasView.as_view(), name='busqueda-avanzada-organigramas'),
     path('get-list/<str:id_organigrama>/',views.GetListLideresAsignadosView.as_view(),name='get-list-lideres-asignados'),
+    path('get-list-actual/',views.GetListLideresAsignadosActualView.as_view(),name='get-list-lideres-actual'),
     path('get-list-filter/',views.BuscarLideresAsignadosFilterView.as_view(),name='get-list-lideres-asignados'),
     path('get-lider-by-documento/',views.GetPersonaLiderByNumeroDocumento.as_view(),name='get-lider-by-documento'),
     path('get-lideres-filter/',views.GetPersonaLiderFiltro.as_view(),name='get-lideres-filter'),

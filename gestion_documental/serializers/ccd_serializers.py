@@ -94,7 +94,8 @@ class SubseriesDocPostSerializer(serializers.ModelSerializer):
         return value
     
     def validate_nombre(self, value):
-        subseries = SubseriesDoc.objects.filter(nombre=value)
+        serie = SeriesDoc.objects.filter(id_serie_doc=self.initial_data['id_serie_doc']).first()
+        subseries = SubseriesDoc.objects.filter(nombre=value, id_serie_doc__id_ccd=serie.id_ccd.id_ccd)
         if subseries:
             raise serializers.ValidationError('No puede existir más de una subserie con el mismo nombre para este CCD')
         return value
@@ -219,9 +220,6 @@ class CCDPosiblesSerializer(serializers.ModelSerializer):
         )
 
 class CCDPostSerializer(serializers.ModelSerializer):
-    version = serializers.CharField(validators=[UniqueValidator(queryset=CuadrosClasificacionDocumental.objects.all(), message='La versión del Cuadro de Clasificación Documental debe ser único')])
-    nombre = serializers.CharField(validators=[UniqueValidator(queryset=CuadrosClasificacionDocumental.objects.all(), message='El nombre del Cuadro de Clasificación Documental debe ser único')])
-    
     def validate_valor_aumento_serie(self, value):
         valores_aumento = [1,2,5,10]
         if value not in valores_aumento:
@@ -246,9 +244,6 @@ class CCDPostSerializer(serializers.ModelSerializer):
         }
 
 class CCDPutSerializer(serializers.ModelSerializer):
-    version = serializers.CharField(validators=[UniqueValidator(queryset=CuadrosClasificacionDocumental.objects.all(), message='La versión del Cuadro de Clasificación Documental debe ser único')])
-    nombre = serializers.CharField(validators=[UniqueValidator(queryset=CuadrosClasificacionDocumental.objects.all(), message='El nombre del Cuadro de Clasificación Documental debe ser único')])
- 
     def validate_valor_aumento_serie(self, value):
         valores_aumento = [1,2,5,10]
         if self.instance:
@@ -284,6 +279,7 @@ class CCDPutSerializer(serializers.ModelSerializer):
         fields = ['id_ccd', 'id_organigrama', 'version', 'nombre', 'valor_aumento_serie', 'valor_aumento_subserie', 'ruta_soporte']
         extra_kwargs = {
             'id_ccd': {'read_only': True},
+            'id_organigrama': {'read_only': True},
             'version': {'required': True},
             'nombre': {'required': True},
             'valor_aumento_serie': {'required': True},
