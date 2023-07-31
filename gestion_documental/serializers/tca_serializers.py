@@ -2,6 +2,7 @@ from rest_framework import serializers
 from rest_framework.serializers import ReadOnlyField
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from gestion_documental.models.tca_models import (
+    HistoricoCatSeriesUnidadOrgCCD_TRD_TCA,
     TablasControlAcceso,
     CatSeriesUnidadOrgCCD_TRD_TCA,
     PermisosCatSeriesUnidadOrgTCA,
@@ -179,3 +180,18 @@ class GetClasifExpedientesSerializer(serializers.ModelSerializer):
         model = CatSeriesUnidadOrgCCD_TRD_TCA
         fields = '__all__'
 
+class GetHistoricoTCASerializer(serializers.ModelSerializer):
+    persona_cambia = serializers.SerializerMethodField()
+    
+    def get_persona_cambia(self, obj):
+        persona_cambia = None
+        if obj.id_persona_cambia:
+            nombre_list = [obj.id_persona_cambia.primer_nombre, obj.id_persona_cambia.segundo_nombre,
+                            obj.id_persona_cambia.primer_apellido, obj.id_persona_cambia.segundo_apellido]
+            persona_cambia = ' '.join(item for item in nombre_list if item is not None)
+            persona_cambia = persona_cambia if persona_cambia != "" else None
+        return persona_cambia
+    
+    class Meta:
+        model = HistoricoCatSeriesUnidadOrgCCD_TRD_TCA
+        fields = '__all__'
