@@ -10,7 +10,7 @@ from django.db.models import Max
 from django.db.models import Q
 from datetime import datetime,date,timedelta
 from gestion_documental.models.depositos_models import Deposito, EstanteDeposito
-from gestion_documental.serializers.depositos_serializers import DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer
+from gestion_documental.serializers.depositos_serializers import DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoChangeOrdenSerializer, EstanteDeleteSerializer, EstanteGetByDepositoSerializer
 from seguridad.utils import Util
 
 
@@ -61,7 +61,7 @@ class DepositoCreate(generics.CreateAPIView):
             error_message = {'error': e.detail}
             raise ValidationError  (e.detail)
 
- #BORRAR_DEPOSITO       
+#BORRAR_DEPOSITO       
 class DepositoDelete(generics.DestroyAPIView):
     serializer_class = DepositoDeleteSerializer
     queryset = Deposito.objects.all()
@@ -115,8 +115,6 @@ class DepositoUpdate(generics.UpdateAPIView):
     queryset = Deposito.objects.all()
     permission_classes = [IsAuthenticated]
     
-    
-
     def put(self,request,pk):
         try:
             data = request.data
@@ -129,12 +127,7 @@ class DepositoUpdate(generics.UpdateAPIView):
             serializer = self.serializer_class(deposito,data=data)
             serializer.is_valid(raise_exception=True)
 
-
-  
-
-            
             serializer.save()
-
 
             #AUDITORIA ACTUALIZAR 
             usuario = request.user.id_usuario
@@ -185,7 +178,7 @@ class DepositoGetById(generics.ListAPIView):
         
         if not Deposito:
             raise NotFound("El registro del deposito que busca, no se encuentra registrado")
-        
+
         return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)
     
 #ORDEN_DEPOSITO    
@@ -204,9 +197,14 @@ class DepositoGetOrden(generics.ListAPIView):
         #return JsonResponse({'maximo_orden': maximo_orden['max_orden']+1},status=status.HTTP_200_OK)
         #return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)
 
+#/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 
 #CRUD ESTANTE DEPOSITO
+
 class EstanteDepositoCreate(generics.CreateAPIView):
+
     serializer_class = EstanteDepositoCreateSerializer
     permission_classes = [IsAuthenticated]
     queryset = EstanteDeposito.objects.all()
@@ -215,9 +213,20 @@ class EstanteDepositoCreate(generics.CreateAPIView):
         
         try:
             data_in = request.data
+            #data_in['activo']=True
+            orden_siguiente = EstanteDepositoGetOrden()
+            response_orden = orden_siguiente.get(request)
+
+            if response_orden.status_code != status.HTTP_200_OK:
+                return response_orden
+            maximo_orden = response_orden.data.get('orden_siguiente')
+            print(maximo_orden)
+            data_in['orden_ubicacion_por_deposito']=maximo_orden+1
             serializer = self.serializer_class(data=data_in)
             serializer.is_valid(raise_exception=True)
             serializer.save()
+
+
             return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
         except ValidationError  as e:
             error_message = {'error': e.detail}
@@ -266,7 +275,7 @@ class EstanteDepositoSearch(generics.CreateAPIView):
     
 
 
-#ORDEN ESTANTE
+#ORDEN ESTANTE ESTANTE
 class EstanteDepositoGetOrden(generics.ListAPIView):
      
     serializer_class = EstanteDepositoGetOrdenSerializer
@@ -284,3 +293,71 @@ class EstanteDepositoGetOrden(generics.ListAPIView):
             'orden_siguiente':maximo_orden['max_orden']},
             status=status.HTTP_200_OK)
         
+#CAMBIAR ORDEN ESTANTE
+class EstanteDepositoChangeOrden(generics.ListAPIView):
+    serializer_class = EstanteDepositoGetOrdenSerializer
+    queryset = EstanteDeposito.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    #def put(self,request,pk):
+    def put (self,request, pk):
+        try:
+            estante = EstanteDeposito.objects.filter(id_estante_deposito=pk).first()
+        except EstanteDeposito.DoesNotExist:
+            return Response({'error': 'El estante no existe.'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = EstanteDepositoChangeOrdenSerializer(estante, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({'success': True, 'detail': 'Orden del estante cambiado correctamente.'}, status=status.HTTP_200_OK)
+
+#ELIMINAR_ESTANTE
+class EstanteDelete(generics.DestroyAPIView):
+    serializer_class = EstanteDeleteSerializer
+    queryset = EstanteDeposito.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self,request,pk):
+        
+        estantes = EstanteDeposito.objects.filter(id_estante_deposito=pk).first()
+       
+        
+        if not deposito:
+            raise ValidationError("No existe el deposito a eliminar")
+        
+
+        #pendiente validacion de cajas bandeja
+
+        if estantes:
+            raise ValidationError("No se puede Eliminar una deposito, si tiene estantes asignadas.")
+        
+        #reordenar
+        depositos = Deposito.objects.filter(orden_ubicacion_por_entidad__gt=deposito.orden_ubicacion_por_entidad).order_by('orden_ubicacion_por_entidad') 
+        deposito.delete()
+        
+        for deposito in depositos:
+            deposito.orden_ubicacion_por_entidad = deposito.orden_ubicacion_por_entidad - 1
+            deposito.save()
+        
+      
+        return Response({'success':True,'detail':'Se elimino el deposito seleccionada.'},status=status.HTTP_200_OK)
+
+#LISTADO DE ESTANTES POR DEPOSITO
+class EstanteGetByDeposito(generics.ListAPIView):
+    serializer_class = EstanteGetByDepositoSerializer
+    queryset = EstanteDeposito.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, pk):
+        estantes = EstanteDeposito.objects.filter(id_deposito=pk)
+        
+        if not estantes.exists():
+            raise NotFound("El registro del depósito que busca no se encuentra registrado.")
+        
+        serializer = self.serializer_class(estantes, many=True)
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes registros.',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)

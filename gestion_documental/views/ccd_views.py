@@ -37,6 +37,8 @@ from gestion_documental.models.trd_models import (
 
 import copy
 
+from transversal.serializers.organigrama_serializers import UnidadesGetSerializer
+
 class CreateCuadroClasificacionDocumental(generics.CreateAPIView):
     serializer_class = CCDPostSerializer
     queryset = CuadrosClasificacionDocumental.objects.all()
@@ -52,6 +54,11 @@ class CreateCuadroClasificacionDocumental(generics.CreateAPIView):
         if organigrama_instance:
             if organigrama_instance.fecha_terminado == None:
                 raise PermissionDenied('No se pueden seleccionar organigramas que no estén terminados')
+            
+            unidades_organigrama = organigrama_instance.unidadesorganizacionales_set.exclude(cod_agrupacion_documental=None)
+            if not unidades_organigrama:
+                raise ValidationError('Solo puede elegir organigramas que tengan unidades marcadas como sección o subsección')
+            
             serializador = serializer.save()
 
             #Auditoria Crear Cuadro de Clasificación Documental
@@ -114,8 +121,6 @@ class UpdateCuadroClasificacionDocumental(generics.RetrieveUpdateAPIView):
             # Verificar si se intentó cambiar el organigrama
             nuevo_organigrama = data.get('id_organigrama', ccd.id_organigrama.id_organigrama)
             if int(nuevo_organigrama) != ccd.id_organigrama.id_organigrama:
-                print ("ACTUAL",type(nuevo_organigrama))
-                print ("PASADO",type(ccd.id_organigrama.id_organigrama))
                 raise ValidationError('No puede cambiar el organigrama utilizado para crear el CCD')
     
             # CAMBIAR CODIGO DE LA ÚNICA SERIE
@@ -181,7 +186,20 @@ class FinalizarCuadroClasificacionDocumental(generics.RetrieveUpdateAPIView):
 
         cat_series_unidad = CatalogosSeriesUnidad.objects.filter(id_catalogo_serie__in=cat_series_subseries_list)
         cat_series_unidad_list = [cat_serie_unidad.id_catalogo_serie.id_catalogo_serie for cat_serie_unidad in cat_series_unidad]
-
+        
+        organigrama_unidades = UnidadesOrganizacionales.objects.filter(id_organigrama=ccd.id_organigrama).exclude(cod_agrupacion_documental=None)
+        organigrama_unidades_list = organigrama_unidades.values_list('id_unidad_organizacional', flat=True)
+        cat_series_unidades_list = [cat_serie_unidad.id_unidad_organizacional.id_unidad_organizacional for cat_serie_unidad in cat_series_unidad if cat_serie_unidad.id_unidad_organizacional.cod_agrupacion_documental != None]
+        
+        if not set(list(organigrama_unidades_list)).issubset(cat_series_unidades_list):
+            unidades_difference = list(set(list(organigrama_unidades_list)) - set(cat_series_unidades_list))
+            unidades_difference_instances = organigrama_unidades.filter(id_unidad_organizacional__in=unidades_difference)
+            serializer_unidades_difference = UnidadesGetSerializer(unidades_difference_instances, many=True)
+            try:
+                raise ValidationError('Debe relacionar todas las unidades que tienen agrupación documental en el catalogo')
+            except ValidationError as e:
+                return Response({'success':False, 'detail':'Debe relacionar todas las unidades que tienen agrupación documental en el catalogo', 'error_unidades':True, 'data': serializer_unidades_difference.data}, status=status.HTTP_400_BAD_REQUEST)
+        
         if not set(series_list).issubset(cat_series_list):
             # Mostrar las series sin asignar
             series_diff_list = [serie for serie in series_list if serie not in cat_series_list]

@@ -5,6 +5,8 @@ from recaudo.views import facilidades_pagos_views as f_views
 urlpatterns = [
     path('etapas/', views.EtapasProcesoView.as_view(), name='etapas-proceso-todos'),
     path('tipos-atributos/', views.TiposAtributosView.as_view(), name='tipos-etapas-todos'),
+    path('actualizar-tipos-atributos/<int:tipo>/', views.ActualizarTiposAtributosView.as_view(), name='tipos-etapas-actualizar'),
+    path('eliminar-tipos-atributos/<int:tipo>/', views.EliminarTiposAtributosView.as_view(), name='tipos-etapas-eliminar'),
     path('atributos/<int:etapa>/', views.AtributosEtapasView.as_view(), name='atributos-etapas-todos'),
     path('flujos/', views.FlujoProcesoView.as_view(), name='flujos-todos'),
     path('grafica/', views.GraficaView.as_view(), name='grafica-flujo'),
@@ -13,6 +15,7 @@ urlpatterns = [
     path('actualizar-etapa-proceso/<int:proceso>/', views.ActualizarEtapaProceso.as_view(), name='actualiza-etapa-de-un-proceso'),
     path('procesos-sin-finalizar/', views.ProcesosView.as_view(), name='procesos-sin-finalizar'),
     path('procesos/', views.ProcesosGeneralView.as_view(), name='procesos'),
+    path('procesos/<int:proceso>/', views.ProcesosGetGeneralView.as_view(), name='procesos'),
     path('crear-proceso/', views.ProcesosView.as_view(), name='crear-proceso'),
     path('atributos/', views.AtributosEtapasView.as_view(), name='atributos-etapas-agregar'),
     path('avaluos-bienes/', f_views.AvaluoCreateView.as_view(), name='avaluos-bienes'),

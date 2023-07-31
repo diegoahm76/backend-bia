@@ -258,7 +258,7 @@ class GetHistoricoTRD(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def get(self,request):
-        id_trd = request.data.get('id_trd')
+        id_trd = request.query_params.get('id_trd')
         queryset = self.queryset.all()
         
         if id_trd:

@@ -9,6 +9,7 @@ urlpatterns = [
     path('update/<str:pk>/', views.UpdateTablaControlAcceso.as_view(), name='update-tca'),
     path('resume/<str:id_tca>/', views.ReanudarTablaControlAcceso.as_view(),name='resume-tca'),
     path('finish/<str:pk>/', views.FinalizarTablaControlAcceso.as_view(),name='finish-tca'),
+    path('historico/',views.GetHistoricoTCA.as_view(),name='get-historico-tca'),
     
     # Catalogo TCA
     path('catalogo-tca/clasificar/<str:id_tca>/',views.ClasifSerieSubserieUnidadTCA.as_view(),name='catalogo-tca-clasificar'),
