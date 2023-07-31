@@ -11,8 +11,7 @@ from conservacion.utils import UtilConservacion
 import copy
 import json
 
-from seguridad.models import Personas
-from conservacion.choices.cod_etapa_lote import cod_etapa_lote_CHOICES
+from transversal.models.personas_models import Personas
 from conservacion.models.viveros_models import (
     Vivero,
 )

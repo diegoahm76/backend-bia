@@ -1,17 +1,15 @@
 from django.core.mail import EmailMultiAlternatives
 from django.db.models import Sum
-from email_validator import validate_email, EmailNotValidError, EmailUndeliverableError, EmailSyntaxError
-from transversal.models.organigrama_models import NivelesOrganigrama, UnidadesOrganizacionales
-from backend.settings.base import EMAIL_HOST_USER, AUTHENTICATION_360_NRS
-from seguridad.models import Shortener, User, Modulos, Permisos, Auditorias
+from email_validator import validate_email, EmailUndeliverableError
+from transversal.models.organigrama_models import UnidadesOrganizacionales
+from backend.settings.base import EMAIL_HOST_USER
 from almacen.models.inventario_models import (
     Inventario
 )
 from almacen.models.bienes_models import EntradasAlmacen, ItemEntradaAlmacen
 from almacen.models.solicitudes_models import DespachoConsumo, ItemDespachoConsumo
-import re, requests
 from django.db.models import Q, F
-from datetime import datetime, date,timedelta
+from datetime import datetime, timedelta
 
 class UtilAlmacen:
     

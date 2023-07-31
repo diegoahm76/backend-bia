@@ -1,4 +1,4 @@
-from seguridad.choices.municipios_choices import municipios_CHOICES
+from transversal.choices.municipios_choices import municipios_CHOICES
 
 municipios_LIST = []
 for choice in municipios_CHOICES:

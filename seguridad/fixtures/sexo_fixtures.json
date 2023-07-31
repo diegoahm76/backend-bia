@@ -1,6 +1,6 @@
 [
     {
-        "model": "seguridad.Sexo",
+        "model": "transversal.Sexo",
         "pk" : "H",
         "fields": {
             "cod_sexo" : "H",
@@ -8,7 +8,7 @@
         }
     },
     {
-        "model": "seguridad.Sexo",
+        "model": "transversal.Sexo",
         "pk" : "M",
         "fields": {
             "cod_sexo" : "M",
@@ -16,7 +16,7 @@
         }
     },
     {
-        "model": "seguridad.Sexo",
+        "model": "transversal.Sexo",
         "pk" : "O",
         "fields": {
             "cod_sexo" : "O",

@@ -1,10 +1,12 @@
 from datetime import datetime, timedelta,date
-import time
-from seguridad.models import ClasesTercero, ClasesTerceroPersona, Personas
+from transversal.models.base_models import ClasesTerceroPersona
+from transversal.models.personas_models import Personas
+from transversal.models.base_models import ClasesTercero
 from django.core.mail import EmailMultiAlternatives
 from email_validator import validate_email, EmailNotValidError, EmailUndeliverableError, EmailSyntaxError
 from backend.settings.base import EMAIL_HOST_USER, AUTHENTICATION_360_NRS
-from seguridad.models import Shortener, User, Modulos, Permisos, Auditorias
+from seguridad.models import User, Modulos, Permisos, Auditorias
+from transversal.models.base_models import Shortener
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
 import re, requests

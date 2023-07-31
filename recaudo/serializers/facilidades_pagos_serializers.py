@@ -13,7 +13,9 @@ from recaudo.models.pagos_models import (
 )
 from recaudo.models.base_models import TiposBien, TipoActuacion
 from recaudo.models.cobros_models import Deudores
-from seguridad.models import Personas, Municipio
+
+from seguridad.models import Personas
+from transversal.models.base_models import Municipio
 
 
 class TipoBienSerializer(serializers.ModelSerializer):

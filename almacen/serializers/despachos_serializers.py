@@ -1,5 +1,5 @@
 from almacen.models.generics_models import UnidadesMedida
-from seguridad.serializers.personas_serializers import PersonasSerializer
+from transversal.serializers.personas_serializers import PersonasSerializer
 from almacen.models.generics_models import Magnitudes
 from almacen.models.inventario_models import Inventario
 from almacen.models.solicitudes_models import DespachoConsumo, ItemDespachoConsumo, SolicitudesConsumibles, ItemsSolicitudConsumible
@@ -8,17 +8,14 @@ from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, ItemEn
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 
 class SerializersDespachoConsumo(serializers.ModelSerializer):
-    #nombre = serializers.CharField(validators=[UniqueValidator(queryset=Marcas.objects.all())])
     class Meta:
         model=DespachoConsumo
         fields=('__all__')
 class SerializersDespachoConsumoActualizar(serializers.ModelSerializer):
-    #nombre = serializers.CharField(validators=[UniqueValidator(queryset=Marcas.objects.all())])
     class Meta:
         model=DespachoConsumo
         exclude=('numero_despacho_consumo', 'fecha_despacho', 'id_persona_despacha',)
 class SerializersItemDespachoConsumo(serializers.ModelSerializer):
-    #nombre = serializers.CharField(validators=[UniqueValidator(queryset=Marcas.objects.all())])
     unidad_medida = serializers.ReadOnlyField(source='id_unidad_medida_solicitada.nombre', default=None)
     nombre_bien_despacho = serializers.ReadOnlyField(source='id_bien_despachado.nombre', default=None)
     codigo_bien_despacho = serializers.ReadOnlyField(source='id_bien_despachado.codigo_bien', default=None)
@@ -31,7 +28,6 @@ class SerializersItemDespachoConsumo(serializers.ModelSerializer):
         #exclude=('id_entrada_almacen_bien',)
 
 class SerializersItemsSolicitudConsumible(serializers.ModelSerializer):
-   # nombre = serializers.CharField(validators=[UniqueValidator(queryset=Marcas.objects.all())])
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
     nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
     unidad_medida = serializers.ReadOnlyField(source='id_unidad_medida.abreviatura')
@@ -41,7 +37,6 @@ class SerializersItemsSolicitudConsumible(serializers.ModelSerializer):
         fields=('__all__')
 
 class SerializersSolicitudesConsumibles(serializers.ModelSerializer):
-    #nombre = serializers.CharField(validators=[UniqueValidator(queryset=Marcas.objects.all())])
     nombre_completo_responsable = serializers.SerializerMethodField()
     nombre_completo_solicitante = serializers.SerializerMethodField()
     unidad_para_la_que_solicita=serializers.ReadOnlyField(source='id_unidad_para_la_que_solicita.nombre',default=None)
@@ -126,7 +121,6 @@ class GetItemOtrosOrigenesSerializers(serializers.ModelSerializer):
 
 
 class SerializersDespachoConsumoConItems(serializers.ModelSerializer):
-    #nombre = serializers.CharField(validators=[UniqueValidator(queryset=Marcas.objects.all())])
     items_despacho_consumo = serializers.SerializerMethodField()
     
     def get_items_despacho_consumo(self, obj):

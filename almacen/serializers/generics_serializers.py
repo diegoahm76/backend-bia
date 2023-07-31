@@ -1,5 +1,5 @@
 from almacen.models.generics_models import UnidadesMedida
-from seguridad.serializers.personas_serializers import PersonasSerializer
+from transversal.serializers.personas_serializers import PersonasSerializer
 from almacen.models.generics_models import Magnitudes
 from rest_framework import serializers
 from almacen.models.generics_models import Marcas, Bodegas,PorcentajesIVA
@@ -7,14 +7,12 @@ from almacen.models.bienes_models import EstadosArticulo
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 
 class SerializersMarca(serializers.ModelSerializer):
-    nombre = serializers.CharField(validators=[UniqueValidator(queryset=Marcas.objects.all())])
     class Meta:
         model=Marcas
         fields=('__all__')
 
 
 class SerializersPostMarca(serializers.ModelSerializer):
-    nombre = serializers.CharField(validators=[UniqueValidator(queryset=Marcas.objects.all())])
     class Meta:
         model=Marcas
         fields=['nombre']
@@ -23,7 +21,6 @@ class SerializersPostMarca(serializers.ModelSerializer):
         }
 
 class SerializersPutMarca(serializers.ModelSerializer):
-    nombre = serializers.CharField(validators=[UniqueValidator(queryset=Marcas.objects.all())])
     class Meta:
         model=Marcas
         fields=['nombre', 'activo']
@@ -70,13 +67,11 @@ class SerializerPutBodegas(serializers.ModelSerializer):
         }
         
 class SerializerMagnitudes(serializers.ModelSerializer):
-    nombre = serializers.CharField(validators=[UniqueValidator(queryset=Magnitudes.objects.all())])
     class Meta:
         model=Magnitudes
         fields=('__all__')
         
 class SerializerPorcentajesIVA(serializers.ModelSerializer):
-    porcentaje = serializers.FloatField(validators=[UniqueValidator(queryset=PorcentajesIVA.objects.all())])
     class Meta:
         model=PorcentajesIVA
         fields=('__all__')
@@ -86,7 +81,6 @@ class SerializerPorcentajesIVA(serializers.ModelSerializer):
 
 
 class SerializerPostPorcentajesIVA(serializers.ModelSerializer):
-    porcentaje = serializers.FloatField(validators=[UniqueValidator(queryset=PorcentajesIVA.objects.all())])
     class Meta:
         model=PorcentajesIVA
         fields=['porcentaje', 'observacion']
@@ -97,7 +91,6 @@ class SerializerPostPorcentajesIVA(serializers.ModelSerializer):
 
 
 class SerializerPutPorcentajesIVA(serializers.ModelSerializer):
-    porcentaje = serializers.FloatField(validators=[UniqueValidator(queryset=PorcentajesIVA.objects.all())])
     class Meta:
         model=PorcentajesIVA
         fields=['porcentaje', 'observacion', 'activo']
@@ -108,8 +101,6 @@ class SerializerPutPorcentajesIVA(serializers.ModelSerializer):
         }
 
 class SerializersUnidadesMedida(serializers.ModelSerializer):
-    nombre=serializers.CharField(validators=[UniqueValidator(queryset=UnidadesMedida.objects.all())])
-    abreviatura=serializers.CharField(validators=[UniqueValidator(queryset=UnidadesMedida.objects.all())])
 
     class Meta:
         model=UnidadesMedida
@@ -119,8 +110,6 @@ class SerializersUnidadesMedida(serializers.ModelSerializer):
         }
 
 class SerializersPostUnidadesMedida(serializers.ModelSerializer):
-    nombre=serializers.CharField(validators=[UniqueValidator(queryset=UnidadesMedida.objects.all())])
-    abreviatura=serializers.CharField(validators=[UniqueValidator(queryset=UnidadesMedida.objects.all())])
 
     class Meta:
         model=UnidadesMedida
@@ -133,8 +122,6 @@ class SerializersPostUnidadesMedida(serializers.ModelSerializer):
 
 
 class SerializersPutUnidadesMedida(serializers.ModelSerializer):
-    nombre=serializers.CharField(validators=[UniqueValidator(queryset=UnidadesMedida.objects.all())])
-    abreviatura=serializers.CharField(validators=[UniqueValidator(queryset=UnidadesMedida.objects.all())])
 
     class Meta:
         model=UnidadesMedida

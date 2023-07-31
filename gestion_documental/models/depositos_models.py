@@ -1,6 +1,8 @@
 from django.db import models
-
-from seguridad.models import Municipio, Paises
+from transversal.models.base_models import (
+    Municipio
+)
+from transversal.models.base_models import Paises
 from transversal.models.entidades_models import SucursalesEmpresas
 
 
@@ -26,10 +28,6 @@ class Deposito(models.Model):
 
 
 
-
-
-
-
 class EstanteDeposito(models.Model):
     id_estante_deposito = models.AutoField(primary_key=True, db_column='T231IdEstante_Deposito')
     id_deposito = models.ForeignKey('Deposito', on_delete=models.CASCADE, db_column='T231Id_Deposito')
@@ -43,5 +41,9 @@ class EstanteDeposito(models.Model):
         db_table = 'T231Estantes_Deposito'
         verbose_name = 'Estante en Depósito'
         verbose_name_plural = 'Estantes en Depósito'
-        unique_together = [['id_estante_deposito','identificacion_por_deposito']]
+        unique_together = [['id_deposito', 'identificacion_por_deposito']]
+        unique_together = [['id_deposito', 'orden_ubicacion_por_deposito']]
+
+
+
         

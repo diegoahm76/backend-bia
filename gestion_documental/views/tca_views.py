@@ -11,9 +11,10 @@ from transversal.models.organigrama_models import UnidadesOrganizacionales
 from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
 from gestion_documental.models.trd_models import TablaRetencionDocumental, CatSeriesUnidadOrgCCDTRD
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
-from seguridad.serializers.personas_serializers import CargosSerializer
+from transversal.serializers.personas_serializers import CargosSerializer
 from gestion_documental.serializers.tca_serializers import (
     GetClasifExpedientesSerializer,
+    GetHistoricoTCASerializer,
     TCASerializer,
     TCAPostSerializer,
     TCAPutSerializer,
@@ -28,24 +29,17 @@ from gestion_documental.serializers.tca_serializers import (
 
 )
 from gestion_documental.models.ccd_models import (
-    CatalogosSeriesUnidad,
-    CuadrosClasificacionDocumental,
-    SeriesDoc,
+    CuadrosClasificacionDocumental
 )
-from transversal.models.organigrama_models import (
-    Organigramas
-)
+
 from gestion_documental.models.tca_models import (
     TablasControlAcceso,
     CatSeriesUnidadOrgCCD_TRD_TCA,
-    ClasificacionExpedientes,
     PermisosCatSeriesUnidadOrgTCA,
-    PermisosDetPermisosCatSerieUndOrgTCA,
-    PermisosGD,
-    HistoricoCatSeriesUnidadOrgCCD_TRD_TCA, 
-    HistoricoPermisosCatSeriesUndOrgTCA
+    HistoricoCatSeriesUnidadOrgCCD_TRD_TCA
 )
-from seguridad.models import Cargos,Personas
+from transversal.models.personas_models import Personas
+from transversal.models.base_models import Cargos
 from gestion_documental.choices.tipo_clasificacion_choices import tipo_clasificacion_CHOICES
 
 class GetUnidadesbyCCD(generics.ListAPIView):
@@ -366,3 +360,19 @@ class GetClasifExpedientesTCA(generics.ListAPIView):
         serializer = self.get_serializer(queryset, many=True)
         data = serializer.data
         return Response({'success':True, 'detail':'Se encontraron los siguientes resultados', 'data': data}, status=status.HTTP_200_OK)
+    
+class GetHistoricoTCA(generics.ListAPIView):
+    serializer_class = GetHistoricoTCASerializer
+    queryset = HistoricoCatSeriesUnidadOrgCCD_TRD_TCA.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request):
+        id_tca = request.query_params.get('id_tca')
+        queryset = self.queryset.all()
+        
+        if id_tca:
+            queryset = queryset.filter(id_catserie_unidad_org__id_tca=id_tca)
+            
+        serializador = self.serializer_class(queryset, many=True)
+                         
+        return Response({'succes':True, 'detail':'Se encontró el siguiente histórico','data':serializador.data}, status=status.HTTP_200_OK)

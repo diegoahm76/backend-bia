@@ -1,6 +1,5 @@
 from rest_framework import generics,status
 from rest_framework.response import Response
-from seguridad.models import Personas, User
 from seguridad.utils import Util
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from rest_framework.permissions import IsAuthenticated
@@ -379,7 +378,14 @@ class GetEntradasEntregasView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        entradas = EntradasAlmacen.objects.filter(Q(id_tipo_entrada=2 ) | Q(id_tipo_entrada=3) | Q(id_tipo_entrada=4) & ~Q(fecha_anulacion=None))
+        # Validar si enviaron parámetros
+        filter={}
+        for key,value in request.query_params.items():
+            if key in ['id_tipo_entrada','numero_entrada_almacen']:
+                if value != '':
+                    filter[key]=value
+        
+        entradas = EntradasAlmacen.objects.filter(**filter).filter(Q(id_tipo_entrada=2 ) | Q(id_tipo_entrada=3) | Q(id_tipo_entrada=4) & ~Q(fecha_anulacion=None))
         entrada_con_items_disponibles = []
         entrada_sin_items_disponibles = []
         for entrada in entradas:

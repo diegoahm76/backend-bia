@@ -1,10 +1,11 @@
 from django.db import models
-from seguridad.choices.municipios_choices import municipios_CHOICES
+from transversal.choices.municipios_choices import municipios_CHOICES
 from almacen.choices.magnitudes_choices import magnitudes_CHOICES
+from transversal.models.base_models import Municipio
 # from seguridad.models import Personas
 
 class Marcas(models.Model):
-    id_marca = models.AutoField(primary_key=True, editable=False, db_column='T052IdMarca')
+    id_marca = models.SmallAutoField(primary_key=True, editable=False, db_column='T052IdMarca')
     nombre = models.CharField(max_length=50, db_column='T052nombre',unique=True)
     activo = models.BooleanField(default=True, db_column='T052activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T052itemYaUsado')
@@ -18,9 +19,9 @@ class Marcas(models.Model):
         verbose_name_plural = 'Marcas'
 
 class PorcentajesIVA(models.Model):
-    id_porcentaje_iva = models.AutoField(primary_key=True, editable=False, db_column='T053IdPorcentajeIVA')
-    porcentaje = models.FloatField(db_column='T053porcentaje',unique=True)
-    observacion = models.CharField(max_length=255, db_column='T053observacion')
+    id_porcentaje_iva = models.SmallAutoField(primary_key=True, editable=False, db_column='T053IdPorcentajeIVA')
+    porcentaje = models.DecimalField(db_column='T053porcentaje', unique=True, max_digits=5, decimal_places=2)
+    observacion = models.CharField(max_length=255, blank=True, null=True, db_column='T053observacion')
     registro_precargado=models.BooleanField(default=False, db_column='T053registroPrecargado')
     activo = models.BooleanField(default=True, db_column='T053activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T053itemYaUsado')
@@ -34,7 +35,7 @@ class PorcentajesIVA(models.Model):
         verbose_name_plural = 'Porcentajes IVA'
 
 class Magnitudes(models.Model):
-    cod_magnitud = models.AutoField(primary_key=True, editable=False, db_column='T054IdMagnitud')
+    cod_magnitud = models.SmallAutoField(primary_key=True, editable=False, db_column='T054IdMagnitud')
     nombre = models.CharField(max_length=50, db_column='T054nombre',unique=True)
 
     def __str__(self):
@@ -46,10 +47,10 @@ class Magnitudes(models.Model):
         verbose_name_plural = 'Magnitudes'
 
 class UnidadesMedida(models.Model):
-    id_unidad_medida = models.AutoField(primary_key=True, editable=False, db_column='T055IdUnidadMedida')
+    id_unidad_medida = models.SmallAutoField(primary_key=True, editable=False, db_column='T055IdUnidadMedida')
     nombre = models.CharField(max_length=50, db_column='T055nombre',unique=True)
-    abreviatura = models.CharField(max_length=5, db_column='T055abreviatura',unique=True)
-    id_magnitud = models.PositiveSmallIntegerField(choices=magnitudes_CHOICES, db_column='T055Id_Magnitud')
+    abreviatura = models.CharField(max_length=5, db_column='T055abreviatura')
+    id_magnitud = models.ForeignKey(Magnitudes, on_delete=models.CASCADE, db_column='T055Id_Magnitud')
     precargado = models.BooleanField(default=False, db_column='T055registroPrecargado')
     activo = models.BooleanField(default=True, db_column='T055activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T055itemYaUsado')
@@ -61,13 +62,14 @@ class UnidadesMedida(models.Model):
         db_table = 'T055UnidadesMedida'
         verbose_name = 'Unidad medida'
         verbose_name_plural = 'Unidades medida'
+        unique_together = (('id_magnitud', 'abreviatura'),)
 
 class Bodegas(models.Model):
-    id_bodega = models.AutoField(primary_key=True, editable=False, db_column='T056IdBodega')
-    nombre = models.CharField(max_length=255, db_column='T056nombre',unique=True)
-    cod_municipio = models.CharField(max_length=5, choices=municipios_CHOICES, null=True, blank=True, db_column='T056Cod_Municipio')
-    direccion = models.CharField(max_length=255, null=True, blank=True, db_column='T056direccion')
-    id_responsable = models.ForeignKey('seguridad.Personas', on_delete=models.SET_NULL, db_column='T056Id_Responsable', blank=True, null=True)
+    id_bodega = models.SmallAutoField(primary_key=True, editable=False, db_column='T056IdBodega')
+    nombre = models.CharField(max_length=255, db_column='T056nombre', unique=True, blank=True, null=True)
+    cod_municipio = models.ForeignKey(Municipio, on_delete=models.CASCADE, db_column='T056Cod_Municipio')
+    direccion = models.CharField(max_length=255, db_column='T056direccion')
+    id_responsable = models.ForeignKey('transversal.Personas', on_delete=models.SET_NULL, db_column='T056Id_Responsable', blank=True, null=True)
     es_principal = models.BooleanField(default=False, db_column='T056esPrincipal')
     activo = models.BooleanField(default=True, db_column='T056activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T056itemYaUsado')

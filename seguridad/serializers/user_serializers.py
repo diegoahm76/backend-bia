@@ -6,8 +6,9 @@ from django.contrib import auth
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
-from seguridad.models import Personas, User, UsuariosRol, HistoricoActivacion,Login,LoginErroneo,PermisosModuloRol
-from seguridad.serializers.personas_serializers import PersonasSerializer
+from seguridad.models import OperacionesSobreUsuario, User, UsuariosRol, HistoricoActivacion,Login,LoginErroneo,PermisosModuloRol
+from transversal.models.personas_models import Personas
+from transversal.serializers.personas_serializers import PersonasSerializer
 from seguridad.serializers.permisos_serializers import PermisosModuloRolSerializer
 import re
 from seguridad.utils import Util
@@ -108,7 +109,6 @@ class UserPutSerializer(serializers.ModelSerializer):
         fields =['password','profile_img']
 
 class UserPutAdminSerializer(serializers.ModelSerializer):
-    # nombre_de_usuario = serializers.CharField(max_length=30, min_length=6, validators=[UniqueValidator(queryset=User.objects.all())])
     tipo_usuario = serializers.CharField(max_length=1, write_only=True)
     profile_img = serializers.ImageField(required=False)
     is_active = serializers.BooleanField(required=False)
@@ -408,10 +408,12 @@ class SetNewPasswordUnblockUserSerializer(serializers.Serializer):
             user.is_blocked = False
             user.save()
             
+            cod_operacion_instance = OperacionesSobreUsuario.objects.filter(cod_operacion='D').first()
+            
             # HISTORICO DESBLOQUEO
             HistoricoActivacion.objects.create(
                 id_usuario_afectado=user,
-                cod_operacion='D',
+                cod_operacion=cod_operacion_instance,
                 fecha_operacion=datetime.now(),
                 justificacion='Usuario desbloqueado por validación de datos',
                 usuario_operador=user

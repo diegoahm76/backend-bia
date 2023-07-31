@@ -1,4 +1,4 @@
-from seguridad.models import Personas
+from transversal.models.personas_models import Personas
 from conservacion.models.viveros_models import HistoricoResponsableVivero
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
@@ -10,7 +10,7 @@ from conservacion.models.viveros_models import (
 from almacen.models.bienes_models import (
     CatalogoBienes,
 )
-from seguridad.choices.municipios_choices import municipios_CHOICES
+from transversal.choices.municipios_choices import municipios_CHOICES
 from almacen.choices.cod_tipo_elemento_vivero_choices import cod_tipo_elemento_vivero_CHOICES
 
 class AbrirViveroSerializer(serializers.ModelSerializer):
@@ -50,8 +50,6 @@ class ActivarDesactivarSerializer(serializers.ModelSerializer):
         }
 
 class ViveroPostSerializer(serializers.ModelSerializer):
-    nombre = serializers.CharField(validators=[UniqueValidator(queryset=Vivero.objects.all(), message='El nombre del Vivero debe ser único')])
-    # cod_municipio = serializers.ChoiceField(choices=municipios_CHOICES)
     
     def validate_cod_municipio(self, value):
         if value == '':

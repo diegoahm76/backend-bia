@@ -1,10 +1,10 @@
 from gestion_documental.serializers.ventanilla_serializers import PersonasSerializer, ActualizarAutorizacionesPersonaSerializer, AutorizacionNotificacionesSerializer
-from seguridad.models import Personas,HistoricoEmails,HistoricoDireccion
+from transversal.models.personas_models import Personas
 from rest_framework import generics,status
 from rest_framework.response import Response
 from datetime import date, datetime
 import copy
-from seguridad.serializers.personas_serializers import PersonaJuridicaPostSerializer, PersonaJuridicaUpdateSerializer, PersonaNaturalPostSerializer, PersonaNaturalUpdateSerializer
+from transversal.serializers.personas_serializers import PersonaJuridicaPostSerializer, PersonaJuridicaUpdateSerializer, PersonaNaturalPostSerializer, PersonaNaturalUpdateSerializer
 from seguridad.signals.roles_signals import IsAuthenticated
 from seguridad.utils import Util
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied

@@ -1,7 +1,7 @@
 from django.urls import path
 
 # Import the home view
-from seguridad.views.shortener_views import redirect_url_view
+from transversal.views.shortener_views import redirect_url_view
 
 appname = "shortener"
 

@@ -8,7 +8,7 @@ from almacen.models.vehiculos_models import VehiculosArrendados
 
 class HojaDeVidaComputadores(models.Model):
     id_hoja_de_vida = models.AutoField(primary_key=True, db_column='T065IdHojaDeVida')
-    id_articulo = models.ForeignKey(CatalogoBienes, on_delete=models.CASCADE, db_column='T065Id_Articulo')
+    id_articulo = models.OneToOneField(CatalogoBienes, on_delete=models.CASCADE, db_column='T065Id_Articulo')
     sistema_operativo = models.CharField(max_length=40, db_column='T065sistemaOperativo', blank=True, null=True)
     suite_ofimatica = models.CharField(max_length=40, db_column='T065suiteOfimatica', blank=True, null=True)
     antivirus = models.CharField(max_length=40, db_column='T065antivirus', blank=True, null=True)
@@ -20,8 +20,7 @@ class HojaDeVidaComputadores(models.Model):
     procesador = models.CharField(max_length=20, db_column='T065procesador', blank=True, null=True)
     memoria_ram = models.SmallIntegerField(db_column='T065memoriaRAM', blank=True, null=True)
     observaciones_adicionales = models.CharField(max_length=255, db_column='T065observacionesAdicionales', blank=True, null=True)
-    otras_aplicaciones = models.CharField(max_length=255, db_column='T065otrasAplicaciones', blank=True, null=True)
-    ruta_imagen_foto = models.ImageField(db_column='T065rutaImagenFoto', blank=True, null=True)
+    ruta_imagen_foto = models.ImageField(db_column='T065rutaImagenFoto', max_length=255, upload_to='almacen/hojas_de_vida_com/', blank=True, null=True)
     
     def __str__(self):
         return str(self.id_hoja_de_vida)
@@ -51,14 +50,14 @@ class HojaDeVidaVehiculos(models.Model):
     cilindraje = models.SmallIntegerField(db_column='T066cilindraje', blank=True, null=True)
     transmision = models.CharField(max_length=20, db_column='T066transmision', blank=True, null=True)
     dimesion_llantas = models.SmallIntegerField(db_column='T066dimensionLlantas', blank=True, null=True)
-    id_proveedor = models.ForeignKey('seguridad.Personas', on_delete=models.SET_NULL, db_column='T066Id_Proveedor', blank=True, null=True)
+    id_proveedor = models.ForeignKey('transversal.Personas', on_delete=models.SET_NULL, db_column='T066Id_Proveedor', blank=True, null=True)
     capacidad_extintor = models.SmallIntegerField(db_column='T066capacidadExtintor', blank=True, null=True)
     tarjeta_operacion = models.CharField(max_length=20, db_column='T066tarjetaOperacion', blank=True, null=True)
     observaciones_adicionales = models.CharField(max_length=255, db_column='T066observacionesAdicionales', blank=True, null=True)
     es_agendable = models.BooleanField(db_column='T066esAgendable', blank=True, null=True)
     en_circulacion = models.BooleanField(db_column='T066enCirculacion', blank=True, null=True)
     fecha_circulacion = models.DateField(db_column='T066fechaCirculacion', blank=True, null=True)
-    ruta_imagen_foto = models.ImageField(db_column='T066rutaImagenFoto', blank=True, null=True)
+    ruta_imagen_foto = models.ImageField(db_column='T066rutaImagenFoto', max_length=255, upload_to='almacen/hojas_de_vida_veh/', blank=True, null=True)
     
     def __str__(self):
         return str(self.id_hoja_de_vida)
@@ -67,6 +66,7 @@ class HojaDeVidaVehiculos(models.Model):
         db_table = 'T066HojaDeVidaVehiculos'
         verbose_name = 'Hoja de vida vehiculos'
         verbose_name_plural = 'Hojas de vida vehiculos'
+        unique_together = (('id_articulo', 'id_vehiculo_arrendado'),)
 
 class HojaDeVidaOtrosActivos(models.Model):
     id_hoja_de_vida = models.AutoField(primary_key=True, db_column='T067IdHojaDeVida')
@@ -74,13 +74,13 @@ class HojaDeVidaOtrosActivos(models.Model):
     caracteristicas_fisicas = models.TextField(db_column='T067caracteristicasFisicas', blank=True, null=True)
     especificaciones_tecnicas = models.TextField(db_column='T067especificacionesTecnicas', blank=True, null=True)
     observaciones_adicionales = models.CharField(max_length=255, db_column='T067observacionesAdicionales', blank=True, null=True)
-    ruta_imagen_foto = models.ImageField(db_column='T067rutaImagenFoto', blank=True, null=True)
+    ruta_imagen_foto = models.ImageField(db_column='T067rutaImagenFoto', max_length=255, upload_to='almacen/hojas_de_vida_oac/', blank=True, null=True)
     
     def __str__(self):
         return str(self.id_hoja_de_vida)
 
     class Meta: 
-        db_table = 'T065HojaDeVidaOtrosActivos'
+        db_table = 'T067HojaDeVidaOtrosActivos'
         verbose_name = 'Hoja de vida otros activos'
         verbose_name_plural = 'Hojas de vida otros activos'
 
@@ -91,10 +91,10 @@ class DocumentosVehiculo(models.Model):
     nro_documento = models.CharField(max_length=20, db_column='T068nroDocumento')
     fecha_inicio_vigencia = models.DateField(db_column='T068fechaInicioVigencia')
     fecha_expiracion = models.DateField(db_column='T068fechaExpiracion')
-    id_empresa_proveedora = models.ForeignKey('seguridad.Personas', on_delete=models.SET_NULL, null=True, blank=True, db_column='T068Id_EmpresaProveedora')
+    id_empresa_proveedora = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T068Id_EmpresaProveedora')
     
     def __str__(self):
-        return str(self.id_hoja_de_vida)
+        return str(self.id_documentos_vehiculos)
 
     class Meta:
         db_table = 'T068DocumentosVehiculo'
