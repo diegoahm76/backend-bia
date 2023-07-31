@@ -14,7 +14,6 @@ from recaudo.models.cobros_models import (
     DocumentosCobro,
     DetalleDocumentosCobro,
     Deudores,
-    Obligaciones,
     Cartera,
     ConceptoContable
 )
@@ -36,7 +35,7 @@ from recaudo.models.procesos_models import (
     CategoriaAtributo
 )
 
-from recaudo.models.pagos_models import (
+from recaudo.models.facilidades_pagos_models import (
     FacilidadesPago,
     RequisitosActuacion,
     CumplimientoRequisitos,
@@ -68,7 +67,6 @@ admin.site.register(DocumentosCobro),
 admin.site.register(DetalleDocumentosCobro),
 admin.site.register(Deudores),
 admin.site.register(Expedientes),
-admin.site.register(Obligaciones),
 admin.site.register(Cartera),
 admin.site.register(ConceptoContable),
 

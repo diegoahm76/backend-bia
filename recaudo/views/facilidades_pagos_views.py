@@ -17,7 +17,7 @@ from recaudo.serializers.facilidades_pagos_serializers import (
     BienSerializer,
     RespuestaSolicitudSerializer
 )
-from recaudo.models.pagos_models import (
+from recaudo.models.facilidades_pagos_models import (
     FacilidadesPago,
     RequisitosActuacion,
     CumplimientoRequisitos,

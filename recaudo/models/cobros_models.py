@@ -1,6 +1,6 @@
 from django.db import models
 from recaudo.models.liquidaciones_models import LiquidacionesBase, Deudores, Expedientes
-from recaudo.models.pagos_models import TasasInteres
+from recaudo.models.facilidades_pagos_models import TasasInteres
 from recaudo.models.base_models import RangosEdad
 
 
@@ -36,20 +36,20 @@ class DetalleDocumentosCobro(models.Model):
         verbose_name_plural = 'Detalles documentos cobro'
 
 
-class Obligaciones(models.Model):
-    id = models.AutoField(primary_key=True, db_column='T416IdObligaciones')
-    nombre = models.CharField(max_length=255, db_column='T416nombre')
-    cod_factura = models.CharField(max_length=255, db_column='T416codFactura')
-    fecha_inicio = models.DateField(db_column='T416fechaInicio')
-    monto_inicial = models.DecimalField(max_digits=30, decimal_places=2, db_column='T416montoInicial')
-    naturaleza = models.CharField(max_length=255, db_column='T416naturaleza')
-    id_documento_cobro = models.ForeignKey(DocumentosCobro, on_delete=models.CASCADE, db_column='T416Id_DocumentoCobro')
-    id_expediente = models.ForeignKey(Expedientes, on_delete=models.CASCADE, db_column='T416Id_Expediente')
+# class Obligaciones(models.Model):
+#     id = models.AutoField(primary_key=True, db_column='T416IdObligaciones')
+#     nombre = models.CharField(max_length=255, db_column='T416nombre')
+#     cod_factura = models.CharField(max_length=255, db_column='T416codFactura')
+#     fecha_inicio = models.DateField(db_column='T416fechaInicio')
+#     monto_inicial = models.DecimalField(max_digits=30, decimal_places=2, db_column='T416montoInicial')
+#     naturaleza = models.CharField(max_length=255, db_column='T416naturaleza')
+#     id_documento_cobro = models.ForeignKey(DocumentosCobro, on_delete=models.CASCADE, db_column='T416Id_DocumentoCobro')
+#     id_expediente = models.ForeignKey(Expedientes, on_delete=models.CASCADE, db_column='T416Id_Expediente')
 
-    class Meta:
-        db_table = 'T416Obligaciones'
-        verbose_name = 'Obligación'
-        verbose_name_plural = 'Obligaciones'
+#     class Meta:
+#         db_table = 'T416Obligaciones'
+#         verbose_name = 'Obligación'
+#         verbose_name_plural = 'Obligaciones'
 
 
 class ConceptoContable(models.Model):
@@ -65,7 +65,6 @@ class ConceptoContable(models.Model):
 
 class Cartera(models.Model):
     id = models.AutoField(primary_key=True, db_column='T417IdCartera')
-    id_obligacion = models.ForeignKey(Obligaciones, on_delete=models.CASCADE, db_column='T417Id_Obligacion')
     nombre = models.CharField(max_length=255, db_column='T417nombre')
     dias_mora = models.IntegerField(db_column='T417diasMora')
     valor_intereses = models.DecimalField(max_digits=30, decimal_places=2, db_column='T417valorIntereses')
