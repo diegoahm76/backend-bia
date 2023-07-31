@@ -113,8 +113,6 @@ class NewUserOrganigramaSerializer(serializers.ModelSerializer):
         fields='__all__'
 
 class OrganigramaSerializer(serializers.ModelSerializer):
-    nombre=serializers.CharField(max_length=50, validators=[UniqueValidator(queryset=Organigramas.objects.all(), message='El nombre del organigrama debe ser único')])
-    version=serializers.CharField(max_length=10, validators=[UniqueValidator(queryset=Organigramas.objects.all(), message='La versión del organigrama debe ser único')])     
     tipo_documento = serializers.ReadOnlyField(source='id_persona_cargo.tipo_documento.cod_tipo_documento',default=None)
     numero_documento = serializers.ReadOnlyField(source='id_persona_cargo.numero_documento',default=None) 
     nombre_completo = serializers.SerializerMethodField()
@@ -153,9 +151,7 @@ class OrganigramaSerializer(serializers.ModelSerializer):
         read_only_fields = ['actual']
 
 
-class OrganigramaPostSerializer(serializers.ModelSerializer):
-    nombre=serializers.CharField(max_length=50, validators=[UniqueValidator(queryset=Organigramas.objects.all(), message='El nombre de organigrama debe ser único')])     
-    version=serializers.CharField(max_length=10, validators=[UniqueValidator(queryset=Organigramas.objects.all(), message='La versión del organigrama debe ser único')])     
+class OrganigramaPostSerializer(serializers.ModelSerializer):   
 
     class Meta:
         model = Organigramas
@@ -172,9 +168,7 @@ class OrganigramaPostSerializer(serializers.ModelSerializer):
             'version': {'required': True}
         }
 
-class OrganigramaPutSerializer(serializers.ModelSerializer):
-    nombre=serializers.CharField(max_length=50, validators=[UniqueValidator(queryset=Organigramas.objects.all(), message='El nombre de organigrama debe ser único')])     
-    version=serializers.CharField(max_length=10, validators=[UniqueValidator(queryset=Organigramas.objects.all(), message='La versión del organigrama debe ser única')])     
+class OrganigramaPutSerializer(serializers.ModelSerializer):    
     
     class Meta:
         model = Organigramas

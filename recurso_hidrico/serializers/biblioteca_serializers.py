@@ -2,7 +2,7 @@ from rest_framework import serializers
 from unittest.util import _MAX_LENGTH
 from wsgiref.validate import validator
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
-from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, DatosCarteraAforos, DatosRegistroLaboratorio, Instrumentos, ParametrosLaboratorio, Pozos, ResultadosLaboratorio, Secciones,Subsecciones
+from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, DatosCarteraAforos, DatosRegistroLaboratorio, DatosSesionPruebaBombeo, Instrumentos, ParametrosLaboratorio, Pozos, PruebasBombeo, ResultadosLaboratorio, Secciones, SesionesPruebaBombeo,Subsecciones
 from seguridad.models import Personas
 
 
@@ -442,12 +442,6 @@ class DatosRegistroLaboratorioPostSerializer(serializers.ModelSerializer):
         fields=('__all__')
 
 
-##
-
-##
-
-
-##
 class DatosRegistroLaboratorioDeleteSerializer(serializers.ModelSerializer):
     class Meta:
         model=DatosRegistroLaboratorio
@@ -463,6 +457,7 @@ class DatosRegistroLaboratorioUpdateSerializer(serializers.ModelSerializer):
 
 
 class DatosRegistroLaboratorioGetSerializer(serializers.ModelSerializer):
+        
         cod_clase=serializers.CharField(source='id_parametro.cod_tipo_parametro')
         parametro=serializers.CharField(source='id_parametro.nombre')
         unidad=serializers.CharField(source='id_parametro.unidad_de_medida')
@@ -479,3 +474,82 @@ class DatosRegistroLaboratorioGetSerializer(serializers.ModelSerializer):
             'resultado',
             'fecha_analisis',
         ]
+            
+#PRUEBAS DE BOMBEO
+
+class PruebasBombeoPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=PruebasBombeo
+        fields=('__all__')
+
+class PruebasBombeoGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=PruebasBombeo
+        fields=('__all__')
+class PruebasBombeoDeleteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=PruebasBombeo
+        fields=('__all__')
+
+class PruebasBombeoUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=PruebasBombeo
+        fields=('__all__')
+##SECCIONES PRUEBA DE BOMBEO
+
+class SesionesPruebaBombeoPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=SesionesPruebaBombeo
+        fields=('__all__')
+
+class SesionesPruebaBombeoPutSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=SesionesPruebaBombeo
+        fields=('__all__')
+class SesionesPruebaBombeoDeleteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=SesionesPruebaBombeo
+        fields=('__all__')
+
+class SesionesPruebaBombeoGetSerializer(serializers.ModelSerializer):
+    datos = serializers.SerializerMethodField()
+    class Meta:
+        model=SesionesPruebaBombeo
+        fields=[ 'id_sesion_prueba_bombeo',
+                'id_prueba_bombeo',
+                'consecutivo_sesion',
+                'fecha_inicio',
+                'cod_tipo_sesion',
+                'datos']
+
+    def get_datos(self, avance):
+        datos = avance.datossesionpruebabombeo_set.all().order_by('hora')
+        return DatosSesionPruebaBombeoGetSerializer(datos, many=True).data
+#DATOS SECCION PRUEBAS BOMBEO
+
+class DatosSesionPruebaBombeoPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=DatosSesionPruebaBombeo
+        fields=('__all__')
+
+class DatosSesionPruebaBombeoGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=DatosSesionPruebaBombeo
+        fields=('__all__')
+
+class DatosSesionPruebaBombeoPutSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=DatosSesionPruebaBombeo
+        fields=('__all__')
+
+
+class DatosSesionPruebaBombeoDeleteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=DatosSesionPruebaBombeo
+        fields=('__all__')
+
+
+class DatosSesionPruebaBombeoGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=DatosSesionPruebaBombeo
+        fields=('__all__')
