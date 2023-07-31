@@ -66,6 +66,7 @@ class ConceptoContable(models.Model):
 class Cartera(models.Model):
     id = models.AutoField(primary_key=True, db_column='T417IdCartera')
     id_obligacion = models.ForeignKey(Obligaciones, on_delete=models.CASCADE, db_column='T417Id_Obligacion')
+    nombre = models.CharField(max_length=255, db_column='T417nombre')
     dias_mora = models.IntegerField(db_column='T417diasMora')
     valor_intereses = models.DecimalField(max_digits=30, decimal_places=2, db_column='T417valorIntereses')
     valor_sancion = models.DecimalField(max_digits=30, decimal_places=2, db_column='T417valorSancion')
@@ -80,6 +81,8 @@ class Cartera(models.Model):
     monto_inicial = models.DecimalField(max_digits=30, decimal_places=2, db_column='T417montoInicial')
     tipo_cobro = models.CharField(max_length=255, db_column='T417tipoCobro')
     id_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T417Id_Deudor')
+    id_documento_cobro = models.ForeignKey(DocumentosCobro, on_delete=models.CASCADE, db_column='T417Id_DocumentoCobro')
+    id_expediente = models.ForeignKey(Expedientes, on_delete=models.CASCADE, db_column='T417Id_Expediente')
 
     def calcular_valor_total(self):
         return self.valor_sancion + self.valor_intereses
