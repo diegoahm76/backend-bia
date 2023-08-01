@@ -373,9 +373,10 @@ class CarteraAforosUpdateSerializer(serializers.ModelSerializer):
 
 class CarteraAforosGetSerializer(serializers.ModelSerializer):
     #cod_clase=serializers.CharField(source='id_parametro.cod_tipo_parametro')
+    nombre_cuenca=serializers.CharField(source='id_cuenca.nombre')
     class Meta:
         model=CarteraAforos
-        fields=('__all__')
+        fields=['id_cartera_aforos','id_instrumento','id_cuenca','fecha_registro','ubicacion_aforo','descripcion','latitud','longitud','fecha_aforo','cod_tipo_aforo','numero_serie','numero_helice','nombre_cuenca']
 
 
 
@@ -483,9 +484,10 @@ class PruebasBombeoPostSerializer(serializers.ModelSerializer):
         fields=('__all__')
 
 class PruebasBombeoGetSerializer(serializers.ModelSerializer):
+    nombre_pozo=serializers.CharField(source='id_pozo.nombre')
     class Meta:
         model=PruebasBombeo
-        fields=('__all__')
+        fields=['id_prueba_bombeo','id_instrumento','id_pozo','nombre_pozo','descripcion','fecha_registro','fecha_prueba_bombeo','latitud','longitud','ubicacion_prueba']
 class PruebasBombeoDeleteSerializer(serializers.ModelSerializer):
     class Meta:
         model=PruebasBombeo
