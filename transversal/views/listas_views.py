@@ -25,7 +25,7 @@ class GetListDepartamentos(generics.ListAPIView):
 
     def get(self, request):
         pais = request.query_params.get('pais', '')
-        departamentos = self.queryset.all().filter(pais__icontains=pais).exclude(cod_departamento='50')
+        departamentos = self.queryset.all().filter(pais__cod_pais__icontains=pais).exclude(cod_departamento='50')
         meta = self.queryset.filter(cod_departamento='50').values(label=F('nombre'),value=F('cod_departamento')).first()
         
         serializer = self.serializer_class(departamentos, many=True)
@@ -43,7 +43,7 @@ class GetListMunicipios(generics.ListAPIView):
     def get(self, request):
         cod_departamento = request.query_params.get('cod_departamento', '')
 
-        municipios = self.queryset.all().filter(cod_departamento__icontains=cod_departamento).exclude(cod_municipio='50001')
+        municipios = self.queryset.all().filter(cod_departamento__cod_departamento__icontains=cod_departamento).exclude(cod_municipio='50001')
         villavicencio = self.queryset.filter(cod_municipio='50001').values(label=F('nombre'),value=F('cod_municipio')).first()
 
         serializer = self.serializer_class(municipios, many=True)
