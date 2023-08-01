@@ -272,14 +272,33 @@ class AlertasProgramadasCreate(generics.CreateAPIView):
             raise NotFound('La alerta no tiene personal asignado.')
 
         cadena=""
+        cadena_lideres=''
+        cadena_personas=''
+        cadena_perfiles=''
         for persona in personas_alertar:
             if persona.id_persona and persona.es_responsable_directo:
                data_alerta_programada['id_persona_implicada']=persona.id_persona.id_persona
                
             if persona.id_unidad_org_lider and  persona.es_responsable_directo:
                 data_alerta_programada['id_und_org_lider_implicada']=persona.id_unidad_org_lider.id_unidad_organizacional
+
             if persona.perfil_sistema and persona.es_responsable_directo:
                 data_alerta_programada['perfil_sistema_implicado']=persona.perfil_sistema
+            
+            if not(persona.es_responsable_directo):
+                if persona.id_unidad_org_lider:
+                    cadena_lideres+=str(persona.id_unidad_org_lider.id_unidad_organizacional)+"|"
+                
+                if persona.perfil_sistema:
+                    cadena_perfiles+=str(persona.perfil_sistema)+"|"
+
+                if persona.id_persona:
+                    cadena_personas+=str(persona.id_persona.id_persona)+"|"
+
+        data_alerta_programada['id_und_org_lider_alertar']=cadena_lideres
+        data_alerta_programada['id_perfiles_sistema_alertar']=cadena_perfiles
+        data_alerta_programada['id_personas_alertar']=cadena_personas
+        
         
         for fecha in fechas:
             data_alerta_programada['cod_clase_alerta']=configuracion.cod_clase_alerta

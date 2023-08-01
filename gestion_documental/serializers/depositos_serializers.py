@@ -96,7 +96,7 @@ class  EstanteDepositoGetOrdenSerializer(serializers.ModelSerializer):
 
 
 #Cambiar_orden_estante
-class EstanteDepositoChangeOrdenSerializer(serializers.ModelSerializer):
+class EstanteDepositoUpDateSerializer(serializers.ModelSerializer):
 
     def validate_orden_ubicacion_por_deposito(self, nuevo_orden):
 
@@ -132,7 +132,7 @@ class EstanteDepositoChangeOrdenSerializer(serializers.ModelSerializer):
         
     class Meta:
         model =  EstanteDeposito
-        fields = ['orden_ubicacion_por_deposito']
+        fields = ['identificacion_por_deposito','orden_ubicacion_por_deposito']
 
 #Eliminar_Estante
 class EstanteDeleteSerializer(serializers.ModelSerializer):

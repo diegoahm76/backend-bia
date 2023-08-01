@@ -10,7 +10,7 @@ from django.db.models import Max
 from django.db.models import Q
 from datetime import datetime,date,timedelta
 from gestion_documental.models.depositos_models import Deposito, EstanteDeposito
-from gestion_documental.serializers.depositos_serializers import DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoChangeOrdenSerializer, EstanteDeleteSerializer, EstanteGetByDepositoSerializer
+from gestion_documental.serializers.depositos_serializers import DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteDeleteSerializer, EstanteGetByDepositoSerializer
 from seguridad.utils import Util
 
 
@@ -293,8 +293,8 @@ class EstanteDepositoGetOrden(generics.ListAPIView):
             'orden_siguiente':maximo_orden['max_orden']},
             status=status.HTTP_200_OK)
         
-#CAMBIAR ORDEN ESTANTE
-class EstanteDepositoChangeOrden(generics.ListAPIView):
+#EDITAR ESTANTE
+class EstanteDepositoUpDate(generics.ListAPIView):
     serializer_class = EstanteDepositoGetOrdenSerializer
     queryset = EstanteDeposito.objects.all()
     permission_classes = [IsAuthenticated]
@@ -306,7 +306,7 @@ class EstanteDepositoChangeOrden(generics.ListAPIView):
         except EstanteDeposito.DoesNotExist:
             return Response({'error': 'El estante no existe.'}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = EstanteDepositoChangeOrdenSerializer(estante, data=request.data, partial=True)
+        serializer = EstanteDepositoUpDateSerializer(estante, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 

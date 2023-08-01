@@ -778,8 +778,7 @@ class ActualizarAvanceEvidencia(generics.UpdateAPIView):
 
 
 class ProgramaPORHBusquedaAvanzadaGet(generics.ListAPIView):
-    #serializer_class = BusquedaAvanzadaAvancesSerializers
-    #serializer_class = GetProgramasporPORHSerializers
+  
     serializer_class=GetAvanzadaProgramasporPORHSerializers
     queryset = Instrumentos.objects.all()
     permission_classes = [IsAuthenticated]

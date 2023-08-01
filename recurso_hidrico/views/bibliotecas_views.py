@@ -554,9 +554,7 @@ class CuencasInstrumentoGet(generics.ListAPIView):
     def get(self,request,ins):
         id = ins
          
-        #cuencas = Instrumentos.objects.filter(id_seccion=seccion, id_subseccion=idsubseccion).values_list('id_instrumento', flat=True)
         cuencas=CuencasInstrumento.objects.filter(id_instrumento=id)
-
 
         serializer = self.serializer_class(cuencas,many=True)
         
@@ -602,7 +600,6 @@ class ArchivosInstrumentoBusquedaAvanzadaGet(generics.ListAPIView):
 
 
 class ArchivosInstrumentoGet(generics.ListAPIView):
-
 
     queryset = ArchivosInstrumento.objects.all()
     serializer_class = ArchivosInstrumentosGetSerializer
@@ -662,8 +659,6 @@ class CuencaDelete(generics.DestroyAPIView):
         if not cuenca:
             raise NotFound("No existe la cuenca a eliminar.")
         
-
-
         if cuenca.registro_precargado:
             raise ValidationError("No se puede eliminar una cuenca precargada.")
         
@@ -721,7 +716,6 @@ class CuencaGetById(generics.ListAPIView):
 
 class CuencaUpdate(generics.UpdateAPIView):
 
-    
     serializer_class = CuencasUpdateSerializer
     queryset = Cuencas.objects.all()
     permission_classes = [IsAuthenticated]
@@ -785,8 +779,6 @@ class PozoDelete(generics.DestroyAPIView):
         if not pozo:
             raise NotFound("No existe el pozo a eliminar.")
         
-
-
         if pozo.registro_precargado:
             raise ValidationError("No se puede eliminar un pozo precargada.")
         
@@ -800,16 +792,13 @@ class PozoDelete(generics.DestroyAPIView):
 
 class PozoUpdate(generics.UpdateAPIView):
 
-    
     serializer_class = PozosUpdateSerializer
     queryset = Pozos.objects.all()
     permission_classes = [IsAuthenticated]
     
     def put(self,request,pk):
 
-
         try:
-
             
             data = request.data
             pozo = Pozos.objects.filter(id_pozo=pk).first()
@@ -922,7 +911,6 @@ class ParametrosLaboratorioDelete(generics.DestroyAPIView):
         if not parametro:
             raise NotFound("No existe el parametro de laboratorio a eliminar.")
         
-
 
         if parametro.registro_precargado:
             raise ValidationError("No se puede eliminar un parametro de laboratorio precargada.")
