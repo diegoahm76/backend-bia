@@ -41,8 +41,6 @@ from recaudo.models.facilidades_pagos_models import (
     CumplimientoRequisitos,
     DetallesFacilidadPago,
     GarantiasFacilidad,
-    PlanPagos,
-    TasasInteres,
     RespuestaSolicitud
 )
 
@@ -85,8 +83,6 @@ admin.site.register(RequisitosActuacion),
 admin.site.register(CumplimientoRequisitos),
 admin.site.register(DetallesFacilidadPago),
 admin.site.register(GarantiasFacilidad),
-admin.site.register(PlanPagos),
-admin.site.register(TasasInteres),
 admin.site.register(RespuestaSolicitud),
 
 #Procesos

@@ -2,8 +2,6 @@ from rest_framework import serializers
 from recaudo.models.base_models import TipoActuacion, TiposPago, Ubicaciones
 from recaudo.models.facilidades_pagos_models import (
     DetallesFacilidadPago,
-    PlanPagos,
-    TasasInteres,
 )
 from recaudo.models.cobros_models import Cartera
 from recaudo.models.liquidaciones_models import Deudores

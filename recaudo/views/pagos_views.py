@@ -1,8 +1,4 @@
-from recaudo.models.facilidades_pagos_models import (
-    FacilidadesPago,
-    PlanPagos,
-    TasasInteres
-)
+from recaudo.models.facilidades_pagos_models import FacilidadesPago
 from recaudo.serializers.pagos_serializers import (
     DetallesFacilidadPagoSerializer,
     ObligacionesSerializer,

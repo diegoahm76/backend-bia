@@ -6,8 +6,6 @@ from recaudo.models.facilidades_pagos_models import (
     RequisitosActuacion,
     CumplimientoRequisitos,
     DetallesFacilidadPago,
-    PlanPagos,
-    TasasInteres,
     RespuestaSolicitud
 )
 from recaudo.models.cobros_models import Cartera, Deudores
