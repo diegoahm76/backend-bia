@@ -12,11 +12,11 @@ ALLOWED_HOSTS = ['*']
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'bia_scripts',
-        'USER': 'postgres',
-        'PASSWORD': '1234',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.environ.get('BIA_DB_NAME'),
+        'USER': os.environ.get('BIA_DB_USER'),
+        'PASSWORD': os.environ.get('BIA_DB_PASSWORD'),
+        'HOST': os.environ.get('BIA_DB_HOST'),
+        'PORT': os.environ.get('BIA_DB_PORT'),
         'ATOMIC_REQUESTS': True
     },
     'bia-estaciones': {
