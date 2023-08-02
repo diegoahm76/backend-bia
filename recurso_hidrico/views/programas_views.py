@@ -655,7 +655,7 @@ class RegistroAvance(generics.CreateAPIView):
                 #valores_actualizados = {'current': instance, 'previous': instance_previous}
                 auditoria_data = {
                     "id_usuario" : usuario,
-                    "id_modulo" : 110,
+                    "id_modulo" : 111,
                     "cod_permiso": "CR",
                     "subsistema": 'RECU',
                     "dirip": direccion,
