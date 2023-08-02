@@ -116,7 +116,7 @@ urlpatterns = [
     path("api/estaciones/migracion/",include('estaciones.urls.migracion_estaciones_urls')),
 
     #FACILIDADES PAGOS
-    path('api/recaudo/pagos/', include('recaudo.urls.pagos_urls')),
+    path('api/recaudo/pagos/', include('recaudo.urls.planes_pagos_urls')),
     path('api/recaudo/garantias/', include('recaudo.urls.garantias_urls')),
     path('api/recaudo/reportes/', include('recaudo.urls.reportes_urls')),
     path('api/recaudo/facilidades-pagos/', include('recaudo.urls.facilidades_pagos_urls')),
