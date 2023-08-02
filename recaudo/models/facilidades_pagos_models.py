@@ -77,7 +77,7 @@ class GarantiasFacilidad(models.Model):
 
 class RespuestaSolicitud(models.Model):
     id = models.AutoField(primary_key=True, db_column='T432idRespuestaSolicitud')
-    id_funcionario_resp = models.ForeignKey('seguridad.Personas', on_delete=models.CASCADE, db_column='T432Id_FuncionarioResp')
+    id_funcionario = models.ForeignKey('seguridad.Personas', on_delete=models.CASCADE, db_column='T432Id_Funcionario')
     id_facilidades_pago = models.ForeignKey(FacilidadesPago, on_delete=models.CASCADE, db_column='T432Id_FacilidadesPago')
     estado = models.CharField(max_length=255, db_column='T432estado')
     aprobacion = models.BooleanField(db_column='T432aprobacion')

@@ -3,7 +3,7 @@ from django.db import models
 from seguridad.models import Municipio, Paises
 from transversal.models.entidades_models import SucursalesEmpresas
 
-
+#DEPOSITOS
 class Deposito(models.Model):
     id_deposito = models.AutoField(primary_key=True,null=False, db_column='T230IdDeposito')
     nombre_deposito = models.CharField(max_length=100, db_column='T230nombreDeposito',null=False)
@@ -25,10 +25,10 @@ class Deposito(models.Model):
         unique_together = [['nombre_deposito']]
 
 
-
+#ESTANTES
 class EstanteDeposito(models.Model):
     id_estante_deposito = models.AutoField(primary_key=True, db_column='T231IdEstante_Deposito')
-    id_deposito = models.ForeignKey('Deposito', on_delete=models.CASCADE, db_column='T231Id_Deposito')
+    id_deposito = models.ForeignKey(Deposito, on_delete=models.CASCADE, db_column='T231Id_Deposito')
     identificacion_por_deposito = models.CharField(max_length=10, db_column='T231identificacionPorDeposito')
     orden_ubicacion_por_deposito = models.SmallIntegerField(db_column='T231ordenUbicacionPorDeposito')
 
@@ -43,5 +43,34 @@ class EstanteDeposito(models.Model):
         unique_together = [['id_deposito', 'orden_ubicacion_por_deposito']]
 
 
+#BANDEJAS
 
-        
+
+class BandejaEstante(models.Model):
+    id_bandeja_estante = models.AutoField(primary_key=True, null=False, db_column='T232IdBandeja_Estante')
+    id_estante_deposito = models.ForeignKey(EstanteDeposito, on_delete=models.CASCADE, db_column='T232Id_Estante_Deposito')
+    identificacion_por_estante = models.CharField(max_length=10, db_column='T232identificacionPorEstante')
+    orden_ubicacion_por_estante = models.SmallIntegerField(db_column='T232ordenUbicacionPorEstante', null=True)
+
+    def __str__(self):
+        return str(self.orden_ubicacion_por_estante)
+
+    class Meta:
+        db_table = 'T232Bandejas_Estante'
+        verbose_name = 'Bandeja en Estante'
+        verbose_name_plural = 'Bandejas en Estante'
+        unique_together = [('id_estante_deposito','identificacion_por_estante'),('id_estante_deposito','orden_ubicacion_por_estante')]
+
+#CAJAS
+
+class CajaBandeja(models.Model):
+    id_caja_estante = models.AutoField(primary_key=True, null=False, db_column='T233IdCaja_Bandeja')
+    id_bandeja_estante =models.ForeignKey(BandejaEstante, on_delete=models.CASCADE, db_column='T233Id_Bandeja_Estante')
+    identificacion_por_bandeja=models.CharField(max_length=10, db_column='T233identificacionPorBandeja')
+    orden_ubicacion_por_bandeja  = models.SmallIntegerField(db_column='T233ordenUbicacionPorBandeja', null=True)
+    
+    class Meta:
+        db_table = 'T233Cajas_Bandeja'
+        verbose_name = 'Caja en Bandeja'
+        verbose_name_plural = 'Cajas en Bandeja'
+        unique_together = [('id_bandeja_estante','identificacion_por_bandeja'),('id_bandeja_estante','orden_ubicacion_por_bandeja')]

@@ -3,10 +3,10 @@ from rest_framework.serializers import ReadOnlyField
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from django.db.models import Max 
 
-from gestion_documental.models.depositos_models import Deposito, EstanteDeposito
+from gestion_documental.models.depositos_models import  Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
 
 
-#DEPOSITOS
+######################### SERIALIZERS DEPOSITO #########################
 
 class DepositoCreateSerializer(serializers.ModelSerializer):
     
@@ -70,7 +70,7 @@ class DepositoGetSerializer(serializers.ModelSerializer):
 #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-#ESTANTES
+######################### SERIALIZERS ESTANTE #########################
 
 #Crear_estante
 class EstanteDepositoCreateSerializer(serializers.ModelSerializer):
@@ -135,7 +135,7 @@ class EstanteDepositoUpDateSerializer(serializers.ModelSerializer):
         fields = ['identificacion_por_deposito','orden_ubicacion_por_deposito']
 
 #Eliminar_Estante
-class EstanteDeleteSerializer(serializers.ModelSerializer):
+class EstanteDepositoDeleteSerializer(serializers.ModelSerializer):
     
     class Meta:
         model =  EstanteDeposito
@@ -148,3 +148,45 @@ class EstanteGetByDepositoSerializer(serializers.ModelSerializer):
     class Meta:
         model =  EstanteDeposito
         fields = ['orden_ubicacion_por_deposito','identificacion_por_deposito']
+
+#Mover_estante
+class MoveEstanteSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  EstanteDeposito
+        fields = '__all__'
+
+#/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+######################### SERIALIZERS BANDEJA #########################
+
+
+
+class BandejaEstanteCreateSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  BandejaEstante
+        fields = '__all__'
+
+#Listar_orden_siguiente_bandeja
+class  BandejaEstanteGetOrdenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  BandejaEstante
+        fields = '__all__'
+
+
+#/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+######################## SERIALIZERS CAJA ########################
+
+class CajaBandejaCreateSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  CajaBandeja
+        fields = '__all__'
+
+#Listar_orden_siguiente_bandeja
+class  CajaBandejaGetOrdenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  CajaBandeja
+        fields = '__all__'
