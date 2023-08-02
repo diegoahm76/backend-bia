@@ -103,6 +103,7 @@ urlpatterns = [
     path('api/conservacion/solicitudes/', include('conservacion.urls.solicitudes_urls')),
     path('api/conservacion/mezclas/', include('conservacion.urls.mezclas_urls')),
     path('api/conservacion/funcionario/', include('conservacion.urls.solicitudes_funcionario_coordinador_urls')),
+    path('api/conservacion/analitica/', include('conservacion.urls.analitica_urls')),
 
     #ESTACIONES
     path("api/estaciones/",include('estaciones.urls.estaciones_urls')),
