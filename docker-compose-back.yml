@@ -24,4 +24,3 @@ services: # the different images that will be running as containers
 
 volumes:
   static_volume:
-  /data/bia/media:
