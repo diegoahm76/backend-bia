@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from recaudo.models.cobros_models import Cartera
 from recaudo.models.liquidaciones_models import Deudores
-from recaudo.models.pagos_models import DetallesFacilidadPago, FacilidadesPago
+from recaudo.models.facilidades_pagos_models import DetallesFacilidadPago, FacilidadesPago
 from django.core.exceptions import ObjectDoesNotExist
 
 class CarteraGeneralSerializer(serializers.ModelSerializer):

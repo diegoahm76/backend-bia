@@ -1,8 +1,4 @@
-from recaudo.models.pagos_models import (
-    FacilidadesPago,
-    PlanPagos,
-    TasasInteres
-)
+from recaudo.models.facilidades_pagos_models import FacilidadesPago
 from recaudo.serializers.pagos_serializers import (
     DetallesFacilidadPagoSerializer,
     ObligacionesSerializer,
@@ -10,7 +6,7 @@ from recaudo.serializers.pagos_serializers import (
     ListadoDeudoresUltSerializer,
 )
 from recaudo.models.base_models import TipoActuacion, TiposPago
-from recaudo.models.cobros_models import Obligaciones, Cartera
+from recaudo.models.cobros_models import Cartera
 from recaudo.models.liquidaciones_models import Deudores, Expedientes
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q, Value as V
@@ -46,7 +42,7 @@ class ObligacionesDeudorListViews(generics.ListAPIView):
                 nombre_completo = deudor.nombres + ' ' + deudor.apellidos
             nombre_completo = deudor.nombres
         
-        obligaciones = Obligaciones.objects.filter(id_expediente__id_deudor=deudor)
+        obligaciones = Cartera.objects.filter(id_deudor=deudor)
         serializer = self.serializer_class(obligaciones, many=True)
         monto_total, intereses_total, monto_total_con_intereses = self.get_monto_total(obligaciones)
         data = {
@@ -108,7 +104,7 @@ class ConsultaObligacionesViews(generics.ListAPIView):
     
     def get_queryset(self):
         id_obligaciones = self.kwargs['id_obligaciones']
-        queryset = Obligaciones.objects.filter(id=id_obligaciones)
+        queryset = Cartera.objects.filter(id=id_obligaciones)
         
         if not queryset.exists():
             raise NotFound("La obligación consultada no existe")

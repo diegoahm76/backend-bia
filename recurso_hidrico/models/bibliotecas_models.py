@@ -123,6 +123,7 @@ class CarteraAforos(models.Model):
         ('SP', 'Suspensión'),
         ('AG', 'Angular')
     ], db_column='T612codTipoAforo')
+    molinete=models.CharField(max_length=30,db_column='T612molinete',default='')
     numero_serie = models.CharField(max_length=30, db_column='T612numeroSerie')
     numero_helice = models.CharField(max_length=30, db_column='T612numeroHelice')
 

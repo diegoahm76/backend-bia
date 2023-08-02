@@ -376,7 +376,7 @@ class CarteraAforosGetSerializer(serializers.ModelSerializer):
     nombre_cuenca=serializers.CharField(source='id_cuenca.nombre', required=False, allow_null=True)
     class Meta:
         model=CarteraAforos
-        fields=['id_cartera_aforos','id_instrumento','id_cuenca','fecha_registro','ubicacion_aforo','descripcion','latitud','longitud','fecha_aforo','cod_tipo_aforo','numero_serie','numero_helice','nombre_cuenca']
+        fields=['id_cartera_aforos','id_instrumento','id_cuenca','fecha_registro','ubicacion_aforo','descripcion','latitud','longitud','fecha_aforo','cod_tipo_aforo','numero_serie','molinete','numero_helice','nombre_cuenca']
 
 
 
