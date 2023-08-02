@@ -1,6 +1,7 @@
 import copy
 from django.http import JsonResponse
 from django.utils import timezone
+from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -300,7 +301,6 @@ class EstanteDepositoUpDate(generics.UpdateAPIView):
     queryset = EstanteDeposito.objects.all()
     permission_classes = [IsAuthenticated]
 
-    #def put(self,request,pk):
     def put (self,request, pk):
         try:
             estante = EstanteDeposito.objects.filter(id_estante_deposito=pk).first()
@@ -370,6 +370,52 @@ class EstanteGetByDeposito(generics.ListAPIView):
     
     
 #MOVER_ESTANTE(PENDIENTE)
+class MoveEstante(generics.UpdateAPIView):
+    serializer_class = MoveEstanteSerializer
+    queryset = EstanteDeposito.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def put(self, request, identificacion_por_deposito):
+        # Obtener el estante correspondiente por identificacion_por_deposito
+        estante = get_object_or_404(EstanteDeposito, identificacion_por_deposito=identificacion_por_deposito)
+
+        # Obtener los valores de deposito_archivo_actual y deposito_archivo_destino desde el cuerpo de la solicitud
+        deposito_archivo_actual = self.get_serializer(data=request.data)
+        deposito_archivo_actual.is_valid(raise_exception=True)
+
+        # Obtener la identificacion_por_entidad y nombre_deposito del depósito de archivo actual
+        identificacion_por_entidad_actual = deposito_archivo_actual.validated_data['identificacion_por_entidad']
+        nombre_deposito_actual = deposito_archivo_actual.validated_data['nombre_deposito']
+
+        # Buscar el depósito de archivo actual en la base de datos
+        try:
+            deposito_actual = Deposito.objects.get(identificacion_por_entidad=identificacion_por_entidad_actual,
+                                                  nombre_deposito=nombre_deposito_actual)
+        except Deposito.DoesNotExist:
+            return JsonResponse({'error': 'No se encontró el depósito de archivo actual.'}, status=400)
+
+        # Obtener los valores de deposito_archivo_destino desde el cuerpo de la solicitud
+        deposito_archivo_destino = self.get_serializer(data=request.data)
+        deposito_archivo_destino.is_valid(raise_exception=True)
+
+        # Obtener la identificacion_por_entidad y nombre_deposito del depósito de archivo destino
+        identificacion_por_entidad_destino = deposito_archivo_destino.validated_data['identificacion_por_entidad']
+        nombre_deposito_destino = deposito_archivo_destino.validated_data['nombre_deposito']
+
+        # Buscar el depósito de archivo destino en la base de datos
+        try:
+            deposito_destino = Deposito.objects.get(identificacion_por_entidad=identificacion_por_entidad_destino,
+                                                    nombre_deposito=nombre_deposito_destino)
+        except Deposito.DoesNotExist:
+            return JsonResponse({'error': 'No se encontró el depósito de archivo destino.'}, status=400)
+
+        # Actualizar el depósito de archivo del estante con el nuevo depósito de archivo
+        estante.id_deposito = deposito_destino
+        estante.save()
+
+        serializer = self.get_serializer(estante)
+        return JsonResponse(serializer.data)
 
 
 
