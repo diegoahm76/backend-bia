@@ -648,7 +648,22 @@ class RegistroAvance(generics.CreateAPIView):
                         nombre_archivo = nombre_archivos[i],                
                         id_archivo = i
                     )
-    
+
+                usuario = request.user.id_usuario
+                direccion=Util.get_client_ip(request)
+                descripcion = {"IdProyectoPgPORH":serializer.data['id_proyecto'],"Accion":serializer.data['accion']}
+                #valores_actualizados = {'current': instance, 'previous': instance_previous}
+                auditoria_data = {
+                    "id_usuario" : usuario,
+                    "id_modulo" : 110,
+                    "cod_permiso": "CR",
+                    "subsistema": 'RECU',
+                    "dirip": direccion,
+                    "descripcion": descripcion, 
+                    #"valores_actualizados": valores_actualizados
+                }
+                Util.save_auditoria(auditoria_data)
+            
             return Response({'success':True,'detail':'Se crea el avance del proyecto correctamente.','data':serializer.data},status=status.HTTP_201_CREATED)
         except ValidationError  as e:
             error_message = {'error': e.detail}

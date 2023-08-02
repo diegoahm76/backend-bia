@@ -422,6 +422,8 @@ class ResultadosLaboratorioPostSerializer(serializers.ModelSerializer):
 
 class ResultadosLaboratorioGetSerializer(serializers.ModelSerializer):
     #cod_clase=serializers.CharField(source='id_parametro.cod_tipo_parametro')
+    nombre_cuenca=serializers.CharField(source='id_cuenca.nombre')
+    nombre_pozo=serializers.CharField(source='id_pozo.nombre')
     class Meta:
         model=ResultadosLaboratorio
         fields=('__all__')
