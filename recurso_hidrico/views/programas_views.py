@@ -642,12 +642,26 @@ class RegistroAvance(generics.CreateAPIView):
             else:
 
                 for i in range(len(archivos)):
-                    print("")
-                    EvidenciasAvance.objects.create(
+                    avance=EvidenciasAvance.objects.create(
                         id_avance = creacion_avance,
                         nombre_archivo = nombre_archivos[i],                
                         id_archivo = i
                     )
+                    usuario = request.user.id_usuario
+                    direccion=Util.get_client_ip(request)
+                    
+                    descripcion = {"IdAvancePyPgPORH":creacion_avance,"NombreArchivo":nombre_archivos[i]}
+                    #valores_actualizados = {'current': instance, 'previous': instance_previous}
+                    auditoria_data = {
+                        "id_usuario" : usuario,
+                        "id_modulo" : 111,
+                        "cod_permiso": "CR",
+                        "subsistema": 'RECU',
+                        "dirip": direccion,
+                        "descripcion": descripcion, 
+                        #"valores_actualizados": valores_actualizados
+                    }
+                    Util.save_auditoria(auditoria_data)
 
                 usuario = request.user.id_usuario
                 direccion=Util.get_client_ip(request)
@@ -739,6 +753,7 @@ class ActualizarAvanceEvidencia(generics.UpdateAPIView):
             if not avance:
                 raise ValidationError("No existe el registro que desea actualizar.")
             
+            instance_previous=copy.copy(avance)
             archivos = request.FILES.getlist('evidencia')
             nombre_archivo = request.data.getlist('nombre_archivo')
             
@@ -748,6 +763,25 @@ class ActualizarAvanceEvidencia(generics.UpdateAPIView):
             serializer.is_valid(raise_exception=True)
             
             serializer.save()
+
+            ##auditoria
+            usuario = request.user.id_usuario
+            direccion=Util.get_client_ip(request)
+            descripcion = {"IdProyectoPgPORH":avance.id_proyecto,"Accion":avance.accion}
+            
+            valores_actualizados = {'current': avance, 'previous': instance_previous}
+            #print(valores_actualizados)
+            auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 111,
+                "cod_permiso": "AC",
+                "subsistema": 'RECU',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+                "valores_actualizados": valores_actualizados
+            }
+            Util.save_auditoria(auditoria_data) 
+            ##auditoria
             
             nombre_actualizar = request.data.get('nombre_actualizar')
             nombre_actualizar = json.loads(nombre_actualizar)
@@ -759,8 +793,24 @@ class ActualizarAvanceEvidencia(generics.UpdateAPIView):
                     raise ValidationError('Debe enviar evidencias exitentes')
                 if nombre_data['nombre_archivo'] == '':
                     raise ValidationError('No puede actualizar el nombre de un archivo a vacío')
+                
+                instance_previous=copy.copy(evidencia_update)
                 evidencia_update.nombre_archivo = nombre_data['nombre_archivo']
                 evidencia_update.save()
+
+                #auditoria
+                descripcion = {"IdAvancePyPgPORH":evidencia_update.id_avance,"NombreArchivo":instance_previous.nombre_archivo}
+                valores_actualizados = {'current': evidencia_update, 'previous': instance_previous}
+                auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 111,
+                "cod_permiso": "AC",
+                "subsistema": 'RECU',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+                "valores_actualizados": valores_actualizados
+                }
+                Util.save_auditoria(auditoria_data) 
 
 
 
