@@ -38,9 +38,7 @@ class EstanteDeposito(models.Model):
         db_table = 'T231Estantes_Deposito'
         verbose_name = 'Estante en Depósito'
         verbose_name_plural = 'Estantes en Depósito'
-        unique_together = [['id_deposito', 'identificacion_por_deposito']]
-        unique_together = [['id_deposito', 'orden_ubicacion_por_deposito']]
-
+        unique_together = [('id_deposito', 'identificacion_por_deposito'),('id_deposito', 'orden_ubicacion_por_deposito')]
 
 #BANDEJAS
 
