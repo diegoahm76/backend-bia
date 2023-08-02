@@ -36,22 +36,6 @@ class DetalleDocumentosCobro(models.Model):
         verbose_name_plural = 'Detalles documentos cobro'
 
 
-# class Obligaciones(models.Model):
-#     id = models.AutoField(primary_key=True, db_column='T416IdObligaciones')
-#     nombre = models.CharField(max_length=255, db_column='T416nombre')
-#     cod_factura = models.CharField(max_length=255, db_column='T416codFactura')
-#     fecha_inicio = models.DateField(db_column='T416fechaInicio')
-#     monto_inicial = models.DecimalField(max_digits=30, decimal_places=2, db_column='T416montoInicial')
-#     naturaleza = models.CharField(max_length=255, db_column='T416naturaleza')
-#     id_documento_cobro = models.ForeignKey(DocumentosCobro, on_delete=models.CASCADE, db_column='T416Id_DocumentoCobro')
-#     id_expediente = models.ForeignKey(Expedientes, on_delete=models.CASCADE, db_column='T416Id_Expediente')
-
-#     class Meta:
-#         db_table = 'T416Obligaciones'
-#         verbose_name = 'Obligación'
-#         verbose_name_plural = 'Obligaciones'
-
-
 class ConceptoContable(models.Model):
     id = models.AutoField(primary_key=True, db_column='T412IdConceptoContable')
     codigo_contable = models.CharField(max_length=255, db_column='T412codigoContable')

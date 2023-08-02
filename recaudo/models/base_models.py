@@ -2,7 +2,7 @@ from django.db import models
 
 
 class VariablesBase(models.Model):
-    id = models.BigAutoField(primary_key=True, db_column='T400IdVariable')
+    id = models.AutoField(primary_key=True, db_column='T400IdVariable')
     nombre = models.CharField(max_length=255, db_column='T400nombre')
     tipo = models.CharField(max_length=1, db_column='T400tipo')
     valor_defecto = models.DecimalField(max_digits=30, decimal_places=2, default=0, db_column='T400valorDefecto')

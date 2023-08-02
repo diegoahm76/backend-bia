@@ -4,6 +4,7 @@ from recaudo.models.liquidaciones_models import Deudores
 #from recaudo.models.cobros_models import Cartera
 from recaudo.models.procesos_models import Bienes
 from recaudo.models.garantias_models import RolesGarantias
+#from seguridad.models import Personas
 
 
 class FacilidadesPago(models.Model):
@@ -17,7 +18,7 @@ class FacilidadesPago(models.Model):
     documento_soporte = models.FileField(db_column='T426documentoSoporte')
     consignacion_soporte = models.FileField(db_column='T426consignacionSoporte')
     documento_no_enajenacion = models.FileField(db_column='T426documentoNoEnajenacion')
-    id_funcionario = models.IntegerField(db_column='T426Id_Funcionario')
+    id_funcionario = models.ForeignKey('seguridad.Personas', on_delete=models.CASCADE, db_column='T426Id_Funcionario')
     notificaciones = models.BooleanField(db_column='T426notificaciones')
     numero_radicacion = models.CharField(max_length=255, db_column='T426numeroRadicacion')
 
@@ -75,8 +76,8 @@ class GarantiasFacilidad(models.Model):
 
 
 class RespuestaSolicitud(models.Model):
-    id = models.BigAutoField(primary_key=True, db_column='T432idRespuestaSolicitud')
-    id_funcionario = models.IntegerField(db_column='T432Id_Funcionario')
+    id = models.AutoField(primary_key=True, db_column='T432idRespuestaSolicitud')
+    id_funcionario = models.ForeignKey('seguridad.Personas', on_delete=models.CASCADE, db_column='T432Id_Funcionario')
     id_facilidades_pago = models.ForeignKey(FacilidadesPago, on_delete=models.CASCADE, db_column='T432Id_FacilidadesPago')
     estado = models.CharField(max_length=255, db_column='T432estado')
     aprobacion = models.BooleanField(db_column='T432aprobacion')
