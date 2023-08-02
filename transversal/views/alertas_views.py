@@ -53,6 +53,23 @@ class ConfiguracionClaseAlertaGetByCod(generics.ListAPIView):
         return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
 
 
+class ConfiguracionClaseAlertaGet(generics.ListAPIView):
+
+    serializer_class = ConfiguracionClaseAlertaGetSerializer
+    queryset = ConfiguracionClaseAlerta.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request):
+
+           
+        alerta = ConfiguracionClaseAlerta.objects.all()
+                
+        serializer = self.serializer_class(alerta,many=True)
+        
+        if not alerta:
+            raise NotFound("No existen registros de alerta.")
+        return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+
 
 class FechaClaseAlertaCreate(generics.CreateAPIView):
     serializer_class = FechaClaseAlertaPostSerializer
