@@ -1,11 +1,9 @@
 from rest_framework import serializers
 from recaudo.models.base_models import TipoActuacion, TiposPago, Ubicaciones
-from recaudo.models.pagos_models import (
+from recaudo.models.facilidades_pagos_models import (
     DetallesFacilidadPago,
-    PlanPagos,
-    TasasInteres,
 )
-from recaudo.models.cobros_models import Obligaciones, Cartera
+from recaudo.models.cobros_models import Cartera
 from recaudo.models.liquidaciones_models import Deudores
 from seguridad.models import Personas, Municipio
 
@@ -38,8 +36,8 @@ class ObligacionesSerializer(serializers.ModelSerializer):
             return None
 
     class Meta:
-        model = Obligaciones
-        fields = ('nombre','fecha_inicio','nro_expediente','nro_resolucion','monto_inicial','valor_intereses', 'dias_mora')
+        model = Cartera
+        fields = ('nombre','inicio','nro_expediente','nro_resolucion','monto_inicial','valor_intereses', 'dias_mora')
 
 
 
@@ -51,7 +49,7 @@ class CarteraSerializer(serializers.ModelSerializer):
 
 class ConsultaObligacionesSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Obligaciones
+        model = Cartera
         fields = '__all__'
 
 
