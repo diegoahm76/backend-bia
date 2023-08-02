@@ -370,35 +370,7 @@ class EstanteGetByDeposito(generics.ListAPIView):
     
     
 #MOVER_ESTANTE(PENDIENTE)
-class MoveEstante(generics.UpdateAPIView):
-    serializer_class = MoveEstanteSerializer
-    queryset = EstanteDeposito.objects.all()
-    permission_classes = [IsAuthenticated]
-
-    def update(self, request, identificacion_por_deposito, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-
-        # Obtener los datos del cuerpo de la solicitud
-        deposito_archivo_actual = request.data.get('deposito_archivo_actual')
-        deposito_archivo_destino = request.data.get('deposito_archivo_destino')
-
-        # Obtener el depósito actual y el depósito destino
-        deposito_actual = get_deposito_archivo(identificacion_por_deposito, deposito_archivo_actual)
-        deposito_destino = get_deposito_archivo(identificacion_por_deposito, deposito_archivo_destino)
-
-        if not deposito_actual or not deposito_destino:
-            return Response({'success': False, 'detail': 'No se encontró el depósito especificado.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Verificar si el estante actual pertenece al depósito actual
-        if instance.id_deposito != deposito_actual:
-            return Response({'success': False, 'detail': 'El estante no pertenece al depósito actual.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Cambiar el depósito del estante
-        instance.id_deposito = deposito_destino
-        instance.save()
-
-        return Response({'success': True, 'detail': 'Se cambió el estante de depósito exitosamente.'}, status=status.HTTP_200_OK)
+#
 
 
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
