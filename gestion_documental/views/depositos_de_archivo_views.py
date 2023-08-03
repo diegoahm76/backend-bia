@@ -369,53 +369,42 @@ class EstanteGetByDeposito(generics.ListAPIView):
         }, status=status.HTTP_200_OK)
     
     
-#MOVER_ESTANTE(PENDIENTE)
+#MOVER_ESTANTE
 class MoveEstante(generics.UpdateAPIView):
-    serializer_class = MoveEstanteSerializer
-    queryset = EstanteDeposito.objects.all()
-    permission_classes = [IsAuthenticated]
-
-
     def put(self, request, identificacion_por_deposito):
-        # Obtener el estante correspondiente por identificacion_por_deposito
+        # Paso 1: Obtener el estante a mover
         estante = get_object_or_404(EstanteDeposito, identificacion_por_deposito=identificacion_por_deposito)
 
-        # Obtener los valores de deposito_archivo_actual y deposito_archivo_destino desde el cuerpo de la solicitud
-        deposito_archivo_actual = self.get_serializer(data=request.data)
-        deposito_archivo_actual.is_valid(raise_exception=True)
+        # Paso 2: Verificar si el estante tiene bandejas
+        tiene_bandejas = BandejaEstante.objects.filter(id_estante_deposito=estante.id_estante_deposito).exists()
+        
+        if tiene_bandejas:
+            return Response({'success': False, 'detail': 'No se puede cambiar de depósito porque el estante tiene bandejas asociadas.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Obtener la identificacion_por_entidad y nombre_deposito del depósito de archivo actual
-        identificacion_por_entidad_actual = deposito_archivo_actual.validated_data['identificacion_por_entidad']
-        nombre_deposito_actual = deposito_archivo_actual.validated_data['nombre_deposito']
+        # Paso 3: Obtener el depósito actual
+        deposito_actual = f"{estante.id_deposito.identificacion_por_entidad}, {estante.id_deposito.nombre_deposito}"
 
-        # Buscar el depósito de archivo actual en la base de datos
+        # Paso 4: Obtener el depósito de destino del cuerpo de la solicitud
+        identificacion_por_entidad_destino = request.data.get('identificacion_por_entidad_destino')
+        nombre_deposito_destino = request.data.get('nombre_deposito_destino')
+        deposito_destino = f"{identificacion_por_entidad_destino}, {nombre_deposito_destino}"
+
+        # Paso 5: Verificar si el depósito de destino existe
         try:
-            deposito_actual = Deposito.objects.get(identificacion_por_entidad=identificacion_por_entidad_actual,
-                                                  nombre_deposito=nombre_deposito_actual)
+            deposito_destino_obj = Deposito.objects.get(identificacion_por_entidad=identificacion_por_entidad_destino, nombre_deposito=nombre_deposito_destino)
         except Deposito.DoesNotExist:
-            return JsonResponse({'error': 'No se encontró el depósito de archivo actual.'}, status=400)
+            return Response({'success': False, 'detail': 'El depósito de destino no existe.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Obtener los valores de deposito_archivo_destino desde el cuerpo de la solicitud
-        deposito_archivo_destino = self.get_serializer(data=request.data)
-        deposito_archivo_destino.is_valid(raise_exception=True)
-
-        # Obtener la identificacion_por_entidad y nombre_deposito del depósito de archivo destino
-        identificacion_por_entidad_destino = deposito_archivo_destino.validated_data['identificacion_por_entidad']
-        nombre_deposito_destino = deposito_archivo_destino.validated_data['nombre_deposito']
-
-        # Buscar el depósito de archivo destino en la base de datos
-        try:
-            deposito_destino = Deposito.objects.get(identificacion_por_entidad=identificacion_por_entidad_destino,
-                                                    nombre_deposito=nombre_deposito_destino)
-        except Deposito.DoesNotExist:
-            return JsonResponse({'error': 'No se encontró el depósito de archivo destino.'}, status=400)
-
-        # Actualizar el depósito de archivo del estante con el nuevo depósito de archivo
-        estante.id_deposito = deposito_destino
+        # Paso 6: Actualizar el depósito del estante
+        estante.id_deposito = deposito_destino_obj
         estante.save()
 
-        serializer = self.get_serializer(estante)
-        return JsonResponse(serializer.data)
+        return Response({'success': True, 
+                        'detail': 'El estante se ha cambiado de depósito exitosamente.',
+                        'identificacion_del_estante': estante.identificacion_por_deposito,
+                        'deposito_actual': deposito_actual, 
+                        'deposito_destino': deposito_destino},
+                          status=status.HTTP_200_OK)
 
 #LISTAR_BANDEJAS_POR_ESTANTE
 class BandejasByEstanteList(generics.ListAPIView):
