@@ -11,7 +11,7 @@ from django.db.models import Max
 from django.db.models import Q
 from datetime import datetime,date,timedelta
 from gestion_documental.models.depositos_models import  Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
-from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, CajaBandejaCreateSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
+from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
 from seguridad.utils import Util
 
 
@@ -417,7 +417,20 @@ class MoveEstante(generics.UpdateAPIView):
         serializer = self.get_serializer(estante)
         return JsonResponse(serializer.data)
 
+#LISTAR_BANDEJAS_POR_ESTANTE
+class BandejasByEstanteList(generics.ListAPIView):
+    serializer_class = BandejasByEstanteListSerializer
+    queryset = BandejaEstante.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        bandeja = BandejaEstante.objects.filter(id_estante_deposito=pk)
+        serializer = self.serializer_class(bandeja,many=True)
+        
+        if not Deposito:
+            raise NotFound("El registro del estante que busca, no se encuentra registrado")
 
+        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)
 
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

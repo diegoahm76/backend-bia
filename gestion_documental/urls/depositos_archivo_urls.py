@@ -18,7 +18,8 @@ urlpatterns = [
      path('estanteDeposito/actualizar-estante/<str:pk>/',views.EstanteDepositoUpDate.as_view(), name='actualizar-estante'),
      path('estanteDeposito/eliminar/<str:pk>/',views.EstanteDepositoDelete.as_view(),name='eliminar-estante'),
      path('estanteDeposito/listar-por-deposito/<str:pk>/',views.EstanteGetByDeposito.as_view(),name='listar-por-deposito'),
-    path('estanteDeposito/mover-estante/<int:pk>/', views.MoveEstante.as_view(), name='mover-estante'),
+     path('estanteDeposito/mover-estante/<int:pk>/', views.MoveEstante.as_view(), name='mover-estante'),
+     path('estanteDeposito/listar-bandejas-por-estante/<int:pk>/', views.BandejasByEstanteList.as_view(), name='listar-bandejas-por-estante'),
      
 
      #Bandeja
