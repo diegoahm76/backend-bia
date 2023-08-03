@@ -49,28 +49,32 @@ import string
 class ObligacionesDeudorListViews(generics.ListAPIView):
     serializer_class = ObligacionesSerializer
 
-    def get_monto_total(self, obligaciones):
+    def get_monto_total(self, carteras):
         monto_total = 0
         intereses_total = 0
-        for obligacion in obligaciones:
-            monto_total += obligacion.monto_inicial
-            carteras = obligacion.cartera_set.filter(fin__isnull=True)
-            for cartera in carteras:
-                intereses_total += cartera.valor_intereses
-        return monto_total, intereses_total, monto_total + intereses_total
+        monto_total = sum(cartera.monto_inicial for cartera in carteras)
+        intereses_total = sum(cartera.valor_intereses for cartera in carteras)
+        monto_total_con_intereses = monto_total + intereses_total
+        return monto_total, intereses_total, monto_total_con_intereses
+
+
+    # def get_monto_total(self, obligaciones):
+    #     monto_total = 0
+    #     intereses_total = 0
+    #     for obligacion in obligaciones:
+    #         monto_total += obligacion.monto_inicial
+    #         carteras = obligacion.cartera_set.filter(fin__isnull=True)
+    #         for cartera in carteras:
+    #             intereses_total += cartera.valor_intereses
+    #     return monto_total, intereses_total, monto_total + intereses_total
     
     def obligaciones_deudor(self, id):
         deudor = Deudores.objects.get(id=id)
         facilidad = FacilidadesPago.objects.filter(id_deudor=deudor.id).exists()
-
-        if deudor.nombres:
-            if deudor.apellidos:
-                nombre_completo = deudor.nombres + ' ' + deudor.apellidos
-            nombre_completo = deudor.nombres
-        
-        obligaciones = Cartera.objects.filter(id_deudor=deudor)
-        serializer = self.serializer_class(obligaciones, many=True)
-        monto_total, intereses_total, monto_total_con_intereses = self.get_monto_total(obligaciones)
+        nombre_completo = deudor.nombres + ' ' + deudor.apellidos if deudor.nombres and deudor.apellidos else deudor.nombres 
+        cartera = Cartera.objects.filter(id_deudor=deudor)
+        serializer = self.serializer_class(cartera, many=True)
+        monto_total, intereses_total, monto_total_con_intereses = self.get_monto_total(cartera)
         data = {
             'id_deudor': deudor.id,
             'nombre_completo': nombre_completo,
@@ -621,7 +625,7 @@ class ListadoFacilidadesPagoAdminViews(generics.ListAPIView):
             raise NotFound("Los datos ingresados con coinciden con las facilidades de pagos existentes")
 
         serializer = self.serializer_class(facilidades_pago, many=True)
-        id_user = request.user.persona.id_persona
+        id_user = request.user.persona
         asignar = [id_user == facilidad.id_funcionario for facilidad in facilidades_pago]
         data = serializer.data
 
@@ -647,7 +651,7 @@ class ListadoFacilidadesPagoFuncionarioViews(generics.ListAPIView):
             raise NotFound("Los datos ingresados con coinciden con las facilidades de pagos existentes")
 
         id_user = request.user.persona.id_persona
-        data = [facilidad for facilidad in facilidades_pago if facilidad.id_funcionario==id_user]
+        data = [facilidad for facilidad in facilidades_pago if facilidad.id_funcionario.id_persona==id_user]
 
         serializer = self.serializer_class(data, many=True)
         
