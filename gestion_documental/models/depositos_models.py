@@ -7,8 +7,8 @@ from transversal.models.entidades_models import SucursalesEmpresas
 class Deposito(models.Model):
     id_deposito = models.AutoField(primary_key=True,null=False, db_column='T230IdDeposito')
     nombre_deposito = models.CharField(max_length=100, db_column='T230nombreDeposito',null=False)
-    identificacion_por_entidad = models.CharField(max_length=10, db_column='T230identificacionPorEntidad',null=False)
-    orden_ubicacion_por_entidad = models.SmallIntegerField(db_column='T230ordenUbicacionPorEntidad',null=False)
+    identificacion_por_entidad = models.CharField(max_length=10, db_column='T230identificacionPorEntidad',null=False,unique=True)
+    orden_ubicacion_por_entidad = models.SmallIntegerField(db_column='T230ordenUbicacionPorEntidad',null=False, unique=True)
     direccion_deposito = models.CharField(max_length=255, db_column='T230direccionDeposito',null=False)
     cod_municipio_nal = models.ForeignKey(Municipio, on_delete=models.CASCADE, db_column='T230Cod_MunicipioNal',null=True)
     cod_pais_exterior = models.ForeignKey(Paises, on_delete=models.CASCADE, db_column='T230Cod_PaisExterior',null=True)
@@ -22,7 +22,6 @@ class Deposito(models.Model):
         db_table = 'T230Depositos'
         verbose_name = 'Depósito'
         verbose_name_plural = 'Depósitos'
-        unique_together = [['nombre_deposito']]
 
 
 #ESTANTES
@@ -39,9 +38,7 @@ class EstanteDeposito(models.Model):
         db_table = 'T231Estantes_Deposito'
         verbose_name = 'Estante en Depósito'
         verbose_name_plural = 'Estantes en Depósito'
-        unique_together = [['id_deposito', 'identificacion_por_deposito']]
-        unique_together = [['id_deposito', 'orden_ubicacion_por_deposito']]
-
+        unique_together = [('id_deposito', 'identificacion_por_deposito'),('id_deposito', 'orden_ubicacion_por_deposito')]
 
 #BANDEJAS
 

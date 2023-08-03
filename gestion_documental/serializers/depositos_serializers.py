@@ -156,6 +156,14 @@ class MoveEstanteSerializer(serializers.ModelSerializer):
         model =  EstanteDeposito
         fields = '__all__'
 
+#Listar_Bandejas_por estante
+
+class BandejasByEstanteListSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  BandejaEstante
+        fields = ['orden_ubicacion_por_estante','identificacion_por_estante']
+
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ######################### SERIALIZERS BANDEJA #########################
