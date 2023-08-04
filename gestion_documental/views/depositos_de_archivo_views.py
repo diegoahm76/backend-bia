@@ -11,7 +11,7 @@ from django.db.models import Max
 from django.db.models import Q
 from datetime import datetime,date,timedelta
 from gestion_documental.models.depositos_models import  Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
-from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
+from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
 from seguridad.utils import Util
 
 
@@ -349,7 +349,7 @@ class EstanteDepositoDelete(generics.DestroyAPIView):
 
         return Response({'success': True, 'detail': 'Se eliminó el estante seleccionado.'}, status=status.HTTP_200_OK)    
 
-#LISTADO DE ESTANTES POR DEPOSITO
+#LISTADO_DE_ESTANTES_POR_DEPOSITO
 class EstanteGetByDeposito(generics.ListAPIView):
     serializer_class = EstanteGetByDepositoSerializer
     queryset = EstanteDeposito.objects.all()
@@ -481,7 +481,35 @@ class BandejaEstanteGetOrden(generics.ListAPIView):
             'orden_siguiente': max_orden
         }, status=status.HTTP_200_OK)
     
-    
+#EDITAR_BANDEJA
+class BandejaEstanteUpDate(generics.UpdateAPIView):
+    serializer_class = BandejaEstanteUpDateSerializer
+    queryset = BandejaEstante.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def put (self,request, pk):
+        try:
+            bandeja = BandejaEstante.objects.filter(id_bandeja_estante=pk).first()
+        except BandejaEstante.DoesNotExist:
+            return Response({'error': 'La bandeja no existe.'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = BandejaEstanteUpDateSerializer(bandeja, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({'success': True, 'detail': 'La bandeja se ha actualizado correctamente.'},
+                         status=status.HTTP_200_OK)
+
+
+
+
+
+
+
+
+
+
+
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ######################## CRUD CAJA ########################
