@@ -156,7 +156,7 @@ class MoveEstanteSerializer(serializers.ModelSerializer):
         model =  EstanteDeposito
         fields = '__all__'
 
-#Listar_Bandejas_por estante
+#Listar_Bandejas_por_estante
 
 class BandejasByEstanteListSerializer(serializers.ModelSerializer):
     
@@ -169,7 +169,7 @@ class BandejasByEstanteListSerializer(serializers.ModelSerializer):
 ######################### SERIALIZERS BANDEJA #########################
 
 
-
+#Crear_bandeja
 class BandejaEstanteCreateSerializer(serializers.ModelSerializer):
     
     class Meta:
@@ -182,6 +182,44 @@ class  BandejaEstanteGetOrdenSerializer(serializers.ModelSerializer):
         model =  BandejaEstante
         fields = '__all__'
 
+ #Listar_bandejas_por_estante       
+class  BandejaEstanteUpDateSerializer(serializers.ModelSerializer):
+    
+    def validate_orden_ubicacion_por_estante(self, nuevo_orden):
+
+        # Obtener el orden actual del depósito
+        orden_actual = self.instance.orden_ubicacion_por_estante
+
+        if nuevo_orden != orden_actual:
+
+            maximo_orden = BandejaEstante.objects.aggregate(max_orden=Max('orden_ubicacion_por_estante')).get('max_orden')
+            self.instance.orden_ubicacion_por_estante = maximo_orden + 1
+            self.instance.save()
+         
+
+            if nuevo_orden > orden_actual:
+                
+                # Desplazar los depósitos siguientes hacia abajo
+                bandejas = BandejaEstante.objects.filter(orden_ubicacion_por_estante__gt=orden_actual, orden_ubicacion_por_estante__lte=nuevo_orden).order_by('orden_ubicacion_por_estante')  
+                
+                for bandeja in bandejas:
+                    bandeja.orden_ubicacion_por_estante = bandeja.orden_ubicacion_por_estante - 1
+                    bandeja.save()
+
+            elif nuevo_orden < orden_actual:
+        
+                # Desplazar los depósitos hacia arriba
+                bandejas = BandejaEstante.objects.filter(orden_ubicacion_por_estante__lt=orden_actual, orden_ubicacion_por_estante__gte=nuevo_orden).order_by('-orden_ubicacion_por_estante')  
+                
+                for bandeja in bandejas:
+                    bandeja.orden_ubicacion_por_estante = bandeja.orden_ubicacion_por_estante + 1
+                    bandeja.save()		  	                  
+
+        return nuevo_orden
+        
+    class Meta:
+        model =  BandejaEstante
+        fields = ['identificacion_por_estante','orden_ubicacion_por_estante']
 
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

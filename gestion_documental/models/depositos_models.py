@@ -23,7 +23,6 @@ class Deposito(models.Model):
         verbose_name = 'Depósito'
         verbose_name_plural = 'Depósitos'
 
-
 #ESTANTES
 class EstanteDeposito(models.Model):
     id_estante_deposito = models.AutoField(primary_key=True, db_column='T231IdEstante_Deposito')
@@ -41,8 +40,6 @@ class EstanteDeposito(models.Model):
         unique_together = [('id_deposito', 'identificacion_por_deposito'),('id_deposito', 'orden_ubicacion_por_deposito')]
 
 #BANDEJAS
-
-
 class BandejaEstante(models.Model):
     id_bandeja_estante = models.AutoField(primary_key=True, null=False, db_column='T232IdBandeja_Estante')
     id_estante_deposito = models.ForeignKey(EstanteDeposito, on_delete=models.CASCADE, db_column='T232Id_Estante_Deposito')
@@ -59,7 +56,6 @@ class BandejaEstante(models.Model):
         unique_together = [('id_estante_deposito','identificacion_por_estante'),('id_estante_deposito','orden_ubicacion_por_estante')]
 
 #CAJAS
-
 class CajaBandeja(models.Model):
     id_caja_estante = models.AutoField(primary_key=True, null=False, db_column='T233IdCaja_Bandeja')
     id_bandeja_estante =models.ForeignKey(BandejaEstante, on_delete=models.CASCADE, db_column='T233Id_Bandeja_Estante')

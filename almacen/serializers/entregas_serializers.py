@@ -100,9 +100,9 @@ class ActualizarEntregaSerializer(serializers.ModelSerializer):
         )
 
 class GetItemsEntregaSerializer(serializers.ModelSerializer):
-    nombre_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.nombre', default=None)
-    codigo_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.codigo_bien', default=None)
-    nombre_bodega = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_bien_despachado.nombre', default=None)
+    codigo_bien = serializers.ReadOnlyField(source='id_bien_despachado.codigo_bien', default=None)
+    bodega = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
     nombre_unidad_medida_despachada= serializers.ReadOnlyField(source='id_bien_despachado.id_unidad_medida.nombre', default=None)
     abreviatura_unidad_medida_despachada = serializers.ReadOnlyField(source='id_bien_despachado.id_unidad_medida.abreviatura', default=None)
     
