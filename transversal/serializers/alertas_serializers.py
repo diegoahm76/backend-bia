@@ -73,7 +73,10 @@ class AlertasProgramadasPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = AlertasProgramadas
         fields = '__all__'
-
+class AlertasProgramadasUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AlertasProgramadas
+        fields = '__all__'
 class AlertasProgramadasDeleteSerializer(serializers.ModelSerializer):
     class Meta:
         model = AlertasProgramadas
