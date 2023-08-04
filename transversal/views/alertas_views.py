@@ -9,7 +9,7 @@ from rest_framework import status
 from datetime import datetime,date,timedelta
 from transversal.models.alertas_models import AlertasProgramadas, ConfiguracionClaseAlerta, FechaClaseAlerta, PersonasAAlertar
 from seguridad.models import Personas
-from transversal.serializers.alertas_serializers import AlertasProgramadasPostSerializer, ConfiguracionClaseAlertaGetSerializer, ConfiguracionClaseAlertaUpdateSerializer, FechaClaseAlertaDeleteSerializer, FechaClaseAlertaGetSerializer, FechaClaseAlertaPostSerializer, PersonasAAlertarDeleteSerializer, PersonasAAlertarGetSerializer, PersonasAAlertarPostSerializer
+from transversal.serializers.alertas_serializers import AlertasProgramadasPostSerializer, AlertasProgramadasUpdateSerializer, ConfiguracionClaseAlertaGetSerializer, ConfiguracionClaseAlertaUpdateSerializer, FechaClaseAlertaDeleteSerializer, FechaClaseAlertaGetSerializer, FechaClaseAlertaPostSerializer, PersonasAAlertarDeleteSerializer, PersonasAAlertarGetSerializer, PersonasAAlertarPostSerializer
 from django.db import transaction 
 from django.db.models import Q
 
@@ -84,7 +84,7 @@ class FechaClaseAlertaCreate(generics.CreateAPIView):
         if not ('age_cumplimiento' in data_in):
             data_in['age_cumplimiento']=None
         try:
-            if data_in['age_cumplimiento']:
+            if 'age_cumplimiento' in data_in and data_in['age_cumplimiento']:
                 fechas=FechaClaseAlerta.objects.filter(cod_clase_alerta=data_in['cod_clase_alerta'],dia_cumplimiento=data_in['dia_cumplimiento'], mes_cumplimiento=data_in['mes_cumplimiento'], age_cumplimiento=data_in['age_cumplimiento'])
             else:
 
@@ -95,16 +95,23 @@ class FechaClaseAlertaCreate(generics.CreateAPIView):
             serializer.is_valid(raise_exception=True)
             instance=serializer.save()
             # Obtener todas las fechas de la tabla FechaClaseAlerta
-            #alertas = AlertasProgramadas.objects.filter(dia_cumplimiento=instance.dia_cumplimiento,mes_cumplimiento=instance.mes_cumplimiento,agno_cumplimiento=instance.age_cumplimiento)
-            #fecha_alerta={'dia_cumplimiento','mes_cumplimiento'}
-            #raise ValidationError("paro")
-
+            alertas = AlertasProgramadas.objects.filter(dia_cumplimiento=instance.dia_cumplimiento,mes_cumplimiento=instance.mes_cumplimiento,agno_cumplimiento=instance.age_cumplimiento)
+            #print(alertas)
+      
+            fecha_alerta={'dia_cumplimiento':instance.dia_cumplimiento,'mes_cumplimiento':instance.mes_cumplimiento,'agno_cumplimiento':instance.age_cumplimiento,'cod_clase_alerta':data_in['cod_clase_alerta']}
+            crear_alerta=AlertasProgramadasCreate()
+            print(instance)
+            #raise ValidationError(instance)
+            response_alerta=crear_alerta.crear_alerta_programada(fecha_alerta)
+            if response_alerta.status_code!=status.HTTP_201_CREATED:
+                return response_alerta
             #Fin
+            return Response({'success':True,'detail':'Se crearon los registros correctamente','data':{'fecha_clase_alerta':serializer.data,'alerta_programada':response_alerta.data['data']}},status=status.HTTP_201_CREATED)
         except ValidationError as e:       
             raise ValidationError(e.detail)
          
         
-        return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+        
   
 class FechaClaseAlertaDelete(generics.DestroyAPIView):
 
@@ -164,6 +171,8 @@ class PersonasAAlertarCreate(generics.CreateAPIView):
     queryset = PersonasAAlertar.objects.all()
     
     def crear_persona_alerta(self, data_in):
+
+        programadas_actualizadas=[]
         if not 'cod_clase_alerta' in data_in:
             raise ValidationError('El código de la clase de alerta es requerido.')
 
@@ -209,8 +218,21 @@ class PersonasAAlertarCreate(generics.CreateAPIView):
             serializador = PersonasAAlertarPostSerializer(data=data_in)
             
             serializador.is_valid(raise_exception=True)
-            serializador.save()
-            return Response({'success': True, 'detail': 'Se crearon los registros correctamente', 'data': serializador.data}, status=status.HTTP_201_CREATED)
+            instance=serializador.save()
+            #actualiza las personas en la alertas configuradas
+            alertas_programadas =AlertasProgramadas.objects.filter(cod_clase_alerta=instance.cod_clase_alerta)
+            #alertas_programadas_ids = AlertasProgramadas.objects.filter(cod_clase_alerta=instance.cod_clase_alerta).values_list('id_alerta_programada', flat=True)
+            if alertas_programadas:
+                actualizar_programadas=AlertasProgramadasUpdate()
+
+                for programada in alertas_programadas:
+                    Response_programada=actualizar_programadas.actualizar_alerta_programada({},programada.id_alerta_programada)
+                    if Response_programada.status_code!=status.HTTP_200_OK:
+                        return Response_programada
+                    programadas_actualizadas.append(Response_programada.data['data'])
+            #fin
+
+            return Response({'success': True, 'detail': 'Se crearon los registros correctamente', 'data': serializador.data,'alertas_programadas':programadas_actualizadas}, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             raise ValidationError( e.detail)
 
@@ -281,7 +303,7 @@ class PersonasAAlertarGetByConfAlerta(generics.ListAPIView):
             
             if dato['es_responsable_directo']:
                 principal='Si'
-            print(destinatario +" "+detalle+" "+nombre+" "+" "+str(principal))
+            #print(destinatario +" "+detalle+" "+nombre+" "+" "+str(principal))
             diccionario_ordenado.append({**dato,'datos_reordenados':{'destinatario':destinatario,'detalle':detalle,"nombre":nombre,"principal":principal}})
 
 
@@ -298,10 +320,7 @@ class AlertasProgramadasCreate(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def crear_alerta_programada(self, data_in):
-        with transaction.atomic():
-            fechas = FechaClaseAlerta.objects.filter(cod_clase_alerta=data_in['cod_clase_alerta'])
-            if not fechas:
-                raise ValidationError("No tiene fechas programadas.")
+        
 
             configuracion = ConfiguracionClaseAlerta.objects.filter(cod_clase_alerta=data_in['cod_clase_alerta']).first()
             if not configuracion:
@@ -352,31 +371,145 @@ class AlertasProgramadasCreate(generics.CreateAPIView):
             data_alerta_programada['id_und_org_lider_alertar'] = cadena_lideres
             data_alerta_programada['id_perfiles_sistema_alertar'] = cadena_perfiles
             data_alerta_programada['id_personas_alertar'] = cadena_personas
+            data_alerta_programada['cod_clase_alerta'] = configuracion.cod_clase_alerta
+            data_alerta_programada['nombre_clase_alerta'] = configuracion.nombre_clase_alerta
 
-            for fecha in fechas:
-                data_alerta_programada['cod_clase_alerta'] = configuracion.cod_clase_alerta
-                data_alerta_programada['nombre_clase_alerta'] = configuracion.nombre_clase_alerta
-                data_alerta_programada['dia_cumplimiento'] = fecha.dia_cumplimiento
-                data_alerta_programada['mes_cumplimiento'] = fecha.mes_cumplimiento
+            if not 'age_cumplimiento' in data_in:
+                data_in['age_cumplimiento']=None
+            fecha=FechaClaseAlerta.objects.filter(cod_clase_alerta=data_in['cod_clase_alerta'],dia_cumplimiento=data_in['dia_cumplimiento'], mes_cumplimiento=data_in['mes_cumplimiento'], age_cumplimiento=data_in['age_cumplimiento']).first()
+            if  not fecha:
+                raise ValidationError("la fecha programada no existe.")
 
-                if fecha.age_cumplimiento:
-                     data_alerta_programada['agno_cumplimiento'] = fecha.age_cumplimiento
-                data_alerta_programada['mensaje_base_del_dia'] = configuracion.mensaje_base_dia
 
-                data_alerta_programada['id_modulo_destino'] = configuracion.id_modulo_destino.id_modulo
-                data_alerta_programada['id_modulo_generador'] = configuracion.id_modulo_generador.id_modulo
-                data_alerta_programada['cod_categoria_alerta'] = configuracion.cod_categoria_clase_alerta
-                data_alerta_programada['tiene_implicado'] = configuracion.asignar_responsable
 
-                data_alerta_programada['activa'] = configuracion.activa
+            data_alerta_programada['dia_cumplimiento'] = fecha.dia_cumplimiento
+            data_alerta_programada['mes_cumplimiento'] = fecha.mes_cumplimiento
 
-                serializer = AlertasProgramadasPostSerializer(data=data_alerta_programada)
-                serializer.is_valid(raise_exception=True)
-                serializer.save()
+            if fecha.age_cumplimiento:
+                data_alerta_programada['agno_cumplimiento'] = fecha.age_cumplimiento
+            data_alerta_programada['mensaje_base_del_dia'] = configuracion.mensaje_base_dia
 
-            return Response({'success': True, 'detail': 'Alertas programadas creadas correctamente.'}, status=status.HTTP_201_CREATED)
+            data_alerta_programada['id_modulo_destino'] = configuracion.id_modulo_destino.id_modulo
+            data_alerta_programada['id_modulo_generador'] = configuracion.id_modulo_generador.id_modulo
+            data_alerta_programada['cod_categoria_alerta'] = configuracion.cod_categoria_clase_alerta
+            data_alerta_programada['tiene_implicado'] = configuracion.asignar_responsable
+
+            data_alerta_programada['activa'] = configuracion.activa
+
+            serializer = AlertasProgramadasPostSerializer(data=data_alerta_programada)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
+            return Response({'success': True, 'detail': 'Alertas programadas creadas correctamente.','data':serializer.data}, status=status.HTTP_201_CREATED)
 
     def post(self, request, *args, **kwargs):
         data_in = request.data
         response = self.crear_alerta_programada(data_in)
+        return response
+
+
+
+class AlertasProgramadasUpdate(generics.UpdateAPIView):
+    serializer_class = AlertasProgramadasUpdateSerializer
+    queryset = AlertasProgramadas.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def actualizar_alerta_programada(self,data,pk):
+        
+        data_in=data
+        # Obtener la instancia existente para actualizar
+        instance =AlertasProgramadas.objects.filter(id_alerta_programada=pk).first()
+
+        # Verificar si la instancia existe
+        if not instance:
+            return Response({'detail': 'La alerta programada no existe.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Obtener los datos recibidos en la solicitud
+    
+        try:
+            #Llenado de datos con base de datos
+            configuracion = ConfiguracionClaseAlerta.objects.filter(cod_clase_alerta=instance.cod_clase_alerta.cod_clase_alerta).first()
+            
+            if not configuracion:
+                raise ValidationError("No existe configuracion de alerta asociada a este cod")
+
+            data_alerta_programada = {}
+            #data_alerta_programada.update(data_in)
+            # if not 'cant_dias_previas' in data_in:
+            #     data_alerta_programada['ctdad_dias_alertas_previas'] = 0
+            # if not 'frecuencia_previas' in data_in:
+            #     data_alerta_programada['frecuencia_alertas_previas'] = 0
+            # if not 'cant_dias_post' in data_in:
+            #     data_alerta_programada['ctdad_repeticiones_post'] = 0
+            # if not 'frecuencia_post' in data_in:
+            #     data_alerta_programada['frecuencia_repeticiones_post'] = 0
+
+            data_alerta_programada['nivel_prioridad'] = configuracion.nivel_prioridad
+            if 'id_persona_implicada' in data_in:
+                data_alerta_programada['id_persona_implicada'] = data_in['id_persona_implicada']
+
+            personas_alertar = PersonasAAlertar.objects.filter(cod_clase_alerta=instance.cod_clase_alerta)
+            if not personas_alertar:
+                raise NotFound('La alerta no tiene personal asignado.')
+
+            cadena = ""
+            cadena_lideres = ''
+            cadena_personas = ''
+            cadena_perfiles = ''
+            for persona in personas_alertar:
+                #print(persona.perfil_sistema)
+                if persona.id_persona and persona.es_responsable_directo:
+                    data_alerta_programada['id_persona_implicada'] = persona.id_persona.id_persona
+
+                if persona.id_unidad_org_lider and persona.es_responsable_directo:
+                    data_alerta_programada['id_und_org_lider_implicada'] = persona.id_unidad_org_lider.id_unidad_organizacional
+
+                if persona.perfil_sistema and persona.es_responsable_directo:
+                    data_alerta_programada['perfil_sistema_implicado'] = persona.perfil_sistema
+
+                if not(persona.es_responsable_directo):
+                    if persona.id_unidad_org_lider:
+                        cadena_lideres += str(persona.id_unidad_org_lider.id_unidad_organizacional) + "|"
+
+                    if persona.perfil_sistema:
+                        cadena_perfiles += str(persona.perfil_sistema) + "|"
+
+                    if persona.id_persona:
+                        cadena_personas += str(persona.id_persona.id_persona) + "|"
+
+            data_alerta_programada['id_und_org_lider_alertar'] = cadena_lideres
+            data_alerta_programada['id_perfiles_sistema_alertar'] = cadena_perfiles
+            data_alerta_programada['id_personas_alertar'] = cadena_personas
+            data_alerta_programada['cod_clase_alerta'] = configuracion.cod_clase_alerta
+            data_alerta_programada['nombre_clase_alerta'] = configuracion.nombre_clase_alerta
+            data_alerta_programada['id_modulo_destino'] = configuracion.id_modulo_destino.id_modulo
+            data_alerta_programada['id_modulo_generador'] = configuracion.id_modulo_generador.id_modulo
+            data_alerta_programada['cod_categoria_alerta'] = configuracion.cod_categoria_clase_alerta
+            data_alerta_programada['tiene_implicado'] = configuracion.asignar_responsable
+            data_alerta_programada['activa'] = configuracion.activa
+
+            #fin
+            data_alerta_programada.update(data_in)
+            # Crear una nueva instancia del serializador utilizando la instancia y los datos recibidos
+            serializer =AlertasProgramadasUpdateSerializer(instance, data=data_alerta_programada, partial=True)
+            
+            # Validar los datos recibidos
+            serializer.is_valid(raise_exception=True)
+            
+            # Guardar los datos actualizados
+            serializer.save()
+        except ValidationError as e:
+            raise ValidationError(e.detail)
+
+        # Respuesta exitosa con los datos actualizados
+        return Response({
+            'success': True,
+            'detail': 'Se actualizó la alerta programada correctamente.',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+
+    def put(self, request, pk):
+        data_in = request.data
+        
+        response= self.actualizar_alerta_programada(data_in,pk)
         return response
