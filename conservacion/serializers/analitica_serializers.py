@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from almacen.models.bienes_models import CatalogoBienes
 from conservacion.models.cuarentena_models import CuarentenaMatVegetal
 
 from conservacion.models.inventario_models import InventarioViveros
@@ -124,48 +125,26 @@ class GetTableroControlConservacionSerializer(serializers.ModelSerializer):
         )
 
 class GetBienesMezclasSerializer(serializers.ModelSerializer):
-    nombre = serializers.SerializerMethodField()
-    codigo_bien  = serializers.ReadOnlyField(source='id_bien.codigo_bien',default=None)
-    unidad_medida = serializers.SerializerMethodField()
+    id_mezcla = serializers.SerializerMethodField()
     tipo_bien = serializers.SerializerMethodField()
-    etapa_lote = serializers.SerializerMethodField()
     
-    def get_nombre(self,obj):
-        if obj.id_bien:
-            nombre = obj.id_bien.nombre
-        else:
-            nombre = obj.id_mezcla.nombre
-            
-        return nombre
-
-    def get_unidad_medida(self,obj):
-        if obj.id_bien:
-            unidad_medida = obj.id_bien.id_unidad_medida.abreviatura
-        else:
-            unidad_medida = obj.id_mezcla.id_unidad_medida.abreviatura
-            
-        return unidad_medida
+    def get_id_mezcla(self,obj):
+        return None
     
     def get_tipo_bien(self, obj):
-        if obj.id_bien:
-            if obj.id_bien.cod_tipo_elemento_vivero == 'IN':
-                tipo_bien = 'Insumo'
-            elif obj.id_bien.cod_tipo_elemento_vivero == 'HE':
-                tipo_bien = 'Herramienta'
-            elif obj.id_bien.cod_tipo_elemento_vivero == 'MV' and obj.id_bien.es_semilla_vivero == True:
-                tipo_bien = 'Semilla'
-            elif obj.id_bien.cod_tipo_elemento_vivero == 'MV' and obj.id_bien.es_semilla_vivero == False:
-                tipo_bien = 'Planta'
-        else:
-            tipo_bien = 'Mezcla'
+        tipo_bien = None
+        
+        if obj.cod_tipo_elemento_vivero == 'IN':
+            tipo_bien = 'Insumo'
+        elif obj.cod_tipo_elemento_vivero == 'HE':
+            tipo_bien = 'Herramienta'
+        elif obj.cod_tipo_elemento_vivero == 'MV' and obj.es_semilla_vivero == True:
+            tipo_bien = 'Semilla'
+        elif obj.cod_tipo_elemento_vivero == 'MV' and obj.es_semilla_vivero == False:
+            tipo_bien = 'Planta'
             
         return tipo_bien
-    
-    def get_etapa_lote(self,obj):
-        desc_etapa_lotes = {'G':'Germinación', 'P':'Producción', 'D':'Distribución'}
-        desc_etapa_lote = desc_etapa_lotes[obj.cod_etapa_lote] if obj.cod_etapa_lote else None
-        return desc_etapa_lote
             
     class Meta:
-        fields = ['id_bien','id_mezcla','id_vivero','nombre','codigo_bien','unidad_medida','tipo_bien','cod_etapa_lote','etapa_lote']
-        model = InventarioViveros
+        fields = ['nombre','id_mezcla','id_bien','codigo_bien','tipo_bien']
+        model = CatalogoBienes

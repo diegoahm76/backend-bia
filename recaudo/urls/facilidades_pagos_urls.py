@@ -4,6 +4,12 @@ from recaudo.views import facilidades_pagos_views as views
 
 urlpatterns = [
 
+    # OBLIGACIONES PARA UNA FACILIDAD DE PAGO
+    path('listado-obligaciones/', views.ListadoObligacionesViews.as_view(),name='listado-obligaciones'),
+    path('listado-deudores/', views.ListadoDeudoresViews.as_view(),name='listado-deudores'),
+    path('consulta-obligaciones-deudores/<str:identificacion>/', views.ConsultaObligacionesDeudoresViews.as_view(),name='consulta-obligaciones-deudores'),
+    path('consulta-obligaciones/<int:id_obligaciones>/', views.ConsultaObligacionesViews.as_view(), name='consulta-obligaciones'),
+
     # CREAR UNA SOLICITUD DE FACILIDAD DE PAGOS
     path('datos-deudor/<int:id>/', views.DatosDeudorView.as_view(), name='datos-deudor'), 
     path('tipos-calidad-actuacion/', views.TipoActuacionView.as_view(), name='tipos-calidad-actuacion'),       

@@ -21,8 +21,8 @@ from gestion_documental.serializers.tca_serializers import (
     ClasifSerieSubserieUnidadTCASerializer,
     ClasifSerieSubserieUnidadTCAPutSerializer,
     ClasifSerieSubseriUnidadTCA_activoSerializer,
-    PermisosCargoUnidadSerieSubserieUnidadTCASerializer,
-    Cargos_Unidad_S_Ss_UndOrg_TCASerializer,
+    # PermisosCargoUnidadSerieSubserieUnidadTCASerializer,
+    # Cargos_Unidad_S_Ss_UndOrg_TCASerializer,
     # CatalogosSeriesUnidadClasifSerializer,
     # CatalogosSeriesUnidadClasifPermisosSerializer,
     BusquedaTCASerializer,
@@ -40,11 +40,11 @@ from gestion_documental.models.tca_models import (
     TablasControlAcceso,
     CatSeriesUnidadOrgCCD_TRD_TCA,
     ClasificacionExpedientes,
-    PermisosCatSeriesUnidadOrgTCA,
-    PermisosDetPermisosCatSerieUndOrgTCA,
-    PermisosGD,
+    # PermisosCatSeriesUnidadOrgTCA,
+    # PermisosDetPermisosCatSerieUndOrgTCA,
+    # PermisosGD,
     HistoricoCatSeriesUnidadOrgCCD_TRD_TCA, 
-    HistoricoPermisosCatSeriesUndOrgTCA
+    # HistoricoPermisosCatSeriesUndOrgTCA
 )
 from seguridad.models import Cargos,Personas
 from gestion_documental.choices.tipo_clasificacion_choices import tipo_clasificacion_CHOICES
@@ -278,8 +278,8 @@ class ReanudarTablaControlAcceso(generics.UpdateAPIView):
                 raise PermissionDenied('No puede reanudar un TCA no terminado')
             if tca.fecha_puesta_produccion:
                 raise PermissionDenied('No se puede reanudar una TCA que ya fue puesta en producción')
-            if PermisosCatSeriesUnidadOrgTCA.objects.filter(id_tca=tca.id_tca).exists():
-                raise PermissionDenied('No se puede reanudar una TCA que está siendo usada en una configuración de permisos')
+            # if PermisosCatSeriesUnidadOrgTCA.objects.filter(id_tca=tca.id_tca).exists():
+            #     raise PermissionDenied('No se puede reanudar una TCA que está siendo usada en una configuración de permisos')
             tca.fecha_terminado = None
             tca.save()
             return Response({'success':True, 'detail':'Se reanudó el TCA'}, status=status.HTTP_201_CREATED)

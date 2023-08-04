@@ -2,7 +2,7 @@ from django.db import models
 
 
 class VariablesBase(models.Model):
-    id = models.BigAutoField(primary_key=True, db_column='T400IdVariable')
+    id = models.AutoField(primary_key=True, db_column='T400IdVariable')
     nombre = models.CharField(max_length=255, db_column='T400nombre')
     tipo = models.CharField(max_length=1, db_column='T400tipo')
     valor_defecto = models.DecimalField(max_digits=30, decimal_places=2, default=0, db_column='T400valorDefecto')
@@ -15,22 +15,22 @@ class VariablesBase(models.Model):
 
 
 class NaturalezaJuridica(models.Model):
-    id = models.AutoField(primary_key=True, db_column='T408IdNaturaleza')
-    descripcion = models.CharField(max_length=255, db_column='T408descripcion')
+    id = models.AutoField(primary_key=True, db_column='T448IdNaturaleza')
+    descripcion = models.CharField(max_length=255, db_column='T448descripcion')
 
     class Meta:
-        db_table = 'T408NaturalezasJuridica'
+        db_table = 'T448NaturalezasJuridica'
         verbose_name = 'Naturaleza juridica'
         verbose_name_plural = 'Naturaleza juridica'
 
 
 class Ubicaciones(models.Model):
-    id = models.AutoField(primary_key=True, db_column='T409IdUbicaciones')
-    nombre = models.CharField(max_length=255, db_column='T409nombre')
-    id_ubicacion_padre = models.ForeignKey('self', blank=True, null=True, on_delete=models.CASCADE, db_column='T409Id_UbicacionPadre')
+    id = models.AutoField(primary_key=True, db_column='T449IdUbicaciones')
+    nombre = models.CharField(max_length=255, db_column='T449nombre')
+    id_ubicacion_padre = models.ForeignKey('self', blank=True, null=True, on_delete=models.CASCADE, db_column='T449Id_UbicacionPadre')
 
     class Meta:
-        db_table = 'T409Ubicaciones'
+        db_table = 'T449Ubicaciones'
         verbose_name = 'Ubicación'
         verbose_name_plural = 'Ubicaciones'
 
@@ -60,11 +60,11 @@ class TiposBien(models.Model):
 
 
 class TiposPago(models.Model):
-    id = models.AutoField(primary_key=True, db_column='T412IdTipoPago')
-    descripcion = models.CharField(max_length=255, db_column='T412descripcion')
+    id = models.AutoField(primary_key=True, db_column='T434IdTipoPago')
+    descripcion = models.CharField(max_length=255, db_column='T434descripcion')
 
     class Meta:
-        db_table = 'T412TiposPago'
+        db_table = 'T434TiposPago'
         verbose_name = 'Tipos pago'
         verbose_name_plural = 'Tipos pagos'
 

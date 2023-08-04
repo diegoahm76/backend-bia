@@ -9,7 +9,7 @@ from django.db.models.functions import Concat
 from datetime import datetime, timezone, timedelta
 from django.db.models import Sum
 from recaudo.models.liquidaciones_models import Deudores
-from recaudo.models.pagos_models import DetallesFacilidadPago, FacilidadesPago
+from recaudo.models.facilidades_pagos_models import DetallesFacilidadPago, FacilidadesPago
 from recaudo.models.cobros_models import Cartera 
 from recaudo.serializers.reportes_serializers import (
     CarteraGeneralSerializer,
