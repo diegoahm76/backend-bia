@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'storages',
 
-    'social_django',
+    # 'social_django',
 
 
 
@@ -102,16 +102,16 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
 
-# Configuración para el backend de autenticación de OIDC
-AUTHENTICATION_BACKENDS = [
-    'social_core.backends.open_id_connect.OpenIdConnectAuth',
-    'django.contrib.auth.backends.ModelBackend',
-]
+# # Configuración para el backend de autenticación de OIDC
+# AUTHENTICATION_BACKENDS = [
+#     'social_core.backends.open_id_connect.OpenIdConnectAuth',
+#     'django.contrib.auth.backends.ModelBackend',
+# ]
 
-SOCIAL_AUTH_OPENID_CONNECT_KEY = 'your_oidc_client_id'
-SOCIAL_AUTH_OPENID_CONNECT_SECRET = 'your_oidc_client_secret'
-SOCIAL_AUTH_OPENID_CONNECT_URL = 'https://your-oidc-server.com/auth'  # URL de autorización OIDC
-SOCIAL_AUTH_OPENID_CONNECT_ID_TOKEN_DECRYPTION_KEY = None  # Si es necesario, especifica la clave para desencriptar el token
+# SOCIAL_AUTH_OPENID_CONNECT_KEY = 'your_oidc_client_id'
+# SOCIAL_AUTH_OPENID_CONNECT_SECRET = 'your_oidc_client_secret'
+# SOCIAL_AUTH_OPENID_CONNECT_URL = 'https://your-oidc-server.com/auth'  # URL de autorización OIDC
+# SOCIAL_AUTH_OPENID_CONNECT_ID_TOKEN_DECRYPTION_KEY = None  # Si es necesario, especifica la clave para desencriptar el token
 
 
 MIDDLEWARE = [
