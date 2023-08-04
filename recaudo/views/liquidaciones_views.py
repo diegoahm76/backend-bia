@@ -87,8 +87,13 @@ class LiquidacionBaseView(generics.ListAPIView):
     def post(self, request):
         serializer = LiquidacionesBasePostSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            id_expediente = request.data['id_expediente']
+            if id_expediente is not None:
+                expediente = Expedientes.objects.get(pk=id_expediente)
+                expediente.liquidado = True
+                expediente.save()
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
