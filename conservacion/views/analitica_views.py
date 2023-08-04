@@ -1,5 +1,7 @@
+from almacen.models.bienes_models import CatalogoBienes
 from conservacion.models.cuarentena_models import BajasVivero, CuarentenaMatVegetal, ItemsLevantaCuarentena
 from conservacion.models.despachos_models import DespachoEntrantes, DespachoViveros, DistribucionesItemDespachoEntrante
+from conservacion.models.mezclas_models import Mezclas
 from conservacion.models.siembras_models import CambiosDeEtapa, Siembras
 from conservacion.models.solicitudes_models import SolicitudesViveros
 from conservacion.models.traslados_models import TrasladosViveros
@@ -25,7 +27,7 @@ class TableroControlGetView(generics.ListAPIView):
         viveros_cerrados = request.query_params.get('viveros_cerrados', '')
         
         for key,value in request.query_params.items():
-            if key in ['id_vivero','cod_tipo_elemento_vivero','cod_etapa_lote','id_bien']:
+            if key in ['id_vivero','cod_tipo_elemento_vivero','cod_etapa_lote','id_bien','id_mezcla']:
                 if key == 'cod_tipo_elemento_vivero':
                     if value != '':
                         if value in ['IN','HE']:
@@ -69,40 +71,61 @@ class TableroControlGetView(generics.ListAPIView):
 
 class BienesMezclasFilterGetView(generics.ListAPIView):
     serializer_class = GetBienesMezclasSerializer
-    queryset = InventarioViveros.objects.all()
+    queryset = CatalogoBienes.objects.all()
     permission_classes = [IsAuthenticated]
     
     def get (self,request):
         filter = {}
         nombre = request.query_params.get('nombre', '')
-        for key,value in request.query_params.items():
-            if key in ['id_vivero','cod_tipo_elemento_vivero','cod_etapa_lote','codigo_bien']:
-                if key == 'cod_tipo_elemento_vivero':
-                    if value != '':
-                        if value in ['IN','HE']:
-                            filter['id_bien__cod_tipo_elemento_vivero']=value
-                        elif value == 'MZ':
-                            filter['id_mezcla__isnull']=False
-                        elif value == 'SE':
-                            filter['id_bien__cod_tipo_elemento_vivero']='MV'
-                            filter['id_bien__es_semilla_vivero']=True
-                        elif value == 'PL':
-                            filter['id_bien__cod_tipo_elemento_vivero']='MV'
-                            filter['id_bien__es_semilla_vivero']=False
-                elif key == 'codigo_bien':
-                    if value != '':
-                        filter['id_bien__codigo_bien__icontains'] = value
-                else:
-                    if value != '':
-                        filter[key]=value
+        codigo_bien = request.query_params.get('codigo_bien', '')
+        cod_tipo_elemento_vivero = request.query_params.get('cod_tipo_elemento_vivero', '')
+        
+        data_response = []
+        
+        if cod_tipo_elemento_vivero != '':
+            if cod_tipo_elemento_vivero == 'MZ':
+                if codigo_bien == '':
+                    mezclas = Mezclas.objects.filter(item_activo=True, nombre__icontains=nombre).values('nombre','id_mezcla')
+                    for item in mezclas:
+                        item.update(
+                            {
+                                'id_bien':None,
+                                'codigo_bien':None,
+                                'tipo_bien':'Mezcla'
+                            }
+                        )
+                    data_response = data_response + list(mezclas)
+            else:
+                if cod_tipo_elemento_vivero in ['IN','HE']:
+                    filter['cod_tipo_elemento_vivero']=cod_tipo_elemento_vivero
+                elif cod_tipo_elemento_vivero == 'SE':
+                    filter['cod_tipo_elemento_vivero']='MV'
+                    filter['es_semilla_vivero']=True
+                elif cod_tipo_elemento_vivero == 'PL':
+                    filter['cod_tipo_elemento_vivero']='MV'
+                    filter['es_semilla_vivero']=False
             
-        bienes = self.queryset.filter(**filter).filter(id_vivero__activo=True).filter(Q(id_bien__isnull=False) | Q(id_mezcla__isnull=False)).exclude(siembra_lote_cerrada=True).order_by('id_vivero__nombre', 'id_bien__nombre')
-        bienes = bienes.filter(Q(id_bien__nombre__icontains=nombre) | Q(id_mezcla__nombre__icontains=nombre)) if nombre != '' else bienes
+                bienes = self.queryset.filter(**filter).filter(solicitable_vivero=True, nivel_jerarquico=5, nombre__icontains=nombre, codigo_bien__icontains=codigo_bien).exclude(cod_tipo_elemento_vivero=None)
+                bienes_serializer = self.serializer_class(bienes, many=True)
+                data_response = data_response + bienes_serializer.data
+        else:
+            if codigo_bien == '':
+                mezclas = Mezclas.objects.filter(item_activo=True, nombre__icontains=nombre).values('nombre','id_mezcla')
+                for item in mezclas:
+                    item.update(
+                        {
+                            'id_bien':None,
+                            'codigo_bien':None,
+                            'tipo_bien':'Mezcla'
+                        }
+                    )
+                data_response = data_response + list(mezclas)
+            
+            bienes = self.queryset.filter(solicitable_vivero=True, nivel_jerarquico=5, nombre__icontains=nombre, codigo_bien__icontains=codigo_bien).exclude(cod_tipo_elemento_vivero=None)
+            bienes_serializer = self.serializer_class(bienes, many=True)
+            data_response = data_response + bienes_serializer.data
         
-        serializador = self.serializer_class(bienes, many=True)
-        serializador_data = serializador.data
-        
-        return Response({'success':True,'detail':'Se encontraron los siguientes bienes/mezclas','data':serializador_data},status=status.HTTP_200_OK)
+        return Response({'success':True,'detail':'Se encontraron los siguientes bienes/mezclas','data':data_response},status=status.HTTP_200_OK)
 
 class HistoricoMovimientosGetView(generics.ListAPIView):
     serializer_class = GetBienesMezclasSerializer
