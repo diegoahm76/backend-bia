@@ -24,9 +24,9 @@ from drf_yasg import openapi
 from rest_framework import permissions
 
 
-from django.contrib.auth.decorators import login_required
-from social_django.views import auth, complete
-from . import login_oidc_views as views
+# from django.contrib.auth.decorators import login_required
+# from social_django.views import auth, complete
+# from . import login_oidc_views as views
 
 
 schema_view = get_schema_view(
@@ -136,9 +136,9 @@ urlpatterns = [
     path('api/hidrico/programas/',include('recurso_hidrico.urls.programas_urls')),
     path('api/hidrico/bibliotecas/',include('recurso_hidrico.urls.bibliotecas_urls')),
 
-    path('auth/', auth, name='social-auth'),
-    path('complete/', login_required(complete), name='social-auth-complete'),
-    path('oidc_login/', views.oidc_login, name='oidc_login'),
+    # path('auth/', auth, name='social-auth'),
+    # path('complete/', login_required(complete), name='social-auth-complete'),
+    # path('oidc_login/', views.oidc_login, name='oidc_login'),
 
     
 ]
