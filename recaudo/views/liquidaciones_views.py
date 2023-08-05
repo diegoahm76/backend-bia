@@ -137,7 +137,20 @@ class ExpedientesView(generics.ListAPIView):
         queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
-    
+
+
+class ExpedienteEspecificoView(generics.ListAPIView):
+    queryset = Expedientes.objects.all()
+    serializer_class = ExpedientesSerializer
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        queryset = Expedientes.objects.filter(pk=pk).first()
+        if not queryset:
+            return Response({'success': False, 'detail': 'No se encontró ningun expendiente con el id ingresado'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.serializer_class(queryset)
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+
 
 class ClonarOpcionLiquidacionView(generics.ListAPIView):
     queryset = OpcionesLiquidacionBase.objects.all()
