@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from rest_framework.serializers import ReadOnlyField
+from django.db.models import F
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from django.db.models import Max 
 
@@ -142,7 +143,6 @@ class EstanteDepositoDeleteSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 #Listar_estantes_por_deposito
-
 class EstanteGetByDepositoSerializer(serializers.ModelSerializer):
     
     class Meta:
@@ -157,7 +157,6 @@ class MoveEstanteSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 #Listar_Bandejas_por_estante
-
 class BandejasByEstanteListSerializer(serializers.ModelSerializer):
     
     class Meta:
@@ -182,10 +181,13 @@ class  BandejaEstanteGetOrdenSerializer(serializers.ModelSerializer):
         model =  BandejaEstante
         fields = '__all__'
 
- #Listar_bandejas_por_estante       
+ #Editar_bandejas       
 class  BandejaEstanteUpDateSerializer(serializers.ModelSerializer):
+   class Meta:
+        model =  BandejaEstante
+        fields = ['identificacion_por_estante','orden_ubicacion_por_estante'] 	   
     
-    def validate_orden_ubicacion_por_estante(self, nuevo_orden):
+   def validate_orden_ubicacion_por_estante(self, nuevo_orden):
 
         # Obtener el orden actual del depósito
         orden_actual = self.instance.orden_ubicacion_por_estante
@@ -215,11 +217,24 @@ class  BandejaEstanteUpDateSerializer(serializers.ModelSerializer):
                     bandeja.orden_ubicacion_por_estante = bandeja.orden_ubicacion_por_estante + 1
                     bandeja.save()		  	                  
 
-        return nuevo_orden
         
+        return nuevo_orden		 
+                  
+#Eliminar_bandeja
+class BandejaEstanteDeleteSerializer(serializers.ModelSerializer):
+    
     class Meta:
         model =  BandejaEstante
-        fields = ['identificacion_por_estante','orden_ubicacion_por_estante']
+        fields = '__all__'
+
+#Buscar_estante(mover_bandejas)
+class BandejaEstanteSearchSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  EstanteDeposito
+        fields = ['orden_ubicacion_por_deposito','identificacion_por_deposito','id_deposito']
+
+
 
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
