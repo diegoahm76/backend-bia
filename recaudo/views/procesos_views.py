@@ -36,7 +36,7 @@ from rest_framework.exceptions import ValidationError, NotFound, PermissionDenie
 class EtapasProcesoView(generics.ListAPIView):
     queryset = EtapasProceso.objects.all()
     serializer_class = EtapasProcesoSerializer
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         queryset = self.get_queryset()
@@ -54,7 +54,7 @@ class EtapasProcesoView(generics.ListAPIView):
 class TiposAtributosView(generics.ListAPIView):
     queryset = TiposAtributos.objects.all()
     serializer_class = TiposAtributosSerializer
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         queryset = self.get_queryset()
@@ -72,7 +72,7 @@ class TiposAtributosView(generics.ListAPIView):
 class ActualizarTiposAtributosView(generics.ListAPIView):
     queryset = TiposAtributos.objects.all()
     serializer_class = TiposAtributosSerializer
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, tipo):
         tipo_actual = TiposAtributos.objects.filter(pk=tipo)
@@ -89,7 +89,7 @@ class ActualizarTiposAtributosView(generics.ListAPIView):
 class EliminarTiposAtributosView(generics.ListAPIView):
     queryset = TiposAtributos.objects.all()
     serializer_class = TiposAtributosSerializer
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, tipo):
         tipo_actual = TiposAtributos.objects.filter(pk=tipo)
@@ -104,7 +104,7 @@ class EliminarTiposAtributosView(generics.ListAPIView):
 class AtributosEtapasView(generics.ListAPIView):
     queryset = AtributosEtapas.objects.all()
     serializer_class = AtributosEtapasSerializer
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, etapa):
         queryset = AtributosEtapas.objects.filter(id_etapa=etapa)
@@ -122,7 +122,7 @@ class AtributosEtapasView(generics.ListAPIView):
 class FlujoProcesoView(generics.ListAPIView):
     queryset = FlujoProceso.objects.all()
     serializer_class = FlujoProcesoSerializer
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         queryset = self.get_queryset()
@@ -138,7 +138,7 @@ class FlujoProcesoView(generics.ListAPIView):
 
 
 class GraficaView(generics.ListAPIView):
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         querysetEtapas = EtapasProceso.objects.all()
@@ -160,7 +160,7 @@ class GraficaView(generics.ListAPIView):
 class ValoresProcesoView(generics.ListAPIView):
     queryset = ValoresProceso.objects.all()
     serializer_class = ValoresProcesoSerializer
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, proceso):
         queryset = ValoresProceso.objects.filter(id_proceso=proceso)
@@ -185,7 +185,7 @@ class ValoresProcesoView(generics.ListAPIView):
 
 class ActualizarEtapaProceso(generics.ListAPIView):
     serializer_class = ProcesosSerializer
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, proceso):
         procesoFilter = Procesos.objects.filter(pk=proceso).filter(fin__isnull=True)
@@ -216,7 +216,7 @@ class ActualizarEtapaProceso(generics.ListAPIView):
 class ProcesosView(generics.ListAPIView):
     queryset = Procesos.objects.filter(fin__isnull=True)
     serializer_class = ProcesosSerializer
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         queryset = self.get_queryset()
@@ -234,7 +234,7 @@ class ProcesosView(generics.ListAPIView):
 class ProcesosGeneralView(generics.ListAPIView):
     queryset = Procesos.objects.all()
     serializer_class = ProcesosSerializer
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         queryset = self.get_queryset()
@@ -245,7 +245,7 @@ class ProcesosGeneralView(generics.ListAPIView):
 class ProcesosGetGeneralView(generics.ListAPIView):
     queryset = Procesos.objects.all()
     serializer_class = ProcesosSerializer
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, proceso):
         queryset = Procesos.objects.filter(pk=proceso)
@@ -267,7 +267,7 @@ class ProcesosGetGeneralView(generics.ListAPIView):
 class CategoriaAtributoView(generics.ListAPIView):
     queryset = CategoriaAtributo.objects.all()
     serializer_class = CategoriaAtributoSerializer
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         queryset = self.get_queryset()
