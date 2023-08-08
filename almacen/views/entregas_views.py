@@ -639,7 +639,7 @@ class ActualizarEntregaView(generics.RetrieveUpdateAPIView):
         bienes_existen_in_items_entrantes = []
         bienes_no_existen_in_items_entrantes = []
         for item in items_serializador:
-            item_in_despachos_entrantes = ItemsDespachoEntrante.objects.filter(id_bien=item.id_bien_despachado.id_bien).first()
+            item_in_despachos_entrantes = ItemsDespachoEntrante.objects.filter(id_bien=item.id_bien_despachado.id_bien, id_despacho_entrante=despacho_entrante_instance.id_despacho_entrante, id_entrada_alm_del_bien=entrega.id_entrada_almacen_cv.id_entrada_almacen).first()
             if item_in_despachos_entrantes:
                 print('entró por acá')
                 bienes_existen_in_items_entrantes.append(item)
@@ -652,7 +652,7 @@ class ActualizarEntregaView(generics.RetrieveUpdateAPIView):
         
         #ACTUALIZACIÓN DE ITEM DESPACHO ENTRANTE SI EL BIEN NO ESTABA EN ITEMS
         for item in bienes_existen_in_items_entrantes:
-            item_in_despachos_entrantes = ItemsDespachoEntrante.objects.filter(id_bien=item.id_bien_despachado.id_bien, id_despacho_entrante=despacho_entrante_instance, id_entrada_alm_del_bien=entrega.id_entrada_almacen_cv.id_entrada_almacen).first()
+            item_in_despachos_entrantes = ItemsDespachoEntrante.objects.filter(id_bien=item.id_bien_despachado.id_bien, id_despacho_entrante=despacho_entrante_instance.id_despacho_entrante, id_entrada_alm_del_bien=entrega.id_entrada_almacen_cv.id_entrada_almacen).first()
             item_in_despachos_entrantes.cantidad_entrante += item.cantidad_despachada
             item_in_despachos_entrantes.save()
 
@@ -776,6 +776,7 @@ class GetItemsEntradasEntregasView(generics.ListAPIView):
             cantidad_despachada = 0
             for item_despachado in item_despachado_por_entrada:
                 cantidad_despachada += item_despachado.cantidad_despachada
+            print(cantidad_despachada)
             if cantidad_despachada >= cantidad_entrante:
                 item['tiene_cantidad_disponible'] = False
                 item['cantidad_disponible'] = 0
