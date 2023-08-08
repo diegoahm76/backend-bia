@@ -51,9 +51,16 @@ class PersonasAAlertarPostSerializer(serializers.ModelSerializer):
             fields=('__all__')
 
 class PersonasAAlertarGetSerializer(serializers.ModelSerializer):
+        nombre_completo = serializers.SerializerMethodField()
+        nombre_unidad=serializers.ReadOnlyField(source='id_unidad_org_lider.nombre', default=None)
         class Meta:
             model=PersonasAAlertar
             fields=('__all__')
+
+        def get_nombre_completo(self, obj):
+            primer_nombre = obj.id_persona
+            #primer_apellido = obj.id_persona.primer_apellido
+            return f'{primer_nombre} '
             
 class PersonasAAlertarDeleteSerializer(serializers.ModelSerializer):
         class Meta:
@@ -63,6 +70,14 @@ class PersonasAAlertarDeleteSerializer(serializers.ModelSerializer):
 
 
 class AlertasProgramadasPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AlertasProgramadas
+        fields = '__all__'
+class AlertasProgramadasUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AlertasProgramadas
+        fields = '__all__'
+class AlertasProgramadasDeleteSerializer(serializers.ModelSerializer):
     class Meta:
         model = AlertasProgramadas
         fields = '__all__'

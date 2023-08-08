@@ -276,7 +276,7 @@ class CreateSeriesDoc(generics.CreateAPIView):
         elif ccd.fecha_retiro_produccion:
             raise PermissionDenied('No puede realizar esta acción a un CCD retirado de producción')
         
-        ultima_serie = self.queryset.all().filter(id_ccd=data['id_ccd']).last()
+        ultima_serie = self.queryset.all().filter(id_ccd=data['id_ccd']).order_by('id_ccd','codigo').last()
         
         codigo_correcto = int(ultima_serie.codigo) + ccd.valor_aumento_serie if ultima_serie else ccd.valor_aumento_serie
         

@@ -99,14 +99,21 @@ class GetListDepartamentos(generics.ListAPIView):
 
     def get(self, request):
         pais = request.query_params.get('pais', '')
-        departamentos = self.queryset.all().filter(pais__icontains=pais).exclude(cod_departamento='50')
-        meta = self.queryset.filter(cod_departamento='50').values(label=F('nombre'),value=F('cod_departamento')).first()
+        cod_municipio = request.query_params.get('municipio', '')
+        departamentos = self.queryset.all().filter(pais__icontains=pais)
+
+        if cod_municipio:
+            municipio = Municipio.objects.filter(cod_municipio=cod_municipio).first()
+            departamentos = self.queryset.all().filter(cod_departamento=municipio.cod_departamento)
+
+        # departamentos = self.queryset.all().filter(pais__icontains=pais).exclude(cod_departamento='50')
+        # meta = self.queryset.filter(cod_departamento='50').values(label=F('nombre'),value=F('cod_departamento')).first()
         
         serializer = self.serializer_class(departamentos, many=True)
         
         data = serializer.data
-        if data and (pais=='CO' or pais==''):
-            data.insert(0, meta)
+        # if data and (pais=='CO' or pais==''):
+        #     data.insert(0, meta)
         
         return Response({'success':True, 'detail':'Se encontraron los siguientes departamentos', 'data': data}, status=status.HTTP_200_OK)
 

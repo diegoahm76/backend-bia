@@ -8,9 +8,9 @@ from seguridad.models import Personas
 
 class SeccionesSerializer(serializers.ModelSerializer):
 
-    id_persona = serializers.IntegerField(source='id_persona_creada.id_persona')
+    id_persona = serializers.IntegerField(source='id_persona_creada.id_persona', required=False, allow_null=True)
     nombre_completo = serializers.SerializerMethodField()
-    nombre_comercial = serializers.CharField(source='id_persona_creada.nombre_comercial')
+    nombre_comercial = serializers.CharField(source='id_persona_creada.nombre_comercial', required=False, allow_null=True)
 
     class Meta:
         model = Secciones
@@ -41,8 +41,8 @@ class RegistrarSubSeccionesSerializer(serializers.ModelSerializer):
 #         fields = '__all__'
 
 class GetSubseccionesSerializer(serializers.ModelSerializer):
-    id_persona = serializers.IntegerField(source='id_persona_creada.id_persona')
-    nombre_comercial = serializers.CharField(source='id_persona_creada.nombre_comercial')
+    id_persona = serializers.IntegerField(source='id_persona_creada.id_persona', required=False, allow_null=True)
+    nombre_comercial = serializers.CharField(source='id_persona_creada.nombre_comercial', required=False, allow_null=True)
     nombre_completo = serializers.SerializerMethodField()
     instrumentos_count = serializers.SerializerMethodField()
 
@@ -131,20 +131,20 @@ class SubseccionContarInstrumentosSerializer(serializers.ModelSerializer):
 
 
 class InstrumentoCuencasGetSerializer(serializers.ModelSerializer):
-    id_instrumento=serializers.IntegerField(source='id_instrumento.id_instrumento')
-    instrumento = serializers.CharField(source='id_instrumento.nombre')
-    id_cuenca=serializers.IntegerField(source='id_cuenca.id_cuenca')
-    cuenca = serializers.CharField(source='id_cuenca.nombre')
+    id_instrumento=serializers.IntegerField(source='id_instrumento.id_instrumento', required=False, allow_null=True)
+    instrumento = serializers.CharField(source='id_instrumento.nombre', required=False, allow_null=True)
+    id_cuenca=serializers.IntegerField(source='id_cuenca.id_cuenca', required=False, allow_null=True)
+    cuenca = serializers.CharField(source='id_cuenca.nombre', required=False, allow_null=True)
     class Meta:
         model=CuencasInstrumento
         fields=['id_instrumento','instrumento','id_cuenca','cuenca']
 
 
 class CuencasGetSerializer(serializers.ModelSerializer):
-    id_instrumento=serializers.IntegerField(source='id_instrumento.id_instrumento')
+    id_instrumento=serializers.IntegerField(source='id_instrumento.id_instrumento', required=False, allow_null=True)
     
-    id_cuenca=serializers.IntegerField(source='id_cuenca.id_cuenca')
-    cuenca = serializers.CharField(source='id_cuenca.nombre')
+    id_cuenca=serializers.IntegerField(source='id_cuenca.id_cuenca', required=False, allow_null=True)
+    cuenca = serializers.CharField(source='id_cuenca.nombre', required=False, allow_null=True)
     class Meta:
         model=CuencasInstrumento
         fields=['id_instrumento','id_cuenca','cuenca']
@@ -152,8 +152,8 @@ class CuencasGetSerializer(serializers.ModelSerializer):
 class CuencasGetByInstrumentoSerializer(serializers.ModelSerializer):
     id_instrumento=serializers.IntegerField(source='id_instrumento.id_instrumento')
     
-    id_cuenca=serializers.IntegerField(source='id_cuenca.id_cuenca')
-    cuenca = serializers.CharField(source='id_cuenca.nombre')
+    id_cuenca=serializers.IntegerField(source='id_cuenca.id_cuenca', required=False, allow_null=True)
+    cuenca = serializers.CharField(source='id_cuenca.nombre', required=False, allow_null=True)
     class Meta:
         model=CuencasInstrumento
         fields=['id_instrumento','id_cuenca','cuenca']
@@ -161,11 +161,11 @@ class CuencasGetByInstrumentoSerializer(serializers.ModelSerializer):
 
 
 class ArchivosInstrumentoBusquedaAvanzadaSerializer(serializers.ModelSerializer):
-    nombre_instrumento=serializers.CharField(source='id_instrumento.nombre')
-    id_seccion=serializers.IntegerField(source='id_instrumento.id_seccion.id_seccion')
-    nombre_seccion=serializers.CharField(source='id_instrumento.id_seccion.nombre')
-    id_subseccion=serializers.IntegerField(source='id_instrumento.id_subseccion.id_subseccion')
-    nombre_subseccion=serializers.CharField(source='id_instrumento.id_subseccion.nombre')
+    nombre_instrumento=serializers.CharField(source='id_instrumento.nombre', required=False, allow_null=True)
+    id_seccion=serializers.IntegerField(source='id_instrumento.id_seccion.id_seccion', required=False, allow_null=True)
+    nombre_seccion=serializers.CharField(source='id_instrumento.id_seccion.nombre', required=False, allow_null=True)
+    id_subseccion=serializers.IntegerField(source='id_instrumento.id_subseccion.id_subseccion', required=False, allow_null=True)
+    nombre_subseccion=serializers.CharField(source='id_instrumento.id_subseccion.nombre', required=False, allow_null=True)
     class Meta:
         model=ArchivosInstrumento
         fields=['id_seccion','nombre_seccion','id_subseccion','nombre_subseccion','id_archivo_instrumento','id_instrumento','nombre_instrumento','nombre_archivo','ruta_archivo']
@@ -373,9 +373,10 @@ class CarteraAforosUpdateSerializer(serializers.ModelSerializer):
 
 class CarteraAforosGetSerializer(serializers.ModelSerializer):
     #cod_clase=serializers.CharField(source='id_parametro.cod_tipo_parametro')
+    nombre_cuenca=serializers.CharField(source='id_cuenca.nombre', required=False, allow_null=True)
     class Meta:
         model=CarteraAforos
-        fields=('__all__')
+        fields=['id_cartera_aforos','id_instrumento','id_cuenca','fecha_registro','ubicacion_aforo','descripcion','latitud','longitud','fecha_aforo','cod_tipo_aforo','numero_serie','molinete','numero_helice','nombre_cuenca']
 
 
 
@@ -421,6 +422,8 @@ class ResultadosLaboratorioPostSerializer(serializers.ModelSerializer):
 
 class ResultadosLaboratorioGetSerializer(serializers.ModelSerializer):
     #cod_clase=serializers.CharField(source='id_parametro.cod_tipo_parametro')
+    nombre_cuenca=serializers.CharField(source='id_cuenca.nombre', required=False, allow_null=True)
+    nombre_pozo=serializers.CharField(source='id_pozo.nombre', required=False, allow_null=True)
     class Meta:
         model=ResultadosLaboratorio
         fields=('__all__')
@@ -458,9 +461,9 @@ class DatosRegistroLaboratorioUpdateSerializer(serializers.ModelSerializer):
 
 class DatosRegistroLaboratorioGetSerializer(serializers.ModelSerializer):
         
-        cod_clase=serializers.CharField(source='id_parametro.cod_tipo_parametro')
-        parametro=serializers.CharField(source='id_parametro.nombre')
-        unidad=serializers.CharField(source='id_parametro.unidad_de_medida')
+        cod_clase=serializers.CharField(source='id_parametro.cod_tipo_parametro', required=False, allow_null=True)
+        parametro=serializers.CharField(source='id_parametro.nombre', required=False, allow_null=True)
+        unidad=serializers.CharField(source='id_parametro.unidad_de_medida', required=False, allow_null=True)
         class Meta:
             model=DatosRegistroLaboratorio
             fields = [
@@ -483,9 +486,10 @@ class PruebasBombeoPostSerializer(serializers.ModelSerializer):
         fields=('__all__')
 
 class PruebasBombeoGetSerializer(serializers.ModelSerializer):
+    nombre_pozo=serializers.CharField(source='id_pozo.nombre', required=False, allow_null=True)
     class Meta:
         model=PruebasBombeo
-        fields=('__all__')
+        fields=['id_prueba_bombeo','id_instrumento','id_pozo','nombre_pozo','descripcion','fecha_registro','fecha_prueba_bombeo','latitud','longitud','ubicacion_prueba']
 class PruebasBombeoDeleteSerializer(serializers.ModelSerializer):
     class Meta:
         model=PruebasBombeo
@@ -513,15 +517,22 @@ class SesionesPruebaBombeoDeleteSerializer(serializers.ModelSerializer):
 
 class SesionesPruebaBombeoGetSerializer(serializers.ModelSerializer):
     datos = serializers.SerializerMethodField()
+    hora_inicio = serializers.SerializerMethodField()
     class Meta:
         model=SesionesPruebaBombeo
         fields=[ 'id_sesion_prueba_bombeo',
                 'id_prueba_bombeo',
                 'consecutivo_sesion',
                 'fecha_inicio',
-                'cod_tipo_sesion',
+                'cod_tipo_sesion','hora_inicio',
                 'datos']
 
+
+    def get_hora_inicio(self, sesion_prueba_bombeo):
+        if sesion_prueba_bombeo.fecha_inicio:
+            hora_inicio = sesion_prueba_bombeo.fecha_inicio.strftime('%H:%M:%S')
+            return hora_inicio
+        return None
     def get_datos(self, avance):
         datos = avance.datossesionpruebabombeo_set.all().order_by('hora')
         return DatosSesionPruebaBombeoGetSerializer(datos, many=True).data
