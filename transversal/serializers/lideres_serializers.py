@@ -16,6 +16,7 @@ class GetListLideresAsignadosSerializer(serializers.ModelSerializer):
     fecha_terminado_organigrama = serializers.ReadOnlyField(source='id_unidad_organizacional.id_organigrama.fecha_terminado', default=None)
     fecha_puesta_produccion_organigrama = serializers.ReadOnlyField(source='id_unidad_organizacional.id_organigrama.fecha_puesta_produccion', default=None)
     fecha_retiro_produccion_organigrama = serializers.ReadOnlyField(source='id_unidad_organizacional.id_organigrama.fecha_retiro_produccion', default=None)
+    actual_organigrama = serializers.ReadOnlyField(source='id_unidad_organizacional.id_organigrama.actual', default=None)
     codigo_unidad_org = serializers.ReadOnlyField(source='id_unidad_organizacional.codigo', default=None)
     nombre_unidad_org = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
     tipo_documento = serializers.ReadOnlyField(source='id_persona.tipo_documento.cod_tipo_documento', default=None)
