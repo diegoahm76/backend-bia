@@ -235,6 +235,12 @@ class BandejaEstanteSearchSerializer(serializers.ModelSerializer):
         fields = ['orden_ubicacion_por_deposito','identificacion_por_deposito','id_deposito']
 
 
+#Mover_bandeja
+class BandejaEstanteMoveSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  BandejaEstante
+        fields = '__all__'
 
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
