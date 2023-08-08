@@ -146,5 +146,5 @@ class GetBienesMezclasSerializer(serializers.ModelSerializer):
         return tipo_bien
             
     class Meta:
-        fields = ['nombre','id_mezcla','id_bien','codigo_bien','tipo_bien']
+        fields = ['nombre','id_mezcla','id_bien','codigo_bien','tipo_bien','nombre_cientifico']
         model = CatalogoBienes

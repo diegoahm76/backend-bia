@@ -12,6 +12,7 @@ from seguridad.utils import Util
 
 from recurso_hidrico.models.programas_models import ActividadesProyectos, AvancesProyecto, EvidenciasAvance, ProgramasPORH, ProyectosPORH
 from recurso_hidrico.serializers.programas_serializers import ActualizarActividadesSerializers, ActualizarAvanceEvidenciaSerializers, ActualizarProyectosSerializers, AvanceConEvidenciasSerializer, BusquedaAvanzadaSerializers, EliminarActividadesSerializers, EliminarProyectoSerializers, GetActividadesporProyectosSerializers, GetAvanzadaProgramasporPORHSerializers, GetProgramasporPORHSerializers, GetProyectosPORHSerializers, ProgramasporPORHUpdateSerializers, RegistrarAvanceSerializers, RegistroEvidenciaSerializers, RegistroProgramaPORHSerializer,BusquedaAvanzadaAvancesSerializers,ProyectosPORHSerializer,GetAvancesporProyectosSerializers
+from django.db.models import Q
 
 class RegistroProgramaPORH(generics.CreateAPIView):
     serializer_class = RegistroProgramaPORHSerializer
@@ -866,3 +867,20 @@ class ProgramaPORHBusquedaAvanzadaGet(generics.ListAPIView):
 
 
 
+##ALERTA RECURSO HIDICO
+class AlertaProyectosVigentesGet(generics.ListAPIView):
+    serializer_class=ProyectosPORHSerializer
+    queryset = ProyectosPORH.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        print("AUXILIO")
+
+        
+        hoy = date.today()
+
+        proyectos_vigentes = ProyectosPORH.objects.filter(
+        Q(vigencia_inicial__lte=hoy) & (Q(vigencia_final__isnull=True) | Q(vigencia_final__gte=hoy)))
+        serializador = self.serializer_class(proyectos_vigentes, many=True)
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializador.data}, status=status.HTTP_200_OK)
+
+        

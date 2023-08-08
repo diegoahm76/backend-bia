@@ -11,7 +11,7 @@ from django.db.models import Max
 from django.db.models import Q
 from datetime import datetime,date,timedelta
 from gestion_documental.models.depositos_models import  Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
-from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
+from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
 from seguridad.utils import Util
 
 
@@ -237,37 +237,39 @@ class EstanteDepositoCreate(generics.CreateAPIView):
 
 #BUSCAR DEPOSITO POR NOMBRE, IDENTIFICACION, SUCURSAL EN ESTANTE
 class EstanteDepositoSearch(generics.ListAPIView):
-
     serializer_class = EstanteDepositoSearchSerializer
     permission_classes = [IsAuthenticated]
-    queryset = Deposito.objects.all()
-    
-     
-    def get(self, request, *args, **kwargs):
-        
-        nombre_deposito = request.query_params.get('nombre_deposito','').strip()
-        identificacion_por_entidad = request.query_params.get('identificacion_por_entidad','').strip()
-        nombre_sucursal = request.query_params.get('descripcion_sucursal','').strip()
+
+    def get_queryset(self):
+        nombre_deposito = self.request.query_params.get('nombre_deposito', '').strip()
+        identificacion_por_entidad = self.request.query_params.get('identificacion_por_entidad', '').strip()
+        nombre_sucursal = self.request.query_params.get('nombre_sucursal', '').strip()
 
         # Filtrar por nombre_deposito, identificacion_por_entidad y nombre_sucursal (unión de parámetros)
-        depositos = Deposito.objects.all()
+        queryset = Deposito.objects.all()
 
         if nombre_deposito:
-            depositos = depositos.filter(nombre_deposito__icontains=nombre_deposito)
+            queryset = queryset.filter(nombre_deposito__icontains=nombre_deposito)
 
         if identificacion_por_entidad:
-            depositos = depositos.filter(identificacion_por_entidad__icontains=identificacion_por_entidad)
+            queryset = queryset.filter(identificacion_por_entidad__icontains=identificacion_por_entidad)
 
         if nombre_sucursal:
-            depositos = depositos.filter(descripcion_sucursal__icontains=nombre_sucursal)
+            queryset = queryset.filter(id_sucursal_entidad__descripcion_sucursal__icontains=nombre_sucursal)
 
-        if not depositos.exists():
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
             return Response({
                 'success': True,
                 'detail': 'No se encontraron datos que coincidan con los criterios de búsqueda.',
                 'data': []
             }, status=status.HTTP_200_OK)
-        serializer = EstanteDepositoSearchSerializer(depositos, many=True)
+
+        serializer = EstanteDepositoSearchSerializer(queryset, many=True)
 
         return Response({
             'success': True,
@@ -419,7 +421,9 @@ class BandejasByEstanteList(generics.ListAPIView):
         if not Deposito:
             raise NotFound("El registro del estante que busca, no se encuentra registrado")
 
-        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)
+        return Response({'success':True,
+                         'detail':'Se encontraron los siguientes registros.',
+                         'data':serializer.data},status=status.HTTP_200_OK)
 
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -500,16 +504,80 @@ class BandejaEstanteUpDate(generics.UpdateAPIView):
         return Response({'success': True, 'detail': 'La bandeja se ha actualizado correctamente.'},
                          status=status.HTTP_200_OK)
 
+#ELIMINAR_BANDEJA
 
+class BandejaEstanteDelete(generics.DestroyAPIView):
+        
+    serializer_class = BandejaEstanteDeleteSerializer
+    queryset = BandejaEstante.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self, request, pk):
+        
+        bandeja = BandejaEstante.objects.filter(id_bandeja_estante=pk).first()
 
+        if not bandeja:
+            raise ValidationError("No existe la bandeja que desea eliminar")
 
+        tiene_cajas = CajaBandeja.objects.filter(id_bandeja_estante=pk).exists()
 
+        if tiene_cajas:
+                return Response({'success': False, 'detail': 'No se puede eliminar la bandeja porque tiene una o mas cajas asociadas a esta bandeja.'},
+                                status=status.HTTP_400_BAD_REQUEST)
 
+        #Reordenar
+        bandejas = BandejaEstante.objects.filter(orden_ubicacion_por_estante__gt=bandeja.orden_ubicacion_por_estante).order_by('orden_ubicacion_por_estante') 
+        bandeja.delete()
 
+        for bandeja in bandejas:
+            bandeja.orden_ubicacion_por_estante = bandeja.orden_ubicacion_por_estante - 1
+            bandeja.save()
 
+        return Response({'success': True, 'detail': 'Se eliminó correctamente la bandeja seleccionada.'}, status=status.HTTP_200_OK)  
 
+#BUSCAR_ESTANTE(MOVER_BANDEJAS)
+class BandejaEstanteSearch(generics.ListAPIView):
+    serializer_class = BandejaEstanteSearchSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        nombre_deposito = self.request.query_params.get('nombre_deposito', '').strip()
+        identificacion_estante = self.request.query_params.get('identificacion_estante', '').strip()
+        orden_estante = self.request.query_params.get('orden_estante', '').strip()
 
+        estantes = EstanteDeposito.objects.all()
 
+        if nombre_deposito:
+            estantes = estantes.filter(id_deposito__nombre_deposito__icontains=nombre_deposito) | \
+                       estantes.filter(id_deposito__identificacion_por_entidad__icontains=nombre_deposito)
+        
+        if identificacion_estante:
+            estantes = estantes.filter(identificacion_por_deposito__icontains=identificacion_estante)
+
+        if orden_estante:
+            estantes = estantes.filter(orden_ubicacion_por_deposito=orden_estante)
+
+        return estantes
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            return Response({
+                'success': True,
+                'detail': 'No se encontraron datos que coincidan con los criterios de búsqueda.',
+                'data': []
+            }, status=status.HTTP_200_OK)
+
+        serializer = self.get_serializer(queryset, many=True)
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes registros.',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+    
+    
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ######################## CRUD CAJA ########################
