@@ -1,13 +1,13 @@
 from almacen.models.bienes_models import CatalogoBienes
-from conservacion.models.cuarentena_models import BajasVivero, CuarentenaMatVegetal, ItemsLevantaCuarentena
-from conservacion.models.despachos_models import DespachoEntrantes, DespachoViveros, DistribucionesItemDespachoEntrante
+from conservacion.models.cuarentena_models import BajasVivero, CuarentenaMatVegetal, ItemsBajasVivero, ItemsLevantaCuarentena
+from conservacion.models.despachos_models import DespachoEntrantes, DespachoViveros, DistribucionesItemDespachoEntrante, ItemsDespachoEntrante, ItemsDespachoViveros
 from conservacion.models.mezclas_models import Mezclas
 from conservacion.models.siembras_models import CambiosDeEtapa, Siembras
-from conservacion.models.solicitudes_models import SolicitudesViveros
+from conservacion.models.solicitudes_models import ItemSolicitudViveros, SolicitudesViveros
 from conservacion.models.traslados_models import TrasladosViveros
 from conservacion.serializers.analitica_serializers import GetBienesMezclasSerializer, GetTableroControlConservacionSerializer
 from rest_framework import generics, status
-from django.db.models import Q, F
+from django.db.models import Q, F, Sum, Count
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from rest_framework.permissions import IsAuthenticated
@@ -91,7 +91,8 @@ class BienesMezclasFilterGetView(generics.ListAPIView):
                             {
                                 'id_bien':None,
                                 'codigo_bien':None,
-                                'tipo_bien':'Mezcla'
+                                'tipo_bien':'Mezcla',
+                                'nombre_cientifico':None
                             }
                         )
                     data_response = data_response + list(mezclas)
@@ -116,7 +117,8 @@ class BienesMezclasFilterGetView(generics.ListAPIView):
                         {
                             'id_bien':None,
                             'codigo_bien':None,
-                            'tipo_bien':'Mezcla'
+                            'tipo_bien':'Mezcla',
+                            'nombre_cientifico':None
                         }
                     )
                 data_response = data_response + list(mezclas)
@@ -209,3 +211,194 @@ class HistoricoMovimientosGetView(generics.ListAPIView):
         ultimos_movimientos.sort(key=lambda item:item['fecha_movimiento'], reverse=True)
         
         return Response({'success':True,'detail':'Se encontró el siguiente histórico de movimientos','data':ultimos_movimientos[:5]},status=status.HTTP_200_OK)
+    
+class ReporteMortalidadGetView(generics.ListAPIView):
+    serializer_class=GetTableroControlConservacionSerializer
+    queryset=BajasVivero.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        id_vivero = request.query_params.get('id_vivero', '')
+        id_bien = request.query_params.get('id_bien', '')
+        fecha_desde = request.query_params.get('fecha_desde', '')
+        fecha_hasta = request.query_params.get('fecha_hasta', '')
+        reporte_consolidado = request.query_params.get('reporte_consolidado', '')
+        
+        if id_bien == '' or fecha_desde == '' or fecha_hasta == '':
+            raise ValidationError('Debe elegir un bien y las fechas como filtros')
+        
+        mortalidades = self.queryset.filter(tipo_baja='M', fecha_baja__gte=fecha_desde, fecha_baja__lte=fecha_hasta)
+        mortalidades = mortalidades.filter(id_vivero=id_vivero) if id_vivero != '' else mortalidades
+        mortalidades_list = list(mortalidades.values_list('id_baja', flat=True))
+        
+        items_mortalidades = ItemsBajasVivero.objects.filter(id_baja__in=mortalidades_list, id_bien=id_bien)
+        
+        if reporte_consolidado == 'true':
+            data = {
+                'id_vivero': None,
+                'nombre_vivero': None
+            }
+            
+            data_mortalidad = items_mortalidades.values(unidad_medida_abreviatura=F('id_bien__id_unidad_medida__abreviatura')).annotate(
+                numero_registros=Count('id_baja'),
+                cantidad_mortalidad=Sum('cantidad_baja'),
+                mortalidad_cuarentena=Sum('cantidad_baja', filter=~Q(consec_cuaren_por_lote_etapa=None))
+            )
+            
+            data.update(data_mortalidad[0])
+            
+            data = [data]
+        else:
+            data = items_mortalidades.values(id_vivero=F('id_baja__id_vivero__id_vivero'), nombre_vivero=F('id_baja__id_vivero__nombre'), unidad_medida_abreviatura=F('id_bien__id_unidad_medida__abreviatura')).annotate(
+                numero_registros=Count('id_vivero'),
+                cantidad_mortalidad=Sum('cantidad_baja'),
+                mortalidad_cuarentena=Sum('cantidad_baja', filter=~Q(consec_cuaren_por_lote_etapa=None))
+            )
+        
+        return Response({'success':True,'detail':'Se encontró la siguiente información','data':data}, status=status.HTTP_200_OK)
+    
+class ReporteSolicitudesDespachosGetView(generics.ListAPIView):
+    serializer_class=GetTableroControlConservacionSerializer
+    queryset=SolicitudesViveros.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        id_vivero = request.query_params.get('id_vivero', '')
+        id_bien = request.query_params.get('id_bien', '')
+        fecha_desde = request.query_params.get('fecha_desde', '')
+        fecha_hasta = request.query_params.get('fecha_hasta', '')
+        reporte_consolidado = request.query_params.get('reporte_consolidado', '')
+        
+        if id_bien == '' or fecha_desde == '' or fecha_hasta == '':
+            raise ValidationError('Debe elegir un bien y las fechas como filtros')
+        
+        solicitudes = self.queryset.filter(fecha_solicitud__gte=fecha_desde, fecha_solicitud__lte=fecha_hasta)
+        solicitudes = solicitudes.filter(id_vivero_solicitud=id_vivero) if id_vivero != '' else solicitudes
+        solicitudes_list = list(solicitudes.values_list('id_solicitud_vivero', flat=True))
+        
+        items_solicitudes = ItemSolicitudViveros.objects.filter(id_solicitud_viveros__in=solicitudes_list, id_bien=id_bien)
+        
+        despachos = DespachoViveros.objects.filter(id_solicitud_a_viveros__in=solicitudes_list)
+        despachos_list = list(despachos.values_list('id_despacho_viveros', flat=True))
+        
+        items_despachos = ItemsDespachoViveros.objects.filter(id_despacho_viveros__in=despachos_list, id_bien=id_bien)
+        
+        if reporte_consolidado == 'true':
+            data = {
+                'id_vivero': None,
+                'nombre_vivero': None
+            }
+            
+            data_solicitud = items_solicitudes.values(unidad_medida_abreviatura=F('id_bien__id_unidad_medida__abreviatura')).annotate(
+                numero_solicitudes=Count('id_solicitud_viveros'),
+                cantidad_total_solicitada=Sum('cantidad')
+            )
+            
+            data.update(data_solicitud[0])
+            
+            # Despachos
+            data_despachos = items_despachos.aggregate(
+                cantidad_total_despachada=Sum('cantidad_despachada')
+            )
+            data['cantidad_total_despachada'] = data_despachos['cantidad_total_despachada']
+            
+            data = [data]
+        else:
+            data = items_solicitudes.values(id_vivero=F('id_solicitud_viveros__id_vivero_solicitud'), nombre_vivero=F('id_solicitud_viveros__id_vivero_solicitud__nombre'), unidad_medida_abreviatura=F('id_bien__id_unidad_medida__abreviatura')).annotate(
+                numero_solicitudes=Count('id_vivero'),
+                cantidad_total_solicitada=Sum('cantidad')
+            )
+
+            # Despachos
+            data_despachos = items_despachos.values(id_vivero=F('id_despacho_viveros__id_vivero')).annotate(
+                numero_despachos=Count('id_vivero'),
+                cantidad_total_despachada=Sum('cantidad_despachada')
+            )
+            
+            for data_item in data:
+                data_item['cantidad_total_despachada'] = [data_despacho for data_despacho in data_despachos if data_despacho['id_vivero'] == data_item['id_vivero']]
+                data_item['cantidad_total_despachada'] = data_item['cantidad_total_despachada'][0]['cantidad_total_despachada'] if data_item['cantidad_total_despachada'] else None
+            
+        return Response({'success':True,'detail':'Se encontró la siguiente información','data':data}, status=status.HTTP_200_OK)
+    
+class ReporteEstadoActividadGetView(generics.ListAPIView):
+    serializer_class=GetTableroControlConservacionSerializer
+    queryset=DespachoEntrantes.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        id_vivero = request.query_params.get('id_vivero', '')
+        id_bien = request.query_params.get('id_bien', '')
+        fecha_desde = request.query_params.get('fecha_desde', '')
+        fecha_hasta = request.query_params.get('fecha_hasta', '')
+        reporte_consolidado = request.query_params.get('reporte_consolidado', '')
+        
+        if id_bien == '' or fecha_desde == '' or fecha_hasta == '':
+            raise ValidationError('Debe elegir un bien y las fechas como filtros')
+        
+        entradas = self.queryset.filter(distribucion_confirmada=True, fecha_confirmacion_distribucion__gte=fecha_desde, fecha_confirmacion_distribucion__lte=fecha_hasta)
+        entradas_list = list(entradas.values_list('id_despacho_entrante', flat=True))
+        
+        items_entradas = ItemsDespachoEntrante.objects.filter(id_despacho_entrante__in=entradas_list, id_bien=id_bien).exclude(id_entrada_alm_del_bien=None)
+        items_entradas_list = list(items_entradas.values_list('id_item_despacho_entrante', flat=True))
+        
+        distribuciones_items_entradas = DistribucionesItemDespachoEntrante.objects.filter(id_item_despacho_entrante__in=items_entradas_list)
+        distribuciones_items_entradas = distribuciones_items_entradas.filter(id_vivero=id_vivero) if id_vivero != '' else distribuciones_items_entradas
+        
+        if reporte_consolidado == 'true':
+            data = {
+                'id_vivero': None,
+                'nombre_vivero': None
+            }
+            
+            data_entradas = distribuciones_items_entradas.values(unidad_medida_abreviatura=F('id_item_despacho_entrante__id_bien__id_unidad_medida__abreviatura')).annotate(
+                cantidad_donacion=Sum('cantidad_asignada', filter=Q(id_item_despacho_entrante__id_entrada_alm_del_bien__id_tipo_entrada__nombre='Donación')),
+                cantidad_resarcimiento=Sum('cantidad_asignada', filter=Q(id_item_despacho_entrante__id_entrada_alm_del_bien__id_tipo_entrada__nombre='Resarcimiento')),
+                cantidad_compensacion=Sum('cantidad_asignada', filter=Q(id_item_despacho_entrante__id_entrada_alm_del_bien__id_tipo_entrada__nombre='Compensación')),
+                cantidad_compras_no_especificado=Sum('cantidad_asignada', filter=~Q(id_item_despacho_entrante__id_entrada_alm_del_bien__id_tipo_entrada__nombre__in=['Donación','Resarcimiento','Compensación'])),
+                cantidad_donacion_produccion=Sum('cantidad_asignada', filter=Q(id_item_despacho_entrante__id_entrada_alm_del_bien__id_tipo_entrada__nombre='Donación') & Q(cod_etapa_lote_al_ingresar='P')),
+                cantidad_resarcimiento_produccion=Sum('cantidad_asignada', filter=Q(id_item_despacho_entrante__id_entrada_alm_del_bien__id_tipo_entrada__nombre='Resarcimiento') & Q(cod_etapa_lote_al_ingresar='P')),
+                cantidad_compensacion_produccion=Sum('cantidad_asignada', filter=Q(id_item_despacho_entrante__id_entrada_alm_del_bien__id_tipo_entrada__nombre='Compensación') & Q(cod_etapa_lote_al_ingresar='P')),
+                cantidad_compras_no_especificado_produccion=Sum('cantidad_asignada', filter=~Q(id_item_despacho_entrante__id_entrada_alm_del_bien__id_tipo_entrada__nombre__in=['Donación','Resarcimiento','Compensación']) & Q(cod_etapa_lote_al_ingresar='P')),
+                cantidad_donacion_distribucion=Sum('cantidad_asignada', filter=Q(id_item_despacho_entrante__id_entrada_alm_del_bien__id_tipo_entrada__nombre='Donación') & Q(cod_etapa_lote_al_ingresar='D')),
+                cantidad_resarcimiento_distribucion=Sum('cantidad_asignada', filter=Q(id_item_despacho_entrante__id_entrada_alm_del_bien__id_tipo_entrada__nombre='Resarcimiento') & Q(cod_etapa_lote_al_ingresar='D')),
+                cantidad_compensacion_distribucion=Sum('cantidad_asignada', filter=Q(id_item_despacho_entrante__id_entrada_alm_del_bien__id_tipo_entrada__nombre='Compensación') & Q(cod_etapa_lote_al_ingresar='D')),
+                cantidad_compras_no_especificado_distribucion=Sum('cantidad_asignada', filter=~Q(id_item_despacho_entrante__id_entrada_alm_del_bien__id_tipo_entrada__nombre__in=['Donación','Resarcimiento','Compensación']) & Q(cod_etapa_lote_al_ingresar='D')),
+            )
+            
+            data.update(data_entradas[0])
+            
+            # Despachos
+            # data_despachos = items_despachos.aggregate(
+            #     cantidad_total_despachada=Sum('cantidad_despachada')
+            # )
+            # data['cantidad_total_despachada'] = data_despachos['cantidad_total_despachada']
+            
+            # data = [data]
+        else:
+            data = distribuciones_items_entradas.values('id_vivero', nombre_vivero=F('id_vivero__nombre'), unidad_medida_abreviatura=F('id_item_despacho_entrante__id_bien__id_unidad_medida__abreviatura')).annotate(
+                cantidad_donacion=Sum('cantidad_asignada', filter=Q(id_item_despacho_entrante__id_entrada_alm_del_bien__id_tipo_entrada__nombre='Donación')),
+                cantidad_resarcimiento=Sum('cantidad_asignada', filter=Q(id_item_despacho_entrante__id_entrada_alm_del_bien__id_tipo_entrada__nombre='Resarcimiento')),
+                cantidad_compensacion=Sum('cantidad_asignada', filter=Q(id_item_despacho_entrante__id_entrada_alm_del_bien__id_tipo_entrada__nombre='Compensación')),
+                cantidad_compras_no_especificado=Sum('cantidad_asignada', filter=~Q(id_item_despacho_entrante__id_entrada_alm_del_bien__id_tipo_entrada__nombre__in=['Donación','Resarcimiento','Compensación'])),
+                cantidad_donacion_produccion=Sum('cantidad_asignada', filter=Q(id_item_despacho_entrante__id_entrada_alm_del_bien__id_tipo_entrada__nombre='Donación') & Q(cod_etapa_lote_al_ingresar='P')),
+                cantidad_resarcimiento_produccion=Sum('cantidad_asignada', filter=Q(id_item_despacho_entrante__id_entrada_alm_del_bien__id_tipo_entrada__nombre='Resarcimiento') & Q(cod_etapa_lote_al_ingresar='P')),
+                cantidad_compensacion_produccion=Sum('cantidad_asignada', filter=Q(id_item_despacho_entrante__id_entrada_alm_del_bien__id_tipo_entrada__nombre='Compensación') & Q(cod_etapa_lote_al_ingresar='P')),
+                cantidad_compras_no_especificado_produccion=Sum('cantidad_asignada', filter=~Q(id_item_despacho_entrante__id_entrada_alm_del_bien__id_tipo_entrada__nombre__in=['Donación','Resarcimiento','Compensación']) & Q(cod_etapa_lote_al_ingresar='P')),
+                cantidad_donacion_distribucion=Sum('cantidad_asignada', filter=Q(id_item_despacho_entrante__id_entrada_alm_del_bien__id_tipo_entrada__nombre='Donación') & Q(cod_etapa_lote_al_ingresar='D')),
+                cantidad_resarcimiento_distribucion=Sum('cantidad_asignada', filter=Q(id_item_despacho_entrante__id_entrada_alm_del_bien__id_tipo_entrada__nombre='Resarcimiento') & Q(cod_etapa_lote_al_ingresar='D')),
+                cantidad_compensacion_distribucion=Sum('cantidad_asignada', filter=Q(id_item_despacho_entrante__id_entrada_alm_del_bien__id_tipo_entrada__nombre='Compensación') & Q(cod_etapa_lote_al_ingresar='D')),
+                cantidad_compras_no_especificado_distribucion=Sum('cantidad_asignada', filter=~Q(id_item_despacho_entrante__id_entrada_alm_del_bien__id_tipo_entrada__nombre__in=['Donación','Resarcimiento','Compensación']) & Q(cod_etapa_lote_al_ingresar='D'))
+            )
+
+            # Despachos
+            # data_despachos = items_despachos.values(id_vivero=F('id_despacho_viveros__id_vivero')).annotate(
+            #     numero_despachos=Count('id_vivero'),
+            #     cantidad_total_despachada=Sum('cantidad_despachada')
+            # )
+            
+            # for data_item in data:
+            #     data_item['cantidad_total_despachada'] = [data_despacho for data_despacho in data_despachos if data_despacho['id_vivero'] == data_item['id_vivero']]
+            #     data_item['cantidad_total_despachada'] = data_item['cantidad_total_despachada'][0]['cantidad_total_despachada'] if data_item['cantidad_total_despachada'] else None
+            
+        return Response({'success':True,'detail':'Se encontró la siguiente información','data':data}, status=status.HTTP_200_OK)
