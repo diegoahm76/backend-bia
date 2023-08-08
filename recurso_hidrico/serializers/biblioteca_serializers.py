@@ -517,15 +517,22 @@ class SesionesPruebaBombeoDeleteSerializer(serializers.ModelSerializer):
 
 class SesionesPruebaBombeoGetSerializer(serializers.ModelSerializer):
     datos = serializers.SerializerMethodField()
+    hora_inicio = serializers.SerializerMethodField()
     class Meta:
         model=SesionesPruebaBombeo
         fields=[ 'id_sesion_prueba_bombeo',
                 'id_prueba_bombeo',
                 'consecutivo_sesion',
                 'fecha_inicio',
-                'cod_tipo_sesion',
+                'cod_tipo_sesion','hora_inicio',
                 'datos']
 
+
+    def get_hora_inicio(self, sesion_prueba_bombeo):
+        if sesion_prueba_bombeo.fecha_inicio:
+            hora_inicio = sesion_prueba_bombeo.fecha_inicio.strftime('%H:%M:%S')
+            return hora_inicio
+        return None
     def get_datos(self, avance):
         datos = avance.datossesionpruebabombeo_set.all().order_by('hora')
         return DatosSesionPruebaBombeoGetSerializer(datos, many=True).data

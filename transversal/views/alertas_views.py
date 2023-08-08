@@ -1,3 +1,4 @@
+import copy
 import json
 from collections import Counter
 from django.utils import timezone
@@ -21,6 +22,7 @@ class ConfiguracionClaseAlertaUpdate(generics.UpdateAPIView):
     def put(self, request, *args, **kwargs):
         pk = kwargs.get('pk')
         instance = self.get_object()
+        previus=copy.copy(instance)
         data_in=request.data
         # Verificar si la instancia existe
         if not instance:
@@ -29,7 +31,26 @@ class ConfiguracionClaseAlertaUpdate(generics.UpdateAPIView):
         try:
             serializer = self.serializer_class(instance, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            instance=serializer.save()
+
+            if (instance.envios_email != previus.envios_email) | (instance.nivel_prioridad != previus.nivel_prioridad)| (instance.activa != previus.activa):
+                print( "cambio")
+                cambios={       
+                        "envios_email": instance.envios_email,
+                        "nivel_prioridad": instance.nivel_prioridad,
+                        "activa": instance.activa
+                        }
+                
+                alertas_programadas=AlertasProgramadas.objects.filter(cod_clase_alerta=instance.cod_clase_alerta)
+
+                actualizar_alerta_programada=AlertasProgramadasUpdate()
+
+                for alerta_programada in alertas_programadas:
+                    response_alerta_programada=actualizar_alerta_programada.actualizar_alerta_programada(cambios,alerta_programada.id_alerta_programada)
+                    if response_alerta_programada.status_code!=status.HTTP_200_OK:
+                        return response_alerta_programada
+                    print(response_alerta_programada.data)
+
         except ValidationError as e:       
             raise ValidationError(e.detail)
 
@@ -100,7 +121,7 @@ class FechaClaseAlertaCreate(generics.CreateAPIView):
       
             fecha_alerta={'dia_cumplimiento':instance.dia_cumplimiento,'mes_cumplimiento':instance.mes_cumplimiento,'agno_cumplimiento':instance.age_cumplimiento,'cod_clase_alerta':data_in['cod_clase_alerta']}
             crear_alerta=AlertasProgramadasCreate()
-            print(instance)
+            #print(instance)
             #raise ValidationError(instance)
             response_alerta=crear_alerta.crear_alerta_programada(fecha_alerta)
             if response_alerta.status_code!=status.HTTP_201_CREATED:
@@ -250,11 +271,25 @@ class PersonasAAlertarDelete(generics.DestroyAPIView):
     def delete(self,request,pk):
         
         persona = PersonasAAlertar.objects.filter(id_persona_alertar=pk).first()
-        
+        programadas_actualizadas=[]
         if not persona:
             raise NotFound("No existe la persona a eliminar.")
         serializer = self.serializer_class(persona) 
         persona.delete()
+        alertas_programadas =AlertasProgramadas.objects.filter(cod_clase_alerta=persona.cod_clase_alerta)
+        #alertas_programadas_ids = AlertasProgramadas.objects.filter(cod_clase_alerta=instance.cod_clase_alerta).values_list('id_alerta_programada', flat=True)
+        if alertas_programadas:
+                actualizar_programadas=AlertasProgramadasUpdate()
+
+                for programada in alertas_programadas:
+                    Response_programada=actualizar_programadas.actualizar_alerta_programada({},programada.id_alerta_programada)
+                    if Response_programada.status_code!=status.HTTP_200_OK:
+                        return Response_programada
+                    programadas_actualizadas.append(Response_programada.data['data'])
+            #fin
+
+
+
 
         
         return Response({'success':True,'detail':'Se elimino la fecha correctamente.','data':serializer.data},status=status.HTTP_200_OK)
@@ -444,6 +479,7 @@ class AlertasProgramadasUpdate(generics.UpdateAPIView):
             # if not 'frecuencia_post' in data_in:
             #     data_alerta_programada['frecuencia_repeticiones_post'] = 0
 
+            data_alerta_programada['requiere_envio_email']=configuracion.envios_email
             data_alerta_programada['nivel_prioridad'] = configuracion.nivel_prioridad
             if 'id_persona_implicada' in data_in:
                 data_alerta_programada['id_persona_implicada'] = data_in['id_persona_implicada']
