@@ -23,7 +23,7 @@ from rest_framework.exceptions import NotFound
 class OpcionesLiquidacionBaseView(generics.ListAPIView):
     queryset = OpcionesLiquidacionBase.objects.all()
     serializer_class = OpcionesLiquidacionBaseSerializer
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated]
 
     def get(self, request):
         queryset = self.get_queryset()
@@ -41,7 +41,7 @@ class OpcionesLiquidacionBaseView(generics.ListAPIView):
 class DetalleOpcionesLiquidacionBaseView(generics.GenericAPIView):
     queryset = OpcionesLiquidacionBase.objects.all()
     serializer_class = OpcionesLiquidacionBaseSerializer
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         queryset = OpcionesLiquidacionBase.objects.filter(pk=pk).first()
@@ -54,7 +54,7 @@ class DetalleOpcionesLiquidacionBaseView(generics.GenericAPIView):
 class DeudoresView(generics.GenericAPIView):
     queryset = Deudores.objects.all()
     serializer_class = DeudoresSerializer
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated]
 
     def get(self, request):
         queryset = self.get_queryset()
@@ -64,7 +64,7 @@ class DeudoresView(generics.GenericAPIView):
 
 class DeudoresIdentificacionView(generics.GenericAPIView):
     serializer_class = DeudoresSerializer
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated]
 
     def get(self, request, identificacion):
         queryset = Deudores.objects.filter(identificacion=identificacion).first()
@@ -77,7 +77,7 @@ class DeudoresIdentificacionView(generics.GenericAPIView):
 class LiquidacionBaseView(generics.ListAPIView):
     queryset = LiquidacionesBase.objects.all()
     serializer_class = LiquidacionesBaseSerializer
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated]
 
     def get(self, request):
         queryset = self.get_queryset()
@@ -99,7 +99,7 @@ class LiquidacionBaseView(generics.ListAPIView):
 
 class ObtenerLiquidacionBaseView(generics.GenericAPIView):
     serializer_class = LiquidacionesBaseSerializer
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         queryset = LiquidacionesBase.objects.filter(pk=pk).first()
@@ -111,7 +111,7 @@ class ObtenerLiquidacionBaseView(generics.GenericAPIView):
 
 class DetallesLiquidacionBaseView(generics.GenericAPIView):
     serializer_class = DetallesLiquidacionBaseSerializer
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated]
 
     def get(self, request, liquidacion):
         queryset = DetalleLiquidacionBase.objects.filter(id_liquidacion__id=liquidacion)
@@ -131,7 +131,7 @@ class DetallesLiquidacionBaseView(generics.GenericAPIView):
 class ExpedientesView(generics.ListAPIView):
     queryset = Expedientes.objects.all()
     serializer_class = ExpedientesSerializer
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated]
 
     def get(self, request):
         queryset = self.get_queryset()
@@ -142,7 +142,7 @@ class ExpedientesView(generics.ListAPIView):
 class ExpedienteEspecificoView(generics.ListAPIView):
     queryset = Expedientes.objects.all()
     serializer_class = ExpedientesSerializer
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         queryset = Expedientes.objects.filter(pk=pk).first()
@@ -155,7 +155,7 @@ class ExpedienteEspecificoView(generics.ListAPIView):
 class ClonarOpcionLiquidacionView(generics.ListAPIView):
     queryset = OpcionesLiquidacionBase.objects.all()
     serializer_class = OpcionesLiquidacionBaseSerializer
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         opcion = OpcionesLiquidacionBase.objects.filter(pk=pk)
