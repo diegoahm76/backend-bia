@@ -8,6 +8,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from datetime import datetime,date,timedelta
+from recurso_hidrico.models.programas_models import ProyectosPORH
+from recurso_hidrico.serializers.programas_serializers import GenerardorMensajeProyectosPORHGetSerializer, ProyectosPORHSerializer
 from transversal.models.alertas_models import AlertasProgramadas, ConfiguracionClaseAlerta, FechaClaseAlerta, PersonasAAlertar
 from seguridad.models import Personas
 from transversal.serializers.alertas_serializers import AlertasProgramadasPostSerializer, AlertasProgramadasUpdateSerializer, ConfiguracionClaseAlertaGetSerializer, ConfiguracionClaseAlertaUpdateSerializer, FechaClaseAlertaDeleteSerializer, FechaClaseAlertaGetSerializer, FechaClaseAlertaPostSerializer, PersonasAAlertarDeleteSerializer, PersonasAAlertarGetSerializer, PersonasAAlertarPostSerializer
@@ -549,3 +551,34 @@ class AlertasProgramadasUpdate(generics.UpdateAPIView):
         
         response= self.actualizar_alerta_programada(data_in,pk)
         return response
+    
+##funciones para complementar mensajes
+
+##ALERTA RECURSO HIDICO
+class AlertaProyectosVigentesGet(generics.ListAPIView):
+    serializer_class=GenerardorMensajeProyectosPORHGetSerializer
+    queryset = ProyectosPORH.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+       
+        mensaje=""
+        hoy = date.today()
+        
+        
+        #proyectos_vigentes = ProyectosPORH.objects.filter(Q(vigencia_inicial__lte=hoy)  & Q(vigencia_final__lte=hoy))
+        proyectos_vigentes = ProyectosPORH.objects.filter(Q(vigencia_inicial__lte=hoy) & Q(vigencia_final__gte=hoy))
+        serializador = self.serializer_class(proyectos_vigentes, many=True)
+        for dato in serializador.data:
+            
+            mensaje+="Proyecto "+str(dato['id_proyecto'])+" ("+str(dato['nombre'])+")"+" del Programa "+str(dato['id_programa'])+" ("+str(dato['nombre_programa'])+")"+"  del Plan de Ordenamiento de Recurso Hídrico "+str(dato['id_porh'])+" ("+str(dato['nombre_porh'])+")"+".\n"
+            #print(mensaje)
+
+        cod='RcH_AvPy'
+
+        alertas_generadas=AlertasProgramadas.objects.filter(cod_clase_alerta=cod)
+        for programada in alertas_generadas:
+            print(programada)
+            
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializador.data,'mensaje':mensaje}, status=status.HTTP_200_OK)
+
+       

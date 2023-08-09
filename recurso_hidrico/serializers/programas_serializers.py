@@ -14,6 +14,14 @@ class ProyectosPORHSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProyectosPORH
         fields = '__all__'
+class GenerardorMensajeProyectosPORHGetSerializer(serializers.ModelSerializer):
+    nombre_programa = serializers.ReadOnlyField(source='id_programa.nombre',default=None)
+    id_programa=serializers.ReadOnlyField(source='id_programa.id_programa',default=None)
+    nombre_porh = serializers.ReadOnlyField(source='id_programa.id_instrumento.nombre',default=None)
+    id_porh=serializers.ReadOnlyField(source='id_programa.id_instrumento.id_instrumento',default=None)
+    class Meta:
+        model = ProyectosPORH
+        fields = '__all__'
 
 class ActividadesProyectosSerializer(serializers.ModelSerializer):
     class Meta:

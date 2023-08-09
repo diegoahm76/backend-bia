@@ -867,20 +867,3 @@ class ProgramaPORHBusquedaAvanzadaGet(generics.ListAPIView):
 
 
 
-##ALERTA RECURSO HIDICO
-class AlertaProyectosVigentesGet(generics.ListAPIView):
-    serializer_class=ProyectosPORHSerializer
-    queryset = ProyectosPORH.objects.all()
-    permission_classes = [IsAuthenticated]
-    def get(self, request):
-        print("AUXILIO")
-
-        
-        hoy = date.today()
-
-        proyectos_vigentes = ProyectosPORH.objects.filter(
-        Q(vigencia_inicial__lte=hoy) & (Q(vigencia_final__isnull=True) | Q(vigencia_final__gte=hoy)))
-        serializador = self.serializer_class(proyectos_vigentes, many=True)
-        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializador.data}, status=status.HTTP_200_OK)
-
-        

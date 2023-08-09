@@ -28,6 +28,8 @@ urlpatterns = [
      path('bandejaEstante/actualizar-bandeja/<str:pk>/',views.BandejaEstanteUpDate.as_view(),name='actualizar-bandejas'),
      path('bandejaEstante/eliminar/<str:pk>/',views.BandejaEstanteDelete.as_view(),name='eliminar-bandeja'),
      path('bandejaEstante/buscar-estante/',views.BandejaEstanteSearch.as_view(), name='buscar-estante'),
+     path('bandejaEstante/mover-bandeja/<int:id_bandeja_estante>/',views.BandejaEstanteMove.as_view(), name='mover-bandeja'),
+
 
      #Caja
      path('cajaBandeja/crear/',views.CajaBandejaCreate.as_view(), name='crear-caja'),

@@ -11,7 +11,7 @@ from django.db.models import Max
 from django.db.models import Q
 from datetime import datetime,date,timedelta
 from gestion_documental.models.depositos_models import  Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
-from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
+from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
 from seguridad.utils import Util
 
 
@@ -373,6 +373,10 @@ class EstanteGetByDeposito(generics.ListAPIView):
     
 #MOVER_ESTANTE
 class MoveEstante(generics.UpdateAPIView):
+    serializer_class = MoveEstanteSerializer
+    queryset = EstanteDeposito.objects.all()
+    permission_classes = [IsAuthenticated]
+    
     def put(self, request, identificacion_por_deposito):
         # Paso 1: Obtener el estante a mover
         estante = get_object_or_404(EstanteDeposito, identificacion_por_deposito=identificacion_por_deposito)
@@ -577,6 +581,52 @@ class BandejaEstanteSearch(generics.ListAPIView):
             'data': serializer.data
         }, status=status.HTTP_200_OK)
     
+
+#MOVER_BANDEJA
+class BandejaEstanteMove(generics.UpdateAPIView):
+    serializer_class = BandejaEstanteMoveSerializer
+    queryset = BandejaEstante.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, id_bandeja_estante):
+        bandeja = get_object_or_404(BandejaEstante, id_bandeja_estante=id_bandeja_estante)
+
+        id_deposito_destino = request.data.get('id_deposito_destino')
+        id_estante_destino = request.data.get('id_estante_destino')
+
+        try:
+            deposito_destino = Deposito.objects.get(id_deposito=id_deposito_destino)
+        except Deposito.DoesNotExist:
+            return Response({'success': False, 'detail': 'El depósito de destino no existe.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            estante_destino = EstanteDeposito.objects.get(id_estante_deposito=id_estante_destino)
+        except EstanteDeposito.DoesNotExist:
+            return Response({'success': False, 'detail': 'El estante de destino no existe.'}, status=status.HTTP_404_NOT_FOUND)
+
+            
+        # Verificar si la bandeja tiene cajas asociadas
+        tiene_cajas = CajaBandeja.objects.filter(id_bandeja_estante=bandeja.id_bandeja_estante).exists()
+        if tiene_cajas:
+            return Response({'success': False, 'detail': 'No se puede mover la bandeja porque tiene cajas asociadas.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        id_deposito_destino = request.data.get('id_deposito_destino')
+        id_estante_destino = request.data.get('id_estante_destino')
+
+        # Obtener el depósito y estante de destino
+        deposito_destino = get_object_or_404(Deposito, id_deposito=id_deposito_destino)
+        estante_destino = get_object_or_404(EstanteDeposito, id_estante_deposito=id_estante_destino)
+
+        # Realizar el cambio de depósito y estante
+        bandeja.id_estante_deposito = estante_destino
+        bandeja.save()
+
+        return Response({
+            'success': True,
+            'detail': 'La Bandeja ha sido movida exitosamente.'
+        }, status=status.HTTP_200_OK)
+
+   
     
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
