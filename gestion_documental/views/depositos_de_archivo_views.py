@@ -11,7 +11,7 @@ from django.db.models import Max
 from django.db.models import Q
 from datetime import datetime,date,timedelta
 from gestion_documental.models.depositos_models import  Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
-from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajasByBandejaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
+from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaEstanteSearchSerializer, CajasByBandejaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
 from seguridad.utils import Util
 
 
@@ -706,3 +706,59 @@ class CajasByBandejaList(generics.ListAPIView):
         return Response({'success':True,
                          'detail':'Se encontraron los siguientes registros.',
                          'data':serializer.data},status=status.HTTP_200_OK)
+    
+
+#BUSCAR_ESTANTE(CAJAS)
+class CajaEstanteSearch(generics.ListAPIView):
+    serializer_class = BandejaEstanteSearchSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        nombre_deposito = self.request.query_params.get('nombre_deposito', '').strip()
+        identificacion_estante = self.request.query_params.get('identificacion_estante', '').strip()
+        orden_estante = self.request.query_params.get('orden_estante', '').strip()
+
+        estantes = EstanteDeposito.objects.all()
+
+        if nombre_deposito:
+            estantes = estantes.filter(id_deposito__nombre_deposito__icontains=nombre_deposito) | \
+                       estantes.filter(id_deposito__identificacion_por_entidad__icontains=nombre_deposito)
+        
+        if identificacion_estante:
+            estantes = estantes.filter(identificacion_por_deposito__icontains=identificacion_estante)
+
+        if orden_estante:
+            estantes = estantes.filter(orden_ubicacion_por_entante=orden_estante)
+
+        return estantes
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            return Response({
+                'success': True,
+                'detail': 'No se encontraron datos que coincidan con los criterios de búsqueda.',
+                'data': []
+            }, status=status.HTTP_200_OK)
+
+        serialized_data = []
+        for estante in queryset:
+            # Obtener la bandeja correspondiente
+            bandeja = BandejaEstante.objects.filter(id_estante_deposito=estante.id_estante_deposito).first()
+            if bandeja:
+                serialized_data.append({
+                    'orden_ubicacion_por_estante': bandeja.orden_ubicacion_por_estante,
+                    'nombre_deposito': estante.id_deposito.nombre_deposito,
+                    'identificacion_deposito': estante.id_deposito.identificacion_por_entidad,
+                    'identificacion_por_estante': bandeja.identificacion_por_estante,
+                })
+
+        # Ordenar los datos por orden_ubicacion_por_estante de forma ascendente
+        serialized_data.sort(key=lambda x: x['orden_ubicacion_por_estante'])
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes registros.',
+            'data': serialized_data
+        }, status=status.HTTP_200_OK)
