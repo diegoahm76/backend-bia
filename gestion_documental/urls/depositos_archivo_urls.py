@@ -34,6 +34,8 @@ urlpatterns = [
      #Caja
      path('cajaBandeja/crear/',views.CajaBandejaCreate.as_view(), name='crear-caja'),
      path('cajaBandeja/siguiente-orden/',views.CajaBandejaGetOrden.as_view(), name='listar-orden-siguiente'),
+     path('cajaBandeja/listar-cajas-por-bandeja/<int:pk>/', views.CajasByBandejaList.as_view(), name='listar-cajas-por-bandeja'),
+
 
 
 

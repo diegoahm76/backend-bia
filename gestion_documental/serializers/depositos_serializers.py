@@ -229,11 +229,13 @@ class BandejaEstanteDeleteSerializer(serializers.ModelSerializer):
 
 #Buscar_estante(mover_bandejas)
 class BandejaEstanteSearchSerializer(serializers.ModelSerializer):
-    
-    class Meta:
-        model =  EstanteDeposito
-        fields = ['orden_ubicacion_por_deposito','identificacion_por_deposito','id_deposito']
+    nombre_deposito = serializers.CharField(source='id_deposito.nombre_deposito', read_only=True)
+    identificacion_deposito = serializers.CharField(source='id_deposito.identificacion_por_entidad', read_only=True)
 
+    class Meta:
+        model = EstanteDeposito
+        fields = [ 'orden_ubicacion_por_deposito','identificacion_por_deposito', 'nombre_deposito', 'identificacion_deposito']
+ 
 
 #Mover_bandeja
 class BandejaEstanteMoveSerializer(serializers.ModelSerializer):
@@ -254,6 +256,12 @@ class CajaBandejaCreateSerializer(serializers.ModelSerializer):
 
 #Listar_orden_siguiente_bandeja
 class  CajaBandejaGetOrdenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  CajaBandeja
+        fields = '__all__'
+
+#Listar_cajas_por bandeja
+class  CajasByBandejaListSerializer(serializers.ModelSerializer):
     class Meta:
         model =  CajaBandeja
         fields = '__all__'

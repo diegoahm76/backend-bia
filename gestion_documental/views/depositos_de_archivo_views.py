@@ -11,7 +11,7 @@ from django.db.models import Max
 from django.db.models import Q
 from datetime import datetime,date,timedelta
 from gestion_documental.models.depositos_models import  Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
-from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
+from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajasByBandejaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
 from seguridad.utils import Util
 
 
@@ -77,12 +77,21 @@ class DepositoDelete(generics.DestroyAPIView):
         if not deposito:
             raise ValidationError("No existe la deposito a eliminar")
         
-
-        #pendiente validacion de cajas bandeja
-
         if estantes:
             raise ValidationError("No se puede Eliminar una deposito, si tiene estantes asignadas.")
         
+        
+        tiene_bandejas = BandejaEstante.objects.filter(id_estante_deposito__id_deposito=pk).exists()
+
+        if tiene_bandejas:
+            return Response({'success': False, 'detail': 'No se puede eliminar el depósito porque tiene bandejas asociadas a él.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        tiene_cajas = CajaBandeja.objects.filter(id_bandeja_estante__id_estante_deposito__id_deposito=pk).exists()
+
+        if tiene_cajas:
+            return Response({'success': False, 'detail': 'No se puede eliminar el depósito porque tiene una o más cajas asociadas a él.'},
+                            status=status.HTTP_400_BAD_REQUEST)
         #reordenar
         depositos = Deposito.objects.filter(orden_ubicacion_por_entidad__gt=deposito.orden_ubicacion_por_entidad).order_by('orden_ubicacion_por_entidad') 
         deposito.delete()
@@ -580,7 +589,6 @@ class BandejaEstanteSearch(generics.ListAPIView):
             'detail': 'Se encontraron los siguientes registros.',
             'data': serializer.data
         }, status=status.HTTP_200_OK)
-    
 
 #MOVER_BANDEJA
 class BandejaEstanteMove(generics.UpdateAPIView):
@@ -681,3 +689,20 @@ class CajaBandejaGetOrden(generics.ListAPIView):
             'success': True,
             'orden_siguiente': max_orden
         }, status=status.HTTP_200_OK)        
+    
+#LISTAR_CAJAS_POR_BANDEJA
+class CajasByBandejaList(generics.ListAPIView):
+    serializer_class = CajasByBandejaListSerializer
+    queryset = CajaBandeja.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        caja = CajaBandeja.objects.filter(id_bandeja_estante=pk)
+        serializer = self.serializer_class(caja,many=True)
+        
+        if not Deposito:
+            raise NotFound("El registro del estante que busca, no se encuentra registrado")
+
+        return Response({'success':True,
+                         'detail':'Se encontraron los siguientes registros.',
+                         'data':serializer.data},status=status.HTTP_200_OK)
