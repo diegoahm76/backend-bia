@@ -11,7 +11,7 @@ from django.db.models import Max
 from django.db.models import Q
 from datetime import datetime,date,timedelta
 from gestion_documental.models.depositos_models import  Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
-from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaEstanteSearchSerializer, CajasByBandejaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
+from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaUpDateSerializer, CajaEstanteSearchSerializer, CajasByBandejaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
 from seguridad.utils import Util
 
 
@@ -762,3 +762,25 @@ class CajaEstanteSearch(generics.ListAPIView):
             'detail': 'Se encontraron los siguientes registros.',
             'data': serialized_data
         }, status=status.HTTP_200_OK)
+
+#EDITAR_CAJAS(CAJAS)
+class cajaBandejaUpDate(generics.UpdateAPIView):
+    serializer_class = CajaBandejaUpDateSerializer
+    queryset = CajaBandeja.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def put (self,request, pk):
+        try:
+            caja = CajaBandeja.objects.filter(id_caja_estante=pk).first()
+        except CajaBandeja.DoesNotExist:
+            return Response({'error': 'La bandeja no existe.'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = CajaBandejaUpDateSerializer(caja, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({'success': True, 'detail': 'La bandeja se ha actualizado correctamente.'},
+                         status=status.HTTP_200_OK)
+    
+
+#MOVER CAJA(PENDIENTE)
