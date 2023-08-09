@@ -16,5 +16,6 @@ urlpatterns = [
     path('detalles-liquidacion-base/<int:liquidacion>/', views.DetallesLiquidacionBaseView.as_view(), name='liquidacion-base-detalles'),
 
     path('expedientes/', views.ExpedientesView.as_view(), name='expedientes-todos'),
+    path('expedientes/<int:pk>/', views.ExpedienteEspecificoView.as_view(), name='obtener-expediente'),
     path('expedientes-deudor/get/<int:id_deudor>/', views.ExpedientesDeudorGetView.as_view(), name='expedientes-deudor'),
 ]
