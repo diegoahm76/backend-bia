@@ -265,3 +265,13 @@ class  CajasByBandejaListSerializer(serializers.ModelSerializer):
     class Meta:
         model =  CajaBandeja
         fields = '__all__'
+
+
+#Buscar_estante(Cajas)
+class CajaEstanteSearchSerializer(serializers.ModelSerializer):
+    nombre_deposito = serializers.CharField(source='id_deposito.nombre_deposito', read_only=True)
+    identificacion_deposito = serializers.CharField(source='id_deposito.identificacion_por_entidad', read_only=True)
+
+    class Meta:
+        model = EstanteDeposito
+        fields = [ 'orden_ubicacion_por_deposito','identificacion_por_deposito', 'nombre_deposito', 'identificacion_deposito','identificacion_por_estante']
