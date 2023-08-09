@@ -3,19 +3,25 @@ from recaudo.models.procesos_models import (
     Avaluos, 
     Bienes
 )
-from recaudo.models.pagos_models import (
+from recaudo.models.facilidades_pagos_models import (
     FacilidadesPago,
     GarantiasFacilidad,
     DetallesBienFacilidadPago,
     CumplimientoRequisitos, 
     RequisitosActuacion,
-    RespuestaSolicitud
+    RespuestaSolicitud,
+    DetallesFacilidadPago
 )
 from recaudo.models.base_models import TiposBien, TipoActuacion
-from recaudo.models.cobros_models import Deudores
+from recaudo.models.cobros_models import Deudores, Cartera
 
-from seguridad.models import Personas
+from transversal.models.personas_models import Personas
 from transversal.models.base_models import Municipio
+
+class DetallesFacilidadPagoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =DetallesFacilidadPago
+        fields = '__all__'
 
 
 class TipoBienSerializer(serializers.ModelSerializer):
@@ -113,9 +119,8 @@ class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
     def get_nombre_de_usuario(self, obj):
         return f"{obj.id_deudor.nombres} {obj.id_deudor.apellidos}"
 
-    def get_nombre_funcionario(self, obj):
-        funcionario = Personas.objects.filter(id_persona=obj.id_funcionario).first()
-        return f"{funcionario.primer_nombre} {funcionario.primer_apellido}"
+    def get_nombre_funcionario(self, obj):      
+        return f"{obj.id_funcionario.primer_nombre} {obj.id_funcionario.primer_apellido}"
     
     class Meta:
         model = FacilidadesPago
@@ -172,3 +177,31 @@ class RespuestaSolicitudSerializer(serializers.ModelSerializer):
     class Meta:
         model = RespuestaSolicitud
         fields = '__all__'
+
+
+class ObligacionesSerializer(serializers.ModelSerializer):
+    nro_expediente = serializers.ReadOnlyField(source='id_expediente.cod_expediente',default=None)
+    nro_resolucion = serializers.ReadOnlyField(source='id_expediente.numero_resolucion',default=None)
+
+    class Meta:
+        model = Cartera
+        fields = ('nombre','inicio','nro_expediente','nro_resolucion','monto_inicial','valor_intereses', 'dias_mora')
+
+
+class ConsultaObligacionesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cartera
+        fields = '__all__'
+
+
+class ListadoDeudoresUltSerializer(serializers.ModelSerializer):
+    nombre_contribuyente = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Deudores
+        fields = ('id','nombre_contribuyente','identificacion')
+
+    def get_nombre_contribuyente(self, obj):
+        return f"{obj.nombres} {obj.apellidos}"
+
+
