@@ -5,8 +5,8 @@ from gestion_documental.models.tca_models import (
     HistoricoCatSeriesUnidadOrgCCD_TRD_TCA,
     TablasControlAcceso,
     CatSeriesUnidadOrgCCD_TRD_TCA,
-    PermisosCatSeriesUnidadOrgTCA,
-    PermisosDetPermisosCatSerieUndOrgTCA
+    # PermisosCatSeriesUnidadOrgTCA,
+    # PermisosDetPermisosCatSerieUndOrgTCA
 )
 from gestion_documental.models.ccd_models import (
     CatalogosSeriesUnidad
@@ -141,21 +141,21 @@ class ClasifSerieSubseriUnidadTCA_activoSerializer(serializers.ModelSerializer):
             'ruta_archivo_cambio': {'required': True,'allow_null':False}
         }
 
-class Cargos_Unidad_S_Ss_UndOrg_TCASerializer(serializers.ModelSerializer):
-    def validate_ruta_soporte(self, value):
-        extension = value.name.split('.')[-1]
-        if extension != 'pdf':
-            raise serializers.ValidationError('El archivo adjunto debe estar en formato PDF.')
-        return value
-    class Meta:
-        model = PermisosCatSeriesUnidadOrgTCA   
-        fields = '__all__'
+# class Cargos_Unidad_S_Ss_UndOrg_TCASerializer(serializers.ModelSerializer):
+#     def validate_ruta_soporte(self, value):
+#         extension = value.name.split('.')[-1]
+#         if extension != 'pdf':
+#             raise serializers.ValidationError('El archivo adjunto debe estar en formato PDF.')
+#         return value
+#     class Meta:
+#         model = PermisosCatSeriesUnidadOrgTCA   
+#         fields = '__all__'
     
-class PermisosCargoUnidadSerieSubserieUnidadTCASerializer(serializers.ModelSerializer):
-    tipo_permiso = serializers.ReadOnlyField(source='cod_permiso.tipo_permiso', default=None)
-    class Meta:
-        model = PermisosDetPermisosCatSerieUndOrgTCA
-        fields = '__all__'
+# class PermisosCargoUnidadSerieSubserieUnidadTCASerializer(serializers.ModelSerializer):
+#     tipo_permiso = serializers.ReadOnlyField(source='cod_permiso.tipo_permiso', default=None)
+#     class Meta:
+#         model = PermisosDetPermisosCatSerieUndOrgTCA
+#         fields = '__all__'
 
 class BusquedaTCASerializer(serializers.ModelSerializer):
     id_ccd = serializers.ReadOnlyField(source='id_trd.id_ccd.id_ccd', default=None)

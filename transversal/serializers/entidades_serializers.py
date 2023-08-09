@@ -44,6 +44,11 @@ class SucursalesEmpresasPutSerializer(serializers.ModelSerializer):
         
 
 class HistoricoPerfilesEntidadGetSerializer(serializers.ModelSerializer):
+    nombre_completo = serializers.SerializerMethodField()
     class Meta:
         model = HistoricoPerfilesEntidad
         fields = '__all__'
+    def get_nombre_completo(self, obj):
+        primer_nombre = obj.id_persona_perfil_histo.primer_nombre
+        primer_apellido = obj.id_persona_perfil_histo.primer_apellido
+        return f'{primer_nombre} {primer_apellido}'

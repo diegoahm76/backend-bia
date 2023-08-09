@@ -29,4 +29,5 @@ urlpatterns = [
     path('direcciones/', views_transversal.GetLisDirecciones.as_view(), name='get-list-direcciones'),
     path('indicativo-pais/', views_transversal.GetLisIndicativoPais.as_view(), name='get-list-indicativo-pais'),
     path('cod-naturaleza-empresa/', views.GetLisCodNaturalezEmpresa.as_view(), name='get-list-cod-naturaleza-empresa'),
+    path('perfiles_sistema/', views.GetLisPerfilesSistema.as_view(), name='get-list-perfiles'),
 ]

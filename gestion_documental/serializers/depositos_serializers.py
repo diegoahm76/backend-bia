@@ -1,12 +1,13 @@
 from rest_framework import serializers
 from rest_framework.serializers import ReadOnlyField
+from django.db.models import F
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from django.db.models import Max 
 
-from gestion_documental.models.depositos_models import Deposito, EstanteDeposito
+from gestion_documental.models.depositos_models import  Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
 
 
-#DEPOSITOS
+######################### SERIALIZERS DEPOSITO #########################
 
 class DepositoCreateSerializer(serializers.ModelSerializer):
     
@@ -70,9 +71,9 @@ class DepositoGetSerializer(serializers.ModelSerializer):
 #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-#ESTANTES
+######################### SERIALIZERS ESTANTE #########################
 
-#Crear estante
+#Crear_estante
 class EstanteDepositoCreateSerializer(serializers.ModelSerializer):
     
     class Meta:
@@ -96,7 +97,7 @@ class  EstanteDepositoGetOrdenSerializer(serializers.ModelSerializer):
 
 
 #Cambiar_orden_estante
-class EstanteDepositoChangeOrdenSerializer(serializers.ModelSerializer):
+class EstanteDepositoUpDateSerializer(serializers.ModelSerializer):
 
     def validate_orden_ubicacion_por_deposito(self, nuevo_orden):
 
@@ -132,6 +133,145 @@ class EstanteDepositoChangeOrdenSerializer(serializers.ModelSerializer):
         
     class Meta:
         model =  EstanteDeposito
-        fields = ['orden_ubicacion_por_deposito']
+        fields = ['identificacion_por_deposito','orden_ubicacion_por_deposito']
+
+#Eliminar_Estante
+class EstanteDepositoDeleteSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  EstanteDeposito
+        fields = '__all__'
+
+#Listar_estantes_por_deposito
+class EstanteGetByDepositoSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  EstanteDeposito
+        fields = ['orden_ubicacion_por_deposito','identificacion_por_deposito']
+
+#Mover_estante
+class MoveEstanteSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  EstanteDeposito
+        fields = '__all__'
+
+#Listar_Bandejas_por_estante
+class BandejasByEstanteListSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  BandejaEstante
+        fields = ['orden_ubicacion_por_estante','identificacion_por_estante']
+
+#/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+######################### SERIALIZERS BANDEJA #########################
+
+
+#Crear_bandeja
+class BandejaEstanteCreateSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  BandejaEstante
+        fields = '__all__'
+
+#Listar_orden_siguiente_bandeja
+class  BandejaEstanteGetOrdenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  BandejaEstante
+        fields = '__all__'
+
+ #Editar_bandejas       
+class  BandejaEstanteUpDateSerializer(serializers.ModelSerializer):
+   class Meta:
+        model =  BandejaEstante
+        fields = ['identificacion_por_estante','orden_ubicacion_por_estante'] 	   
+    
+   def validate_orden_ubicacion_por_estante(self, nuevo_orden):
+
+        # Obtener el orden actual del depósito
+        orden_actual = self.instance.orden_ubicacion_por_estante
+
+        if nuevo_orden != orden_actual:
+
+            maximo_orden = BandejaEstante.objects.aggregate(max_orden=Max('orden_ubicacion_por_estante')).get('max_orden')
+            self.instance.orden_ubicacion_por_estante = maximo_orden + 1
+            self.instance.save()
+         
+
+            if nuevo_orden > orden_actual:
+                
+                # Desplazar los depósitos siguientes hacia abajo
+                bandejas = BandejaEstante.objects.filter(orden_ubicacion_por_estante__gt=orden_actual, orden_ubicacion_por_estante__lte=nuevo_orden).order_by('orden_ubicacion_por_estante')  
+                
+                for bandeja in bandejas:
+                    bandeja.orden_ubicacion_por_estante = bandeja.orden_ubicacion_por_estante - 1
+                    bandeja.save()
+
+            elif nuevo_orden < orden_actual:
+        
+                # Desplazar los depósitos hacia arriba
+                bandejas = BandejaEstante.objects.filter(orden_ubicacion_por_estante__lt=orden_actual, orden_ubicacion_por_estante__gte=nuevo_orden).order_by('-orden_ubicacion_por_estante')  
+                
+                for bandeja in bandejas:
+                    bandeja.orden_ubicacion_por_estante = bandeja.orden_ubicacion_por_estante + 1
+                    bandeja.save()		  	                  
 
         
+        return nuevo_orden		 
+                  
+#Eliminar_bandeja
+class BandejaEstanteDeleteSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  BandejaEstante
+        fields = '__all__'
+
+#Buscar_estante(mover_bandejas)
+class BandejaEstanteSearchSerializer(serializers.ModelSerializer):
+    nombre_deposito = serializers.CharField(source='id_deposito.nombre_deposito', read_only=True)
+    identificacion_deposito = serializers.CharField(source='id_deposito.identificacion_por_entidad', read_only=True)
+
+    class Meta:
+        model = EstanteDeposito
+        fields = [ 'orden_ubicacion_por_deposito','identificacion_por_deposito', 'nombre_deposito', 'identificacion_deposito']
+ 
+
+#Mover_bandeja
+class BandejaEstanteMoveSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  BandejaEstante
+        fields = '__all__'
+
+#/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+######################## SERIALIZERS CAJA ########################
+
+class CajaBandejaCreateSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  CajaBandeja
+        fields = '__all__'
+
+#Listar_orden_siguiente_bandeja
+class  CajaBandejaGetOrdenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  CajaBandeja
+        fields = '__all__'
+
+#Listar_cajas_por bandeja
+class  CajasByBandejaListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  CajaBandeja
+        fields = '__all__'
+
+
+#Buscar_estante(Cajas)
+class CajaEstanteSearchSerializer(serializers.ModelSerializer):
+    nombre_deposito = serializers.CharField(source='id_deposito.nombre_deposito', read_only=True)
+    identificacion_deposito = serializers.CharField(source='id_deposito.identificacion_por_entidad', read_only=True)
+
+    class Meta:
+        model = EstanteDeposito
+        fields = [ 'orden_ubicacion_por_deposito','identificacion_por_deposito', 'nombre_deposito', 'identificacion_deposito','identificacion_por_estante']

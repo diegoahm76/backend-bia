@@ -8,6 +8,7 @@ from conservacion.choices.tipo_incidencia_choices import tipo_incidencia_CHOICES
 from conservacion.choices.estado_aprobacion_choices import estado_aprobacion_CHOICES
 from conservacion.choices.tipo_baja_choices import tipo_baja_CHOICES
 from conservacion.choices.tipo_bien_choices import tipo_bien_CHOICES
+from conservacion.choices.tipo_bien_tablero_choices import tipo_bien_tablero_CHOICES
 
 
 
@@ -40,6 +41,11 @@ class EstadoAprobacion(APIView):
 class TipoBien(APIView):
     def get(self,request):
         choices = tipo_bien_CHOICES
+        return Response(choices)
+
+class TipoBienTablero(APIView):
+    def get(self,request):
+        choices = tipo_bien_tablero_CHOICES
         return Response(choices)
 
 class TipoBaja(APIView):

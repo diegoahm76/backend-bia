@@ -20,7 +20,7 @@ class DisposicionFinalSeries(APIView):
         choices = disposicion_final_series_CHOICES
         return Response(choices)
 
-class PermisosGD(APIView):
-    def get(self,request):
-        choices = permisos_gd_CHOICES
-        return Response(choices)
+# class PermisosGD(APIView):
+#     def get(self,request):
+#         choices = permisos_gd_CHOICES
+#         return Response(choices)

@@ -20,12 +20,12 @@ from gestion_documental.models.ccd_models import (
 from gestion_documental.models.tca_models import (
     TablasControlAcceso,
     ClasificacionExpedientes,
-    PermisosGD,
+    # PermisosGD,
     CatSeriesUnidadOrgCCD_TRD_TCA,
     HistoricoCatSeriesUnidadOrgCCD_TRD_TCA,
-    PermisosCatSeriesUnidadOrgTCA,
-    PermisosDetPermisosCatSerieUndOrgTCA,
-    HistoricoPermisosCatSeriesUndOrgTCA
+    # PermisosCatSeriesUnidadOrgTCA,
+    # PermisosDetPermisosCatSerieUndOrgTCA,
+    # HistoricoPermisosCatSeriesUndOrgTCA
 )
 
 #CCD
@@ -48,9 +48,9 @@ admin.site.register(HistoricosCatSeriesUnidadOrgCCDTRD)
 #TCA
 admin.site.register(TablasControlAcceso),
 admin.site.register(ClasificacionExpedientes),
-admin.site.register(PermisosGD),
+# admin.site.register(PermisosGD),
 admin.site.register(CatSeriesUnidadOrgCCD_TRD_TCA),
 admin.site.register(HistoricoCatSeriesUnidadOrgCCD_TRD_TCA),
-admin.site.register(PermisosCatSeriesUnidadOrgTCA),
-admin.site.register(PermisosDetPermisosCatSerieUndOrgTCA),
-admin.site.register(HistoricoPermisosCatSeriesUndOrgTCA)
+# admin.site.register(PermisosCatSeriesUnidadOrgTCA),
+# admin.site.register(PermisosDetPermisosCatSerieUndOrgTCA),
+# admin.site.register(HistoricoPermisosCatSeriesUndOrgTCA)
