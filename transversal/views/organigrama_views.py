@@ -433,9 +433,11 @@ class CreateOrgChart(generics.CreateAPIView):
     queryset = Organigramas.objects.all()
     permission_classes = [IsAuthenticated]
     def post(self, request):
-        
         persona = request.user.persona.id_persona
+        
         data=request.data
+        data._mutable = True
+        
         data['id_persona_cargo']=persona
         
         serializer = self.serializer_class(data=data)
