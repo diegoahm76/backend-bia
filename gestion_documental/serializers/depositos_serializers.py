@@ -183,6 +183,7 @@ class  BandejaEstanteGetOrdenSerializer(serializers.ModelSerializer):
 
  #Editar_bandejas       
 class  BandejaEstanteUpDateSerializer(serializers.ModelSerializer):
+   
    class Meta:
         model =  BandejaEstante
         fields = ['identificacion_por_estante','orden_ubicacion_por_estante'] 	   
@@ -275,3 +276,42 @@ class CajaEstanteSearchSerializer(serializers.ModelSerializer):
     class Meta:
         model = EstanteDeposito
         fields = [ 'orden_ubicacion_por_deposito','identificacion_por_deposito', 'nombre_deposito', 'identificacion_deposito','identificacion_por_estante']
+
+#Editar_cajas
+class CajaBandejaUpDateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CajaBandeja
+        fields = ['identificacion_por_bandeja', 'orden_ubicacion_por_bandeja']
+
+    def validate_orden_ubicacion_por_bandeja(self, nuevo_orden):
+        orden_actual = self.instance.orden_ubicacion_por_bandeja
+
+        if nuevo_orden != orden_actual:
+            # Obtener el número máximo de orden actual en las cajas
+            maximo_orden = CajaBandeja.objects.aggregate(max_orden=Max('orden_ubicacion_por_bandeja')).get('max_orden')
+            self.instance.orden_ubicacion_por_bandeja = maximo_orden + 1
+            self.instance.save()
+
+            if nuevo_orden > orden_actual:
+                # Desplazar las cajas siguientes hacia abajo
+                cajas = CajaBandeja.objects.filter(id_bandeja_estante=self.instance.id_bandeja_estante, orden_ubicacion_por_bandeja__gt=orden_actual, orden_ubicacion_por_bandeja__lte=nuevo_orden).order_by('orden_ubicacion_por_bandeja')
+
+                for caja in cajas:
+                    caja.orden_ubicacion_por_bandeja = caja.orden_ubicacion_por_bandeja - 1
+                    caja.save()
+
+            elif nuevo_orden < orden_actual:
+                # Desplazar las cajas hacia arriba
+                cajas = CajaBandeja.objects.filter(id_bandeja_estante=self.instance.id_bandeja_estante, orden_ubicacion_por_bandeja__lt=orden_actual, orden_ubicacion_por_bandeja__gte=nuevo_orden).order_by('-orden_ubicacion_por_bandeja')
+
+                for caja in cajas:
+                    caja.orden_ubicacion_por_bandeja = caja.orden_ubicacion_por_bandeja + 1
+                    caja.save()
+
+        return nuevo_orden
+    
+#Mover_caja_a_otra_bandeja
+class  CajaBandejaMoveSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  CajaBandeja
+        fields = '__all__'
