@@ -315,3 +315,9 @@ class  CajaBandejaMoveSerializer(serializers.ModelSerializer):
     class Meta:
         model =  CajaBandeja
         fields = '__all__'
+
+#Busqueda_avanzada_de_cajas
+class  CajaEstanteSearchAdvancedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  CajaBandeja
+        fields = '__all__'

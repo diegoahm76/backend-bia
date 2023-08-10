@@ -37,7 +37,9 @@ urlpatterns = [
      path('cajaBandeja/listar-cajas-por-bandeja/<int:pk>/', views.CajasByBandejaList.as_view(), name='listar-cajas-por-bandeja'),
      path('cajaBandeja/buscar-estante/',views.CajaEstanteSearch.as_view(), name='buscar-estante'),
      path('cajaBandeja/actualizar-caja/<int:pk>/',views.cajaBandejaUpDate.as_view(),name='actualizar-caja'),
-     path('cajaBandeja/mover-caja/<int:id_caja_estante>/',views.BandejaEstanteMove.as_view(), name='mover-caja'),
+     path('cajaBandeja/mover-caja/<int:id_caja_estante>/',views.CajaEstanteBandejaMove.as_view(), name='mover-caja'),
+     path('cajaBandeja/busqueda-avanzada-caja/',views.CajaEstanteSearchAdvanced.as_view(), name='buscar-avanzada'),
+
 
 
 
