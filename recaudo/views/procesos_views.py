@@ -9,9 +9,6 @@ from recaudo.models.procesos_models import (
     Bienes,
     Avaluos
 )
-from recaudo.models.cobros_models import (
-    Cartera
-)
 from recaudo.serializers.procesos_serializers import (
     EtapasProcesoSerializer,
     TiposAtributosSerializer,
@@ -239,20 +236,19 @@ class UpdateProcesosView(generics.ListAPIView):
     #permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
-        id_cartera = request.data['id_cartera']
-        cartera = Cartera.objects.filter(pk=id_cartera)
+        id_etapa = request.data['id_etapa']
+        etapa = EtapasProceso.objects.filter(pk=id_etapa)
         proceso = Procesos.objects.filter(pk=pk)
         if len(proceso) == 1:
-            if len(cartera) == 1:
+            if len(etapa) == 1:
                 proceso = proceso.get()
-                cartera = cartera.get()
-                proceso.id_cartera = cartera
-                serializer = ProcesosPostSerializer(data=proceso)
+                etapa = etapa.get()
+                proceso.id_etapa = etapa
                 proceso.save()
                 print(proceso)
-                return Response({'success': True, 'data': 'La cartera del proceso se ha actualizado con exito'}, status=status.HTTP_200_OK)
+                return Response({'success': True, 'data': 'La etapa del proceso se ha actualizado con exito'}, status=status.HTTP_200_OK)
             else:
-                return Response({'success': False, 'data': 'No existe la cartera con el id enviado'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'success': False, 'data': 'No existe la etapa con el id enviado'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'success': False, 'data': 'No existe el proceso con el id enviado'}, status=status.HTTP_400_BAD_REQUEST)
 
