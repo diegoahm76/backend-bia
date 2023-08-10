@@ -379,8 +379,11 @@ class FinalizarOrganigrama(generics.UpdateAPIView):
             if organigrama_a_finalizar.id_persona_cargo:
                 if organigrama_a_finalizar.id_persona_cargo.id_persona != persona_logueada:
                     raise PermissionDenied('Este organigrama actualmente solo podrá ser editado por ' + organigrama_a_finalizar.id_persona_cargo.primer_nombre + ' ' + organigrama_a_finalizar.id_persona_cargo.primer_apellido)
-        
+            
             if not organigrama_a_finalizar.fecha_terminado:
+                if not organigrama_a_finalizar.ruta_resolucion or organigrama_a_finalizar.ruta_resolucion == '':
+                    raise PermissionDenied('No se puede finalizar organigrama sin antes adjuntar la resolución')
+            
                 niveles=NivelesOrganigrama.objects.filter(id_organigrama=pk) 
                 unidades=UnidadesOrganizacionales.objects.filter(id_organigrama=pk) 
                 nivel_list= [nivel.id_nivel_organigrama for nivel in niveles] 
@@ -428,6 +431,7 @@ class FinalizarOrganigrama(generics.UpdateAPIView):
                 raise PermissionDenied('Ya se encuentra finalizado este Organigrama')
 
         raise PermissionDenied('No existe organigrama')
+    
 class CreateOrgChart(generics.CreateAPIView):
     serializer_class = OrganigramaPostSerializer
     queryset = Organigramas.objects.all()
