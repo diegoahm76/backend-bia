@@ -9,9 +9,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Max 
 from django.db.models import Q
+from django.db import transaction
 from datetime import datetime,date,timedelta
 from gestion_documental.models.depositos_models import  Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
-from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaUpDateSerializer, CajaEstanteSearchSerializer, CajasByBandejaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
+from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajasByBandejaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
 from seguridad.utils import Util
 
 
@@ -784,3 +785,137 @@ class cajaBandejaUpDate(generics.UpdateAPIView):
     
 
 #MOVER CAJA(PENDIENTE)
+#(Pendiente validacion de deposito si esta activo o no)(kc)
+#pendiente validacion de carpetas (kc)
+class CajaEstanteBandejaMove(generics.UpdateAPIView):
+    serializer_class = CajaBandejaMoveSerializer
+    queryset = CajaBandeja.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def put(self, request, id_caja_estante):
+        # Obtener la caja actual
+        caja = get_object_or_404(CajaBandeja, id_caja_estante=id_caja_estante)
+
+        # Obtener los datos de destino desde la solicitud
+        identificacion_bandeja_destino = request.data.get('identificacion_bandeja_destino')
+        identificacion_estante_destino = request.data.get('identificacion_estante_destino')
+        identificacion_deposito_destino = request.data.get('identificacion_deposito_destino')
+
+        # Validar si la bandeja de destino existe
+        bandeja_destino = BandejaEstante.objects.filter(identificacion_por_estante=identificacion_bandeja_destino).first()
+        if not bandeja_destino:
+            return Response({'success': False, 'detail': 'No se encontró la bandeja de destino especificada.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Validar si el estante de destino existe
+        estante_destino = EstanteDeposito.objects.filter(identificacion_por_deposito=identificacion_estante_destino).first()
+        if not estante_destino:
+            return Response({'success': False, 'detail': 'No se encontró el estante de destino especificado.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Validar si el depósito de destino existe
+        deposito_destino = Deposito.objects.filter(identificacion_por_entidad=identificacion_deposito_destino).first()
+        if not deposito_destino:
+            return Response({'success': False, 'detail': 'No se encontró el depósito de destino especificado.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Retener los datos actuales de la caja (sin cambios)
+        caja_actual_data = {
+            'identificacion_bandeja': caja.id_bandeja_estante.identificacion_por_estante,
+            'identificacion_estante': caja.id_bandeja_estante.id_estante_deposito.identificacion_por_deposito,
+            'identificacion_deposito': caja.id_bandeja_estante.id_estante_deposito.id_deposito.identificacion_por_entidad,
+        }
+
+        # Realizar el cambio de la caja a la bandeja de destino
+        caja.id_bandeja_estante = bandeja_destino
+        caja.save()
+
+        # Retornar los datos de caja actual y caja destino
+        return Response({
+            'success': True,
+            'detail': 'Caja movida exitosamente.',
+            'caja_actual': caja_actual_data,
+            'caja_destino': {
+                'identificacion_bandeja': identificacion_bandeja_destino,
+                'identificacion_estante': identificacion_estante_destino,
+                'identificacion_deposito': identificacion_deposito_destino,
+            },
+        }, status=status.HTTP_200_OK)
+
+
+#LISTAR_BANDEJAS_POR_ESTANTE
+class BandejasByEstanteList(generics.ListAPIView):
+    serializer_class = BandejasByEstanteListSerializer
+    queryset = BandejaEstante.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        bandeja = BandejaEstante.objects.filter(id_estante_deposito=pk)
+        serializer = self.serializer_class(bandeja,many=True)
+        
+        if not Deposito:
+            raise NotFound("El registro del estante que busca, no se encuentra registrado")
+
+        return Response({'success':True,
+                         'detail':'Se encontraron los siguientes registros.',
+                         'data':serializer.data},status=status.HTTP_200_OK)
+    
+
+#BUSQUEDA_AVANZADA_DE_CAJAS
+class CajaEstanteSearchAdvanced(generics.ListAPIView):
+    serializer_class = CajaEstanteSearchAdvancedSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def clean_search_param(self, param):
+        # Convertir a minúsculas y eliminar espacios en blanco
+        return param.lower().strip() if param else None
+
+    def get_queryset(self):
+        identificacion_deposito = self.clean_search_param(self.request.query_params.get('identificacion_deposito'))
+        identificacion_estante = self.clean_search_param(self.request.query_params.get('identificacion_estante'))
+        identificacion_bandeja = self.clean_search_param(self.request.query_params.get('identificacion_bandeja'))
+        identificacion_caja = self.clean_search_param(self.request.query_params.get('identificacion_caja'))
+        orden_caja = self.clean_search_param(self.request.query_params.get('orden_caja'))
+
+        queryset = CajaBandeja.objects.all()
+
+        if identificacion_deposito:
+            queryset = queryset.filter(id_bandeja_estante__id_estante_deposito__id_deposito__identificacion_por_entidad__icontains=identificacion_deposito)
+
+        if identificacion_estante:
+            queryset = queryset.filter(id_bandeja_estante__id_estante_deposito__identificacion_por_deposito__icontains=identificacion_estante)
+
+        if identificacion_bandeja:
+            queryset = queryset.filter(id_bandeja_estante__identificacion_por_estante__icontains=identificacion_bandeja)
+
+        if identificacion_caja:
+            queryset = queryset.filter(identificacion_por_bandeja__icontains=identificacion_caja)
+
+        if orden_caja:
+            queryset = queryset.filter(orden_ubicacion_por_bandeja=orden_caja)
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            return Response({
+                'success': True,
+                'detail': 'No se encontraron cajas que coincidan con los criterios de búsqueda.',
+                'data': []
+            }, status=status.HTTP_200_OK)
+
+        serialized_data = []
+        for caja in queryset:
+            serialized_data.append({
+                'identificacion_deposito': caja.id_bandeja_estante.id_estante_deposito.id_deposito.identificacion_por_entidad,
+                'identificacion_estante': caja.id_bandeja_estante.id_estante_deposito.identificacion_por_deposito,
+                'identificacion_bandeja': caja.id_bandeja_estante.identificacion_por_estante,
+                'identificacion_caja': caja.identificacion_por_bandeja,
+                'orden_caja': caja.orden_ubicacion_por_bandeja,
+            })
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron las siguientes cajas.',
+            'data': serialized_data
+        }, status=status.HTTP_200_OK)
