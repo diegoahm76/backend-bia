@@ -21,6 +21,7 @@ from seguridad.lists.estado_civil_list import estado_civil_LIST
 from seguridad.lists.opciones_usuario_list import opciones_usuario_LIST
 from seguridad.lists.sexo_list import sexo_LIST 
 from seguridad.lists.perfiles_sistema_list import perfiles_LIST
+from seguridad.lists.niveles_prioridad_alerta import niveles_list
 from seguridad.lists.subsistemas_list import subsistemas_LIST
 from seguridad.lists.tipo_direccion_list import tipo_direccion_LIST
 from seguridad.lists.direcciones_list import direcciones_LIST 
@@ -71,6 +72,10 @@ class GetLisSexo(APIView):
 class GetLisPerfilesSistema(APIView):
     def get(self, request):
         return Response({'success':True, 'detail':'Los perfiles del sistema son los siguientes', 'data': perfiles_LIST}, status=status.HTTP_200_OK) 
+class GetLisNivelesPrioridadAlerta(APIView):
+    def get(self, request):
+        return Response({'success':True, 'detail':'Los perfiles del sistema son los siguientes', 'data':niveles_list }, status=status.HTTP_200_OK) 
+
 
 class GetLisSubsistema(APIView):
     def get(self, request):
