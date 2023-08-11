@@ -94,14 +94,24 @@ class GetListPaises(generics.ListAPIView):
 
     def get(self, request):
         cod_departamento = request.query_params.get('cod_departamento', '')
+        cod_municipio = request.query_params.get('cod_municipio', '')
 
-        if cod_departamento:
-            departamento = Departamento.objects.filter(cod_departamento=cod_departamento).first()
-            if not departamento:
-                raise ValidationError("El departamento ingresado no existe")
-            paises = self.queryset.all().filter(cod_pais=departamento.pais)
+        if cod_municipio:
+            municipio = Municipio.objects.filter(cod_municipio=cod_municipio).first()
+            if not municipio:
+                raise ValidationError("El municipio ingresado no existe")
+            departamento_m = Departamento.objects.filter(cod_departamento=municipio.cod_departamento).first()
+            paises = self.queryset.all().filter(cod_pais=departamento_m.pais)
             serializer = self.serializer_class(paises, many=True)
             paises = serializer.data
+
+        # if cod_departamento:
+        #     departamento = Departamento.objects.filter(cod_departamento=cod_departamento).first()
+        #     if not departamento:
+        #         raise ValidationError("El departamento ingresado no existe")
+        #     paises = self.queryset.all().filter(cod_pais=departamento.pais)
+        #     serializer = self.serializer_class(paises, many=True)
+        #     paises = serializer.data
         else:
             paises = self.queryset.exclude(cod_pais='CO').values(value=F('cod_pais'), label=F('nombre'))
             colombia = self.queryset.filter(cod_pais='CO').values(value=F('cod_pais'), label=F('nombre')).first()
