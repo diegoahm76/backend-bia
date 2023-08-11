@@ -352,6 +352,9 @@ class ReporteEstadoActividadGetView(generics.ListAPIView):
         distribuciones_items_entradas = DistribucionesItemDespachoEntrante.objects.filter(id_item_despacho_entrante__in=items_entradas_list)
         distribuciones_items_entradas = distribuciones_items_entradas.filter(id_vivero=id_vivero) if id_vivero != '' else distribuciones_items_entradas
         
+        cantidad_actual = InventarioViveros.objects.filter(id_bien=id_bien)
+        cantidad_actual = cantidad_actual.filter(id_vivero=id_vivero) if id_vivero != '' else cantidad_actual
+        
         if reporte_consolidado == 'true':
             data = {
                 'id_vivero': None,
@@ -396,9 +399,31 @@ class ReporteEstadoActividadGetView(generics.ListAPIView):
                 'unidades_mortalidad': response_reporte_mortalidad.data.get('data', [])[0].get('cantidad_mortalidad') if response_reporte_mortalidad.data.get('data', []) else None
             }
             
+            cantidades_produccion = cantidad_actual.filter(cod_etapa_lote='P').aggregate(
+                cantidad_entrante_total=Sum('cantidad_entrante'),
+                cantidad_bajas_total=Sum('cantidad_bajas'),
+                cantidad_traslados_lote_produccion_distribucion_total=Sum('cantidad_traslados_lote_produccion_distribucion'),
+                cantidad_lote_cuarentena_total=Sum('cantidad_lote_cuarentena'),
+            )
+            
+            cantidades_distribucion = cantidad_actual.filter(cod_etapa_lote='D').aggregate(
+                cantidad_entrante_total=Sum('cantidad_entrante'),
+                cantidad_bajas_total=Sum('cantidad_bajas'),
+                cantidad_lote_cuarentena_total=Sum('cantidad_lote_cuarentena'),
+            )
+            
+            cantidad_entrante_total_produccion = cantidades_produccion['cantidad_entrante_total'] if cantidades_produccion['cantidad_entrante_total'] else 0
+            cantidad_bajas_total_produccion = cantidades_produccion['cantidad_bajas_total'] if cantidades_produccion['cantidad_bajas_total'] else 0
+            cantidad_traslados_lote_produccion_distribucion_total_produccion = cantidades_produccion['cantidad_traslados_lote_produccion_distribucion_total'] if cantidades_produccion['cantidad_traslados_lote_produccion_distribucion_total'] else 0
+            cantidad_lote_cuarentena_total = cantidades_produccion['cantidad_lote_cuarentena_total'] if cantidades_produccion['cantidad_lote_cuarentena_total'] else 0
+            
+            cantidad_entrante_total_distribucion = cantidades_distribucion['cantidad_entrante_total'] if cantidades_distribucion['cantidad_entrante_total'] else 0
+            cantidad_bajas_total_distribucion = cantidades_distribucion['cantidad_bajas_total'] if cantidades_distribucion['cantidad_bajas_total'] else 0
+            cantidad_lote_cuarentena_total_distribucion = cantidades_distribucion['cantidad_lote_cuarentena_total'] if cantidades_distribucion['cantidad_lote_cuarentena_total'] else 0
+            
             data['actualidad'] = {
-                'cantidad_produccion': None,
-                'cantidad_distribucion': None
+                'cantidad_produccion': cantidad_entrante_total_produccion - cantidad_bajas_total_produccion - cantidad_traslados_lote_produccion_distribucion_total_produccion - cantidad_lote_cuarentena_total,
+                'cantidad_distribucion': cantidad_entrante_total_distribucion - cantidad_bajas_total_distribucion - cantidad_lote_cuarentena_total_distribucion
             }
             
             data = [data]
@@ -449,9 +474,31 @@ class ReporteEstadoActividadGetView(generics.ListAPIView):
                     'unidades_mortalidad': unidades_mortalidad[0] if unidades_mortalidad else None
                 }
                 
+                cantidades_produccion = cantidad_actual.filter(id_vivero=item['id_vivero'], cod_etapa_lote='P').aggregate(
+                    cantidad_entrante_total=Sum('cantidad_entrante'),
+                    cantidad_bajas_total=Sum('cantidad_bajas'),
+                    cantidad_traslados_lote_produccion_distribucion_total=Sum('cantidad_traslados_lote_produccion_distribucion'),
+                    cantidad_lote_cuarentena_total=Sum('cantidad_lote_cuarentena'),
+                )
+                
+                cantidades_distribucion = cantidad_actual.filter(id_vivero=item['id_vivero'], cod_etapa_lote='D').aggregate(
+                    cantidad_entrante_total=Sum('cantidad_entrante'),
+                    cantidad_bajas_total=Sum('cantidad_bajas'),
+                    cantidad_lote_cuarentena_total=Sum('cantidad_lote_cuarentena'),
+                )
+                
+                cantidad_entrante_total_produccion = cantidades_produccion['cantidad_entrante_total'] if cantidades_produccion['cantidad_entrante_total'] else 0
+                cantidad_bajas_total_produccion = cantidades_produccion['cantidad_bajas_total'] if cantidades_produccion['cantidad_bajas_total'] else 0
+                cantidad_traslados_lote_produccion_distribucion_total_produccion = cantidades_produccion['cantidad_traslados_lote_produccion_distribucion_total'] if cantidades_produccion['cantidad_traslados_lote_produccion_distribucion_total'] else 0
+                cantidad_lote_cuarentena_total = cantidades_produccion['cantidad_lote_cuarentena_total'] if cantidades_produccion['cantidad_lote_cuarentena_total'] else 0
+                
+                cantidad_entrante_total_distribucion = cantidades_distribucion['cantidad_entrante_total'] if cantidades_distribucion['cantidad_entrante_total'] else 0
+                cantidad_bajas_total_distribucion = cantidades_distribucion['cantidad_bajas_total'] if cantidades_distribucion['cantidad_bajas_total'] else 0
+                cantidad_lote_cuarentena_total_distribucion = cantidades_distribucion['cantidad_lote_cuarentena_total'] if cantidades_distribucion['cantidad_lote_cuarentena_total'] else 0
+                
                 item['actualidad'] = {
-                    'cantidad_produccion': None,
-                    'cantidad_distribucion': None
+                    'cantidad_produccion': cantidad_entrante_total_produccion - cantidad_bajas_total_produccion - cantidad_traslados_lote_produccion_distribucion_total_produccion - cantidad_lote_cuarentena_total,
+                    'cantidad_distribucion': cantidad_entrante_total_distribucion - cantidad_bajas_total_distribucion - cantidad_lote_cuarentena_total_distribucion
                 }
                 
                 data_response.append(item)
@@ -470,7 +517,6 @@ class ReporteActividadLoteGetView(generics.ListAPIView):
         id_bien = request.query_params.get('id_bien', '')
         fecha_desde = request.query_params.get('fecha_desde', '')
         fecha_hasta = request.query_params.get('fecha_hasta', '')
-        reporte_consolidado = request.query_params.get('reporte_consolidado', '')
         
         if id_vivero == '' or id_bien == '' or fecha_desde == '' or fecha_hasta == '':
             raise ValidationError('Debe elegir el vivero, una planta y las fechas como filtros')

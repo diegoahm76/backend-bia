@@ -1,6 +1,7 @@
 import copy
 import json
 from collections import Counter
+from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from rest_framework import generics
@@ -10,11 +11,13 @@ from rest_framework import status
 from datetime import datetime,date,timedelta
 from recurso_hidrico.models.programas_models import ProyectosPORH
 from recurso_hidrico.serializers.programas_serializers import GenerardorMensajeProyectosPORHGetSerializer, ProyectosPORHSerializer
+from transversal.funtions.alertas import alerta_proyectos_vigentes_porh, mi_primera_tarea_en_segundo_plano
 from transversal.models.alertas_models import AlertasProgramadas, ConfiguracionClaseAlerta, FechaClaseAlerta, PersonasAAlertar
 from seguridad.models import Personas
 from transversal.serializers.alertas_serializers import AlertasProgramadasPostSerializer, AlertasProgramadasUpdateSerializer, ConfiguracionClaseAlertaGetSerializer, ConfiguracionClaseAlertaUpdateSerializer, FechaClaseAlertaDeleteSerializer, FechaClaseAlertaGetSerializer, FechaClaseAlertaPostSerializer, PersonasAAlertarDeleteSerializer, PersonasAAlertarGetSerializer, PersonasAAlertarPostSerializer
 from django.db import transaction 
 from django.db.models import Q
+# from background_task import background
 
 class ConfiguracionClaseAlertaUpdate(generics.UpdateAPIView):
     serializer_class = ConfiguracionClaseAlertaUpdateSerializer
@@ -430,7 +433,7 @@ class AlertasProgramadasCreate(generics.CreateAPIView):
             data_alerta_programada['id_modulo_generador'] = configuracion.id_modulo_generador.id_modulo
             data_alerta_programada['cod_categoria_alerta'] = configuracion.cod_categoria_clase_alerta
             data_alerta_programada['tiene_implicado'] = configuracion.asignar_responsable
-
+            data_alerta_programada['nombre_funcion_comple_mensaje']=configuracion.nombre_funcion_comple_mensaje
             data_alerta_programada['activa'] = configuracion.activa
 
             serializer = AlertasProgramadasPostSerializer(data=data_alerta_programada)
@@ -555,10 +558,13 @@ class AlertasProgramadasUpdate(generics.UpdateAPIView):
 ##funciones para complementar mensajes
 
 ##ALERTA RECURSO HIDICO
+
 class AlertaProyectosVigentesGet(generics.ListAPIView):
     serializer_class=GenerardorMensajeProyectosPORHGetSerializer
     queryset = ProyectosPORH.objects.all()
     permission_classes = [IsAuthenticated]
+
+
     def get(self, request):
        
         mensaje=""
@@ -568,17 +574,59 @@ class AlertaProyectosVigentesGet(generics.ListAPIView):
         #proyectos_vigentes = ProyectosPORH.objects.filter(Q(vigencia_inicial__lte=hoy)  & Q(vigencia_final__lte=hoy))
         proyectos_vigentes = ProyectosPORH.objects.filter(Q(vigencia_inicial__lte=hoy) & Q(vigencia_final__gte=hoy))
         serializador = self.serializer_class(proyectos_vigentes, many=True)
-        for dato in serializador.data:
+        #for dato in serializador.data:
             
-            mensaje+="Proyecto "+str(dato['id_proyecto'])+" ("+str(dato['nombre'])+")"+" del Programa "+str(dato['id_programa'])+" ("+str(dato['nombre_programa'])+")"+"  del Plan de Ordenamiento de Recurso Hídrico "+str(dato['id_porh'])+" ("+str(dato['nombre_porh'])+")"+".\n"
+            #mensaje+="Proyecto "+str(dato['id_proyecto'])+" ("+str(dato['nombre'])+")"+" del Programa "+str(dato['id_programa'])+" ("+str(dato['nombre_programa'])+")"+"  del Plan de Ordenamiento de Recurso Hídrico "+str(dato['id_porh'])+" ("+str(dato['nombre_porh'])+")"+".\n"
             #print(mensaje)
+        mensaje=alerta_proyectos_vigentes_porh()
 
-        cod='RcH_AvPy'
-
-        alertas_generadas=AlertasProgramadas.objects.filter(cod_clase_alerta=cod)
-        for programada in alertas_generadas:
-            print(programada)
             
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializador.data,'mensaje':mensaje}, status=status.HTTP_200_OK)
 
-       
+
+#FUNCIONES GENERADORAS DE MENSAJE
+# def alerta_proyectos_vigentes_porh():
+#         mensaje=""
+#         hoy = date.today()
+#         proyectos_vigentes = ProyectosPORH.objects.filter(Q(vigencia_inicial__lte=hoy) & Q(vigencia_final__gte=hoy))
+#         serializador = GenerardorMensajeProyectosPORHGetSerializer(proyectos_vigentes, many=True)
+#         for dato in serializador.data:
+#             mensaje+="Proyecto "+str(dato['id_proyecto'])+" ("+str(dato['nombre'])+")"+" del Programa "+str(dato['id_programa'])+" ("+str(dato['nombre_programa'])+")"+"  del Plan de Ordenamiento de Recurso Hídrico "+str(dato['id_porh'])+" ("+str(dato['nombre_porh'])+")"+".\n"
+
+#         return(mensaje)
+
+
+
+# #@background(schedule=None) 
+# def mi_primera_tarea_en_segundo_plano():
+#     # Coloca aquí el código de la tarea que deseas ejecutar en segundo plano
+#     print("Tarea en segundo plano ejecutada.")
+#     #cod='RcH_AvPy'
+#     hoy = date.today()
+#     numero_dia = hoy.day
+#     numero_mes = hoy.month
+#     numero_anio = hoy.year
+#     alertas_generadas=AlertasProgramadas.objects.all()
+#     #Alerta en Fecha Fija - Programadas con o sin Repeticiones anteriores o posteriores  (con y sin año).
+#     for programada in alertas_generadas:
+#             if programada.dia_cumplimiento==numero_dia and programada.mes_cumplimiento==numero_mes:
+#                 print(programada.nombre_funcion_comple_mensaje)
+#                 print(programada.dia_cumplimiento)
+
+#                 nombre_funcion = programada.nombre_funcion_comple_mensaje
+#                 funcion = globals().get(nombre_funcion)
+
+#                 if funcion:
+#                     cadena=funcion()
+#                     print(cadena)
+#                 else:
+#                     print("La función no fue encontrada.")
+
+
+
+
+def mi_vista(request):
+
+    mi_primera_tarea_en_segundo_plano()  
+
+    return HttpResponse("Tarea en segundo plano programada.")

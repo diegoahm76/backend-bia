@@ -19,4 +19,5 @@ urlpatterns = [
     path("alertas_programadas/update/<str:pk>/", views.AlertasProgramadasUpdate.as_view(), name="update-alertas-programadas"),
     path('proyectosporh/get-proyectos-vigentes-alerta/',views.AlertaProyectosVigentesGet.as_view(),name='get-proyectos-vigentes'),
     #FIN RECURSO_HIDRICO
+    path('ejecutar-tarea/', views.mi_vista, name='ejecutar_tarea'),
 ]
