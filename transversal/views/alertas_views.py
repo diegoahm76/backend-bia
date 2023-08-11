@@ -17,7 +17,8 @@ from seguridad.models import Personas
 from transversal.serializers.alertas_serializers import AlertasProgramadasPostSerializer, AlertasProgramadasUpdateSerializer, ConfiguracionClaseAlertaGetSerializer, ConfiguracionClaseAlertaUpdateSerializer, FechaClaseAlertaDeleteSerializer, FechaClaseAlertaGetSerializer, FechaClaseAlertaPostSerializer, PersonasAAlertarDeleteSerializer, PersonasAAlertarGetSerializer, PersonasAAlertarPostSerializer
 from django.db import transaction 
 from django.db.models import Q
-from background_task import background
+# from background_task import background
+
 class ConfiguracionClaseAlertaUpdate(generics.UpdateAPIView):
     serializer_class = ConfiguracionClaseAlertaUpdateSerializer
     queryset = ConfiguracionClaseAlerta.objects.all()

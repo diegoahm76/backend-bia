@@ -50,7 +50,10 @@ class UnidadesOrganizacionales(models.Model):
     cod_tipo_unidad=models.CharField(max_length=2,choices=tipo_unidad_CHOICES,db_column='T019codTipoUnidad')
     cod_agrupacion_documental=models.CharField(max_length=3, choices=agrupacion_documental_CHOICES, null=True, blank=True, db_column='T019codAgrupacionDocumental')
     unidad_raiz=models.BooleanField(db_column='T019unidadRaiz',default=False)
-    id_unidad_org_padre=models.ForeignKey('self',on_delete=models.SET_NULL,blank=True,null=True,db_column='T019Id_UnidadOrgPadre')
+    id_unidad_org_padre=models.ForeignKey('self',related_name='id_unidad_org_padre_organigrama',on_delete=models.SET_NULL,blank=True,null=True,db_column='T019Id_UnidadOrgPadre')
+    id_unidad_org_actual_admin_series=models.ForeignKey('self', related_name='id_unidad_org_actual_admin_series_organigrama', on_delete=models.SET_NULL, blank=True, null=True, db_column='T019Id_UndOrgActual_AdminSeries')
+    item_usado=models.BooleanField(db_column='T019itemYaUsado', default=False)
+    activo=models.BooleanField(db_column='T019activo', default=True)
 
     def __str__(self):
         return str(self.nombre) 
