@@ -1,7 +1,7 @@
 
 from rest_framework import serializers
 
-from transversal.models.alertas_models import AlertasBandejaAlertaPersona, AlertasGeneradas, AlertasProgramadas, ConfiguracionClaseAlerta, FechaClaseAlerta, PersonasAAlertar
+from transversal.models.alertas_models import AlertasBandejaAlertaPersona, AlertasGeneradas, AlertasProgramadas, BandejaAlertaPersona, ConfiguracionClaseAlerta, FechaClaseAlerta, PersonasAAlertar
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 
 
@@ -91,3 +91,23 @@ class AlertasBandejaAlertaPersonaPostSerializer(serializers.ModelSerializer):
      class Meta:
           model=AlertasBandejaAlertaPersona
           fields= '__all__'
+
+class BandejaAlertaPersonaGetSerializer(serializers.ModelSerializer):
+     class Meta:
+          model=BandejaAlertaPersona
+          fields= '__all__'
+
+
+
+class AlertasBandejaAlertaPersonaGetSerializer(serializers.ModelSerializer):
+    nivel_prioridad=serializers.ReadOnlyField(source='id_alerta_generada.nivel_prioridad', default=None)
+    tipo_alerta=serializers.ReadOnlyField(source='id_alerta_generada.cod_categoria_alerta', default=None)
+    fecha_hora=serializers.ReadOnlyField(source='id_alerta_generada.fecha_generada', default=None)
+    nombre_clase_alerta=serializers.ReadOnlyField(source='id_alerta_generada.nombre_clase_alerta', default=None)
+    id_modulo=serializers.ReadOnlyField(source='id_alerta_generada.id_modulo_destino.id_modulo', default=None)
+    nombre_modulo=serializers.ReadOnlyField(source='id_alerta_generada.id_modulo_destino.nombre_modulo', default=None)
+    ultima_repeticion=serializers.ReadOnlyField(source='id_alerta_generada.es_ultima_repeticion', default=None)
+    class Meta:
+          model=AlertasBandejaAlertaPersona
+          fields= '__all__'
+

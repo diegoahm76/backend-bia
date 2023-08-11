@@ -102,7 +102,7 @@ def mi_primera_tarea_en_segundo_plano():
                 id_implicado=None
                 if programada.tiene_implicado:
                     if programada.id_persona_implicada:
-                        #print("PERSONA")
+                        print(programada.id_persona_implicada)
                         print(programada.id_persona_implicada.id_persona)
                         id_implicado=programada.id_persona_implicada.id_persona
                     if programada.perfil_sistema_implicado:
@@ -172,15 +172,16 @@ def mi_primera_tarea_en_segundo_plano():
                 print(arreglo_sin_repetidos)  # Resultado: [1, '2', '3', 2, '4', 3, '5']
                 for destino in arreglo_sin_repetidos:
                     bandejas_notificaciones=BandejaAlertaPersona.objects.filter(id_persona=destino).first()
-                    print(bandejas_notificaciones.id_persona.id_persona)
+                    #print(bandejas_notificaciones.id_persona.id_persona)
                     alerta_bandeja={}
                     alerta_bandeja['leido']=False
                     alerta_bandeja['archivado']=False
                     #alerta_bandeja['fecha_archivado']=False
                     alerta_bandeja['email_usado']='PENDINTE@'
-                    alerta_bandeja['responsable_directo']=id_implicado
+                    print(id_implicado)
+                    alerta_bandeja['responsable_directo']=True
                     alerta_bandeja['id_alerta_generada']=instance_alerta_generada.id_alerta_generada
-                    alerta_bandeja['id_bandeja_alerta_persona']=destino
+                    alerta_bandeja['id_bandeja_alerta_persona']=bandejas_notificaciones.id_bandeja_alerta
                     #correo
                     print(alerta_bandeja)
                     serializer_alerta_bandeja=AlertasBandejaAlertaPersonaPostSerializer(data=alerta_bandeja)
