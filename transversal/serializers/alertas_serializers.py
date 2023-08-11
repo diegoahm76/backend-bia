@@ -1,7 +1,7 @@
 
 from rest_framework import serializers
 
-from transversal.models.alertas_models import AlertasProgramadas, ConfiguracionClaseAlerta, FechaClaseAlerta, PersonasAAlertar
+from transversal.models.alertas_models import AlertasBandejaAlertaPersona, AlertasGeneradas, AlertasProgramadas, ConfiguracionClaseAlerta, FechaClaseAlerta, PersonasAAlertar
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 
 
@@ -81,3 +81,13 @@ class AlertasProgramadasDeleteSerializer(serializers.ModelSerializer):
     class Meta:
         model = AlertasProgramadas
         fields = '__all__'
+
+class AlertasGeneradasPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AlertasGeneradas
+        fields = '__all__'
+
+class AlertasBandejaAlertaPersonaPostSerializer(serializers.ModelSerializer):
+     class Meta:
+          model=AlertasBandejaAlertaPersona
+          fields= '__all__'
