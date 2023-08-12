@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from almacen.models.bienes_models import CatalogoBienes
 from conservacion.models.cuarentena_models import CuarentenaMatVegetal
+from conservacion.models.incidencias_models import ConsumosIncidenciasMV
 
 from conservacion.models.inventario_models import InventarioViveros
 
@@ -148,3 +149,36 @@ class GetBienesMezclasSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ['nombre','id_mezcla','id_bien','codigo_bien','tipo_bien','nombre_cientifico']
         model = CatalogoBienes
+        
+class GetBienesInventarioSerializer(serializers.ModelSerializer):
+    nombre = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
+    codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
+    nombre_cientifico = serializers.ReadOnlyField(source='id_bien.nombre_cientifico', default=None)
+            
+    class Meta:
+        fields = ['nombre','id_bien','codigo_bien','nombre_cientifico','agno_lote','nro_lote']
+        model = InventarioViveros
+        
+class ConsumosIncidenciasGetSerializer(serializers.ModelSerializer):
+    nombre = serializers.SerializerMethodField()
+    unidad_medida = serializers.SerializerMethodField()
+    
+    def get_nombre(self,obj):
+        if obj.id_bien:
+            nombre = obj.id_bien.nombre
+        else:
+            nombre = obj.id_mezcla.nombre
+            
+        return nombre
+
+    def get_unidad_medida(self,obj):
+        if obj.id_bien:
+            unidad_medida = obj.id_bien.id_unidad_medida.abreviatura
+        else:
+            unidad_medida = obj.id_mezcla.id_unidad_medida.abreviatura
+            
+        return unidad_medida
+            
+    class Meta:
+        fields = ['nombre','unidad_medida','cantidad_consumida']
+        model = ConsumosIncidenciasMV

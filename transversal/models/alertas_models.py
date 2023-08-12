@@ -23,9 +23,10 @@ class ConfiguracionClaseAlerta(models.Model):
     mensaje_base_dia = models.CharField(max_length=255, db_column='T040mensajeBaseDelDia')
     mensaje_base_previo = models.CharField(null=True, blank=True, max_length=255, db_column='T040mensajeBasePrevio')
     mensaje_base_vencido = models.CharField(null=True, blank=True, max_length=255, db_column='T040mensajeBaseVencido')
-    asignar_respondable = models.BooleanField(default=False, db_column='T040asignarResponsableDirEnConfig')
-    id_modulo_destino = models.ForeignKey('seguridad.Modulos', related_name='id_modulo_destino_alertas', on_delete=models.SET_NULL, blank=True, null=True, db_column='T040Id_ModuloDestino')
-    id_modulo_generador = models.ForeignKey('seguridad.Modulos', related_name='id_modulo_generador_alertas', on_delete=models.CASCADE, blank=True, null=True, db_column='T040Id_ModuloGenerador')
+    asignar_responsable = models.BooleanField(default=False, db_column='T040asignarResponsableDirEnConfig')
+    id_modulo_destino = models.ForeignKey('seguridad.Modulos', related_name='configuraciones_destino', on_delete=models.SET_NULL, blank=True, null=True, db_column='T040Id_ModuloDestino')
+    id_modulo_generador = models.ForeignKey('seguridad.Modulos', related_name='configuraciones_generador', on_delete=models.SET_NULL, blank=True, null=True, db_column='T040Id_ModuloGenerador')
+    nombre_funcion_comple_mensaje = models.CharField(max_length=255, null=True, blank=True, db_column='T040nombreFuncionParaCompleAMensaje')
 
     def __str__(self):
         return str(self.nombre_clase_alerta)
