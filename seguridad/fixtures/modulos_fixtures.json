@@ -524,7 +524,7 @@
         "descripcion": "permite a Almacén entregar los bienes de consumo de Viveros que ingresaron a la entidad mediante una Donación, Resarcimiento o Compensación",
         "ruta_formulario": "/#/app/almacen/gestion_inventario/movimientos/entrega_donaciones_resarcimientos_compensaciones_viveros",
         "nombre_icono": "test",
-        "id_menu": 33
+        "id_menu": 32
     }
 },
 {
@@ -918,7 +918,7 @@
         "nombre_modulo": "Parámetros de Referencia Sensores",
         "subsistema": "RECU",
         "descripcion": "Permite administrar los valores de referencia de cada una de las variables monitorizadas por Estación Hidrometeorológica controlada por el sistema",
-        "ruta_formulario": "/#/app/recurso_hidrico/estaciones/alertas",
+        "ruta_formulario": "/#/app/recurso_hidrico/estaciones/parametros_referencia",
         "nombre_icono": "test",
         "id_menu": 58
     }
@@ -930,7 +930,7 @@
         "nombre_modulo": "Mensajes de Alerta Externos",
         "subsistema": "RECU",
         "descripcion": "Permite crear y configurar los mensajes de las alertas generadas por las Estaciones Hidrometeorológicas que se enviarán a los interesados desde el sistema",
-        "ruta_formulario": "/#/app/recurso_hidrico/estaciones/alertas",
+        "ruta_formulario": "/#/app/recurso_hidrico/estaciones/configuracion_alarma",
         "nombre_icono": "test",
         "id_menu": 58
     }
@@ -990,7 +990,7 @@
         "nombre_modulo": "Historial de Datos",
         "subsistema": "RECU",
         "descripcion": "Reporte que muestra el historial por mes de los valores generados por cada Estación Meteorológica monitorizada en el sistema",
-        "ruta_formulario": "/#/app/recurso_hidrico/estaciones/historial",
+        "ruta_formulario": "/#/app/recurso_hidrico/estaciones/historial_datos",
         "nombre_icono": "test",
         "id_menu": 54
     }
@@ -1002,7 +1002,7 @@
         "nombre_modulo": "Historial de Alertas Emitidas a Interesados",
         "subsistema": "RECU",
         "descripcion": "Reporte que muestra el historial por mes de las alertas emitidas a la población interesada, a causa de los datos generados por los diferentes sensores de las Estaciones Meteorológicas monitorizadas en el sistema",
-        "ruta_formulario": "/#/app/recurso_hidrico/estaciones/historial",
+        "ruta_formulario": "/#/app/recurso_hidrico/estaciones/historial_alertas",
         "nombre_icono": "test",
         "id_menu": 54
     }
@@ -1014,7 +1014,7 @@
         "nombre_modulo": "Historial de Alertas Internas",
         "subsistema": "RECU",
         "descripcion": "Reporte que muestra el historial por mes de las alertas emitidas hacia la corporación a causa de los datos generados por los diferentes sensores de las Estaciones Meteorológicas monitorizadas en el sistema",
-        "ruta_formulario": "/#/app/recurso_hidrico/estaciones/historial",
+        "ruta_formulario": "/#/app/recurso_hidrico/estaciones/historial_equipos",
         "nombre_icono": "test",
         "id_menu": 54
     }
@@ -1278,7 +1278,7 @@
         "nombre_modulo": "Configuración de la Entidad",
         "subsistema": "TRSV",
         "descripcion": "Permite configurar los valores básicos de la entidad requeridos para la operación del sistema.",
-        "ruta_formulario": "/*",
+        "ruta_formulario": "/#/app/transversal/configuracion_entidad",
         "nombre_icono": "test",
         "id_menu": 4
     }
@@ -1326,7 +1326,7 @@
         "nombre_modulo": "Sucursales de la Entidad",
         "subsistema": "TRSV",
         "descripcion": "Permite administrar las sucursales con que cuenta la entidad usuaria del software.",
-        "ruta_formulario": "/*",
+        "ruta_formulario": "/#/app/seguridad/sucursal_entidad",
         "nombre_icono": "test",
         "id_menu": 4
     }
@@ -1338,7 +1338,7 @@
         "nombre_modulo": "Traslado Masivo de Unidades por Entidad (previo)",
         "subsistema": "TRSV",
         "descripcion": "Permite realizar un cambio masivo de las unidades organizacionales a las que pertenecen los colaboradores de la entidad antes y después de activar un nuevo organigrama",
-        "ruta_formulario": "/*",
+        "ruta_formulario": "/#/app/transversal/procesos/traslado_masivo_unidad_organizacional",
         "nombre_icono": "test",
         "id_menu": 3
     }
@@ -1350,7 +1350,7 @@
         "nombre_modulo": "Traslado Masivo de Unidad a Unidad",
         "subsistema": "TRSV",
         "descripcion": "Permite realizar un cambio masivo de unidades organizacionales a las que pertenecen los colaboradores de la entidad, de una unidad en particular, después de activar un nuevo organigrama",
-        "ruta_formulario": "/*",
+        "ruta_formulario": "/#/app/transversal/procesos/traslado_masivo_unidad_a_unidad",
         "nombre_icono": "test",
         "id_menu": 3
     }
@@ -1362,7 +1362,7 @@
         "nombre_modulo": "Líderes por Unidad Organizacional",
         "subsistema": "TRSV",
         "descripcion": "Permite administrar la asignación de líderes a las unidades organizacionales del organigrama de la entidad",
-        "ruta_formulario": "/*",
+        "ruta_formulario": "/#/app/transversal/corporativo/lideres_unidad_organizacional",
         "nombre_icono": "test",
         "id_menu": 2
     }
@@ -1446,7 +1446,7 @@
         "nombre_modulo": "Registro de Cuencas",
         "subsistema": "RECU",
         "descripcion": "Permite registrar las Cuencas Hídricas de la Biblioteca de Recurso Hídrico",
-        "ruta_formulario": "/*",
+        "ruta_formulario": "/#/app/recurso_hidrico/configuraciones_basicas/cuencas",
         "nombre_icono": "test",
         "id_menu": 47
     }
@@ -1458,7 +1458,7 @@
         "nombre_modulo": "Registro de Pozos",
         "subsistema": "RECU",
         "descripcion": "Permite registrar los Pozos de la Biblioteca de Recurso Hídrico",
-        "ruta_formulario": "/*",
+        "ruta_formulario": "/#/app/recurso_hidrico/configuraciones_basicas/pozos",
         "nombre_icono": "test",
         "id_menu": 48
     }
@@ -1470,7 +1470,7 @@
         "nombre_modulo": "Registro de Parámetros de Laboratorio",
         "subsistema": "RECU",
         "descripcion": "Permite registrar los Parámetros que se usan en los Resultados de Laboratorio",
-        "ruta_formulario": "/*",
+        "ruta_formulario": "/#/app/recurso_hidrico/configuraciones_basicas/parametros",
         "nombre_icono": "test",
         "id_menu": 48
     }
@@ -1509,6 +1509,54 @@
         "ruta_formulario": "/*",
         "nombre_icono": "test",
         "id_menu": 30
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 129,
+    "fields": {
+        "nombre_modulo": "Cajas de Archivo Documental",
+        "subsistema": "GEST",
+        "descripcion": "Permite administrar las cajas que se encuentran en las bandejas de los estantes de los depósitos de archivo de la entidad",
+        "ruta_formulario": "",
+        "nombre_icono": "test",
+        "id_menu": 19
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 130,
+    "fields": {
+        "nombre_modulo": "Configuración de Alertas de Gestión Documental",
+        "subsistema": "GEST",
+        "descripcion": "Permite configurar las alertas pertenecientes al subsistema de Gestión Documental.",
+        "ruta_formulario": "",
+        "nombre_icono": "test",
+        "id_menu": 19
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 131,
+    "fields": {
+        "nombre_modulo": "Tablero de Control de Conservación",
+        "subsistema": "CONS",
+        "descripcion": "Permite ver información consolidada sobre los inventarios registrados en el sistema.",
+        "ruta_formulario": "",
+        "nombre_icono": "test",
+        "id_menu": 29
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 134,
+    "fields": {
+        "nombre_modulo": "Analítica de Datos",
+        "subsistema": "CONS",
+        "descripcion": "Permite visualizar gráficamente información\nsobre las operaciones del subsistema de conservación.",
+        "ruta_formulario": "",
+        "nombre_icono": "test",
+        "id_menu": 29
     }
 }
 ]

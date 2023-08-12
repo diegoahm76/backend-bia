@@ -75,8 +75,9 @@ class UtilAlmacen:
         if entradas:
             entradas_id = [entrada.id_entrada_almacen for entrada in entradas] if entradas else []
             cantidad_total_entradas = ItemEntradaAlmacen.objects.filter(id_entrada_almacen__in=entradas_id, id_bien=id_bien, id_bodega=id_bodega).aggregate(cantidad=Sum('cantidad'))
-
-            cantidad_disponible = saldo_actual - cantidad_total_entradas['cantidad']
+            cantidad_total_entradas = cantidad_total_entradas['cantidad']
+            
+            cantidad_disponible = saldo_actual - cantidad_total_entradas if cantidad_total_entradas else saldo_actual
             
         return cantidad_disponible
 
