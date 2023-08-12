@@ -169,144 +169,156 @@ class UpdateUnidades(generics.UpdateAPIView):
                 if organigrama.id_persona_cargo.id_persona != persona_logueada:
                     raise PermissionDenied('Este organigrama actualmente solo podrá ser editado por ' + organigrama.id_persona_cargo.primer_nombre + ' ' + organigrama.id_persona_cargo.primer_apellido)
             
-            if not organigrama.fecha_terminado:
-                if data:
-                    nivel_unidades = sorted(data, key=itemgetter('id_nivel_organigrama'))
-                    
-                    # VALIDACIONES
-                    
-                    # ELIMINACION DE UNIDADES
-                    unidades_eliminar = UnidadesOrganizacionales.objects.filter(id_organigrama=pk)
-                    unidades_eliminar.delete()
-                    
-                    # VALIDACIONES SERIALIZER
-                    # unidades_serializer = self.serializer_class(data=unidades_crear, many=True)
-                    # unidades_serializer.is_valid(raise_exception=True)
-                    
-                    # VALIDACIÓN DE EXISTENCIA DE NIVELES
-                    niveles_list = [unidad['id_nivel_organigrama'] for unidad in data]
-                    niveles_existe = NivelesOrganigrama.objects.filter(id_nivel_organigrama__in=niveles_list)
-                    if niveles_existe.count() != len(list(dict.fromkeys(niveles_list))):
-                        raise ValidationError('Uno o varios niveles que está asociando no existen')
-                    
-                    # VALIDACIÓN DE UNA SOLA RAÍZ          
-                    raiz_list = [unidad['unidad_raiz'] for unidad in data]
-                    if raiz_list.count(True) > 1:
-                        raise ValidationError('No puede definir más de una unidad como raíz')
-                    
-                    # VALIDACIÓN DE CÓDIGO ÚNICO          
-                    codigo_list = [unidad['codigo'] for unidad in data]
-                    if len(set(codigo_list)) != len(codigo_list):
-                        raise ValidationError('No puede definir más de una unidad con el mismo código')
-                    
-                    # VALIDACIÓN DE NOMBRE ÚNICO          
-                    nombre_list = [unidad['nombre'] for unidad in data]
-                    if len(set(nombre_list)) != len(nombre_list):
-                        raise ValidationError('No puede definir más de una unidad con el mismo nombre')
-                    
-                    # VALIDACIÓN DE EXISTENCIA UNIDAD RAÍZ Y PERTENENCIA A NIVEL UNO
-                    unidad_raiz = list(filter(lambda unidad: unidad['unidad_raiz'] == True, data))
-                    if unidad_raiz:
-                        nivel_instance = NivelesOrganigrama.objects.filter(id_nivel_organigrama=unidad_raiz[0]['id_nivel_organigrama']).first()
-                        if nivel_instance.orden_nivel != 1:
-                           raise ValidationError('La unidad raíz solo puede pertenecer al nivel uno')
-                    else:
-                        raise ValidationError('Debe enviar la unidad raíz')
-                    
-                    # VALIDACIÓN QUE SECCIÓN SEA UNIDAD RAÍZ
-                    seccion_raiz = list(filter(lambda unidad: unidad['cod_agrupacion_documental'] == 'SEC', data))
-                    if seccion_raiz:
-                        nivel_instance = NivelesOrganigrama.objects.filter(id_nivel_organigrama=seccion_raiz[0]['id_nivel_organigrama']).first()
-                        if nivel_instance.orden_nivel != 1:
-                            raise ValidationError('La sección solo puede pertenecer a la unidad raíz')
-                    
-                    # VALIDACIÓN QUE UNIDADES STAFF SEAN DE NIVEL SUPERIOR AL UNO
-                    staff_unidades = list(filter(lambda unidad: unidad['cod_tipo_unidad'] != 'LI', data))
-                    for unidad in staff_unidades:
-                        nivel_instance = NivelesOrganigrama.objects.filter(id_nivel_organigrama=unidad['id_nivel_organigrama']).first()
-                        if nivel_instance.orden_nivel < 2:
-                            raise ValidationError('Las unidades de staff deben tener un nivel superior al uno')
-
-                    # VALIDACIÓN DE EXISTENCIA DE SECCIÓN Y UNA SOLA SECCIÓN
-                    seccion_list = [unidad['cod_agrupacion_documental'] for unidad in data]
-                    if seccion_list:
-                        if seccion_list.count('SEC') > 1:
-                            raise ValidationError('No puede definir más de una unidad como sección')
-                        if ('SUB' in seccion_list) and ('SEC' not in seccion_list):
-                            raise ValidationError('Debe definir la sección para las subsecciones')
-                    
-                    # VALIDACIÓN DE EXISTENCIA DE UNIDADES PADRE
-                    unidades_codigo_list = [unidad['codigo'] for unidad in data]
-                    unidades_padre_list = [unidad['cod_unidad_org_padre'] for unidad in data if unidad['cod_unidad_org_padre'] is not None]
-                    
-                    if not set(unidades_padre_list).issubset(unidades_codigo_list):
-                        raise ValidationError('Debe asociar unidades padre que existan')          
-                    
-                    # VALIDACIÓN DE UNA UNIDAD EN NIVEL UNO
-                    padre_unidad_list = []
-                    current_cod_unidades = []
-                    for nivel, unidades in groupby(nivel_unidades, itemgetter('id_nivel_organigrama')):
-                        nivel_instance = NivelesOrganigrama.objects.filter(id_nivel_organigrama=nivel).first()
-                        unidades_list = list(unidades)
+            if not organigrama.actual:
+                if not organigrama.fecha_terminado:
+                    if data:
+                        nivel_unidades = sorted(data, key=itemgetter('id_nivel_organigrama'))
                         
-                        # VALIDACIÓN DE UNIDAD PADRE QUE SEA DE  LÍNEA Y DE NIVEL SUPERIOR
-                        unidades_codigo_list = [unidad['codigo'] for unidad in unidades_list if unidad['cod_tipo_unidad'] == 'LI']
-                        current_cod_unidades.extend(unidades_codigo_list)
-                        unidades_padre_list = [unidad['cod_unidad_org_padre'] for unidad in unidades_list if unidad['cod_unidad_org_padre'] is not None]
-                        if not set(unidades_padre_list).issubset(current_cod_unidades):
-                            raise ValidationError('Debe asociar unidades padre de línea superiores a unidades hijos')   
+                        # VALIDACIONES
+                        
+                        # ELIMINACION DE UNIDADES
+                        unidades_eliminar = UnidadesOrganizacionales.objects.filter(id_organigrama=pk)
+                        unidades_eliminar.delete()
+                        
+                        # VALIDACIONES SERIALIZER
+                        # unidades_serializer = self.serializer_class(data=unidades_crear, many=True)
+                        # unidades_serializer.is_valid(raise_exception=True)
+                        
+                        # VALIDACIÓN DE EXISTENCIA DE NIVELES
+                        niveles_list = [unidad['id_nivel_organigrama'] for unidad in data]
+                        niveles_existe = NivelesOrganigrama.objects.filter(id_nivel_organigrama__in=niveles_list)
+                        if niveles_existe.count() != len(list(dict.fromkeys(niveles_list))):
+                            raise ValidationError('Uno o varios niveles que está asociando no existen')
+                        
+                        # VALIDACIÓN DE UNA SOLA RAÍZ          
+                        raiz_list = [unidad['unidad_raiz'] for unidad in data]
+                        if raiz_list.count(True) > 1:
+                            raise ValidationError('No puede definir más de una unidad como raíz')
+                        
+                        # VALIDACIÓN DE CÓDIGO ÚNICO          
+                        codigo_list = [unidad['codigo'] for unidad in data]
+                        if len(set(codigo_list)) != len(codigo_list):
+                            raise ValidationError('No puede definir más de una unidad con el mismo código')
+                        
+                        # VALIDACIÓN DE NOMBRE ÚNICO          
+                        nombre_list = [unidad['nombre'] for unidad in data]
+                        if len(set(nombre_list)) != len(nombre_list):
+                            raise ValidationError('No puede definir más de una unidad con el mismo nombre')
+                        
+                        # VALIDACIÓN DE EXISTENCIA UNIDAD RAÍZ Y PERTENENCIA A NIVEL UNO
+                        unidad_raiz = list(filter(lambda unidad: unidad['unidad_raiz'] == True, data))
+                        if unidad_raiz:
+                            nivel_instance = NivelesOrganigrama.objects.filter(id_nivel_organigrama=unidad_raiz[0]['id_nivel_organigrama']).first()
+                            if nivel_instance.orden_nivel != 1:
+                                raise ValidationError('La unidad raíz solo puede pertenecer al nivel uno')
+                        else:
+                            raise ValidationError('Debe enviar la unidad raíz')
+                        
+                        # VALIDACIÓN QUE SECCIÓN SEA UNIDAD RAÍZ
+                        seccion_raiz = list(filter(lambda unidad: unidad['cod_agrupacion_documental'] == 'SEC', data))
+                        if seccion_raiz:
+                            nivel_instance = NivelesOrganigrama.objects.filter(id_nivel_organigrama=seccion_raiz[0]['id_nivel_organigrama']).first()
+                            if nivel_instance.orden_nivel != 1:
+                                raise ValidationError('La sección solo puede pertenecer a la unidad raíz')
+                        
+                        # VALIDACIÓN QUE UNIDADES STAFF SEAN DE NIVEL SUPERIOR AL UNO
+                        staff_unidades = list(filter(lambda unidad: unidad['cod_tipo_unidad'] != 'LI', data))
+                        for unidad in staff_unidades:
+                            nivel_instance = NivelesOrganigrama.objects.filter(id_nivel_organigrama=unidad['id_nivel_organigrama']).first()
+                            if nivel_instance.orden_nivel < 2:
+                                raise ValidationError('Las unidades de staff deben tener un nivel superior al uno')
+
+                        # VALIDACIÓN DE EXISTENCIA DE SECCIÓN Y UNA SOLA SECCIÓN
+                        seccion_list = [unidad['cod_agrupacion_documental'] for unidad in data]
+                        if seccion_list:
+                            if seccion_list.count('SEC') > 1:
+                                raise ValidationError('No puede definir más de una unidad como sección')
+                            if ('SUB' in seccion_list) and ('SEC' not in seccion_list):
+                                raise ValidationError('Debe definir la sección para las subsecciones')
+                        
+                        # VALIDACIÓN DE EXISTENCIA DE UNIDADES PADRE
+                        unidades_codigo_list = [unidad['codigo'] for unidad in data]
+                        unidades_padre_list = [unidad['cod_unidad_org_padre'] for unidad in data if unidad['cod_unidad_org_padre'] is not None]
+                        
+                        if not set(unidades_padre_list).issubset(unidades_codigo_list):
+                            raise ValidationError('Debe asociar unidades padre que existan')          
                         
                         # VALIDACIÓN DE UNA UNIDAD EN NIVEL UNO
-                        if nivel_instance.orden_nivel == 1 and (len(unidades_list) > 1):
-                            raise ValidationError('Solo debe establecer una unidad para el nivel uno')
-                        if nivel_instance.orden_nivel != 1:
+                        padre_unidad_list = []
+                        current_cod_unidades = []
+                        for nivel, unidades in groupby(nivel_unidades, itemgetter('id_nivel_organigrama')):
+                            nivel_instance = NivelesOrganigrama.objects.filter(id_nivel_organigrama=nivel).first()
+                            unidades_list = list(unidades)
                             
-                            # VALIDACIÓN DEFINIR PADRES EN TODAS LOS NIVELES MENOS EL UNO
-                            unidades_org = list(filter(lambda unidad: unidad['cod_unidad_org_padre'] == None or unidad['cod_unidad_org_padre'] == '', unidades_list))
-                            if unidades_org:
-                                raise ValidationError('Debe definir el padre en todas las unidades distintas a la raiz')                
+                            # VALIDACIÓN DE UNIDAD PADRE QUE SEA DE  LÍNEA Y DE NIVEL SUPERIOR
+                            unidades_codigo_list = [unidad['codigo'] for unidad in unidades_list]# if unidad['cod_tipo_unidad'] == 'LI']
+                            current_cod_unidades.extend(unidades_codigo_list)
+                            unidades_padre_list = [unidad['cod_unidad_org_padre'] for unidad in unidades_list if unidad['cod_unidad_org_padre'] is not None]
+                            if not set(unidades_padre_list).issubset(current_cod_unidades):
+                                raise ValidationError('Debe asociar unidades padre de línea superiores a unidades hijos')   
                             
-                            # VALIDACIÓN QUE EL PADRE DE SUBSECCIÓN ESTÉ MARCADO COMO SUBSECCIÓN
-                            unidades_sub = list(filter(lambda unidad: unidad['cod_agrupacion_documental'] == 'SUB', unidades_list))
-                            if unidades_sub:
-                                unidad_padre = list(filter(lambda unidad: unidad['codigo'] == unidades_sub[0]['cod_unidad_org_padre'], data))
-                                if unidad_padre:
-                                    if unidad_padre[0]['cod_agrupacion_documental'] == None or unidad_padre[0]['cod_agrupacion_documental'] == '':
-                                        raise ValidationError('Debe marcar las unidades padre como subsecciones')
-                        #VALIDACIÓN QUE CUANDO ES UNA UNIDAD DE APOYO O SOPORTE EL PADRE DEBE SER DE NIVEL INMEDIATAMENTE ANTERIOR
-                        unidades_padre_staff_list = [unidad['cod_unidad_org_padre'] for unidad in unidades_list if unidad['cod_tipo_unidad'] != 'LI']
+                            # VALIDACIÓN DE UNA UNIDAD EN NIVEL UNO
+                            if nivel_instance.orden_nivel == 1 and (len(unidades_list) > 1):
+                                raise ValidationError('Solo debe establecer una unidad para el nivel uno')
+                            if nivel_instance.orden_nivel != 1:
+                                
+                                # VALIDACIÓN DEFINIR PADRES EN TODAS LOS NIVELES MENOS EL UNO
+                                unidades_org = list(filter(lambda unidad: unidad['cod_unidad_org_padre'] == None or unidad['cod_unidad_org_padre'] == '', unidades_list))
+                                if unidades_org:
+                                    raise ValidationError('Debe definir el padre en todas las unidades distintas a la raiz')                
+                                
+                                # VALIDACIÓN QUE EL PADRE DE SUBSECCIÓN ESTÉ MARCADO COMO SUBSECCIÓN
+                                # unidades_sub = list(filter(lambda unidad: unidad['cod_agrupacion_documental'] == 'SUB', unidades_list))
+                                # if unidades_sub:
+                                #     unidad_padre = list(filter(lambda unidad: unidad['codigo'] == unidades_sub[0]['cod_unidad_org_padre'], data))
+                                #     if unidad_padre:
+                                #         if unidad_padre[0]['cod_agrupacion_documental'] == None or unidad_padre[0]['cod_agrupacion_documental'] == '':
+                                #             raise ValidationError('Debe marcar las unidades padre como subsecciones')
+                                
+                                # VALIDACIÓN QUE EL HIJO DE UNIDAD STAFF SEA DE TIPO LINEA
+                                unidades_sub = list(filter(lambda unidad: unidad['cod_agrupacion_documental'] != 'SEC' and unidad['cod_tipo_unidad'] != 'LI', unidades_list))
+                                if unidades_sub:
+                                    unidad_padre = list(filter(lambda unidad: unidad['codigo'] == unidades_sub[0]['cod_unidad_org_padre'], data))
+                                    if unidad_padre:
+                                        if unidad_padre[0]['cod_tipo_unidad'] != 'LI':
+                                            raise ValidationError('Los hijos de una unidad staff deben ser de tipo línea')
+                            
+                            #VALIDACIÓN QUE CUANDO ES UNA UNIDAD DE APOYO O SOPORTE EL PADRE DEBE SER DE NIVEL INMEDIATAMENTE ANTERIOR
+                            unidades_padre_staff_list = [unidad['cod_unidad_org_padre'] for unidad in unidades_list if unidad['cod_tipo_unidad'] != 'LI']
 
-                        if not set(unidades_padre_staff_list).issubset(padre_unidad_list):
-                            raise ValidationError('Debe asociar unidades padre de línea inmediatamente anteriores para las unidades staff') 
-                            
-                        padre_unidad_list = unidades_codigo_list
+                            if not set(unidades_padre_staff_list).issubset(padre_unidad_list):
+                                raise ValidationError('Debe asociar unidades padre de línea inmediatamente anteriores para las unidades staff') 
+                                
+                            padre_unidad_list = unidades_codigo_list
 
-                    # CREACION DE UNIDADES
-                    for nivel, unidades in groupby(nivel_unidades, itemgetter('id_nivel_organigrama')):
-                        nivel_instance = NivelesOrganigrama.objects.filter(id_nivel_organigrama=nivel).first()
-                        for unidad in unidades:
-                            unidad_org = UnidadesOrganizacionales.objects.filter(codigo=unidad['cod_unidad_org_padre'], id_organigrama=pk).first()
-                            unidad_org = unidad_org if unidad_org else None
+                        # CREACION DE UNIDADES
+                        for nivel, unidades in groupby(nivel_unidades, itemgetter('id_nivel_organigrama')):
+                            nivel_instance = NivelesOrganigrama.objects.filter(id_nivel_organigrama=nivel).first()
+                            for unidad in unidades:
+                                unidad_org = UnidadesOrganizacionales.objects.filter(codigo=unidad['cod_unidad_org_padre'], id_organigrama=pk).first()
+                                unidad_org = unidad_org if unidad_org else None
 
-                            if unidad['cod_tipo_unidad'] != 'LI': 
-                                unidad['cod_agrupacion_documental'] = None
-                            
-                            UnidadesOrganizacionales.objects.create(
-                                id_nivel_organigrama=nivel_instance,
-                                nombre=unidad['nombre'],
-                                codigo=unidad['codigo'],
-                                cod_tipo_unidad=unidad['cod_tipo_unidad'],
-                                cod_agrupacion_documental=unidad['cod_agrupacion_documental'],
-                                unidad_raiz=unidad['unidad_raiz'],
-                                id_organigrama=organigrama,
-                                id_unidad_org_padre=unidad_org
-                            )
-                    
-                    return Response({'success':True, 'detail':'Actualizacion exitosa de las unidades'}, status=status.HTTP_201_CREATED)
+                                # if unidad['cod_tipo_unidad'] != 'LI': 
+                                #     unidad['cod_agrupacion_documental'] = None
+                                
+                                UnidadesOrganizacionales.objects.create(
+                                    id_nivel_organigrama=nivel_instance,
+                                    nombre=unidad['nombre'],
+                                    codigo=unidad['codigo'],
+                                    cod_tipo_unidad=unidad['cod_tipo_unidad'],
+                                    cod_agrupacion_documental=unidad['cod_agrupacion_documental'],
+                                    unidad_raiz=unidad['unidad_raiz'],
+                                    id_organigrama=organigrama,
+                                    id_unidad_org_padre=unidad_org
+                                )
+                        
+                        return Response({'success':True, 'detail':'Actualizacion exitosa de las unidades'}, status=status.HTTP_201_CREATED)
+                    else:
+                        raise ValidationError('Debe crear por lo menos una unidad')
                 else:
-                    raise ValidationError('Debe crear por lo menos una unidad')
+                    raise ValidationError('El organigrama ya está terminado, por lo cual no es posible realizar acciones sobre las unidades')
             else:
-                raise ValidationError('El organigrama ya está terminado, por lo cual no es posible realizar acciones sobre las unidades')
+                pass
         else:
             raise NotFound('El organigrama no existe')
 
@@ -379,8 +391,11 @@ class FinalizarOrganigrama(generics.UpdateAPIView):
             if organigrama_a_finalizar.id_persona_cargo:
                 if organigrama_a_finalizar.id_persona_cargo.id_persona != persona_logueada:
                     raise PermissionDenied('Este organigrama actualmente solo podrá ser editado por ' + organigrama_a_finalizar.id_persona_cargo.primer_nombre + ' ' + organigrama_a_finalizar.id_persona_cargo.primer_apellido)
-        
+            
             if not organigrama_a_finalizar.fecha_terminado:
+                if not organigrama_a_finalizar.ruta_resolucion or organigrama_a_finalizar.ruta_resolucion == '':
+                    raise PermissionDenied('No se puede finalizar organigrama sin antes adjuntar la resolución')
+            
                 niveles=NivelesOrganigrama.objects.filter(id_organigrama=pk) 
                 unidades=UnidadesOrganizacionales.objects.filter(id_organigrama=pk) 
                 nivel_list= [nivel.id_nivel_organigrama for nivel in niveles] 
@@ -428,14 +443,17 @@ class FinalizarOrganigrama(generics.UpdateAPIView):
                 raise PermissionDenied('Ya se encuentra finalizado este Organigrama')
 
         raise PermissionDenied('No existe organigrama')
+    
 class CreateOrgChart(generics.CreateAPIView):
     serializer_class = OrganigramaPostSerializer
     queryset = Organigramas.objects.all()
     permission_classes = [IsAuthenticated]
     def post(self, request):
-        
         persona = request.user.persona.id_persona
+        
         data=request.data
+        data._mutable = True
+        
         data['id_persona_cargo']=persona
         
         serializer = self.serializer_class(data=data)

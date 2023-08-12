@@ -27,7 +27,7 @@ class ConfiguracionClaseAlerta(models.Model):
     asignar_responsable = models.BooleanField(default=False, db_column='T040asignarResponsableDirEnConfig')
     id_modulo_destino = models.ForeignKey('seguridad.Modulos', db_column='T040Id_ModuloDestino', on_delete=models.DO_NOTHING, related_name='configuraciones_destino')
     id_modulo_generador = models.ForeignKey('seguridad.Modulos', db_column='T040Id_ModuloGenerador', on_delete=models.DO_NOTHING,related_name='configuraciones_generador')
-
+    nombre_funcion_comple_mensaje = models.CharField(max_length=255, null=True, blank=True, db_column='T040nombreFuncionParaCompleAMensaje')
     def __str__(self):
         return str(self.nombre_clase_alerta)
 
@@ -145,9 +145,9 @@ class AlertasProgramadas(models.Model):
 class AlertasGeneradas(models.Model):
     id_alerta_generada = models.AutoField(primary_key=True, db_column='T044IdAlertaGenerada')
     nombre_clase_alerta = models.CharField(max_length=50, db_column='T044nombreClaseAlerta')
-    mensaje = models.CharField(max_length=785, db_column='T044mensaje')
+    mensaje = models.CharField(max_length=2000, db_column='T044mensaje')
     fecha_generada = models.DateTimeField(auto_now=True,db_column='T044fechaGenerada')
-    cod_tipo_alerta = models.CharField(max_length=3, db_column='T044codTipoAlerta')
+    cod_categoria_alerta = models.CharField(max_length=3, db_column='T044codCategoriaAlerta')
     nivel_prioridad = models.SmallIntegerField(db_column='T044nivelPrioridad')
     id_modulo_destino = models.ForeignKey('seguridad.Modulos', related_name='modulo_destino_alertas_generadas', null=True, blank=True, on_delete=models.SET_NULL, db_column='T044Id_ModuloDestino')
     id_modulo_generador = models.ForeignKey('seguridad.Modulos', related_name='modulo_generador_alertas_generadas', on_delete=models.CASCADE, db_column='T044Id_ModuloGenerador')

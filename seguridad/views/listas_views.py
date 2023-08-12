@@ -6,8 +6,10 @@ from seguridad.models import EstadoCivil, Municipio, Departamento, Paises, TipoD
 from rest_framework.permissions import IsAuthenticated
 from seguridad.serializers.listas_serializers import (
     MunicipiosSerializer,
-    DepartamentosSerializer
+    DepartamentosSerializer,
+    PaisesSerializer
 )
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
 # IMPORT LISTS
 from seguridad.lists.tipo_persona_list import tipo_persona_LIST
@@ -18,6 +20,8 @@ from seguridad.lists.cod_permiso_list import cod_permiso_LIST
 from seguridad.lists.estado_civil_list import estado_civil_LIST  
 from seguridad.lists.opciones_usuario_list import opciones_usuario_LIST
 from seguridad.lists.sexo_list import sexo_LIST 
+from seguridad.lists.perfiles_sistema_list import perfiles_LIST
+from seguridad.lists.niveles_prioridad_alerta import niveles_list
 from seguridad.lists.subsistemas_list import subsistemas_LIST
 from seguridad.lists.tipo_direccion_list import tipo_direccion_LIST
 from seguridad.lists.direcciones_list import direcciones_LIST 
@@ -65,6 +69,14 @@ class GetLisSexo(APIView):
     def get(self, request):
         return Response({'success':True, 'detail':'Los tipos de sexo son los siguientes', 'data': sexo_LIST}, status=status.HTTP_200_OK) 
 
+class GetLisPerfilesSistema(APIView):
+    def get(self, request):
+        return Response({'success':True, 'detail':'Los perfiles del sistema son los siguientes', 'data': perfiles_LIST}, status=status.HTTP_200_OK) 
+class GetLisNivelesPrioridadAlerta(APIView):
+    def get(self, request):
+        return Response({'success':True, 'detail':'Los perfiles del sistema son los siguientes', 'data':niveles_list }, status=status.HTTP_200_OK) 
+
+
 class GetLisSubsistema(APIView):
     def get(self, request):
         return Response({'success':True, 'detail':'Los tipos de subsistema son los siguientes', 'data': subsistemas_LIST}, status=status.HTTP_200_OK)
@@ -83,13 +95,33 @@ class GetLisIndicativoPais(APIView):
 
 class GetListPaises(generics.ListAPIView):
     queryset = Paises.objects.all()
+    serializer_class = PaisesSerializer
 
     def get(self, request):
-        paises = self.queryset.exclude(cod_pais='CO').values(value=F('cod_pais'), label=F('nombre'))
-        colombia = self.queryset.filter(cod_pais='CO').values(value=F('cod_pais'), label=F('nombre')).first()
-        
-        paises = list(paises)
-        paises.insert(0, colombia)
+        cod_departamento = request.query_params.get('cod_departamento', '')
+        cod_municipio = request.query_params.get('cod_municipio', '')
+
+        if cod_municipio:
+            municipio = Municipio.objects.filter(cod_municipio=cod_municipio).first()
+            if not municipio:
+                raise ValidationError("El municipio ingresado no existe")
+            departamento_m = Departamento.objects.filter(cod_departamento=municipio.cod_departamento).first()
+            paises = self.queryset.all().filter(cod_pais=departamento_m.pais)
+            serializer = self.serializer_class(paises, many=True)
+            paises = serializer.data
+
+        # if cod_departamento:
+        #     departamento = Departamento.objects.filter(cod_departamento=cod_departamento).first()
+        #     if not departamento:
+        #         raise ValidationError("El departamento ingresado no existe")
+        #     paises = self.queryset.all().filter(cod_pais=departamento.pais)
+        #     serializer = self.serializer_class(paises, many=True)
+        #     paises = serializer.data
+        else:
+            paises = self.queryset.exclude(cod_pais='CO').values(value=F('cod_pais'), label=F('nombre'))
+            colombia = self.queryset.filter(cod_pais='CO').values(value=F('cod_pais'), label=F('nombre')).first()
+            paises = list(paises)
+            paises.insert(0, colombia)
         
         return Response({'success':True, 'detail':'Los paises son los siguientes', 'data': paises}, status=status.HTTP_200_OK)
 
@@ -104,16 +136,19 @@ class GetListDepartamentos(generics.ListAPIView):
 
         if cod_municipio:
             municipio = Municipio.objects.filter(cod_municipio=cod_municipio).first()
+            if not municipio:
+                raise ValidationError("El municipio ingresado no existe")
             departamentos = self.queryset.all().filter(cod_departamento=municipio.cod_departamento)
-
-        # departamentos = self.queryset.all().filter(pais__icontains=pais).exclude(cod_departamento='50')
-        # meta = self.queryset.filter(cod_departamento='50').values(label=F('nombre'),value=F('cod_departamento')).first()
+        else:
+            departamentos = self.queryset.all().filter(pais__icontains=pais).exclude(cod_departamento='50')
+            meta = self.queryset.filter(cod_departamento='50').values(label=F('nombre'),value=F('cod_departamento')).first()
         
         serializer = self.serializer_class(departamentos, many=True)
         
         data = serializer.data
-        # if data and (pais=='CO' or pais==''):
-        #     data.insert(0, meta)
+        if not cod_municipio: 
+            if data and (pais=='CO' or pais==''):
+                data.insert(0, meta)
         
         return Response({'success':True, 'detail':'Se encontraron los siguientes departamentos', 'data': data}, status=status.HTTP_200_OK)
 
