@@ -13,6 +13,8 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from rest_framework.permissions import IsAuthenticated
 
+import operator, itertools
+
 from conservacion.models.inventario_models import (
     InventarioViveros
 )
@@ -647,4 +649,127 @@ class HistoricoBajasGetView(generics.ListAPIView):
 #             )
         
 #         return Response({'success':True,'detail':'Se encontró la siguiente información','data':bajas}, status=status.HTTP_200_OK)
-    
+
+class AnaliticaMortalidadTiempoGetView(generics.ListAPIView):
+    serializer_class=GetTableroControlConservacionSerializer
+    queryset=BajasVivero.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        id_bien = request.query_params.get('id_bien', '')
+        id_vivero = request.query_params.get('id_vivero', '')
+        fecha_desde = request.query_params.get('fecha_desde', '')
+        fecha_hasta = request.query_params.get('fecha_hasta', '')
+        
+        if id_vivero == '' or fecha_desde == '' or fecha_hasta == '':
+            raise ValidationError('Debe elegir viveros y fechas como filtros')
+        
+        mortalidades = self.queryset.filter(tipo_baja='M', baja_anulado=False, fecha_baja__gte=fecha_desde, fecha_baja__lte=fecha_hasta)
+        mortalidades = mortalidades.filter(id_vivero__in=id_vivero.split(',')) if id_vivero else mortalidades
+        mortalidades_list = [mortalidad.id_baja for mortalidad in mortalidades]
+        
+        output_list = []
+        
+        if mortalidades_list:
+            items_mortalidad = ItemsBajasVivero.objects.filter(id_baja__in=mortalidades_list)
+            items_mortalidad = items_mortalidad.filter(id_bien=id_bien) if id_bien != '' else items_mortalidad
+            
+            items_mortalidad = items_mortalidad.values('id_bien', nombre_bien=F('id_bien__nombre'), id_vivero=F('id_baja__id_vivero__id_vivero'), nombre_vivero=F('id_baja__id_vivero__nombre'), fecha_baja=F('id_baja__fecha_baja__date')).annotate(
+                cantidad = Sum('cantidad_baja')
+            )
+            
+            items_mortalidad_data = sorted(items_mortalidad, key=operator.itemgetter("id_bien", "nombre_bien"))
+
+            for item_mortalidad, cantidades in itertools.groupby(items_mortalidad_data, key=operator.itemgetter("id_bien", "nombre_bien")):
+                cantidades_tiempo = list(cantidades)
+                for cantidad_tiempo in cantidades_tiempo:
+                    del cantidad_tiempo['id_bien']
+                    del cantidad_tiempo['nombre_bien']
+                    
+                items_data = {
+                    "id_bien": item_mortalidad[0],
+                    "nombre_bien": item_mortalidad[1],
+                    "cantidades_tiempo": []
+                }
+                
+                group_viveros_data = sorted(cantidades_tiempo, key=operator.itemgetter("id_vivero", "nombre_vivero"))
+
+                for vivero, cantidades_vivero in itertools.groupby(group_viveros_data, key=operator.itemgetter("id_vivero", "nombre_vivero")):
+                    fechas_vivero = list(cantidades_vivero)
+                    for fecha_vivero in fechas_vivero:
+                        del fecha_vivero['id_vivero']
+                        del fecha_vivero['nombre_vivero']
+                        
+                    fechas_vivero_data = {
+                        "id_vivero": vivero[0],
+                        "nombre_vivero": vivero[1],
+                        "fechas": fechas_vivero
+                    }
+                    
+                    items_data['cantidades_tiempo'].append(fechas_vivero_data)
+                    
+                output_list.append(items_data)
+        
+        return Response({'success':True,'detail':'Se encontró la siguiente información','data':output_list}, status=status.HTTP_200_OK)
+
+# class AnaliticaBajasTiempoGetView(generics.ListAPIView):
+#     serializer_class=GetTableroControlConservacionSerializer
+#     queryset=BajasVivero.objects.all()
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self,request):
+#         cod_tipo_elemento_vivero = request.query_params.get('cod_tipo_elemento_vivero', '')
+#         id_vivero = request.query_params.get('id_vivero', '')
+#         fecha_desde = request.query_params.get('fecha_desde', '')
+#         fecha_hasta = request.query_params.get('fecha_hasta', '')
+        
+#         if id_vivero == '' or fecha_desde == '' or fecha_hasta == '':
+#             raise ValidationError('Debe elegir viveros y fechas como filtros')
+        
+#         mortalidades = self.queryset.filter(tipo_baja='B', baja_anulado=False, fecha_baja__gte=fecha_desde, fecha_baja__lte=fecha_hasta)
+#         mortalidades = mortalidades.filter(id_vivero__in=id_vivero.split(',')) if id_vivero else mortalidades
+#         mortalidades_list = [mortalidad.id_baja for mortalidad in mortalidades]
+        
+#         output_list = []
+        
+#         if mortalidades_list:
+#             items_mortalidad = ItemsBajasVivero.objects.filter(id_baja__in=mortalidades_list)
+#             items_mortalidad = items_mortalidad.filter(id_bien=id_bien) if id_bien != '' else items_mortalidad
+            
+#             items_mortalidad = items_mortalidad.values('id_bien', nombre_bien=F('id_bien__nombre'), id_vivero=F('id_baja__id_vivero__id_vivero'), nombre_vivero=F('id_baja__id_vivero__nombre'), fecha_baja=F('id_baja__fecha_baja__date')).annotate(
+#                 cantidad = Sum('cantidad_baja')
+#             )
+            
+#             items_mortalidad_data = sorted(items_mortalidad, key=operator.itemgetter("id_bien", "nombre_bien"))
+
+#             for item_mortalidad, cantidades in itertools.groupby(items_mortalidad_data, key=operator.itemgetter("id_bien", "nombre_bien")):
+#                 cantidades_tiempo = list(cantidades)
+#                 for cantidad_tiempo in cantidades_tiempo:
+#                     del cantidad_tiempo['id_bien']
+#                     del cantidad_tiempo['nombre_bien']
+                    
+#                 items_data = {
+#                     "id_bien": item_mortalidad[0],
+#                     "nombre_bien": item_mortalidad[1],
+#                     "cantidades_tiempo": []
+#                 }
+                
+#                 group_viveros_data = sorted(cantidades_tiempo, key=operator.itemgetter("id_vivero", "nombre_vivero"))
+
+#                 for vivero, cantidades_vivero in itertools.groupby(group_viveros_data, key=operator.itemgetter("id_vivero", "nombre_vivero")):
+#                     fechas_vivero = list(cantidades_vivero)
+#                     for fecha_vivero in fechas_vivero:
+#                         del fecha_vivero['id_vivero']
+#                         del fecha_vivero['nombre_vivero']
+                        
+#                     fechas_vivero_data = {
+#                         "id_vivero": vivero[0],
+#                         "nombre_vivero": vivero[1],
+#                         "fechas": fechas_vivero
+#                     }
+                    
+#                     items_data['cantidades_tiempo'].append(fechas_vivero_data)
+                    
+#                 output_list.append(items_data)
+        
+#         return Response({'success':True,'detail':'Se encontró la siguiente información','data':output_list}, status=status.HTTP_200_OK)
