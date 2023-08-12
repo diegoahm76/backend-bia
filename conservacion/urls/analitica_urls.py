@@ -17,4 +17,8 @@ urlpatterns = [
     # Historicos de Movimientos por Modulo
     path('historico-bajas/get/', views.HistoricoBajasGetView.as_view(), name='historico-bajas-get'),
     # path('historico-distribuciones/get/', views.HistoricoDistribucionesGetView.as_view(), name='historico-distribuciones-get'),
+    
+    # Analitica
+    path('analitica-mortalidad-tiempo/get/', views.AnaliticaMortalidadTiempoGetView.as_view(), name='analitica-mortalidad-tiempo-get'),
+    # path('analitica-bajas-tiempo/get/', views.AnaliticaBajasTiempoGetView.as_view(), name='analitica-bajas-tiempo-get'),
 ]
