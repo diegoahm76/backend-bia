@@ -106,8 +106,17 @@ class AlertasBandejaAlertaPersonaGetSerializer(serializers.ModelSerializer):
     nombre_clase_alerta=serializers.ReadOnlyField(source='id_alerta_generada.nombre_clase_alerta', default=None)
     id_modulo=serializers.ReadOnlyField(source='id_alerta_generada.id_modulo_destino.id_modulo', default=None)
     nombre_modulo=serializers.ReadOnlyField(source='id_alerta_generada.id_modulo_destino.nombre_modulo', default=None)
+    nombre_modulo=serializers.ReadOnlyField(source='id_alerta_generada.id_modulo_destino.ruta_formulario', default=None)
     ultima_repeticion=serializers.ReadOnlyField(source='id_alerta_generada.es_ultima_repeticion', default=None)
     class Meta:
           model=AlertasBandejaAlertaPersona
           fields= '__all__'
+          ordering = ['-id_alerta_generada__fecha_generada']
+
+class AlertasBandejaAlertaPersonaPutSerializer(serializers.ModelSerializer):
+
+    class Meta:
+          model=AlertasBandejaAlertaPersona
+          fields= '__all__'
+        
 
