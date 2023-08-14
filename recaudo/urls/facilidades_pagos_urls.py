@@ -9,6 +9,7 @@ urlpatterns = [
     path('listado-deudores/', views.ListadoDeudoresViews.as_view(),name='listado-deudores'),
     path('consulta-obligaciones-deudores/<str:identificacion>/', views.ConsultaObligacionesDeudoresViews.as_view(),name='consulta-obligaciones-deudores'),
     path('consulta-obligaciones/<int:id_obligaciones>/', views.ConsultaObligacionesViews.as_view(), name='consulta-obligaciones'),
+    path('lista-obligaciones-ids/', views.ObligacionesDeudorSeleccionadasIds.as_view(), name='lista-obligaciones-ids'),
 
     # CREAR UNA SOLICITUD DE FACILIDAD DE PAGOS
     path('datos-deudor/<int:id>/', views.DatosDeudorView.as_view(), name='datos-deudor'), 
