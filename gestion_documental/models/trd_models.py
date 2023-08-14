@@ -14,7 +14,7 @@ class TablaRetencionDocumental(models.Model):
     nombre = models.CharField(max_length=50, unique=True, db_column='T212nombre')
     fecha_terminado = models.DateTimeField(null=True, blank=True, db_column='T212fechaTerminado')
     fecha_puesta_produccion = models.DateTimeField(null=True, blank=True, db_column='T212fechaPuestaEnProduccion')
-    fecha_retiro_produccion = models.DateTimeField(null=True, blank=True, db_column='T212fechaRetiroEnProduccion')
+    fecha_retiro_produccion = models.DateTimeField(null=True, blank=True, db_column='T212fechaRetiroDeProduccion')
     actual = models.BooleanField(default=False, db_column='T212actual')
 
     def __str__(self):
