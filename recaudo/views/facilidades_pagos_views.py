@@ -18,7 +18,8 @@ from recaudo.serializers.facilidades_pagos_serializers import (
     FuncionariosSerializer,
     FacilidadPagoGetByIdSerializer,
     BienSerializer,
-    RespuestaSolicitudSerializer
+    RespuestaSolicitudSerializer,
+    IdArraySerializer
 )
 from recaudo.models.facilidades_pagos_models import (
     FacilidadesPago,
@@ -45,6 +46,40 @@ import string
 
 
 ### VISTAS QUE MUESTRAN LAS OBLIGACIONES
+    
+
+# class ObligacionesDeudorSeleccionadasIds(generics.ListAPIView):
+#     serializer_class = ObligacionesSerializer
+
+#     def get(self, request):
+        
+#         ids_param = self.request.query_params.get('ids')
+#         ids = [int(id_str) for id_str in ids_param.strip('[]').split(',') if id_str]
+#         carteras = Cartera.objects.filter(id__in=ids)
+#         serializer = ObligacionesSerializer(carteras, many=True)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ObligacionesDeudorSeleccionadasIds(generics.ListAPIView):
+    serializer_class = ObligacionesSerializer
+
+    def get(self, request):
+        
+        ids_param = self.request.query_params.get('ids')
+        ids = [int(id_str) for id_str in ids_param.strip('[]').split(',') if id_str]
+        instancia_obligaciones = ObligacionesDeudorListViews()
+        carteras = Cartera.objects.filter(id__in=ids)
+        serializer = ObligacionesSerializer(carteras, many=True)
+        monto_total, intereses_total, monto_total_con_intereses = instancia_obligaciones.get_monto_total(carteras)
+
+        data = {
+            'obligaciones': serializer.data,
+            'monto_total': monto_total,
+            'intereses_total': intereses_total,
+            'monto_total_con_intereses': monto_total_con_intereses
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
 
 class ObligacionesDeudorListViews(generics.ListAPIView):
     serializer_class = ObligacionesSerializer
@@ -423,6 +458,7 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
             'id_deudor': data_in['id_deudor'],
             'id_tipo_actuacion':data_in['id_tipo_actuacion'],
             'observaciones':data_in['observaciones'],
+            'valor_abonado':data_in['valor_abonado'],
             'periodicidad':data_in['periodicidad'],
             'cuotas':data_in['cuotas'],
             'documento_soporte':data_in['documento_soporte'],
