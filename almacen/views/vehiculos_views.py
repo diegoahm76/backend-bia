@@ -24,49 +24,93 @@ from almacen.serializers.vehiculos_serializers import (
 from seguridad.models import ClasesTerceroPersona
 from seguridad.utils import Util
 
-#TABLA T071 CREAR REGISTROS DE ARRENDAMIENTO
+#TABLA T071 CREAR REGISTROS DE ARRENDAMIENTO(MODELADO)
+def crear_arriendo_vehiculo(data):
+    serializer = RegistrarVehiculoArrendadoSerializer(data=data)
+    serializer.is_valid(raise_exception=True)
+    
+    creacion_arriendo = serializer.save()
+
+    if data['asignar_hoja_de_vida']:
+        agendable = data.get('es_agendable')
+        if agendable is None:
+            raise ValidationError("Debe indicar si el vehiculo es agendable o no.")
+        
+        hoja_de_vida = HojaDeVidaVehiculos.objects.create(
+            id_vehiculo_arrendado=creacion_arriendo,
+            es_arrendado=True,
+            es_agendable=agendable
+        )
+        
+        if data['fecha_inicio'] is None or data['fecha_fin'] is None:
+            raise ValidationError("Los campos de las fechas son obligatorios para la creación del registro del vehículo arrendado.")
+        
+        fecha_data_fin = datetime.strptime(data['fecha_fin'], '%Y-%m-%d')
+        fecha_data_incio = datetime.strptime(data['fecha_inicio'], '%Y-%m-%d')
+        
+        if fecha_data_incio.date() > fecha_data_fin.date():
+            raise ValidationError("No se puede crear un nuevo registro si la fecha de inicio supera la fecha final.")
+        
+        vehiculo = PeriodoArriendoVehiculo.objects.create(
+            id_vehiculo_arrendado=creacion_arriendo,
+            fecha_inicio=data['fecha_inicio'],
+            fecha_fin=data['fecha_fin']
+        )
+
+    return creacion_arriendo, serializer.data
+
 class RegistrarVehiculoArrendado(generics.CreateAPIView):
     serializer_class = RegistrarVehiculoArrendadoSerializer
     permission_classes = [IsAuthenticated]
     queryset = VehiculosArrendados.objects.all()
     
-    def post(self,request):
+    def post(self, request):
         data = request.data
-              
-        serializer = self.serializer_class(data=data)
-        serializer.is_valid(raise_exception=True)
+        creacion_arriendo, serializer_data = crear_arriendo_vehiculo(data)
         
-        creacion_arriendo = serializer.save()
+        return Response({'success': True, 'detail': 'Se creó correctamente el registro', 'data': serializer_data}, status=status.HTTP_201_CREATED)
+# class RegistrarVehiculoArrendado(generics.CreateAPIView):
+#     serializer_class = RegistrarVehiculoArrendadoSerializer
+#     permission_classes = [IsAuthenticated]
+#     queryset = VehiculosArrendados.objects.all()
+    
+#     def post(self,request):
+#         data = request.data
+              
+#         serializer = self.serializer_class(data=data)
+#         serializer.is_valid(raise_exception=True)
+        
+#         creacion_arriendo = serializer.save()
         
              
-        if data['asignar_hoja_de_vida']== True:
-            agendable = data.get('es_agendable')
-            if agendable == None:
-                raise ValidationError("Debe de indicar si el vehiculo es agendable o no.")
-            hoja_de_vida = HojaDeVidaVehiculos.objects.create(
-                # id_persona = persona_logueada,
-                id_vehiculo_arrendado = creacion_arriendo,
-                es_arrendado = True,
-                es_agendable = agendable
-            )   
-            #REGISTRO DE LAS FECHAS DE ARRENDAMIENTO
+#         if data['asignar_hoja_de_vida']== True:
+#             agendable = data.get('es_agendable')
+#             if agendable == None:
+#                 raise ValidationError("Debe de indicar si el vehiculo es agendable o no.")
+#             hoja_de_vida = HojaDeVidaVehiculos.objects.create(
+#                 # id_persona = persona_logueada,
+#                 id_vehiculo_arrendado = creacion_arriendo,
+#                 es_arrendado = True,
+#                 es_agendable = agendable
+#             )   
+#             #REGISTRO DE LAS FECHAS DE ARRENDAMIENTO
       
-            if data['fecha_inicio'] == None or data['fecha_fin'] == None:
-                raise ValidationError("Los campos de las fechas son obligatorio para la creación del registro del vehiculo arrendado.")
+#             if data['fecha_inicio'] == None or data['fecha_fin'] == None:
+#                 raise ValidationError("Los campos de las fechas son obligatorio para la creación del registro del vehiculo arrendado.")
             
-            fecha_data_fin = datetime.strptime(data['fecha_fin'],'%Y-%m-%d')
-            fecha_data_incio = datetime.strptime(data['fecha_inicio'],'%Y-%m-%d')
+#             fecha_data_fin = datetime.strptime(data['fecha_fin'],'%Y-%m-%d')
+#             fecha_data_incio = datetime.strptime(data['fecha_inicio'],'%Y-%m-%d')
                         
-            if fecha_data_incio.date() > fecha_data_fin.date():
-                raise ValidationError("No se puede crear un nuevo registro si la fecha de inicio supera la fecha final.")
+#             if fecha_data_incio.date() > fecha_data_fin.date():
+#                 raise ValidationError("No se puede crear un nuevo registro si la fecha de inicio supera la fecha final.")
             
-            vehiculo = PeriodoArriendoVehiculo.objects.create(
-                id_vehiculo_arrendado = creacion_arriendo,
-                fecha_inicio = data['fecha_inicio'],
-                fecha_fin = data['fecha_fin']
-            )
+#             vehiculo = PeriodoArriendoVehiculo.objects.create(
+#                 id_vehiculo_arrendado = creacion_arriendo,
+#                 fecha_inicio = data['fecha_inicio'],
+#                 fecha_fin = data['fecha_fin']
+#             )
                   
-        return Response({'success':True, 'detail':'Se creo correctamente el registro', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+#         return Response({'success':True, 'detail':'Se creo correctamente el registro', 'data': serializer.data}, status=status.HTTP_201_CREATED)
 
 #********************************************************************************************************#
 
@@ -368,4 +412,6 @@ class BusquedaFechasArrendamientoVehiculo(generics.ListAPIView):
         
     
     
+ #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ #TABLA T073 INSPECCION DIARIA DE VEHICULO
  

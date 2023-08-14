@@ -321,3 +321,9 @@ class  CajaEstanteSearchAdvancedSerializer(serializers.ModelSerializer):
     class Meta:
         model =  CajaBandeja
         fields = '__all__'
+
+#Eliminar_caja
+class  CajaEstanteDeleteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  CajaBandeja
+        fields = '__all__'
