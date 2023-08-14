@@ -12,11 +12,11 @@ ALLOWED_HOSTS = ['*']
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('BIA_DB_NAME'),
+        'NAME': 'railway',
         'USER': os.environ.get('BIA_DB_USER'),
-        'PASSWORD': os.environ.get('BIA_DB_PASSWORD'),
-        'HOST': os.environ.get('BIA_DB_HOST'),
-        'PORT': os.environ.get('BIA_DB_PORT'),
+        'PASSWORD': 'NYRRXW0WR30oW35p09U2',
+        'HOST': 'containers-us-west-126.railway.app',
+        'PORT': '5826',
         'ATOMIC_REQUESTS': True
     },
     'bia-estaciones': {

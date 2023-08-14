@@ -192,7 +192,7 @@ class UpdatePersonaJuridicaByVentanilla(generics.UpdateAPIView):
                 else:
                     fecha_formateada = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
                     fecha_ahora = date.today()
-                    if fecha_formateada > fecha_ahora or fecha_formateada <= persona.fecha_inicio_cargo_rep_legal.date():
+                    if fecha_formateada > fecha_ahora or fecha_formateada <= persona.fecha_inicio_cargo_rep_legal:
                         raise PermissionDenied('La fecha de inicio del cargo del representante no debe ser superior a la del sistema y tiene que ser mayor a la fecha de inicio del representante legal anterior')
 
             else:
@@ -201,7 +201,7 @@ class UpdatePersonaJuridicaByVentanilla(generics.UpdateAPIView):
                 
                     fecha_formateada = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
                     print()
-                    if persona.fecha_inicio_cargo_rep_legal.date() != fecha_formateada:
+                    if persona.fecha_inicio_cargo_rep_legal != fecha_formateada:
                         raise PermissionDenied('No se puede actualizar la fecha de inicio de representante legal sin haber cambiado el representante')
                     
                 data['fecha_cambio_representante_legal'] = None

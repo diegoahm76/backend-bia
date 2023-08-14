@@ -619,7 +619,7 @@ class GetNuevoUserOrganigrama(generics.RetrieveAPIView):
         nuevo_user_organigrama = Personas.objects.filter(tipo_documento=tipo_documento, numero_documento=numero_documento).first()
         if not nuevo_user_organigrama:
             raise NotFound('No existe la persona con ese tipo y numero de documento.') 
-        if not nuevo_user_organigrama.fecha_a_finalizar_cargo_actual or nuevo_user_organigrama.fecha_a_finalizar_cargo_actual < fecha_sistema:
+        if not nuevo_user_organigrama.fecha_a_finalizar_cargo_actual or nuevo_user_organigrama.fecha_a_finalizar_cargo_actual < fecha_sistema.date():
             raise NotFound('La persona no se encuentra vinculada o la fecha de finalización del cargo ya expiro.') 
                 
         if nuevo_user_organigrama.id_persona == persona_log:
@@ -688,7 +688,7 @@ class AsignarOrganigramaUser(generics.CreateAPIView):
         if persona.id_persona == organigrama.id_persona_cargo.id_persona:
             raise NotFound('La persona no se puede reasignar asi mismo.')
         
-        if not persona.fecha_a_finalizar_cargo_actual or persona.fecha_a_finalizar_cargo_actual < fecha_sistema:
+        if not persona.fecha_a_finalizar_cargo_actual or persona.fecha_a_finalizar_cargo_actual < fecha_sistema.date():
             raise NotFound('La persona no se encuentra vinculada o la fecha de finalización del cargo ya expiro.')             
         
         if organigrama.fecha_terminado != None:
