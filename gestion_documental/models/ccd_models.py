@@ -79,7 +79,7 @@ class CatalogosSeries(models.Model):
 
 class CatalogosSeriesUnidad(models.Model):
     id_cat_serie_und = models.AutoField(primary_key=True, editable=False, db_column='T224IdCatSerie_UndOrg_CCD')
-    id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T224Id_UnidadOrganizacional ')
+    id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T224Id_UnidadOrganizacional')
     id_catalogo_serie = models.ForeignKey(CatalogosSeries, on_delete=models.CASCADE, db_column='T224Id_CatalogoSerie_CCD')
 
     def __str__(self):
