@@ -9,7 +9,7 @@ urlpatterns = [
     path('listado-deudores/', views.ListadoDeudoresViews.as_view(),name='listado-deudores'),
     path('consulta-obligaciones-deudores/<str:identificacion>/', views.ConsultaObligacionesDeudoresViews.as_view(),name='consulta-obligaciones-deudores'),
     path('consulta-obligaciones/<int:id_obligaciones>/', views.ConsultaObligacionesViews.as_view(), name='consulta-obligaciones'),
-    path('lista-obligaciones-ids/', views.ObligacionesDeudorSeleccionadasIds.as_view(), name='lista-obligaciones-ids'),
+    path('lista-obligaciones-ids/', views.ListaObligacionesDeudorSeleccionadasIds.as_view(), name='lista-obligaciones-ids'),
 
     # CREAR UNA SOLICITUD DE FACILIDAD DE PAGOS
     path('datos-deudor/<int:id>/', views.DatosDeudorView.as_view(), name='datos-deudor'), 
@@ -22,6 +22,7 @@ urlpatterns = [
     path('detalles-bien/create/', views.DetallesBienFacilidadPagoCreateView.as_view(), name='crear-detalles-bien'),
     path('garantias-facilidad/create/', views.GarantiasFacilidadCreateView.as_view(), name='crear-garantias-facilidad'),
     path('cumplimiento-requisitos/create/', views.CumplimientoRequisitosCreateView.as_view(), name='crear-cumplimiento-requisitos'),
+    path('detalles-cartera/create/', views.DetallesFacilidadPagoCreateView.as_view(), name='crear-detalles-cartera'),
     path('create/', views.FacilidadPagoCreateView.as_view(), name='crear-facilidad-pago'),
 
     # ASIGNAR UN FUNCIONARIO A LA FACILIDAD DE PAGOS
