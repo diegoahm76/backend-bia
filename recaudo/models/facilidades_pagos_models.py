@@ -19,7 +19,7 @@ class FacilidadesPago(models.Model):
     consignacion_soporte = models.FileField(db_column='T426consignacionSoporte')
     documento_no_enajenacion = models.FileField(db_column='T426documentoNoEnajenacion')
     observaciones = models.TextField(db_column='T426observaciones')
-    id_funcionario = models.ForeignKey('seguridad.Personas', on_delete=models.CASCADE, db_column='T426Id_Funcionario')
+    id_funcionario = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T426Id_Funcionario')
     notificaciones = models.BooleanField(db_column='T426notificaciones')
     numero_radicacion = models.CharField(max_length=255, db_column='T426numeroRadicacion')
 
