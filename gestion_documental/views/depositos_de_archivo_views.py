@@ -12,7 +12,7 @@ from django.db.models import Q
 from django.db import transaction
 from datetime import datetime,date,timedelta
 from gestion_documental.models.depositos_models import  Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
-from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajasByBandejaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
+from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteDeleteSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajasByBandejaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
 from seguridad.utils import Util
 
 
@@ -919,3 +919,35 @@ class CajaEstanteSearchAdvanced(generics.ListAPIView):
             'detail': 'Se encontraron las siguientes cajas.',
             'data': serialized_data
         }, status=status.HTTP_200_OK)
+    
+#ELIMINAR_CAJA(PENDIENTE)
+
+class CajaEstanteDelete(generics.DestroyAPIView):
+        
+    serializer_class = CajaEstanteDeleteSerializer
+    queryset = CajaBandeja.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self, request, pk):
+        
+        bandeja = BandejaEstante.objects.filter(id_bandeja_estante=pk).first()
+
+        if not bandeja:
+            raise ValidationError("No existe la bandeja que desea eliminar")
+
+        tiene_cajas = CajaBandeja.objects.filter(id_bandeja_estante=pk).exists()
+
+        if tiene_cajas:
+                return Response({'success': False, 'detail': 'No se puede eliminar la bandeja porque tiene una o mas cajas asociadas a esta bandeja.'},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        #Reordenar
+        bandejas = BandejaEstante.objects.filter(orden_ubicacion_por_estante__gt=bandeja.orden_ubicacion_por_estante).order_by('orden_ubicacion_por_estante') 
+        bandeja.delete()
+
+        for bandeja in bandejas:
+            bandeja.orden_ubicacion_por_estante = bandeja.orden_ubicacion_por_estante - 1
+            bandeja.save()
+
+        return Response({'success': True, 'detail': 'Se eliminó correctamente la bandeja seleccionada.'}, status=status.HTTP_200_OK)  
+

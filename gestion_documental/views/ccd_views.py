@@ -906,3 +906,8 @@ class BusquedaCCD(generics.ListAPIView):
         ccd = self.queryset.filter(**filter)
         serializador = self.serializer_class(ccd, many=True, context = {'request':request})
         return Response({'succes': True, 'detail':'Resultados de la búsqueda', 'data':serializador.data}, status=status.HTTP_200_OK)
+
+
+#Permisos sobre Series de Expedientes de los CCD
+
+
