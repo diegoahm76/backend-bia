@@ -220,51 +220,94 @@ class ActualizarVehiculoArrendado(generics.UpdateAPIView):
         serializer.save()
         return Response({'success':True,'detail':'Se realiza la actualizacion Correctamente'},status=status.HTTP_200_OK)
 
-#TABLA "T085PeriodoArriendoVehiculo" ELIMINAR REGISTROS
+#TABLA "T085PeriodoArriendoVehiculo" ELIMINAR REGISTROS(MODELADO)
+def eliminar_registro_arrendamiento(pk):
+    vehiculo = VehiculosArrendados.objects.filter(id_vehiculo_arrendado=pk).first()
+
+    if not vehiculo:
+        raise ValidationError("No existe el registro del vehiculo arrendado que desea eliminar.")
+
+    periodos_veh_arrendado = PeriodoArriendoVehiculo.objects.filter(id_vehiculo_arrendado=pk)
+    ultimo_periodo = periodos_veh_arrendado.last()
+
+    hoja_vida_veh_arrendado = HojaDeVidaVehiculos.objects.filter(id_vehiculo_arrendado=vehiculo.id_vehiculo_arrendado).last()
+    agenda = VehiculosAgendadosDiaDisponible.objects.filter(id_Hoja_vida_vehiculo=hoja_vida_veh_arrendado.id_hoja_de_vida).last()
+    conductor = VehiculosAgendables_Conductor.objects.filter(id_hoja_vida_vehiculo=hoja_vida_veh_arrendado.id_hoja_de_vida).last()
+
+    fecha_sistema = datetime.now()
+
+    if ultimo_periodo.fecha_fin < fecha_sistema.date():
+        raise ValidationError("Los registros con fechas vencidas no se pueden eliminar, solo es permitido eliminar los registros con fechas actuales.")
+
+    if periodos_veh_arrendado.count() > 1:
+        raise ValidationError("No se puede eliminar.")
+    else:
+        if agenda and ultimo_periodo.fecha_inicio <= agenda.dia_disponibilidad:
+            raise ValidationError("No se puede eliminar.")
+
+        if conductor and ultimo_periodo.fecha_inicio <= conductor.fecha_final_asignacion:
+            raise ValidationError("No se puede eliminar x2")
+
+        vehiculo.delete()
+        
+    return True
+
 class DeleteRegistroVehiculoArriendo(generics.DestroyAPIView):
     serializer_class = RegistrarVehiculoArrendadoSerializer
     queryset = VehiculosArrendados.objects.all()
     permission_classes = [IsAuthenticated]
-    
-    def delete(self,request,pk):
-        
-        vehiculo = VehiculosArrendados.objects.filter(id_vehiculo_arrendado=pk).first()
-        
-        if not vehiculo:
-            raise ValidationError("No existe el registro del vehiculo arrendado que desea eliminar.")
-        
-        periodos_veh_arrendado = PeriodoArriendoVehiculo.objects.filter(id_vehiculo_arrendado=pk)
-        ultimo_periodo = periodos_veh_arrendado.last()
-        
-        
-        hoja_vida_veh_arrendado = HojaDeVidaVehiculos.objects.filter(id_vehiculo_arrendado = vehiculo.id_vehiculo_arrendado).last()
-        
-        agenda = VehiculosAgendadosDiaDisponible.objects.filter(id_Hoja_vida_vehiculo = hoja_vida_veh_arrendado.id_hoja_de_vida).last()
-        conductor = VehiculosAgendables_Conductor.objects.filter(id_hoja_vida_vehiculo = hoja_vida_veh_arrendado.id_hoja_de_vida).last()
-        
-        fecha_sistema = datetime.now()
-        
-        if ultimo_periodo.fecha_fin < fecha_sistema.date():
-            raise ValidationError("Los registros con fechas vencidas no se pueden eliminar, solo es permitido eliminar los registros con fechas actuales.")
-        
-        if periodos_veh_arrendado.count() > 1:
 
-            raise ValidationError("No se puede eliminar.")
-                               
-        else:      
-            if agenda:
-                            
-                if ultimo_periodo.fecha_inicio <= agenda.dia_disponibilidad:
-                    raise ValidationError("No se puede eliminar.")
-                
-            if conductor:
-                
-                if ultimo_periodo.fecha_inicio <= conductor.fecha_final_asignacion:
-                    raise ValidationError("No se puede eliminar x2")
-            
-            vehiculo.delete()
+    def delete(self, request, pk):
+        try:
+            eliminado = eliminar_registro_arrendamiento(pk)
+            if eliminado:
+                return Response({'success': True, 'detail': "Se eliminó el registro del arrendamiento del vehiculo exitosamente"}, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+# class DeleteRegistroVehiculoArriendo(generics.DestroyAPIView):
+#     serializer_class = RegistrarVehiculoArrendadoSerializer
+#     queryset = VehiculosArrendados.objects.all()
+#     permission_classes = [IsAuthenticated]
+    
+#     def delete(self,request,pk):
         
-        return Response({'success':True,'detail':"Se elimino el registro del arrendamiento del vehiculo exitosamente"},status=status.HTTP_200_OK)
+#         vehiculo = VehiculosArrendados.objects.filter(id_vehiculo_arrendado=pk).first()
+        
+#         if not vehiculo:
+#             raise ValidationError("No existe el registro del vehiculo arrendado que desea eliminar.")
+        
+#         periodos_veh_arrendado = PeriodoArriendoVehiculo.objects.filter(id_vehiculo_arrendado=pk)
+#         ultimo_periodo = periodos_veh_arrendado.last()
+        
+        
+#         hoja_vida_veh_arrendado = HojaDeVidaVehiculos.objects.filter(id_vehiculo_arrendado = vehiculo.id_vehiculo_arrendado).last()
+        
+#         agenda = VehiculosAgendadosDiaDisponible.objects.filter(id_Hoja_vida_vehiculo = hoja_vida_veh_arrendado.id_hoja_de_vida).last()
+#         conductor = VehiculosAgendables_Conductor.objects.filter(id_hoja_vida_vehiculo = hoja_vida_veh_arrendado.id_hoja_de_vida).last()
+        
+#         fecha_sistema = datetime.now()
+        
+#         if ultimo_periodo.fecha_fin < fecha_sistema.date():
+#             raise ValidationError("Los registros con fechas vencidas no se pueden eliminar, solo es permitido eliminar los registros con fechas actuales.")
+        
+#         if periodos_veh_arrendado.count() > 1:
+
+#             raise ValidationError("No se puede eliminar.")
+                               
+#         else:      
+#             if agenda:
+                            
+#                 if ultimo_periodo.fecha_inicio <= agenda.dia_disponibilidad:
+#                     raise ValidationError("No se puede eliminar.")
+                
+#             if conductor:
+                
+#                 if ultimo_periodo.fecha_inicio <= conductor.fecha_final_asignacion:
+#                     raise ValidationError("No se puede eliminar x2")
+            
+#             vehiculo.delete()
+        
+#         return Response({'success':True,'detail':"Se elimino el registro del arrendamiento del vehiculo exitosamente"},status=status.HTTP_200_OK)
 
 #SERVICIO DE BUSQUEDA DE VEHICULOS ARRENDADOS 'T071', POR NOMBRE Y VERSION
 
