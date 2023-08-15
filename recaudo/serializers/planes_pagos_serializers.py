@@ -12,3 +12,8 @@ class TipoPagoSerializer(serializers.ModelSerializer):
         model = TiposPago
         fields = ('id', 'descripcion')
 
+
+class PlanPagosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PlanPagos
+        fields = '__all__'
