@@ -24,49 +24,93 @@ from almacen.serializers.vehiculos_serializers import (
 from transversal.models.base_models import ClasesTerceroPersona
 from seguridad.utils import Util
 
-#TABLA T071 CREAR REGISTROS DE ARRENDAMIENTO
+#TABLA T071 CREAR REGISTROS DE ARRENDAMIENTO(MODELADO)
+def crear_arriendo_vehiculo(data):
+    serializer = RegistrarVehiculoArrendadoSerializer(data=data)
+    serializer.is_valid(raise_exception=True)
+    
+    creacion_arriendo = serializer.save()
+
+    if data['asignar_hoja_de_vida']:
+        agendable = data.get('es_agendable')
+        if agendable is None:
+            raise ValidationError("Debe indicar si el vehiculo es agendable o no.")
+        
+        hoja_de_vida = HojaDeVidaVehiculos.objects.create(
+            id_vehiculo_arrendado=creacion_arriendo,
+            es_arrendado=True,
+            es_agendable=agendable
+        )
+        
+        if data['fecha_inicio'] is None or data['fecha_fin'] is None:
+            raise ValidationError("Los campos de las fechas son obligatorios para la creación del registro del vehículo arrendado.")
+        
+        fecha_data_fin = datetime.strptime(data['fecha_fin'], '%Y-%m-%d')
+        fecha_data_incio = datetime.strptime(data['fecha_inicio'], '%Y-%m-%d')
+        
+        if fecha_data_incio.date() > fecha_data_fin.date():
+            raise ValidationError("No se puede crear un nuevo registro si la fecha de inicio supera la fecha final.")
+        
+        vehiculo = PeriodoArriendoVehiculo.objects.create(
+            id_vehiculo_arrendado=creacion_arriendo,
+            fecha_inicio=data['fecha_inicio'],
+            fecha_fin=data['fecha_fin']
+        )
+
+    return creacion_arriendo, serializer.data
+
 class RegistrarVehiculoArrendado(generics.CreateAPIView):
     serializer_class = RegistrarVehiculoArrendadoSerializer
     permission_classes = [IsAuthenticated]
     queryset = VehiculosArrendados.objects.all()
     
-    def post(self,request):
+    def post(self, request):
         data = request.data
-              
-        serializer = self.serializer_class(data=data)
-        serializer.is_valid(raise_exception=True)
+        creacion_arriendo, serializer_data = crear_arriendo_vehiculo(data)
         
-        creacion_arriendo = serializer.save()
+        return Response({'success': True, 'detail': 'Se creó correctamente el registro', 'data': serializer_data}, status=status.HTTP_201_CREATED)
+# class RegistrarVehiculoArrendado(generics.CreateAPIView):
+#     serializer_class = RegistrarVehiculoArrendadoSerializer
+#     permission_classes = [IsAuthenticated]
+#     queryset = VehiculosArrendados.objects.all()
+    
+#     def post(self,request):
+#         data = request.data
+              
+#         serializer = self.serializer_class(data=data)
+#         serializer.is_valid(raise_exception=True)
+        
+#         creacion_arriendo = serializer.save()
         
              
-        if data['asignar_hoja_de_vida']== True:
-            agendable = data.get('es_agendable')
-            if agendable == None:
-                raise ValidationError("Debe de indicar si el vehiculo es agendable o no.")
-            hoja_de_vida = HojaDeVidaVehiculos.objects.create(
-                # id_persona = persona_logueada,
-                id_vehiculo_arrendado = creacion_arriendo,
-                es_arrendado = True,
-                es_agendable = agendable
-            )   
-            #REGISTRO DE LAS FECHAS DE ARRENDAMIENTO
+#         if data['asignar_hoja_de_vida']== True:
+#             agendable = data.get('es_agendable')
+#             if agendable == None:
+#                 raise ValidationError("Debe de indicar si el vehiculo es agendable o no.")
+#             hoja_de_vida = HojaDeVidaVehiculos.objects.create(
+#                 # id_persona = persona_logueada,
+#                 id_vehiculo_arrendado = creacion_arriendo,
+#                 es_arrendado = True,
+#                 es_agendable = agendable
+#             )   
+#             #REGISTRO DE LAS FECHAS DE ARRENDAMIENTO
       
-            if data['fecha_inicio'] == None or data['fecha_fin'] == None:
-                raise ValidationError("Los campos de las fechas son obligatorio para la creación del registro del vehiculo arrendado.")
+#             if data['fecha_inicio'] == None or data['fecha_fin'] == None:
+#                 raise ValidationError("Los campos de las fechas son obligatorio para la creación del registro del vehiculo arrendado.")
             
-            fecha_data_fin = datetime.strptime(data['fecha_fin'],'%Y-%m-%d')
-            fecha_data_incio = datetime.strptime(data['fecha_inicio'],'%Y-%m-%d')
+#             fecha_data_fin = datetime.strptime(data['fecha_fin'],'%Y-%m-%d')
+#             fecha_data_incio = datetime.strptime(data['fecha_inicio'],'%Y-%m-%d')
                         
-            if fecha_data_incio.date() > fecha_data_fin.date():
-                raise ValidationError("No se puede crear un nuevo registro si la fecha de inicio supera la fecha final.")
+#             if fecha_data_incio.date() > fecha_data_fin.date():
+#                 raise ValidationError("No se puede crear un nuevo registro si la fecha de inicio supera la fecha final.")
             
-            vehiculo = PeriodoArriendoVehiculo.objects.create(
-                id_vehiculo_arrendado = creacion_arriendo,
-                fecha_inicio = data['fecha_inicio'],
-                fecha_fin = data['fecha_fin']
-            )
+#             vehiculo = PeriodoArriendoVehiculo.objects.create(
+#                 id_vehiculo_arrendado = creacion_arriendo,
+#                 fecha_inicio = data['fecha_inicio'],
+#                 fecha_fin = data['fecha_fin']
+#             )
                   
-        return Response({'success':True, 'detail':'Se creo correctamente el registro', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+#         return Response({'success':True, 'detail':'Se creo correctamente el registro', 'data': serializer.data}, status=status.HTTP_201_CREATED)
 
 #********************************************************************************************************#
 
@@ -176,51 +220,94 @@ class ActualizarVehiculoArrendado(generics.UpdateAPIView):
         serializer.save()
         return Response({'success':True,'detail':'Se realiza la actualizacion Correctamente'},status=status.HTTP_200_OK)
 
-#TABLA "T085PeriodoArriendoVehiculo" ELIMINAR REGISTROS
+#TABLA "T085PeriodoArriendoVehiculo" ELIMINAR REGISTROS(MODELADO)
+def eliminar_registro_arrendamiento(pk):
+    vehiculo = VehiculosArrendados.objects.filter(id_vehiculo_arrendado=pk).first()
+
+    if not vehiculo:
+        raise ValidationError("No existe el registro del vehiculo arrendado que desea eliminar.")
+
+    periodos_veh_arrendado = PeriodoArriendoVehiculo.objects.filter(id_vehiculo_arrendado=pk)
+    ultimo_periodo = periodos_veh_arrendado.last()
+
+    hoja_vida_veh_arrendado = HojaDeVidaVehiculos.objects.filter(id_vehiculo_arrendado=vehiculo.id_vehiculo_arrendado).last()
+    agenda = VehiculosAgendadosDiaDisponible.objects.filter(id_Hoja_vida_vehiculo=hoja_vida_veh_arrendado.id_hoja_de_vida).last()
+    conductor = VehiculosAgendables_Conductor.objects.filter(id_hoja_vida_vehiculo=hoja_vida_veh_arrendado.id_hoja_de_vida).last()
+
+    fecha_sistema = datetime.now()
+
+    if ultimo_periodo.fecha_fin < fecha_sistema.date():
+        raise ValidationError("Los registros con fechas vencidas no se pueden eliminar, solo es permitido eliminar los registros con fechas actuales.")
+
+    if periodos_veh_arrendado.count() > 1:
+        raise ValidationError("No se puede eliminar.")
+    else:
+        if agenda and ultimo_periodo.fecha_inicio <= agenda.dia_disponibilidad:
+            raise ValidationError("No se puede eliminar.")
+
+        if conductor and ultimo_periodo.fecha_inicio <= conductor.fecha_final_asignacion:
+            raise ValidationError("No se puede eliminar x2")
+
+        vehiculo.delete()
+        
+    return True
+
 class DeleteRegistroVehiculoArriendo(generics.DestroyAPIView):
     serializer_class = RegistrarVehiculoArrendadoSerializer
     queryset = VehiculosArrendados.objects.all()
     permission_classes = [IsAuthenticated]
-    
-    def delete(self,request,pk):
-        
-        vehiculo = VehiculosArrendados.objects.filter(id_vehiculo_arrendado=pk).first()
-        
-        if not vehiculo:
-            raise ValidationError("No existe el registro del vehiculo arrendado que desea eliminar.")
-        
-        periodos_veh_arrendado = PeriodoArriendoVehiculo.objects.filter(id_vehiculo_arrendado=pk)
-        ultimo_periodo = periodos_veh_arrendado.last()
-        
-        
-        hoja_vida_veh_arrendado = HojaDeVidaVehiculos.objects.filter(id_vehiculo_arrendado = vehiculo.id_vehiculo_arrendado).last()
-        
-        agenda = VehiculosAgendadosDiaDisponible.objects.filter(id_Hoja_vida_vehiculo = hoja_vida_veh_arrendado.id_hoja_de_vida).last()
-        conductor = VehiculosAgendables_Conductor.objects.filter(id_hoja_vida_vehiculo = hoja_vida_veh_arrendado.id_hoja_de_vida).last()
-        
-        fecha_sistema = datetime.now()
-        
-        if ultimo_periodo.fecha_fin < fecha_sistema.date():
-            raise ValidationError("Los registros con fechas vencidas no se pueden eliminar, solo es permitido eliminar los registros con fechas actuales.")
-        
-        if periodos_veh_arrendado.count() > 1:
 
-            raise ValidationError("No se puede eliminar.")
-                               
-        else:      
-            if agenda:
-                            
-                if ultimo_periodo.fecha_inicio <= agenda.dia_disponibilidad:
-                    raise ValidationError("No se puede eliminar.")
-                
-            if conductor:
-                
-                if ultimo_periodo.fecha_inicio <= conductor.fecha_final_asignacion:
-                    raise ValidationError("No se puede eliminar x2")
-            
-            vehiculo.delete()
+    def delete(self, request, pk):
+        try:
+            eliminado = eliminar_registro_arrendamiento(pk)
+            if eliminado:
+                return Response({'success': True, 'detail': "Se eliminó el registro del arrendamiento del vehiculo exitosamente"}, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+# class DeleteRegistroVehiculoArriendo(generics.DestroyAPIView):
+#     serializer_class = RegistrarVehiculoArrendadoSerializer
+#     queryset = VehiculosArrendados.objects.all()
+#     permission_classes = [IsAuthenticated]
+    
+#     def delete(self,request,pk):
         
-        return Response({'success':True,'detail':"Se elimino el registro del arrendamiento del vehiculo exitosamente"},status=status.HTTP_200_OK)
+#         vehiculo = VehiculosArrendados.objects.filter(id_vehiculo_arrendado=pk).first()
+        
+#         if not vehiculo:
+#             raise ValidationError("No existe el registro del vehiculo arrendado que desea eliminar.")
+        
+#         periodos_veh_arrendado = PeriodoArriendoVehiculo.objects.filter(id_vehiculo_arrendado=pk)
+#         ultimo_periodo = periodos_veh_arrendado.last()
+        
+        
+#         hoja_vida_veh_arrendado = HojaDeVidaVehiculos.objects.filter(id_vehiculo_arrendado = vehiculo.id_vehiculo_arrendado).last()
+        
+#         agenda = VehiculosAgendadosDiaDisponible.objects.filter(id_Hoja_vida_vehiculo = hoja_vida_veh_arrendado.id_hoja_de_vida).last()
+#         conductor = VehiculosAgendables_Conductor.objects.filter(id_hoja_vida_vehiculo = hoja_vida_veh_arrendado.id_hoja_de_vida).last()
+        
+#         fecha_sistema = datetime.now()
+        
+#         if ultimo_periodo.fecha_fin < fecha_sistema.date():
+#             raise ValidationError("Los registros con fechas vencidas no se pueden eliminar, solo es permitido eliminar los registros con fechas actuales.")
+        
+#         if periodos_veh_arrendado.count() > 1:
+
+#             raise ValidationError("No se puede eliminar.")
+                               
+#         else:      
+#             if agenda:
+                            
+#                 if ultimo_periodo.fecha_inicio <= agenda.dia_disponibilidad:
+#                     raise ValidationError("No se puede eliminar.")
+                
+#             if conductor:
+                
+#                 if ultimo_periodo.fecha_inicio <= conductor.fecha_final_asignacion:
+#                     raise ValidationError("No se puede eliminar x2")
+            
+#             vehiculo.delete()
+        
+#         return Response({'success':True,'detail':"Se elimino el registro del arrendamiento del vehiculo exitosamente"},status=status.HTTP_200_OK)
 
 #SERVICIO DE BUSQUEDA DE VEHICULOS ARRENDADOS 'T071', POR NOMBRE Y VERSION
 
@@ -368,4 +455,6 @@ class BusquedaFechasArrendamientoVehiculo(generics.ListAPIView):
         
     
     
+ #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ #TABLA T073 INSPECCION DIARIA DE VEHICULO
  

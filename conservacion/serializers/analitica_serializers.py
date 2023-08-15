@@ -1,9 +1,12 @@
 from rest_framework import serializers
 from almacen.models.bienes_models import CatalogoBienes
-from conservacion.models.cuarentena_models import CuarentenaMatVegetal
+from conservacion.models.cuarentena_models import CuarentenaMatVegetal, ItemsLevantaCuarentena
+from conservacion.models.despachos_models import DistribucionesItemDespachoEntrante
 from conservacion.models.incidencias_models import ConsumosIncidenciasMV
 
 from conservacion.models.inventario_models import InventarioViveros
+from conservacion.models.siembras_models import CambiosDeEtapa, ConsumosSiembra, Siembras
+from conservacion.models.traslados_models import ItemsTrasladoViveros, TrasladosViveros
 
 class GetTableroControlConservacionSerializer(serializers.ModelSerializer):
     nombre_vivero = serializers.ReadOnlyField(source='id_vivero.nombre', default=None)
@@ -182,3 +185,179 @@ class ConsumosIncidenciasGetSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ['nombre','unidad_medida','cantidad_consumida']
         model = ConsumosIncidenciasMV
+
+class HistoricoDistribucionesGetSerializer(serializers.ModelSerializer):
+    nombre_vivero = serializers.ReadOnlyField(source='id_vivero.nombre', default=None)
+    fecha_ingreso = serializers.ReadOnlyField(source='id_item_despacho_entrante.fecha_ingreso', default=None)
+    etapa_ingresa = serializers.CharField(source='get_cod_etapa_lote_al_ingresar_display')
+    fecha_distribucion = serializers.DateTimeField(read_only=True, format="%Y-%m-%d")
+    id_bien = serializers.ReadOnlyField(source='id_item_despacho_entrante.id_bien.id_bien', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_item_despacho_entrante.id_bien.nombre', default=None)
+    unidad_medida = serializers.ReadOnlyField(source='id_item_despacho_entrante.id_bien.id_unidad_medida.abreviatura', default=None)
+    numero_despacho = serializers.ReadOnlyField(source='id_item_despacho_entrante.id_despacho_entrante.id_despacho_consumo_alm.numero_despacho_consumo', default=None)
+            
+    class Meta:
+        fields = [
+            'id_distribucion_item_despacho_entrante',
+            'cantidad_asignada',
+            'id_vivero',
+            'nombre_vivero',
+            'numero_despacho',
+            'fecha_distribucion',
+            'fecha_ingreso',
+            'etapa_ingresa',
+            'id_bien',
+            'nombre_bien',
+            'unidad_medida'
+        ]
+        model = DistribucionesItemDespachoEntrante
+
+class HistoricoSiembrasBienesConsumidosGetSerializer(serializers.ModelSerializer):
+    nombre_bien = serializers.SerializerMethodField()
+    unidad_medida = serializers.SerializerMethodField()
+    
+    def get_nombre_bien(self,obj):
+        if obj.id_bien_consumido:
+            nombre_bien = obj.id_bien_consumido.nombre
+        else:
+            nombre_bien = obj.id_mezcla_consumida.nombre
+            
+        return nombre_bien
+    
+    def get_unidad_medida(self,obj):
+        if obj.id_bien_consumido:
+            unidad_medida = obj.id_bien_consumido.id_unidad_medida.abreviatura
+        else:
+            unidad_medida = obj.id_mezcla_consumida.id_unidad_medida.abreviatura
+            
+        return unidad_medida
+    
+    class Meta:
+        model = ConsumosSiembra
+        fields = (
+            'id_consumo_siembra',
+            'id_bien_consumido',
+            'id_mezcla_consumida',
+            'nombre_bien',
+            'cantidad',
+            'unidad_medida'
+        )
+
+class HistoricoSiembrasGetSerializer(serializers.ModelSerializer):
+    nombre_vivero = serializers.ReadOnlyField(source='id_vivero.nombre', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_bien_sembrado.nombre', default=None)
+    bienes_consumidos = serializers.SerializerMethodField()
+    
+    def get_bienes_consumidos(self, obj):
+        bienes_consumidos = ConsumosSiembra.objects.filter(id_siembra=obj.id_siembra)
+        bienes_consumidos_serializer = HistoricoSiembrasBienesConsumidosGetSerializer(bienes_consumidos, many=True)
+        return bienes_consumidos_serializer.data
+    
+    class Meta:
+        model = Siembras
+        fields = (
+            'id_siembra',
+            'fecha_siembra',
+            'id_vivero',
+            'nombre_vivero',
+            'id_bien_sembrado',
+            'nombre_bien',
+            'distancia_entre_semillas',
+            'nro_lote',
+            'fecha_registro',
+            'bienes_consumidos'
+        )
+        
+class HistoricoCambiosEtapaGetSerializer(serializers.ModelSerializer):
+    nombre_vivero = serializers.ReadOnlyField(source='id_vivero.nombre', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
+    etapa_origen = serializers.CharField(source='get_cod_etapa_lote_origen_display', default=None)
+    
+    class Meta:
+        model = CambiosDeEtapa
+        fields = (
+            'id_cambio_de_etapa',
+            'fecha_cambio',
+            'id_vivero',
+            'nombre_vivero',
+            'id_bien',
+            'nombre_bien',
+            'etapa_origen',
+            'agno_lote',
+            'nro_lote',
+            'fecha_registro'
+        )
+        
+class HistoricoIngresoCuarentenaGetSerializer(serializers.ModelSerializer):
+    nombre_vivero = serializers.ReadOnlyField(source='id_vivero.nombre', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
+    etapa_lote = serializers.CharField(source='get_cod_etapa_lote_display', default=None)
+    
+    class Meta:
+        model = CuarentenaMatVegetal
+        fields = (
+            'id_cuarentena_mat_vegetal',
+            'fecha_cuarentena',
+            'id_vivero',
+            'nombre_vivero',
+            'id_bien',
+            'nombre_bien',
+            'cantidad_cuarentena',
+            'agno_lote',
+            'nro_lote',
+            'etapa_lote',
+            'fecha_registro'
+        )
+        
+class HistoricoLevantamientoCuarentenaGetSerializer(serializers.ModelSerializer):
+    id_vivero = serializers.ReadOnlyField(source='id_cuarentena_mat_vegetal.id_vivero.id_vivero', default=None)
+    nombre_vivero = serializers.ReadOnlyField(source='id_cuarentena_mat_vegetal.id_vivero.nombre', default=None)
+    id_bien = serializers.ReadOnlyField(source='id_cuarentena_mat_vegetal.id_bien.id_bien', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_cuarentena_mat_vegetal.id_bien.nombre', default=None)
+    agno_lote = serializers.ReadOnlyField(source='id_cuarentena_mat_vegetal.agno_lote', default=None)
+    nro_lote = serializers.ReadOnlyField(source='id_cuarentena_mat_vegetal.nro_lote', default=None)
+    etapa_lote = serializers.CharField(source='id_cuarentena_mat_vegetal.get_cod_etapa_lote_display', default=None)
+    
+    class Meta:
+        model = ItemsLevantaCuarentena
+        fields = (
+            'id_item_levanta_cuarentena',
+            'fecha_levantamiento',
+            'id_vivero',
+            'nombre_vivero',
+            'id_bien',
+            'nombre_bien',
+            'cantidad_a_levantar',
+            'agno_lote',
+            'nro_lote',
+            'etapa_lote',
+            'fecha_registro'
+        )
+
+class HistoricoTrasladosGetSerializer(serializers.ModelSerializer):
+    fecha_traslado = serializers.ReadOnlyField(source='id_traslado.fecha_traslado', default=None)
+    id_vivero_origen = serializers.ReadOnlyField(source='id_traslado.id_vivero_origen.id_vivero', default=None)
+    nombre_vivero_origen = serializers.ReadOnlyField(source='id_traslado.id_vivero_origen.nombre', default=None)
+    id_vivero_destino = serializers.ReadOnlyField(source='id_traslado.id_vivero_destino.id_vivero', default=None)
+    nombre_vivero_destino = serializers.ReadOnlyField(source='id_traslado.id_vivero_destino.nombre', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_bien_origen.nombre', default=None)
+    fecha_registro = serializers.ReadOnlyField(source='id_traslado.fecha_registro', default=None)
+    
+    class Meta:
+        model = ItemsTrasladoViveros
+        fields = (
+            'id_item_traslado_viveros',
+            'fecha_traslado',
+            'id_bien_origen',
+            'nombre_bien',
+            'cantidad_a_trasladar',
+            'id_vivero_origen',
+            'nombre_vivero_origen',
+            'agno_lote_origen',
+            'nro_lote_origen',
+            'id_vivero_destino',
+            'nombre_vivero_destino',
+            'agno_lote_destino_MV',
+            'nro_lote_destino_MV',
+            'fecha_registro'
+        )

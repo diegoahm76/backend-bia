@@ -74,7 +74,7 @@ class SolicitudesPendientesAprobarSerializer(serializers.ModelSerializer):
     #VERIFICAR DE QUE LA FECHA DE VINCULACION DE LA PERSONA NO ESTE VENCIDA
     def get_responsable_vinculacion_vencida(self, obj):
         fecha_actual = datetime.now()
-        fecha_vencida_responsable2 = True if obj.id_funcionario_responsable_unidad.fecha_a_finalizar_cargo_actual < fecha_actual else False
+        fecha_vencida_responsable2 = True if obj.id_funcionario_responsable_unidad.fecha_a_finalizar_cargo_actual < fecha_actual.date() else False
         return fecha_vencida_responsable2
     #VERIFICAR SI LA PERSONA ES RESPONSABLE DE LA UNIDAD
     def get_responsable_unidad(self, obj):        

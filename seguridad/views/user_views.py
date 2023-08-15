@@ -133,7 +133,7 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                     
                     persona = Personas.objects.get(user=user)
                     
-                    if persona.id_cargo is None or persona.fecha_a_finalizar_cargo_actual <= datetime.now():
+                    if persona.id_cargo is None or persona.fecha_a_finalizar_cargo_actual <= datetime.now().date():
                         raise PermissionDenied('La persona propietaria del usuario no tiene cargo actual o la fecha final del cargo ha vencido')
                     
                     if persona.tipo_persona == 'J':
@@ -147,7 +147,7 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                 if user.tipo_usuario == 'I' and str(user.is_active).lower() != str(request.data['is_active']).lower():
                     # user.is_active = False
                     if not user.is_active:
-                        if user.persona.id_cargo is None or user.persona.fecha_a_finalizar_cargo_actual <= datetime.now():
+                        if user.persona.id_cargo is None or user.persona.fecha_a_finalizar_cargo_actual <= datetime.now().date():
                             raise PermissionDenied('La persona propietaria del usuario no tiene cargo actual o la fecha final del cargo ha vencido, por lo cual no puede activar su usuario')
                         
                     if 'justificacion_activacion' not in request.data or not request.data['justificacion_activacion']:
@@ -547,7 +547,7 @@ class RegisterView(generics.CreateAPIView):
                 raise PermissionDenied('La persona no tiene un cargo asociado')
             
             # VALIDAR QUE ESTE VIGENTE EL CARGO
-            if not persona.fecha_a_finalizar_cargo_actual or persona.fecha_a_finalizar_cargo_actual <= datetime.now():
+            if not persona.fecha_a_finalizar_cargo_actual or persona.fecha_a_finalizar_cargo_actual <= datetime.now().date():
                 raise PermissionDenied('La fecha de finalización del cargo actual no es vigente')
         
         valores_creados_detalles = []
