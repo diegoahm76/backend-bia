@@ -184,7 +184,7 @@ class ObligacionesSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Cartera
-        fields = ('nombre','inicio','nro_expediente','nro_resolucion','monto_inicial','valor_intereses', 'dias_mora')
+        fields = ('id','nombre','inicio','nro_expediente','nro_resolucion','monto_inicial','valor_intereses', 'dias_mora')
 
 
 class ConsultaObligacionesSerializer(serializers.ModelSerializer):
@@ -203,4 +203,7 @@ class ListadoDeudoresUltSerializer(serializers.ModelSerializer):
     def get_nombre_contribuyente(self, obj):
         return f"{obj.nombres} {obj.apellidos}"
 
+
+class IdArraySerializer(serializers.Serializer):
+    ids = serializers.ListField(child=serializers.IntegerField())
 
