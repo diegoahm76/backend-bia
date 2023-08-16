@@ -67,3 +67,18 @@ class CajaBandeja(models.Model):
         verbose_name = 'Caja en Bandeja'
         verbose_name_plural = 'Cajas en Bandeja'
         unique_together = [('id_bandeja_estante','identificacion_por_bandeja'),('id_bandeja_estante','orden_ubicacion_por_bandeja')]
+
+#CARPETAS
+class CarpetaCaja(models.Model):
+    id_carpeta_caja = models.AutoField(primary_key=True, db_column='T234IdCarpeta_Caja')
+    id_caja_bandeja = models.ForeignKey(CajaBandeja, on_delete=models.CASCADE, db_column='T234Id_Caja_Bandeja')
+    identificacion_por_caja = models.CharField(max_length=10, db_column='T234identificacionPorCaja')
+    orden_ubicacion_por_caja = models.SmallIntegerField(db_column='T234ordenUbicacionPorCaja')
+    id_expediente = models.SmallIntegerField(null=True, db_column='T234Id_Expediente')
+    id_prestamo_expediente = models.SmallIntegerField(null=True, db_column='T234Id_PrestamoExpediente')
+    # T234Id_PrestamoExpediente & T234Id_Expediente cambiar en modelo cuando se genere el modelo de expediente (kc)
+    class Meta:
+        db_table = 'T234Carpetas_Caja'
+        verbose_name = 'Carpeta en Caja'
+        verbose_name_plural = 'Carpetas en Caja'
+        unique_together = [('id_caja_bandeja','identificacion_por_caja'),('id_caja_bandeja','orden_ubicacion_por_caja')]

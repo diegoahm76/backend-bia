@@ -11,8 +11,8 @@ from django.db.models import Max
 from django.db.models import Q
 from django.db import transaction
 from datetime import datetime,date,timedelta
-from gestion_documental.models.depositos_models import  Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
-from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteDeleteSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajasByBandejaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
+from gestion_documental.models.depositos_models import  CarpetaCaja, Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
+from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteDeleteSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajasByBandejaListSerializer, CarpetaCajaCreateSerializer, CarpetaCajaSearchSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
 from seguridad.utils import Util
 
 
@@ -951,3 +951,120 @@ class CajaEstanteDelete(generics.DestroyAPIView):
 
         return Response({'success': True, 'detail': 'Se eliminó correctamente la bandeja seleccionada.'}, status=status.HTTP_200_OK)  
 
+#/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+########################## CRUD CARPETAS ##########################
+
+
+#CREAR_CARPETAS
+class CarpetaCajaCreate(generics.CreateAPIView):
+
+    serializer_class = CarpetaCajaCreateSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = CarpetaCaja.objects.all()
+    
+    def post(self,request):
+        
+        try:
+            data_in = request.data
+            orden_siguiente = CarpetaCajaGetOrden()
+            response_orden = orden_siguiente.get(request)
+
+            if response_orden.status_code != status.HTTP_200_OK:
+                return response_orden
+            maximo_orden = response_orden.data.get('orden_siguiente')
+            print(maximo_orden)
+            data_in['orden_ubicacion_por_caja']=maximo_orden+1
+            serializer = self.serializer_class(data=data_in)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
+
+            return Response({'success':True,
+                             'detail':'Se crearon los registros correctamente',
+                             'data':serializer.data},
+                             status=status.HTTP_201_CREATED)
+        except ValidationError  as e:
+            error_message = {'error': e.detail}
+            raise ValidationError  (e.detail)
+        
+
+#ORDEN CARPETAS
+class CarpetaCajaGetOrden(generics.ListAPIView):
+     
+    def get(self, request):
+        maximo_orden = CarpetaCaja.objects.aggregate(max_orden=Max('orden_ubicacion_por_caja'))
+
+        # Verificar si el valor del orden es nulo
+        if not maximo_orden['max_orden']:
+            max_orden = 0
+        else:
+            max_orden = maximo_orden['max_orden']
+
+        return Response({
+            'success': True,
+            'orden_siguiente': max_orden
+        }, status=status.HTTP_200_OK)          
+    
+#BUSQUEDA_CAJAS(CARPETAS)
+class CarpetaCajaSearch(generics.ListAPIView):
+    serializer_class = CarpetaCajaSearchSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def clean_search_param(self, param):
+        # Convertir a minúsculas y eliminar espacios en blanco
+        return param.lower().strip() if param else None
+
+    def get_queryset(self):
+        identificacion_deposito = self.clean_search_param(self.request.query_params.get('identificacion_deposito'))
+        identificacion_estante = self.clean_search_param(self.request.query_params.get('identificacion_estante'))
+        identificacion_bandeja = self.clean_search_param(self.request.query_params.get('identificacion_bandeja'))
+        identificacion_caja = self.clean_search_param(self.request.query_params.get('identificacion_caja'))
+        orden_caja = self.clean_search_param(self.request.query_params.get('orden_caja'))
+
+        queryset = CajaBandeja.objects.all()
+
+        if identificacion_deposito:
+            queryset = queryset.filter(id_bandeja_estante__id_estante_deposito__id_deposito__identificacion_por_entidad__icontains=identificacion_deposito)
+
+        if identificacion_estante:
+            queryset = queryset.filter(id_bandeja_estante__id_estante_deposito__identificacion_por_deposito__icontains=identificacion_estante)
+
+        if identificacion_bandeja:
+            queryset = queryset.filter(id_bandeja_estante__identificacion_por_estante__icontains=identificacion_bandeja)
+
+        if identificacion_caja:
+            queryset = queryset.filter(identificacion_por_bandeja__icontains=identificacion_caja)
+
+        if orden_caja:
+            queryset = queryset.filter(orden_ubicacion_por_bandeja=orden_caja)
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            return Response({
+                'success': True,
+                'detail': 'No se encontraron cajas que coincidan con los criterios de búsqueda.',
+                'data': []
+            }, status=status.HTTP_200_OK)
+
+        serialized_data = []
+        for caja in queryset:
+            serialized_data.append({
+                'identificacion_deposito': caja.id_bandeja_estante.id_estante_deposito.id_deposito.identificacion_por_entidad,
+                'identificacion_estante': caja.id_bandeja_estante.id_estante_deposito.identificacion_por_deposito,
+                'identificacion_bandeja': caja.id_bandeja_estante.identificacion_por_estante,
+                'identificacion_caja': caja.identificacion_por_bandeja,
+                'orden_caja': caja.orden_ubicacion_por_bandeja,
+            })
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron las siguientes cajas.',
+            'data': serialized_data
+        }, status=status.HTTP_200_OK)

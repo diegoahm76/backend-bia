@@ -4,7 +4,7 @@ from django.db.models import F
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from django.db.models import Max 
 
-from gestion_documental.models.depositos_models import  Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
+from gestion_documental.models.depositos_models import  CarpetaCaja, Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
 
 
 ######################### SERIALIZERS DEPOSITO #########################
@@ -324,6 +324,30 @@ class  CajaEstanteSearchAdvancedSerializer(serializers.ModelSerializer):
 
 #Eliminar_caja
 class  CajaEstanteDeleteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  CajaBandeja
+        fields = '__all__'
+
+
+#/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+######################## SERIALIZERS CARPETA ########################
+
+#Crear_carpeta
+class CarpetaCajaCreateSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  CarpetaCaja
+        fields = '__all__'
+
+#Listar_orden_siguiente_carpeta
+class  CarpetaCajaGetOrdenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  CarpetaCaja
+        fields = '__all__'
+
+#Buscar_caja(carpeta)
+class  CarpetaCajaSearchSerializer(serializers.ModelSerializer):
     class Meta:
         model =  CajaBandeja
         fields = '__all__'
