@@ -16,5 +16,14 @@ urlpatterns = [
     
     # Historicos de Movimientos por Modulo
     path('historico-bajas/get/', views.HistoricoBajasGetView.as_view(), name='historico-bajas-get'),
-    # path('historico-distribuciones/get/', views.HistoricoDistribucionesGetView.as_view(), name='historico-distribuciones-get'),
+    path('historico-distribuciones/get/', views.HistoricoDistribucionesGetView.as_view(), name='historico-distribuciones-get'),
+    path('historico-siembras/get/', views.HistoricoSiembrasGetView.as_view(), name='historico-siembras-get'),
+    path('historico-cambios-etapa/get/', views.HistoricoCambiosEtapaGetView.as_view(), name='historico-cambios-etapa-get'),
+    path('historico-ingreso-cuarentena/get/', views.HistoricoIngresoCuarentenaGetView.as_view(), name='historico-ingreso-cuarentena-get'),
+    path('historico-levantamiento-cuarentena/get/', views.HistoricoLevantamientoCuarentenaGetView.as_view(), name='historico-levantamiento-cuarentena-get'),
+    path('historico-traslados/get/', views.HistoricoTrasladosGetView.as_view(), name='historico-traslados-get'),
+    
+    # Analitica
+    path('analitica-mortalidad-tiempo/get/', views.AnaliticaMortalidadTiempoGetView.as_view(), name='analitica-mortalidad-tiempo-get'),
+    # path('analitica-bajas-tiempo/get/', views.AnaliticaBajasTiempoGetView.as_view(), name='analitica-bajas-tiempo-get'),
 ]

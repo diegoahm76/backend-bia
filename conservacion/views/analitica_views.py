@@ -5,13 +5,15 @@ from conservacion.models.incidencias_models import ConsumosIncidenciasMV, Incide
 from conservacion.models.mezclas_models import Mezclas
 from conservacion.models.siembras_models import CambiosDeEtapa, Siembras
 from conservacion.models.solicitudes_models import ItemSolicitudViveros, SolicitudesViveros
-from conservacion.models.traslados_models import TrasladosViveros
-from conservacion.serializers.analitica_serializers import ConsumosIncidenciasGetSerializer, GetBienesInventarioSerializer, GetBienesMezclasSerializer, GetTableroControlConservacionSerializer
+from conservacion.models.traslados_models import ItemsTrasladoViveros, TrasladosViveros
+from conservacion.serializers.analitica_serializers import ConsumosIncidenciasGetSerializer, GetBienesInventarioSerializer, GetBienesMezclasSerializer, GetTableroControlConservacionSerializer, HistoricoCambiosEtapaGetSerializer, HistoricoDistribucionesGetSerializer, HistoricoIngresoCuarentenaGetSerializer, HistoricoLevantamientoCuarentenaGetSerializer, HistoricoSiembrasGetSerializer, HistoricoTrasladosGetSerializer
 from rest_framework import generics, status
 from django.db.models import Q, F, Sum, Count
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from rest_framework.permissions import IsAuthenticated
+
+import operator, itertools
 
 from conservacion.models.inventario_models import (
     InventarioViveros
@@ -581,7 +583,7 @@ class HistoricoBajasGetView(generics.ListAPIView):
         if fecha_desde == '' or fecha_hasta == '':
             raise ValidationError('Debe elegir las fechas como filtros')
         
-        bajas = self.queryset.filter(tipo_baja='B', fecha_baja__gte=fecha_desde, fecha_baja__lte=fecha_hasta)
+        bajas = self.queryset.filter(tipo_baja='B', fecha_baja__gte=fecha_desde, fecha_baja__lte=fecha_hasta, baja_anulado=False)
         bajas = bajas.filter(id_vivero=id_vivero) if id_vivero != '' else bajas
         bajas = bajas.values(
             'id_baja',
@@ -610,41 +612,281 @@ class HistoricoBajasGetView(generics.ListAPIView):
         
         return Response({'success':True,'detail':'Se encontró la siguiente información','data':bajas}, status=status.HTTP_200_OK)
 
-# class HistoricoDistribucionesGetView(generics.ListAPIView):
+class HistoricoDistribucionesGetView(generics.ListAPIView):
+    serializer_class=HistoricoDistribucionesGetSerializer
+    queryset=DistribucionesItemDespachoEntrante.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        id_vivero = request.query_params.get('id_vivero', '')
+        id_bien = request.query_params.get('id_bien', '')
+        fecha_desde = request.query_params.get('fecha_desde', '')
+        fecha_hasta = request.query_params.get('fecha_hasta', '')
+        
+        if fecha_desde == '' or fecha_hasta == '':
+            raise ValidationError('Debe elegir las fechas como filtros')
+        
+        distribuciones = self.queryset.filter(fecha_distribucion__gte=fecha_desde, fecha_distribucion__lte=fecha_hasta)
+        distribuciones = distribuciones.filter(id_vivero=id_vivero) if id_vivero != '' else distribuciones
+        distribuciones = distribuciones.filter(id_item_despacho_entrante__id_bien__id_bien=id_bien) if id_bien else distribuciones
+        
+        distribuciones_serializer = self.serializer_class(distribuciones, many=True)
+        distribuciones = distribuciones_serializer.data
+        
+        distribuciones_data = sorted(distribuciones, key=operator.itemgetter("fecha_distribucion", "id_vivero", "nombre_vivero", "numero_despacho"))
+        data_output = []
+        
+        for fechas_distribucion, bienes in itertools.groupby(distribuciones_data, key=operator.itemgetter("fecha_distribucion", "id_vivero", "nombre_vivero", "numero_despacho")):
+            bienes_distribuidos = list(bienes)
+            for bien_distribuido in bienes_distribuidos:
+                del bien_distribuido['fecha_distribucion']
+                del bien_distribuido['id_vivero']
+                del bien_distribuido['nombre_vivero']
+                del bien_distribuido['numero_despacho']
+                
+            items_data = {
+                "fecha_distribucion": fechas_distribucion[0],
+                "id_vivero": fechas_distribucion[1],
+                "nombre_vivero": fechas_distribucion[2],
+                "numero_despacho": fechas_distribucion[3],
+                "bienes_distribuidos": bienes_distribuidos
+            }
+            
+            data_output.append(items_data)
+        
+        return Response({'success':True,'detail':'Se encontró la siguiente información','data':data_output}, status=status.HTTP_200_OK)
+
+class HistoricoSiembrasGetView(generics.ListAPIView):
+    serializer_class=HistoricoSiembrasGetSerializer
+    queryset=Siembras.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        id_vivero = request.query_params.get('id_vivero', '')
+        id_bien = request.query_params.get('id_bien', '')
+        fecha_desde = request.query_params.get('fecha_desde', '')
+        fecha_hasta = request.query_params.get('fecha_hasta', '')
+        
+        if fecha_desde == '' or fecha_hasta == '':
+            raise ValidationError('Debe elegir las fechas como filtros')
+        
+        siembras = self.queryset.filter(fecha_siembra__gte=fecha_desde, fecha_siembra__lte=fecha_hasta)
+        siembras = siembras.filter(id_vivero=id_vivero) if id_vivero != '' else siembras
+        siembras = siembras.filter(id_bien_sembrado__id_bien=id_bien) if id_bien else siembras
+        
+        siembras_serializer = self.serializer_class(siembras, many=True)
+        siembras = siembras_serializer.data
+        
+        return Response({'success':True,'detail':'Se encontró la siguiente información','data':siembras}, status=status.HTTP_200_OK)
+
+class HistoricoCambiosEtapaGetView(generics.ListAPIView):
+    serializer_class=HistoricoCambiosEtapaGetSerializer
+    queryset=CambiosDeEtapa.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        id_vivero = request.query_params.get('id_vivero', '')
+        id_bien = request.query_params.get('id_bien', '')
+        fecha_desde = request.query_params.get('fecha_desde', '')
+        fecha_hasta = request.query_params.get('fecha_hasta', '')
+        
+        if fecha_desde == '' or fecha_hasta == '':
+            raise ValidationError('Debe elegir las fechas como filtros')
+        
+        cambios_etapa = self.queryset.filter(fecha_cambio__gte=fecha_desde, fecha_cambio__lte=fecha_hasta)
+        cambios_etapa = cambios_etapa.filter(id_vivero=id_vivero) if id_vivero != '' else cambios_etapa
+        cambios_etapa = cambios_etapa.filter(id_bien=id_bien) if id_bien else cambios_etapa
+        
+        cambios_etapa_serializer = self.serializer_class(cambios_etapa, many=True)
+        
+        return Response({'success':True,'detail':'Se encontró la siguiente información','data':cambios_etapa_serializer.data}, status=status.HTTP_200_OK)
+
+class HistoricoIngresoCuarentenaGetView(generics.ListAPIView):
+    serializer_class=HistoricoIngresoCuarentenaGetSerializer
+    queryset=CuarentenaMatVegetal.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        id_vivero = request.query_params.get('id_vivero', '')
+        id_bien = request.query_params.get('id_bien', '')
+        fecha_desde = request.query_params.get('fecha_desde', '')
+        fecha_hasta = request.query_params.get('fecha_hasta', '')
+        
+        if fecha_desde == '' or fecha_hasta == '':
+            raise ValidationError('Debe elegir las fechas como filtros')
+        
+        ingresos_cuarentena = self.queryset.filter(fecha_cuarentena__gte=fecha_desde, fecha_cuarentena__lte=fecha_hasta)
+        ingresos_cuarentena = ingresos_cuarentena.filter(id_vivero=id_vivero) if id_vivero != '' else ingresos_cuarentena
+        ingresos_cuarentena = ingresos_cuarentena.filter(id_bien=id_bien) if id_bien else ingresos_cuarentena
+        
+        ingresos_cuarentena_serializer = self.serializer_class(ingresos_cuarentena, many=True)
+        
+        return Response({'success':True,'detail':'Se encontró la siguiente información','data':ingresos_cuarentena_serializer.data}, status=status.HTTP_200_OK)
+
+class HistoricoLevantamientoCuarentenaGetView(generics.ListAPIView):
+    serializer_class=HistoricoLevantamientoCuarentenaGetSerializer
+    queryset=ItemsLevantaCuarentena.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        id_vivero = request.query_params.get('id_vivero', '')
+        id_bien = request.query_params.get('id_bien', '')
+        fecha_desde = request.query_params.get('fecha_desde', '')
+        fecha_hasta = request.query_params.get('fecha_hasta', '')
+        
+        if fecha_desde == '' or fecha_hasta == '':
+            raise ValidationError('Debe elegir las fechas como filtros')
+        
+        items_levanta_cuarentena = self.queryset.filter(fecha_levantamiento__gte=fecha_desde, fecha_levantamiento__lte=fecha_hasta)
+        items_levanta_cuarentena = items_levanta_cuarentena.filter(id_cuarentena_mat_vegetal__id_vivero=id_vivero) if id_vivero != '' else items_levanta_cuarentena
+        items_levanta_cuarentena = items_levanta_cuarentena.filter(id_cuarentena_mat_vegetal__id_bien=id_bien) if id_bien else items_levanta_cuarentena
+        
+        items_levanta_cuarentena_serializer = self.serializer_class(items_levanta_cuarentena, many=True)
+        
+        return Response({'success':True,'detail':'Se encontró la siguiente información','data':items_levanta_cuarentena_serializer.data}, status=status.HTTP_200_OK)
+
+class HistoricoTrasladosGetView(generics.ListAPIView):
+    serializer_class=HistoricoTrasladosGetSerializer
+    queryset=ItemsTrasladoViveros.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        id_vivero = request.query_params.get('id_vivero', '')
+        id_bien = request.query_params.get('id_bien', '')
+        fecha_desde = request.query_params.get('fecha_desde', '')
+        fecha_hasta = request.query_params.get('fecha_hasta', '')
+        
+        if fecha_desde == '' or fecha_hasta == '':
+            raise ValidationError('Debe elegir las fechas como filtros')
+        
+        items_traslados = self.queryset.filter(id_traslado__fecha_traslado__gte=fecha_desde, id_traslado__fecha_traslado__lte=fecha_hasta).exclude(id_traslado__traslado_anulado=True)
+        items_traslados = items_traslados.filter(Q(id_traslado__id_vivero_destino=id_vivero) | Q(id_traslado__id_vivero_origen=id_vivero)) if id_vivero != '' else items_traslados
+        items_traslados = items_traslados.filter(id_bien_origen=id_bien) if id_bien else items_traslados
+        
+        items_traslados_serializer = self.serializer_class(items_traslados, many=True)
+        
+        return Response({'success':True,'detail':'Se encontró la siguiente información','data':items_traslados_serializer.data}, status=status.HTTP_200_OK)
+
+class AnaliticaMortalidadTiempoGetView(generics.ListAPIView):
+    serializer_class=GetTableroControlConservacionSerializer
+    queryset=BajasVivero.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        id_bien = request.query_params.get('id_bien', '')
+        id_vivero = request.query_params.get('id_vivero', '')
+        fecha_desde = request.query_params.get('fecha_desde', '')
+        fecha_hasta = request.query_params.get('fecha_hasta', '')
+        
+        if id_vivero == '' or fecha_desde == '' or fecha_hasta == '':
+            raise ValidationError('Debe elegir viveros y fechas como filtros')
+        
+        mortalidades = self.queryset.filter(tipo_baja='M', baja_anulado=False, fecha_baja__gte=fecha_desde, fecha_baja__lte=fecha_hasta)
+        mortalidades = mortalidades.filter(id_vivero__in=id_vivero.split(',')) if id_vivero else mortalidades
+        mortalidades_list = [mortalidad.id_baja for mortalidad in mortalidades]
+        
+        output_list = []
+        
+        if mortalidades_list:
+            items_mortalidad = ItemsBajasVivero.objects.filter(id_baja__in=mortalidades_list)
+            items_mortalidad = items_mortalidad.filter(id_bien=id_bien) if id_bien != '' else items_mortalidad
+            
+            items_mortalidad = items_mortalidad.values('id_bien', nombre_bien=F('id_bien__nombre'), id_vivero=F('id_baja__id_vivero__id_vivero'), nombre_vivero=F('id_baja__id_vivero__nombre'), fecha_baja=F('id_baja__fecha_baja__date')).annotate(
+                cantidad = Sum('cantidad_baja')
+            )
+            
+            items_mortalidad_data = sorted(items_mortalidad, key=operator.itemgetter("id_bien", "nombre_bien"))
+
+            for item_mortalidad, cantidades in itertools.groupby(items_mortalidad_data, key=operator.itemgetter("id_bien", "nombre_bien")):
+                cantidades_tiempo = list(cantidades)
+                for cantidad_tiempo in cantidades_tiempo:
+                    del cantidad_tiempo['id_bien']
+                    del cantidad_tiempo['nombre_bien']
+                    
+                items_data = {
+                    "id_bien": item_mortalidad[0],
+                    "nombre_bien": item_mortalidad[1],
+                    "cantidades_tiempo": []
+                }
+                
+                group_viveros_data = sorted(cantidades_tiempo, key=operator.itemgetter("id_vivero", "nombre_vivero"))
+
+                for vivero, cantidades_vivero in itertools.groupby(group_viveros_data, key=operator.itemgetter("id_vivero", "nombre_vivero")):
+                    fechas_vivero = list(cantidades_vivero)
+                    for fecha_vivero in fechas_vivero:
+                        del fecha_vivero['id_vivero']
+                        del fecha_vivero['nombre_vivero']
+                        
+                    fechas_vivero_data = {
+                        "id_vivero": vivero[0],
+                        "nombre_vivero": vivero[1],
+                        "fechas": fechas_vivero
+                    }
+                    
+                    items_data['cantidades_tiempo'].append(fechas_vivero_data)
+                    
+                output_list.append(items_data)
+        
+        return Response({'success':True,'detail':'Se encontró la siguiente información','data':output_list}, status=status.HTTP_200_OK)
+
+# class AnaliticaBajasTiempoGetView(generics.ListAPIView):
 #     serializer_class=GetTableroControlConservacionSerializer
-#     queryset=DistribucionesItemDespachoEntrante.objects.all()
+#     queryset=BajasVivero.objects.all()
 #     permission_classes = [IsAuthenticated]
 
 #     def get(self,request):
+#         cod_tipo_elemento_vivero = request.query_params.get('cod_tipo_elemento_vivero', '')
 #         id_vivero = request.query_params.get('id_vivero', '')
-#         id_bien = request.query_params.get('id_bien', '')
 #         fecha_desde = request.query_params.get('fecha_desde', '')
 #         fecha_hasta = request.query_params.get('fecha_hasta', '')
         
-#         if fecha_desde == '' or fecha_hasta == '':
-#             raise ValidationError('Debe elegir las fechas como filtros')
+#         if id_vivero == '' or fecha_desde == '' or fecha_hasta == '':
+#             raise ValidationError('Debe elegir viveros y fechas como filtros')
         
-#         distribuciones = self.queryset.filter(fecha_distribucion__gte=fecha_desde, fecha_distribucion__lte=fecha_hasta)
-#         distribuciones = distribuciones.filter(id_vivero=id_vivero) if id_vivero != '' else distribuciones
-#         distribuciones = distribuciones.values(
-#             'id_distribucion_item_despacho_entrante',
-#             'fecha_distribucion',
-#             'id_vivero',
-#             nombre_vivero=F('id_vivero__nombre'),
-#             fecha_ingreso=F('id_item_despacho_entrante__fecha_ingreso'),
-#             id_despacho_entrante=F('id_item_despacho_entrante__id_despacho_entrante__id_despacho_entrante'),
-#         )
+#         mortalidades = self.queryset.filter(tipo_baja='B', baja_anulado=False, fecha_baja__gte=fecha_desde, fecha_baja__lte=fecha_hasta)
+#         mortalidades = mortalidades.filter(id_vivero__in=id_vivero.split(',')) if id_vivero else mortalidades
+#         mortalidades_list = [mortalidad.id_baja for mortalidad in mortalidades]
         
-#         for distribucion in distribuciones:
-#             items_distribuciones = ItemsDespachoEntrante.objects.filter(id_despacho_entrante=distribucion['id_despacho_entrante'])
-#             items_distribuciones = items_distribuciones.filter(id_bien=id_bien) if id_bien != '' else items_distribuciones
+#         output_list = []
+        
+#         if mortalidades_list:
+#             items_mortalidad = ItemsBajasVivero.objects.filter(id_baja__in=mortalidades_list)
+#             items_mortalidad = items_mortalidad.filter(id_bien=id_bien) if id_bien != '' else items_mortalidad
             
-#             distribucion['bienes_distribuidos'] = items_distribuciones.values(
-#                 'id_bien',
-#                 'cantidad_distribuida',
-#                 nombre_bien=F('id_bien__nombre'),
-#                 unidad_medida=F('id_bien__id_unidad_medida__abreviatura')
+#             items_mortalidad = items_mortalidad.values('id_bien', nombre_bien=F('id_bien__nombre'), id_vivero=F('id_baja__id_vivero__id_vivero'), nombre_vivero=F('id_baja__id_vivero__nombre'), fecha_baja=F('id_baja__fecha_baja__date')).annotate(
+#                 cantidad = Sum('cantidad_baja')
 #             )
+            
+#             items_mortalidad_data = sorted(items_mortalidad, key=operator.itemgetter("id_bien", "nombre_bien"))
+
+#             for item_mortalidad, cantidades in itertools.groupby(items_mortalidad_data, key=operator.itemgetter("id_bien", "nombre_bien")):
+#                 cantidades_tiempo = list(cantidades)
+#                 for cantidad_tiempo in cantidades_tiempo:
+#                     del cantidad_tiempo['id_bien']
+#                     del cantidad_tiempo['nombre_bien']
+                    
+#                 items_data = {
+#                     "id_bien": item_mortalidad[0],
+#                     "nombre_bien": item_mortalidad[1],
+#                     "cantidades_tiempo": []
+#                 }
+                
+#                 group_viveros_data = sorted(cantidades_tiempo, key=operator.itemgetter("id_vivero", "nombre_vivero"))
+
+#                 for vivero, cantidades_vivero in itertools.groupby(group_viveros_data, key=operator.itemgetter("id_vivero", "nombre_vivero")):
+#                     fechas_vivero = list(cantidades_vivero)
+#                     for fecha_vivero in fechas_vivero:
+#                         del fecha_vivero['id_vivero']
+#                         del fecha_vivero['nombre_vivero']
+                        
+#                     fechas_vivero_data = {
+#                         "id_vivero": vivero[0],
+#                         "nombre_vivero": vivero[1],
+#                         "fechas": fechas_vivero
+#                     }
+                    
+#                     items_data['cantidades_tiempo'].append(fechas_vivero_data)
+                    
+#                 output_list.append(items_data)
         
-#         return Response({'success':True,'detail':'Se encontró la siguiente información','data':bajas}, status=status.HTTP_200_OK)
-    
+#         return Response({'success':True,'detail':'Se encontró la siguiente información','data':output_list}, status=status.HTTP_200_OK)
