@@ -12,7 +12,7 @@ from django.db.models import Q
 from django.db import transaction
 from datetime import datetime,date,timedelta
 from gestion_documental.models.depositos_models import  CarpetaCaja, Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
-from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteDeleteSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajasByBandejaListSerializer, CarpetaCajaCreateSerializer, CarpetaCajaSearchSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
+from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteDeleteSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajasByBandejaListSerializer, CarpetaCajaCreateSerializer, CarpetaCajaDeleteSerializer, CarpetaCajaSearchSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
 from seguridad.utils import Util
 
 
@@ -519,7 +519,6 @@ class BandejaEstanteUpDate(generics.UpdateAPIView):
                          status=status.HTTP_200_OK)
 
 #ELIMINAR_BANDEJA
-
 class BandejaEstanteDelete(generics.DestroyAPIView):
         
     serializer_class = BandejaEstanteDeleteSerializer
@@ -921,7 +920,6 @@ class CajaEstanteSearchAdvanced(generics.ListAPIView):
         }, status=status.HTTP_200_OK)
     
 #ELIMINAR_CAJA(PENDIENTE)
-
 class CajaEstanteDelete(generics.DestroyAPIView):
         
     serializer_class = CajaEstanteDeleteSerializer
@@ -930,26 +928,26 @@ class CajaEstanteDelete(generics.DestroyAPIView):
     
     def delete(self, request, pk):
         
-        bandeja = BandejaEstante.objects.filter(id_bandeja_estante=pk).first()
+        caja = CajaBandeja.objects.filter(id_caja_estante=pk).first()
 
-        if not bandeja:
-            raise ValidationError("No existe la bandeja que desea eliminar")
+        if not caja:
+            raise ValidationError("No existe la caja que desea eliminar")
 
-        tiene_cajas = CajaBandeja.objects.filter(id_bandeja_estante=pk).exists()
+        tiene_carpetas = CarpetaCaja.objects.filter(id_carpeta_caja=pk).exists()
 
-        if tiene_cajas:
-                return Response({'success': False, 'detail': 'No se puede eliminar la bandeja porque tiene una o mas cajas asociadas a esta bandeja.'},
+        if tiene_carpetas:
+                return Response({'success': False, 'detail': 'No se puede eliminar la caja porque tiene una o mas carpetas asociadas a esta caja.'},
                                 status=status.HTTP_400_BAD_REQUEST)
 
         #Reordenar
-        bandejas = BandejaEstante.objects.filter(orden_ubicacion_por_estante__gt=bandeja.orden_ubicacion_por_estante).order_by('orden_ubicacion_por_estante') 
-        bandeja.delete()
+        cajas = CajaBandeja.objects.filter(orden_ubicacion_por_bandeja__gt=caja.orden_ubicacion_por_bandeja).order_by('orden_ubicacion_por_bandeja') 
+        caja.delete()
 
-        for bandeja in bandejas:
-            bandeja.orden_ubicacion_por_estante = bandeja.orden_ubicacion_por_estante - 1
-            bandeja.save()
+        for caja in cajas:
+            caja.orden_ubicacion_por_bandeja = caja.orden_ubicacion_por_bandeja - 1
+            caja.save()
 
-        return Response({'success': True, 'detail': 'Se eliminó correctamente la bandeja seleccionada.'}, status=status.HTTP_200_OK)  
+        return Response({'success': True, 'detail': 'Se eliminó correctamente la caja seleccionada.'}, status=status.HTTP_200_OK)  
 
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1068,3 +1066,33 @@ class CarpetaCajaSearch(generics.ListAPIView):
             'detail': 'Se encontraron las siguientes cajas.',
             'data': serialized_data
         }, status=status.HTTP_200_OK)
+    
+#ELIMINAR_CARPETA
+class CarpetaCajaDelete(generics.DestroyAPIView):
+        
+    serializer_class = CarpetaCajaDeleteSerializer
+    queryset = CarpetaCaja.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self, request, pk):
+        
+        carpeta = CarpetaCaja.objects.filter(id_carpeta_caja=pk).first()
+
+        if not carpeta:
+            raise ValidationError("No existe la carpeta que desea eliminar")
+
+        tiene_cajas = CajaBandeja.objects.filter(id_bandeja_estante=pk).exists()
+
+        if tiene_cajas:
+                return Response({'success': False, 'detail': 'No se puede eliminar la bandeja porque tiene una o mas cajas asociadas a esta bandeja.'},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        #Reordenar
+        bandejas = BandejaEstante.objects.filter(orden_ubicacion_por_estante__gt=bandeja.orden_ubicacion_por_estante).order_by('orden_ubicacion_por_estante') 
+        bandeja.delete()
+
+        for bandeja in bandejas:
+            bandeja.orden_ubicacion_por_estante = bandeja.orden_ubicacion_por_estante - 1
+            bandeja.save()
+
+        return Response({'success': True, 'detail': 'Se eliminó correctamente la bandeja seleccionada.'}, status=status.HTTP_200_OK)  

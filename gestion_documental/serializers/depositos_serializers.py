@@ -351,3 +351,10 @@ class  CarpetaCajaSearchSerializer(serializers.ModelSerializer):
     class Meta:
         model =  CajaBandeja
         fields = '__all__'
+
+#Eliminar_carpeta
+#Buscar_caja(carpeta)
+class  CarpetaCajaDeleteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  CajaBandeja
+        fields = '__all__'
