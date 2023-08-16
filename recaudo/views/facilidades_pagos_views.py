@@ -416,6 +416,9 @@ class DetallesFacilidadPagoCreateView(generics.CreateAPIView):
         if not facilidad_pago:
             raise NotFound('No existe facilidad de pago relacionada con la informacion ingresada')
         
+        if cartera.id_deudor != facilidad_pago.id_deudor:
+            raise ValidationError('El deudor no coinciden con los dados ingresados')
+        
         serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
         bienes_facilidad = serializer.save()
