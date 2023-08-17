@@ -42,6 +42,15 @@ urlpatterns = [
      path('cajaBandeja/eliminar/<str:pk>/',views.CajaEstanteDelete.as_view(),name='eliminar-caja'),
 
 
+     #Carpetas
+     path('carpetaCaja/crear/',views.CarpetaCajaCreate.as_view(), name='crear-carpeta'),
+     path('carpetaCaja/siguiente-orden/',views.CarpetaCajaGetOrden.as_view(),name='listar-orden-siguiente'),
+     path('carpetaCaja/busqueda-caja/',views.CarpetaCajaSearch.as_view(), name='buscar-caja'),
+     
+
+
+
+
 
 
 
