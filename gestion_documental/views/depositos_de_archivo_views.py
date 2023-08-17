@@ -12,7 +12,7 @@ from django.db.models import Q
 from django.db import transaction
 from datetime import datetime,date,timedelta
 from gestion_documental.models.depositos_models import  CarpetaCaja, Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
-from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteDeleteSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajasByBandejaListSerializer, CarpetaCajaCreateSerializer, CarpetaCajaDeleteSerializer, CarpetaCajaSearchSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
+from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteDeleteSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajasByBandejaListSerializer, CarpetaCajaCreateSerializer, CarpetaCajaDeleteSerializer, CarpetaCajaSearchSerializer, CarpetasByCajaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
 from seguridad.utils import Util
 
 
@@ -634,7 +634,24 @@ class BandejaEstanteMove(generics.UpdateAPIView):
             'detail': 'La Bandeja ha sido movida exitosamente.'
         }, status=status.HTTP_200_OK)
 
-   
+#LISTAR_BANDEJAS_POR ESTANTE
+class BandejasByEstanteList(generics.ListAPIView):
+    serializer_class = BandejasByEstanteListSerializer
+    queryset = BandejaEstante.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        bandeja = BandejaEstante.objects.filter(id_estante_deposito=pk)
+        serializer = self.serializer_class(bandeja,many=True)
+        
+        if not Deposito:
+            raise NotFound("El registro del estante que busca, no se encuentra registrado")
+
+        return Response({'success':True,
+                         'detail':'Se encontraron los siguientes registros.',
+                         'data':serializer.data},status=status.HTTP_200_OK)
+    
+
     
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -840,23 +857,7 @@ class CajaEstanteBandejaMove(generics.UpdateAPIView):
         }, status=status.HTTP_200_OK)
 
 
-#LISTAR_BANDEJAS_POR_ESTANTE
-class BandejasByEstanteList(generics.ListAPIView):
-    serializer_class = BandejasByEstanteListSerializer
-    queryset = BandejaEstante.objects.all()
-    permission_classes = [IsAuthenticated]
-    
-    def get(self,request,pk):
-        bandeja = BandejaEstante.objects.filter(id_estante_deposito=pk)
-        serializer = self.serializer_class(bandeja,many=True)
-        
-        if not Deposito:
-            raise NotFound("El registro del estante que busca, no se encuentra registrado")
 
-        return Response({'success':True,
-                         'detail':'Se encontraron los siguientes registros.',
-                         'data':serializer.data},status=status.HTTP_200_OK)
-    
 
 #BUSQUEDA_AVANZADA_DE_CAJAS
 class CajaEstanteSearchAdvanced(generics.ListAPIView):
@@ -1073,26 +1074,41 @@ class CarpetaCajaDelete(generics.DestroyAPIView):
     serializer_class = CarpetaCajaDeleteSerializer
     queryset = CarpetaCaja.objects.all()
     permission_classes = [IsAuthenticated]
-    
-    def delete(self, request, pk):
-        
-        carpeta = CarpetaCaja.objects.filter(id_carpeta_caja=pk).first()
+
+    def destroy(self, request, *args, **kwargs):
+        carpeta = self.get_object()
 
         if not carpeta:
-            raise ValidationError("No existe la carpeta que desea eliminar")
+            return Response({'detail': 'La carpeta no existe.'}, status=status.HTTP_404_NOT_FOUND)
 
-        tiene_cajas = CajaBandeja.objects.filter(id_bandeja_estante=pk).exists()
-
-        if tiene_cajas:
-                return Response({'success': False, 'detail': 'No se puede eliminar la bandeja porque tiene una o mas cajas asociadas a esta bandeja.'},
-                                status=status.HTTP_400_BAD_REQUEST)
+        # Verificar si la carpeta tiene un expediente asociado
+        if carpeta.id_expediente is not None:
+            return Response({'detail': 'No se puede eliminar la carpeta porque tiene uno o mas expedientes asociado.'}, status=status.HTTP_400_BAD_REQUEST)
 
         #Reordenar
-        bandejas = BandejaEstante.objects.filter(orden_ubicacion_por_estante__gt=bandeja.orden_ubicacion_por_estante).order_by('orden_ubicacion_por_estante') 
-        bandeja.delete()
+        carpetas = CarpetaCaja.objects.filter(orden_ubicacion_por_caja__gt=carpeta.orden_ubicacion_por_caja).order_by('orden_ubicacion_por_caja') 
+        carpeta.delete()
 
-        for bandeja in bandejas:
-            bandeja.orden_ubicacion_por_estante = bandeja.orden_ubicacion_por_estante - 1
-            bandeja.save()
+        for carpeta in carpetas:
+            carpeta.orden_ubicacion_por_caja = carpeta.orden_ubicacion_por_caja - 1
+            carpeta.save()
 
-        return Response({'success': True, 'detail': 'Se eliminó correctamente la bandeja seleccionada.'}, status=status.HTTP_200_OK)  
+        return Response({'success': True, 'detail': 'Se eliminó correctamente la carpeta seleccionada.'}, status=status.HTTP_200_OK)
+
+
+#LISTAR_CARPETAS_POR_CAJA
+class CarpetasByCajaList(generics.ListAPIView):
+    serializer_class = CarpetasByCajaListSerializer
+    queryset = CarpetaCaja.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        carpeta = CarpetaCaja.objects.filter(id_caja_bandeja=pk)
+        serializer = self.serializer_class(carpeta,many=True)
+        
+        if not Deposito:
+            raise NotFound("El registro del estante que busca, no se encuentra registrado")
+
+        return Response({'success':True,
+                         'detail':'Se encontraron los siguientes registros.',
+                         'data':serializer.data},status=status.HTTP_200_OK)
