@@ -1,4 +1,6 @@
 import copy
+from datetime import datetime
+
 from rest_framework import generics
 from transversal.models.alertas_models import FechaClaseAlerta
 from transversal.models.entidades_models import ConfiguracionEntidad
@@ -114,30 +116,14 @@ class AlertasBandejaAlertaPersonaUpdate(generics.UpdateAPIView):
         #print("personaaa")
         #print(id_persona)
         try:
-            
-            serializer = self.serializer_class(instance, data=request.data, partial=True)
-            serializer.is_valid(raise_exception=True)
-            instance=serializer.save()
-
-            if 'leido' in data_in:
-                if data_in['leido']:
-                    #print((instance.id_bandeja_alerta_persona))
-                    elementos_sin_leer=AlertasBandejaAlertaPersona.objects.filter(id_bandeja_alerta_persona=instance.id_bandeja_alerta_persona,leido=False)
-                    
-                    if not elementos_sin_leer:
-                        #print('LA BANDEJA NO TIENE ELEMENTOS PENDIENTES POR LEER')
-                        bandeja=instance.id_bandeja_alerta_persona
-                        bandeja.pendientes_leer=False
-                        bandeja.save()
-                        #print(bandeja)
-            
+                        
             if 'repeticiones_suspendidas' in data_in:
-                if previus.repeticiones_suspendidas != instance.repeticiones_suspendidas and instance.repeticiones_suspendidas==True:
-                    #print("PRE CONDICION")
+                if previus.repeticiones_suspendidas != data_in['repeticiones_suspendidas']  and data_in['repeticiones_suspendidas']==True:
+                    
                     alerta_programada=AlertasProgramadas.objects.filter(id_alerta_programada=instance.id_alerta_generada.id_alerta_programada_origen).first()
                     if not alerta_programada:
                         raise NotFound('No existe alerta programada')
-                    #print("PRE CONDICION")
+                    
                     if alerta_programada.agno_cumplimiento:
                         
                         if instance.responsable_directo:
@@ -210,8 +196,39 @@ class AlertasBandejaAlertaPersonaUpdate(generics.UpdateAPIView):
 
                         print(instance.id_bandeja_alerta_persona.id_persona.id_persona)
                         print(alerta_programada.id_personas_suspen_alertar_sin_agno)
-                  
 
+                    fecha_suspencion= datetime.now()
+
+                    data_in['fecha_suspencion_repeticion']=fecha_suspencion
+            
+            
+            
+            if 'leido' in data_in:
+                if previus.leido==False and data_in['leido']:
+                    data_in['fecha_leido']=datetime.now()
+
+            if 'archivado' in data_in:
+                if previus.archivado==False and data_in['archivado']:
+                    data_in['fecha_archivado']=datetime.now()
+
+
+            serializer = self.serializer_class(instance, data=data_in, partial=True)
+            serializer.is_valid(raise_exception=True)
+            instance=serializer.save()
+
+
+
+            if 'leido' in data_in:
+                if data_in['leido']:
+                    #print((instance.id_bandeja_alerta_persona))
+                    elementos_sin_leer=AlertasBandejaAlertaPersona.objects.filter(id_bandeja_alerta_persona=instance.id_bandeja_alerta_persona,leido=False)
+                    
+                    if not elementos_sin_leer:
+                        #print('LA BANDEJA NO TIENE ELEMENTOS PENDIENTES POR LEER')
+                        bandeja=instance.id_bandeja_alerta_persona
+                        bandeja.pendientes_leer=False
+                        bandeja.save()
+                        #print(bandeja)
 
 
 

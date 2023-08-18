@@ -54,6 +54,7 @@ class PersonasAAlertarPostSerializer(serializers.ModelSerializer):
 class PersonasAAlertarGetSerializer(serializers.ModelSerializer):
         nombre_completo = serializers.SerializerMethodField()
         nombre_unidad=serializers.ReadOnlyField(source='id_unidad_org_lider.nombre', default=None)
+        numero_documento=serializers.ReadOnlyField(source='id_persona.numero_documento', default=None)
         class Meta:
             model=PersonasAAlertar
             fields=('__all__')
