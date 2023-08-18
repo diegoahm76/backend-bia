@@ -27,4 +27,6 @@ urlpatterns = [
     path('analitica-mortalidad-tiempo/get/', views.AnaliticaMortalidadTiempoGetView.as_view(), name='analitica-mortalidad-tiempo-get'),
     path('analitica-bajas-tiempo/get/', views.AnaliticaBajasTiempoGetView.as_view(), name='analitica-bajas-tiempo-get'),
     path('analitica-cuarentena-tiempo/get/', views.AnaliticaCuarentenaGetView.as_view(), name='analitica-cuarentena-tiempo-get'),
+    path('analitica-despachos-tiempo/get/', views.AnaliticaDespachosGetView.as_view(), name='analitica-despachos-tiempo-get'),
+    path('analitica-solicitudes-tiempo/get/', views.AnaliticaSolicitudesGetView.as_view(), name='analitica-solicitudes-tiempo-get'),
 ]

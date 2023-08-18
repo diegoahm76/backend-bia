@@ -966,3 +966,127 @@ class AnaliticaCuarentenaGetView(generics.ListAPIView):
                 output_list.append(items_data)
         
         return Response({'success':True,'detail':'Se encontró la siguiente información','data':output_list}, status=status.HTTP_200_OK)
+
+class AnaliticaDespachosGetView(generics.ListAPIView):
+    serializer_class=GetTableroControlConservacionSerializer
+    queryset=DespachoViveros.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        id_bien = request.query_params.get('id_bien', '')
+        id_vivero = request.query_params.get('id_vivero', '')
+        fecha_desde = request.query_params.get('fecha_desde', '')
+        fecha_hasta = request.query_params.get('fecha_hasta', '')
+        
+        if id_vivero == '' or fecha_desde == '' or fecha_hasta == '':
+            raise ValidationError('Debe elegir viveros y fechas como filtros')
+        
+        despachos = self.queryset.filter(fecha_despacho__gte=fecha_desde, fecha_despacho__lte=fecha_hasta)
+        despachos = despachos.filter(id_vivero__in=id_vivero.split(',')) if id_vivero else despachos
+        despachos_list = [despacho.id_despacho_viveros for despacho in despachos]
+        
+        output_list = []
+        
+        if despachos_list:
+            items_despacho = ItemsDespachoViveros.objects.filter(id_despacho_viveros__in=despachos_list)
+            items_despacho = items_despacho.filter(id_bien=id_bien) if id_bien != '' else items_despacho
+            
+            items_despacho = items_despacho.values('id_bien', nombre_bien=F('id_bien__nombre'), id_vivero=F('id_despacho_viveros__id_vivero__id_vivero'), nombre_vivero=F('id_despacho_viveros__id_vivero__nombre'), fecha_despacho=F('id_despacho_viveros__fecha_despacho__date')).annotate(
+                cantidad = Sum('cantidad_despachada')
+            )
+            
+            items_despacho_data = sorted(items_despacho, key=operator.itemgetter("id_bien", "nombre_bien"))
+
+            for item_despacho, cantidades in itertools.groupby(items_despacho_data, key=operator.itemgetter("id_bien", "nombre_bien")):
+                cantidades_tiempo = list(cantidades)
+                for cantidad_tiempo in cantidades_tiempo:
+                    del cantidad_tiempo['id_bien']
+                    del cantidad_tiempo['nombre_bien']
+                    
+                items_data = {
+                    "id_bien": item_despacho[0],
+                    "nombre_bien": item_despacho[1],
+                    "cantidades_tiempo": []
+                }
+                
+                group_viveros_data = sorted(cantidades_tiempo, key=operator.itemgetter("id_vivero", "nombre_vivero"))
+
+                for vivero, cantidades_vivero in itertools.groupby(group_viveros_data, key=operator.itemgetter("id_vivero", "nombre_vivero")):
+                    fechas_vivero = list(cantidades_vivero)
+                    for fecha_vivero in fechas_vivero:
+                        del fecha_vivero['id_vivero']
+                        del fecha_vivero['nombre_vivero']
+                        
+                    fechas_vivero_data = {
+                        "id_vivero": vivero[0],
+                        "nombre_vivero": vivero[1],
+                        "fechas": fechas_vivero
+                    }
+                    
+                    items_data['cantidades_tiempo'].append(fechas_vivero_data)
+                    
+                output_list.append(items_data)
+        
+        return Response({'success':True,'detail':'Se encontró la siguiente información','data':output_list}, status=status.HTTP_200_OK)
+
+class AnaliticaSolicitudesGetView(generics.ListAPIView):
+    serializer_class=GetTableroControlConservacionSerializer
+    queryset=SolicitudesViveros.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        id_bien = request.query_params.get('id_bien', '')
+        id_vivero = request.query_params.get('id_vivero', '')
+        fecha_desde = request.query_params.get('fecha_desde', '')
+        fecha_hasta = request.query_params.get('fecha_hasta', '')
+        
+        if id_vivero == '' or fecha_desde == '' or fecha_hasta == '':
+            raise ValidationError('Debe elegir viveros y fechas como filtros')
+        
+        solicitudes = self.queryset.filter(solicitud_anulada_solicitante=False, fecha_solicitud__gte=fecha_desde, fecha_solicitud__lte=fecha_hasta)
+        solicitudes = solicitudes.filter(id_vivero_solicitud__in=id_vivero.split(',')) if id_vivero else solicitudes
+        solicitudes_list = [solicitud.id_solicitud_vivero for solicitud in solicitudes]
+        
+        output_list = []
+        
+        if solicitudes_list:
+            items_solicitud = ItemSolicitudViveros.objects.filter(id_solicitud_viveros__in=solicitudes_list)
+            items_solicitud = items_solicitud.filter(id_bien=id_bien) if id_bien != '' else items_solicitud
+            
+            items_solicitud = items_solicitud.values('id_bien', nombre_bien=F('id_bien__nombre'), id_vivero=F('id_solicitud_viveros__id_vivero_solicitud__id_vivero'), nombre_vivero=F('id_solicitud_viveros__id_vivero_solicitud__nombre'), fecha_solicitud=F('id_solicitud_viveros__fecha_solicitud__date')).annotate(
+                cantidad = Count('id_item_solicitud_viveros')
+            )
+            
+            items_solicitud_data = sorted(items_solicitud, key=operator.itemgetter("id_bien", "nombre_bien"))
+
+            for item_solicitud, cantidades in itertools.groupby(items_solicitud_data, key=operator.itemgetter("id_bien", "nombre_bien")):
+                cantidades_tiempo = list(cantidades)
+                for cantidad_tiempo in cantidades_tiempo:
+                    del cantidad_tiempo['id_bien']
+                    del cantidad_tiempo['nombre_bien']
+                    
+                items_data = {
+                    "id_bien": item_solicitud[0],
+                    "nombre_bien": item_solicitud[1],
+                    "cantidades_tiempo": []
+                }
+                
+                group_viveros_data = sorted(cantidades_tiempo, key=operator.itemgetter("id_vivero", "nombre_vivero"))
+
+                for vivero, cantidades_vivero in itertools.groupby(group_viveros_data, key=operator.itemgetter("id_vivero", "nombre_vivero")):
+                    fechas_vivero = list(cantidades_vivero)
+                    for fecha_vivero in fechas_vivero:
+                        del fecha_vivero['id_vivero']
+                        del fecha_vivero['nombre_vivero']
+                        
+                    fechas_vivero_data = {
+                        "id_vivero": vivero[0],
+                        "nombre_vivero": vivero[1],
+                        "fechas": fechas_vivero
+                    }
+                    
+                    items_data['cantidades_tiempo'].append(fechas_vivero_data)
+                    
+                output_list.append(items_data)
+        
+        return Response({'success':True,'detail':'Se encontró la siguiente información','data':output_list}, status=status.HTTP_200_OK)
