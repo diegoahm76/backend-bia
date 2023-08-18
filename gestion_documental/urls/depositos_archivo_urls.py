@@ -49,6 +49,8 @@ urlpatterns = [
      path('carpetaCaja/busqueda-caja/',views.CarpetaCajaSearch.as_view(), name='buscar-caja'),
      path('carpetaCaja/listar-carpetas-por-caja/<str:pk>/',views.CarpetasByCajaList.as_view(),name='listar-carpetas-por-caja'),
      path('carpetaCaja/eliminar/<str:pk>/',views.CarpetaCajaDelete.as_view(),name='eliminar-carpeta'),
+     path('carpetaCaja/actualizar-carpeta/<int:pk>/',views.CarpetaCajaUpDate.as_view(),name='actualizar-carpeta'),
+
 
 
      
