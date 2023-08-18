@@ -18,6 +18,7 @@ from transversal.serializers.alertas_serializers import AlertasProgramadasPostSe
 from django.db import transaction 
 from django.db.models import Q
 from seguridad.choices.subsistemas_choices import subsistemas_CHOICES
+from seguridad.choices.perfiles_sistema_choices import PERFIL_SISTEMA_CHOICES
 # from background_task import background
 
 class ConfiguracionClaseAlertaUpdate(generics.UpdateAPIView):
@@ -90,7 +91,7 @@ class ConfiguracionClaseAlertaGet(generics.ListAPIView):
     
     def get(self,request,subsis):
         existe=False
-        print(subsistemas_CHOICES)
+        #print(subsistemas_CHOICES)
         for codigo, nombre in subsistemas_CHOICES:
             if codigo==subsis:
                 existe =True
@@ -213,6 +214,10 @@ class PersonasAAlertarCreate(generics.CreateAPIView):
         if not 'cod_clase_alerta' in data_in:
             raise ValidationError('El código de la clase de alerta es requerido.')
 
+        if not 'es_responsable_directo' in data_in:
+            data_in['es_responsable_directo']=False
+
+        data_in['registro_editable']=True
         configuracion = ConfiguracionClaseAlerta.objects.filter(cod_clase_alerta=data_in['cod_clase_alerta']).first()
 
         if not configuracion:
@@ -247,7 +252,7 @@ class PersonasAAlertarCreate(generics.CreateAPIView):
 
         if data_in['es_responsable_directo']:
                 
-            directo = PersonasAAlertar.objects.filter(es_responsable_directo=True)
+            directo = PersonasAAlertar.objects.filter(es_responsable_directo=True,cod_clase_alerta=configuracion.cod_clase_alerta)
             if directo:
                 raise ValidationError("Ya existe un responsable directo")
         
@@ -327,7 +332,11 @@ class PersonasAAlertarGetByConfAlerta(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def get(self,request,cod):
-        perfiles=[('Dire', 'Director'), ('CViv', 'Coordinador de Viveros'), ('RTra', 'Responsable de Transporte'), ('CAlm', 'Coordinador de Almacén'), ('Alma', 'Almacenista')]
+        
+        
+        #perfiles=[('Dire', 'Director'), ('CViv', 'Coordinador de Viveros'), ('RTra', 'Responsable de Transporte'), ('CAlm', 'Coordinador de Almacén'), ('Alma', 'Almacenista')]
+        perfiles=PERFIL_SISTEMA_CHOICES
+        #print(perfiles)
         dicccionario=[]
         
         personas_alertar = PersonasAAlertar.objects.filter(cod_clase_alerta=cod)
@@ -351,12 +360,13 @@ class PersonasAAlertarGetByConfAlerta(generics.ListAPIView):
             #si es persona especifica
             if dato['id_persona']:
                 destinatario="Persona especifica"
-                detalle=dato['nombre_completo']
+                detalle=dato['numero_documento']
+                nombre=dato['nombre_completo']
             if dato['perfil_sistema']:
                 destinatario="Perfil profesional"
-                for perfil in perfiles:
-                    if dato['perfil_sistema']==perfil[0]:
-                        detalle=perfil[1]
+                for cod,nombre_perfil in perfiles:
+                    if dato['perfil_sistema']==cod:
+                        detalle=nombre_perfil
                         break
             if dato['id_unidad_org_lider']:
                 destinatario="Líder de grupo"

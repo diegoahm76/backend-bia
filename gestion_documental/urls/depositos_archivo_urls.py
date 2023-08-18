@@ -18,9 +18,8 @@ urlpatterns = [
      path('estanteDeposito/siguiente-orden/',views.EstanteDepositoGetOrden.as_view(), name='listar-orden-siguiente'),
      path('estanteDeposito/actualizar-estante/<str:pk>/',views.EstanteDepositoUpDate.as_view(), name='actualizar-estante'),
      path('estanteDeposito/eliminar/<str:pk>/',views.EstanteDepositoDelete.as_view(),name='eliminar-estante'),
-     path('estanteDeposito/listar-por-deposito/<str:pk>/',views.EstanteGetByDeposito.as_view(),name='listar-estante-por-deposito'),
+     path('estanteDeposito/listar-estante-por-deposito/<str:pk>/',views.EstanteGetByDeposito.as_view(),name='listar-estante-por-deposito'),
      path('estanteDeposito/mover-estante/<str:identificacion_por_deposito>/', views.MoveEstante.as_view(), name='mover-estante'),
-     path('estanteDeposito/listar-bandejas-por-estante/<int:pk>/', views.BandejasByEstanteList.as_view(), name='listar-bandejas-por-estante'),
 
      #Bandeja
      path('bandejaEstante/crear/',views.BandejaEstanteCreate.as_view(), name='crear-bandeja'),
@@ -29,12 +28,14 @@ urlpatterns = [
      path('bandejaEstante/eliminar/<str:pk>/',views.BandejaEstanteDelete.as_view(),name='eliminar-bandeja'),
      path('bandejaEstante/buscar-estante/',views.BandejaEstanteSearch.as_view(), name='buscar-estante'),
      path('bandejaEstante/mover-bandeja/<int:id_bandeja_estante>/',views.BandejaEstanteMove.as_view(), name='mover-bandeja'),
+     path('bandejaEstante/listar-bandejas-por-estante/<str:pk>/',views.BandejasByEstanteList.as_view(),name='listar-bandeja-por-estante'),
+
 
 
      #Caja
      path('cajaBandeja/crear/',views.CajaBandejaCreate.as_view(), name='crear-caja'),
      path('cajaBandeja/siguiente-orden/',views.CajaBandejaGetOrden.as_view(), name='listar-orden-siguiente'),
-     path('cajaBandeja/listar-cajas-por-bandeja/<int:pk>/', views.CajasByBandejaList.as_view(), name='listar-cajas-por-bandeja'),
+     path('cajaBandeja/listar-cajas-por-bandeja/<int:pk>/',views.CajasByBandejaList.as_view(), name='listar-cajas-por-bandeja'),
      path('cajaBandeja/buscar-estante/',views.CajaEstanteSearch.as_view(), name='buscar-estante'),
      path('cajaBandeja/actualizar-caja/<int:pk>/',views.cajaBandejaUpDate.as_view(),name='actualizar-caja'),
      path('cajaBandeja/mover-caja/<int:id_caja_estante>/',views.CajaEstanteBandejaMove.as_view(), name='mover-caja'),
@@ -46,6 +47,11 @@ urlpatterns = [
      path('carpetaCaja/crear/',views.CarpetaCajaCreate.as_view(), name='crear-carpeta'),
      path('carpetaCaja/siguiente-orden/',views.CarpetaCajaGetOrden.as_view(),name='listar-orden-siguiente'),
      path('carpetaCaja/busqueda-caja/',views.CarpetaCajaSearch.as_view(), name='buscar-caja'),
+     path('carpetaCaja/listar-carpetas-por-caja/<str:pk>/',views.CarpetasByCajaList.as_view(),name='listar-carpetas-por-caja'),
+     path('carpetaCaja/eliminar/<str:pk>/',views.CarpetaCajaDelete.as_view(),name='eliminar-carpeta'),
+
+
+     
      
 
 

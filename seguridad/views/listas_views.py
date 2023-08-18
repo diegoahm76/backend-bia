@@ -22,6 +22,8 @@ from seguridad.lists.opciones_usuario_list import opciones_usuario_LIST
 from seguridad.lists.sexo_list import sexo_LIST 
 from seguridad.lists.perfiles_sistema_list import perfiles_LIST
 from seguridad.lists.niveles_prioridad_alerta import niveles_list
+from seguridad.lists.cod_clase_alerta_list import cod_clase_alerta_LIST
+from seguridad.lists.cod_categoria_alerta_list import cod_categoria_LIST
 from seguridad.lists.subsistemas_list import subsistemas_LIST
 from seguridad.lists.tipo_direccion_list import tipo_direccion_LIST
 from seguridad.lists.direcciones_list import direcciones_LIST 
@@ -74,8 +76,15 @@ class GetLisPerfilesSistema(APIView):
         return Response({'success':True, 'detail':'Los perfiles del sistema son los siguientes', 'data': perfiles_LIST}, status=status.HTTP_200_OK) 
 class GetLisNivelesPrioridadAlerta(APIView):
     def get(self, request):
-        return Response({'success':True, 'detail':'Los perfiles del sistema son los siguientes', 'data':niveles_list }, status=status.HTTP_200_OK) 
+        return Response({'success':True, 'detail':'Los niveles de prioridad son los siguentes', 'data':niveles_list }, status=status.HTTP_200_OK) 
 
+class GetListCodClaseAlerta(APIView):
+    def get(self, request):
+        return Response({'success':True, 'detail':'Los codigos de alerta son los siguientes', 'data':cod_clase_alerta_LIST }, status=status.HTTP_200_OK) 
+
+class GetListCodCategoriaAlerta(APIView):
+    def get(self, request):
+        return Response({'success':True, 'detail':'Los codigos de categoria  son los siguientes', 'data':cod_categoria_LIST }, status=status.HTTP_200_OK) 
 
 class GetLisSubsistema(APIView):
     def get(self, request):

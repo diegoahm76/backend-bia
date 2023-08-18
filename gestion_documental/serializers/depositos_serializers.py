@@ -156,12 +156,6 @@ class MoveEstanteSerializer(serializers.ModelSerializer):
         model =  EstanteDeposito
         fields = '__all__'
 
-#Listar_Bandejas_por_estante
-class BandejasByEstanteListSerializer(serializers.ModelSerializer):
-    
-    class Meta:
-        model =  BandejaEstante
-        fields = ['orden_ubicacion_por_estante','identificacion_por_estante']
 
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -245,6 +239,13 @@ class BandejaEstanteMoveSerializer(serializers.ModelSerializer):
         model =  BandejaEstante
         fields = '__all__'
 
+#Listar_Bandejas_por_estante
+class BandejasByEstanteListSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  BandejaEstante
+        fields = ['orden_ubicacion_por_estante','identificacion_por_estante']
+
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ######################## SERIALIZERS CAJA ########################
@@ -261,7 +262,7 @@ class  CajaBandejaGetOrdenSerializer(serializers.ModelSerializer):
         model =  CajaBandeja
         fields = '__all__'
 
-#Listar_cajas_por bandeja
+#Listar_cajas_por_bandeja
 class  CajasByBandejaListSerializer(serializers.ModelSerializer):
     class Meta:
         model =  CajaBandeja
@@ -353,8 +354,13 @@ class  CarpetaCajaSearchSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 #Eliminar_carpeta
-#Buscar_caja(carpeta)
 class  CarpetaCajaDeleteSerializer(serializers.ModelSerializer):
     class Meta:
-        model =  CajaBandeja
+        model =  CarpetaCaja
         fields = '__all__'
+
+#Listar_carpetas_por caja
+class  CarpetasByCajaListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  CarpetaCaja
+        fields = ['orden_ubicacion_por_caja','identificacion_por_caja']
