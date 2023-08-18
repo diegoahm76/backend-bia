@@ -25,5 +25,6 @@ urlpatterns = [
     
     # Analitica
     path('analitica-mortalidad-tiempo/get/', views.AnaliticaMortalidadTiempoGetView.as_view(), name='analitica-mortalidad-tiempo-get'),
-    # path('analitica-bajas-tiempo/get/', views.AnaliticaBajasTiempoGetView.as_view(), name='analitica-bajas-tiempo-get'),
+    path('analitica-bajas-tiempo/get/', views.AnaliticaBajasTiempoGetView.as_view(), name='analitica-bajas-tiempo-get'),
+    path('analitica-cuarentena-tiempo/get/', views.AnaliticaCuarentenaGetView.as_view(), name='analitica-cuarentena-tiempo-get'),
 ]
