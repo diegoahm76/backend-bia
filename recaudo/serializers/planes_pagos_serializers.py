@@ -30,8 +30,10 @@ class VisualizacionCarteraSelecionadaSerializer(serializers.ModelSerializer):
     valor_abonado = serializers.SerializerMethodField()
     
     def get_valor_abonado(self, obj):
+        print(type(obj), obj.id)
         facilidad_pago = DetallesFacilidadPago.objects.filter(id_cartera=obj.id).first()
         valor_abonado = facilidad_pago.id_facilidad_pago.valor_abonado
+
         return valor_abonado
 
     class Meta:
