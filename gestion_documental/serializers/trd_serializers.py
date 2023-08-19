@@ -18,6 +18,24 @@ class TipologiasDocumentalesSerializer(serializers.ModelSerializer):
     class Meta:
         model = TipologiasDoc
         fields = '__all__'
+        
+class TipologiasSeriesSubSUnidadOrgTRDSerializer(serializers.ModelSerializer):
+    id_tipologia_documental = serializers.ReadOnlyField(source='id_tipologia_doc.id_tipologia_documental', default=None)
+    nombre = serializers.ReadOnlyField(source='id_tipologia_doc.nombre', default=None)
+    cod_tipo_medio_doc = serializers.ReadOnlyField(source='id_tipologia_doc.cod_tipo_medio_doc.cod_tipo_medio_doc', default=None)
+    item_ya_usado = serializers.ReadOnlyField(source='id_tipologia_doc.item_ya_usado', default=None)
+    
+    class Meta:
+        model = SeriesSubSUnidadOrgTRDTipologias
+        fields = [
+            'id_tipologia_documental',
+            'nombre',
+            'cod_tipo_medio_doc',
+            'activo',
+            'item_ya_usado',
+            'reservada'
+        ]
+
         # validators = [
         #    UniqueTogetherValidator(
         #        queryset=TipologiasDoc.objects.all(),
