@@ -198,15 +198,16 @@ class DepositoGetOrden(generics.ListAPIView):
     queryset = Deposito.objects.all()
     permission_classes = [IsAuthenticated]
     
-    def get(self,request):
+    def get(self, request):
         maximo_orden = Deposito.objects.aggregate(max_orden=Max('orden_ubicacion_por_entidad'))
-        #serializer = self.serializer_class(deposito,many=True)
         
         if not maximo_orden:
-            raise NotFound("El registro del deposito que busca, no se encuentra registrado")
-        return Response({'success':True,'orden_siguiente':maximo_orden['max_orden']},status=status.HTTP_200_OK)
-        #return JsonResponse({'maximo_orden': maximo_orden['max_orden']+1},status=status.HTTP_200_OK)
-        #return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializer.data},status=status.HTTP_200_OK)
+            raise NotFound("El registro del depósito que busca no se encuentra registrado")
+        
+        orden_siguiente = maximo_orden['max_orden'] + 1
+        
+        return Response({'success': True, 'orden_siguiente': orden_siguiente}, status=status.HTTP_200_OK)
+       
 
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -296,16 +297,15 @@ class EstanteDepositoGetOrden(generics.ListAPIView):
     queryset = EstanteDeposito.objects.all()
     permission_classes = [IsAuthenticated]
     
-    def get(self,request):
+    def get(self, request):
         maximo_orden = EstanteDeposito.objects.aggregate(max_orden=Max('orden_ubicacion_por_deposito'))
-        #serializer = self.serializer_class(deposito,many=True)
         
-        if not maximo_orden or 0:
-            raise NotFound("El registro del deposito que busca, no se encuentra registrado")
-        return Response({
-            'success':True,
-            'orden_siguiente':maximo_orden['max_orden']},
-            status=status.HTTP_200_OK)
+        if not maximo_orden:
+            raise NotFound("El registro del depósito que busca no se encuentra registrado")
+        
+        orden_siguiente = maximo_orden['max_orden'] + 1
+        
+        return Response({'success': True, 'orden_siguiente': orden_siguiente}, status=status.HTTP_200_OK)
         
 #EDITAR ESTANTE
 class EstanteDepositoUpDate(generics.UpdateAPIView):
@@ -492,7 +492,7 @@ class BandejaEstanteGetOrden(generics.ListAPIView):
         if not maximo_orden['max_orden']:
             max_orden = 0
         else:
-            max_orden = maximo_orden['max_orden']
+            max_orden = maximo_orden['max_orden'] + 1
 
         return Response({
             'success': True,
@@ -700,12 +700,12 @@ class CajaBandejaGetOrden(generics.ListAPIView):
         if not maximo_orden['max_orden']:
             max_orden = 0
         else:
-            max_orden = maximo_orden['max_orden']
+            max_orden = maximo_orden['max_orden'] + 1
 
         return Response({
             'success': True,
             'orden_siguiente': max_orden
-        }, status=status.HTTP_200_OK)        
+        }, status=status.HTTP_200_OK)
     
 #LISTAR_CAJAS_POR_BANDEJA
 class CajasByBandejaList(generics.ListAPIView):
@@ -834,6 +834,19 @@ class CajaEstanteBandejaMove(generics.UpdateAPIView):
         if not deposito_destino:
             return Response({'success': False, 'detail': 'No se encontró el depósito de destino especificado.'}, status=status.HTTP_404_NOT_FOUND)
 
+
+        # Obtener el depósito de destino desde la solicitud
+        identificacion_deposito_destino = request.data.get('identificacion_deposito_destino')
+
+        # Obtener la carpeta asociada a la caja
+        carpeta_asociada = CarpetaCaja.objects.filter(id_caja_bandeja=caja).first()
+
+        # Validar si la carpeta asociada tiene un expediente y si el depósito de destino está activo
+        if carpeta_asociada and carpeta_asociada.id_expediente is not None:
+            deposito_destino = Deposito.objects.filter(identificacion_por_entidad=identificacion_deposito_destino, activo=True).first()
+            if not deposito_destino:
+                return Response({'success': False, 'detail': 'La caja tiene un expediente asociado y no puede ser movida o el depósito de destino no está activo.'}, status=status.HTTP_400_BAD_REQUEST)
+       
         # Retener los datos actuales de la caja (sin cambios)
         caja_actual_data = {
             'identificacion_bandeja': caja.id_bandeja_estante.identificacion_por_estante,
@@ -849,6 +862,7 @@ class CajaEstanteBandejaMove(generics.UpdateAPIView):
         return Response({
             'success': True,
             'detail': 'Caja movida exitosamente.',
+            'id_caja':id_caja_estante,
             'caja_actual': caja_actual_data,
             'caja_destino': {
                 'identificacion_bandeja': identificacion_bandeja_destino,
@@ -994,19 +1008,19 @@ class CarpetaCajaCreate(generics.CreateAPIView):
 #ORDEN CARPETAS
 class CarpetaCajaGetOrden(generics.ListAPIView):
      
-    def get(self, request):
+     def get(self, request):
         maximo_orden = CarpetaCaja.objects.aggregate(max_orden=Max('orden_ubicacion_por_caja'))
 
         # Verificar si el valor del orden es nulo
         if not maximo_orden['max_orden']:
             max_orden = 0
         else:
-            max_orden = maximo_orden['max_orden']
+            max_orden = maximo_orden['max_orden'] + 1
 
         return Response({
             'success': True,
             'orden_siguiente': max_orden
-        }, status=status.HTTP_200_OK)          
+        }, status=status.HTTP_200_OK)         
     
 #BUSQUEDA_CAJAS(CARPETAS)
 class CarpetaCajaSearch(generics.ListAPIView):
