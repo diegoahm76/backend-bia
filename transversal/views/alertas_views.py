@@ -34,8 +34,32 @@ class ConfiguracionClaseAlertaUpdate(generics.UpdateAPIView):
         # Verificar si la instancia existe
         if not instance:
             return Response({'detail': 'La configuración de clase de alerta no existe.'}, status=status.HTTP_404_NOT_FOUND)
+        cant_dias_previas = instance.cant_dias_previas
+        frecuencia_previas = instance.frecuencia_previas
+        cant_dias_post = instance.cant_dias_post
+        frecuencia_post = instance.frecuencia_post
+
+        if 'cant_dias_previas' in data_in and data_in['cant_dias_previas']:
+            cant_dias_previas = data_in['cant_dias_previas']
+
+        if 'frecuencia_previas' in data_in and data_in['frecuencia_previas']:
+            frecuencia_previas = data_in['frecuencia_previas']
+
+        if 'cant_dias_post' in data_in and data_in['cant_dias_post']:
+            cant_dias_post = data_in['cant_dias_post']
+
+        if 'frecuencia_post' in data_in and data_in['frecuencia_post']:
+            frecuencia_post = data_in['frecuencia_post']
+
+        if frecuencia_previas and cant_dias_previas and frecuencia_previas >= cant_dias_previas:
+            raise ValidationError("La frecuencia previa debe ser menor que la cantidad de días previos")
+
+        if frecuencia_post and cant_dias_post and frecuencia_post >= cant_dias_post:
+            raise ValidationError("La frecuencia posterior debe ser menor que la cantidad de días posteriores")
 
         try:
+           
+                
             serializer = self.serializer_class(instance, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
             instance=serializer.save()
