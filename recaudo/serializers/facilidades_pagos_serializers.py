@@ -153,7 +153,8 @@ class FacilidadPagoGetByIdSerializer(serializers.ModelSerializer):
         model = FacilidadesPago
         fields = ('id', 'id_deudor', 'id_tipo_actuacion', 'tipo_actuacion', 'fecha_generacion',
                   'observaciones', 'periodicidad', 'cuotas', 'documento_soporte', 'consignacion_soporte',
-                  'documento_no_enajenacion', 'id_funcionario','notificaciones', 'numero_radicacion'
+                  'valor_abonado', 'fecha_abono', 'documento_no_enajenacion', 'id_funcionario',
+                  'notificaciones', 'numero_radicacion'
                   )
 
 
@@ -178,7 +179,7 @@ class RespuestaSolicitudSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class ObligacionesSerializer(serializers.ModelSerializer):
+class CarteraSerializer(serializers.ModelSerializer):
     nro_expediente = serializers.ReadOnlyField(source='id_expediente.cod_expediente',default=None)
     nro_resolucion = serializers.ReadOnlyField(source='id_expediente.numero_resolucion',default=None)
 
@@ -187,7 +188,7 @@ class ObligacionesSerializer(serializers.ModelSerializer):
         fields = ('id','nombre','inicio','nro_expediente','nro_resolucion','monto_inicial','valor_intereses', 'dias_mora')
 
 
-class ConsultaObligacionesSerializer(serializers.ModelSerializer):
+class ConsultaCarteraSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cartera
         fields = '__all__'

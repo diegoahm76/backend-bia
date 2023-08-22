@@ -15,6 +15,8 @@ from gestion_documental.choices.tipos_medios_formato_choices import tipos_medios
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 
 class TipologiasDocumentalesSerializer(serializers.ModelSerializer):
+    tipo_medio_doc = serializers.ReadOnlyField(source='cod_tipo_medio_doc.nombre', default=None)
+    
     class Meta:
         model = TipologiasDoc
         fields = '__all__'
@@ -71,6 +73,7 @@ class ModificarTipologiaDocumentalSerializer(serializers.ModelSerializer):
 
 class BuscarTipologiaSerializer(serializers.ModelSerializer):
     formatos = serializers.SerializerMethodField()
+    tipo_medio_doc = serializers.ReadOnlyField(source='cod_tipo_medio_doc.nombre', default=None)
 
     def get_formatos(self, obj):
         formatos = FormatosTiposMedioTipoDoc.objects.filter(id_tipologia_doc=obj.id_tipologia_documental)
@@ -79,7 +82,7 @@ class BuscarTipologiaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TipologiasDoc
-        fields = ['id_tipologia_documental', 'nombre', 'cod_tipo_medio_doc', 'activo', 'item_ya_usado', 'formatos']
+        fields = ['id_tipologia_documental', 'nombre', 'cod_tipo_medio_doc', 'tipo_medio_doc', 'activo', 'item_ya_usado', 'formatos']
 
 
 class BusquedaTRDNombreVersionSerializer(serializers.ModelSerializer):
