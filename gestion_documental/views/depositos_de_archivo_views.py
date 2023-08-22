@@ -12,7 +12,7 @@ from django.db.models import Q
 from django.db import transaction
 from datetime import datetime,date,timedelta
 from gestion_documental.models.depositos_models import  CarpetaCaja, Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
-from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteDeleteSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajasByBandejaListSerializer, CarpetaCajaCreateSerializer, CarpetaCajaDeleteSerializer, CarpetaCajaSearchSerializer, CarpetaCajaUpDateSerializer, CarpetasByCajaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
+from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteDeleteSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajasByBandejaListSerializer, CarpetaCajaCreateSerializer, CarpetaCajaDeleteSerializer, CarpetaCajaSearchSerializer, CarpetaCajaUpDateSerializer, CarpetasByCajaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoSearchSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
 from seguridad.utils import Util
 
 
@@ -208,6 +208,46 @@ class DepositoGetOrden(generics.ListAPIView):
         
         return Response({'success': True, 'orden_siguiente': orden_siguiente}, status=status.HTTP_200_OK)
        
+#FILTRO_DEPOSITOS_POR_IDENTIFICACION_&_NOMBRE
+class DepositoSearch(generics.ListAPIView):
+    serializer_class = DepositoSearchSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        nombre_deposito = self.request.query_params.get('nombre_deposito', '').strip()
+        identificacion_por_entidad = self.request.query_params.get('identificacion_por_entidad', '').strip()
+
+        # Filtrar por nombre_deposito, identificacion_por_entidad y ordenar por orden_ubicacion_por_entidad
+        queryset = Deposito.objects.all()
+
+        if nombre_deposito:
+            queryset = queryset.filter(nombre_deposito__icontains=nombre_deposito)
+
+        if identificacion_por_entidad:
+            queryset = queryset.filter(identificacion_por_entidad__icontains=identificacion_por_entidad)
+
+        queryset = queryset.order_by('orden_ubicacion_por_entidad')  # Ordenar de forma ascendente
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            return Response({
+                'success': True,
+                'detail': 'No se encontraron datos que coincidan con los criterios de búsqueda.',
+                'data': []
+            }, status=status.HTTP_200_OK)
+
+        serializer = DepositoSearchSerializer(queryset, many=True)
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes registros.',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+
 
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -268,7 +308,10 @@ class EstanteDepositoSearch(generics.ListAPIView):
         if nombre_sucursal:
             queryset = queryset.filter(id_sucursal_entidad__descripcion_sucursal__icontains=nombre_sucursal)
 
+        queryset = queryset.order_by('orden_ubicacion_por_entidad')  # Ordenar de forma ascendente
+
         return queryset
+
 
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -800,9 +843,7 @@ class cajaBandejaUpDate(generics.UpdateAPIView):
                          status=status.HTTP_200_OK)
     
 
-#MOVER CAJA(PENDIENTE)
-#(Pendiente validacion de deposito si esta activo o no)(kc)
-#pendiente validacion de carpetas (kc)
+#MOVER CAJA
 class CajaEstanteBandejaMove(generics.UpdateAPIView):
     serializer_class = CajaBandejaMoveSerializer
     queryset = CajaBandeja.objects.all()
@@ -834,19 +875,15 @@ class CajaEstanteBandejaMove(generics.UpdateAPIView):
         if not deposito_destino:
             return Response({'success': False, 'detail': 'No se encontró el depósito de destino especificado.'}, status=status.HTTP_404_NOT_FOUND)
 
-
-        # Obtener el depósito de destino desde la solicitud
-        identificacion_deposito_destino = request.data.get('identificacion_deposito_destino')
-
-        # Obtener la carpeta asociada a la caja
-        carpeta_asociada = CarpetaCaja.objects.filter(id_caja_bandeja=caja).first()
-
-        # Validar si la carpeta asociada tiene un expediente y si el depósito de destino está activo
-        if carpeta_asociada and carpeta_asociada.id_expediente is not None:
+       
+        # Verificar si la caja tiene un expediente asociado
+        if CarpetaCaja.id_expediente is not None:
+            # Validar si el depósito de destino existe y está activo
             deposito_destino = Deposito.objects.filter(identificacion_por_entidad=identificacion_deposito_destino, activo=True).first()
             if not deposito_destino:
-                return Response({'success': False, 'detail': 'La caja tiene un expediente asociado y no puede ser movida o el depósito de destino no está activo.'}, status=status.HTTP_400_BAD_REQUEST)
-       
+                return Response({'success': False, 'detail': 'La caja tiene un expediente asociado y no puede ser movida a un depósito inactivo.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            
         # Retener los datos actuales de la caja (sin cambios)
         caja_actual_data = {
             'identificacion_bandeja': caja.id_bandeja_estante.identificacion_por_estante,

@@ -11,6 +11,8 @@ urlpatterns = [
      path('deposito/listar/',views.DepositoGet.as_view(),name='listar-deposito'),
      path('deposito/listar-por-id/<str:pk>/',views.DepositoGetById.as_view(),name='listar-por-id-deposito'),
      path('deposito/siguiente-orden/',views.DepositoGetOrden.as_view(),name='listar-orden-siguiente'),
+     path('deposito/buscar-deposito/',views.DepositoSearch.as_view(), name='buscar-deposito'),
+
 
      #Estante
      path('estanteDeposito/crear/',views.EstanteDepositoCreate.as_view(), name='crear-estanteDeposito'),
