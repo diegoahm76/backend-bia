@@ -6,6 +6,8 @@ urlpatterns = [
     path('validacion/<int:id_facilidad_pago>/', views.PlanPagosValidationView.as_view(),name='validacion'),
     path('validacion-resolucion/<int:id_facilidad_pago>/', views.PlanPagosResolucionValidationView.as_view(),name='validacion-resolucion'),
 
+    path('consulta-obligaciones-deudores/<int:id_facilidad_pago>/', views.ConsultaCarteraDeudoresViews.as_view(),name='consulta-obligaciones-deudores'),
+    
 
 
     # path('listado-deudores/', views.ListadoDeudoresViews.as_view(),name='listado-deudores'),
