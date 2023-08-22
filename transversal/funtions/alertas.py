@@ -63,7 +63,7 @@ def mi_primera_tarea_en_segundo_plano():
                 agno_valido=True
 
 
-            if programada.dia_cumplimiento==numero_dia and programada.mes_cumplimiento==numero_mes and agno_valido:
+            if  programada.activa and  programada.dia_cumplimiento==numero_dia and programada.mes_cumplimiento==numero_mes and agno_valido:
 
                 nombre_funcion = programada.nombre_funcion_comple_mensaje
                 funcion = globals().get(nombre_funcion)
@@ -137,13 +137,11 @@ def mi_primera_tarea_en_segundo_plano():
                 str_lideres_unidades_alertar=programada.id_und_org_lider_alertar
                 #para los perfiles del sistema se requiere buscar las ids de las personas responsables actualmente en ese cargo 
                 
-              
-                #[('Dire', 'Director'), ('CViv', 'Coordinador de Viveros'), ('RTra', 'Responsable de Transporte'), ('CAlm', 'Coordinador de Almacén'), ('Alma', 'Almacenista')]
                 personas_alertar=separar_cadena(str_personas_alertar)
                 perfiles_alertar=separar_cadena(str_perfiles_alertar)
                 ids_perfiles_alertar=[]
                 for perfil in perfiles_alertar:
-                    #PENDIENTE REFACTORIZACION PARA CONFIGURACION DE ENTIDAD
+                   
                     if perfil == 'Dire':
                         if perfiles_actuales.id_persona_director_actual:
                             ids_perfiles_alertar.append(perfiles_actuales.id_persona_director_actual.id_persona)
