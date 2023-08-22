@@ -244,7 +244,7 @@ class BandejasByEstanteListSerializer(serializers.ModelSerializer):
     
     class Meta:
         model =  BandejaEstante
-        fields = ['id_bandeja_estante','orden_ubicacion_por_estante','identificacion_por_estante']
+        fields = ['id_estante_deposito','orden_ubicacion_por_estante','identificacion_por_estante']
 
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
