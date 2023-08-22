@@ -12,7 +12,7 @@ from django.db.models import Q
 from django.db import transaction
 from datetime import datetime,date,timedelta
 from gestion_documental.models.depositos_models import  CarpetaCaja, Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
-from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteDeleteSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajasByBandejaListSerializer, CarpetaCajaCreateSerializer, CarpetaCajaDeleteSerializer, CarpetaCajaSearchSerializer, CarpetasByCajaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
+from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteDeleteSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajasByBandejaListSerializer, CarpetaCajaCreateSerializer, CarpetaCajaDeleteSerializer, CarpetaCajaSearchSerializer, CarpetaCajaUpDateSerializer, CarpetasByCajaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
 from seguridad.utils import Util
 
 
@@ -920,7 +920,7 @@ class CajaEstanteSearchAdvanced(generics.ListAPIView):
             'data': serialized_data
         }, status=status.HTTP_200_OK)
     
-#ELIMINAR_CAJA(PENDIENTE)
+#ELIMINAR_CAJA
 class CajaEstanteDelete(generics.DestroyAPIView):
         
     serializer_class = CajaEstanteDeleteSerializer
@@ -1112,3 +1112,22 @@ class CarpetasByCajaList(generics.ListAPIView):
         return Response({'success':True,
                          'detail':'Se encontraron los siguientes registros.',
                          'data':serializer.data},status=status.HTTP_200_OK)
+    
+#EDITAR_CARPETAS
+class CarpetaCajaUpDate(generics.UpdateAPIView):
+    serializer_class = CarpetaCajaUpDateSerializer
+    queryset = CarpetaCaja.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def put (self,request, pk):
+        try:
+            caja = CarpetaCaja.objects.filter(id_carpeta_caja=pk).first()
+        except CarpetaCaja.DoesNotExist:
+            return Response({'error': 'La bandeja no existe.'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = CarpetaCajaUpDateSerializer(caja, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({'success': True, 'detail': 'La carpeta se ha actualizado correctamente.'},
+                         status=status.HTTP_200_OK)

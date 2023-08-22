@@ -125,6 +125,7 @@ class SeriesSubSUnidadOrgTRDTipologias(models.Model):
     id_catserie_unidadorg_ccd_trd = models.ForeignKey(CatSeriesUnidadOrgCCDTRD, on_delete=models.CASCADE, db_column='T211Id_CatSerie_UndOrg_CCD_TRD')
     id_tipologia_doc = models.ForeignKey(TipologiasDoc, on_delete=models.CASCADE, db_column='T211Id_TipologiaDoc')
     activo = models.BooleanField(default=True, db_column='T211activo')
+    reservada = models.BooleanField(default=False, db_column='T211reservada')
     
     def __str__(self):
         return str(self.id_tipologia_catserie_unidad_ccd_trd)
