@@ -153,7 +153,8 @@ class FacilidadPagoGetByIdSerializer(serializers.ModelSerializer):
         model = FacilidadesPago
         fields = ('id', 'id_deudor', 'id_tipo_actuacion', 'tipo_actuacion', 'fecha_generacion',
                   'observaciones', 'periodicidad', 'cuotas', 'documento_soporte', 'consignacion_soporte',
-                  'documento_no_enajenacion', 'id_funcionario','notificaciones', 'numero_radicacion'
+                  'valor_abonado', 'fecha_abono', 'documento_no_enajenacion', 'id_funcionario',
+                  'notificaciones', 'numero_radicacion'
                   )
 
 
