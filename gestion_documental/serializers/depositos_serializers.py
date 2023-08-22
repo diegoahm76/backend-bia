@@ -4,7 +4,7 @@ from django.db.models import F
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from django.db.models import Max 
 
-from gestion_documental.models.depositos_models import  Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
+from gestion_documental.models.depositos_models import  CarpetaCaja, Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
 
 
 ######################### SERIALIZERS DEPOSITO #########################
@@ -66,7 +66,7 @@ class DepositoGetSerializer(serializers.ModelSerializer):
     municipio=serializers.ReadOnlyField(source='id_sucursal_entidad.municipio', default=None)
     class Meta:
         model =  Deposito
-        fields = ['nombre_deposito','identificacion_por_entidad','orden_ubicacion_por_entidad','direccion_deposito','cod_municipio_nal','cod_pais_exterior','id_sucursal_entidad','nombre_sucursal','municipio','activo']
+        fields = ['id_deposito','nombre_deposito','identificacion_por_entidad','orden_ubicacion_por_entidad','direccion_deposito','cod_municipio_nal','cod_pais_exterior','id_sucursal_entidad','nombre_sucursal','municipio','activo']
 
 #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -86,7 +86,7 @@ class  EstanteDepositoSearchSerializer(serializers.ModelSerializer):
     
     class Meta:
         model =  Deposito
-        fields = ['orden_ubicacion_por_entidad','nombre_deposito','identificacion_por_entidad','nombre_sucursal']
+        fields = ['id_deposito','orden_ubicacion_por_entidad','nombre_deposito','identificacion_por_entidad','nombre_sucursal']
 
 
 #Listar_orden_siguiente_estante
@@ -133,7 +133,7 @@ class EstanteDepositoUpDateSerializer(serializers.ModelSerializer):
         
     class Meta:
         model =  EstanteDeposito
-        fields = ['identificacion_por_deposito','orden_ubicacion_por_deposito']
+        fields = ['id_estante_deposito','identificacion_por_deposito','orden_ubicacion_por_deposito']
 
 #Eliminar_Estante
 class EstanteDepositoDeleteSerializer(serializers.ModelSerializer):
@@ -147,7 +147,7 @@ class EstanteGetByDepositoSerializer(serializers.ModelSerializer):
     
     class Meta:
         model =  EstanteDeposito
-        fields = ['orden_ubicacion_por_deposito','identificacion_por_deposito']
+        fields = ['id_estante_deposito','orden_ubicacion_por_deposito','identificacion_por_deposito']
 
 #Mover_estante
 class MoveEstanteSerializer(serializers.ModelSerializer):
@@ -156,12 +156,6 @@ class MoveEstanteSerializer(serializers.ModelSerializer):
         model =  EstanteDeposito
         fields = '__all__'
 
-#Listar_Bandejas_por_estante
-class BandejasByEstanteListSerializer(serializers.ModelSerializer):
-    
-    class Meta:
-        model =  BandejaEstante
-        fields = ['orden_ubicacion_por_estante','identificacion_por_estante']
 
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -245,6 +239,13 @@ class BandejaEstanteMoveSerializer(serializers.ModelSerializer):
         model =  BandejaEstante
         fields = '__all__'
 
+#Listar_Bandejas_por_estante
+class BandejasByEstanteListSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  BandejaEstante
+        fields = ['id_estante_deposito','orden_ubicacion_por_estante','identificacion_por_estante']
+
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ######################## SERIALIZERS CAJA ########################
@@ -261,7 +262,7 @@ class  CajaBandejaGetOrdenSerializer(serializers.ModelSerializer):
         model =  CajaBandeja
         fields = '__all__'
 
-#Listar_cajas_por bandeja
+#Listar_cajas_por_bandeja
 class  CajasByBandejaListSerializer(serializers.ModelSerializer):
     class Meta:
         model =  CajaBandeja
@@ -327,3 +328,72 @@ class  CajaEstanteDeleteSerializer(serializers.ModelSerializer):
     class Meta:
         model =  CajaBandeja
         fields = '__all__'
+
+
+#/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+######################## SERIALIZERS CARPETA ########################
+
+#Crear_carpeta
+class CarpetaCajaCreateSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  CarpetaCaja
+        fields = '__all__'
+
+#Listar_orden_siguiente_carpeta
+class  CarpetaCajaGetOrdenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  CarpetaCaja
+        fields = '__all__'
+
+#Buscar_caja(carpeta)
+class  CarpetaCajaSearchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  CajaBandeja
+        fields = '__all__'
+
+#Eliminar_carpeta
+class  CarpetaCajaDeleteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  CarpetaCaja
+        fields = '__all__'
+
+#Listar_carpetas_por caja
+class  CarpetasByCajaListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  CarpetaCaja
+        fields = ['id_carpeta_caja','orden_ubicacion_por_caja','identificacion_por_caja']
+
+#Editar_carpetas
+class CarpetaCajaUpDateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CarpetaCaja
+        fields = ['identificacion_por_caja', 'orden_ubicacion_por_caja']
+
+    def validate_orden_ubicacion_por_caja(self, nuevo_orden):
+        orden_actual = self.instance.orden_ubicacion_por_caja
+
+        if nuevo_orden != orden_actual:
+            # Obtener el número máximo de orden actual en las carpeta
+            maximo_orden = CarpetaCaja.objects.aggregate(max_orden=Max('orden_ubicacion_por_caja')).get('max_orden')
+            self.instance.orden_ubicacion_por_caja = maximo_orden + 1
+            self.instance.save()
+
+            if nuevo_orden > orden_actual:
+                # Desplazar las carpeta siguientes hacia abajo
+                carpetas = CarpetaCaja.objects.filter(id_bandeja_estante=self.instance.id_caja_bandeja, orden_ubicacion_por_caja__gt=orden_actual, orden_ubicacion_por_caja__lte=nuevo_orden).order_by('orden_ubicacion_por_caja')
+
+                for carpeta in carpetas:
+                    carpeta.orden_ubicacion_por_caja = carpeta.orden_ubicacion_por_caja - 1
+                    carpeta.save()
+
+            elif nuevo_orden < orden_actual:
+                # Desplazar las carpetas hacia arriba
+                carpetas = CarpetaCaja.objects.filter(id_caja_bandeja=self.instance.id_caja_bandeja, orden_ubicacion_por_caja__lt=orden_actual, orden_ubicacion_por_caja__gte=nuevo_orden).order_by('-orden_ubicacion_por_caja')
+
+                for carpeta in carpetas:
+                    carpeta.orden_ubicacion_por_caja = carpeta.orden_ubicacion_por_caja + 1
+                    carpeta.save()
+
+        return nuevo_orden

@@ -30,5 +30,7 @@ urlpatterns = [
     path('indicativo-pais/', views_transversal.GetLisIndicativoPais.as_view(), name='get-list-indicativo-pais'),
     path('cod-naturaleza-empresa/', views.GetLisCodNaturalezEmpresa.as_view(), name='get-list-cod-naturaleza-empresa'),
     path('perfiles_sistema/', views.GetLisPerfilesSistema.as_view(), name='get-list-perfiles'),
-    path('niveles_prioridad_alerta/', views.GetLisNivelesPrioridadAlerta.as_view(), name='get-list-prioridades_alerta'),
+    path('niveles_prioridad_alerta/', views.GetLisNivelesPrioridadAlerta.as_view(), name='get-list-prioridades-alerta'),
+    path('cod_clase_alerta/', views.GetListCodClaseAlerta.as_view(), name='get-cod-clase-alerta'),
+    path('cod_categoria_alerta/', views.GetListCodCategoriaAlerta.as_view(), name='get-cod-clase-alerta'),
 ]

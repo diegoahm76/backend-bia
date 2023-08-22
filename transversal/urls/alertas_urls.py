@@ -4,7 +4,7 @@ from transversal.views  import bandeja_alertas_views  as bandejas_views
 urlpatterns = [
     #RECURSO_HIDRICO
     path("configuracion_clase_alerta/get-by-cod/<str:cod>/", views.ConfiguracionClaseAlertaGetByCod.as_view(), name="get-configuracion-alerta-by-id"),
-    path("configuracion_clase_alerta/get-by-cod/", views.ConfiguracionClaseAlertaGet.as_view(), name="get-configuracion-alerta"),
+    path("configuracion_clase_alerta/get-by-subsistema/<str:subsis>/", views.ConfiguracionClaseAlertaGet.as_view(), name="get-configuracion-alerta"),
 
     path('configuracion_clase_alerta/update/<str:pk>/', views.ConfiguracionClaseAlertaUpdate.as_view(), name='configuracion_clase_alerta_update'),
     #Fecha alerta

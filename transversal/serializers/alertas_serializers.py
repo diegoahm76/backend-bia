@@ -6,6 +6,7 @@ from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 
 
 class ConfiguracionClaseAlertaGetSerializer(serializers.ModelSerializer):
+        nombre_subsistema=serializers.ReadOnlyField(source='id_modulo_generador.subsistema', default=None)
         class Meta:
             model=ConfiguracionClaseAlerta
             fields='__all__'
@@ -53,6 +54,7 @@ class PersonasAAlertarPostSerializer(serializers.ModelSerializer):
 class PersonasAAlertarGetSerializer(serializers.ModelSerializer):
         nombre_completo = serializers.SerializerMethodField()
         nombre_unidad=serializers.ReadOnlyField(source='id_unidad_org_lider.nombre', default=None)
+        numero_documento=serializers.ReadOnlyField(source='id_persona.numero_documento', default=None)
         class Meta:
             model=PersonasAAlertar
             fields=('__all__')
@@ -77,6 +79,12 @@ class AlertasProgramadasUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = AlertasProgramadas
         fields = '__all__'
+
+class AlertasProgramadasUpdateEnBandejaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AlertasProgramadas
+        fields = ['id_personas_suspen_alertar_sin_agno']
+
 class AlertasProgramadasDeleteSerializer(serializers.ModelSerializer):
     class Meta:
         model = AlertasProgramadas
@@ -108,6 +116,7 @@ class AlertasBandejaAlertaPersonaGetSerializer(serializers.ModelSerializer):
     nombre_modulo=serializers.ReadOnlyField(source='id_alerta_generada.id_modulo_destino.nombre_modulo', default=None)
     nombre_modulo=serializers.ReadOnlyField(source='id_alerta_generada.id_modulo_destino.ruta_formulario', default=None)
     ultima_repeticion=serializers.ReadOnlyField(source='id_alerta_generada.es_ultima_repeticion', default=None)
+    mensaje=serializers.ReadOnlyField(source='id_alerta_generada.mensaje', default=None)
     class Meta:
           model=AlertasBandejaAlertaPersona
           fields= '__all__'

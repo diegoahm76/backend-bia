@@ -17,6 +17,7 @@ urlpatterns = [
     path('procesos/', views.ProcesosGeneralView.as_view(), name='procesos'),
     path('procesos/<int:proceso>/', views.ProcesosGetGeneralView.as_view(), name='procesos'),
     path('crear-proceso/', views.ProcesosView.as_view(), name='crear-proceso'),
+    path('actualizar-proceso/<int:pk>/', views.UpdateProcesosView.as_view(), name='actualizar-proceso'),
     path('atributos/', views.AtributosEtapasView.as_view(), name='atributos-etapas-agregar'),
     path('avaluos-bienes/', f_views.AvaluoCreateView.as_view(), name='avaluos-bienes'),
     path('categoria-atributos/', views.CategoriaAtributoView.as_view(), name='categoria-atributos'),

@@ -15,9 +15,29 @@ from gestion_documental.choices.tipos_medios_formato_choices import tipos_medios
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 
 class TipologiasDocumentalesSerializer(serializers.ModelSerializer):
+    tipo_medio_doc = serializers.ReadOnlyField(source='cod_tipo_medio_doc.nombre', default=None)
+    
     class Meta:
         model = TipologiasDoc
         fields = '__all__'
+        
+class TipologiasSeriesSubSUnidadOrgTRDSerializer(serializers.ModelSerializer):
+    id_tipologia_documental = serializers.ReadOnlyField(source='id_tipologia_doc.id_tipologia_documental', default=None)
+    nombre = serializers.ReadOnlyField(source='id_tipologia_doc.nombre', default=None)
+    cod_tipo_medio_doc = serializers.ReadOnlyField(source='id_tipologia_doc.cod_tipo_medio_doc.cod_tipo_medio_doc', default=None)
+    item_ya_usado = serializers.ReadOnlyField(source='id_tipologia_doc.item_ya_usado', default=None)
+    
+    class Meta:
+        model = SeriesSubSUnidadOrgTRDTipologias
+        fields = [
+            'id_tipologia_documental',
+            'nombre',
+            'cod_tipo_medio_doc',
+            'activo',
+            'item_ya_usado',
+            'reservada'
+        ]
+
         # validators = [
         #    UniqueTogetherValidator(
         #        queryset=TipologiasDoc.objects.all(),
@@ -53,6 +73,7 @@ class ModificarTipologiaDocumentalSerializer(serializers.ModelSerializer):
 
 class BuscarTipologiaSerializer(serializers.ModelSerializer):
     formatos = serializers.SerializerMethodField()
+    tipo_medio_doc = serializers.ReadOnlyField(source='cod_tipo_medio_doc.nombre', default=None)
 
     def get_formatos(self, obj):
         formatos = FormatosTiposMedioTipoDoc.objects.filter(id_tipologia_doc=obj.id_tipologia_documental)
@@ -61,7 +82,7 @@ class BuscarTipologiaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TipologiasDoc
-        fields = ['id_tipologia_documental', 'nombre', 'cod_tipo_medio_doc', 'activo', 'item_ya_usado', 'formatos']
+        fields = ['id_tipologia_documental', 'nombre', 'cod_tipo_medio_doc', 'tipo_medio_doc', 'activo', 'item_ya_usado', 'formatos']
 
 
 class BusquedaTRDNombreVersionSerializer(serializers.ModelSerializer):
@@ -243,7 +264,7 @@ class SeriesSubSeriesUnidadesOrgTRDPutSerializer(serializers.ModelSerializer):
 
 class GetSeriesSubSUnidadOrgTRDSerializer(serializers.ModelSerializer):
     nombre_unidad = serializers.ReadOnlyField(source='id_cat_serie_und.id_unidad_organizacional.nombre',default =None)
-    cod_unidad_org = serializers.ReadOnlyField(source='id_cat_serie_und.id_unidad_organizacional.id_unidad_organizacional',default =None)
+    cod_unidad_org = serializers.ReadOnlyField(source='id_cat_serie_und.id_unidad_organizacional.codigo',default =None)
     nombre_serie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_serie_doc.nombre', default=None)
     cod_serie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_serie_doc.codigo', default=None)
     nombre_subserie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.nombre', default=None)

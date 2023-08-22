@@ -80,7 +80,7 @@ urlpatterns = [
     path('dato_registro_laboratorio/create/',views.DatosRegistroLaboratorioCreate.as_view(),name='create-dato_registro_laboratorio'),
     path('dato_registro_laboratorio/delete/<str:pk>/',views.DatosRegistroLaboratorioDelete.as_view(),name='delete-dato_registro_laboratorio'),
     path('dato_registro_laboratorio/update/<str:pk>/',views.DatosRegistroLaboratorioUpdate.as_view(),name='update-dato_registro_laboratorio'),
-    path('dato_registro_laboratorio/get-by-resultado/<str:lab>/',views.DatosRegistroLaboratorioByResultadosLaboratorioGet.as_view(),name='get_dato_registro_laboratorio_by_resultado'),
+    path('dato_registro_laboratorio/get-by-resultado/<str:lab>/<str:para>/',views.DatosRegistroLaboratorioByResultadosLaboratorioGet.as_view(),name='get_dato_registro_laboratorio_by_resultado'),
     path('dato_registro_laboratorio/get-by-id/<str:pk>/',views.DatosRegistroLaboratorioByIdGet.as_view(),name='get-dato_registro_laboratorio_by_id'),
     #pruebas_bombeo
     path('pruebas_bombeo/create/',views.PruebasBombeoCreate.as_view(),name='create_pruebas_bombeo'),
