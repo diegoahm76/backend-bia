@@ -86,7 +86,7 @@ class  EstanteDepositoSearchSerializer(serializers.ModelSerializer):
     
     class Meta:
         model =  Deposito
-        fields = ['orden_ubicacion_por_entidad','nombre_deposito','identificacion_por_entidad','nombre_sucursal']
+        fields = ['id_deposito','orden_ubicacion_por_entidad','nombre_deposito','identificacion_por_entidad','nombre_sucursal']
 
 
 #Listar_orden_siguiente_estante
@@ -133,7 +133,7 @@ class EstanteDepositoUpDateSerializer(serializers.ModelSerializer):
         
     class Meta:
         model =  EstanteDeposito
-        fields = ['identificacion_por_deposito','orden_ubicacion_por_deposito']
+        fields = ['id_estante_deposito','identificacion_por_deposito','orden_ubicacion_por_deposito']
 
 #Eliminar_Estante
 class EstanteDepositoDeleteSerializer(serializers.ModelSerializer):
@@ -147,7 +147,7 @@ class EstanteGetByDepositoSerializer(serializers.ModelSerializer):
     
     class Meta:
         model =  EstanteDeposito
-        fields = ['orden_ubicacion_por_deposito','identificacion_por_deposito']
+        fields = ['id_estante_deposito','orden_ubicacion_por_deposito','identificacion_por_deposito']
 
 #Mover_estante
 class MoveEstanteSerializer(serializers.ModelSerializer):
@@ -369,31 +369,31 @@ class  CarpetasByCajaListSerializer(serializers.ModelSerializer):
 class CarpetaCajaUpDateSerializer(serializers.ModelSerializer):
     class Meta:
         model = CarpetaCaja
-        fields = ['identificacion_por_bandeja', 'orden_ubicacion_por_bandeja']
+        fields = ['identificacion_por_caja', 'orden_ubicacion_por_caja']
 
-    def validate_orden_ubicacion_por_bandeja(self, nuevo_orden):
-        orden_actual = self.instance.orden_ubicacion_por_bandeja
+    def validate_orden_ubicacion_por_caja(self, nuevo_orden):
+        orden_actual = self.instance.orden_ubicacion_por_caja
 
         if nuevo_orden != orden_actual:
-            # Obtener el número máximo de orden actual en las cajas
-            maximo_orden = CajaBandeja.objects.aggregate(max_orden=Max('orden_ubicacion_por_bandeja')).get('max_orden')
-            self.instance.orden_ubicacion_por_bandeja = maximo_orden + 1
+            # Obtener el número máximo de orden actual en las carpeta
+            maximo_orden = CarpetaCaja.objects.aggregate(max_orden=Max('orden_ubicacion_por_caja')).get('max_orden')
+            self.instance.orden_ubicacion_por_caja = maximo_orden + 1
             self.instance.save()
 
             if nuevo_orden > orden_actual:
-                # Desplazar las cajas siguientes hacia abajo
-                cajas = CajaBandeja.objects.filter(id_bandeja_estante=self.instance.id_bandeja_estante, orden_ubicacion_por_bandeja__gt=orden_actual, orden_ubicacion_por_bandeja__lte=nuevo_orden).order_by('orden_ubicacion_por_bandeja')
+                # Desplazar las carpeta siguientes hacia abajo
+                carpetas = CarpetaCaja.objects.filter(id_bandeja_estante=self.instance.id_caja_bandeja, orden_ubicacion_por_caja__gt=orden_actual, orden_ubicacion_por_caja__lte=nuevo_orden).order_by('orden_ubicacion_por_caja')
 
-                for caja in cajas:
-                    caja.orden_ubicacion_por_bandeja = caja.orden_ubicacion_por_bandeja - 1
-                    caja.save()
+                for carpeta in carpetas:
+                    carpeta.orden_ubicacion_por_caja = carpeta.orden_ubicacion_por_caja - 1
+                    carpeta.save()
 
             elif nuevo_orden < orden_actual:
-                # Desplazar las cajas hacia arriba
-                cajas = CajaBandeja.objects.filter(id_bandeja_estante=self.instance.id_bandeja_estante, orden_ubicacion_por_bandeja__lt=orden_actual, orden_ubicacion_por_bandeja__gte=nuevo_orden).order_by('-orden_ubicacion_por_bandeja')
+                # Desplazar las carpetas hacia arriba
+                carpetas = CarpetaCaja.objects.filter(id_caja_bandeja=self.instance.id_caja_bandeja, orden_ubicacion_por_caja__lt=orden_actual, orden_ubicacion_por_caja__gte=nuevo_orden).order_by('-orden_ubicacion_por_caja')
 
-                for caja in cajas:
-                    caja.orden_ubicacion_por_bandeja = caja.orden_ubicacion_por_bandeja + 1
-                    caja.save()
+                for carpeta in carpetas:
+                    carpeta.orden_ubicacion_por_caja = carpeta.orden_ubicacion_por_caja + 1
+                    carpeta.save()
 
         return nuevo_orden

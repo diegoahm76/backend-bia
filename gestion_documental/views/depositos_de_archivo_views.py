@@ -818,6 +818,7 @@ class CajaEstanteBandejaMove(generics.UpdateAPIView):
         identificacion_estante_destino = request.data.get('identificacion_estante_destino')
         identificacion_deposito_destino = request.data.get('identificacion_deposito_destino')
 
+        
         # Validar si la bandeja de destino existe
         bandeja_destino = BandejaEstante.objects.filter(identificacion_por_estante=identificacion_bandeja_destino).first()
         if not bandeja_destino:
