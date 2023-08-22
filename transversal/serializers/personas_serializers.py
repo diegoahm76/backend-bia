@@ -777,6 +777,7 @@ class PersonasFilterSerializer(serializers.ModelSerializer):
     primer_apellido = serializers.SerializerMethodField()
     segundo_apellido = serializers.SerializerMethodField()
     razon_social = serializers.SerializerMethodField()
+    tipo_persona_desc = serializers.CharField(source='get_tipo_persona_display')
     
     def get_tiene_usuario(self, obj):
         usuario = User.objects.filter(persona=obj.id_persona).exists()   
@@ -818,6 +819,7 @@ class PersonasFilterSerializer(serializers.ModelSerializer):
         fields = [
             'id_persona',
             'tipo_persona',
+            'tipo_persona_desc',
             'tipo_documento',
             'numero_documento',
             'primer_nombre',

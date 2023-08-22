@@ -101,6 +101,10 @@ from transversal.serializers.personas_serializers import (
     HistoricoRepresentLegalSerializer
 )
 
+from rest_framework.views import APIView
+from django.conf import settings
+import jwt
+
 # Views for Estado Civil
 
 
@@ -1361,3 +1365,47 @@ class HistoricoRepresentLegalView(generics.ListAPIView):
         id_persona_empresa = self.kwargs['id_persona_empresa']
         queryset = HistoricoRepresentLegales.objects.filter(id_persona_empresa=id_persona_empresa)
         return queryset
+    
+
+# class ValidacionTokenView(generics.ListAPIView):
+#     permission_classes = [IsAuthenticated]  
+
+#     def get(self, request, *args, **kwargs):
+#         received_token = request.query_params.get('token', None)
+
+#         if received_token is None:
+#             return Response({'success':False, 'detail':'No se ha ingresado el token.'}, status=status.HTTP_400_BAD_REQUEST)
+
+#         generated_token = request.user
+
+#         try:
+#             decoded_token = jwt.decode(received_token, settings.SECRET_KEY, algorithms=['HS256'])
+#             if decoded_token['user_id'] != generated_token.id_usuario:
+#                 return Response({'success':False, 'detail':'El token no coincide con el usuario autenticado.'}, status=status.HTTP_401_UNAUTHORIZED)
+#             return Response({'success':True, 'detail':'El token es válido y coincide con el usuario autenticado.'}, status=status.HTTP_200_OK)
+#         except jwt.ExpiredSignatureError:
+#             return Response({'success':False, 'detail':'El token ha expirado'}, status=status.HTTP_401_UNAUTHORIZED)
+#         except jwt.DecodeError:
+#             return Response({'success':False, 'detail':'El token no es valido'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class ValidacionTokenView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        received_token = request.query_params.get('token', None)
+
+        if received_token is None:
+            return Response({'success': False, 'detail': 'No se ha ingresado el token.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        generated_token = request.user
+
+        try:
+            decoded_token = jwt.decode(received_token, algorithms=[], options={"verify_signature": False})
+            if decoded_token['user_id'] != generated_token.id_usuario:
+                return Response({'success': False, 'detail': 'El token no coincide con el usuario autenticado.'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'success': True, 'detail': 'El token es válido y coincide con el usuario autenticado.'}, status=status.HTTP_200_OK)
+        except jwt.ExpiredSignatureError:
+            return Response({'success': False, 'detail': 'El token ha expirado'}, status=status.HTTP_401_UNAUTHORIZED)
+        except jwt.DecodeError:
+            return Response({'success': False, 'detail': 'El token no es válido'}, status=status.HTTP_401_UNAUTHORIZED)

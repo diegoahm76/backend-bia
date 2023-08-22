@@ -160,7 +160,7 @@ class GetNivelesByOrganigrama(generics.ListAPIView):
 class UpdateUnidades(generics.UpdateAPIView):
     serializer_class=UnidadesPutSerializer
     queryset=UnidadesOrganizacionales.objects.all()
-    permission_classes = [IsAuthenticated]#, PermisoActualizarOrganigramas]
+    permission_classes = [IsAuthenticated, PermisoActualizarOrganigramas]
 
     def put(self, request, pk):
         data = request.data
@@ -313,6 +313,7 @@ class UpdateUnidades(generics.UpdateAPIView):
                                     cod_tipo_unidad=unidad['cod_tipo_unidad'],
                                     cod_agrupacion_documental=unidad['cod_agrupacion_documental'],
                                     unidad_raiz=unidad['unidad_raiz'],
+                                    activo=unidad['activo'],
                                     id_organigrama=organigrama,
                                     id_unidad_org_padre=unidad_org
                                 )

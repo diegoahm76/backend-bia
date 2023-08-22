@@ -272,6 +272,16 @@ class HistoricoCambiosEtapaGetSerializer(serializers.ModelSerializer):
     nombre_vivero = serializers.ReadOnlyField(source='id_vivero.nombre', default=None)
     nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
     etapa_origen = serializers.CharField(source='get_cod_etapa_lote_origen_display', default=None)
+    etapa_destino = serializers.SerializerMethodField()
+    
+    def get_etapa_destino(self, obj):
+        etapa_destino = None
+        if obj.cod_etapa_lote_origen == 'G':
+            etapa_destino = 'Producción'
+        elif obj.cod_etapa_lote_origen == 'P':
+            etapa_destino = 'Distribución'
+            
+        return etapa_destino
     
     class Meta:
         model = CambiosDeEtapa
@@ -283,6 +293,7 @@ class HistoricoCambiosEtapaGetSerializer(serializers.ModelSerializer):
             'id_bien',
             'nombre_bien',
             'etapa_origen',
+            'etapa_destino',
             'agno_lote',
             'nro_lote',
             'fecha_registro'
