@@ -11,6 +11,8 @@ urlpatterns = [
      path('deposito/listar/',views.DepositoGet.as_view(),name='listar-deposito'),
      path('deposito/listar-por-id/<str:pk>/',views.DepositoGetById.as_view(),name='listar-por-id-deposito'),
      path('deposito/siguiente-orden/',views.DepositoGetOrden.as_view(),name='listar-orden-siguiente'),
+     path('deposito/buscar-deposito/',views.DepositoSearch.as_view(), name='buscar-deposito'),
+
 
      #Estante
      path('estanteDeposito/crear/',views.EstanteDepositoCreate.as_view(), name='crear-estanteDeposito'),
@@ -31,7 +33,6 @@ urlpatterns = [
      path('bandejaEstante/listar-bandejas-por-estante/<str:pk>/',views.BandejasByEstanteList.as_view(),name='listar-bandeja-por-estante'),
 
 
-
      #Caja
      path('cajaBandeja/crear/',views.CajaBandejaCreate.as_view(), name='crear-caja'),
      path('cajaBandeja/siguiente-orden/',views.CajaBandejaGetOrden.as_view(), name='listar-orden-siguiente'),
@@ -41,6 +42,8 @@ urlpatterns = [
      path('cajaBandeja/mover-caja/<int:id_caja_estante>/',views.CajaEstanteBandejaMove.as_view(), name='mover-caja'),
      path('cajaBandeja/busqueda-avanzada-caja/',views.CajaEstanteSearchAdvanced.as_view(), name='buscar-avanzada'),
      path('cajaBandeja/eliminar/<str:pk>/',views.CajaEstanteDelete.as_view(),name='eliminar-caja'),
+     path('cajaBandeja/listar-info-caja/<str:pk>/',views.CajaBandejaInfo.as_view(),name='listar-info-por-caja'),
+
 
 
      #Carpetas
