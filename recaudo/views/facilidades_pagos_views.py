@@ -44,6 +44,7 @@ from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+import datetime
 import random
 import string
 
@@ -468,6 +469,16 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
         numero_radicado = self.generar_numero_radicacion()
         facilidad_pago = None
 
+        fecha_abono_a = data_in['fecha_abono']
+
+        try:
+            fecha_abono = datetime.strptime(fecha_abono_a, '%Y-%m-%d').date()
+        except ValueError:
+            raise ValidationError('Formato de fecha de abono inválido')
+        
+        if fecha_abono >= datetime.now().date():
+            raise ValidationError('La fecha de abono es incorrecta')
+
         facilidad_data = {
             'id_deudor': data_in['id_deudor'],
             'id_tipo_actuacion':data_in['id_tipo_actuacion'],
@@ -523,6 +534,8 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
 
 #         # else:
 #         #     raise ValidationError('Falta agregar bienes')
+        
+
         instancia_bien = BienCreateView()
         instancia_avaluo = AvaluoCreateView()
         instancia_det_bien_facilidad = DetallesBienFacilidadPagoCreateView()
@@ -908,8 +921,6 @@ class FacilidadesPagosSeguimientoListView(generics.ListAPIView):
             ids_cartera = [cartera_id.id_cartera.id for cartera_id in cartera_ids if cartera_id]
             cartera_seleccion = Cartera.objects.filter(id__in=ids_cartera)
             valor_total = self.get_valor_total(cartera_seleccion)
-
-            # Utilizar un diccionario para cada facilidad_pago en lugar de modificar data directamente
             facilidad_data = self.serializer_class(facilidad_pago).data
             facilidad_data['valor_total'] = valor_total
             data.append(facilidad_data)
