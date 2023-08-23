@@ -344,6 +344,16 @@ class  CajaEstanteDeleteSerializer(serializers.ModelSerializer):
         model =  CajaBandeja
         fields = '__all__'
 
+#Listar_por_idcaja_info
+class  CajaBandejaInfoSerializer(serializers.ModelSerializer):
+       
+    identificacion_por_entidad = serializers.CharField(source='id_bandeja_estante.id_estante_deposito.id_deposito.id_sucursal_entidad.identificacion_por_entidad', read_only=True)
+    identificacion_por_deposito = serializers.CharField(source='id_bandeja_estante.id_estante_deposito.id_deposito.identificacion_por_entidad', read_only=True)
+    identificacion_por_estante = serializers.CharField(source='id_bandeja_estante.identificacion_por_deposito', read_only=True)
+
+    class Meta:
+        model = CajaBandeja
+        fields = ['identificacion_por_entidad', 'identificacion_por_deposito', 'identificacion_por_estante']
 
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

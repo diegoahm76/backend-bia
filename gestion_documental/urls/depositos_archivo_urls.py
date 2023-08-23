@@ -42,7 +42,8 @@ urlpatterns = [
      path('cajaBandeja/mover-caja/<int:id_caja_estante>/',views.CajaEstanteBandejaMove.as_view(), name='mover-caja'),
      path('cajaBandeja/busqueda-avanzada-caja/',views.CajaEstanteSearchAdvanced.as_view(), name='buscar-avanzada'),
      path('cajaBandeja/eliminar/<str:pk>/',views.CajaEstanteDelete.as_view(),name='eliminar-caja'),
-     path('cajaBandeja/listar-cajas-por-depostio-activo/<str:pk>/',views.BandejasByEstanteList.as_view(),name='listar-bandeja-por-estante'),
+     path('cajaBandeja/listar-info-caja/<str:pk>/',views.CajaBandejaInfo.as_view(),name='listar-info-por-caja'),
+
 
 
      #Carpetas
