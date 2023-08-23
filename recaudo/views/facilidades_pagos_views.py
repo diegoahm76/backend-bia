@@ -877,30 +877,44 @@ class RespuestaSolicitudFacilidadGetView(generics.ListAPIView):
     def get(self, request, id_facilidad_pago):
         respuesta_solicitud = self.get_respuesta_solicitud(id_facilidad_pago)
         return Response({'success': True, 'detail': 'Se muestra todos los bienes del deudor', 'data': respuesta_solicitud}, status=status.HTTP_200_OK) 
-    
+
 
 class FacilidadesPagosSeguimientoListView(generics.ListAPIView):
     serializer_class = ListadoFacilidadesSeguimientoSerializer
 
+    def get_valor_total(self, carteras):
+        monto_total = sum(cartera.monto_inicial for cartera in carteras)
+        intereses_total = sum(cartera.valor_intereses for cartera in carteras)
+        valor_total = monto_total + intereses_total
+        return valor_total
+
     def get(self, request):
         user = request.user
         numero_identificacion = user.persona.numero_documento
-        try:
-            deudor = Deudores.objects.get(identificacion=numero_identificacion)
-        except Deudores.DoesNotExist:
-            raise NotFound('No se encontró un objeto deudor para este usuario.')
+        deudor =  Deudores.objects.get(identificacion=numero_identificacion)
 
-        facilidad_pago = FacilidadesPago.objects.filter(id_deudor=deudor.id)
-        if not facilidad_pago:
+        if not deudor:
+            raise NotFound('No se encontró ningún registro en deudores con el parámetro ingresado')
+
+        facilidades_pago = FacilidadesPago.objects.filter(id_deudor=deudor.id)
+
+        if not facilidades_pago.exists():
             raise NotFound('No se encontró ningún registro en facilidades de pago con el parámetro ingresado')
         
-        serializer = self.serializer_class(facilidad_pago, many=True)
+        data = []
+
+        for facilidad_pago in facilidades_pago:
+            cartera_ids = DetallesFacilidadPago.objects.filter(id_facilidad_pago=facilidad_pago.id)
+            ids_cartera = [cartera_id.id_cartera.id for cartera_id in cartera_ids if cartera_id]
+            cartera_seleccion = Cartera.objects.filter(id__in=ids_cartera)
+            valor_total = self.get_valor_total(cartera_seleccion)
+
+            # Utilizar un diccionario para cada facilidad_pago en lugar de modificar data directamente
+            facilidad_data = self.serializer_class(facilidad_pago).data
+            facilidad_data['valor_total'] = valor_total
+            data.append(facilidad_data)
         
-        return Response({'success': True, 'detail': 'Se registra la respuesta la respuesta dada por el funcionario', 'data': serializer.data}, status=status.HTTP_201_CREATED)
-
-        
-
-
+        return Response({'success': True, 'detail':'Se registra la respuesta dada por el funcionario', 'data': data}, status=status.HTTP_201_CREATED)
 
 
 
