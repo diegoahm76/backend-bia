@@ -33,7 +33,6 @@ urlpatterns = [
      path('bandejaEstante/listar-bandejas-por-estante/<str:pk>/',views.BandejasByEstanteList.as_view(),name='listar-bandeja-por-estante'),
 
 
-
      #Caja
      path('cajaBandeja/crear/',views.CajaBandejaCreate.as_view(), name='crear-caja'),
      path('cajaBandeja/siguiente-orden/',views.CajaBandejaGetOrden.as_view(), name='listar-orden-siguiente'),
@@ -43,6 +42,7 @@ urlpatterns = [
      path('cajaBandeja/mover-caja/<int:id_caja_estante>/',views.CajaEstanteBandejaMove.as_view(), name='mover-caja'),
      path('cajaBandeja/busqueda-avanzada-caja/',views.CajaEstanteSearchAdvanced.as_view(), name='buscar-avanzada'),
      path('cajaBandeja/eliminar/<str:pk>/',views.CajaEstanteDelete.as_view(),name='eliminar-caja'),
+     path('cajaBandeja/listar-cajas-por-depostio-activo/<str:pk>/',views.BandejasByEstanteList.as_view(),name='listar-bandeja-por-estante'),
 
 
      #Carpetas
