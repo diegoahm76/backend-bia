@@ -34,7 +34,7 @@ class PlanPagosValidationView(generics.RetrieveAPIView):
 
         if instancia_validacion:
             serializer = self.serializer_class(instancia_validacion, many=False)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response({'success': True, 'detail': 'Plan de plagos relacionado', 'data': serializer.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success': False, 'detail': 'No existe plan de pagos para la facilidad de pago relacionada con la información dada'})
 
@@ -60,7 +60,7 @@ class PlanPagosResolucionValidationView(generics.RetrieveAPIView):
 
         if instancia_validacion.exists():
             serializer = self.serializer_class(instancia_validacion, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response({'success': True, 'detail': 'Resoluciones', 'data': serializer.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success': False, 'detail': 'No existe resolucion para la facilidad de pago relacionada con la información dada'})
 

@@ -205,6 +205,17 @@ class ListadoDeudoresUltSerializer(serializers.ModelSerializer):
         return f"{obj.nombres} {obj.apellidos}"
 
 
-class IdArraySerializer(serializers.Serializer):
-    ids = serializers.ListField(child=serializers.IntegerField())
+class ListadoFacilidadesSeguimientoSerializer(serializers.ModelSerializer):
+    estado = serializers.SerializerMethodField()
 
+    class Meta:
+        model = FacilidadesPago
+        fields = ('id','numero_radicacion','estado')
+
+    def get_estado(self, obj):
+        respuesta_solicitud = RespuestaSolicitud.objects.filter(id_facilidades_pago=obj.id).first()
+        if not respuesta_solicitud:
+            estado = 'Sin revisar'
+        else:
+            estado = respuesta_solicitud.estado
+        return estado

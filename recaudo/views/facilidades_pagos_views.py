@@ -19,14 +19,16 @@ from recaudo.serializers.facilidades_pagos_serializers import (
     FacilidadPagoGetByIdSerializer,
     BienSerializer,
     RespuestaSolicitudSerializer,
-    DetallesFacilidadPagoSerializer
+    DetallesFacilidadPagoSerializer,
+    ListadoFacilidadesSeguimientoSerializer
 )
 from recaudo.models.facilidades_pagos_models import (
     FacilidadesPago,
     RequisitosActuacion,
     CumplimientoRequisitos,
     GarantiasFacilidad,
-    DetallesFacilidadPago
+    DetallesFacilidadPago,
+    RespuestaSolicitud
 )
 from recaudo.models.procesos_models import Bienes
 from recaudo.models.base_models import TiposBien, TipoActuacion
@@ -88,7 +90,7 @@ class ListadoCarteraViews(generics.ListAPIView):
         numero_identificacion = user.persona.numero_documento
         try:
             deudor = Deudores.objects.get(identificacion=numero_identificacion)
-        except ObjectDoesNotExist:
+        except Deudores.DoesNotExist:
             raise NotFound('No se encontró un objeto deudor para este usuario.')
         
         instancia_obligaciones = CarteraDeudorListViews()
@@ -858,3 +860,48 @@ class RespuestaSolicitudFacilidadView(generics.CreateAPIView):
             raise ValidationError('No se pudo crear el bien')
 
         return Response({'success': True, 'detail': 'Se registra la respuesta la respuesta dada por el funcionario', 'data': self.serializer_class(respuesta_solicitud).data}, status=status.HTTP_201_CREATED)
+
+
+class RespuestaSolicitudFacilidadGetView(generics.ListAPIView):
+    serializer_class = RespuestaSolicitudSerializer
+
+    def get_respuesta_solicitud(self, id_facilidad_pago):
+        facilidad_pago = FacilidadesPago.objects.get(id=id_facilidad_pago)
+        if not facilidad_pago:
+            raise NotFound('No se encontró ningún registro en facilidades de pago con el parámetro ingresado')
+        
+        respuesta = RespuestaSolicitud.objects.filter(id_facilidad_pago=facilidad_pago.id)
+        serializer = self.serializer_class(respuesta, many=False)
+        return serializer.data
+    
+    def get(self, request, id_facilidad_pago):
+        respuesta_solicitud = self.get_respuesta_solicitud(id_facilidad_pago)
+        return Response({'success': True, 'detail': 'Se muestra todos los bienes del deudor', 'data': respuesta_solicitud}, status=status.HTTP_200_OK) 
+    
+
+class FacilidadesPagosSeguimientoListView(generics.ListAPIView):
+    serializer_class = ListadoFacilidadesSeguimientoSerializer
+
+    def get(self, request):
+        user = request.user
+        numero_identificacion = user.persona.numero_documento
+        try:
+            deudor = Deudores.objects.get(identificacion=numero_identificacion)
+        except Deudores.DoesNotExist:
+            raise NotFound('No se encontró un objeto deudor para este usuario.')
+
+        facilidad_pago = FacilidadesPago.objects.filter(id_deudor=deudor.id)
+        if not facilidad_pago:
+            raise NotFound('No se encontró ningún registro en facilidades de pago con el parámetro ingresado')
+        
+        serializer = self.serializer_class(facilidad_pago, many=True)
+        
+        return Response({'success': True, 'detail': 'Se registra la respuesta la respuesta dada por el funcionario', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+
+        
+
+
+
+
+
+
