@@ -39,6 +39,7 @@ urlpatterns = [
 
     # RESPUESTA FACILIDAD DE PAGO
     path('respuesta-solicitud-funcionario/create/', views.RespuestaSolicitudFacilidadView.as_view(), name='respuesta-solicitud-funcionario'),
+    path('seguimiento/', views.FacilidadesPagosSeguimientoListView.as_view(), name='seguimiento'),
 
 
 
