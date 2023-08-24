@@ -119,7 +119,7 @@ class AlertasBandejaAlertaPersonaUpdate(generics.UpdateAPIView):
                         
             if 'repeticiones_suspendidas' in data_in:
                 if previus.repeticiones_suspendidas != data_in['repeticiones_suspendidas']  and data_in['repeticiones_suspendidas']==True:
-                    
+                    print('SUSPENDIDA DE FALSO A VERDADERO')
                     alerta_programada=AlertasProgramadas.objects.filter(id_alerta_programada=instance.id_alerta_generada.id_alerta_programada_origen).first()
                     if not alerta_programada:
                         raise NotFound('No existe alerta programada')
