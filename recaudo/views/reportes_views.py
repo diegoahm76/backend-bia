@@ -45,12 +45,16 @@ class ReporteCarteraGeneralDetalleView(generics.ListAPIView):
         queryset = Cartera.objects.all()
         codigo_contable = request.GET.get('codigo_contable')
         nombre_deudor = request.GET.get('nombre_deudor')
+        nombres_apellidos = nombre_deudor.split()
 
         if codigo_contable:
             queryset = queryset.filter(codigo_contable=codigo_contable)
 
         if nombre_deudor: 
-            queryset = queryset.annotate(nombre_deudor=Concat('id_obligacion__id_expediente__id_deudor__nombres', V(' '), 'id_obligacion__id_expediente__id_deudor__apellidos')).filter(nombre_deudor__icontains=nombre_deudor)
+            queryset = queryset.annotate(nombre_deudor=Concat('id_deudor__nombres', V(' '), 'id_deudor__apellidos'))
+
+            for nombre_apellido in nombres_apellidos:
+                queryset = queryset.filter(nombre_deudor__icontains=nombre_apellido)
 
         if not queryset.exists():
             raise NotFound("No se encontraron reportes en la búsqueda")
@@ -111,16 +115,97 @@ class ReporteFacilidadesPagoView(generics.ListAPIView):
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': resultados}, status=status.HTTP_200_OK)
 
+# class ReporteFacilidadesPagosDetalleView(generics.ListAPIView):
+#     serializer_class = ReporteFacilidadesPagosDetalleSerializer
+
+#     def get(self, request, *args, **kwargs):
+#         tipo_cobro = request.GET.get('tipo_cobro')
+#         identificacion = request.GET.get('identificacion')
+#         nombre_deudor = request.GET.get('nombre_deudor')
+#         cod_expediente = request.GET.get('cod_expediente')
+#         numero_resolucion = request.GET.get('numero_resolucion')
+#         numero_factura = request.GET.get('numero_factura')
+
+#         detalles_facilidad_pago = DetallesFacilidadPago.objects.all()
+
+#         if tipo_cobro:
+#             detalles_facilidad_pago = detalles_facilidad_pago.filter(id_cartera__tipo_cobro=tipo_cobro)
+
+#         if identificacion:
+#             detalles_facilidad_pago = detalles_facilidad_pago.filter(
+#                 id_facilidad_pago__id_deudor__identificacion=identificacion
+#             )
+
+#         if nombre_deudor:
+#             nombres_apellidos = nombre_deudor.split()
+#             detalles_facilidad_pago = detalles_facilidad_pago.annotate(
+#                 nombre_deudor=Concat('id_facilidad_pago__id_deudor__nombres', V(' '),
+#                                      'id_facilidad_pago__id_deudor__apellidos')
+#             )
+#             for nombre_apellido in nombres_apellidos:
+#                 detalles_facilidad_pago = detalles_facilidad_pago.filter(nombre_deudor__icontains=nombre_apellido)
+
+#         if cod_expediente:
+#             detalles_facilidad_pago = detalles_facilidad_pago.filter(
+#                 id_cartera__id_expediente__cod_expediente=cod_expediente
+#             )
+
+#         if numero_resolucion:
+#             detalles_facilidad_pago = detalles_facilidad_pago.filter(
+#                 id_cartera__id_expediente__numero_resolucion=numero_resolucion
+#             )
+
+#         if numero_factura:
+#             detalles_facilidad_pago = detalles_facilidad_pago.filter(id_cartera__numero_factura=numero_factura)
+
+#         resultados = []
+#         total_cobro_coactivo = 0
+#         total_cobro_persuasivo = 0
+
+#         for detalle in detalles_facilidad_pago:
+#             facilidad_pago = detalle.id_facilidad_pago
+#             deudor = facilidad_pago.id_deudor
+#             cartera = detalle.id_cartera
+#             expediente = cartera.id_expediente
+
+#             valor_sancion = cartera.valor_sancion
+#             valor_intereses = cartera.valor_intereses
+
+#             valor_total = valor_sancion + valor_intereses
+
+#             resultado = {
+#                 'tipo_cobro': detalle.id_cartera.tipo_cobro,
+#                 'identificacion': deudor.identificacion,
+#                 'nombre_deudor': f'{deudor.nombres} {deudor.apellidos}',
+#                 'concepto_deuda': cartera.codigo_contable.descripcion,
+#                 'cod_expediente': expediente.cod_expediente,
+#                 'numero_resolucion': expediente.numero_resolucion,
+#                 'numero_factura': cartera.numero_factura,
+#                 'valor_sancion': valor_total
+#             }
+
+#             resultados.append(resultado)
+
+#             if detalle.id_cartera__tipo_cobro == 'coactivo':
+#                 total_cobro_coactivo += valor_total
+#             elif detalle.id_cartera__tipo_cobro == 'persuasivo':
+#                 total_cobro_persuasivo += valor_total
+
+#         serializer = self.get_serializer(resultados, many=True)
+
+#         return Response({'success': True,'detail': 'Resultados de la búsqueda','data': serializer.data,'total_cobro_coactivo': total_cobro_coactivo,'total_cobro_persuasivo': total_cobro_persuasivo,'total_general': total_cobro_coactivo + total_cobro_persuasivo}, status=status.HTTP_200_OK)
+
+
 class ReporteFacilidadesPagosDetalleView(generics.ListAPIView):
     serializer_class = ReporteFacilidadesPagosDetalleSerializer
 
-    def get(self, request, *args, **kwargs):
-        tipo_cobro = request.GET.get('tipo_cobro')
-        identificacion = request.GET.get('identificacion')
-        nombre_deudor = request.GET.get('nombre_deudor')
-        cod_expediente = request.GET.get('cod_expediente')
-        numero_resolucion = request.GET.get('numero_resolucion')
-        numero_factura = request.GET.get('numero_factura')
+    def get_queryset(self):
+        tipo_cobro = self.request.GET.get('tipo_cobro')
+        identificacion = self.request.GET.get('identificacion')
+        nombre_deudor = self.request.GET.get('nombre_deudor')
+        cod_expediente = self.request.GET.get('cod_expediente')
+        numero_resolucion = self.request.GET.get('numero_resolucion')
+        numero_factura = self.request.GET.get('numero_factura')
 
         detalles_facilidad_pago = DetallesFacilidadPago.objects.all()
 
@@ -133,23 +218,31 @@ class ReporteFacilidadesPagosDetalleView(generics.ListAPIView):
             )
 
         if nombre_deudor:
+            nombres_apellidos = nombre_deudor.split()
             detalles_facilidad_pago = detalles_facilidad_pago.annotate(
                 nombre_deudor=Concat('id_facilidad_pago__id_deudor__nombres', V(' '),
                                      'id_facilidad_pago__id_deudor__apellidos')
-            ).filter(nombre_deudor__icontains=nombre_deudor)
+            )
+            for nombre_apellido in nombres_apellidos:
+                detalles_facilidad_pago = detalles_facilidad_pago.filter(nombre_deudor__icontains=nombre_apellido)
 
         if cod_expediente:
             detalles_facilidad_pago = detalles_facilidad_pago.filter(
-                id_cartera__id_obligacion__id_expediente__cod_expediente=cod_expediente
+                id_cartera__id_expediente__cod_expediente=cod_expediente
             )
 
         if numero_resolucion:
             detalles_facilidad_pago = detalles_facilidad_pago.filter(
-                id_cartera__id_obligacion__id_expediente__numero_resolucion=numero_resolucion
+                id_cartera__id_expediente__numero_resolucion=numero_resolucion
             )
 
         if numero_factura:
             detalles_facilidad_pago = detalles_facilidad_pago.filter(id_cartera__numero_factura=numero_factura)
+
+        return detalles_facilidad_pago
+
+    def get(self, request, *args, **kwargs):
+        detalles_facilidad_pago = self.get_queryset()
 
         resultados = []
         total_cobro_coactivo = 0
@@ -159,7 +252,7 @@ class ReporteFacilidadesPagosDetalleView(generics.ListAPIView):
             facilidad_pago = detalle.id_facilidad_pago
             deudor = facilidad_pago.id_deudor
             cartera = detalle.id_cartera
-            expediente = cartera.id_obligacion.id_expediente
+            expediente = cartera.id_expediente
 
             valor_sancion = cartera.valor_sancion
             valor_intereses = cartera.valor_intereses
@@ -167,7 +260,7 @@ class ReporteFacilidadesPagosDetalleView(generics.ListAPIView):
             valor_total = valor_sancion + valor_intereses
 
             resultado = {
-                'tipo_cobro': detalle.id_cartera__tipo_cobro,
+                'tipo_cobro': detalle.id_cartera.tipo_cobro,
                 'identificacion': deudor.identificacion,
                 'nombre_deudor': f'{deudor.nombres} {deudor.apellidos}',
                 'concepto_deuda': cartera.codigo_contable.descripcion,
@@ -186,5 +279,13 @@ class ReporteFacilidadesPagosDetalleView(generics.ListAPIView):
 
         serializer = self.get_serializer(resultados, many=True)
 
-        return Response({'success': True,'detail': 'Resultados de la búsqueda','data': serializer.data,'total_cobro_coactivo': total_cobro_coactivo,'total_cobro_persuasivo': total_cobro_persuasivo,'total_general': total_cobro_coactivo + total_cobro_persuasivo}, status=status.HTTP_200_OK)
-    
+        response_data = {
+            'success': True,
+            'detail': 'Resultados de la búsqueda',
+            'data': serializer.data,
+            'total_cobro_coactivo': total_cobro_coactivo,
+            'total_cobro_persuasivo': total_cobro_persuasivo,
+            'total_general': total_cobro_coactivo + total_cobro_persuasivo
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)

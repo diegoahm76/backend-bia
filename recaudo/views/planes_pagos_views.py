@@ -3,7 +3,8 @@ from recaudo.serializers.planes_pagos_serializers import (
     TipoPagoSerializer, 
     PlanPagosSerializer, 
     ResolucionesPlanPagoSerializer,
-    VisualizacionCarteraSelecionadaSerializer
+    VisualizacionCarteraSelecionadaSerializer,
+    FacilidadPagoDatosPlanSerializer
     )
 from recaudo.models.base_models import TipoActuacion, TiposPago
 from recaudo.models.planes_pagos_models import (
@@ -63,6 +64,29 @@ class PlanPagosResolucionValidationView(generics.RetrieveAPIView):
             return Response({'success': True, 'detail': 'Resoluciones', 'data': serializer.data}, status=status.HTTP_200_OK)
         else:
             return Response({'success': False, 'detail': 'No existe resolucion para la facilidad de pago relacionada con la información dada'})
+
+
+class FacilidadPagoDatosPlanView(generics.ListAPIView):
+    serializer_class = FacilidadPagoDatosPlanSerializer
+
+    def get_datos_facilidad(self, id_facilidad_pago):
+
+        facilidad_pago = FacilidadesPago.objects.filter(id=id_facilidad_pago).first()
+        if not facilidad_pago:
+            raise NotFound("No existe facilidad de pago relacionada con la información dada")
+        
+        serializer = self.serializer_class(facilidad_pago, many=False)
+        
+        return serializer.data
+        
+    def get(self, request, id_facilidad_pago):
+        
+        instancia_datos_facilidad = self.get_datos_facilidad(id_facilidad_pago)
+
+        if instancia_datos_facilidad:
+            return Response({'success': True, 'detail': 'Datos de la facilidad de pago relacionado', 'data': instancia_datos_facilidad}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success': False, 'detail': 'No existe facilidad de pago relacionada con la información dada'})
 
 
 class CarteraSeleccionadaListViews(generics.ListAPIView):
