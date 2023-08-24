@@ -7,6 +7,8 @@ from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 
 class ConfiguracionClaseAlertaGetSerializer(serializers.ModelSerializer):
         nombre_subsistema=serializers.ReadOnlyField(source='id_modulo_generador.subsistema', default=None)
+        cod_categoria_clase_alerta_display = serializers.CharField(source='get_cod_categoria_clase_alerta_display', read_only=True)
+        nivel_prioridad_display = serializers.CharField(source='get_nivel_prioridad_display', read_only=True)
         class Meta:
             model=ConfiguracionClaseAlerta
             fields='__all__'

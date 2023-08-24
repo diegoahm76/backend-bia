@@ -45,6 +45,7 @@ from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from datetime import datetime, date, timedelta
 import random
 import string
 
@@ -62,25 +63,41 @@ class CarteraDeudorListViews(generics.ListAPIView):
         monto_total_con_intereses = monto_total + intereses_total
         return monto_total, intereses_total, monto_total_con_intereses
     
-    def obligaciones_deudor(self, id):
-        deudor = Deudores.objects.get(id=id)
-        facilidad = FacilidadesPago.objects.filter(id_deudor=deudor.id).exists()
-        nombre_completo = deudor.nombres + ' ' + deudor.apellidos if deudor.nombres and deudor.apellidos else deudor.nombres 
-        cartera = Cartera.objects.filter(id_deudor=deudor)
-        serializer = self.serializer_class(cartera, many=True)
-        monto_total, intereses_total, monto_total_con_intereses = self.get_monto_total(cartera)
-        data = {
-            'id_deudor': deudor.id,
-            'nombre_completo': nombre_completo,
-            'numero_identificacion': deudor.identificacion,
-            'email': deudor.email,
-            'obligaciones': serializer.data,
-            'monto_total': monto_total,
-            'intereses_total': intereses_total,
-            'monto_total_con_intereses': monto_total_con_intereses,
-            'tiene_facilidad' : facilidad
-        }
-        return data
+    def obligaciones_deudor(self, numero_identificacion):
+        deudor = Deudores.objects.filter(identificacion=numero_identificacion).first()
+        if deudor:
+            facilidad = FacilidadesPago.objects.filter(id_deudor=deudor.id).exists()
+            nombre_completo = deudor.nombres + ' ' + deudor.apellidos if deudor.nombres and deudor.apellidos else deudor.nombres 
+            cartera = Cartera.objects.filter(id_deudor=deudor)
+            serializer = self.serializer_class(cartera, many=True)
+            monto_total, intereses_total, monto_total_con_intereses = self.get_monto_total(cartera)
+
+            data = {
+                'id_deudor': deudor.id,
+                'nombre_completo': nombre_completo,
+                'numero_identificacion': deudor.identificacion,
+                'email': deudor.email,
+                'obligaciones': serializer.data,
+                'monto_total': monto_total,
+                'intereses_total': intereses_total,
+                'monto_total_con_intereses': monto_total_con_intereses,
+                'tiene_facilidad' : facilidad
+            }
+            return data
+        else:
+            persona = Personas.objects.filter(numero_documento=numero_identificacion).first()
+            data = {
+                'id_deudor': persona.id_persona,
+                'nombre_completo': persona.primer_nombre + " " + persona.primer_apellido,
+                'numero_identificacion': persona.numero_documento,
+                'email': persona.email,
+                'obligaciones': None,
+                'monto_total': None,
+                'intereses_total': None,
+                'monto_total_con_intereses': None,
+                'tiene_facilidad' : None
+            }
+            return data
 
 
 class ListadoCarteraViews(generics.ListAPIView):
@@ -89,13 +106,14 @@ class ListadoCarteraViews(generics.ListAPIView):
     def get(self, request):
         user = request.user
         numero_identificacion = user.persona.numero_documento
-        try:
-            deudor = Deudores.objects.get(identificacion=numero_identificacion)
-        except Deudores.DoesNotExist:
-            raise NotFound('No se encontró un objeto deudor para este usuario.')
+        
+        # try:
+        #     deudor = Deudores.objects.get(identificacion=numero_identificacion)
+        # except Deudores.DoesNotExist:
+        #     raise NotFound('No se encontró un objeto deudor para este usuario.')
         
         instancia_obligaciones = CarteraDeudorListViews()
-        response_data = instancia_obligaciones.obligaciones_deudor(deudor.id)
+        response_data = instancia_obligaciones.obligaciones_deudor(numero_identificacion)
 
         if response_data:
             return Response({'success': True, 'data': response_data}, status=status.HTTP_200_OK)
@@ -469,6 +487,17 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
         numero_radicado = self.generar_numero_radicacion()
         facilidad_pago = None
 
+        fecha_abono_a = data_in['fecha_abono']
+
+        try:
+            fecha_abono = datetime.strptime(fecha_abono_a, '%Y-%m-%d').date()
+        except ValueError:
+            raise ValidationError('Formato de fecha de abono inválido')
+        
+        if fecha_abono >= datetime.now().date():
+            raise ValidationError('La fecha de abono es incorrecta')
+        
+
         facilidad_data = {
             'id_deudor': data_in['id_deudor'],
             'id_tipo_actuacion':data_in['id_tipo_actuacion'],
@@ -524,6 +553,8 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
 
 #         # else:
 #         #     raise ValidationError('Falta agregar bienes')
+        
+
         instancia_bien = BienCreateView()
         instancia_avaluo = AvaluoCreateView()
         instancia_det_bien_facilidad = DetallesBienFacilidadPagoCreateView()
@@ -868,10 +899,11 @@ class RespuestaSolicitudFacilidadGetView(generics.ListAPIView):
 
     def get_respuesta_solicitud(self, id_facilidad_pago):
         facilidad_pago = FacilidadesPago.objects.get(id=id_facilidad_pago)
+
         if not facilidad_pago:
             raise NotFound('No se encontró ningún registro en facilidades de pago con el parámetro ingresado')
         
-        respuesta = RespuestaSolicitud.objects.filter(id_facilidad_pago=facilidad_pago.id)
+        respuesta = RespuestaSolicitud.objects.filter(id_facilidad_pago=facilidad_pago.id).first()
         serializer = self.serializer_class(respuesta, many=False)
         return serializer.data
     
@@ -893,6 +925,7 @@ class FacilidadesPagosSeguimientoListView(generics.ListAPIView):
         user = request.user
         numero_identificacion = user.persona.numero_documento
         deudor =  Deudores.objects.get(identificacion=numero_identificacion)
+        data = []
 
         if not deudor:
             raise NotFound('No se encontró ningún registro en deudores con el parámetro ingresado')
@@ -902,15 +935,11 @@ class FacilidadesPagosSeguimientoListView(generics.ListAPIView):
         if not facilidades_pago.exists():
             raise NotFound('No se encontró ningún registro en facilidades de pago con el parámetro ingresado')
         
-        data = []
-
         for facilidad_pago in facilidades_pago:
             cartera_ids = DetallesFacilidadPago.objects.filter(id_facilidad_pago=facilidad_pago.id)
             ids_cartera = [cartera_id.id_cartera.id for cartera_id in cartera_ids if cartera_id]
             cartera_seleccion = Cartera.objects.filter(id__in=ids_cartera)
             valor_total = self.get_valor_total(cartera_seleccion)
-
-            # Utilizar un diccionario para cada facilidad_pago en lugar de modificar data directamente
             facilidad_data = self.serializer_class(facilidad_pago).data
             facilidad_data['valor_total'] = valor_total
             data.append(facilidad_data)
