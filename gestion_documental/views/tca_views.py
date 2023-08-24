@@ -1,3 +1,4 @@
+import json
 from rest_framework import generics,status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -9,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from transversal.serializers.organigrama_serializers import UnidadesGetSerializer
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
-from gestion_documental.models.trd_models import TablaRetencionDocumental, CatSeriesUnidadOrgCCDTRD
+from gestion_documental.models.trd_models import SeriesSubSUnidadOrgTRDTipologias, TablaRetencionDocumental, CatSeriesUnidadOrgCCDTRD
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from transversal.serializers.personas_serializers import CargosSerializer
 from gestion_documental.serializers.tca_serializers import (
@@ -21,11 +22,11 @@ from gestion_documental.serializers.tca_serializers import (
     ClasifSerieSubserieUnidadTCASerializer,
     ClasifSerieSubserieUnidadTCAPutSerializer,
     ClasifSerieSubseriUnidadTCA_activoSerializer,
-    PermisosCargoUnidadSerieSubserieUnidadTCASerializer,
-    Cargos_Unidad_S_Ss_UndOrg_TCASerializer,
+    # PermisosCargoUnidadSerieSubserieUnidadTCASerializer,
+    # Cargos_Unidad_S_Ss_UndOrg_TCASerializer,
     # CatalogosSeriesUnidadClasifSerializer,
     # CatalogosSeriesUnidadClasifPermisosSerializer,
-    BusquedaTCASerializer,
+    BusquedaTCASerializer
 
 )
 from gestion_documental.models.ccd_models import (
@@ -35,8 +36,12 @@ from gestion_documental.models.ccd_models import (
 from gestion_documental.models.tca_models import (
     TablasControlAcceso,
     CatSeriesUnidadOrgCCD_TRD_TCA,
-    PermisosCatSeriesUnidadOrgTCA,
-    HistoricoCatSeriesUnidadOrgCCD_TRD_TCA
+    ClasificacionExpedientes,
+    # PermisosCatSeriesUnidadOrgTCA,
+    # PermisosDetPermisosCatSerieUndOrgTCA,
+    # PermisosGD,
+    HistoricoCatSeriesUnidadOrgCCD_TRD_TCA, 
+    # HistoricoPermisosCatSeriesUndOrgTCA
 )
 from transversal.models.personas_models import Personas
 from transversal.models.base_models import Cargos
@@ -187,6 +192,25 @@ class ClasifSerieSubserieUnidadTCA(generics.CreateAPIView):
                     serializer = self.serializer_class(data=data)
                     serializer.is_valid(raise_exception=True)
                     serializer.save()
+                    
+                    tipologias_reservadas = data.get('tipologias_reservadas')
+                            
+                    if tipologias_reservadas:
+                        tipologias_doc_list = [tipologia['id_tipologia_documental'] for tipologia in tipologias_reservadas]
+                        
+                        id_catserie_unidadorg = data['id_cat_serie_und_ccd_trd']
+                        
+                        tipologias_doc_instances = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_catserie_unidadorg_ccd_trd=id_catserie_unidadorg, id_tipologia_doc__in=tipologias_doc_list)
+                        tipologias_doc_instances_list = tipologias_doc_instances.values_list('id_tipologia_doc', flat=True)
+                        
+                        if not set(tipologias_doc_list).issubset(set(list(tipologias_doc_instances_list))):
+                            raise ValidationError('Solo puede reservar tipologias asociadas al registro del catalogo de TRD elegido')
+                        
+                        for tipologia_reservada in tipologias_reservadas:
+                            tipologia_reservada_instance = tipologias_doc_instances.filter(id_tipologia_doc=tipologia_reservada['id_tipologia_documental']).first()
+                            if tipologia_reservada_instance.reservada != tipologia_reservada['reservada']:
+                                tipologia_reservada_instance.reservada = tipologia_reservada['reservada']
+                                tipologia_reservada_instance.save()
 
                     return Response({'success':True, 'detail':'Se realizó la clasificación del expediente exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
                 else:
@@ -208,6 +232,7 @@ class UpdateClasifSerieSubserieUnidadTCA(generics.UpdateAPIView):
         clasif__previous=copy.copy(clasif_s_ss_unidad_tca)
         if clasif_s_ss_unidad_tca:
             if not clasif_s_ss_unidad_tca.id_tca.fecha_retiro_produccion:
+                serializer = None
                 if not clasif_s_ss_unidad_tca.id_tca.actual:
                     if not clasif_s_ss_unidad_tca.id_tca.fecha_terminado:
                         # Validad existencia del tipo clasificación
@@ -218,42 +243,67 @@ class UpdateClasifSerieSubserieUnidadTCA(generics.UpdateAPIView):
                         serializer = self.serializer_class(clasif_s_ss_unidad_tca, data=data)
                         serializer.is_valid(raise_exception=True)
                         serializer.save()
-
-                        return Response({'success':True, 'detail':'Se actualizó la clasificación del expediente exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
                     else:
                         raise PermissionDenied('No se puede actualizar una TCA terminada, intente reanudar primero')
                 else:
                     dict_tipo_clasificacion = dict(tipo_clasificacion_CHOICES)
                     if data['cod_clas_expediente'] not in dict_tipo_clasificacion:
                         raise ValidationError('Debe ingresar un código de clasificación que exista')
-                    serializer= self.serializer_class_2(clasif_s_ss_unidad_tca, data=data)
-                    serializer.is_valid(raise_exception=True)
-                    serializer.save() 
-                    
-                    persona=request.user.persona.id_persona
-                    persona_intance=Personas.objects.filter(id_persona=persona).first()
-                    datos_actualizados=[]
-                    
-                    del clasif__previous.__dict__["_state"]
-                    del clasif__previous.__dict__["_django_version"]
-                    
-                    for field, value in clasif__previous.__dict__.items():
-                        new_value = getattr(clasif_s_ss_unidad_tca,field)
-                        new_value = new_value if new_value != '' else None
-                        value = value if value != '' else None
-                        if value != new_value:
-                            datos_actualizados.append({field: value})
+                     
+                    if clasif_s_ss_unidad_tca.cod_clas_expediente != data['cod_clas_expediente']:
+                        serializer= self.serializer_class_2(clasif_s_ss_unidad_tca, data=data)
+                        serializer.is_valid(raise_exception=True)
+                        serializer.save() 
+                        
+                        persona=request.user.persona.id_persona
+                        persona_intance=Personas.objects.filter(id_persona=persona).first()
+                        datos_actualizados=[]
+                        
+                        del clasif__previous.__dict__["_state"]
+                        del clasif__previous.__dict__["_django_version"]
+                        
+                        for field, value in clasif__previous.__dict__.items():
+                            new_value = getattr(clasif_s_ss_unidad_tca,field)
+                            new_value = new_value if new_value != '' else None
+                            value = value if value != '' else None
+                            if value != new_value:
+                                datos_actualizados.append({field: value})
+                                
+                        # HISTORICO:
+                        if datos_actualizados:
+                            HistoricoCatSeriesUnidadOrgCCD_TRD_TCA.objects.create(
+                                id_catserie_unidad_org = clasif_s_ss_unidad_tca,
+                                cod_clasificacion_exp = clasif__previous.cod_clas_expediente,
+                                justificacion_del_cambio = clasif__previous.justificacion_cambio,
+                                ruta_archivo_cambio = clasif__previous.ruta_archivo_cambio,
+                                id_persona_cambia = persona_intance
+                            )
+                        
+                tipologias_reservadas = data.get('tipologias_reservadas')
                             
-                    # HISTORICO:
-                    if datos_actualizados:
-                        HistoricoCatSeriesUnidadOrgCCD_TRD_TCA.objects.create(
-                            id_catserie_unidad_org = clasif_s_ss_unidad_tca,
-                            cod_clasificacion_exp = clasif__previous.cod_clas_expediente,
-                            justificacion_del_cambio = clasif__previous.justificacion_cambio,
-                            ruta_archivo_cambio = clasif__previous.ruta_archivo_cambio,
-                            id_persona_cambia = persona_intance
-                        )
-                    return Response({'success':True, 'detail':'Se actualizó la clasificación del expediente exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+                if tipologias_reservadas:
+                    tipologias_reservadas = json.loads(tipologias_reservadas)
+                    tipologias_doc_list = [tipologia['id_tipologia_documental'] for tipologia in tipologias_reservadas]
+                    
+                    id_catserie_unidadorg = clasif_s_ss_unidad_tca.id_cat_serie_und_ccd_trd.id_catserie_unidadorg
+                    
+                    tipologias_doc_instances = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_catserie_unidadorg_ccd_trd=id_catserie_unidadorg, id_tipologia_doc__in=tipologias_doc_list)
+                    tipologias_doc_instances_list = tipologias_doc_instances.values_list('id_tipologia_doc', flat=True)
+                    
+                    if not set(tipologias_doc_list).issubset(set(list(tipologias_doc_instances_list))):
+                        raise ValidationError('Solo puede reservar tipologias asociadas al registro del catalogo de TRD elegido')
+                    
+                    for tipologia_reservada in tipologias_reservadas:
+                        tipologia_reservada_instance = tipologias_doc_instances.filter(id_tipologia_doc=tipologia_reservada['id_tipologia_documental']).first()
+                        if tipologia_reservada_instance.reservada != tipologia_reservada['reservada']:
+                            tipologia_reservada_instance.reservada = tipologia_reservada['reservada']
+                            tipologia_reservada_instance.save()
+                            
+                if not serializer:
+                    serializer = self.serializer_class(clasif_s_ss_unidad_tca)
+                            
+                return Response({'success':True, 'detail':'Se actualizó la clasificación del expediente exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+            
             else:
                 raise PermissionDenied('No puede realizar cambios a una TCA que ya fue retirada de producción')
         else:
@@ -271,8 +321,8 @@ class ReanudarTablaControlAcceso(generics.UpdateAPIView):
                 raise PermissionDenied('No puede reanudar un TCA no terminado')
             if tca.fecha_puesta_produccion:
                 raise PermissionDenied('No se puede reanudar una TCA que ya fue puesta en producción')
-            if PermisosCatSeriesUnidadOrgTCA.objects.filter(id_tca=tca.id_tca).exists():
-                raise PermissionDenied('No se puede reanudar una TCA que está siendo usada en una configuración de permisos')
+            # if PermisosCatSeriesUnidadOrgTCA.objects.filter(id_tca=tca.id_tca).exists():
+            #     raise PermissionDenied('No se puede reanudar una TCA que está siendo usada en una configuración de permisos')
             tca.fecha_terminado = None
             tca.save()
             return Response({'success':True, 'detail':'Se reanudó el TCA'}, status=status.HTTP_201_CREATED)

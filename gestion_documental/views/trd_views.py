@@ -8,14 +8,12 @@ from rest_framework.response import Response
 from gestion_documental.models.tca_models import TablasControlAcceso
 from seguridad.utils import Util
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from gestion_documental.serializers.trd_serializers import (
     BuscarTipologiaSerializer,
     BusquedaTRDNombreVersionSerializer,
     CrearTipologiaDocumentalSerializer,
-    EliminarCatSerieUndOrgCCDTRD218Serializer,
     GetHistoricoTRDSerializer,
     ModificarTRDNombreVersionSerializer,
     ModificarTipologiaDocumentalSerializer,
@@ -32,8 +30,7 @@ from gestion_documental.serializers.trd_serializers import (
     SeriesSubSeriesUnidadesOrgTRDPutSerializer,
     TipologiasDocumentalesPutSerializer,
     GetSeriesSubSUnidadOrgTRDSerializer,
-    GetSeriesSubSUnidadOrgTRDTipologiasSerializer,
-    GetTipologiasDocumentalesSerializer
+    TipologiasSeriesSubSUnidadOrgTRDSerializer
 )
 from gestion_documental.serializers.ccd_serializers import (
     CCDSerializer
@@ -1251,14 +1248,13 @@ class GetSeriesSubSUnidadOrgTRD(generics.ListAPIView):
         return Response({'success':True, 'detail':'Se encontraron los siguientes resultados', 'data':serializer.data}, status=status.HTTP_200_OK)
     
 class GetTipologiasSeriesSubSUnidadOrgTRD(generics.ListAPIView):
-    serializer_class = TipologiasDocumentalesSerializer
+    serializer_class = TipologiasSeriesSubSUnidadOrgTRDSerializer
     queryset = SeriesSubSUnidadOrgTRDTipologias.objects.all()
     permission_classes = [IsAuthenticated]
 
     def get(self, request, id_catserie_unidadorg):
         tipologias_catalogo_trd = self.queryset.filter(id_catserie_unidadorg_ccd_trd=id_catserie_unidadorg)
-        tipologias_catalogo = [tipologia_catalogo_trd.id_tipologia_doc for tipologia_catalogo_trd in tipologias_catalogo_trd]
-        tipologias_catalogo_serializer = self.serializer_class(tipologias_catalogo, many=True)
+        tipologias_catalogo_serializer = self.serializer_class(tipologias_catalogo_trd, many=True)
             
         return Response({'success':True, 'detail':'Se encontraron las siguientes tipologias para el registro del catalogo TRD elegido', 'data':tipologias_catalogo_serializer.data}, status=status.HTTP_200_OK)
   

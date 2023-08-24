@@ -9,8 +9,14 @@ class BusquedaAvanzadaOrganigramasSerializer(serializers.ModelSerializer):
         fields = '__all__'
         
 class GetListLideresAsignadosSerializer(serializers.ModelSerializer):
+    id_organigrama = serializers.ReadOnlyField(source='id_unidad_organizacional.id_organigrama.id_organigrama', default=None)
     nombre_organigrama = serializers.ReadOnlyField(source='id_unidad_organizacional.id_organigrama.nombre', default=None)
     version_organigra = serializers.ReadOnlyField(source='id_unidad_organizacional.id_organigrama.version', default=None)
+    descripcion_organigrama = serializers.ReadOnlyField(source='id_unidad_organizacional.id_organigrama.descripcion', default=None)
+    fecha_terminado_organigrama = serializers.ReadOnlyField(source='id_unidad_organizacional.id_organigrama.fecha_terminado', default=None)
+    fecha_puesta_produccion_organigrama = serializers.ReadOnlyField(source='id_unidad_organizacional.id_organigrama.fecha_puesta_produccion', default=None)
+    fecha_retiro_produccion_organigrama = serializers.ReadOnlyField(source='id_unidad_organizacional.id_organigrama.fecha_retiro_produccion', default=None)
+    actual_organigrama = serializers.ReadOnlyField(source='id_unidad_organizacional.id_organigrama.actual', default=None)
     codigo_unidad_org = serializers.ReadOnlyField(source='id_unidad_organizacional.codigo', default=None)
     nombre_unidad_org = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
     tipo_documento = serializers.ReadOnlyField(source='id_persona.tipo_documento.cod_tipo_documento', default=None)
@@ -37,7 +43,7 @@ class CreateAsignacionSerializer(serializers.ModelSerializer):
     def validate_id_persona(self, persona):
         current_date = datetime.now()
         
-        if not persona.es_unidad_organizacional_actual or persona.fecha_a_finalizar_cargo_actual < current_date or not persona.id_cargo or not persona.id_unidad_organizacional_actual:
+        if not persona.es_unidad_organizacional_actual or persona.fecha_a_finalizar_cargo_actual < current_date.date() or not persona.id_cargo or not persona.id_unidad_organizacional_actual:
             raise serializers.ValidationError('La persona elegida no se encuentra actualmente vinculada')
         
         return persona

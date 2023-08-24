@@ -101,6 +101,10 @@ from transversal.serializers.personas_serializers import (
     HistoricoRepresentLegalSerializer
 )
 
+from rest_framework.views import APIView
+from django.conf import settings
+import jwt
+
 # Views for Estado Civil
 
 
@@ -449,7 +453,7 @@ class UpdatePersonaJuridicaAdminPersonas(generics.UpdateAPIView):
                 else:
                     fecha_formateada = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
                     fecha_ahora = date.today()
-                    if fecha_formateada > fecha_ahora or fecha_formateada <= persona.fecha_inicio_cargo_rep_legal.date():
+                    if fecha_formateada > fecha_ahora or fecha_formateada <= persona.fecha_inicio_cargo_rep_legal:
                         raise PermissionDenied('La fecha de inicio del cargo del representante no debe ser superior a la del sistema y tiene que ser mayor a la fecha de inicio del representante legal anterior')
 
             else:
@@ -458,7 +462,7 @@ class UpdatePersonaJuridicaAdminPersonas(generics.UpdateAPIView):
                 
                     fecha_formateada = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
                   
-                    if persona.fecha_inicio_cargo_rep_legal.date() != fecha_formateada:
+                    if persona.fecha_inicio_cargo_rep_legal != fecha_formateada:
                         raise PermissionDenied('No se puede actualizar la fecha de inicio de representante legal sin haber cambiado el representante')
                     
                 data['fecha_cambio_representante_legal'] = None
@@ -653,7 +657,7 @@ class UpdatePersonaJuridicaBySelf(generics.UpdateAPIView):
             else:
                 fecha_formateada = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
                 fecha_ahora = date.today()
-                if fecha_formateada > fecha_ahora or fecha_formateada <= persona.fecha_inicio_cargo_rep_legal.date():
+                if fecha_formateada > fecha_ahora or fecha_formateada <= persona.fecha_inicio_cargo_rep_legal:
                     raise PermissionDenied('La fecha de inicio del cargo del representante no debe ser superior a la del sistema y tiene que ser mayor a la fecha de inicio del representante legal anterior')
 
         else:
@@ -662,7 +666,7 @@ class UpdatePersonaJuridicaBySelf(generics.UpdateAPIView):
             
                 fecha_formateada = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
                 print()
-                if persona.fecha_inicio_cargo_rep_legal.date() != fecha_formateada:
+                if persona.fecha_inicio_cargo_rep_legal != fecha_formateada:
                     raise PermissionDenied('No se puede actualizar la fecha de inicio de representante legal sin haber cambiado el representante')
                 
             data['fecha_cambio_representante_legal'] = None
@@ -1361,3 +1365,47 @@ class HistoricoRepresentLegalView(generics.ListAPIView):
         id_persona_empresa = self.kwargs['id_persona_empresa']
         queryset = HistoricoRepresentLegales.objects.filter(id_persona_empresa=id_persona_empresa)
         return queryset
+    
+
+# class ValidacionTokenView(generics.ListAPIView):
+#     permission_classes = [IsAuthenticated]  
+
+#     def get(self, request, *args, **kwargs):
+#         received_token = request.query_params.get('token', None)
+
+#         if received_token is None:
+#             return Response({'success':False, 'detail':'No se ha ingresado el token.'}, status=status.HTTP_400_BAD_REQUEST)
+
+#         generated_token = request.user
+
+#         try:
+#             decoded_token = jwt.decode(received_token, settings.SECRET_KEY, algorithms=['HS256'])
+#             if decoded_token['user_id'] != generated_token.id_usuario:
+#                 return Response({'success':False, 'detail':'El token no coincide con el usuario autenticado.'}, status=status.HTTP_401_UNAUTHORIZED)
+#             return Response({'success':True, 'detail':'El token es válido y coincide con el usuario autenticado.'}, status=status.HTTP_200_OK)
+#         except jwt.ExpiredSignatureError:
+#             return Response({'success':False, 'detail':'El token ha expirado'}, status=status.HTTP_401_UNAUTHORIZED)
+#         except jwt.DecodeError:
+#             return Response({'success':False, 'detail':'El token no es valido'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class ValidacionTokenView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        received_token = request.query_params.get('token', None)
+
+        if received_token is None:
+            return Response({'success': False, 'detail': 'No se ha ingresado el token.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        generated_token = request.user
+
+        try:
+            decoded_token = jwt.decode(received_token, algorithms=[], options={"verify_signature": False})
+            if decoded_token['user_id'] != generated_token.id_usuario:
+                return Response({'success': False, 'detail': 'El token no coincide con el usuario autenticado.'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'success': True, 'detail': 'El token es válido y coincide con el usuario autenticado.'}, status=status.HTTP_200_OK)
+        except jwt.ExpiredSignatureError:
+            return Response({'success': False, 'detail': 'El token ha expirado'}, status=status.HTTP_401_UNAUTHORIZED)
+        except jwt.DecodeError:
+            return Response({'success': False, 'detail': 'El token no es válido'}, status=status.HTTP_401_UNAUTHORIZED)

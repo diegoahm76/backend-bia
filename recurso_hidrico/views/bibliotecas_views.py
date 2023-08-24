@@ -12,7 +12,7 @@ from django.db.models import Max
 from django.db import transaction
 from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, DatosCarteraAforos, DatosRegistroLaboratorio, DatosSesionPruebaBombeo, Instrumentos, ParametrosLaboratorio, Pozos, PruebasBombeo, ResultadosLaboratorio, Secciones, SesionesPruebaBombeo,Subsecciones
 from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentoUpdateSerializer, ArchivosInstrumentosGetSerializer, CarteraAforosDeleteSerializer, CarteraAforosGetSerializer, CarteraAforosPostSerializer, CarteraAforosUpdateSerializer, CuencasGetByInstrumentoSerializer, CuencasGetSerializer, CuencasInstrumentoDeleteSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, DatosCarteraAforosDeleteSerializer, DatosCarteraAforosGetSerializer, DatosCarteraAforosPostSerializer, DatosCarteraAforosUpdateSerializer, DatosRegistroLaboratorioDeleteSerializer, DatosRegistroLaboratorioGetSerializer, DatosRegistroLaboratorioPostSerializer, DatosRegistroLaboratorioUpdateSerializer, DatosSesionPruebaBombeoDeleteSerializer, DatosSesionPruebaBombeoGetSerializer, DatosSesionPruebaBombeoPostSerializer, DatosSesionPruebaBombeoPutSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoBusquedaAvanzadaSerializer, InstrumentoCuencasGetSerializer, InstrumentosDeleteSerializer, InstrumentosPostSerializer, InstrumentosSerializer, InstrumentosUpdateSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer, PruebasBombeoDeleteSerializer, PruebasBombeoGetSerializer, PruebasBombeoPostSerializer, PruebasBombeoUpdateSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, ResultadosLaboratorioDeleteSerializer, ResultadosLaboratorioGetSerializer, ResultadosLaboratorioPostSerializer, ResultadosLaboratorioUpdateSerializer, SeccionSerializer, SeccionesSerializer, SesionesPruebaBombeoDeleteSerializer, SesionesPruebaBombeoGetSerializer, SesionesPruebaBombeoPostSerializer, SesionesPruebaBombeoPutSerializer, SubseccionBusquedaAvanzadaSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
-
+from seguridad.utils import Util
 
 
 class GetSecciones(generics.ListAPIView):
@@ -152,10 +152,11 @@ class RegistroSeccionSubseccion(generics.CreateAPIView):
     queryset = Secciones.objects.all()
 
     def post(self, request):
-        try:
+        #try:
             response_data=[]
             data_in = request.data
             id_seccion=''
+            nombre_seccion=''
             # Creación de la sección
             instancia_seccion=''
             seccion = Secciones.objects.filter(id_seccion=data_in['id_seccion']).first()
@@ -171,14 +172,15 @@ class RegistroSeccionSubseccion(generics.CreateAPIView):
 
                 response_data.append(response_seccion.data.get('data', {}))
                 id_seccion = response_seccion.data.get('data', {}).get('id_seccion')
+                nombre_seccion=response_seccion.data.get('data', {}).get('nombre')
             
             else:
                 id_seccion=seccion.id_seccion
-               
+                nombre_seccion=seccion.nombre
             
             # Creación de las subsecciones
             subsecciones = data_in.get('subsecciones', [])
-
+            detalles_audioria=[]
             if subsecciones:
                 for subseccion in subsecciones:
                     subseccion_data = {
@@ -192,13 +194,29 @@ class RegistroSeccionSubseccion(generics.CreateAPIView):
                     if response_subseccion.status_code != status.HTTP_201_CREATED:
                         return response_subseccion
                     response_data.append(response_subseccion.data)
+                    detalles_audioria.append({'IdSeccion':response_subseccion.data.get('data', {}).get('id_seccion'),'Nombre':response_subseccion.data.get('data', {}).get('nombre')})
             serializador=self.get_serializer()
 
+            ##AUDITORIA
+            descripcion = {"Nombre": str(nombre_seccion)}
+            direccion=Util.get_client_ip(request)
+            auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 117,
+            "cod_permiso": "CR",
+            "subsistema": 'RECU',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_creados_detalles": detalles_audioria
+            }
+            print(auditoria_data)
+            Util.save_auditoria_maestro_detalle(auditoria_data)
+            #
             return Response({'success': True, 'detail': 'Se crearon los registros correctamente', 'data':  response_data}, status=status.HTTP_201_CREATED)
-        except ValidationError  as e:
+        # except ValidationError  as e:
             
-            error_message = {'error': e.detail}
-            raise ValidationError  (e.detail)
+        #     error_message = {'error': e.detail}
+        #     raise ValidationError  (e.detail)
 
 
 
@@ -554,9 +572,7 @@ class CuencasInstrumentoGet(generics.ListAPIView):
     def get(self,request,ins):
         id = ins
          
-        #cuencas = Instrumentos.objects.filter(id_seccion=seccion, id_subseccion=idsubseccion).values_list('id_instrumento', flat=True)
         cuencas=CuencasInstrumento.objects.filter(id_instrumento=id)
-
 
         serializer = self.serializer_class(cuencas,many=True)
         
@@ -602,7 +618,6 @@ class ArchivosInstrumentoBusquedaAvanzadaGet(generics.ListAPIView):
 
 
 class ArchivosInstrumentoGet(generics.ListAPIView):
-
 
     queryset = ArchivosInstrumento.objects.all()
     serializer_class = ArchivosInstrumentosGetSerializer
@@ -662,8 +677,6 @@ class CuencaDelete(generics.DestroyAPIView):
         if not cuenca:
             raise NotFound("No existe la cuenca a eliminar.")
         
-
-
         if cuenca.registro_precargado:
             raise ValidationError("No se puede eliminar una cuenca precargada.")
         
@@ -721,7 +734,6 @@ class CuencaGetById(generics.ListAPIView):
 
 class CuencaUpdate(generics.UpdateAPIView):
 
-    
     serializer_class = CuencasUpdateSerializer
     queryset = Cuencas.objects.all()
     permission_classes = [IsAuthenticated]
@@ -785,8 +797,6 @@ class PozoDelete(generics.DestroyAPIView):
         if not pozo:
             raise NotFound("No existe el pozo a eliminar.")
         
-
-
         if pozo.registro_precargado:
             raise ValidationError("No se puede eliminar un pozo precargada.")
         
@@ -800,16 +810,13 @@ class PozoDelete(generics.DestroyAPIView):
 
 class PozoUpdate(generics.UpdateAPIView):
 
-    
     serializer_class = PozosUpdateSerializer
     queryset = Pozos.objects.all()
     permission_classes = [IsAuthenticated]
     
     def put(self,request,pk):
 
-
         try:
-
             
             data = request.data
             pozo = Pozos.objects.filter(id_pozo=pk).first()
@@ -922,7 +929,6 @@ class ParametrosLaboratorioDelete(generics.DestroyAPIView):
         if not parametro:
             raise NotFound("No existe el parametro de laboratorio a eliminar.")
         
-
 
         if parametro.registro_precargado:
             raise ValidationError("No se puede eliminar un parametro de laboratorio precargada.")
@@ -2185,17 +2191,12 @@ class DatosRegistroLaboratorioByResultadosLaboratorioGet(generics.ListAPIView):
     queryset = DatosRegistroLaboratorio.objects.all()
     permission_classes = [IsAuthenticated]
     
-    def get(self,request,lab):
+    def get(self,request,lab,para):
 
-        filter={}
-        for key, value in request.query_params.items():
-            if key == 'tipo':
-                if value != '':
-                    filter['id_parametro__cod_tipo_parametro'] = value
            
         
         
-        datos_laboratorio = self.queryset.all().filter(**filter).order_by('id_dato_registro_laboratorio')
+        datos_laboratorio = DatosRegistroLaboratorio.objects.filter(id_registro_laboratorio=lab,id_parametro__cod_tipo_parametro=para)
 
     
         serializer = self.serializer_class(datos_laboratorio,many=True)

@@ -1,0 +1,23 @@
+from django.db import models
+from seguridad.models import Personas
+
+from gestion_documental.choices.tipo_radicado_choices import TIPOS_RADICADO_CHOICES
+class ConfigTiposRadicadoAgno(models.Model):
+
+    
+    id_config_tipo_radicado_agno = models.SmallAutoField(primary_key=True, db_column='T235IdConfigTipoRadicadoAgno')
+    agno_radicado = models.SmallIntegerField(db_column='T235agnoRadicado')
+    cod_tipo_radicado = models.CharField(max_length=1, choices=TIPOS_RADICADO_CHOICES, db_column='T235codTipoRadicado')
+    prefijo_consecutivo = models.CharField(null=True,max_length=10, db_column='T235prefijoConsecutivo')
+    consecutivo_inicial = models.IntegerField(null=True,db_column='T235consecutivoInicial')
+    cantidad_digitos = models.SmallIntegerField(null=True,db_column='T235cantidadDigitos')
+    implementar = models.BooleanField(db_column='T235implementar')
+    id_persona_config_implementacion = models.ForeignKey('transversal.Personas',null=True, on_delete=models.CASCADE, db_column='T235Id_PersonaConfigImplementacion',related_name='T235Id_PersonaConfigImplementacion')
+    fecha_inicial_config_implementacion = models.DateTimeField(null=True,db_column='T235fechaInicialConfigImplementacion')
+    consecutivo_actual = models.IntegerField(null=True,db_column='T235consecutivoActual')
+    fecha_consecutivo_actual = models.DateTimeField(null=True,db_column='T235fechaConsecutivoActual')
+    id_persona_consecutivo_actual = models.ForeignKey('transversal.Personas',null=True, on_delete=models.CASCADE, db_column='T235Id_PersonaConsecutivoActual',related_name='FK2_T235ConfigTiposRadicadoAgno')
+
+    class Meta:
+        db_table = 'T235ConfigTiposRadicadoAgno'
+        unique_together = ['agno_radicado', 'cod_tipo_radicado']

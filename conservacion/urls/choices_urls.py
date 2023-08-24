@@ -10,4 +10,5 @@ urlpatterns = [
     path('estado-aprobacion/', views.EstadoAprobacion.as_view(), name='estado-aprobacion'),
     path('tipo-baja/', views.TipoBaja.as_view(), name='estado-aprobacion'),
     path('tipo-bien/', views.TipoBien.as_view(), name='tipo-bien'),
+    path('tipo-bien-tablero/', views.TipoBienTablero.as_view(), name='tipo-bien'),
 ]

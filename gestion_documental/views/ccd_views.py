@@ -6,6 +6,8 @@ from django.db.models import Q
 from seguridad.utils import Util
 from datetime import datetime
 from rest_framework.permissions import IsAuthenticated
+from django.db.models.functions import Cast
+from django.db.models import BigIntegerField
 from gestion_documental.serializers.ccd_serializers import (
     CCDPostSerializer,
     CCDPutSerializer,
@@ -276,9 +278,9 @@ class CreateSeriesDoc(generics.CreateAPIView):
         elif ccd.fecha_retiro_produccion:
             raise PermissionDenied('No puede realizar esta acción a un CCD retirado de producción')
         
-        ultima_serie = self.queryset.all().filter(id_ccd=data['id_ccd']).last()
+        ultima_serie = self.queryset.all().annotate(codigo_int=Cast('codigo', output_field=BigIntegerField())).filter(id_ccd=data['id_ccd']).order_by('id_ccd','codigo_int').last()
         
-        codigo_correcto = int(ultima_serie.codigo) + ccd.valor_aumento_serie if ultima_serie else ccd.valor_aumento_serie
+        codigo_correcto = ultima_serie.codigo_int + ccd.valor_aumento_serie if ultima_serie else ccd.valor_aumento_serie
         
         # VALIDAR SI SE VA A CREAR SERIE INTERMEDIA
         serie = self.queryset.all().filter(id_ccd=data['id_ccd'], codigo=int(data['codigo'])).first()
@@ -477,7 +479,7 @@ class GetSeriesByIdCCD(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request, id_ccd):
-        series = self.queryset.all().filter(id_ccd=id_ccd).order_by('codigo')
+        series = self.queryset.all().annotate(codigo_int=Cast('codigo', output_field=BigIntegerField())).filter(id_ccd=id_ccd).order_by('codigo_int')
         serializador = self.serializer_class(series, many=True)
         
         return Response({'success':True, 'detail':'Se encontraron las siguientes series', 'data':serializador.data}, status=status.HTTP_200_OK)
@@ -510,9 +512,9 @@ class CreateSubseriesDoc(generics.CreateAPIView):
         
         serie = SeriesDoc.objects.filter(id_serie_doc = data['id_serie_doc']).first()
         
-        ultima_subserie = self.queryset.all().filter(id_serie_doc=data['id_serie_doc']).order_by('codigo').last()
+        ultima_subserie = self.queryset.all().annotate(codigo_int=Cast('codigo', output_field=BigIntegerField())).filter(id_serie_doc=data['id_serie_doc']).order_by('codigo_int').last()
         
-        codigo_correcto = int(ultima_subserie.codigo) + serie.id_ccd.valor_aumento_subserie if ultima_subserie else serie.id_ccd.valor_aumento_subserie
+        codigo_correcto = ultima_subserie.codigo_int + serie.id_ccd.valor_aumento_subserie if ultima_subserie else serie.id_ccd.valor_aumento_subserie
         
         if int(data['codigo']) != codigo_correcto:
              raise ValidationError('El codigo ingresado no es correcto. Valide que siga el orden definido por el valor de aumento elegido para las subseries')
@@ -671,7 +673,7 @@ class GetSubseriesByIdSerieDoc(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request, id_serie_doc):
-        subseries = self.queryset.all().filter(id_serie_doc=id_serie_doc).order_by('codigo')
+        subseries = self.queryset.all().annotate(codigo_int=Cast('codigo', output_field=BigIntegerField())).filter(id_serie_doc=id_serie_doc).order_by('codigo_int')
         serializador = self.serializer_class(subseries, many=True)
         
         return Response({'success':True, 'detail':'Se encontraron las siguientes subseries', 'data':serializador.data}, status=status.HTTP_200_OK)
@@ -904,3 +906,8 @@ class BusquedaCCD(generics.ListAPIView):
         ccd = self.queryset.filter(**filter)
         serializador = self.serializer_class(ccd, many=True, context = {'request':request})
         return Response({'succes': True, 'detail':'Resultados de la búsqueda', 'data':serializador.data}, status=status.HTTP_200_OK)
+
+
+#Permisos sobre Series de Expedientes de los CCD
+
+

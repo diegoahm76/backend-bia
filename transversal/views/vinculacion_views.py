@@ -113,7 +113,7 @@ class ConsultaVinculacionColaboradorView(generics.ListAPIView):
         data = serializador.data
 
         fecha_a_finalizar_cargo_actual = consulta_personas.fecha_a_finalizar_cargo_actual if consulta_personas.id_cargo else None
-        fecha_vencida = True if fecha_a_finalizar_cargo_actual < datetime.now() else False
+        fecha_vencida = True if fecha_a_finalizar_cargo_actual < datetime.now().date() else False
         data['fecha_vencida'] = fecha_vencida
 
         return Response({'success':True, 'detail': 'La persona existe y está vinculada como colaborador', 'data':data}, status=status.HTTP_200_OK)
@@ -208,7 +208,7 @@ class UpdateVinculacionColaboradorView(generics.RetrieveUpdateDestroyAPIView):
                     )
                 
             else:
-                if fecha_finalizar_cargo != persona.fecha_a_finalizar_cargo_actual.date():
+                if fecha_finalizar_cargo != persona.fecha_a_finalizar_cargo_actual:
                     fecha_minima = (datetime.today() + timedelta(days=1)).date()
                     if fecha_finalizar_cargo < fecha_minima:
                         return Response({'success': False, 'detail':'La fecha de finalización debe ser posterior a la fecha actual, mínimo el día siguiente'}, status=status.HTTP_403_FORBIDDEN)
@@ -265,7 +265,7 @@ class Desvinculacion_persona(generics.UpdateAPIView):
             if not persona.fecha_a_finalizar_cargo_actual or not persona.fecha_inicio_cargo_actual or not persona.fecha_asignacion_unidad:
                 return Response({'succes':False,'detail':'La persona no se encuentra actualmente vinculada a la empresa'},status=status.HTTP_403_FORBIDDEN)                        
               
-            if persona.fecha_a_finalizar_cargo_actual < fecha_desvinculacion:
+            if persona.fecha_a_finalizar_cargo_actual < fecha_desvinculacion.date():
                 fecha_desvinculacion = persona.fecha_a_finalizar_cargo_actual
                 fecha_desvinculacion.replace(hour=23, minute=59)
               

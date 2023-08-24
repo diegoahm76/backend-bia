@@ -9,7 +9,7 @@ from django.db.models.functions import Concat
 from datetime import datetime, timezone, timedelta
 from django.db.models import Sum
 from recaudo.models.liquidaciones_models import Deudores
-from recaudo.models.pagos_models import DetallesFacilidadPago, FacilidadesPago
+from recaudo.models.facilidades_pagos_models import DetallesFacilidadPago, FacilidadesPago
 from recaudo.models.cobros_models import Cartera 
 from recaudo.serializers.reportes_serializers import (
     CarteraGeneralSerializer,
@@ -84,8 +84,8 @@ class ReporteFacilidadesPagoView(generics.ListAPIView):
     serializer_class = ReporteFacilidadesPagosSerializer
 
     def get(self, request, *args, **kwargs):
-        sanciones_coactivo = DetallesFacilidadPago.objects.filter(tipo_cobro='coactivo')
-        sanciones_persuasivo = DetallesFacilidadPago.objects.filter(tipo_cobro='persuasivo')
+        sanciones_coactivo = DetallesFacilidadPago.objects.filter(id_cartera__tipo_cobro='coactivo')
+        sanciones_persuasivo = DetallesFacilidadPago.objects.filter(id_cartera__tipo_cobro='persuasivo')
 
         total_sanciones_coactivo = sanciones_coactivo.aggregate(total_sanciones_coactivo=Sum('id_cartera__valor_sancion'))
         total_sanciones_persuasivo = sanciones_persuasivo.aggregate(total_sanciones_persuasivo=Sum('id_cartera__valor_sancion'))
@@ -125,7 +125,7 @@ class ReporteFacilidadesPagosDetalleView(generics.ListAPIView):
         detalles_facilidad_pago = DetallesFacilidadPago.objects.all()
 
         if tipo_cobro:
-            detalles_facilidad_pago = detalles_facilidad_pago.filter(tipo_cobro=tipo_cobro)
+            detalles_facilidad_pago = detalles_facilidad_pago.filter(id_cartera__tipo_cobro=tipo_cobro)
 
         if identificacion:
             detalles_facilidad_pago = detalles_facilidad_pago.filter(
@@ -167,7 +167,7 @@ class ReporteFacilidadesPagosDetalleView(generics.ListAPIView):
             valor_total = valor_sancion + valor_intereses
 
             resultado = {
-                'tipo_cobro': detalle.tipo_cobro,
+                'tipo_cobro': detalle.id_cartera__tipo_cobro,
                 'identificacion': deudor.identificacion,
                 'nombre_deudor': f'{deudor.nombres} {deudor.apellidos}',
                 'concepto_deuda': cartera.codigo_contable.descripcion,
@@ -179,9 +179,9 @@ class ReporteFacilidadesPagosDetalleView(generics.ListAPIView):
 
             resultados.append(resultado)
 
-            if detalle.tipo_cobro == 'coactivo':
+            if detalle.id_cartera__tipo_cobro == 'coactivo':
                 total_cobro_coactivo += valor_total
-            elif detalle.tipo_cobro == 'persuasivo':
+            elif detalle.id_cartera__tipo_cobro == 'persuasivo':
                 total_cobro_persuasivo += valor_total
 
         serializer = self.get_serializer(resultados, many=True)

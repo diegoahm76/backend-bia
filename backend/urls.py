@@ -23,6 +23,12 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
 
+
+# from django.contrib.auth.decorators import login_required
+# from social_django.views import auth, complete
+# from . import login_oidc_views as views
+
+
 schema_view = get_schema_view(
    openapi.Info(
       title="Server Api Documentation",
@@ -75,6 +81,7 @@ urlpatterns = [
     path('api/gestor/choices/', include('gestion_documental.urls.choices_urls')),
     path('api/gestor/ventanilla/',include('gestion_documental.urls.ventanilla_urls')),
     path('api/gestor/depositos-archivos/',include('gestion_documental.urls.depositos_archivo_urls')),
+    path('api/gestor/adminitrador_radicados/',include('gestion_documental.urls.tipos_radicados_consecutivos_url')),
     
     #ALMACEN
     path('api/almacen/hoja-de-vida/', include('almacen.urls.hoja_de_vida_urls')),
@@ -103,6 +110,7 @@ urlpatterns = [
     path('api/conservacion/solicitudes/', include('conservacion.urls.solicitudes_urls')),
     path('api/conservacion/mezclas/', include('conservacion.urls.mezclas_urls')),
     path('api/conservacion/funcionario/', include('conservacion.urls.solicitudes_funcionario_coordinador_urls')),
+    path('api/conservacion/analitica/', include('conservacion.urls.analitica_urls')),
 
     #ESTACIONES
     path("api/estaciones/",include('estaciones.urls.estaciones_urls')),
@@ -115,7 +123,7 @@ urlpatterns = [
     path("api/estaciones/migracion/",include('estaciones.urls.migracion_estaciones_urls')),
 
     #FACILIDADES PAGOS
-    path('api/recaudo/pagos/', include('recaudo.urls.pagos_urls')),
+    path('api/recaudo/planes-pagos/', include('recaudo.urls.planes_pagos_urls')),
     path('api/recaudo/garantias/', include('recaudo.urls.garantias_urls')),
     path('api/recaudo/reportes/', include('recaudo.urls.reportes_urls')),
     path('api/recaudo/facilidades-pagos/', include('recaudo.urls.facilidades_pagos_urls')),
@@ -128,6 +136,10 @@ urlpatterns = [
     #RECURSO HIDRICO
     path('api/hidrico/programas/',include('recurso_hidrico.urls.programas_urls')),
     path('api/hidrico/bibliotecas/',include('recurso_hidrico.urls.bibliotecas_urls')),
+
+    # path('auth/', auth, name='social-auth'),
+    # path('complete/', login_required(complete), name='social-auth-complete'),
+    # path('oidc_login/', views.oidc_login, name='oidc_login'),
 
     
 ]
