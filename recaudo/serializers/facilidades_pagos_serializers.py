@@ -214,9 +214,9 @@ class ListadoFacilidadesSeguimientoSerializer(serializers.ModelSerializer):
         fields = ('id','numero_radicacion','estado')
 
     def get_estado(self, obj):
-        respuesta_solicitud = RespuestaSolicitud.objects.filter(id_facilidades_pago=obj.id).first()
+        respuesta_solicitud = RespuestaSolicitud.objects.filter(id_facilidad_pago=obj.id).first()
         if not respuesta_solicitud:
-            estado = 'Sin revisar'
+            estado = 'SIN RESPONDER'
         else:
             estado = respuesta_solicitud.estado
         return estado
