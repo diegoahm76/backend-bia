@@ -60,7 +60,7 @@ class TipologiasDoc(models.Model):
     nombre = models.CharField(max_length=50, unique=True, db_column='T208nombre')
     cod_tipo_medio_doc = models.ForeignKey(TiposMediosDocumentos, on_delete=models.CASCADE, db_column='T208Cod_TipoMedioDoc')
     activo = models.BooleanField(default=True, db_column='T208activo')
-    item_ya_usado = models.BooleanField(default=False, db_column='T208itemYaUsado')
+    item_ya_usado = models.BooleanField(default=False, db_column='T208ItemYaUsado')
 
     def __str__(self):
         return str(self.nombre)
