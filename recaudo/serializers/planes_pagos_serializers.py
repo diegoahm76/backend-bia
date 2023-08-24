@@ -24,18 +24,39 @@ class ResolucionesPlanPagoSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class FacilidadPagoDatosPlanSerializer(serializers.ModelSerializer):
+    porcentaje_abonado = serializers.SerializerMethodField()
+    nombre_deudor = serializers.SerializerMethodField()
+    identificacion = serializers.ReadOnlyField(source='id_deudor.identificacion',default=None)
+
+    class Meta:
+        model = FacilidadesPago
+        fields = ('id', 'nombre_deudor', 'identificacion', 'valor_abonado', 'porcentaje_abonado', 'fecha_abono', 'cuotas', 'periodicidad')
+
+    def get_valor_total(self, carteras):
+        monto_total = sum(cartera.monto_inicial for cartera in carteras)
+        intereses_total = sum(cartera.valor_intereses for cartera in carteras)
+        valor_total = monto_total + intereses_total
+        return valor_total
+
+    def get_porcentaje_abonado(self, obj):
+        cartera_ids = DetallesFacilidadPago.objects.filter(id_facilidad_pago=obj.id)
+        ids_cartera = [cartera_id.id_cartera.id for cartera_id in cartera_ids if cartera_id]
+        cartera_seleccion = Cartera.objects.filter(id__in=ids_cartera)
+        valor_total = self.get_valor_total(cartera_seleccion)
+        porcentaje_abonado = (obj.valor_abonado / valor_total) *100
+        return float("{:.2f}".format(porcentaje_abonado))
+    
+    def get_nombre_deudor(self, obj):
+        return f"{obj.id_deudor.nombres} {obj.id_deudor.apellidos}"
+        
+
+    
+
 class VisualizacionCarteraSelecionadaSerializer(serializers.ModelSerializer):
     nro_expediente = serializers.ReadOnlyField(source='id_expediente.cod_expediente',default=None)
-    nro_resolucion = serializers.ReadOnlyField(source='id_expediente.numero_resolucion',default=None)
-    valor_abonado = serializers.SerializerMethodField()
-    
-    def get_valor_abonado(self, obj):
-        print(type(obj), obj.id)
-        facilidad_pago = DetallesFacilidadPago.objects.filter(id_cartera=obj.id).first()
-        valor_abonado = facilidad_pago.id_facilidad_pago.valor_abonado
-
-        return valor_abonado
+    nro_resolucion = serializers.ReadOnlyField(source='id_expediente.numero_resolucion',default=None)    
 
     class Meta:
         model = Cartera
-        fields = ('id','nombre','nro_expediente','nro_resolucion','monto_inicial','inicio','dias_mora','valor_intereses', 'valor_abonado')
+        fields = ('id','nombre','nro_expediente','nro_resolucion','monto_inicial','inicio','dias_mora','valor_intereses')

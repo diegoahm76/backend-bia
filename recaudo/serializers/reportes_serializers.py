@@ -25,24 +25,24 @@ class CarteraGeneralDetalleSerializer(serializers.ModelSerializer):
 
     def get_nombre_deudor(self, obj):
         try:
-            deudor = Deudores.objects.get(id=obj.id_obligacion.id_expediente.id_deudor.id)
+            deudor = Deudores.objects.get(id=obj.id_deudor.id)
             return f"{deudor.nombres} {deudor.apellidos}"
         except ObjectDoesNotExist:
             return None
         
     def get_identificacion(self, obj):
         try:
-            deudor = Deudores.objects.get(id=obj.id_obligacion.id_expediente.id_deudor.id)
+            deudor = Deudores.objects.get(id=obj.id_deudor.id)
             return f"{deudor.identificacion}"
         except ObjectDoesNotExist:
             return None
     
     def get_expediente(self, obj):
-        expediente = obj.id_obligacion.id_expediente
+        expediente = obj.id_expediente
         return expediente.cod_expediente if expediente else None
 
     def get_resolucion(self, obj):
-        resolucion = obj.id_obligacion.id_expediente.numero_resolucion
+        resolucion = obj.id_expediente.numero_resolucion
         return resolucion if resolucion else None
 
     def get_concepto_deuda(self, obj):
@@ -61,23 +61,23 @@ class CarteraEdadesSerializer(serializers.ModelSerializer):
 
     def get_identificacion(self, obj):
         try:
-            deudor = Deudores.objects.get(id=obj.id_obligacion.id_expediente.id_deudor.id)
+            deudor = Deudores.objects.get(id=obj.id_deudor.id)
             return f"{deudor.identificacion}"
         except ObjectDoesNotExist:
             return None
         
     def get_expediente(self, obj):
-        expediente = obj.id_obligacion.id_expediente
+        expediente = obj.id_expediente
         return expediente.cod_expediente if expediente else None
 
     def get_resolucion(self, obj):
-        resolucion = obj.id_obligacion.id_expediente.numero_resolucion
+        resolucion = obj.id_expediente.numero_resolucion
         return resolucion if resolucion else None
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         try:
-            deudor = Deudores.objects.get(id=instance.id_obligacion.id_expediente.id_deudor.id)
+            deudor = Deudores.objects.get(id=instance.id_deudor.id)
             representation['nombre_deudor'] = f"{deudor.nombres} {deudor.apellidos}"
         except ObjectDoesNotExist:
             representation['nombre_deudor'] = None

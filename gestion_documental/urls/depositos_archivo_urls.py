@@ -22,6 +22,8 @@ urlpatterns = [
      path('estanteDeposito/eliminar/<str:pk>/',views.EstanteDepositoDelete.as_view(),name='eliminar-estante'),
      path('estanteDeposito/listar-estante-por-deposito/<str:pk>/',views.EstanteGetByDeposito.as_view(),name='listar-estante-por-deposito'),
      path('estanteDeposito/mover-estante/<str:identificacion_por_deposito>/', views.MoveEstante.as_view(), name='mover-estante'),
+     path('estanteDeposito/listar/',views.EstanteGetAll.as_view(),name='listar-estantes'),
+
 
      #Bandeja
      path('bandejaEstante/crear/',views.BandejaEstanteCreate.as_view(), name='crear-bandeja'),
