@@ -73,13 +73,17 @@ class ConfigTiposRadicadoAgnoUpdate(generics.UpdateAPIView):
                 if cantidad_digitos is None:
                     raise ValidationError("se deben asignar una cantidad de digitos.")
                 
-                if consecutivo_inicial < 0:
-                    raise ValidationError(" El consecutivo inicial debe ser mayor o igual a 0.")
+                #if consecutivo_inicial < 0:
+                #    raise ValidationError(" El consecutivo inicial debe ser mayor o igual a 0.")
                 if cantidad_digitos <= 0:
                     raise ValidationError("se debe ser mayor a cero.")
                 
 
         try:
+
+            if 'consecutivo_inicial' in data_in:
+                if data_in['consecutivo_inicial']:
+                    data_in['consecutivo_inicial']=data_in['consecutivo_inicial']-1
          
             serializer =ConfigTiposRadicadoAgnoUpDateSerializer(instance, data=data_in, partial=True)
             serializer.is_valid(raise_exception=True)
@@ -113,10 +117,7 @@ class ConfigTiposRadicadoAgnoGet(generics.ListAPIView):
         
         hoy = date.today()
         
-        if agno=='sig':
-            age=hoy.year+1
-        else:
-            age=hoy.year
+
         
         valido=False
 
@@ -128,7 +129,7 @@ class ConfigTiposRadicadoAgnoGet(generics.ListAPIView):
         if not valido:
             raise ValidationError("Tipo de radicado no valido")
         
-        queryset=ConfigTiposRadicadoAgno.objects.filter(agno_radicado=age,cod_tipo_radicado=tipo)
+        queryset=ConfigTiposRadicadoAgno.objects.filter(agno_radicado=agno,cod_tipo_radicado=tipo)
         serializador = self.serializer_class(queryset, many=True)
                          
         return Response({'succes':True, 'detail':'Se encontró el siguiente histórico','data':serializador.data}, status=status.HTTP_200_OK)

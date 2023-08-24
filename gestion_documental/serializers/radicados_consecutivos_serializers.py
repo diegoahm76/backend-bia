@@ -1,7 +1,13 @@
 from gestion_documental.models.radicados_models import ConfigTiposRadicadoAgno
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
+
+from seguridad.models import Personas
 class ConfigTiposRadicadoAgnoUpDateSerializer(serializers.ModelSerializer):
+    #fecha_consecutivo_actual = serializers.ReadOnlyField()
+    #id_persona_config_implementacion = serializers.PrimaryKeyRelatedField(queryset=Personas.objects.all())
+    #id_persona_config_implementacion = serializers.PrimaryKeyRelatedField(queryset=Personas.objects.all())   
+    #fecha_inicial_config_implementacion=serializers.ReadOnlyField()   
     class Meta:
         model = ConfigTiposRadicadoAgno
         fields = '__all__'
