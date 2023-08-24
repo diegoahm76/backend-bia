@@ -517,13 +517,15 @@ class ReporteActividadLoteGetView(generics.ListAPIView):
     def get(self,request):
         id_vivero = request.query_params.get('id_vivero', '')
         id_bien = request.query_params.get('id_bien', '')
+        agno_lote = request.query_params.get('agno_lote', '')
+        nro_lote = request.query_params.get('nro_lote', '')
         fecha_desde = request.query_params.get('fecha_desde', '')
         fecha_hasta = request.query_params.get('fecha_hasta', '')
         
-        if id_vivero == '' or id_bien == '' or fecha_desde == '' or fecha_hasta == '':
-            raise ValidationError('Debe elegir el vivero, una planta y las fechas como filtros')
+        if id_vivero == '' or id_bien == '' or agno_lote == '' or nro_lote == '' or fecha_desde == '' or fecha_hasta == '':
+            raise ValidationError('Debe elegir el vivero, una planta, el año del lote, número de lote y las fechas como filtros')
         
-        incidencias = self.queryset.filter(id_vivero=id_vivero, id_bien=id_bien, fecha_incidencia__gte=fecha_desde, fecha_incidencia__lte=fecha_hasta)
+        incidencias = self.queryset.filter(id_vivero=id_vivero, id_bien=id_bien, agno_lote=agno_lote, nro_lote=nro_lote, fecha_incidencia__gte=fecha_desde, fecha_incidencia__lte=fecha_hasta)
         incidencias_data = incidencias.values(
             'id_incidencias_mat_vegetal',
             'fecha_incidencia',

@@ -148,8 +148,8 @@ class RolesSerializers(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     def validate_nombre_de_usuario(self, value):
-        if not value.isalnum():
-            raise serializers.ValidationError("El nombre de usuario solo debe tener caracteres alfanumericos")
+        # if not value.isalnum():
+        #     raise serializers.ValidationError("El nombre de usuario solo debe tener caracteres alfanumericos")
         if " " in value:
             raise serializers.ValidationError("No puede contener espacios en el nombre de usuario")
         

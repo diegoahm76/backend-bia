@@ -153,7 +153,8 @@ class FacilidadPagoGetByIdSerializer(serializers.ModelSerializer):
         model = FacilidadesPago
         fields = ('id', 'id_deudor', 'id_tipo_actuacion', 'tipo_actuacion', 'fecha_generacion',
                   'observaciones', 'periodicidad', 'cuotas', 'documento_soporte', 'consignacion_soporte',
-                  'documento_no_enajenacion', 'id_funcionario','notificaciones', 'numero_radicacion'
+                  'valor_abonado', 'fecha_abono', 'documento_no_enajenacion', 'id_funcionario',
+                  'notificaciones', 'numero_radicacion'
                   )
 
 
@@ -178,7 +179,7 @@ class RespuestaSolicitudSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class ObligacionesSerializer(serializers.ModelSerializer):
+class CarteraSerializer(serializers.ModelSerializer):
     nro_expediente = serializers.ReadOnlyField(source='id_expediente.cod_expediente',default=None)
     nro_resolucion = serializers.ReadOnlyField(source='id_expediente.numero_resolucion',default=None)
 
@@ -187,7 +188,7 @@ class ObligacionesSerializer(serializers.ModelSerializer):
         fields = ('id','nombre','inicio','nro_expediente','nro_resolucion','monto_inicial','valor_intereses', 'dias_mora')
 
 
-class ConsultaObligacionesSerializer(serializers.ModelSerializer):
+class ConsultaCarteraSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cartera
         fields = '__all__'
@@ -204,6 +205,17 @@ class ListadoDeudoresUltSerializer(serializers.ModelSerializer):
         return f"{obj.nombres} {obj.apellidos}"
 
 
-class IdArraySerializer(serializers.Serializer):
-    ids = serializers.ListField(child=serializers.IntegerField())
+class ListadoFacilidadesSeguimientoSerializer(serializers.ModelSerializer):
+    estado = serializers.SerializerMethodField()
 
+    class Meta:
+        model = FacilidadesPago
+        fields = ('id','numero_radicacion','estado')
+
+    def get_estado(self, obj):
+        respuesta_solicitud = RespuestaSolicitud.objects.filter(id_facilidades_pago=obj.id).first()
+        if not respuesta_solicitud:
+            estado = 'Sin revisar'
+        else:
+            estado = respuesta_solicitud.estado
+        return estado
