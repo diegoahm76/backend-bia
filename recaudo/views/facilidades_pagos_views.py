@@ -126,13 +126,13 @@ class ConsultaCarteraDeudoresViews(generics.ListAPIView):
     def get(self, request, identificacion):
         numero_identificacion = identificacion
 
-        try:
-            deudor = Deudores.objects.get(identificacion=numero_identificacion)
-        except ObjectDoesNotExist:
-            raise NotFound('No se encontraron resultados.')
+        # try:
+        #     deudor = Deudores.objects.get(identificacion=numero_identificacion)
+        # except ObjectDoesNotExist:
+        #     raise NotFound('No se encontraron resultados.')
         
         instancia_obligaciones = CarteraDeudorListViews()
-        response_data = instancia_obligaciones.obligaciones_deudor(deudor.id)
+        response_data = instancia_obligaciones.obligaciones_deudor(numero_identificacion)
 
         if response_data:
             return Response({'success': True, 'data': response_data}, status=status.HTTP_200_OK)

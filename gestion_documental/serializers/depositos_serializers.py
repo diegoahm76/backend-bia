@@ -15,6 +15,13 @@ class DepositoCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model =  Deposito
         fields = '__all__'
+    def validate_identificacion_por_entidad(self, value):
+        if Deposito.objects.filter(identificacion_por_entidad=value).exists():
+            raise serializers.ValidationError("Ya existe un depósito con esta identificación por entidad.")
+        return value
+
+
+
 
 #Borrar_Deposito
 class DepositoDeleteSerializer(serializers.ModelSerializer):
@@ -26,12 +33,19 @@ class DepositoDeleteSerializer(serializers.ModelSerializer):
 #Actualizar_Deposito
 class DepositoUpdateSerializer(serializers.ModelSerializer):
 
-    class Meta:
-        model =  Deposito
-        fields = '__all__'
+    def validate_identificacion_por_entidad(self, value):
+        if self.instance:  # Si estamos actualizando un objeto existente
+            queryset = Deposito.objects.exclude(pk=self.instance.pk)
+        else:
+            queryset = Deposito.objects.all()
+
+        if queryset.filter(identificacion_por_entidad=value).exists():
+            raise serializers.ValidationError("Esta identificación ya está en uso en otro deposito.")
+
+        return value
 
     def validate_orden_ubicacion_por_entidad(self, nuevo_orden):
-        
+
         # Obtener el orden actual del depósito
         orden_actual = self.instance.orden_ubicacion_por_entidad
 
@@ -42,8 +56,7 @@ class DepositoUpdateSerializer(serializers.ModelSerializer):
             self.instance.save()
          
             if nuevo_orden > orden_actual:
-                
-                # Desplazar las cajas siguientes hacia abajo
+                # Desplazar los depósitos siguientes hacia abajo
                 depositos = Deposito.objects.filter(orden_ubicacion_por_entidad__gt=orden_actual, orden_ubicacion_por_entidad__lte=nuevo_orden).order_by('orden_ubicacion_por_entidad')  
                 
                 for deposito in depositos:
@@ -51,18 +64,22 @@ class DepositoUpdateSerializer(serializers.ModelSerializer):
                     deposito.save()
 
             elif nuevo_orden < orden_actual:
-
-                # Desplazar las cajas hacia arriba
+                # Desplazar los depósitos hacia arriba
                 depositos = Deposito.objects.filter(orden_ubicacion_por_entidad__lt=orden_actual, orden_ubicacion_por_entidad__gte=nuevo_orden).order_by('-orden_ubicacion_por_entidad')  
                 
                 for deposito in depositos:
                     deposito.orden_ubicacion_por_entidad = deposito.orden_ubicacion_por_entidad + 1
-                    deposito.save()		  	                 
-        
+                    deposito.save()		  	                  
+
         return nuevo_orden
         
+    
+    class Meta:
+        model =  Deposito
+        fields = '__all__'
+        
 
-
+#LISTAR_DEPOSITOS_POR_ID
 class DepositoGetSerializer(serializers.ModelSerializer):
     nombre_sucursal = serializers.ReadOnlyField(source='id_sucursal_entidad.descripcion_sucursal', default=None)
     municipio=serializers.ReadOnlyField(source='id_sucursal_entidad.municipio', default=None)
@@ -90,6 +107,12 @@ class EstanteDepositoCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model =  EstanteDeposito
         fields = '__all__'
+
+    def validate_orden_ubicacion_por_deposito(self, value):
+        if EstanteDeposito.objects.filter(orden_ubicacion_por_deposito=value).exists():
+            raise serializers.ValidationError("Ya existe un depósito con esta identificación por entidad.")
+        return value
+
  
 #Buscar_deposito
 class  EstanteDepositoSearchSerializer(serializers.ModelSerializer):
@@ -109,6 +132,17 @@ class  EstanteDepositoGetOrdenSerializer(serializers.ModelSerializer):
 
 #Actualizar_estante
 class EstanteDepositoUpDateSerializer(serializers.ModelSerializer):
+
+    def validate_identificacion_por_deposito(self, value):
+        if self.instance:  # Si estamos actualizando un objeto existente
+            queryset = EstanteDeposito.objects.exclude(pk=self.instance.pk)
+        else:
+            queryset = EstanteDeposito.objects.all()
+
+        if queryset.filter(identificacion_por_deposito=value).exists():
+            raise serializers.ValidationError("Esta identificación ya está en uso en otro estante.")
+
+        return value
 
     def validate_orden_ubicacion_por_deposito(self, nuevo_orden):
 
@@ -142,6 +176,8 @@ class EstanteDepositoUpDateSerializer(serializers.ModelSerializer):
     class Meta:
         model =  EstanteDeposito
         fields = ['id_estante_deposito','identificacion_por_deposito','orden_ubicacion_por_deposito']
+        
+                    
 
 #Eliminar_Estante
 class EstanteDepositoDeleteSerializer(serializers.ModelSerializer):
@@ -155,7 +191,9 @@ class EstanteGetByDepositoSerializer(serializers.ModelSerializer):
     
     class Meta:
         model =  EstanteDeposito
-        fields = ['id_estante_deposito','orden_ubicacion_por_deposito','identificacion_por_deposito']
+        fields = ['id_estante_deposito','orden_ubicacion_por_deposito','identificacion_por_deposito','id_deposito']
+
+
 
 #Mover_estante
 class MoveEstanteSerializer(serializers.ModelSerializer):
@@ -192,7 +230,7 @@ class  BandejaEstanteUpDateSerializer(serializers.ModelSerializer):
     
    def validate_orden_ubicacion_por_estante(self, nuevo_orden):
 
-        # Obtener el orden actual del depósito
+        # Obtener el orden actual de las bandejas
         orden_actual = self.instance.orden_ubicacion_por_estante
 
         if nuevo_orden != orden_actual:
@@ -204,7 +242,7 @@ class  BandejaEstanteUpDateSerializer(serializers.ModelSerializer):
 
             if nuevo_orden > orden_actual:
                 
-                # Desplazar los depósitos siguientes hacia abajo
+                # Desplazar las bandejas siguientes hacia abajo
                 bandejas = BandejaEstante.objects.filter(orden_ubicacion_por_estante__gt=orden_actual, orden_ubicacion_por_estante__lte=nuevo_orden).order_by('orden_ubicacion_por_estante')  
                 
                 for bandeja in bandejas:
@@ -213,7 +251,7 @@ class  BandejaEstanteUpDateSerializer(serializers.ModelSerializer):
 
             elif nuevo_orden < orden_actual:
         
-                # Desplazar los depósitos hacia arriba
+                # Desplazar las bandejas hacia arriba
                 bandejas = BandejaEstante.objects.filter(orden_ubicacion_por_estante__lt=orden_actual, orden_ubicacion_por_estante__gte=nuevo_orden).order_by('-orden_ubicacion_por_estante')  
                 
                 for bandeja in bandejas:
@@ -234,10 +272,10 @@ class BandejaEstanteDeleteSerializer(serializers.ModelSerializer):
 class BandejaEstanteSearchSerializer(serializers.ModelSerializer):
     nombre_deposito = serializers.CharField(source='id_deposito.nombre_deposito', read_only=True)
     identificacion_deposito = serializers.CharField(source='id_deposito.identificacion_por_entidad', read_only=True)
-
+    
     class Meta:
         model = EstanteDeposito
-        fields = [ 'orden_ubicacion_por_deposito','identificacion_por_deposito', 'nombre_deposito', 'identificacion_deposito']
+        fields = [ 'orden_ubicacion_por_deposito','identificacion_por_deposito', 'nombre_deposito', 'identificacion_deposito','id_estante_deposito','id_deposito']
  
 
 #Mover_bandeja
@@ -347,13 +385,12 @@ class  CajaEstanteDeleteSerializer(serializers.ModelSerializer):
 #Listar_por_idcaja_info
 class  CajaBandejaInfoSerializer(serializers.ModelSerializer):
        
-    identificacion_por_entidad = serializers.CharField(source='id_bandeja_estante.id_estante_deposito.id_deposito.id_sucursal_entidad.identificacion_por_entidad', read_only=True)
-    identificacion_por_deposito = serializers.CharField(source='id_bandeja_estante.id_estante_deposito.id_deposito.identificacion_por_entidad', read_only=True)
-    identificacion_por_estante = serializers.CharField(source='id_bandeja_estante.identificacion_por_deposito', read_only=True)
+   identificacion_deposito = serializers.CharField(source='id_deposito.identificacion_por_entidad', read_only=True)
 
-    class Meta:
-        model = CajaBandeja
-        fields = ['identificacion_por_entidad', 'identificacion_por_deposito', 'identificacion_por_estante']
+   class Meta:
+            model = CajaBandeja
+            fields = ['identificacion_por_entidad']
+
 
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
