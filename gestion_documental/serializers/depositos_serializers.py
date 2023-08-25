@@ -15,6 +15,13 @@ class DepositoCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model =  Deposito
         fields = '__all__'
+    def validate_identificacion_por_entidad(self, value):
+        if Deposito.objects.filter(identificacion_por_entidad=value).exists():
+            raise serializers.ValidationError("Ya existe un depósito con esta identificación por entidad.")
+        return value
+
+
+
 
 #Borrar_Deposito
 class DepositoDeleteSerializer(serializers.ModelSerializer):
@@ -101,15 +108,9 @@ class EstanteDepositoCreateSerializer(serializers.ModelSerializer):
         model =  EstanteDeposito
         fields = '__all__'
 
-    def validate_identificacion_por_deposito(self, value):
-        if self.instance:  # Si estamos actualizando un objeto existente
-            queryset = EstanteDeposito.objects.exclude(pk=self.instance.pk)
-        else:
-            queryset = EstanteDeposito.objects.all()
-
-        if queryset.filter(identificacion_por_deposito=value).exists():
-            raise serializers.ValidationError("Esta identificación ya está en uso en otro estante.")
-
+    def validate_orden_ubicacion_por_deposito(self, value):
+        if EstanteDeposito.objects.filter(orden_ubicacion_por_deposito=value).exists():
+            raise serializers.ValidationError("Ya existe un depósito con esta identificación por entidad.")
         return value
 
  

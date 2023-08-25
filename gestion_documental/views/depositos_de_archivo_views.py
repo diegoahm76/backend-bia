@@ -12,7 +12,7 @@ from django.db.models import Q
 from django.db import transaction
 from datetime import datetime,date,timedelta
 from gestion_documental.models.depositos_models import  CarpetaCaja, Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
-from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaInfoSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteDeleteSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajasByBandejaListSerializer, CarpetaCajaCreateSerializer, CarpetaCajaDeleteSerializer, CarpetaCajaSearchSerializer, CarpetaCajaUpDateSerializer, CarpetasByCajaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoSearchSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
+from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteGetOrdenSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaGetOrdenSerializer, CajaBandejaInfoSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteDeleteSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajasByBandejaListSerializer, CarpetaCajaCreateSerializer, CarpetaCajaDeleteSerializer, CarpetaCajaSearchSerializer, CarpetaCajaUpDateSerializer, CarpetasByCajaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoSearchSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
 from seguridad.utils import Util
 
 
@@ -28,15 +28,14 @@ class DepositoCreate(generics.CreateAPIView):
         
         try:
             data_in = request.data
-            #data_in['activo']=True
-            orden_siguiente = DepositoGetOrden()
+            orden_siguiente = DepositoGetOrdenActual()
             response_orden = orden_siguiente.get(request)
 
             if response_orden.status_code != status.HTTP_200_OK:
                 return response_orden
             maximo_orden = response_orden.data.get('orden_siguiente')
             print(maximo_orden)
-            data_in['orden_ubicacion_por_entidad']=maximo_orden+1
+            data_in['orden_ubicacion_por_entidad']=  maximo_orden + 1
             serializer = self.serializer_class(data=data_in)
             serializer.is_valid(raise_exception=True)
             deposito =serializer.save()
@@ -198,7 +197,7 @@ class DepositoGetById(generics.ListAPIView):
 
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializer.data}, status=status.HTTP_200_OK)
         
-#ORDEN_DEPOSITO    
+#ORDEN_DEPOSITO_SIGUIENTE    
 class DepositoGetOrden(generics.ListAPIView):
     serializer_class = DepositoGetSerializer
     queryset = Deposito.objects.all()
@@ -214,6 +213,23 @@ class DepositoGetOrden(generics.ListAPIView):
         
         return Response({'success': True, 'orden_siguiente': orden_siguiente}, status=status.HTTP_200_OK)
        
+
+#ORDEN_ACTUAL
+class DepositoGetOrdenActual(generics.ListAPIView):
+    serializer_class = DepositoGetSerializer
+    queryset = Deposito.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        maximo_orden = Deposito.objects.aggregate(max_orden=Max('orden_ubicacion_por_entidad'))
+        
+        if not maximo_orden:
+            raise NotFound("El registro del depósito que busca no se encuentra registrado")
+        
+        orden_siguiente = maximo_orden['max_orden'] 
+        
+        return Response({'success': True, 'orden_siguiente': orden_siguiente}, status=status.HTTP_200_OK)
+        
 #FILTRO_DEPOSITOS_POR_IDENTIFICACION_&_NOMBRE
 class DepositoSearch(generics.ListAPIView):
     serializer_class = DepositoSearchSerializer
@@ -272,24 +288,25 @@ class EstanteDepositoCreate(generics.CreateAPIView):
         
         try:
             data_in = request.data
-            #data_in['activo']=True
-            orden_siguiente = EstanteDepositoGetOrden()
+            orden_siguiente = EstanteDepositoGetOrdenActual()
             response_orden = orden_siguiente.get(request)
 
             if response_orden.status_code != status.HTTP_200_OK:
                 return response_orden
             maximo_orden = response_orden.data.get('orden_siguiente')
+
             print(maximo_orden)
-            data_in['orden_ubicacion_por_deposito']=maximo_orden+1
+            data_in['orden_ubicacion_por_deposito']=  maximo_orden + 1
             serializer = self.serializer_class(data=data_in)
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            estante =serializer.save()
 
 
             return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
         except ValidationError  as e:
             error_message = {'error': e.detail}
             raise ValidationError  (e.detail)
+
         
 
 #BUSCAR DEPOSITO POR NOMBRE, IDENTIFICACION, SUCURSAL EN ESTANTE
@@ -339,7 +356,7 @@ class EstanteDepositoSearch(generics.ListAPIView):
     
 
 
-#ORDEN ESTANTE 
+#ORDEN_SIGUIENTE_ESTANTE 
 class EstanteDepositoGetOrden(generics.ListAPIView):
      
     serializer_class = EstanteDepositoGetOrdenSerializer
@@ -355,7 +372,25 @@ class EstanteDepositoGetOrden(generics.ListAPIView):
         orden_siguiente = maximo_orden['max_orden'] + 1
         
         return Response({'success': True, 'orden_siguiente': orden_siguiente}, status=status.HTTP_200_OK)
+
+
+#ORDEN_ACTUAL_ESTANTE
+class EstanteDepositoGetOrdenActual(generics.ListAPIView):
+    serializer_class = EstanteDepositoGetOrdenSerializer
+    queryset = EstanteDeposito.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        maximo_orden = EstanteDeposito.objects.aggregate(max_orden=Max('orden_ubicacion_por_deposito'))
         
+        if not maximo_orden:
+            raise NotFound("El registro del depósito que busca no se encuentra registrado")
+        
+        orden_siguiente = maximo_orden['max_orden']
+        
+        return Response({'success': True, 'orden_siguiente': orden_siguiente}, status=status.HTTP_200_OK)
+    
+
 #EDITAR_ESTANTE
 class EstanteDepositoUpDate(generics.UpdateAPIView):
     serializer_class = EstanteDepositoUpDateSerializer
@@ -525,53 +560,64 @@ class BandejaEstanteCreate(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     queryset = BandejaEstante.objects.all()
     
-    def post(self, request):
+    def post(self,request):
         
         try:
             data_in = request.data
-            orden_siguiente = BandejaEstanteGetOrden()
+            orden_siguiente = BandejaEstanteGetOrdenActual()
             response_orden = orden_siguiente.get(request)
 
             if response_orden.status_code != status.HTTP_200_OK:
                 return response_orden
             maximo_orden = response_orden.data.get('orden_siguiente')
 
-            # Verificar si maximo_orden es None y asignar 1 en ese caso
-            if maximo_orden is None or 0:
-                maximo_orden = 1
-            else:
-                maximo_orden += 1
-
-            data_in['orden_ubicacion_por_estante'] = maximo_orden
+            print(maximo_orden)
+            data_in['orden_ubicacion_por_estante']=  maximo_orden +1
             serializer = self.serializer_class(data=data_in)
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            bandeja =serializer.save()
 
-            return Response({
-                'success': True,
-                'detail': 'Se crearon los registros correctamente',
-                'data': serializer.data},
-                status=status.HTTP_201_CREATED)
-        except ValidationError as e:
+
+            return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+        except ValidationError  as e:
             error_message = {'error': e.detail}
-            raise ValidationError(e.detail)
+            raise ValidationError  (e.detail)
 
-#ORDEN BANDEJAS
+#ORDEN_BANDEJAS_SIGUIENTE
 class BandejaEstanteGetOrden(generics.ListAPIView):
      
+    serializer_class = BandejaEstanteGetOrdenSerializer
+    queryset = BandejaEstante.objects.all()
+    permission_classes = [IsAuthenticated]
+    
     def get(self, request):
         maximo_orden = BandejaEstante.objects.aggregate(max_orden=Max('orden_ubicacion_por_estante'))
+        
+        if not maximo_orden:
+            raise NotFound("El registro del depósito que busca no se encuentra registrado")
+        
+        orden_siguiente = maximo_orden['max_orden'] + 1
+        
+        return Response({'success': True, 'orden_siguiente': orden_siguiente}, status=status.HTTP_200_OK)
 
-        # Verificar si el valor del orden es nulo
-        if not maximo_orden['max_orden']:
-            max_orden = 0
-        else:
-            max_orden = maximo_orden['max_orden'] + 1
+    
+#ORDEN_BANDEJAS_ACTUAL
+class BandejaEstanteGetOrdenActual(generics.ListAPIView):
+     
+    serializer_class = BandejaEstanteGetOrdenSerializer
+    queryset = BandejaEstante.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        maximo_orden = BandejaEstante.objects.aggregate(max_orden=Max('orden_ubicacion_por_estante'))
+        
+        if not maximo_orden:
+            raise NotFound("El registro del depósito que busca no se encuentra registrado")
+        
+        orden_siguiente = maximo_orden['max_orden'] 
+        
+        return Response({'success': True, 'orden_siguiente': orden_siguiente}, status=status.HTTP_200_OK)
 
-        return Response({
-            'success': True,
-            'orden_siguiente': max_orden
-        }, status=status.HTTP_200_OK)
     
 #EDITAR_BANDEJA
 class BandejaEstanteUpDate(generics.UpdateAPIView):
@@ -720,7 +766,7 @@ class BandejasByEstanteList(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def get(self,request,pk):
-        bandeja = BandejaEstante.objects.filter(id_estante_deposito=pk)
+        bandeja = BandejaEstante.objects.filter(id_estante_deposito=pk).order_by('orden_ubicacion_por_estante')
         serializer = self.serializer_class(bandeja,many=True)
         
         if not Deposito:
@@ -731,7 +777,29 @@ class BandejasByEstanteList(generics.ListAPIView):
                          'data':serializer.data},status=status.HTTP_200_OK)
     
 
-    
+ #LISTAR_TODAS_BANDEJAS
+class BandejaEstanteAll(generics.ListAPIView):
+    serializer_class = BandejasByEstanteListSerializer
+    queryset = BandejaEstante.objects.all().order_by('orden_ubicacion_por_estante')
+    permission_classes = []
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            return Response({
+                'success': False,
+                'detail': 'No se encontraron datos de estantes registrados.',
+                'data': []
+            }, status=status.HTTP_200_OK)
+
+        serializer = self.get_serializer(queryset, many=True)
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes bandejas ordenados por orden_ubicacion_por_estante.',
+            'data': serializer.data
+        })    
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ######################## CRUD CAJA ########################
@@ -747,44 +815,57 @@ class CajaBandejaCreate(generics.CreateAPIView):
         
         try:
             data_in = request.data
-            #data_in['activo']=True
-            orden_siguiente = CajaBandejaGetOrden()
+            orden_siguiente = CajaBandejaGetOrdenActual()
             response_orden = orden_siguiente.get(request)
 
             if response_orden.status_code != status.HTTP_200_OK:
                 return response_orden
             maximo_orden = response_orden.data.get('orden_siguiente')
+
             print(maximo_orden)
-            data_in['orden_ubicacion_por_bandeja']=maximo_orden+1
+            data_in['orden_ubicacion_por_bandeja']=  maximo_orden +1
             serializer = self.serializer_class(data=data_in)
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            caja =serializer.save()
 
 
-            return Response({'success':True,
-                             'detail':'Se crearon los registros correctamente',
-                             'data':serializer.data},
-                             status=status.HTTP_201_CREATED)
+            return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
         except ValidationError  as e:
             error_message = {'error': e.detail}
             raise ValidationError  (e.detail)
         
-#ORDEN CAJAS
+#ORDEN_SIGUIENTE_CAJAS
 class CajaBandejaGetOrden(generics.ListAPIView):
+    serializer_class = CajaBandejaGetOrdenSerializer
+    queryset = CajaBandeja.objects.all()
+    permission_classes = [IsAuthenticated]
      
     def get(self, request):
         maximo_orden = CajaBandeja.objects.aggregate(max_orden=Max('orden_ubicacion_por_bandeja'))
+        
+        if not maximo_orden:
+            raise NotFound("El registro de la caja que busca no se encuentra registrado")
+        
+        orden_siguiente = maximo_orden['max_orden'] + 1
+        
+        return Response({'success': True, 'orden_siguiente': orden_siguiente}, status=status.HTTP_200_OK)
 
-        # Verificar si el valor del orden es nulo
-        if not maximo_orden['max_orden']:
-            max_orden = 0
-        else:
-            max_orden = maximo_orden['max_orden'] + 1
-
-        return Response({
-            'success': True,
-            'orden_siguiente': max_orden
-        }, status=status.HTTP_200_OK)
+    
+#ORDEN_ACTUAL_CAJAS
+class CajaBandejaGetOrdenActual(generics.ListAPIView):
+    serializer_class = CajaBandejaGetOrdenSerializer
+    queryset = CajaBandeja.objects.all()
+    permission_classes = [IsAuthenticated]
+     
+    def get(self, request):
+        maximo_orden = CajaBandeja.objects.aggregate(max_orden=Max('orden_ubicacion_por_bandeja'))
+        
+        if not maximo_orden:
+            raise NotFound("El registro de la caja que busca no se encuentra registrado")
+        
+        orden_siguiente = maximo_orden['max_orden']
+        
+        return Response({'success': True, 'orden_siguiente': orden_siguiente}, status=status.HTTP_200_OK)
     
 #LISTAR_CAJAS_POR_BANDEJA
 class CajasByBandejaList(generics.ListAPIView):
@@ -1046,6 +1127,29 @@ class CajaBandejaInfo(generics.RetrieveAPIView):
         ).exclude(id_caja_estante=id_caja_estante)
         return queryset
 
+#LISTAR_TODAS_CAJAS
+class CajaBandejaAll(generics.ListAPIView):
+    serializer_class = CajasByBandejaListSerializer
+    queryset = CajaBandeja.objects.all().order_by('orden_ubicacion_por_bandeja')
+    permission_classes = []
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            return Response({
+                'success': False,
+                'detail': 'No se encontraron datos de estantes registrados.',
+                'data': []
+            }, status=status.HTTP_200_OK)
+
+        serializer = self.get_serializer(queryset, many=True)
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes bandejas ordenados por orden_ubicacion_por_estante.',
+            'data': serializer.data
+        })    
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1064,7 +1168,7 @@ class CarpetaCajaCreate(generics.CreateAPIView):
         
         try:
             data_in = request.data
-            orden_siguiente = CarpetaCajaGetOrden()
+            orden_siguiente = CarpetaCajaGetOrdenActual()
             response_orden = orden_siguiente.get(request)
 
             if response_orden.status_code != status.HTTP_200_OK:
@@ -1086,10 +1190,13 @@ class CarpetaCajaCreate(generics.CreateAPIView):
             raise ValidationError  (e.detail)
         
 
-#ORDEN CARPETAS
+#ORDEN_SIGUIENTE_CARPETAS
 class CarpetaCajaGetOrden(generics.ListAPIView):
+    serializer_class = CarpetasByCajaListSerializer    
+    queryset = CarpetaCaja.objects.all()
+    permission_classes = [IsAuthenticated]
      
-     def get(self, request):
+    def get(self, request):
         maximo_orden = CarpetaCaja.objects.aggregate(max_orden=Max('orden_ubicacion_por_caja'))
 
         # Verificar si el valor del orden es nulo
@@ -1101,7 +1208,27 @@ class CarpetaCajaGetOrden(generics.ListAPIView):
         return Response({
             'success': True,
             'orden_siguiente': max_orden
-        }, status=status.HTTP_200_OK)         
+        }, status=status.HTTP_200_OK)
+
+#ORDEN_ACTUAL_CARPETAS
+class CarpetaCajaGetOrdenActual(generics.ListAPIView):
+    serializer_class = CarpetasByCajaListSerializer 
+    queryset = CarpetaCaja.objects.all()
+    permission_classes = [IsAuthenticated]
+     
+    def get(self, request):
+        maximo_orden = CarpetaCaja.objects.aggregate(max_orden=Max('orden_ubicacion_por_caja'))
+
+        # Verificar si el valor del orden es nulo
+        if not maximo_orden['max_orden']:
+            max_orden = 0
+        else:
+            max_orden = maximo_orden['max_orden']
+
+        return Response({
+            'success': True,
+            'orden_siguiente': max_orden
+        }, status=status.HTTP_200_OK)        
     
 #BUSQUEDA_CAJAS(CARPETAS)
 class CarpetaCajaSearch(generics.ListAPIView):
@@ -1230,4 +1357,26 @@ class CarpetaCajaUpDate(generics.UpdateAPIView):
         serializer_ordenados = self.get_serializer(carpetas_ordenadas, many=True)
         return Response(serializer_ordenados.data)
     
-    
+#LISTAR_TODAS_CARPETAS
+class CarpetaCajaAll(generics.ListAPIView):
+    serializer_class = CarpetasByCajaListSerializer
+    queryset = CarpetaCaja.objects.all().order_by('orden_ubicacion_por_caja')
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            return Response({
+                'success': False,
+                'detail': 'No se encontraron datos de estantes registrados.',
+                'data': []
+            }, status=status.HTTP_200_OK)
+
+        serializer = self.get_serializer(queryset, many=True)
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes bandejas ordenados por orden_ubicacion_por_estante.',
+            'data': serializer.data
+        })    
