@@ -110,7 +110,7 @@ class EstanteDepositoCreateSerializer(serializers.ModelSerializer):
 
     def validate_orden_ubicacion_por_deposito(self, value):
         if EstanteDeposito.objects.filter(orden_ubicacion_por_deposito=value).exists():
-            raise serializers.ValidationError("Ya existe un depósito con esta identificación por entidad.")
+            raise serializers.ValidationError("Ya existe un estante con esta identificación.")
         return value
 
  
@@ -210,7 +210,12 @@ class MoveEstanteSerializer(serializers.ModelSerializer):
 
 #Crear_bandeja
 class BandejaEstanteCreateSerializer(serializers.ModelSerializer):
-    
+
+    def validate_orden_identificacion_por_estante(self, value):
+        if BandejaEstante.objects.filter(identificacion_por_estante=value).exists():
+            raise serializers.ValidationError("Ya existe un bandeja con esta identificación.")
+        return value
+
     class Meta:
         model =  BandejaEstante
         fields = '__all__'
@@ -221,15 +226,25 @@ class  BandejaEstanteGetOrdenSerializer(serializers.ModelSerializer):
         model =  BandejaEstante
         fields = '__all__'
 
- #Editar_bandejas       
+#Editar_bandejas       
 class  BandejaEstanteUpDateSerializer(serializers.ModelSerializer):
    
-   class Meta:
+    class Meta:
         model =  BandejaEstante
         fields = ['id_bandeja_estante','identificacion_por_estante','orden_ubicacion_por_estante'] 	   
-    
-   def validate_orden_ubicacion_por_estante(self, nuevo_orden):
 
+    def validate_identificacion_por_estante(self, value):
+        if self.instance:  # Si estamos actualizando un objeto existente
+            queryset = BandejaEstante.objects.exclude(pk=self.instance.pk)
+        else:
+            queryset = BandejaEstante.objects.all()
+
+        if queryset.filter(identificacion_por_estante=value).exists():
+            raise serializers.ValidationError("Esta identificación ya está en uso en otro deposito.")
+
+        return value
+    
+    def validate_orden_ubicacion_por_estante(self, nuevo_orden):
         # Obtener el orden actual de las bandejas
         orden_actual = self.instance.orden_ubicacion_por_estante
 
@@ -297,6 +312,10 @@ class BandejasByEstanteListSerializer(serializers.ModelSerializer):
 ######################## SERIALIZERS CAJA ########################
 
 class CajaBandejaCreateSerializer(serializers.ModelSerializer):
+    def validate_identificacion_por_bandeja(self, value):
+        if CajaBandeja.objects.filter(identificacion_por_bandeja=value).exists():
+            raise serializers.ValidationError("Ya existe un caja con esta identificación.")
+        return value
     
     class Meta:
         model =  CajaBandeja
@@ -329,6 +348,17 @@ class CajaBandejaUpDateSerializer(serializers.ModelSerializer):
     class Meta:
         model = CajaBandeja
         fields = ['id_caja_estante','identificacion_por_bandeja', 'orden_ubicacion_por_bandeja']
+
+    def validate_identificacion_por_bandeja(self, value):
+        if self.instance:  # Si estamos actualizando un objeto existente
+            queryset = CajaBandeja.objects.exclude(pk=self.instance.pk)
+        else:
+            queryset = CajaBandeja.objects.all()
+
+        if queryset.filter(identificacion_por_bandeja=value).exists():
+            raise serializers.ValidationError("Esta identificación ya está en uso en otra caja.")
+
+        return value    
 
     def validate_orden_ubicacion_por_bandeja(self, nuevo_orden):
 
@@ -398,6 +428,11 @@ class  CajaBandejaInfoSerializer(serializers.ModelSerializer):
 
 #Crear_carpeta
 class CarpetaCajaCreateSerializer(serializers.ModelSerializer):
+
+    def validate_identificacion_por_caja(self, value):
+        if CarpetaCaja.objects.filter(identificacion_por_caja=value).exists():
+            raise serializers.ValidationError("Ya existe un carpeta con esta identificación.")
+        return value
     
     class Meta:
         model =  CarpetaCaja
@@ -432,6 +467,17 @@ class CarpetaCajaUpDateSerializer(serializers.ModelSerializer):
     class Meta:
         model = CarpetaCaja
         fields = ['id_carpeta_caja','identificacion_por_caja', 'orden_ubicacion_por_caja']
+    
+    def validate_identificacion_por_caja(self, value):
+        if self.instance:  # Si estamos actualizando un objeto existente
+            queryset = CarpetaCaja.objects.exclude(pk=self.instance.pk)
+        else:
+            queryset = CarpetaCaja.objects.all()
+
+        if queryset.filter(identificacion_por_caja=value).exists():
+            raise serializers.ValidationError("Esta identificación ya está en uso en otra carpeta.")
+
+        return value
 
     def validate_orden_ubicacion_por_caja(self, nuevo_orden):
 
