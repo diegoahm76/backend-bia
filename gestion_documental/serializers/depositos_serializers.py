@@ -347,7 +347,7 @@ class CajaEstanteSearchSerializer(serializers.ModelSerializer):
 class CajaBandejaUpDateSerializer(serializers.ModelSerializer):
     class Meta:
         model = CajaBandeja
-        fields = ['id_caja_estante','identificacion_por_bandeja', 'orden_ubicacion_por_bandeja']
+        fields = ['id_caja_bandeja','identificacion_por_bandeja', 'orden_ubicacion_por_bandeja']
 
     def validate_identificacion_por_bandeja(self, value):
         if self.instance:  # Si estamos actualizando un objeto existente
@@ -412,15 +412,14 @@ class  CajaEstanteDeleteSerializer(serializers.ModelSerializer):
         model =  CajaBandeja
         fields = '__all__'
 
+
+
 #Listar_por_idcaja_info
 class  CajaBandejaInfoSerializer(serializers.ModelSerializer):
        
-   identificacion_deposito = serializers.CharField(source='id_deposito.identificacion_por_entidad', read_only=True)
-
-   class Meta:
-            model = CajaBandeja
-            fields = ['identificacion_por_entidad']
-
+    class Meta:
+        model = BandejaEstante
+        fields = ('orden_ubicacion_por_estante','id_bandeja_estante', 'identificacion_por_estante')
 
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
