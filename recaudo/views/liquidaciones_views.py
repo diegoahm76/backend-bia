@@ -7,6 +7,7 @@ from recaudo.models.liquidaciones_models import (
 )
 from recaudo.serializers.liquidaciones_serializers import (
     OpcionesLiquidacionBaseSerializer,
+    OpcionesLiquidacionBasePutSerializer,
     DeudoresSerializer,
     LiquidacionesBaseSerializer,
     LiquidacionesBasePostSerializer,
@@ -49,6 +50,14 @@ class DetalleOpcionesLiquidacionBaseView(generics.GenericAPIView):
             return Response({'success': False, 'detail': 'No se encontró ningun registro con el parámetro ingresado'}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.serializer_class(queryset)
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+
+    def put(self, request, pk):
+        opcion = OpcionesLiquidacionBase.objects.filter(pk=pk).get()
+        serializer = OpcionesLiquidacionBasePutSerializer(opcion, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class EliminarOpcionesLiquidacionBaseView(generics.GenericAPIView):
