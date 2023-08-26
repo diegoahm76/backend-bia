@@ -238,6 +238,9 @@ class DepositoSearch(generics.ListAPIView):
     def get_queryset(self):
         nombre_deposito = self.request.query_params.get('nombre_deposito', '').strip()
         identificacion_por_entidad = self.request.query_params.get('identificacion_por_entidad', '').strip()
+        id_deposito = self.request.query_params.get('id_deposito', '').strip()
+
+        
 
         # Filtrar por nombre_deposito, identificacion_por_entidad y ordenar por orden_ubicacion_por_entidad
         queryset = Deposito.objects.all()
@@ -247,6 +250,9 @@ class DepositoSearch(generics.ListAPIView):
 
         if identificacion_por_entidad:
             queryset = queryset.filter(identificacion_por_entidad__icontains=identificacion_por_entidad)
+
+        if id_deposito:
+            queryset = queryset.filter(id_deposito=id_deposito)    
 
         queryset = queryset.order_by('orden_ubicacion_por_entidad')  # Ordenar de forma ascendente
 
@@ -1036,6 +1042,7 @@ class CajaEstanteSearchAdvanced(generics.ListAPIView):
         identificacion_bandeja = self.clean_search_param(self.request.query_params.get('identificacion_bandeja'))
         identificacion_caja = self.clean_search_param(self.request.query_params.get('identificacion_caja'))
         orden_caja = self.clean_search_param(self.request.query_params.get('orden_caja'))
+        
 
         queryset = CajaBandeja.objects.all()
 
@@ -1054,7 +1061,10 @@ class CajaEstanteSearchAdvanced(generics.ListAPIView):
         if orden_caja:
             queryset = queryset.filter(orden_ubicacion_por_bandeja=orden_caja)
 
-        return queryset
+
+        
+        return queryset.order_by('orden_ubicacion_por_bandeja')
+
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -1069,11 +1079,18 @@ class CajaEstanteSearchAdvanced(generics.ListAPIView):
         serialized_data = []
         for caja in queryset:
             serialized_data.append({
+
                 'identificacion_deposito': caja.id_bandeja_estante.id_estante_deposito.id_deposito.identificacion_por_entidad,
+                'id_deposito': caja.id_bandeja_estante.id_estante_deposito.id_deposito.id_deposito,
                 'identificacion_estante': caja.id_bandeja_estante.id_estante_deposito.identificacion_por_deposito,
+                'id_estante': caja.id_bandeja_estante.id_estante_deposito.id_estante_deposito,
                 'identificacion_bandeja': caja.id_bandeja_estante.identificacion_por_estante,
+                'id_bandeja' :caja.id_bandeja_estante.id_bandeja_estante,
                 'identificacion_caja': caja.identificacion_por_bandeja,
+                'id_caja':caja.id_caja_bandeja,
                 'orden_caja': caja.orden_ubicacion_por_bandeja,
+
+
             })
 
         return Response({
@@ -1125,7 +1142,7 @@ class CajaBandejaInfo(generics.ListAPIView):
         idcaja = self.request.query_params.get('idcaja')
         if idcaja is not None:
             # Filtrar por bandejas que no están vinculadas a id_caja_estante
-            queryset = queryset.filter(id_caja_estante__idcaja_estante__ne=idcaja)
+            queryset = queryset.filter(id_caja_estante__id_caja_estante__ne=idcaja)
         
         # Ordenar por orden_ubicacion_por_estante en orden ascendente
         queryset = queryset.order_by('orden_ubicacion_por_estante')
@@ -1284,10 +1301,15 @@ class CarpetaCajaSearch(generics.ListAPIView):
         for caja in queryset:
             serialized_data.append({
                 'identificacion_deposito': caja.id_bandeja_estante.id_estante_deposito.id_deposito.identificacion_por_entidad,
+                'id_deposito': caja.id_bandeja_estante.id_estante_deposito.id_deposito.id_deposito,
                 'identificacion_estante': caja.id_bandeja_estante.id_estante_deposito.identificacion_por_deposito,
+                'id_estante': caja.id_bandeja_estante.id_estante_deposito.id_estante_deposito,
                 'identificacion_bandeja': caja.id_bandeja_estante.identificacion_por_estante,
+                'id_bandeja' :caja.id_bandeja_estante.id_bandeja_estante,
                 'identificacion_caja': caja.identificacion_por_bandeja,
+                'id_caja':caja.id_caja_bandeja,
                 'orden_caja': caja.orden_ubicacion_por_bandeja,
+
             })
 
         return Response({
