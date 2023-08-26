@@ -51,12 +51,24 @@ class FacilidadPagoDatosPlanSerializer(serializers.ModelSerializer):
         return f"{obj.id_deudor.nombres} {obj.id_deudor.apellidos}"
         
 
-    
-
 class VisualizacionCarteraSelecionadaSerializer(serializers.ModelSerializer):
-    nro_expediente = serializers.ReadOnlyField(source='id_expediente.cod_expediente',default=None)
-    nro_resolucion = serializers.ReadOnlyField(source='id_expediente.numero_resolucion',default=None)    
+    dias_mora = serializers.SerializerMethodField()
+    valor_intereses = serializers.SerializerMethodField()
 
     class Meta:
         model = Cartera
-        fields = ('id','nombre','nro_expediente','nro_resolucion','monto_inicial','inicio','dias_mora','valor_intereses')
+        fields = ('id','nombre','monto_inicial','inicio','dias_mora','valor_intereses')
+
+    def get_dias_mora(self, obj):
+        detalle = DetallesFacilidadPago.objects.filter(id_cartera=obj.id).first()
+
+        if detalle:
+            fecha_abono = detalle.id_facilidad_pago.fecha_abono
+            dias_mora = (fecha_abono - obj.inicio).days
+            return dias_mora
+        
+    def get_valor_intereses(self, obj):
+        dias_mora = self.get_dias_mora(obj)
+        if dias_mora is not None:
+            monto_inicial = float(obj.monto_inicial) 
+            return (0.12 / 360 * monto_inicial) * dias_mora

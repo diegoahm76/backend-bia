@@ -182,8 +182,8 @@ class RegisterExternoSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         nombre_de_usuario=attrs.get('nombre_de_usuario', '')
         # redirect_url=attrs.get('redirect_url','')
-        if not nombre_de_usuario.isalnum():
-            raise serializers.ValidationError("El Nombre de usuario solo debe tener caracteres alfanumericos")
+        # if not nombre_de_usuario.isalnum():
+        #     raise serializers.ValidationError("El Nombre de usuario solo debe tener caracteres alfanumericos")
         
         attrs['nombre_de_usuario'] = str(attrs['nombre_de_usuario']).lower()
         

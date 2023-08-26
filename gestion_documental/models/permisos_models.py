@@ -5,9 +5,9 @@ from transversal.models.organigrama_models import (
 )
 
 class PermisosUndsOrgActualesSerieExpCCD(models.Model):
-    id_permisos_und_org_actual_serie_exp_ccd=models.IntegerField(primary_key=True, editable=False, db_column='T221IdPermisos_UndOrgActual_SerieExp_CCD')
+    id_permisos_und_org_actual_serie_exp_ccd=models.AutoField(primary_key=True, editable=False, db_column='T221IdPermisos_UndOrgActual_SerieExp_CCD')
     id_cat_serie_und_org_ccd=models.ForeignKey(CatalogosSeriesUnidad, on_delete=models.CASCADE, db_column='T221Id_CatSerie_UndOrg_CCD')
-    id_und_organizacional_actual=models.ForeignKey(UnidadesOrganizacionales, on_delete=models.SET_NULL, db_column='T221Id_UndOrganizacionalActual')
+    id_und_organizacional_actual=models.ForeignKey(UnidadesOrganizacionales, on_delete=models.SET_NULL, blank=True, null=True, db_column='T221Id_UndOrganizacionalActual')
     pertenece_seccion_actual_admin_serie=models.BooleanField(blank=True, null=True, db_column='T221perteneceASeccionActualAdminSerie')
     crear_expedientes=models.BooleanField(blank=True, null=True, db_column='T221crearExpedientes')
     crear_documentos_exps_no_propios=models.BooleanField(blank=True, null=True, db_column='T221crearDocumentosEnExpsNoPropios')
@@ -30,3 +30,4 @@ class PermisosUndsOrgActualesSerieExpCCD(models.Model):
         db_table='T221Permisos_UndsOrgActuales_SerieExp_CCD'
         verbose_name='Permisos sobre Series de Expedientes de los CCD'
         verbose_name_plural='Permiso sobre Serie de Expedientes de los CCD'
+        unique_together = ['id_cat_serie_und_org_ccd', 'id_und_organizacional_actual']

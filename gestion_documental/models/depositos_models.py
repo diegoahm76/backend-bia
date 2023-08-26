@@ -59,7 +59,7 @@ class BandejaEstante(models.Model):
 
 #CAJAS
 class CajaBandeja(models.Model):
-    id_caja_estante = models.AutoField(primary_key=True, null=False, db_column='T233IdCaja_Bandeja')
+    id_caja_bandeja= models.AutoField(primary_key=True, null=False, db_column='T233IdCaja_Bandeja')
     id_bandeja_estante =models.ForeignKey(BandejaEstante, on_delete=models.CASCADE, db_column='T233Id_Bandeja_Estante')
     identificacion_por_bandeja=models.CharField(max_length=10, db_column='T233identificacionPorBandeja')
     orden_ubicacion_por_bandeja  = models.SmallIntegerField(db_column='T233ordenUbicacionPorBandeja', null=True)

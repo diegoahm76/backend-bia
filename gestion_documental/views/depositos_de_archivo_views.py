@@ -960,9 +960,9 @@ class CajaEstanteBandejaMove(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
-    def put(self, request, id_caja_estante):
+    def put(self, request, id_caja_bandeja):
         # Obtener la caja actual
-        caja = get_object_or_404(CajaBandeja, id_caja_estante=id_caja_estante)
+        caja = get_object_or_404(CajaBandeja, id_caja_bandeja=id_caja_bandeja)
 
         # Obtener los datos de destino desde la solicitud
         identificacion_bandeja_destino = request.data.get('identificacion_bandeja_destino')
@@ -1009,7 +1009,7 @@ class CajaEstanteBandejaMove(generics.UpdateAPIView):
         return Response({
             'success': True,
             'detail': 'Caja movida exitosamente.',
-            'id_caja':id_caja_estante,
+            'id_caja':id_caja_bandeja,
             'caja_actual': caja_actual_data,
             'caja_destino': {
                 'identificacion_bandeja': identificacion_bandeja_destino,
@@ -1091,7 +1091,7 @@ class CajaEstanteDelete(generics.DestroyAPIView):
     
     def delete(self, request, pk):
         
-        caja = CajaBandeja.objects.filter(id_caja_estante=pk).first()
+        caja = CajaBandeja.objects.filter(id_caja_bandeja=pk).first()
 
         if not caja:
             raise ValidationError("No existe la caja que desea eliminar")
@@ -1114,17 +1114,22 @@ class CajaEstanteDelete(generics.DestroyAPIView):
 
 
 #LISTAR_POR_IDCAJA_INFO
-class CajaBandejaInfo(generics.RetrieveAPIView):
+class CajaBandejaInfo(generics.ListAPIView):
     serializer_class = CajaBandejaInfoSerializer
-    queryset = CajaBandeja.objects.all()
+    queryset = BandejaEstante.objects.all()
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        id_caja_estante = self.kwargs['id_caja_estante']
-        caja = CajaBandeja.objects.get(id_caja_estante=id_caja_estante)
-        queryset = CajaBandeja.objects.filter(
-            id_bandeja_estante__id_estante_deposito__id_deposito=caja.id_bandeja_estante.id_estante_deposito.id_deposito
-        ).exclude(id_caja_estante=id_caja_estante)
+        queryset = BandejaEstante.objects.all()
+        
+        idcaja = self.request.query_params.get('idcaja')
+        if idcaja is not None:
+            # Filtrar por bandejas que no están vinculadas a id_caja_estante
+            queryset = queryset.filter(id_caja_estante__idcaja_estante__ne=idcaja)
+        
+        # Ordenar por orden_ubicacion_por_estante en orden ascendente
+        queryset = queryset.order_by('orden_ubicacion_por_estante')
+        
         return queryset
 
 #LISTAR_TODAS_CAJAS
