@@ -1,7 +1,7 @@
 from django.db import models
 
 from transversal.models.organigrama_models import UnidadesOrganizacionales
-
+from transversal.choices.tipos_alertas import CATEGORIA_ALERTA_CHOICES
 
 class ConfiguracionClaseAlerta(models.Model):
     cod_clase_alerta = models.CharField(primary_key=True, max_length=10, db_column='T040CodClaseAlerta')
@@ -74,10 +74,7 @@ class PersonasAAlertar(models.Model):
 
 
 # Choices para T043codCategoriaAlerta
-CATEGORIA_ALERTA_CHOICES = [
-    ('Ale', 'Alerta'),
-    ('Com', 'Comunicación'),
-]
+
 
 # Choices para T043nivelPrioridad
 NIVEL_PRIORIDAD_CHOICES = [
