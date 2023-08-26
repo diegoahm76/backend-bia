@@ -135,7 +135,18 @@ def programar_alerta(programada,clasificacion):
         data_alerga_generada={}
         data_alerga_generada['nombre_clase_alerta']=programada.nombre_clase_alerta
         #PENDIENTE COMPLEMENTO DE MENSAJES
-        data_alerga_generada['mensaje']=programada.mensaje_base_del_dia+"\n"+cadena#VALIDAR CAMPO <1000
+        data_alerga_generada['mensaje']=""
+        if clasificacion=="ANTES":
+            data_alerga_generada['mensaje']+=programada.mensaje_base_previo#VALIDAR CAMPO <1000
+        elif clasificacion=="AHORA":
+            data_alerga_generada['mensaje']+=programada.mensaje_base_del_dia#VALIDAR CAMPO <1000
+        elif clasificacion=="DESPUES":
+            data_alerga_generada['mensaje']+=programada.mensaje_base_vencido#VALIDAR CAMPO <1000
+
+        if programada.complemento_mensaje:
+            data_alerga_generada['mensaje']+=" "+programada.complemento_mensaje
+        
+        data_alerga_generada['mensaje']+=" "+cadena
         #FIN
         data_alerga_generada['cod_categoria_alerta']=programada.cod_categoria_alerta
         data_alerga_generada['nivel_prioridad']=programada.nivel_prioridad

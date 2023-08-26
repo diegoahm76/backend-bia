@@ -479,6 +479,7 @@ class AlertasProgramadasCreate(generics.CreateAPIView):
             data_alerta_programada['id_personas_alertar'] = cadena_personas
             data_alerta_programada['cod_clase_alerta'] = configuracion.cod_clase_alerta
             data_alerta_programada['nombre_clase_alerta'] = configuracion.nombre_clase_alerta
+            #data_alerta_programada['']
 
             if not 'age_cumplimiento' in data_in:
                 data_in['age_cumplimiento']=None
@@ -495,6 +496,9 @@ class AlertasProgramadasCreate(generics.CreateAPIView):
             if data_in['age_cumplimiento']:
                 data_alerta_programada['agno_cumplimiento'] =data_in['age_cumplimiento']
             data_alerta_programada['mensaje_base_del_dia'] = configuracion.mensaje_base_dia
+            data_alerta_programada['mensaje_base_previo'] = configuracion.mensaje_base_previo
+            data_alerta_programada['mensaje_base_vencido'] = configuracion.mensaje_base_vencido
+            
 
             data_alerta_programada['id_modulo_destino'] = configuracion.id_modulo_destino.id_modulo
             data_alerta_programada['id_modulo_generador'] = configuracion.id_modulo_generador.id_modulo
