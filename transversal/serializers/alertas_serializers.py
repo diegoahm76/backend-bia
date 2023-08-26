@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from transversal.models.alertas_models import AlertasBandejaAlertaPersona, AlertasGeneradas, AlertasProgramadas, BandejaAlertaPersona, ConfiguracionClaseAlerta, FechaClaseAlerta, PersonasAAlertar
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
-
+from transversal.choices.tipos_alertas import CATEGORIA_ALERTA_CHOICES
 
 class ConfiguracionClaseAlertaGetSerializer(serializers.ModelSerializer):
         nombre_subsistema=serializers.ReadOnlyField(source='id_modulo_generador.subsistema', default=None)
@@ -116,7 +116,7 @@ class BandejaAlertaPersonaGetSerializer(serializers.ModelSerializer):
 
 class AlertasBandejaAlertaPersonaGetSerializer(serializers.ModelSerializer):
     nivel_prioridad=serializers.ReadOnlyField(source='id_alerta_generada.nivel_prioridad', default=None)
-    tipo_alerta=serializers.ReadOnlyField(source='id_alerta_generada.cod_categoria_alerta', default=None)
+    #tipo_alerta=serializers.ReadOnlyField(source='id_alerta_generada.cod_categoria_alerta', default=None)
     fecha_hora=serializers.ReadOnlyField(source='id_alerta_generada.fecha_generada', default=None)
     nombre_clase_alerta=serializers.ReadOnlyField(source='id_alerta_generada.nombre_clase_alerta', default=None)
     id_modulo=serializers.ReadOnlyField(source='id_alerta_generada.id_modulo_destino.id_modulo', default=None)
@@ -124,6 +124,17 @@ class AlertasBandejaAlertaPersonaGetSerializer(serializers.ModelSerializer):
     nombre_modulo=serializers.ReadOnlyField(source='id_alerta_generada.id_modulo_destino.ruta_formulario', default=None)
     ultima_repeticion=serializers.ReadOnlyField(source='id_alerta_generada.es_ultima_repeticion', default=None)
     mensaje=serializers.ReadOnlyField(source='id_alerta_generada.mensaje', default=None)
+
+    def get_tipo_alerta(self, obj):
+        for cod,nombre in CATEGORIA_ALERTA_CHOICES:
+             if obj.id_alerta_generada.cod_categoria_alerta==cod:
+                  return nombre
+        return obj.id_alerta_generada.cod_categoria_alerta
+    tipo_alerta = serializers.SerializerMethodField()
+
+    
+    #cod_categoria_clase_alerta_display = serializers.CharField(source='get_cod_categoria_clase_alerta_display', read_only=True)
+    #nivel_prioridad_display = serializers.CharField(source='get_nivel_prioridad_display', read_only=True)
     class Meta:
           model=AlertasBandejaAlertaPersona
           fields= '__all__'
