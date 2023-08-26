@@ -1036,6 +1036,7 @@ class CajaEstanteSearchAdvanced(generics.ListAPIView):
         identificacion_bandeja = self.clean_search_param(self.request.query_params.get('identificacion_bandeja'))
         identificacion_caja = self.clean_search_param(self.request.query_params.get('identificacion_caja'))
         orden_caja = self.clean_search_param(self.request.query_params.get('orden_caja'))
+        
 
         queryset = CajaBandeja.objects.all()
 
@@ -1054,7 +1055,10 @@ class CajaEstanteSearchAdvanced(generics.ListAPIView):
         if orden_caja:
             queryset = queryset.filter(orden_ubicacion_por_bandeja=orden_caja)
 
-        return queryset
+
+        
+        return queryset.order_by('orden_ubicacion_por_bandeja')
+
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -1069,11 +1073,18 @@ class CajaEstanteSearchAdvanced(generics.ListAPIView):
         serialized_data = []
         for caja in queryset:
             serialized_data.append({
+
                 'identificacion_deposito': caja.id_bandeja_estante.id_estante_deposito.id_deposito.identificacion_por_entidad,
+                'id_deposito': caja.id_bandeja_estante.id_estante_deposito.id_deposito.id_deposito,
                 'identificacion_estante': caja.id_bandeja_estante.id_estante_deposito.identificacion_por_deposito,
+                'id_estante': caja.id_bandeja_estante.id_estante_deposito.id_estante_deposito,
                 'identificacion_bandeja': caja.id_bandeja_estante.identificacion_por_estante,
+                'id_bandeja' :caja.id_bandeja_estante.id_bandeja_estante,
                 'identificacion_caja': caja.identificacion_por_bandeja,
+                'id_caja':caja.id_caja_bandeja,
                 'orden_caja': caja.orden_ubicacion_por_bandeja,
+
+
             })
 
         return Response({
@@ -1268,7 +1279,7 @@ class CarpetaCajaSearch(generics.ListAPIView):
         if orden_caja:
             queryset = queryset.filter(orden_ubicacion_por_bandeja=orden_caja)
 
-        return queryset
+        return queryset.order_by('orden_ubicacion_por_bandeja')
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -1284,10 +1295,15 @@ class CarpetaCajaSearch(generics.ListAPIView):
         for caja in queryset:
             serialized_data.append({
                 'identificacion_deposito': caja.id_bandeja_estante.id_estante_deposito.id_deposito.identificacion_por_entidad,
+                'id_deposito': caja.id_bandeja_estante.id_estante_deposito.id_deposito.id_deposito,
                 'identificacion_estante': caja.id_bandeja_estante.id_estante_deposito.identificacion_por_deposito,
+                'id_estante': caja.id_bandeja_estante.id_estante_deposito.id_estante_deposito,
                 'identificacion_bandeja': caja.id_bandeja_estante.identificacion_por_estante,
+                'id_bandeja' :caja.id_bandeja_estante.id_bandeja_estante,
                 'identificacion_caja': caja.identificacion_por_bandeja,
+                'id_caja':caja.id_caja_bandeja,
                 'orden_caja': caja.orden_ubicacion_por_bandeja,
+
             })
 
         return Response({
