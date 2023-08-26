@@ -167,7 +167,7 @@ class AlertasGeneradas(models.Model):
 
 class BandejaAlertaPersona(models.Model):
     id_bandeja_alerta = models.AutoField(primary_key=True, db_column='T045IdBandejaAlertas_Persona')
-    id_persona = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T045Id_Persona')
+    id_persona = models.OneToOneField('transversal.Personas', on_delete=models.CASCADE, db_column='T045Id_Persona')
     pendientes_leer = models.BooleanField(default=False, db_column='T045pendientesLeer')
     pendientes_archivar = models.BooleanField(default=False, db_column='T045pendientesArchivar')
     

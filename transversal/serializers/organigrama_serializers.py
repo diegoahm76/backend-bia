@@ -64,6 +64,9 @@ class UnidadesPutSerializer(serializers.ModelSerializer):
         extra_kwargs = {"cod_tipo_unidad": {"error_messages": {"required": "El campo de cod_tipo_unidad es requerido"}}}
 
 class UnidadesGetSerializer(serializers.ModelSerializer):
+    nombre_unidad_org_actual_admin_series = serializers.ReadOnlyField(source='id_unidad_org_actual_admin_series.nombre', default=None)
+    codigo_unidad_org_actual_admin_series = serializers.ReadOnlyField(source='id_unidad_org_actual_admin_series.codigo', default=None)
+    
     class Meta:
         model = UnidadesOrganizacionales
         fields = '__all__'

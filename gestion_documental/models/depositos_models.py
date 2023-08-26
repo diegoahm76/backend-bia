@@ -9,8 +9,8 @@ from transversal.models.entidades_models import SucursalesEmpresas
 class Deposito(models.Model):
     id_deposito = models.AutoField(primary_key=True,null=False, db_column='T230IdDeposito')
     nombre_deposito = models.CharField(max_length=100, db_column='T230nombreDeposito',null=False)
-    identificacion_por_entidad = models.CharField(max_length=10, db_column='T230identificacionPorEntidad',null=False,unique=True)
-    orden_ubicacion_por_entidad = models.SmallIntegerField(db_column='T230ordenUbicacionPorEntidad',null=False, unique=True)
+    identificacion_por_entidad = models.CharField(max_length=10, db_column='T230identificacionPorEntidad',null=False)
+    orden_ubicacion_por_entidad = models.SmallIntegerField(db_column='T230ordenUbicacionPorEntidad',null=False)
     direccion_deposito = models.CharField(max_length=255, db_column='T230direccionDeposito',null=False)
     cod_municipio_nal = models.ForeignKey(Municipio, on_delete=models.CASCADE, db_column='T230Cod_MunicipioNal',null=True)
     cod_pais_exterior = models.ForeignKey(Paises, on_delete=models.CASCADE, db_column='T230Cod_PaisExterior',null=True)
@@ -24,6 +24,8 @@ class Deposito(models.Model):
         db_table = 'T230Depositos'
         verbose_name = 'Depósito'
         verbose_name_plural = 'Depósitos'
+        unique_together = [('identificacion_por_entidad'),( 'orden_ubicacion_por_entidad')]
+
 
 #ESTANTES
 class EstanteDeposito(models.Model):
@@ -59,7 +61,7 @@ class BandejaEstante(models.Model):
 
 #CAJAS
 class CajaBandeja(models.Model):
-    id_caja_estante = models.AutoField(primary_key=True, null=False, db_column='T233IdCaja_Bandeja')
+    id_caja_bandeja= models.AutoField(primary_key=True, null=False, db_column='T233IdCaja_Bandeja')
     id_bandeja_estante =models.ForeignKey(BandejaEstante, on_delete=models.CASCADE, db_column='T233Id_Bandeja_Estante')
     identificacion_por_bandeja=models.CharField(max_length=10, db_column='T233identificacionPorBandeja')
     orden_ubicacion_por_bandeja  = models.SmallIntegerField(db_column='T233ordenUbicacionPorBandeja', null=True)
