@@ -5,6 +5,7 @@ urlpatterns = [
     path('opciones-liquidacion-base/', views.OpcionesLiquidacionBaseView.as_view(), name='opciones-liquidacion-base-todos'),
     path('clonar-opcion-liquidacion-base/<int:pk>/', views.ClonarOpcionLiquidacionView.as_view(), name='clonar-opciones-liquidacion-base'),
     path('opciones-liquidacion-base/<int:pk>/', views.DetalleOpcionesLiquidacionBaseView.as_view(), name='opciones-liquidacion-base-detalles'),
+    path('eliminar-opciones-liquidacion-base/<int:pk>/', views.EliminarOpcionesLiquidacionBaseView.as_view(), name='opciones-liquidacion-base-eliminar'),
 
     path('deudores/', views.DeudoresView.as_view(), name='deudores-todos'),
     path('deudores/<str:identificacion>', views.DeudoresIdentificacionView.as_view(), name='deudores-busqueda-identificacion'),

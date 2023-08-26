@@ -51,6 +51,20 @@ class DetalleOpcionesLiquidacionBaseView(generics.GenericAPIView):
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
+class EliminarOpcionesLiquidacionBaseView(generics.GenericAPIView):
+    queryset = OpcionesLiquidacionBase.objects.all()
+    serializer_class = OpcionesLiquidacionBaseSerializer
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        opcion_liquidacion = OpcionesLiquidacionBase.objects.filter(pk=pk).first()
+        if opcion_liquidacion:
+            opcion_liquidacion.delete()
+            return Response({'success': True, 'detail': 'La opción de liquidación ha sido eliminado exitosamente'}, status=status.HTTP_200_OK)
+        else:
+            raise NotFound('No existe la opción de liquidación')
+
+
 class DeudoresView(generics.GenericAPIView):
     queryset = Deudores.objects.all()
     serializer_class = DeudoresSerializer

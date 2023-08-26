@@ -245,7 +245,6 @@ class UpdateProcesosView(generics.ListAPIView):
                 etapa = etapa.get()
                 proceso.id_etapa = etapa
                 proceso.save()
-                print(proceso)
                 return Response({'success': True, 'data': 'La etapa del proceso se ha actualizado con exito'}, status=status.HTTP_200_OK)
             else:
                 return Response({'success': False, 'data': 'No existe la etapa con el id enviado'}, status=status.HTTP_400_BAD_REQUEST)
@@ -302,3 +301,40 @@ class CategoriaAtributoView(generics.ListAPIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class EtapasFiltradoView(generics.ListAPIView):
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        etapas = AtributosEtapas.objects.all()
+        etapasGeneral = []
+        etapasLista = []
+        etapasNombres = []
+
+        for etapa in etapas:
+            etapasNombres.append(etapa.id_etapa.etapa)
+            etapasLista.append(
+                {
+                    'etapa_general': etapa.id_etapa,
+                    'etapa': etapa.id_etapa.etapa,
+                    'categoria_general': etapa.id_categoria,
+                    'categoria': etapa.id_categoria.categoria
+                }
+            )
+
+        for etapa in etapasNombres:
+            categorias = []
+            etapa_general = {}
+            for item in etapasLista:
+                if etapa == item['etapa']:
+                    etapa_general = EtapasProcesoSerializer(item['etapa_general']).data
+                    categorias.append(CategoriaAtributoSerializer(item['categoria_general']).data)
+            etapasGeneral.append(
+                {
+                    'etapa': etapa_general,
+                    'subetapas': categorias
+                }
+            )
+
+        return Response({'success': True, 'data': etapasGeneral}, status=status.HTTP_200_OK)
