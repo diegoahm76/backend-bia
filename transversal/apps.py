@@ -6,5 +6,13 @@ class TransversalConfig(AppConfig):
     name = 'transversal'
     
     def ready(self):
+        
         import transversal.signals.organigrama_signals
         import transversal.signals.personas_signals
+        #from jobs import  updater
+        #updater.start()
+
+
+
+
+        

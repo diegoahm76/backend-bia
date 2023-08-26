@@ -52,6 +52,11 @@ class PersonasAAlertarPostSerializer(serializers.ModelSerializer):
         class Meta:
             model=PersonasAAlertar
             fields=('__all__')
+class BandejaAlertaPersonaPostSerializer(serializers.ModelSerializer):
+        class Meta:
+            model=BandejaAlertaPersona
+            fields=('__all__')
+
 
 class PersonasAAlertarGetSerializer(serializers.ModelSerializer):
         nombre_completo = serializers.SerializerMethodField()

@@ -5,7 +5,7 @@ from rest_framework import generics
 from transversal.models.alertas_models import FechaClaseAlerta
 from transversal.models.entidades_models import ConfiguracionEntidad
 from transversal.models.lideres_models import LideresUnidadesOrg
-
+from seguridad.models import Personas
 from transversal.serializers.alertas_serializers import *
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
@@ -237,3 +237,29 @@ class AlertasBandejaAlertaPersonaUpdate(generics.UpdateAPIView):
 
 
         return Response({'success': True, 'detail': 'Se actualizó la configuración de clase de alerta correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+
+class BandejaAlertaPersonaCreate(generics.CreateAPIView):
+    serializer_class = BandejaAlertaPersonaPostSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = BandejaAlertaPersona.objects.all()
+    
+    def crear_bandeja_persona(self, data_in):
+        id_persona=data_in['id_persona']
+        persona=Personas.objects.filter(id_persona=id_persona).first()
+        #print(persona)
+        if  not persona:
+            raise NotFound("No existe persona asociada a esta id.")
+        try:
+            serializador = BandejaAlertaPersonaPostSerializer(data=data_in)
+            serializador.is_valid(raise_exception=True)
+            instance=serializador.save()
+            return Response({'success': True, 'detail': 'Se crearon los registros correctamente', 'data': serializador.data}, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            raise ValidationError( e.detail)
+
+    def post(self, request, *args, **kwargs):
+        data_in = request.data
+        response_data = self.crear_bandeja_persona(data_in)
+        return response_data

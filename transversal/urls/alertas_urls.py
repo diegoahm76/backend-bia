@@ -26,6 +26,7 @@ urlpatterns = [
     path('ejecutar-tarea/', views.mi_vista, name='ejecutar_tarea'),
     path('alertas_bandeja_Alerta_persona/get-alerta_bandeja-by-bandeja/<str:pk>/',bandejas_views.AlertasBandejaAlertaPersonaGetByBandeja.as_view(),name='get-items_bandeja-persona'),
     path('alertas_bandeja_Alerta_persona/update/<str:pk>/', bandejas_views.AlertasBandejaAlertaPersonaUpdate.as_view(), name='actualizar_item_bandeja_persona'),
+    path('alertas_bandeja_persona/create/', bandejas_views.BandejaAlertaPersonaCreate.as_view(), name='crear_bandeja_alerta'),
 
 
 ]

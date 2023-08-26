@@ -11,7 +11,7 @@ from rest_framework import status
 from datetime import datetime,date,timedelta
 from recurso_hidrico.models.programas_models import ProyectosPORH
 from recurso_hidrico.serializers.programas_serializers import GenerardorMensajeProyectosPORHGetSerializer, ProyectosPORHSerializer
-from transversal.funtions.alertas import alerta_proyectos_vigentes_porh, mi_primera_tarea_en_segundo_plano
+from transversal.funtions.alertas import alerta_proyectos_vigentes_porh, generar_alerta_segundo_plano
 from transversal.models.alertas_models import AlertasProgramadas, ConfiguracionClaseAlerta, FechaClaseAlerta, PersonasAAlertar
 from seguridad.models import Personas
 from transversal.serializers.alertas_serializers import AlertasProgramadasPostSerializer, AlertasProgramadasUpdateSerializer, ConfiguracionClaseAlertaGetSerializer, ConfiguracionClaseAlertaUpdateSerializer, FechaClaseAlertaDeleteSerializer, FechaClaseAlertaGetSerializer, FechaClaseAlertaPostSerializer, PersonasAAlertarDeleteSerializer, PersonasAAlertarGetSerializer, PersonasAAlertarPostSerializer
@@ -64,23 +64,24 @@ class ConfiguracionClaseAlertaUpdate(generics.UpdateAPIView):
             serializer.is_valid(raise_exception=True)
             instance=serializer.save()
 
-            if (instance.envios_email != previus.envios_email) | (instance.nivel_prioridad != previus.nivel_prioridad)| (instance.activa != previus.activa):
-                print( "cambio")
-                cambios={       
+            #if (instance.envios_email != previus.envios_email) or (instance.nivel_prioridad != previus.nivel_prioridad) or (instance.activa != previus.activa):
+            print( "cambio")
+            cambios={       
                         "envios_email": instance.envios_email,
                         "nivel_prioridad": instance.nivel_prioridad,
                         "activa": instance.activa
                         }
                 
-                alertas_programadas=AlertasProgramadas.objects.filter(cod_clase_alerta=instance.cod_clase_alerta)
-
-                actualizar_alerta_programada=AlertasProgramadasUpdate()
-
-                for alerta_programada in alertas_programadas:
-                    response_alerta_programada=actualizar_alerta_programada.actualizar_alerta_programada(cambios,alerta_programada.id_alerta_programada)
-                    if response_alerta_programada.status_code!=status.HTTP_200_OK:
-                        return response_alerta_programada
-                    print(response_alerta_programada.data)
+            alertas_programadas=AlertasProgramadas.objects.filter(cod_clase_alerta=instance.cod_clase_alerta)
+            print(instance.cod_clase_alerta)
+            actualizar_alerta_programada=AlertasProgramadasUpdate()
+           
+            for alerta_programada in alertas_programadas:
+                print(alerta_programada.id_alerta_programada)
+                response_alerta_programada=actualizar_alerta_programada.actualizar_alerta_programada(cambios,alerta_programada.id_alerta_programada)
+                if response_alerta_programada.status_code!=status.HTTP_200_OK:
+                    return response_alerta_programada
+                print(response_alerta_programada.data)
 
         except ValidationError as e:       
             raise ValidationError(e.detail)
@@ -140,34 +141,35 @@ class FechaClaseAlertaCreate(generics.CreateAPIView):
     
     def post(self,request):
         data_in = request.data
+        dia= data_in.get('dia_cumplimiento')
+        mes=data_in.get('mes_cumplimiento')
+        agno=data_in.get('age_cumplimiento')
 
         if not ('age_cumplimiento' in data_in):
             data_in['age_cumplimiento']=None
         try:
-            if 'age_cumplimiento' in data_in and data_in['age_cumplimiento']:
-                #raise ValidationError(data_in['age_cumplimiento'])
-                fechas=FechaClaseAlerta.objects.filter(cod_clase_alerta=data_in['cod_clase_alerta'],dia_cumplimiento=data_in['dia_cumplimiento'], mes_cumplimiento=data_in['mes_cumplimiento'], age_cumplimiento=data_in['age_cumplimiento'])
-            else:
+            
+           
+            fechas=FechaClaseAlerta.objects.filter(cod_clase_alerta=data_in['cod_clase_alerta'],dia_cumplimiento=dia, mes_cumplimiento=mes)
+            for fecha in fechas:
+                if agno is None:
+                    raise ValidationError("Esta alerta ya cuenta con fechas dirigidas a estos dias con año especifico.")
+                if fecha.age_cumplimiento is None:
+                    raise ValidationError("Esta alerta ya se encuentra configurada para esta fecha.")
+                elif fecha.age_cumplimiento==agno:
+                    raise ValidationError("Esta alerta ya se encuentra configurada para esta fecha.(CON AÑO)")
 
-                fechas=FechaClaseAlerta.objects.filter(cod_clase_alerta=data_in['cod_clase_alerta'],dia_cumplimiento=data_in['dia_cumplimiento'], mes_cumplimiento=data_in['mes_cumplimiento'], age_cumplimiento__isnull=True)
-            if fechas:
-                raise ValidationError("Ya existe esta fecha en la alerta.")
             serializer = self.serializer_class(data=data_in)
             serializer.is_valid(raise_exception=True)
             instance=serializer.save()
-            #raise ValidationError("GUARDO"+str(instance))
-            # Obtener todas las fechas de la tabla FechaClaseAlerta
-            #alertas = AlertasProgramadas.objects.filter(dia_cumplimiento=instance.dia_cumplimiento,mes_cumplimiento=instance.mes_cumplimiento,agno_cumplimiento=instance.age_cumplimiento)
-            #print(alertas)
-      
+
             fecha_alerta={'dia_cumplimiento':instance.dia_cumplimiento,'mes_cumplimiento':instance.mes_cumplimiento,'age_cumplimiento':instance.age_cumplimiento,'cod_clase_alerta':data_in['cod_clase_alerta']}
             crear_alerta=AlertasProgramadasCreate()
-            #print(instance)
-            #raise ValidationError(instance)
+
             response_alerta=crear_alerta.crear_alerta_programada(fecha_alerta)
             if response_alerta.status_code!=status.HTTP_201_CREATED:
                 return response_alerta
-            #Fin
+           
             return Response({'success':True,'detail':'Se crearon los registros correctamente','data':{'fecha_clase_alerta':serializer.data,'alerta_programada':response_alerta.data['data']}},status=status.HTTP_201_CREATED)
         except ValidationError as e:       
             raise ValidationError(e.detail)
@@ -246,6 +248,13 @@ class PersonasAAlertarCreate(generics.CreateAPIView):
 
         if not configuracion:
             raise ValidationError('No existe esta alerta.')
+
+        #validacion si requiere responsable directo
+        #raise ValidationError(ConfiguracionClaseAlerta.asignar_responsable)
+        if data_in['es_responsable_directo']:
+            #raise ValidationError("Esta alerta no requiere responsable directo.")
+            if not configuracion.asignar_responsable:
+                raise ValidationError("Esta alerta no requiere responsable directo.")
 
         if not 'id_persona' in data_in:
             data_in['id_persona'] = None
@@ -544,8 +553,13 @@ class AlertasProgramadasUpdate(generics.UpdateAPIView):
 
             data_alerta_programada['requiere_envio_email']=configuracion.envios_email
             data_alerta_programada['nivel_prioridad'] = configuracion.nivel_prioridad
-            if 'id_persona_implicada' in data_in:
-                data_alerta_programada['id_persona_implicada'] = data_in['id_persona_implicada']
+            data_alerta_programada['ctdad_dias_alertas_previas']=configuracion.cant_dias_previas
+            data_alerta_programada['frecuencia_alertas_previas']=configuracion.frecuencia_previas
+            data_alerta_programada['ctdad_repeticiones_post']=configuracion.cant_dias_post
+            data_alerta_programada['frecuencia_repeticiones_post']=configuracion.frecuencia_post
+
+            #if 'id_persona_implicada' in data_in:
+            #    data_alerta_programada['id_persona_implicada'] = data_in['id_persona_implicada']
 
             personas_alertar = PersonasAAlertar.objects.filter(cod_clase_alerta=instance.cod_clase_alerta)
             if not personas_alertar:
@@ -613,6 +627,10 @@ class AlertasProgramadasUpdate(generics.UpdateAPIView):
         response= self.actualizar_alerta_programada(data_in,pk)
         return response
     
+
+
+
+
 ##funciones para complementar mensajes
 
 ##ALERTA RECURSO HIDICO
@@ -642,49 +660,11 @@ class AlertaProyectosVigentesGet(generics.ListAPIView):
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializador.data,'mensaje':mensaje}, status=status.HTTP_200_OK)
 
 
-#FUNCIONES GENERADORAS DE MENSAJE
-# def alerta_proyectos_vigentes_porh():
-#         mensaje=""
-#         hoy = date.today()
-#         proyectos_vigentes = ProyectosPORH.objects.filter(Q(vigencia_inicial__lte=hoy) & Q(vigencia_final__gte=hoy))
-#         serializador = GenerardorMensajeProyectosPORHGetSerializer(proyectos_vigentes, many=True)
-#         for dato in serializador.data:
-#             mensaje+="Proyecto "+str(dato['id_proyecto'])+" ("+str(dato['nombre'])+")"+" del Programa "+str(dato['id_programa'])+" ("+str(dato['nombre_programa'])+")"+"  del Plan de Ordenamiento de Recurso Hídrico "+str(dato['id_porh'])+" ("+str(dato['nombre_porh'])+")"+".\n"
-
-#         return(mensaje)
-
-
-
-# #@background(schedule=None) 
-# def mi_primera_tarea_en_segundo_plano():
-#     # Coloca aquí el código de la tarea que deseas ejecutar en segundo plano
-#     print("Tarea en segundo plano ejecutada.")
-#     #cod='RcH_AvPy'
-#     hoy = date.today()
-#     numero_dia = hoy.day
-#     numero_mes = hoy.month
-#     numero_anio = hoy.year
-#     alertas_generadas=AlertasProgramadas.objects.all()
-#     #Alerta en Fecha Fija - Programadas con o sin Repeticiones anteriores o posteriores  (con y sin año).
-#     for programada in alertas_generadas:
-#             if programada.dia_cumplimiento==numero_dia and programada.mes_cumplimiento==numero_mes:
-#                 print(programada.nombre_funcion_comple_mensaje)
-#                 print(programada.dia_cumplimiento)
-
-#                 nombre_funcion = programada.nombre_funcion_comple_mensaje
-#                 funcion = globals().get(nombre_funcion)
-
-#                 if funcion:
-#                     cadena=funcion()
-#                     print(cadena)
-#                 else:
-#                     print("La función no fue encontrada.")
-
 
 
 
 def mi_vista(request):
 
-    mi_primera_tarea_en_segundo_plano()  
+    generar_alerta_segundo_plano()  
 
     return HttpResponse("Tarea en segundo plano programada.")
