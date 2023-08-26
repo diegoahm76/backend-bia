@@ -238,6 +238,9 @@ class DepositoSearch(generics.ListAPIView):
     def get_queryset(self):
         nombre_deposito = self.request.query_params.get('nombre_deposito', '').strip()
         identificacion_por_entidad = self.request.query_params.get('identificacion_por_entidad', '').strip()
+        id_deposito = self.request.query_params.get('id_deposito', '').strip()
+
+        
 
         # Filtrar por nombre_deposito, identificacion_por_entidad y ordenar por orden_ubicacion_por_entidad
         queryset = Deposito.objects.all()
@@ -247,6 +250,9 @@ class DepositoSearch(generics.ListAPIView):
 
         if identificacion_por_entidad:
             queryset = queryset.filter(identificacion_por_entidad__icontains=identificacion_por_entidad)
+
+        if id_deposito:
+            queryset = queryset.filter(id_deposito=id_deposito)    
 
         queryset = queryset.order_by('orden_ubicacion_por_entidad')  # Ordenar de forma ascendente
 
@@ -1136,7 +1142,7 @@ class CajaBandejaInfo(generics.ListAPIView):
         idcaja = self.request.query_params.get('idcaja')
         if idcaja is not None:
             # Filtrar por bandejas que no están vinculadas a id_caja_estante
-            queryset = queryset.filter(id_caja_estante__idcaja_estante__ne=idcaja)
+            queryset = queryset.filter(id_caja_estante__id_caja_estante__ne=idcaja)
         
         # Ordenar por orden_ubicacion_por_estante en orden ascendente
         queryset = queryset.order_by('orden_ubicacion_por_estante')
@@ -1279,7 +1285,7 @@ class CarpetaCajaSearch(generics.ListAPIView):
         if orden_caja:
             queryset = queryset.filter(orden_ubicacion_por_bandeja=orden_caja)
 
-        return queryset.order_by('orden_ubicacion_por_bandeja')
+        return queryset
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
