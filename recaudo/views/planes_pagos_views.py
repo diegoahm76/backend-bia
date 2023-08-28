@@ -18,7 +18,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from datetime import datetime, date, timedelta
- 
+
 
 class PlanPagosValidationView(generics.RetrieveAPIView):
     serializer_class = PlanPagosSerializer
@@ -190,11 +190,13 @@ class CarteraSeleccionadaModificadaDeudorListaViews(generics.ListAPIView):
             raise ValidationError('El dato ingresado no es valido')
         
 
-class PlanPagosCarteraListaViews(generics.ListAPIView):
+class PlanPagosAmortizacionListaViews(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, id_facilidad_pago):
         fecha_final_str = str(self.request.query_params.get('fecha_final', ''))
+        cuotas = int(self.request.query_params.get('cuotas', ''))
+        periodicidad = int(self.request.query_params.get('periodicidad', ''))
         fecha_final = datetime.strptime(fecha_final_str, '%Y-%m-%d').date()
 
         try:
@@ -202,15 +204,55 @@ class PlanPagosCarteraListaViews(generics.ListAPIView):
         except FacilidadesPago.DoesNotExist:
             raise NotFound('No se encontraron resultados.')
         
+        # TABLA 1
         instancia_cartera = CarteraSeleccionadaListViews()
-        data_cartera = instancia_cartera.cartera_selecionada(facilidad.id, fecha_final)
-
+        data_cartera = instancia_cartera.cartera_selecionada(facilidad.id, facilidad.fecha_abono)
+        # TABLA 2
         instancia_cartera_modificada = CarteraSeleccionadaListViews()
         data_cartera_modificada = instancia_cartera_modificada.cartera_selecionada(facilidad.id, fecha_final)
 
+        # RESUMEN DE LA FACILIDAD
+        resumen_inicial = {
+            'capital_total': data_cartera['total_valor_capital_con_intereses'],
+            'abono_facilidad': float(facilidad.valor_abonado)
+        }
+        # RESUMEN DE LA FACILIDAD
+        resumen_facilidad = {
+            'saldo_total': data_cartera_modificada['total_valor_capital'],
+            'intreses_mora': data_cartera_modificada['total_intereses'],
+            'deuda_total':data_cartera_modificada['total_valor_capital']+data_cartera_modificada['total_intereses']
+        }
+        capital_cuotas = data_cartera_modificada['total_valor_capital'] / cuotas
+        interes_cuotas = data_cartera_modificada['total_intereses'] / cuotas
+        # DISTRIBUCION CUOTA
+        distribucion_cuota= {
+            'capital_cuotas': capital_cuotas,
+            'interes_cuotas': interes_cuotas,
+            'total_cuota': capital_cuotas + interes_cuotas
+        }
+
+        proyeccion_plan = []
+        fecha_plan = facilidad.fecha_abono
+
+        for cuota in range(cuotas):
+            fecha_plan = fecha_plan + timedelta(days=periodicidad * 30)
+            proyeccion_plan.append({
+                'num_cuota':cuota+1,
+                'fecha_pago':fecha_plan,
+                'capital':capital_cuotas,
+                'interes':interes_cuotas,
+                'cuota': capital_cuotas + interes_cuotas
+                })
+
+
+        print(resumen_inicial)
         response_data = {
             'data_cartera':data_cartera,
-            'data_cartera_modificada':data_cartera_modificada
+            'data_cartera_modificada':data_cartera_modificada,
+            'resumen_inicial':resumen_inicial,
+            'resumen_facilidad':resumen_facilidad,
+            'distribucion_cuota':distribucion_cuota,
+            'proyeccion_plan':proyeccion_plan
         }
 
         if response_data:
@@ -218,7 +260,3 @@ class PlanPagosCarteraListaViews(generics.ListAPIView):
         else:
             raise ValidationError('El dato ingresado no es valido')
 
-
-
-class ProyeccionPlanPagosView(generics.ListAPIView):
-    serializer_class = "ddsd"
