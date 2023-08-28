@@ -59,6 +59,7 @@ class EtapasProceso(models.Model):
 class CategoriaAtributo(models.Model):
     id = models.AutoField(primary_key=True, db_column='T418IdCategoriaAtributo')
     categoria = models.CharField(max_length=255, db_column='T418categoriaAtributo')
+    orden = models.PositiveIntegerField(default=1, db_column='T418orden')
 
     class Meta:
         db_table = 'T418CategoriasAtributo'

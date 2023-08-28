@@ -3,28 +3,32 @@
     "model": "recaudo.TiposAtributos",
     "pk" : 1,
     "fields" : {
-      "tipo": "Documento"
+      "tipo": "Documento",
+      "notificacion": 0
     }
   },
   {
     "model": "recaudo.TiposAtributos",
     "pk" : 2,
     "fields" : {
-      "tipo": "Fecha"
+      "tipo": "Fecha",
+      "notificacion": 0
     }
   },
   {
     "model": "recaudo.TiposAtributos",
     "pk" : 3,
     "fields" : {
-      "tipo": "Texto"
+      "tipo": "Texto",
+      "notificacion": 0
     }
   },
   {
     "model": "recaudo.TiposAtributos",
     "pk" : 4,
     "fields" : {
-      "tipo": "Opciones"
+      "tipo": "Opciones",
+      "notificacion": 0
     }
   }
 ]
