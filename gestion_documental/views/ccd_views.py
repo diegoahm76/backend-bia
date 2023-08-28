@@ -189,7 +189,7 @@ class FinalizarCuadroClasificacionDocumental(generics.RetrieveUpdateAPIView):
         cat_series_unidad = CatalogosSeriesUnidad.objects.filter(id_catalogo_serie__in=cat_series_subseries_list)
         cat_series_unidad_list = [cat_serie_unidad.id_catalogo_serie.id_catalogo_serie for cat_serie_unidad in cat_series_unidad]
         
-        organigrama_unidades = UnidadesOrganizacionales.objects.filter(id_organigrama=ccd.id_organigrama).exclude(cod_agrupacion_documental=None)
+        organigrama_unidades = UnidadesOrganizacionales.objects.filter(id_organigrama=ccd.id_organigrama).exclude(cod_agrupacion_documental=None, activo=False)
         organigrama_unidades_list = organigrama_unidades.values_list('id_unidad_organizacional', flat=True)
         cat_series_unidades_list = [cat_serie_unidad.id_unidad_organizacional.id_unidad_organizacional for cat_serie_unidad in cat_series_unidad if cat_serie_unidad.id_unidad_organizacional.cod_agrupacion_documental != None]
         
