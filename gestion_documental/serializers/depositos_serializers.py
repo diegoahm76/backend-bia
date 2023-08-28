@@ -414,13 +414,27 @@ class  CajaEstanteDeleteSerializer(serializers.ModelSerializer):
 
 
 
-#Listar_por_idcaja_info
-class  CajaBandejaInfoSerializer(serializers.ModelSerializer):
+#Filtro_bandejas_por_caja
+class  CajaListBandejaInfoSerializer(serializers.ModelSerializer):
        
     class Meta:
         model = BandejaEstante
-        fields = ('orden_ubicacion_por_estante','id_bandeja_estante', 'identificacion_por_estante')
+        fields = '__all__'
 
+
+#Filtro_estante_por_caja
+class  CajaListEstanteInfoSerializer(serializers.ModelSerializer):
+       
+    class Meta:
+        model = EstanteDeposito
+        fields = '__all__'
+
+#Filtro_deposito_por_caja
+class  CajaListDepositoInfoSerializer(serializers.ModelSerializer):
+       
+    class Meta:
+        model = Deposito
+        fields = '__all__'
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ######################## SERIALIZERS CARPETA ########################

@@ -49,7 +49,9 @@ urlpatterns = [
      path('cajaBandeja/mover-caja/<int:id_caja_estante>/',views.CajaEstanteBandejaMove.as_view(), name='mover-caja'),
      path('cajaBandeja/busqueda-avanzada-caja/',views.CajaEstanteSearchAdvanced.as_view(), name='buscar-avanzada'),
      path('cajaBandeja/eliminar/<str:pk>/',views.CajaEstanteDelete.as_view(),name='eliminar-caja'),
-     path('cajaBandeja/listar-info-caja/<str:pk>/',views.CajaBandejaInfo.as_view(),name='listar-info-por-caja'),
+     path('cajaBandeja/listar-bandejas-por-caja/<int:id_caja>/',views.CajaListBandejaInfo.as_view(),name='listar-bandejas-por-caja'),
+     path('cajaBandeja/listar-estantes-por-caja/<int:id_caja>/',views.CajaListEstanteInfo.as_view(),name='listar-estantes-por-caja'),
+     path('cajaBandeja/listar-depositos-por-caja/<int:id_caja>/',views.CajaListDepositoInfo.as_view(),name='listar-depositos-por-caja'),
      path('cajaBandeja/listar/',views.CajaBandejaAll.as_view(),name='listar-cajas'),
 
 
