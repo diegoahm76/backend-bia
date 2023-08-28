@@ -132,6 +132,18 @@ class ObtenerLiquidacionBaseView(generics.GenericAPIView):
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
+class ObtenerLiquidacionPorIdExpedienteBaseView(generics.GenericAPIView):
+    serializer_class = LiquidacionesBaseSerializer
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        queryset = LiquidacionesBase.objects.filter(id_expediente=pk).first()
+        if not queryset:
+            return Response({'success': False, 'detail': 'No se encontró ninguna liquidación base con el id de expediente ingresado'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.serializer_class(queryset)
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
 class DetallesLiquidacionBaseView(generics.GenericAPIView):
     serializer_class = DetallesLiquidacionBaseSerializer
     #permission_classes = [IsAuthenticated]
