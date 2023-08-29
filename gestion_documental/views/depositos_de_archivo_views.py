@@ -12,7 +12,7 @@ from django.db.models import Q
 from django.db import transaction
 from datetime import datetime,date,timedelta
 from gestion_documental.models.depositos_models import  CarpetaCaja, Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
-from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteGetOrdenSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaGetOrdenSerializer, CajaListBandejaInfoSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteDeleteSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajaListDepositoInfoSerializer, CajaListEstanteInfoSerializer, CajasByBandejaListSerializer, CarpetaCajaCreateSerializer, CarpetaCajaDeleteSerializer, CarpetaCajaSearchSerializer, CarpetaCajaUpDateSerializer, CarpetasByCajaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoSearchSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
+from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteGetOrdenSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejaListCarpetaInfoSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaGetOrdenSerializer, CajaListBandejaInfoSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteDeleteSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajaListDepositoInfoSerializer, CajaListEstanteInfoSerializer, CajasByBandejaListSerializer, CarpetaCajaCreateSerializer, CarpetaCajaDeleteSerializer, CarpetaCajaMoveSerializer, CarpetaCajaSearchSerializer, CarpetaCajaUpDateSerializer, CarpetaListCajaInfoSerializer, CarpetasByCajaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoListCarpetaInfoSerializer, DepositoSearchSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, EstanteListCarpetaInfoSerializer, MoveEstanteSerializer
 from seguridad.utils import Util
 
 
@@ -1488,3 +1488,191 @@ class CarpetaCajaAll(generics.ListAPIView):
             'detail': 'Se encontraron los siguientes bandejas ordenados por orden_ubicacion_por_estante.',
             'data': serializer.data
         })    
+    
+
+#FILTRO_CAJAS_POR_CARPETA
+#Este permite filtrar todas las cajas, menos la caja a la cual pertenece una carpeta
+class CarpetaListCajaInfo(generics.ListAPIView):
+    serializer_class = CarpetaListCajaInfoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        id_carpeta = self.kwargs.get('id_carpeta')  # Obtener el valor del id_carpeta de la URL
+        
+        # Verificar si la carpeta existe
+        carpeta = get_object_or_404(CarpetaCaja, id_carpeta_caja=id_carpeta)
+        
+        cajas_relacionadas = CarpetaCaja.objects.filter(id_carpeta_caja=id_carpeta).values_list('id_caja_bandeja', flat=True)
+        queryset = CajaBandeja.objects.exclude(id_caja_bandeja__in=cajas_relacionadas)
+        
+        return queryset.order_by('orden_ubicacion_por_bandeja')
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        id_carpeta = self.kwargs.get('id_carpeta')
+        data = {
+            "id_carpeta": id_carpeta,
+            "cajas": self.serializer_class(queryset, many=True).data
+        }
+        return Response(data, status=status.HTTP_200_OK)
+    
+#FILTRO_BANDEJAS_POR_CARPETA
+#Este permite filtrar todas las bandejas, menos la caja a la cual pertenece una carpeta
+class CarpetaListBandejaInfo(generics.ListAPIView):
+    serializer_class = BandejaListCarpetaInfoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        id_carpeta = self.kwargs.get('id_carpeta')  # Obtener el valor del id_carpeta de la URL
+        
+        # Verificar si la carpeta existe
+        carpeta = get_object_or_404(CarpetaCaja, id_carpeta_caja=id_carpeta)
+        
+        # Obtener el ID de la caja que pertenece a la carpeta
+        id_caja_perteneciente = carpeta.id_caja_bandeja.id_caja_bandeja
+        
+        # Obtener las bandejas relacionadas con la caja de la carpeta
+        bandejas_relacionadas = CajaBandeja.objects.filter(id_caja_bandeja=id_caja_perteneciente).values_list('id_bandeja_estante', flat=True)
+        
+        # Obtener todas las bandejas excepto las relacionadas con la caja de la carpeta
+        queryset = BandejaEstante.objects.exclude(id_bandeja_estante__in=bandejas_relacionadas)
+        
+        return queryset.order_by('orden_ubicacion_por_estante')
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+#FILTRO_ESTANTES_POR_CARPETA
+#Este permite filtrar todas las estantes, menos la caja a la cual pertenece una carpeta
+class EstanteListCarpetaInfo(generics.ListAPIView):
+    serializer_class = EstanteListCarpetaInfoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        id_carpeta = self.kwargs.get('id_carpeta')  # Obtener el valor del id_carpeta de la URL
+
+        # Verificar si la carpeta existe
+        carpeta = get_object_or_404(CarpetaCaja, id_carpeta_caja=id_carpeta)
+
+        # Obtener el ID de la caja que pertenece a la carpeta
+        id_caja_perteneciente = carpeta.id_caja_bandeja.id_caja_bandeja
+
+        # Obtener los IDs de las bandejas relacionadas con la caja de la carpeta
+        bandejas_relacionadas = CajaBandeja.objects.filter(id_caja_bandeja=id_caja_perteneciente).values_list('id_bandeja_estante', flat=True)
+
+        # Obtener los IDs de los estantes a través de las bandejas relacionadas
+        estantes_relacionados = BandejaEstante.objects.filter(id_bandeja_estante__in=bandejas_relacionadas).values_list('id_estante_deposito', flat=True)
+
+        # Obtener todos los estantes que NO están en los IDs relacionados
+        queryset = EstanteDeposito.objects.exclude(id_estante_deposito__in=estantes_relacionados)
+
+        return queryset.order_by('orden_ubicacion_por_deposito')
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        id_carpeta = self.kwargs.get('id_carpeta')
+        data = {
+            "id_carpeta": id_carpeta,
+            "estante": self.serializer_class(queryset, many=True).data
+        }
+        return Response(data, status=status.HTTP_200_OK)
+    
+#FILTRO_DEPOSITO_POR_CARPETA
+#Este permite filtrar todos los depositos, menos el deposito a la cual pertenece una carpeta
+class CarpetaListDepositoInfo(generics.ListAPIView):
+    serializer_class = DepositoListCarpetaInfoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        id_carpeta = self.kwargs.get('id_carpeta')  # Obtener el valor del id_carpeta de la URL
+
+        # Verificar si la carpeta existe
+        carpeta = get_object_or_404(CarpetaCaja, id_carpeta_caja=id_carpeta)
+
+        # Obtener el ID de la caja que pertenece a la carpeta
+        id_caja_perteneciente = carpeta.id_caja_bandeja.id_caja_bandeja
+
+        # Obtener el ID del depósito que pertenece a la caja de la carpeta
+        id_deposito_perteneciente = CajaBandeja.objects.get(id_caja_bandeja=id_caja_perteneciente).id_bandeja_estante.id_estante_deposito.id_deposito.id_deposito
+
+        # Obtener todos los depósitos excepto el que pertenece a la carpeta
+        queryset = Deposito.objects.exclude(id_deposito=id_deposito_perteneciente)
+
+        return queryset.order_by('orden_ubicacion_por_entidad')
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        id_carpeta = self.kwargs.get('id_carpeta')
+        data = {
+            "id_carpeta": id_carpeta,
+            "depositos": self.serializer_class(queryset, many=True).data
+        }
+        return Response(data, status=status.HTTP_200_OK)
+    
+
+#MOVER CARPETA
+class CarpetaCajaMove(generics.UpdateAPIView):
+    serializer_class = CarpetaCajaMoveSerializer
+    queryset = CarpetaCaja.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def put(self, request, id_caja_bandeja):
+        # Obtener la caja actual
+        caja = get_object_or_404(CajaBandeja, id_caja_bandeja=id_caja_bandeja)
+
+        # Obtener los datos de destino desde la solicitud
+        identificacion_bandeja_destino = request.data.get('identificacion_bandeja_destino')
+        identificacion_estante_destino = request.data.get('identificacion_estante_destino')
+        identificacion_deposito_destino = request.data.get('identificacion_deposito_destino')
+
+        
+        # Validar si la bandeja de destino existe
+        bandeja_destino = BandejaEstante.objects.filter(identificacion_por_estante=identificacion_bandeja_destino).first()
+        if not bandeja_destino:
+            return Response({'success': False, 'detail': 'No se encontró la bandeja de destino especificada.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Validar si el estante de destino existe
+        estante_destino = EstanteDeposito.objects.filter(identificacion_por_deposito=identificacion_estante_destino).first()
+        if not estante_destino:
+            return Response({'success': False, 'detail': 'No se encontró el estante de destino especificado.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Validar si el depósito de destino existe
+        deposito_destino = Deposito.objects.filter(identificacion_por_entidad=identificacion_deposito_destino).first()
+        if not deposito_destino:
+            return Response({'success': False, 'detail': 'No se encontró el depósito de destino especificado.'}, status=status.HTTP_404_NOT_FOUND)
+
+       
+        # Verificar si la caja tiene un expediente asociado
+        if CarpetaCaja.id_expediente is not None:
+            # Validar si el depósito de destino existe y está activo
+            deposito_destino = Deposito.objects.filter(identificacion_por_entidad=identificacion_deposito_destino, activo=True).first()
+            if not deposito_destino:
+                return Response({'success': False, 'detail': 'La caja tiene un expediente asociado y no puede ser movida a un depósito inactivo.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            
+        # Retener los datos actuales de la caja (sin cambios)
+        caja_actual_data = {
+            'identificacion_bandeja': caja.id_bandeja_estante.identificacion_por_estante,
+            'identificacion_estante': caja.id_bandeja_estante.id_estante_deposito.identificacion_por_deposito,
+            'identificacion_deposito': caja.id_bandeja_estante.id_estante_deposito.id_deposito.identificacion_por_entidad,
+        }
+
+        # Realizar el cambio de la caja a la bandeja de destino
+        caja.id_bandeja_estante = bandeja_destino
+        caja.save()
+
+        # Retornar los datos de caja actual y caja destino
+        return Response({
+            'success': True,
+            'detail': 'Caja movida exitosamente.',
+            'id_caja':id_caja_bandeja,
+            'caja_actual': caja_actual_data,
+            'caja_destino': {
+                'identificacion_bandeja': identificacion_bandeja_destino,
+                'identificacion_estante': identificacion_estante_destino,
+                'identificacion_deposito': identificacion_deposito_destino,
+            },
+        }, status=status.HTTP_200_OK)

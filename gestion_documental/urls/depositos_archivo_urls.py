@@ -46,7 +46,7 @@ urlpatterns = [
      path('cajaBandeja/listar-cajas-por-bandeja/<int:pk>/',views.CajasByBandejaList.as_view(), name='listar-cajas-por-bandeja'),
      path('cajaBandeja/buscar-estante/',views.CajaEstanteSearch.as_view(), name='buscar-estante'),
      path('cajaBandeja/actualizar-caja/<int:pk>/',views.cajaBandejaUpDate.as_view(),name='actualizar-caja'),
-     path('cajaBandeja/mover-caja/<int:id_caja_estante>/',views.CajaEstanteBandejaMove.as_view(), name='mover-caja'),
+     path('cajaBandeja/mover-caja/<int:id_caja_bandeja>/',views.CajaEstanteBandejaMove.as_view(), name='mover-caja'),
      path('cajaBandeja/busqueda-avanzada-caja/',views.CajaEstanteSearchAdvanced.as_view(), name='buscar-avanzada'),
      path('cajaBandeja/eliminar/<str:pk>/',views.CajaEstanteDelete.as_view(),name='eliminar-caja'),
      path('cajaBandeja/listar-bandejas-por-caja/<int:id_caja>/',views.CajaListBandejaInfo.as_view(),name='listar-bandejas-por-caja'),
@@ -66,6 +66,14 @@ urlpatterns = [
      path('carpetaCaja/eliminar/<str:pk>/',views.CarpetaCajaDelete.as_view(),name='eliminar-carpeta'),
      path('carpetaCaja/actualizar-carpeta/<int:pk>/',views.CarpetaCajaUpDate.as_view(),name='actualizar-carpeta'),
      path('carpetaCaja/listar/',views.CarpetaCajaAll.as_view(),name='listar-carpetas'),
+     path('cajaBandeja/listar-cajas-por-carpeta/<int:id_carpeta>/',views.CarpetaListCajaInfo.as_view(),name='listar-cajas-por-carpeta'),
+     path('cajaBandeja/listar-bandejas-por-carpeta/<int:id_carpeta>/',views.CarpetaListBandejaInfo.as_view(),name='listar-bandejas-por-carpeta'),
+     path('cajaBandeja/listar-estantes-por-carpeta/<int:id_carpeta>/',views.EstanteListCarpetaInfo.as_view(),name='listar-estantes-por-carpeta'),
+     path('cajaBandeja/listar-depositos-por-carpeta/<int:id_carpeta>/',views.CarpetaListDepositoInfo.as_view(),name='listar-depositos-por-carpeta'),
+     path('cajaBandeja/mover-carpeta/<int:id_carpeta_caja>/',views.CajaEstanteBandejaMove.as_view(), name='mover-carpeta'),
+
+
+
 
 
 
