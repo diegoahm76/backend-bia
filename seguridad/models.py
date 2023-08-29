@@ -399,7 +399,7 @@ class PermisosModulo(models.Model):
 class PermisosModuloRol(models.Model):
     id_permiso_modulo_rol = models.AutoField(primary_key=True, db_column='TzIdPermisos_Modulo_Rol')
     id_rol = models.ForeignKey(Roles, on_delete=models.CASCADE, db_column='TzId_Rol')
-    id_permiso_modulo = models.ForeignKey(PermisosModulo, on_delete=models.CASCADE, db_column='TzId_Permiso_Modulo')
+    id_permiso_modulo = models.ForeignKey(PermisosModulo, on_delete=models.CASCADE, db_column='TzId_Permisos_Modulo')
     
     def __str__(self):
         return str(self.id_rol) + ' ' + str(self.id_permiso_modulo) + ' ' + str(self.id_permiso_modulo_rol)
