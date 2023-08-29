@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db.models import Q, F
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
-from gestion_documental.serializers.permisos_serializers import PermisosGetSerializer, PermisosPostSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
+from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
 from seguridad.utils import Util
 from datetime import datetime
 from rest_framework.permissions import IsAuthenticated
@@ -113,70 +113,136 @@ class UnidadesPermisosGetView(generics.ListAPIView):
         id_unidad_org_actual_admin_series = cat_serie_und.id_unidad_organizacional.id_unidad_org_actual_admin_series
         unidades_permisos = PermisosUndsOrgActualesSerieExpCCD.objects.filter(id_cat_serie_und_org_ccd=id_cat_serie_und)
         
+        # OBTENER UNIDAD ADMIN Y FAMILIA
+        unidades_data = [
+            {
+                'id_und_organizacional_actual':id_unidad_org_actual_admin_series.id_unidad_organizacional,
+                'nombre_und_organizacional_actual':id_unidad_org_actual_admin_series.nombre,
+                'codigo_und_organizacional_actual':id_unidad_org_actual_admin_series.codigo,
+            }
+        ]
+        unidades_org = self.queryset.filter(id_unidad_org_padre=id_unidad_org_actual_admin_series.id_unidad_organizacional, cod_agrupacion_documental=None, activo=True).values(
+            id_und_organizacional_actual = F('id_unidad_organizacional'),
+            nombre_und_organizacional_actual = F('nombre'),
+            codigo_und_organizacional_actual = F('codigo')
+        )
+        unidades_family = self.get_family(unidades_org)
+        unidades_family = unidades_data + list(unidades_org) + unidades_family
+        
+        for unidad in unidades_family:
+            unidad['id_permisos_und_org_actual_serie_exp_ccd'] = None
+            unidad['id_cat_serie_und_org_ccd'] = id_cat_serie_und
+            unidad['pertenece_seccion_actual_admin_serie'] = False
+            unidad['crear_expedientes'] = False
+            unidad['crear_documentos_exps_no_propios'] = False
+            unidad['anular_documentos_exps_no_propios'] = False
+            unidad['borrar_documentos_exps_no_propios'] = False
+            unidad['conceder_acceso_documentos_exps_no_propios'] = False
+            unidad['conceder_acceso_expedientes_no_propios'] = False
+            unidad['consultar_expedientes_no_propios'] = False
+            unidad['descargar_expedientes_no_propios'] = False
+            unidad['mostrar'] = True
+        
         data = []
         
         if unidades_permisos:
             serializador = self.serializer_class(unidades_permisos, many=True)
-            data = serializador.data
-        # unidades_org = list(unidades_org) if unidades_org else []
-        else:
-            unidades_data = [
-                {
-                    'id_und_organizacional_actual':id_unidad_org_actual_admin_series.id_unidad_organizacional,
-                    'nombre_und_organizacional_actual':id_unidad_org_actual_admin_series.nombre,
-                    'codigo_und_organizacional_actual':id_unidad_org_actual_admin_series.codigo,
-                }
-            ]
-            unidades_org = self.queryset.filter(id_unidad_org_padre=id_unidad_org_actual_admin_series.id_unidad_organizacional, cod_agrupacion_documental=None, activo=True).values(
-                id_und_organizacional_actual = F('id_unidad_organizacional'),
-                nombre_und_organizacional_actual = F('nombre'),
-                codigo_und_organizacional_actual = F('codigo')
-            )
-            unidades_family = self.get_family(unidades_org)
-            data = unidades_data + list(unidades_org) + unidades_family
+            serializador_data = serializador.data
             
-            for unidad in data:
-                unidad['id_permisos_und_org_actual_serie_exp_ccd'] = None
-                unidad['id_cat_serie_und_org_ccd'] = id_cat_serie_und
-                unidad['pertenece_seccion_actual_admin_serie'] = False
-                unidad['crear_expedientes'] = False
-                unidad['crear_documentos_exps_no_propios'] = False
-                unidad['anular_documentos_exps_no_propios'] = False
-                unidad['borrar_documentos_exps_no_propios'] = False
-                unidad['conceder_acceso_documentos_exps_no_propios'] = False
-                unidad['conceder_acceso_expedientes_no_propios'] = False
-                unidad['consultar_expedientes_no_propios'] = False
-                unidad['descargar_expedientes_no_propios'] = False
-                unidad['denegar_anulacion_docs'] = False
-                unidad['denegar_borrado_docs'] = False
-                unidad['excluir_und_actual_respon_series_doc_restriccion'] = False
-                unidad['denegar_conceder_acceso_doc_na_resp_series'] = False
-                unidad['denegar_conceder_acceso_exp_na_resp_series'] = False
+            serializador_data_id = [unidad['id_und_organizacional_actual'] for unidad in serializador_data]
+            unidades_propias = [unidad for unidad in unidades_family if unidad['id_und_organizacional_actual'] not in serializador_data_id]
+            for unidad in unidades_propias:
+                unidad['mostrar'] = False
+            
+            data = serializador_data + unidades_propias
+        else:
+            data = unidades_family
             
         # PENDIENTE VALIDACION SI TIENEN PERMISOS
         return Response({'succes': True, 'detail':'Resultados encontrados', 'data':data}, status=status.HTTP_200_OK)
-    
-class UnidadesPermisosPutView(generics.UpdateAPIView):
-    serializer_class_post = PermisosPostSerializer
-    serializer_class_put = PermisosPutSerializer
+
+class DenegacionPermisosGetView(generics.ListAPIView):
+    serializer_class = DenegacionPermisosGetSerializer 
     queryset = PermisosUndsOrgActualesSerieExpCCD.objects.filter()
     permission_classes = [IsAuthenticated]
 
+    def get(self, request, id_cat_serie_und):
+        denegacion_permisos = self.queryset.filter(id_cat_serie_und_org_ccd=id_cat_serie_und, id_und_organizacional_actual=None).first()
+        serializador = self.serializer_class(denegacion_permisos)
+        return Response({'succes': True, 'detail':'Resultados encontrados', 'data':serializador.data}, status=status.HTTP_200_OK)
+
+class UnidadesPermisosPutView(generics.UpdateAPIView):
+    serializer_class_post = PermisosPostSerializer
+    serializer_class_put = PermisosPutSerializer
+    serializer_class_post_denegacion = PermisosPostDenegacionSerializer
+    serializer_class_put_denegacion = PermisosPutSerializer
+    queryset = PermisosUndsOrgActualesSerieExpCCD.objects.filter()
+    permission_classes = [IsAuthenticated]
+    
+    def put_denegacion_permisos(self, request, id_cat_serie_und):
+        data = request.data['denegacion_permisos']
+        instance = self.queryset.filter(id_cat_serie_und_org_ccd=id_cat_serie_und, id_und_organizacional_actual=None).first()
+        
+        denegacion_permisos_list = [
+            data['denegar_anulacion_docs'],
+            data['denegar_borrado_docs'],
+            data['excluir_und_actual_respon_series_doc_restriccion'],
+            data['denegar_conceder_acceso_doc_na_resp_series'],
+            data['denegar_conceder_acceso_exp_na_resp_series']
+        ]
+        
+        serializer = None
+        
+        if instance:
+            if True in denegacion_permisos_list:
+                serializer = self.serializer_class_put_denegacion(instance, data=data)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+            else:
+                instance.delete()
+        else:
+            if True in denegacion_permisos_list:
+                serializer = self.serializer_class_post_denegacion(data=data)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+        
+        serializer_data = serializer.data if serializer else serializer
+        
+        return serializer_data
+
     def put(self, request, id_cat_serie_und):
-        data = request.data
+        data = request.data['unidades_permisos']
         unidades_permisos_crear = [item for item in data if not item['id_permisos_und_org_actual_serie_exp_ccd']]
         unidades_permisos_actualizar = [item for item in data if item['id_permisos_und_org_actual_serie_exp_ccd']]
         
         if unidades_permisos_crear:
+            # PENDIENTE VALIDAR QUE NO CREE PERMISOS CON TODO EN FALSE
             unidades_permisos_crear_serializer = self.serializer_class_post(data=unidades_permisos_crear, many=True)
             unidades_permisos_crear_serializer.is_valid(raise_exception=True)
             unidades_permisos_crear_serializer.save()
         if unidades_permisos_actualizar:
             for unidad_permiso in unidades_permisos_actualizar:
                 unidad_permiso_instance = self.queryset.filter(id_permisos_und_org_actual_serie_exp_ccd=unidad_permiso['id_permisos_und_org_actual_serie_exp_ccd']).first()
-                unidad_permiso_serializer = self.serializer_class_put(unidad_permiso_instance, data=unidad_permiso)
-                unidad_permiso_serializer.is_valid(raise_exception=True)
-                unidad_permiso_serializer.save()
+                unidad_permiso_list = [
+                    unidad_permiso['pertenece_seccion_actual_admin_serie'],
+                    unidad_permiso['crear_expedientes'],
+                    unidad_permiso['crear_documentos_exps_no_propios'],
+                    unidad_permiso['anular_documentos_exps_no_propios'],
+                    unidad_permiso['borrar_documentos_exps_no_propios'],
+                    unidad_permiso['conceder_acceso_documentos_exps_no_propios'],
+                    unidad_permiso['conceder_acceso_expedientes_no_propios'],
+                    unidad_permiso['consultar_expedientes_no_propios'],
+                    unidad_permiso['descargar_expedientes_no_propios']
+                ]
+                if True in unidad_permiso_list:
+                    unidad_permiso_serializer = self.serializer_class_put(unidad_permiso_instance, data=unidad_permiso)
+                    unidad_permiso_serializer.is_valid(raise_exception=True)
+                    unidad_permiso_serializer.save()
+                else:
+                    unidad_permiso_instance.delete()
+                
+        if request.data.get('denegacion_permisos'):
+            self.put_denegacion_permisos(request, id_cat_serie_und)
         
         # PENDIENTE VALIDACION SI TIENEN PERMISOS
         return Response({'succes': True, 'detail':'Se realizó el guardado correctamente'}, status=status.HTTP_200_OK)

@@ -12,7 +12,7 @@ from django.db.models import Q
 from django.db import transaction
 from datetime import datetime,date,timedelta
 from gestion_documental.models.depositos_models import  CarpetaCaja, Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
-from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteGetOrdenSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaGetOrdenSerializer, CajaBandejaInfoSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteDeleteSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajasByBandejaListSerializer, CarpetaCajaCreateSerializer, CarpetaCajaDeleteSerializer, CarpetaCajaSearchSerializer, CarpetaCajaUpDateSerializer, CarpetasByCajaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoSearchSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
+from gestion_documental.serializers.depositos_serializers import BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteGetOrdenSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaGetOrdenSerializer, CajaListBandejaInfoSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteDeleteSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajaListDepositoInfoSerializer, CajaListEstanteInfoSerializer, CajasByBandejaListSerializer, CarpetaCajaCreateSerializer, CarpetaCajaDeleteSerializer, CarpetaCajaSearchSerializer, CarpetaCajaUpDateSerializer, CarpetasByCajaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoSearchSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, MoveEstanteSerializer
 from seguridad.utils import Util
 
 
@@ -1130,24 +1130,105 @@ class CajaEstanteDelete(generics.DestroyAPIView):
         return Response({'success': True, 'detail': 'Se eliminó correctamente la caja seleccionada.'}, status=status.HTTP_200_OK)  
 
 
-#LISTAR_POR_IDCAJA_INFO
-class CajaBandejaInfo(generics.ListAPIView):
-    serializer_class = CajaBandejaInfoSerializer
+#FILTRO_BANDEJAS_POR_CAJA
+#Este permite filtrar todas la bandejas, menos la bandeja a la cual pertenece una caja
+class CajaListBandejaInfo(generics.ListAPIView):
+    serializer_class = CajaListBandejaInfoSerializer
     queryset = BandejaEstante.objects.all()
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        queryset = BandejaEstante.objects.all()
+        id_caja = self.kwargs.get('id_caja')  # Obtener el valor del id_caja de la URL
         
-        idcaja = self.request.query_params.get('idcaja')
-        if idcaja is not None:
-            # Filtrar por bandejas que no están vinculadas a id_caja_estante
-            queryset = queryset.filter(id_caja_estante__id_caja_estante__ne=idcaja)
+        # Verificar si la caja existe
+        caja = get_object_or_404(CajaBandeja, id_caja_bandeja=id_caja)
         
-        # Ordenar por orden_ubicacion_por_estante en orden ascendente
-        queryset = queryset.order_by('orden_ubicacion_por_estante')
+        bandejas_relacionadas = CajaBandeja.objects.filter(id_caja_bandeja=id_caja).values_list('id_bandeja_estante', flat=True)
+        queryset = BandejaEstante.objects.exclude(id_bandeja_estante__in=bandejas_relacionadas)
         
+        return queryset.order_by('orden_ubicacion_por_estante')
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        id_caja = self.kwargs.get('id_caja')
+        data = {
+            "id_caja": id_caja,
+            "bandejas": self.serializer_class(queryset, many=True).data
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+
+
+#FILTRO_ESTANTE_POR_CAJA
+#Este permite filtrar todos los estante, menos el estante a la cual pertenece una caja
+class CajaListEstanteInfo(generics.ListAPIView):
+    serializer_class = CajaListEstanteInfoSerializer
+    queryset = EstanteDeposito.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        id_caja = self.kwargs.get('id_caja')  # Obtener el valor del id_caja de la URL}
+
+        # Verificar si la caja existe
+        caja = CajaBandeja.objects.filter(id_caja_bandeja=id_caja).get()
+            
+        # Obtener los IDs de las bandejas relacionadas con la caja
+        bandejas_relacionadas = CajaBandeja.objects.filter(id_caja_bandeja=id_caja).values_list('id_bandeja_estante', flat=True)
+        
+        # Obtener los IDs de los estantes a través de las bandejas relacionadas
+        estantes_relacionados = BandejaEstante.objects.filter(id_bandeja_estante__in=bandejas_relacionadas).values_list('id_estante_deposito', flat=True)
+        
+        # Obtener todos los estantes que NO están en los IDs relacionados
+        queryset = EstanteDeposito.objects.exclude(id_estante_deposito__in=estantes_relacionados)
+        
+        return queryset.order_by('orden_ubicacion_por_deposito')
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        id_caja = self.kwargs.get('id_caja')
+        data = {
+            "id_caja": id_caja,
+            "estante": self.serializer_class(queryset, many=True).data
+        }
+        return Response(data, status=status.HTTP_200_OK)
+    
+
+
+#FILTRO_DEPOSITO_POR_CAJA
+#Este permite filtrar todos los depositos, menos el deposito a la cual pertenece una caja
+class CajaListDepositoInfo(generics.ListAPIView):
+    serializer_class = CajaListDepositoInfoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        id_caja = self.kwargs.get('id_caja')  # Obtener el valor del id_caja de la URL
+
+        # Verificar si la caja existe
+        caja = get_object_or_404(CajaBandeja, id_caja_bandeja=id_caja)
+
+        # Obtener los IDs de las bandejas relacionadas con la caja
+        bandejas_relacionadas = CajaBandeja.objects.filter(id_caja_bandeja=id_caja).values_list('id_bandeja_estante', flat=True)
+
+        # Obtener los IDs de los estantes a través de las bandejas relacionadas
+        estantes_relacionados = BandejaEstante.objects.filter(id_bandeja_estante__in=bandejas_relacionadas).values_list('id_estante_deposito', flat=True)
+
+        # Obtener los IDs de los depósitos relacionados con los estantes
+        depositos_relacionados = EstanteDeposito.objects.filter(id_estante_deposito__in=estantes_relacionados).values_list('id_deposito', flat=True)
+
+        # Obtener los objetos de los depósitos que NO están en los IDs relacionados
+        queryset = Deposito.objects.exclude(id_deposito__in=depositos_relacionados).order_by('orden_ubicacion_por_entidad')
+
         return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        id_caja = self.kwargs.get('id_caja')
+        data = {
+            "id_caja": id_caja,
+            "depósitos": self.serializer_class(queryset, many=True).data
+        }
+        return Response(data, status=status.HTTP_200_OK)
+    
 
 #LISTAR_TODAS_CAJAS
 class CajaBandejaAll(generics.ListAPIView):
