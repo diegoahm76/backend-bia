@@ -431,14 +431,14 @@ class AlertasProgramadasCreate(generics.CreateAPIView):
                 raise ValidationError("No existe configuracion de alerta asociada a este cod")
 
             data_alerta_programada = {}
-            if not 'cant_dias_previas' in data_in:
-                data_alerta_programada['ctdad_dias_alertas_previas'] = 0
-            if not 'frecuencia_previas' in data_in:
-                data_alerta_programada['frecuencia_alertas_previas'] = 0
-            if not 'cant_dias_post' in data_in:
-                data_alerta_programada['ctdad_repeticiones_post'] = 0
-            if not 'frecuencia_post' in data_in:
-                data_alerta_programada['frecuencia_repeticiones_post'] = 0
+            
+            data_alerta_programada['ctdad_dias_alertas_previas'] = configuracion.cant_dias_previas
+          
+            data_alerta_programada['frecuencia_alertas_previas'] = configuracion.frecuencia_previas
+           
+            data_alerta_programada['ctdad_repeticiones_post'] = configuracion.cant_dias_post
+            
+            data_alerta_programada['frecuencia_repeticiones_post'] = configuracion.frecuencia_post
 
             data_alerta_programada['nivel_prioridad'] = configuracion.nivel_prioridad
             if 'id_persona_implicada' in data_in:
