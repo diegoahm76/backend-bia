@@ -10,6 +10,7 @@ urlpatterns = [
     path('consulta-obligaciones-facilidad-modificada/<int:id_facilidad_pago>/', views.CarteraSeleccionadaModificadaDeudorListaViews.as_view(),name='consulta-obligaciones-facilidad-modificada'),
     path('plan-obligaciones-facilidad/<int:id_facilidad_pago>/', views.PlanPagosAmortizacionListaViews.as_view(),name='plan-obligaciones-facilidad'),
     path('create/', views.PlanPagosCreateView.as_view(),name='crear-plan-pagos'),
+    path('get/<int:id_facilidad_pago>/', views.PlanPagosListGetView.as_view(),name='ver-plan-pagos'),
 
 
     # path('listado-deudores/', views.ListadoDeudoresViews.as_view(),name='listado-deudores'),

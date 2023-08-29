@@ -27,7 +27,7 @@ class PlanPagos(models.Model):
     fecha_pago_abono = models.DateField(db_column='T435fechaPagoAbono')
     nro_cuotas = models.IntegerField(db_column='T435nroCuotas')
     periodicidad = models.IntegerField(db_column='T435periodicidad')
-    fecha_creacion_registro = models.DateTimeField(db_column='T435fechaCreacionRegistro')
+    fecha_creacion_registro = models.DateTimeField(auto_now_add=True, db_column='T435fechaCreacionRegistro')
 
     class Meta:
         db_table = 'T435PlanesPago'

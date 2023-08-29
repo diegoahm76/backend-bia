@@ -2,7 +2,7 @@ from rest_framework import serializers
 from recaudo.models.base_models import TiposPago
 from recaudo.models.cobros_models import Cartera
 from recaudo.models.liquidaciones_models import Deudores
-from recaudo.models.planes_pagos_models import PlanPagos, ResolucionesPlanPago
+from recaudo.models.planes_pagos_models import PlanPagos, ResolucionesPlanPago, PlanPagosCuotas
 from recaudo.models.facilidades_pagos_models import FacilidadesPago, DetallesFacilidadPago
 
 
@@ -15,6 +15,12 @@ class TipoPagoSerializer(serializers.ModelSerializer):
 class PlanPagosSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlanPagos
+        fields = '__all__'
+
+
+class PlanPagosCuotasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PlanPagosCuotas
         fields = '__all__'
 
 
@@ -59,3 +65,16 @@ class VisualizacionCarteraSelecionadaSerializer(serializers.ModelSerializer):
         model = Cartera
         fields = ('id','nombre','monto_inicial','inicio','dias_mora','valor_intereses')
 
+    def get_dias_mora(self, obj):
+        detalle = DetallesFacilidadPago.objects.filter(id_cartera=obj.id).first()
+
+        if detalle:
+            fecha_abono = detalle.id_facilidad_pago.fecha_abono
+            dias_mora = (fecha_abono - obj.inicio).days
+            return dias_mora
+        
+    def get_valor_intereses(self, obj):
+        dias_mora = self.get_dias_mora(obj)
+        if dias_mora is not None:
+            monto_inicial = float(obj.monto_inicial) 
+            return (0.12 / 360 * monto_inicial) * dias_mora
