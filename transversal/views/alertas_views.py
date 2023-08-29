@@ -431,22 +431,34 @@ class AlertasProgramadasCreate(generics.CreateAPIView):
                 raise ValidationError("No existe configuracion de alerta asociada a este cod")
 
             data_alerta_programada = {}
-            if not 'cant_dias_previas' in data_in:
-                data_alerta_programada['ctdad_dias_alertas_previas'] = 0
-            if not 'frecuencia_previas' in data_in:
-                data_alerta_programada['frecuencia_alertas_previas'] = 0
-            if not 'cant_dias_post' in data_in:
-                data_alerta_programada['ctdad_repeticiones_post'] = 0
-            if not 'frecuencia_post' in data_in:
-                data_alerta_programada['frecuencia_repeticiones_post'] = 0
+            
+            if configuracion.cant_dias_previas:
+                data_alerta_programada['ctdad_dias_alertas_previas'] = configuracion.cant_dias_previas
+            else:
+                data_alerta_programada['ctdad_dias_alertas_previas'] = 0    
 
+            if configuracion.frecuencia_previas:
+                data_alerta_programada['frecuencia_alertas_previas'] = configuracion.frecuencia_previas
+            else:
+                data_alerta_programada['frecuencia_alertas_previas'] = 0
+
+            if configuracion.cant_dias_post:
+                data_alerta_programada['ctdad_repeticiones_post'] = configuracion.cant_dias_post
+            else:
+                data_alerta_programada['ctdad_repeticiones_post']=0
+            
+            if configuracion.frecuencia_post:
+                data_alerta_programada['frecuencia_repeticiones_post'] = configuracion.frecuencia_post
+            else:
+                data_alerta_programada['frecuencia_repeticiones_post'] = 0
+                
             data_alerta_programada['nivel_prioridad'] = configuracion.nivel_prioridad
             if 'id_persona_implicada' in data_in:
                 data_alerta_programada['id_persona_implicada'] = data_in['id_persona_implicada']
 
             personas_alertar = PersonasAAlertar.objects.filter(cod_clase_alerta=data_in['cod_clase_alerta'])
-            if not personas_alertar:
-                raise NotFound('La alerta no tiene personal asignado.')
+            #if not personas_alertar:
+            #    raise NotFound('La alerta no tiene personal asignado.')
 
             cadena = ""
             cadena_lideres = ""
@@ -555,19 +567,40 @@ class AlertasProgramadasUpdate(generics.UpdateAPIView):
             # if not 'frecuencia_post' in data_in:
             #     data_alerta_programada['frecuencia_repeticiones_post'] = 0
 
-            data_alerta_programada['requiere_envio_email']=configuracion.envios_email
-            data_alerta_programada['nivel_prioridad'] = configuracion.nivel_prioridad
-            data_alerta_programada['ctdad_dias_alertas_previas']=configuracion.cant_dias_previas
-            data_alerta_programada['frecuencia_alertas_previas']=configuracion.frecuencia_previas
-            data_alerta_programada['ctdad_repeticiones_post']=configuracion.cant_dias_post
-            data_alerta_programada['frecuencia_repeticiones_post']=configuracion.frecuencia_post
+            # data_alerta_programada['requiere_envio_email']=configuracion.envios_email
+            # data_alerta_programada['nivel_prioridad'] = configuracion.nivel_prioridad
+            # data_alerta_programada['ctdad_dias_alertas_previas']=configuracion.cant_dias_previas
+            # data_alerta_programada['frecuencia_alertas_previas']=configuracion.frecuencia_previas
+            # data_alerta_programada['ctdad_repeticiones_post']=configuracion.cant_dias_post
+            # data_alerta_programada['frecuencia_repeticiones_post']=configuracion.frecuencia_post
+
+            if configuracion.cant_dias_previas:
+                data_alerta_programada['ctdad_dias_alertas_previas'] = configuracion.cant_dias_previas
+            else:
+                data_alerta_programada['ctdad_dias_alertas_previas'] = 0    
+
+            if configuracion.frecuencia_previas:
+                data_alerta_programada['frecuencia_alertas_previas'] = configuracion.frecuencia_previas
+            else:
+                data_alerta_programada['frecuencia_alertas_previas'] = 0
+
+            if configuracion.cant_dias_post:
+                data_alerta_programada['ctdad_repeticiones_post'] = configuracion.cant_dias_post
+            else:
+                data_alerta_programada['ctdad_repeticiones_post']=0
+            
+            if configuracion.frecuencia_post:
+                data_alerta_programada['frecuencia_repeticiones_post'] = configuracion.frecuencia_post
+            else:
+                data_alerta_programada['frecuencia_repeticiones_post'] = 0
+                
 
             #if 'id_persona_implicada' in data_in:
             #    data_alerta_programada['id_persona_implicada'] = data_in['id_persona_implicada']
 
             personas_alertar = PersonasAAlertar.objects.filter(cod_clase_alerta=instance.cod_clase_alerta)
-            if not personas_alertar:
-                raise NotFound('La alerta no tiene personal asignado.')
+            #if not personas_alertar:
+            #    raise NotFound('La alerta no tiene personal asignado.')
 
             cadena = ""
             cadena_lideres = ''

@@ -4,12 +4,13 @@ from django.forms import ValidationError
 from django.forms.models import model_to_dict
 from recurso_hidrico.models.programas_models import ProyectosPORH
 from recurso_hidrico.serializers.programas_serializers import GenerardorMensajeProyectosPORHGetSerializer
+from seguridad.utils import Util
 from transversal.models.alertas_models import AlertasProgramadas, BandejaAlertaPersona
 from transversal.models.entidades_models import ConfiguracionEntidad
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.serializers.alertas_serializers import AlertasBandejaAlertaPersonaPostSerializer, AlertasGeneradasPostSerializer
 from datetime import datetime, timedelta
-
+from django.template.loader import render_to_string
 def separar_cadena(cadena):
 
     arreglo = []
@@ -52,17 +53,21 @@ def generar_alerta_segundo_plano():
     numero_dia = hoy.day
     numero_mes = hoy.month
     numero_agno = hoy.year
-
     alertas_generadas=AlertasProgramadas.objects.all()
-   
+    print(alertas_generadas)
     #Alerta en Fecha Fija - Programadas con o sin Repeticiones anteriores o posteriores  (con y sin año).
     
     for programada in alertas_generadas:
-            
-            agno_alerta=numero_agno
+            print("HOLAAA")
+           
 
             if   programada.agno_cumplimiento:
                 agno_alerta=programada.agno_cumplimiento
+                agno_fijo=True
+            else:
+                agno_alerta=numero_agno
+                agno_fijo=False
+
 
             if  programada.activa :
                 dias_pre=programada.ctdad_dias_alertas_previas
@@ -91,15 +96,15 @@ def generar_alerta_segundo_plano():
                         while (fecha_frecuencia < fecha_alerta_base):
                             print("GENERA ALERTAS PRE:"+str(fecha_frecuencia))
                             if fecha_frecuencia==fecha_actual:
-                                  programar_alerta(programada,"ANTES")
+                                  programar_alerta(programada,"ANTES",False,agno_fijo)
                                   print("LA ALERTA SE GENERO ANTES DE LA FECHA: "+ str(fecha_frecuencia))
 
                             fecha_frecuencia= fecha_frecuencia + timedelta(days=frecuencia_pre)
                         
                     if  fecha_alerta_base==fecha_actual:
-                         programar_alerta(programada,"AHORA")
+                         programar_alerta(programada,"AHORA",False,agno_fijo)
                          print("ES HOY LA ALERTA BASE")
-                         return 0
+                         
 
                     #ALERTAS POST
                     
@@ -109,8 +114,11 @@ def generar_alerta_segundo_plano():
                              #print("ALERTAS GENERADAS DESPUES: "+str(fecha_frecuencia))
 
                              if fecha_frecuencia==fecha_actual:
+                                  ultima_rep=False
+                                  if fecha_lim_superior==fecha_frecuencia:
+                                      ultima_rep=True
                                   print("LA ALERTA SE GENERO DESPUES DE LA FECHA: "+ str(fecha_frecuencia))
-                                  programar_alerta(programada,"DESPUES")
+                                  programar_alerta(programada,"DESPUES",ultima_rep,agno_fijo)
                              fecha_frecuencia +=  timedelta(days=frecuencia_dias_post)
                             
                     
@@ -119,12 +127,13 @@ def generar_alerta_segundo_plano():
                     print("##############################")
                     
 
-def programar_alerta(programada,clasificacion):
+def programar_alerta(programada,clasificacion,ultima_rep,agno_fijo):
         perfiles_actuales=ConfiguracionEntidad.objects.first()
         nombre_funcion = programada.nombre_funcion_comple_mensaje
         funcion = globals().get(nombre_funcion)
         cadena=""
         print(clasificacion)
+        print(programada)
         id_responsable=None
         if funcion:
             cadena=funcion()
@@ -134,7 +143,7 @@ def programar_alerta(programada,clasificacion):
 
         data_alerga_generada={}
         data_alerga_generada['nombre_clase_alerta']=programada.nombre_clase_alerta
-        #PENDIENTE COMPLEMENTO DE MENSAJES
+   
         data_alerga_generada['mensaje']=""
         if clasificacion=="ANTES":
             data_alerga_generada['mensaje']+=programada.mensaje_base_previo#VALIDAR CAMPO <1000
@@ -157,7 +166,7 @@ def programar_alerta(programada,clasificacion):
         data_alerga_generada['envio_email']=programada.requiere_envio_email
         #PENDIENTE LEER ENTREGA 38
 
-        data_alerga_generada['es_ultima_repeticion']=True
+        data_alerga_generada['es_ultima_repeticion']=ultima_rep
         serializer_alerta_generada=AlertasGeneradasPostSerializer(data=data_alerga_generada)
         instace=None
 
@@ -169,6 +178,7 @@ def programar_alerta(programada,clasificacion):
             error_message = {'error': e.detail}
             print(len(data_alerga_generada['mensaje']))
             raise ValidationError  (e.detail)
+
 
 
         #En el caso de tener personal implicado ,este puede ser una persona,un perfil profesional o un lider de unidad organizacional implicado
@@ -238,8 +248,7 @@ def programar_alerta(programada,clasificacion):
             for lider in lideres_unidad_orga:
                 ids_lideres_unidades_alertar_alertar.append(lider.id_persona.id_persona)
             #pentiente por verificar
-        #Pendiente validacion con T043idPersonasSuspendEnAlerSinAgno 
-        #Pendiente T010emailNotificacion 
+        
         destinatarios=[]
 
         destinatarios.extend(ids_lideres_unidades_alertar_alertar)
@@ -248,7 +257,7 @@ def programar_alerta(programada,clasificacion):
         if id_responsable:
             destinatarios.append(str(id_responsable))
 
-
+        
         elementos_unicos = {}
         # ELEMENTOS REPETIDOS
         for elemento in destinatarios:
@@ -257,9 +266,21 @@ def programar_alerta(programada,clasificacion):
 
         # Obtener los elementos únicos del diccionario como una lista
         arreglo_sin_repetidos = list(elementos_unicos.values())
+        #Pendiente validacion con T043idPersonasSuspendEnAlerSinAgno 
 
-
-        for destino in arreglo_sin_repetidos:
+        arreglo_resultante=[]
+        if  not agno_fijo:
+            lista_suspendidos=[]
+            if(programada.id_personas_suspen_alertar_sin_agno):
+                lista_suspendidos=(programada.id_personas_suspen_alertar_sin_agno.rstrip("|")).split('|')
+                #raise ValidationError(lista_suspendidos)
+                arreglo_resultante = [x for x in arreglo_sin_repetidos if x not in lista_suspendidos]
+                #raise ValidationError(arreglo_resultante)
+            else:
+                arreglo_resultante=arreglo_sin_repetidos
+        else:
+              arreglo_resultante=arreglo_sin_repetidos
+        for destino in arreglo_resultante:
             if not destino:
                 raise ValidationError("NULOO")
             print(destinatarios)
@@ -269,17 +290,37 @@ def programar_alerta(programada,clasificacion):
                 alerta_bandeja={}
                 alerta_bandeja['leido']=False
                 alerta_bandeja['archivado']=False
-                #alerta_bandeja['fecha_archivado']=False
-                alerta_bandeja['email_usado']='correo@conhora.com'
+                email_persona=bandejas_notificaciones.id_persona
+                
+               
+                if programada.requiere_envio_email:
+                    if  email_persona and email_persona.email:
+                        alerta_bandeja['email_usado'] = email_persona.email
+                        subject = programada.nombre_clase_alerta
+                        template = "ingreso-de-entorno.html"
+
+                        context = {'primer_nombre': email_persona.primer_nombre}
+                        #template = render_to_string((template), context)
+                        email_data = {'template': data_alerga_generada['mensaje'], 'email_subject': subject, 'to_email':email_persona.email}
+                        Util.send_email(email_data)
+                        alerta_bandeja['fecha_envio_email']=datetime.now()
+
+                    else:
+                        alerta_bandeja['email_usado'] = "No aplica"
+                else:
+                    alerta_bandeja['email_usado'] = "No aplica"
                 if id_responsable and  destino == str(id_responsable):
-                    alerta_bandeja['responsable_directo']=True
+                        alerta_bandeja['responsable_directo']=True
                 else:
                     alerta_bandeja['responsable_directo']=False
                 alerta_bandeja['id_alerta_generada']=instance_alerta_generada.id_alerta_generada
                 alerta_bandeja['id_bandeja_alerta_persona']=bandejas_notificaciones.id_bandeja_alerta
-                #correo
+                
                 print(alerta_bandeja)
                 
+                print(" TIENE AÑO : "+str(agno_fijo))
+                print("ES ULTIMA REPETICION: " +str(ultima_rep))
+                #raise ValueError("ÑAO")
                 serializer_alerta_bandeja=AlertasBandejaAlertaPersonaPostSerializer(data=alerta_bandeja)
                 bandejas_notificaciones.pendientes_leer=True
                 bandejas_notificaciones.save()
@@ -288,6 +329,17 @@ def programar_alerta(programada,clasificacion):
                 print("###DESTINATARIO")
                 print(destino)
             instance_alerta_bandeja=serializer_alerta_bandeja.save()
-        #     #DATOS SUFICIENTES PARA ENTREGA 35 PENDIENTE FINALIZAR
+
+        #Mantenimiento
+        #SI ES DE AÑO  FIJO Y ES LA ULTIMA RETETICION SE ELIMINA
+        if ultima_rep:
+            if agno_fijo:
+                print("AÑO FIJO")
+                programada.delete()
+            else:
+                print("SIN AÑO DEFINIDO")
+                programada.id_personas_suspen_alertar_sin_agno=None
+                programada.save()
+
 
                 
