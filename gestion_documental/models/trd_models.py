@@ -105,7 +105,7 @@ class CatSeriesUnidadOrgCCDTRD(models.Model):
     digitalizacion_dis_final = models.BooleanField(null=True, blank=True, db_column='T218digitalizacionDispFinal')
     tiempo_retencion_ag = models.PositiveSmallIntegerField(null=True, blank=True, db_column='T218tiempoRetencionAG')
     tiempo_retencion_ac = models.PositiveSmallIntegerField(null=True, blank=True, db_column='T218tiempoRetencionAC')
-    descripcion_procedimiento = models.TextField(max_length=500, null=True, blank=True, db_column='T218descripcionProcedimiento')
+    descripcion_procedimiento = models.TextField(max_length=1000, null=True, blank=True, db_column='T218descripcionProcedimiento')
     fecha_registro = models.DateTimeField(auto_now=True, null=True, blank=True, db_column='T218fechaRegistro')
     justificacion_cambio = models.CharField(max_length=255, null=True, blank=True, db_column='T218JustificacionCambio')
     ruta_archivo_cambio = models.FileField(null=True, blank=True, db_column='T218RutaArchivoCambio')
@@ -125,6 +125,7 @@ class SeriesSubSUnidadOrgTRDTipologias(models.Model):
     id_catserie_unidadorg_ccd_trd = models.ForeignKey(CatSeriesUnidadOrgCCDTRD, on_delete=models.CASCADE, db_column='T211Id_CatSerie_UndOrg_CCD_TRD')
     id_tipologia_doc = models.ForeignKey(TipologiasDoc, on_delete=models.CASCADE, db_column='T211Id_TipologiaDoc')
     activo = models.BooleanField(default=True, db_column='T211activo')
+    reservada = models.BooleanField(default=False, db_column='T211reservada')
     
     def __str__(self):
         return str(self.id_tipologia_catserie_unidad_ccd_trd)
@@ -143,7 +144,7 @@ class HistoricosCatSeriesUnidadOrgCCDTRD(models.Model):
     digitalizacion_disp_final = models.BooleanField(default=False, db_column='T219digitalizacionDispFinal')
     tiempo_retencion_ag = models.PositiveSmallIntegerField(db_column='T219tiempoRetencionAG')
     tiempo_retencion_ac = models.PositiveSmallIntegerField(db_column='T219tiempoRetencionAC')
-    descripcion_procedimiento = models.TextField(max_length=500, db_column='T219descripcionProcedimiento')
+    descripcion_procedimiento = models.TextField(max_length=1000, db_column='T219descripcionProcedimiento')
     fecha_registro_historico = models.DateTimeField(auto_now=True, db_column='T219fechaInicioDisposicion')
     justificacion = models.CharField(max_length=255, null=True, blank=True, db_column='T219justificacionDelCambio')
     ruta_archivo = models.CharField(max_length=255, null=True, blank =True, db_column='T219rutaArchivoCambio')

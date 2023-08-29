@@ -11,6 +11,7 @@ from gestion_documental.models.tca_models import (
 from gestion_documental.models.ccd_models import (
     CatalogosSeriesUnidad
 )
+from gestion_documental.models.trd_models import SeriesSubSUnidadOrgTRDTipologias
 from transversal.models.organigrama_models import (
     UnidadesOrganizacionales
 )
@@ -130,11 +131,19 @@ class ClasifSerieSubseriUnidadTCA_activoSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = CatSeriesUnidadOrgCCD_TRD_TCA
-        fields = ['cod_clas_expediente','justificacion_cambio','ruta_archivo_cambio']
+        fields = [
+            'id_cat_serie_unidad_org_ccd_trd_tca',
+            'cod_clas_expediente',
+            'fecha_registro',
+            'justificacion_cambio',
+            'ruta_archivo_cambio',
+            'id_tca',
+            'id_cat_serie_und_ccd_trd'
+        ]
         extra_kwargs={
             'id_cat_serie_unidad_org_ccd_trd_tca': {'read_only': True},
             'id_tca': {'read_only': True},
-            'id_cat_serie_und': {'read_only': True},
+            'id_cat_serie_und_ccd_trd': {'read_only': True},
             'cod_clas_expediente': {'required': True},
             'fecha_registro': {'read_only': True},
             'justificacion_cambio': {'required': True,'allow_null':False,'allow_blank':False},

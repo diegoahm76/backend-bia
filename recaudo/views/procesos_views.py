@@ -21,7 +21,6 @@ from recaudo.serializers.procesos_serializers import (
     ProcesosSerializer,
     ProcesosPostSerializer,
     AtributosEtapasPostSerializer,
-
     CategoriaAtributoSerializer
 )
 from recaudo.models.base_models import TiposBien
@@ -231,6 +230,28 @@ class ProcesosView(generics.ListAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class UpdateProcesosView(generics.ListAPIView):
+    queryset = Procesos.objects.all()
+    serializer_class = ProcesosSerializer
+    #permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        id_etapa = request.data['id_etapa']
+        etapa = EtapasProceso.objects.filter(pk=id_etapa)
+        proceso = Procesos.objects.filter(pk=pk)
+        if len(proceso) == 1:
+            if len(etapa) == 1:
+                proceso = proceso.get()
+                etapa = etapa.get()
+                proceso.id_etapa = etapa
+                proceso.save()
+                return Response({'success': True, 'data': 'La etapa del proceso se ha actualizado con exito'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'success': False, 'data': 'No existe la etapa con el id enviado'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'success': False, 'data': 'No existe el proceso con el id enviado'}, status=status.HTTP_400_BAD_REQUEST)
+
+
 class ProcesosGeneralView(generics.ListAPIView):
     queryset = Procesos.objects.all()
     serializer_class = ProcesosSerializer
@@ -280,3 +301,40 @@ class CategoriaAtributoView(generics.ListAPIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class EtapasFiltradoView(generics.ListAPIView):
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        etapas = AtributosEtapas.objects.all()
+        etapasGeneral = []
+        etapasLista = []
+        etapasNombres = []
+
+        for etapa in etapas:
+            etapasNombres.append(etapa.id_etapa.etapa)
+            etapasLista.append(
+                {
+                    'etapa_general': etapa.id_etapa,
+                    'etapa': etapa.id_etapa.etapa,
+                    'categoria_general': etapa.id_categoria,
+                    'categoria': etapa.id_categoria.categoria
+                }
+            )
+
+        for etapa in etapasNombres:
+            categorias = []
+            etapa_general = {}
+            for item in etapasLista:
+                if etapa == item['etapa']:
+                    etapa_general = EtapasProcesoSerializer(item['etapa_general']).data
+                    categorias.append(CategoriaAtributoSerializer(item['categoria_general']).data)
+            etapasGeneral.append(
+                {
+                    'etapa': etapa_general,
+                    'subetapas': categorias
+                }
+            )
+
+        return Response({'success': True, 'data': etapasGeneral}, status=status.HTTP_200_OK)

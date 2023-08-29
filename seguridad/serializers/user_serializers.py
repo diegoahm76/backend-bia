@@ -148,8 +148,8 @@ class RolesSerializers(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     def validate_nombre_de_usuario(self, value):
-        if not value.isalnum():
-            raise serializers.ValidationError("El nombre de usuario solo debe tener caracteres alfanumericos")
+        # if not value.isalnum():
+        #     raise serializers.ValidationError("El nombre de usuario solo debe tener caracteres alfanumericos")
         if " " in value:
             raise serializers.ValidationError("No puede contener espacios en el nombre de usuario")
         
@@ -182,8 +182,8 @@ class RegisterExternoSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         nombre_de_usuario=attrs.get('nombre_de_usuario', '')
         # redirect_url=attrs.get('redirect_url','')
-        if not nombre_de_usuario.isalnum():
-            raise serializers.ValidationError("El Nombre de usuario solo debe tener caracteres alfanumericos")
+        # if not nombre_de_usuario.isalnum():
+        #     raise serializers.ValidationError("El Nombre de usuario solo debe tener caracteres alfanumericos")
         
         attrs['nombre_de_usuario'] = str(attrs['nombre_de_usuario']).lower()
         

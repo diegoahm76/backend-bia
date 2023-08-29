@@ -55,10 +55,12 @@ class GetCCDPosiblesActivar(generics.ListAPIView):
         
         for ccd in ccd_queryset:
             trd = ccd.tablaretenciondocumental
-            tca = trd.tablascontrolacceso
-            
-            if tca:
-                ccd_posibles.append(ccd)
+            try:
+                tca = trd.tablascontrolacceso
+                if tca:
+                    ccd_posibles.append(ccd)
+            except TablasControlAcceso.DoesNotExist:
+                pass
         
         serializer = self.serializer_class(ccd_posibles, many=True)
             

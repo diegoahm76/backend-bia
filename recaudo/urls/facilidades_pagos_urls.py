@@ -5,11 +5,11 @@ from recaudo.views import facilidades_pagos_views as views
 urlpatterns = [
 
     # OBLIGACIONES PARA UNA FACILIDAD DE PAGO
-    path('listado-obligaciones/', views.ListadoObligacionesViews.as_view(),name='listado-obligaciones'),
+    path('listado-obligaciones/', views.ListadoCarteraViews.as_view(),name='listado-obligaciones'),
     path('listado-deudores/', views.ListadoDeudoresViews.as_view(),name='listado-deudores'),
-    path('consulta-obligaciones-deudores/<str:identificacion>/', views.ConsultaObligacionesDeudoresViews.as_view(),name='consulta-obligaciones-deudores'),
-    path('consulta-obligaciones/<int:id_obligaciones>/', views.ConsultaObligacionesViews.as_view(), name='consulta-obligaciones'),
-    path('lista-obligaciones-ids/', views.ListaObligacionesDeudorSeleccionadasIds.as_view(), name='lista-obligaciones-ids'),
+    path('consulta-obligaciones-deudores/<str:identificacion>/', views.ConsultaCarteraDeudoresViews.as_view(),name='consulta-obligaciones-deudores'),
+    path('consulta-obligaciones/<int:id_obligaciones>/', views.ConsultaCarteraViews.as_view(), name='consulta-obligaciones'),
+    path('lista-obligaciones-ids/', views.ListaCarteraDeudorSeleccionadasIds.as_view(), name='lista-obligaciones-ids'),
 
     # CREAR UNA SOLICITUD DE FACILIDAD DE PAGOS
     path('datos-deudor/<int:id>/', views.DatosDeudorView.as_view(), name='datos-deudor'), 
@@ -39,6 +39,8 @@ urlpatterns = [
 
     # RESPUESTA FACILIDAD DE PAGO
     path('respuesta-solicitud-funcionario/create/', views.RespuestaSolicitudFacilidadView.as_view(), name='respuesta-solicitud-funcionario'),
+    path('respuesta-solicitud-funcionario/get/<int:id_facilidad_pago>/', views.RespuestaSolicitudFacilidadGetView.as_view(), name='obtener-respuesta-solicitud-funcionario'),
+    path('seguimiento/', views.FacilidadesPagosSeguimientoListView.as_view(), name='seguimiento'),
 
 
 

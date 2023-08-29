@@ -6,6 +6,7 @@ urlpatterns = [
     path('tipo-clasificacion/', views.TipoClasificacion.as_view(), name='tipo-clasificacion'),
     path('tipos-medios-doc/', views.TiposMediosDoc.as_view(), name='tipos-medios-doc'),
     path('disposicion-final-series/', views.DisposicionFinalSeries.as_view(), name='disposicion-final-series'),
+    path('cod-tipo-consecutivo/', views.GetCodConsecutivo.as_view(), name='tipos-consecutivos'),
     # path('permisos-gd/', views.PermisosGD.as_view(), name='permisos-gd'),
     
 ]

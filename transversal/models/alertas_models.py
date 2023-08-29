@@ -1,7 +1,7 @@
 from django.db import models
 
 from transversal.models.organigrama_models import UnidadesOrganizacionales
-
+from transversal.choices.tipos_alertas import CATEGORIA_ALERTA_CHOICES
 
 class ConfiguracionClaseAlerta(models.Model):
     cod_clase_alerta = models.CharField(primary_key=True, max_length=10, db_column='T040CodClaseAlerta')
@@ -74,10 +74,7 @@ class PersonasAAlertar(models.Model):
 
 
 # Choices para T043codCategoriaAlerta
-CATEGORIA_ALERTA_CHOICES = [
-    ('Ale', 'Alerta'),
-    ('Com', 'Comunicación'),
-]
+
 
 # Choices para T043nivelPrioridad
 NIVEL_PRIORIDAD_CHOICES = [
@@ -167,7 +164,7 @@ class AlertasGeneradas(models.Model):
 
 class BandejaAlertaPersona(models.Model):
     id_bandeja_alerta = models.AutoField(primary_key=True, db_column='T045IdBandejaAlertas_Persona')
-    id_persona = models.ForeignKey('seguridad.Personas', on_delete=models.CASCADE, db_column='T045Id_Persona')
+    id_persona = models.OneToOneField('seguridad.Personas', on_delete=models.CASCADE, db_column='T045Id_Persona')
     pendientes_leer = models.BooleanField(default=False, db_column='T045pendientesLeer')
     pendientes_archivar = models.BooleanField(default=False, db_column='T045pendientesArchivar')
     

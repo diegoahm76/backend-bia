@@ -330,7 +330,7 @@
         "nombre_modulo": "Activación Instrumentos Archivísticos",
         "subsistema": "GEST",
         "descripcion": "Permite adoptar una nueva versión de los Instrumentos Archivísticos de la entidad en el sistema",
-        "ruta_formulario": "/*",
+        "ruta_formulario": "/#/app/gestor_documental/activacion_instrumentos_archivisticos",
         "nombre_icono": "test",
         "id_menu": 13
     }
@@ -697,18 +697,6 @@
 },
 {
     "model": "seguridad.modulos",
-    "pk": 61,
-    "fields": {
-        "nombre_modulo": "Despachos de Plantas e Insumos de Viveros",
-        "subsistema": "CONS",
-        "descripcion": "Permite registrar los Despachos de Solicitudes de Plantas e Insumos a un Vivero determinado",
-        "ruta_formulario": "/#/app/conservacion/distribucion/despacho",
-        "nombre_icono": "test",
-        "id_menu": 24
-    }
-},
-{
-    "model": "seguridad.modulos",
     "pk": 62,
     "fields": {
         "nombre_modulo": "Listado de Solicitudes pendientes de Aprobación (Funcionario)",
@@ -858,7 +846,7 @@
         "nombre_modulo": "Tipologías Documentales",
         "subsistema": "GEST",
         "descripcion": "Permite administrar las tipologías documentales de la entidad a manejar en el sistema",
-        "ruta_formulario": "/*",
+        "ruta_formulario": "/#/app/gestor_documental/configuracion_datos_basicos/admin_tipologias_documentales",
         "nombre_icono": "test",
         "id_menu": 19
     }
@@ -870,21 +858,9 @@
         "nombre_modulo": "Formatos Documentales",
         "subsistema": "GEST",
         "descripcion": "Permite administrar las formatos de los documentos para medios físicos y digitales a manejar en el sistema",
-        "ruta_formulario": "/*",
+        "ruta_formulario": "/#/app/gestor_documental/configuracion_datos_basicos/admin_formatos_documentales",
         "nombre_icono": "test",
         "id_menu": 19
-    }
-},
-{
-    "model": "seguridad.modulos",
-    "pk": 76,
-    "fields": {
-        "nombre_modulo": "Permisos por Catálogo del TCA",
-        "subsistema": "GEST",
-        "descripcion": "Permite administrar los Permisos que tendrán los diferentes Cargo-Unidad Organizacional sobre las tipologías documentales de los catálogos disponibles de una TCA de la entidad en el sistema",
-        "ruta_formulario": "/*",
-        "nombre_icono": "test",
-        "id_menu": 13
     }
 },
 {
@@ -1314,7 +1290,7 @@
         "nombre_modulo": "Configuración de Alertas de Recurso Hídrico",
         "subsistema": "RECU",
         "descripcion": "Permite configurar las Alertas disponbiles para el subsistema de Recurso Hídrico",
-        "ruta_formulario": "/*",
+        "ruta_formulario": "/#/app/recurso_hidrico/biblioteca/alertas/configuracion_alertas",
         "nombre_icono": "test",
         "id_menu": 8
     }
@@ -1398,7 +1374,7 @@
         "nombre_modulo": "Biblioteca Recurso Hídrico",
         "subsistema": "RECU",
         "descripcion": "Permite consultar la biblioteca de Recurso\nHídrico con sus secciones, subsecciones e instrumentos asociados.",
-        "ruta_formulario": "/*",
+        "ruta_formulario": "/#//app/recurso_hidrico/biblioteca/consulta/visualizacion",
         "nombre_icono": "test",
         "id_menu": 66
     }
@@ -1434,7 +1410,7 @@
         "nombre_modulo": "Administración de Instrumentos de Biblioteca",
         "subsistema": "RECU",
         "descripcion": "Permite administrar los instrumentos de cada sección y subsección de la Biblioteca de Recurso Hídrico.",
-        "ruta_formulario": "/*",
+        "ruta_formulario": "/#/app/recurso_hidrico/biblioteca/instrumentos/administracion",
         "nombre_icono": "test",
         "id_menu": 66
     }
@@ -1557,6 +1533,30 @@
         "ruta_formulario": "",
         "nombre_icono": "test",
         "id_menu": 29
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 143,
+    "fields": {
+        "nombre_modulo": "Configuración de Tipos de Radicado Actuales",
+        "subsistema": "GEST",
+        "descripcion": "Permite configurar los tipos de radicado que la entidad quiere utilizar en el año en curso",
+        "ruta_formulario": "",
+        "nombre_icono": "test",
+        "id_menu": 19
+    }
+},
+{
+    "model": "seguridad.modulos",
+    "pk": 144,
+    "fields": {
+        "nombre_modulo": "Configuración de Tipos de Radicado Próximo Año",
+        "subsistema": "GEST",
+        "descripcion": "Permite configurar anticipadamente los tipos de radicado que la entidad quiere utilizar el próximo año",
+        "ruta_formulario": "",
+        "nombre_icono": "test",
+        "id_menu": 19
     }
 }
 ]

@@ -2191,17 +2191,12 @@ class DatosRegistroLaboratorioByResultadosLaboratorioGet(generics.ListAPIView):
     queryset = DatosRegistroLaboratorio.objects.all()
     permission_classes = [IsAuthenticated]
     
-    def get(self,request,lab):
+    def get(self,request,lab,para):
 
-        filter={}
-        for key, value in request.query_params.items():
-            if key == 'tipo':
-                if value != '':
-                    filter['id_parametro__cod_tipo_parametro'] = value
            
         
         
-        datos_laboratorio = self.queryset.all().filter(**filter).order_by('id_dato_registro_laboratorio')
+        datos_laboratorio = DatosRegistroLaboratorio.objects.filter(id_registro_laboratorio=lab,id_parametro__cod_tipo_parametro=para)
 
     
         serializer = self.serializer_class(datos_laboratorio,many=True)

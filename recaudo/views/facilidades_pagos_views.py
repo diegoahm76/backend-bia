@@ -1,7 +1,7 @@
 from recaudo.serializers.facilidades_pagos_serializers import (
     AvaluosSerializer,
-    ObligacionesSerializer,
-    ConsultaObligacionesSerializer,
+    CarteraSerializer,
+    ConsultaCarteraSerializer,
     ListadoDeudoresUltSerializer,
     DeudorFacilidadPagoSerializer,
     FacilidadesPagoSerializer,
@@ -19,14 +19,16 @@ from recaudo.serializers.facilidades_pagos_serializers import (
     FacilidadPagoGetByIdSerializer,
     BienSerializer,
     RespuestaSolicitudSerializer,
-    DetallesFacilidadPagoSerializer
+    DetallesFacilidadPagoSerializer,
+    ListadoFacilidadesSeguimientoSerializer
 )
 from recaudo.models.facilidades_pagos_models import (
     FacilidadesPago,
     RequisitosActuacion,
     CumplimientoRequisitos,
     GarantiasFacilidad,
-    DetallesFacilidadPago
+    DetallesFacilidadPago,
+    RespuestaSolicitud
 )
 from recaudo.models.procesos_models import Bienes
 from recaudo.models.base_models import TiposBien, TipoActuacion
@@ -42,14 +44,15 @@ from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from datetime import datetime, date, timedelta
 import random
 import string
 
 
 ### VISTAS QUE MUESTRAN LAS OBLIGACIONES
 
-class ObligacionesDeudorListViews(generics.ListAPIView):
-    serializer_class = ObligacionesSerializer
+class CarteraDeudorListViews(generics.ListAPIView):
+    serializer_class = CarteraSerializer
 
     def get_monto_total(self, carteras):
         monto_total = 0
@@ -59,40 +62,57 @@ class ObligacionesDeudorListViews(generics.ListAPIView):
         monto_total_con_intereses = monto_total + intereses_total
         return monto_total, intereses_total, monto_total_con_intereses
     
-    def obligaciones_deudor(self, id):
-        deudor = Deudores.objects.get(id=id)
-        facilidad = FacilidadesPago.objects.filter(id_deudor=deudor.id).exists()
-        nombre_completo = deudor.nombres + ' ' + deudor.apellidos if deudor.nombres and deudor.apellidos else deudor.nombres 
-        cartera = Cartera.objects.filter(id_deudor=deudor)
-        serializer = self.serializer_class(cartera, many=True)
-        monto_total, intereses_total, monto_total_con_intereses = self.get_monto_total(cartera)
-        data = {
-            'id_deudor': deudor.id,
-            'nombre_completo': nombre_completo,
-            'numero_identificacion': deudor.identificacion,
-            'email': deudor.email,
-            'obligaciones': serializer.data,
-            'monto_total': monto_total,
-            'intereses_total': intereses_total,
-            'monto_total_con_intereses': monto_total_con_intereses,
-            'tiene_facilidad' : facilidad
-        }
-        return data
+    def obligaciones_deudor(self, numero_identificacion):
+        deudor = Deudores.objects.filter(identificacion=numero_identificacion).first()
+        if deudor:
+            facilidad = FacilidadesPago.objects.filter(id_deudor=deudor.id).exists()
+            nombre_completo = deudor.nombres + ' ' + deudor.apellidos if deudor.nombres and deudor.apellidos else deudor.nombres 
+            cartera = Cartera.objects.filter(id_deudor=deudor)
+            serializer = self.serializer_class(cartera, many=True)
+            monto_total, intereses_total, monto_total_con_intereses = self.get_monto_total(cartera)
+
+            data = {
+                'id_deudor': deudor.id,
+                'nombre_completo': nombre_completo,
+                'numero_identificacion': deudor.identificacion,
+                'email': deudor.email,
+                'obligaciones': serializer.data,
+                'monto_total': monto_total,
+                'intereses_total': intereses_total,
+                'monto_total_con_intereses': monto_total_con_intereses,
+                'tiene_facilidad' : facilidad
+            }
+            return data
+        else:
+            persona = Personas.objects.filter(numero_documento=numero_identificacion).first()
+            data = {
+                'id_deudor': persona.id_persona,
+                'nombre_completo': persona.primer_nombre + " " + persona.primer_apellido,
+                'numero_identificacion': persona.numero_documento,
+                'email': persona.email,
+                'obligaciones': None,
+                'monto_total': None,
+                'intereses_total': None,
+                'monto_total_con_intereses': None,
+                'tiene_facilidad' : None
+            }
+            return data
 
 
-class ListadoObligacionesViews(generics.ListAPIView):
+class ListadoCarteraViews(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
         user = request.user
         numero_identificacion = user.persona.numero_documento
-        try:
-            deudor = Deudores.objects.get(identificacion=numero_identificacion)
-        except ObjectDoesNotExist:
-            raise NotFound('No se encontró un objeto deudor para este usuario.')
         
-        instancia_obligaciones = ObligacionesDeudorListViews()
-        response_data = instancia_obligaciones.obligaciones_deudor(deudor.id)
+        # try:
+        #     deudor = Deudores.objects.get(identificacion=numero_identificacion)
+        # except Deudores.DoesNotExist:
+        #     raise NotFound('No se encontró un objeto deudor para este usuario.')
+        
+        instancia_obligaciones = CarteraDeudorListViews()
+        response_data = instancia_obligaciones.obligaciones_deudor(numero_identificacion)
 
         if response_data:
             return Response({'success': True, 'data': response_data}, status=status.HTTP_200_OK)
@@ -100,19 +120,19 @@ class ListadoObligacionesViews(generics.ListAPIView):
             raise ValidationError('El dato ingresado no es valido')  
 
 
-class ConsultaObligacionesDeudoresViews(generics.ListAPIView):
+class ConsultaCarteraDeudoresViews(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, identificacion):
         numero_identificacion = identificacion
 
-        try:
-            deudor = Deudores.objects.get(identificacion=numero_identificacion)
-        except ObjectDoesNotExist:
-            raise NotFound('No se encontraron resultados.')
+        # try:
+        #     deudor = Deudores.objects.get(identificacion=numero_identificacion)
+        # except ObjectDoesNotExist:
+        #     raise NotFound('No se encontraron resultados.')
         
-        instancia_obligaciones = ObligacionesDeudorListViews()
-        response_data = instancia_obligaciones.obligaciones_deudor(deudor.id)
+        instancia_obligaciones = CarteraDeudorListViews()
+        response_data = instancia_obligaciones.obligaciones_deudor(numero_identificacion)
 
         if response_data:
             return Response({'success': True, 'data': response_data}, status=status.HTTP_200_OK)
@@ -120,8 +140,8 @@ class ConsultaObligacionesDeudoresViews(generics.ListAPIView):
             raise ValidationError('El dato ingresado no es valido')
         
 
-class ConsultaObligacionesViews(generics.ListAPIView):
-    serializer_class = ConsultaObligacionesSerializer
+class ConsultaCarteraViews(generics.ListAPIView):
+    serializer_class = ConsultaCarteraSerializer
     
     def get_queryset(self):
         id_obligaciones = self.kwargs['id_obligaciones']
@@ -179,13 +199,13 @@ class DatosDeudorView(generics.ListAPIView):
         return Response({'success': True, 'detail':'Se muestra los datos del deudor', 'data': deudor}, status=status.HTTP_200_OK) 
 
 
-class ListaObligacionesDeudorSeleccionadasIds(generics.ListAPIView):
-    serializer_class = ObligacionesSerializer
+class ListaCarteraDeudorSeleccionadasIds(generics.ListAPIView):
+    serializer_class = CarteraSerializer
 
     def get_obligaciones(self, ids_cartera):
-        instancia_obligaciones = ObligacionesDeudorListViews()
+        instancia_obligaciones = CarteraDeudorListViews()
         carteras = Cartera.objects.filter(id__in=ids_cartera)
-        serializer = ObligacionesSerializer(carteras, many=True)
+        serializer = CarteraSerializer(carteras, many=True)
         monto_total, intereses_total, monto_total_con_intereses = instancia_obligaciones.get_monto_total(carteras)
 
         data = {
@@ -416,6 +436,9 @@ class DetallesFacilidadPagoCreateView(generics.CreateAPIView):
         if not facilidad_pago:
             raise NotFound('No existe facilidad de pago relacionada con la informacion ingresada')
         
+        if cartera.id_deudor != facilidad_pago.id_deudor:
+            raise ValidationError('El deudor no coinciden con los dados ingresados')
+        
         serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
         bienes_facilidad = serializer.save()
@@ -463,15 +486,27 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
         numero_radicado = self.generar_numero_radicacion()
         facilidad_pago = None
 
+        fecha_abono_a = data_in['fecha_abono']
+
+        try:
+            fecha_abono = datetime.strptime(fecha_abono_a, '%Y-%m-%d').date()
+        except ValueError:
+            raise ValidationError('Formato de fecha de abono inválido')
+        
+        if fecha_abono >= datetime.now().date():
+            raise ValidationError('La fecha de abono es incorrecta')
+        
+
         facilidad_data = {
             'id_deudor': data_in['id_deudor'],
             'id_tipo_actuacion':data_in['id_tipo_actuacion'],
             'observaciones':data_in['observaciones'],
-            'valor_abonado':data_in['valor_abonado'],
             'periodicidad':data_in['periodicidad'],
             'cuotas':data_in['cuotas'],
             'documento_soporte':data_in['documento_soporte'],
             'consignacion_soporte':data_in['consignacion_soporte'],
+            'valor_abonado':data_in['valor_abonado'],
+            'fecha_abono':data_in['fecha_abono'],
             'documento_no_enajenacion':data_in['documento_no_enajenacion'],
             'id_funcionario':data_in['id_funcionario'],
             'notificaciones':data_in['notificaciones'],
@@ -517,6 +552,8 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
 
 #         # else:
 #         #     raise ValidationError('Falta agregar bienes')
+        
+
         instancia_bien = BienCreateView()
         instancia_avaluo = AvaluoCreateView()
         instancia_det_bien_facilidad = DetallesBienFacilidadPagoCreateView()
@@ -809,7 +846,7 @@ class FacilidadPagoGetByIdView(generics.ListAPIView):
         deudor = instancia_deudor.get_datos_deudor(facilidad_pago['id_deudor'])
         obligaciones = DetallesFacilidadPago.objects.filter(id_facilidad_pago=facilidad_pago['id'])
         ids_cartera = [obligacion.id_cartera.id for obligacion in obligaciones if obligacion.id_cartera]
-        instancia_obligaciones = ListaObligacionesDeudorSeleccionadasIds()
+        instancia_obligaciones = ListaCarteraDeudorSeleccionadasIds()
         obligaciones_seleccionadas = instancia_obligaciones.get_obligaciones(ids_cartera)
         instancia_documentos_deudor = CumplimientoRequisitosGetView()
         documentos_deudor_actuacion = instancia_documentos_deudor.get_documentos_requisitos(facilidad_pago['id'])
@@ -854,3 +891,60 @@ class RespuestaSolicitudFacilidadView(generics.CreateAPIView):
             raise ValidationError('No se pudo crear el bien')
 
         return Response({'success': True, 'detail': 'Se registra la respuesta la respuesta dada por el funcionario', 'data': self.serializer_class(respuesta_solicitud).data}, status=status.HTTP_201_CREATED)
+
+
+class RespuestaSolicitudFacilidadGetView(generics.ListAPIView):
+    serializer_class = RespuestaSolicitudSerializer
+
+    def get_respuesta_solicitud(self, id_facilidad_pago):
+        facilidad_pago = FacilidadesPago.objects.get(id=id_facilidad_pago)
+
+        if not facilidad_pago:
+            raise NotFound('No se encontró ningún registro en facilidades de pago con el parámetro ingresado')
+        
+        respuesta = RespuestaSolicitud.objects.filter(id_facilidad_pago=facilidad_pago.id).first()
+        serializer = self.serializer_class(respuesta, many=False)
+        return serializer.data
+    
+    def get(self, request, id_facilidad_pago):
+        respuesta_solicitud = self.get_respuesta_solicitud(id_facilidad_pago)
+        return Response({'success': True, 'detail': 'Se muestra todos los bienes del deudor', 'data': respuesta_solicitud}, status=status.HTTP_200_OK) 
+
+
+class FacilidadesPagosSeguimientoListView(generics.ListAPIView):
+    serializer_class = ListadoFacilidadesSeguimientoSerializer
+
+    def get_valor_total(self, carteras):
+        monto_total = sum(cartera.monto_inicial for cartera in carteras)
+        intereses_total = sum(cartera.valor_intereses for cartera in carteras)
+        valor_total = monto_total + intereses_total
+        return valor_total
+
+    def get(self, request):
+        user = request.user
+        numero_identificacion = user.persona.numero_documento
+        deudor =  Deudores.objects.get(identificacion=numero_identificacion)
+        data = []
+
+        if not deudor:
+            raise NotFound('No se encontró ningún registro en deudores con el parámetro ingresado')
+
+        facilidades_pago = FacilidadesPago.objects.filter(id_deudor=deudor.id)
+
+        if not facilidades_pago.exists():
+            raise NotFound('No se encontró ningún registro en facilidades de pago con el parámetro ingresado')
+        
+        for facilidad_pago in facilidades_pago:
+            cartera_ids = DetallesFacilidadPago.objects.filter(id_facilidad_pago=facilidad_pago.id)
+            ids_cartera = [cartera_id.id_cartera.id for cartera_id in cartera_ids if cartera_id]
+            cartera_seleccion = Cartera.objects.filter(id__in=ids_cartera)
+            valor_total = self.get_valor_total(cartera_seleccion)
+            facilidad_data = self.serializer_class(facilidad_pago).data
+            facilidad_data['valor_total'] = valor_total
+            data.append(facilidad_data)
+        
+        return Response({'success': True, 'detail':'Se registra la respuesta dada por el funcionario', 'data': data}, status=status.HTTP_201_CREATED)
+
+
+
+

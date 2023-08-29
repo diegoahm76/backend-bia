@@ -113,4 +113,8 @@ urlpatterns = [
     # path('clases-tercero-personas/update/<str:pk>/', views.updateClaseTerceroPersona.as_view(), name='clase-tercero-persona-update'),
     # path('clases-tercero-personas/create/', views.registerClaseTerceroPersona.as_view(), name='clase-tercero-persona-register'),
 
+    # VALIDACION
+    path('validacion-token/', views.ValidacionTokenView.as_view(), name='validacion_token'),
+
+
 ]
