@@ -158,7 +158,7 @@ class CarteraSeleccionadaDeudorListaViews(generics.ListAPIView):
         try:
             facilidad = FacilidadesPago.objects.get(id=id_facilidad_pago)
         except FacilidadesPago.DoesNotExist:
-            raise NotFound('No se encontraron resultados.')
+            raise NotFound("No existe facilidad de pagos relacionada con la informacion ingresada")
         
         instancia_obligaciones = CarteraSeleccionadaListViews()
         response_data = instancia_obligaciones.cartera_selecionada(facilidad.id, facilidad.fecha_abono)
@@ -202,7 +202,7 @@ class PlanPagosAmortizacionListaViews(generics.ListAPIView):
         try:
             facilidad = FacilidadesPago.objects.get(id=id_facilidad_pago)
         except FacilidadesPago.DoesNotExist:
-            raise NotFound('No se encontraron resultados.')
+            raise NotFound("No existe facilidad de pagos relacionada con la informacion ingresada")
         
         # TABLA 1
         instancia_cartera = CarteraSeleccionadaListViews()
@@ -244,8 +244,6 @@ class PlanPagosAmortizacionListaViews(generics.ListAPIView):
                 'cuota': capital_cuotas + interes_cuotas
                 })
 
-
-        print(resumen_inicial)
         response_data = {
             'data_cartera':data_cartera,
             'data_cartera_modificada':data_cartera_modificada,
@@ -259,4 +257,40 @@ class PlanPagosAmortizacionListaViews(generics.ListAPIView):
             return Response({'success': True, 'data': response_data}, status=status.HTTP_200_OK)
         else:
             raise ValidationError('El dato ingresado no es valido')
+
+
+class PlanPagosCreateView(generics.CreateAPIView):
+    serializer_class = PlanPagosSerializer
+
+    def crear_plan_pagos(self, data):
+        id_facilidad = data['id_facilidad_pago']
+        facilidad_pago = FacilidadesPago.objects.filter(id=id_facilidad).first()
+
+        if not facilidad_pago:
+            raise NotFound("No existe facilidad de pagos relacionada con la informacion ingresada")
+        
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        plan_pagos = serializer.save()
+        return plan_pagos
+    
+    def post(self, request):
+        data = request.data
+        user = request.user
+
+        id_funcionario = user.persona.id_persona
+
+        data['id_funcionario'] = id_funcionario
+        data['id_tasa_interes'] = 1
+
+        print(data)
+
+        plan_pagos = self.crear_plan_pagos(data)
+
+        if not plan_pagos:
+            raise ValidationError('No se pudo crear la relacion')
+
+        return Response({'success':True, 'detail':'Se crea el plan de pagos', 'data':self.serializer_class(plan_pagos).data}, status=status.HTTP_201_CREATED)
+
+
 
