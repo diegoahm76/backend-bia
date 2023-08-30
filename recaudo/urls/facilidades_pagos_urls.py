@@ -34,8 +34,8 @@ urlpatterns = [
     # MOSTRAR UNA FACILIDAD DE PAGOS
     path('documentos-deudor/get/<int:id_facilidad_pago>/', views.CumplimientoRequisitosGetView.as_view(), name='documentos-deudor-facilidad-pago'),
     path('documento-garantia/get/<int:id_facilidad_pago>/', views.GarantiasFacilidadGetView.as_view(), name='documento-garantia-facilidad-pago'),
-    path('bienes-deudor/list/<int:id_facilidad_pago>/', views.ListaBienesDeudorView.as_view(), name='lista-bienes-deudor'),
-    path('bienes-deudor/get/<int:id_facilidad_pago>/', views.ListaBienesFacilidadView.as_view(), name='bienes-deudor'),
+    path('bienes-deudor/list/<int:id_deudor>/', views.ListaBienesDeudorView.as_view(), name='lista-bienes-deudor'),
+    path('bienes-facilidad/get/<int:id_facilidad_pago>/', views.ListaBienesFacilidadView.as_view(), name='bienes-facilidad'),
     path('get-id/<int:id>/', views.FacilidadPagoGetByIdView.as_view(), name='obtener-facilidad-pago'),
 
     # RESPUESTA FACILIDAD DE PAGO

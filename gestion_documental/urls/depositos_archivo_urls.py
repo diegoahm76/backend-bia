@@ -66,11 +66,11 @@ urlpatterns = [
      path('carpetaCaja/eliminar/<str:pk>/',views.CarpetaCajaDelete.as_view(),name='eliminar-carpeta'),
      path('carpetaCaja/actualizar-carpeta/<int:pk>/',views.CarpetaCajaUpDate.as_view(),name='actualizar-carpeta'),
      path('carpetaCaja/listar/',views.CarpetaCajaAll.as_view(),name='listar-carpetas'),
-     path('cajaBandeja/listar-cajas-por-carpeta/<int:id_carpeta>/',views.CarpetaListCajaInfo.as_view(),name='listar-cajas-por-carpeta'),
-     path('cajaBandeja/listar-bandejas-por-carpeta/<int:id_carpeta>/',views.CarpetaListBandejaInfo.as_view(),name='listar-bandejas-por-carpeta'),
-     path('cajaBandeja/listar-estantes-por-carpeta/<int:id_carpeta>/',views.EstanteListCarpetaInfo.as_view(),name='listar-estantes-por-carpeta'),
-     path('cajaBandeja/listar-depositos-por-carpeta/<int:id_carpeta>/',views.CarpetaListDepositoInfo.as_view(),name='listar-depositos-por-carpeta'),
-     path('cajaBandeja/mover-carpeta/<int:id_carpeta_caja>/',views.CajaEstanteBandejaMove.as_view(), name='mover-carpeta'),
+     path('carpetaCaja/listar-cajas-por-carpeta/<int:id_carpeta>/',views.CarpetaListCajaInfo.as_view(),name='listar-cajas-por-carpeta'),
+     path('carpetaCaja/listar-bandejas-por-carpeta/<int:id_carpeta>/',views.CarpetaListBandejaInfo.as_view(),name='listar-bandejas-por-carpeta'),
+     path('carpetaCaja/listar-estantes-por-carpeta/<int:id_carpeta>/',views.EstanteListCarpetaInfo.as_view(),name='listar-estantes-por-carpeta'),
+     path('carpetaCaja/listar-depositos-por-carpeta/<int:id_carpeta>/',views.CarpetaListDepositoInfo.as_view(),name='listar-depositos-por-carpeta'),
+     path('carpetaCaja/mover-carpeta/<int:id_carpeta_caja>/',views.CarpetaCajaMove.as_view(), name='mover-carpeta'),
 
 
 
