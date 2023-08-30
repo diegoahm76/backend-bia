@@ -337,7 +337,7 @@ class Roles(models.Model):
     id_rol = models.AutoField(primary_key=True, editable=False, db_column='TzIdRol')
     nombre_rol = models.CharField(max_length=100, db_column='Tznombre')
     descripcion_rol = models.CharField(max_length=255, db_column='Tzdescripcion')
-    Rol_sistema = models.BooleanField(default=False, db_column='TXrolDelSistema')
+    Rol_sistema = models.BooleanField(default=False, db_column='TzrolDelSistema')
     
     def __str__(self):
         return str(self.nombre_rol)
