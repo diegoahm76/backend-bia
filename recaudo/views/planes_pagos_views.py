@@ -59,14 +59,16 @@ class PlanPagosResolucionValidationView(generics.RetrieveAPIView):
         if not plan_pago:
             raise NotFound("No existe plan de pagos relacionada con la facilidad de pagos ingresada")
         
-        return ResolucionesPlanPago.objects.filter(id_plan_pago=plan_pago.id)
+        instancia_resolucion = ResolucionUltimaPlanPagoGetView()
+        resolucion = instancia_resolucion.get_ultima_resolucion(plan_pago.id)
+        
+        return resolucion
         
     def get(self, request, id_facilidad_pago):
         instancia_validacion = self.get_validacion(id_facilidad_pago)
 
-        if instancia_validacion.exists():
-            serializer = self.serializer_class(instancia_validacion, many=True)
-            return Response({'success': True, 'detail': 'Resoluciones', 'data': serializer.data}, status=status.HTTP_200_OK)
+        if instancia_validacion:
+            return Response({'success': True, 'detail': 'Resoluciones', 'data':instancia_validacion }, status=status.HTTP_200_OK)
         else:
             return Response({'success': False, 'detail': 'No existe resolucion para la facilidad de pago relacionada con la información dada'})
 
@@ -379,7 +381,7 @@ class PlanPagosCuotasListGetView(generics.ListAPIView):
         return data
     
     def get(self, request, id_plan_pagos):
-        plan_pago_cuotas = self.get_plan_pagos_cuotas(id_plan_pagos)
+        plan_pago_cuotas = self.get_cuotas(id_plan_pagos)
         return Response({'success': True, 'detail':'Se muestra los datos del deudor', 'data':plan_pago_cuotas}, status=status.HTTP_200_OK) 
 
 
@@ -420,3 +422,91 @@ class PlanPagosListGetView(generics.ListAPIView):
         plan_pago_data = self.get_plan_pagos_cuotas(facilidad_pago.id)
         
         return Response({'success': True, 'detail': 'Se encontró el plan de pagos', 'data': plan_pago_data}, status=status.HTTP_200_OK)
+
+
+class CuotaPlanPagoByIdView(generics.RetrieveAPIView):
+    serializer_class = PlanPagosCuotasSerializer
+
+    def get_cuota_plan_pago_by_id(self, id):
+        cuota = PlanPagosCuotas.objects.filter(id=id).first()
+        if not cuota:
+            raise NotFound('No se encontró ningún registro en facilidades de pago con el parámetro ingresado')
+        serializer = self.serializer_class(cuota, many=False)
+        return serializer.data
+    
+    def get(self, request, id_cuota):
+        cuota = self.get_cuota_plan_pago_by_id(id_cuota)
+
+        return Response({'success': True, 'detail': 'Se encontró el plan de pagos', 'data': cuota}, status=status.HTTP_200_OK)
+    
+
+class ResolucionPlanPagosCreateView(generics.CreateAPIView):
+    serializer_class = ResolucionesPlanPagoSerializer
+
+    def crear_resolucion(self, data):
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        bien_creado = serializer.save()
+        return bien_creado
+
+    def post(self, request):
+        data = request.data
+
+        resolucion = self.crear_resolucion(data)
+
+        if not resolucion:
+            raise ValidationError('No se pudo crear el bien')
+
+        return Response({'success': True, 'detail': 'Se crea el bien que coloca el deudor', 'data': self.serializer_class(resolucion).data}, status=status.HTTP_201_CREATED)
+
+
+class ResolucionPlanPagoGetView(generics.RetrieveAPIView):
+    serializer_class = ResolucionesPlanPagoSerializer
+
+    def get_resoluciones(self, id_plan_pago):
+        resoluciones = ResolucionesPlanPago.objects.filter(id_plan_pago=id_plan_pago).order_by('-fecha_creacion_registro')
+        serializer = self.serializer_class(resoluciones, many=True)
+        return serializer.data
+
+    def get(self, request, id_facilidad_pago):
+        facilidad = FacilidadesPago.objects.filter(id=id_facilidad_pago).first()
+        if not facilidad:
+            raise NotFound('No se encontró ningún registro en facilidades de pago con el parámetro ingresado')
+
+        plan_pago = PlanPagos.objects.filter(id_facilidad_pago=facilidad.id).first()
+        if not plan_pago:
+            raise NotFound('No se encontró ningún registro en plan de pagos con el parámetro ingresado')
+
+        resolucion_data = self.get_resoluciones(plan_pago.id)
+        if not resolucion_data:
+            raise NotFound('No se encontró ningún registro en resoluciones con el parámetro ingresado')
+
+        return Response({'success': True, 'detail': 'Se encontró el plan de pagos', 'data': resolucion_data}, status=status.HTTP_200_OK)
+
+
+
+
+class ResolucionUltimaPlanPagoGetView(generics.RetrieveAPIView):
+    serializer_class = ResolucionesPlanPagoSerializer
+
+    def get_ultima_resolucion(self, id_plan_pago):
+        resoluciones = ResolucionesPlanPago.objects.filter(id_plan_pago=id_plan_pago).order_by('-fecha_creacion_registro')
+        if resoluciones.exists():
+            serializer = self.serializer_class(resoluciones.first())
+            return serializer.data
+        return None
+
+    def get(self, request, id_facilidad_pago):
+        facilidad = FacilidadesPago.objects.filter(id=id_facilidad_pago).first()
+        if not facilidad:
+            raise NotFound('No se encontró ningún registro en facilidades de pago con el parámetro ingresado')
+
+        plan_pago = PlanPagos.objects.filter(id_facilidad_pago=facilidad.id).first()
+        if not plan_pago:
+            raise NotFound('No se encontró ningún registro en plan de pagos con el parámetro ingresado')
+
+        ultima_resolucion_data = self.get_ultima_resolucion(plan_pago.id)
+        if not ultima_resolucion_data:
+            raise NotFound('No se encontró ninguna resolución para el plan de pagos')
+
+        return Response({'success': True, 'detail': 'Se encontró la última resolución', 'data': ultima_resolucion_data}, status=status.HTTP_200_OK)
