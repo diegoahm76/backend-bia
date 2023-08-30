@@ -171,7 +171,7 @@ class DepositoGet(generics.ListAPIView):
                 'success': False,
                 'detail': 'No se encontraron datos de depósitos registrados.',
                 'data': []
-            }, status=status.HTTP_200_OK)
+            }, status=status.HTTP_404_NOT_FOUND)
 
         serializer = self.get_serializer(queryset, many=True)
 
@@ -264,7 +264,7 @@ class DepositoSearch(generics.ListAPIView):
                 'success': True,
                 'detail': 'No se encontraron datos que coincidan con los criterios de búsqueda.',
                 'data': []
-            }, status=status.HTTP_200_OK)
+            }, status=status.HTTP_404_NOT_FOUND)
 
         serializer = DepositoSearchSerializer(queryset, many=True)
 
@@ -348,7 +348,7 @@ class EstanteDepositoSearch(generics.ListAPIView):
                 'success': True,
                 'detail': 'No se encontraron datos que coincidan con los criterios de búsqueda.',
                 'data': []
-            }, status=status.HTTP_200_OK)
+            }, status=status.HTTP_404_NOT_FOUND)
 
         serializer = EstanteDepositoSearchSerializer(queryset, many=True)
 
@@ -485,7 +485,7 @@ class EstanteGetAll(generics.ListAPIView):
                 'success': False,
                 'detail': 'No se encontraron datos de estantes registrados.',
                 'data': []
-            }, status=status.HTTP_200_OK)
+            }, status=status.HTTP_404_NOT_FOUND)
 
         serializer = self.get_serializer(queryset, many=True)
 
@@ -535,22 +535,22 @@ class MoveEstante(generics.UpdateAPIView):
                         'deposito_destino': deposito_destino},
                           status=status.HTTP_200_OK)
 
-#LISTAR_BANDEJAS_POR_ESTANTE
-class BandejasByEstanteList(generics.ListAPIView):
-    serializer_class = BandejasByEstanteListSerializer
-    queryset = BandejaEstante.objects.all()
-    permission_classes = [IsAuthenticated]
+# #LISTAR_BANDEJAS_POR_ESTANTE
+# class BandejasByEstanteList(generics.ListAPIView):
+#     serializer_class = BandejasByEstanteListSerializer
+#     queryset = BandejaEstante.objects.all()
+#     permission_classes = [IsAuthenticated]
     
-    def get(self,request,pk):
-        bandeja = BandejaEstante.objects.filter(id_estante_deposito=pk)
-        serializer = self.serializer_class(bandeja,many=True)
+#     def get(self,request,pk):
+#         bandeja = BandejaEstante.objects.filter(id_estante_deposito=pk)
+#         serializer = self.serializer_class(bandeja,many=True)
         
-        if not Deposito:
-            raise NotFound("El registro del estante que busca, no se encuentra registrado")
+#         if not Deposito:
+#             raise NotFound("El registro del estante que busca, no se encuentra registrado")
 
-        return Response({'success':True,
-                         'detail':'Se encontraron los siguientes registros.',
-                         'data':serializer.data},status=status.HTTP_200_OK)
+#         return Response({'success':True,
+#                          'detail':'Se encontraron los siguientes registros.',
+#                          'data':serializer.data},status=status.HTTP_200_OK)
 
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -709,7 +709,7 @@ class BandejaEstanteSearch(generics.ListAPIView):
                 'success': True,
                 'detail': 'No se encontraron datos que coincidan con los criterios de búsqueda.',
                 'data': []
-            }, status=status.HTTP_200_OK)
+            }, status=status.HTTP_404_NOT_FOUND)
 
         serializer = self.get_serializer(queryset, many=True)
 
@@ -795,7 +795,7 @@ class BandejaEstanteAll(generics.ListAPIView):
                 'success': False,
                 'detail': 'No se encontraron datos de estantes registrados.',
                 'data': []
-            }, status=status.HTTP_200_OK)
+            }, status=status.HTTP_404_NOT_FOUND)
 
         serializer = self.get_serializer(queryset, many=True)
 
@@ -878,7 +878,7 @@ class CajasByBandejaList(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def get(self,request,pk):
-        caja = CajaBandeja.objects.filter(id_bandeja_estante=pk)
+        caja = CajaBandeja.objects.filter(id_bandeja_estante=pk).order_by('orden_ubicacion_por_bandeja')
         serializer = self.serializer_class(caja,many=True)
         
         if not Deposito:
@@ -923,7 +923,7 @@ class CajaEstanteSearch(generics.ListAPIView):
                 'success': True,
                 'detail': 'No se encontraron datos que coincidan con los criterios de búsqueda.',
                 'data': []
-            }, status=status.HTTP_200_OK)
+            }, status=status.HTTP_404_NOT_FOUND)
 
         serializer = self.get_serializer(queryset, many=True)
 
@@ -1072,7 +1072,7 @@ class CajaEstanteSearchAdvanced(generics.ListAPIView):
                 'success': True,
                 'detail': 'No se encontraron cajas que coincidan con los criterios de búsqueda.',
                 'data': []
-            }, status=status.HTTP_200_OK)
+            }, status=status.HTTP_404_NOT_FOUND)
 
         serialized_data = []
         for caja in queryset:
@@ -1374,7 +1374,7 @@ class CarpetaCajaSearch(generics.ListAPIView):
                 'success': True,
                 'detail': 'No se encontraron cajas que coincidan con los criterios de búsqueda.',
                 'data': []
-            }, status=status.HTTP_200_OK)
+            }, status=status.HTTP_404_NOT_FOUND)
 
         serialized_data = []
         for caja in queryset:
@@ -1432,7 +1432,7 @@ class CarpetasByCajaList(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def get(self,request,pk):
-        carpeta = CarpetaCaja.objects.filter(id_caja_bandeja=pk)
+        carpeta = CarpetaCaja.objects.filter(id_caja_bandeja=pk).order_by('orden_ubicacion_por_caja')
         serializer = self.serializer_class(carpeta,many=True)
         
         if not Deposito:
@@ -1477,7 +1477,7 @@ class CarpetaCajaAll(generics.ListAPIView):
                 'success': False,
                 'detail': 'No se encontraron datos de estantes registrados.',
                 'data': []
-            }, status=status.HTTP_200_OK)
+            }, status=status.HTTP_404_NOT_FOUND)
 
         serializer = self.get_serializer(queryset, many=True)
 
