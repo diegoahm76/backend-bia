@@ -11,6 +11,12 @@ urlpatterns = [
     path('plan-obligaciones-facilidad/<int:id_facilidad_pago>/', views.PlanPagosAmortizacionListaViews.as_view(),name='plan-obligaciones-facilidad'),
     path('create/', views.PlanPagosCreateView.as_view(),name='crear-plan-pagos'),
     path('get/<int:id_facilidad_pago>/', views.PlanPagosListGetView.as_view(),name='ver-plan-pagos'),
+    path('cuota-by-id/get/<int:id_cuota>/', views.CuotaPlanPagoByIdView.as_view(),name='ver-cuota-by-id'),
+    path('resolucion/create/', views.ResolucionPlanPagosCreateView.as_view(),name='crear-resolucion-plan-pagos'),
+    path('resoluciones/get/<int:id_facilidad_pago>/', views.ResolucionPlanPagoGetView.as_view(),name='ver-resolucion-plan-pagos'),
+    path('resolucion-ultima/get/<int:id_facilidad_pago>/', views.ResolucionUltimaPlanPagoGetView.as_view(),name='ver-ultima-resolucion-plan-pagos'),
+
+
 
 
     # path('listado-deudores/', views.ListadoDeudoresViews.as_view(),name='listado-deudores'),

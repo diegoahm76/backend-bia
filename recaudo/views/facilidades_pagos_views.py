@@ -64,8 +64,8 @@ class CarteraDeudorListViews(generics.ListAPIView):
     
     def obligaciones_deudor(self, numero_identificacion):
         deudor = Deudores.objects.filter(identificacion=numero_identificacion).first()
-        if deudor:
-            facilidad = FacilidadesPago.objects.filter(id_deudor=deudor.id).exists()
+        
+        if deudor:     
             nombre_completo = deudor.nombres + ' ' + deudor.apellidos if deudor.nombres and deudor.apellidos else deudor.nombres 
             cartera = Cartera.objects.filter(id_deudor=deudor)
             serializer = self.serializer_class(cartera, many=True)
@@ -79,8 +79,7 @@ class CarteraDeudorListViews(generics.ListAPIView):
                 'obligaciones': serializer.data,
                 'monto_total': monto_total,
                 'intereses_total': intereses_total,
-                'monto_total_con_intereses': monto_total_con_intereses,
-                'tiene_facilidad' : facilidad
+                'monto_total_con_intereses': monto_total_con_intereses
             }
             return data
         else:
