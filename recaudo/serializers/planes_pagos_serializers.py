@@ -2,7 +2,7 @@ from rest_framework import serializers
 from recaudo.models.base_models import TiposPago
 from recaudo.models.cobros_models import Cartera
 from recaudo.models.liquidaciones_models import Deudores
-from recaudo.models.planes_pagos_models import PlanPagos, ResolucionesPlanPago
+from recaudo.models.planes_pagos_models import PlanPagos, ResolucionesPlanPago, PlanPagosCuotas
 from recaudo.models.facilidades_pagos_models import FacilidadesPago, DetallesFacilidadPago
 
 
@@ -15,6 +15,12 @@ class TipoPagoSerializer(serializers.ModelSerializer):
 class PlanPagosSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlanPagos
+        fields = '__all__'
+
+
+class PlanPagosCuotasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PlanPagosCuotas
         fields = '__all__'
 
 

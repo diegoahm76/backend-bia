@@ -9,8 +9,8 @@ class TransversalConfig(AppConfig):
         
         import transversal.signals.organigrama_signals
         import transversal.signals.personas_signals
-        #from jobs import  updater
-        #updater.start()
+        from jobs import  updater
+        updater.start()
 
 
 

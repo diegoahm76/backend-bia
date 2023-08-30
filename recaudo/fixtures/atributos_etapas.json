@@ -1,0 +1,79 @@
+[
+  {
+    "model": "recaudo.AtributosEtapas",
+    "pk" : 1,
+    "fields" : {
+      "descripcion": "Documento que se allega al usuario para el cobro de la obligación generada",
+      "obligatorio": 1,
+      "id_tipo": 1,
+      "id_etapa": 1,
+      "id_categoria": 3
+    }
+  },
+  {
+    "model": "recaudo.AtributosEtapas",
+    "pk" : 2,
+    "fields" : {
+      "descripcion": "Obligacion generada",
+      "obligatorio": 1,
+      "id_tipo": 1,
+      "id_etapa": 1,
+      "id_categoria": 7
+    }
+  },
+  {
+    "model": "recaudo.AtributosEtapas",
+    "pk" : 3,
+    "fields" : {
+      "descripcion": "Liquidacion de TUA",
+      "obligatorio": 1,
+      "id_tipo": 4,
+      "id_etapa": 1,
+      "id_categoria": 16
+    }
+  },
+  {
+    "model": "recaudo.AtributosEtapas",
+    "pk" : 4,
+    "fields" : {
+      "descripcion": "Seguimiento cobro",
+      "obligatorio": 1,
+      "id_tipo": 2,
+      "id_etapa": 1,
+      "id_categoria": 4
+    }
+  },
+  {
+    "model": "recaudo.AtributosEtapas",
+    "pk" : 5,
+    "fields" : {
+      "descripcion": "Dias Habiles",
+      "obligatorio": 1,
+      "id_tipo": 1,
+      "id_etapa": 1,
+      "id_categoria": 8
+    }
+  },
+  {
+    "model": "recaudo.AtributosEtapas",
+    "pk" : 6,
+    "fields" : {
+      "descripcion": "Incumplimiento facilidad de pago",
+      "obligatorio": 1,
+      "id_tipo": 1,
+      "id_etapa": 1,
+      "id_categoria": 2
+    }
+  },
+  {
+    "model": "recaudo.AtributosEtapas",
+    "pk" : 7,
+    "fields" : {
+      "descripcion": "Fecha de Notificación",
+      "obligatorio": 2,
+      "id_tipo": 1,
+      "id_etapa": 2,
+      "id_categoria": 8
+    }
+  }
+]

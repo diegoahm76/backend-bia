@@ -40,12 +40,9 @@ class AuditoriasPostSerializers(serializers.ModelSerializer):
         model=Auditorias
         fields= '__all__'
         extra_kwargs = {
-                'id_auditoria': {'required': True},
-                'id_usuario': {'required': True},
-                'id_modulo':  {'required': True},
-                'id_cod_permiso_accion': {'required': True},
-                'fecha_accion': {'required': True},
-                'subsistema': {'required': True},
-                'dirip': {'required': True},
-                'descripcion': {'required': True},
-            }
+            'id_modulo':  {'required': True, 'allow_null':False},
+            'id_cod_permiso_accion': {'required': True, 'allow_null':False},
+            'subsistema': {'required': True, 'allow_blank':False, 'allow_null':False},
+            'descripcion': {'required': True, 'allow_blank':False, 'allow_null':False},
+            'valores_actualizados': {'required': True, 'allow_null':True},
+        }
