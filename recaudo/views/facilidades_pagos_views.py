@@ -690,7 +690,7 @@ class ListadoFacilidadesPagoViews(generics.ListAPIView):
                 q |= Q(nombre_de_usuario__icontains=nombre_apellido)
             facilidades_pago = facilidades_pago.filter(q)
 
-        return facilidades_pago
+        return facilidades_pago.order_by('-fecha_generacion')
     
 
 class FuncionariosView(generics.ListAPIView):
