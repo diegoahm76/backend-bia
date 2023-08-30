@@ -34,9 +34,11 @@ class SerieSubserieUnidadCCDGetSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = CatalogosSeriesUnidad
-        fields = ['id_cat_serie_und', 'id_unidad_organizacional', 'id_catalogo_serie', 'id_serie_doc', 'nombre_serie', 'codigo_serie', 'id_subserie_doc', 'nombre_subserie', 'codigo_subserie', 'id_unidad_org_actual_admin_series', 'nombre_unidad_org_actual_admin_series', 'codigo_unidad_org_actual_admin_series']
+        fields = ['id_cat_serie_und', 'id_unidad_organizacional', 'nombre_unidad_organizacional', 'codigo_unidad_organizacional', 'id_catalogo_serie', 'id_serie_doc', 'nombre_serie', 'codigo_serie', 'id_subserie_doc', 'nombre_subserie', 'codigo_subserie', 'id_unidad_org_actual_admin_series', 'nombre_unidad_org_actual_admin_series', 'codigo_unidad_org_actual_admin_series']
 
 class PermisosGetSerializer(serializers.ModelSerializer):
+    activo = serializers.ReadOnlyField(source='id_und_organizacional_actual.activo', default=None)
+    cod_agrupacion_documental = serializers.ReadOnlyField(source='id_und_organizacional_actual.cod_agrupacion_documental', default=None)
     nombre_und_organizacional_actual = serializers.ReadOnlyField(source='id_und_organizacional_actual.nombre', default=None)
     codigo_und_organizacional_actual = serializers.ReadOnlyField(source='id_und_organizacional_actual.codigo', default=None)
     mostrar = serializers.SerializerMethodField()
@@ -130,7 +132,8 @@ class PermisosPutSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = PermisosUndsOrgActualesSerieExpCCD
-        fields = [
+        exclude = [
+            'pertenece_seccion_actual_admin_serie',
             'denegar_anulacion_docs',
             'denegar_borrado_docs',
             'excluir_und_actual_respon_series_doc_restriccion',
