@@ -28,7 +28,8 @@ from recaudo.models.facilidades_pagos_models import (
     CumplimientoRequisitos,
     GarantiasFacilidad,
     DetallesFacilidadPago,
-    RespuestaSolicitud
+    RespuestaSolicitud,
+    DetallesBienFacilidadPago
 )
 from recaudo.models.procesos_models import Bienes
 from recaudo.models.base_models import TiposBien, TipoActuacion
@@ -822,10 +823,36 @@ class ListaBienesDeudorView(generics.ListAPIView):
         serializer = self.serializer_class(bienes_deudor, many=True)
         return serializer.data
 
-    queryset = Bienes.objects.all()
-
     def get(self, request, id_deudor):
         bienes_deudor = self.get_bienes_deudor(id_deudor)
+        return Response({'success': True, 'detail': 'Se muestra todos los bienes del deudor', 'data': bienes_deudor}, status=status.HTTP_200_OK) 
+
+
+class ListaBienesFacilidadView(generics.ListAPIView):
+    serializer_class = BienesDeudorSerializer
+
+    def get_bienes_deudor(self, id_facilidad_pago):
+
+        facilidad_pago = FacilidadesPago.objects.filter(id=id_facilidad_pago).first()
+
+        if not facilidad_pago:
+            raise NotFound('No se encontró ningún registro en facilidades de pago con el parámetro ingresado')
+        
+        bienes_deudor = Bienes.objects.filter(id_deudor=facilidad_pago.id_deudor)
+
+        if not bienes_deudor:
+            raise NotFound('No se encontró ningún registro en los bienes con el parámetro ingresado')
+        
+        detalles_bienes = DetallesBienFacilidadPago.objects.filter(id_facilidad_pago=facilidad_pago.id)
+        bienes_ids = [detalle_bien.id_bien.id for detalle_bien in detalles_bienes if detalle_bien.id_bien]
+
+        bienes_deudor = bienes_deudor.filter(id__in=bienes_ids)
+
+        serializer = self.serializer_class(bienes_deudor, many=True)
+        return serializer.data
+
+    def get(self, request, id_facilidad_pago):
+        bienes_deudor = self.get_bienes_deudor(id_facilidad_pago)
         return Response({'success': True, 'detail': 'Se muestra todos los bienes del deudor', 'data': bienes_deudor}, status=status.HTTP_200_OK) 
     
 
@@ -855,8 +882,8 @@ class FacilidadPagoGetByIdView(generics.ListAPIView):
         if (facilidad_pago['periodicidad']*facilidad_pago['cuotas']) > 12:
             instancia_garantia = GarantiasFacilidadGetView()
             documento_garanta = instancia_garantia.get_documento_garantia(facilidad_pago['id'])
-        instancia_bienes = ListaBienesDeudorView()
-        bienes = instancia_bienes.get_bienes_deudor(facilidad_pago['id_deudor'])
+        instancia_bienes = ListaBienesFacilidadView()
+        bienes = instancia_bienes.get_bienes_deudor(facilidad_pago['id'])
 
         result_data = {
             'facilidad_pago': facilidad_pago,
