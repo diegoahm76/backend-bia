@@ -240,8 +240,6 @@ class DepositoSearch(generics.ListAPIView):
         identificacion_por_entidad = self.request.query_params.get('identificacion_por_entidad', '').strip()
         id_deposito = self.request.query_params.get('id_deposito', '').strip()
 
-        
-
         # Filtrar por nombre_deposito, identificacion_por_entidad y ordenar por orden_ubicacion_por_entidad
         queryset = Deposito.objects.all()
 
@@ -1612,22 +1610,28 @@ class CarpetaListDepositoInfo(generics.ListAPIView):
         return Response(data, status=status.HTTP_200_OK)
     
 
-#MOVER CARPETA
+
+#MOVER_CAJA 
 class CarpetaCajaMove(generics.UpdateAPIView):
     serializer_class = CarpetaCajaMoveSerializer
     queryset = CarpetaCaja.objects.all()
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
-    def put(self, request, id_caja_bandeja):
+    def put(self, request, id_carpeta_caja):
         # Obtener la caja actual
-        caja = get_object_or_404(CajaBandeja, id_caja_bandeja=id_caja_bandeja)
+        carpeta = get_object_or_404(CarpetaCaja, id_carpeta_caja=id_carpeta_caja)
 
         # Obtener los datos de destino desde la solicitud
+        identificacion_caja_destino = request.data.get('identificacion_caja_destino')
         identificacion_bandeja_destino = request.data.get('identificacion_bandeja_destino')
         identificacion_estante_destino = request.data.get('identificacion_estante_destino')
         identificacion_deposito_destino = request.data.get('identificacion_deposito_destino')
 
+        # Validar si la caja de destino existe
+        caja_destino = CajaBandeja.objects.filter(identificacion_por_bandeja=identificacion_caja_destino).first()
+        if not caja_destino:
+            return Response({'success': False, 'detail': 'No se encontró la caja de destino especificada.'}, status=status.HTTP_404_NOT_FOUND)
         
         # Validar si la bandeja de destino existe
         bandeja_destino = BandejaEstante.objects.filter(identificacion_por_estante=identificacion_bandeja_destino).first()
@@ -1650,27 +1654,29 @@ class CarpetaCajaMove(generics.UpdateAPIView):
             # Validar si el depósito de destino existe y está activo
             deposito_destino = Deposito.objects.filter(identificacion_por_entidad=identificacion_deposito_destino, activo=True).first()
             if not deposito_destino:
-                return Response({'success': False, 'detail': 'La caja tiene un expediente asociado y no puede ser movida a un depósito inactivo.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'success': False, 'detail': 'La carpeta tiene un expediente asociado y no puede ser movida a un depósito inactivo.'}, status=status.HTTP_400_BAD_REQUEST)
 
             
         # Retener los datos actuales de la caja (sin cambios)
-        caja_actual_data = {
-            'identificacion_bandeja': caja.id_bandeja_estante.identificacion_por_estante,
-            'identificacion_estante': caja.id_bandeja_estante.id_estante_deposito.identificacion_por_deposito,
-            'identificacion_deposito': caja.id_bandeja_estante.id_estante_deposito.id_deposito.identificacion_por_entidad,
+        carpeta_actual_data = {
+            'identificacion_caja': carpeta.id_caja_bandeja.identificacion_por_bandeja,
+            'identificacion_bandeja': carpeta.id_caja_bandeja.id_bandeja_estante.identificacion_por_estante,
+            'identificacion_estante': carpeta.id_caja_bandeja.id_bandeja_estante.id_estante_deposito.identificacion_por_deposito,
+            'identificacion_deposito': carpeta.id_caja_bandeja.id_bandeja_estante.id_estante_deposito.id_deposito.identificacion_por_entidad,
         }
 
         # Realizar el cambio de la caja a la bandeja de destino
-        caja.id_bandeja_estante = bandeja_destino
-        caja.save()
+        carpeta.id_caja_bandeja = caja_destino
+        carpeta.save()
 
         # Retornar los datos de caja actual y caja destino
         return Response({
             'success': True,
-            'detail': 'Caja movida exitosamente.',
-            'id_caja':id_caja_bandeja,
-            'caja_actual': caja_actual_data,
+            'detail': 'Carpeta movida exitosamente.',
+            'id_caja':id_carpeta_caja,
+            'caja_actual': carpeta_actual_data,
             'caja_destino': {
+                'identificacion_caja': identificacion_caja_destino,
                 'identificacion_bandeja': identificacion_bandeja_destino,
                 'identificacion_estante': identificacion_estante_destino,
                 'identificacion_deposito': identificacion_deposito_destino,
