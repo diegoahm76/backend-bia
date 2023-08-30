@@ -3,48 +3,32 @@
     "model": "recaudo.EtapasProceso",
     "pk" : 1,
     "fields" : {
-      "etapa": "Mandamiento de Pago",
-      "descripcion": "En proceso de pago normal"
+      "etapa": "Facturación",
+      "descripcion": "Es donde se genera los cobros en primera instancia"
     }
   },
   {
     "model": "recaudo.EtapasProceso",
     "pk" : 2,
     "fields" : {
-      "etapa": "Cobro persuasivo",
-      "descripcion": "Se invita a suscribir mandamiento de pago"
+      "etapa": "Cobro Persuasivo",
+      "descripcion": "Son las acciones donde se invita al deudor a realizar la cancelación de sus obligaciones"
     }
   },
   {
     "model": "recaudo.EtapasProceso",
     "pk" : 3,
     "fields" : {
-      "etapa": "Cobro coactivo",
-      "descripcion": "Cobro efectivo de recaudo"
+      "etapa": "Cobro Coactivo",
+      "descripcion": "Es la facultad Especial de la Administración que le permite cobrar por sí misma los créditos a su favor"
     }
   },
   {
     "model": "recaudo.EtapasProceso",
     "pk" : 4,
     "fields" : {
-      "etapa": "Embargo",
-      "descripcion": "Embargo de vienes dentro del marco de cobro"
-    }
-  },
-  {
-    "model": "recaudo.EtapasProceso",
-    "pk" : 5,
-    "fields" : {
-      "etapa": "Extinción de deuda",
-      "descripcion": "Ante inefectividad de cobro"
-    }
-  },
-  {
-    "model": "recaudo.EtapasProceso",
-    "pk" : 6,
-    "fields" : {
-      "etapa": "Finalización de deuda",
-      "descripcion": "El deudor ha cumplido sus obligaciones"
+      "etapa": "Fiscalizacion",
+      "descripcion": "Fiscalizacion"
     }
   }
 ]

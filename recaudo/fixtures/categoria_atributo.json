@@ -1,0 +1,130 @@
+[
+  {
+    "model": "recaudo.CategoriaAtributo",
+    "pk" : 1,
+    "fields" : {
+      "categoria": "Generación",
+      "orden": 1
+    }
+  },
+  {
+    "model": "recaudo.CategoriaAtributo",
+    "pk" : 2,
+    "fields" : {
+      "categoria": "Incumplimiento",
+      "orden": 2
+    }
+  },
+  {
+    "model": "recaudo.CategoriaAtributo",
+    "pk" : 3,
+    "fields" : {
+      "categoria": "Notificación",
+      "orden": 3
+    }
+  },
+  {
+    "model": "recaudo.CategoriaAtributo",
+    "pk" : 4,
+    "fields" : {
+      "categoria": "Inicio Cobro",
+      "orden": 4
+    }
+  },
+  {
+    "model": "recaudo.CategoriaAtributo",
+    "pk" : 5,
+    "fields" : {
+      "categoria": "Solicitud",
+      "orden": 5
+    }
+  },
+  {
+    "model": "recaudo.CategoriaAtributo",
+    "pk" : 6,
+    "fields" : {
+      "categoria": "Respuesta",
+      "orden": 6
+    }
+  },
+  {
+    "model": "recaudo.CategoriaAtributo",
+    "pk" : 7,
+    "fields" : {
+      "categoria": "Emisión",
+      "orden": 7
+    }
+  },
+  {
+    "model": "recaudo.CategoriaAtributo",
+    "pk" : 8,
+    "fields" : {
+      "categoria": "Pago",
+      "orden": 8
+    }
+  },
+  {
+    "model": "recaudo.CategoriaAtributo",
+    "pk" : 9,
+    "fields" : {
+      "categoria": "Investigación de Bienes",
+      "orden": 9
+    }
+  },
+  {
+    "model": "recaudo.CategoriaAtributo",
+    "pk" : 10,
+    "fields" : {
+      "categoria": "Pago Cartera",
+      "orden": 10
+    }
+  },
+  {
+    "model": "recaudo.CategoriaAtributo",
+    "pk" : 11,
+    "fields" : {
+      "categoria": "Terminación",
+      "orden": 11
+    }
+  },
+  {
+    "model": "recaudo.CategoriaAtributo",
+    "pk" : 12,
+    "fields" : {
+      "categoria": "Inicio de Embargo",
+      "orden": 12
+    }
+  },
+  {
+    "model": "recaudo.CategoriaAtributo",
+    "pk" : 13,
+    "fields" : {
+      "categoria": "Mandamiento de Pago",
+      "orden": 13
+    }
+  },
+  {
+    "model": "recaudo.CategoriaAtributo",
+    "pk" : 14,
+    "fields" : {
+      "categoria": "Inventario",
+      "orden": 14
+    }
+  },
+  {
+    "model": "recaudo.CategoriaAtributo",
+    "pk" : 15,
+    "fields" : {
+      "categoria": "Secuestro",
+      "orden": 15
+    }
+  },
+  {
+    "model": "recaudo.CategoriaAtributo",
+    "pk" : 16,
+    "fields" : {
+      "categoria": "Liquidación",
+      "orden": 16
+    }
+  }
+]
