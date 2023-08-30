@@ -29,24 +29,58 @@ class SerieSubserieUnidadCCDGetSerializer(serializers.ModelSerializer):
     id_unidad_org_actual_admin_series = serializers.ReadOnlyField(source='id_unidad_organizacional.id_unidad_org_actual_admin_series.id_unidad_organizacional', default=None)
     nombre_unidad_org_actual_admin_series = serializers.ReadOnlyField(source='id_unidad_organizacional.id_unidad_org_actual_admin_series.nombre', default=None)
     codigo_unidad_org_actual_admin_series = serializers.ReadOnlyField(source='id_unidad_organizacional.id_unidad_org_actual_admin_series.codigo', default=None)
+    nombre_unidad_organizacional = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
+    codigo_unidad_organizacional = serializers.ReadOnlyField(source='id_unidad_organizacional.codigo', default=None)
     
     class Meta:
         model = CatalogosSeriesUnidad
-        fields = ['id_cat_serie_und', 'id_unidad_organizacional', 'id_catalogo_serie', 'id_serie_doc', 'nombre_serie', 'codigo_serie', 'id_subserie_doc', 'nombre_subserie', 'codigo_subserie', 'id_unidad_org_actual_admin_series', 'nombre_unidad_org_actual_admin_series', 'codigo_unidad_org_actual_admin_series']
+        fields = ['id_cat_serie_und', 'id_unidad_organizacional', 'nombre_unidad_organizacional', 'codigo_unidad_organizacional', 'id_catalogo_serie', 'id_serie_doc', 'nombre_serie', 'codigo_serie', 'id_subserie_doc', 'nombre_subserie', 'codigo_subserie', 'id_unidad_org_actual_admin_series', 'nombre_unidad_org_actual_admin_series', 'codigo_unidad_org_actual_admin_series']
 
 class PermisosGetSerializer(serializers.ModelSerializer):
+    activo = serializers.ReadOnlyField(source='id_und_organizacional_actual.activo', default=None)
+    cod_agrupacion_documental = serializers.ReadOnlyField(source='id_und_organizacional_actual.cod_agrupacion_documental', default=None)
     nombre_und_organizacional_actual = serializers.ReadOnlyField(source='id_und_organizacional_actual.nombre', default=None)
     codigo_und_organizacional_actual = serializers.ReadOnlyField(source='id_und_organizacional_actual.codigo', default=None)
+    mostrar = serializers.SerializerMethodField()
+    
+    def get_mostrar(self, obj):
+        return True
     
     class Meta:
         model = PermisosUndsOrgActualesSerieExpCCD
-        fields = '__all__'
+        exclude = [
+            'denegar_anulacion_docs',
+            'denegar_borrado_docs',
+            'excluir_und_actual_respon_series_doc_restriccion',
+            'denegar_conceder_acceso_doc_na_resp_series',
+            'denegar_conceder_acceso_exp_na_resp_series'
+        ]
+
+class DenegacionPermisosGetSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = PermisosUndsOrgActualesSerieExpCCD
+        fields = [
+            'id_permisos_und_org_actual_serie_exp_ccd',
+            'id_cat_serie_und_org_ccd',
+            'denegar_anulacion_docs',
+            'denegar_borrado_docs',
+            'excluir_und_actual_respon_series_doc_restriccion',
+            'denegar_conceder_acceso_doc_na_resp_series',
+            'denegar_conceder_acceso_exp_na_resp_series'
+        ]
 
 class PermisosPostSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = PermisosUndsOrgActualesSerieExpCCD
-        fields = '__all__'
+        exclude = [
+            'denegar_anulacion_docs',
+            'denegar_borrado_docs',
+            'excluir_und_actual_respon_series_doc_restriccion',
+            'denegar_conceder_acceso_doc_na_resp_series',
+            'denegar_conceder_acceso_exp_na_resp_series'
+        ]
 
 class PermisosPutSerializer(serializers.ModelSerializer):
     
@@ -62,6 +96,44 @@ class PermisosPutSerializer(serializers.ModelSerializer):
             'conceder_acceso_expedientes_no_propios',
             'consultar_expedientes_no_propios',
             'descargar_expedientes_no_propios',
+            'denegar_anulacion_docs',
+            'denegar_borrado_docs',
+            'excluir_und_actual_respon_series_doc_restriccion',
+            'denegar_conceder_acceso_doc_na_resp_series',
+            'denegar_conceder_acceso_exp_na_resp_series'
+        ]
+
+class PermisosPostDenegacionSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = PermisosUndsOrgActualesSerieExpCCD
+        fields = [
+            'id_cat_serie_und_org_ccd',
+            'denegar_anulacion_docs',
+            'denegar_borrado_docs',
+            'excluir_und_actual_respon_series_doc_restriccion',
+            'denegar_conceder_acceso_doc_na_resp_series',
+            'denegar_conceder_acceso_exp_na_resp_series'
+        ]
+
+class PermisosPutDenegacionSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = PermisosUndsOrgActualesSerieExpCCD
+        fields = [
+            'denegar_anulacion_docs',
+            'denegar_borrado_docs',
+            'excluir_und_actual_respon_series_doc_restriccion',
+            'denegar_conceder_acceso_doc_na_resp_series',
+            'denegar_conceder_acceso_exp_na_resp_series'
+        ]
+
+class PermisosPutSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = PermisosUndsOrgActualesSerieExpCCD
+        exclude = [
+            'pertenece_seccion_actual_admin_serie',
             'denegar_anulacion_docs',
             'denegar_borrado_docs',
             'excluir_und_actual_respon_series_doc_restriccion',

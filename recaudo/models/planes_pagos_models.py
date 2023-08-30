@@ -27,7 +27,7 @@ class PlanPagos(models.Model):
     fecha_pago_abono = models.DateField(db_column='T435fechaPagoAbono')
     nro_cuotas = models.IntegerField(db_column='T435nroCuotas')
     periodicidad = models.IntegerField(db_column='T435periodicidad')
-    fecha_creacion_registro = models.DateTimeField(db_column='T435fechaCreacionRegistro')
+    fecha_creacion_registro = models.DateTimeField(auto_now_add=True, db_column='T435fechaCreacionRegistro')
 
     class Meta:
         db_table = 'T435PlanesPago'
@@ -58,7 +58,7 @@ class PlanPagosCuotas(models.Model):
 class ResolucionesPlanPago(models.Model):
     id = models.AutoField(primary_key=True, db_column='T437IdResolucionPlanPago')
     id_plan_pago = models.ForeignKey(PlanPagos, on_delete=models.CASCADE, db_column='T437Id_PlanPago')
-    doc_asociado = models.CharField(max_length=255, db_column='T437docAsociado')
+    doc_asociado = models.FileField(db_column='T437docAsociado')
     observacion = models.CharField(max_length=255, db_column='T437observacion')
     fecha_creacion_registro = models.DateTimeField(auto_now_add=True, db_column='T437fechaCreacionRegistro')
 

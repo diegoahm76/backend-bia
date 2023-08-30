@@ -13,6 +13,8 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from rest_framework.exceptions import NotFound, PermissionDenied
 import pytz
 
+from seguridad.utils import Util
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def getAuditorias(request):
@@ -188,6 +190,29 @@ class ListApiViews(generics.ListAPIView):
     queryset = Auditorias.objects.all()
 
 
-
-
-
+class AuditoriaCreateView(generics.CreateAPIView):
+    serializer_class = AuditoriasPostSerializers
+    queryset = Auditorias.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        data = request.data
+        
+        usuario = request.user.id_usuario
+        direccion=Util.get_client_ip(request)
+        
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : data['id_modulo'],
+            "id_cod_permiso_accion": data['id_cod_permiso_accion'],
+            "subsistema": data['subsistema'],
+            "dirip": direccion,
+            "descripcion": data['descripcion'], 
+            "valores_actualizados": data['valores_actualizados']
+        }
+        
+        serializer = self.serializer_class(data=auditoria_data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        
+        return Response({'success':True, 'detail':'Auditoria creada con éxito', 'data':serializer.data}, status=status.HTTP_201_CREATED)

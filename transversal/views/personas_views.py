@@ -105,6 +105,8 @@ from rest_framework.views import APIView
 from django.conf import settings
 import jwt
 
+from transversal.views.bandeja_alertas_views import BandejaAlertaPersonaCreate
+
 # Views for Estado Civil
 
 
@@ -1173,8 +1175,14 @@ class CreatePersonaJuridicaAndUsuario(generics.CreateAPIView):
         template = "activación-de-usuario.html"
 
         Util.notificacion(serializador,subject,template,absurl=absurl,email=serializador.email)
-    
-        
+
+        crear_bandeja=BandejaAlertaPersonaCreate()
+
+        response_bandeja=crear_bandeja.crear_bandeja_persona({"id_persona":serializador.id_persona})
+            
+        if response_bandeja.status_code!=status.HTTP_201_CREATED:
+            raise ValidationError(response_bandeja)
+
         return Response({'success':True, 'detail':'Se creo la persona jurídica y el usuario correctamente'},status=status.HTTP_200_OK)
 
 
@@ -1283,6 +1291,15 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
             
             subject = "Verifica tu usuario"
             template = "activación-de-usuario.html"
+
+
+            crear_bandeja=BandejaAlertaPersonaCreate()
+
+            response_bandeja=crear_bandeja.crear_bandeja_persona({"id_persona":serializador.id_persona})
+            
+            if response_bandeja.status_code!=status.HTTP_201_CREATED:
+                raise ValidationError(response_bandeja)
+            #print(response_bandeja.status_code)
 
             Util.notificacion(serializador,subject,template,absurl=absurl,email=serializador.email)
         

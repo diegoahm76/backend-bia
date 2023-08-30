@@ -14,6 +14,12 @@ class OpcionesLiquidacionBaseSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class OpcionesLiquidacionBasePutSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OpcionesLiquidacionBase
+        fields = ('nombre', 'estado', 'version', 'funcion', 'variables', 'bloques')
+
+
 class DeudoresSerializer(serializers.ModelSerializer):
     class Meta:
         model = Deudores
