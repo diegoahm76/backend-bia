@@ -287,11 +287,11 @@ class BandejaEstanteDeleteSerializer(serializers.ModelSerializer):
 #Buscar_estante(mover_bandejas)
 class BandejaEstanteSearchSerializer(serializers.ModelSerializer):
     nombre_deposito = serializers.CharField(source='id_deposito.nombre_deposito', read_only=True)
-    identificacion_deposito = serializers.CharField(source='id_deposito.identificacion_por_entidad', read_only=True)
+    identificacion_entidad = serializers.CharField(source='id_deposito.identificacion_por_entidad', read_only=True)
     
     class Meta:
         model = EstanteDeposito
-        fields = [ 'orden_ubicacion_por_deposito','identificacion_por_deposito', 'nombre_deposito', 'identificacion_deposito','id_estante_deposito','id_deposito']
+        fields = [ 'orden_ubicacion_por_deposito','id_estante_deposito','identificacion_por_deposito','id_deposito','nombre_deposito' ,'identificacion_entidad',]
  
 
 #Mover_bandeja
@@ -556,6 +556,12 @@ class DepositoListCarpetaInfoSerializer(serializers.ModelSerializer):
 
 #Mover_carpeta_a_otra_caja
 class  CarpetaCajaMoveSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  CarpetaCaja
+        fields = '__all__'
+
+#Busqueda_avanzada_de_carpetas
+class  CarpetaCajaSearchAdvancedSerializer(serializers.ModelSerializer):
     class Meta:
         model =  CarpetaCaja
         fields = '__all__'
