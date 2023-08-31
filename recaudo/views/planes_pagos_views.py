@@ -400,7 +400,7 @@ class PlanPagosListGetView(generics.ListAPIView):
 
         plan_pago = PlanPagos.objects.filter(id_facilidad_pago=facilidad_pago.id).first()
         if not plan_pago:
-            raise NotFound("No existe plan de pagos relacionado con la información dada")
+            return Response({'success': False, 'detail': 'No existe plan de pagos para la facilidad de pago relacionada con la información dada'})
         
         plan_pago_data = self.get_plan_pago(plan_pago)
         instancia_cuota = PlanPagosCuotasListGetView()

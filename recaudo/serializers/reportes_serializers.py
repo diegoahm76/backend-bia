@@ -40,6 +40,8 @@ class CarteraGeneralDetalleSerializer(serializers.ModelSerializer):
     identificacion = serializers.SerializerMethodField()
     expediente = serializers.SerializerMethodField()
     resolucion = serializers.SerializerMethodField()
+    auto = serializers.SerializerMethodField()
+    recurso = serializers.SerializerMethodField()
     codigo_contable = serializers.ReadOnlyField(source='codigo_contable.codigo_contable')
     concepto_deuda = serializers.ReadOnlyField(source='codigo_contable.descripcion')
 
@@ -59,9 +61,17 @@ class CarteraGeneralDetalleSerializer(serializers.ModelSerializer):
         expediente = obj.id_expediente
         return expediente.numero_resolucion if expediente else None
     
+    def get_auto(self, obj):
+        expediente = obj.id_expediente
+        return expediente.cod_auto if expediente else None
+
+    def get_recurso(self, obj):
+        expediente = obj.id_expediente
+        return expediente.cod_recurso if expediente else None
+     
     class Meta:
         model = Cartera
-        fields = ('codigo_contable', 'concepto_deuda', 'nombre_deudor', 'identificacion', 'expediente', 'resolucion', 'numero_factura', 'valor_sancion')
+        fields = ('codigo_contable', 'concepto_deuda', 'identificacion', 'nombre_deudor', 'numero_factura', 'expediente', 'resolucion', 'auto', 'recurso', 'valor_sancion')
 
 
 
