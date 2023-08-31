@@ -71,7 +71,32 @@ class ReporteCarteraGeneralView(generics.ListAPIView):
             page = self.paginate_queryset(cartera)
             if page is not None:
                 serializer = self.serializer_class(page, context={'fecha_corte_s': fecha_corte}, many=True)
-                return self.get_paginated_response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data})
+                data = serializer.data
+                total_general = sum(dato['valor_sancion'] for dato in data)
+                return self.get_paginated_response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data, 'total_general': total_general})
+        else:
+            raise ValidationError('No se encuentran registros de reportes en la fecha')
+
+
+class ReporteCarteraGeneralGraficaView(generics.ListAPIView):
+    serializer_class = CarteraGeneralSerializer
+
+    def get(self, request, *args, **kwargs):
+        fecha_corte_str = self.kwargs['fin']
+        
+        if not fecha_corte_str:
+            raise ValidationError('Falta ingresar fecha de corte')
+
+        fecha_corte = datetime.strptime(fecha_corte_str, '%Y-%m-%d').date()
+        cartera = ConceptoContable.objects.all()
+
+        if cartera.exists():
+            serializer = self.serializer_class(cartera, context={'fecha_corte_s': fecha_corte}, many=True)
+            #return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data})
+            data = serializer.data
+            total_general = sum(dato['valor_sancion'] for dato in data)
+            return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data, 'total_general': total_general})
+        
         else:
             raise ValidationError('No se encuentran registros de reportes en la fecha')
 
@@ -86,7 +111,7 @@ class ReporteCarteraGeneralDetalleView(generics.ListAPIView):
         nombre_deudor = self.request.query_params.get('nombre_deudor', None)
 
         if codigo_contable:
-            cartera = cartera.filter(codigo_contable=codigo_contable)
+            cartera = cartera.filter(codigo_contable__codigo_contable__icontains=codigo_contable)
 
         if nombre_deudor:
             nombres_apellidos = nombre_deudor.split()
@@ -105,26 +130,51 @@ class ReporteCarteraGeneralDetalleView(generics.ListAPIView):
             raise ValidationError('No se encuentran registros de reportes en la fecha')
         
 
+# class ReporteCarteraEdadesView(generics.ListAPIView):
+#     serializer_class = CarteraEdadesSerializer
+
+#     def get_queryset(self):
+#         rango_edad = self.request.query_params.get('rango_edad', None)
+#         queryset = Cartera.objects.all()
+
+#         if rango_edad == '0 a 180 días':
+#             queryset = queryset.filter(id_rango__inicial__gte=0, id_rango__final__lte=180)
+#         elif rango_edad == '181 a 360 días':
+#             queryset = queryset.filter(id_rango__inicial__gte=181, id_rango__final__lte=360)
+#         elif rango_edad == 'mayor a 361 días':
+#             queryset = queryset.filter(id_rango__inicial__gte=361)
+#         return queryset
+
+#     def list(self, request, *args, **kwargs):
+#         queryset = self.get_queryset()
+#         serializer = self.get_serializer(queryset, many=True)
+#         total_general = queryset.aggregate(total_sanciones=Sum(F('valor_sancion') + F('valor_intereses')))['total_sanciones']
+#         return Response({'success':True, 'detail':'Resultados de la búsqueda', 'data':serializer.data, 'total_general':total_general}, status=status.HTTP_200_OK)
+
 class ReporteCarteraEdadesView(generics.ListAPIView):
     serializer_class = CarteraEdadesSerializer
+    pagination_class = CustomPagination
 
-    def get_queryset(self):
+    def get(self, request, *args, **kwargs):
         rango_edad = self.request.query_params.get('rango_edad', None)
-        queryset = Cartera.objects.all()
-
-        if rango_edad == '0 a 180 días':
-            queryset = queryset.filter(id_rango__inicial__gte=0, id_rango__final__lte=180)
-        elif rango_edad == '181 a 360 días':
-            queryset = queryset.filter(id_rango__inicial__gte=181, id_rango__final__lte=360)
-        elif rango_edad == 'mayor a 361 días':
-            queryset = queryset.filter(id_rango__inicial__gte=361)
-        return queryset
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        total_general = queryset.aggregate(total_sanciones=Sum(F('valor_sancion') + F('valor_intereses')))['total_sanciones']
-        return Response({'success':True, 'detail':'Resultados de la búsqueda', 'data':serializer.data, 'total_general':total_general}, status=status.HTTP_200_OK)
+        rango_edad_filters = {
+            '0 a 180 días': Q(id_rango__inicial__gte=0, id_rango__final__lte=180),
+            '181 a 360 días': Q(id_rango__inicial__gte=181, id_rango__final__lte=360),
+            'mayor a 361 días': Q(id_rango__inicial__gte=361)
+        }
+        cartera = Cartera.objects.all()
+        if rango_edad in rango_edad_filters:
+            cartera = cartera.filter(rango_edad_filters[rango_edad])
+      
+        if cartera.exists():
+            page = self.paginate_queryset(cartera)
+            if page is not None:
+                serializer = self.serializer_class(page, many=True)
+                total_general = cartera.aggregate(total_sanciones=Sum(F('valor_sancion') + F('valor_intereses')))['total_sanciones']
+                return self.get_paginated_response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data, 'total_general': total_general})
+        else:
+            raise ValidationError('No se encuentran registros de reportes en la fecha')
+        
 
 class ReporteFacilidadesPagoView(generics.ListAPIView):
     serializer_class = ReporteFacilidadesPagosSerializer
