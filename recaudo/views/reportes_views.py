@@ -3,11 +3,10 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Q, F
+from django.db.models import Q, F, Sum
 from django.db.models import Value as V
 from django.db.models.functions import Concat
 from datetime import datetime, timezone, timedelta
-from django.db.models import Sum
 from recaudo.models.liquidaciones_models import Deudores
 from recaudo.models.facilidades_pagos_models import DetallesFacilidadPago, FacilidadesPago
 from recaudo.models.cobros_models import Cartera 
@@ -18,19 +17,126 @@ from recaudo.serializers.reportes_serializers import (
     ReporteFacilidadesPagosSerializer,
     ReporteFacilidadesPagosDetalleSerializer,
 )
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.views import APIView
+
+
+# class ReporteCarteraGeneralView(generics.ListAPIView):
+#     serializer_class = CarteraGeneralSerializer
+
+#     def get(self, request, *args, **kwargs):
+#         fecha_corte_str = self.kwargs['fin']
+#         fecha_corte = datetime.strptime(fecha_corte_str, '%Y-%m-%d').date()
+#         queryset = Cartera.objects.filter(fin=fecha_corte).order_by('-valor_sancion')
+        
+#         if queryset.exists():
+#             serializer = self.serializer_class(queryset, many=True)
+#             total_general = self.calcular_total_general(queryset) 
+#             return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data, 'total_general': total_general}, status=status.HTTP_200_OK)
+#         else:
+#             raise ValidationError('No se encuentran registros de reportes en la fecha')
+
+#     def calcular_total_general(self, queryset):
+#         total_general = queryset.aggregate(total=Sum(F('valor_sancion') + F('valor_intereses')))['total']
+#         return total_general
+
+
+# class CustomPagination(PageNumberPagination):
+#     page_size = 50  # Ajusta el tamaño de página según tus necesidades
+
+# class ReporteCarteraGeneralView(generics.ListAPIView):
+#     serializer_class = CarteraGeneralSerializer
+#     pagination_class = CustomPagination
+
+#     def get_queryset(self):
+#         fecha_corte_str = self.kwargs['fin']
+#         fecha_corte = datetime.strptime(fecha_corte_str, '%Y-%m-%d').date()
+#         # queryset = Cartera.objects.filter(fin=fecha_corte).select_related('relacion1', 'relacion2').order_by('-valor_sancion')
+#         queryset = Cartera.objects.filter(fin=fecha_corte).order_by('-valor_sancion')
+#         return queryset
+
+#     def get_total_general(self, queryset):
+#         total_general = queryset.aggregate(total=Sum(F('valor_sancion') + F('valor_intereses')))['total']
+#         return total_general
+
+#     def list(self, request, *args, **kwargs):
+#         queryset = self.get_queryset()
+
+#         if queryset.exists():
+#             page = self.paginate_queryset(queryset)
+#             serializer = self.serializer_class(page, many=True)
+#             total_general = self.get_total_general(queryset)
+#             response_data = {
+#                 'success': True,
+#                 'detail': 'Resultados de la búsqueda',
+#                 'data': serializer.data,
+#                 'total_general': total_general
+#             }
+#             if page is not None:
+#                 response_data['next'] = page.next_page_number() if page.has_next() else None
+#                 response_data['previous'] = page.previous_page_number() if page.has_previous() else None
+#             return Response(response_data)
+#         else:
+#             raise ValidationError('No se encuentran registros de reportes en la fecha')
+        
+
+# class CustomPagination(PageNumberPagination):
+#     page_size = 50  # Ajusta el tamaño de página según tus necesidades
+
+# class ReporteCarteraGeneralView(generics.ListAPIView):
+#     serializer_class = CarteraGeneralSerializer
+#     pagination_class = CustomPagination
+
+#     def get_queryset(self):
+#         fecha_corte_str = self.kwargs['fin']
+#         fecha_corte = datetime.strptime(fecha_corte_str, '%Y-%m-%d').date()
+#         queryset = Cartera.objects.filter(fin=fecha_corte).order_by('-valor_sancion')
+#         return queryset
+
+#     def get_total_general(self, queryset):
+#         total_general = queryset.aggregate(total=Sum(F('valor_sancion') + F('valor_intereses')))['total']
+#         return total_general
+
+#     def list(self, request, *args, **kwargs):
+#         queryset = self.get_queryset()
+
+#         if queryset.exists():
+#             page = self.paginate_queryset(queryset)
+#             serializer = self.serializer_class(page, many=True)
+#             total_general = self.get_total_general(queryset)
+#             response_data = {
+#                 'success': True,
+#                 'detail': 'Resultados de la búsqueda',
+#                 'data': serializer.data,
+#                 'total_general': total_general
+#             }
+#             if page is not None:
+#                 response_data['next'] = page.next_page_number() if page.has_next() else None
+#                 response_data['previous'] = page.previous_page_number() if page.has_previous() else None
+#             return Response(response_data)
+#         else:
+#             raise ValidationError('No se encuentran registros de reportes en la fecha')
+
+class CustomPagination(PageNumberPagination):
+    page_size = 15  # Número de elementos por página
+    page_size_query_param = 'page_size'
+
 
 class ReporteCarteraGeneralView(generics.ListAPIView):
     serializer_class = CarteraGeneralSerializer
+    pagination_class = CustomPagination  # Usar la clase de paginación personalizada
 
     def get(self, request, *args, **kwargs):
         fecha_corte_str = self.kwargs['fin']
         fecha_corte = datetime.strptime(fecha_corte_str, '%Y-%m-%d').date()
         queryset = Cartera.objects.filter(fin=fecha_corte).order_by('-valor_sancion')
-        
+
         if queryset.exists():
-            serializer = self.serializer_class(queryset, many=True)
-            total_general = self.calcular_total_general(queryset) 
-            return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data, 'total_general': total_general}, status=status.HTTP_200_OK)
+            page = self.paginate_queryset(queryset)  # Obtener la página actual
+            if page is not None:
+                serializer = self.serializer_class(page, many=True)
+                total_general = self.calcular_total_general(queryset)
+                return self.get_paginated_response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data, 'total_general': total_general})
         else:
             raise ValidationError('No se encuentran registros de reportes en la fecha')
 
@@ -38,29 +144,31 @@ class ReporteCarteraGeneralView(generics.ListAPIView):
         total_general = queryset.aggregate(total=Sum(F('valor_sancion') + F('valor_intereses')))['total']
         return total_general
 
+
 class ReporteCarteraGeneralDetalleView(generics.ListAPIView):
     serializer_class = CarteraGeneralDetalleSerializer
 
     def get(self, request, *args, **kwargs):
-        queryset = Cartera.objects.all()
-        codigo_contable = request.GET.get('codigo_contable')
-        nombre_deudor = request.GET.get('nombre_deudor')
-        nombres_apellidos = nombre_deudor.split()
+        cartera = Cartera.objects.all()
+        codigo_contable = self.request.query_params.get('codigo_contable', None)
+        nombre_deudor = self.request.query_params.get('nombre_deudor', None)
+        
 
         if codigo_contable:
-            queryset = queryset.filter(codigo_contable=codigo_contable)
+            cartera = cartera.filter(codigo_contable=codigo_contable)
 
-        if nombre_deudor: 
-            queryset = queryset.annotate(nombre_deudor=Concat('id_deudor__nombres', V(' '), 'id_deudor__apellidos'))
+        if nombre_deudor:
+            nombres_apellidos = nombre_deudor.split()
+            cartera = cartera.annotate(nombre_deudor=Concat('id_deudor__nombres', V(' '), 'id_deudor__apellidos'))
 
             for nombre_apellido in nombres_apellidos:
-                queryset = queryset.filter(nombre_deudor__icontains=nombre_apellido)
+                cartera = cartera.filter(nombre_deudor__icontains=nombre_apellido)
 
-        if not queryset.exists():
+        if not cartera.exists():
             raise NotFound("No se encontraron reportes en la búsqueda")
 
-        serializer = self.get_serializer(queryset, many=True)
-        total_general = queryset.aggregate(total_sanciones=Sum(F('valor_sancion') + F('valor_intereses')))['total_sanciones']
+        serializer = self.get_serializer(cartera, many=True)
+        total_general = cartera.aggregate(total_sanciones=Sum(F('valor_sancion') + F('valor_intereses')))['total_sanciones']
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data':serializer.data, 'total_general':total_general}, status=status.HTTP_200_OK)
 
 class ReporteCarteraEdadesView(generics.ListAPIView):
@@ -289,3 +397,4 @@ class ReporteFacilidadesPagosDetalleView(generics.ListAPIView):
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
+

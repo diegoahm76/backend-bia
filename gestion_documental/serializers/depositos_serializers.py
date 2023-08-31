@@ -188,10 +188,11 @@ class EstanteDepositoDeleteSerializer(serializers.ModelSerializer):
 
 #Listar_estantes_por_deposito
 class EstanteGetByDepositoSerializer(serializers.ModelSerializer):
-    
+    nombre_deposito = serializers.CharField(source='id_deposito.nombre_deposito', read_only=True)
+    identificacion_deposito = serializers.CharField(source='id_deposito.identificacion_por_entidad', read_only=True)
     class Meta:
         model =  EstanteDeposito
-        fields = ['id_estante_deposito','orden_ubicacion_por_deposito','identificacion_por_deposito','id_deposito']
+        fields = ['id_estante_deposito','orden_ubicacion_por_deposito','identificacion_por_deposito','id_deposito','nombre_deposito','identificacion_deposito']
 
 
 
@@ -286,11 +287,11 @@ class BandejaEstanteDeleteSerializer(serializers.ModelSerializer):
 #Buscar_estante(mover_bandejas)
 class BandejaEstanteSearchSerializer(serializers.ModelSerializer):
     nombre_deposito = serializers.CharField(source='id_deposito.nombre_deposito', read_only=True)
-    identificacion_deposito = serializers.CharField(source='id_deposito.identificacion_por_entidad', read_only=True)
+    identificacion_entidad = serializers.CharField(source='id_deposito.identificacion_por_entidad', read_only=True)
     
     class Meta:
         model = EstanteDeposito
-        fields = [ 'orden_ubicacion_por_deposito','identificacion_por_deposito', 'nombre_deposito', 'identificacion_deposito','id_estante_deposito','id_deposito']
+        fields = [ 'orden_ubicacion_por_deposito','id_estante_deposito','identificacion_por_deposito','id_deposito','nombre_deposito' ,'identificacion_entidad',]
  
 
 #Mover_bandeja
@@ -302,10 +303,10 @@ class BandejaEstanteMoveSerializer(serializers.ModelSerializer):
 
 #Listar_Bandejas_por_estante
 class BandejasByEstanteListSerializer(serializers.ModelSerializer):
-    
+    identificacion_estante = serializers.CharField(source='id_estante_deposito.identificacion_por_deposito', read_only=True)
     class Meta:
         model =  BandejaEstante
-        fields = ['id_bandeja_estante','orden_ubicacion_por_estante','identificacion_por_estante']
+        fields = ['id_bandeja_estante','orden_ubicacion_por_estante','identificacion_por_estante','id_estante_deposito','identificacion_estante']
 
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -329,9 +330,11 @@ class  CajaBandejaGetOrdenSerializer(serializers.ModelSerializer):
 
 #Listar_cajas_por_bandeja
 class  CajasByBandejaListSerializer(serializers.ModelSerializer):
+
+    identificacion_bandeja = serializers.CharField(source='id_bandeja_estante.identificacion_por_estante', read_only=True)
     class Meta:
         model =  CajaBandeja
-        fields = '__all__'
+        fields = [ 'orden_ubicacion_por_bandeja','identificacion_por_bandeja', 'id_caja_bandeja', 'id_bandeja_estante','identificacion_bandeja']
 
 
 #Buscar_estante(Cajas)
@@ -469,11 +472,13 @@ class  CarpetaCajaDeleteSerializer(serializers.ModelSerializer):
         model =  CarpetaCaja
         fields = '__all__'
 
-#Listar_carpetas_por caja
+#Listar_carpetas_por_caja
 class  CarpetasByCajaListSerializer(serializers.ModelSerializer):
+    identificacion_caja = serializers.CharField(source='id_caja_bandeja.identificacion_por_bandeja', read_only=True)
+
     class Meta:
         model =  CarpetaCaja
-        fields = ['id_carpeta_caja','orden_ubicacion_por_caja','identificacion_por_caja']
+        fields = ['id_carpeta_caja','identificacion_por_caja','orden_ubicacion_por_caja','id_expediente','id_caja_bandeja','identificacion_caja']
 
 #Editar_carpetas
 class CarpetaCajaUpDateSerializer(serializers.ModelSerializer):
@@ -523,3 +528,40 @@ class CarpetaCajaUpDateSerializer(serializers.ModelSerializer):
                     carpeta.save()		  	                 
         
         return nuevo_orden		
+
+
+#Filtro_cajas_por_carpeta
+class CarpetaListCajaInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CajaBandeja
+        fields = '__all__'
+
+#Filtro_bandejas_por_carpeta
+class BandejaListCarpetaInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BandejaEstante
+        fields = '__all__'
+
+#Filtro_estantes_por_carpeta
+class EstanteListCarpetaInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EstanteDeposito
+        fields = '__all__'
+
+#Filtro_depositos_por_carpeta
+class DepositoListCarpetaInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Deposito
+        fields = '__all__'
+
+#Mover_carpeta_a_otra_caja
+class  CarpetaCajaMoveSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  CarpetaCaja
+        fields = '__all__'
+
+#Busqueda_avanzada_de_carpetas
+class  CarpetaCajaSearchAdvancedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  CarpetaCaja
+        fields = '__all__'
