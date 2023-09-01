@@ -1290,7 +1290,7 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
             subject = "Verifica tu usuario"
             template = "activación-de-usuario.html"
 
-
+            #CREACION DE BANDEJA DE ALERTAS
             crear_bandeja=BandejaAlertaPersonaCreate()
 
             response_bandeja=crear_bandeja.crear_bandeja_persona({"id_persona":serializador.id_persona})
