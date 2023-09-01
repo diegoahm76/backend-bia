@@ -828,7 +828,7 @@ class AnaliticaMortalidadTiempoGetView(generics.ListAPIView):
                         
                         items_data['cantidades_tiempo'].append(fechas_vivero_data)
                         
-                    output_list.append(items_data)
+                    output_list = items_data
                 
             else:
                 items_mortalidad = items_mortalidad.values(id_vivero=F('id_baja__id_vivero__id_vivero'), nombre_vivero=F('id_baja__id_vivero__nombre'), fecha_baja=F('id_baja__fecha_baja__date')).annotate(
@@ -837,13 +837,11 @@ class AnaliticaMortalidadTiempoGetView(generics.ListAPIView):
             
                 items_mortalidad_data = sorted(items_mortalidad, key=operator.itemgetter("id_vivero", "nombre_vivero"))
 
-                output_list = [
-                    {
-                        "id_bien": None,
-                        "nombre_bien": "Todas las plantas",
-                        "cantidades_tiempo": []
-                    }
-                ]
+                output_list = {
+                    "id_bien": None,
+                    "nombre_bien": "Todas las plantas",
+                    "cantidades_tiempo": []
+                }
                 
                 for vivero, cantidades_vivero in itertools.groupby(items_mortalidad_data, key=operator.itemgetter("id_vivero", "nombre_vivero")):
                     fechas_vivero = list(cantidades_vivero)
@@ -857,7 +855,7 @@ class AnaliticaMortalidadTiempoGetView(generics.ListAPIView):
                         "fechas": fechas_vivero
                     }
                     
-                    output_list[0]['cantidades_tiempo'].append(fechas_vivero_data)
+                    output_list['cantidades_tiempo'].append(fechas_vivero_data)
         
         return Response({'success':True,'detail':'Se encontró la siguiente información','data':output_list}, status=status.HTTP_200_OK)
 
@@ -996,7 +994,7 @@ class AnaliticaCuarentenaGetView(generics.ListAPIView):
                         
                         items_data['cantidades_tiempo'].append(fechas_vivero_data)
                         
-                    output_list.append(items_data)
+                    output_list = items_data
             else:
                 cuarentenas_cantidades = cuarentenas.values('id_vivero', nombre_vivero=F('id_vivero__nombre'), fecha_cuarentena_date=F('fecha_cuarentena__date')).annotate(
                     cantidad = Sum('cantidad_cuarentena')
@@ -1004,13 +1002,11 @@ class AnaliticaCuarentenaGetView(generics.ListAPIView):
                 
                 cuarentenas_data = sorted(cuarentenas_cantidades, key=operator.itemgetter("id_vivero", "nombre_vivero"))
                 
-                output_list = [
-                    {
-                        "id_bien": None,
-                        "nombre_bien": "Todas las plantas",
-                        "cantidades_tiempo": []
-                    }
-                ]
+                output_list = {
+                    "id_bien": None,
+                    "nombre_bien": "Todas las plantas",
+                    "cantidades_tiempo": []
+                }
                 
                 for vivero, cantidades_vivero in itertools.groupby(cuarentenas_data, key=operator.itemgetter("id_vivero", "nombre_vivero")):
                     fechas_vivero = list(cantidades_vivero)
@@ -1024,7 +1020,7 @@ class AnaliticaCuarentenaGetView(generics.ListAPIView):
                         "fechas": fechas_vivero
                     }
                     
-                    output_list[0]['cantidades_tiempo'].append(fechas_vivero_data)
+                    output_list['cantidades_tiempo'].append(fechas_vivero_data)
         
         return Response({'success':True,'detail':'Se encontró la siguiente información','data':output_list}, status=status.HTTP_200_OK)
 
@@ -1087,7 +1083,7 @@ class AnaliticaDespachosGetView(generics.ListAPIView):
                         
                         items_data['cantidades_tiempo'].append(fechas_vivero_data)
                         
-                    output_list.append(items_data)
+                    output_list = items_data
             else:
                 items_despacho = items_despacho.values(id_vivero=F('id_despacho_viveros__id_vivero__id_vivero'), nombre_vivero=F('id_despacho_viveros__id_vivero__nombre'), fecha_despacho=F('id_despacho_viveros__fecha_despacho__date')).annotate(
                     cantidad = Sum('cantidad_despachada')
@@ -1095,13 +1091,11 @@ class AnaliticaDespachosGetView(generics.ListAPIView):
                 
                 items_despacho_data = sorted(items_despacho, key=operator.itemgetter("id_vivero", "nombre_vivero"))
 
-                output_list = [
-                    {
-                        "id_bien": None,
-                        "nombre_bien": "Todas las plantas",
-                        "cantidades_tiempo": []
-                    }
-                ]
+                output_list = {
+                    "id_bien": None,
+                    "nombre_bien": "Todas las plantas",
+                    "cantidades_tiempo": []
+                }
                 
                 for vivero, cantidades_vivero in itertools.groupby(items_despacho_data, key=operator.itemgetter("id_vivero", "nombre_vivero")):
                     fechas_vivero = list(cantidades_vivero)
@@ -1115,7 +1109,7 @@ class AnaliticaDespachosGetView(generics.ListAPIView):
                         "fechas": fechas_vivero
                     }
                     
-                    output_list[0]['cantidades_tiempo'].append(fechas_vivero_data)
+                    output_list['cantidades_tiempo'].append(fechas_vivero_data)
         
         return Response({'success':True,'detail':'Se encontró la siguiente información','data':output_list}, status=status.HTTP_200_OK)
 
@@ -1178,7 +1172,7 @@ class AnaliticaSolicitudesGetView(generics.ListAPIView):
                         
                         items_data['cantidades_tiempo'].append(fechas_vivero_data)
                         
-                    output_list.append(items_data)
+                    output_list = items_data
             else:
                 items_solicitud = items_solicitud.values(id_vivero=F('id_solicitud_viveros__id_vivero_solicitud__id_vivero'), nombre_vivero=F('id_solicitud_viveros__id_vivero_solicitud__nombre'), fecha_solicitud=F('id_solicitud_viveros__fecha_solicitud__date')).annotate(
                     cantidad = Count('id_item_solicitud_viveros')
@@ -1186,13 +1180,11 @@ class AnaliticaSolicitudesGetView(generics.ListAPIView):
                 
                 items_solicitud_data = sorted(items_solicitud, key=operator.itemgetter("id_vivero", "nombre_vivero"))
 
-                output_list = [
-                    {
-                        "id_bien": None,
-                        "nombre_bien": "Todas las plantas",
-                        "cantidades_tiempo": []
-                    }
-                ]
+                output_list = {
+                    "id_bien": None,
+                    "nombre_bien": "Todas las plantas",
+                    "cantidades_tiempo": []
+                }
 
                 for vivero, cantidades_vivero in itertools.groupby(items_solicitud_data, key=operator.itemgetter("id_vivero", "nombre_vivero")):
                     fechas_vivero = list(cantidades_vivero)
@@ -1206,6 +1198,6 @@ class AnaliticaSolicitudesGetView(generics.ListAPIView):
                         "fechas": fechas_vivero
                     }
                     
-                    output_list[0]['cantidades_tiempo'].append(fechas_vivero_data)
+                    output_list['cantidades_tiempo'].append(fechas_vivero_data)
         
         return Response({'success':True,'detail':'Se encontró la siguiente información','data':output_list}, status=status.HTTP_200_OK)
