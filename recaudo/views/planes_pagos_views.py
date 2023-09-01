@@ -23,7 +23,6 @@ from datetime import datetime, date, timedelta
 
 
 class PlanPagosValidationView(generics.RetrieveAPIView):
-    serializer_class = PlanPagosSerializer
     permission_classes = [IsAuthenticated]
 
     def get_validacion(self, id_facilidad_pago):
@@ -33,8 +32,11 @@ class PlanPagosValidationView(generics.RetrieveAPIView):
         
         instancia_plan = PlanPagosListGetView()
         plan_pagos = instancia_plan.get_plan_pagos_cuotas(id_facilidad_pago)
-        return plan_pagos
-    
+        if not plan_pagos:
+            return None
+        else:
+            return plan_pagos
+        
     def get(self, request, id_facilidad_pago):
         instancia_validacion = self.get_validacion(id_facilidad_pago)
 
@@ -55,14 +57,13 @@ class PlanPagosResolucionValidationView(generics.RetrieveAPIView):
         
         plan_pago = PlanPagos.objects.filter(id_facilidad_pago=id_facilidad_pago).first()
 
-        if not plan_pago:
-            raise NotFound("No existe plan de pagos relacionada con la facilidad de pagos ingresada")
-            #return Response({'success': False, 'detail': 'No existe plan de pagos para la facilidad de pago relacionada con la información dada'})
-        
-        instancia_resolucion = ResolucionUltimaPlanPagoGetView()
-        resolucion = instancia_resolucion.get_ultima_resolucion(plan_pago.id)
-        
-        return resolucion
+        if plan_pago:
+            # raise NotFound("No existe plan de pagos relacionada con la facilidad de pagos ingresada")
+            # return Response({'success': False, 'detail': 'No existe plan de pagos para la facilidad de pago relacionada con la información dada'})
+            instancia_resolucion = ResolucionUltimaPlanPagoGetView()
+            resolucion = instancia_resolucion.get_ultima_resolucion(plan_pago.id)
+            return resolucion
+        return None
         
     def get(self, request, id_facilidad_pago):
         instancia_validacion = self.get_validacion(id_facilidad_pago)
@@ -377,14 +378,13 @@ class PlanPagosCuotasListGetView(generics.ListAPIView):
         plan_pago_cuotas = PlanPagosCuotas.objects.filter(id_plan_pago=plan_pago.id)
         serializer = self.serializer_class(plan_pago_cuotas, many=True)
         data = serializer.data
-        
         return data
     
     def get(self, request, id_plan_pagos):
         plan_pago_cuotas = self.get_cuotas(id_plan_pagos)
         return Response({'success': True, 'detail':'Se muestra los datos del deudor', 'data':plan_pago_cuotas}, status=status.HTTP_200_OK) 
 
-
+    
 class PlanPagosListGetView(generics.ListAPIView):
     serializer_class = PlanPagosSerializer
 
@@ -399,20 +399,21 @@ class PlanPagosListGetView(generics.ListAPIView):
             raise NotFound("No existe facilidad de pago relacionada con la información dada")
 
         plan_pago = PlanPagos.objects.filter(id_facilidad_pago=facilidad_pago.id).first()
+        
         if not plan_pago:
-            #raise NotFound("No existe plan de pago relacionada con la información dada")
-            return {'success': False, 'detail': 'No existe plan de pagos para la facilidad de pago relacionada con la información dada'}
-                
-        plan_pago_data = self.get_plan_pago(plan_pago)
-        instancia_cuota = PlanPagosCuotasListGetView()
-        cuotas_data = instancia_cuota.get_cuotas(plan_pago_data['id'])
+            # raise NotFound("No existe plan de pagos relacionado con la información dada")
+            reponse_data = None
 
-        reponse_data = {
-            'plan_pago':plan_pago_data,
-            'cuotas':cuotas_data
-        }
-
+        else:
+            plan_pago_data = self.get_plan_pago(plan_pago)
+            instancia_cuota = PlanPagosCuotasListGetView()
+            cuotas_data = instancia_cuota.get_cuotas(plan_pago_data['id'])
+            reponse_data = {
+                'plan_pago':plan_pago_data,
+                'cuotas':cuotas_data
+            }
         return reponse_data
+    
     
     def get(self, request, id_facilidad_pago):
 
