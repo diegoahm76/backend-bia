@@ -23,4 +23,5 @@ urlpatterns = [
     path('categoria-atributos/', views.CategoriaAtributoView.as_view(), name='categoria-atributos'),
     path('categoria-atributos/<int:pk>/', views.CategoriaAtributoView.as_view(), name='categoria-atributos'),
     path('etapas-filtrado/', views.EtapasFiltradoView.as_view(), name='categoria-atributos'),
+    path('categoria-por-etapas/<int:pk>/', views.CategoriasEtapasFiltradoView.as_view(), name='categoria-etapas-atributos'),
 ]
