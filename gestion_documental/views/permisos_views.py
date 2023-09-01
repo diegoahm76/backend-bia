@@ -347,4 +347,6 @@ class UnidadesPermisosPutView(generics.UpdateAPIView):
             self.put_restricciones(request, id_cat_serie_und)
         
         # PENDIENTE VALIDACION SI TIENEN PERMISOS
+        
+        # PENDIENTE AUDITORIAS
         return Response({'succes': True, 'detail':'Se realizó el guardado correctamente'}, status=status.HTTP_200_OK)
