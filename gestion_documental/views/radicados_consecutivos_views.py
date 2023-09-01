@@ -49,7 +49,7 @@ class ConfigTiposRadicadoAgnoUpdate(generics.UpdateAPIView):
                         raise ValidationError("No se puede implementar la configuracion si se encuentra vigente una de tipo salida")
                 
                 elif instance.cod_tipo_radicado=="E" or instance.cod_tipo_radicado=="S":
-                    unico=ConfigTiposRadicadoAgno.objects.filter(cod_tipo_radicado="U",agno_radicado=instance.agno_radicado)
+                    unico=ConfigTiposRadicadoAgno.objects.filter(cod_tipo_radicado="U",agno_radicado=instance.agno_radicado,implementar=True)
                     if unico:
                         raise ValidationError("No se puede implementar la configuracion si ya esta vigente una de tipo unica")
                 prefijo_consecutivo = data.get('prefijo_consecutivo')
@@ -79,7 +79,8 @@ class ConfigTiposRadicadoAgnoUpdate(generics.UpdateAPIView):
                 #    raise ValidationError(" El consecutivo inicial debe ser mayor o igual a 0.")
                 if cantidad_digitos <= 0:
                     raise ValidationError("se debe ser mayor a cero.")
-                
+                data_in['fecha_inicial_config_implementacion']= timezone.now()
+                data_in['id_persona_config_implementacion']=data_in['user']
 
         try:
 
@@ -104,8 +105,8 @@ class ConfigTiposRadicadoAgnoUpdate(generics.UpdateAPIView):
     def put(self, request, pk):
         data_in = request.data
         usuario = request.user.id_usuario
-        data_in['id_persona_config_implementacion']=usuario
-        data_in['fecha_inicial_config_implementacion']= timezone.now()
+        data_in['user']=usuario#id_persona_config_implementacion
+        
         response= self.actualizar_config_tipos_radicado_agno(data_in,pk)
         return response
     
@@ -138,7 +139,7 @@ class ConfigTiposRadicadoAgnoCreate(generics.CreateAPIView):
                     raise ValidationError("No se puede implementar la configuración si se encuentra vigente una de tipo salida")
 
             elif data_in['cod_tipo_radicado'] == "E" or data_in['cod_tipo_radicado'] == "S":
-                unico = ConfigTiposRadicadoAgno.objects.filter(cod_tipo_radicado="U", agno_radicado=data_in['agno_radicado'])
+                unico = ConfigTiposRadicadoAgno.objects.filter(cod_tipo_radicado="U", agno_radicado=data_in['agno_radicado'],implementar=True)
                 if unico:
                     raise ValidationError("No se puede implementar la configuración si ya está vigente una de tipo unica")
 

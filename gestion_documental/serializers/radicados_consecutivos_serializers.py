@@ -4,6 +4,8 @@ from rest_framework.validators import UniqueTogetherValidator
 
 from seguridad.models import Personas
 class ConfigTiposRadicadoAgnoUpDateSerializer(serializers.ModelSerializer):
+    agno_radicado=serializers.CharField(read_only=True)
+    cod_tipo_radicado=serializers.CharField(read_only=True)
     #fecha_consecutivo_actual = serializers.ReadOnlyField()
     #id_persona_config_implementacion = serializers.PrimaryKeyRelatedField(queryset=Personas.objects.all())
     #id_persona_config_implementacion = serializers.PrimaryKeyRelatedField(queryset=Personas.objects.all())   
@@ -20,6 +22,8 @@ class ConfigTiposRadicadoAgnoUpDateSerializer(serializers.ModelSerializer):
                     message='Ya existe una configuracion con este prefijo')
                     ]
 class ConfigTiposRadicadoAgnoCreateSerializer(serializers.ModelSerializer):
+    agno_radicado=serializers.CharField(read_only=True)
+    cod_tipo_radicado=serializers.CharField(read_only=True)
   
     class Meta:
         model = ConfigTiposRadicadoAgno
@@ -36,6 +40,16 @@ class ConfigTiposRadicadoAgnoCreateSerializer(serializers.ModelSerializer):
 
 
 class ConfigTiposRadicadoAgnoGetSerializer(serializers.ModelSerializer):
+    cod_tipo_radicado_legible = serializers.SerializerMethodField()
+
     class Meta:
         model = ConfigTiposRadicadoAgno
         fields = '__all__'
+
+        
+
+    def get_cod_tipo_radicado_legible(self, obj):
+        return obj.get_cod_tipo_radicado_display()
+
+
+
