@@ -77,7 +77,7 @@ class CarpetaCaja(models.Model):
     identificacion_por_caja = models.CharField(max_length=10, db_column='T234identificacionPorCaja')
     orden_ubicacion_por_caja = models.SmallIntegerField(db_column='T234ordenUbicacionPorCaja')
     id_expediente = models.SmallIntegerField(null=True, blank=True, db_column='T234Id_Expediente')
-    id_prestamo_expediente = models.SmallIntegerField(null=True, db_column='T234Id_PrestamoExpediente',null=True)
+    id_prestamo_expediente = models.SmallIntegerField(null=True, blank=True, db_column='T234Id_PrestamoExpediente')
     # T234Id_PrestamoExpediente & T234Id_Expediente cambiar en modelo cuando se genere el tabla de expediente (kc)
     class Meta:
         db_table = 'T234Carpetas_Caja'
