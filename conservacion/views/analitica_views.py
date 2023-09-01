@@ -879,7 +879,11 @@ class AnaliticaBajasTiempoGetView(generics.ListAPIView):
         bajas = bajas.filter(id_vivero__in=id_vivero.split(',')) if id_vivero else bajas
         bajas_list = [baja.id_baja for baja in bajas]
         
-        output_list = []
+        output_list = {
+            "id_bien": None,
+            "nombre_bien": "Todas las plantas",
+            "cantidades_tiempo": []
+        }
             
         if bajas_list:
             items_mortalidad = ItemsBajasVivero.objects.filter(id_baja__in=bajas_list)
@@ -934,7 +938,7 @@ class AnaliticaBajasTiempoGetView(generics.ListAPIView):
                     "fechas": fechas_vivero
                 }
                     
-                output_list.append(fechas_vivero_data)
+                output_list['cantidades_tiempo'].append(fechas_vivero_data)
         
         return Response({'success':True,'detail':'Se encontró la siguiente información','data':output_list}, status=status.HTTP_200_OK)
 
