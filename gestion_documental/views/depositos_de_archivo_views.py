@@ -1379,6 +1379,7 @@ class CarpetaCajaSearch(generics.ListAPIView):
         serialized_data = []
         for caja in queryset:
             serialized_data.append({
+                'nombre_deposito': caja.id_bandeja_estante.id_estante_deposito.id_deposito.nombre_deposito,
                 'identificacion_deposito': caja.id_bandeja_estante.id_estante_deposito.id_deposito.identificacion_por_entidad,
                 'id_deposito': caja.id_bandeja_estante.id_estante_deposito.id_deposito.id_deposito,
                 'identificacion_estante': caja.id_bandeja_estante.id_estante_deposito.identificacion_por_deposito,
