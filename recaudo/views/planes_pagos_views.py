@@ -33,9 +33,8 @@ class PlanPagosValidationView(generics.RetrieveAPIView):
         
         instancia_plan = PlanPagosListGetView()
         plan_pagos = instancia_plan.get_plan_pagos_cuotas(id_facilidad_pago)
-        
         return plan_pagos
-        
+    
     def get(self, request, id_facilidad_pago):
         instancia_validacion = self.get_validacion(id_facilidad_pago)
 
@@ -58,6 +57,7 @@ class PlanPagosResolucionValidationView(generics.RetrieveAPIView):
 
         if not plan_pago:
             raise NotFound("No existe plan de pagos relacionada con la facilidad de pagos ingresada")
+            #return Response({'success': False, 'detail': 'No existe plan de pagos para la facilidad de pago relacionada con la información dada'})
         
         instancia_resolucion = ResolucionUltimaPlanPagoGetView()
         resolucion = instancia_resolucion.get_ultima_resolucion(plan_pago.id)
@@ -400,8 +400,9 @@ class PlanPagosListGetView(generics.ListAPIView):
 
         plan_pago = PlanPagos.objects.filter(id_facilidad_pago=facilidad_pago.id).first()
         if not plan_pago:
-            return Response({'success': False, 'detail': 'No existe plan de pagos para la facilidad de pago relacionada con la información dada'})
-        
+            #raise NotFound("No existe plan de pago relacionada con la información dada")
+            return {'success': False, 'detail': 'No existe plan de pagos para la facilidad de pago relacionada con la información dada'}
+                
         plan_pago_data = self.get_plan_pago(plan_pago)
         instancia_cuota = PlanPagosCuotasListGetView()
         cuotas_data = instancia_cuota.get_cuotas(plan_pago_data['id'])
