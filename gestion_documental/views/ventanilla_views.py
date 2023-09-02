@@ -9,6 +9,8 @@ from seguridad.signals.roles_signals import IsAuthenticated
 from seguridad.utils import Util
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
+from transversal.views.bandeja_alertas_views import BandejaAlertaPersonaCreate
+
 
 class BusquedaPersonaParaRegistro(generics.RetrieveAPIView):
     
@@ -66,6 +68,13 @@ class RegisterPersonaNatural(generics.CreateAPIView):
             "descripcion": descripcion, 
         }
         Util.save_auditoria(auditoria_data)
+        #CREACION DE BANDEJA DE ALERTAS
+        crear_bandeja=BandejaAlertaPersonaCreate()
+
+        response_bandeja=crear_bandeja.crear_bandeja_persona({"id_persona":serializador.id_persona})
+            
+        if response_bandeja.status_code!=status.HTTP_201_CREATED:
+            raise ValidationError(response_bandeja)
         
         return Response({'success':True, 'detail':'Se creo la persona natural correctamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 
@@ -99,6 +108,13 @@ class RegisterPersonaJuridica(generics.CreateAPIView):
             "descripcion": descripcion, 
         }
         Util.save_auditoria(auditoria_data)
+        #CREACION DE BANDEJA DE ALERTAS
+        crear_bandeja=BandejaAlertaPersonaCreate()
+
+        response_bandeja=crear_bandeja.crear_bandeja_persona({"id_persona":serializador.id_persona})
+            
+        if response_bandeja.status_code!=status.HTTP_201_CREATED:
+            raise ValidationError(response_bandeja)
         
         return Response({'success':True, 'detail':'Se creo la persona jurídica correctamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 
