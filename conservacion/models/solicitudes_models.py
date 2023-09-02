@@ -18,6 +18,8 @@ class SolicitudesViveros(models.Model):
     con_municipio_destino = models.ForeignKey(Municipio, on_delete=models.CASCADE, db_column='T173Cod_MunicipioDestino')
     direccion_destino = models.CharField(max_length=255, db_column='T173direccionDestino')
     nombre_predio_destino = models.CharField(max_length=255, db_column='T173nombrePredioDestino')
+    coordenadas_destino_lat = models.DecimalField(max_digits=18, decimal_places=13, db_column='T173coordenadasDestinoLat')
+    coordenadas_destino_lon = models.DecimalField(max_digits=18, decimal_places=13, db_column='T173coordenadasDestinoLon')
     fecha_retiro_material = models.DateField(db_column='T173fechaRetiroMaterial')
     nro_info_tecnico = models.CharField(max_length=30, db_column='T173nroInfoTecnico')
     ruta_archivo_info_tecnico = models.FileField(max_length=255, upload_to='conservacion/solicitudes/', blank=True, null=True, db_column='T173rutaArchivoInfoTecnico')

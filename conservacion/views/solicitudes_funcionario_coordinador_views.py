@@ -1,6 +1,7 @@
 from conservacion.utils import UtilConservacion
 from rest_framework import generics, status
 from rest_framework.views import APIView
+from seguridad.permissions.permissions_conservacion import PermisoEsCoordinadorViveros
 from seguridad.utils import Util  
 from django.db.models import Q, F, Sum
 from rest_framework.response import Response
@@ -199,7 +200,7 @@ class GestionarSolicitudesVencidasSupervisorView(generics.RetrieveUpdateAPIView)
 class ListSolicitudesCoordinadorView(generics.ListAPIView):
     serializer_class = GetSolicitudesViveroResponsableSerializer
     queryset = SolicitudesViveros.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoEsCoordinadorViveros]
 
     def get(self, request):
         usuario_logeado = request.user.persona.id_persona
@@ -212,7 +213,7 @@ class ListSolicitudesCoordinadorView(generics.ListAPIView):
 class GestionarSolicitudCoordinadorView(generics.RetrieveUpdateAPIView):
     serializer_class = GestionarSolicitudCoordinadorSerializer
     queryset = SolicitudesViveros.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoEsCoordinadorViveros]
 
     def patch(self, request, id_solicitud):
         data = request.data

@@ -1,5 +1,6 @@
 from django.db import models
 from transversal.models.personas_models import Personas
+from conservacion.models.viveros_models import Vivero
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from transversal.choices.tipo_unidad_choices import tipo_unidad_CHOICES
 from almacen.models.generics_models import UnidadesMedida
@@ -17,6 +18,7 @@ class SolicitudesConsumibles(models.Model):
     motivo = models.CharField(max_length=255, db_column='T081motivo')
     observacion = models.CharField(max_length=255, db_column='T081observacion', null=True, blank=True)
     id_persona_solicita = models.ForeignKey(Personas, db_column='T081Id_PersonaSolicita', on_delete=models.CASCADE, related_name='persona_solicita_solicitud')
+    id_vivero_solicita = models.ForeignKey(Vivero, db_column='T081Id_ViveroSolicita', on_delete=models.SET_NULL, blank=True, null=True, related_name='id_vivero_solicita_consumible')
     id_unidad_org_del_solicitante = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T081Id_UnidadOrgDelSolicitante', related_name='unidad_organizacional_solicitante')
     id_unidad_para_la_que_solicita = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T081Id_UnidadParaLaQueSolicita', related_name='unidad_para_la_que_solicita')
     id_funcionario_responsable_unidad = models.ForeignKey(Personas, db_column='T081Id_FuncionarioResponsableUnidad', on_delete=models.CASCADE, related_name='funcionario_responsable_unidad')
@@ -78,6 +80,7 @@ class DespachoConsumo(models.Model):
     id_persona_despacha = models.ForeignKey(Personas, related_name='persona_despacha', on_delete=models.CASCADE, db_column='T083Id_PersonaDespacha')
     motivo = models.CharField(max_length=255, null=True, blank=True, db_column='T083motivo')
     id_persona_solicita = models.ForeignKey(Personas, related_name='persona_solicita', null=True, blank=True, on_delete=models.SET_NULL, db_column='T083Id_PersonaSolicita')
+    id_vivero_solicita = models.ForeignKey(Vivero, db_column='T083Id_ViveroSolicita', on_delete=models.SET_NULL, blank=True, null=True, related_name='id_vivero_solicita_despacho')
     id_unidad_para_la_que_solicita = models.ForeignKey(UnidadesOrganizacionales, null=True, blank=True, on_delete=models.SET_NULL, db_column='T083Id_UnidadParaLaQueSolicita')
     id_funcionario_responsable_unidad = models.ForeignKey(Personas, related_name='persona_funcionario_responsable_unidad', null=True, blank=True, on_delete=models.SET_NULL, db_column='T083Id_FuncionarioResponsableUnidad')
     es_despacho_conservacion = models.BooleanField(default=False, db_column='T083esDespachoDeConservacion')
