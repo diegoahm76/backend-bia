@@ -94,6 +94,7 @@ class CreateDespachoMaestro(generics.UpdateAPIView):
         info_despacho['numero_solicitud_por_tipo'] = instancia_solicitud.nro_solicitud_por_tipo
         info_despacho['fecha_solicitud'] = instancia_solicitud.fecha_solicitud
         info_despacho['id_persona_solicita'] = instancia_solicitud.id_persona_solicita.id_persona
+        info_despacho['id_vivero_solicita'] = instancia_solicitud.id_vivero_solicita.id_vivero if instancia_solicitud.id_vivero_solicita else None
         info_despacho['id_unidad_para_la_que_solicita'] = instancia_solicitud.id_unidad_para_la_que_solicita.id_unidad_organizacional
         info_despacho['id_funcionario_responsable_unidad'] = instancia_solicitud.id_funcionario_responsable_unidad.id_persona
         #Asignación de persona que despacha

@@ -12,6 +12,8 @@ from conservacion.models.inventario_models import InventarioViveros
 
 class DespachosEntrantesSerializer(serializers.ModelSerializer):
     numero_despacho_consumo = serializers.ReadOnlyField(source='id_despacho_consumo_alm.numero_despacho_consumo', default=None)
+    id_vivero_solicita = serializers.ReadOnlyField(source='id_despacho_consumo_alm.id_vivero_solicita.id_vivero', default=None)
+    nombre_vivero_solicita = serializers.ReadOnlyField(source='id_despacho_consumo_alm.id_vivero_solicita.nombre', default=None)
     
     class Meta:
         model = DespachoEntrantes

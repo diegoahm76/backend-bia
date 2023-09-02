@@ -2,6 +2,19 @@ from rest_framework.permissions import BasePermission
 from seguridad.models import UsuariosRol, PermisosModuloRol
 from django.db.models import Q
 
+from transversal.models.entidades_models import ConfiguracionEntidad
+
+class PermisoEsCoordinadorViveros(BasePermission):
+    message = 'Solo el Coordinador de Viveros puede realizar esta acción'
+    def has_permission(self, request, view):
+        id_persona = request.user.persona.id_persona
+        coordinador_viveros = ConfiguracionEntidad.objects.filter(id_persona_coord_viveros_actual=id_persona).first()
+
+        if coordinador_viveros:
+            return True
+
+        return False
+
 class PermisoCrearAdministrarViveros(BasePermission):
     message = 'No tiene permiso para crear viveros'
     def has_permission(self, request, view):
