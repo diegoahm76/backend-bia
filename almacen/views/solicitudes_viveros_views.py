@@ -318,7 +318,11 @@ class SearchCoordinadorViveros(generics.ListAPIView):
     
     def get(self, request):
         coordinador_viveros = ConfiguracionEntidad.objects.all().first()
-        coordinador_viveros = coordinador_viveros.id_persona_coord_viveros_actual if coordinador_viveros else None
-
-        serializador_personas = self.serializer_class(coordinador_viveros)
-        return Response({'success':True, 'detail':'Se encontró la siguiente información', 'data':serializador_personas.data}, status=status.HTTP_200_OK)
+        coordinador_viveros = coordinador_viveros.id_persona_coord_viveros_actual if coordinador_viveros else {}
+        data = {}
+        detail = 'No se encontró el Coordinador de Viveros'
+        if coordinador_viveros:
+            serializador_personas = self.serializer_class(coordinador_viveros)
+            data = serializador_personas.data
+            detail = 'Se encontró el Coordinador de Viveros'
+        return Response({'success':True, 'detail':detail, 'data':data}, status=status.HTTP_200_OK)
