@@ -1459,9 +1459,10 @@ class GuardarActualizacionUnidadOrganizacional(generics.UpdateAPIView):
         
         # VALIDAR SI CAMBIAN ORGANIGRAMA
         temporal_all = TemporalPersonasUnidad.objects.all()
-        temporal_all_list = list(temporal_all.values_list('id_unidad_org_nueva__id_organigrama__id_organigrama', flat=True).distinct())
-        if temporal_all_list[0] != int(id_organigrama):
-            raise ValidationError('Si desea cambiar el organigrama nuevo debe desmarcar a todas las personas con cambios parciales antes de continuar')
+        if temporal_all:
+            temporal_all_list = list(temporal_all.values_list('id_unidad_org_nueva__id_organigrama__id_organigrama', flat=True).distinct())
+            if temporal_all_list[0] != int(id_organigrama):
+                raise ValidationError('Si desea cambiar el organigrama nuevo debe desmarcar a todas las personas con cambios parciales antes de continuar')
 
         for persona_nueva_unidad in personas_nuevas_unidades:
             id_persona = persona_nueva_unidad.get('id_persona')
