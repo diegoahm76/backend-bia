@@ -11,8 +11,11 @@ urlpatterns = [
     path('tipo-expediente/', views.TipoExpediente.as_view(), name='tipo-expediente'),
     path('estado-expediente/', views.EstadoExpediente.as_view(), name='estado-expediente'),
     path('etapa-actual-expediente/', views.EtapaActualExpediente.as_view(), name='etapa-expediente'),
-
-
-
+    path('categoria-archivo/', views.CategoriaArchivo.as_view(), name='categoria-archivo'),
+    path('tipo-origen-doc/', views.TipoOrigenDoc.as_view(), name='tipo-origen-doc'),
+    path('tipo-subsistema/', views.TipoSubsistemaCreado.as_view(), name='tipo-subsistema-creado'),
+    path('tipo-radicado/', views.TipoRadicado.as_view(), name='tipo-radicado'),
+    path('operacion-realizado/', views.OperacionRealizada.as_view(), name='operaciones-realizadas'),
+    
     
 ]

@@ -7,6 +7,13 @@ from gestion_documental.choices.tipo_expediente_choices import tipo_expediente_C
 from gestion_documental.choices.estado_expediente_choices import estado_expediente_CHOICES
 from gestion_documental.choices.etapa_actual_expediente_choices import etapa_actual_expediente_CHOICES
 from gestion_documental.choices.categoria_archivo_choices import categoria_archivo_CHOICES
+from gestion_documental.choices.tipo_origen_doc_choices import tipo_origen_doc_CHOICES
+from gestion_documental.choices.tipo_subsistema_creado_choices import tipo_subsistema_creado_CHOICES
+from gestion_documental.choices.tipo_radicado_choices import TIPOS_RADICADO_CHOICES
+from gestion_documental.choices.operacion_realizada_choices import operacion_realizada_CHOICES
+
+
+
 
 
 
@@ -55,4 +62,24 @@ class EtapaActualExpediente(APIView):
 class CategoriaArchivo(APIView):
     def get(self,request):
         choices = categoria_archivo_CHOICES
+        return Response(choices)
+    
+class TipoOrigenDoc(APIView):
+    def get(self,request):
+        choices = tipo_origen_doc_CHOICES
+        return Response(choices)
+    
+class TipoSubsistemaCreado(APIView):
+    def get(self,request):
+        choices = tipo_subsistema_creado_CHOICES
+        return Response(choices)
+    
+class TipoRadicado(APIView):
+    def get(self,request):
+        choices = TIPOS_RADICADO_CHOICES
+        return Response(choices)
+    
+class OperacionRealizada(APIView):
+    def get(self,request):
+        choices = operacion_realizada_CHOICES
         return Response(choices)
