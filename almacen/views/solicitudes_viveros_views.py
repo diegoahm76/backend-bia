@@ -128,8 +128,8 @@ class CreateSolicitudViveros(generics.UpdateAPIView):
             if user_logeado.persona.id_unidad_organizacional_actual.id_unidad_organizacional != info_solicitud['id_unidad_para_la_que_solicita']:
                 raise NotFound('Un usuario de una unidad de apoyo o asesor solo le puede hacer solicitudes a la misma unidad a la que pertenece')
 
-            if (info_solicitud['id_funcionario_responsable_unidad'] != padre_de_todos.id_persona and info_solicitud['id_funcionario_responsable_unidad'] != '' and info_solicitud['id_funcionario_responsable_unidad'] != None) or info_solicitud['id_funcionario_responsable_unidad'] == user_logeado.persona.id_persona:
-                raise NotFound('El usuario supervisor no puede ser el mismo usuario que solicita, el funcionario supervisor solo puede ser de unidad organizacional nivel 1')
+            # if (info_solicitud['id_funcionario_responsable_unidad'] != padre_de_todos.id_persona and info_solicitud['id_funcionario_responsable_unidad'] != '' and info_solicitud['id_funcionario_responsable_unidad'] != None) or info_solicitud['id_funcionario_responsable_unidad'] == user_logeado.persona.id_persona:
+            #     raise NotFound('El usuario supervisor no puede ser el mismo usuario que solicita, el funcionario supervisor solo puede ser de unidad organizacional nivel 1')
         # VALIDACIÓN DE LA LINEA DEL ORGANIGRAMA A LA QUE PERTENECE EL USUARIO SOLICITANTE Y EL USUARIO SUPERVISOR DEL SOLICITANTE
         else:
             if int(info_solicitud['id_funcionario_responsable_unidad']) == user_logeado.persona.id_persona:
@@ -177,8 +177,8 @@ class CreateSolicitudViveros(generics.UpdateAPIView):
             if not unidad_para_la_que_solicita['nombre'] in unidades_organiacionales_misma_linea:
                 raise NotFound('La unidad organizacional para la que solicita no pertenece a la linea del organigrama a la que pertenece el solicitante')
             
-            if not funcionario_responsable.id_unidad_organizacional_actual.nombre in unidades_iguales_y_arriba or funcionario_responsable.id_unidad_organizacional_actual.nombre == None:
-                raise NotFound('La persona que ingresó como responsable no es ningún superior de la persona que solicita')
+            # if not funcionario_responsable.id_unidad_organizacional_actual.nombre in unidades_iguales_y_arriba or funcionario_responsable.id_unidad_organizacional_actual.nombre == None:
+            #     raise NotFound('La persona que ingresó como responsable no es ningún superior de la persona que solicita')
         # Creacion de solicitudes
         if bandera_actualizar == False:
             if solicitudes_existentes:
