@@ -57,25 +57,7 @@ class AlertasBandejaAlertaPersonaUpdate(generics.UpdateAPIView):
     queryset = AlertasBandejaAlertaPersona.objects.all()
     permission_classes = [IsAuthenticated]
 
-    # def buscar_id_perfil(self,perfil):
-    #     perfiles_actuales=ConfiguracionEntidad.objects.first()
-    #     id=None
-    #     if perfil == 'Dire':
-    #         if perfiles_actuales.id_persona_director_actual:
-    #             id=perfiles_actuales.id_persona_director_actual.id_persona
-    #     elif perfil == 'CAlm':
-    #         if perfiles_actuales.id_persona_coord_almacen_actual:
-    #             id=perfiles_actuales.id_persona_coord_almacen_actual.id_persona
-    #     elif perfil == 'RTra':
-    #         if perfiles_actuales.id_persona_respon_transporte_actual:
-    #             id=perfiles_actuales.id_persona_respon_transporte_actual.id_persona
-    #     elif perfil == 'CViv':
-    #         if perfiles_actuales.id_persona_coord_viveros_actual:
-    #             id=perfiles_actuales.id_persona_coord_viveros_actual.id_persona
-    #     elif perfil == 'Alma':
-    #         if perfiles_actuales.id_persona_almacenista:
-    #             id=perfiles_actuales.id_persona_almacenista.id_persona
-    #     return id
+
     def buscar_codigo_por_id(self, id_persona):
         perfiles_actuales = ConfiguracionEntidad.objects.first()
         

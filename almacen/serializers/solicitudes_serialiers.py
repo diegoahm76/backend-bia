@@ -14,7 +14,7 @@ class CrearSolicitudesPostSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = SolicitudesConsumibles
-        fields = '__all__'
+        exclude = ['id_vivero_solicita']
 
 class GetListSolicitudesSerializer(serializers.ModelSerializer):
     persona_solicita = serializers.SerializerMethodField()

@@ -58,9 +58,8 @@ def generar_alerta_segundo_plano():
     #Alerta en Fecha Fija - Programadas con o sin Repeticiones anteriores o posteriores  (con y sin año).
     
     for programada in alertas_generadas:
-            print("HOLAAA")
-           
-
+            
+        
             if   programada.agno_cumplimiento:
                 agno_alerta=programada.agno_cumplimiento
                 agno_fijo=True

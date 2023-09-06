@@ -9,6 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from datetime import datetime,date,timedelta
+from gestion_documental.views.radicados_consecutivos_views import actualizar_conf_agno_sig
 from recurso_hidrico.models.programas_models import ProyectosPORH
 from recurso_hidrico.serializers.programas_serializers import GenerardorMensajeProyectosPORHGetSerializer, ProyectosPORHSerializer
 from transversal.funtions.alertas import alerta_proyectos_vigentes_porh, generar_alerta_segundo_plano
@@ -702,6 +703,6 @@ class AlertaProyectosVigentesGet(generics.ListAPIView):
 
 def mi_vista(request):
 
-    generar_alerta_segundo_plano()  
-
+    #generar_alerta_segundo_plano()  
+    actualizar_conf_agno_sig()
     return HttpResponse("Tarea en segundo plano programada.")

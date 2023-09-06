@@ -22,8 +22,8 @@ class ConfigTiposRadicadoAgnoUpDateSerializer(serializers.ModelSerializer):
                     message='Ya existe una configuracion con este prefijo')
                     ]
 class ConfigTiposRadicadoAgnoCreateSerializer(serializers.ModelSerializer):
-    agno_radicado=serializers.CharField(read_only=True)
-    cod_tipo_radicado=serializers.CharField(read_only=True)
+    #agno_radicado=serializers.CharField(read_only=True)
+    #cod_tipo_radicado=serializers.CharField(read_only=True)
   
     class Meta:
         model = ConfigTiposRadicadoAgno
