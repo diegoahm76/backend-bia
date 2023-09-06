@@ -7,16 +7,16 @@ class ConfiguracionClaseAlerta(models.Model):
     cod_clase_alerta = models.CharField(primary_key=True, max_length=10, db_column='T040CodClaseAlerta')
     nombre_clase_alerta = models.CharField(max_length=50, unique=True, db_column='T040nombreClaseAlerta')
     descripcion_clase_alerta = models.CharField(max_length=255, db_column='T040descripcionClaseAlerta')
-    cod_tipo_clase_alerta = models.CharField(max_length=3, db_column='T040codTipoClaseAlerta')
+    COD_TIPOALERTAS_CHOICES = [
+        ('FF','Alerta en Fecha Fija'),('EP','Alerta en Evento Programado'), ('EI','Alerta en Evento Inmediato')
+    ]
+    cod_tipo_clase_alerta = models.CharField(max_length=2, choices=COD_TIPOALERTAS_CHOICES, db_column='T040codTipoClaseAlerta')
     cod_categoria_clase_alerta = models.CharField(max_length=3, choices=[('Ale', 'Alerta'), ('Com', 'Comunicación')], db_column='T040codCategoriaClaseAlerta')
     cant_dias_previas = models.SmallIntegerField(null=True, blank=True, db_column='T040ctdadDiasAlertasPrevias')
     frecuencia_previas = models.SmallIntegerField(null=True, blank=True, db_column='T040frecuenciaAlertasPrevias')
     cant_dias_post = models.SmallIntegerField(null=True, blank=True, db_column='T040ctdadRepeticionesPost')
     frecuencia_post = models.SmallIntegerField(null=True, blank=True, db_column='T040frecuenciaRepeticionesPost')
     envios_email = models.BooleanField(default=False, db_column='T040envioSimultaneoEmail')	
-    mensaje_base_dia = models.CharField(max_length=255, db_column='T040mensajeBaseDelDia')
-    mensaje_base_previo = models.CharField(null=True, blank=True, max_length=255, db_column='T040mensajeBasePrevio')
-    mensaje_base_vencido = models.CharField(null=True, blank=True, max_length=255, db_column='T040mensajeBaseVencido')
     NIVEL_PRIORIDAD_CHOICES = [
         ('1', 'Máxima'),
         ('2', 'Media'),
@@ -24,10 +24,14 @@ class ConfiguracionClaseAlerta(models.Model):
     ]
     nivel_prioridad = models.CharField(max_length=1, choices=NIVEL_PRIORIDAD_CHOICES, db_column='T040nivelPrioridad')#T040nivelPrioridad
     activa = models.BooleanField(default=True, db_column='T040activa')
+    mensaje_base_dia = models.CharField(max_length=255, db_column='T040mensajeBaseDelDia')
+    mensaje_base_previo = models.CharField(null=True, blank=True, max_length=255, db_column='T040mensajeBasePrevio')
+    mensaje_base_vencido = models.CharField(null=True, blank=True, max_length=255, db_column='T040mensajeBaseVencido')
     asignar_responsable = models.BooleanField(default=False, db_column='T040asignarResponsableDirEnConfig')
-    id_modulo_destino = models.ForeignKey('seguridad.Modulos', db_column='T040Id_ModuloDestino', on_delete=models.DO_NOTHING, related_name='configuraciones_destino')
-    id_modulo_generador = models.ForeignKey('seguridad.Modulos', db_column='T040Id_ModuloGenerador', on_delete=models.DO_NOTHING,related_name='configuraciones_generador')
+    id_modulo_destino = models.ForeignKey('seguridad.Modulos', db_column='T040Id_ModuloDestino', on_delete=models.SET_NULL, null=True, blank=True, related_name='configuraciones_destino')
+    id_modulo_generador = models.ForeignKey('seguridad.Modulos', db_column='T040Id_ModuloGenerador', on_delete=models.SET_NULL, null=True, blank=True, related_name='configuraciones_generador')
     nombre_funcion_comple_mensaje = models.CharField(max_length=255, null=True, blank=True, db_column='T040nombreFuncionParaCompleAMensaje')
+    
     def __str__(self):
         return str(self.nombre_clase_alerta)
 
@@ -61,7 +65,7 @@ class PersonasAAlertar(models.Model):
     id_unidad_org_lider = models.ForeignKey(UnidadesOrganizacionales, null=True, blank=True, on_delete=models.SET_NULL, db_column='T042Id_UndOrgDelLider')
     perfil_sistema = models.CharField(null=True, blank=True, max_length=4, db_column='T042codPerfilDelSistema')
     es_responsable_directo = models.BooleanField(null=True, blank=True, db_column='T042esResponsableDirecto')
-    registro_editable = models.BooleanField(default=False, db_column='T042registroEditable')
+    registro_editable = models.BooleanField(default=True, db_column='T042registroEditable')
     
     def __str__(self):
         return str(self.id_persona_alertar)
@@ -199,8 +203,5 @@ class AlertasBandejaAlertaPersona(models.Model):
         verbose_name = 'Alerta Generada Bandeja Alerta Persona'
         verbose_name_plural = 'Alertas Generadas Bandeja Alertas Personas'
         unique_together = ['id_bandeja_alerta_persona', 'id_alerta_generada']
-
-
-
 
 
