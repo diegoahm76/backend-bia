@@ -11,7 +11,7 @@ from gestion_documental.choices.tipo_origen_doc_choices import tipo_origen_doc_C
 from gestion_documental.choices.tipo_subsistema_creado_choices import tipo_subsistema_creado_CHOICES
 from gestion_documental.choices.tipo_radicado_choices import TIPOS_RADICADO_CHOICES
 from gestion_documental.choices.operacion_realizada_choices import operacion_realizada_CHOICES
-
+from gestion_documental.choices.tipos_pqr_choices import cond_tipos_pqr_list
 
 
 
@@ -43,6 +43,9 @@ class DisposicionFinalSeries(APIView):
 class GetCodConsecutivo(APIView):
     def get(self, request):
         return Response({'success':True, 'detail':'Los perfiles del sistema son los siguientes', 'data': cod_tipos_radicados_LIST}, status=status.HTTP_200_OK) 
+class GetCod_tipo_PQR(APIView):
+    def get(self, request):
+        return Response({'success':True, 'detail':'Los perfiles del sistema son los siguientes', 'data':cond_tipos_pqr_list }, status=status.HTTP_200_OK) 
 
 class TipoExpediente(APIView):
     def get(self,request):
