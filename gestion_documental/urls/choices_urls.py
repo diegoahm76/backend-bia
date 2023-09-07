@@ -15,7 +15,7 @@ urlpatterns = [
     path('tipo-origen-doc/', views.TipoOrigenDoc.as_view(), name='tipo-origen-doc'),
     path('tipo-subsistema/', views.TipoSubsistemaCreado.as_view(), name='tipo-subsistema-creado'),
     path('tipo-radicado/', views.TipoRadicado.as_view(), name='tipo-radicado'),
-    path('operacion-realizado/', views.OperacionRealizada.as_view(), name='operaciones-realizadas'),
+    path('operacion-realizada/', views.OperacionRealizada.as_view(), name='operaciones-realizadas'),
     
     
 ]

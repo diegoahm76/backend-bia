@@ -57,7 +57,7 @@ class ExpedientesDocumentales(models.Model):
 
 
 
-class ArchivosDigitales	(models.Model):
+class ArchivosDigitales(models.Model):
 
     id_archivo_digital = models.AutoField(primary_key=True, db_column='T238IdArchivoDigital')
     nombre_de_Guardado = models.CharField(max_length=20, db_column='T238nombreDeGuardado', unique=True)
@@ -191,7 +191,7 @@ class CierresReaperturasExpediente(models.Model):
     fecha_cierre_reapertura = models.DateTimeField(db_column='T241fechaCierreReapertura')
     justificacion_cierre_reapertura = models.CharField(max_length=255, db_column='T241justificacionCierreReapertura')
     id_persona_cierra_reabre = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T241Id_PersonaCierraReabre')
-    cod_etapa_archivo_pre_reapertura	 = models.CharField(max_length=1, choices=etapa_actual_expediente_CHOICES, db_column='T241codEtapaEnArchivo_PreReApertura')
+    cod_etapa_archivo_pre_reapertura= models.CharField(max_length=1, choices=etapa_actual_expediente_CHOICES, db_column='T241codEtapaEnArchivo_PreReApertura')
     class Meta:
         db_table = 'T241CierresReaperturas_Expediente'
         verbose_name = 'Cierre De reapertura '
@@ -209,62 +209,3 @@ class ArchivosSoporte_CierreReapertura(models.Model):
         verbose_name = 'Archivo De Soporte De Cierre Reapertura'
         verbose_name_plural = 'Archivos De Soportes De Cierres Reapertura'
         unique_together = ('id_cierre_reapertura_exp', 'id_doc_archivo_exp_soporte')
-
-
-
-
-
-
-
-    
-
-
-    
-
-
-
-
-
-
-      
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
-    
-
-
-
-  
