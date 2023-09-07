@@ -1,6 +1,6 @@
 from django.db import models
+from gestion_documental.choices.tipos_pqr_choices import TIPOS_PQR
 from seguridad.models import Personas
-
 from gestion_documental.choices.tipo_radicado_choices import TIPOS_RADICADO_CHOICES
 class ConfigTiposRadicadoAgno(models.Model):
 
@@ -21,3 +21,17 @@ class ConfigTiposRadicadoAgno(models.Model):
     class Meta:
         db_table = 'T235ConfigTiposRadicadoAgno'
         unique_together = ['agno_radicado', 'cod_tipo_radicado']
+
+class TiposPQR(models.Model):
+
+
+    cod_tipo_pqr = models.CharField(max_length=1,choices=TIPOS_PQR,unique=True,db_column='T252CodTipoPQR')
+    nombre = models.CharField(max_length=15,unique=True,db_column='T252nombre', verbose_name='Nombre del Tipo de PQR' )
+    tiempo_respuesta_en_dias = models.SmallIntegerField(null=True,blank=True,db_column='T252tiempoRtaEnDias')
+    
+    def __str__(self):
+        return self.nombre
+    class Meta:
+        db_table = 'T252TiposPQR'  
+        verbose_name = 'Tipo de PQR'  
+        verbose_name_plural = 'Tipos de PQR' 

@@ -1,5 +1,5 @@
 
-from gestion_documental.views.radicados_consecutivos_views import actualizar_conf_agno_sig
+from gestion_documental.views.configuracion_tipos_radicados_views import actualizar_conf_agno_sig
 from transversal.funtions.alertas import  generar_alerta_segundo_plano
 from transversal.models.alertas_models import AlertasProgramadas
 

@@ -9,6 +9,5 @@ categoria_archivo_CHOICES = (
     ('BD', 'Base de Datos'),
     ('PW', 'Páginas Web'),
     ('CE', 'Correo Electrónico'),
-   
 )  
     
