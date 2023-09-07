@@ -12,9 +12,9 @@ class TiposPQRGet(generics.ListAPIView):
     queryset = TiposPQR.objects.all()
     permission_classes = [IsAuthenticated]
     
-    def get(self,request):
+    def get(self,request,pk):
 
-        instance=TiposPQR.objects.all()
+        instance=TiposPQR.objects.filter(cod_tipo_pqr=pk)
         if not instance:
             raise NotFound("No existen tipos de radicado")
         
