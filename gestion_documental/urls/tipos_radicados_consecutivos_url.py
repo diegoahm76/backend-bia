@@ -1,5 +1,5 @@
 from django.urls import path
-from gestion_documental.views import   radicados_consecutivos_views as views
+from gestion_documental.views import   configuracion_tipos_radicados_views as views
 
 
 urlpatterns = [
