@@ -20,6 +20,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from datetime import datetime, date, timedelta
+from transversal.models.personas_models import Personas
 from transversal.views.alertas_views import AlertasProgramadasCreate
 
 class PlanPagosValidationView(generics.RetrieveAPIView):
@@ -341,25 +342,27 @@ class PlanPagosCreateView(generics.CreateAPIView):
                 'saldo_pendiente': round((data['saldo_total'] - (capital*(cuota))),2),
                 'id_cuota_anterior': cuota_ant
                 }
-            
             instance_cuota = PlanPagosCuotasCreateView()
             cuota_creada = instance_cuota.crear_plan_pagos_cuotas(data_cuota)
             cuota_ant = cuota_creada.id
             plan_cuotas.append(instance_cuota.serializer_class(cuota_creada).data)
-            print("TIPO FECHA : ",type(fecha_plan))
+            persona = Personas.objects.filter(numero_documento=facilidad_pago.id_deudor.identificacion).first()
+            mensaje = 'Estimado deudor '+ f'{facilidad_pago.id_deudor.nombres} {facilidad_pago.id_deudor.apellidos}'+' la cuota # '+str(cuota_creada.nro_cuota)+' esta por un valor a pagar: '+str(cuota_creada.monto_cuota)+' y la fecha de pago es: '+str(cuota_creada.fecha_vencimiento)
 
             data_alerta = {
                 'cod_clase_alerta':'Rec_VPPago',
                 'dia_cumplimiento':fecha_plan.day,
                 'mes_cumplimiento':fecha_plan.month,
                 'age_cumplimiento':fecha_plan.year,
-                'complemento_mensaje':"Este es el mensaje generado por la funcion, fecha: {fecha_plan}",
+                'complemento_mensaje':mensaje,
                 'id_elemento_implicado':cuota_creada.id,
-                'id_persona_implicada':1
+                'id_persona_implicada':persona.id_persona
                 }
+            
             response_alerta=crear_alerta.crear_alerta_programada(data_alerta)
             if response_alerta.status_code!=status.HTTP_201_CREATED:
                 return response_alerta
+            
 
         plan_pagos_data = serializer.data
         plan_pagos_data['cuotas'] = plan_cuotas
