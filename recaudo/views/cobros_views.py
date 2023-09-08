@@ -7,14 +7,19 @@ from recaudo.serializers.cobros_serializers import (
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 
 
 class CarteraView(generics.ListAPIView):
     queryset = Cartera.objects.all()
     serializer_class = CarteraGeneralSerializer
-    #permission_classes = [IsAuthenticated]
+    pagination_class = PageNumberPagination
 
     def get(self, request):
         queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.serializer_class(page, many=True)
+            return self.get_paginated_response({'success': True, 'data': serializer.data})
         serializer = self.serializer_class(queryset, many=True)
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
