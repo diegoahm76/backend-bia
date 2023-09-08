@@ -1,5 +1,5 @@
 from django.urls import path
-from seguridad.views import personas_views as views
+from transversal.views import personas_views as views
 
 
 urlpatterns = [

@@ -3,22 +3,24 @@ from wsgiref.validate import validator
 from rest_framework import serializers
 from rest_framework.serializers import ReadOnlyField
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
+from transversal.models.personas_models import Personas
 from seguridad.models import (
+    User
+)
+from transversal.models.base_models import (
     Departamento,
-    Personas, 
-    User,
-    TipoDocumento, 
     EstadoCivil,
+    TipoDocumento,
     ApoderadoPersona,
-    HistoricoEmails,
-    HistoricoDireccion,
+    HistoricoCambiosIDPersonas,
+    Cargos,
     ClasesTercero,
     ClasesTerceroPersona,
-    Cargos,
-    HistoricoCargosUndOrgPersona,
-    HistoricoCambiosIDPersonas,
+    HistoricoEmails,
+    HistoricoDireccion,
     HistoricoAutirzacionesNotis,
-    HistoricoRepresentLegales
+    HistoricoRepresentLegales,
+    HistoricoCargosUndOrgPersona,
 )
 
 
@@ -92,28 +94,28 @@ class PersonasSerializer(serializers.ModelSerializer):
     segundo_nombre = serializers.SerializerMethodField()
     primer_apellido = serializers.SerializerMethodField()
     segundo_apellido = serializers.SerializerMethodField()
-    cod_departamento_expedicion = serializers.ReadOnlyField(source='cod_municipio_expedicion_id.cod_departamento',default=None)
+    cod_departamento_expedicion = serializers.ReadOnlyField(source='cod_municipio_expedicion_id.cod_departamento.cod_departamento',default=None)
     cod_departamento_residencia = serializers.SerializerMethodField()
     cod_departamento_notificacion = serializers.SerializerMethodField()
     cod_departamento_laboral = serializers.SerializerMethodField()
     
     def get_cod_departamento_residencia(self, obj):
         cod_departamento_residencia = None
-        departamento = Departamento.objects.filter(cod_departamento=obj.municipio_residencia[:2]).first() if obj.municipio_residencia else None
+        departamento = Departamento.objects.filter(cod_departamento=obj.municipio_residencia.cod_municipio[:2]).first() if obj.municipio_residencia else None
         if departamento:
             cod_departamento_residencia = departamento.cod_departamento
         return cod_departamento_residencia
     
     def get_cod_departamento_notificacion(self, obj):
         cod_departamento_notificacion = None
-        departamento = Departamento.objects.filter(cod_departamento=obj.cod_municipio_notificacion_nal[:2]).first() if obj.cod_municipio_notificacion_nal else None
+        departamento = Departamento.objects.filter(cod_departamento=obj.cod_municipio_notificacion_nal.cod_municipio[:2]).first() if obj.cod_municipio_notificacion_nal else None
         if departamento:
             cod_departamento_notificacion = departamento.cod_departamento
         return cod_departamento_notificacion
     
     def get_cod_departamento_laboral(self, obj):
         cod_departamento_laboral = None
-        departamento = Departamento.objects.filter(cod_departamento=obj.cod_municipio_laboral_nal[:2]).first() if obj.cod_municipio_laboral_nal else None
+        departamento = Departamento.objects.filter(cod_departamento=obj.cod_municipio_laboral_nal.cod_municipio[:2]).first() if obj.cod_municipio_laboral_nal else None
         if departamento:
             cod_departamento_laboral = departamento.cod_departamento
         return cod_departamento_laboral
@@ -173,6 +175,7 @@ class PersonaNaturalSerializer(serializers.ModelSerializer):
             'direccion_residencia',
             'direccion_residencia_ref',
             'ubicacion_georeferenciada',
+            'ubicacion_georeferenciada_lon',
             'municipio_residencia',
             'pais_residencia',
             'direccion_laboral',
@@ -220,6 +223,7 @@ class PersonaJuridicaSerializer(serializers.ModelSerializer):
             'municipio_residencia',
             'cod_municipio_notificacion_nal',
             'ubicacion_georeferenciada',
+            'ubicacion_georeferenciada_lon',
             'telefono_celular_empresa',
             'telefono_empresa_2',
             'telefono_empresa',
@@ -251,6 +255,7 @@ class PersonaNaturalPostSerializer(serializers.ModelSerializer):
             'pais_nacimiento',
             'email_empresarial',
             'ubicacion_georeferenciada',
+            'ubicacion_georeferenciada_lon',
             'telefono_fijo_residencial',
             'pais_residencia',
             'municipio_residencia',
@@ -306,6 +311,7 @@ class PersonaNaturalUpdateSerializer(serializers.ModelSerializer):
             'direccion_residencia_ref',
             'direccion_notificacion_referencia',
             'ubicacion_georeferenciada',
+            'ubicacion_georeferenciada_lon',
             'municipio_residencia',
             'pais_residencia',
             'direccion_laboral',
@@ -467,6 +473,7 @@ class GetPersonaJuridicaByRepresentanteLegalSerializer(serializers.ModelSerializ
             'municipio_residencia',
             'cod_municipio_notificacion_nal',
             'ubicacion_georeferenciada',
+            'ubicacion_georeferenciada_lon',
             'telefono_celular_empresa',
             'telefono_empresa_2',
             'telefono_empresa',
@@ -499,6 +506,7 @@ class PersonaNaturalPostByUserSerializer(serializers.ModelSerializer):
             'pais_nacimiento',
             'email_empresarial',
             'ubicacion_georeferenciada',
+            'ubicacion_georeferenciada_lon',
             'telefono_fijo_residencial',
             'pais_residencia',
             'municipio_residencia',
@@ -578,6 +586,7 @@ class PersonaNaturalUpdateUserPermissionsSerializer(serializers.ModelSerializer)
             'direccion_residencia',
             'direccion_residencia_ref',
             'ubicacion_georeferenciada',
+            'ubicacion_georeferenciada_lon',
             'municipio_residencia',
             'pais_residencia',
             'direccion_laboral',

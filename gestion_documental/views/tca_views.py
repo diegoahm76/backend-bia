@@ -12,7 +12,7 @@ from transversal.models.organigrama_models import UnidadesOrganizacionales
 from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
 from gestion_documental.models.trd_models import SeriesSubSUnidadOrgTRDTipologias, TablaRetencionDocumental, CatSeriesUnidadOrgCCDTRD
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
-from seguridad.serializers.personas_serializers import CargosSerializer
+from transversal.serializers.personas_serializers import CargosSerializer
 from gestion_documental.serializers.tca_serializers import (
     GetClasifExpedientesSerializer,
     GetHistoricoTCASerializer,
@@ -30,13 +30,9 @@ from gestion_documental.serializers.tca_serializers import (
 
 )
 from gestion_documental.models.ccd_models import (
-    CatalogosSeriesUnidad,
-    CuadrosClasificacionDocumental,
-    SeriesDoc,
+    CuadrosClasificacionDocumental
 )
-from transversal.models.organigrama_models import (
-    Organigramas
-)
+
 from gestion_documental.models.tca_models import (
     TablasControlAcceso,
     CatSeriesUnidadOrgCCD_TRD_TCA,
@@ -47,7 +43,8 @@ from gestion_documental.models.tca_models import (
     HistoricoCatSeriesUnidadOrgCCD_TRD_TCA, 
     # HistoricoPermisosCatSeriesUndOrgTCA
 )
-from seguridad.models import Cargos,Personas
+from transversal.models.personas_models import Personas
+from transversal.models.base_models import Cargos
 from gestion_documental.choices.tipo_clasificacion_choices import tipo_clasificacion_CHOICES
 
 class GetUnidadesbyCCD(generics.ListAPIView):

@@ -24,7 +24,7 @@ from almacen.models.bienes_models import (
 from almacen.models.hoja_de_vida_models import (
     HojaDeVidaVehiculos
 )
-from seguridad.models import (
+from transversal.models.personas_models import (
     Personas
 )
 from almacen.models.inventario_models import (
@@ -111,9 +111,9 @@ class AnularMantenimientoProgramado(generics.RetrieveUpdateAPIView):
             valores_actualizados={'previous':mantenimiento_previous, 'current':mantenimiento}
             id_modulo = 0
             
-            if bien.cod_tipo_activo == 'Com':
+            if bien.cod_tipo_activo and bien.cod_tipo_activo.cod_tipo_activo == 'Com':
                 id_modulo = 21
-            elif bien.cod_tipo_activo == 'Veh':
+            elif bien.cod_tipo_activo and bien.cod_tipo_activo.cod_tipo_activo == 'Veh':
                 id_modulo = 22
             else:
                 id_modulo = 23
@@ -257,9 +257,9 @@ class DeleteRegistroMantenimiento(generics.DestroyAPIView):
                 direccion=Util.get_client_ip(request)
                 id_modulo = 0
             
-                if bien.cod_tipo_activo == 'Com':
+                if bien.cod_tipo_activo and bien.cod_tipo_activo.cod_tipo_activo == 'Com':
                     id_modulo = 24
-                elif bien.cod_tipo_activo == 'Veh':
+                elif bien.cod_tipo_activo and bien.cod_tipo_activo.cod_tipo_activo == 'Veh':
                     id_modulo = 25
                 else:
                     id_modulo = 26
@@ -309,9 +309,9 @@ class UpdateRegistroMantenimiento(generics.UpdateAPIView):
                 direccion=Util.get_client_ip(request)
                 id_modulo = 0
             
-                if bien.cod_tipo_activo == 'Com':
+                if bien.cod_tipo_activo and bien.cod_tipo_activo.cod_tipo_activo == 'Com':
                     id_modulo = 24
-                elif bien.cod_tipo_activo == 'Veh':
+                elif bien.cod_tipo_activo and bien.cod_tipo_activo.cod_tipo_activo == 'Veh':
                     id_modulo = 25
                 else:
                     id_modulo = 26
@@ -750,10 +750,10 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
             raise NotFound('El bien seleeccionado no tiene movimientos registrados')
         if aux_fecha.days < 0:
             raise PermissionDenied('No se puede registrar el mantenimiento debido a que La fecha del registro del mantenimiento debe ser POSTERIOR O IGUAL a la fecha en la cual fue actualizado el estado anterior del activo')
-        datos_ingresados['cod_estado_anterior'] = inventario.cod_estado_activo
+        datos_ingresados['cod_estado_anterior'] = inventario.cod_estado_activo.cod_estado
         datos_ingresados['fecha_estado_anterior'] = inventario.fecha_ultimo_movimiento
         inventario.fecha_ultimo_movimiento = datos_ingresados['fecha_registrado']
-        inventario.cod_estado_activo = datos_ingresados['cod_estado_final']
+        inventario.cod_estado_activo = cod_estado_final.first()
         inventario.save()        
         serializer = self.get_serializer(data=datos_ingresados)
         serializer.is_valid(raise_exception=True)

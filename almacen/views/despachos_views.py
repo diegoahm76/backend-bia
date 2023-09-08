@@ -1,16 +1,14 @@
 from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, ItemEntradaAlmacen
-from almacen.serializers.bienes_serializers import CatalogoBienesSerializer
 from almacen.serializers.despachos_serializers import  SerializersDespachoConsumo, SerializersDespachoConsumoConItems, SerializersItemDespachoConsumo, SerializersSolicitudesConsumibles, SerializersItemsSolicitudConsumible, SearchBienInventarioSerializer
 from rest_framework import generics,status
 from rest_framework.response import Response
-from seguridad.models import Personas, User
-from rest_framework.decorators import api_view
+from transversal.models.personas_models import Personas
 from seguridad.utils import Util
 from almacen.utils import UtilAlmacen
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q, Sum,F
-from datetime import datetime, date,timedelta
+from datetime import datetime, timedelta
 import copy
 import json
 from almacen.serializers.despachos_serializers import (
@@ -19,7 +17,6 @@ from almacen.serializers.despachos_serializers import (
     SerializersDespachoConsumoActualizar,
     SerializersItemDespachoConsumo,
     SerializersSolicitudesConsumibles,
-    SerializersItemsSolicitudConsumible,
     AgregarBienesConsumoConservacionSerializer,
     GetItemOtrosOrigenesSerializers
 )
@@ -30,27 +27,12 @@ from almacen.models.solicitudes_models import (
     SolicitudesConsumibles, 
     ItemsSolicitudConsumible
 )
-from seguridad.models import (
-    Personas,
-    User,
-    ClasesTerceroPersona
-)
-from transversal.models.organigrama_models import (
-    UnidadesOrganizacionales,
-    NivelesOrganigrama
-)
 from almacen.models.generics_models import (
-    UnidadesMedida,
     Bodegas
 )
 from almacen.models.inventario_models import (
     Inventario
 )
-from almacen.serializers.solicitudes_serialiers import ( 
-    CrearSolicitudesPostSerializer,
-    CrearItemsSolicitudConsumiblePostSerializer
-    )
-from seguridad.serializers.personas_serializers import PersonasSerializer
 
 class CreateDespachoMaestro(generics.UpdateAPIView):
     serializer_class = SerializersDespachoConsumo
@@ -266,7 +248,7 @@ class CreateDespachoMaestro(generics.UpdateAPIView):
         
         # INSERT EN LA TABLA SOLICITUDES DE CONSUMIBLES
         despacho_creado = DespachoConsumo.objects.filter(Q(id_solicitud_consumo=info_despacho['id_solicitud_consumo']) & Q(numero_despacho_consumo=info_despacho['numero_despacho_consumo'])).first()
-        instancia_solicitud.id_despacho_consumo = despacho_creado.id_despacho_consumo
+        instancia_solicitud.id_despacho_consumo = despacho_creado
         instancia_solicitud.fecha_cierre_solicitud = despacho_creado.fecha_despacho
         instancia_solicitud.gestionada_almacen = True
         instancia_solicitud.solicitud_abierta = False

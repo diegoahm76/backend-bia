@@ -14,8 +14,9 @@ from recaudo.models.facilidades_pagos_models import (
 )
 from recaudo.models.base_models import TiposBien, TipoActuacion
 from recaudo.models.cobros_models import Deudores, Cartera
-from seguridad.models import Personas, Municipio
 
+from transversal.models.personas_models import Personas
+from transversal.models.base_models import Municipio
 
 class DetallesFacilidadPagoSerializer(serializers.ModelSerializer):
     class Meta:

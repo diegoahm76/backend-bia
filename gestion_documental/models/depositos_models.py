@@ -1,6 +1,8 @@
 from django.db import models
-
-from seguridad.models import Municipio, Paises
+from transversal.models.base_models import (
+    Municipio
+)
+from transversal.models.base_models import Paises
 from transversal.models.entidades_models import SucursalesEmpresas
 
 #DEPOSITOS

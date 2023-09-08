@@ -4,11 +4,16 @@ from conservacion.models.viveros_models import HistoricoResponsableVivero, Viver
 from almacen.models.generics_models import Bodegas
 from transversal.models.entidades_models import ConfiguracionEntidad
 from transversal.serializers.vinculacion_serializers import BusquedaHistoricoCargoUndSerializer, GetDesvinculacion_persona, VinculacionColaboradorSerializer, ConsultaVinculacionColaboradorSerializer, UpdateVinculacionColaboradorSerializer
-from seguridad.models import ClasesTerceroPersona, HistoricoActivacion, HistoricoCargosUndOrgPersona, Personas, User
+from seguridad.models import HistoricoActivacion, OperacionesSobreUsuario, User
+from transversal.models.base_models import (
+    ClasesTerceroPersona,
+    Cargos,
+    HistoricoCargosUndOrgPersona
+)
+from transversal.models.personas_models import Personas
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime, date, timedelta, timezone
 import copy
-from seguridad.models import Cargos, HistoricoCargosUndOrgPersona
 from transversal.models import UnidadesOrganizacionales
 from seguridad.utils import Util
 from transversal.views.configuracionEntidades_views import UpdateConfiguracionEntidad
@@ -110,7 +115,7 @@ class ConsultaVinculacionColaboradorView(generics.ListAPIView):
         data = serializador.data
 
         fecha_a_finalizar_cargo_actual = consulta_personas.fecha_a_finalizar_cargo_actual if consulta_personas.id_cargo else None
-        fecha_vencida = True if fecha_a_finalizar_cargo_actual < datetime.now() else False
+        fecha_vencida = True if fecha_a_finalizar_cargo_actual < datetime.now().date() else False
         data['fecha_vencida'] = fecha_vencida
 
         return Response({'success':True, 'detail': 'La persona existe y está vinculada como colaborador', 'data':data}, status=status.HTTP_200_OK)
@@ -205,7 +210,7 @@ class UpdateVinculacionColaboradorView(generics.RetrieveUpdateDestroyAPIView):
                     )
                 
             else:
-                if fecha_finalizar_cargo != persona.fecha_a_finalizar_cargo_actual.date():
+                if fecha_finalizar_cargo != persona.fecha_a_finalizar_cargo_actual:
                     fecha_minima = (datetime.today() + timedelta(days=1)).date()
                     if fecha_finalizar_cargo < fecha_minima:
                         return Response({'success': False, 'detail':'La fecha de finalización debe ser posterior a la fecha actual, mínimo el día siguiente'}, status=status.HTTP_403_FORBIDDEN)
@@ -264,7 +269,7 @@ class Desvinculacion_persona(generics.UpdateAPIView):
             if not persona.fecha_a_finalizar_cargo_actual or not persona.fecha_inicio_cargo_actual or not persona.fecha_asignacion_unidad:
                 return Response({'succes':False,'detail':'La persona no se encuentra actualmente vinculada a la empresa'},status=status.HTTP_403_FORBIDDEN)                        
               
-            if persona.fecha_a_finalizar_cargo_actual < fecha_desvinculacion:
+            if persona.fecha_a_finalizar_cargo_actual < fecha_desvinculacion.date():
                 fecha_desvinculacion = persona.fecha_a_finalizar_cargo_actual
                 fecha_desvinculacion.replace(hour=23, minute=59)
               
@@ -302,10 +307,11 @@ class Desvinculacion_persona(generics.UpdateAPIView):
                     usuario.is_active = False
                     
                 #HISTORICO ACTIVACION
+                cod_operacion_instance = OperacionesSobreUsuario.objects.filter(cod_operacion='I').first()
                 
                 HistoricoActivacion.objects.create(
                     id_usuario_afectado = usuario,
-                    cod_operacion = 'I',
+                    cod_operacion = cod_operacion_instance,
                     fecha_operacion = fecha_desvinculacion,
                     justificacion = "Inactivación automática por acción de desvinculación de la corporación desde el módulo de Vinculación de Colaboradores",
                     usuario_operador = usuario_logueado                

@@ -21,7 +21,7 @@ from almacen.serializers.generics_serializers import (
     )   
 from almacen.models.generics_models import Marcas, PorcentajesIVA
 from almacen.models.bienes_models import EstadosArticulo
-from seguridad.models import Personas
+from transversal.models.personas_models import Personas
 from django.db.models import Q
 from almacen.choices.estados_articulo_choices import estados_articulo_CHOICES
 from almacen.choices.magnitudes_choices import magnitudes_CHOICES

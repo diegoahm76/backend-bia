@@ -10,7 +10,7 @@ from transversal.serializers.entidades_serializers import SucursalesEmpresasSeri
 
 from transversal.models.entidades_models import SucursalesEmpresas
 
-from seguridad.models import Personas
+from transversal.models.personas_models import Personas
 
 
 class GetSucursalesEmpresasView(generics.ListAPIView):

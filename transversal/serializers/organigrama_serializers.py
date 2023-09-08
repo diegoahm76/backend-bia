@@ -13,7 +13,8 @@ from transversal.models.organigrama_models import (
     TemporalPersonasUnidad,
     CambiosUnidadMasivos
 )
-from seguridad.models import User, Personas
+from seguridad.models import User
+from transversal.models.personas_models import Personas
 
 class NivelesGetSerializer(serializers.ModelSerializer):
     class Meta:

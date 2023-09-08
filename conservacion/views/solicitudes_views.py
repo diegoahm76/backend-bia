@@ -46,11 +46,13 @@ from almacen.models.bienes_models import (
 from transversal.models.organigrama_models import (
     UnidadesOrganizacionales,
 )
-from seguridad.serializers.personas_serializers import (
+from transversal.serializers.personas_serializers import (
     PersonasSerializer
 )
+from transversal.models.personas_models import (
+    Personas
+)
 from seguridad.models import (
-    Personas,
     User
 )
 

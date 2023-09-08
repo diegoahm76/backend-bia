@@ -1,21 +1,22 @@
 from django.db import models
-from seguridad.choices.municipios_choices import municipios_CHOICES
+from transversal.choices.municipios_choices import municipios_CHOICES
 from conservacion.choices.tipo_vivero_choices import tipo_vivero_CHOICES
 from conservacion.choices.origen_recursos_vivero_choices import origen_recursos_vivero_CHOICES
-from seguridad.models import (
+from transversal.models.base_models import Municipio
+from transversal.models.personas_models import (
     Personas,
 )
 class Vivero(models.Model):
-    id_vivero = models.AutoField(primary_key=True, editable=False, db_column='T150IdVivero')
+    id_vivero = models.SmallAutoField(primary_key=True, editable=False, db_column='T150IdVivero')
     nombre = models.CharField(max_length=30, unique=True, db_column='T150nombre')
-    cod_municipio = models.CharField(max_length=5, choices=municipios_CHOICES, db_column='T150Cod_Municipio')
+    cod_municipio = models.ForeignKey(Municipio, on_delete=models.CASCADE, db_column='T150Cod_Municipio')
     direccion = models.CharField(max_length=255, db_column='T150direccion')
-    coordenadas_lat = models.DecimalField(max_digits=18,decimal_places=13, db_column='T150coordenadasLat')
-    coordenadas_lon = models.DecimalField(max_digits=18,decimal_places=13, db_column='T150coordenadasLon')
-    area_mt2 = models.PositiveIntegerField(db_column='T150areaMt2')
-    area_propagacion_mt2 = models.PositiveIntegerField(db_column='T150areaPropagacionMt2')
+    coordenadas_lat = models.DecimalField(max_digits=18, decimal_places=13, db_column='T150coordenadasLat')
+    coordenadas_lon = models.DecimalField(max_digits=18, decimal_places=13, db_column='T150coordenadasLon')
+    area_mt2 = models.IntegerField(db_column='T150areaMt2')
+    area_propagacion_mt2 = models.IntegerField(db_column='T150areaPropagacionMt2')
     tiene_area_produccion = models.BooleanField(default=False, db_column='T150tieneAreaProduccion')
-    tiene_areas_pep_sustrato = models.BooleanField(default=False, db_column='T150tieneAreasPrepSustrato')
+    tiene_areas_pep_sustrato = models.BooleanField(default=False, db_column='T150tieneAreaPrepSustrato')
     tiene_area_embolsado = models.BooleanField(default=False, db_column='T150tieneAreaEmbolsado')
     cod_tipo_vivero = models.CharField(max_length=2, choices=tipo_vivero_CHOICES, db_column='T150codTipoVivero')
     id_viverista_actual = models.ForeignKey(Personas, related_name='id_persona_viverista_actual', on_delete=models.SET_NULL, null=True, blank=True, db_column='T150Id_ViveristaActual')
@@ -34,7 +35,7 @@ class Vivero(models.Model):
     fecha_inicio_cuarentena = models.DateTimeField(null=True, blank=True, db_column='T150fechaInicioCuarentena')
     id_persona_cuarentena = models.ForeignKey(Personas, related_name='persona_cuarentena_vivero', on_delete=models.SET_NULL, null=True, blank=True, db_column='T150Id_PersonaCuarentena')
     justificacion_cuarentena = models.CharField(max_length=255, null=True, blank=True, db_column='T150justificacionCuarentena')
-    ruta_archivo_creacion = models.FileField(db_column='T150rutaArchivoCreación')
+    ruta_archivo_creacion = models.FileField(db_column='T150rutaArchivoCreacion', upload_to='conservacion/viveros/')
     activo = models.BooleanField(default=True, db_column='T150activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T150itemYaUsado')
     
@@ -47,12 +48,12 @@ class Vivero(models.Model):
         verbose_name_plural = 'Viveros'
 
 class HistorialAperturaViveros(models.Model):
-    id_historial_apertura_vivero = models.AutoField(primary_key=True,db_column='T151IdHistorialAperturaVivero')
-    id_vivero=models.ForeignKey(Vivero,on_delete=models.CASCADE, db_column='T151Id_Vivero')
+    id_historial_apertura_vivero = models.AutoField(primary_key=True, db_column='T151IdHistorialAperturaVivero')
+    id_vivero=models.ForeignKey(Vivero, on_delete=models.CASCADE, db_column='T151Id_Vivero')
     fecha_apertura_anterior=models.DateTimeField(db_column='T151fechaAperturaAnterior')
     fecha_cierre_correspondiente=models.DateTimeField(db_column='T151fechaCierreCorrespondiente')
-    id_persona_apertura_anterior=models.ForeignKey(Personas, on_delete=models.CASCADE,db_column='T151Id_PersonaAperturaAnterior',related_name='persona_apertura_anterior')
-    id_persona_cierre_correspondiente=models.ForeignKey(Personas, on_delete=models.CASCADE,db_column='T151Id_PersonaCierreCorrespondiente',related_name='persona_cierre_correspondiente')
+    id_persona_apertura_anterior=models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T151Id_PersonaAperturaAnterior', related_name='persona_apertura_anterior')
+    id_persona_cierre_correspondiente=models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T151Id_PersonaCierreCorrespondiente', related_name='persona_cierre_correspondiente')
     justificacion_apertura_anterior=models.CharField(max_length=255, db_column='T151justificacionAperturaAnterior')
     justificacion_cierre_correspondiente=models.CharField(max_length=255, db_column='T151justificacionCierreCorrespondiente')
 
@@ -65,14 +66,14 @@ class HistorialAperturaViveros(models.Model):
         verbose_name_plural = 'Historial apertura viveros'
 
 class HistorialCuarentenaViveros(models.Model):
-    id_historial_cuarentena_vivero=models.AutoField(primary_key=True,db_column='T152IdHistorialCuarentenaVivero')
-    id_vivero=models.ForeignKey(Vivero,on_delete=models.CASCADE,db_column='T152Id_Vivero')
-    fecha_inicio_cuarentena=models.DateTimeField(auto_now=True,db_column='T152fechaInicioCuarentena')
-    id_persona_inicia_cuarentena=models.ForeignKey(Personas,on_delete=models.CASCADE,db_column='T152Id_PersonaIniciaCuarentena',related_name='persona_inicia_cuarentena')
-    justificacion_inicio_cuarentena=models.CharField(max_length=255,db_column='T152justificacionInicioCuarentena')
+    id_historial_cuarentena_vivero=models.AutoField(primary_key=True, db_column='T152IdHistorialCuarentenaVivero')
+    id_vivero=models.ForeignKey(Vivero, on_delete=models.CASCADE, db_column='T152Id_Vivero')
+    fecha_inicio_cuarentena=models.DateTimeField(auto_now=True, db_column='T152fechaInicioCuarentena')
+    id_persona_inicia_cuarentena=models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T152Id_PersonaIniciaCuarentena', related_name='persona_inicia_cuarentena')
+    justificacion_inicio_cuarentena=models.CharField(max_length=255, db_column='T152justificacionInicioCuarentena')
     fecha_fin_cuarentena=models.DateTimeField(db_column='T152fechaFinCuarentena')
-    id_persona_finaliza_cuarentena=models.ForeignKey(Personas,on_delete=models.CASCADE,db_column='T152Id_PersonaFinalizaCuarentena',related_name='persona_finaliza_cuarentena')
-    justifiacion_fin_cuarentena=models.CharField(max_length=255,db_column='T152justificacionFinCuarentena')
+    id_persona_finaliza_cuarentena=models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T152Id_PersonaFinalizaCuarentena', related_name='persona_finaliza_cuarentena')
+    justifiacion_fin_cuarentena=models.CharField(max_length=255, db_column='T152justificacionFinCuarentena')
     
     def __str__(self):
         return str(self.id_historial_cuarentena_vivero)
@@ -85,14 +86,14 @@ class HistorialCuarentenaViveros(models.Model):
 
 class HistoricoResponsableVivero(models.Model):
     
-    id_histo_responsable_vivero = models.AutoField(primary_key=True,editable=False,db_column='T177IdHistoResponsable_Vivero')
-    id_vivero = models.ForeignKey(Vivero,on_delete=models.CASCADE,db_column='T177Id_Vivero')
-    id_persona = models.ForeignKey(Personas,on_delete=models.CASCADE,db_column='T177Id_Persona',related_name='id_persona_historico_responsable')
+    id_histo_responsable_vivero = models.AutoField(primary_key=True, editable=False, db_column='T177IdHistoResponsable_Vivero')
+    id_vivero = models.ForeignKey(Vivero, on_delete=models.CASCADE, db_column='T177Id_Vivero')
+    id_persona = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T177Id_Persona', related_name='id_persona_historico_responsable')
     consec_asignacion = models.IntegerField(db_column='T177consecAsignacion')
     fecha_inicio_periodo = models.DateTimeField(db_column='T177fechaInicioPeriodo')
     fecha_fin_periodo = models.DateTimeField(db_column='T177fechaFinPeriodo')
-    observaciones = models.CharField(max_length=255,db_column='T177observaciones')
-    id_persona_cambia = models.ForeignKey(Personas,on_delete=models.CASCADE,db_column='T177Id_PersonaCambia',related_name='id_persona_cambia_historico_responsable')
+    observaciones = models.CharField(max_length=255, db_column='T177observaciones')
+    id_persona_cambia = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T177Id_PersonaCambia', related_name='id_persona_cambia_historico_responsable')
     
     def __str__(self):
         return str(self.id_histo_responsable_vivero)

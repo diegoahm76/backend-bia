@@ -19,7 +19,8 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.db.models import Q
 from django.contrib.sites.shortcuts import get_current_site
-from seguridad.serializers.personas_serializers import PersonasFilterSerializer, PersonasSerializer
+from transversal.models.base_models import Shortener
+from transversal.serializers.personas_serializers import PersonasFilterSerializer, PersonasSerializer
 from seguridad.utils import Util
 from django.contrib.auth.hashers import make_password
 from rest_framework import status
@@ -40,6 +41,8 @@ import copy, re, pytz
 from django.http import HttpResponsePermanentRedirect
 from django.contrib.sessions.models import Session
 from rest_framework.exceptions import NotFound,ValidationError, PermissionDenied
+
+from transversal.models.personas_models import Personas
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -130,7 +133,7 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                     
                     persona = Personas.objects.get(user=user)
                     
-                    if persona.id_cargo is None or persona.fecha_a_finalizar_cargo_actual <= datetime.now():
+                    if persona.id_cargo is None or persona.fecha_a_finalizar_cargo_actual <= datetime.now().date():
                         raise PermissionDenied('La persona propietaria del usuario no tiene cargo actual o la fecha final del cargo ha vencido')
                     
                     if persona.tipo_persona == 'J':
@@ -144,7 +147,7 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                 if user.tipo_usuario == 'I' and str(user.is_active).lower() != str(request.data['is_active']).lower():
                     # user.is_active = False
                     if not user.is_active:
-                        if user.persona.id_cargo is None or user.persona.fecha_a_finalizar_cargo_actual <= datetime.now():
+                        if user.persona.id_cargo is None or user.persona.fecha_a_finalizar_cargo_actual <= datetime.now().date():
                             raise PermissionDenied('La persona propietaria del usuario no tiene cargo actual o la fecha final del cargo ha vencido, por lo cual no puede activar su usuario')
                         
                     if 'justificacion_activacion' not in request.data or not request.data['justificacion_activacion']:
@@ -226,10 +229,10 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                 # HISTORICO 
                 usuario_afectado = User.objects.get(id_usuario=id_usuario_afectado)
                 usuario_operador = User.objects.get(id_usuario=id_usuario_operador)
-                cod_operacion = ""
+                cod_operaciones = OperacionesSobreUsuario.objects.all()
 
                 if previous_user.tipo_usuario == 'E' and user_actualizado.tipo_usuario == 'I' and not previous_user.is_active:
-                    cod_operacion = "A"
+                    cod_operacion = cod_operaciones.filter(cod_operacion='A').first()
                     justificacion = "Activación automática por cambio de usuario externo a usuario interno"
                     
                     subject = "Verificación exitosa"
@@ -246,7 +249,7 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                     )
                     
                 elif user_actualizado.is_active != previous_user.is_active:
-                    cod_operacion = "A" if user_actualizado.is_active else "I"
+                    cod_operacion = cod_operaciones.filter(cod_operacion='A').first() if user_actualizado.is_active else cod_operaciones.filter(cod_operacion='I').first()
                     
                     if user_actualizado.is_active:
                         subject = "Verificación exitosa"
@@ -263,7 +266,7 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                     )
                     
                 if user_actualizado.is_blocked != previous_user.is_blocked:
-                    cod_operacion = "B" if user_actualizado.is_blocked else "D"
+                    cod_operacion = cod_operaciones.filter(cod_operacion='B').first() if user_actualizado.is_blocked else cod_operaciones.filter(cod_operacion='D').first()
                     
                     HistoricoActivacion.objects.create(
                         id_usuario_afectado = usuario_afectado,
@@ -544,7 +547,7 @@ class RegisterView(generics.CreateAPIView):
                 raise PermissionDenied('La persona no tiene un cargo asociado')
             
             # VALIDAR QUE ESTE VIGENTE EL CARGO
-            if not persona.fecha_a_finalizar_cargo_actual or persona.fecha_a_finalizar_cargo_actual <= datetime.now():
+            if not persona.fecha_a_finalizar_cargo_actual or persona.fecha_a_finalizar_cargo_actual <= datetime.now().date():
                 raise PermissionDenied('La fecha de finalización del cargo actual no es vigente')
         
         valores_creados_detalles = []
@@ -703,11 +706,13 @@ class Verify(views.APIView):
                 user.activated_at = datetime.now()
                 user.save()
                 
+                cod_operacion_instance = OperacionesSobreUsuario.objects.filter(cod_operacion='A').first()
+                
                 HistoricoActivacion.objects.create(
                     id_usuario_afectado=user,
                     justificacion='Activación Inicial del Usuario',
                     usuario_operador=user,
-                    cod_operacion='A'
+                    cod_operacion=cod_operacion_instance
                 )
                 
                 subject = "Verificación exitosa"
@@ -858,10 +863,12 @@ class LoginApiView(generics.CreateAPIView):
                             if login_error.contador == 3:
                                 user.is_blocked = True
                                 user.save()
+                                
+                                cod_operacion_instance = OperacionesSobreUsuario.objects.filter(cod_operacion='B').first()
                         
                                 HistoricoActivacion.objects.create(
                                     id_usuario_afectado = user,
-                                    cod_operacion = 'B',
+                                    cod_operacion = cod_operacion_instance,
                                     fecha_operacion = datetime.now(),
                                     justificacion = 'Usuario bloqueado por exceder los intentos incorrectos en el login',
                                     usuario_operador = user,
@@ -1046,11 +1053,13 @@ class SetNewPasswordApiView(generics.GenericAPIView):
             user.is_active = True
             user.activated_at = datetime.now()
             
+            cod_operacion_instance = OperacionesSobreUsuario.objects.filter(cod_operacion='A').first()
+            
             HistoricoActivacion.objects.create(
                 id_usuario_afectado=user,
                 justificacion='Activación Inicial del Usuario',
                 usuario_operador=user,
-                cod_operacion='A'
+                cod_operacion=cod_operacion_instance
             )
             
             subject = "Verificación exitosa"
@@ -1182,11 +1191,14 @@ class UsuarioInternoAExterno(generics.UpdateAPIView):
             usuario.tipo_usuario = 'E'
             usuario.is_active = True
             usuario.save()
+            
+            cod_operacion_instance = OperacionesSobreUsuario.objects.filter(cod_operacion='A').first()
+            
             HistoricoActivacion.objects.create(
                 id_usuario_afectado=usuario,
                 justificacion='Usuario activado desde el portal, con cambio de INTERNO a EXTERNO',
                 usuario_operador=user_loggedin,
-                cod_operacion='A'
+                cod_operacion=cod_operacion_instance
             )
 
             subject = "Cambio a usuario externo"

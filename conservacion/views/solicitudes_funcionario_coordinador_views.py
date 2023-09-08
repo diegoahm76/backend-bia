@@ -31,22 +31,6 @@ from conservacion.serializers.solicitudes_serializers import (
     GetSolicitudesViverosSerializer,
     ListarSolicitudIDSerializer,
 )
-from conservacion.models.viveros_models import (
-    Vivero
-)
-from almacen.models.bienes_models import (
-    CatalogoBienes
-)
-from transversal.models.organigrama_models import (
-    UnidadesOrganizacionales,
-)
-from seguridad.serializers.personas_serializers import (
-    PersonasSerializer
-)
-from seguridad.models import (
-    Personas,
-    User
-)
 
 class ListSolicitudesFuncionarioView(generics.ListAPIView):
     serializer_class = GetSolicitudesViverosFuncionarioSerializer

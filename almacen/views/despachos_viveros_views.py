@@ -3,7 +3,7 @@ from almacen.serializers.bienes_serializers import CatalogoBienesSerializer
 from almacen.serializers.despachos_serializers import SerializersDespachoConsumo, SerializersItemDespachoConsumo, SerializersSolicitudesConsumibles, SerializersItemsSolicitudConsumible, SearchBienInventarioSerializer
 from rest_framework import generics,status
 from rest_framework.response import Response
-from seguridad.models import Personas, User
+from transversal.models.personas_models import Personas
 from rest_framework.decorators import api_view
 from seguridad.utils import Util
 from almacen.utils import UtilAlmacen
@@ -27,11 +27,6 @@ from almacen.models.solicitudes_models import (
     SolicitudesConsumibles, 
     ItemsSolicitudConsumible
 )
-from seguridad.models import (
-    Personas,
-    User,
-    ClasesTerceroPersona
-)
 from transversal.models.organigrama_models import (
     UnidadesOrganizacionales,
     NivelesOrganigrama
@@ -47,11 +42,6 @@ from almacen.models.generics_models import (
 from almacen.models.inventario_models import (
     Inventario
 )
-from almacen.serializers.solicitudes_serialiers import ( 
-    CrearSolicitudesPostSerializer,
-    CrearItemsSolicitudConsumiblePostSerializer
-    )
-from seguridad.serializers.personas_serializers import PersonasSerializer
 
 class CreateDespachoMaestroVivero(generics.UpdateAPIView):
     serializer_class = SerializersDespachoViverosConsumo

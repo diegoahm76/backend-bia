@@ -2,7 +2,7 @@ from django.db.models.signals import pre_save
 from django.db.models import Q
 from django.dispatch import receiver
 # from gestion_documental.models.tca_models import PermisosCatSeriesUnidadOrgTCA
-from seguridad.models import Cargos
+from transversal.models.base_models import Cargos
 
 # @receiver(pre_save, sender=PermisosCatSeriesUnidadOrgTCA)
 # def create_update_cargos_unidad(sender, instance, **kwargs):

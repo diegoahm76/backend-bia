@@ -7,8 +7,6 @@ from transversal.models.notificaciones_models import (
     RespuestaNotificacion
 )
 
-from seguridad.models import Personas
-
 from recaudo.models.liquidaciones_models import Deudores
 
 

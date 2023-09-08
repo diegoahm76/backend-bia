@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib import auth
-from seguridad.models import HistoricoCargosUndOrgPersona, Personas
+from transversal.models.base_models import HistoricoCargosUndOrgPersona
+from transversal.models.personas_models import Personas
 
 class VinculacionColaboradorSerializer(serializers.ModelSerializer):
     class Meta:

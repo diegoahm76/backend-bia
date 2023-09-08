@@ -12,11 +12,11 @@ class ConfigTiposRadicadoAgno(models.Model):
     consecutivo_inicial = models.IntegerField(null=True,db_column='T235consecutivoInicial')
     cantidad_digitos = models.SmallIntegerField(null=True,db_column='T235cantidadDigitos')
     implementar = models.BooleanField(db_column='T235implementar')
-    id_persona_config_implementacion = models.ForeignKey('seguridad.Personas',null=True, on_delete=models.CASCADE, db_column='T235Id_PersonaConfigImplementacion',related_name='T235Id_PersonaConfigImplementacion')
+    id_persona_config_implementacion = models.ForeignKey('transversal.Personas',null=True, on_delete=models.CASCADE, db_column='T235Id_PersonaConfigImplementacion',related_name='T235Id_PersonaConfigImplementacion')
     fecha_inicial_config_implementacion = models.DateTimeField(null=True,db_column='T235fechaInicialConfigImplementacion')
     consecutivo_actual = models.IntegerField(null=True,db_column='T235consecutivoActual')
     fecha_consecutivo_actual = models.DateTimeField(null=True,db_column='T235fechaConsecutivoActual')
-    id_persona_consecutivo_actual = models.ForeignKey('seguridad.Personas',null=True, on_delete=models.CASCADE, db_column='T235Id_PersonaConsecutivoActual',related_name='FK2_T235ConfigTiposRadicadoAgno')
+    id_persona_consecutivo_actual = models.ForeignKey('transversal.Personas',null=True, on_delete=models.CASCADE, db_column='T235Id_PersonaConsecutivoActual',related_name='FK2_T235ConfigTiposRadicadoAgno')
 
     class Meta:
         db_table = 'T235ConfigTiposRadicadoAgno'

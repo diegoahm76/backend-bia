@@ -20,7 +20,7 @@ class FacilidadesPago(models.Model):
     fecha_abono = models.DateField(db_column='T426fechaAbono')
     documento_no_enajenacion = models.FileField(db_column='T426documentoNoEnajenacion')
     observaciones = models.TextField(db_column='T426observaciones')
-    id_funcionario = models.ForeignKey('seguridad.Personas', on_delete=models.CASCADE, db_column='T426Id_Funcionario')
+    id_funcionario = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T426Id_Funcionario')
     notificaciones = models.BooleanField(db_column='T426notificaciones')
     numero_radicacion = models.CharField(max_length=255, db_column='T426numeroRadicacion')
 
@@ -79,7 +79,7 @@ class GarantiasFacilidad(models.Model):
 
 class RespuestaSolicitud(models.Model):
     id = models.AutoField(primary_key=True, db_column='T432idRespuestaSolicitud')
-    id_funcionario = models.ForeignKey('seguridad.Personas', on_delete=models.CASCADE, db_column='T432Id_Funcionario')
+    id_funcionario = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T432Id_Funcionario')
     id_facilidad_pago = models.ForeignKey(FacilidadesPago, on_delete=models.CASCADE, db_column='T432Id_FacilidadPago')
     estado = models.CharField(max_length=255, db_column='T432estado')
     aprobacion = models.BooleanField(db_column='T432aprobacion')

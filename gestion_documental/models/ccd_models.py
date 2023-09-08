@@ -4,15 +4,15 @@ from django.db.models.constraints import UniqueConstraint
 from transversal.models.organigrama_models import Organigramas, UnidadesOrganizacionales
 
 class CuadrosClasificacionDocumental(models.Model):
-    id_ccd = models.AutoField(primary_key=True, editable=False, db_column='T206IdCCD')
+    id_ccd = models.SmallAutoField(primary_key=True, editable=False, db_column='T206IdCCD')
     id_organigrama = models.ForeignKey(Organigramas, on_delete=models.CASCADE, db_column='T206Id_Organigrama')
     version = models.CharField(max_length=10, unique=True, db_column='T206version')
     nombre = models.CharField(max_length=50, unique=True, db_column='T206nombre')
     fecha_terminado = models.DateTimeField(null=True, blank=True, db_column='T206fechaTerminado')
     fecha_puesta_produccion = models.DateTimeField(null=True, blank=True, db_column='T206fechaPuestaEnProduccion')
     fecha_retiro_produccion = models.DateTimeField(null=True, blank=True, db_column='T206fechaRetiroDeProduccion')
-    justificacion = models.CharField(max_length=255,null=True, blank=True, db_column='T206justificacionNuevaVersion')
-    ruta_soporte = models.FileField(max_length=255,null=True, blank=True, db_column='T206rutaSoporte')
+    justificacion = models.CharField(max_length=255, null=True, blank=True, db_column='T206justificacionNuevaVersion')
+    ruta_soporte = models.FileField(max_length=255, upload_to='gestion_documental/ccd/', null=True, blank=True, db_column='T206rutaSoporte')
     actual = models.BooleanField(default=False, db_column='T206actual')
     valor_aumento_serie = models.SmallIntegerField(db_column='T206valorAumentoSerie')
     valor_aumento_subserie = models.SmallIntegerField(db_column='T206valorAumentoSubserie')
@@ -51,7 +51,7 @@ class SubseriesDoc(models.Model):
         return str(self.nombre)
 
     class Meta:
-        db_table = 'T204Subseries_Series_CCD'
+        db_table = 'T204Subseries_Serie_CCD'
         verbose_name = 'Subserie'
         verbose_name_plural = 'Subseries'
         unique_together = [('id_serie_doc','nombre'), ('id_serie_doc','codigo')]      
@@ -59,7 +59,7 @@ class SubseriesDoc(models.Model):
 
 class CatalogosSeries(models.Model):
     id_catalogo_serie = models.AutoField(primary_key=True, editable=False, db_column='T205IdCatalogoSerie_CCD')
-    id_serie_doc = models.ForeignKey(SeriesDoc,on_delete=models.CASCADE, db_column='T205Id_SerieDoc_CCD')
+    id_serie_doc = models.ForeignKey(SeriesDoc, on_delete=models.CASCADE, db_column='T205Id_SerieDoc_CCD')
     id_subserie_doc = models.ForeignKey(SubseriesDoc, on_delete=models.SET_NULL, null=True, blank=True, db_column='T205Id_Subserie_Serie_CCD')
 
     def __str__(self):
@@ -79,7 +79,7 @@ class CatalogosSeries(models.Model):
 
 class CatalogosSeriesUnidad(models.Model):
     id_cat_serie_und = models.AutoField(primary_key=True, editable=False, db_column='T224IdCatSerie_UndOrg_CCD')
-    id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE,db_column='T224Id_UnidadOrganizacional ')
+    id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T224Id_UnidadOrganizacional')
     id_catalogo_serie = models.ForeignKey(CatalogosSeries, on_delete=models.CASCADE, db_column='T224Id_CatalogoSerie_CCD')
 
     def __str__(self):

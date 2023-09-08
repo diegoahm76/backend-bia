@@ -3,7 +3,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 
 # Model
-from seguridad.models import Shortener
+from transversal.models.base_models import Shortener
 
 # Create your views here.
     

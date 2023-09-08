@@ -35,8 +35,9 @@ from recaudo.models.procesos_models import Bienes
 from recaudo.models.base_models import TiposBien, TipoActuacion
 from recaudo.models.garantias_models import RolesGarantias
 from recaudo.models.liquidaciones_models import Deudores
+from transversal.models.personas_models import Personas
+from transversal.models.base_models import ClasesTerceroPersona
 from recaudo.models.cobros_models import Cartera
-from seguridad.models import Personas, ClasesTerceroPersona
 from datetime import timedelta, date
 from django.db.models.functions import Concat
 from django.db.models import Q, Value as V

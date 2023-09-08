@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from seguridad.models import (
+from transversal.models.base_models import (
     Municipio,
     Departamento,
     Paises
