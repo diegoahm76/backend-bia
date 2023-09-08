@@ -145,7 +145,7 @@ class GraficaView(generics.ListAPIView):
         nuevasEtapas = []
         nuevoFlujo = []
         for item in querysetEtapas:
-            nuevasEtapas.append({'id': item.pk, 'data': {'etapa': item.etapa, 'descripcion': item.descripcion}})
+            nuevasEtapas.append({'id': item.pk, 'data': {'id': item.pk, 'etapa': item.etapa, 'descripcion': item.descripcion}})
         for item in querysetFlujos:
             data = {'fecha_flujo': item.fecha_flujo, 'descripcion': item.descripcion, 'requisitos': item.requisitos}
             nuevoFlujo.append({'id': item.pk, 'source': item.id_etapa_origen.pk, 'target': item.id_etapa_destino.pk, 'data': data})
@@ -302,6 +302,14 @@ class CategoriaAtributoView(generics.ListAPIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def put(self, request, pk):
+        categoria = CategoriaAtributo.objects.filter(pk=pk).get()
+        serializer = CategoriaAtributoSerializer(categoria, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class EtapasFiltradoView(generics.ListAPIView):
     #permission_classes = [IsAuthenticated]
@@ -330,6 +338,18 @@ class EtapasFiltradoView(generics.ListAPIView):
                 if etapa == item['etapa']:
                     etapa_general = EtapasProcesoSerializer(item['etapa_general']).data
                     categorias.append(CategoriaAtributoSerializer(item['categoria_general']).data)
+
+            categorias_vistas = set()
+
+            nueva_lista = []
+
+            for elemento in categorias:
+                categoria = elemento["categoria"]
+
+                if categoria not in categorias_vistas:
+                    nueva_lista.append(elemento)
+                    categorias_vistas.add(categoria)
+            categorias = nueva_lista
             etapasGeneral.append(
                 {
                     'etapa': etapa_general,
@@ -338,3 +358,51 @@ class EtapasFiltradoView(generics.ListAPIView):
             )
 
         return Response({'success': True, 'data': etapasGeneral}, status=status.HTTP_200_OK)
+
+
+class CategoriasEtapasFiltradoView(generics.ListAPIView):
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        etapaGeneral = AtributosEtapas.objects.filter(pk=pk)
+
+        if len(etapaGeneral):
+            etapaG = etapaGeneral.get()
+            etapas = AtributosEtapas.objects.all()
+            etapasGeneral = []
+            etapasLista = []
+            etapasNombres = []
+
+            for etapa in etapas:
+                etapasNombres.append(etapa.id_etapa.etapa)
+                etapasLista.append(
+                    {
+                        'etapa_general': etapa.id_etapa,
+                        'etapa': etapa.id_etapa.etapa,
+                        'categoria_general': etapa.id_categoria,
+                        'categoria': etapa.id_categoria.categoria
+                    }
+                )
+
+            for etapa in etapasNombres:
+                categorias = []
+                for item in etapasLista:
+                    if etapa == etapaG.id_etapa.etapa:
+                        categorias.append(CategoriaAtributoSerializer(item['categoria_general']).data)
+                if len(categorias) > 0:
+                    categorias_vistas = set()
+
+                    nueva_lista = []
+
+                    for elemento in categorias:
+                        categoria = elemento["categoria"]
+
+                        if categoria not in categorias_vistas:
+                            nueva_lista.append(elemento)
+                            categorias_vistas.add(categoria)
+
+                    etapasGeneral = nueva_lista
+
+            return Response({'success': True, 'data': etapasGeneral}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success': False, 'data': 'No existe la etapa con el id enviado'}, status=status.HTTP_200_OK)
