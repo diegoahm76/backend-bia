@@ -201,7 +201,24 @@ class ConfigTiposRadicadoAgnoCreate(generics.CreateAPIView):
             print(data_in)
             serializer = ConfigTiposRadicadoAgnoCreateSerializer(data=data_in)
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            instance=serializer.save()
+
+            id_modulo=0
+            if instance.agno_radicado==age:
+                id_modulo=143
+            elif instance.agno_radicado==age+1:
+                id_modulo=144
+
+            descripcion = {"AgnoRadicado":instance.agno_radicado,"CodTipoRadicado":instance.cod_tipo_radicado}
+            auditoria_data = {
+            "id_usuario" : data_in['user'],
+            "id_modulo" : id_modulo,
+            "cod_permiso": "CR",
+            "subsistema": 'GEST',
+            "dirip": data_in['direccion'],
+            "descripcion": descripcion, 
+            }
+            Util.save_auditoria(auditoria_data)
 
             return Response({
                 'success': True,
@@ -217,6 +234,7 @@ class ConfigTiposRadicadoAgnoCreate(generics.CreateAPIView):
         data_in = request.data
         usuario = request.user.id_usuario
         data_in['user'] = usuario #id_persona_config_implementacion
+        data_in['direccion']=Util.get_client_ip(request)
         #data_in['fecha_inicial_config_implementacion'] = timezone.now()
         response = self.crear_config_tipos_radicado_agno(data_in)
         return response
