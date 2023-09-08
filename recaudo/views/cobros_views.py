@@ -14,6 +14,7 @@ class CarteraView(generics.ListAPIView):
     queryset = Cartera.objects.all()
     serializer_class = CarteraGeneralSerializer
     pagination_class = PageNumberPagination
+    # permission_classes = [IsAuthenticated]
 
     def get(self, request):
         queryset = self.get_queryset()
