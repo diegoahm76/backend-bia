@@ -1526,7 +1526,7 @@ class ProcederActualizacionUnidad(generics.UpdateAPIView):
                         fecha_inicial_historico = persona.fecha_asignacion_unidad,
                         fecha_final_historico = fecha_actual,
                         observaciones_vinculni_cargo = None,
-                        justificacion_cambio_und_org = f'Cambio masivo de unidad organizacional por {nombre_de_usuario} el {fecha_actual.strftime("%Y-%m-%d %H:%M:%S")} mediante proceso del sistema de Traslado Masivo de Unidad por Entidad',
+                        justificacion_cambio_und_org = f'Traslado Masivo de Unidad por Entidad por {nombre_de_usuario} el {fecha_actual.strftime("%Y-%m-%d %H:%M:%S")}',
                         desvinculado = False
                     )
                     historico.save()
