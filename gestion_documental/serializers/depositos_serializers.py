@@ -82,7 +82,7 @@ class DepositoUpdateSerializer(serializers.ModelSerializer):
 #LISTAR_DEPOSITOS_POR_ID
 class DepositoGetSerializer(serializers.ModelSerializer):
     nombre_sucursal = serializers.ReadOnlyField(source='id_sucursal_entidad.descripcion_sucursal', default=None)
-    municipio=serializers.ReadOnlyField(source='id_sucursal_entidad.municipio', default=None)
+    municipio=serializers.ReadOnlyField(source='id_sucursal_entidad.municipio.cod_municipio', default=None)
     class Meta:
         model =  Deposito
         fields = ['id_deposito','nombre_deposito','identificacion_por_entidad','orden_ubicacion_por_entidad','direccion_deposito','cod_municipio_nal','cod_pais_exterior','id_sucursal_entidad','nombre_sucursal','municipio','activo']
