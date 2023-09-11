@@ -1481,7 +1481,7 @@ class GuardarActualizacionUnidadOrganizacional(generics.UpdateAPIView):
 
             if temporal_persona:
                 if temporal_persona.id_unidad_org_nueva != nueva_unidad.id_unidad_organizacional:
-                    temporal_persona.id_unidad_org_nueva = nueva_unidad.id_unidad_organizacional
+                    temporal_persona.id_unidad_org_nueva = nueva_unidad
                     temporal_persona.save()
             else:
                 unidad_anterior = persona.id_unidad_organizacional_actual
