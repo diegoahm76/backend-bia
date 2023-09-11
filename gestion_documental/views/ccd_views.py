@@ -911,3 +911,9 @@ class BusquedaCCD(generics.ListAPIView):
 #Permisos sobre Series de Expedientes de los CCD
 
 
+
+# HOMOLOGACIONES DE CCD
+
+
+
+
