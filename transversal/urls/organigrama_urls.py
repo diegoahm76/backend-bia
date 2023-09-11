@@ -5,7 +5,7 @@ urlpatterns = [
     #ORGANIGRAMA
     path('create/', views.CreateOrgChart.as_view(),name="crear-organigrama"),
     path('get/', views.GetOrganigrama.as_view(), name='get-organigrama'),
-    path('get/<int:id_organigrama>', views.GetOrganigramaById.as_view(), name='get-organigrama-id'),
+    path('get/<int:id_organigrama>/', views.GetOrganigramaById.as_view(), name='get-organigrama-id'),
     path('get-terminados/', views.GetOrganigramasTerminados.as_view(), name='get-terminados-organigrama'),
     path('update/<str:id_organigrama>/', views.UpdateOrganigrama.as_view(), name='update-organigrama'),
     path('finalizar/<str:pk>/', views.FinalizarOrganigrama.as_view(), name='finalizar-organigrama'),

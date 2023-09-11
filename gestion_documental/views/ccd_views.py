@@ -912,7 +912,7 @@ class BusquedaCCD(generics.ListAPIView):
 
 
 
-# HOMOLOGACIONES DE CCD
+# HOMOLOGACIONES DE CCD - ENTREGA 55
 
 
 
