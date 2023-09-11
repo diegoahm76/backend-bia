@@ -84,6 +84,7 @@ urlpatterns = [
     path('api/gestor/expedientes-archivos/',include('gestion_documental.urls.expedientes_url')),
     path('api/gestor/adminitrador_radicados/',include('gestion_documental.urls.tipos_radicados_consecutivos_url')),
     path('api/gestor/pqr/',include('gestion_documental.urls.pqr_urls')),
+    path('api/gestor/encuestas/',include('gestion_documental.urls.encuentas_urls')),
     path('api/gestor/permisos/',include('gestion_documental.urls.permisos_urls')),
     path('api/gestor/ctrl-acceso/',include('gestion_documental.urls.ctrl_acceso_urls')),
     
