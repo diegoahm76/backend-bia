@@ -514,8 +514,11 @@ class AlertasProgramadasCreate(generics.CreateAPIView):
             data_alerta_programada['mensaje_base_previo'] = configuracion.mensaje_base_previo
             data_alerta_programada['mensaje_base_vencido'] = configuracion.mensaje_base_vencido
             
+            if configuracion.id_modulo_destino:
+                data_alerta_programada['id_modulo_destino'] = configuracion.id_modulo_destino.id_modulo
+            else:
+                data_alerta_programada['id_modulo_destino'] = None
 
-            data_alerta_programada['id_modulo_destino'] = configuracion.id_modulo_destino.id_modulo
             data_alerta_programada['id_modulo_generador'] = configuracion.id_modulo_generador.id_modulo
             data_alerta_programada['cod_categoria_alerta'] = configuracion.cod_categoria_clase_alerta
             data_alerta_programada['tiene_implicado'] = configuracion.asignar_responsable
