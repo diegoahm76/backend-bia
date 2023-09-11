@@ -347,8 +347,11 @@ class PlanPagosCreateView(generics.CreateAPIView):
             cuota_ant = cuota_creada.id
             plan_cuotas.append(instance_cuota.serializer_class(cuota_creada).data)
             persona = Personas.objects.filter(numero_documento=facilidad_pago.id_deudor.identificacion).first()
-            mensaje = 'Estimado deudor '+ f'{facilidad_pago.id_deudor.nombres} {facilidad_pago.id_deudor.apellidos}'+' la cuota # '+str(cuota_creada.nro_cuota)+' esta por un valor a pagar: '+str(cuota_creada.monto_cuota)+' y la fecha de pago es: '+str(cuota_creada.fecha_vencimiento)
+            mensaje = '<p>'+ f'{facilidad_pago.id_deudor.nombres} {facilidad_pago.id_deudor.apellidos}'+' la cuota # '+str(cuota_creada.nro_cuota)+' esta por un valor a pagar: '+str(cuota_creada.monto_cuota)+' y la fecha de pago es: '+str(cuota_creada.fecha_vencimiento)+'</p>'
 
+            
+            
+            
             data_alerta = {
                 'cod_clase_alerta':'Rec_VPPago',
                 'dia_cumplimiento':fecha_plan.day,
@@ -356,7 +359,8 @@ class PlanPagosCreateView(generics.CreateAPIView):
                 'age_cumplimiento':fecha_plan.year,
                 'complemento_mensaje':mensaje,
                 'id_elemento_implicado':cuota_creada.id,
-                'id_persona_implicada':persona.id_persona
+                'id_persona_implicada':persona.id_persona,
+                "tiene_implicado":True
                 }
             
             response_alerta=crear_alerta.crear_alerta_programada(data_alerta)

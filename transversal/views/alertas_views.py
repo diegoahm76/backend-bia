@@ -68,7 +68,7 @@ class ConfiguracionClaseAlertaUpdate(generics.UpdateAPIView):
             #if (instance.envios_email != previus.envios_email) or (instance.nivel_prioridad != previus.nivel_prioridad) or (instance.activa != previus.activa):
             print( "cambio")
             cambios={       
-                        "envios_email": instance.envios_email,
+                        "requiere_envio_email": instance.envios_email,
                         "nivel_prioridad": instance.nivel_prioridad,
                         "activa": instance.activa
                         }
@@ -494,6 +494,8 @@ class AlertasProgramadasCreate(generics.CreateAPIView):
             data_alerta_programada['nombre_clase_alerta'] = configuracion.nombre_clase_alerta
             #data_alerta_programada['']
 
+
+
             if not 'age_cumplimiento' in data_in:
                 data_in['age_cumplimiento']=None
             fecha=FechaClaseAlerta.objects.filter(cod_clase_alerta=data_in['cod_clase_alerta'],dia_cumplimiento=data_in['dia_cumplimiento'], mes_cumplimiento=data_in['mes_cumplimiento'], age_cumplimiento=data_in['age_cumplimiento']).first()
@@ -519,7 +521,17 @@ class AlertasProgramadasCreate(generics.CreateAPIView):
             data_alerta_programada['tiene_implicado'] = configuracion.asignar_responsable
             data_alerta_programada['nombre_funcion_comple_mensaje']=configuracion.nombre_funcion_comple_mensaje
             data_alerta_programada['activa'] = configuracion.activa
-
+            
+            if 'tiene_implicado' in data_in and data_in['tiene_implicado']:
+                data_alerta_programada['tiene_implicado']=data_in['tiene_implicado']
+            
+            if 'id_persona_implicada' in data_in and data_in['id_persona_implicada']:
+                data_alerta_programada['id_persona_implicada']=data_in['id_persona_implicada']
+            
+            if 'complemento_mensaje' in data_in:
+                data_alerta_programada['complemento_mensaje']=data_in['complemento_mensaje']
+            if 'id_elemento_implicado' in data_in:
+                data_alerta_programada['id_elemento_implicado']=data_in['id_elemento_implicado']
             serializer = AlertasProgramadasPostSerializer(data=data_alerta_programada)
             serializer.is_valid(raise_exception=True)
             serializer.save()
@@ -703,6 +715,6 @@ class AlertaProyectosVigentesGet(generics.ListAPIView):
 
 def mi_vista(request):
 
-    #generar_alerta_segundo_plano()  
-    actualizar_conf_agno_sig()
+    generar_alerta_segundo_plano()  
+    #actualizar_conf_agno_sig()
     return HttpResponse("Tarea en segundo plano programada.")
