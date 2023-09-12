@@ -4,19 +4,20 @@ from recaudo.models.cobros_models import (
 from recaudo.serializers.cobros_serializers import (
     CarteraGeneralSerializer
 )
-from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.pagination import LimitOffsetPagination
 
 
 class CarteraView(generics.ListAPIView):
     queryset = Cartera.objects.all()
     serializer_class = CarteraGeneralSerializer
-    pagination_class = PageNumberPagination
-    # permission_classes = [IsAuthenticated]
+    pagination_class = LimitOffsetPagination
+    page_size = 10
 
     def get(self, request):
+        self.pagination_class.default_limit = self.page_size  # Establece el PAGE_SIZE en la configuración de paginación
+
         queryset = self.get_queryset()
         page = self.paginate_queryset(queryset)
         if page is not None:
