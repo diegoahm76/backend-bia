@@ -90,3 +90,36 @@ class CatalogosSeriesUnidad(models.Model):
         verbose_name = 'Catalogo Serie Unidad'
         verbose_name_plural = 'Catalogos Series Unidades'
         unique_together= ['id_unidad_organizacional','id_catalogo_serie']
+
+
+class UnidadesSeccionPersistenteTemporal(models.Model):
+    id_unidad_seccion_temporal = models.AutoField(primary_key=True, editable=False, db_column='T225IdUndSeccionPersiste_Tmp')
+    id_ccd_nuevo = models.ForeignKey(CuadrosClasificacionDocumental, on_delete=models.CASCADE, db_column='T225Id_CCDNuevo')
+    id_unidad_seccion_actual = models.ForeignKey(UnidadesOrganizacionales, related_name='id_unidad_seccion_actual', on_delete=models.CASCADE, db_column='T225Id_UndSeccionActual')
+    id_unidad_seccion_nueva = models.ForeignKey(UnidadesOrganizacionales, related_name='id_unidad_seccion_nueva', on_delete=models.CASCADE, db_column='T225Id_UndSeccionNueva')
+
+    class Meta:
+        db_table = 'T225UndsSeccionPersisten_Tmp'
+        verbose_name = 'Unidad Seccion Persistente Temporal'
+        verbose_name_plural = 'Unidades Seccion Persistente Temporal'
+        unique_together= ['id_ccd_nuevo','id_unidad_seccion_nueva']
+
+
+class AgrupacionesDocumentalesPersistenteTemporal(models.Model):
+    id_agrupacion_documental_temporal = models.AutoField(primary_key=True, editable=False, db_column='T226IdAgrupacionDocPersiste_Tmp')
+    id_unidad_seccion_temporal = models.ForeignKey(UnidadesSeccionPersistenteTemporal, on_delete=models.CASCADE, db_column='T226Id_UndSeccionPersiste_Tmp')
+    id_cat_serie_unidad_ccd_actual = models.ForeignKey(CatalogosSeriesUnidad, related_name='id_cat_serie_unidad_ccd_actual', on_delete=models.CASCADE, db_column='T226Id_CatSerie_UndOrg_CCDActual')
+    id_cat_serie_unidad_ccd_nueva = models.ForeignKey(CatalogosSeriesUnidad, related_name='id_cat_serie_unidad_ccd_nueva', on_delete=models.CASCADE, db_column='T226Id_CatSerie_UndOrg_CCDNueva')
+
+    class Meta:
+        db_table = 'T226AgrupacionesDocPersisten_Tmp'
+        verbose_name = 'Agrupacion Documental Persistente Temporal'
+        verbose_name_plural = 'Agrupaciones Documentales Persistente Temporal'
+
+
+
+
+
+
+
+
