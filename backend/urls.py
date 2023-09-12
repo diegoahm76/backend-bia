@@ -87,6 +87,7 @@ urlpatterns = [
     path('api/gestor/encuestas/',include('gestion_documental.urls.encuentas_urls')),
     path('api/gestor/permisos/',include('gestion_documental.urls.permisos_urls')),
     path('api/gestor/ctrl-acceso/',include('gestion_documental.urls.ctrl_acceso_urls')),
+    path('api/gestor/metadatos/',include('gestion_documental.urls.metadatos_urls')),
     
     #ALMACEN
     path('api/almacen/hoja-de-vida/', include('almacen.urls.hoja_de_vida_urls')),
