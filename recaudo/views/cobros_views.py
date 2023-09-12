@@ -16,7 +16,7 @@ class CarteraView(generics.ListAPIView):
     page_size = 10
 
     def get(self, request):
-        self.pagination_class.default_limit = self.page_size  # Establece el PAGE_SIZE en la configuración de paginación
+        self.pagination_class.default_limit = self.page_size
 
         queryset = self.get_queryset()
         page = self.paginate_queryset(queryset)
