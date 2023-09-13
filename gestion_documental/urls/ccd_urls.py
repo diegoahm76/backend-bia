@@ -37,4 +37,9 @@ urlpatterns = [
     # Asignaciones
     # path('asignar/create/<str:id_ccd>/',views.AsignarSeriesYSubseriesAUnidades.as_view(),name='asignar-series-documentales'),
     # path('asignar/get/<str:id_ccd>/',views.GetAsignaciones.as_view(),name='asignar-series-documentales')
+
+    # HOMOLOGACIONES
+    path('get-homologacion-ccd/<int:id_organigrama>/', views.CompararSeriesDocUnidadView.as_view(),name='homologacion-ccd'),
+
+
 ]
