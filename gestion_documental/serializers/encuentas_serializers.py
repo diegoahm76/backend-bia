@@ -10,11 +10,23 @@ class  EncabezadoEncuestaCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model =  EncabezadoEncuesta
         fields = '__all__'
+
+class  EncabezadoEncuestaUpdateSerializer(serializers.ModelSerializer):
+    fecha_creacion = serializers.ReadOnlyField()
+    fecha_creacion = serializers.ReadOnlyField()
+    class Meta:
+        model =  EncabezadoEncuesta
+        fields = '__all__'
 class  EncabezadoEncuestaGetSerializer(serializers.ModelSerializer):
     class Meta:
         model =  EncabezadoEncuesta
         fields = ['id_encabezado_encuesta','nombre_encuesta','fecha_creacion']
-            
+
+
+class  EncabezadoEncuestaGetDetalleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  EncabezadoEncuesta
+        fields = '__all__'
 class  EncabezadoEncuestaDeleteSerializer(serializers.ModelSerializer):
     class Meta:
         model =  EncabezadoEncuesta
@@ -32,7 +44,12 @@ class  PreguntasEncuestaCreateSerializer(serializers.ModelSerializer):
                 message='Esta pregunta ya existe en esta encuesta.'
             )
         ]
-    
+
+class  PreguntasEncuestaGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  PreguntasEncuesta
+        fields = ['id_encabezado_encuesta','redaccion_pregunta',]
+
 
 class  OpcionesRtaCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -45,3 +62,8 @@ class  OpcionesRtaCreateSerializer(serializers.ModelSerializer):
                 message='Esta opcion ya existe en esta pregunta.'
             )
         ]
+class  OpcionesRtaGetSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model =  OpcionesRta
+        fields = ['id_opcion_rta','opcion_rta','id_pregunta']
