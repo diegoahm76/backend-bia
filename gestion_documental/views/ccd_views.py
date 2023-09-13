@@ -20,7 +20,8 @@ from gestion_documental.serializers.ccd_serializers import (
     SubseriesDocPutSerializer,
     CatalogosSeriesUnidadSerializer,
     AsignacionesCatalogosOrgSerializer,
-    BusquedaCCDSerializer
+    BusquedaCCDSerializer,
+    CompararSeriesDocUnidadSerializer
 )
 from transversal.models.organigrama_models import Organigramas
 from gestion_documental.models.ccd_models import (
@@ -918,6 +919,40 @@ class BusquedaCCD(generics.ListAPIView):
 
 # HOMOLOGACIONES DE CCD - ENTREGA 55
 
+class CompararSeriesDocUnidadView(generics.ListAPIView):
+    serializer_class = CompararSeriesDocUnidadSerializer
 
+    def get(self, request, id_organigrama):
+        try:
+            organigrama_nuevo = Organigramas.objects.get(id_organigrama=id_organigrama, actual=False)
+        except Organigramas.DoesNotExist:
+            raise PermissionDenied('No se puede homologar debido a que el CCD pertenece al organigrama actual')
 
+        unidades_organizacionales_nuevo = UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama_nuevo.id_organigrama)
+        unidades_nueva = self.serializer_class(unidades_organizacionales_nuevo, many=True).data
 
+        organigrama_actual = Organigramas.objects.get(actual=True)
+        unidades_organizacionales_actual = UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama_actual.id_organigrama)
+        unidades_actual = self.serializer_class(unidades_organizacionales_actual, many=True).data
+
+        data = []
+
+        for unidad_actual in unidades_actual:
+            for unidad_nueva in unidades_nueva:
+                if unidad_actual['codigo'] == unidad_nueva['codigo']:
+                    data_json = {
+                        'id_unidad_actual': unidad_actual['id_unidad_organizacional'],
+                        'cod_unidad_actual': unidad_actual['codigo'],
+                        'nom_unidad_actual': unidad_actual['nombre'],
+                        'id_organigrama_unidad_actual': unidad_actual['id_organigrama'],
+                        'id_unidad_nuevo': unidad_nueva['id_unidad_organizacional'],
+                        'cod_unidad_nuevo': unidad_nueva['codigo'],
+                        'nom_unidad_nuevo': unidad_nueva['nombre'],
+                        'id_organigrama_unidad_nuevo': unidad_nueva['id_organigrama']
+                    }
+                    data_json['iguales'] = unidad_actual['nombre'] == unidad_nueva['nombre']
+                    data.append(data_json)
+
+        data = sorted(data, key=lambda x: x['iguales'], reverse=True)
+
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
