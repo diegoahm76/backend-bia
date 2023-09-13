@@ -784,6 +784,10 @@ class UpdateCatalogoUnidad(generics.UpdateAPIView):
         # VALIDAR EXISTENCIA DE CCD
         if not ccd:
              raise ValidationError('Debe elegir un CCD existente')
+        if ccd.fecha_terminado and not ccd.actual:
+            raise ValidationError('El CCD elegido se encuentra terminado. Por favor intente reanudarlo antes de continuar')
+        elif ccd.fecha_retiro_produccion:
+            raise ValidationError('No puede realizar esta acción a un CCD retirado de producción')
         
         # VALIDAR EXISTENCIA DE UNIDADES
         unidades_list = [item['id_unidad_organizacional'] for item in data]
