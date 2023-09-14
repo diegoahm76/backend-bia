@@ -9,9 +9,10 @@ from django.db.models import Case, When, Value, IntegerField
 from django.db.models import Q
 from django.db import transaction
 from rest_framework import generics
-from gestion_documental.models.metadatos_models import MetadatosPersonalizados
-from gestion_documental.serializers.metadatos_serializers import GetMetadatosPersonalizadosOrdenSerializer, MetadatosPersonalizadosDeleteSerializer, MetadatosPersonalizadosGetSerializer, MetadatosPersonalizadosSearchSerializer, MetadatosPersonalizadosSerializer, MetadatosPersonalizadosUpdateSerializer
+from gestion_documental.models.metadatos_models import ListaValores_MetadatosPers, MetadatosPersonalizados
+from gestion_documental.serializers.metadatos_serializers import GetMetadatosPersonalizadosOrdenSerializer, MetadatosPersonalizadosDeleteSerializer, MetadatosPersonalizadosGetSerializer, MetadatosPersonalizadosSearchSerializer, MetadatosPersonalizadosSerializer, MetadatosPersonalizadosUpdateSerializer, MetadatosValoresCreateSerializer, MetadatosValoresGetOrdenSerializer, MetadatosValoresGetSerializer
 
+########################## CRUD DE METADATO ##########################
 
 #CREAR-METADATOS
 class MetadatosPersonalizadosCreate(generics.CreateAPIView):
@@ -116,7 +117,6 @@ class MetadatosPersonalizadosDelete(generics.DestroyAPIView):
     
 
 #EDITAR_METADATOS
-
 class MetadatosPersonalizadosUpdate(generics.UpdateAPIView):
     serializer_class = MetadatosPersonalizadosUpdateSerializer
     queryset = MetadatosPersonalizados.objects.all()
@@ -183,3 +183,122 @@ class MetadatosPersonalizadosSearch(generics.ListAPIView):
             'detail': 'Se encontraron los siguientes metadatos.',
             'data': serializer.data
         }, status=status.HTTP_200_OK)
+    
+
+########################## CRUD DE VALORES DE METADATOS ##########################
+
+#CREAR_LISTA_VALORES
+class MetadatosValoresCreate(generics.CreateAPIView):
+
+    serializer_class = MetadatosValoresCreateSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = ListaValores_MetadatosPers.objects.all()
+    
+    def post(self,request):
+        
+        try:
+            data_in = request.data
+            orden_siguiente = MetadatosValoresGetOrdenActual()
+            response_orden = orden_siguiente.get(request)
+
+            if response_orden.status_code != status.HTTP_200_OK:
+                return response_orden
+            maximo_orden = response_orden.data.get('orden_siguiente')
+
+            print(maximo_orden)
+            data_in['orden_dentro_de_lista']=  maximo_orden + 1
+            serializer = self.serializer_class(data=data_in)
+            serializer.is_valid(raise_exception=True)
+            estante =serializer.save()
+
+
+            return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+        except ValidationError  as e:
+            error_message = {'error': e.detail}
+            raise ValidationError  (e.detail)
+
+#ORDEN_VALORES_SIGUIENTE
+class MetadatosValoresGetOrden(generics.ListAPIView):
+     
+    serializer_class = MetadatosValoresGetOrdenSerializer
+    queryset = ListaValores_MetadatosPers.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        maximo_orden = ListaValores_MetadatosPers.objects.aggregate(max_orden=Max('orden_dentro_de_lista'))
+        
+        if maximo_orden['max_orden'] is not None:
+            orden_siguiente = maximo_orden['max_orden'] + 1
+        else:
+            orden_siguiente = 1  # O cualquier otro valor por defecto que prefieras
+        
+        data = {'orden_siguiente': orden_siguiente}
+        return Response(data, status=status.HTTP_200_OK)
+
+    
+#ORDEN_VALORES_ACTUAL
+class MetadatosValoresGetOrdenActual(generics.ListAPIView):
+    serializer_class = MetadatosValoresGetOrdenSerializer
+    queryset = ListaValores_MetadatosPers.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        maximo_orden = ListaValores_MetadatosPers.objects.aggregate(max_orden=Max('orden_dentro_de_lista'))
+        
+        if not maximo_orden:
+            raise NotFound("El registro del depósito que busca no se encuentra registrado")
+        
+        orden_siguiente = maximo_orden['max_orden']
+        
+        return Response({'success': True, 'orden_siguiente': orden_siguiente}, status=status.HTTP_200_OK)
+    
+
+#LISTAR_TODOS_LOS_VALORES
+class ValoresMetadatosGet(generics.ListAPIView):
+    serializer_class = MetadatosValoresGetSerializer
+    queryset = ListaValores_MetadatosPers.objects.all().order_by('orden_dentro_de_lista')
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            return Response({
+                'success': False,
+                'detail': 'No se encontraron datos de depósitos registrados.',
+                'data': []
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.get_serializer(queryset, many=True)
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes depósitos ordenados por orden_ubicacion_por_entidad.',
+            'data': serializer.data
+        })
+    
+
+#ELIMINAR_VALORES_METADATOS
+class ValoresMetadatosDelete(generics.DestroyAPIView):
+    serializer_class = MetadatosPersonalizadosDeleteSerializer
+    queryset = ListaValores_MetadatosPers.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def delete(self, request, pk):
+        
+        valor = ListaValores_MetadatosPers.objects.filter(id_lista_valor_metadato_pers=pk).first()
+
+        if not valor:
+            raise ValidationError("No existe el valor que desea eliminar")
+
+        # Reordenar
+        valores = ListaValores_MetadatosPers.objects.filter(orden_dentro_de_lista__gt=valor.orden_dentro_de_lista).order_by('orden_dentro_de_lista') 
+        valor.delete()
+
+        for valor in valores:
+            valor.orden_dentro_de_lista = valor.orden_dentro_de_lista - 1
+            valor.save()
+
+        return Response({'success': True, 'detail': 'Se eliminó el valor metadato seleccionado.'}, status=status.HTTP_200_OK)    
+        
