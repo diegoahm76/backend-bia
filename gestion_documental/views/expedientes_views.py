@@ -5,7 +5,7 @@ from gestion_documental.models.trd_models import TablaRetencionDocumental
 from seguridad.utils import Util
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.serializers.expedientes_serializers import ExpedienteSearchSerializer, ListarTRDSerializer
+from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ListarTRDSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Max 
@@ -130,3 +130,82 @@ class TrdDateGet(generics.ListAPIView):
             'detail': 'Se encontraron los siguientes resultados',
             'data': serializer.data
         })
+    
+#AGREGAR_ARCHIVO_SOPORTE(PENDINETE)
+class AgregarArchivoSoporte(generics.CreateAPIView):
+    serializer_class = AgregarArchivoSoporteCreateSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = DocumentosDeArchivoExpediente.objects.all()
+    
+    def post(self, request, format=None):
+        # Asocia el serializador con una instancia de DocumentosDeArchivoExpediente
+        serializer = AgregarArchivoSoporteCreateSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            # Obtén el id_persona del usuario logueado
+            id_persona_logueada = self.request.user.persona.id_persona
+
+            # Establece la relación antes de guardar el objeto
+            serializer.save(id_persona_que_crea=id_persona_logueada)
+            
+            # Guarda la instancia del documento de archivo expediente
+            serializer.save()
+            
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+#IDENTIFICACION_DOC_EN_EXPEDIENTE
+class ListarDocumentosEnExpediente(generics.ListAPIView):
+    queryset = DocumentosDeArchivoExpediente.objects.all()
+    serializer_class = DocumentosDeArchivoExpediente
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        
+        # Recorre los documentos y genera la identificación
+        for documento in queryset:
+            if DocumentosDeArchivoExpediente.id_expediente_documental.cod_tipo_expediente == "S":
+                # Formatea el número de orden de documento en expediente con una longitud de 10 dígitos
+                orden_en_expediente_formatted = f"{documento.T237ordenEnExpediente:010}"
+                
+                # Genera la identificación del documento según las reglas
+                documento.T237IdentificacionDoc_EnExpediente = (
+                    f"{documento.T236codigoExp_Agno}{documento.T236codTipoExpediente}{orden_en_expediente_formatted}"
+                )
+                documento.save()
+        
+        return queryset
+    
+#ORDEN_EXPEDIENTE_SIGUIENTE
+class ExpedienteGetOrden(generics.ListAPIView):
+    serializer_class = ExpedienteGetOrdenSerializer
+    queryset = DocumentosDeArchivoExpediente.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        maximo_orden = DocumentosDeArchivoExpediente.objects.aggregate(max_orden=Max('orden_en_expediente'))
+        
+        if not maximo_orden:
+            raise NotFound("El registro del depósito que busca no se encuentra registrado")
+        
+        orden_siguiente = maximo_orden['max_orden'] + 1
+        
+        return Response({'success': True, 'orden_en_expediente': orden_siguiente}, status=status.HTTP_200_OK)
+    
+#ORDEN_EXPEDIENTE_ACTUAL
+class EstanteDepositoGetOrdenActual(generics.ListAPIView):
+    serializer_class = ExpedienteGetOrdenSerializer
+    queryset = DocumentosDeArchivoExpediente.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        maximo_orden = DocumentosDeArchivoExpediente.objects.aggregate(max_orden=Max('orden_en_expediente'))
+        
+        if not maximo_orden:
+            raise NotFound("El registro del depósito que busca no se encuentra registrado")
+        
+        orden_siguiente = maximo_orden['max_orden']
+        
+        return Response({'success': True, 'orden_actual': orden_siguiente}, status=status.HTTP_200_OK)
