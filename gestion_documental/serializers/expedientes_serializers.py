@@ -3,7 +3,6 @@ from rest_framework.serializers import ReadOnlyField
 from django.db.models import F
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from django.db.models import Max 
-
 from gestion_documental.models.expedientes_models import ExpedientesDocumentales,ArchivosDigitales,DocumentosDeArchivoExpediente,IndicesElectronicosExp,Docs_IndiceElectronicoExp,CierresReaperturasExpediente,ArchivosSoporte_CierreReapertura
 from gestion_documental.models.trd_models import TablaRetencionDocumental
 
@@ -35,3 +34,17 @@ class ListarTRDSerializer(serializers.ModelSerializer):
 
     def get_estado_actual(self, obj):
         return "ACTUAL" if obj.id_trd_origen.actual else "NO ACTUAL"
+    
+
+#Orden_Siguiente_Expediente
+class ExpedienteGetOrdenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  DocumentosDeArchivoExpediente
+        fields = '__all__'
+
+
+#
+class AgregarArchivoSoporteCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  DocumentosDeArchivoExpediente
+        fields = '__all__'

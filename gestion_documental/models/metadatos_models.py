@@ -17,7 +17,7 @@ class MetadatosPersonalizados(models.Model):
     aplica_para_documento= models.BooleanField(default=False, db_column='T243aplicaParaDocumento')
     aplica_para_expediente = models.BooleanField(default=False, db_column='T243aplicaParaExpediente')
     activo = models.BooleanField(default=False, db_column='T243activo')
-    item_ya_usado	 = models.BooleanField(default=False, db_column='T243itemYaUsado')
+    item_ya_usado= models.BooleanField(default=False, db_column='T243itemYaUsado')
 
     class Meta:
             db_table = 'T243MetadatosPersonalizados'
@@ -40,6 +40,5 @@ class ListaValores_MetadatosPers(models.Model):
             verbose_name = 'Lista Valor Metadatos'
             verbose_name_plural = 'Lista De Valores De Metadatos'
             unique_together = [('id_metadato_personalizado', 'valor_a_mostrar')]
-
 
 
