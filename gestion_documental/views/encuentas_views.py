@@ -11,25 +11,8 @@ from gestion_documental.models.encuencas_models import EncabezadoEncuesta, Opcio
 from gestion_documental.serializers.encuentas_serializers import EncabezadoEncuestaCreateSerializer, EncabezadoEncuestaDeleteSerializer, EncabezadoEncuestaGetDetalleSerializer, EncabezadoEncuestaGetSerializer, EncabezadoEncuestaUpdateSerializer, OpcionesRtaCreateSerializer, OpcionesRtaDeleteSerializer, OpcionesRtaGetSerializer, OpcionesRtaUpdateSerializer, PreguntasEncuestaCreateSerializer, PreguntasEncuestaDeleteSerializer, PreguntasEncuestaGetSerializer, PreguntasEncuestaUpdateSerializer
 from django.db.models import Max
 from datetime import datetime
-
-# class EncabezadoEncuestaCreate(generics.CreateAPIView):
-#     serializer_class = EncabezadoEncuestaCreateSerializer
-#     permission_classes = [IsAuthenticated]
-#     queryset = EncabezadoEncuesta.objects.all()
-    
-#     def post(self,request):
-#         data_in = request.data
-#         usuario = request.user.id_usuario
-#         try:
-#             data_in['id_persona_ult_config_implement']=usuario
-#             serializer = self.serializer_class(data=data_in)
-#             serializer.is_valid(raise_exception=True)
-#             instance=serializer.save()
-           
-#             return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
-#         except ValidationError as e:       
-#             raise ValidationError(e.detail)
-         
+from django.db import transaction
+   
 class EncabezadoEncuestaCreate(generics.CreateAPIView):
     serializer_class = EncabezadoEncuestaCreateSerializer
     permission_classes = [IsAuthenticated]
@@ -37,55 +20,35 @@ class EncabezadoEncuestaCreate(generics.CreateAPIView):
     
     def post(self,request):
         data_in = request.data
-        usuario = request.user.id_usuario
+        usuario = request.user.persona.id_persona
+        print(usuario)
         try:
-            data_in['id_persona_ult_config_implement']=usuario
-            serializer = self.serializer_class(data=data_in)
-            serializer.is_valid(raise_exception=True)
-            instance=serializer.save()
-            crear_pregunta=PreguntasEncuestaCreate()
-            crear_opcion=OpcionesRtaCreate()
-            if 'preguntas' in data_in:
-            
-                data_pregunta={}
-                response_preguntas=[]
+            with transaction.atomic():
+                data_in['id_persona_ult_config_implement']=usuario
+                serializer = self.serializer_class(data=data_in)
+                serializer.is_valid(raise_exception=True)
+                instance=serializer.save()
+                crear_pregunta=PreguntasEncuestaCreate()
+                crear_opcion=OpcionesRtaCreate()
+                if 'preguntas' in data_in:
+                
+                    data_pregunta={}
+                    response_preguntas=[]
 
-                for pre in data_in['preguntas']:
-                    data_pregunta.clear()
-                    
-                    data_pregunta={**pre}
-                    data_pregunta['id_encabezado_encuesta']=instance.id_encabezado_encuesta
-                    #print(data_pregunta)
-                    response_pregunta=crear_pregunta.crear_pregunta(data_pregunta)
-                    if response_pregunta.status_code!=status.HTTP_201_CREATED:
-                        return response_pregunta
-                    response_preguntas.append(response_pregunta.data['data'])
-                    # pregunta=response_pregunta.data['data']
-                    # #raise ValidationError(str(pregunta))
+                    for pre in data_in['preguntas']:
+                        data_pregunta.clear()
+                        
+                        data_pregunta={**pre}
+                        data_pregunta['id_encabezado_encuesta']=instance.id_encabezado_encuesta
+                        #print(data_pregunta)
+                        response_pregunta=crear_pregunta.crear_pregunta(data_pregunta)
+                        if response_pregunta.status_code!=status.HTTP_201_CREATED:
+                            return response_pregunta
+                        response_preguntas.append(response_pregunta.data['data'])
 
-                    # data_preguntas={}
-                    # if 'opciones_rta' in pre:
-                    #     data_ops=[]
-                    #     data_respuesta={}
-                    #     for op in pre['opciones_rta']:
-                    #         data_respuesta.clear()
-                    #         data_respuesta={**op}
-                    #         data_respuesta['id_pregunta']=pregunta['id_pregunta_encuesta']
-                    #         #print(data_respuesta)
-                    #         response_opcion=crear_opcion.crear_opciones_rta(data_respuesta)
-                    #         if response_opcion.status_code!=status.HTTP_201_CREATED:
-                    #                 return response_opcion
-                    #         data_ops.append(response_opcion.data['data'])
-                    
-                    # data_pregunta=response_pregunta.data['data']
-                    # data_pregunta['opciones_rta']=data_ops
-                    # data_copy=copy.copy(data_pregunta)
-                    # print(data_pregunta)
-                    # response_preguntas.append(data_copy)
-                #raise ValidationError()
-                response_encabezado=serializer.data
-                response_encabezado['preguntas_encuesta']=response_preguntas
-            return Response({'success':True,'detail':'Se crearon los registros correctamente','data':response_encabezado},status=status.HTTP_201_CREATED)
+                    response_encabezado=serializer.data
+                    response_encabezado['preguntas_encuesta']=response_preguntas
+                return Response({'success':True,'detail':'Se crearon los registros correctamente','data':response_encabezado},status=status.HTTP_201_CREATED)
         except ValidationError as e:       
             raise ValidationError(e.detail)
 
