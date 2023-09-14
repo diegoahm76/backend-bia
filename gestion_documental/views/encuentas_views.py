@@ -59,29 +59,29 @@ class EncabezadoEncuestaCreate(generics.CreateAPIView):
                     response_pregunta=crear_pregunta.crear_pregunta(data_pregunta)
                     if response_pregunta.status_code!=status.HTTP_201_CREATED:
                         return response_pregunta
-                    
-                    pregunta=response_pregunta.data['data']
-                    #raise ValidationError(str(pregunta))
+                    response_preguntas.append(response_pregunta.data['data'])
+                    # pregunta=response_pregunta.data['data']
+                    # #raise ValidationError(str(pregunta))
 
-                    data_preguntas={}
-                    if 'opciones_rta' in pre:
-                        data_ops=[]
-                        data_respuesta={}
-                        for op in pre['opciones_rta']:
-                            data_respuesta.clear()
-                            data_respuesta={**op}
-                            data_respuesta['id_pregunta']=pregunta['id_pregunta_encuesta']
-                            #print(data_respuesta)
-                            response_opcion=crear_opcion.crear_opciones_rta(data_respuesta)
-                            if response_opcion.status_code!=status.HTTP_201_CREATED:
-                                    return response_opcion
-                            data_ops.append(response_opcion.data['data'])
+                    # data_preguntas={}
+                    # if 'opciones_rta' in pre:
+                    #     data_ops=[]
+                    #     data_respuesta={}
+                    #     for op in pre['opciones_rta']:
+                    #         data_respuesta.clear()
+                    #         data_respuesta={**op}
+                    #         data_respuesta['id_pregunta']=pregunta['id_pregunta_encuesta']
+                    #         #print(data_respuesta)
+                    #         response_opcion=crear_opcion.crear_opciones_rta(data_respuesta)
+                    #         if response_opcion.status_code!=status.HTTP_201_CREATED:
+                    #                 return response_opcion
+                    #         data_ops.append(response_opcion.data['data'])
                     
-                    data_pregunta=response_pregunta.data['data']
-                    data_pregunta['opciones_rta']=data_ops
-                    data_copy=copy.copy(data_pregunta)
-                    print(data_pregunta)
-                    response_preguntas.append(data_copy)
+                    # data_pregunta=response_pregunta.data['data']
+                    # data_pregunta['opciones_rta']=data_ops
+                    # data_copy=copy.copy(data_pregunta)
+                    # print(data_pregunta)
+                    # response_preguntas.append(data_copy)
                 #raise ValidationError()
                 response_encabezado=serializer.data
                 response_encabezado['preguntas_encuesta']=response_preguntas
@@ -210,7 +210,7 @@ class PreguntasEncuestaUpdate(generics.UpdateAPIView):
                 if data_in['opciones_rta']:
                     for opc_rta in  data_in['opciones_rta']:
                         if 'id_opcion_rta' in opc_rta and opc_rta['id_opcion_rta'] :
-                            print("CREA")
+                            
                             response_pregunta=actualizar_opcion.actualizar_pregunta({**opc_rta},opc_rta['id_opcion_rta'])
                             if response_pregunta.status_code!=status.HTTP_200_OK:
                                 return response_pregunta   
