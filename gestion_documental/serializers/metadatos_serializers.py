@@ -2,6 +2,9 @@ from gestion_documental.models.metadatos_models import MetadatosPersonalizados, 
 from rest_framework import serializers
 
 
+
+########################## CRUD DE METADATO ##########################
+
 class MetadatosPersonalizadosSerializer(serializers.ModelSerializer):
     class Meta:
         model = MetadatosPersonalizados
@@ -101,3 +104,29 @@ class MetadatosPersonalizadosSearchSerializer(serializers.ModelSerializer):
     class Meta:
         model = MetadatosPersonalizados
         fields = ['id_metadato_personalizado','nombre_metadato','descripcion','orden_aparicion']
+
+
+
+
+########################## CRUD DE VALORES DE METADATOS ##########################
+
+class MetadatosValoresCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  ListaValores_MetadatosPers
+        fields = '__all__'
+
+class MetadatosValoresGetOrdenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ListaValores_MetadatosPers
+        fields = '__all__'
+
+class MetadatosValoresGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ListaValores_MetadatosPers
+        fields = '__all__'
+
+
+class ValoresMetadatosDeleteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MetadatosPersonalizados
+        fields = '__all__'

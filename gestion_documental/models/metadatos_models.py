@@ -26,7 +26,7 @@ class MetadatosPersonalizados(models.Model):
 
 
 
-#LISTA_METADATOS_PERSONALIZADOS
+#LISTA_VALORES_METADATOS
 class ListaValores_MetadatosPers(models.Model):
     
     id_lista_valor_metadato_pers= models.AutoField(primary_key=True, db_column='T244IdListaValor_MetadatoPers')
