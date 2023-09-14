@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from gestion_documental.models.encuencas_models import EncabezadoEncuesta, OpcionesRta, PreguntasEncuesta
-from gestion_documental.serializers.encuentas_serializers import EncabezadoEncuestaCreateSerializer, EncabezadoEncuestaDeleteSerializer, EncabezadoEncuestaGetDetalleSerializer, EncabezadoEncuestaGetSerializer, EncabezadoEncuestaUpdateSerializer, OpcionesRtaCreateSerializer, OpcionesRtaGetSerializer, PreguntasEncuestaCreateSerializer, PreguntasEncuestaGetSerializer
+from gestion_documental.serializers.encuentas_serializers import EncabezadoEncuestaCreateSerializer, EncabezadoEncuestaDeleteSerializer, EncabezadoEncuestaGetDetalleSerializer, EncabezadoEncuestaGetSerializer, EncabezadoEncuestaUpdateSerializer, OpcionesRtaCreateSerializer, OpcionesRtaDeleteSerializer, OpcionesRtaGetSerializer, OpcionesRtaUpdateSerializer, PreguntasEncuestaCreateSerializer, PreguntasEncuestaDeleteSerializer, PreguntasEncuestaGetSerializer, PreguntasEncuestaUpdateSerializer
 from django.db.models import Max
 from datetime import datetime
 
@@ -109,25 +109,35 @@ class EncabezadoEncuestaUpdate(generics.UpdateAPIView):
             serializer = self.get_serializer(instance, data=data_in,partial=True)
             serializer.is_valid(raise_exception=True)
             instance = serializer.save()
+            data_response_pregunta=[]
             if 'preguntas_encuesta' in data_in:
                 crear_pregunta=PreguntasEncuestaCreate()
+                actualizar_pregunta=PreguntasEncuestaUpdate()
                 for pre in data_in['preguntas_encuesta']:
 
                     if 'id_pregunta_encuesta' in pre:
                         if pre:
-                            print("ACTUALIZA")
+                           
+                            print(pre)
+                            response_pregunta=actualizar_pregunta.actualizar_pregunta(pre,pre['id_pregunta_encuesta'])
+                            if response_pregunta.status_code!=status.HTTP_200_OK:
+                                return response_pregunta  
+                            data_response_pregunta.append(response_pregunta.data['data'])
+
                     else:
-                        print("CREA")
+                       
                         response_pregunta=crear_pregunta.crear_pregunta(pre)
                         if response_pregunta.status_code!=status.HTTP_201_CREATED:
                             return response_pregunta    
+                        data_response_pregunta.append(response_pregunta.data['data'])
                     print(pre)
 
-
+            response_data=serializer.data
+            response_data['preguntas']=data_response_pregunta
             return Response({
                 "success": True,
                 "detail": "Se actualizó el encabezado de encuesta correctamente",
-                "data": serializer.data
+                "data": response_data
             }, status=status.HTTP_200_OK)
         except ValidationError as e:       
             raise ValidationError(e.detail)
@@ -151,7 +161,23 @@ class PreguntasEncuestaCreate(generics.CreateAPIView):
             serializer = PreguntasEncuestaCreateSerializer(data=data_in)
             serializer.is_valid(raise_exception=True)
             instance=serializer.save()
-            return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+            id_pregunta=instance.id_pregunta_encuesta
+            print(id_pregunta)
+
+            crear_opcion=OpcionesRtaCreate()
+            data_ops=[]
+            if 'opciones_rta' in data_in:
+                if data_in['opciones_rta']:
+                    for opc_rta in  data_in['opciones_rta']:
+                        
+                        response_pregunta=crear_opcion.crear_opciones_rta({**opc_rta,"id_pregunta":id_pregunta})
+                        if response_pregunta.status_code!=status.HTTP_201_CREATED:
+                            return response_pregunta   
+                        print (opc_rta)
+                        data_ops.append(response_pregunta.data['data'])
+            data_response=serializer.data
+            data_response['opciones_rta']=data_ops
+            return Response({'success':True,'detail':'Se crearon los registros correctamente','data':data_response},status=status.HTTP_201_CREATED)
         except ValidationError as e:       
             raise ValidationError(e.detail)
 
@@ -160,6 +186,80 @@ class PreguntasEncuestaCreate(generics.CreateAPIView):
         response=self.crear_pregunta(data_in)
         return response
 
+
+class PreguntasEncuestaUpdate(generics.UpdateAPIView):
+    queryset = PreguntasEncuesta.objects.all()
+    serializer_class = PreguntasEncuestaUpdateSerializer
+    def actualizar_pregunta(self,data,pk):
+        data_in=data
+        instance = PreguntasEncuesta.objects.filter(id_pregunta_encuesta=pk).first()
+
+        if not instance:
+            raise NotFound("No existe encuentas asociada e esta id")
+        try:
+            
+            serializer = PreguntasEncuestaUpdateSerializer(instance, data=data_in,partial=True)
+            serializer.is_valid(raise_exception=True)
+            instance = serializer.save()
+            id_pregunta=instance.id_pregunta_encuesta
+            crear_opcion=OpcionesRtaCreate()
+            actualizar_opcion=OpcionesRtaUpdate()
+            data_ops=[]
+            
+            if 'opciones_rta' in data_in:
+                if data_in['opciones_rta']:
+                    for opc_rta in  data_in['opciones_rta']:
+                        if 'id_opcion_rta' in opc_rta and opc_rta['id_opcion_rta'] :
+                            print("CREA")
+                            response_pregunta=actualizar_opcion.actualizar_pregunta({**opc_rta},opc_rta['id_opcion_rta'])
+                            if response_pregunta.status_code!=status.HTTP_200_OK:
+                                return response_pregunta   
+                            
+                            data_ops.append(response_pregunta.data['data'])
+
+                        else:
+                            response_pregunta=crear_opcion.crear_opciones_rta({**opc_rta,"id_pregunta":id_pregunta})
+                            if response_pregunta.status_code!=status.HTTP_201_CREATED:
+                                return response_pregunta   
+                            
+                            data_ops.append(response_pregunta.data['data'])
+                            
+
+            data_response=serializer.data
+            data_response['opciones_rta']=data_ops
+            return Response({
+                "success": True,
+                "detail": "Se actualizó el encabezado de encuesta correctamente",
+                "data":data_response
+            }, status=status.HTTP_200_OK)
+        except ValidationError as e:       
+            raise ValidationError(e.detail)
+
+
+    def put(self, request, pk):
+
+        response =self.actualizar_pregunta(request.data,pk)
+        return response
+
+class PreguntasEncuestaDelete(generics.DestroyAPIView):
+    queryset = PreguntasEncuesta.objects.all()
+    serializer_class = PreguntasEncuestaDeleteSerializer
+
+    def eliminar(self,pk):
+        instance = PreguntasEncuesta.objects.filter(id_pregunta_encuesta=pk).first()
+        if not instance:
+            raise NotFound("No existe pregunta asociada a esta id.")
+        serializer =PreguntasEncuestaDeleteSerializer(instance)
+        instance.delete
+        return Response({
+            "success": True,
+            "detail": "Se eliminó la pregunta correctamente",
+            "data": serializer.data
+        }, status=status.HTTP_204_NO_CONTENT)
+    def delete(self, request,pk):
+        response=self.eliminar(pk)
+        return response
+    
 class OpcionesRtaCreate(generics.CreateAPIView):
     serializer_class = OpcionesRtaCreateSerializer
     permission_classes = [IsAuthenticated]
@@ -187,6 +287,56 @@ class OpcionesRtaCreate(generics.CreateAPIView):
         data_in = request.data
         response=self.crear_opciones_rta(data_in)
         return response
+
+class OpcionesRtaUpdate(generics.UpdateAPIView):
+    queryset = OpcionesRta.objects.all()
+    serializer_class = OpcionesRtaUpdateSerializer
+    def actualizar_pregunta(self,data,pk):
+        data_in=data
+        instance = OpcionesRta.objects.filter(id_opcion_rta=pk).first()
+
+        if not instance:
+            raise NotFound("No existe opcion asociada e esta id")
+        try:
+ 
+            serializer = OpcionesRtaUpdateSerializer(instance, data=data_in,partial=True)
+            serializer.is_valid(raise_exception=True)
+            instance = serializer.save()
+            return Response({
+                "success": True,
+                "detail": "Se actualizó el encabezado de encuesta correctamente",
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+        except ValidationError as e:       
+            raise ValidationError(e.detail)
+
+
+    def put(self, request, pk):
+
+        response =self.actualizar_pregunta(request.data,pk)
+        return response
+
+class OpcionesRtaDelete(generics.DestroyAPIView):
+    queryset = OpcionesRta.objects.all()
+    serializer_class = OpcionesRtaDeleteSerializer
+
+    def eliminar(self,pk):
+        instance = OpcionesRta.objects.filter(id_opcion_rta=pk).first()
+        if not instance:
+            raise NotFound("No existe pregunta asociada a esta id.")
+        serializer =OpcionesRtaDeleteSerializer(instance)
+        instance.delete
+        return Response({
+            "success": True,
+            "detail": "Se eliminó la opcion correctamente",
+            "data": serializer.data
+        }, status=status.HTTP_204_NO_CONTENT)
+    def delete(self, request,pk):
+        response=self.eliminar(pk)
+        return response
+
+
+
 
 class EncabezadoEncuestaGet(generics.ListAPIView):
     queryset = EncabezadoEncuesta.objects.all()
@@ -235,7 +385,7 @@ class EncabezadoEncuestaDetalleGet(generics.ListAPIView):
 class EncabezadoEncuestaDelete(generics.DestroyAPIView):
     queryset = EncabezadoEncuesta.objects.all()
     serializer_class = EncabezadoEncuestaDeleteSerializer
-
+    
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
