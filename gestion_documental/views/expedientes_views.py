@@ -1,11 +1,11 @@
 from gestion_documental.models.expedientes_models import ExpedientesDocumentales,ArchivosDigitales,DocumentosDeArchivoExpediente,IndicesElectronicosExp,Docs_IndiceElectronicoExp,CierresReaperturasExpediente,ArchivosSoporte_CierreReapertura
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from django.shortcuts import get_object_or_404
-from gestion_documental.models.trd_models import TablaRetencionDocumental
+from gestion_documental.models.trd_models import TablaRetencionDocumental, TipologiasDoc
 from seguridad.utils import Util
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ListarTRDSerializer
+from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ListarTRDSerializer, ListarTipologiasSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Max 
@@ -209,3 +209,28 @@ class EstanteDepositoGetOrdenActual(generics.ListAPIView):
         orden_siguiente = maximo_orden['max_orden']
         
         return Response({'success': True, 'orden_actual': orden_siguiente}, status=status.HTTP_200_OK)
+    
+
+#LISTAR_TIPOLOGIAS
+class ListarTipologias(generics.ListAPIView):
+    serializer_class = ListarTipologiasSerializer
+    queryset = TipologiasDoc.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            return Response({
+                'success': False,
+                'detail': 'No se encontraron datos de tipologias registrados.',
+                'data': []
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.get_serializer(queryset, many=True)
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron las siguientes tipologias',
+            'data': serializer.data
+        })

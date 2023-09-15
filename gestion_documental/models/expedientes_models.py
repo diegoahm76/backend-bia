@@ -40,7 +40,7 @@ class ExpedientesDocumentales(models.Model):
     fecha_firma_cierre_indice_elec = models.DateTimeField(blank=True,null=True,db_column='T236fechaFirmaCierreIndiceElec')
     palabras_clave_expediente = models.CharField(max_length=255, blank=True,null=True, db_column='T236palabrasClaveExpediente')
     cod_etapa_de_archivo_actual_exped = models.CharField(max_length=1, choices=etapa_actual_expediente_CHOICES, db_column='T236codEtapaDeArchivoActual_Exped')
-    fecha_paso_a_archivo_central = models.DateTimeField(blank=True,null=True,db_column='T236fechaPasoAArchivoCentral	')
+    fecha_paso_a_archivo_central = models.DateTimeField(blank=True,null=True,db_column='T236fechaPasoAArchivoCentral')
     fecha_paso_a_archivo_historico = models.DateTimeField(blank=True,null=True,db_column='T236fechaPasoAArchivoHistorico')
     fecha_eliminacion_x_dispo_final	= models.DateTimeField(blank=True,null=True,db_column='T236fechaEliminacionXDispoFinal')
     tiene_carpeta_fisica = models.BooleanField(default=False, db_column='T236tieneCarpetaFisica')
@@ -97,15 +97,15 @@ class DocumentosDeArchivoExpediente(models.Model):
     orden_en_expediente	 = models.SmallIntegerField(db_column='T237ordenEnExpediente')
     id_tipologia_documental	= models.ForeignKey(TipologiasDoc,blank=True, null=True , on_delete=models.SET_NULL, db_column='T237Id_TipologiaDocumental')
     codigo_tipologia_doc_prefijo = models.CharField(max_length=20, blank=True, null=True, db_column='T237codigoTipologiaDoc_Prefijo')
-    codigo_tipologia_doc_agno = models.SmallIntegerField(blank=True, null=True,db_column='T237codigoTipologiaDoc_Agno	')
+    codigo_tipologia_doc_agno = models.SmallIntegerField(blank=True, null=True,db_column='T237codigoTipologiaDoc_Agno')
     codigo_tipologia_doc_consecutivo = models.CharField(max_length=50, blank=True, null=True, db_column='T237codigoTipologiaDoc_Consecutivo')
     es_un_archivo_anexo = models.BooleanField(default=False, db_column='T237esUnArchivoAnexo')
-    id_doc_de_arch_del_cual_es_anexo =  models.ForeignKey('self', related_name='arch_anexo', on_delete=models.SET_NULL, null=True, blank=True, db_column='T237Id_DocDeArch_DelCualEsAnexo	')
-    tipologia_no_creada_trd	 = models.CharField(max_length=50, blank=True, null=True, db_column='T237tipologiaNoCreadaEnTRD	')
+    id_doc_de_arch_del_cual_es_anexo =  models.ForeignKey('self', related_name='arch_anexo', on_delete=models.SET_NULL, null=True, blank=True, db_column='T237Id_DocDeArch_DelCualEsAnexo')
+    tipologia_no_creada_trd	 = models.CharField(max_length=50, blank=True, null=True, db_column='T237tipologiaNoCreadaEnTRD')
     anexo_corresp_a_lista_chequeo	 = models.BooleanField(default=False, db_column='T237anexoCorrespAListaDeChequeo')
     cantidad_anexos	= models.SmallIntegerField(blank=True, null=True,db_column='T237cantidadDeAnexos')
     id_archivo_sistema	= models.ForeignKey(ArchivosDigitales, on_delete=models.SET_NULL, null=True, blank=True, db_column='T237Id_ArchivoEnSistema')#falta creacion tabla 38
-    palabras_clave_documento = models.CharField(max_length=255,blank=True,null=True , db_column='T237palabrasClaveDocumento	')
+    palabras_clave_documento = models.CharField(max_length=255,blank=True,null=True , db_column='T237palabrasClaveDocumento')
     sub_sistema_incorporacion = models.CharField(max_length=4, choices=tipo_subsistema_creado_CHOICES, db_column='T237subSistemaDeIncorporacion')
     cod_tipo_radicado = models.CharField(max_length=1, choices=TIPOS_RADICADO_CHOICES,blank=True, null=True, db_column='T237codTipoRadicado')
     codigo_radicado_prefijo	 = models.CharField(max_length=10,blank=True,null=True ,db_column='T237codigoRadicado_Prefijo')
@@ -115,7 +115,7 @@ class DocumentosDeArchivoExpediente(models.Model):
     documento_requiere_rta = models.BooleanField(default=False, db_column='T237documentoRequiereRta')
     id_doc_arch_respondido	 =  models.ForeignKey('self', related_name='arch_respondido', on_delete=models.SET_NULL, null=True, blank=True, db_column='T237Id_DocDeArch_Respondido')
     id_doc_arch_rad_ini_exp_simple =  models.ForeignKey('self', related_name='id_doc_arch_rad_exp_simple', on_delete=models.SET_NULL, null=True, blank=True, db_column='T237Id_DocDeArch_RadIni_EnExpSimple	')
-    id_und_org_oficina_creadora= models.ForeignKey(UnidadesOrganizacionales, related_name='id_und_org_oficina_creadora',on_delete=models.CASCADE, db_column='T237Id_UndOrgOficina_Creadora	')
+    id_und_org_oficina_creadora= models.ForeignKey(UnidadesOrganizacionales, related_name='id_und_org_oficina_creadora',on_delete=models.CASCADE, db_column='T237Id_UndOrgOficina_Creadora')
     id_persona_que_crea	= models.ForeignKey(Personas, related_name='id_persona_que_crea',on_delete=models.CASCADE, db_column='T237Id_PersonaQueCrea')
     id_und_org_oficina_respon_actual = models.ForeignKey(UnidadesOrganizacionales,related_name='id_und_org_oficina_respon_actual', on_delete=models.CASCADE, db_column='T237Id_UndOrgOficinaRespon_Actual')
 
@@ -132,7 +132,7 @@ class DocumentosDeArchivoExpediente(models.Model):
 
 
 class IndicesElectronicosExp(models.Model):
-    id_indice_electronico_exp	 = models.AutoField(primary_key=True, db_column='T239IdIndiceElectronicoExp	')
+    id_indice_electronico_exp	 = models.AutoField(primary_key=True, db_column='T239IdIndiceElectronicoExp')
     id_expediente_doc	 = models.ForeignKey(ExpedientesDocumentales, on_delete=models.CASCADE, db_column='T239Id_ExpedienteDoc')
     fecha_indice_electronico = models.DateTimeField(db_column='T239fechaIndiceElectronico')
     abierto = models.BooleanField(default=False, db_column='T239abierto')

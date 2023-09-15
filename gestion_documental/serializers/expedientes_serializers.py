@@ -4,7 +4,7 @@ from django.db.models import F
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from django.db.models import Max 
 from gestion_documental.models.expedientes_models import ExpedientesDocumentales,ArchivosDigitales,DocumentosDeArchivoExpediente,IndicesElectronicosExp,Docs_IndiceElectronicoExp,CierresReaperturasExpediente,ArchivosSoporte_CierreReapertura
-from gestion_documental.models.trd_models import TablaRetencionDocumental
+from gestion_documental.models.trd_models import TablaRetencionDocumental, TipologiasDoc
 
 
 ######################### SERIALIZERS DEPOSITO #########################
@@ -48,3 +48,10 @@ class AgregarArchivoSoporteCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model =  DocumentosDeArchivoExpediente
         fields = '__all__'
+
+class ListarTipologiasSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = TipologiasDoc
+        fields = ['id_tipologia_documental', 'nombre']
+  
