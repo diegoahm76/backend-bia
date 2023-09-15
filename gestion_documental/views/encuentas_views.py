@@ -88,8 +88,8 @@ class EncabezadoEncuestaUpdate(generics.UpdateAPIView):
                             data_response_pregunta.append(response_pregunta.data['data'])
 
                     else:
-                       
-                        response_pregunta=crear_pregunta.crear_pregunta(pre)
+                        id_encabezado=instance.id_encabezado_encuesta
+                        response_pregunta=crear_pregunta.crear_pregunta({**pre,"id_encabezado_encuesta":id_encabezado})
                         if response_pregunta.status_code!=status.HTTP_201_CREATED:
                             return response_pregunta    
                         data_response_pregunta.append(response_pregunta.data['data'])
