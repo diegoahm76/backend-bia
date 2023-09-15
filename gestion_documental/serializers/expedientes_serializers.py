@@ -48,6 +48,8 @@ class AgregarArchivoSoporteCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model =  DocumentosDeArchivoExpediente
         fields = '__all__'
+        read_only_fields = ['fecha_incorporacion_doc_a_Exp']
+
 
 class ListarTipologiasSerializer(serializers.ModelSerializer):
 

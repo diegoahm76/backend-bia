@@ -1,3 +1,4 @@
+import datetime
 from gestion_documental.models.expedientes_models import ExpedientesDocumentales,ArchivosDigitales,DocumentosDeArchivoExpediente,IndicesElectronicosExp,Docs_IndiceElectronicoExp,CierresReaperturasExpediente,ArchivosSoporte_CierreReapertura
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from django.shortcuts import get_object_or_404
@@ -138,23 +139,36 @@ class AgregarArchivoSoporte(generics.CreateAPIView):
     queryset = DocumentosDeArchivoExpediente.objects.all()
     
     def post(self, request, format=None):
-        # Asocia el serializador con una instancia de DocumentosDeArchivoExpediente
-        serializer = AgregarArchivoSoporteCreateSerializer(data=request.data)
-        
-        if serializer.is_valid():
-            # Obtén el id_persona del usuario logueado
-            id_persona_logueada = self.request.user.persona.id_persona
+        try:
+            data_in = request.data
+            orden_siguiente = ExpedienteGetOrdenActual()
+            response_orden = orden_siguiente.get(request)
 
-            # Establece la relación antes de guardar el objeto
-            serializer.save(id_persona_que_crea=id_persona_logueada)
+            if response_orden.status_code != status.HTTP_200_OK:
+                return response_orden
+            maximo_orden = response_orden.data.get('orden_siguiente')
+
+            print(maximo_orden)
+
+            # Maneja el caso en el que maximo_orden es None
+            maximo_orden = maximo_orden + 1 if maximo_orden is not None else 1
+
+            data_in['orden_en_expediente'] = maximo_orden
+            serializer = self.serializer_class(data=data_in)
+            serializer.is_valid(raise_exception=True)
             
-            # Guarda la instancia del documento de archivo expediente
-            serializer.save()
+            # Establece la fecha de incorporación como la fecha actual
+            serializer.validated_data['fecha_incorporacion_doc_a_Exp'] = datetime.now()
             
+            estante = serializer.save()
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            # Cambia la respuesta a Bad Request (estado HTTP 400)
+             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
 
 #IDENTIFICACION_DOC_EN_EXPEDIENTE
 class ListarDocumentosEnExpediente(generics.ListAPIView):
@@ -195,7 +209,7 @@ class ExpedienteGetOrden(generics.ListAPIView):
         return Response({'success': True, 'orden_en_expediente': orden_siguiente}, status=status.HTTP_200_OK)
     
 #ORDEN_EXPEDIENTE_ACTUAL
-class EstanteDepositoGetOrdenActual(generics.ListAPIView):
+class ExpedienteGetOrdenActual(generics.ListAPIView):
     serializer_class = ExpedienteGetOrdenSerializer
     queryset = DocumentosDeArchivoExpediente.objects.all()
     permission_classes = [IsAuthenticated]
