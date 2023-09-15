@@ -16,14 +16,14 @@ class CtrlAccesoGetSerializer(serializers.ModelSerializer):
         fields = '__all__'
         
 class CtrlAccesoCodClasifPutSerializer(serializers.ModelSerializer):
-    id_serie_doc = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_serie_doc.id_serie_doc', default=None)
-    nombre_serie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_serie_doc.nombre', default=None)
-    codigo_serie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_serie_doc.codigo', default=None)
-    id_subserie_doc = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.id_subserie_doc', default=None)
-    nombre_subserie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.nombre', default=None)
-    codigo_subserie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.codigo', default=None)
-    nombre_unidad_organizacional = serializers.ReadOnlyField(source='id_cat_serie_und.id_unidad_organizacional.nombre', default=None)
-    codigo_unidad_organizacional = serializers.ReadOnlyField(source='id_cat_serie_und.id_unidad_organizacional.codigo', default=None)
+    id_serie_doc = serializers.ReadOnlyField(source='id_cat_serie_und_org_ccd.id_catalogo_serie.id_serie_doc.id_serie_doc', default=None)
+    nombre_serie = serializers.ReadOnlyField(source='id_cat_serie_und_org_ccd.id_catalogo_serie.id_serie_doc.nombre', default=None)
+    codigo_serie = serializers.ReadOnlyField(source='id_cat_serie_und_org_ccd.id_catalogo_serie.id_serie_doc.codigo', default=None)
+    id_subserie_doc = serializers.ReadOnlyField(source='id_cat_serie_und_org_ccd.id_catalogo_serie.id_subserie_doc.id_subserie_doc', default=None)
+    nombre_subserie = serializers.ReadOnlyField(source='id_cat_serie_und_org_ccd.id_catalogo_serie.id_subserie_doc.nombre', default=None)
+    codigo_subserie = serializers.ReadOnlyField(source='id_cat_serie_und_org_ccd.id_catalogo_serie.id_subserie_doc.codigo', default=None)
+    nombre_unidad_organizacional = serializers.ReadOnlyField(source='id_cat_serie_und_org_ccd.id_unidad_organizacional.nombre', default=None)
+    codigo_unidad_organizacional = serializers.ReadOnlyField(source='id_cat_serie_und_org_ccd.id_unidad_organizacional.codigo', default=None)
     
     class Meta:
         model = CtrlAccesoClasificacionExpCCD
@@ -48,14 +48,14 @@ class CtrlAccesoCodClasifPutSerializer(serializers.ModelSerializer):
         }
         
 class CtrlAccesoCatUndPutSerializer(serializers.ModelSerializer):
-    id_serie_doc = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_serie_doc.id_serie_doc', default=None)
-    nombre_serie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_serie_doc.nombre', default=None)
-    codigo_serie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_serie_doc.codigo', default=None)
-    id_subserie_doc = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.id_subserie_doc', default=None)
-    nombre_subserie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.nombre', default=None)
-    codigo_subserie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.codigo', default=None)
-    nombre_unidad_organizacional = serializers.ReadOnlyField(source='id_cat_serie_und.id_unidad_organizacional.nombre', default=None)
-    codigo_unidad_organizacional = serializers.ReadOnlyField(source='id_cat_serie_und.id_unidad_organizacional.codigo', default=None)
+    id_serie_doc = serializers.ReadOnlyField(source='id_cat_serie_und_org_ccd.id_catalogo_serie.id_serie_doc.id_serie_doc', default=None)
+    nombre_serie = serializers.ReadOnlyField(source='id_cat_serie_und_org_ccd.id_catalogo_serie.id_serie_doc.nombre', default=None)
+    codigo_serie = serializers.ReadOnlyField(source='id_cat_serie_und_org_ccd.id_catalogo_serie.id_serie_doc.codigo', default=None)
+    id_subserie_doc = serializers.ReadOnlyField(source='id_cat_serie_und_org_ccd.id_catalogo_serie.id_subserie_doc.id_subserie_doc', default=None)
+    nombre_subserie = serializers.ReadOnlyField(source='id_cat_serie_und_org_ccd.id_catalogo_serie.id_subserie_doc.nombre', default=None)
+    codigo_subserie = serializers.ReadOnlyField(source='id_cat_serie_und_org_ccd.id_catalogo_serie.id_subserie_doc.codigo', default=None)
+    nombre_unidad_organizacional = serializers.ReadOnlyField(source='id_cat_serie_und_org_ccd.id_unidad_organizacional.nombre', default=None)
+    codigo_unidad_organizacional = serializers.ReadOnlyField(source='id_cat_serie_und_org_ccd.id_unidad_organizacional.codigo', default=None)
     
     class Meta:
         model = CtrlAccesoClasificacionExpCCD
