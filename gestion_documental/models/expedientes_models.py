@@ -114,7 +114,7 @@ class DocumentosDeArchivoExpediente(models.Model):
     es_radicado_inicial_de_solicitud	= models.BooleanField(blank=True,null=True, db_column='T237esRadicadoInicialDeLaSolicitud')
     documento_requiere_rta = models.BooleanField(default=False, db_column='T237documentoRequiereRta')
     id_doc_arch_respondido	 =  models.ForeignKey('self', related_name='arch_respondido', on_delete=models.SET_NULL, null=True, blank=True, db_column='T237Id_DocDeArch_Respondido')
-    id_doc_arch_rad_ini_exp_simple =  models.ForeignKey('self', related_name='id_doc_arch_rad_exp_simple', on_delete=models.SET_NULL, null=True, blank=True, db_column='T237Id_DocDeArch_RadIni_EnExpSimple	')
+    id_doc_arch_rad_ini_exp_simple =  models.ForeignKey('self', related_name='id_doc_arch_rad_exp_simple', on_delete=models.SET_NULL, null=True, blank=True, db_column='T237Id_DocDeArch_RadIni_EnExpSimple')
     id_und_org_oficina_creadora= models.ForeignKey(UnidadesOrganizacionales, related_name='id_und_org_oficina_creadora',on_delete=models.CASCADE, db_column='T237Id_UndOrgOficina_Creadora')
     id_persona_que_crea	= models.ForeignKey(Personas, related_name='id_persona_que_crea',on_delete=models.CASCADE, db_column='T237Id_PersonaQueCrea')
     id_und_org_oficina_respon_actual = models.ForeignKey(UnidadesOrganizacionales,related_name='id_und_org_oficina_respon_actual', on_delete=models.CASCADE, db_column='T237Id_UndOrgOficinaRespon_Actual')
