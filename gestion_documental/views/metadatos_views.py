@@ -265,7 +265,7 @@ class ValoresMetadatosGet(generics.ListAPIView):
         if not queryset.exists():
             return Response({
                 'success': False,
-                'detail': 'No se encontraron datos de depósitos registrados.',
+                'detail': 'No se encontraron datos de valores registrados.',
                 'data': []
             }, status=status.HTTP_404_NOT_FOUND)
 
@@ -273,7 +273,7 @@ class ValoresMetadatosGet(generics.ListAPIView):
 
         return Response({
             'success': True,
-            'detail': 'Se encontraron los siguientes depósitos ordenados por orden_ubicacion_por_entidad.',
+            'detail': 'Se encontraron los siguientes valores de metadatos.',
             'data': serializer.data
         })
     
