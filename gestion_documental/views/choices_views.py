@@ -13,7 +13,7 @@ from gestion_documental.choices.tipo_radicado_choices import TIPOS_RADICADO_CHOI
 from gestion_documental.choices.operacion_realizada_choices import operacion_realizada_CHOICES
 from gestion_documental.choices.tipos_pqr_choices import cond_tipos_pqr_list
 from gestion_documental.choices.tipo_dato_alojar_choices import tipo_dato_alojar_CHOICES
-
+from gestion_documental.choices.tipo_acceso_choices import tipo_acceso_list
 
 
 
@@ -92,3 +92,9 @@ class TipoDatoAlojar(APIView):
     def get(self,request):
         choices = tipo_dato_alojar_CHOICES
         return Response(choices)   
+    
+class TipoAcceso(APIView):
+    def get(self,request):
+        choices = tipo_acceso_list
+        return Response(choices)   
+    

@@ -7,3 +7,4 @@ from .radicados_models import *
 from .tca_models import *
 from .trd_models import *
 from .encuencas_models import *
+from .plantillas_models import *
