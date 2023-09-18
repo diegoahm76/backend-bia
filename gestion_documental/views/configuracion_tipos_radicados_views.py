@@ -1,4 +1,5 @@
 
+import copy
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from gestion_documental.choices.tipo_radicado_choices import cod_tipos_radicados_LIST
@@ -11,6 +12,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
 from datetime import date
 from django.utils import timezone
+from seguridad.models import Personas
+
+from seguridad.utils import Util
+from transversal.views.bandeja_alertas_views import BandejaAlertaPersonaCreate
 
 class GetLisPerfilesSistema(APIView):
     def get(self, request):
@@ -33,12 +38,19 @@ class ConfigTiposRadicadoAgnoUpdate(generics.UpdateAPIView):
         # Verificar si la instancia existe
         if not instance:
             return Response({'detail': 'La configuracion no existe.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        previous=copy.copy(instance)
         if instance.implementar and instance.agno_radicado==age:
             raise ValidationError('No se puede modificar la configuracion de un consecutivo si se esta implementando actualmente.')
         if instance.agno_radicado < age:
             raise ValidationError('No se puede modificar la configuracion de un consecutivo si es de un año anterior.')
         if 'implementar' in data_in:
-            if data_in['implementar']==True:
+
+            if data_in['implementar']==False and instance.implementar:
+                 data_in['prefijo_consecutivo']=None
+                 data_in['consecutivo_inicial']=None
+                 data_in['cantidad_digitos']=None
+            elif data_in['implementar']==True:
 
                 if instance.cod_tipo_radicado=="U":
                     entrada=ConfigTiposRadicadoAgno.objects.filter(implementar=True,cod_tipo_radicado='E',agno_radicado=instance.agno_radicado)
@@ -92,6 +104,27 @@ class ConfigTiposRadicadoAgnoUpdate(generics.UpdateAPIView):
             serializer.is_valid(raise_exception=True)
             
             serializer.save()
+
+            direccion=data_in['direccion']
+            descripcion = {"AgnoRadicado":instance.agno_radicado,"CodTipoRadicado":instance.cod_tipo_radicado}
+            
+            valores_actualizados = {'current': instance, 'previous': previous}
+            #print(valores_actualizados)
+            id_modulo=0
+            if instance.agno_radicado==age:
+                id_modulo=143
+            elif instance.agno_radicado==age+1:
+                id_modulo=144
+            auditoria_data = {
+                "id_usuario" : data_in['user'],
+                "id_modulo" : id_modulo,
+                "cod_permiso": "AC",
+                "subsistema": 'GEST',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+                "valores_actualizados": valores_actualizados
+            }
+            Util.save_auditoria(auditoria_data) 
         except ValidationError as e:
             raise ValidationError(e.detail)
 
@@ -105,8 +138,9 @@ class ConfigTiposRadicadoAgnoUpdate(generics.UpdateAPIView):
     def put(self, request, pk):
         data_in = request.data
         usuario = request.user.id_usuario
+        #direccion=
         data_in['user']=usuario#id_persona_config_implementacion
-        
+        data_in['direccion']=Util.get_client_ip(request)
         response= self.actualizar_config_tipos_radicado_agno(data_in,pk)
         return response
     
@@ -121,7 +155,7 @@ class ConfigTiposRadicadoAgnoCreate(generics.CreateAPIView):
         age = hoy.year
         print(age)
         print(age+1)
-        print(data_in['agno_radicado'])
+        #print(data_in['agno_radicado'])
         if 'agno_radicado' in data_in:
             if data_in['agno_radicado']!= age and  data_in['agno_radicado']!= (age+1):
                 raise ValidationError("El año debe ser el actual o el siguiente")
@@ -164,10 +198,27 @@ class ConfigTiposRadicadoAgnoCreate(generics.CreateAPIView):
         try:
 
 
-
+            print(data_in)
             serializer = ConfigTiposRadicadoAgnoCreateSerializer(data=data_in)
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            instance=serializer.save()
+
+            id_modulo=0
+            if instance.agno_radicado==age:
+                id_modulo=143
+            elif instance.agno_radicado==age+1:
+                id_modulo=144
+
+            descripcion = {"AgnoRadicado":instance.agno_radicado,"CodTipoRadicado":instance.cod_tipo_radicado}
+            auditoria_data = {
+            "id_usuario" : data_in['user'],
+            "id_modulo" : id_modulo,
+            "cod_permiso": "CR",
+            "subsistema": 'GEST',
+            "dirip": data_in['direccion'],
+            "descripcion": descripcion, 
+            }
+            Util.save_auditoria(auditoria_data)
 
             return Response({
                 'success': True,
@@ -183,6 +234,7 @@ class ConfigTiposRadicadoAgnoCreate(generics.CreateAPIView):
         data_in = request.data
         usuario = request.user.id_usuario
         data_in['user'] = usuario #id_persona_config_implementacion
+        data_in['direccion']=Util.get_client_ip(request)
         #data_in['fecha_inicial_config_implementacion'] = timezone.now()
         response = self.crear_config_tipos_radicado_agno(data_in)
         return response
@@ -213,3 +265,32 @@ class ConfigTiposRadicadoAgnoGet(generics.ListAPIView):
         serializador = self.serializer_class(queryset, many=True)
                          
         return Response({'succes':True, 'detail':'Se encontró el siguiente histórico','data':serializador.data}, status=status.HTTP_200_OK)
+
+
+def actualizar_conf_agno_sig():
+    #print("SI SOU ")
+    hoy = date.today()
+    age=hoy.year+1
+    
+   
+    instance =ConfigTiposRadicadoAgno.objects.filter(agno_radicado=age)
+    for data,name in TIPOS_RADICADO_CHOICES:
+        conf=ConfigTiposRadicadoAgno.objects.filter(agno_radicado=age,cod_tipo_radicado=data).first()
+        if conf:
+            if conf.implementar:
+                print(conf)
+            print("existe")
+            print(data)
+        else:
+           conf_agno_anterior=ConfigTiposRadicadoAgno.objects.filter(agno_radicado=age-1,cod_tipo_radicado=data).first()
+           data_conf={}
+           data_conf['agno_radicado']=age
+           data_conf['cod_tipo_radicado']=data
+           data_conf['prefijo_consecutivo']=conf_agno_anterior.prefijo_consecutivo
+           data_conf['consecutivo_inicial']=1
+           data_conf['cantidad_digitos']=conf_agno_anterior.cantidad_digitos
+           data_conf['implementar']=conf_agno_anterior.implementar
+           print(conf_agno_anterior)
+           print("No Existe "+data) 
+        print("#############")
+    

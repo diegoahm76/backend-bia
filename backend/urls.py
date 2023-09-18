@@ -81,8 +81,14 @@ urlpatterns = [
     path('api/gestor/choices/', include('gestion_documental.urls.choices_urls')),
     path('api/gestor/ventanilla/',include('gestion_documental.urls.ventanilla_urls')),
     path('api/gestor/depositos-archivos/',include('gestion_documental.urls.depositos_archivo_urls')),
+    path('api/gestor/expedientes-archivos/',include('gestion_documental.urls.expedientes_url')),
     path('api/gestor/adminitrador_radicados/',include('gestion_documental.urls.tipos_radicados_consecutivos_url')),
+    path('api/gestor/pqr/',include('gestion_documental.urls.pqr_urls')),
+    path('api/gestor/encuestas/',include('gestion_documental.urls.encuentas_urls')),
     path('api/gestor/permisos/',include('gestion_documental.urls.permisos_urls')),
+    path('api/gestor/ctrl-acceso/',include('gestion_documental.urls.ctrl_acceso_urls')),
+    path('api/gestor/metadatos/',include('gestion_documental.urls.metadatos_urls')),
+    path('api/gestor/plantillas/',include('gestion_documental.urls.plantillas_urls')),
     
     #ALMACEN
     path('api/almacen/hoja-de-vida/', include('almacen.urls.hoja_de_vida_urls')),

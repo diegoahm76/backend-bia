@@ -78,7 +78,7 @@ class DepositoDelete(generics.DestroyAPIView):
             raise ValidationError("No existe la deposito a eliminar")
         
         if estantes:
-            raise ValidationError("No se puede Eliminar una deposito, si tiene estantes asignadas.")
+            raise ValidationError("No se puede Eliminar deposito, si tiene estantes asignadas.")
         
         
         tiene_bandejas = BandejaEstante.objects.filter(id_estante_deposito__id_deposito=pk).exists()
@@ -113,7 +113,7 @@ class DepositoDelete(generics.DestroyAPIView):
                 
             }
         Util.save_auditoria(auditoria_data) 
-        return Response({'success':True,'detail':'Se elimino el deposito seleccionada.'},status=status.HTTP_200_OK)
+        return Response({'success':True,'detail':'Se elimino el deposito seleccionado.'},status=status.HTTP_200_OK)
 
 
 #ACTUALIZAR_DEPOSITO
@@ -161,7 +161,7 @@ class DepositoUpdate(generics.UpdateAPIView):
 class DepositoGet(generics.ListAPIView):
     serializer_class = DepositoGetSerializer
     queryset = Deposito.objects.all().order_by('orden_ubicacion_por_entidad')
-    permission_classes = []
+    permission_classes = [IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()

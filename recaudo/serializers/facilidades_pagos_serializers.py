@@ -88,7 +88,7 @@ class DatosContactoDeudorSerializer(serializers.ModelSerializer):
     ciudad = serializers.SerializerMethodField()
 
     def get_ciudad(self, obj):
-        ubicacion = Municipio.objects.filter(cod_municipio=obj.municipio_residencia).first()
+        ubicacion = Municipio.objects.filter(cod_municipio=obj.municipio_residencia.cod_municipio).first()
         ubicacion = ubicacion.nombre
         return ubicacion
         

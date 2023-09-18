@@ -1,7 +1,6 @@
 from django.db import models
-from transversal.models.base_models import (
-    Municipio
-)
+from transversal.models.base_models import (Municipio)
+
 from transversal.models.base_models import Paises
 from transversal.models.entidades_models import SucursalesEmpresas
 
@@ -12,8 +11,8 @@ class Deposito(models.Model):
     identificacion_por_entidad = models.CharField(max_length=10, db_column='T230identificacionPorEntidad')
     orden_ubicacion_por_entidad = models.SmallIntegerField(db_column='T230ordenUbicacionPorEntidad')
     direccion_deposito = models.CharField(max_length=255, db_column='T230direccionDeposito')
-    cod_municipio_nal = models.ForeignKey(Municipio, on_delete=models.CASCADE, db_column='T230Cod_MunicipioNal',null=True)
-    cod_pais_exterior = models.ForeignKey(Paises, on_delete=models.CASCADE, db_column='T230Cod_PaisExterior',null=True)
+    cod_municipio_nal = models.ForeignKey(Municipio, on_delete=models.SET_NULL, db_column='T230Cod_MunicipioNal',null=True)
+    cod_pais_exterior = models.ForeignKey(Paises, on_delete=models.SET_NULL, db_column='T230Cod_PaisExterior',null=True)
     id_sucursal_entidad = models.ForeignKey(SucursalesEmpresas, on_delete=models.CASCADE, db_column='T230Id_SucursalEntidad')
     activo = models.BooleanField(db_column='T230activo')
 

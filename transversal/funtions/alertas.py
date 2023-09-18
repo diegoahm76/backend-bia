@@ -58,9 +58,8 @@ def generar_alerta_segundo_plano():
     #Alerta en Fecha Fija - Programadas con o sin Repeticiones anteriores o posteriores  (con y sin año).
     
     for programada in alertas_generadas:
-            print("HOLAAA")
-           
-
+            
+        
             if   programada.agno_cumplimiento:
                 agno_alerta=programada.agno_cumplimiento
                 agno_fijo=True
@@ -307,9 +306,9 @@ def programar_alerta(programada,clasificacion,ultima_rep,agno_fijo):
                         alerta_bandeja['fecha_envio_email']=datetime.now()
 
                     else:
-                        alerta_bandeja['email_usado'] = "No aplica"
+                        alerta_bandeja['email_usado'] = None
                 else:
-                    alerta_bandeja['email_usado'] = "No aplica"
+                    alerta_bandeja['email_usado'] = None
                 if id_responsable and  destino == str(id_responsable):
                         alerta_bandeja['responsable_directo']=True
                 else:
@@ -326,10 +325,11 @@ def programar_alerta(programada,clasificacion,ultima_rep,agno_fijo):
                 bandejas_notificaciones.pendientes_leer=True
                 bandejas_notificaciones.save()
                 serializer_alerta_bandeja.is_valid(raise_exception=True)
+                instance_alerta_bandeja=serializer_alerta_bandeja.save()
             else:
                 print("###DESTINATARIO")
                 print(destino)
-            instance_alerta_bandeja=serializer_alerta_bandeja.save()
+            #instance_alerta_bandeja=serializer_alerta_bandeja.save()
 
         #Mantenimiento
         #SI ES DE AÑO  FIJO Y ES LA ULTIMA RETETICION SE ELIMINA
