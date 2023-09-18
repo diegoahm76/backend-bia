@@ -425,9 +425,28 @@ class BusquedaCCDSerializer(serializers.ModelSerializer):
         model = CuadrosClasificacionDocumental
         fields ='__all__'
 
+
+class BusquedaCCDHomologacionSerializer(serializers.ModelSerializer):
+    id_organigrama = serializers.ReadOnlyField(source='id_organigrama.id_organigrama',default=None)
+    nombre_organigrama = serializers.ReadOnlyField(source='id_organigrama.nombre',default=None)
+    version_organigrama = serializers.ReadOnlyField(source='id_organigrama.version',default=None)
+
+    class Meta:
+        model = CuadrosClasificacionDocumental
+        fields = ['id_ccd', 'nombre', 'version', 'id_organigrama', 'nombre_organigrama', 'version_organigrama']
+
+
 class CompararSeriesDocUnidadSerializer(serializers.ModelSerializer):
     id_organigrama = serializers.ReadOnlyField(source='id_organigrama.id_organigrama',default=None)
 
     class Meta:
         model = UnidadesOrganizacionales
+        fields = ['id_unidad_organizacional', 'codigo', 'nombre', 'id_organigrama']
+
+
+class CompararSeriesDocUnidadCatSerieSerializer(serializers.ModelSerializer):
+    cod_serie = serializers.ReadOnlyField(source='.id_organigrama',default=None)
+
+    class Meta:
+        model = CatalogosSeriesUnidad
         fields = ['id_unidad_organizacional', 'codigo', 'nombre', 'id_organigrama']
