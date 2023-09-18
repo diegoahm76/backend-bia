@@ -4,5 +4,6 @@ from gestion_documental.views import plantillas_views as views
 
 urlpatterns = [
     path('plantilla_documento/create/', views.PlantillasDocCreate.as_view(),name='crear-plantilla'),
-    path('tipos_tipologia/get/',views.TipologiasDocGetActivo.as_view(),name='listar-tipologias')
+    path('tipos_tipologia/get/',views.TipologiasDocGetActivo.as_view(),name='listar-tipologias'),
+    path('acceso/create/',views.AccesoUndsOrg_PlantillaDocCreate.as_view(),name='crear-acceso'),
 ]
