@@ -17,6 +17,7 @@ urlpatterns = [
     path('tipo-subsistema/', views.TipoSubsistemaCreado.as_view(), name='tipo-subsistema-creado'),
     path('tipo-radicado/', views.TipoRadicado.as_view(), name='tipo-radicado'),
     path('operacion-realizada/', views.OperacionRealizada.as_view(), name='operaciones-realizadas'),
-    
+    path('tipo-dato-alojar/', views.TipoDatoAlojar.as_view(), name='tipo-dato-alojar'),
+    path('tipo-acceso/', views.TipoAcceso.as_view(), name='tipo-acceso'),
     
 ]

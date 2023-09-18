@@ -424,3 +424,10 @@ class BusquedaCCDSerializer(serializers.ModelSerializer):
     class Meta:
         model = CuadrosClasificacionDocumental
         fields ='__all__'
+
+class CompararSeriesDocUnidadSerializer(serializers.ModelSerializer):
+    id_organigrama = serializers.ReadOnlyField(source='id_organigrama.id_organigrama',default=None)
+
+    class Meta:
+        model = UnidadesOrganizacionales
+        fields = ['id_unidad_organizacional', 'codigo', 'nombre', 'id_organigrama']

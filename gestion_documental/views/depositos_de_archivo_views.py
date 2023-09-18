@@ -161,7 +161,7 @@ class DepositoUpdate(generics.UpdateAPIView):
 class DepositoGet(generics.ListAPIView):
     serializer_class = DepositoGetSerializer
     queryset = Deposito.objects.all().order_by('orden_ubicacion_por_entidad')
-    permission_classes = []
+    permission_classes = [IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()

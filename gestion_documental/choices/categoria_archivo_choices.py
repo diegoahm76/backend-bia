@@ -1,5 +1,5 @@
 categoria_archivo_CHOICES = (
-    ('TX', 'Simple'),
+    ('TX', 'Texto'),
     ('IM', 'Imagen'),
     ('AU', 'Audio'),
     ('VD', 'Video'),

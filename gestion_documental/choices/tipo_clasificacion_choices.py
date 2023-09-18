@@ -1,5 +1,5 @@
 tipo_clasificacion_CHOICES=(
     ('P','Público'),
-    ('C','Controlado'),
+    ('C','Clasificado'),
     ('R','Rerservado')
 )
