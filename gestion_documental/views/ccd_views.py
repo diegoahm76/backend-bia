@@ -968,17 +968,10 @@ class CompararSeriesDocUnidadView(generics.ListAPIView):
 
     def get(self, request, id_organigrama):
 
-        # TO DO: un CCD que ya esté terminado, que no esté puesto en producción aún, 
-        # y que ya tenga un TRD y un TCA terminados con fecha de terminado posterior 
-        # a la fecha de puesta en producción del TCA actual.
-
-
-        try:
-            organigrama_nuevo = Organigramas.objects.get(id_organigrama=id_organigrama, actual=False)
-        except Organigramas.DoesNotExist:
+        if not Organigramas.objects.filter(id_organigrama=id_organigrama, actual=False).exists():
             raise PermissionDenied('No se puede homologar debido a que el CCD pertenece al organigrama actual')
 
-        unidades_organizacionales_nuevo = UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama_nuevo.id_organigrama)
+        unidades_organizacionales_nuevo = UnidadesOrganizacionales.objects.filter(id_organigrama=id_organigrama)
         unidades_nueva = self.serializer_class(unidades_organizacionales_nuevo, many=True).data
 
         organigrama_actual = Organigramas.objects.get(actual=True)
@@ -1020,11 +1013,11 @@ class CompararSeriesDocUnidadCatSerieView(generics.ListAPIView):
 
         data_in = request.data
 
-        try:
-            organigrama_nuevo = Organigramas.objects.get(id_organigrama=data_in['id_organigrama_unidad_nueva'], actual=False)
-        except Organigramas.DoesNotExist:
-            raise PermissionDenied('No se puede homologar debido a que el CCD pertenece al organigrama actual')
+        if not Organigramas.objects.filter(id_organigrama=data_in['id_organigrama_unidad_actual'], actual=True).exists():
+            raise NotFound('No se puede homologar debido a que el organigrama actual no existe')
         
+        if not Organigramas.objects.filter(id_organigrama=data_in['id_organigrama_unidad_nueva'], actual=False).exists():
+            raise PermissionDenied('No se puede homologar debido a que el CCD pertenece al organigrama actual')
         
         if not UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=data_in['id_unidad_actual']).exists(): 
             raise NotFound('No se encontro unidad organizacional actual')
@@ -1037,31 +1030,38 @@ class CompararSeriesDocUnidadCatSerieView(generics.ListAPIView):
 
         if not unidad_cat_serie_actual or not unidad_cat_serie_nueva:
             raise ValidationError('No hay unidades realcionadas con un CCD')
+        
         unidad_cat_serie_actual_data = self.serializer_class(unidad_cat_serie_actual, many=True).data
         unidad_cat_serie_nueva_data = self.serializer_class(unidad_cat_serie_nueva, many=True).data
         
-
         data = []
-        data.append(unidad_cat_serie_actual_data)
-        data.append(unidad_cat_serie_nueva_data)
 
-        # for unidad_actual in unidades_actual:
-        #     for unidad_nueva in unidades_nueva:
-        #         if unidad_actual['codigo'] == unidad_nueva['codigo']:
-        #             data_json = {
-        #                 'id_unidad_actual': unidad_actual['id_unidad_organizacional'],
-        #                 'cod_unidad_actual': unidad_actual['codigo'],
-        #                 'nom_unidad_actual': unidad_actual['nombre'],
-        #                 'id_organigrama_unidad_actual': unidad_actual['id_organigrama'],
-        #                 'id_unidad_nuevo': unidad_nueva['id_unidad_organizacional'],
-        #                 'cod_unidad_nuevo': unidad_nueva['codigo'],
-        #                 'nom_unidad_nuevo': unidad_nueva['nombre'],
-        #                 'id_organigrama_unidad_nuevo': unidad_nueva['id_organigrama']
-        #             }
-        #             data_json['iguales'] = unidad_actual['nombre'] == unidad_nueva['nombre']
-        #             data.append(data_json)
+        for uni_cat_ser_actual in unidad_cat_serie_actual_data:
+            for uni_cat_ser_nueva in unidad_cat_serie_nueva_data:
+                if uni_cat_ser_nueva['cod_serie'] == uni_cat_ser_actual['cod_serie'] and uni_cat_ser_nueva['cod_subserie'] == uni_cat_ser_actual['cod_subserie']:
+                    data_json = {
+                        'id_unidad_org_actual': uni_cat_ser_actual['id_unidad_organizacional'],
+                        'id_catalogo_serie_actual': uni_cat_ser_actual['id_catalogo_serie'],
+                        'id_serie_actual': uni_cat_ser_actual['id_serie'],
+                        'cod_serie_actual': uni_cat_ser_actual['cod_serie'],
+                        'nombre_serie_actual': uni_cat_ser_actual['nombre_serie'],
+                        'id_subserie_actual': uni_cat_ser_actual['id_subserie'],
+                        'cod_subserie_actual': uni_cat_ser_actual['cod_subserie'],
+                        'nombre_subserie_actual': uni_cat_ser_actual['nombre_subserie'],
 
-        # data = sorted(data, key=lambda x: x['iguales'], reverse=True)
+                        'id_unidad_org_nueva': uni_cat_ser_nueva['id_unidad_organizacional'],
+                        'id_catalogo_serie_nueva': uni_cat_ser_nueva['id_catalogo_serie'],
+                        'id_serie_nueva': uni_cat_ser_nueva['id_serie'],
+                        'cod_serie_nueva': uni_cat_ser_nueva['cod_serie'],
+                        'nombre_serie_nueva': uni_cat_ser_nueva['nombre_serie'],
+                        'id_subserie_nueva': uni_cat_ser_nueva['id_subserie'],
+                        'cod_subserie_nueva': uni_cat_ser_nueva['cod_subserie'],
+                        'nombre_subserie_nueva': uni_cat_ser_nueva['nombre_subserie']
+                    }
+                    data_json['iguales'] = uni_cat_ser_actual['nombre_serie'] == uni_cat_ser_nueva['nombre_serie'] and uni_cat_ser_actual['nombre_subserie'] == uni_cat_ser_nueva['nombre_subserie']
+                    data.append(data_json)
+
+        data = sorted(data, key=lambda x: x['iguales'], reverse=True)
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
 
