@@ -273,6 +273,13 @@ class UnidadesPermisosPutView(generics.UpdateAPIView):
             data['denegar_conceder_acceso_exp_na_resp_series']
         ]
         
+        if data['excluir_und_actual_respon_series_doc_restriccion']:
+            if not data['denegar_borrado_docs'] and not data['denegar_anulacion_docs']:
+                raise ValidationError('No puede marcar "Excluir a Sección o Subsección Actual Responsable de la Serie Documental, de las Restricciones de Anulación y Borrado" sin marcar por lo menos uno de los siguientes: "Denegar Borrar Documentos", "Denegar Anular Documentos"')
+        else:
+            if data['denegar_borrado_docs'] or data['denegar_anulacion_docs']:
+                raise ValidationError('No puede dejar desmarcado "Excluir a Sección o Subsección Actual Responsable de la Serie Documental, de las Restricciones de Anulación y Borrado" sin desmarcar los siguientes: "Denegar Borrar Documentos", "Denegar Anular Documentos"')
+        
         serializer = None
         
         if instance:
@@ -340,4 +347,6 @@ class UnidadesPermisosPutView(generics.UpdateAPIView):
             self.put_restricciones(request, id_cat_serie_und)
         
         # PENDIENTE VALIDACION SI TIENEN PERMISOS
+        
+        # PENDIENTE AUDITORIAS
         return Response({'succes': True, 'detail':'Se realizó el guardado correctamente'}, status=status.HTTP_200_OK)

@@ -542,6 +542,13 @@ class RegisterPersonaJuridicaAdmin(generics.CreateAPIView):
             "descripcion": descripcion, 
         }
         Util.save_auditoria(auditoria_data)
+        #CREACION DE BANDEJA DE ALERTAS
+        crear_bandeja=BandejaAlertaPersonaCreate()
+
+        response_bandeja=crear_bandeja.crear_bandeja_persona({"id_persona":serializador.id_persona})
+            
+        if response_bandeja.status_code!=status.HTTP_201_CREATED:
+            raise ValidationError(response_bandeja)
         
         return Response({'success':True, 'detail':'Se creo la persona jurídica correctamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 
@@ -593,6 +600,13 @@ class RegisterPersonaNaturalAdmin(generics.CreateAPIView):
             "valores_creados_detalles": valores_creados_detalles
         }
         Util.save_auditoria_maestro_detalle(auditoria_data)
+        #CREACION DE BANDEJA DE ALERTAS
+        crear_bandeja=BandejaAlertaPersonaCreate()
+
+        response_bandeja=crear_bandeja.crear_bandeja_persona({"id_persona":serializador.id_persona})
+            
+        if response_bandeja.status_code!=status.HTTP_201_CREATED:
+            raise ValidationError(response_bandeja)
         
         return Response({'success':True, 'detail':'Se creo la persona jurídica correctamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 
@@ -1292,7 +1306,7 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
             subject = "Verifica tu usuario"
             template = "activación-de-usuario.html"
 
-
+            #CREACION DE BANDEJA DE ALERTAS
             crear_bandeja=BandejaAlertaPersonaCreate()
 
             response_bandeja=crear_bandeja.crear_bandeja_persona({"id_persona":serializador.id_persona})

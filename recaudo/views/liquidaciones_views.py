@@ -19,6 +19,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
+from django.shortcuts import render
 
 
 class OpcionesLiquidacionBaseView(generics.ListAPIView):
@@ -132,6 +133,18 @@ class ObtenerLiquidacionBaseView(generics.GenericAPIView):
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
+class ObtenerLiquidacionPorIdExpedienteBaseView(generics.GenericAPIView):
+    serializer_class = LiquidacionesBaseSerializer
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        queryset = LiquidacionesBase.objects.filter(id_expediente=pk).first()
+        if not queryset:
+            return Response({'success': False, 'detail': 'No se encontró ninguna liquidación base con el id de expediente ingresado'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.serializer_class(queryset)
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
 class DetallesLiquidacionBaseView(generics.GenericAPIView):
     serializer_class = DetallesLiquidacionBaseSerializer
     #permission_classes = [IsAuthenticated]
@@ -197,7 +210,7 @@ class ClonarOpcionLiquidacionView(generics.ListAPIView):
             opcion_nueva.save()
             serializer = self.serializer_class(opcion_nueva, many=False)
             return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
-        
+
 
 class ExpedientesDeudorGetView(generics.ListAPIView):
     serializer_class = ExpedientesSerializer
@@ -208,7 +221,22 @@ class ExpedientesDeudorGetView(generics.ListAPIView):
             raise NotFound('No se encontró ningún registro en expedientes con el parámetro ingresado')
         serializer = self.serializer_class(expedientes, many=True)
         return serializer.data
-    
+
     def get(self, request, id_deudor):
         expedientes = self.get_expedientes_deudor(id_deudor)
         return Response({'success': True, 'detail':'Se muestra los expedientes del deudor', 'data':expedientes}, status=status.HTTP_200_OK)
+
+
+def liquidacionPdf(request, pk):
+    liquidacion = LiquidacionesBase.objects.filter(pk=pk).get()
+    context = {
+        'referencia_pago': liquidacion.id,
+        'limite_pago': liquidacion.vencimiento,
+        'cedula': liquidacion.id_deudor.identificacion,
+        'titular': liquidacion.id_deudor.nombres + ' ' + liquidacion.id_deudor.apellidos,
+        'numero_cuota': liquidacion.periodo_liquidacion,
+        'valor_cuota': liquidacion.valor,
+        'fecha_impresion': liquidacion.fecha_liquidacion,
+        'codigo_barras': '',
+    }
+    return render(request, 'liquidacion.html', context=context)

@@ -20,10 +20,10 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from datetime import datetime, date, timedelta
-
+from transversal.models.personas_models import Personas
+from transversal.views.alertas_views import AlertasProgramadasCreate
 
 class PlanPagosValidationView(generics.RetrieveAPIView):
-    serializer_class = PlanPagosSerializer
     permission_classes = [IsAuthenticated]
 
     def get_validacion(self, id_facilidad_pago):
@@ -33,8 +33,10 @@ class PlanPagosValidationView(generics.RetrieveAPIView):
         
         instancia_plan = PlanPagosListGetView()
         plan_pagos = instancia_plan.get_plan_pagos_cuotas(id_facilidad_pago)
-        
-        return plan_pagos
+        if not plan_pagos:
+            return None
+        else:
+            return plan_pagos
         
     def get(self, request, id_facilidad_pago):
         instancia_validacion = self.get_validacion(id_facilidad_pago)
@@ -56,13 +58,13 @@ class PlanPagosResolucionValidationView(generics.RetrieveAPIView):
         
         plan_pago = PlanPagos.objects.filter(id_facilidad_pago=id_facilidad_pago).first()
 
-        if not plan_pago:
-            raise NotFound("No existe plan de pagos relacionada con la facilidad de pagos ingresada")
-        
-        instancia_resolucion = ResolucionUltimaPlanPagoGetView()
-        resolucion = instancia_resolucion.get_ultima_resolucion(plan_pago.id)
-        
-        return resolucion
+        if plan_pago:
+            # raise NotFound("No existe plan de pagos relacionada con la facilidad de pagos ingresada")
+            # return Response({'success': False, 'detail': 'No existe plan de pagos para la facilidad de pago relacionada con la información dada'})
+            instancia_resolucion = ResolucionUltimaPlanPagoGetView()
+            resolucion = instancia_resolucion.get_ultima_resolucion(plan_pago.id)
+            return resolucion
+        return None
         
     def get(self, request, id_facilidad_pago):
         instancia_validacion = self.get_validacion(id_facilidad_pago)
@@ -277,9 +279,9 @@ class PlanPagosCuotasCreateView(generics.CreateAPIView):
         
         serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
-        plan_pagos = serializer.save()
+        cuota_plan_pagos = serializer.save()
 
-        return plan_pagos
+        return cuota_plan_pagos
     
     def post(self, request):
         data = request.data
@@ -323,6 +325,7 @@ class PlanPagosCreateView(generics.CreateAPIView):
         capital = round((data['saldo_total']/plan_pagos.nro_cuotas),2)
         intereses = round((data['intreses_mora']/plan_pagos.nro_cuotas),2)
         cuota_ant = None
+        crear_alerta=AlertasProgramadasCreate()
 
         for cuota in range(plan_pagos.nro_cuotas):
             fecha_plan = fecha_plan + timedelta(days=plan_pagos.periodicidad * 30)
@@ -339,11 +342,31 @@ class PlanPagosCreateView(generics.CreateAPIView):
                 'saldo_pendiente': round((data['saldo_total'] - (capital*(cuota))),2),
                 'id_cuota_anterior': cuota_ant
                 }
-            
             instance_cuota = PlanPagosCuotasCreateView()
             cuota_creada = instance_cuota.crear_plan_pagos_cuotas(data_cuota)
             cuota_ant = cuota_creada.id
             plan_cuotas.append(instance_cuota.serializer_class(cuota_creada).data)
+            persona = Personas.objects.filter(numero_documento=facilidad_pago.id_deudor.identificacion).first()
+            mensaje = '<p>'+ f'{facilidad_pago.id_deudor.nombres} {facilidad_pago.id_deudor.apellidos}'+' la cuota # '+str(cuota_creada.nro_cuota)+' esta por un valor a pagar: '+str(cuota_creada.monto_cuota)+' y la fecha de pago es: '+str(cuota_creada.fecha_vencimiento)+'</p>'
+
+            
+            
+            
+            data_alerta = {
+                'cod_clase_alerta':'Rec_VPPago',
+                'dia_cumplimiento':fecha_plan.day,
+                'mes_cumplimiento':fecha_plan.month,
+                'age_cumplimiento':fecha_plan.year,
+                'complemento_mensaje':mensaje,
+                'id_elemento_implicado':cuota_creada.id,
+                'id_persona_implicada':persona.id_persona,
+                "tiene_implicado":True
+                }
+            
+            response_alerta=crear_alerta.crear_alerta_programada(data_alerta)
+            if response_alerta.status_code!=status.HTTP_201_CREATED:
+                return response_alerta
+            
 
         plan_pagos_data = serializer.data
         plan_pagos_data['cuotas'] = plan_cuotas
@@ -377,14 +400,13 @@ class PlanPagosCuotasListGetView(generics.ListAPIView):
         plan_pago_cuotas = PlanPagosCuotas.objects.filter(id_plan_pago=plan_pago.id)
         serializer = self.serializer_class(plan_pago_cuotas, many=True)
         data = serializer.data
-        
         return data
     
     def get(self, request, id_plan_pagos):
         plan_pago_cuotas = self.get_cuotas(id_plan_pagos)
         return Response({'success': True, 'detail':'Se muestra los datos del deudor', 'data':plan_pago_cuotas}, status=status.HTTP_200_OK) 
 
-
+    
 class PlanPagosListGetView(generics.ListAPIView):
     serializer_class = PlanPagosSerializer
 
@@ -399,19 +421,21 @@ class PlanPagosListGetView(generics.ListAPIView):
             raise NotFound("No existe facilidad de pago relacionada con la información dada")
 
         plan_pago = PlanPagos.objects.filter(id_facilidad_pago=facilidad_pago.id).first()
-        if not plan_pago:
-            raise NotFound("No existe plan de pagos relacionado con la información dada")
         
-        plan_pago_data = self.get_plan_pago(plan_pago)
-        instancia_cuota = PlanPagosCuotasListGetView()
-        cuotas_data = instancia_cuota.get_cuotas(plan_pago_data['id'])
+        if not plan_pago:
+            # raise NotFound("No existe plan de pagos relacionado con la información dada")
+            reponse_data = None
 
-        reponse_data = {
-            'plan_pago':plan_pago_data,
-            'cuotas':cuotas_data
-        }
-
+        else:
+            plan_pago_data = self.get_plan_pago(plan_pago)
+            instancia_cuota = PlanPagosCuotasListGetView()
+            cuotas_data = instancia_cuota.get_cuotas(plan_pago_data['id'])
+            reponse_data = {
+                'plan_pago':plan_pago_data,
+                'cuotas':cuotas_data
+            }
         return reponse_data
+    
     
     def get(self, request, id_facilidad_pago):
 

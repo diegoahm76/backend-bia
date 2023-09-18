@@ -11,15 +11,17 @@ from transversal.models.personas_models import Personas
 from transversal.serializers.personas_serializers import PersonasFilterSerializer
 
 class CrearSolicitudesPostSerializer(serializers.ModelSerializer):
+    nombre_vivero_solicita = serializers.ReadOnlyField(source='id_vivero_solicita.nombre', default=None)
     
     class Meta:
         model = SolicitudesConsumibles
-        fields = '__all__'
+        exclude = ['id_vivero_solicita']
 
 class GetListSolicitudesSerializer(serializers.ModelSerializer):
     persona_solicita = serializers.SerializerMethodField()
     persona_responsable = serializers.SerializerMethodField()
     nombre_unidad_organizacional_destino = serializers.ReadOnlyField(source='id_unidad_para_la_que_solicita.nombre', default=None)
+    nombre_vivero_solicita = serializers.ReadOnlyField(source='id_vivero_solicita.nombre', default=None)
     
     def get_persona_solicita(self, obj):
         nombre_completo_solicita = None
@@ -50,6 +52,7 @@ class SolicitudesPendientesAprobarSerializer(serializers.ModelSerializer):
     persona_solicita = serializers.SerializerMethodField()
     persona_responsable = serializers.SerializerMethodField()
     nombre_unidad_organizacional_destino = serializers.ReadOnlyField(source='id_unidad_para_la_que_solicita.nombre', default=None)
+    nombre_vivero_solicita = serializers.ReadOnlyField(source='id_vivero_solicita.nombre', default=None)
     
     def get_persona_solicita(self, obj):
         nombre_completo_solicita = None

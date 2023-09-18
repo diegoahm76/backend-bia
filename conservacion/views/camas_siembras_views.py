@@ -241,7 +241,7 @@ class CreateSiembraView(generics.CreateAPIView):
             raise ValidationError('El bien seleccionado no cumple los requisitos para que la siembra pueda ser creada')
         
         #ASIGNACIÓN NÚMERO LOTE
-        lote = Siembras.objects.filter(id_bien_sembrado=data_siembra['id_bien_sembrado'], id_vivero=data_siembra['id_vivero'], agno_lote=fecha_siembra_strptime.year).order_by('-nro_lote').first()
+        lote = InventarioViveros.objects.filter(id_bien=data_siembra['id_bien_sembrado'], id_vivero=data_siembra['id_vivero'], agno_lote=fecha_siembra_strptime.year).order_by('-nro_lote').first()
         contador = 0
         if lote:
             contador = lote.nro_lote

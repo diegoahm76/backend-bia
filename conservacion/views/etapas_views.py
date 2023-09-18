@@ -195,33 +195,19 @@ class GuardarCambioEtapa(generics.CreateAPIView):
             inventario_vivero.siembra_lote_cerrada = True
             inventario_vivero.save()
             
-            # VALIDAR Y CREAR REGISTRO SI ES NECESARIO
-            inventario_vivero_prod = InventarioViveros.objects.filter(
-                id_vivero=data['id_vivero'],
-                id_bien=data['id_bien'],
-                agno_lote=data['agno_lote'],
-                nro_lote=data['nro_lote'],
-                cod_etapa_lote='P'
-            ).first()
-            
-            nro_lote_prod = inventario_vivero.nro_lote
-            
-            if inventario_vivero_prod:
-                nro_lote_prod = inventario_vivero_prod.nro_lote + 1 if inventario_vivero_prod.nro_lote else 1
-            else:
-                # NUEVO REGISTRO
-                InventarioViveros.objects.create(
-                    id_vivero = inventario_vivero.id_vivero,
-                    id_bien = inventario_vivero.id_bien,
-                    agno_lote = inventario_vivero.agno_lote,
-                    nro_lote = nro_lote_prod,
-                    cod_etapa_lote = 'P',
-                    es_produccion_propia_lote = True,
-                    fecha_ingreso_lote_etapa = fecha_cambio,
-                    ult_altura_lote = data['altura_lote_en_cms'],
-                    fecha_ult_altura_lote = fecha_cambio,
-                    cantidad_entrante = data['cantidad_movida']
-                )
+            # NUEVO REGISTRO
+            InventarioViveros.objects.create(
+                id_vivero = inventario_vivero.id_vivero,
+                id_bien = inventario_vivero.id_bien,
+                agno_lote = inventario_vivero.agno_lote,
+                nro_lote = inventario_vivero.nro_lote,
+                cod_etapa_lote = 'P',
+                es_produccion_propia_lote = True,
+                fecha_ingreso_lote_etapa = fecha_cambio,
+                ult_altura_lote = data['altura_lote_en_cms'],
+                fecha_ult_altura_lote = fecha_cambio,
+                cantidad_entrante = data['cantidad_movida']
+            )
         else:
             # ACTUALIZAR LOTE ACTUAL PRODUCCIÓN
             inventario_vivero.cantidad_traslados_lote_produccion_distribucion = inventario_vivero.cantidad_traslados_lote_produccion_distribucion + int(data['cantidad_movida']) if inventario_vivero.cantidad_traslados_lote_produccion_distribucion else data['cantidad_movida']

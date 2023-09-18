@@ -247,8 +247,8 @@ class DatosContactoDeudorView(generics.ListAPIView):
         deudor = Deudores.objects.filter(id=id_deudor).first()
         if not deudor:
             raise NotFound('No se encontró ningun registro con el parámetro ingresado')
-        deudor = Personas.objects.filter(numero_documento = deudor.identificacion).first()
-        serializer = self.serializer_class(deudor)
+        personas_deudor = Personas.objects.filter(numero_documento = deudor.identificacion).first()
+        serializer = self.serializer_class(personas_deudor)
         return serializer.data
     
     def get(self, request, id):

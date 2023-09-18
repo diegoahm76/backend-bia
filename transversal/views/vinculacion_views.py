@@ -2,6 +2,7 @@ from rest_framework import generics,status
 from rest_framework.response import Response
 from conservacion.models.viveros_models import HistoricoResponsableVivero, Vivero
 from almacen.models.generics_models import Bodegas
+from transversal.models.entidades_models import ConfiguracionEntidad
 from transversal.serializers.vinculacion_serializers import BusquedaHistoricoCargoUndSerializer, GetDesvinculacion_persona, VinculacionColaboradorSerializer, ConsultaVinculacionColaboradorSerializer, UpdateVinculacionColaboradorSerializer
 from seguridad.models import HistoricoActivacion, OperacionesSobreUsuario, User
 from transversal.models.base_models import (
@@ -11,10 +12,11 @@ from transversal.models.base_models import (
 )
 from transversal.models.personas_models import Personas
 from rest_framework.permissions import IsAuthenticated
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 import copy
 from transversal.models import UnidadesOrganizacionales
 from seguridad.utils import Util
+from transversal.views.configuracionEntidades_views import UpdateConfiguracionEntidad
 
 class VinculacionColaboradorView(generics.UpdateAPIView):
     serializer_class = VinculacionColaboradorSerializer
@@ -254,7 +256,9 @@ class Desvinculacion_persona(generics.UpdateAPIView):
         persona = self.queryset.all().filter(id_persona = id_persona).first()
        
        #VALIDAR DE QUE EL USUARIO SUPER ADMINISTRADOR NO SE ELIMINE
+        
         if persona:
+            print(persona.id_persona)
             usuario = User.objects.filter(persona=id_persona,tipo_usuario='I').exclude(id_usuario=1).first()
             
             if not data['observaciones_desvinculacion']:
@@ -321,48 +325,48 @@ class Desvinculacion_persona(generics.UpdateAPIView):
             
             dirip = Util.get_client_ip(request)
             
-            for vivero in viveros:
-                fecha_actual_viverista = vivero.fecha_inicio_viverista_actual
+            # for vivero in viveros:
+            #     fecha_actual_viverista = vivero.fecha_inicio_viverista_actual
                 
-                vivero.id_viverista_actual = None
-                vivero.fecha_inicio_viverista_actual=None     
-                vivero.fecha_cierre_actual = datetime.now()
-                vivero.en_funcionamiento = False 
-                vivero.id_persona_cierra = usuario_logueado.persona
-                vivero.justificacion_cierre = "Cierre por desvinculación del viverista"
+            #     vivero.id_viverista_actual = None
+            #     vivero.fecha_inicio_viverista_actual=None     
+            #     vivero.fecha_cierre_actual = datetime.now()
+            #     vivero.en_funcionamiento = False 
+            #     vivero.id_persona_cierra = usuario_logueado.persona
+            #     vivero.justificacion_cierre = "Cierre por desvinculación del viverista"
             
                 #GENERAR HISTORICO CUANDO SE RETIRA A UN RESPONSABLE DE VIVERO
                 
-                historico = HistoricoResponsableVivero.objects.filter(id_vivero=vivero.id_vivero, id_persona=vivero.id_viverista_actual).last()
+                # historico = HistoricoResponsableVivero.objects.filter(id_vivero=vivero.id_vivero, id_persona=vivero.id_viverista_actual).last()
                     
-                consecutivo = 1
+                # consecutivo = 1
                 
-                if historico:
-                    consecutivo = historico.consec_asignacion + 1         
-                print(vivero.fecha_inicio_viverista_actual)
-                HistoricoResponsableVivero.objects.create(
-                    id_vivero = vivero,
-                    id_persona = persona,
-                    consec_asignacion = consecutivo,
-                    fecha_inicio_periodo = fecha_actual_viverista,
-                    fecha_fin_periodo = fecha_desvinculacion,
-                    observaciones = "Retiro automático del Viverista por acción de desvinculación de la corporación desde el módulo de Vinculación de Colaboradores",
-                    id_persona_cambia = persona_logueaddo,                
-                )
+                # if historico:
+                #     consecutivo = historico.consec_asignacion + 1         
+                # print(vivero.fecha_inicio_viverista_actual)
+                # HistoricoResponsableVivero.objects.create(
+                #     id_vivero = vivero,
+                #     id_persona = persona,
+                #     consec_asignacion = consecutivo,
+                #     fecha_inicio_periodo = fecha_actual_viverista,
+                #     fecha_fin_periodo = fecha_desvinculacion,
+                #     observaciones = "Retiro automático del Viverista por acción de desvinculación de la corporación desde el módulo de Vinculación de Colaboradores",
+                #     id_persona_cambia = persona_logueaddo,                
+                # )
                 
-                vivero.save()
+                # vivero.save()
                 
-                # AUDITORIA
-                descripcion = {'nombre': vivero.nombre}
-                auditoria_data = {
-                    'id_usuario': usuario_logueado.id_usuario,
-                    'id_modulo': 43,
-                    'cod_permiso': 'CR',
-                    'subsistema': 'CONS',
-                    'dirip': dirip,
-                    'descripcion': descripcion
-                }
-                Util.save_auditoria(auditoria_data)
+                # # AUDITORIA
+                # descripcion = {'nombre': vivero.nombre}
+                # auditoria_data = {
+                #     'id_usuario': usuario_logueado.id_usuario,
+                #     'id_modulo': 43,
+                #     'cod_permiso': 'CR',
+                #     'subsistema': 'CONS',
+                #     'dirip': dirip,
+                #     'descripcion': descripcion
+                # }
+                # Util.save_auditoria(auditoria_data)
     
             #SI LA PERSONA ES RESPONSABLE DE ALGUNA BODEGA
 
@@ -402,7 +406,55 @@ class Desvinculacion_persona(generics.UpdateAPIView):
 
 
             #SI LA PERSONA SE ENCUENTRA EN LA CONFIGURACION DE LA ENTIDAD
-        
+            fecha_hora_actual =datetime.now()
+            actualizar_configuracion=UpdateConfiguracionEntidad()
+
+            perfiles_actuales=ConfiguracionEntidad.objects.first()
+            
+
+            if perfiles_actuales.id_persona_director_actual and perfiles_actuales.id_persona_director_actual.id_persona == persona.id_persona:
+                  
+                  fecha_inicio=perfiles_actuales.fecha_inicio_dir_actual
+                  perfiles_actuales.id_persona_director_actual = None
+                  perfiles_actuales.fecha_inicio_dir_actual = None 
+                  perfiles_actuales.save()
+                  actualizar_configuracion.registrarHistoricoPerfilesEntidad('Dire',1,persona,fecha_inicio,"Desvinculacion laboral",usuario_logueado.id_usuario)
+
+            if perfiles_actuales.id_persona_coord_almacen_actual and perfiles_actuales.id_persona_coord_almacen_actual.id_persona == persona.id_persona:
+                
+                fecha_inicio = perfiles_actuales.fecha_inicio_coord_alm_actual
+                perfiles_actuales.id_persona_coord_almacen_actual = None
+                perfiles_actuales.fecha_inicio_coord_alm_actual = None 
+                perfiles_actuales.save()
+                actualizar_configuracion.registrarHistoricoPerfilesEntidad('CAlm', 1, persona, fecha_inicio, "Desvinculación laboral", usuario_logueado.id_usuario)
+
+            if perfiles_actuales.id_persona_respon_transporte_actual and perfiles_actuales.id_persona_respon_transporte_actual.id_persona == persona.id_persona:
+            
+                fecha_inicio = perfiles_actuales.fecha_inicio_respon_trans_actual
+                perfiles_actuales.id_persona_respon_transporte_actual = None
+                perfiles_actuales.fecha_inicio_respon_trans_actual = None 
+                perfiles_actuales.save()
+                actualizar_configuracion.registrarHistoricoPerfilesEntidad('RTra', 1, persona, fecha_inicio, "Desvinculación laboral", usuario_logueado.id_usuario)
+
+            if perfiles_actuales.id_persona_coord_viveros_actual and perfiles_actuales.id_persona_coord_viveros_actual.id_persona == persona.id_persona:
+             
+                fecha_inicio = perfiles_actuales.fecha_inicio_coord_viv_actual
+                perfiles_actuales.id_persona_coord_viveros_actual = None
+                perfiles_actuales.fecha_inicio_coord_viv_actual = None 
+                perfiles_actuales.save()
+                actualizar_configuracion.registrarHistoricoPerfilesEntidad('CViv', 1, persona, fecha_inicio, "Desvinculación laboral", usuario_logueado.id_usuario)
+            
+            if perfiles_actuales.id_persona_almacenista and perfiles_actuales.id_persona_almacenista.id_persona == persona.id_persona:
+             
+                fecha_inicio = perfiles_actuales.fecha_inicio_almacenista
+                perfiles_actuales.id_persona_almacenista = None
+                perfiles_actuales.fecha_inicio_almacenista = None 
+                perfiles_actuales.save()
+                actualizar_configuracion.registrarHistoricoPerfilesEntidad('Alma', 1, persona, fecha_inicio, "Desvinculación laboral", usuario_logueado.id_usuario)
+
+
+                        
+                    
         return Response({'succes':True,'detail':'Se realiza la desvinculación.'},status=status.HTTP_200_OK)
     
 class BusquedaHistoricoCargoUnd(generics.ListAPIView):

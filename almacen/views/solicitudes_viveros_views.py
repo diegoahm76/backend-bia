@@ -1,11 +1,13 @@
 from almacen.models.bienes_models import CatalogoBienes
 from rest_framework import generics,status
 from rest_framework.response import Response
+from almacen.serializers.solicitudes_serialiers import PersonasResponsablesFilterSerializer
 from transversal.models import UnidadesOrganizacionales, NivelesOrganigrama
 from transversal.models.personas_models import Personas
 from seguridad.utils import Util
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
+from transversal.models.entidades_models import ConfiguracionEntidad
 from transversal.models.organigrama_models import (
     UnidadesOrganizacionales,
     NivelesOrganigrama
@@ -64,10 +66,16 @@ class CreateSolicitudViveros(generics.UpdateAPIView):
             funcionario_responsable = Personas.objects.filter(id_persona = info_solicitud['id_funcionario_responsable_unidad']).first()
             if not funcionario_responsable:
                 raise NotFound('El funcionario responsable no existe')
-            if funcionario_responsable.id_unidad_organizacional_actual == None:
-                raise NotFound('El funcionario responsable debe tener asignada una unidad organizacional')
-            if user_logeado.persona.id_unidad_organizacional_actual.id_unidad_organizacional == funcionario_responsable.id_unidad_organizacional_actual.id_unidad_organizacional:
-                raise NotFound('El funcionario responsable no puede ser de la misma unidad organizacional del que solicita')
+            
+            coordinador_viveros = ConfiguracionEntidad.objects.filter(id_persona_coord_viveros_actual=info_solicitud['id_funcionario_responsable_unidad']).first()
+            if not coordinador_viveros:
+                raise NotFound('El funcionario responsable debe ser el Coordinador de Viveros actual')
+            
+            # if funcionario_responsable.id_unidad_organizacional_actual == None:
+            #     raise NotFound('El funcionario responsable debe tener asignada una unidad organizacional')
+            # if user_logeado.persona.id_unidad_organizacional_actual.id_unidad_organizacional == funcionario_responsable.id_unidad_organizacional_actual.id_unidad_organizacional:
+            #     raise NotFound('El funcionario responsable no puede ser de la misma unidad organizacional del que solicita')
+            
             info_solicitud['id_unidad_org_del_responsable'] = funcionario_responsable.id_unidad_organizacional_actual.id_unidad_organizacional
         else:
             info_solicitud['id_unidad_org_del_responsable'] = None
@@ -119,8 +127,8 @@ class CreateSolicitudViveros(generics.UpdateAPIView):
             if user_logeado.persona.id_unidad_organizacional_actual.id_unidad_organizacional != info_solicitud['id_unidad_para_la_que_solicita']:
                 raise NotFound('Un usuario de una unidad de apoyo o asesor solo le puede hacer solicitudes a la misma unidad a la que pertenece')
 
-            if (info_solicitud['id_funcionario_responsable_unidad'] != padre_de_todos.id_persona and info_solicitud['id_funcionario_responsable_unidad'] != '' and info_solicitud['id_funcionario_responsable_unidad'] != None) or info_solicitud['id_funcionario_responsable_unidad'] == user_logeado.persona.id_persona:
-                raise NotFound('El usuario supervisor no puede ser el mismo usuario que solicita, el funcionario supervisor solo puede ser de unidad organizacional nivel 1')
+            # if (info_solicitud['id_funcionario_responsable_unidad'] != padre_de_todos.id_persona and info_solicitud['id_funcionario_responsable_unidad'] != '' and info_solicitud['id_funcionario_responsable_unidad'] != None) or info_solicitud['id_funcionario_responsable_unidad'] == user_logeado.persona.id_persona:
+            #     raise NotFound('El usuario supervisor no puede ser el mismo usuario que solicita, el funcionario supervisor solo puede ser de unidad organizacional nivel 1')
         # VALIDACIÓN DE LA LINEA DEL ORGANIGRAMA A LA QUE PERTENECE EL USUARIO SOLICITANTE Y EL USUARIO SUPERVISOR DEL SOLICITANTE
         else:
             if int(info_solicitud['id_funcionario_responsable_unidad']) == user_logeado.persona.id_persona:
@@ -168,8 +176,8 @@ class CreateSolicitudViveros(generics.UpdateAPIView):
             if not unidad_para_la_que_solicita['nombre'] in unidades_organiacionales_misma_linea:
                 raise NotFound('La unidad organizacional para la que solicita no pertenece a la linea del organigrama a la que pertenece el solicitante')
             
-            if not funcionario_responsable.id_unidad_organizacional_actual.nombre in unidades_iguales_y_arriba or funcionario_responsable.id_unidad_organizacional_actual.nombre == None:
-                raise NotFound('La persona que ingresó como responsable no es ningún superior de la persona que solicita')
+            # if not funcionario_responsable.id_unidad_organizacional_actual.nombre in unidades_iguales_y_arriba or funcionario_responsable.id_unidad_organizacional_actual.nombre == None:
+            #     raise NotFound('La persona que ingresó como responsable no es ningún superior de la persona que solicita')
         # Creacion de solicitudes
         if bandera_actualizar == False:
             if solicitudes_existentes:
@@ -301,3 +309,19 @@ class RevisionSolicitudBienConsumosViveroPorSupervisor(generics.UpdateAPIView):
         instance.save()
         
         return Response({'success':True,'Detail':'Solicitud aprobada con éxito', },status=status.HTTP_200_OK)
+
+class SearchCoordinadorViveros(generics.ListAPIView):
+    serializer_class=PersonasResponsablesFilterSerializer
+    queryset=Personas.objects.all()
+    permission_classes=[IsAuthenticated]
+    
+    def get(self, request):
+        coordinador_viveros = ConfiguracionEntidad.objects.all().first()
+        coordinador_viveros = coordinador_viveros.id_persona_coord_viveros_actual if coordinador_viveros else {}
+        data = {}
+        detail = 'No se encontró el Coordinador de Viveros'
+        if coordinador_viveros:
+            serializador_personas = self.serializer_class(coordinador_viveros)
+            data = serializador_personas.data
+            detail = 'Se encontró el Coordinador de Viveros'
+        return Response({'success':True, 'detail':detail, 'data':data}, status=status.HTTP_200_OK)

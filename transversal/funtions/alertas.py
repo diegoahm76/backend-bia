@@ -31,13 +31,13 @@ def separar_cadena(cadena):
 
 
 def alerta_proyectos_vigentes_porh():
-        mensaje=""
+        mensaje="<ul>"
         hoy = date.today()
         proyectos_vigentes = ProyectosPORH.objects.filter(Q(vigencia_inicial__lte=hoy) & Q(vigencia_final__gte=hoy))
         serializador = GenerardorMensajeProyectosPORHGetSerializer(proyectos_vigentes, many=True)
         for dato in serializador.data:
-            mensaje+="Proyecto "+str(dato['id_proyecto'])+" ("+str(dato['nombre'])+")"+" del Programa "+str(dato['id_programa'])+" ("+str(dato['nombre_programa'])+")"+"  del Plan de Ordenamiento de Recurso Hídrico "+str(dato['id_porh'])+" ("+str(dato['nombre_porh'])+")"+".\n"
-
+            mensaje+="<li>Proyecto "+str(dato['id_proyecto'])+" ("+str(dato['nombre'])+")"+" del Programa "+str(dato['id_programa'])+" ("+str(dato['nombre_programa'])+")"+"  del Plan de Ordenamiento de Recurso Hídrico "+str(dato['id_porh'])+" ("+str(dato['nombre_porh'])+")"+".</li>"
+        mensaje+="</ul>"
         return(mensaje)
 
 
@@ -58,9 +58,8 @@ def generar_alerta_segundo_plano():
     #Alerta en Fecha Fija - Programadas con o sin Repeticiones anteriores o posteriores  (con y sin año).
     
     for programada in alertas_generadas:
-            print("HOLAAA")
-           
-
+            
+        
             if   programada.agno_cumplimiento:
                 agno_alerta=programada.agno_cumplimiento
                 agno_fijo=True
@@ -291,24 +290,25 @@ def programar_alerta(programada,clasificacion,ultima_rep,agno_fijo):
                 alerta_bandeja['leido']=False
                 alerta_bandeja['archivado']=False
                 email_persona=bandejas_notificaciones.id_persona
-                
-               
+                #print("HOLAAAAAAAAAAAAAAAAAAA SI ENTRO ACA")
+                print( programada.requiere_envio_email)
                 if programada.requiere_envio_email:
                     if  email_persona and email_persona.email:
                         alerta_bandeja['email_usado'] = email_persona.email
                         subject = programada.nombre_clase_alerta
-                        template = "ingreso-de-entorno.html"
+                        
+                        template = "alerta.html"
 
-                        context = {'primer_nombre': email_persona.primer_nombre}
-                        #template = render_to_string((template), context)
-                        email_data = {'template': data_alerga_generada['mensaje'], 'email_subject': subject, 'to_email':email_persona.email}
+                        context = {'Nombre_alerta':programada.nombre_clase_alerta,'primer_nombre': email_persona.primer_nombre,"mensaje":data_alerga_generada['mensaje']}
+                        template = render_to_string((template), context)
+                        email_data = {'template': template, 'email_subject': subject, 'to_email':email_persona.email}
                         Util.send_email(email_data)
                         alerta_bandeja['fecha_envio_email']=datetime.now()
 
                     else:
-                        alerta_bandeja['email_usado'] = "No aplica"
+                        alerta_bandeja['email_usado'] = None
                 else:
-                    alerta_bandeja['email_usado'] = "No aplica"
+                    alerta_bandeja['email_usado'] = None
                 if id_responsable and  destino == str(id_responsable):
                         alerta_bandeja['responsable_directo']=True
                 else:
@@ -325,10 +325,11 @@ def programar_alerta(programada,clasificacion,ultima_rep,agno_fijo):
                 bandejas_notificaciones.pendientes_leer=True
                 bandejas_notificaciones.save()
                 serializer_alerta_bandeja.is_valid(raise_exception=True)
+                instance_alerta_bandeja=serializer_alerta_bandeja.save()
             else:
                 print("###DESTINATARIO")
                 print(destino)
-            instance_alerta_bandeja=serializer_alerta_bandeja.save()
+            #instance_alerta_bandeja=serializer_alerta_bandeja.save()
 
         #Mantenimiento
         #SI ES DE AÑO  FIJO Y ES LA ULTIMA RETETICION SE ELIMINA
