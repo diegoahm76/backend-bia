@@ -9,10 +9,9 @@ urlpatterns = [
      path('expedientes/listar-trd/',views.TrdDateGet.as_view(), name='listar-trd'),
      path('expedientes/agregar-archivo-soporte/',views.AgregarArchivoSoporte.as_view(), name='listar-trd'),
      path('expedientes/orden-siguiente/',views.ExpedienteGetOrden.as_view(), name='orden-expediente'),
-     path('expedientes/orden-actual/0',views.EstanteDepositoGetOrdenActual.as_view(), name='orden-expediente-actual'),
-
-
-
+     path('expedientes/orden-actual/',views.ExpedienteGetOrdenActual.as_view(), name='orden-expediente-actual'),
+     path('expedientes/listar-topologias/',views.ListarTipologias.as_view(), name='listar-topologias'),
+   
 
      
 ]
