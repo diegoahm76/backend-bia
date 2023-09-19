@@ -438,6 +438,12 @@ class  CajaListDepositoInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Deposito
         fields = '__all__'
+
+class  CajaRotuloSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  CajaBandeja
+        fields = '__all__'
+
 #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ######################## SERIALIZERS CARPETA ########################

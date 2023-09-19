@@ -53,6 +53,7 @@ urlpatterns = [
      path('cajaBandeja/listar-estantes-por-caja/<int:id_caja>/',views.CajaListEstanteInfo.as_view(),name='listar-estantes-por-caja'),
      path('cajaBandeja/listar-depositos-por-caja/<int:id_caja>/',views.CajaListDepositoInfo.as_view(),name='listar-depositos-por-caja'),
      path('cajaBandeja/listar/',views.CajaBandejaAll.as_view(),name='listar-cajas'),
+     path('cajaBandeja/rotulo/<int:id_caja_bandeja>/',views.CajaRotulo.as_view(),name='rotulo-cajas'),
 
 
 
