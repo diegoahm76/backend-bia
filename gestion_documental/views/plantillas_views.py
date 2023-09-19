@@ -68,7 +68,7 @@ class PlantillasDocCreate(generics.CreateAPIView):
 class PlantillasDocDelete(generics.DestroyAPIView):
     queryset = PlantillasDoc.objects.all()
     serializer_class = PlantillasDocCreateSerializer
-    
+    permission_classes = [IsAuthenticated]
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
@@ -81,7 +81,7 @@ class PlantillasDocDelete(generics.DestroyAPIView):
 class TipologiasDocGetActivo(generics.ListAPIView):
     serializer_class = TipologiasDocSerializerGetSerializer
     queryset =TipologiasDoc.objects.all()
-
+    permission_classes = [IsAuthenticated]
     def get (self, request):
         instance = TipologiasDoc.objects.filter(activo=True)
 
@@ -144,7 +144,7 @@ class AccesoUndsOrg_PlantillaDocGetByPlantilla(generics.ListAPIView):
 class AccesoUndsOrg_PlantillaDocDelete(generics.DestroyAPIView):
     queryset = AccesoUndsOrg_PlantillaDoc.objects.all()
     serializer_class = AccesoUndsOrg_PlantillaDocCreateSerializer
-
+    permission_classes = [IsAuthenticated]
     def eliminar(self,pk):
         instance = AccesoUndsOrg_PlantillaDoc.objects.filter(id_acceso_und_org_plantilla_doc=pk).first()
         if not instance:
@@ -164,7 +164,7 @@ class AccesoUndsOrg_PlantillaDocDelete(generics.DestroyAPIView):
 class PlantillasDocUpdateUpdate(generics.UpdateAPIView):
     queryset = PlantillasDoc.objects.all()
     serializer_class = PlantillasDocUpdateSerializer
-
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, *args, **kwargs):
 
