@@ -462,6 +462,8 @@ class CompararSeriesDocUnidadCatSerieSerializer(serializers.ModelSerializer):
         model = CatalogosSeriesUnidad
         fields = ['id_unidad_organizacional', 'id_catalogo_serie', 'id_serie', 'cod_serie', 'nombre_serie', 'id_subserie', 'cod_subserie', 'nombre_subserie']
 
+
+#   LLAMADO DE SERIALIZADOR DENTRO DE OTRO SERIALIZADOR CON RELACION
 # class SeriesDocSerializer(serializers.ModelSerializer):
 #     class Meta:
 #         model = SeriesDoc
@@ -472,8 +474,6 @@ class CompararSeriesDocUnidadCatSerieSerializer(serializers.ModelSerializer):
 #         model = SubseriesDoc
 #         fields = ['id_subserie_doc', 'codigo', 'nombre']
 
-
-
 # class CompararSeriesDocUnidadCatSerieSerializer(serializers.ModelSerializer):
 #     serie = SeriesDocSerializer(source='id_catalogo_serie.id_serie_doc', read_only=True)
 #     subserie = SubseriesDocSerializer(source='id_catalogo_serie.id_subserie_doc', read_only=True)
@@ -483,16 +483,3 @@ class CompararSeriesDocUnidadCatSerieSerializer(serializers.ModelSerializer):
 #         model = CatalogosSeriesUnidad
 #         fields = ['id_unidad_organizacional', 'id_catalogo_serie', 'serie', 'subserie']
 
-
-# class CompararSeriesDocUnidadCatSerieSerializer(serializers.ModelSerializer):
-#     id_serie = serializers.ReadOnlyField(source='id_serie_doc.id_serie_doc',default=None)
-#     cod_serie = serializers.ReadOnlyField(source='id_serie_doc.codigo',default=None)
-#     nombre_serie = serializers.ReadOnlyField(source='id_serie_doc.nombre',default=None)
-#     id_subserie = serializers.ReadOnlyField(source='id_subserie_doc.id_subserie_doc',default=None)
-#     cod_subserie = serializers.ReadOnlyField(source='id_subserie_doc.codigo',default=None)
-#     nombre_subserie = serializers.ReadOnlyField(source='id_subserie_doc.nombre',default=None)
-#     id_catalogo_serie = serializers.PrimaryKeyRelatedField(queryset=CatalogosSeriesUnidad.objects.all())
-
-#     class Meta:
-#         model = CatalogosSeries
-#         fields = ['id_catalogo_serie', 'id_serie', 'cod_serie', 'nombre_serie', 'id_subserie', 'cod_subserie', 'nombre_subserie']
