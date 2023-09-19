@@ -72,7 +72,9 @@ class PlantillasDocDelete(generics.DestroyAPIView):
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
-        self.perform_destroy(instance)
+        instance.delete()
+
+
         return Response({
             "success": True,
             "detail": "Se eliminó el registro correctamente",

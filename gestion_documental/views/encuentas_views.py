@@ -355,9 +355,18 @@ class EncabezadoEncuestaDelete(generics.DestroyAPIView):
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
-        self.perform_destroy(instance)
+
+        preguntas_intance=PreguntasEncuesta.objects.filter(id_encabezado_encuesta=instance.id_encabezado_encuesta)
+
+        if preguntas_intance:
+            for pregunta in preguntas_intance:
+                respuestas_instace=OpcionesRta.objects.filter(id_pregunta=pregunta.id_pregunta_encuesta)
+                print(respuestas_instace)
+                respuestas_instace.delete()
+            preguntas_intance.delete()
+        instance.delete()
         return Response({
             "success": True,
             "detail": "Se eliminó el encabezado de encuesta correctamente",
             "data": serializer.data
-        }, status=status.HTTP_204_NO_CONTENT)
+        }, status= status.HTTP_200_OK)
