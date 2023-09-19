@@ -21,7 +21,9 @@ from gestion_documental.serializers.ccd_serializers import (
     CatalogosSeriesUnidadSerializer,
     AsignacionesCatalogosOrgSerializer,
     BusquedaCCDSerializer,
-    CompararSeriesDocUnidadSerializer
+    BusquedaCCDHomologacionSerializer,
+    CompararSeriesDocUnidadSerializer,
+    CompararSeriesDocUnidadCatSerieSerializer
 )
 from transversal.models.organigrama_models import Organigramas
 from gestion_documental.models.ccd_models import (
@@ -36,6 +38,9 @@ from transversal.models.organigrama_models import (
 )
 from gestion_documental.models.trd_models import (
     TablaRetencionDocumental
+)
+from gestion_documental.models.tca_models import (
+    TablasControlAcceso
 )
 
 import copy
@@ -919,16 +924,54 @@ class BusquedaCCD(generics.ListAPIView):
 
 # HOMOLOGACIONES DE CCD - ENTREGA 55
 
+# class BusquedaCCDHomologacionView(generics.ListAPIView):
+#     serializer_class = BusquedaCCDHomologacionSerializer
+
+#     def get(self, request):
+
+#         tca_actual = TablasControlAcceso.objects.filter(actual=True).first()
+#         tca_filtro = TablasControlAcceso.objects.filter(
+#             fecha_puesta_produccion=None,
+#             fecha_terminado__gt=tca_actual.fecha_puesta_produccion)
+#         trd_filtro = TablaRetencionDocumental.objects.exclude(fecha_terminado = None).filter(fecha_puesta_produccion=None)
+#         ccd_filtro = CuadrosClasificacionDocumental.objects.exclude(fecha_terminado = None).filter(fecha_puesta_produccion=None)
+
+#         for tca in tca_filtro:
+#             trd_filtro = trd_filtro.filter(id_trd=tca.id_trd.id_trd)
+
+#         for trd in trd_filtro:
+#             ccd_filtro = ccd_filtro.filter(id_ccd=trd.id_ccd.id_ccd)
+
+#         serializer = self.serializer_class(ccd_filtro, many=True)
+
+#         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+class BusquedaCCDHomologacionView(generics.ListAPIView):
+    serializer_class = BusquedaCCDHomologacionSerializer
+
+    def get(self, request):
+
+        tca_actual = TablasControlAcceso.objects.filter(actual=True).first()
+        tca_filtro = TablasControlAcceso.objects.filter(fecha_puesta_produccion=None, fecha_terminado__gt=tca_actual.fecha_puesta_produccion)
+        trd_filtro = TablaRetencionDocumental.objects.exclude(fecha_terminado=None).filter(fecha_puesta_produccion=None)
+        ccd_filtro = CuadrosClasificacionDocumental.objects.exclude(fecha_terminado=None).filter(fecha_puesta_produccion=None)
+        trd_filtro = trd_filtro.filter(id_trd__in=tca_filtro.values('id_trd'))  # Filtrar TablaRetencionDocumental relacionada a TablasControlAcceso
+        ccd_filtro = ccd_filtro.filter(id_ccd__in=trd_filtro.values('id_ccd'))  # Filtrar CuadrosClasificacionDocumental relacionada a TablaRetencionDocumental
+        serializer = self.serializer_class(ccd_filtro, many=True)
+
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
 class CompararSeriesDocUnidadView(generics.ListAPIView):
     serializer_class = CompararSeriesDocUnidadSerializer
 
     def get(self, request, id_organigrama):
-        try:
-            organigrama_nuevo = Organigramas.objects.get(id_organigrama=id_organigrama, actual=False)
-        except Organigramas.DoesNotExist:
+
+        if not Organigramas.objects.filter(id_organigrama=id_organigrama, actual=False).exists():
             raise PermissionDenied('No se puede homologar debido a que el CCD pertenece al organigrama actual')
 
-        unidades_organizacionales_nuevo = UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama_nuevo.id_organigrama)
+        unidades_organizacionales_nuevo = UnidadesOrganizacionales.objects.filter(id_organigrama=id_organigrama)
         unidades_nueva = self.serializer_class(unidades_organizacionales_nuevo, many=True).data
 
         organigrama_actual = Organigramas.objects.get(actual=True)
@@ -945,10 +988,10 @@ class CompararSeriesDocUnidadView(generics.ListAPIView):
                         'cod_unidad_actual': unidad_actual['codigo'],
                         'nom_unidad_actual': unidad_actual['nombre'],
                         'id_organigrama_unidad_actual': unidad_actual['id_organigrama'],
-                        'id_unidad_nuevo': unidad_nueva['id_unidad_organizacional'],
-                        'cod_unidad_nuevo': unidad_nueva['codigo'],
-                        'nom_unidad_nuevo': unidad_nueva['nombre'],
-                        'id_organigrama_unidad_nuevo': unidad_nueva['id_organigrama']
+                        'id_unidad_nueva': unidad_nueva['id_unidad_organizacional'],
+                        'cod_unidad_nueva': unidad_nueva['codigo'],
+                        'nom_unidad_nueva': unidad_nueva['nombre'],
+                        'id_organigrama_unidad_nueva': unidad_nueva['id_organigrama']
                     }
                     data_json['iguales'] = unidad_actual['nombre'] == unidad_nueva['nombre']
                     data.append(data_json)
@@ -956,3 +999,69 @@ class CompararSeriesDocUnidadView(generics.ListAPIView):
         data = sorted(data, key=lambda x: x['iguales'], reverse=True)
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
+
+
+class CompararSeriesDocUnidadCatSerieView(generics.ListAPIView):
+    serializer_class = CompararSeriesDocUnidadCatSerieSerializer
+
+    def get(self, request):
+
+        # TO DO: un CCD que ya esté terminado, que no esté puesto en producción aún, 
+        # y que ya tenga un TRD y un TCA terminados con fecha de terminado posterior 
+        # a la fecha de puesta en producción del TCA actual.
+
+
+        data_in = request.data
+
+        if not Organigramas.objects.filter(id_organigrama=data_in['id_organigrama_unidad_actual'], actual=True).exists():
+            raise NotFound('No se puede homologar debido a que el organigrama actual no existe')
+        
+        if not Organigramas.objects.filter(id_organigrama=data_in['id_organigrama_unidad_nueva'], actual=False).exists():
+            raise PermissionDenied('No se puede homologar debido a que el CCD pertenece al organigrama actual')
+        
+        if not UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=data_in['id_unidad_actual']).exists(): 
+            raise NotFound('No se encontro unidad organizacional actual')
+        
+        if not UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=data_in['id_unidad_nueva']).exists(): 
+            raise NotFound('No se encontro unidad organizacional nueva')
+
+        unidad_cat_serie_actual = CatalogosSeriesUnidad.objects.filter(id_unidad_organizacional=data_in['id_unidad_actual'])
+        unidad_cat_serie_nueva = CatalogosSeriesUnidad.objects.filter(id_unidad_organizacional=data_in['id_unidad_nueva'])
+
+        if not unidad_cat_serie_actual or not unidad_cat_serie_nueva:
+            raise ValidationError('No hay unidades realcionadas con un CCD')
+        
+        unidad_cat_serie_actual_data = self.serializer_class(unidad_cat_serie_actual, many=True).data
+        unidad_cat_serie_nueva_data = self.serializer_class(unidad_cat_serie_nueva, many=True).data
+        
+        data = []
+
+        for uni_cat_ser_actual in unidad_cat_serie_actual_data:
+            for uni_cat_ser_nueva in unidad_cat_serie_nueva_data:
+                if uni_cat_ser_nueva['cod_serie'] == uni_cat_ser_actual['cod_serie'] and uni_cat_ser_nueva['cod_subserie'] == uni_cat_ser_actual['cod_subserie']:
+                    data_json = {
+                        'id_unidad_org_actual': uni_cat_ser_actual['id_unidad_organizacional'],
+                        'id_catalogo_serie_actual': uni_cat_ser_actual['id_catalogo_serie'],
+                        'id_serie_actual': uni_cat_ser_actual['id_serie'],
+                        'cod_serie_actual': uni_cat_ser_actual['cod_serie'],
+                        'nombre_serie_actual': uni_cat_ser_actual['nombre_serie'],
+                        'id_subserie_actual': uni_cat_ser_actual['id_subserie'],
+                        'cod_subserie_actual': uni_cat_ser_actual['cod_subserie'],
+                        'nombre_subserie_actual': uni_cat_ser_actual['nombre_subserie'],
+
+                        'id_unidad_org_nueva': uni_cat_ser_nueva['id_unidad_organizacional'],
+                        'id_catalogo_serie_nueva': uni_cat_ser_nueva['id_catalogo_serie'],
+                        'id_serie_nueva': uni_cat_ser_nueva['id_serie'],
+                        'cod_serie_nueva': uni_cat_ser_nueva['cod_serie'],
+                        'nombre_serie_nueva': uni_cat_ser_nueva['nombre_serie'],
+                        'id_subserie_nueva': uni_cat_ser_nueva['id_subserie'],
+                        'cod_subserie_nueva': uni_cat_ser_nueva['cod_subserie'],
+                        'nombre_subserie_nueva': uni_cat_ser_nueva['nombre_subserie']
+                    }
+                    data_json['iguales'] = uni_cat_ser_actual['nombre_serie'] == uni_cat_ser_nueva['nombre_serie'] and uni_cat_ser_actual['nombre_subserie'] == uni_cat_ser_nueva['nombre_subserie']
+                    data.append(data_json)
+
+        data = sorted(data, key=lambda x: x['iguales'], reverse=True)
+
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
+
