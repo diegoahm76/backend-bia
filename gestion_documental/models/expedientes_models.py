@@ -90,7 +90,7 @@ class DocumentosDeArchivoExpediente(models.Model):
     asunto	= models.CharField(max_length=50, db_column='T237asunto')
     id_persona_titular	= models.ForeignKey(Personas, related_name='id_persona_titular',blank=True,null=True, on_delete=models.SET_NULL, db_column='T237Id_PersonaTitular')
     cod_categoria_archivo	= models.CharField(max_length=2, choices=categoria_archivo_CHOICES, db_column='T237codCategoríaArchivo')
-    es_version_original	 = models.BooleanField(default=False, db_column='T237esVersionOriginal')
+    es_version_original	 = models.BooleanField(default=True, db_column='T237esVersionOriginal')
     tiene_replica_fisica = models.BooleanField(default=False, db_column='T237tieneReplicaFisica')
     nro_folios_del_doc	 = models.SmallIntegerField(db_column='T237nroFoliosDelDoc')
     cod_origen_archivo	= models.CharField(max_length=1, choices=tipo_origen_doc_CHOICES, db_column='T237codOrigenArchivo')
@@ -104,7 +104,7 @@ class DocumentosDeArchivoExpediente(models.Model):
     tipologia_no_creada_trd	 = models.CharField(max_length=50, blank=True, null=True, db_column='T237tipologiaNoCreadaEnTRD')
     anexo_corresp_a_lista_chequeo	 = models.BooleanField(default=False, db_column='T237anexoCorrespAListaDeChequeo')
     cantidad_anexos	= models.SmallIntegerField(blank=True, null=True,db_column='T237cantidadDeAnexos')
-    id_archivo_sistema	= models.ForeignKey(ArchivosDigitales, on_delete=models.SET_NULL, null=True, blank=True, db_column='T237Id_ArchivoEnSistema')#falta creacion tabla 38
+    id_archivo_sistema	= models.ForeignKey(ArchivosDigitales, on_delete=models.SET_NULL, null=True, blank=True, db_column='T237Id_ArchivoEnSistema')#falta clase (oskitar)
     palabras_clave_documento = models.CharField(max_length=255,blank=True,null=True , db_column='T237palabrasClaveDocumento')
     sub_sistema_incorporacion = models.CharField(max_length=4, choices=tipo_subsistema_creado_CHOICES, db_column='T237subSistemaDeIncorporacion')
     cod_tipo_radicado = models.CharField(max_length=1, choices=TIPOS_RADICADO_CHOICES,blank=True, null=True, db_column='T237codTipoRadicado')
