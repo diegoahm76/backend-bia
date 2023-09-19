@@ -944,20 +944,23 @@ class BusquedaCCD(generics.ListAPIView):
 
 #         serializer = self.serializer_class(ccd_filtro, many=True)
 
-#         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
-
+#         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)    
 
 class BusquedaCCDHomologacionView(generics.ListAPIView):
     serializer_class = BusquedaCCDHomologacionSerializer
-
-    def get(self, request):
-
+    
+    def get_validacion_ccd(self):
         tca_actual = TablasControlAcceso.objects.filter(actual=True).first()
         tca_filtro = TablasControlAcceso.objects.filter(fecha_puesta_produccion=None, fecha_terminado__gt=tca_actual.fecha_puesta_produccion)
         trd_filtro = TablaRetencionDocumental.objects.exclude(fecha_terminado=None).filter(fecha_puesta_produccion=None)
         ccd_filtro = CuadrosClasificacionDocumental.objects.exclude(fecha_terminado=None).filter(fecha_puesta_produccion=None)
         trd_filtro = trd_filtro.filter(id_trd__in=tca_filtro.values('id_trd'))  # Filtrar TablaRetencionDocumental relacionada a TablasControlAcceso
         ccd_filtro = ccd_filtro.filter(id_ccd__in=trd_filtro.values('id_ccd'))  # Filtrar CuadrosClasificacionDocumental relacionada a TablaRetencionDocumental
+        return ccd_filtro.order_by('-fecha_terminado')
+
+    def get(self, request):
+
+        ccd_filtro = self.get_validacion_ccd()
         serializer = self.serializer_class(ccd_filtro, many=True)
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
@@ -966,19 +969,26 @@ class BusquedaCCDHomologacionView(generics.ListAPIView):
 class CompararSeriesDocUnidadView(generics.ListAPIView):
     serializer_class = CompararSeriesDocUnidadSerializer
 
-    def get(self, request, id_organigrama):
+    def get(self, request, id_ccd):
+        ccd_filro = BusquedaCCDHomologacionView().get_validacion_ccd()
+        ccd_actual = CuadrosClasificacionDocumental.objects.filter(actual=True).first()
 
-        if not Organigramas.objects.filter(id_organigrama=id_organigrama, actual=False).exists():
+        try:
+            ccd = ccd_filro.get(id_ccd=id_ccd)
+        except CuadrosClasificacionDocumental.DoesNotExist:
+            raise NotFound('CCD no encontrado o no cumple con TRD y TCA terminados')
+        
+        if not Organigramas.objects.filter(id_organigrama=ccd.id_organigrama.id_organigrama, actual=False).exists():
             raise PermissionDenied('No se puede homologar debido a que el CCD pertenece al organigrama actual')
 
-        unidades_organizacionales_nuevo = UnidadesOrganizacionales.objects.filter(id_organigrama=id_organigrama)
+        unidades_organizacionales_nuevo = UnidadesOrganizacionales.objects.filter(id_organigrama=ccd.id_organigrama.id_organigrama).order_by('codigo')
         unidades_nueva = self.serializer_class(unidades_organizacionales_nuevo, many=True).data
 
         organigrama_actual = Organigramas.objects.get(actual=True)
-        unidades_organizacionales_actual = UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama_actual.id_organigrama)
+        unidades_organizacionales_actual = UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama_actual.id_organigrama).order_by('codigo')
         unidades_actual = self.serializer_class(unidades_organizacionales_actual, many=True).data
 
-        data = []
+        data_out = []
 
         for unidad_actual in unidades_actual:
             for unidad_nueva in unidades_nueva:
@@ -994,12 +1004,19 @@ class CompararSeriesDocUnidadView(generics.ListAPIView):
                         'id_organigrama_unidad_nueva': unidad_nueva['id_organigrama']
                     }
                     data_json['iguales'] = unidad_actual['nombre'] == unidad_nueva['nombre']
-                    data.append(data_json)
+                    data_out.append(data_json)
 
-        data = sorted(data, key=lambda x: x['iguales'], reverse=True)
+        data_out = sorted(data_out, key=lambda x: x['iguales'], reverse=True)
+
+        data = {
+            'id_ccd_nuevo':ccd.id_ccd,
+            'id_ccd_actual':ccd_actual.id_ccd,
+            'coincdencias':data_out
+        }
+
+
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
-
 
 class CompararSeriesDocUnidadCatSerieView(generics.ListAPIView):
     serializer_class = CompararSeriesDocUnidadCatSerieSerializer
@@ -1062,6 +1079,8 @@ class CompararSeriesDocUnidadCatSerieView(generics.ListAPIView):
                     data.append(data_json)
 
         data = sorted(data, key=lambda x: x['iguales'], reverse=True)
+        data = sorted(data, key=lambda x: x['cod_unidad_actual'], reverse=False)
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
+
 
