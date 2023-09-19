@@ -192,7 +192,7 @@ class CreateViveros(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     
     def post(self, request):
-        data = request.data
+        data = request.data.copy()
         persona = request.user.persona.id_persona
         data['id_persona_crea'] = persona
     
