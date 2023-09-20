@@ -15,19 +15,35 @@ from gestion_documental.serializers.metadatos_serializers import GetMetadatosPer
 ########################## CRUD DE METADATO ##########################
 
 #CREAR-METADATOS
+# class MetadatosPersonalizadosCreate(generics.CreateAPIView):
+#     serializer_class = MetadatosPersonalizadosSerializer  
+#     permission_classes = [IsAuthenticated]
+#     queryset = MetadatosPersonalizados.objects.all()
+
+#     def post(self, request, *args, **kwargs):
+#         serializer = MetadatosPersonalizadosSerializer(data=request.data)
+
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+#         raise ValidationError(serializer.errors)
+        
+        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class MetadatosPersonalizadosCreate(generics.CreateAPIView):
-    serializer_class = MetadatosPersonalizadosSerializer  
+    serializer_class = MetadatosPersonalizadosSerializer
     permission_classes = [IsAuthenticated]
-    queryset = MetadatosPersonalizados.objects.all()
 
     def post(self, request, *args, **kwargs):
-        serializer = MetadatosPersonalizadosSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)  # Utiliza self.get_serializer para crear una instancia del serializador
 
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        raise ValidationError(serializer.errors)
 
 #ORDEN_METADATOS_SIGUIENTE
 class MetadatosPersonalizadosGetOrden(generics.ListAPIView):

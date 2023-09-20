@@ -973,6 +973,7 @@ class CompararSeriesDocUnidadView(generics.ListAPIView):
         ccd_filro = BusquedaCCDHomologacionView().get_validacion_ccd()
         ccd_actual = CuadrosClasificacionDocumental.objects.filter(actual=True).first()
         mismo_organigrama = False
+        data_out = []
 
         try:
             ccd = ccd_filro.get(id_ccd=id_ccd)
@@ -992,8 +993,6 @@ class CompararSeriesDocUnidadView(generics.ListAPIView):
         unidades_organizacionales_actual = UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama_actual.id_organigrama).exclude(cod_agrupacion_documental=None).order_by('codigo')
         unidades_actual = self.serializer_class(unidades_organizacionales_actual, many=True).data
 
-        data_out = []
-
         for unidad_actual in unidades_actual:
             for unidad_nueva in unidades_nueva:
                 if unidad_actual['codigo'] == unidad_nueva['codigo']:
@@ -1009,17 +1008,14 @@ class CompararSeriesDocUnidadView(generics.ListAPIView):
                     }
                     data_json['iguales'] = unidad_actual['nombre'] == unidad_nueva['nombre']
                     data_out.append(data_json)
-
         data_out = sorted(data_out, key=lambda x: x['iguales'], reverse=True)
 
         data = {
-            'id_ccd_nuevo':ccd.id_ccd,
             'id_ccd_actual':ccd_actual.id_ccd,
+            'id_ccd_nuevo':ccd.id_ccd,
             'mismo_organigrama':mismo_organigrama,
             'coincdencias':data_out
         }
-
-
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
 
@@ -1027,19 +1023,32 @@ class CompararSeriesDocUnidadCatSerieView(generics.ListAPIView):
     serializer_class = CompararSeriesDocUnidadCatSerieSerializer
 
     def get(self, request):
-
-        # TO DO: un CCD que ya esté terminado, que no esté puesto en producción aún, 
-        # y que ya tenga un TRD y un TCA terminados con fecha de terminado posterior 
-        # a la fecha de puesta en producción del TCA actual.
-
-
         data_in = request.data
+        ccd_filro = BusquedaCCDHomologacionView().get_validacion_ccd()
+        mismo_organigrama = False
+        data_out = []
 
-        if not Organigramas.objects.filter(id_organigrama=data_in['id_organigrama_unidad_actual'], actual=True).exists():
-            raise NotFound('No se puede homologar debido a que el organigrama actual no existe')
+        try:
+            ccd_actual = CuadrosClasificacionDocumental.objects.get(id_ccd=data_in['id_ccd_actual'], actual=True)
+        except CuadrosClasificacionDocumental.DoesNotExist:
+            raise NotFound('CCD no concuerda con el actual')
+
+        try:
+            ccd = ccd_filro.get(id_ccd=data_in['id_ccd_nuevo'])
+        except CuadrosClasificacionDocumental.DoesNotExist:
+            raise NotFound('CCD no encontrado o no cumple con TRD y TCA terminados')
         
-        if not Organigramas.objects.filter(id_organigrama=data_in['id_organigrama_unidad_nueva'], actual=False).exists():
-            raise PermissionDenied('No se puede homologar debido a que el CCD pertenece al organigrama actual')
+        try:
+            organigrama = Organigramas.objects.get(id_organigrama=ccd.id_organigrama.id_organigrama)
+        except Organigramas.DoesNotExist:
+            raise NotFound('No se ha encontrado organigrama')
+        
+        try:
+            organigrama_actual = Organigramas.objects.get(id_organigrama=ccd_actual.id_organigrama.id_organigrama, actual=True)
+        except Organigramas.DoesNotExist:
+            raise NotFound('No se ha encontrado organigrama como actual')
+        
+        if organigrama.id_organigrama == organigrama_actual.id_organigrama: mismo_organigrama = True
         
         if not UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=data_in['id_unidad_actual']).exists(): 
             raise NotFound('No se encontro unidad organizacional actual')
@@ -1051,7 +1060,7 @@ class CompararSeriesDocUnidadCatSerieView(generics.ListAPIView):
         unidad_cat_serie_nueva = CatalogosSeriesUnidad.objects.filter(id_unidad_organizacional=data_in['id_unidad_nueva'])
 
         if not unidad_cat_serie_actual or not unidad_cat_serie_nueva:
-            raise ValidationError('No hay unidades realcionadas con un CCD')
+            raise ValidationError('No hay unidades relacionadas con un CCD')
         
         unidad_cat_serie_actual_data = self.serializer_class(unidad_cat_serie_actual, many=True).data
         unidad_cat_serie_nueva_data = self.serializer_class(unidad_cat_serie_nueva, many=True).data
@@ -1081,10 +1090,17 @@ class CompararSeriesDocUnidadCatSerieView(generics.ListAPIView):
                         'nombre_subserie_nueva': uni_cat_ser_nueva['nombre_subserie']
                     }
                     data_json['iguales'] = uni_cat_ser_actual['nombre_serie'] == uni_cat_ser_nueva['nombre_serie'] and uni_cat_ser_actual['nombre_subserie'] == uni_cat_ser_nueva['nombre_subserie']
-                    data.append(data_json)
+                    data_out.append(data_json)
 
-        data = sorted(data, key=lambda x: x['iguales'], reverse=True)
-        data = sorted(data, key=lambda x: x['cod_unidad_actual'], reverse=False)
+        data_out = sorted(data_out, key=lambda x: x['cod_serie_actual'], reverse=False)
+        data_out = sorted(data_out, key=lambda x: x['iguales'], reverse=True)
+
+        data = {
+            'id_ccd_actual':ccd_actual.id_ccd,
+            'id_ccd_nuevo':ccd.id_ccd,
+            'mismo_organigrama':mismo_organigrama,
+            'coincdencias':data_out
+        }
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
 

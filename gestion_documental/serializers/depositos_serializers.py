@@ -5,6 +5,7 @@ from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from django.db.models import Max 
 
 from gestion_documental.models.depositos_models import  CarpetaCaja, Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
+from gestion_documental.models.expedientes_models import ExpedientesDocumentales
 
 
 ######################### SERIALIZERS DEPOSITO #########################
@@ -571,3 +572,41 @@ class  CarpetaCajaSearchAdvancedSerializer(serializers.ModelSerializer):
     class Meta:
         model =  CarpetaCaja
         fields = '__all__'
+
+
+#CarpetaRotulo
+class CarpetaCajaRotuloSerializer(serializers.ModelSerializer):
+    # Otros campos aquí
+
+    id_serie_origen = serializers.StringRelatedField(source='id_expediente.id_serie_origen.id_serie_doc')
+    nombre_serie_origen = serializers.StringRelatedField(source='id_expediente.id_serie_origen.nombre')
+    id_subserie_origen = serializers.StringRelatedField(source='id_expediente.id_subserie_origen.id_subserie_doc')
+    nombre_subserie_origen = serializers.StringRelatedField(source='id_expediente.id_subserie_origen.nombre')
+    titulo_expediente = serializers.ReadOnlyField(source='id_expediente.titulo_expediente')
+    identificacion_caja = serializers.ReadOnlyField(source='id_caja_bandeja.identificacion_por_bandeja')
+    codigo_exp_und_serie_subserie = serializers.ReadOnlyField(source='id_expediente.codigo_exp_und_serie_subserie')
+    codigo_exp_Agno = serializers.ReadOnlyField(source='id_expediente.codigo_exp_Agno')
+    codigo_exp_consec_por_agno = serializers.ReadOnlyField(source='id_expediente.codigo_exp_consec_por_agno')
+    fecha_folio_inicial = serializers.ReadOnlyField(source='id_expediente.fecha_folio_inicial')
+
+    numero_expediente = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CarpetaCaja
+        fields = ['id_carpeta_caja', 'identificacion_por_caja', 'id_caja_bandeja', 'identificacion_caja',
+                  'id_serie_origen', 'nombre_serie_origen', 'id_subserie_origen', 'nombre_subserie_origen',
+                  'titulo_expediente', 'codigo_exp_und_serie_subserie', 'codigo_exp_Agno',
+                  'codigo_exp_consec_por_agno', 'numero_expediente', 'fecha_folio_inicial']
+
+    def get_numero_expediente(self, obj):
+        components = []
+        # Combinar los componentes en un solo número de expediente
+        if obj.id_expediente:
+            if obj.id_expediente.codigo_exp_und_serie_subserie:
+                components.append(obj.id_expediente.codigo_exp_und_serie_subserie)
+            if obj.id_expediente.codigo_exp_Agno:
+                components.append(str(obj.id_expediente.codigo_exp_Agno))
+            if obj.id_expediente.codigo_exp_consec_por_agno is not None:
+                components.append(str(obj.id_expediente.codigo_exp_consec_por_agno))
+        
+        return "-".join(components)
