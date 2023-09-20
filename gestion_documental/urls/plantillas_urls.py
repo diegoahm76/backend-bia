@@ -10,6 +10,7 @@ urlpatterns = [
     path('plantilla_documento/get_id/<str:pk>/', views.PlantillasDocGetById.as_view(),name='listar-detalle-plantilla'),
     path('plantilla_documento/get_detalle_id/<str:pk>/', views.PlantillasDocGetDetalleById.as_view(),name='listar-detalle-plantilla'),
     #
+    path('plantilla_documento/get/busqueda_avanzada_admin/', views.BusquedaAvanzadaPlantillasAdmin.as_view(),name='busqueda-plantilla-admin'),
     
     path('tipos_tipologia/get/',views.TipologiasDocGetActivo.as_view(),name='listar-tipologias'),
     path('acceso/create/',views.AccesoUndsOrg_PlantillaDocCreate.as_view(),name='crear-acceso'),

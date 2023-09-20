@@ -18,6 +18,15 @@ class  PlantillasDocBusquedaAvanzadaSerializer(serializers.ModelSerializer):
         model =  PlantillasDoc
         fields = ['id_plantilla_doc','nombre','nombre_tipologia','ruta','extension']
 
+class  PlantillasDocBusquedaAvanzadaDetalleSerializer(serializers.ModelSerializer):
+    nombre_tipologia=serializers.ReadOnlyField(source='id_tipologia_doc_trd.nombre',default=None)
+    ruta=serializers.ReadOnlyField(source='id_archivo_digital.ruta_archivo',default=None)
+    extension=serializers.ReadOnlyField(source='id_archivo_digital.formato',default=None)
+    cod_tipo_acceso_display = serializers.CharField(source='get_cod_tipo_acceso_display', default=None)
+    class Meta:
+        model =  PlantillasDoc
+        fields = ['id_plantilla_doc','nombre','fecha_creacion','nombre_tipologia','ruta','extension','activa','cod_tipo_acceso_display']
+
 
 class  PlantillasDocGetSeriallizer(serializers.ModelSerializer):
     nombre_creador=serializers.ReadOnlyField(source='id_persona_crea_plantilla.nombre',default=None)

@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from gestion_documental.models.plantillas_models import AccesoUndsOrg_PlantillaDoc, PlantillasDoc
 from gestion_documental.models.trd_models import TipologiasDoc
-from gestion_documental.serializers.plantillas_serializers import AccesoUndsOrg_PlantillaDocCreateSerializer, AccesoUndsOrg_PlantillaDocGetSerializer, PlantillasDocBusquedaAvanzadaSerializer, PlantillasDocCreateSerializer, PlantillasDocGetSeriallizer, PlantillasDocSerializer, PlantillasDocUpdateSerializer, TipologiasDocSerializerGetSerializer
+from gestion_documental.serializers.plantillas_serializers import AccesoUndsOrg_PlantillaDocCreateSerializer, AccesoUndsOrg_PlantillaDocGetSerializer, PlantillasDocBusquedaAvanzadaDetalleSerializer, PlantillasDocBusquedaAvanzadaSerializer, PlantillasDocCreateSerializer, PlantillasDocGetSeriallizer, PlantillasDocSerializer, PlantillasDocUpdateSerializer, TipologiasDocSerializerGetSerializer
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 import os
 from rest_framework.permissions import IsAuthenticated
@@ -72,6 +72,11 @@ class PlantillasDocDelete(generics.DestroyAPIView):
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
+
+        intance_accesos_plantilla=AccesoUndsOrg_PlantillaDoc.objects.filter(id_plantilla_doc=instance.id_plantilla_doc)
+        if intance_accesos_plantilla:
+            intance_accesos_plantilla.delete()
+
         instance.delete()
 
 
@@ -79,7 +84,7 @@ class PlantillasDocDelete(generics.DestroyAPIView):
             "success": True,
             "detail": "Se eliminó el registro correctamente",
             "data": serializer.data
-        }, status=status.HTTP_204_NO_CONTENT)
+        }, status=status.HTTP_200_OK)
 class TipologiasDocGetActivo(generics.ListAPIView):
     serializer_class = TipologiasDocSerializerGetSerializer
     queryset =TipologiasDoc.objects.all()
@@ -157,7 +162,7 @@ class AccesoUndsOrg_PlantillaDocDelete(generics.DestroyAPIView):
             "success": True,
             "detail": "Se eliminó la pregunta correctamente",
             "data": serializer.data
-        }, status=status.HTTP_204_NO_CONTENT)
+        }, status=status.HTTP_200_OK)
     def delete(self, request,pk):
         response=self.eliminar(pk)
         return response
@@ -236,18 +241,50 @@ class BusquedaAvanzadaPlantillas(generics.ListAPIView):
             if key =='disponibilidad':
                 if value != '':
                     filter['cod_tipo_acceso__icontains'] = value
-
-                    
             if key =='extension':
                 if value != '':
                     filter['id_archivo_digital__formato__icontains'] = value                 
                 
+        filter['activa']=True
+        #activas=PlantillasDoc.objects.filter(activa=True)
         plantilla = self.queryset.all().filter(**filter)
         serializador = self.serializer_class(plantilla,many=True)
         
         return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializador.data},status=status.HTTP_200_OK)
         
+class BusquedaAvanzadaPlantillasAdmin(generics.ListAPIView):
+    serializer_class = PlantillasDocBusquedaAvanzadaDetalleSerializer
 
+    queryset = PlantillasDoc.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request):
+        filter={}
+        
+        for key, value in request.query_params.items():
+
+            if key == 'nombre':
+                if value !='':
+                    filter['nombre__icontains'] = value
+            if key =='descripcion':
+                if value != '':
+                    filter['descripcion__icontains'] = value    
+            if key =='tipologia':
+                if value != '':
+                    filter['id_tipologia_doc_trd__nombre__icontains'] = value
+            if key =='disponibilidad':
+                if value != '':
+                    filter['cod_tipo_acceso__icontains'] = value
+            if key =='extension':
+                if value != '':
+                    filter['id_archivo_digital__formato__icontains'] = value                 
+                
+        
+        #activas=PlantillasDoc.objects.filter(activa=True)
+        plantilla = self.queryset.all().filter(**filter)
+        serializador = self.serializer_class(plantilla,many=True)
+        
+        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializador.data},status=status.HTTP_200_OK)
 class PlantillasDocGetById(generics.ListAPIView):
     serializer_class = PlantillasDocGetSeriallizer
     queryset = PlantillasDoc.objects.all()
