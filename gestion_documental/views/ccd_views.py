@@ -972,20 +972,24 @@ class CompararSeriesDocUnidadView(generics.ListAPIView):
     def get(self, request, id_ccd):
         ccd_filro = BusquedaCCDHomologacionView().get_validacion_ccd()
         ccd_actual = CuadrosClasificacionDocumental.objects.filter(actual=True).first()
+        mismo_organigrama = False
 
         try:
             ccd = ccd_filro.get(id_ccd=id_ccd)
         except CuadrosClasificacionDocumental.DoesNotExist:
             raise NotFound('CCD no encontrado o no cumple con TRD y TCA terminados')
         
-        if not Organigramas.objects.filter(id_organigrama=ccd.id_organigrama.id_organigrama, actual=False).exists():
-            raise PermissionDenied('No se puede homologar debido a que el CCD pertenece al organigrama actual')
+        try:
+            organigrama = Organigramas.objects.get(id_organigrama=ccd.id_organigrama.id_organigrama)
+            organigrama_actual = Organigramas.objects.get(actual=True)
+        except Organigramas.DoesNotExist:
+            raise NotFound('No se ha encontrado organigrama')
+        
+        if organigrama.id_organigrama == organigrama_actual.id_organigrama: mismo_organigrama = True
 
-        unidades_organizacionales_nuevo = UnidadesOrganizacionales.objects.filter(id_organigrama=ccd.id_organigrama.id_organigrama).order_by('codigo')
+        unidades_organizacionales_nuevo = UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama.id_organigrama).exclude(cod_agrupacion_documental=None).order_by('codigo')
         unidades_nueva = self.serializer_class(unidades_organizacionales_nuevo, many=True).data
-
-        organigrama_actual = Organigramas.objects.get(actual=True)
-        unidades_organizacionales_actual = UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama_actual.id_organigrama).order_by('codigo')
+        unidades_organizacionales_actual = UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama_actual.id_organigrama).exclude(cod_agrupacion_documental=None).order_by('codigo')
         unidades_actual = self.serializer_class(unidades_organizacionales_actual, many=True).data
 
         data_out = []
@@ -1011,6 +1015,7 @@ class CompararSeriesDocUnidadView(generics.ListAPIView):
         data = {
             'id_ccd_nuevo':ccd.id_ccd,
             'id_ccd_actual':ccd_actual.id_ccd,
+            'mismo_organigrama':mismo_organigrama,
             'coincdencias':data_out
         }
 

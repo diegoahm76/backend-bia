@@ -194,28 +194,26 @@ class MetadatosValoresCreate(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     queryset = ListaValores_MetadatosPers.objects.all()
     
-    def post(self,request):
-        
+    def get_max_order_in_database(self):
+        last_order = ListaValores_MetadatosPers.objects.order_by('-orden_dentro_de_lista').first()
+        if last_order is not None:
+            return last_order.orden_dentro_de_lista + 1
+        else:
+            return 1
+    
+    def post(self, request):
         try:
             data_in = request.data
-            orden_siguiente = MetadatosValoresGetOrdenActual()
-            response_orden = orden_siguiente.get(request)
-
-            if response_orden.status_code != status.HTTP_200_OK:
-                return response_orden
-            maximo_orden = response_orden.data.get('orden_siguiente')
-
-            print(maximo_orden)
-            data_in['orden_dentro_de_lista']=  maximo_orden + 1
+            maximo_orden = self.get_max_order_in_database()
+            data_in['orden_dentro_de_lista'] = maximo_orden
             serializer = self.serializer_class(data=data_in)
             serializer.is_valid(raise_exception=True)
-            estante =serializer.save()
+            estante = serializer.save()
 
-
-            return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
-        except ValidationError  as e:
+            return Response({'success': True, 'detail': 'Se crearon los registros correctamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
             error_message = {'error': e.detail}
-            raise ValidationError  (e.detail)
+            raise ValidationError(e.detail)
 
 #ORDEN_VALORES_SIGUIENTE
 class MetadatosValoresGetOrden(generics.ListAPIView):
