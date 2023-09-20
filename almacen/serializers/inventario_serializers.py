@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from almacen.models.bienes_models import CatalogoBienes
 from almacen.models.inventario_models import Inventario
 
 class SerializerUpdateInventariosActivosFijos(serializers.ModelSerializer):
@@ -12,7 +13,26 @@ class SerializerUpdateInventariosConsumo(serializers.ModelSerializer):
     class Meta:
         model= Inventario
         fields = ['id_bodega', 'cantidad_entrante_consumo']
-        
+
+class BusquedaBienesSerializer(serializers.ModelSerializer):
+    nombre_bien = serializers.ReadOnlyField(source='nombre', default=None)
+    categoria = serializers.ReadOnlyField(source='cod_tipo_activo.nombre', default=None)
+    nombre_marca = serializers.ReadOnlyField(source='id_marca.nombre', default=None)
+    serial = serializers.ReadOnlyField(source='doc_identificador_nro', default=None)
+    
+    class Meta:
+        fields = [
+            'id_bien',
+            'codigo_bien',
+            'nombre_bien',
+            'id_marca',
+            'nombre_marca',
+            'serial',
+            'cod_tipo_activo',
+            'categoria'
+        ]
+        model = CatalogoBienes
+
 class ControlInventarioTodoSerializer(serializers.ModelSerializer):
     nombre_bodega = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
     nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
@@ -43,13 +63,13 @@ class ControlInventarioTodoSerializer(serializers.ModelSerializer):
         if obj.ubicacion_en_bodega:
             ubicacion = 'En Bodega'
         elif obj.ubicacion_asignado:
-            ubicacion = 'Asignado'
+            ubicacion = 'Asignado a Persona'
         elif obj.ubicacion_prestado:
-            ubicacion = 'Prestado'
+            ubicacion = 'Prestado a Persona'
         elif obj.realizo_baja:
-            ubicacion = 'Baja'
+            ubicacion = 'Dado de Baja'
         elif obj.realizo_salida:
-            ubicacion = 'Salida'
+            ubicacion = 'Se le registró Salida'
         
         return ubicacion
     

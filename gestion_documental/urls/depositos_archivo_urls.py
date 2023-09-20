@@ -73,5 +73,7 @@ urlpatterns = [
      path('carpetaCaja/listar-depositos-por-carpeta/<int:id_carpeta>/',views.CarpetaListDepositoInfo.as_view(),name='listar-depositos-por-carpeta'),
      path('carpetaCaja/mover-carpeta/<int:id_carpeta_caja>/',views.CarpetaCajaMove.as_view(), name='mover-carpeta'),
      path('carpetCaja/busqueda-avanzada-carpetas/',views.CarpetaCajaSearchAdvanced.as_view(), name='buscar-avanzada'),
+     path('carpetaCaja/rotulo/<int:id_carpeta_caja>/',views.CarpetaRotulo.as_view(),name='rotulo-carpeta'),
+
      
 ]
