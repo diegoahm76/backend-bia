@@ -1,6 +1,7 @@
 from django.urls import path
 
 from gestion_documental.views import expedientes_views as views
+from gestion_documental.views import archivos_digitales_views as views_archivos
 
 
 urlpatterns = [
@@ -14,7 +15,7 @@ urlpatterns = [
      path('expedientes/archivos-digitales/',views.UploadPDFView.as_view(), name='adjuntar-archvios'),
      path('expedientes/listar-archivos/',views.ListarArchivosDigitales.as_view(), name='listar-archvios-digitales'),
      path('expedientes/listar-expedientes/',views.ListaExpedientesDocumentales.as_view(), name='listar-expedientes'),
-   
+    path('expedientes/archivos-digitales/create/',views_archivos.ArchivosInstrumentoCreate.as_view(), name='crear-archvios'),
 
      
 ]

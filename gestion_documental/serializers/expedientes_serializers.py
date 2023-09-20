@@ -7,7 +7,8 @@ from gestion_documental.models.expedientes_models import ExpedientesDocumentales
 from gestion_documental.models.trd_models import TablaRetencionDocumental, TipologiasDoc
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-
+from django.conf import settings
+import os
 
 
 ######################### SERIALIZERS EXPEDIENTE #########################
@@ -91,3 +92,37 @@ class ArchivosDigitalesSerializer(serializers.ModelSerializer):
     class Meta:
         model = ArchivosDigitales
         fields = '__all__'  
+
+class ArchivosDigitalesCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ArchivosDigitales
+        fields = '__all__'
+        # extra_kwargs = {
+        #     'ruta_archivo': {'write_only': True}
+        # }
+
+    def save(self, subcarpeta='',**kwargs):
+        try:
+            archivo = self.validated_data['ruta_archivo']
+            nombre_archivo = archivo.name
+            Subcarpeta=subcarpeta
+            # Utiliza la ruta de medios para guardar el archivo
+            
+            ruta_completa = os.path.join(settings.MEDIA_ROOT,Subcarpeta, nombre_archivo)
+            
+            if not os.path.relpath(ruta_completa, settings.MEDIA_ROOT):
+                raise serializers.ValidationError(f"La subcarpeta '{subcarpeta}' no existe en la ruta especificada.")
+            print("hola?")
+            # Guarda el archivo
+            with open(ruta_completa, 'wb') as destination:
+                for chunk in archivo.chunks():
+                    destination.write(chunk)
+
+
+            self.validated_data['ruta_archivo'] = os.path.relpath(ruta_completa, settings.MEDIA_ROOT)
+
+            return super().save(**kwargs)
+
+        except FileNotFoundError as e:
+
+             raise serializers.ValidationError('Error:No es posible guardar el archivo.')
