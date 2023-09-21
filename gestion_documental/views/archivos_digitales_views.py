@@ -24,36 +24,11 @@ class ArchivosInstrumentoCreate(generics.CreateAPIView):
             print(f"No se pudo obtener el tamaño del archivo: {str(e)}")
             return None
 
-    def crear_archivo(self, data):
-       
-        data_in=data
-
-        tamano=self.obtener_tamano_archivo(data_in['archivo'])
-        nombre=data_in['archivo'].name
-        archivo=data_in['archivo']
-
-        nombre_sin_extension, extension = os.path.splitext(nombre)
-        extension_sin_punto = extension[1:] if extension.startswith('.') else extension
-
-        data_in['formato'] = extension_sin_punto
-        
-        data_in['tamagno_kb'] = int(tamano)
-        data_in['nombre_de_Guardado'] = nombre_sin_extension
-        
-        ruta_personalizada = 'tu/ruta/personalizada/'
-        ruta_archivo_personalizada = os.path.join(ruta_personalizada, nombre)
-
-        data['ruta_archivo'] =  ruta_archivo_personalizada
-
-        serializer = ArchivosDigitalesCreateSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return serializer.data
-
-    def post(self, request, *args, **kwargs):
+    def crear_archivo(self, data,data_archivos):
         try:
-            data=request.data
-            archivo = request.FILES['archivo']
+            data=data
+            archivo = data_archivos
+            
             #tamano=self.obtener_tamano_archivo(archivo)
             ruta=""
             if 'ruta' in data:
@@ -80,3 +55,39 @@ class ArchivosInstrumentoCreate(generics.CreateAPIView):
         except ValidationError  as e:
             error_message = {'error': e.detail}
             raise ValidationError  (e.detail)
+
+    def post(self, request, *args, **kwargs):
+        
+        data_archivos=request.FILES['archivo_digital']
+        respuesta=self.crear_archivo(request.data,data_archivos)
+        return respuesta
+        # try:
+        #     data=request.data
+        #     archivo = request.FILES['archivo_digital']
+        #     print(type(archivo))
+        #     #tamano=self.obtener_tamano_archivo(archivo)
+        #     ruta=""
+        #     if 'ruta' in data:
+        #         ruta=data['ruta']
+        #     nombre=archivo.name
+            
+        #     nombre_sin_extension, extension = os.path.splitext(nombre)
+        #     extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+
+        #     data['formato'] = extension_sin_punto
+            
+        #     data['tamagno_kb'] =int(self.obtener_tamano_archivo(archivo))
+        #     data['nombre_de_Guardado'] = nombre_sin_extension
+            
+        
+        #     data['ruta_archivo'] = archivo
+
+        #     serializer = ArchivosDigitalesCreateSerializer(data=data)
+        #     serializer.is_valid(raise_exception=True)
+        #     serializer.save(subcarpeta=ruta)
+
+        #     return Response({'data':serializer.data}, status=status.HTTP_201_CREATED)
+    
+        # except ValidationError  as e:
+        #     error_message = {'error': e.detail}
+        #     raise ValidationError  (e.detail)

@@ -3,12 +3,13 @@ from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
 from gestion_documental.models.plantillas_models import AccesoUndsOrg_PlantillaDoc, PlantillasDoc
-from gestion_documental.models.trd_models import TipologiasDoc
+from gestion_documental.models.trd_models import FormatosTiposMedio, TipologiasDoc
 from gestion_documental.serializers.plantillas_serializers import AccesoUndsOrg_PlantillaDocCreateSerializer, AccesoUndsOrg_PlantillaDocGetSerializer, PlantillasDocBusquedaAvanzadaDetalleSerializer, PlantillasDocBusquedaAvanzadaSerializer, PlantillasDocCreateSerializer, PlantillasDocGetSeriallizer, PlantillasDocSerializer, PlantillasDocUpdateSerializer, TipologiasDocSerializerGetSerializer
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 import os
 from rest_framework.permissions import IsAuthenticated
 import json
+from gestion_documental.views.archivos_digitales_views import ArchivosInstrumentoCreate
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 class PlantillasDocCreate(generics.CreateAPIView):
     queryset = PlantillasDoc.objects.all()
@@ -25,16 +26,39 @@ class PlantillasDocCreate(generics.CreateAPIView):
         data_in = request.data.copy()
         data_in['id_persona_crea_plantilla']=usuario
 
-        archivo = request.FILES.get('archivo')
-        nombre_archivo = request.data.get('nombre_archivo')
+        archivo = request.FILES['archivo']
+        
+        data_archivo={
+            'es_Doc_elec_archivo':False,
+            'ruta':'gestor'
+        }
                 
         if not archivo:
             raise ValidationError("No se ha proporcionado ningún archivo.")
 
-        if not nombre_archivo:
-            raise ValidationError("El archivo debe tener un nombre.")
-        #FUNCION GENERADORA DE RUTAS DE ARCHIVOS
+        #Validacion para tipos de archivo:
+        nombre=archivo.name
+            
+        nombre_sin_extension, extension = os.path.splitext(nombre)
+        extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+        if not extension_sin_punto:
+            raise ValidationError("No fue posible registrar el archivo")
         
+        formatos=FormatosTiposMedio.objects.filter(nombre=extension_sin_punto,activo=True)
+
+        if not formatos:
+            raise ValidationError("Este formato "+str(extension_sin_punto)+" de archivo no esta permitido")
+       
+        que_tal=ArchivosInstrumentoCreate()
+        respuesta=que_tal.crear_archivo(data_archivo,archivo)
+
+ 
+        if respuesta.status_code!=status.HTTP_201_CREATED:
+            return respuesta   
+
+        data_archivo_digital= respuesta.data['data']      
+        di_archivo=data_archivo_digital['id_archivo_digital']
+        data_in['id_archivo_digital'] =  di_archivo              
     
        
         try:
