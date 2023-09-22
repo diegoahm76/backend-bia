@@ -1082,10 +1082,16 @@ class CompararSeriesDocUnidadCatSerieView(generics.ListAPIView):
         if not UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=data_in['id_unidad_nueva']).exists(): 
             raise NotFound('No se encontro unidad organizacional nueva')
         
+        unidad_cat_serie_actual = CatalogosSeriesUnidad.objects.filter(id_unidad_organizacional=data_in['id_unidad_actual'])
+        unidad_cat_serie_nueva = CatalogosSeriesUnidad.objects.filter(id_unidad_organizacional=data_in['id_unidad_nueva'])
+
         instancia_agrupaciones_persistentes = AgrupacionesDocumentalesPersistenteTemporalGetView()
         ids_agrupacion_doc_actual, ids_agrupacion_doc_nueva = instancia_agrupaciones_persistentes.get_unidades_seccion(data_in)
-        unidad_cat_serie_actual = CatalogosSeriesUnidad.objects.filter(id_unidad_organizacional=data_in['id_unidad_actual']).exclude(id_cat_serie_und__in=ids_agrupacion_doc_actual)
-        unidad_cat_serie_nueva = CatalogosSeriesUnidad.objects.filter(id_unidad_organizacional=data_in['id_unidad_nueva']).exclude(id_cat_serie_und__in=ids_agrupacion_doc_nueva)
+
+        if ids_agrupacion_doc_actual and ids_agrupacion_doc_nueva:
+            unidad_cat_serie_actual = unidad_cat_serie_actual.exclude(id_cat_serie_und__in=ids_agrupacion_doc_actual)
+            unidad_cat_serie_nueva = unidad_cat_serie_nueva.exclude(id_cat_serie_und__in=ids_agrupacion_doc_nueva)
+
         unidad_cat_serie_actual_data = self.serializer_class(unidad_cat_serie_actual, many=True).data
         unidad_cat_serie_nueva_data = self.serializer_class(unidad_cat_serie_nueva, many=True).data
 
@@ -1343,13 +1349,13 @@ class AgrupacionesDocumentalesPersistenteTemporalGetView(generics.ListAPIView):
                                                                                 id_unidad_seccion_actual=data_in['id_unidad_actual'],
                                                                                 id_unidad_seccion_nueva=data_in['id_unidad_nueva']).first()
     
-        if not unidades_persistentes:
-            raise NotFound('No existe unidades persistentes con los datos ingresados')
-        
-        agrupaciones_persistentes = AgrupacionesDocumentalesPersistenteTemporal.objects.filter(id_unidad_seccion_temporal=unidades_persistentes.id_unidad_seccion_temporal)
-
-        ids_agrupacion_doc_actual = [agrupacion.id_cat_serie_unidad_ccd_actual.id_cat_serie_und for agrupacion in agrupaciones_persistentes]
-        ids_agrupacion_doc_nueva = [agrupacion.id_cat_serie_unidad_ccd_nueva.id_cat_serie_und for agrupacion in agrupaciones_persistentes]
+        if unidades_persistentes:    
+            agrupaciones_persistentes = AgrupacionesDocumentalesPersistenteTemporal.objects.filter(id_unidad_seccion_temporal=unidades_persistentes.id_unidad_seccion_temporal)
+            ids_agrupacion_doc_actual = [agrupacion.id_cat_serie_unidad_ccd_actual.id_cat_serie_und for agrupacion in agrupaciones_persistentes]
+            ids_agrupacion_doc_nueva = [agrupacion.id_cat_serie_unidad_ccd_nueva.id_cat_serie_und for agrupacion in agrupaciones_persistentes]
+        else:
+            ids_agrupacion_doc_actual = None
+            ids_agrupacion_doc_nueva = None
         
         return ids_agrupacion_doc_actual, ids_agrupacion_doc_nueva
     
@@ -1358,6 +1364,10 @@ class AgrupacionesDocumentalesPersistenteTemporalGetView(generics.ListAPIView):
         data = request.data
 
         ids_agrupacion_doc_actual, ids_agrupacion_doc_nueva = self.get_unidades_seccion(data)
+
+        if ids_agrupacion_doc_actual == None and ids_agrupacion_doc_nueva == None:
+            raise NotFound('No existe unidades persistentes con los datos ingresados')
+        
         unidad_cat_serie_actual = CatalogosSeriesUnidad.objects.filter(id_cat_serie_und__in=ids_agrupacion_doc_actual)
         unidad_cat_serie_nueva = CatalogosSeriesUnidad.objects.filter(id_cat_serie_und__in=ids_agrupacion_doc_nueva)
         unidad_cat_serie_actual_data = self.serializer_class(unidad_cat_serie_actual, many=True).data
