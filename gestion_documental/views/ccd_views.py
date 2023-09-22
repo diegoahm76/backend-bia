@@ -1097,32 +1097,97 @@ class CompararSeriesDocUnidadCatSerieView(generics.ListAPIView):
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
     
+# class UnidadesSeccionPersistenteTemporalView(generics.CreateAPIView):
+#     serializer_class = UnidadesSeccionPersistenteTemporalSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def crear_unidades_persistentes(self, data_in):
+#         ccd_filro = BusquedaCCDHomologacionView().get_validacion_ccd()
+
+#         try:
+#             ccd = ccd_filro.get(id_ccd=data_in['id_ccd_nuevo'])
+#         except CuadrosClasificacionDocumental.DoesNotExist:
+#             raise NotFound('CCD no encontrado o no cumple con TRD y TCA terminados')
+        
+#         ids_unidad = []
+#         for id_unidad in data_in['unidades_persistentes']:
+#             ids_unidad.append(id_unidad['id_unidad_actual'])
+#             ids_unidad.append(id_unidad['id_unidad_nueva'])
+
+#         if not all(UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=id_unidad).exists() for id_unidad in ids_unidad):
+#             raise NotFound('No se encontraron todas las unidades organizacionales')
+        
+#         data_response = []
+#         for id_unidad in data_in['unidades_persistentes']:
+#             data = {
+#                 'id_ccd_nuevo':ccd.id_ccd,
+#                 'id_unidad_seccion_actual':id_unidad['id_unidad_actual'],
+#                 'id_unidad_seccion_nueva':id_unidad['id_unidad_nueva']
+#             }
+
+#             serializer = self.serializer_class(data=data)
+#             serializer.is_valid(raise_exception=True)
+#             unidades_persistentes = serializer.save()
+#             data_response.append(self.serializer_class(unidades_persistentes).data)
+
+#         return data_response
+
+#     def post(self, request):
+#         data = request.data
+#         unidades_persistentes = self.crear_unidades_persistentes(data)
+
+#         if not unidades_persistentes:
+#             raise ValidationError('No se pudo guardar la informacion')
+
+#         return Response({'success':True, 'detail':'Se guardan unidades persistentes', 'data':unidades_persistentes}, status=status.HTTP_201_CREATED)
+
 class UnidadesSeccionPersistenteTemporalView(generics.CreateAPIView):
     serializer_class = UnidadesSeccionPersistenteTemporalSerializer
     permission_classes = [IsAuthenticated]
 
-    def crear_unidades_persistentes(self, data_in):
+    def crear_actualizar_unidades_persistentes(self, data_in):
         ccd_filro = BusquedaCCDHomologacionView().get_validacion_ccd()
 
         try:
             ccd = ccd_filro.get(id_ccd=data_in['id_ccd_nuevo'])
         except CuadrosClasificacionDocumental.DoesNotExist:
             raise NotFound('CCD no encontrado o no cumple con TRD y TCA terminados')
-        
-        ids_unidad = []
-        for id_unidad in data_in['unidades_persistentes']:
-            ids_unidad.append(id_unidad['id_unidad_actual'])
-            ids_unidad.append(id_unidad['id_unidad_nueva'])
 
-        if not all(UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=id_unidad).exists() for id_unidad in ids_unidad):
-            raise NotFound('No se encontraron todas las unidades organizacionales')
-        
+        unidades_persistentes_existentes = UnidadesSeccionPersistenteTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd)
+
+        # Crear un conjunto de tuplas (id_unidad_actual, id_unidad_nueva) a partir de las unidades persistentes existentes
+        unidades_existentes_set = set(
+            (unidad.id_unidad_seccion_actual.id_unidad_organizacional, unidad.id_unidad_seccion_nueva.id_unidad_organizacional)
+            for unidad in unidades_persistentes_existentes
+        )
+
+        # Crear un conjunto de tuplas (id_unidad_actual, id_unidad_nueva) a partir de los datos entrantes
+        unidades_nuevas_set = set(
+            (id_unidad['id_unidad_actual'], id_unidad['id_unidad_nueva'])
+            for id_unidad in data_in['unidades_persistentes']
+        )
+        print(unidades_existentes_set)
+
+        # Calcular las unidades que se deben eliminar
+        unidades_a_eliminar = unidades_existentes_set - unidades_nuevas_set
+
+        # Calcular las unidades que se deben crear
+        unidades_a_crear = unidades_nuevas_set - unidades_existentes_set
+
+        # Eliminar las unidades persistentes que corresponden a las unidades a eliminar
+        UnidadesSeccionPersistenteTemporal.objects.filter(
+            id_ccd_nuevo=ccd.id_ccd,
+            id_unidad_seccion_actual__in=[unidad[0] for unidad in unidades_a_eliminar],
+            id_unidad_seccion_nueva__in=[unidad[1] for unidad in unidades_a_eliminar]
+        ).delete()
+
+        # Crear las unidades persistentes que corresponden a las unidades a crear
         data_response = []
-        for id_unidad in data_in['unidades_persistentes']:
+        for unidad in unidades_a_crear:
             data = {
-                'id_ccd_nuevo':ccd.id_ccd,
-                'id_unidad_seccion_actual':id_unidad['id_unidad_actual'],
-                'id_unidad_seccion_nueva':id_unidad['id_unidad_nueva']
+                'id_ccd_nuevo': ccd.id_ccd,
+                'id_unidad_seccion_actual': unidad[0],
+                'id_unidad_seccion_nueva': unidad[1]
             }
             serializer = self.serializer_class(data=data)
             serializer.is_valid(raise_exception=True)
@@ -1133,12 +1198,26 @@ class UnidadesSeccionPersistenteTemporalView(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
-        unidades_persistentes = self.crear_unidades_persistentes(data)
+        unidades_persistentes = self.crear_actualizar_unidades_persistentes(data)
 
         if not unidades_persistentes:
-            raise ValidationError('No se pudo guardar la informacion')
+            raise ValidationError('No se realizaron cambios en las unidades persistentes')
 
-        return Response({'success':True, 'detail':'Se guardan unidades persistentes', 'data':unidades_persistentes}, status=status.HTTP_201_CREATED)
+        return Response({'success': True, 'detail': 'Se actualizan unidades persistentes', 'data': unidades_persistentes}, status=status.HTTP_201_CREATED)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class AgrupacionesDocumentalesPersistenteTemporalView(generics.CreateAPIView):
     serializer_class = AgrupacionesDocumentalesPersistenteTemporalSerializer
@@ -1184,7 +1263,7 @@ class PersistenciaConfirmadaCreateView(generics.CreateAPIView):
         data = request.data
         with transaction.atomic():
             instancia_unidades_persistentes = UnidadesSeccionPersistenteTemporalView()
-            unidades_persistentes = instancia_unidades_persistentes.crear_unidades_persistentes(data)
+            unidades_persistentes = instancia_unidades_persistentes.crear_actualizar_unidades_persistentes(data)
             agrupaciones_persistentes = []
 
             if 'catalagos_persistentes' in data and data['catalagos_persistentes']:
