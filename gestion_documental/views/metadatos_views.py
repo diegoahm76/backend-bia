@@ -84,6 +84,8 @@ class MetadatosPersonalizadosGetOrdenActual(generics.ListAPIView):
 #LISTAR_METADATOS
 class MetadatosPersonalizadosList(generics.ListAPIView):
     serializer_class = MetadatosPersonalizadosSerializer
+    permission_classes = [IsAuthenticated]
+
 
     def get_queryset(self):
         # Obtener el valor máximo de orden_aparicion
@@ -113,7 +115,7 @@ class MetadatosPersonalizadosList(generics.ListAPIView):
 class MetadatosPersonalizadosDelete(generics.DestroyAPIView):
     serializer_class = MetadatosPersonalizadosDeleteSerializer
     queryset = MetadatosPersonalizados.objects.all()
-    lookup_field = 'id_metadato_personalizado'  # Configura el campo de clave primaria
+    lookup_field = 'id_metadato_personalizado'
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -121,20 +123,43 @@ class MetadatosPersonalizadosDelete(generics.DestroyAPIView):
         if instance.item_ya_usado:
             return Response({"detail": "No puedes eliminar este metadato porque este ya fue usado."}, status=status.HTTP_400_BAD_REQUEST)
         
+        # Obtener todas las listas de valores asociadas al metadato
+        listas_valores = ListaValores_MetadatosPers.objects.filter(id_metadato_personalizado=instance)
+        
+        # Eliminar todas las listas de valores asociadas
+        listas_valores.delete()
+        
         # Eliminar el metadato
         instance.delete()
         
-        # Reordenar los metadatos restantes
-        max_orden_aparicion = MetadatosPersonalizados.objects.aggregate(max_orden=Max('orden_aparicion'))['max_orden']
+        return Response({'success':True,"detail": "El metadato y todas las listas de valores asociadas se eliminaron con éxito."}, status=status.HTTP_200_OK)
+    
+
+# class MetadatosPersonalizadosDelete(generics.DestroyAPIView):
+#     serializer_class = MetadatosPersonalizadosDeleteSerializer
+#     queryset = MetadatosPersonalizados.objects.all()
+#     lookup_field = 'id_metadato_personalizado'  # Configura el campo de clave primaria
+
+#     def destroy(self, request, *args, **kwargs):
+#         instance = self.get_object()
         
-        # Resto del código para reordenar los metadatos restantes...
+#         if instance.item_ya_usado:
+#             return Response({"detail": "No puedes eliminar este metadato porque este ya fue usado."}, status=status.HTTP_400_BAD_REQUEST)
         
-        return Response({"detail": "El metadato se eliminó y se reordenaron los demás metadatos."}, status=status.HTTP_204_NO_CONTENT)
+#         # Eliminar el metadato
+#         instance.delete()
+        
+#         # Reordenar los metadatos restantes
+#         max_orden_aparicion = MetadatosPersonalizados.objects.aggregate(max_orden=Max('orden_aparicion'))['max_orden']
+        
+        
+#         return Response({"detail": "El metadato se eliminó y se reordenaron los demás metadatos."}, status=status.HTTP_204_NO_CONTENT)
     
 
 #EDITAR_METADATOS
 class MetadatosPersonalizadosUpdate(generics.UpdateAPIView):
     serializer_class = MetadatosPersonalizadosUpdateSerializer
+    permission_classes = [IsAuthenticated]
     queryset = MetadatosPersonalizados.objects.all()
     lookup_field = 'id_metadato_personalizado'  # Configura el campo de clave primaria
 
@@ -165,6 +190,7 @@ class MetadatosPersonalizadosUpdate(generics.UpdateAPIView):
 #BUSCAR-METADATOS
 class MetadatosPersonalizadosSearch(generics.ListAPIView):
     serializer_class = MetadatosPersonalizadosSearchSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         nombre_metadato = self.request.query_params.get('nombre_metadato', '').strip()
