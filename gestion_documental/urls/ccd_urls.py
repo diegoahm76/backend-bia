@@ -46,6 +46,7 @@ urlpatterns = [
     path('persistencia-agrupaciones-documental-ccd/create/', views.AgrupacionesDocumentalesPersistenteTemporalView.as_view(),name='crear-persistencia-agrupaciones-documental-ccd'),
     path('persistencia-confirmada-ccd/create/', views.PersistenciaConfirmadaCreateView.as_view(),name='crear-persistencia-confirmada-ccd'),
     path('persistencia-unidades-ccd/get/<str:id_ccd>/', views.UnidadesSeccionPersistenteTemporalGetView.as_view(),name='obtener-persistencia-unidades-ccd'),
+    path('persistencia-agrupaciones-documental-ccd/get/', views.AgrupacionesDocumentalesPersistenteTemporalGetView.as_view(),name='obtener-persistencia-agrupaciones-documental-ccd'),
 
 
 ]
