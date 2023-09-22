@@ -15,19 +15,35 @@ from gestion_documental.serializers.metadatos_serializers import GetMetadatosPer
 ########################## CRUD DE METADATO ##########################
 
 #CREAR-METADATOS
+# class MetadatosPersonalizadosCreate(generics.CreateAPIView):
+#     serializer_class = MetadatosPersonalizadosSerializer  
+#     permission_classes = [IsAuthenticated]
+#     queryset = MetadatosPersonalizados.objects.all()
+
+#     def post(self, request, *args, **kwargs):
+#         serializer = MetadatosPersonalizadosSerializer(data=request.data)
+
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+#         raise ValidationError(serializer.errors)
+        
+        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class MetadatosPersonalizadosCreate(generics.CreateAPIView):
-    serializer_class = MetadatosPersonalizadosSerializer  
+    serializer_class = MetadatosPersonalizadosSerializer
     permission_classes = [IsAuthenticated]
-    queryset = MetadatosPersonalizados.objects.all()
 
     def post(self, request, *args, **kwargs):
-        serializer = MetadatosPersonalizadosSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)  # Utiliza self.get_serializer para crear una instancia del serializador
 
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        raise ValidationError(serializer.errors)
 
 #ORDEN_METADATOS_SIGUIENTE
 class MetadatosPersonalizadosGetOrden(generics.ListAPIView):
@@ -68,6 +84,8 @@ class MetadatosPersonalizadosGetOrdenActual(generics.ListAPIView):
 #LISTAR_METADATOS
 class MetadatosPersonalizadosList(generics.ListAPIView):
     serializer_class = MetadatosPersonalizadosSerializer
+    permission_classes = [IsAuthenticated]
+
 
     def get_queryset(self):
         # Obtener el valor máximo de orden_aparicion
@@ -97,7 +115,7 @@ class MetadatosPersonalizadosList(generics.ListAPIView):
 class MetadatosPersonalizadosDelete(generics.DestroyAPIView):
     serializer_class = MetadatosPersonalizadosDeleteSerializer
     queryset = MetadatosPersonalizados.objects.all()
-    lookup_field = 'id_metadato_personalizado'  # Configura el campo de clave primaria
+    lookup_field = 'id_metadato_personalizado'
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -105,20 +123,43 @@ class MetadatosPersonalizadosDelete(generics.DestroyAPIView):
         if instance.item_ya_usado:
             return Response({"detail": "No puedes eliminar este metadato porque este ya fue usado."}, status=status.HTTP_400_BAD_REQUEST)
         
+        # Obtener todas las listas de valores asociadas al metadato
+        listas_valores = ListaValores_MetadatosPers.objects.filter(id_metadato_personalizado=instance)
+        
+        # Eliminar todas las listas de valores asociadas
+        listas_valores.delete()
+        
         # Eliminar el metadato
         instance.delete()
         
-        # Reordenar los metadatos restantes
-        max_orden_aparicion = MetadatosPersonalizados.objects.aggregate(max_orden=Max('orden_aparicion'))['max_orden']
+        return Response({'success':True,"detail": "El metadato y todas las listas de valores asociadas se eliminaron con éxito."}, status=status.HTTP_200_OK)
+    
+
+# class MetadatosPersonalizadosDelete(generics.DestroyAPIView):
+#     serializer_class = MetadatosPersonalizadosDeleteSerializer
+#     queryset = MetadatosPersonalizados.objects.all()
+#     lookup_field = 'id_metadato_personalizado'  # Configura el campo de clave primaria
+
+#     def destroy(self, request, *args, **kwargs):
+#         instance = self.get_object()
         
-        # Resto del código para reordenar los metadatos restantes...
+#         if instance.item_ya_usado:
+#             return Response({"detail": "No puedes eliminar este metadato porque este ya fue usado."}, status=status.HTTP_400_BAD_REQUEST)
         
-        return Response({"detail": "El metadato se eliminó y se reordenaron los demás metadatos."}, status=status.HTTP_204_NO_CONTENT)
+#         # Eliminar el metadato
+#         instance.delete()
+        
+#         # Reordenar los metadatos restantes
+#         max_orden_aparicion = MetadatosPersonalizados.objects.aggregate(max_orden=Max('orden_aparicion'))['max_orden']
+        
+        
+#         return Response({"detail": "El metadato se eliminó y se reordenaron los demás metadatos."}, status=status.HTTP_204_NO_CONTENT)
     
 
 #EDITAR_METADATOS
 class MetadatosPersonalizadosUpdate(generics.UpdateAPIView):
     serializer_class = MetadatosPersonalizadosUpdateSerializer
+    permission_classes = [IsAuthenticated]
     queryset = MetadatosPersonalizados.objects.all()
     lookup_field = 'id_metadato_personalizado'  # Configura el campo de clave primaria
 
@@ -149,6 +190,7 @@ class MetadatosPersonalizadosUpdate(generics.UpdateAPIView):
 #BUSCAR-METADATOS
 class MetadatosPersonalizadosSearch(generics.ListAPIView):
     serializer_class = MetadatosPersonalizadosSearchSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         nombre_metadato = self.request.query_params.get('nombre_metadato', '').strip()
@@ -194,28 +236,26 @@ class MetadatosValoresCreate(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     queryset = ListaValores_MetadatosPers.objects.all()
     
-    def post(self,request):
-        
+    def get_max_order_in_database(self):
+        last_order = ListaValores_MetadatosPers.objects.order_by('-orden_dentro_de_lista').first()
+        if last_order is not None:
+            return last_order.orden_dentro_de_lista + 1
+        else:
+            return 1
+    
+    def post(self, request):
         try:
             data_in = request.data
-            orden_siguiente = MetadatosValoresGetOrdenActual()
-            response_orden = orden_siguiente.get(request)
-
-            if response_orden.status_code != status.HTTP_200_OK:
-                return response_orden
-            maximo_orden = response_orden.data.get('orden_siguiente')
-
-            print(maximo_orden)
-            data_in['orden_dentro_de_lista']=  maximo_orden + 1
+            maximo_orden = self.get_max_order_in_database()
+            data_in['orden_dentro_de_lista'] = maximo_orden
             serializer = self.serializer_class(data=data_in)
             serializer.is_valid(raise_exception=True)
-            estante =serializer.save()
+            estante = serializer.save()
 
-
-            return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
-        except ValidationError  as e:
+            return Response({'success': True, 'detail': 'Se crearon los registros correctamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
             error_message = {'error': e.detail}
-            raise ValidationError  (e.detail)
+            raise ValidationError(e.detail)
 
 #ORDEN_VALORES_SIGUIENTE
 class MetadatosValoresGetOrden(generics.ListAPIView):

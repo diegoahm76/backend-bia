@@ -12,6 +12,7 @@ from rest_framework import status
 import re, requests
 # from twilio.rest import Client
 from django.template.loader import render_to_string
+from seguridad.lists.fields_abrv_list import fields_abrv_LIST
 import os
 
 class Util:
@@ -172,6 +173,12 @@ class Util:
                 
                 for field, value in data_previous.__dict__.items():
                     new_value = getattr(data_current,field)
+                    
+                    # ABREVIATURAS
+                    abrv = next((item for item in fields_abrv_LIST if item["field"] == field), None)
+                    if abrv:
+                        field = abrv['abrv']
+                    
                     if value != new_value:
                         valores_actualizados += '' if not valores_actualizados else '|'
                         valores_actualizados += field + ":" + str(value) + " con " + str(new_value)

@@ -35,3 +35,20 @@ class TiposPQR(models.Model):
         db_table = 'T252TiposPQR'  
         verbose_name = 'Tipo de PQR'  
         verbose_name_plural = 'Tipos de PQR' 
+
+class MediosSolicitud(models.Model):
+    id_medio_solicitud = models.SmallAutoField(primary_key=True, db_column='T253IdMedioSolicitud')
+    nombre = models.CharField(max_length=50, db_column='T253nombre',unique=True)
+    aplica_para_pqrsdf = models.BooleanField(default=False, db_column='T253aplicaParaPQRSDF')
+    aplica_para_tramites = models.BooleanField(default=False, db_column='T253aplicaParaTramites')
+    aplica_para_otros = models.BooleanField(default=False, db_column='T253aplicaParaOtros')
+    registro_precargado = models.BooleanField(default=False, db_column='T253registroPrecargado')
+    activo = models.BooleanField(default=False, db_column='T253activo')
+    item_ya_usado = models.BooleanField(default=False, db_column='T253itemYaUsado')
+
+    class Meta:
+        db_table = 'T253MediosSolicitud'  
+        verbose_name = 'Medio de Solicitud'  
+        verbose_name_plural = 'Medios de Solictud' 
+
+

@@ -5,9 +5,13 @@ from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from django.db.models import Max 
 from gestion_documental.models.expedientes_models import ExpedientesDocumentales,ArchivosDigitales,DocumentosDeArchivoExpediente,IndicesElectronicosExp,Docs_IndiceElectronicoExp,CierresReaperturasExpediente,ArchivosSoporte_CierreReapertura
 from gestion_documental.models.trd_models import TablaRetencionDocumental, TipologiasDoc
+from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
+from django.conf import settings
+import os
 
 
-######################### SERIALIZERS DEPOSITO #########################
+######################### SERIALIZERS EXPEDIENTE #########################
 
 #Buscar-Expediente
 class ExpedienteSearchSerializer(serializers.ModelSerializer):
@@ -34,8 +38,12 @@ class ListarTRDSerializer(serializers.ModelSerializer):
 
     def get_estado_actual(self, obj):
         return "ACTUAL" if obj.id_trd_origen.actual else "NO ACTUAL"
-    
 
+#Listar_Expedientes    
+class ExpedientesDocumentalesGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExpedientesDocumentales
+        fields = '__all__'
 #Orden_Siguiente_Expediente
 class ExpedienteGetOrdenSerializer(serializers.ModelSerializer):
     class Meta:
@@ -43,13 +51,34 @@ class ExpedienteGetOrdenSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-#
+
+
+######################### SERIALIZERS DOCUMENTOS DE ARCHIVO DE EXPEDIENTE #########################
+
+
 class AgregarArchivoSoporteCreateSerializer(serializers.ModelSerializer):
+
+    def validate_palabras_clave_documento(self, value):
+        # Separar las palabras clave ingresadas por el carácter "|"
+        palabras_clave = value.split('|')
+
+        # Limitar a un máximo de 5 palabras clave
+        if len(palabras_clave) > 5:
+            raise ValidationError("No se pueden ingresar más de 5 palabras clave.")
+
+        # Eliminar espacios en blanco al principio y al final de cada palabra clave
+        palabras_clave = [palabra.strip() for palabra in palabras_clave]
+
+        # Unir las palabras clave formateadas de nuevo con "|"
+        return '|'.join(palabras_clave)
+
     class Meta:
-        model =  DocumentosDeArchivoExpediente
+        model = DocumentosDeArchivoExpediente
         fields = '__all__'
         read_only_fields = ['fecha_incorporacion_doc_a_Exp']
 
+
+   
 
 class ListarTipologiasSerializer(serializers.ModelSerializer):
 
@@ -57,3 +86,43 @@ class ListarTipologiasSerializer(serializers.ModelSerializer):
         model = TipologiasDoc
         fields = ['id_tipologia_documental', 'nombre']
   
+
+ ######################### SERIALIZERS ARCHIVOS DIGITALES #########################
+class ArchivosDigitalesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ArchivosDigitales
+        fields = '__all__'  
+
+class ArchivosDigitalesCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ArchivosDigitales
+        fields = '__all__'
+        # extra_kwargs = {
+        #     'ruta_archivo': {'write_only': True}
+        # }
+
+    def save(self, subcarpeta='',**kwargs):
+        try:
+            archivo = self.validated_data['ruta_archivo']
+            nombre_archivo = archivo.name
+            Subcarpeta=subcarpeta
+            # Utiliza la ruta de medios para guardar el archivo
+            
+            ruta_completa = os.path.join(settings.MEDIA_ROOT,Subcarpeta, nombre_archivo)
+            
+            if not os.path.relpath(ruta_completa, settings.MEDIA_ROOT):
+                raise serializers.ValidationError(f"La subcarpeta '{subcarpeta}' no existe en la ruta especificada.")
+            
+            # Guarda el archivo
+            with open(ruta_completa, 'wb') as destination:
+                for chunk in archivo.chunks():
+                    destination.write(chunk)
+
+
+            self.validated_data['ruta_archivo'] = os.path.relpath(ruta_completa, settings.MEDIA_ROOT)
+
+            return super().save(**kwargs)
+
+        except FileNotFoundError as e:
+
+             raise serializers.ValidationError(str(e))

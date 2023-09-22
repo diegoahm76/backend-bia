@@ -3,9 +3,9 @@ import copy
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.models.radicados_models import TiposPQR
+from gestion_documental.models.radicados_models import MediosSolicitud, TiposPQR
 from rest_framework.response import Response
-from gestion_documental.serializers.pqr_serializers import TiposPQRGetSerializer, TiposPQRUpdateSerializer
+from gestion_documental.serializers.pqr_serializers import MediosSolicitudCreateSerializer, MediosSolicitudDeleteSerializer, MediosSolicitudSearchSerializer, MediosSolicitudUpdateSerializer, TiposPQRGetSerializer, TiposPQRUpdateSerializer
 from seguridad.utils import Util
 class TiposPQRGet(generics.ListAPIView):
     serializer_class = TiposPQRGetSerializer
@@ -22,8 +22,6 @@ class TiposPQRGet(generics.ListAPIView):
 
                          
         return Response({'succes':True, 'detail':'Se encontró los siguientes registross','data':serializer.data}, status=status.HTTP_200_OK)
-
-
 
 
 class TiposPQRUpdate(generics.UpdateAPIView):
@@ -67,3 +65,126 @@ class TiposPQRUpdate(generics.UpdateAPIView):
         except ValidationError  as e:
             error_message = {'error': e.detail}
             raise ValidationError  (e.detail)    
+        
+
+
+ ########################## MEDIOS DE SOLICITUD ##########################
+
+
+#CREAR_MEDIOS_SOLICITUD
+class MediosSolicitudCreate(generics.CreateAPIView):
+    queryset = MediosSolicitud.objects.all()
+    serializer_class = MediosSolicitudCreateSerializer
+    permission_classes = [IsAuthenticated]
+
+
+#BUSCAR_MEDIOS_SOLICITUD
+class MediosSolicitudSearch(generics.ListAPIView):
+    serializer_class = MediosSolicitudSearchSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        nombre_medio_solicitud = self.request.query_params.get('nombre_medio_solicitud', '').strip()
+        aplica_para_pqrsdf = self.request.query_params.get('aplica_para_pqrsdf', '').strip()
+        aplica_para_tramites = self.request.query_params.get('aplica_para_tramites', '').strip()
+        aplica_para_otros = self.request.query_params.get('aplica_para_otros', '').strip()
+        activo = self.request.query_params.get('activo', '').strip()
+
+        medios_solicitud = MediosSolicitud.objects.all()
+
+        if nombre_medio_solicitud:
+            medios_solicitud = medios_solicitud.filter(nombre__icontains=nombre_medio_solicitud)
+
+        
+        if aplica_para_pqrsdf:
+            medios_solicitud = medios_solicitud.filter(aplica_para_pqrsdf__icontains=aplica_para_pqrsdf)
+
+
+        if aplica_para_tramites:
+            medios_solicitud = medios_solicitud.filter(aplica_para_tramites__icontains=aplica_para_tramites)
+
+        if aplica_para_otros:
+            medios_solicitud = medios_solicitud.filter(descripcion__icontains=aplica_para_otros)
+
+    
+        if activo:
+            medios_solicitud = medios_solicitud.filter(activo__icontains=activo)
+            
+
+        medios_solicitud = medios_solicitud.order_by('id_medio_solicitud')  # Ordenar aquí
+
+        return medios_solicitud
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            return Response({
+                'success': True,
+                'detail': 'No se encontraron medios de solicitud que coincidan con los criterios de búsqueda.',
+                'data': []
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.get_serializer(queryset, many=True)
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes medios de solicitud.',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+    
+#BORRAR_MEDIO_SOLICITUD
+class MediosSolicitudDelete(generics.DestroyAPIView):
+    queryset = MediosSolicitud.objects.all()
+    serializer_class = MediosSolicitudDeleteSerializer 
+    lookup_field = 'id_medio_solicitud'
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        # Verificar si T253registroPrecargado es TRUE
+        if instance.registro_precargado:
+            return Response({'success': False,"detail": "No puedes eliminar este medio de solicitud porque está precargado (Registro_Precargado=TRUE)."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verificar si T253itemYaUsado es TRUE
+        if instance.item_ya_usado:
+            return Response({'success': False,"detail": "No puedes eliminar este medio de solicitud porque ya ha sido usado (ItemYaUsado=TRUE)."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Eliminar el medio de solicitud
+        instance.delete()
+
+        return Response({'success': True,"detail": "El medio de solicitud se eliminó con éxito."}, status=status.HTTP_200_OK)
+    
+#ACTUALIZAR_MEDIO_SOLICITUD
+class MediosSolicitudUpdate(generics.UpdateAPIView):
+    queryset = MediosSolicitud.objects.all()
+    serializer_class = MediosSolicitudUpdateSerializer  
+    lookup_field = 'id_medio_solicitud'
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        # Verificar si T253registroPrecargado es TRUE
+        if instance.registro_precargado:
+            return Response({'success': False, "detail": "No puedes actualizar este medio de solicitud porque está precargado.", "data": MediosSolicitudUpdateSerializer(instance).data}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verificar si T253itemYaUsado es TRUE
+        if instance.item_ya_usado:
+            # Comprobar si 'nombre' está presente en los datos de solicitud
+            if 'nombre' in request.data:
+                return Response({'success': False, "detail": "No puedes actualizar el campo 'nombre' en este medio de solicitud.", "data": MediosSolicitudUpdateSerializer(instance).data}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Permitir actualizar otros campos
+            serializer = self.get_serializer(instance, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'success': True, "detail": "El medio de solicitud se actualizó con éxito.", "data": serializer.data}, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # Si T253itemYaUsado es FALSE, permitir la actualización completa del medio de solicitud
+        serializer = self.get_serializer(instance, data=request.data, partial=False)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'success': True, "detail": "El medio de solicitud se actualizó con éxito.", "data": serializer.data}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
