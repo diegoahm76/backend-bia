@@ -125,4 +125,4 @@ class ArchivosDigitalesCreateSerializer(serializers.ModelSerializer):
 
         except FileNotFoundError as e:
 
-             raise serializers.ValidationError('Error:No es posible guardar el archivo.')
+             raise serializers.ValidationError(str(e))
