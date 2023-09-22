@@ -110,9 +110,8 @@ class ArchivosDigitalesCreateSerializer(serializers.ModelSerializer):
             
             ruta_completa = os.path.join(settings.MEDIA_ROOT,Subcarpeta, nombre_archivo)
             
-            if not os.path.relpath(ruta_completa, settings.MEDIA_ROOT):
-                raise serializers.ValidationError(f"La subcarpeta '{subcarpeta}' no existe en la ruta especificada.")
-            
+            if not os.path.exists(os.path.join(settings.MEDIA_ROOT, Subcarpeta)):
+                os.makedirs(os.path.join(settings.MEDIA_ROOT, Subcarpeta))
             # Guarda el archivo
             with open(ruta_completa, 'wb') as destination:
                 for chunk in archivo.chunks():
