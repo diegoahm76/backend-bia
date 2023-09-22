@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser
-class ArchivosInstrumentoCreate(generics.CreateAPIView):
+class ArchivosDgitalesCreate(generics.CreateAPIView):
     queryset = ArchivosDigitales.objects.all()
     serializer_class = ArchivosDigitalesCreateSerializer
     #parser_classes = (MultiPartParser,)
