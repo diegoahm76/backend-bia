@@ -2,13 +2,15 @@
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
+from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.models.plantillas_models import AccesoUndsOrg_PlantillaDoc, PlantillasDoc
-from gestion_documental.models.trd_models import TipologiasDoc
+from gestion_documental.models.trd_models import FormatosTiposMedio, TipologiasDoc
 from gestion_documental.serializers.plantillas_serializers import AccesoUndsOrg_PlantillaDocCreateSerializer, AccesoUndsOrg_PlantillaDocGetSerializer, PlantillasDocBusquedaAvanzadaDetalleSerializer, PlantillasDocBusquedaAvanzadaSerializer, PlantillasDocCreateSerializer, PlantillasDocGetSeriallizer, PlantillasDocSerializer, PlantillasDocUpdateSerializer, TipologiasDocSerializerGetSerializer
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 import os
 from rest_framework.permissions import IsAuthenticated
 import json
+from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 class PlantillasDocCreate(generics.CreateAPIView):
     queryset = PlantillasDoc.objects.all()
@@ -23,18 +25,55 @@ class PlantillasDocCreate(generics.CreateAPIView):
         usuario = request.user.persona.id_persona
         data_acceso=[]
         data_in = request.data.copy()
-        data_in['id_persona_crea_plantilla']=usuario
+        data_in['id_persona_crea_plantilla'] = usuario
+        #CONFIGURACION TEMPORAL PARA HACER PRUEBAS
+        if 'ruta_temporal' in data_in and data_in['ruta_temporal']:
 
-        archivo = request.FILES.get('archivo')
-        nombre_archivo = request.data.get('nombre_archivo')
+            ruta_temporal = data_in['ruta_temporal']
+        else:
+            ruta_temporal = ''
+        elementos = ruta_temporal.split(",")
+        ruta = os.path.join(*elementos)
+       
+        #FIN PRUEBAS
+        #ruta = os.path.join("home", "BIA", "Otros", "Plantillas")
+       
+        print(ruta)
+    
+        #raise ValidationError(ruta)
+        archivo = request.FILES['archivo']
+        
+        data_archivo={
+            'es_Doc_elec_archivo':False,
+            'ruta':ruta
+        }
                 
         if not archivo:
             raise ValidationError("No se ha proporcionado ningún archivo.")
 
-        if not nombre_archivo:
-            raise ValidationError("El archivo debe tener un nombre.")
-        #FUNCION GENERADORA DE RUTAS DE ARCHIVOS
+        #Validacion para tipos de archivo:
+        nombre=archivo.name
+            
+        nombre_sin_extension, extension = os.path.splitext(nombre)
+        extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+        if not extension_sin_punto:
+            raise ValidationError("No fue posible registrar el archivo")
         
+        formatos=FormatosTiposMedio.objects.filter(nombre=extension_sin_punto,activo=True)
+
+        if not formatos:
+            raise ValidationError("Este formato "+str(extension_sin_punto)+" de archivo no esta permitido")
+       
+        que_tal=ArchivosDgitalesCreate()
+        respuesta=que_tal.crear_archivo(data_archivo,archivo)
+
+ 
+        if respuesta.status_code!=status.HTTP_201_CREATED:
+            return respuesta   
+
+        data_archivo_digital= respuesta.data['data']      
+        di_archivo=data_archivo_digital['id_archivo_digital']
+        data_in['id_archivo_digital'] =  di_archivo              
     
        
         try:
@@ -60,7 +99,7 @@ class PlantillasDocCreate(generics.CreateAPIView):
 
 
 
-            return Response({'success':True,'detail':'Se crearon los registros correctamente','data':{**serializer.data,"acceso_unidades":data_acceso}},status=status.HTTP_201_CREATED)
+            return Response({'success':True,'detail':'Se crearon los registros correctamente','data':{**serializer.data,"acceso_unidades":data_acceso,'archivo_digital':data_archivo_digital}},status=status.HTTP_201_CREATED)
         except ValidationError as e:       
             raise ValidationError(e.detail)
         
@@ -76,6 +115,11 @@ class PlantillasDocDelete(generics.DestroyAPIView):
         intance_accesos_plantilla=AccesoUndsOrg_PlantillaDoc.objects.filter(id_plantilla_doc=instance.id_plantilla_doc)
         if intance_accesos_plantilla:
             intance_accesos_plantilla.delete()
+        
+        if instance.id_archivo_digital:
+            instance_archivo=ArchivosDigitales.objects.filter(id_archivo_digital=instance.id_archivo_digital.id_archivo_digital)
+            if instance_archivo:
+                instance_archivo.delete()
 
         instance.delete()
 

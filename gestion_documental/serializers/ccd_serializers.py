@@ -6,7 +6,9 @@ from gestion_documental.models.ccd_models import (
     SeriesDoc,
     SubseriesDoc,
     CatalogosSeries,
-    CatalogosSeriesUnidad
+    CatalogosSeriesUnidad,
+    UnidadesSeccionPersistenteTemporal,
+    AgrupacionesDocumentalesPersistenteTemporal
 )
 from gestion_documental.models.trd_models import (
     TablaRetencionDocumental
@@ -442,7 +444,7 @@ class BusquedaCCDHomologacionSerializer(serializers.ModelSerializer):
         fields = ['id_ccd', 'nombre', 'version', 'usado', 'fecha_terminado', 'id_organigrama', 'nombre_organigrama', 'version_organigrama']
 
 
-class CompararSeriesDocUnidadSerializer(serializers.ModelSerializer):
+class SeriesDocUnidadHomologacionesSerializer(serializers.ModelSerializer):
     id_organigrama = serializers.ReadOnlyField(source='id_organigrama.id_organigrama',default=None)
 
     class Meta:
@@ -450,7 +452,7 @@ class CompararSeriesDocUnidadSerializer(serializers.ModelSerializer):
         fields = ['id_unidad_organizacional', 'codigo', 'nombre', 'id_organigrama']
 
 
-class CompararSeriesDocUnidadCatSerieSerializer(serializers.ModelSerializer):
+class SeriesDocUnidadCatSerieHomologacionesSerializer(serializers.ModelSerializer):
     id_serie = serializers.ReadOnlyField(source='id_catalogo_serie.id_serie_doc.id_serie_doc',default=None)
     cod_serie = serializers.ReadOnlyField(source='id_catalogo_serie.id_serie_doc.codigo',default=None)
     nombre_serie = serializers.ReadOnlyField(source='id_catalogo_serie.id_serie_doc.nombre',default=None)
@@ -460,8 +462,18 @@ class CompararSeriesDocUnidadCatSerieSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CatalogosSeriesUnidad
-        fields = ['id_unidad_organizacional', 'id_catalogo_serie', 'id_serie', 'cod_serie', 'nombre_serie', 'id_subserie', 'cod_subserie', 'nombre_subserie']
+        fields = ['id_unidad_organizacional', 'id_cat_serie_und', 'id_serie', 'cod_serie', 'nombre_serie', 'id_subserie', 'cod_subserie', 'nombre_subserie']
 
+
+class UnidadesSeccionPersistenteTemporalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UnidadesSeccionPersistenteTemporal
+        fields = '__all__'
+
+class AgrupacionesDocumentalesPersistenteTemporalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AgrupacionesDocumentalesPersistenteTemporal
+        fields = '__all__'
 
 #   LLAMADO DE SERIALIZADOR DENTRO DE OTRO SERIALIZADOR CON RELACION
 # class SeriesDocSerializer(serializers.ModelSerializer):

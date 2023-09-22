@@ -63,15 +63,16 @@ class ArchivosDigitales(models.Model):
     nombre_de_Guardado = models.CharField(max_length=20, db_column='T238nombreDeGuardado', unique=True)
     formato = models.CharField(max_length=20, db_column='T238formato')
     tamagno_kb = models.IntegerField(db_column='T238tamagnoEnKB')
-    ruta_archivo = models.CharField(max_length=500, db_column='T238rutaArchivo')
-    fecha_creacion_doc = models.DateTimeField(db_column='T238fechaCreacionDoc')
+    ruta_archivo = models.FileField(max_length=255, db_column='T238rutaArchivo')
+    #ruta_archivo = models.CharField(max_length=500, db_column='T238rutaArchivo')
+    fecha_creacion_doc = models.DateTimeField(auto_now=True,db_column='T238fechaCreacionDoc')
     es_Doc_elec_archivo = models.BooleanField(db_column='T238EsDocElecDeArchivo')
 
     def __str__(self):
             return self.nombre_de_Guardado
     
     class Meta:
-            db_table = 'T238ArchivosDigitales					'
+            db_table = 'T238ArchivosDigitales'
             verbose_name = 'Archivo Digital'
             verbose_name_plural = 'Archivos Digitales'
         
