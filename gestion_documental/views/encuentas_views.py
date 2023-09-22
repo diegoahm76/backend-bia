@@ -30,10 +30,11 @@ class EncabezadoEncuestaCreate(generics.CreateAPIView):
                 instance=serializer.save()
                 crear_pregunta=PreguntasEncuestaCreate()
                 crear_opcion=OpcionesRtaCreate()
+                response_preguntas=[]
                 if 'preguntas' in data_in:
                 
                     data_pregunta={}
-                    response_preguntas=[]
+                    
 
                     for pre in data_in['preguntas']:
                         data_pregunta.clear()
@@ -46,8 +47,8 @@ class EncabezadoEncuestaCreate(generics.CreateAPIView):
                             return response_pregunta
                         response_preguntas.append(response_pregunta.data['data'])
 
-                    response_encabezado=serializer.data
-                    response_encabezado['preguntas_encuesta']=response_preguntas
+                response_encabezado=serializer.data
+                response_encabezado['preguntas_encuesta']=response_preguntas
                 return Response({'success':True,'detail':'Se crearon los registros correctamente','data':response_encabezado},status=status.HTTP_201_CREATED)
         except ValidationError as e:       
             raise ValidationError(e.detail)
@@ -56,7 +57,7 @@ class EncabezadoEncuestaCreate(generics.CreateAPIView):
 class EncabezadoEncuestaUpdate(generics.UpdateAPIView):
     queryset = EncabezadoEncuesta.objects.all()
     serializer_class = EncabezadoEncuestaUpdateSerializer
-
+    permission_classes = [IsAuthenticated]
     def put(self, request, *args, **kwargs):
 
 
@@ -153,6 +154,7 @@ class PreguntasEncuestaCreate(generics.CreateAPIView):
 class PreguntasEncuestaUpdate(generics.UpdateAPIView):
     queryset = PreguntasEncuesta.objects.all()
     serializer_class = PreguntasEncuestaUpdateSerializer
+    permission_classes = [IsAuthenticated]
     def actualizar_pregunta(self,data,pk):
         data_in=data
         instance = PreguntasEncuesta.objects.filter(id_pregunta_encuesta=pk).first()
@@ -207,7 +209,7 @@ class PreguntasEncuestaUpdate(generics.UpdateAPIView):
 class PreguntasEncuestaDelete(generics.DestroyAPIView):
     queryset = PreguntasEncuesta.objects.all()
     serializer_class = PreguntasEncuestaDeleteSerializer
-
+    permission_classes = [IsAuthenticated]
     def eliminar(self,pk):
         instance = PreguntasEncuesta.objects.filter(id_pregunta_encuesta=pk).first()
         if not instance:
@@ -254,6 +256,7 @@ class OpcionesRtaCreate(generics.CreateAPIView):
 class OpcionesRtaUpdate(generics.UpdateAPIView):
     queryset = OpcionesRta.objects.all()
     serializer_class = OpcionesRtaUpdateSerializer
+    permission_classes = [IsAuthenticated]
     def actualizar_pregunta(self,data,pk):
         data_in=data
         instance = OpcionesRta.objects.filter(id_opcion_rta=pk).first()
@@ -282,7 +285,7 @@ class OpcionesRtaUpdate(generics.UpdateAPIView):
 class OpcionesRtaDelete(generics.DestroyAPIView):
     queryset = OpcionesRta.objects.all()
     serializer_class = OpcionesRtaDeleteSerializer
-
+    permission_classes = [IsAuthenticated]
     def eliminar(self,pk):
         instance = OpcionesRta.objects.filter(id_opcion_rta=pk).first()
         if not instance:
@@ -352,9 +355,18 @@ class EncabezadoEncuestaDelete(generics.DestroyAPIView):
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
-        self.perform_destroy(instance)
+
+        preguntas_intance=PreguntasEncuesta.objects.filter(id_encabezado_encuesta=instance.id_encabezado_encuesta)
+
+        if preguntas_intance:
+            for pregunta in preguntas_intance:
+                respuestas_instace=OpcionesRta.objects.filter(id_pregunta=pregunta.id_pregunta_encuesta)
+                print(respuestas_instace)
+                respuestas_instace.delete()
+            preguntas_intance.delete()
+        instance.delete()
         return Response({
             "success": True,
             "detail": "Se eliminó el encabezado de encuesta correctamente",
             "data": serializer.data
-        }, status=status.HTTP_204_NO_CONTENT)
+        }, status= status.HTTP_200_OK)

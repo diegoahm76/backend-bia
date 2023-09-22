@@ -1,4 +1,6 @@
-import datetime
+from datetime import datetime
+import os
+import secrets
 from gestion_documental.models.expedientes_models import ExpedientesDocumentales,ArchivosDigitales,DocumentosDeArchivoExpediente,IndicesElectronicosExp,Docs_IndiceElectronicoExp,CierresReaperturasExpediente,ArchivosSoporte_CierreReapertura
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from django.shortcuts import get_object_or_404
@@ -6,11 +8,13 @@ from gestion_documental.models.trd_models import TablaRetencionDocumental, Tipol
 from seguridad.utils import Util
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ListarTRDSerializer, ListarTipologiasSerializer
+from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, ArchivosDigitalesSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, ListarTRDSerializer, ListarTipologiasSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Max 
 from django.db.models import Q
+from rest_framework.parsers import FileUploadParser
+from rest_framework.response import Response
 from django.db import transaction
 from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
 
@@ -131,66 +135,70 @@ class TrdDateGet(generics.ListAPIView):
             'detail': 'Se encontraron los siguientes resultados',
             'data': serializer.data
         })
-    
-#AGREGAR_ARCHIVO_SOPORTE(PENDINETE)
+
+#LISTAR_EXPEDIENTES    
+class ListaExpedientesDocumentales(generics.ListAPIView):
+    queryset = ExpedientesDocumentales.objects.all()
+    serializer_class = ExpedientesDocumentalesGetSerializer    
+    permission_classes = [IsAuthenticated]
+
+        
+########################## CRUD DE ARCHIVO DE SOPORTE ##########################
+
 class AgregarArchivoSoporte(generics.CreateAPIView):
     serializer_class = AgregarArchivoSoporteCreateSerializer
     permission_classes = [IsAuthenticated]
     queryset = DocumentosDeArchivoExpediente.objects.all()
     
     def post(self, request, format=None):
-        try:
-            data_in = request.data
-            orden_siguiente = ExpedienteGetOrdenActual()
-            response_orden = orden_siguiente.get(request)
+        data_in = request.data
 
-            if response_orden.status_code != status.HTTP_200_OK:
-                return response_orden
-            maximo_orden = response_orden.data.get('orden_siguiente')
+        persona_logueada = request.user.persona
+        data_in['id_persona_que_crea'] = persona_logueada.id_persona
 
-            print(maximo_orden)
+        if not persona_logueada.id_unidad_organizacional_actual:
+            raise ValidationError("No tiene permiso para realizar esta acción")
 
-            # Maneja el caso en el que maximo_orden es None
-            maximo_orden = maximo_orden + 1 if maximo_orden is not None else 1
+        data_in['id_und_org_oficina_creadora'] = persona_logueada.id_unidad_organizacional_actual.id_unidad_organizacional
+        data_in['id_und_org_oficina_respon_actual'] = persona_logueada.id_unidad_organizacional_actual.id_unidad_organizacional
+        data_in['sub_sistema_incorporacion'] = 'GEST'
 
-            data_in['orden_en_expediente'] = maximo_orden
-            serializer = self.serializer_class(data=data_in)
-            serializer.is_valid(raise_exception=True)
+
+        # Determina el último orden en la base de datos y suma 1
+        last_order = DocumentosDeArchivoExpediente.objects.order_by('-orden_en_expediente').first()
+        if last_order is not None:
+            data_in['orden_en_expediente'] = last_order.orden_en_expediente + 1
+        else:
+            data_in['orden_en_expediente'] = 1
+
+        # Asegúrate de que 'id_expediente_documental' sea una instancia válida de ExpedientesDocumentales
+        id_expediente_documental_id = data_in.get('id_expediente_documental')
+        if id_expediente_documental_id:
+            try:
+                id_expediente_documental = ExpedientesDocumentales.objects.get(pk=id_expediente_documental_id)
+            except ExpedientesDocumentales.DoesNotExist:
+                raise ValidationError("El expediente documental especificado no existe.")
             
-            # Establece la fecha de incorporación como la fecha actual
-            serializer.validated_data['fecha_incorporacion_doc_a_Exp'] = datetime.now()
-            
-            estante = serializer.save()
-
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        except Exception as e:
-            # Cambia la respuesta a Bad Request (estado HTTP 400)
-             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            # Ahora puedes acceder a los atributos de 'id_expediente_documental'
+            if id_expediente_documental.cod_tipo_expediente == 'S':
+                # Para Expedientes Simples (T236codTipoExpediente = S)
+                data_in['identificacion_doc_en_expediente'] = f"{id_expediente_documental.codigo_exp_Agno}S{data_in['orden_en_expediente']:010d}"
+            elif id_expediente_documental.cod_tipo_expediente == 'C':
+                # Para Expedientes Complejos (T236codTipoExpediente = C)
+                # data_in['identificacion_doc_en_expediente'] = f"{id_expediente_documental.codigo_exp_Agno}C{id_expediente_documental.codigo_exp_consec_por_agno:04d}{data_in['orden_en_expedient]e']:06d}"
+                data_in['identificacion_doc_en_expediente'] = f"{id_expediente_documental.codigo_exp_Agno}C{id_expediente_documental.codigo_exp_consec_por_agno:<04d}{data_in['orden_en_expediente']:06d}"
+               
+        serializer = self.serializer_class(data=data_in)
+        serializer.is_valid(raise_exception=True)
         
-
-
-#IDENTIFICACION_DOC_EN_EXPEDIENTE
-class ListarDocumentosEnExpediente(generics.ListAPIView):
-    queryset = DocumentosDeArchivoExpediente.objects.all()
-    serializer_class = DocumentosDeArchivoExpediente
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
+        # Establece la fecha de incorporación como la fecha actual
+        serializer.validated_data['fecha_incorporacion_doc_a_Exp'] = datetime.now()
         
-        # Recorre los documentos y genera la identificación
-        for documento in queryset:
-            if DocumentosDeArchivoExpediente.id_expediente_documental.cod_tipo_expediente == "S":
-                # Formatea el número de orden de documento en expediente con una longitud de 10 dígitos
-                orden_en_expediente_formatted = f"{documento.T237ordenEnExpediente:010}"
-                
-                # Genera la identificación del documento según las reglas
-                documento.T237IdentificacionDoc_EnExpediente = (
-                    f"{documento.T236codigoExp_Agno}{documento.T236codTipoExpediente}{orden_en_expediente_formatted}"
-                )
-                documento.save()
-        
-        return queryset
+        estante = serializer.save()
+
+        return Response({'success': True, 'detail': 'Se crearon los registros correctamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+
+
     
 #ORDEN_EXPEDIENTE_SIGUIENTE
 class ExpedienteGetOrden(generics.ListAPIView):
@@ -248,3 +256,59 @@ class ListarTipologias(generics.ListAPIView):
             'detail': 'Se encontraron las siguientes tipologias',
             'data': serializer.data
         })
+    
+########################## CRUD DE ARCHIVOS DIGITALES  ##########################
+
+class UploadPDFView(generics.CreateAPIView):
+    queryset = ArchivosDigitales.objects.all()
+    serializer_class = ArchivosDigitalesSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = (FileUploadParser,)
+
+    def create(self, request, *args, **kwargs):
+        # Genera un nombre de archivo único cifrado de 20 caracteres
+        unique_filename = secrets.token_hex(10)  # 10 bytes = 20 caracteres alfanuméricos
+
+        # Obtiene el formato del archivo desde la solicitud
+        uploaded_file = request.data.get('file')
+        if uploaded_file:
+            file_extension = os.path.splitext(uploaded_file.name)[-1]
+            formato = file_extension[1:]  # Elimina el punto del inicio
+
+            # Calcula el tamaño del archivo en kilobytes y redondea a un número entero
+            tamagno_kb = round(uploaded_file.size / 1024)  # Tamaño del archivo en kilobytes (entero)
+
+            # Obtiene el año actual para determinar la carpeta de destino
+            current_year = datetime.now().year
+
+            # Construye la ruta de archivo completa
+            ruta_archivo = f"/home/BIA/Gestor/GDEA/{current_year}/{unique_filename}.{formato}"
+
+            # Crea una instancia de ArchivosDigitales con los datos proporcionados
+            archivo_digital_data = {
+                'nombre_de_Guardado': unique_filename,
+                'formato': formato,
+                'tamagno_kb': tamagno_kb,
+                'ruta_archivo': ruta_archivo,
+                'fecha_creacion_doc': datetime.now(),
+                'es_Doc_elec_archivo': True,
+            }
+
+            file_serializer = ArchivosDigitalesSerializer(data=archivo_digital_data)
+
+            if file_serializer.is_valid():
+                # Guarda el archivo y la instancia de ArchivosDigitales
+                file_serializer.save()
+
+                # Retorna una respuesta exitosa
+                return Response(file_serializer.data, status=status.HTTP_201_CREATED)
+            else:
+                return Response(file_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"error": "No se ha proporcionado ningún archivo"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ListarArchivosDigitales(generics.ListAPIView):
+    queryset = ArchivosDigitales.objects.all()
+    serializer_class = ArchivosDigitalesSerializer    
+    permission_classes = [IsAuthenticated]

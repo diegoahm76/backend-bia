@@ -301,10 +301,26 @@ class UnidadesPermisosPutView(generics.UpdateAPIView):
 
     def put(self, request, id_cat_serie_und):
         data = request.data['unidades_permisos']
+        
+        cat_serie_und_org_ccd = CatalogosSeriesUnidad.objects.filter(id_cat_serie_und=id_cat_serie_und).first()
+        if not cat_serie_und_org_ccd:
+            raise ValidationError('Debe seleccionar un registro del Catalogo de Serie-Subserie-Unidad existente')
+        
         unidades_permisos_crear = [item for item in data if not item['id_permisos_und_org_actual_serie_exp_ccd']]
         unidades_permisos_actualizar = [item for item in data if item['id_permisos_und_org_actual_serie_exp_ccd']]
         
         unidad_permiso_list = []
+        
+        usuario = request.user.id_usuario
+        direccion=Util.get_client_ip(request)
+        descripcion = {
+            "NombreCCD": str(cat_serie_und_org_ccd.id_catalogo_serie.id_serie_doc.id_ccd.nombre),
+            "VersionCCD": str(cat_serie_und_org_ccd.id_catalogo_serie.id_serie_doc.id_ccd.version),
+            "NombreSerie": str(cat_serie_und_org_ccd.id_catalogo_serie.id_serie_doc.nombre)
+        }
+        
+        if cat_serie_und_org_ccd.id_catalogo_serie.id_subserie_doc:
+            descripcion['NombreSubserie'] = str(cat_serie_und_org_ccd.id_catalogo_serie.id_subserie_doc.nombre)
         
         for unidad_permiso in data:
             unidad_permiso_list = [
@@ -318,28 +334,57 @@ class UnidadesPermisosPutView(generics.UpdateAPIView):
                 unidad_permiso['descargar_expedientes_no_propios']
             ]
             
-            if unidad_permiso['consultar_expedientes_no_propios']:
-                if not unidad_permiso['anular_documentos_exps_no_propios'] and not unidad_permiso['borrar_documentos_exps_no_propios'] and not unidad_permiso['conceder_acceso_documentos_exps_no_propios'] and not unidad_permiso['conceder_acceso_expedientes_no_propios']:
-                    raise ValidationError('No puede marcar "Consultar Expediente" sin marcar por lo menos uno de los siguientes: "Anular Documento", "Borrar Documento", "Conceder Acceso a Docs", "Conceder Acceso a Exps"')
-            else:
-                if unidad_permiso['anular_documentos_exps_no_propios'] or unidad_permiso['borrar_documentos_exps_no_propios'] or unidad_permiso['conceder_acceso_documentos_exps_no_propios'] or unidad_permiso['conceder_acceso_expedientes_no_propios']:
-                    raise ValidationError('No puede dejar desmarcado "Consultar Expediente" sin desmarcar los siguientes: "Anular Documento", "Borrar Documento", "Conceder Acceso a Docs", "Conceder Acceso a Exps"')
+            if unidad_permiso['anular_documentos_exps_no_propios'] or unidad_permiso['borrar_documentos_exps_no_propios'] or unidad_permiso['conceder_acceso_documentos_exps_no_propios'] or unidad_permiso['conceder_acceso_expedientes_no_propios'] or unidad_permiso['descargar_expedientes_no_propios']:
+                if not unidad_permiso['consultar_expedientes_no_propios']:
+                    raise ValidationError('Debe marcar "Consultar Expediente" si marcó por lo menos uno de los siguientes: "Anular Documento", "Borrar Documento", "Conceder Acceso a Docs", "Conceder Acceso a Exps", "Descargar Expediente"')
+            
+            if not unidad_permiso['consultar_expedientes_no_propios']:
+                if unidad_permiso['anular_documentos_exps_no_propios'] or unidad_permiso['borrar_documentos_exps_no_propios'] or unidad_permiso['conceder_acceso_documentos_exps_no_propios'] or unidad_permiso['conceder_acceso_expedientes_no_propios'] or unidad_permiso['descargar_expedientes_no_propios']:
+                    raise ValidationError('No puede dejar desmarcado "Consultar Expediente" sin desmarcar los siguientes: "Anular Documento", "Borrar Documento", "Conceder Acceso a Docs", "Conceder Acceso a Exps", "Descargar Expediente"')
                 
         if unidades_permisos_crear:
             # PENDIENTE VALIDAR QUE NO CREE PERMISOS CON TODO EN FALSE
             if True in unidad_permiso_list:
-                unidades_permisos_crear_serializer = self.serializer_class_post(data=unidades_permisos_crear, many=True)
-                unidades_permisos_crear_serializer.is_valid(raise_exception=True)
-                unidades_permisos_crear_serializer.save()
+                for unidad_permiso in unidades_permisos_crear:
+                    unidades_permisos_crear_serializer = self.serializer_class_post(data=unidad_permiso)
+                    unidades_permisos_crear_serializer.is_valid(raise_exception=True)
+                    unidad_permiso_creada = unidades_permisos_crear_serializer.save()
+                    
+                    descripcion['NombreUnidad'] = unidad_permiso_creada.id_und_organizacional_actual.nombre
+                    # AUDITORIA
+                    auditoria_data = {
+                        "id_usuario" : usuario,
+                        "id_modulo" : 135,
+                        "cod_permiso": "CR",
+                        "subsistema": 'GEST',
+                        "dirip": direccion,
+                        "descripcion": descripcion, 
+                    }
+                    Util.save_auditoria(auditoria_data)
         
         if unidades_permisos_actualizar:
             for unidad_permiso in unidades_permisos_actualizar:
                 unidad_permiso_instance = self.queryset.filter(id_permisos_und_org_actual_serie_exp_ccd=unidad_permiso['id_permisos_und_org_actual_serie_exp_ccd']).first()
+                previous_unidad_permiso_instance = copy.copy(unidad_permiso_instance)
                 
                 if True in unidad_permiso_list:
                     unidad_permiso_serializer = self.serializer_class_put(unidad_permiso_instance, data=unidad_permiso)
                     unidad_permiso_serializer.is_valid(raise_exception=True)
                     unidad_permiso_serializer.save()
+                    
+                    descripcion['NombreUnidad'] = unidad_permiso_instance.id_und_organizacional_actual.nombre
+                    # AUDITORIA
+                    auditoria_data = {
+                        "id_usuario" : usuario,
+                        "id_modulo" : 135,
+                        "cod_permiso": "AC",
+                        "subsistema": 'GEST',
+                        "dirip": direccion,
+                        "descripcion": descripcion,
+                        "valores_actualizados": {"previous":previous_unidad_permiso_instance, "current":unidad_permiso_instance}
+                    }
+                    Util.save_auditoria(auditoria_data)
+                    
                 else:
                     unidad_permiso_instance.delete()
                 
@@ -348,5 +393,4 @@ class UnidadesPermisosPutView(generics.UpdateAPIView):
         
         # PENDIENTE VALIDACION SI TIENEN PERMISOS
         
-        # PENDIENTE AUDITORIAS
         return Response({'succes': True, 'detail':'Se realizó el guardado correctamente'}, status=status.HTTP_200_OK)

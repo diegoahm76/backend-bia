@@ -3,6 +3,7 @@ from django.db import models
 from gestion_documental.choices import tipo_acceso_choices
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.models.trd_models import FormatosTiposMedio, TipologiasDoc
+from transversal.models.organigrama_models import UnidadesOrganizacionales
 
 class PlantillasDoc(models.Model):
     id_plantilla_doc = models.AutoField(primary_key=True, db_column='T200IdPlantillaDoc')
@@ -30,7 +31,7 @@ class PlantillasDoc(models.Model):
 class AccesoUndsOrg_PlantillaDoc(models.Model):
     id_acceso_und_org_plantilla_doc = models.AutoField(primary_key=True, db_column='T201IdAccesoUndOrg_PlantillaDoc')
     id_plantilla_doc = models.ForeignKey(PlantillasDoc, on_delete=models.CASCADE, db_column='T201Id_PlantillaDoc')
-    id_und_organizacional = models.IntegerField(db_column='T201Id_UndOrganizacional')
+    id_und_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE,db_column='T201Id_UndOrganizacional')
 
     class Meta:
         db_table = 'T201AccesoUndsOrg_PlantillaDoc'

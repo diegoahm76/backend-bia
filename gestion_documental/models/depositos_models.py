@@ -3,6 +3,8 @@ from transversal.models.base_models import (Municipio)
 
 from transversal.models.base_models import Paises
 from transversal.models.entidades_models import SucursalesEmpresas
+from gestion_documental.models.expedientes_models import ExpedientesDocumentales
+
 
 #DEPOSITOS
 class Deposito(models.Model):
@@ -77,10 +79,10 @@ class CarpetaCaja(models.Model):
     id_caja_bandeja = models.ForeignKey(CajaBandeja, on_delete=models.CASCADE, db_column='T234Id_Caja_Bandeja')
     identificacion_por_caja = models.CharField(max_length=10, db_column='T234identificacionPorCaja')
     orden_ubicacion_por_caja = models.SmallIntegerField(db_column='T234ordenUbicacionPorCaja')
-    id_expediente = models.SmallIntegerField(null=True, blank=True, db_column='T234Id_Expediente')
+    id_expediente = models.ForeignKey(ExpedientesDocumentales,null=True, blank=True, on_delete=models.SET_NULL, db_column='T234Id_Expediente')
     id_prestamo_expediente = models.SmallIntegerField(null=True, blank=True, db_column='T234Id_PrestamoExpediente')
 
-    # T234Id_PrestamoExpediente & T234Id_Expediente cambiar en modelo cuando se genere el tabla de expediente (kc)
+    # T234Id_PrestamoExpediente  cambiar en modelo cuando se genere el tabla de expediente (kc)
     class Meta:
         db_table = 'T234Carpetas_Caja'
         verbose_name = 'Carpeta en Caja'
