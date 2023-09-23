@@ -41,8 +41,10 @@ class PlantillasDocCreate(generics.CreateAPIView):
         print(ruta)
     
         #raise ValidationError(ruta)
-        archivo = request.FILES['archivo']
-        
+        #archivo = request.FILES['archivo']
+        if not 'archivo' in data_in:
+            raise ValidationError("No se ha proporcionado ningún archivo.")
+        archivo = request.data.get('archivo')
         data_archivo={
             'es_Doc_elec_archivo':False,
             'ruta':ruta
