@@ -5,6 +5,7 @@ from gestion_documental.models.expedientes_models import ExpedientesDocumentales
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from django.shortcuts import get_object_or_404
 from gestion_documental.models.trd_models import TablaRetencionDocumental, TipologiasDoc
+from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from seguridad.utils import Util
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -259,55 +260,35 @@ class ListarTipologias(generics.ListAPIView):
     
 ########################## CRUD DE ARCHIVOS DIGITALES  ##########################
 
+
+
+
 class UploadPDFView(generics.CreateAPIView):
     queryset = ArchivosDigitales.objects.all()
     serializer_class = ArchivosDigitalesSerializer
     permission_classes = [IsAuthenticated]
-    parser_classes = (FileUploadParser,)
-
+    #parser_classes = (FileUploadParser,)
     def create(self, request, *args, **kwargs):
-        # Genera un nombre de archivo único cifrado de 20 caracteres
-        unique_filename = secrets.token_hex(10)  # 10 bytes = 20 caracteres alfanuméricos
-
-        # Obtiene el formato del archivo desde la solicitud
         uploaded_file = request.data.get('file')
+
+        #archivo=request.data.get('archivo')
         if uploaded_file:
-            file_extension = os.path.splitext(uploaded_file.name)[-1]
-            formato = file_extension[1:]  # Elimina el punto del inicio
-
-            # Calcula el tamaño del archivo en kilobytes y redondea a un número entero
-            tamagno_kb = round(uploaded_file.size / 1024)  # Tamaño del archivo en kilobytes (entero)
-
-            # Obtiene el año actual para determinar la carpeta de destino
+             # Obtiene el año actual para determinar la carpeta de destino
             current_year = datetime.now().year
-
-            # Construye la ruta de archivo completa
-            ruta_archivo = f"/home/BIA/Gestor/GDEA/{current_year}/{unique_filename}.{formato}"
-
-            # Crea una instancia de ArchivosDigitales con los datos proporcionados
-            archivo_digital_data = {
-                'nombre_de_Guardado': unique_filename,
-                'formato': formato,
-                'tamagno_kb': tamagno_kb,
-                'ruta_archivo': ruta_archivo,
-                'fecha_creacion_doc': datetime.now(),
-                'es_Doc_elec_archivo': True,
+            
+            ruta = os.path.join("home", "BIA", "Otros", "GDEA",str(current_year))
+            data_archivo={
+            'es_Doc_elec_archivo':False,
+            'ruta':ruta
             }
+            que_tal=ArchivosDgitalesCreate()
+            respuesta=que_tal.crear_archivo(data_archivo,uploaded_file)
 
-            file_serializer = ArchivosDigitalesSerializer(data=archivo_digital_data)
-
-            if file_serializer.is_valid():
-                # Guarda el archivo y la instancia de ArchivosDigitales
-                file_serializer.save()
-
-                # Retorna una respuesta exitosa
-                return Response(file_serializer.data, status=status.HTTP_201_CREATED)
-            else:
-                return Response(file_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            if respuesta.status_code!=status.HTTP_201_CREATED:
+                return respuesta  
+            return respuesta
         else:
-            return Response({"error": "No se ha proporcionado ningún archivo"}, status=status.HTTP_400_BAD_REQUEST)
-
-
+                return Response({"error": "No se ha proporcionado ningún archivo"}, status=status.HTTP_400_BAD_REQUEST)
 class ListarArchivosDigitales(generics.ListAPIView):
     queryset = ArchivosDigitales.objects.all()
     serializer_class = ArchivosDigitalesSerializer    
