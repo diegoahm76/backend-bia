@@ -243,7 +243,7 @@ class ControlActivosFijosGetByTipoView(generics.ListAPIView):
         
         data_output = []
         
-        if resultados_entidad:
+        if not resultados_entidad:
             inventarios_data = inventarios.values(
                 'id_bodega',
                 nombre_bodega=F('id_bodega__nombre'),
