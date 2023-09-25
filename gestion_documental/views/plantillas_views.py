@@ -41,8 +41,10 @@ class PlantillasDocCreate(generics.CreateAPIView):
         print(ruta)
     
         #raise ValidationError(ruta)
-        archivo = request.FILES['archivo']
-        
+        #archivo = request.FILES['archivo']
+        if not 'archivo' in data_in:
+            raise ValidationError("No se ha proporcionado ningún archivo.")
+        archivo = request.data.get('archivo')
         data_archivo={
             'es_Doc_elec_archivo':False,
             'ruta':ruta
@@ -297,8 +299,8 @@ class BusquedaAvanzadaPlantillas(generics.ListAPIView):
         return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializador.data},status=status.HTTP_200_OK)
         
 class BusquedaAvanzadaPlantillasAdmin(generics.ListAPIView):
-    serializer_class = PlantillasDocBusquedaAvanzadaDetalleSerializer
-
+    #serializer_class = PlantillasDocBusquedaAvanzadaDetalleSerializer
+    serializer_class = PlantillasDocBusquedaAvanzadaSerializer
     queryset = PlantillasDoc.objects.all()
     permission_classes = [IsAuthenticated]
     
@@ -326,6 +328,14 @@ class BusquedaAvanzadaPlantillasAdmin(generics.ListAPIView):
         
         #activas=PlantillasDoc.objects.filter(activa=True)
         plantilla = self.queryset.all().filter(**filter)
+        ids_de_plantillas = list(plantilla.values_list('id_archivo_digital', flat=True))
+        print(ids_de_plantillas)
+        
+        archivos_digitales=ArchivosDigitales.objects.filter(id_archivo_digital__in=ids_de_plantillas)
+        for a in archivos_digitales:
+            print (a)
+        #raise ValidationError(ids_de_plantillas)
+
         serializador = self.serializer_class(plantilla,many=True)
         
         return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializador.data},status=status.HTTP_200_OK)

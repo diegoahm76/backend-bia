@@ -33,6 +33,10 @@ class ArchivosDgitalesCreate(generics.CreateAPIView):
             ruta=""
             if 'ruta' in data:
                 ruta=data['ruta']
+                #print(ruta)
+                elementos = ruta.split(",")
+                #print(elementos)
+                ruta = os.path.join(*elementos)
             nombre=archivo.name
             
             nombre_sin_extension, extension = os.path.splitext(nombre)

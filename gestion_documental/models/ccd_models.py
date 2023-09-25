@@ -117,8 +117,20 @@ class AgrupacionesDocumentalesPersistenteTemporal(models.Model):
         verbose_name_plural = 'Agrupaciones Documentales Persistente Temporal'
 
 
+# class UnidadesSeccionResponsableTemporal(models.Model):
+#     id_unidad_seccion_responsable_temporal = models.AutoField(primary_key=True, editable=False, db_column='T227IdUndSeccionResponsable_Tmp')
+#     id_ccd_nuevo = models.ForeignKey(CuadrosClasificacionDocumental, on_delete=models.CASCADE, db_column='T225Id_CCDNuevo')
+#     id_unidad_seccion_actual = models.ForeignKey(UnidadesOrganizacionales, related_name='id_unidad_seccion_actual', on_delete=models.CASCADE, db_column='T225Id_UndSeccionActual')
+#     id_unidad_seccion_nueva = models.ForeignKey(UnidadesOrganizacionales, related_name='id_unidad_seccion_nueva', on_delete=models.CASCADE, db_column='T225Id_UndSeccionNueva')
+#     es_registro_asig_seccion_responsabel = models.BooleanField(db_column='T227esRegistroParaAsigSeccionesResp')
+#     id_unidad_seccion_actual_padre = models.ForeignKey(UnidadesOrganizacionales, related_name='id_unidad_seccion_actual_padre', on_delete=models.CASCADE, db_column='T227Id_UndSeccionActual_PadreDeOficina')
 
 
+#     class Meta:
+#         db_table = 'T227UndsSeccionResponsables_Tmp'
+#         verbose_name = 'Unidad Seccion Persistente Temporal'
+#         verbose_name_plural = 'Unidades Seccion Persistente Temporal'
+#         unique_together= ['id_ccd_nuevo','id_unidad_seccion_actual']
 
 
 
