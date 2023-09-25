@@ -21,7 +21,7 @@ class EncabezadoEncuestaCreate(generics.CreateAPIView):
     def post(self,request):
         data_in = request.data
         usuario = request.user.persona.id_persona
-        print(usuario)
+        #print(usuario)
         try:
             with transaction.atomic():
                 data_in['id_persona_ult_config_implement']=usuario
@@ -35,8 +35,9 @@ class EncabezadoEncuestaCreate(generics.CreateAPIView):
                 
                     data_pregunta={}
                     
-
+                    
                     for pre in data_in['preguntas']:
+                        #print(pre)
                         data_pregunta.clear()
                         
                         data_pregunta={**pre}
@@ -74,15 +75,33 @@ class EncabezadoEncuestaUpdate(generics.UpdateAPIView):
             serializer.is_valid(raise_exception=True)
             instance = serializer.save()
             data_response_pregunta=[]
-            if 'preguntas_encuesta' in data_in:
+            if 'preguntas' in data_in :
                 crear_pregunta=PreguntasEncuestaCreate()
                 actualizar_pregunta=PreguntasEncuestaUpdate()
-                for pre in data_in['preguntas_encuesta']:
+                eliminar_pregunta=PreguntasEncuestaDelete()
+
+                id_preguntas= [opcion.get('id_pregunta_encuesta', None) for opcion in data_in['preguntas']]
+                #BUSCA EN BASE DE DATOS LAS RESPUESTAS
+                respuestas_persistentes=list(PreguntasEncuesta.objects.filter(id_encabezado_encuesta=instance.id_encabezado_encuesta).values_list('id_pregunta_encuesta', flat=True))
+                print("EN BASE DE DATOS :"+str(respuestas_persistentes))
+                print("EN JSON:"+ str(id_preguntas))
+                id_opciones_json_set = set(id_preguntas)
+                id_opciones_bd_set = set(respuestas_persistentes)
+
+                id_opciones_no_en_json = list(id_opciones_bd_set.difference(id_opciones_json_set))
+                print(id_opciones_no_en_json)
+                for ids in  id_opciones_no_en_json:
+                    print (ids)
+                    respuesta_pregunta=eliminar_pregunta.eliminar(ids)
+                    if respuesta_pregunta.status_code != status.HTTP_200_OK:
+                        return respuesta_pregunta
+           
+                for pre in data_in['preguntas']:
 
                     if 'id_pregunta_encuesta' in pre:
                         if pre:
                            
-                            print(pre)
+                            #print(pre)
                             response_pregunta=actualizar_pregunta.actualizar_pregunta(pre,pre['id_pregunta_encuesta'])
                             if response_pregunta.status_code!=status.HTTP_200_OK:
                                 return response_pregunta  
@@ -94,7 +113,8 @@ class EncabezadoEncuestaUpdate(generics.UpdateAPIView):
                         if response_pregunta.status_code!=status.HTTP_201_CREATED:
                             return response_pregunta    
                         data_response_pregunta.append(response_pregunta.data['data'])
-                    print(pre)
+                    #print(pre)
+               
 
             response_data=serializer.data
             response_data['preguntas']=data_response_pregunta
@@ -126,7 +146,7 @@ class PreguntasEncuestaCreate(generics.CreateAPIView):
             serializer.is_valid(raise_exception=True)
             instance=serializer.save()
             id_pregunta=instance.id_pregunta_encuesta
-            print(id_pregunta)
+            #print(id_pregunta)
 
             crear_opcion=OpcionesRtaCreate()
             data_ops=[]
@@ -137,7 +157,7 @@ class PreguntasEncuestaCreate(generics.CreateAPIView):
                         response_pregunta=crear_opcion.crear_opciones_rta({**opc_rta,"id_pregunta":id_pregunta})
                         if response_pregunta.status_code!=status.HTTP_201_CREATED:
                             return response_pregunta   
-                        print (opc_rta)
+                        #print (opc_rta)
                         data_ops.append(response_pregunta.data['data'])
             data_response=serializer.data
             data_response['opciones_rta']=data_ops
@@ -169,14 +189,27 @@ class PreguntasEncuestaUpdate(generics.UpdateAPIView):
             id_pregunta=instance.id_pregunta_encuesta
             crear_opcion=OpcionesRtaCreate()
             actualizar_opcion=OpcionesRtaUpdate()
+            eliminar_opcion=OpcionesRtaDelete()
             data_ops=[]
             
             if 'opciones_rta' in data_in:
                 if data_in['opciones_rta']:
+                    id_opciones_rta = [opcion.get('id_opcion_rta', None) for opcion in data_in['opciones_rta']]
+                    #BUSCA EN BASE DE DATOS LAS RESPUESTAS
+                    respuestas_persistentes=list(OpcionesRta.objects.filter(id_pregunta=instance.id_pregunta_encuesta).values_list('id_opcion_rta', flat=True))
+                    #print("EN BASE DE DATOS :"+str(respuestas_persistentes))
+                    #print("EN JSON:"+ str(id_opciones_rta))
+                    id_opciones_json_set = set(id_opciones_rta)
+                    id_opciones_bd_set = set(respuestas_persistentes)
+
+                    id_opciones_no_en_json = list(id_opciones_bd_set.difference(id_opciones_json_set))
+
+           
+
                     for opc_rta in  data_in['opciones_rta']:
                         if 'id_opcion_rta' in opc_rta and opc_rta['id_opcion_rta'] :
                             
-                            response_pregunta=actualizar_opcion.actualizar_pregunta({**opc_rta},opc_rta['id_opcion_rta'])
+                            response_pregunta=actualizar_opcion.actualizar_opciones_rta({**opc_rta},opc_rta['id_opcion_rta'])
                             if response_pregunta.status_code!=status.HTTP_200_OK:
                                 return response_pregunta   
                             
@@ -189,7 +222,11 @@ class PreguntasEncuestaUpdate(generics.UpdateAPIView):
                             
                             data_ops.append(response_pregunta.data['data'])
                             
-
+                    for delete in id_opciones_no_en_json:
+                        datos_eliminados_response = eliminar_opcion.eliminar(delete)
+                        if datos_eliminados_response.status_code != status.HTTP_200_OK:
+                            return datos_eliminados_response
+                        #print (datos_eliminados_response)
             data_response=serializer.data
             data_response['opciones_rta']=data_ops
             return Response({
@@ -215,12 +252,12 @@ class PreguntasEncuestaDelete(generics.DestroyAPIView):
         if not instance:
             raise NotFound("No existe pregunta asociada a esta id.")
         serializer =PreguntasEncuestaDeleteSerializer(instance)
-        instance.delete
+        instance.delete()
         return Response({
             "success": True,
             "detail": "Se eliminó la pregunta correctamente",
             "data": serializer.data
-        }, status=status.HTTP_204_NO_CONTENT)
+        }, status=status.HTTP_200_OK)
     def delete(self, request,pk):
         response=self.eliminar(pk)
         return response
@@ -257,7 +294,7 @@ class OpcionesRtaUpdate(generics.UpdateAPIView):
     queryset = OpcionesRta.objects.all()
     serializer_class = OpcionesRtaUpdateSerializer
     permission_classes = [IsAuthenticated]
-    def actualizar_pregunta(self,data,pk):
+    def actualizar_opciones_rta(self,data,pk):
         data_in=data
         instance = OpcionesRta.objects.filter(id_opcion_rta=pk).first()
 
@@ -279,7 +316,7 @@ class OpcionesRtaUpdate(generics.UpdateAPIView):
 
     def put(self, request, pk):
 
-        response =self.actualizar_pregunta(request.data,pk)
+        response =self.actualizar_opciones_rta(request.data,pk)
         return response
 
 class OpcionesRtaDelete(generics.DestroyAPIView):
@@ -291,12 +328,12 @@ class OpcionesRtaDelete(generics.DestroyAPIView):
         if not instance:
             raise NotFound("No existe pregunta asociada a esta id.")
         serializer =OpcionesRtaDeleteSerializer(instance)
-        instance.delete
+        instance.delete()
         return Response({
             "success": True,
             "detail": "Se eliminó la opcion correctamente",
             "data": serializer.data
-        }, status=status.HTTP_204_NO_CONTENT)
+        }, status = status.HTTP_200_OK)
     def delete(self, request,pk):
         response=self.eliminar(pk)
         return response
@@ -333,10 +370,10 @@ class EncabezadoEncuestaDetalleGet(generics.ListAPIView):
         for pre in preguntas:
             data_pregunta=PreguntasEncuestaGetSerializer(pre).data
             opciones=OpcionesRta.objects.filter(id_pregunta=pre.id_pregunta_encuesta)
-            print(pre.id_pregunta_encuesta)
+            #print(pre.id_pregunta_encuesta)
             data_opcion=[]
             for op in opciones:
-                print(op)
+                #print(op)
                 data_opcion.append(OpcionesRtaGetSerializer(op).data)
             data_pregunta['opciones_rta']=data_opcion
             lista_preguntas.append(data_pregunta)
@@ -361,7 +398,7 @@ class EncabezadoEncuestaDelete(generics.DestroyAPIView):
         if preguntas_intance:
             for pregunta in preguntas_intance:
                 respuestas_instace=OpcionesRta.objects.filter(id_pregunta=pregunta.id_pregunta_encuesta)
-                print(respuestas_instace)
+                #print(respuestas_instace)
                 respuestas_instace.delete()
             preguntas_intance.delete()
         instance.delete()
