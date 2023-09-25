@@ -1,8 +1,14 @@
 from rest_framework import serializers
+from gestion_documental.models.expedientes_models import ArchivosDigitales
 
 from gestion_documental.models.plantillas_models import AccesoUndsOrg_PlantillaDoc, PlantillasDoc
 from gestion_documental.models.trd_models import TipologiasDoc
 
+
+class ArchivosDigitalesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ArchivosDigitales
+        fields = '__all__'
 
 
 class  PlantillasDocCreateSerializer(serializers.ModelSerializer):
@@ -10,14 +16,27 @@ class  PlantillasDocCreateSerializer(serializers.ModelSerializer):
         model =  PlantillasDoc
         fields = '__all__'
 
-class  PlantillasDocBusquedaAvanzadaSerializer(serializers.ModelSerializer):
-    nombre_tipologia=serializers.ReadOnlyField(source='id_tipologia_doc_trd.nombre',default=None)
-    ruta=serializers.ReadOnlyField(source='id_archivo_digital.ruta_archivo',default=None)
-    extension=serializers.ReadOnlyField(source='id_archivo_digital.formato',default=None)
-    class Meta:
-        model =  PlantillasDoc
-        fields = ['id_plantilla_doc','nombre','nombre_tipologia','ruta','extension']
+class PlantillasDocBusquedaAvanzadaSerializer(serializers.ModelSerializer):
 
+    archivos_digitales = ArchivosDigitalesSerializer(source='id_archivo_digital', read_only=True)
+    class Meta:
+        model = PlantillasDoc
+        
+        fields = ['id_plantilla_doc',
+    'nombre',
+    'descripcion',
+    'id_archivo_digital',
+    'id_formato_tipo_medio',
+    'asociada_a_tipologia_doc_trd',
+    'id_tipologia_doc_trd',
+    'otras_tipologias',
+    'codigo_formato_calidad_asociado',
+    'version_formato_calidad_asociado',
+    'cod_tipo_acceso',
+    'observacion',
+    'activa',
+    'fecha_creacion',
+    'id_persona_crea_plantilla','archivos_digitales']
 class  PlantillasDocBusquedaAvanzadaDetalleSerializer(serializers.ModelSerializer):
     nombre_tipologia=serializers.ReadOnlyField(source='id_tipologia_doc_trd.nombre',default=None)
     ruta=serializers.ReadOnlyField(source='id_archivo_digital.ruta_archivo',default=None)
