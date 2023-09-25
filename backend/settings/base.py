@@ -227,6 +227,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'seguridad.User'
 FRONTEND_URL = os.environ.get('FRONTEND_URL')
 
+SECURE_CROSS_ORIGIN_OPENER_POLICY = None
+
 
 if os.getcwd() == '/app':
     DEBUG = False
