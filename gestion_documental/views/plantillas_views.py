@@ -272,7 +272,8 @@ class BusquedaAvanzadaPlantillas(generics.ListAPIView):
     
     def get(self,request):
         filter={}
-        
+        usuario = request.user.persona.id_persona
+
         for key, value in request.query_params.items():
 
             if key == 'nombre':
@@ -291,9 +292,12 @@ class BusquedaAvanzadaPlantillas(generics.ListAPIView):
                 if value != '':
                     filter['id_archivo_digital__formato__icontains'] = value                 
                 
-        filter['activa']=True
+        #filter['activa']=True
         #activas=PlantillasDoc.objects.filter(activa=True)
         plantilla = self.queryset.all().filter(**filter)
+        for plan in plantilla:
+            print(plan)
+            #accesos = AccesoUndsOrg_PlantillaDoc
         serializador = self.serializer_class(plantilla,many=True)
         
         return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializador.data},status=status.HTTP_200_OK)
