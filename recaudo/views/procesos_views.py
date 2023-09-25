@@ -118,6 +118,18 @@ class AtributosEtapasView(generics.ListAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class DeleteAtributosEtapasView(generics.ListAPIView):
+    queryset = AtributosEtapas.objects.all()
+    serializer_class = AtributosEtapasSerializer
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request, etapa):
+        queryset = AtributosEtapas.objects.filter(id_etapa=etapa)
+        queryset.delete()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
 class FlujoProcesoView(generics.ListAPIView):
     queryset = FlujoProceso.objects.all()
     serializer_class = FlujoProcesoSerializer
@@ -248,6 +260,28 @@ class UpdateProcesosView(generics.ListAPIView):
                 return Response({'success': True, 'data': 'La etapa del proceso se ha actualizado con exito'}, status=status.HTTP_200_OK)
             else:
                 return Response({'success': False, 'data': 'No existe la etapa con el id enviado'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'success': False, 'data': 'No existe el proceso con el id enviado'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UpdateCategoriaProcesosView(generics.ListAPIView):
+    queryset = Procesos.objects.all()
+    serializer_class = ProcesosSerializer
+    #permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        id_categoria = request.data['id_categoria']
+        categoria = CategoriaAtributo.objects.filter(pk=id_categoria)
+        proceso = Procesos.objects.filter(pk=pk)
+        if len(proceso) == 1:
+            if len(categoria) == 1:
+                proceso = proceso.get()
+                categoria = categoria.get()
+                proceso.id_categoria = categoria
+                proceso.save()
+                return Response({'success': True, 'data': 'La categoria del proceso se ha actualizado con exito'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'success': False, 'data': 'No existe la categoria con el id enviado'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'success': False, 'data': 'No existe el proceso con el id enviado'}, status=status.HTTP_400_BAD_REQUEST)
 
