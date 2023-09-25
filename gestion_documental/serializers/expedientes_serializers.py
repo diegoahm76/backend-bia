@@ -1,3 +1,4 @@
+import secrets
 from rest_framework import serializers
 from rest_framework.serializers import ReadOnlyField
 from django.db.models import F
@@ -106,9 +107,15 @@ class ArchivosDigitalesCreateSerializer(serializers.ModelSerializer):
             archivo = self.validated_data['ruta_archivo']
             nombre_archivo = archivo.name
             Subcarpeta=subcarpeta
-            # Utiliza la ruta de medios para guardar el archivo
+            unique_filename = secrets.token_hex(10)
+            nombre_sin_extension, extension = os.path.splitext(nombre_archivo)
+            extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+            nombre_nuevo=unique_filename+'.'+extension_sin_punto
+            if not extension_sin_punto:
+                raise ValidationError("No fue posible registrar el archivo")
+                # Utiliza la ruta de medios para guardar el archivo
             
-            ruta_completa = os.path.join(settings.MEDIA_ROOT,Subcarpeta, nombre_archivo)
+            ruta_completa = os.path.join(settings.MEDIA_ROOT,Subcarpeta, nombre_nuevo)
             
             if not os.path.exists(os.path.join(settings.MEDIA_ROOT, Subcarpeta)):
                 os.makedirs(os.path.join(settings.MEDIA_ROOT, Subcarpeta))
@@ -119,7 +126,7 @@ class ArchivosDigitalesCreateSerializer(serializers.ModelSerializer):
 
 
             self.validated_data['ruta_archivo'] = os.path.relpath(ruta_completa, settings.MEDIA_ROOT)
-
+            self.validated_data['nombre_de_Guardado'] = unique_filename
             return super().save(**kwargs)
 
         except FileNotFoundError as e:
