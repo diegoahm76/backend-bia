@@ -97,6 +97,11 @@ class  DepositoSearchSerializer(serializers.ModelSerializer):
         model =  Deposito
         fields = '__all__'
 
+class DepositoGetAllSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  Deposito
+        fields = ['id_deposito','nombre_deposito','identificacion_por_entidad','orden_ubicacion_por_entidad']
+
 #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -610,3 +615,6 @@ class CarpetaCajaRotuloSerializer(serializers.ModelSerializer):
                 components.append(str(obj.id_expediente.codigo_exp_consec_por_agno))
         
         return "-".join(components)
+    
+
+######################## SERIALIZERS ARCHIVO FISICO########################
