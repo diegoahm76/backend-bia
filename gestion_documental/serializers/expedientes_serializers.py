@@ -126,7 +126,7 @@ class ArchivosDigitalesCreateSerializer(serializers.ModelSerializer):
 
 
             self.validated_data['ruta_archivo'] = os.path.relpath(ruta_completa, settings.MEDIA_ROOT)
-
+            self.validated_data['nombre_de_Guardado'] = unique_filename
             return super().save(**kwargs)
 
         except FileNotFoundError as e:

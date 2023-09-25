@@ -277,6 +277,7 @@ class UploadPDFView(generics.CreateAPIView):
             current_year = datetime.now().year
             
             ruta = os.path.join("home", "BIA", "Otros", "GDEA",str(current_year))
+            ruta="home,BIA,Otros,GDEA,"+str(current_year)
             data_archivo={
             'es_Doc_elec_archivo':False,
             'ruta':ruta
