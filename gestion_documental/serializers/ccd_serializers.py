@@ -477,6 +477,24 @@ class UnidadesSeccionResponsableTemporalSerializer(serializers.ModelSerializer):
         model = UnidadesSeccionResponsableTemporal
         fields = '__all__'
 
+class UnidadesSeccionResponsableTemporalGetSerializer(serializers.ModelSerializer):
+    cod_unidad_actual = serializers.ReadOnlyField(source='id_unidad_seccion_actual.codigo',default=None)
+    nom_unidad_actual = serializers.ReadOnlyField(source='id_unidad_seccion_actual.nombre',default=None)
+    cod_unidad_nueva = serializers.ReadOnlyField(source='id_unidad_seccion_nueva.codigo',default=None)
+    nom_unidad_nueva = serializers.ReadOnlyField(source='id_unidad_seccion_nueva.nombre',default=None)
+
+    class Meta:
+        model = UnidadesSeccionResponsableTemporal
+        fields = ['id_unidad_seccion_responsable_temporal', 
+                  'id_unidad_seccion_actual',
+                  'cod_unidad_actual',
+                  'nom_unidad_actual',
+                  'id_unidad_seccion_nueva',
+                  'cod_unidad_nueva',
+                  'nom_unidad_nueva'
+                   ]
+
+
 #   LLAMADO DE SERIALIZADOR DENTRO DE OTRO SERIALIZADOR CON RELACION
 # class SeriesDocSerializer(serializers.ModelSerializer):
 #     class Meta:
