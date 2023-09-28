@@ -91,7 +91,6 @@ class CatalogosSeriesUnidad(models.Model):
         verbose_name_plural = 'Catalogos Series Unidades'
         unique_together= ['id_unidad_organizacional','id_catalogo_serie']
 
-
 class UnidadesSeccionPersistenteTemporal(models.Model):
     id_unidad_seccion_temporal = models.AutoField(primary_key=True, editable=False, db_column='T225IdUndSeccionPersiste_Tmp')
     id_ccd_nuevo = models.ForeignKey(CuadrosClasificacionDocumental, on_delete=models.CASCADE, db_column='T225Id_CCDNuevo')
@@ -104,7 +103,6 @@ class UnidadesSeccionPersistenteTemporal(models.Model):
         verbose_name_plural = 'Unidades Seccion Persistente Temporal'
         unique_together= ['id_ccd_nuevo','id_unidad_seccion_nueva']
 
-
 class AgrupacionesDocumentalesPersistenteTemporal(models.Model):
     id_agrupacion_documental_temporal = models.AutoField(primary_key=True, editable=False, db_column='T226IdAgrupacionDocPersiste_Tmp')
     id_unidad_seccion_temporal = models.ForeignKey(UnidadesSeccionPersistenteTemporal, on_delete=models.CASCADE, db_column='T226Id_UndSeccionPersiste_Tmp')
@@ -116,9 +114,19 @@ class AgrupacionesDocumentalesPersistenteTemporal(models.Model):
         verbose_name = 'Agrupacion Documental Persistente Temporal'
         verbose_name_plural = 'Agrupaciones Documentales Persistente Temporal'
 
+class UnidadesSeccionResponsableTemporal(models.Model):
+    id_unidad_seccion_responsable_temporal = models.AutoField(primary_key=True, editable=False, db_column='T227IdUndSeccionResponsable_Tmp')
+    id_ccd_nuevo = models.ForeignKey(CuadrosClasificacionDocumental, on_delete=models.CASCADE, db_column='T227Id_CCDNuevo')
+    id_unidad_seccion_actual = models.ForeignKey(UnidadesOrganizacionales, related_name='id_unidad_seccion_actual_resp', on_delete=models.CASCADE, db_column='T227Id_UndSeccionActual')
+    id_unidad_seccion_nueva = models.ForeignKey(UnidadesOrganizacionales, related_name='id_unidad_seccion_nueva_resp', on_delete=models.CASCADE, db_column='T227Id_UndSeccionNueva')
+    es_registro_asig_seccion_responsable = models.BooleanField(db_column='T227esRegistroParaAsigSeccionesResp')
+    id_unidad_seccion_actual_padre = models.ForeignKey(UnidadesOrganizacionales, related_name='id_unidad_seccion_actual_padre', on_delete=models.CASCADE, db_column='T227Id_UndSeccionActual_PadreDeOficina')
 
-
-
+    class Meta:
+        db_table = 'T227UndsSeccionResponsables_Tmp'
+        verbose_name = 'Unidad Seccion Responsable Temporal'
+        verbose_name_plural = 'Unidades Seccion Responsable Temporal'
+        unique_together= ['id_ccd_nuevo','id_unidad_seccion_actual']
 
 
 

@@ -41,8 +41,10 @@ class PlantillasDocCreate(generics.CreateAPIView):
         print(ruta)
     
         #raise ValidationError(ruta)
-        archivo = request.FILES['archivo']
-        
+        #archivo = request.FILES['archivo']
+        if not 'archivo' in data_in:
+            raise ValidationError("No se ha proporcionado ningún archivo.")
+        archivo = request.data.get('archivo')
         data_archivo={
             'es_Doc_elec_archivo':False,
             'ruta':ruta
@@ -222,6 +224,7 @@ class PlantillasDocUpdateUpdate(generics.UpdateAPIView):
         data_in=request.data
         instance = self.get_object()
         data_eliminada=[]
+        data_acceso_nueva=[]
         if not instance:
             raise NotFound("No existe un dato  asociada a esta id")
         try:
@@ -250,8 +253,26 @@ class PlantillasDocUpdateUpdate(generics.UpdateAPIView):
                                 return respuesta   
                         data_eliminada.append(respuesta.data['data'])
    
+            
+            id_planilla=instance.id_plantilla_doc
+            if 'acceso_unidades' in data_in and data_in['acceso_unidades']:
+                crear_acceso=AccesoUndsOrg_PlantillaDocCreate()
+                data_json = request.data.get('acceso_unidades')
+                data_dict={}
+                try:
+                
+                    data_dict = json.loads(data_json)
+                except json.JSONDecodeError:
+                    return Response({'error': 'El campo "data_json" debe ser un JSON válido.'}, status=status.HTTP_400_BAD_REQUEST)
+                #print(data_dict)
+                for acceso in data_dict:
+                    response=crear_acceso.crear_acceso({**acceso,"id_plantilla_doc":id_planilla})
+                    if response.status_code!=status.HTTP_201_CREATED:
+                            return response   
+                    data_acceso_nueva.append(response.data['data'])
             response_data=serializer.data
             response_data['eliminar_acceso']=data_eliminada
+            response_data['data_acceso_nueva']=data_acceso_nueva
             #response_data['preguntas']=data_response_pregunta
             return Response({
                 "success": True,
@@ -264,6 +285,44 @@ class PlantillasDocUpdateUpdate(generics.UpdateAPIView):
 
 
 class BusquedaAvanzadaPlantillas(generics.ListAPIView):
+    serializer_class = PlantillasDocBusquedaAvanzadaSerializer
+    queryset = PlantillasDoc.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request):
+        filter={}
+        usuario = request.user.persona.id_persona
+
+        for key, value in request.query_params.items():
+
+            if key == 'nombre':
+                if value !='':
+                    filter['nombre__icontains'] = value
+            if key =='descripcion':
+                if value != '':
+                    filter['descripcion__icontains'] = value    
+            if key =='tipologia':
+                if value != '':
+                    filter['id_tipologia_doc_trd__nombre__icontains'] = value
+            if key =='disponibilidad':
+                if value != '':
+                    filter['cod_tipo_acceso__icontains'] = value
+            if key =='extension':
+                if value != '':
+                    filter['id_archivo_digital__formato__icontains'] = value                 
+                
+        #filter['activa']=True
+        #activas=PlantillasDoc.objects.filter(activa=True)
+        plantilla = self.queryset.all().filter(**filter)
+        for plan in plantilla:
+            print(plan)
+            #accesos = AccesoUndsOrg_PlantillaDoc
+        serializador = self.serializer_class(plantilla,many=True)
+        
+        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializador.data},status=status.HTTP_200_OK)
+        
+class BusquedaAvanzadaPlantillasAdmin(generics.ListAPIView):
+    #serializer_class = PlantillasDocBusquedaAvanzadaDetalleSerializer
     serializer_class = PlantillasDocBusquedaAvanzadaSerializer
     queryset = PlantillasDoc.objects.all()
     permission_classes = [IsAuthenticated]
@@ -289,43 +348,17 @@ class BusquedaAvanzadaPlantillas(generics.ListAPIView):
                 if value != '':
                     filter['id_archivo_digital__formato__icontains'] = value                 
                 
-        filter['activa']=True
-        #activas=PlantillasDoc.objects.filter(activa=True)
-        plantilla = self.queryset.all().filter(**filter)
-        serializador = self.serializer_class(plantilla,many=True)
-        
-        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializador.data},status=status.HTTP_200_OK)
-        
-class BusquedaAvanzadaPlantillasAdmin(generics.ListAPIView):
-    serializer_class = PlantillasDocBusquedaAvanzadaDetalleSerializer
-
-    queryset = PlantillasDoc.objects.all()
-    permission_classes = [IsAuthenticated]
-    
-    def get(self,request):
-        filter={}
-        
-        for key, value in request.query_params.items():
-
-            if key == 'nombre':
-                if value !='':
-                    filter['nombre__icontains'] = value
-            if key =='descripcion':
-                if value != '':
-                    filter['descripcion__icontains'] = value    
-            if key =='tipologia':
-                if value != '':
-                    filter['id_tipologia_doc_trd__nombre__icontains'] = value
-            if key =='disponibilidad':
-                if value != '':
-                    filter['cod_tipo_acceso__icontains'] = value
-            if key =='extension':
-                if value != '':
-                    filter['id_archivo_digital__formato__icontains'] = value                 
-                
         
         #activas=PlantillasDoc.objects.filter(activa=True)
         plantilla = self.queryset.all().filter(**filter)
+        ids_de_plantillas = list(plantilla.values_list('id_archivo_digital', flat=True))
+        print(ids_de_plantillas)
+        
+        archivos_digitales=ArchivosDigitales.objects.filter(id_archivo_digital__in=ids_de_plantillas)
+        for a in archivos_digitales:
+            print (a)
+        #raise ValidationError(ids_de_plantillas)
+
         serializador = self.serializer_class(plantilla,many=True)
         
         return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializador.data},status=status.HTTP_200_OK)

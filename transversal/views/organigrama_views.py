@@ -3,6 +3,7 @@ from rest_framework import generics, views
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from itertools import groupby
+from gestion_documental.models.plantillas_models import AccesoUndsOrg_PlantillaDoc
 from gestion_documental.models.tca_models import TablasControlAcceso
 from gestion_documental.serializers.ccd_serializers import CCDSerializer
 from seguridad.permissions.permissions_gestor import PermisoActualizarOrganigramas
@@ -522,7 +523,11 @@ class UpdateUnidades(generics.UpdateAPIView):
                                 unidad_es_padre = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre=unidad_instance.id_unidad_organizacional, activo=True)
                                 if unidad_es_padre:
                                     raise PermissionDenied('Error: No es posible desactivar una Unidad Organizacional mientras tenga Unidades hijas activas')
-                            
+                                #ELIMINA RELACIONES DE ACCESO EN PLANTILLAS
+                                accesos =AccesoUndsOrg_PlantillaDoc.objects.filter(id_und_organizacional=unidad_instance.id_unidad_organizacional)
+                                accesos.delete()
+                                
+                                
                             unidad_instance.activo = unidad['activo']
                             unidad_instance.save()
                 
