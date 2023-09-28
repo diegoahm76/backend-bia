@@ -270,7 +270,7 @@ class CreateDespachoMaestroVivero(generics.UpdateAPIView):
         
         # INSERT EN LA TABLA SOLICITUDES DE CONSUMIBLES
         despacho_creado = DespachoConsumo.objects.filter(Q(id_solicitud_consumo=info_despacho['id_solicitud_consumo']) & Q(numero_despacho_consumo=info_despacho['numero_despacho_consumo'])).first()
-        instancia_solicitud.id_despacho_consumo = despacho_creado.id_despacho_consumo
+        instancia_solicitud.id_despacho_consumo = despacho_creado
         instancia_solicitud.fecha_cierre_solicitud = despacho_creado.fecha_despacho
         instancia_solicitud.gestionada_almacen = True
         instancia_solicitud.solicitud_abierta = False
