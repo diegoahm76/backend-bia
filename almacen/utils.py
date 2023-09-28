@@ -57,9 +57,11 @@ class UtilAlmacen:
             
             entradas = EntradasAlmacen.objects.filter(fecha_entrada__gte=fecha_despacho, entrada_anulada=None)
             cantidad_total_entradas = [{'id_bien': inventario.id_bien.id_bien, 'id_bodega': inventario.id_bodega.id_bodega, 'cantidad_disponible': saldo_actual}]
+            
             if entradas:
                 entradas_id = [entrada.id_entrada_almacen for entrada in entradas] if entradas else []
-                cantidad_total_entradas = ItemEntradaAlmacen.objects.filter(id_entrada_almacen__in=entradas_id, id_bien=inventario.id_bien, id_bodega = inventario.id_bodega).values('id_bien', 'id_bodega').annotate(cantidad_disponible=saldo_actual - Sum('cantidad'))  
+                items_entradas = ItemEntradaAlmacen.objects.filter(id_entrada_almacen__in=entradas_id, id_bien=inventario.id_bien, id_bodega = inventario.id_bodega).values('id_bien', 'id_bodega').annotate(cantidad_disponible=saldo_actual - Sum('cantidad'))  
+                cantidad_total_entradas = items_entradas if items_entradas else cantidad_total_entradas
             cantidades_disponibles.append(cantidad_total_entradas[0])
         
         return cantidades_disponibles
