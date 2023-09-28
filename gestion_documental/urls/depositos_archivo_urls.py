@@ -75,5 +75,19 @@ urlpatterns = [
      path('carpetCaja/busqueda-avanzada-carpetas/',views.CarpetaCajaSearchAdvanced.as_view(), name='buscar-avanzada'),
      path('carpetaCaja/rotulo/<int:id_carpeta_caja>/',views.CarpetaRotulo.as_view(),name='rotulo-carpeta'),
 
+
+     #Archivo Físico
+     path('archivoFisico/listar-deposito-id/<int:pk>/',views.DepositoGetById.as_view(),name='listar-por-id-deposito'),
+     path('archivoFisico/listar-estante-id/<int:pk>/',views.EstanteGetById.as_view(),name='listar-por-id-estante'),
+     path('archivoFisico/listar-bandeja-id/<int:pk>/',views.BandejaGetById.as_view(),name='listar-por-id-bandeja'),
+     path('archivoFisico/listar-caja-id/<int:pk>/',views.CajaGetById.as_view(),name='listar-por-id-caja'),
+     path('archivoFisico/listar-carpeta-id/<int:pk>/',views.CarpetaGetById.as_view(),name='listar-por-id-carpeta'),
+     path('archivoFisico/listar-depositos/',views.DepositoGetAll.as_view(),name='listar-todos-depositos'),
+     path('archivoFisico/listar-estantes/<int:id_deposito>/',views.EstanteGetAll.as_view(),name='listar-todos-estantes'),
+     path('archivoFisico/listar-bandejas/<int:id_estante_deposito>/',views.BandejaGetAll.as_view(),name='listar-todos-bandejas'),
+     path('archivoFisico/listar-cajas/<int:id_bandeja_estante>/',views.CajaGetAll.as_view(),name='listar-todos-cajas'),
+     path('archivoFisico/listar-carpetas/<int:id_caja_bandeja>/',views.CarpetaGetAll.as_view(),name='listar-todos-carpetas'),
+
+
      
 ]

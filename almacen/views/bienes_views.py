@@ -736,7 +736,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
         fecha_entrada = entrada_data.get('fecha_entrada')
         if fecha_entrada > str(datetime.now()):
             raise ValidationError('No se puede crear una entrada con una fecha superior a la actual')
-
+        
         # VALIDACIÓN DE EXITENCIA DE BODEGA PARA ENTRADA
         id_bodega_entrada = entrada_data['id_bodega']
         bodega_entrada = Bodegas.objects.filter(id_bodega=id_bodega_entrada).first()
@@ -859,12 +859,14 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
                     id_bien_inventario.cantidad_entrante_consumo = cantidad
                     id_bien_inventario.save()
             else:
+                fecha_entrada_date = datetime.strptime(fecha_entrada, '%Y-%m-%d %H:%M:%S')
+                
                 registro_inventario = Inventario.objects.create(
                     id_bien=bien,
                     id_bodega=bodega,
                     cod_tipo_entrada=entrada_creada.id_tipo_entrada,
                     cantidad_entrante_consumo=cantidad,
-                    fecha_ingreso=fecha_entrada
+                    fecha_ingreso=fecha_entrada_date.date()
                 )
             serializador_item_entrada_consumo = SerializerItemEntradaConsumo(data=item, many=False)
             serializador_item_entrada_consumo.is_valid(raise_exception=True)
@@ -936,12 +938,14 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
                     tipo_doc_ultimo_movimiento = 'E_EMB'
                 case 8:
                     tipo_doc_ultimo_movimiento = 'E_INC'
-
+            
+            fecha_entrada_date = datetime.strptime(fecha_entrada, '%Y-%m-%d %H:%M:%S')
+            
             registro_inventario = Inventario.objects.create(
                 id_bien=elemento_creado,
                 id_bodega=bodega,
                 cod_tipo_entrada=entrada_creada.id_tipo_entrada,
-                fecha_ingreso=fecha_entrada,
+                fecha_ingreso=fecha_entrada_date.date(),
                 id_persona_origen=entrada_creada.id_proveedor,
                 numero_doc_origen=entrada_creada.numero_entrada_almacen,
                 valor_ingreso=valor_total_item,
@@ -1405,7 +1409,7 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
                 id_bien=elemento_creado,
                 id_bodega=bodega,
                 cod_tipo_entrada=entrada_almacen.id_tipo_entrada,
-                fecha_ingreso=entrada_almacen.fecha_entrada,
+                fecha_ingreso=entrada_almacen.fecha_entrada.date(),
                 id_persona_origen=entrada_almacen.id_proveedor,
                 numero_doc_origen=entrada_almacen.numero_entrada_almacen,
                 valor_ingreso=valor_total_item,
@@ -1466,7 +1470,7 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
                     id_bodega=bodega,
                     cod_tipo_entrada=entrada_almacen.id_tipo_entrada,
                     cantidad_entrante_consumo=cantidad,
-                    fecha_ingreso=entrada_almacen.fecha_entrada
+                    fecha_ingreso=entrada_almacen.fecha_entrada.date()
                 )
             serializador_item_entrada_consumo = SerializerItemEntradaConsumo(
                 data=item, many=False)
@@ -1845,7 +1849,7 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
                 id_bien=elemento_creado,
                 id_bodega=bodega,
                 cod_tipo_entrada=entrada_almacen.id_tipo_entrada,
-                fecha_ingreso=entrada_almacen.fecha_entrada,
+                fecha_ingreso=entrada_almacen.fecha_entrada.date(),
                 id_persona_origen=entrada_almacen.id_proveedor,
                 numero_doc_origen=entrada_almacen.numero_entrada_almacen,
                 valor_ingreso=valor_total_item,
@@ -1907,7 +1911,7 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
                     id_bodega=bodega,
                     cod_tipo_entrada=entrada_almacen.id_tipo_entrada,
                     cantidad_entrante_consumo=cantidad,
-                    fecha_ingreso=entrada_almacen.fecha_entrada
+                    fecha_ingreso=entrada_almacen.fecha_entrada.date()
                 )
             serializador_item_entrada_consumo = SerializerItemEntradaConsumo(
                 data=item, many=False)

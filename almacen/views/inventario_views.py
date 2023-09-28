@@ -3,16 +3,17 @@ from almacen.models.generics_models import Bodegas
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from almacen.models.inventario_models import Inventario, TiposEntradas
+from almacen.models.solicitudes_models import ItemDespachoConsumo
 from almacen.serializers.generics_serializers import (
     SerializersMarca
     )   
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import F, Count
+from django.db.models import F, Count, Sum
 import operator, itertools
 
-from almacen.serializers.inventario_serializers import BusquedaBienesConsumoSerializer, BusquedaBienesSerializer, ControlBienesConsumoGetListSerializer, ControlInventarioByTipoSerializer, ControlInventarioTodoSerializer, OrigenesListGetSerializer
+from almacen.serializers.inventario_serializers import BusquedaBienesConsumoSerializer, BusquedaBienesSerializer, ControlBienesConsumoGetListSerializer, ControlConsumoBienesGetListSerializer, ControlInventarioByTipoSerializer, ControlInventarioTodoSerializer, OrigenesListGetSerializer
 
 class OrigenesListGetView(generics.ListAPIView):
     serializer_class=OrigenesListGetSerializer
@@ -324,5 +325,69 @@ class ControlBienesConsumoGetListView(generics.ListAPIView):
                 data_output.append(items_data)
         else:
             data_output = serializer.data
+
+        return Response({'success':True,'detail':'Se encontró la siguiente información','data':data_output},status=status.HTTP_200_OK)
+
+class ControlConsumoBienesGetListView(generics.ListAPIView):
+    serializer_class=ControlConsumoBienesGetListSerializer
+    queryset=ItemDespachoConsumo.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        filter={}
+        no_discriminar = request.query_params.get('no_discriminar', '')
+        no_discriminar = True if no_discriminar.lower() == 'true' else False
+        
+        for key,value in request.query_params.items():
+            if key in ['es_despacho_conservacion','id_bien','id_unidad_para_la_que_solicita', 'fecha_desde', 'fecha_hasta']:
+                if key == 'es_despacho_conservacion':
+                    if value != '':
+                        filter['id_despacho_consumo__es_despacho_conservacion']=True if value.lower() == 'true' else False
+                elif key == 'id_unidad_para_la_que_solicita':
+                    if value != '':
+                        filter['id_despacho_consumo__id_unidad_para_la_que_solicita']=value
+                elif key == 'id_bien':
+                    if value != '':
+                        filter['id_bien_despachado']=value
+                elif key == 'fecha_desde':
+                    if value != '':
+                        filter['id_despacho_consumo__fecha_despacho__gte']=value
+                elif key == 'fecha_hasta':
+                    if value != '':
+                        filter['id_despacho_consumo__fecha_despacho__lte']=value
+                else:
+                    if value != '':
+                        filter[key]=value
+        
+        items_despacho_consumo = self.queryset.filter(**filter)
+
+        data_output = []
+        
+        if no_discriminar:
+            data_output = items_despacho_consumo.values(
+                'id_bien_despachado',
+                nombre_bien_despachado=F('id_bien_despachado__nombre'),
+                codigo_bien_despachado=F('id_bien_despachado__codigo_bien'),
+                id_unidad_medida=F('id_bien_despachado__id_unidad_medida__id_unidad_medida'),
+                unidad_medida=F('id_bien_despachado__id_unidad_medida__abreviatura')
+            ).annotate(
+                cantidad_despachada_unidad=Sum('cantidad_despachada')
+            )
+        else:
+            data_output = items_despacho_consumo.values(
+                'id_bien_despachado',
+                id_unidad_para_la_que_solicita=F('id_despacho_consumo__id_unidad_para_la_que_solicita__id_unidad_organizacional'),
+                nombre_unidad_para_la_que_solicita=F('id_despacho_consumo__id_unidad_para_la_que_solicita__nombre'),
+                nombre_bien_despachado=F('id_bien_despachado__nombre'),
+                codigo_bien_despachado=F('id_bien_despachado__codigo_bien'),
+                id_unidad_medida=F('id_bien_despachado__id_unidad_medida__id_unidad_medida'),
+                unidad_medida=F('id_bien_despachado__id_unidad_medida__abreviatura')
+            ).annotate(
+                cantidad_despachada_unidad=Sum('cantidad_despachada')
+            )
+            
+            for item in data_output:
+                if not item['id_unidad_para_la_que_solicita']:
+                    item['nombre_unidad_para_la_que_solicita'] = 'Entrega a Viveros'
 
         return Response({'success':True,'detail':'Se encontró la siguiente información','data':data_output},status=status.HTTP_200_OK)
