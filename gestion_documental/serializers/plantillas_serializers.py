@@ -17,26 +17,37 @@ class  PlantillasDocCreateSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class PlantillasDocBusquedaAvanzadaSerializer(serializers.ModelSerializer):
-
+    nombre_tipologia=serializers.ReadOnlyField(source='id_tipologia_doc_trd.nombre',default=None)
     archivos_digitales = ArchivosDigitalesSerializer(source='id_archivo_digital', read_only=True)
+    nombre_completo = serializers.SerializerMethodField()
     class Meta:
         model = PlantillasDoc
         
         fields = ['id_plantilla_doc',
-    'nombre',
-    'descripcion',
-    'id_archivo_digital',
-    'id_formato_tipo_medio',
-    'asociada_a_tipologia_doc_trd',
-    'id_tipologia_doc_trd',
-    'otras_tipologias',
-    'codigo_formato_calidad_asociado',
-    'version_formato_calidad_asociado',
-    'cod_tipo_acceso',
-    'observacion',
-    'activa',
-    'fecha_creacion',
-    'id_persona_crea_plantilla','archivos_digitales']
+                'nombre',
+                'descripcion',
+                'id_archivo_digital',
+                'id_formato_tipo_medio',
+                'asociada_a_tipologia_doc_trd',
+                'id_tipologia_doc_trd',
+                'nombre_tipologia',
+                'otras_tipologias',
+                'codigo_formato_calidad_asociado',
+                'version_formato_calidad_asociado',
+                'cod_tipo_acceso',
+                'observacion',
+                'activa',
+                'fecha_creacion',
+                'nombre_completo',
+                'id_persona_crea_plantilla','archivos_digitales']
+    def get_nombre_completo(self, obj):
+                nombre_completo_responsable = None
+                nombre_list = [obj.id_persona_crea_plantilla.primer_nombre, obj.id_persona_crea_plantilla.segundo_nombre,
+                                obj.id_persona_crea_plantilla.primer_apellido, obj.id_persona_crea_plantilla.segundo_apellido]
+                nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+                nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+                return nombre_completo_responsable
+        
 class  PlantillasDocBusquedaAvanzadaDetalleSerializer(serializers.ModelSerializer):
     nombre_tipologia=serializers.ReadOnlyField(source='id_tipologia_doc_trd.nombre',default=None)
     ruta=serializers.ReadOnlyField(source='id_archivo_digital.ruta_archivo',default=None)

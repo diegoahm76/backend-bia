@@ -8,7 +8,8 @@ from gestion_documental.models.ccd_models import (
     CatalogosSeries,
     CatalogosSeriesUnidad,
     UnidadesSeccionPersistenteTemporal,
-    AgrupacionesDocumentalesPersistenteTemporal
+    AgrupacionesDocumentalesPersistenteTemporal,
+    UnidadesSeccionResponsableTemporal
 )
 from gestion_documental.models.trd_models import (
     TablaRetencionDocumental
@@ -427,7 +428,6 @@ class BusquedaCCDSerializer(serializers.ModelSerializer):
         model = CuadrosClasificacionDocumental
         fields ='__all__'
 
-
 class BusquedaCCDHomologacionSerializer(serializers.ModelSerializer):
     id_organigrama = serializers.ReadOnlyField(source='id_organigrama.id_organigrama',default=None)
     nombre_organigrama = serializers.ReadOnlyField(source='id_organigrama.nombre',default=None)
@@ -443,14 +443,12 @@ class BusquedaCCDHomologacionSerializer(serializers.ModelSerializer):
         model = CuadrosClasificacionDocumental
         fields = ['id_ccd', 'nombre', 'version', 'usado', 'fecha_terminado', 'id_organigrama', 'nombre_organigrama', 'version_organigrama']
 
-
 class SeriesDocUnidadHomologacionesSerializer(serializers.ModelSerializer):
     id_organigrama = serializers.ReadOnlyField(source='id_organigrama.id_organigrama',default=None)
 
     class Meta:
         model = UnidadesOrganizacionales
         fields = ['id_unidad_organizacional', 'codigo', 'nombre', 'id_organigrama']
-
 
 class SeriesDocUnidadCatSerieHomologacionesSerializer(serializers.ModelSerializer):
     id_serie = serializers.ReadOnlyField(source='id_catalogo_serie.id_serie_doc.id_serie_doc',default=None)
@@ -464,7 +462,6 @@ class SeriesDocUnidadCatSerieHomologacionesSerializer(serializers.ModelSerialize
         model = CatalogosSeriesUnidad
         fields = ['id_unidad_organizacional', 'id_cat_serie_und', 'id_serie', 'cod_serie', 'nombre_serie', 'id_subserie', 'cod_subserie', 'nombre_subserie']
 
-
 class UnidadesSeccionPersistenteTemporalSerializer(serializers.ModelSerializer):
     class Meta:
         model = UnidadesSeccionPersistenteTemporal
@@ -474,6 +471,29 @@ class AgrupacionesDocumentalesPersistenteTemporalSerializer(serializers.ModelSer
     class Meta:
         model = AgrupacionesDocumentalesPersistenteTemporal
         fields = '__all__'
+
+class UnidadesSeccionResponsableTemporalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UnidadesSeccionResponsableTemporal
+        fields = '__all__'
+
+class UnidadesSeccionResponsableTemporalGetSerializer(serializers.ModelSerializer):
+    cod_unidad_actual = serializers.ReadOnlyField(source='id_unidad_seccion_actual.codigo',default=None)
+    nom_unidad_actual = serializers.ReadOnlyField(source='id_unidad_seccion_actual.nombre',default=None)
+    cod_unidad_nueva = serializers.ReadOnlyField(source='id_unidad_seccion_nueva.codigo',default=None)
+    nom_unidad_nueva = serializers.ReadOnlyField(source='id_unidad_seccion_nueva.nombre',default=None)
+
+    class Meta:
+        model = UnidadesSeccionResponsableTemporal
+        fields = ['id_unidad_seccion_responsable_temporal', 
+                  'id_unidad_seccion_actual',
+                  'cod_unidad_actual',
+                  'nom_unidad_actual',
+                  'id_unidad_seccion_nueva',
+                  'cod_unidad_nueva',
+                  'nom_unidad_nueva'
+                   ]
+
 
 #   LLAMADO DE SERIALIZADOR DENTRO DE OTRO SERIALIZADOR CON RELACION
 # class SeriesDocSerializer(serializers.ModelSerializer):

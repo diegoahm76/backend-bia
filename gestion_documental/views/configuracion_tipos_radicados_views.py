@@ -99,6 +99,10 @@ class ConfigTiposRadicadoAgnoUpdate(generics.UpdateAPIView):
             if 'consecutivo_inicial' in data_in:
                 if data_in['consecutivo_inicial']:
                     data_in['consecutivo_inicial']=data_in['consecutivo_inicial']-1
+            if 'cantidad_digitos' in data_in and data_in['cantidad_digitos']:
+                if data_in['cantidad_digitos'] > 20:
+                    raise ValidationError('La cantidad de digitos no puede ser mayor a 20')
+
          
             serializer =ConfigTiposRadicadoAgnoUpDateSerializer(instance, data=data_in, partial=True)
             serializer.is_valid(raise_exception=True)
@@ -196,6 +200,9 @@ class ConfigTiposRadicadoAgnoCreate(generics.CreateAPIView):
             data_in['id_persona_config_implementacion']=data_in['user']
             data_in['fecha_inicial_config_implementacion'] = timezone.now()
         try:
+            if 'cantidad_digitos' in data_in and data_in['cantidad_digitos']:
+                if data_in['cantidad_digitos'] > 20:
+                    raise ValidationError('La cantidad de digitos no puede ser mayor a 20')
 
 
             print(data_in)
