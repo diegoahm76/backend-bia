@@ -90,6 +90,7 @@ urlpatterns = [
     path('api/gestor/metadatos/',include('gestion_documental.urls.metadatos_urls')),
     path('api/gestor/plantillas/',include('gestion_documental.urls.plantillas_urls')),
     path('api/gestor/configuracion-tiempos-respuesta-accion/',include('gestion_documental.urls.configuracion_tiempos_respuesta_urls')),
+    path('api/gestor/configuracion-tipos-expendientes/',include('gestion_documental.urls.conf__tipos_exp_urls')),
     
     #ALMACEN
     path('api/almacen/hoja-de-vida/', include('almacen.urls.hoja_de_vida_urls')),
