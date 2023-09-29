@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from almacen.models.bienes_models import CatalogoBienes
 from almacen.models.inventario_models import Inventario, TiposEntradas
+from almacen.models.solicitudes_models import ItemDespachoConsumo
 
 class SerializerUpdateInventariosActivosFijos(serializers.ModelSerializer):
     valor_total_item = serializers.FloatField(source='valor_ingreso')
@@ -227,3 +228,28 @@ class ControlBienesConsumoGetListSerializer(serializers.ModelSerializer):
             'nombre_cientifico'
         ]
         model = Inventario
+
+class ControlConsumoBienesGetListSerializer(serializers.ModelSerializer):
+    id_unidad_para_la_que_solicita = serializers.ReadOnlyField(source='id_despacho_consumo.id_unidad_para_la_que_solicita.id_unidad_organizacional', default=None)
+    nombre_unidad_para_la_que_solicita = serializers.ReadOnlyField(source='id_despacho_consumo.id_unidad_para_la_que_solicita.nombre', default=None)
+    es_despacho_conservacion = serializers.ReadOnlyField(source='id_despacho_consumo.es_despacho_conservacion', default=None)
+    fecha_despacho = serializers.ReadOnlyField(source='id_despacho_consumo.fecha_despacho', default=None)
+    nombre_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.nombre', default=None)
+    codigo_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.codigo_bien', default=None)
+    id_unidad_medida = serializers.ReadOnlyField(source='id_bien_despachado.id_unidad_medida.id_unidad_medida', default=None)
+    unidad_medida = serializers.ReadOnlyField(source='id_bien_despachado.id_unidad_medida.abreviatura', default=None)
+    
+    class Meta:
+        fields = [
+            'id_unidad_para_la_que_solicita',
+            'nombre_unidad_para_la_que_solicita',
+            'id_bien_despachado',
+            'nombre_bien_despachado',
+            'codigo_bien_despachado',
+            'cantidad_despachada',
+            'id_unidad_medida',
+            'unidad_medida',
+            'es_despacho_conservacion',
+            'fecha_despacho'
+        ]
+        model = ItemDespachoConsumo

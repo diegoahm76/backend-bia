@@ -937,11 +937,13 @@ class BusquedaCCDHomologacionView(generics.ListAPIView):
     
     def get_validacion_ccd(self):
         tca_actual = TablasControlAcceso.objects.filter(actual=True).first()
-        tca_filtro = TablasControlAcceso.objects.filter(fecha_puesta_produccion=None, fecha_terminado__gt=tca_actual.fecha_puesta_produccion)
+        tca_filtro = TablasControlAcceso.objects.filter(
+            fecha_puesta_produccion=None, 
+            fecha_terminado__gt=tca_actual.fecha_puesta_produccion)
         trd_filtro = TablaRetencionDocumental.objects.exclude(fecha_terminado=None).filter(fecha_puesta_produccion=None)
         ccd_filtro = CuadrosClasificacionDocumental.objects.exclude(fecha_terminado=None).filter(fecha_puesta_produccion=None)
-        trd_filtro = trd_filtro.filter(id_trd__in=tca_filtro.values('id_trd'))  # Filtrar TablaRetencionDocumental relacionada a TablasControlAcceso
-        ccd_filtro = ccd_filtro.filter(id_ccd__in=trd_filtro.values('id_ccd'))  # Filtrar CuadrosClasificacionDocumental relacionada a TablaRetencionDocumental
+        trd_filtro = trd_filtro.filter(id_trd__in=tca_filtro.values('id_trd'))  
+        ccd_filtro = ccd_filtro.filter(id_ccd__in=trd_filtro.values('id_ccd'))  
         return ccd_filtro.order_by('-fecha_terminado')
 
     def get(self, request):
@@ -950,6 +952,23 @@ class BusquedaCCDHomologacionView(generics.ListAPIView):
         serializer = self.serializer_class(ccd_filtro, many=True)
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+class BusquedaCCDView(generics.ListAPIView):
+    serializer_class = BusquedaCCDSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_ccd(self):
+        ccd_filtro = CuadrosClasificacionDocumental.objects.exclude(fecha_terminado=None).filter(fecha_retiro_produccion=None)
+        return ccd_filtro.order_by('-fecha_terminado')
+
+    def get(self, request):
+
+        ccd_filtro = self.get_ccd()
+        serializer = self.serializer_class(ccd_filtro, many=True)
+
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
 
 @staticmethod
 def obtener_unidades_ccd(unidades_actual, unidades_nueva):
@@ -1350,9 +1369,7 @@ class SeriesDocUnidadCCDActualGetView(generics.ListAPIView):
 
     def get(self, request, id_ccd):
         ccd_filro = BusquedaCCDHomologacionView().get_validacion_ccd()
-        ccd_actual = CuadrosClasificacionDocumental.objects.filter(actual=True).first()
-        mismo_organigrama = False
-
+        
         try:
             ccd = ccd_filro.get(id_ccd=id_ccd)
         except CuadrosClasificacionDocumental.DoesNotExist:
@@ -1363,9 +1380,14 @@ class SeriesDocUnidadCCDActualGetView(generics.ListAPIView):
             organigrama_actual = Organigramas.objects.get(actual=True)
         except Organigramas.DoesNotExist:
             raise NotFound('No se ha encontrado organigrama')
-        
-        if organigrama.id_organigrama == organigrama_actual.id_organigrama: mismo_organigrama = True
 
+        instancia_unidades = CompararSeriesDocUnidadView()
+        unidades_validacion = instancia_unidades.get_series_doc_unidades(id_ccd)
+        Validacion_iguales = [unidad_val['iguales'] for unidad_val in unidades_validacion['coincdencias']]
+
+        if True in Validacion_iguales:
+            raise PermissionDenied('Existe una homologacion persistente ')
+    
         instance_unidades_persistentes = UnidadesSeccionPersistenteTemporalGetView()
         ids_unidad_actual, ids_unidad_nueva = instance_unidades_persistentes.get_unidades_seccion(ccd.id_ccd)
 
@@ -1375,9 +1397,10 @@ class SeriesDocUnidadCCDActualGetView(generics.ListAPIView):
         unidades_actual = self.serializer_class(unidades_organizacionales_actual, many=True).data
 
         data = {
-            'id_ccd_actual':ccd_actual.id_ccd,
+            'id_ccd_actual':unidades_validacion['id_ccd_actual'],
             'id_ccd_nuevo':ccd.id_ccd,
-            'mismo_organigrama':mismo_organigrama,
+            'mismo_organigrama':unidades_validacion['mismo_organigrama'],
+            'coincidencia':len(Validacion_iguales)>0,
             'unidades':unidades_actual
         }
 
@@ -1505,21 +1528,18 @@ class UnidadesSeccionResponsableTemporalGetView(generics.ListAPIView):
         except CuadrosClasificacionDocumental.DoesNotExist:
             raise NotFound('CCD no encontrado')
         
-        uniadades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd)
-        ids_unidad_actual = [unidad.id_unidad_seccion_actual.id_unidad_organizacional for unidad in uniadades_responsables]
-        ids_unidad_nueva = [unidad.id_unidad_seccion_nueva.id_unidad_organizacional for unidad in uniadades_responsables]
+        unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd)
+        unidades_responsables_data = self.serializer_class(unidades_responsables, many=True).data
+        # ids_unidad_actual = [unidad.id_unidad_seccion_actual.id_unidad_organizacional for unidad in uniadades_responsables]
+        # ids_unidad_nueva = [unidad.id_unidad_seccion_nueva.id_unidad_organizacional for unidad in uniadades_responsables]
 
-        return ids_unidad_actual, ids_unidad_nueva
+        # return ids_unidad_actual, ids_unidad_nueva
+        return unidades_responsables_data
+
     
     def get(self, request, id_ccd):
 
-        try:
-            ccd = CuadrosClasificacionDocumental.objects.get(id_ccd=id_ccd)
-        except CuadrosClasificacionDocumental.DoesNotExist:
-            raise NotFound('CCD no encontrado')
-        
-        unidades_organizacionales_responsable = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd)
-        unidades_responsables = self.serializer_class(unidades_organizacionales_responsable, many=True).data
+        unidades_responsables = self.get_unidades_seccion(id_ccd)
         data = {
             'id_ccd_nuevo':id_ccd,
             'unidades_responsables':unidades_responsables
