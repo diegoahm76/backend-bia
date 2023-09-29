@@ -87,6 +87,8 @@ urlpatterns = [
      path('archivoFisico/listar-bandejas/<int:id_estante_deposito>/',views.BandejaGetAll.as_view(),name='listar-todos-bandejas'),
      path('archivoFisico/listar-cajas/<int:id_bandeja_estante>/',views.CajaGetAll.as_view(),name='listar-todos-cajas'),
      path('archivoFisico/listar-carpetas/<int:id_caja_bandeja>/',views.CarpetaGetAll.as_view(),name='listar-todos-carpetas'),
+     path('archivoFisico/consultar-expediente/<int:id_carpeta_caja>/',views.ConsultarNumeroExpediente.as_view(),name='consultar-expediente'),
+     path('archivoFisico/ver-expediente/<int:id_carpeta_caja>/',views.ReviewExpediente.as_view(),name='ver-expediente'),
 
 
      
