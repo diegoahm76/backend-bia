@@ -12,10 +12,10 @@ urlpatterns = [
      path('expedientes/orden-siguiente/',views.ExpedienteGetOrden.as_view(), name='orden-expediente'),
      path('expedientes/orden-actual/',views.ExpedienteGetOrdenActual.as_view(), name='orden-expediente-actual'),
      path('expedientes/listar-topologias/',views.ListarTipologias.as_view(), name='listar-topologias'),
-     path('expedientes/archivos-digitales/',views.UploadPDFView.as_view(), name='adjuntar-archvios'),
+     path('expedientes/archivos-digitales/adjuntar/',views.UploadPDFView.as_view(), name='adjuntar-archvios'),
      path('expedientes/listar-archivos/',views.ListarArchivosDigitales.as_view(), name='listar-archvios-digitales'),
      path('expedientes/listar-expedientes/',views.ListaExpedientesDocumentales.as_view(), name='listar-expedientes'),
-    path('expedientes/archivos-digitales/create/',views_archivos.ArchivosDgitalesCreate.as_view(), name='crear-archvios'),
+     path('expedientes/archivos-digitales/create/',views_archivos.ArchivosDgitalesCreate.as_view(), name='crear-archvios'),
 
      
 ]
