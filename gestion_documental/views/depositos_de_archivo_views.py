@@ -12,8 +12,10 @@ from django.db.models import Q
 from datetime import datetime  
 from django.db import transaction
 from datetime import datetime,date,timedelta
+from gestion_documental.models.expedientes_models import ExpedientesDocumentales
+from seguridad.models import Personas
 from gestion_documental.models.depositos_models import  CarpetaCaja, Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
-from gestion_documental.serializers.depositos_serializers import CarpetaCajaRotuloSerializer,BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteGetOrdenSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejaListCarpetaInfoSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaGetOrdenSerializer, CajaListBandejaInfoSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteDeleteSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajaListDepositoInfoSerializer, CajaListEstanteInfoSerializer, CajaRotuloSerializer, CajasByBandejaListSerializer, CarpetaCajaCreateSerializer, CarpetaCajaDeleteSerializer, CarpetaCajaMoveSerializer, CarpetaCajaSearchAdvancedSerializer, CarpetaCajaSearchSerializer, CarpetaCajaUpDateSerializer, CarpetaListCajaInfoSerializer, CarpetasByCajaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoListCarpetaInfoSerializer, DepositoSearchSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, EstanteListCarpetaInfoSerializer, MoveEstanteSerializer
+from gestion_documental.serializers.depositos_serializers import CarpetaCajaConsultSerializer, CarpetaCajaGetOrdenSerializer, CarpetaCajaRotuloSerializer,BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteGetOrdenSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejaListCarpetaInfoSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaGetOrdenSerializer, CajaListBandejaInfoSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteDeleteSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajaListDepositoInfoSerializer, CajaListEstanteInfoSerializer, CajaRotuloSerializer, CajasByBandejaListSerializer, CarpetaCajaCreateSerializer, CarpetaCajaDeleteSerializer, CarpetaCajaMoveSerializer, CarpetaCajaSearchAdvancedSerializer, CarpetaCajaSearchSerializer, CarpetaCajaUpDateSerializer, CarpetaListCajaInfoSerializer, CarpetasByCajaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoGetAllSerializer, DepositoListCarpetaInfoSerializer, DepositoSearchSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, EstanteListCarpetaInfoSerializer, MoveEstanteSerializer, ReviewExpedienteSerializer
 from seguridad.utils import Util
 
 
@@ -1850,3 +1852,364 @@ class CarpetaRotulo(generics.ListAPIView):
         }
 
         return Response(response_data)
+    
+#/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+########################## CRUD ARCHIVO FISICO ##########################
+
+#LISTAR_DEPOSITO_POR_ID
+class DepositoGetById(generics.ListAPIView):
+    serializer_class = DepositoGetSerializer
+    queryset = Deposito.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, pk):
+        deposito = Deposito.objects.filter(id_deposito=pk).order_by('orden_ubicacion_por_entidad')
+        serializer = self.serializer_class(deposito, many=True)
+        
+        if not deposito:
+            raise NotFound("El registro del deposito que busca, no se encuentra registrado")
+
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+#LISTAR_ESTANTE_POR_ID
+class EstanteGetById(generics.ListAPIView):
+    serializer_class = EstanteDepositoGetOrdenSerializer
+    queryset = EstanteDeposito.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, pk):
+        estante = EstanteDeposito.objects.filter(id_estante_deposito=pk).order_by('orden_ubicacion_por_deposito')
+        serializer = self.serializer_class(estante, many=True)
+        
+        if not estante:
+            raise NotFound("El registro del estante que busca, no se encuentra registrado")
+
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+#LISTAR_BANDEJA_POR_ID
+class BandejaGetById(generics.ListAPIView):
+    serializer_class = BandejaEstanteGetOrdenSerializer
+    queryset = BandejaEstante.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, pk):
+        bandeja = BandejaEstante.objects.filter(id_bandeja_estante=pk).order_by('orden_ubicacion_por_estante')
+        serializer = self.serializer_class(bandeja, many=True)
+        
+        if not bandeja:
+            raise NotFound("El registro de la bandeja que busca, no se encuentra registrado")
+
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+#LISTAR_CAJA_POR_ID
+class CajaGetById(generics.ListAPIView):
+    serializer_class = CajaBandejaGetOrdenSerializer
+    queryset = CajaBandeja.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, pk):
+        caja = CajaBandeja.objects.filter(id_caja_bandeja=pk).order_by('orden_ubicacion_por_bandeja')
+        serializer = self.serializer_class(caja, many=True)
+        
+        if not caja:
+            raise NotFound("El registro de la caja que busca, no se encuentra registrado")
+
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+#LISTAR_CARPETA_POR_ID
+class CarpetaGetById(generics.ListAPIView):
+    serializer_class = CarpetaCajaGetOrdenSerializer
+    queryset = CarpetaCaja.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, pk):
+        carpeta = CarpetaCaja.objects.filter(id_carpeta_caja=pk).order_by('orden_ubicacion_por_caja')
+        serializer = self.serializer_class(carpeta, many=True)
+        
+        if not carpeta:
+            raise NotFound("El registro de la carpeta que busca, no se encuentra registrado")
+
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+#LISTAR_TODOS_DEPOSITOS
+class DepositoGetAll(generics.ListAPIView):
+    serializer_class = DepositoGetAllSerializer
+    queryset = Deposito.objects.all().order_by('orden_ubicacion_por_entidad')
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            return Response({
+                'success': False,
+                'detail': 'No se encontraron datos de depósitos registrados.',
+                'data': []
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.get_serializer(queryset, many=True)
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes depósitos ordenados por orden_ubicacion_por_entidad.',
+            'data': serializer.data
+        })
+    
+#LISTAR_TODOS_ESTANTE
+class EstanteGetAll(generics.ListAPIView):
+    serializer_class = EstanteDepositoGetOrdenSerializer
+    queryset = EstanteDeposito.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_deposito):
+        try:
+            # Filtrar las estantes por el ID del estante_deposito y ordenarlas por orden_ubicacion_por_deposito
+            estantes = EstanteDeposito.objects.filter(id_deposito=id_deposito).order_by('orden_ubicacion_por_deposito')
+
+            # Verificar si no se encontraron registros
+            if not estantes:
+                return Response({'success': False, 'detail': 'No se encontraron estantes relacionadas para el deposito especificado.'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Crear una lista de resultados formateados según tus especificaciones
+            resultados = []
+            for estante in estantes:
+                # Construir el resultado formateado con los campos adicionales
+                resultado_formateado = {
+                    'id_estante': estante.id_estante_deposito,
+                    'id_deposito': estante.id_deposito.id_deposito,  
+                    'identificacion_estante': estante.identificacion_por_deposito,
+                    'orden_ubicacion_estante': estante.orden_ubicacion_por_deposito,
+                    'Informacion_Mostrar': f"{estante.orden_ubicacion_por_deposito} - Estante {estante.identificacion_por_deposito}"
+                }
+                resultados.append(resultado_formateado)
+
+            # Devolver la lista de resultados en la respuesta
+            return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': resultados}, status=status.HTTP_200_OK)
+
+        except BandejaEstante.DoesNotExist:
+            return Response({'success': False, 'detail': 'No se encontraron bandejas para el estante_deposito especificado.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+#LISTAR_TODAS_BANDEJAS
+class BandejaGetAll(generics.ListAPIView):
+    serializer_class = BandejaEstanteGetOrdenSerializer
+    queryset = BandejaEstante.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_estante_deposito):
+        try:
+            # Filtrar las bandejas por el ID del estante_deposito y ordenarlas por T232ordenUbicacionPorEstante
+            bandejas = BandejaEstante.objects.filter(id_estante_deposito=id_estante_deposito).order_by('orden_ubicacion_por_estante')
+
+            # Verificar si no se encontraron registros
+            if not bandejas:
+                return Response({'success': False, 'detail': 'No se encontraron bandejas relacionadas para el estante especificado.'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Crear una lista de resultados formateados según tus especificaciones
+            resultados = []
+            for bandeja in bandejas:
+                # Construir el resultado formateado con los campos adicionales
+                resultado_formateado = {
+                    'id_bandeja': bandeja.id_bandeja_estante,
+                    'id_estante': bandeja.id_estante_deposito.id_estante_deposito,  
+                    'identificacion_bandeja': bandeja.identificacion_por_estante,
+                    'orden_ubicacion_bandeja': bandeja.orden_ubicacion_por_estante,
+                    'Informacion_Mostrar': f"{bandeja.orden_ubicacion_por_estante} - Bandeja {bandeja.identificacion_por_estante}"
+                }
+                resultados.append(resultado_formateado)
+
+            # Devolver la lista de resultados en la respuesta
+            return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': resultados}, status=status.HTTP_200_OK)
+
+        except BandejaEstante.DoesNotExist:
+            return Response({'success': False, 'detail': 'No se encontraron bandejas para el estante_deposito especificado.'}, status=status.HTTP_404_NOT_FOUND)
+        
+#LISTAR_TODAS_CAJAS
+class CajaGetAll(generics.ListAPIView):
+    serializer_class = CajaBandejaGetOrdenSerializer
+    queryset = CajaBandeja.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_bandeja_estante):
+        try:
+            # Filtrar las cajas por el ID del id_bandeja_estante y ordenarlas por orden_ubicacion_por_bandeja
+            cajas = CajaBandeja.objects.filter(id_bandeja_estante=id_bandeja_estante).order_by('orden_ubicacion_por_bandeja')
+
+            # Verificar si no se encontraron registros
+            if not cajas:
+                return Response({'success': False, 'detail': 'No se encontraron cajas relacionadas para la bandeja especificada.'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Crear una lista de resultados formateados según tus especificaciones
+            resultados = []
+            for caja in cajas:
+                # Construir el resultado formateado con los campos adicionales
+                resultado_formateado = {
+                    'id_caja': caja.id_caja_bandeja,
+                    'id_bandeja': caja.id_bandeja_estante.id_bandeja_estante,  
+                    'identificacion_caja': caja.identificacion_por_bandeja,
+                    'orden_ubicacion_caja': caja.orden_ubicacion_por_bandeja,
+                    'Informacion_Mostrar': f"{caja.orden_ubicacion_por_bandeja} - Caja {caja.identificacion_por_bandeja}"
+                }
+                resultados.append(resultado_formateado)
+
+            # Devolver la lista de resultados en la respuesta
+            return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': resultados}, status=status.HTTP_200_OK)
+
+        except BandejaEstante.DoesNotExist:
+            return Response({'success': False, 'detail': 'No se encontraron cajas para el estante_deposito especificado.'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+#LISTAR_TODAS_CARPETAS
+class CarpetaGetAll(generics.ListAPIView):
+    serializer_class = CarpetaCajaGetOrdenSerializer
+    queryset = CarpetaCaja.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_caja_bandeja):
+        try:
+            # Filtrar las carpetas por el ID del id_bandeja_estante y ordenarlas por orden_ubicacion_por_caja
+            carpetas = CarpetaCaja.objects.filter(id_caja_bandeja=id_caja_bandeja).order_by('orden_ubicacion_por_caja')
+
+            # Verificar si no se encontraron registros
+            if not carpetas:
+                return Response({'success': False, 'detail': 'No se encontraron carpetas relacionadas para la caja especificada.'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Crear una lista de resultados formateados según tus especificaciones
+            resultados = []
+            for carpeta in carpetas:
+                # Construir el resultado formateado con los campos adicionales
+                resultado_formateado = {
+                    'id_carpeta': carpeta.id_carpeta_caja,
+                    'id_caja': carpeta.id_caja_bandeja.id_caja_bandeja,  
+                    'identificacion_carpeta': carpeta.identificacion_por_caja,
+                    'orden_ubicacion_carpeta': carpeta.orden_ubicacion_por_caja,
+                    'id_expediente': carpeta.id_expediente.id_expediente_documental,
+                    'Informacion_Mostrar': f"{carpeta.orden_ubicacion_por_caja} - Carpeta {carpeta.identificacion_por_caja}"
+                }
+                resultados.append(resultado_formateado)
+
+            # Devolver la lista de resultados en la respuesta
+            return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': resultados}, status=status.HTTP_200_OK)
+
+        except BandejaEstante.DoesNotExist:
+            return Response({'success': False, 'detail': 'No se encontraron carpetas para el estante_deposito especificado.'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+class ConsultarNumeroExpediente(generics.ListAPIView):
+    serializer_class = CarpetaCajaConsultSerializer
+    queryset = CarpetaCaja.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get(self, request, id_carpeta_caja):
+        try:
+            # Buscar la carpeta por su id_carpeta_caja
+            carpeta = CarpetaCaja.objects.get(id_carpeta_caja=id_carpeta_caja)
+
+            # Obtener el ID del expediente asociado a la carpeta
+            id_expediente = carpeta.id_expediente_id
+
+            # Verificar si el ID del expediente es nulo
+            if id_expediente is None:
+                return Response({'success': False, 'detail': 'La carpeta no tiene expedientes asociados.'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Obtener el expediente asociado utilizando el ID
+            expediente = ExpedientesDocumentales.objects.get(id_expediente_documental=id_expediente)
+
+            # Construir el número de expediente en el formato deseado
+            numero_expediente = f"{expediente.codigo_exp_und_serie_subserie}-{expediente.codigo_exp_Agno}-{expediente.codigo_exp_consec_por_agno}"
+
+            # Devolver el número de expediente como respuesta JSON
+            return Response({'success': True, 
+                            'detail': 'Se encontraron los siguientes registros:',
+                            'id_carpeta': carpeta.id_carpeta_caja,
+                            'id_expediente': id_expediente,
+                            'numero_expediente': numero_expediente}, status=status.HTTP_200_OK)
+        except CarpetaCaja.DoesNotExist:
+            return Response({'success': False, 'detail': 'La carpeta no fue encontrada.'}, status=status.HTTP_404_NOT_FOUND)
+
+        except ExpedientesDocumentales.DoesNotExist:
+            return Response({'success': False, 'detail': 'El expediente no fue encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+class ReviewExpediente(generics.ListAPIView):
+
+    serializer_class = ReviewExpedienteSerializer
+    queryset = CarpetaCaja.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_carpeta_caja):
+        try:
+            # Buscar la carpeta por su id_carpeta_caja
+            carpeta = CarpetaCaja.objects.get(id_carpeta_caja=id_carpeta_caja)
+
+            # Obtener el ID del expediente asociado a la carpeta
+            id_expediente = carpeta.id_expediente_id
+
+            # Verificar si el ID del expediente es nulo
+            if id_expediente is None:
+                return Response({'success': False, 'detail': 'La carpeta no tiene expedientes asociados.'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Obtener el expediente asociado utilizando el ID
+            expediente = ExpedientesDocumentales.objects.get(id_expediente_documental=id_expediente)
+
+            # Obtener el tipo de expediente (simple o complejo)
+            tipo_expediente = expediente.cod_tipo_expediente
+
+            # Crear un diccionario para almacenar la información del expediente
+            info_expediente = {
+                'id_expediente': expediente.id_expediente_documental,
+                'id_carpeta_caja': carpeta.id_carpeta_caja,
+                'titulo_expediente': expediente.titulo_expediente,
+                'descripcion_expediente': expediente.descripcion_expediente,
+            }
+
+            if tipo_expediente == 'S':
+                # Expediente Simple
+                info_expediente['tipo_expediente'] = 'S = SIMPLE'
+                info_expediente['nombre_serie'] = expediente.id_serie_origen.nombre
+                info_expediente['titulo_expediente'] = expediente.titulo_expediente
+                info_expediente['descripcion_expediente'] = expediente.titulo_expediente
+                info_expediente['nombre_serie'] = expediente.id_serie_origen.nombre
+                info_expediente['nombre_subserie'] = expediente.id_subserie_origen.nombre
+                info_expediente['estado_expediente'] = expediente.estado
+                info_expediente['fecha_folio_inicial'] = expediente.fecha_folio_inicial
+                info_expediente['fecha_folio_final'] = expediente.fecha_folio_final
+                info_expediente['etapa_de_archivo'] = expediente.cod_etapa_de_archivo_actual_exped
+
+
+
+
+            elif tipo_expediente == 'C':
+                # Expediente Complejo
+                info_expediente['tipo_expediente'] = 'C = COMPLEJO'
+                info_expediente['tipo_expediente_cod'] = expediente.cod_tipo_expediente
+                info_expediente['nombre_serie'] = expediente.id_serie_origen.nombre
+                info_expediente['titulo_expediente'] = expediente.titulo_expediente
+                info_expediente['descripcion_expediente'] = expediente.titulo_expediente
+                info_expediente['nombre_serie'] = expediente.id_serie_origen.nombre
+                info_expediente['nombre_subserie'] = expediente.id_subserie_origen.nombre
+                info_expediente['id_persona_titular_exp_complejo'] = expediente.id_persona_titular_exp_complejo.id_persona if expediente.id_persona_titular_exp_complejo else None
+                if expediente.id_persona_titular_exp_complejo:
+                    nombres = expediente.id_persona_titular_exp_complejo.primer_nombre.title() if expediente.id_persona_titular_exp_complejo.primer_nombre else ''
+                    segundo_nombre = expediente.id_persona_titular_exp_complejo.segundo_nombre.title() if expediente.id_persona_titular_exp_complejo.segundo_nombre else ''
+                    apellidos = expediente.id_persona_titular_exp_complejo.primer_apellido.title() if expediente.id_persona_titular_exp_complejo.primer_apellido else ''
+                    segundo_apellido = expediente.id_persona_titular_exp_complejo.segundo_apellido.title() if expediente.id_persona_titular_exp_complejo.segundo_apellido else ''
+                    nombre_persona_titular = f"{nombres} {segundo_nombre} {apellidos} {segundo_apellido}".strip()
+                    info_expediente['Nombre_Persona_titular'] = nombre_persona_titular                
+                info_expediente['estado_expediente'] = expediente.estado
+                info_expediente['fecha_folio_inicial'] = expediente.fecha_folio_inicial
+                info_expediente['fecha_folio_final'] = expediente.fecha_folio_final
+                info_expediente['etapa_de_archivo'] = expediente.cod_etapa_de_archivo_actual_exped
+
+
+            return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': info_expediente}, status=status.HTTP_200_OK)
+        except CarpetaCaja.DoesNotExist:
+            return Response({'success': False, 'detail': 'La carpeta no fue encontrada.'}, status=status.HTTP_404_NOT_FOUND)
+
+        except ExpedientesDocumentales.DoesNotExist:
+            return Response({'success': False, 'detail': 'El expediente no fue encontrado.'}, status=status.HTTP_404_NOT_FOUND)

@@ -97,6 +97,11 @@ class  DepositoSearchSerializer(serializers.ModelSerializer):
         model =  Deposito
         fields = '__all__'
 
+class DepositoGetAllSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  Deposito
+        fields = ['id_deposito','nombre_deposito','identificacion_por_entidad','orden_ubicacion_por_entidad']
+
 #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -610,3 +615,65 @@ class CarpetaCajaRotuloSerializer(serializers.ModelSerializer):
                 components.append(str(obj.id_expediente.codigo_exp_consec_por_agno))
         
         return "-".join(components)
+    
+
+######################## SERIALIZERS ARCHIVO FISICO########################
+class CarpetaCajaConsultSerializer(serializers.ModelSerializer):
+    numero_expediente = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CarpetaCaja
+        fields = '__all__'
+
+    def get_numero_expediente(self, obj):
+        try:
+            expediente = ExpedientesDocumentales.objects.get(id_expediente=obj.id_expediente_id)
+            return f"{expediente.codigo_exp_und_serie_subserie}-{expediente.codigo_exp_Agno}-{expediente.codigo_exp_consec_por_agno}"
+        except ExpedientesDocumentales.DoesNotExist:
+            return None
+        
+
+class ReviewExpedienteSerializer(serializers.ModelSerializer):
+    numero_expediente = serializers.SerializerMethodField()
+    nombre_serie = serializers.SerializerMethodField()
+    nombre_subserie = serializers.SerializerMethodField()
+    persona_titular = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CarpetaCaja
+        fields = [
+            'id_carpeta_caja',
+            'numero_expediente',
+            'nombre_serie',
+            'nombre_subserie',
+            'titulo_expediente',
+            'descripcion_expediente',
+            'estado_expediente',
+            'fecha_folio_inicial',
+            'fecha_folio_final',
+            'etapa_archivo',
+        ]
+
+    def get_numero_expediente(self, obj):
+        expediente = obj.id_expediente
+        if expediente:
+            return f"{expediente.codigo_exp_und_serie_subserie}-{expediente.codigo_exp_Agno}-{expediente.codigo_exp_consec_por_agno}"
+        return ''
+
+    def get_nombre_serie(self, obj):
+        expediente = obj.id_expediente
+        if expediente and expediente.id_serie_origen:
+            return expediente.id_serie_origen.nombre_serie
+        return ''
+
+    def get_nombre_subserie(self, obj):
+        expediente = obj.id_expediente
+        if expediente and expediente.id_subserie_origen:
+            return expediente.id_subserie_origen.nombre_subserie
+        return ''
+
+    def get_persona_titular(self, obj):
+        expediente = obj.id_expediente
+        if expediente and expediente.cod_tipo_expediente == 'C' and expediente.id_persona_titular_exp_complejo:
+            return expediente.id_persona_titular_exp_complejo.nombre_completo
+        return ''    

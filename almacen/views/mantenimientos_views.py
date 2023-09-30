@@ -3,6 +3,7 @@ from rest_framework import generics, status
 from rest_framework.views import APIView
 from seguridad.utils import Util
 from almacen.serializers.mantenimientos_serializers import (
+    ControlMantenimientosProgramadosGetListSerializer,
     SerializerProgramacionMantenimientos,
     SerializerRegistroMantenimientos,
     AnularMantenimientoProgramadoSerializer,
@@ -505,7 +506,7 @@ class ValidarFechasProgramacion(generics.CreateAPIView):
                 vehiculo = CatalogoBienes.objects.filter(id_bien=int(datos_ingresados['id_articulo'])).values().first()
                 if not vehiculo:
                     raise ValidationError('Debe ingresar el id de un articulo existente')
-                if vehiculo['cod_tipo_activo'] != 'Veh':
+                if vehiculo['cod_tipo_activo_id'] != 'Veh':
                     raise ValidationError('No se puedeprogramar por kilometraje un tipo de activo diferente a un vehículo')
                 # if not datos_ingresados['desde'].isdigit() or not datos_ingresados['hasta'].isdigit() or not datos_ingresados['cada'].isdigit():
                 #     raise ValidationError('En desde, cada o hasta debe ingresar un número entero')
@@ -545,7 +546,7 @@ class CreateProgramacionMantenimiento(generics.CreateAPIView):
                 raise ValidationError('El artículo no tiene hoja de vida por lo que no se puede programar mantenimiento')
             if articulo['cod_tipo_bien'] != 'A':
                 raise ValidationError('Para programar un mantenimiento el bien debe ser un activo fijo')
-            if articulo['cod_tipo_activo'] != 'Com' and articulo['cod_tipo_activo'] != 'Veh' and articulo['cod_tipo_activo'] != 'OAc':
+            if articulo['cod_tipo_activo_id'] != 'Com' and articulo['cod_tipo_activo_id'] != 'Veh' and articulo['cod_tipo_activo_id'] != 'OAc':
                 raise ValidationError('Para programar un mantenimiento el bien debe ser de tipo computador, vehiculo u otro tipo de activo')
             if articulo['nivel_jerarquico'] != 5:
                 raise ValidationError('Para programar un mantenimiento el bien debe ser de nivel 5')
@@ -618,13 +619,13 @@ class CreateProgramacionMantenimiento(generics.CreateAPIView):
                     if int(aux_v_f_p_2[2]) <= 0 or int(aux_v_f_p_2[2]) >= 31:
                             raise ValidationError('Abril, Junio, Septiembre y Noviembre solo pueden tener entre 1 y 30 días')
                 i['fecha_programada'] = (datetime.strptime(i['fecha_programada'], '%Y-%m-%d')).date()
-                i['fecha_generada'] = date.today()
+                i['fecha_generada'] = datetime.now()
                 i['fecha_solicitud'] = (datetime.strptime(i['fecha_solicitud'], '%Y-%m-%d')).date()
                 a = i['fecha_generada'] - i['fecha_programada']
                 if (i['fecha_generada'] > i['fecha_solicitud']) or (i['fecha_generada'] > i['fecha_programada']) or (i['fecha_solicitud'] > i['fecha_programada']):
                     raise ValidationError('La fecha de programación y la fecha de solicitud no pueden ser menores a la fecha de hoy')
                 
-            i['fecha_generada'] = date.today()
+            i['fecha_generada'] = datetime.now()
             
             serializer = self.get_serializer(data=i)
             serializer.is_valid(raise_exception=True)
@@ -709,7 +710,7 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
             raise PermissionDenied('El artículo no tiene hoja de vida por lo que no se puede registrar mantenimiento')
         if articulo['cod_tipo_bien'] != 'A':
             raise NotFound('Para registrar un mantenimiento el bien debe ser un activo fijo')
-        if articulo['cod_tipo_activo'] != 'Com' and articulo['cod_tipo_activo'] != 'Veh' and articulo['cod_tipo_activo'] != 'OAc':
+        if articulo['cod_tipo_activo_id'] != 'Com' and articulo['cod_tipo_activo_id'] != 'Veh' and articulo['cod_tipo_activo_id'] != 'OAc':
             raise NotFound('Para registrar un mantenimiento el bien debe ser de tipo computador, vehiculo u otro tipo de activo')
         if articulo['nivel_jerarquico'] != 5:
             raise NotFound('Para registrar un mantenimiento el bien debe ser de nivel 5')
@@ -759,3 +760,14 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'success':True, 'detail':'Mantenimiento registrado con éxito'}, status=status.HTTP_200_OK)
+    
+class ControlMantenimientosProgramadosGetListView(generics.ListAPIView):
+    serializer_class=ControlMantenimientosProgramadosGetListSerializer
+    queryset=ProgramacionMantenimientos.objects.filter(ejecutado=False)
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        mantenimientos_programados = self.queryset.all()
+        serializer = self.serializer_class(mantenimientos_programados, many=True)
+
+        return Response({'success':True,'detail':'Se encontró la siguiente información','data':serializer.data},status=status.HTTP_200_OK)

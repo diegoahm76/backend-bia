@@ -18,4 +18,7 @@ urlpatterns = [
     
     # BIENES DE CONSUMO
     path('control/bienes-consumo/get-list/', views.ControlBienesConsumoGetListView.as_view(), name='control-activos-bienes-consumo-get-list'),
+    
+    # DESPACHOS
+    path('control/despachos/get-list/', views.ControlConsumoBienesGetListView.as_view(), name='control-despachos-get-list'),
 ]
