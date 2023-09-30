@@ -3,6 +3,7 @@ from rest_framework import generics, status
 from rest_framework.views import APIView
 from seguridad.utils import Util
 from almacen.serializers.mantenimientos_serializers import (
+    ControlMantenimientosProgramadosGetListSerializer,
     SerializerProgramacionMantenimientos,
     SerializerRegistroMantenimientos,
     AnularMantenimientoProgramadoSerializer,
@@ -759,3 +760,14 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'success':True, 'detail':'Mantenimiento registrado con éxito'}, status=status.HTTP_200_OK)
+    
+class ControlMantenimientosProgramadosGetListView(generics.ListAPIView):
+    serializer_class=ControlMantenimientosProgramadosGetListSerializer
+    queryset=ProgramacionMantenimientos.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        mantenimientos_programados = self.queryset.all()
+        serializer = self.serializer_class(mantenimientos_programados, many=True)
+
+        return Response({'success':True,'detail':'Se encontró la siguiente información','data':serializer.data},status=status.HTTP_200_OK)
