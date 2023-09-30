@@ -9,7 +9,7 @@ class ProgramacionMantenimientos(models.Model):
     id_articulo = models.ForeignKey(CatalogoBienes, on_delete=models.CASCADE, db_column='T069Id_Articulo')
     cod_tipo_mantenimiento = models.CharField(max_length=1, choices=tipo_mantenimiento_CHOICES, db_column='T069codTipoMantenimiento')
     fecha_generada = models.DateTimeField(db_column='T069fechaGenerada')
-    fecha_programada = models.DateField(db_column='T069fechaProgramada')
+    fecha_programada = models.DateField(db_column='T069fechaProgramada', blank=True, null=True)
     kilometraje_programado = models.IntegerField(db_column='T069kilometrajeProgramado', blank=True, null=True)
     motivo_mantenimiento = models.CharField(max_length=255, db_column='T069motivoMantenimiento')
     observaciones = models.CharField(max_length=255, db_column='T069observaciones', blank=True, null=True)

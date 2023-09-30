@@ -1,4 +1,5 @@
 from datetime import datetime
+import hashlib
 import os
 import secrets
 from gestion_documental.models.expedientes_models import ExpedientesDocumentales,ArchivosDigitales,DocumentosDeArchivoExpediente,IndicesElectronicosExp,Docs_IndiceElectronicoExp,CierresReaperturasExpediente,ArchivosSoporte_CierreReapertura
@@ -145,59 +146,158 @@ class ListaExpedientesDocumentales(generics.ListAPIView):
 
         
 ########################## CRUD DE ARCHIVO DE SOPORTE ##########################
-
 class AgregarArchivoSoporte(generics.CreateAPIView):
-    serializer_class = AgregarArchivoSoporteCreateSerializer
     permission_classes = [IsAuthenticated]
-    queryset = DocumentosDeArchivoExpediente.objects.all()
-    
+
     def post(self, request, format=None):
-        data_in = request.data
+        # Procesa los datos del archivo adjunto
+        uploaded_file = request.data.get('file')
 
-        persona_logueada = request.user.persona
-        data_in['id_persona_que_crea'] = persona_logueada.id_persona
+        if not uploaded_file:
+            return Response({'success': False,'detail': 'No se ha proporcionado ningún archivo'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not persona_logueada.id_unidad_organizacional_actual:
-            raise ValidationError("No tiene permiso para realizar esta acción")
+        try:
+            # Obtiene el año actual para determinar la carpeta de destino
+            current_year = datetime.now().year
+            ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year))
 
-        data_in['id_und_org_oficina_creadora'] = persona_logueada.id_unidad_organizacional_actual.id_unidad_organizacional
-        data_in['id_und_org_oficina_respon_actual'] = persona_logueada.id_unidad_organizacional_actual.id_unidad_organizacional
-        data_in['sub_sistema_incorporacion'] = 'GEST'
+            # Calcula el hash MD5 del archivo
+            md5_hash = hashlib.md5()
+            for chunk in uploaded_file.chunks():
+                md5_hash.update(chunk)
 
+            # Obtiene el valor hash MD5
+            md5_value = md5_hash.hexdigest()
 
-        # Determina el último orden en la base de datos y suma 1
-        last_order = DocumentosDeArchivoExpediente.objects.order_by('-orden_en_expediente').first()
-        if last_order is not None:
-            data_in['orden_en_expediente'] = last_order.orden_en_expediente + 1
-        else:
-            data_in['orden_en_expediente'] = 1
+            # Crea el archivo digital y obtiene su ID
+            data_archivo = {
+                'es_Doc_elec_archivo': False,
+                'ruta': ruta,
+                'md5_hash': md5_value  # Agregamos el hash MD5 al diccionario de datos
+            }
 
-        # Asegúrate de que 'id_expediente_documental' sea una instancia válida de ExpedientesDocumentales
-        id_expediente_documental_id = data_in.get('id_expediente_documental')
-        if id_expediente_documental_id:
-            try:
-                id_expediente_documental = ExpedientesDocumentales.objects.get(pk=id_expediente_documental_id)
-            except ExpedientesDocumentales.DoesNotExist:
-                raise ValidationError("El expediente documental especificado no existe.")
+            que_tal = ArchivosDgitalesCreate()
+            respuesta = que_tal.crear_archivo(data_archivo, uploaded_file)
+
+            if respuesta.status_code != status.HTTP_201_CREATED:
+                return respuesta
+
+            archivo_digital_id = respuesta.data.get('id_archivo_digital')
+
+            # Procesa los datos para agregar un documento de archivo expediente
+            data_in = request.data
+
+            persona_logueada = request.user.persona
+            data_in['id_persona_que_crea'] = persona_logueada.id_persona
+
+            if not persona_logueada.id_unidad_organizacional_actual:
+                raise ValidationError("No tiene permiso para realizar esta acción")
+
+            data_in['id_und_org_oficina_creadora'] = persona_logueada.id_unidad_organizacional_actual.id_unidad_organizacional
+            data_in['id_und_org_oficina_respon_actual'] = persona_logueada.id_unidad_organizacional_actual.id_unidad_organizacional
+            data_in['sub_sistema_incorporacion'] = 'GEST'
+
+            # Determina el último orden en la base de datos y suma 1
+            last_order = DocumentosDeArchivoExpediente.objects.order_by('-orden_en_expediente').first()
+            if last_order is not None:
+                data_in['orden_en_expediente'] = last_order.orden_en_expediente + 1
+            else:
+                data_in['orden_en_expediente'] = 1
+
+            # Asegúrate de que 'id_expediente_documental' sea una instancia válida de ExpedientesDocumentales
+            id_expediente_documental_id = data_in.get('id_expediente_documental')
+            if id_expediente_documental_id:
+                try:
+                    id_expediente_documental = ExpedientesDocumentales.objects.get(pk=id_expediente_documental_id)
+                except ExpedientesDocumentales.DoesNotExist:
+                    raise ValidationError("El expediente documental especificado no existe.")
+                
+                # Ahora puedes acceder a los atributos de 'id_expediente_documental'
+                if id_expediente_documental.cod_tipo_expediente == 'S':
+                    # Para Expedientes Simples (T236codTipoExpediente = S)
+                    data_in['identificacion_doc_en_expediente'] = f"{id_expediente_documental.codigo_exp_Agno}S{data_in['orden_en_expediente']:010d}"
+                elif id_expediente_documental.cod_tipo_expediente == 'C':
+                    # Para Expedientes Complejos (T236codTipoExpediente = C)
+                    data_in['identificacion_doc_en_expediente'] = f"{id_expediente_documental.codigo_exp_Agno}C{id_expediente_documental.codigo_exp_consec_por_agno:<04d}{data_in['orden_en_expediente']:06d}"
+                
+            serializer = AgregarArchivoSoporteCreateSerializer(data=data_in)
+            serializer.is_valid(raise_exception=True)
             
-            # Ahora puedes acceder a los atributos de 'id_expediente_documental'
-            if id_expediente_documental.cod_tipo_expediente == 'S':
-                # Para Expedientes Simples (T236codTipoExpediente = S)
-                data_in['identificacion_doc_en_expediente'] = f"{id_expediente_documental.codigo_exp_Agno}S{data_in['orden_en_expediente']:010d}"
-            elif id_expediente_documental.cod_tipo_expediente == 'C':
-                # Para Expedientes Complejos (T236codTipoExpediente = C)
-                # data_in['identificacion_doc_en_expediente'] = f"{id_expediente_documental.codigo_exp_Agno}C{id_expediente_documental.codigo_exp_consec_por_agno:04d}{data_in['orden_en_expedient]e']:06d}"
-                data_in['identificacion_doc_en_expediente'] = f"{id_expediente_documental.codigo_exp_Agno}C{id_expediente_documental.codigo_exp_consec_por_agno:<04d}{data_in['orden_en_expediente']:06d}"
-               
-        serializer = self.serializer_class(data=data_in)
-        serializer.is_valid(raise_exception=True)
-        
-        # Establece la fecha de incorporación como la fecha actual
-        serializer.validated_data['fecha_incorporacion_doc_a_Exp'] = datetime.now()
-        
-        estante = serializer.save()
+            # Establece la fecha de incorporación como la fecha actual
+            serializer.validated_data['fecha_incorporacion_doc_a_Exp'] = datetime.now()
+            
+            # Asigna el ID del archivo digital al campo 'id_archivo_sistema'
+            serializer.validated_data['id_archivo_sistema'] = archivo_digital_id
+            
+            # Guarda el archivo de soporte
+            archivo_soporte = serializer.save()
+            
+            # Retornar el hash MD5 y el archivo de soporte
+            response_data = {
+                "mensaje": "Archivo subido exitosamente",
+                "md5_hash": md5_value,
+                "archivo_soporte": serializer.data,
+                "archivo_digital": respuesta.data
+            }
 
-        return Response({'success': True, 'detail': 'Se crearon los registros correctamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_404_NOT_FOUND)
+        
+# class AgregarArchivoSoporte(generics.CreateAPIView):
+#     serializer_class = AgregarArchivoSoporteCreateSerializer
+#     permission_classes = [IsAuthenticated]
+#     queryset = DocumentosDeArchivoExpediente.objects.all()
+    
+#     def post(self, request, format=None):
+#         data_in = request.data
+
+#         persona_logueada = request.user.persona
+#         data_in['id_persona_que_crea'] = persona_logueada.id_persona
+
+#         if not persona_logueada.id_unidad_organizacional_actual:
+#             raise ValidationError("No tiene permiso para realizar esta acción")
+
+        
+#         data_in['id_und_org_oficina_creadora'] = persona_logueada.id_unidad_organizacional_actual.id_unidad_organizacional
+#         data_in['id_und_org_oficina_respon_actual'] = persona_logueada.id_unidad_organizacional_actual.id_unidad_organizacional
+#         data_in['sub_sistema_incorporacion'] = 'GEST'
+
+#         # Determina el último orden en la base de datos y suma 1
+#         last_order = DocumentosDeArchivoExpediente.objects.order_by('-orden_en_expediente').first()
+#         if last_order is not None:
+#             data_in['orden_en_expediente'] = last_order.orden_en_expediente + 1
+#         else:
+#             data_in['orden_en_expediente'] = 1
+
+#         # Asegúrate de que 'id_expediente_documental' sea una instancia válida de ExpedientesDocumentales
+#         id_expediente_documental_id = data_in.get('id_expediente_documental')
+#         if id_expediente_documental_id:
+#             try:
+#                 id_expediente_documental = ExpedientesDocumentales.objects.get(pk=id_expediente_documental_id)
+#             except ExpedientesDocumentales.DoesNotExist:
+#                 raise ValidationError("El expediente documental especificado no existe.")
+            
+#             # Ahora puedes acceder a los atributos de 'id_expediente_documental'
+#             if id_expediente_documental.cod_tipo_expediente == 'S':
+#                 # Para Expedientes Simples (T236codTipoExpediente = S)
+#                 data_in['identificacion_doc_en_expediente'] = f"{id_expediente_documental.codigo_exp_Agno}S{data_in['orden_en_expediente']:010d}"
+#             elif id_expediente_documental.cod_tipo_expediente == 'C':
+#                 # Para Expedientes Complejos (T236codTipoExpediente = C)
+#                 # data_in['identificacion_doc_en_expediente'] = f"{id_expediente_documental.codigo_exp_Agno}C{id_expediente_documental.codigo_exp_consec_por_agno:04d}{data_in['orden_en_expedient]e']:06d}"
+#                 data_in['identificacion_doc_en_expediente'] = f"{id_expediente_documental.codigo_exp_Agno}C{id_expediente_documental.codigo_exp_consec_por_agno:<04d}{data_in['orden_en_expediente']:06d}"
+               
+#         serializer = self.serializer_class(data=data_in)
+#         serializer.is_valid(raise_exception=True)
+        
+#         # Establece la fecha de incorporación como la fecha actual
+#         serializer.validated_data['fecha_incorporacion_doc_a_Exp'] = datetime.now()
+        
+#         expediente = serializer.save()
+
+      
+
+#         return Response({'success': True, 'detail': 'Se crearon los registros correctamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
 
 
     
@@ -263,33 +363,91 @@ class ListarTipologias(generics.ListAPIView):
 
 
 
+# class UploadPDFView(generics.CreateAPIView):
+#     queryset = ArchivosDigitales.objects.all()
+#     serializer_class = ArchivosDigitalesSerializer
+#     permission_classes = [IsAuthenticated]
+#     #parser_classes = (FileUploadParser,)
+#     def create(self, request, *args, **kwargs):
+#         uploaded_file = request.data.get('file')
+
+#         #archivo=request.data.get('archivo')
+#         if uploaded_file:
+#              # Obtiene el año actual para determinar la carpeta de destino
+#             current_year = datetime.now().year
+            
+#             ruta = os.path.join("home", "BIA", "Otros", "GDEA",str(current_year))
+#             ruta="home,BIA,Otros,GDEA,"+str(current_year)
+#             data_archivo={
+#             'es_Doc_elec_archivo':False,
+#             'ruta':ruta
+#             }
+#             que_tal=ArchivosDgitalesCreate()
+#             respuesta=que_tal.crear_archivo(data_archivo,uploaded_file)
+
+#             if respuesta.status_code!=status.HTTP_201_CREATED:
+#                 return respuesta  
+#             return respuesta
+#         else:
+#                 return Response({"error": "No se ha proporcionado ningún archivo"}, status=status.HTTP_400_BAD_REQUEST)
+        
+
 class UploadPDFView(generics.CreateAPIView):
     queryset = ArchivosDigitales.objects.all()
     serializer_class = ArchivosDigitalesSerializer
     permission_classes = [IsAuthenticated]
-    #parser_classes = (FileUploadParser,)
+
     def create(self, request, *args, **kwargs):
         uploaded_file = request.data.get('file')
 
-        #archivo=request.data.get('archivo')
-        if uploaded_file:
-             # Obtiene el año actual para determinar la carpeta de destino
-            current_year = datetime.now().year
-            
-            ruta = os.path.join("home", "BIA", "Otros", "GDEA",str(current_year))
-            ruta="home,BIA,Otros,GDEA,"+str(current_year)
-            data_archivo={
-            'es_Doc_elec_archivo':False,
-            'ruta':ruta
-            }
-            que_tal=ArchivosDgitalesCreate()
-            respuesta=que_tal.crear_archivo(data_archivo,uploaded_file)
+        if not uploaded_file:
+            return Response({"error": "No se ha proporcionado ningún archivo"}, status=status.HTTP_400_BAD_REQUEST)
 
-            if respuesta.status_code!=status.HTTP_201_CREATED:
-                return respuesta  
-            return respuesta
-        else:
-                return Response({"error": "No se ha proporcionado ningún archivo"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            # Obtiene el año actual para determinar la carpeta de destino
+            current_year = datetime.now().year
+            ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year))
+
+            # Calcula el hash MD5 del archivo
+            md5_hash = hashlib.md5()
+            for chunk in uploaded_file.chunks():
+                md5_hash.update(chunk)
+
+            # Obtiene el valor hash MD5
+            md5_value = md5_hash.hexdigest()
+
+            # A continuación, puedes utilizar md5_value según tus necesidades
+            # Por ejemplo, puedes agregarlo al diccionario data_archivo
+            data_archivo = {
+                'es_Doc_elec_archivo': False,
+                'ruta': ruta,
+                'md5_hash': md5_value  # Agregamos el hash MD5 al diccionario de datos
+            }
+
+            que_tal = ArchivosDgitalesCreate()
+            respuesta = que_tal.crear_archivo(data_archivo, uploaded_file)
+
+            if respuesta.status_code != status.HTTP_201_CREATED:
+                return respuesta
+
+            # Retornar el hash MD5 junto con "respuesta"
+            response_data = {
+                "mensaje": "Archivo subido exitosamente",
+                "md5_hash": md5_value,
+                "respuesta": respuesta.data  # Agregamos la respuesta de "que_tal"
+            }
+
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
+
+
+        
+        
 class ListarArchivosDigitales(generics.ListAPIView):
     queryset = ArchivosDigitales.objects.all()
     serializer_class = ArchivosDigitalesSerializer    
