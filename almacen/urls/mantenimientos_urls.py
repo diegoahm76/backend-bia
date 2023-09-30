@@ -19,4 +19,7 @@ urlpatterns = [
     path('ejecutados/delete/<str:pk>/',views.DeleteRegistroMantenimiento.as_view(),name='mantenimientos-ejecutados-delete'),
     path('ejecutados/update/<str:pk>/',views.UpdateRegistroMantenimiento.as_view(),name='mantenimiento-ejecutados-update'),
     path('ejecutados/create/',views.CreateRegistroMantenimiento.as_view(),name='mantenimiento-ejecutados-create'),
+    
+    # Control
+    path('programados/control/get-list/', views.ControlMantenimientosProgramadosGetListView.as_view(), name='control-mantenimientos-programados-get-list'),    
 ]
