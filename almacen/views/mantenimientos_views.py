@@ -763,7 +763,7 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
     
 class ControlMantenimientosProgramadosGetListView(generics.ListAPIView):
     serializer_class=ControlMantenimientosProgramadosGetListSerializer
-    queryset=ProgramacionMantenimientos.objects.all()
+    queryset=ProgramacionMantenimientos.objects.filter(ejecutado=False)
     permission_classes = [IsAuthenticated]
 
     def get(self,request):
