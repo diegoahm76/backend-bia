@@ -72,11 +72,12 @@ class AgregarArchivoSoporteCreateSerializer(serializers.ModelSerializer):
 
         # Unir las palabras clave formateadas de nuevo con "|"
         return '|'.join(palabras_clave)
+    
+    id_archivo_sistema = serializers.ReadOnlyField(source='id_archivo_sistema.id_archivo_digital.id_archivo_digital', default=None)
 
     class Meta:
         model = DocumentosDeArchivoExpediente
         fields = '__all__'
-        read_only_fields = ['fecha_incorporacion_doc_a_Exp']
 
 
    

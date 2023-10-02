@@ -12,8 +12,10 @@ from django.db.models import Q
 from datetime import datetime  
 from django.db import transaction
 from datetime import datetime,date,timedelta
+from gestion_documental.models.expedientes_models import ExpedientesDocumentales
+from seguridad.models import Personas
 from gestion_documental.models.depositos_models import  CarpetaCaja, Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
-from gestion_documental.serializers.depositos_serializers import CarpetaCajaGetOrdenSerializer, CarpetaCajaRotuloSerializer,BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteGetOrdenSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejaListCarpetaInfoSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaGetOrdenSerializer, CajaListBandejaInfoSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteDeleteSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajaListDepositoInfoSerializer, CajaListEstanteInfoSerializer, CajaRotuloSerializer, CajasByBandejaListSerializer, CarpetaCajaCreateSerializer, CarpetaCajaDeleteSerializer, CarpetaCajaMoveSerializer, CarpetaCajaSearchAdvancedSerializer, CarpetaCajaSearchSerializer, CarpetaCajaUpDateSerializer, CarpetaListCajaInfoSerializer, CarpetasByCajaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoGetAllSerializer, DepositoListCarpetaInfoSerializer, DepositoSearchSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, EstanteListCarpetaInfoSerializer, MoveEstanteSerializer
+from gestion_documental.serializers.depositos_serializers import CarpetaCajaConsultSerializer, CarpetaCajaGetOrdenSerializer, CarpetaCajaRotuloSerializer,BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteGetOrdenSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejaListCarpetaInfoSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaGetOrdenSerializer, CajaListBandejaInfoSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteDeleteSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajaListDepositoInfoSerializer, CajaListEstanteInfoSerializer, CajaRotuloSerializer, CajasByBandejaListSerializer, CarpetaCajaCreateSerializer, CarpetaCajaDeleteSerializer, CarpetaCajaMoveSerializer, CarpetaCajaSearchAdvancedSerializer, CarpetaCajaSearchSerializer, CarpetaCajaUpDateSerializer, CarpetaListCajaInfoSerializer, CarpetasByCajaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoGetAllSerializer, DepositoListCarpetaInfoSerializer, DepositoSearchSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, EstanteListCarpetaInfoSerializer, MoveEstanteSerializer, ReviewExpedienteSerializer
 from seguridad.utils import Util
 
 
@@ -2084,6 +2086,7 @@ class CarpetaGetAll(generics.ListAPIView):
                     'id_caja': carpeta.id_caja_bandeja.id_caja_bandeja,  
                     'identificacion_carpeta': carpeta.identificacion_por_caja,
                     'orden_ubicacion_carpeta': carpeta.orden_ubicacion_por_caja,
+                    'id_expediente': carpeta.id_expediente.id_expediente_documental,
                     'Informacion_Mostrar': f"{carpeta.orden_ubicacion_por_caja} - Carpeta {carpeta.identificacion_por_caja}"
                 }
                 resultados.append(resultado_formateado)
@@ -2093,3 +2096,120 @@ class CarpetaGetAll(generics.ListAPIView):
 
         except BandejaEstante.DoesNotExist:
             return Response({'success': False, 'detail': 'No se encontraron carpetas para el estante_deposito especificado.'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+class ConsultarNumeroExpediente(generics.ListAPIView):
+    serializer_class = CarpetaCajaConsultSerializer
+    queryset = CarpetaCaja.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get(self, request, id_carpeta_caja):
+        try:
+            # Buscar la carpeta por su id_carpeta_caja
+            carpeta = CarpetaCaja.objects.get(id_carpeta_caja=id_carpeta_caja)
+
+            # Obtener el ID del expediente asociado a la carpeta
+            id_expediente = carpeta.id_expediente_id
+
+            # Verificar si el ID del expediente es nulo
+            if id_expediente is None:
+                return Response({'success': False, 'detail': 'La carpeta no tiene expedientes asociados.'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Obtener el expediente asociado utilizando el ID
+            expediente = ExpedientesDocumentales.objects.get(id_expediente_documental=id_expediente)
+
+            # Construir el número de expediente en el formato deseado
+            numero_expediente = f"{expediente.codigo_exp_und_serie_subserie}-{expediente.codigo_exp_Agno}-{expediente.codigo_exp_consec_por_agno}"
+
+            # Devolver el número de expediente como respuesta JSON
+            return Response({'success': True, 
+                            'detail': 'Se encontraron los siguientes registros:',
+                            'id_carpeta': carpeta.id_carpeta_caja,
+                            'id_expediente': id_expediente,
+                            'numero_expediente': numero_expediente}, status=status.HTTP_200_OK)
+        except CarpetaCaja.DoesNotExist:
+            return Response({'success': False, 'detail': 'La carpeta no fue encontrada.'}, status=status.HTTP_404_NOT_FOUND)
+
+        except ExpedientesDocumentales.DoesNotExist:
+            return Response({'success': False, 'detail': 'El expediente no fue encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+class ReviewExpediente(generics.ListAPIView):
+
+    serializer_class = ReviewExpedienteSerializer
+    queryset = CarpetaCaja.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_carpeta_caja):
+        try:
+            # Buscar la carpeta por su id_carpeta_caja
+            carpeta = CarpetaCaja.objects.get(id_carpeta_caja=id_carpeta_caja)
+
+            # Obtener el ID del expediente asociado a la carpeta
+            id_expediente = carpeta.id_expediente_id
+
+            # Verificar si el ID del expediente es nulo
+            if id_expediente is None:
+                return Response({'success': False, 'detail': 'La carpeta no tiene expedientes asociados.'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Obtener el expediente asociado utilizando el ID
+            expediente = ExpedientesDocumentales.objects.get(id_expediente_documental=id_expediente)
+
+            # Obtener el tipo de expediente (simple o complejo)
+            tipo_expediente = expediente.cod_tipo_expediente
+
+            # Crear un diccionario para almacenar la información del expediente
+            info_expediente = {
+                'id_expediente': expediente.id_expediente_documental,
+                'id_carpeta_caja': carpeta.id_carpeta_caja,
+                'titulo_expediente': expediente.titulo_expediente,
+                'descripcion_expediente': expediente.descripcion_expediente,
+            }
+
+            if tipo_expediente == 'S':
+                # Expediente Simple
+                info_expediente['tipo_expediente'] = 'S = SIMPLE'
+                info_expediente['nombre_serie'] = expediente.id_serie_origen.nombre
+                info_expediente['titulo_expediente'] = expediente.titulo_expediente
+                info_expediente['descripcion_expediente'] = expediente.titulo_expediente
+                info_expediente['nombre_serie'] = expediente.id_serie_origen.nombre
+                info_expediente['nombre_subserie'] = expediente.id_subserie_origen.nombre
+                info_expediente['estado_expediente'] = expediente.estado
+                info_expediente['fecha_folio_inicial'] = expediente.fecha_folio_inicial
+                info_expediente['fecha_folio_final'] = expediente.fecha_folio_final
+                info_expediente['etapa_de_archivo'] = expediente.cod_etapa_de_archivo_actual_exped
+
+
+
+
+            elif tipo_expediente == 'C':
+                # Expediente Complejo
+                info_expediente['tipo_expediente'] = 'C = COMPLEJO'
+                info_expediente['tipo_expediente_cod'] = expediente.cod_tipo_expediente
+                info_expediente['nombre_serie'] = expediente.id_serie_origen.nombre
+                info_expediente['titulo_expediente'] = expediente.titulo_expediente
+                info_expediente['descripcion_expediente'] = expediente.titulo_expediente
+                info_expediente['nombre_serie'] = expediente.id_serie_origen.nombre
+                info_expediente['nombre_subserie'] = expediente.id_subserie_origen.nombre
+                info_expediente['id_persona_titular_exp_complejo'] = expediente.id_persona_titular_exp_complejo.id_persona if expediente.id_persona_titular_exp_complejo else None
+                if expediente.id_persona_titular_exp_complejo:
+                    nombres = expediente.id_persona_titular_exp_complejo.primer_nombre.title() if expediente.id_persona_titular_exp_complejo.primer_nombre else ''
+                    segundo_nombre = expediente.id_persona_titular_exp_complejo.segundo_nombre.title() if expediente.id_persona_titular_exp_complejo.segundo_nombre else ''
+                    apellidos = expediente.id_persona_titular_exp_complejo.primer_apellido.title() if expediente.id_persona_titular_exp_complejo.primer_apellido else ''
+                    segundo_apellido = expediente.id_persona_titular_exp_complejo.segundo_apellido.title() if expediente.id_persona_titular_exp_complejo.segundo_apellido else ''
+                    nombre_persona_titular = f"{nombres} {segundo_nombre} {apellidos} {segundo_apellido}".strip()
+                    info_expediente['Nombre_Persona_titular'] = nombre_persona_titular                
+                info_expediente['estado_expediente'] = expediente.estado
+                info_expediente['fecha_folio_inicial'] = expediente.fecha_folio_inicial
+                info_expediente['fecha_folio_final'] = expediente.fecha_folio_final
+                info_expediente['etapa_de_archivo'] = expediente.cod_etapa_de_archivo_actual_exped
+
+
+            return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': info_expediente}, status=status.HTTP_200_OK)
+        except CarpetaCaja.DoesNotExist:
+            return Response({'success': False, 'detail': 'La carpeta no fue encontrada.'}, status=status.HTTP_404_NOT_FOUND)
+
+        except ExpedientesDocumentales.DoesNotExist:
+            return Response({'success': False, 'detail': 'El expediente no fue encontrado.'}, status=status.HTTP_404_NOT_FOUND)
