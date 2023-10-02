@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.models.plantillas_models import AccesoUndsOrg_PlantillaDoc, PlantillasDoc
 from gestion_documental.models.trd_models import FormatosTiposMedio, TipologiasDoc
-from gestion_documental.serializers.plantillas_serializers import AccesoUndsOrg_PlantillaDocCreateSerializer, AccesoUndsOrg_PlantillaDocGetSerializer, PlantillasDocBusquedaAvanzadaDetalleSerializer, PlantillasDocBusquedaAvanzadaSerializer, PlantillasDocCreateSerializer, PlantillasDocGetSeriallizer, PlantillasDocSerializer, PlantillasDocUpdateSerializer, TipologiasDocSerializerGetSerializer
+from gestion_documental.serializers.plantillas_serializers import AccesoUndsOrg_PlantillaDocCreateSerializer, AccesoUndsOrg_PlantillaDocGetSerializer, OtrasTipologiasSerializerGetSerializer, PlantillasDocBusquedaAvanzadaDetalleSerializer, PlantillasDocBusquedaAvanzadaSerializer, PlantillasDocCreateSerializer, PlantillasDocGetSeriallizer, PlantillasDocSerializer, PlantillasDocUpdateSerializer, TipologiasDocSerializerGetSerializer
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 import os
 from rest_framework.permissions import IsAuthenticated
@@ -291,7 +291,7 @@ class BusquedaAvanzadaPlantillas(generics.ListAPIView):
     
     def get(self,request):
         filter={}
-        usuario = request.user.persona.id_persona
+        usuario = request.user.persona
 
         for key, value in request.query_params.items():
 
@@ -311,12 +311,24 @@ class BusquedaAvanzadaPlantillas(generics.ListAPIView):
                 if value != '':
                     filter['id_archivo_digital__formato__icontains'] = value                 
                 
-        #filter['activa']=True
-        #activas=PlantillasDoc.objects.filter(activa=True)
+        filter['activa']=True
+
+
+        
+       
+        if 'RT' in request.query_params.getlist('disponibilidad'):
+            unidad_organizacional=usuario.id_unidad_organizacional_actual
+            if not unidad_organizacional:
+                raise NotFound("No se encuentra vinculado a ninguna unidad organizacional.")
+            
+            plantilla_ids = AccesoUndsOrg_PlantillaDoc.objects.filter(id_unidad_organizacional=unidad_organizacional.id_unidad_organizacional).values_list('id_plantilla_doc', flat=True)
+            #print(plantilla_ids)
+            filter['id_plantilla_doc__in'] = plantilla_ids
+        else:
+            filter['cod_tipo_acceso__icontains']='TC'
         plantilla = self.queryset.all().filter(**filter)
-        for plan in plantilla:
-            print(plan)
-            #accesos = AccesoUndsOrg_PlantillaDoc
+
+
         serializador = self.serializer_class(plantilla,many=True)
         
         return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializador.data},status=status.HTTP_200_OK)
@@ -352,11 +364,11 @@ class BusquedaAvanzadaPlantillasAdmin(generics.ListAPIView):
         #activas=PlantillasDoc.objects.filter(activa=True)
         plantilla = self.queryset.all().filter(**filter)
         ids_de_plantillas = list(plantilla.values_list('id_archivo_digital', flat=True))
-        print(ids_de_plantillas)
+        #print(ids_de_plantillas)
         
         archivos_digitales=ArchivosDigitales.objects.filter(id_archivo_digital__in=ids_de_plantillas)
-        for a in archivos_digitales:
-            print (a)
+        # for a in archivos_digitales:
+        #     print (a)
         #raise ValidationError(ids_de_plantillas)
 
         serializador = self.serializer_class(plantilla,many=True)
@@ -403,3 +415,21 @@ class PlantillasDocGetDetalleById(generics.ListAPIView):
         
         return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializador},status=status.HTTP_200_OK)
         
+
+
+class OtrasTipologiasDocGetActivo(generics.ListAPIView):
+    serializer_class = OtrasTipologiasSerializerGetSerializer
+    queryset =PlantillasDoc.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get (self, request):
+        #instance = PlantillasDoc.objects.filter(activo=True)
+        instance = PlantillasDoc.objects.filter(activa=True).values('otras_tipologias').distinct()
+        for x in instance:
+            print(x)
+    
+        if not instance:
+            raise NotFound("No existen registros")
+
+        serializador = self.serializer_class(instance,many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data,}, status=status.HTTP_200_OK)
+    
