@@ -930,6 +930,19 @@ class BusquedaCCD(generics.ListAPIView):
 
 
 # HOMOLOGACIONES DE CCD - ENTREGA 55
+class BusquedaCCDView(generics.ListAPIView):
+    serializer_class = BusquedaCCDSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_ccd(self):
+        ccd_filtro = CuadrosClasificacionDocumental.objects.exclude(fecha_terminado=None).filter(fecha_retiro_produccion=None)
+        return ccd_filtro.order_by('-fecha_terminado')
+
+    def get(self, request):
+        ccd_filtro = self.get_ccd()
+        serializer = self.serializer_class(ccd_filtro, many=True)
+
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 class BusquedaCCDHomologacionView(generics.ListAPIView):
     serializer_class = BusquedaCCDHomologacionSerializer
@@ -952,23 +965,6 @@ class BusquedaCCDHomologacionView(generics.ListAPIView):
         serializer = self.serializer_class(ccd_filtro, many=True)
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
-
-class BusquedaCCDView(generics.ListAPIView):
-    serializer_class = BusquedaCCDSerializer
-    permission_classes = [IsAuthenticated]
-    
-    def get_ccd(self):
-        ccd_filtro = CuadrosClasificacionDocumental.objects.exclude(fecha_terminado=None).filter(fecha_retiro_produccion=None)
-        return ccd_filtro.order_by('-fecha_terminado')
-
-    def get(self, request):
-
-        ccd_filtro = self.get_ccd()
-        serializer = self.serializer_class(ccd_filtro, many=True)
-
-        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
-
-
 
 @staticmethod
 def obtener_unidades_ccd(unidades_actual, unidades_nueva):
@@ -1363,6 +1359,8 @@ class AgrupacionesDocumentalesPersistenteTemporalGetView(generics.ListAPIView):
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
 
+
+# ENTREGA 57
 class SeriesDocUnidadCCDActualGetView(generics.ListAPIView):
     serializer_class = SeriesDocUnidadHomologacionesSerializer
     permission_classes = [IsAuthenticated]

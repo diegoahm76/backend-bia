@@ -72,11 +72,11 @@ class SerieSubserioUnidadGet(generics.ListAPIView):
         
         
        
-        # catalogo_serie_unidad=CatSeriesUnidadOrgCCDTRD.objects.filter(id_cat_serie_und__in=instance)
-        # for x in catalogo_serie_unidad:
-        #     print((x))
+        catalogo_serie_unidad=CatSeriesUnidadOrgCCDTRD.objects.filter(id_cat_serie_und__in=instance)
+        for x in catalogo_serie_unidad:
+            print((x))
         
+        #serializador=self.serializer_class(catalogo_serie_unidad,many=True)
         serializador=self.serializer_class(instance,many=True)
-
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data}, status=status.HTTP_200_OK)
     
