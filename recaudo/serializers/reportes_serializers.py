@@ -71,7 +71,7 @@ class CarteraGeneralDetalleSerializer(serializers.ModelSerializer):
      
     class Meta:
         model = Cartera
-        fields = ('codigo_contable', 'concepto_deuda', 'identificacion', 'nombre_deudor', 'numero_factura', 'expediente', 'resolucion', 'auto', 'recurso', 'valor_sancion')
+        fields = ('id','codigo_contable', 'concepto_deuda', 'identificacion', 'nombre_deudor', 'numero_factura', 'expediente', 'resolucion', 'auto', 'recurso', 'valor_sancion')
 
 
 
