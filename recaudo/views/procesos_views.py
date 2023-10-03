@@ -123,8 +123,8 @@ class DeleteAtributosEtapasView(generics.ListAPIView):
     serializer_class = AtributosEtapasSerializer
     #permission_classes = [IsAuthenticated]
 
-    def get(self, request, etapa):
-        queryset = AtributosEtapas.objects.filter(id_etapa=etapa)
+    def get(self, request, etapa, categoria):
+        queryset = AtributosEtapas.objects.filter(id_etapa=etapa).filter(id_categoria=categoria)
         queryset.delete()
         serializer = self.serializer_class(queryset, many=True)
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)

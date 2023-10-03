@@ -235,6 +235,28 @@ class PlantillasDocUpdateUpdate(generics.UpdateAPIView):
     serializer_class = PlantillasDocUpdateSerializer
     permission_classes = [IsAuthenticated]
 
+    def comparar_arreglos(self,base,json):
+                arregloBase = base
+                    
+                arregloJson = json
+                # Convertimos los arreglos en conjuntos
+                set_arregloBase = set(arregloBase)
+                set_arregloJson = set(arregloJson)
+
+                # Obtenemos los elementos en arregloBase pero no en arregloJson
+                elementos_en_arregloBase_no_en_arregloJson = set_arregloBase.difference(set_arregloJson)
+
+                # Obtenemos los elementos en arregloJson pero no en arregloBase
+                elementos_en_arregloJson_no_en_arregloBase = set_arregloJson.difference(set_arregloBase)
+
+                # Convertimos los resultados de nuevo a listas para mostrarlos
+                elementos_en_arregloBase_no_en_arregloJson = list(elementos_en_arregloBase_no_en_arregloJson)
+                elementos_en_arregloJson_no_en_arregloBase = list(elementos_en_arregloJson_no_en_arregloBase)
+
+                print("Elementos en arregloBase pero no en arregloJson:", elementos_en_arregloBase_no_en_arregloJson)
+                print("Elementos en arregloJson pero no en arregloBase:", elementos_en_arregloJson_no_en_arregloBase)
+                return elementos_en_arregloJson_no_en_arregloBase,elementos_en_arregloBase_no_en_arregloJson
+    
     def put(self, request, *args, **kwargs):
 
         data_in=request.data
@@ -287,26 +309,9 @@ class PlantillasDocUpdateUpdate(generics.UpdateAPIView):
             serializer.is_valid(raise_exception=True)
             instance = serializer.save()
 
-            if 'eliminar_acceso' in data_in and data_in['eliminar_acceso']:
-                data_json = request.data.get('eliminar_acceso')
-                data_dict={}
-                try:
-                
-                    data_dict = json.loads(data_json)
-                except json.JSONDecodeError:
-                    return Response({'error': 'El campo "data_json" debe ser un JSON válido.'}, status=status.HTTP_400_BAD_REQUEST)
-                print(data_dict)
-                
 
-                eliminar_acceso=AccesoUndsOrg_PlantillaDocDelete()
-                for dato in data_dict:
-                    if 'id_acceso_und_org_plantilla_doc' in dato and  dato['id_acceso_und_org_plantilla_doc']:
-                        respuesta=eliminar_acceso.eliminar(dato['id_acceso_und_org_plantilla_doc'])
-            
-                        if respuesta.status_code!=status.HTTP_204_NO_CONTENT:
-                                return respuesta   
-                        data_eliminada.append(respuesta.data['data'])
-   
+
+
             
             id_planilla=instance.id_plantilla_doc
             if 'acceso_unidades' in data_in and data_in['acceso_unidades']:
@@ -318,12 +323,42 @@ class PlantillasDocUpdateUpdate(generics.UpdateAPIView):
                     data_dict = json.loads(data_json)
                 except json.JSONDecodeError:
                     return Response({'error': 'El campo "data_json" debe ser un JSON válido.'}, status=status.HTTP_400_BAD_REQUEST)
-                #print(data_dict)
+      
+
+                unidades_acceso_query=AccesoUndsOrg_PlantillaDoc.objects.filter(id_plantilla_doc=instance.id_plantilla_doc).values_list('id_unidad_organizacional', flat=True)
+                unidades_acceso=[]
+                unidades_acceso_json=[]
+                for acceso in unidades_acceso_query:
+                    unidades_acceso.append(acceso)
+                    #unidades_acceso.append(acceso.id_unidad_organizacional)
+                print(unidades_acceso)
+
                 for acceso in data_dict:
-                    response=crear_acceso.crear_acceso({**acceso,"id_plantilla_doc":id_planilla})
+                    unidades_acceso_json.append(acceso['id_unidad_organizacional'])
+                print(unidades_acceso_json)
+
+ 
+                elementos_crear,elementos_eliminar=self.comparar_arreglos(unidades_acceso,unidades_acceso_json)
+                ##
+                #Crea los que no estan en base de datos
+                for acceso in elementos_crear:
+                    
+                    response=crear_acceso.crear_acceso({'id_unidad_organizacional':acceso,"id_plantilla_doc":id_planilla})
                     if response.status_code!=status.HTTP_201_CREATED:
                             return response   
                     data_acceso_nueva.append(response.data['data'])
+                
+                eliminar_acceso=AccesoUndsOrg_PlantillaDocDelete()
+                unidades_acceso_query_delete=AccesoUndsOrg_PlantillaDoc.objects.filter(id_unidad_organizacional__in=elementos_eliminar)
+                for dato in unidades_acceso_query_delete:
+                    
+                        respuesta=eliminar_acceso.eliminar(dato.id_acceso_und_org_plantilla_doc)
+            
+                        if respuesta.status_code!=status.HTTP_200_OK:
+                                return respuesta   
+                        data_eliminada.append(respuesta.data['data'])
+   
+                
             response_data=serializer.data
             response_data['eliminar_acceso']=data_eliminada
             response_data['data_acceso_nueva']=data_acceso_nueva
