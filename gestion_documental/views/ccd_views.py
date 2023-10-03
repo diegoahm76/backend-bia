@@ -1123,7 +1123,18 @@ class CompararSeriesDocUnidadCatSerieView(generics.ListAPIView):
         return data
 
     def get(self, request):
-        data_in = request.data
+
+        id_unidad_actual = self.request.query_params.get('id_unidad_actual', None)
+        id_unidad_nueva = self.request.query_params.get('id_unidad_nueva', None)
+        id_ccd_actual = self.request.query_params.get('id_ccd_actual', None)
+        id_ccd_nuevo = self.request.query_params.get('id_ccd_nuevo', None)
+        
+        data_in = {
+            "id_ccd_actual": id_ccd_actual,
+            "id_ccd_nuevo": id_ccd_nuevo,
+            "id_unidad_actual": id_unidad_actual,
+            "id_unidad_nueva": id_unidad_nueva
+        }
         data = self.get_series_doc_unidad_cat_serie(data_in)
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
  
