@@ -1059,7 +1059,7 @@ class CompararSeriesDocUnidadView(generics.ListAPIView):
             'id_ccd_actual':ccd_actual.id_ccd,
             'id_ccd_nuevo':ccd.id_ccd,
             'mismo_organigrama':mismo_organigrama,
-            'coincdencias': obtener_unidades_ccd(unidades_actual, unidades_nueva)
+            'coincidencias': obtener_unidades_ccd(unidades_actual, unidades_nueva)
         }
 
         return data
