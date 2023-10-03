@@ -45,14 +45,25 @@ class ArchivosDgitalesCreate(generics.CreateAPIView):
             data['formato'] = extension_sin_punto
             
             data['tamagno_kb'] =int(self.obtener_tamano_archivo(archivo))
-            data['nombre_de_Guardado'] = nombre_sin_extension
+            if not('nombre_de_Guardado' in data):
+
+                data['nombre_de_Guardado'] = nombre_sin_extension
             
         
             data['ruta_archivo'] = archivo
 
             serializer = ArchivosDigitalesCreateSerializer(data=data)
             serializer.is_valid(raise_exception=True)
-            serializer.save(subcarpeta=ruta)
+            if 'nombre_cifrado' in data:
+                condicion=True
+                if data['nombre_cifrado']:
+                    if data['nombre_cifrado']=='False':
+                        condicion=False
+
+                        serializer.save(subcarpeta=ruta,nombre_cifrado=False)
+            else:
+
+                serializer.save(subcarpeta=ruta)
 
             return Response({'data':serializer.data}, status=status.HTTP_201_CREATED)
     

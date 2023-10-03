@@ -76,8 +76,24 @@ class PlantillasDocCreate(generics.CreateAPIView):
         data_archivo_digital= respuesta.data['data']      
         di_archivo=data_archivo_digital['id_archivo_digital']
         data_in['id_archivo_digital'] =  di_archivo              
-    
-       
+        
+        
+        if data_in['asociada_a_tipologia_doc_trd']=='True':
+                if 'id_tipologia_doc_trd' in data_in:
+                    if not data_in['id_tipologia_doc_trd']:
+                        raise ValidationError("Se requiere asociar una tipologia")
+                else:
+                    raise ValidationError("Se requiere asociar una tipologia.")
+                
+        else:
+            if 'otras_tipologias' in data_in:
+                if not data_in['otras_tipologias']:
+                    raise ValidationError('Debe asociar otra tiplogia tipologia.')
+
+            else: 
+              
+                raise ValidationError('Debe asociar otra tiplogia tipologia.')
+            
         try:
             serializer = self.serializer_class(data=data_in)
             serializer.is_valid(raise_exception=True)
@@ -225,9 +241,47 @@ class PlantillasDocUpdateUpdate(generics.UpdateAPIView):
         instance = self.get_object()
         data_eliminada=[]
         data_acceso_nueva=[]
+        data_archivo_digital={}
         if not instance:
             raise NotFound("No existe un dato  asociada a esta id")
         try:
+
+            #Actualizar archivo
+            if 'archivo' in data_in:
+                ruta = os.path.join("home", "BIA", "Otros", "Plantillas")
+            
+                print(ruta)
+            
+                if not 'archivo' in data_in:
+                    raise ValidationError("No se ha proporcionado ningún archivo.")
+                archivo = request.data.get('archivo')
+                data_archivo={
+                    'es_Doc_elec_archivo':False,
+                    'ruta':ruta
+                }
+                nombre=archivo.name
+                nombre_sin_extension, extension = os.path.splitext(nombre)
+                extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+                if not extension_sin_punto:
+                    raise ValidationError("No fue posible registrar el archivo")
+                
+                formatos=FormatosTiposMedio.objects.filter(nombre=extension_sin_punto,activo=True)
+
+                if not formatos:
+                    raise ValidationError("Este formato "+str(extension_sin_punto)+" de archivo no esta permitido")
+            
+                que_tal=ArchivosDgitalesCreate()
+                respuesta=que_tal.crear_archivo(data_archivo,archivo)
+
+        
+                if respuesta.status_code!=status.HTTP_201_CREATED:
+                    return respuesta   
+
+                data_archivo_digital= respuesta.data['data']      
+                di_archivo=data_archivo_digital['id_archivo_digital']
+                data_in['id_archivo_digital'] =  di_archivo     
+
+                instance.id_archivo_digital.delete()
 
             serializer = self.get_serializer(instance, data=data_in,partial=True)
             serializer.is_valid(raise_exception=True)
@@ -273,7 +327,10 @@ class PlantillasDocUpdateUpdate(generics.UpdateAPIView):
             response_data=serializer.data
             response_data['eliminar_acceso']=data_eliminada
             response_data['data_acceso_nueva']=data_acceso_nueva
+            response_data['data_archivo_digital']=data_archivo_digital
             #response_data['preguntas']=data_response_pregunta
+
+
             return Response({
                 "success": True,
                 "detail": "Se actualizó correctamente",
