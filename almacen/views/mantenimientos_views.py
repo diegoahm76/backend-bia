@@ -619,7 +619,7 @@ class CreateProgramacionMantenimiento(generics.CreateAPIView):
                     if int(aux_v_f_p_2[2]) <= 0 or int(aux_v_f_p_2[2]) >= 31:
                             raise ValidationError('Abril, Junio, Septiembre y Noviembre solo pueden tener entre 1 y 30 días')
                 i['fecha_programada'] = (datetime.strptime(i['fecha_programada'], '%Y-%m-%d')).date()
-                i['fecha_generada'] = datetime.now()
+                i['fecha_generada'] = datetime.now().date()
                 i['fecha_solicitud'] = (datetime.strptime(i['fecha_solicitud'], '%Y-%m-%d')).date()
                 a = i['fecha_generada'] - i['fecha_programada']
                 if (i['fecha_generada'] > i['fecha_solicitud']) or (i['fecha_generada'] > i['fecha_programada']) or (i['fecha_solicitud'] > i['fecha_programada']):
