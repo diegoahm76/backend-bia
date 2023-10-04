@@ -50,8 +50,22 @@ class ExpedienteGetOrdenSerializer(serializers.ModelSerializer):
     class Meta:
         model =  DocumentosDeArchivoExpediente
         fields = '__all__'
+ 
 
 
+ #Cierre_Expediente  
+class CierreExpedienteSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  CierresReaperturasExpediente
+        fields = '__all__'
+
+#ArchivosSoporte_CierreReapertura
+class ArchivosSoporteCierreReaperturaSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  ArchivosSoporte_CierreReapertura
+        fields = '__all__'
 
 
 ######################### SERIALIZERS DOCUMENTOS DE ARCHIVO DE EXPEDIENTE #########################
@@ -72,8 +86,6 @@ class AgregarArchivoSoporteCreateSerializer(serializers.ModelSerializer):
 
         # Unir las palabras clave formateadas de nuevo con "|"
         return '|'.join(palabras_clave)
-    
-    id_archivo_sistema = serializers.ReadOnlyField(source='id_archivo_sistema.id_archivo_digital.id_archivo_digital', default=None)
 
     class Meta:
         model = DocumentosDeArchivoExpediente
