@@ -165,7 +165,7 @@ class DetallesLiquidacionBaseView(generics.GenericAPIView):
 
 
 class ExpedientesView(generics.ListAPIView):
-    queryset = Expedientes.objects.all()
+    queryset = Expedientes.objects.filter(id_deudor__isnull=False)
     serializer_class = ExpedientesSerializer
     #permission_classes = [IsAuthenticated]
 

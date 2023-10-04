@@ -89,7 +89,7 @@ class ControlMantenimientosProgramadosGetListSerializer(serializers.ModelSeriali
         if obj.fecha_programada:
             if current_date > obj.fecha_programada and not obj.ejecutado:
                 dias_kilometros_vencidos = abs((current_date - obj.fecha_programada).days)
-        elif obj.kilometraje_programado:
+        elif obj.kilometraje_programado and kilometraje_actual:
             if kilometraje_actual > obj.kilometraje_programado and not obj.ejecutado:
                 dias_kilometros_vencidos = kilometraje_actual - obj.kilometraje_programado 
             

@@ -38,4 +38,4 @@ class AccesoUndsOrg_PlantillaDoc(models.Model):
         unique_together = ('id_plantilla_doc', 'id_unidad_organizacional')
 
     def __str__(self):
-        return f'Acceso a plantilla {self.id_plantilla_doc} para unidad organizacional {self.id_und_organizacional}'
+        return f'Acceso a plantilla {self.id_plantilla_doc} para unidad organizacional {self.id_unidad_organizacional}'
