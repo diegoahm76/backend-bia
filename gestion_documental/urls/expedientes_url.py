@@ -16,6 +16,7 @@ urlpatterns = [
      path('expedientes/listar-archivos/',views.ListarArchivosDigitales.as_view(), name='listar-archvios-digitales'),
      path('expedientes/listar-expedientes/',views.ListaExpedientesDocumentales.as_view(), name='listar-expedientes'),
      path('expedientes/archivos-digitales/create/',views_archivos.ArchivosDgitalesCreate.as_view(), name='crear-archvios'),
+     path('expedientes/cierre-expediente/',views.CierreExpediente.as_view(), name='cierre-expediente'),
 
      
 ]
