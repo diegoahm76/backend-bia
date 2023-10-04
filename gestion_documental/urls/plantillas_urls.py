@@ -11,7 +11,10 @@ urlpatterns = [
     path('plantilla_documento/get_detalle_id/<str:pk>/', views.PlantillasDocGetDetalleById.as_view(),name='listar-detalle-plantilla'),
     #
     path('plantilla_documento/get/busqueda_avanzada_admin/', views.BusquedaAvanzadaPlantillasAdmin.as_view(),name='busqueda-plantilla-admin'),
-    
+    #OtrasTipologiasDocGetActivo
+    path('otras_tipologias/get/', views.OtrasTipologiasDocGetActivo.as_view(),name='otras-tipologias-plantilla-admin'),
+
+
     path('tipos_tipologia/get/',views.TipologiasDocGetActivo.as_view(),name='listar-tipologias'),
     path('acceso/create/',views.AccesoUndsOrg_PlantillaDocCreate.as_view(),name='crear-acceso'),
     path('acceso/delete/<str:pk>/', views.AccesoUndsOrg_PlantillaDocDelete.as_view(),name='eliminar-acceso'),

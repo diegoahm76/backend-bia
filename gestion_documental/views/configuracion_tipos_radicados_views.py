@@ -141,8 +141,8 @@ class ConfigTiposRadicadoAgnoUpdate(generics.UpdateAPIView):
 
     def put(self, request, pk):
         data_in = request.data
-        usuario = request.user.id_usuario
-        #direccion=
+        usuario = request.user.persona.id_persona
+        #direccion=#
         data_in['user']=usuario#id_persona_config_implementacion
         data_in['direccion']=Util.get_client_ip(request)
         response= self.actualizar_config_tipos_radicado_agno(data_in,pk)

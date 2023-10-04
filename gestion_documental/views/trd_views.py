@@ -5,6 +5,7 @@ import copy
 from datetime import datetime
 from rest_framework import generics
 from rest_framework.response import Response
+from gestion_documental.models.plantillas_models import PlantillasDoc
 from gestion_documental.models.tca_models import TablasControlAcceso
 from seguridad.utils import Util
 from rest_framework.permissions import IsAuthenticated
@@ -136,9 +137,23 @@ class ModificarTipologiaDocumental(generics.UpdateAPIView):
             elif tipologias.activo != data['activo']:
                 raise ValidationError('No se puede actualizar el estado de una Tipologia que esta siendo usada.')    
         
+
+        if tipologias.activo==True:
+            if 'activo' in data:
+                if data['activo']==False:
+                    plantillas_asociadas_tiplogia=PlantillasDoc.objects.filter(id_tipologia_doc_trd=tipologias.id_tipologia_documental)
+                    for x in plantillas_asociadas_tiplogia:
+                        #print (x)
+                        nombre_tipologia=x.id_tipologia_doc_trd.nombre
+                        x.id_tipologia_doc_trd=None
+                        x.otras_tipologias=nombre_tipologia
+                        x.asociada_a_tipologia_doc_trd=False
+                        x.save()
+            
         serializador = self.serializer_class(tipologias,data=data)
         serializador.is_valid(raise_exception=True)
         tipologia = serializador.save()
+        
         
         id_lista_formatos = data['formatos']
         id_cod_tipo_medio = data['cod_tipo_medio_doc']

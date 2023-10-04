@@ -930,6 +930,19 @@ class BusquedaCCD(generics.ListAPIView):
 
 
 # HOMOLOGACIONES DE CCD - ENTREGA 55
+class BusquedaCCDView(generics.ListAPIView):
+    serializer_class = BusquedaCCDSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_ccd(self):
+        ccd_filtro = CuadrosClasificacionDocumental.objects.exclude(fecha_terminado=None).filter(fecha_retiro_produccion=None)
+        return ccd_filtro.order_by('-fecha_terminado')
+
+    def get(self, request):
+        ccd_filtro = self.get_ccd()
+        serializer = self.serializer_class(ccd_filtro, many=True)
+
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 class BusquedaCCDHomologacionView(generics.ListAPIView):
     serializer_class = BusquedaCCDHomologacionSerializer
@@ -952,23 +965,6 @@ class BusquedaCCDHomologacionView(generics.ListAPIView):
         serializer = self.serializer_class(ccd_filtro, many=True)
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
-
-class BusquedaCCDView(generics.ListAPIView):
-    serializer_class = BusquedaCCDSerializer
-    permission_classes = [IsAuthenticated]
-    
-    def get_ccd(self):
-        ccd_filtro = CuadrosClasificacionDocumental.objects.exclude(fecha_terminado=None).filter(fecha_retiro_produccion=None)
-        return ccd_filtro.order_by('-fecha_terminado')
-
-    def get(self, request):
-
-        ccd_filtro = self.get_ccd()
-        serializer = self.serializer_class(ccd_filtro, many=True)
-
-        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
-
-
 
 @staticmethod
 def obtener_unidades_ccd(unidades_actual, unidades_nueva):
@@ -1063,7 +1059,7 @@ class CompararSeriesDocUnidadView(generics.ListAPIView):
             'id_ccd_actual':ccd_actual.id_ccd,
             'id_ccd_nuevo':ccd.id_ccd,
             'mismo_organigrama':mismo_organigrama,
-            'coincdencias': obtener_unidades_ccd(unidades_actual, unidades_nueva)
+            'coincidencias': obtener_unidades_ccd(unidades_actual, unidades_nueva)
         }
 
         return data
@@ -1127,7 +1123,18 @@ class CompararSeriesDocUnidadCatSerieView(generics.ListAPIView):
         return data
 
     def get(self, request):
-        data_in = request.data
+
+        id_unidad_actual = self.request.query_params.get('id_unidad_actual', None)
+        id_unidad_nueva = self.request.query_params.get('id_unidad_nueva', None)
+        id_ccd_actual = self.request.query_params.get('id_ccd_actual', None)
+        id_ccd_nuevo = self.request.query_params.get('id_ccd_nuevo', None)
+        
+        data_in = {
+            "id_ccd_actual": id_ccd_actual,
+            "id_ccd_nuevo": id_ccd_nuevo,
+            "id_unidad_actual": id_unidad_actual,
+            "id_unidad_nueva": id_unidad_nueva
+        }
         data = self.get_series_doc_unidad_cat_serie(data_in)
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
  
@@ -1363,6 +1370,8 @@ class AgrupacionesDocumentalesPersistenteTemporalGetView(generics.ListAPIView):
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
 
+
+# ENTREGA 57
 class SeriesDocUnidadCCDActualGetView(generics.ListAPIView):
     serializer_class = SeriesDocUnidadHomologacionesSerializer
     permission_classes = [IsAuthenticated]

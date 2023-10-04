@@ -10,7 +10,7 @@ from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCr
 from seguridad.utils import Util
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, ArchivosDigitalesSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, ListarTRDSerializer, ListarTipologiasSerializer
+from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, CierreExpedienteSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, ListarTRDSerializer, ListarTipologiasSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Max 
@@ -149,6 +149,7 @@ class ListaExpedientesDocumentales(generics.ListAPIView):
 class AgregarArchivoSoporte(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
+    @transaction.atomic
     def post(self, request, format=None):
         # Procesa los datos del archivo adjunto
         uploaded_file = request.data.get('file')
@@ -182,7 +183,7 @@ class AgregarArchivoSoporte(generics.CreateAPIView):
             if respuesta.status_code != status.HTTP_201_CREATED:
                 return respuesta
 
-            archivo_digital_id = respuesta.data.get('id_archivo_digital')
+            archivo_digital_id = respuesta.data.get('data').get('id_archivo_digital')
 
             # Procesa los datos para agregar un documento de archivo expediente
             data_in = request.data
@@ -219,21 +220,59 @@ class AgregarArchivoSoporte(generics.CreateAPIView):
                 elif id_expediente_documental.cod_tipo_expediente == 'C':
                     # Para Expedientes Complejos (T236codTipoExpediente = C)
                     data_in['identificacion_doc_en_expediente'] = f"{id_expediente_documental.codigo_exp_Agno}C{id_expediente_documental.codigo_exp_consec_por_agno:<04d}{data_in['orden_en_expediente']:06d}"
-                
-            serializer = AgregarArchivoSoporteCreateSerializer(data=data_in)
-            serializer.is_valid(raise_exception=True)
-            
+
             # Establece la fecha de incorporación como la fecha actual
-            serializer.validated_data['fecha_incorporacion_doc_a_Exp'] = datetime.now()
+            data_in['fecha_incorporacion_doc_a_Exp'] = datetime.now()
             
             # Asigna el ID del archivo digital al campo 'id_archivo_sistema'
-            serializer.validated_data['id_archivo_sistema'] = archivo_digital_id
-            
-            # Guarda el archivo de soporte
+            data_in['id_archivo_sistema'] = archivo_digital_id
+
+            # Obtener el índice electrónico del expediente que se está cerrando (debe reemplazar '1' con el ID correcto)
+            indice_electronico = IndicesElectronicosExp.objects.get(pk=1)  # Reemplaza 1 con el ID correcto
+
+            # Obtener el número de folios ingresado en el formulario
+            nro_folios_del_doc = data_in.get('nro_folios_del_doc')
+
+            # Calcular la página de inicio
+            last_index_doc = Docs_IndiceElectronicoExp.objects.filter(id_indice_electronico_exp=indice_electronico).order_by('-pagina_fin').first()
+            if last_index_doc:
+                pagina_inicio = last_index_doc.pagina_fin + 1
+            else:
+                pagina_inicio = 1
+
+            # Calcular la página final
+            pagina_inicio = int(pagina_inicio)
+            nro_folios_del_doc = int(nro_folios_del_doc)
+            pagina_fin = pagina_inicio + nro_folios_del_doc - 1
+
+            # Guardar el archivo de soporte
+            serializer = AgregarArchivoSoporteCreateSerializer(data=data_in)
+            serializer.is_valid(raise_exception=True)
             archivo_soporte = serializer.save()
-            
+
+            # Crear un registro en T240Docs_IndiceElectronicoExp
+            Docs_IndiceElectronicoExp.objects.create(
+                id_indice_electronico_exp=indice_electronico,
+                id_doc_archivo_exp=archivo_soporte,
+                identificación_doc_exped=archivo_soporte.identificacion_doc_en_expediente,
+                nombre_documento=archivo_soporte.nombre_asignado_documento,
+                id_tipologia_documental=archivo_soporte.id_tipologia_documental,
+                fecha_creacion_doc=archivo_soporte.fecha_creacion_doc,
+                fecha_incorporacion_exp=archivo_soporte.fecha_incorporacion_doc_a_Exp,
+                valor_huella=md5_value,
+                funcion_resumen="MD5",
+                orden_doc_expediente=archivo_soporte.orden_en_expediente,
+                pagina_inicio=pagina_inicio,
+                pagina_fin=pagina_fin,
+                formato = archivo_soporte.id_archivo_sistema.formato,
+                tamagno_kb=archivo_soporte.id_archivo_sistema.tamagno_kb,
+                cod_origen_archivo=archivo_soporte.cod_origen_archivo,
+                es_un_archivo_anexo=archivo_soporte.es_un_archivo_anexo,
+            )
+
             # Retornar el hash MD5 y el archivo de soporte
             response_data = {
+                'success': True,
                 "mensaje": "Archivo subido exitosamente",
                 "md5_hash": md5_value,
                 "archivo_soporte": serializer.data,
@@ -243,61 +282,7 @@ class AgregarArchivoSoporte(generics.CreateAPIView):
             return Response(response_data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_404_NOT_FOUND)
-        
-# class AgregarArchivoSoporte(generics.CreateAPIView):
-#     serializer_class = AgregarArchivoSoporteCreateSerializer
-#     permission_classes = [IsAuthenticated]
-#     queryset = DocumentosDeArchivoExpediente.objects.all()
-    
-#     def post(self, request, format=None):
-#         data_in = request.data
 
-#         persona_logueada = request.user.persona
-#         data_in['id_persona_que_crea'] = persona_logueada.id_persona
-
-#         if not persona_logueada.id_unidad_organizacional_actual:
-#             raise ValidationError("No tiene permiso para realizar esta acción")
-
-        
-#         data_in['id_und_org_oficina_creadora'] = persona_logueada.id_unidad_organizacional_actual.id_unidad_organizacional
-#         data_in['id_und_org_oficina_respon_actual'] = persona_logueada.id_unidad_organizacional_actual.id_unidad_organizacional
-#         data_in['sub_sistema_incorporacion'] = 'GEST'
-
-#         # Determina el último orden en la base de datos y suma 1
-#         last_order = DocumentosDeArchivoExpediente.objects.order_by('-orden_en_expediente').first()
-#         if last_order is not None:
-#             data_in['orden_en_expediente'] = last_order.orden_en_expediente + 1
-#         else:
-#             data_in['orden_en_expediente'] = 1
-
-#         # Asegúrate de que 'id_expediente_documental' sea una instancia válida de ExpedientesDocumentales
-#         id_expediente_documental_id = data_in.get('id_expediente_documental')
-#         if id_expediente_documental_id:
-#             try:
-#                 id_expediente_documental = ExpedientesDocumentales.objects.get(pk=id_expediente_documental_id)
-#             except ExpedientesDocumentales.DoesNotExist:
-#                 raise ValidationError("El expediente documental especificado no existe.")
-            
-#             # Ahora puedes acceder a los atributos de 'id_expediente_documental'
-#             if id_expediente_documental.cod_tipo_expediente == 'S':
-#                 # Para Expedientes Simples (T236codTipoExpediente = S)
-#                 data_in['identificacion_doc_en_expediente'] = f"{id_expediente_documental.codigo_exp_Agno}S{data_in['orden_en_expediente']:010d}"
-#             elif id_expediente_documental.cod_tipo_expediente == 'C':
-#                 # Para Expedientes Complejos (T236codTipoExpediente = C)
-#                 # data_in['identificacion_doc_en_expediente'] = f"{id_expediente_documental.codigo_exp_Agno}C{id_expediente_documental.codigo_exp_consec_por_agno:04d}{data_in['orden_en_expedient]e']:06d}"
-#                 data_in['identificacion_doc_en_expediente'] = f"{id_expediente_documental.codigo_exp_Agno}C{id_expediente_documental.codigo_exp_consec_por_agno:<04d}{data_in['orden_en_expediente']:06d}"
-               
-#         serializer = self.serializer_class(data=data_in)
-#         serializer.is_valid(raise_exception=True)
-        
-#         # Establece la fecha de incorporación como la fecha actual
-#         serializer.validated_data['fecha_incorporacion_doc_a_Exp'] = datetime.now()
-        
-#         expediente = serializer.save()
-
-      
-
-#         return Response({'success': True, 'detail': 'Se crearon los registros correctamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
 
 
     
@@ -358,6 +343,96 @@ class ListarTipologias(generics.ListAPIView):
             'data': serializer.data
         })
     
+
+# #CIERRE_DE_EXPEDIENTE
+# class CierreExpediente(generics.CreateAPIView):
+#     serializer_class = CierreExpedienteSerializer
+
+#     def create(self, request, *args, **kwargs):
+#         try:
+#             id_expediente_doc = request.data.get('id_expediente_doc')
+#             justificacion_cierre_reapertura = request.data.get('justificacion_cierre_reapertura')  # Corregido para obtener 'justificacion_cierre'
+#             user = request.user  # Obtén el usuario actual
+
+#             # Verifica si el expediente existe
+#             expediente = ExpedientesDocumentales.objects.get(pk=id_expediente_doc)
+
+#             # Obtén la instancia de Personas asociada al usuario actual
+#             persona = user.persona
+            
+#             # Crea el registro de cierre de expediente
+#             cierre_expediente = CierresReaperturasExpediente.objects.create(
+#                 id_expediente_doc=expediente,
+#                 cod_operacion='C',  # Siempre 'C' para cierre
+#                 fecha_cierre_reapertura=datetime.now(),
+#                 justificacion_cierre_reapertura=justificacion_cierre_reapertura,
+#                 id_persona_cierra_reabre=persona,  # Asigna la instancia de Personas
+#             )
+
+#             # Serializa el objeto cierre_expediente
+#             serializer = CierreExpedienteSerializer(cierre_expediente)
+
+#             return Response({'success': True, 'message': 'Cierre de expediente realizado con éxito', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+
+#         except ExpedientesDocumentales.DoesNotExist:
+#             return Response({'success': False, 'detail': 'El expediente especificado no existe.'}, status=status.HTTP_404_NOT_FOUND)
+#         except Exception as e:
+#             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+class CierreExpediente(generics.CreateAPIView):
+    serializer_class = CierreExpedienteSerializer
+
+    def create(self, request, *args, **kwargs):
+        try:
+            id_expediente_doc = request.data.get('id_expediente_doc')
+            justificacion_cierre_reapertura = request.data.get('justificacion_cierre_reapertura')
+            user = request.user
+            expediente = ExpedientesDocumentales.objects.get(pk=id_expediente_doc)
+            persona = user.persona
+
+            # Verificar si el expediente existe
+            expediente = ExpedientesDocumentales.objects.get(pk=id_expediente_doc)
+
+            # Obtener la instancia de Personas asociada al usuario actual
+            persona = user.persona
+            
+            # Crear el registro de cierre de expediente
+            cierre_expediente = CierresReaperturasExpediente.objects.create(
+                id_expediente_doc=expediente,
+                cod_operacion='C',  # Siempre 'C' para cierre
+                fecha_cierre_reapertura=datetime.now(),
+                justificacion_cierre_reapertura=justificacion_cierre_reapertura,
+                id_persona_cierra_reabre=persona,  # Asignar la instancia de Personas
+            )
+
+            # Actualizar el estado del expediente a "C" (cerrado)
+            expediente.estado = 'C'
+            expediente.fechaCierreReaperturaActual = datetime.now()
+
+            # Verificar si se han agregado archivos de soporte
+            archivos_soporte = ArchivosSoporte_CierreReapertura.objects.filter(id_cierre_reapertura_exp=cierre_expediente)
+            
+            if archivos_soporte.exists():
+                # Si hay archivos de soporte, actualizar la fecha de folio final
+                expediente.fechaFolioFinal = datetime.now()
+            else:
+                # Si no hay archivos de soporte, buscar el registro más reciente en T237DocumentosDeArchivo_Expediente
+                ultimo_documento = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=expediente).order_by('-fecha_incorporacion_doc_a_Exp').first()
+                if ultimo_documento:
+                    expediente.fechaFolioFinal = ultimo_documento.fecha_incorporacion_doc_a_Exp
+
+            # Guardar los cambios en el expediente
+            expediente.save()
+
+            # Serializar el objeto cierre_expediente
+            serializer = CierreExpedienteSerializer(cierre_expediente)
+
+            return Response({'success': True, 'message': 'Cierre de expediente realizado con éxito', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+
+        except ExpedientesDocumentales.DoesNotExist:
+            return Response({'success': False, 'detail': 'El expediente especificado no existe.'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 ########################## CRUD DE ARCHIVOS DIGITALES  ##########################
 
 
@@ -444,11 +519,10 @@ class UploadPDFView(generics.CreateAPIView):
 
 
 
-
-
-        
         
 class ListarArchivosDigitales(generics.ListAPIView):
     queryset = ArchivosDigitales.objects.all()
     serializer_class = ArchivosDigitalesSerializer    
     permission_classes = [IsAuthenticated]
+
+
