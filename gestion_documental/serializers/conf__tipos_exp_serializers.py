@@ -35,16 +35,20 @@ class CatalogosSeriesSecSubGetSerializer(serializers.ModelSerializer):
         fields=['id_catalogo_serie','id_serie_doc','nombre_serie_doc','id_subserie_doc','nombre_subserie_doc']
 
 class XXGetSerializer(serializers.ModelSerializer):
-    accesos_unidades_organizacionales = CatalogosSeriesSecSubGetSerializer(many=True, read_only=True)
+    #accesos_unidades_organizacionales = CatalogosSeriesSecSubGetSerializer(many=True, read_only=True)
     id_serie_doc=serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_serie_doc.id_serie_doc',default=None)
     nombre_serie_doc=serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_serie_doc.nombre',default=None)
     id_subserie_doc=serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.id_subserie_doc',default=None)
     nombre_subserie_doc=serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.nombre',default=None)
     class Meta:
         model= CatSeriesUnidadOrgCCDTRD
-        fields='__all__'
+        fields=['id_catserie_unidadorg',
+            'id_serie_doc',
+            'nombre_serie_doc',
+            'id_subserie_doc',
+            'nombre_subserie_doc']
     
-
+#CatSeriesUnidadOrgCCDTRD
 class XYGetSerializer(serializers.ModelSerializer):
     #accesos_unidades_organizacionales = CatalogosSeriesSecSubGetSerializer(many=True, read_only=True)
     id_serie_doc=serializers.ReadOnlyField(source='id_catalogo_serie.id_serie_doc.id_serie_doc',default=None)

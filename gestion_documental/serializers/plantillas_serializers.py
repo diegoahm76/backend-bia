@@ -93,7 +93,7 @@ class AccesoUndsOrg_PlantillaDocCreateSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class AccesoUndsOrg_PlantillaDocGetSerializer(serializers.ModelSerializer):
-    nombre_unidad=serializers.ReadOnlyField(source='id_und_organizacional.nombre',default=None)
+    nombre=serializers.ReadOnlyField(source='id_unidad_organizacional.nombre',default=None)
     class Meta:
         model =  AccesoUndsOrg_PlantillaDoc
         fields = '__all__'
@@ -110,3 +110,7 @@ class PlantillasDocSerializer(serializers.ModelSerializer):
 
 
 
+class  OtrasTipologiasSerializerGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  PlantillasDoc
+        fields = ['otras_tipologias']

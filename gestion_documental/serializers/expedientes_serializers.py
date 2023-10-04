@@ -50,8 +50,22 @@ class ExpedienteGetOrdenSerializer(serializers.ModelSerializer):
     class Meta:
         model =  DocumentosDeArchivoExpediente
         fields = '__all__'
+ 
 
 
+ #Cierre_Expediente  
+class CierreExpedienteSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  CierresReaperturasExpediente
+        fields = '__all__'
+
+#ArchivosSoporte_CierreReapertura
+class ArchivosSoporteCierreReaperturaSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  ArchivosSoporte_CierreReapertura
+        fields = '__all__'
 
 
 ######################### SERIALIZERS DOCUMENTOS DE ARCHIVO DE EXPEDIENTE #########################
@@ -72,8 +86,6 @@ class AgregarArchivoSoporteCreateSerializer(serializers.ModelSerializer):
 
         # Unir las palabras clave formateadas de nuevo con "|"
         return '|'.join(palabras_clave)
-    
-    id_archivo_sistema = serializers.ReadOnlyField(source='id_archivo_sistema.id_archivo_digital.id_archivo_digital', default=None)
 
     class Meta:
         model = DocumentosDeArchivoExpediente
@@ -103,7 +115,7 @@ class ArchivosDigitalesCreateSerializer(serializers.ModelSerializer):
         #     'ruta_archivo': {'write_only': True}
         # }
 
-    def save(self, subcarpeta='',**kwargs):
+    def save(self, subcarpeta='',nombre_cifrado=True,**kwargs):
         try:
             archivo = self.validated_data['ruta_archivo']
             nombre_archivo = archivo.name
@@ -111,7 +123,11 @@ class ArchivosDigitalesCreateSerializer(serializers.ModelSerializer):
             unique_filename = secrets.token_hex(10)
             nombre_sin_extension, extension = os.path.splitext(nombre_archivo)
             extension_sin_punto = extension[1:] if extension.startswith('.') else extension
-            nombre_nuevo=unique_filename+'.'+extension_sin_punto
+            if nombre_cifrado:
+                nombre_nuevo=unique_filename+'.'+extension_sin_punto
+            else:
+                nombre_nuevo=self.validated_data['nombre_de_Guardado']+'.'+extension_sin_punto
+                unique_filename=self.validated_data['nombre_de_Guardado']
             if not extension_sin_punto:
                 raise ValidationError("No fue posible registrar el archivo")
                 # Utiliza la ruta de medios para guardar el archivo
@@ -128,6 +144,7 @@ class ArchivosDigitalesCreateSerializer(serializers.ModelSerializer):
 
             self.validated_data['ruta_archivo'] = os.path.relpath(ruta_completa, settings.MEDIA_ROOT)
             self.validated_data['nombre_de_Guardado'] = unique_filename
+            #print(self.validated_data)
             return super().save(**kwargs)
 
         except FileNotFoundError as e:
