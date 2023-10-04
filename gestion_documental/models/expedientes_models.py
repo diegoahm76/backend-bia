@@ -50,7 +50,7 @@ class ExpedientesDocumentales(models.Model):
     id_persona_responsable_actual	= models.ForeignKey(Personas, related_name='id_persona_responsable_actual',blank=True,null=True,on_delete=models.SET_NULL, db_column='T236Id_PersonaResponsableActual')
 
     class Meta:
-        db_table = 'T236ExpedientesDocumentales	'
+        db_table = 'T236ExpedientesDocumentales'
         verbose_name = 'Expediente Docuemental'
         verbose_name_plural = 'Expedientes Documentales'
         unique_together = ('codigo_exp_und_serie_subserie', 'codigo_exp_Agno', 'codigo_exp_consec_por_agno')
@@ -173,6 +173,7 @@ class Docs_IndiceElectronicoExp (models.Model):
     cod_origen_archivo = models.CharField(max_length=1, choices=tipo_origen_doc_CHOICES, db_column='T240codOrigenArchivo')
     id_doc_indice_Anexo	=  models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, db_column='T240Id_DocIndice_DelCualEsAnexo')
     tipologia_no_creada_trd	 = models.CharField(max_length=50,blank=True,null=True , db_column='T240tipologiaNoCreadaEnTRD')
+    es_un_archivo_anexo = models.BooleanField(default=False, db_column='T240esUnArchivoAnexo')
 
     def __str__(self):
         return str(self.id_doc_indice_electronico_exp)
