@@ -1353,7 +1353,16 @@ class AgrupacionesDocumentalesPersistenteTemporalGetView(generics.ListAPIView):
     
     def get(self, request):
 
-        data = request.data
+        id_ccd_nuevo = self.request.query_params.get('id_ccd_nuevo', None)
+        id_unidad_actual = self.request.query_params.get('id_unidad_actual', None)
+        id_unidad_nueva = self.request.query_params.get('id_unidad_nueva', None)
+
+        data = {
+            "id_ccd_nuevo": id_ccd_nuevo,
+            "id_unidad_actual": id_unidad_actual,
+            "id_unidad_nueva": id_unidad_nueva
+            }
+        
         ids_agrupacion_doc_actual, ids_agrupacion_doc_nueva = self.get_unidades_seccion(data)
 
         if ids_agrupacion_doc_actual == None and ids_agrupacion_doc_nueva == None:
@@ -1369,7 +1378,6 @@ class AgrupacionesDocumentalesPersistenteTemporalGetView(generics.ListAPIView):
         }
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
-
 
 # ENTREGA 57
 class SeriesDocUnidadCCDActualGetView(generics.ListAPIView):
@@ -1524,7 +1532,6 @@ class UnidadesSeccionResponsableTemporalCreateView(generics.CreateAPIView):
             raise ValidationError('No se realizaron cambios en las unidades responsables')
 
         return Response({'success': True, 'detail': 'Se crean o actualizan unidades responsables', 'data': unidades_responsables}, status=status.HTTP_201_CREATED)
-
 
 class UnidadesSeccionResponsableTemporalGetView(generics.ListAPIView):
     serializer_class = UnidadesSeccionResponsableTemporalGetSerializer
