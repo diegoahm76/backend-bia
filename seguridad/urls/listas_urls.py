@@ -24,6 +24,7 @@ urlpatterns = [
     path('opc-usuario/', views.GetLisOpcUsuario.as_view(),
          name='get-list-opc-usuario'),
     path('sexo/', views_transversal.GetLisSexo.as_view(), name='get-list-sexo'),
+    path('sexoBase/', views_transversal.GetListSexoBase.as_view(), name='get-list-sexo-base'),
     path('subsistema/', views.GetLisSubsistema.as_view(), name='get-list-subsistema'),
     path('tipo-direccion/', views.GetLisTipoDireccion.as_view(), name='get-list-tipo-direccion'),
     path('direcciones/', views_transversal.GetLisDirecciones.as_view(), name='get-list-direcciones'),

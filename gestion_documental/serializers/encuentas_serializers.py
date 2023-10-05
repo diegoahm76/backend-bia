@@ -2,7 +2,7 @@
 from rest_framework import serializers
 from rest_framework.serializers import ReadOnlyField
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
-from gestion_documental.models.encuencas_models import EncabezadoEncuesta, OpcionesRta, PreguntasEncuesta 
+from gestion_documental.models.encuencas_models import DatosEncuestasResueltas, EncabezadoEncuesta, OpcionesRta, PreguntasEncuesta 
 
 
 
@@ -99,4 +99,10 @@ class  OpcionesRtaDeleteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model =  OpcionesRta
+        fields = '__all__'
+
+class DatosEncuestasResueltasCreateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = DatosEncuestasResueltas
         fields = '__all__'

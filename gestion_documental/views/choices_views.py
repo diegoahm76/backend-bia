@@ -1,3 +1,4 @@
+from gestion_documental.choices.rango_edad_choices import RANGO_EDAD_LIST
 from gestion_documental.choices.tipo_clasificacion_choices import tipo_clasificacion_CHOICES
 from gestion_documental.choices.tipos_medios_doc_choices import tipos_medios_doc_CHOICES
 from gestion_documental.choices.disposicion_final_series_choices import disposicion_final_series_CHOICES
@@ -104,3 +105,8 @@ class TipoAcceso(APIView):
         choices = tipo_acceso_list
         return Response(choices)   
     
+class RangoEdad(APIView):
+    def get(self,request):
+        choices = RANGO_EDAD_LIST
+        return Response(choices)  
+#RANGO_EDAD_LIST
