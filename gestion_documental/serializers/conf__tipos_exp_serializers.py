@@ -5,7 +5,7 @@ from gestion_documental.models.ccd_models import CatalogosSeries, CatalogosSerie
 from gestion_documental.models.conf__tipos_exp_models import ConfiguracionTipoExpedienteAgno
 from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, TablaRetencionDocumental
 from transversal.models.organigrama_models import UnidadesOrganizacionales
-
+from rest_framework.validators import UniqueValidator,UniqueTogetherValidator
 class ConfiguracionTipoExpedienteAgnoGetSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConfiguracionTipoExpedienteAgno
@@ -59,4 +59,15 @@ class XYGetSerializer(serializers.ModelSerializer):
         model= CatalogosSeriesUnidad
         fields='__all__'
     
+class ConfiguracionTipoExpedienteAgnoCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=ConfiguracionTipoExpedienteAgno
+        fields='__all__'
 
+        validators = [
+            UniqueTogetherValidator(
+                queryset=ConfiguracionTipoExpedienteAgno.objects.all(),
+                fields=['id_cat_serie_undorg_ccd', 'agno_expediente'],
+                message='Esta terna ya tiene configuracion para el año seleccionado.'
+            )
+        ]
