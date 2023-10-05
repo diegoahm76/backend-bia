@@ -65,7 +65,7 @@ class ArchivosDgitalesCreate(generics.CreateAPIView):
 
                 serializer.save(subcarpeta=ruta)
 
-            return Response({'data':serializer.data}, status=status.HTTP_201_CREATED)
+            return Response({'success':True, 'detail':'Archivo guardado exitosamente','data':serializer.data}, status=status.HTTP_201_CREATED)
     
         except ValidationError  as e:
             error_message = {'error': e.detail}
