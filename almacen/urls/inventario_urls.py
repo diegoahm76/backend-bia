@@ -21,4 +21,7 @@ urlpatterns = [
     
     # DESPACHOS
     path('control/despachos/get-list/', views.ControlConsumoBienesGetListView.as_view(), name='control-despachos-get-list'),
+    
+    # STOCK
+    path('control/stock/get-list/', views.ControlStockGetView.as_view(), name='control-stock-get-list'),
 ]

@@ -13,7 +13,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import F, Count, Sum
 import operator, itertools
 
-from almacen.serializers.inventario_serializers import BusquedaBienesConsumoSerializer, BusquedaBienesSerializer, ControlBienesConsumoGetListSerializer, ControlConsumoBienesGetListSerializer, ControlInventarioByTipoSerializer, ControlInventarioTodoSerializer, OrigenesListGetSerializer
+from almacen.serializers.inventario_serializers import BusquedaBienesConsumoSerializer, BusquedaBienesSerializer, ControlBienesConsumoGetListSerializer, ControlConsumoBienesGetListSerializer, ControlInventarioByTipoSerializer, ControlInventarioTodoSerializer, ControlStockGetSerializer, OrigenesListGetSerializer
 
 class OrigenesListGetView(generics.ListAPIView):
     serializer_class=OrigenesListGetSerializer
@@ -389,5 +389,34 @@ class ControlConsumoBienesGetListView(generics.ListAPIView):
             for item in data_output:
                 if not item['id_unidad_para_la_que_solicita']:
                     item['nombre_unidad_para_la_que_solicita'] = 'Entrega a Viveros'
+
+        return Response({'success':True,'detail':'Se encontró la siguiente información','data':data_output},status=status.HTTP_200_OK)
+
+class ControlStockGetView(generics.ListAPIView):
+    serializer_class=ControlStockGetSerializer
+    queryset=Inventario.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        solicitable_vivero = request.query_params.get('solicitable_vivero', None)
+        
+        if solicitable_vivero:
+            solicitable_vivero = True if solicitable_vivero.lower() == 'true' else None
+            
+        inventario = self.queryset.all().filter(id_bien__solicitable_vivero=True) if solicitable_vivero else self.queryset.all()
+        
+        data_output = inventario.filter(id_bien__cod_tipo_bien='C').values(
+            'id_bien',
+            codigo_bien=F('id_bien__codigo_bien'),
+            nombre_bien=F('id_bien__nombre'),
+            stock_minimo=F('id_bien__stock_minimo'),
+            stock_maximo=F('id_bien__stock_maximo'),
+            id_unidad_medida=F('id_bien__id_unidad_medida__id_unidad_medida'),
+            unidad_medida=F('id_bien__id_unidad_medida__abreviatura')
+        ).annotate(
+            cantidad_entrante_consumo_total=Sum('cantidad_entrante_consumo', default=0),
+            cantidad_saliente_consumo_total=Sum('cantidad_saliente_consumo', default=0),
+            cantidad_existente=F('cantidad_entrante_consumo_total') - F('cantidad_saliente_consumo_total')
+        ).order_by('nombre_bien')
 
         return Response({'success':True,'detail':'Se encontró la siguiente información','data':data_output},status=status.HTTP_200_OK)

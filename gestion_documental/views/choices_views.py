@@ -2,6 +2,7 @@ from gestion_documental.choices.tipo_clasificacion_choices import tipo_clasifica
 from gestion_documental.choices.tipos_medios_doc_choices import tipos_medios_doc_CHOICES
 from gestion_documental.choices.disposicion_final_series_choices import disposicion_final_series_CHOICES
 from gestion_documental.choices.permisos_gd_choices import permisos_gd_CHOICES
+from gestion_documental.choices.estructura_tipos_expediente_choices import tipo_expediente_LIST
 from gestion_documental.choices.tipo_radicado_choices import cod_tipos_radicados_LIST
 from gestion_documental.choices.tipo_expediente_choices import tipo_expediente_CHOICES
 from gestion_documental.choices.estado_expediente_choices import estado_expediente_CHOICES
@@ -47,6 +48,11 @@ class GetCodConsecutivo(APIView):
 class GetCod_tipo_PQR(APIView):
     def get(self, request):
         return Response({'success':True, 'detail':'Los perfiles del sistema son los siguientes', 'data':cond_tipos_pqr_list }, status=status.HTTP_200_OK) 
+
+class GetEstruc_tipo_exp(APIView):
+    def get(self, request):
+        return Response({'success':True, 'detail':'Las estructuras de los tipos de expediente  son los siguientes', 'data':tipo_expediente_LIST }, status=status.HTTP_200_OK) 
+#tipo_expediente_LIST
 
 class TipoExpediente(APIView):
     def get(self,request):
