@@ -50,7 +50,7 @@ class ExpedientesDocumentales(models.Model):
     id_persona_responsable_actual	= models.ForeignKey(Personas, related_name='id_persona_responsable_actual',blank=True,null=True,on_delete=models.SET_NULL, db_column='T236Id_PersonaResponsableActual')
 
     class Meta:
-        db_table = 'T236ExpedientesDocumentales	'
+        db_table = 'T236ExpedientesDocumentales'
         verbose_name = 'Expediente Docuemental'
         verbose_name_plural = 'Expedientes Documentales'
         unique_together = ('codigo_exp_und_serie_subserie', 'codigo_exp_Agno', 'codigo_exp_consec_por_agno')
