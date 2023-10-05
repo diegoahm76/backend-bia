@@ -9,7 +9,7 @@ class ConfiguracionTipoExpedienteAgno(models.Model):
     cod_tipo_expediente = models.CharField(max_length=1, choices=[('C', 'Complejo'), ('S', 'Simple')], db_column='T245codTipoExpediente')
     consecutivo_inicial = models.IntegerField(null=True, blank=True, db_column='T245consecutivoInicial')
     cantidad_digitos = models.SmallIntegerField(null=True, blank=True, db_column='T245cantidadDigitos')
-    item_ya_usado = models.BooleanField(db_column='T245itemYaUsado')
+    item_ya_usado = models.BooleanField(default=False,db_column='T245itemYaUsado')
     id_persona_ult_config_implement = models.ForeignKey('transversal.Personas',on_delete=models.CASCADE,null=True, blank=True, db_column='T245Id_PersonaUltConfigImplemen',related_name='config_tipo_expediente_ult_config')
     fecha_ult_config_implement = models.DateTimeField(null=True, blank=True, db_column='T245fechaUltConfigImplemen')
     consecutivo_actual = models.IntegerField(null=True, blank=True, db_column='T245consecutivoActual')

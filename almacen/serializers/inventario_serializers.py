@@ -253,3 +253,23 @@ class ControlConsumoBienesGetListSerializer(serializers.ModelSerializer):
             'fecha_despacho'
         ]
         model = ItemDespachoConsumo
+        
+class ControlStockGetSerializer(serializers.ModelSerializer):
+    nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
+    stock_minimo = serializers.ReadOnlyField(source='id_bien.stock_minimo', default=None)
+    stock_maximo = serializers.ReadOnlyField(source='id_bien.stock_maximo', default=None)
+    id_unidad_medida = serializers.ReadOnlyField(source='id_bien.id_unidad_medida.id_unidad_medida', default=None)
+    unidad_medida = serializers.ReadOnlyField(source='id_bien.id_unidad_medida.abreviatura', default=None)
+    
+    class Meta:
+        fields = [
+            'id_bien',
+            'codigo_bien',
+            'nombre_bien',
+            'stock_minimo',
+            'stock_maximo',
+            'cantidad_existente',
+            'id_unidad_medida',
+            'unidad_medida'
+        ]
+        model = Inventario

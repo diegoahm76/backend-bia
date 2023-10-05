@@ -61,8 +61,8 @@ class PlantillasDocCreate(generics.CreateAPIView):
         if not extension_sin_punto:
             raise ValidationError("No fue posible registrar el archivo")
         
-        formatos=FormatosTiposMedio.objects.filter(nombre=extension_sin_punto,activo=True)
-
+        formatos=FormatosTiposMedio.objects.filter(nombre=extension_sin_punto,activo=True).first()
+        data_in['id_formato_tipo_medio']=formatos.id_formato_tipo_medio
         if not formatos:
             raise ValidationError("Este formato "+str(extension_sin_punto)+" de archivo no esta permitido")
        
