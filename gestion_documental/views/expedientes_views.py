@@ -504,21 +504,51 @@ class EliminarArchivoSoporte(generics.DestroyAPIView):
             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
 
-class ArchivosSoporteGetAll(generics.ListAPIView):
+#LISTAR_ARCHIVOS_SOPORTE_X_ID
+# class ArchivosSoporteGetAll(generics.ListAPIView):
+#     serializer_class = ArchivosSoporteGetAllSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def get_queryset(self):
+#         # Ordena los resultados de acuerdo al campo 'orden_en_expediente' de forma ascendente
+#         return DocumentosDeArchivoExpediente.objects.all().order_by('orden_en_expediente')
+
+#     def list(self, request, *args, **kwargs):
+#         queryset = self.get_queryset()
+
+#         if not queryset.exists():
+#             return Response({
+#                 'success': False,
+#                 'detail': 'No se encontraron archivos de soporte registrados.',
+#                 'data': []
+#             }, status=status.HTTP_404_NOT_FOUND)
+
+#         serializer = self.get_serializer(queryset, many=True)
+
+#         return Response({
+#             'success': True,
+#             'detail': 'Se encontraron los siguientes archivos de soporte ordenados por orden_en_expediente.',
+#             'data': serializer.data
+#         })
+class ArchivosSoporteGetId(generics.ListAPIView):
     serializer_class = ArchivosSoporteGetAllSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        # Ordena los resultados de acuerdo al campo 'orden_en_expediente' de forma ascendente
-        return DocumentosDeArchivoExpediente.objects.all().order_by('orden_en_expediente')
+        # Obtén el ID del expediente desde la URL
+        id_expediente = self.kwargs.get('id_expediente')
+
+        # Filtra los archivos de soporte asociados al expediente
+        return DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=id_expediente).order_by('orden_en_expediente')
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
+        id_expediente = self.kwargs.get('id_expediente')  # Obtén el ID del expediente de la URL
 
         if not queryset.exists():
             return Response({
                 'success': False,
-                'detail': 'No se encontraron archivos de soporte registrados.',
+                'detail': f'No se encontraron archivos de soporte registrados para el expediente con ID {id_expediente}.',
                 'data': []
             }, status=status.HTTP_404_NOT_FOUND)
 
@@ -526,10 +556,9 @@ class ArchivosSoporteGetAll(generics.ListAPIView):
 
         return Response({
             'success': True,
-            'detail': 'Se encontraron los siguientes archivos de soporte ordenados por orden_en_expediente.',
+            'detail': f'Se encontraron los siguientes archivos de soporte para el expediente con ID {id_expediente}.',
             'data': serializer.data
         })
-
 
 class UpdateArchivoSoporte(generics.UpdateAPIView):
     queryset = DocumentosDeArchivoExpediente.objects.all()
