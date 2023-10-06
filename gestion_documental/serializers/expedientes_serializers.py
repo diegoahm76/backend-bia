@@ -92,7 +92,12 @@ class AgregarArchivoSoporteCreateSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-   
+class ArchivosSoporteGetAllSerializer(serializers.ModelSerializer):
+    # Puedes incluir el nombre de la tipología documental a través de la relación
+    nombre_tipologia = serializers.CharField(source='id_tipologia_documental.nombre', read_only=True)
+    class Meta:
+        model = DocumentosDeArchivoExpediente
+        fields = ('orden_en_expediente','id_documento_de_archivo_exped', 'id_expediente_documental', 'nombre_asignado_documento', 'id_tipologia_documental',  'nombre_tipologia')
 
 class ListarTipologiasSerializer(serializers.ModelSerializer):
 

@@ -1101,8 +1101,10 @@ class CompararSeriesDocUnidadCatSerieView(generics.ListAPIView):
         if not UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=data_in['id_unidad_nueva']).exists(): 
             raise NotFound('No se encontro unidad organizacional nueva')
         
-        unidad_cat_serie_actual = CatalogosSeriesUnidad.objects.filter(id_unidad_organizacional=data_in['id_unidad_actual'])
-        unidad_cat_serie_nueva = CatalogosSeriesUnidad.objects.filter(id_unidad_organizacional=data_in['id_unidad_nueva'])
+        unidad_cat_serie_actual = CatalogosSeriesUnidad.objects.filter(id_unidad_organizacional=data_in['id_unidad_actual'],
+                                                                       id_catalogo_serie__id_serie_doc__id_ccd__id_ccd = ccd_actual.id_ccd)
+        unidad_cat_serie_nueva = CatalogosSeriesUnidad.objects.filter(id_unidad_organizacional=data_in['id_unidad_nueva'],
+                                                                      id_catalogo_serie__id_serie_doc__id_ccd__id_ccd = ccd.id_ccd)
 
         instancia_agrupaciones_persistentes = AgrupacionesDocumentalesPersistenteTemporalGetView()
         ids_agrupacion_doc_actual, ids_agrupacion_doc_nueva = instancia_agrupaciones_persistentes.get_unidades_seccion(data_in)
@@ -1117,7 +1119,7 @@ class CompararSeriesDocUnidadCatSerieView(generics.ListAPIView):
         data = {
             'id_ccd_actual':ccd_actual.id_ccd,
             'id_ccd_nuevo':ccd.id_ccd,
-            'coincdencias':obtener_cat_series_unidades_ccd(unidad_cat_serie_actual_data, unidad_cat_serie_nueva_data)
+            'coincidencias':obtener_cat_series_unidades_ccd(unidad_cat_serie_actual_data, unidad_cat_serie_nueva_data)
         }
 
         return data
@@ -1360,7 +1362,7 @@ class AgrupacionesDocumentalesPersistenteTemporalGetView(generics.ListAPIView):
         data = {
             "id_ccd_nuevo": id_ccd_nuevo,
             "id_unidad_actual": id_unidad_actual,
-            "id_unidad_nueva": id_unidad_nueva
+            "id_unidad_nueva": id_unidad_nueva  
             }
         
         ids_agrupacion_doc_actual, ids_agrupacion_doc_nueva = self.get_unidades_seccion(data)
@@ -1400,7 +1402,7 @@ class SeriesDocUnidadCCDActualGetView(generics.ListAPIView):
 
         instancia_unidades = CompararSeriesDocUnidadView()
         unidades_validacion = instancia_unidades.get_series_doc_unidades(id_ccd)
-        Validacion_iguales = [unidad_val['iguales'] for unidad_val in unidades_validacion['coincdencias']]
+        Validacion_iguales = [unidad_val['iguales'] for unidad_val in unidades_validacion['coincidencias']]
 
         if True in Validacion_iguales:
             raise PermissionDenied('Existe una homologacion persistente ')
@@ -1417,7 +1419,7 @@ class SeriesDocUnidadCCDActualGetView(generics.ListAPIView):
             'id_ccd_actual':unidades_validacion['id_ccd_actual'],
             'id_ccd_nuevo':ccd.id_ccd,
             'mismo_organigrama':unidades_validacion['mismo_organigrama'],
-            'coincidencia':len(Validacion_iguales)>0,
+            'coincidencias':len(Validacion_iguales)>0,
             'unidades':unidades_actual
         }
 
@@ -1428,7 +1430,16 @@ class SeriesDocUnidadCatSerieCCDActualGetView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        data_in = request.data
+        id_ccd_actual = self.request.query_params.get('id_ccd_actual', None)
+        id_ccd_nuevo = self.request.query_params.get('id_ccd_nuevo', None)
+        id_unidad_actual = self.request.query_params.get('id_unidad_actual', None)
+
+        data_in = {
+            "id_ccd_actual": id_ccd_actual,
+            "id_ccd_nuevo": id_ccd_nuevo,
+            "id_unidad_actual": id_unidad_actual
+        }
+
         ccd_filro = BusquedaCCDHomologacionView().get_validacion_ccd()
         data_in['id_unidad_nueva'] = None
 
@@ -1455,7 +1466,8 @@ class SeriesDocUnidadCatSerieCCDActualGetView(generics.ListAPIView):
         if not UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=data_in['id_unidad_actual']).exists(): 
             raise NotFound('No se encontro unidad organizacional actual')
         
-        unidad_cat_serie_actual = CatalogosSeriesUnidad.objects.filter(id_unidad_organizacional=data_in['id_unidad_actual'])
+        unidad_cat_serie_actual = CatalogosSeriesUnidad.objects.filter(id_unidad_organizacional=data_in['id_unidad_actual'],
+                                                                       id_catalogo_serie__id_serie_doc__id_ccd__id_ccd = ccd_actual.id_ccd)
 
         instancia_agrupaciones_persistentes = AgrupacionesDocumentalesPersistenteTemporalGetView()
         ids_agrupacion_doc_actual, ids_agrupacion_doc_nueva = instancia_agrupaciones_persistentes.get_unidades_seccion(data_in)
@@ -1468,7 +1480,7 @@ class SeriesDocUnidadCatSerieCCDActualGetView(generics.ListAPIView):
         data = {
             'id_ccd_actual':ccd_actual.id_ccd,
             'id_ccd_nuevo':ccd.id_ccd,
-            'coincdencias':unidad_cat_serie_actual_data
+            'coincidencias':unidad_cat_serie_actual_data
         }
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
