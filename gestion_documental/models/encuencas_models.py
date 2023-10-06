@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from gestion_documental.choices.rango_edad_choices import RANGO_EDAD_CHOICES
 
 from transversal.models.base_models import Departamento, Municipio, Paises, Sexo, TipoDocumento
 
@@ -82,28 +83,26 @@ TIPO_USUARIO_CHOICES = [
 ]
 
 # Choices para rango_edad
-RANGO_EDAD_CHOICES = [
-    ('A', 'De 18 a 25 años'),
-    ('B', 'De 26 a 36 años'),
-    ('C', 'De 37 a 46 años'),
-    ('D', 'De 47 a 56 años'),
-    ('E', 'Mayores de 56 años')
-]
+
 
 class DatosEncuestasResueltas(models.Model):
     id_datos_encuesta_resuelta = models.BigAutoField(primary_key=True, db_column='T251IdDatosEncuestaResuelta')
     id_encuesta = models.ForeignKey(EncabezadoEncuesta, on_delete=models.CASCADE, db_column='T251Id_Encuesta')
     tipo_usuario = models.CharField(max_length=1, choices=TIPO_USUARIO_CHOICES, db_column='T251tipoUsuario')
     id_persona = models.ForeignKey('transversal.Personas', null=True, blank=True, on_delete=models.CASCADE, db_column='T251Id_Persona')
-    id_tipo_documento_usuario = models.CharField(max_length=2, null=True, db_column='T251Id_TipoDocumentoUsuario')
+    id_tipo_documento_usuario = models.ForeignKey(TipoDocumento, on_delete=models.CASCADE, db_column='T251Id_TipoDocumentoUsuario', null=True, blank=True, verbose_name='Tipo de Documento de Identidad')
+    #id_tipo_documento_usuario = models.CharField(max_length=2, null=True, db_column='T251Id_TipoDocumentoUsuario')
     nro_documento_id = models.CharField(max_length=20, null=True, db_column='T251nroDocumentoID')
     nombre_completo = models.CharField(max_length=200, null=True, db_column='T251nombreCompleto')
-    cod_sexo = models.CharField(max_length=1, null=True, db_column='T251Cod_Sexo')
+    #cod_sexo = models.CharField(max_length=1, null=True, db_column='T251Cod_Sexo')
+    cod_sexo = models.ForeignKey(Sexo, on_delete=models.CASCADE, db_column='T251Cod_Sexo', null=True, blank=True, verbose_name='ID del Sexo')
     rango_edad = models.CharField(max_length=1, choices=RANGO_EDAD_CHOICES, db_column='T251rangoEdad')
     email = models.CharField(max_length=100, null=True, db_column='T251email')
     telefono = models.CharField(max_length=20, null=True, db_column='T251telefono')
-    id_pais_para_extranjero = models.CharField(max_length=2, null=True, db_column='T251Id_PaisParaExtranjero')
-    id_municipio_para_nacional = models.CharField(max_length=5, null=True, db_column='T251Id_MunicipioParaNacional')
+    #id_pais_para_extranjero = models.CharField(max_length=2, null=True, db_column='T251Id_PaisParaExtranjero')
+    id_pais_para_extranjero = models.ForeignKey(Paises, on_delete=models.CASCADE, db_column='T251Id_PaisParaExtranjero', null=True, blank=True, verbose_name='ID del País')
+    #id_municipio_para_nacional = models.CharField(max_length=5, null=True, db_column='T251Id_MunicipioParaNacional')
+    id_municipio_para_nacional = models.ForeignKey(Municipio, on_delete=models.CASCADE, db_column='T251Id_MunicipioParaNacional', null=True, blank=True, verbose_name='ID de la Ciudad')
     fecha_creacion = models.DateTimeField(db_column='T251fechaCreacion')
 
     def __str__(self):
