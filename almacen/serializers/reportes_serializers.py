@@ -37,3 +37,21 @@ class EntradasInventarioGetSerializer(serializers.ModelSerializer):
             'responsable_bodega'
         ]
         model = ItemEntradaAlmacen
+        
+class MovimientosIncautadosGetSerializer(serializers.ModelSerializer):
+    nombre_bodega = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
+    codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
+    tipo_activo = serializers.CharField(source='id_bien.get_cod_tipo_bien_display')
+    
+    class Meta:
+        fields = [
+            'id_bodega',
+            'nombre_bodega',
+            'id_bien',
+            'nombre_bien',
+            'codigo_bien',
+            'tipo_activo',
+            'cantidad',
+        ]
+        model = ItemEntradaAlmacen
