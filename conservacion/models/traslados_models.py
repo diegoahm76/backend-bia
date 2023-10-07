@@ -36,7 +36,7 @@ class TrasladosViveros(models.Model):
 class ItemsTrasladoViveros(models.Model):
     id_item_traslado_viveros = models.AutoField(primary_key=True, editable=False, db_column='T163IdItem_TrasladoViveros')
     id_traslado = models.ForeignKey(TrasladosViveros, on_delete=models.CASCADE, db_column='T163Id_Traslado')
-    id_bien_origen = models.ForeignKey(CatalogoBienes, on_delete=models.CASCADE, db_column='T163Id_BienOrigen ')
+    id_bien_origen = models.ForeignKey(CatalogoBienes, on_delete=models.CASCADE, db_column='T163Id_BienOrigen')
     agno_lote_origen = models.SmallIntegerField(null=True, blank=True, db_column='T163agnoLoteOrigen')
     nro_lote_origen = models.IntegerField(null=True, blank=True, db_column='T163nroLoteOrigen')
     cod_etapa_lote_origen = models.CharField(max_length=1, null=True, blank=True, choices=cod_etapa_lote_CHOICES, db_column='T163codEtapaLoteOrigen')
