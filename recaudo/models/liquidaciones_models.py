@@ -55,6 +55,7 @@ class LiquidacionesBase(models.Model):
     fecha_liquidacion = models.DateTimeField(db_column="T403fechaLiquidacion")
     vencimiento = models.DateTimeField(db_column="T403vencimiento")
     periodo_liquidacion = models.CharField(max_length=255, db_column="T403periodoLiquidacion")
+    ciclo_liquidacion = models.CharField(max_length=255, db_column="T403cicloliquidacion")
     valor = models.IntegerField(default=0, db_column="T403valor")
     estado = models.CharField(max_length=1, default='G', db_column="T403estado")
 
