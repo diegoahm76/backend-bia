@@ -6,7 +6,8 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import F, Count, Sum
-from almacen.serializers.reportes_serializers import EntradasInventarioGetSerializer, MovimientosIncautadosGetSerializer
+from almacen.models.mantenimientos_models import RegistroMantenimientos
+from almacen.serializers.reportes_serializers import EntradasInventarioGetSerializer, MantenimientosRealizadosGetSerializer, MovimientosIncautadosGetSerializer
 
 class EntradasInventarioGetView(generics.ListAPIView):
     serializer_class=EntradasInventarioGetSerializer
@@ -93,18 +94,6 @@ class MovimientosIncautadosGetView(generics.ListAPIView):
         data_output = []
         
         if items_entradas:
-            # data_output = items_entradas.values(
-            #     'id_bodega',
-            #     'id_bien',
-            #     'cantidad',
-            #     nombre_bodega=F('id_bodega__nombre'),
-            #     nombre_bien=F('id_bien__id_bien_padre__nombre'),
-            #     codigo_bien=F('id_bien__codigo_bien'),
-            #     tipo_activo=F('id_bien__get_cod_tipo_bien_display'),
-            # ).annotate(
-            #     cantidad_ingresada=Sum('cantidad')
-            # )
-            
             items_entrada_data = sorted(serializer_data, key=operator.itemgetter("id_bodega", "nombre_bodega", "id_bien", "nombre_bien", "codigo_bien", "tipo_activo"))
                 
             for entrada, items in itertools.groupby(items_entrada_data, key=operator.itemgetter("id_bodega", "nombre_bodega", "id_bien", "nombre_bien", "codigo_bien", "tipo_activo")):
@@ -123,3 +112,29 @@ class MovimientosIncautadosGetView(generics.ListAPIView):
                 data_output.append(items_data)
 
         return Response({'success':True,'detail':'Se encontró la siguiente información','data':data_output},status=status.HTTP_200_OK)
+
+class MantenimientosRealizadosGetView(generics.ListAPIView):
+    serializer_class=MantenimientosRealizadosGetSerializer
+    queryset=RegistroMantenimientos.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        filter={}
+        
+        for key,value in request.query_params.items():
+            if key in ['cod_tipo_mantenimiento','id_persona_realiza','fecha_desde','fecha_hasta']:
+                if key == 'fecha_desde':
+                    if value != '':
+                        filter['fecha_ejecutado__gte']=value
+                elif key == 'fecha_hasta':
+                    if value != '':
+                        filter['fecha_ejecutado__lte']=value
+                else:
+                    if value != '':
+                        filter[key]=value
+        
+        registro_mantenimientos = self.queryset.filter(**filter)
+        serializer = self.serializer_class(registro_mantenimientos, many=True)
+        serializer_data = serializer.data
+
+        return Response({'success':True,'detail':'Se encontró la siguiente información','data':serializer_data},status=status.HTTP_200_OK)
