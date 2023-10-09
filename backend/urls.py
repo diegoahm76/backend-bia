@@ -104,6 +104,7 @@ urlpatterns = [
     path('api/almacen/mantenimientos/', include('almacen.urls.mantenimientos_urls')),
     path('api/almacen/vehiculos/', include('almacen.urls.vehiculos_urls')),
     path('api/almacen/inventario/', include('almacen.urls.inventario_urls')),
+    path('api/almacen/reportes/', include('almacen.urls.reportes_urls')),
     
     # CONSERVACIÓN
     path('api/conservacion/choices/', include('conservacion.urls.choices_urls')),
