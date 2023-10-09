@@ -1,5 +1,5 @@
 tipo_origen_doc_CHOICES = (
-    ('E', 'Electonico'),
+    ('E', 'Electronico'),
     ('F', 'Fisico'),
     ('D', 'Digitalizado'),
 )  
