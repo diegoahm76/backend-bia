@@ -1219,7 +1219,7 @@ class AgrupacionesDocumentalesPersistenteTemporalCreateView(generics.CreateAPIVi
         except UnidadesSeccionPersistenteTemporal.DoesNotExist:
             raise NotFound('No se encontró la unidad persistentente temporal')
 
-        cat_serie_unidad_set = set((id_cat_serie_unidad['id_catalogo_serie_actual'], id_cat_serie_unidad['id_catalogo_serie_actual'])
+        cat_serie_unidad_set = set((id_cat_serie_unidad['id_catalogo_serie_actual'], id_cat_serie_unidad['id_catalogo_serie_nueva'])
             for id_cat_serie_unidad in data_in['catalagos_persistentes']
         )
         all_ids_cat = {id_cat_serie_unidad for tupla in cat_serie_unidad_set for id_cat_serie_unidad in tupla}
