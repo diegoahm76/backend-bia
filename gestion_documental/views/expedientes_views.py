@@ -2,6 +2,7 @@ from datetime import datetime
 import hashlib
 import os
 import secrets
+from rest_framework.parsers import MultiPartParser
 from gestion_documental.models.expedientes_models import ExpedientesDocumentales,ArchivosDigitales,DocumentosDeArchivoExpediente,IndicesElectronicosExp,Docs_IndiceElectronicoExp,CierresReaperturasExpediente,ArchivosSoporte_CierreReapertura
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from django.shortcuts import get_object_or_404
@@ -345,80 +346,26 @@ class ListarTipologias(generics.ListAPIView):
     
 
 
-# class CierreExpediente(generics.CreateAPIView):
-#     serializer_class = CierreExpedienteSerializer
-
-#     def create(self, request, *args, **kwargs):
-#         try:
-#             id_expediente_doc = request.data.get('id_expediente_doc')
-#             justificacion_cierre_reapertura = request.data.get('justificacion_cierre_reapertura')
-#             user = request.user
-#             expediente = ExpedientesDocumentales.objects.get(pk=id_expediente_doc)
-
-#             # Verifica si el expediente ya está cerrado
-#             if expediente.estado == 'C':
-#                 return Response({'success': False, 'detail': 'El expediente ya está cerrado.'}, status=status.HTTP_400_BAD_REQUEST)
-
-#             persona = user.persona
-            
-#             # Crea el registro de cierre de expediente
-#             cierre_expediente = CierresReaperturasExpediente.objects.create(
-#                 id_expediente_doc=expediente,
-#                 cod_operacion='C',  # Siempre 'C' para cierre
-#                 fecha_cierre_reapertura=datetime.now(),
-#                 justificacion_cierre_reapertura=justificacion_cierre_reapertura,
-#                 id_persona_cierra_reabre=persona,  # Asignar la instancia de Personas
-#             )
-
-#             # Actualizar el estado del expediente a "C" (cerrado)
-#             expediente.estado = 'C'
-#             expediente.fecha_cierre_reapertura_actual = datetime.now()
-
-#             # Verificar si se han agregado archivos de soporte
-#             archivos_soporte = ArchivosSoporte_CierreReapertura.objects.filter(id_cierre_reapertura_exp=cierre_expediente)
-            
-#             if archivos_soporte.exists():
-#                 # Si hay archivos de soporte, actualizar la fecha de folio final
-#                 expediente.fecha_folio_final = datetime.now()
-#             else:
-#                 # Si no hay archivos de soporte, buscar el registro más reciente en T237DocumentosDeArchivo_Expediente
-#                 ultimo_documento = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=expediente).order_by('-fecha_incorporacion_doc_a_Exp').first()
-#                 if ultimo_documento:
-#                     expediente.fecha_folio_final = ultimo_documento.fecha_incorporacion_doc_a_Exp
-
-#             # Guardar los cambios en el expediente
-#             expediente.save()
-
-#             # Serializar el objeto cierre_expediente
-#             serializer = CierreExpedienteSerializer(cierre_expediente)
-
-#             return Response({'success': True, 'message': 'Cierre de expediente realizado con éxito', 'data': serializer.data}, status=status.HTTP_201_CREATED)
-
-#         except ExpedientesDocumentales.DoesNotExist:
-#             return Response({'success': False, 'detail': 'El expediente especificado no existe.'}, status=status.HTTP_404_NOT_FOUND)
-#         except Exception as e:
-#             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)+
-
 class CierreExpediente(generics.CreateAPIView):
     serializer_class = CierreExpedienteSerializer
     permission_classes = [IsAuthenticated]
 
-
     def create(self, request, *args, **kwargs):
         try:
             id_expediente_doc = request.data.get('id_expediente_doc')
-            id_documento_de_archivo_exped = request.data.get('id_documento_de_archivo_exped')
-            
             justificacion_cierre_reapertura = request.data.get('justificacion_cierre_reapertura')
             user = request.user
             expediente = ExpedientesDocumentales.objects.get(pk=id_expediente_doc)
-            DocumentoArchivo = DocumentosDeArchivoExpediente.objects.get(pk=id_documento_de_archivo_exped)
+            DocumentoArchivo = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=id_expediente_doc)
 
             # Verifica si el expediente ya está cerrado
             if expediente.estado == 'C':
-                return Response({'success': False, 'detail': 'El expediente ya está cerrado.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('El expediente ya está cerrado.')
 
             persona = user.persona
+
+            if not DocumentoArchivo.exists():
+                raise PermissionDenied('No puede realizar el cierre del expediente sin adjuntar mínimo un archivo de soporte')
             
             # Crea el registro de cierre de expediente
             cierre_expediente = CierresReaperturasExpediente.objects.create(
@@ -429,42 +376,128 @@ class CierreExpediente(generics.CreateAPIView):
                 id_persona_cierra_reabre=persona,  # Asignar la instancia de Personas
             )
 
-            # Verificar si se han agregado archivos de soporte
-            archivos_soporte = ArchivosSoporte_CierreReapertura.objects.filter(id_cierre_reapertura_exp=cierre_expediente)
+            # Actualizar el estado del expediente a "C" (cerrado)
+            expediente.fecha_folio_final = datetime.now()
+            expediente.estado = 'C'
+            expediente.fecha_cierre_reapertura_actual = datetime.now()
             
-            if archivos_soporte.exists():
-                # Si hay archivos de soporte, actualizar la fecha de folio final
-                expediente.fecha_folio_final = datetime.now()
-            else:
-                # Si no hay archivos de soporte, buscar el registro más reciente en T237DocumentosDeArchivo_Expediente
-                ultimo_documento = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=expediente).order_by('-fecha_incorporacion_doc_a_Exp').first()
-                if ultimo_documento:
-                    expediente.fecha_folio_final = ultimo_documento.fecha_incorporacion_doc_a_Exp
-
             # Guardar los cambios en el expediente
             expediente.save()
+
+            for archivo_soporte in DocumentoArchivo:
+                # Reemplaza 'tu_id_de_archivo_soporte' con el ID correcto del archivo de soporte
+                ArchivosSoporte_CierreReapertura.objects.create(
+                    id_cierre_reapertura_exp=cierre_expediente,
+                    id_doc_archivo_exp_soporte=archivo_soporte,
+                )
+
+            # Verificar si se han agregado archivos de soporte
+            # archivos_soporte = ArchivosSoporte_CierreReapertura.objects.filter(id_cierre_reapertura_exp=cierre_expediente)
+            
+            # if archivos_soporte.exists():
+            #     # Si hay archivos de soporte, actualizar la fecha de folio final
+            #     expediente.fecha_folio_final = datetime.now()
+            # else:
+            #     # Si no hay archivos de soporte, buscar el registro más reciente en T237DocumentosDeArchivo_Expediente
+            #     ultimo_documento = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=expediente).order_by('-fecha_incorporacion_doc_a_Exp').first()
+            #     if ultimo_documento:
+            #         expediente.fecha_folio_final = ultimo_documento.fecha_incorporacion_doc_a_Exp
+
 
             # Serializar el objeto cierre_expediente
             serializer = CierreExpedienteSerializer(cierre_expediente)
 
-            # Verificar si se han agregado archivos de soporte
-            archivos_soporte = ArchivosSoporte_CierreReapertura.objects.filter(id_cierre_reapertura_exp=cierre_expediente)
-
-            if archivos_soporte.exists():
-                # Si hay archivos de soporte, realizar las acciones necesarias
-                for archivo_soporte in archivos_soporte:
-                    # Reemplaza 'tu_id_de_archivo_soporte' con el ID correcto del archivo de soporte
-                    ArchivosSoporte_CierreReapertura.objects.create(
-                        id_cierre_reapertura_exp=cierre_expediente,
-                        id_doc_archivo_exp_soporte=archivo_soporte,
-        )
+            # Auditoria cierre_expediente
+            usuario = request.user.id_usuario
+            descripcion = {"IDExpediente": str(id_expediente_doc), "CodigoOperacion": "Cierre", "ConsecutivoExpediente": str(expediente.codigo_exp_consec_por_agno), "TituloExpediente": str(expediente.titulo_expediente)}
+            direccion=Util.get_client_ip(request)
+            auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 146,
+                "cod_permiso": "CR",
+                "subsistema": 'GEST',
+                "dirip": direccion,
+                "descripcion": descripcion,
+            }
+            Util.save_auditoria(auditoria_data)
 
             return Response({'success': True, 'message': 'Cierre de expediente realizado con éxito', 'data': serializer.data}, status=status.HTTP_201_CREATED)
 
         except ExpedientesDocumentales.DoesNotExist:
-            return Response({'success': False, 'detail': 'El expediente especificado no existe.'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('El expediente especificado no existe.')
         except Exception as e:
-            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError(str(e))
+
+# class CierreExpediente(generics.CreateAPIView):
+#     serializer_class = CierreExpedienteSerializer
+#     permission_classes = [IsAuthenticated]
+
+
+#     def create(self, request, *args, **kwargs):
+#         try:
+#             id_expediente_doc = request.data.get('id_expediente_doc')
+#             # id_documento_de_archivo_exped = request.data.get('id_documento_de_archivo_exped')
+            
+#             justificacion_cierre_reapertura = request.data.get('justificacion_cierre_reapertura')
+#             user = request.user
+#             expediente = ExpedientesDocumentales.objects.get(pk=id_expediente_doc)
+#             DocumentoArchivo = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=id_expediente_doc)
+
+#             # Verifica si el expediente ya está cerrado
+#             if expediente.estado == 'C':
+#                 return Response({'success': False, 'detail': 'El expediente ya está cerrado.'}, status=status.HTTP_400_BAD_REQUEST)
+
+#             persona = user.persona
+            
+
+
+#             # Crea el registro de cierre de expediente
+#             cierre_expediente = CierresReaperturasExpediente.objects.create(
+#                 id_expediente_doc=expediente,
+#                 cod_operacion='C',  # Siempre 'C' para cierre
+#                 fecha_cierre_reapertura=datetime.now(),
+#                 justificacion_cierre_reapertura=justificacion_cierre_reapertura,
+#                 id_persona_cierra_reabre=persona,  # Asignar la instancia de Personas
+#             )
+
+#             # Verificar si se han agregado archivos de soporte
+#             archivos_soporte = DocumentoArchivo.filter(id_cierre_reapertura_exp=cierre_expediente)
+            
+#             if archivos_soporte.exists():
+#                 # Si hay archivos de soporte, actualizar la fecha de folio final
+#                 expediente.fecha_folio_final = datetime.now()
+#             else:
+#                 # Si no hay archivos de soporte, buscar el registro más reciente en T237DocumentosDeArchivo_Expediente
+#                 ultimo_documento = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=expediente).order_by('-fecha_incorporacion_doc_a_Exp').first()
+#                 if ultimo_documento:
+#                     expediente.fecha_folio_final = ultimo_documento.fecha_incorporacion_doc_a_Exp
+
+#             expediente.estado = 'C'
+
+#             # Guardar los cambios en el expediente
+#             expediente.save()
+
+#             # Serializar el objeto cierre_expediente
+#             serializer = CierreExpedienteSerializer(cierre_expediente)
+
+#             # Verificar si se han agregado archivos de soporte
+#             archivos_soporte = DocumentoArchivo.filter(id_cierre_reapertura_exp=cierre_expediente)
+
+#             if archivos_soporte.exists():
+#                 # Si hay archivos de soporte, realizar las acciones necesarias
+#                 for archivo_soporte in archivos_soporte:
+#                     # Reemplaza 'tu_id_de_archivo_soporte' con el ID correcto del archivo de soporte
+#                     ArchivosSoporte_CierreReapertura.objects.create(
+#                         id_cierre_reapertura_exp=cierre_expediente,
+#                         id_doc_archivo_exp_soporte=archivo_soporte,
+#         )
+
+#             return Response({'success': True, 'message': 'Cierre de expediente realizado con éxito', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+
+#         except ExpedientesDocumentales.DoesNotExist:
+#             return Response({'success': False, 'detail': 'El expediente especificado no existe.'}, status=status.HTTP_404_NOT_FOUND)
+#         except Exception as e:
+#             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -505,31 +538,6 @@ class EliminarArchivoSoporte(generics.DestroyAPIView):
         
 
 #LISTAR_ARCHIVOS_SOPORTE_X_ID
-# class ArchivosSoporteGetAll(generics.ListAPIView):
-#     serializer_class = ArchivosSoporteGetAllSerializer
-#     permission_classes = [IsAuthenticated]
-
-#     def get_queryset(self):
-#         # Ordena los resultados de acuerdo al campo 'orden_en_expediente' de forma ascendente
-#         return DocumentosDeArchivoExpediente.objects.all().order_by('orden_en_expediente')
-
-#     def list(self, request, *args, **kwargs):
-#         queryset = self.get_queryset()
-
-#         if not queryset.exists():
-#             return Response({
-#                 'success': False,
-#                 'detail': 'No se encontraron archivos de soporte registrados.',
-#                 'data': []
-#             }, status=status.HTTP_404_NOT_FOUND)
-
-#         serializer = self.get_serializer(queryset, many=True)
-
-#         return Response({
-#             'success': True,
-#             'detail': 'Se encontraron los siguientes archivos de soporte ordenados por orden_en_expediente.',
-#             'data': serializer.data
-#         })
 class ArchivosSoporteGetId(generics.ListAPIView):
     serializer_class = ArchivosSoporteGetAllSerializer
     permission_classes = [IsAuthenticated]
@@ -583,7 +591,7 @@ class UpdateArchivoSoporte(generics.UpdateAPIView):
         except Exception as e:
             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
-        
+
 ########################## CRUD DE ARCHIVOS DIGITALES  ##########################
 
 
