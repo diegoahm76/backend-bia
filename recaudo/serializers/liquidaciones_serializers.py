@@ -47,7 +47,7 @@ class LiquidacionesBaseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LiquidacionesBase
-        fields = ('id', 'id_deudor', 'id_expediente', 'fecha_liquidacion', 'vencimiento', 'periodo_liquidacion', 'valor', 'estado', 'detalles')
+        fields = ('id', 'id_deudor', 'id_expediente', 'fecha_liquidacion', 'vencimiento', 'periodo_liquidacion', 'valor', 'estado', 'detalles', 'ciclo_liquidacion')
 
 
 class LiquidacionesBasePostSerializer(serializers.ModelSerializer):
