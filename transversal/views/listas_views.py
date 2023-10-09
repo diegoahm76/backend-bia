@@ -7,12 +7,14 @@ from transversal.models. base_models import (
     Departamento,
     Paises,
     EstadoCivil,
+    Sexo,
     TipoDocumento
 )
 from transversal.lists.listas_serializers import (
     MunicipiosSerializer,
     DepartamentosSerializer,
-    PaisesSerializer
+    PaisesSerializer,
+    SexoSerializer
 )
 
 # IMPORT LISTS
@@ -126,3 +128,18 @@ class GetListTipoDocumento(generics.ListAPIView):
     def get(self, request):
         tipos_documento = self.queryset.filter(activo=True).values(value=F('cod_tipo_documento'), label=F('nombre'))
         return Response({'success':True, 'detail':'Los tipos de documento son los siguientes', 'data': tipos_documento}, status=status.HTTP_200_OK)
+
+
+class GetListSexoBase(generics.ListAPIView):
+    queryset = Sexo.objects.all()
+    serializer_class = SexoSerializer
+
+    def get(self, request):
+        sexos=Sexo.objects.all()
+        serializer = self.serializer_class(sexos, many=True)
+        
+        data = serializer.data
+
+        
+        return Response({'success':True, 'detail':'Se encontraron los siguientes municipios', 'data':data}, status=status.HTTP_200_OK)
+    

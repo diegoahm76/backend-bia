@@ -2,7 +2,8 @@ from rest_framework import serializers
 from transversal.models.base_models import (
     Municipio,
     Departamento,
-    Paises
+    Paises,
+    Sexo
 )
 
 class MunicipiosSerializer(serializers.ModelSerializer):
@@ -45,4 +46,18 @@ class PaisesSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         if 'cod_pais' in data:
             del data['cod_pais']
+        return data
+
+class SexoSerializer(serializers.ModelSerializer):
+    label = serializers.CharField(source='nombre')
+    value = serializers.CharField(source='cod_sexo')
+
+    class Meta:
+        model = Sexo
+        fields = ['label', 'value']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if 'cod_sexo' in data:
+            del data['cod_sexo']
         return data

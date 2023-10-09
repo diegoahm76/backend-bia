@@ -19,7 +19,8 @@ urlpatterns = [
     path('operacion-realizada/', views.OperacionRealizada.as_view(), name='operaciones-realizadas'),
     path('tipo-dato-alojar/', views.TipoDatoAlojar.as_view(), name='tipo-dato-alojar'),
     path('tipo-acceso/', views.TipoAcceso.as_view(), name='tipo-acceso'),
-     path('estructura-tipo-expendiente/', views.GetEstruc_tipo_exp.as_view(), name='estructura-tipo-expendiente'),
-    #GetEstruc_tipo_exp
+    path('estructura-tipo-expendiente/', views.GetEstruc_tipo_exp.as_view(), name='estructura-tipo-expendiente'),
+    path('rango-edad/', views.RangoEdad.as_view(), name='rango-edad'),
+    #RangoEdad
     
 ]
