@@ -953,10 +953,12 @@ class BusquedaCCDHomologacionView(generics.ListAPIView):
         tca_filtro = TablasControlAcceso.objects.filter(
             fecha_puesta_produccion=None, 
             fecha_terminado__gt=tca_actual.fecha_puesta_produccion)
-        trd_filtro = TablaRetencionDocumental.objects.exclude(fecha_terminado=None).filter(fecha_puesta_produccion=None)
-        ccd_filtro = CuadrosClasificacionDocumental.objects.exclude(fecha_terminado=None).filter(fecha_puesta_produccion=None)
-        trd_filtro = trd_filtro.filter(id_trd__in=tca_filtro.values('id_trd'))  
-        ccd_filtro = ccd_filtro.filter(id_ccd__in=trd_filtro.values('id_ccd'))  
+        # trd_filtro = TablaRetencionDocumental.objects.exclude(fecha_terminado=None).filter(fecha_puesta_produccion=None)
+        # ccd_filtro = CuadrosClasificacionDocumental.objects.exclude(fecha_terminado=None).filter(fecha_puesta_produccion=None)
+        # trd_filtro = trd_filtro.filter(id_trd__in=tca_filtro.values('id_trd'))  
+        # ccd_filtro = ccd_filtro.filter(id_ccd__in=trd_filtro.values('id_ccd'))
+        trd_filtro = TablaRetencionDocumental.objects.filter(id_trd__in=tca_filtro.values('id_trd'))
+        ccd_filtro = CuadrosClasificacionDocumental.objects.filter(id_ccd__in=trd_filtro.values('id_ccd')) 
         return ccd_filtro.order_by('-fecha_terminado')
 
     def get(self, request):
@@ -969,7 +971,6 @@ class BusquedaCCDHomologacionView(generics.ListAPIView):
 @staticmethod
 def obtener_unidades_ccd(unidades_actual, unidades_nueva):
     data_out = []
-
     for unidad_actual in unidades_actual:
         for unidad_nueva in unidades_nueva:
             if unidad_actual['codigo'] == unidad_nueva['codigo']:
@@ -1152,6 +1153,10 @@ class UnidadesSeccionPersistenteTemporalCreateView(generics.CreateAPIView):
         except CuadrosClasificacionDocumental.DoesNotExist:
             raise NotFound('CCD no encontrado o no cumple con TRD y TCA terminados')
         
+        if not data_in['unidades_persistentes']:
+            unidades_nuevas_set = set((None,None))
+            print(unidades_nuevas_set)
+
         unidades_nuevas_set = set(
             (id_unidad['id_unidad_actual'], id_unidad['id_unidad_nueva'])
             for id_unidad in data_in['unidades_persistentes']
@@ -1160,20 +1165,17 @@ class UnidadesSeccionPersistenteTemporalCreateView(generics.CreateAPIView):
 
         if not UnidadesOrganizacionales.objects.filter(id_unidad_organizacional__in=all_ids).count() == len(all_ids):
             raise NotFound('No se encontraron todas las unidades organizacionales')
-
+            
         unidades_persistentes_existentes = UnidadesSeccionPersistenteTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd)
         unidades_existentes_set = set(
             (unidad.id_unidad_seccion_actual.id_unidad_organizacional, unidad.id_unidad_seccion_nueva.id_unidad_organizacional)
             for unidad in unidades_persistentes_existentes
         )
+
         unidades_a_eliminar = unidades_existentes_set - unidades_nuevas_set
         unidades_a_crear = unidades_nuevas_set - unidades_existentes_set
 
-        UnidadesSeccionPersistenteTemporal.objects.filter(
-            id_ccd_nuevo=ccd.id_ccd,
-            id_unidad_seccion_actual__in=[unidad[0] for unidad in unidades_a_eliminar],
-            id_unidad_seccion_nueva__in=[unidad[1] for unidad in unidades_a_eliminar]
-        ).delete()
+        self.delete_unidades_persistentes_tmp(ccd.id_ccd, unidades_a_eliminar)
 
         for unidad in unidades_a_crear:
             data = {
@@ -1188,13 +1190,22 @@ class UnidadesSeccionPersistenteTemporalCreateView(generics.CreateAPIView):
         unidades_persistentes = UnidadesSeccionPersistenteTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd)
         unidades_persistentes_data = self.serializer_class(unidades_persistentes, many=True).data
         return unidades_persistentes_data
+    
+    def delete_unidades_persistentes_tmp(self, id_ccd_nuevo, unidades_a_eliminar):
+        instancia_agrupaciones = AgrupacionesDocumentalesPersistenteTemporalCreateView()
+        unidades = UnidadesSeccionPersistenteTemporal.objects.filter(
+            id_ccd_nuevo=id_ccd_nuevo,
+            id_unidad_seccion_actual__in=[unidad[0] for unidad in unidades_a_eliminar],
+            id_unidad_seccion_nueva__in=[unidad[1] for unidad in unidades_a_eliminar]
+        )
+        for unidad in unidades:
+            instancia_agrupaciones.delete_agrupaciones_persistentes_tmp(unidad.id_unidad_seccion_temporal,None)
+
+        unidades.delete()
 
     def post(self, request):
         data = request.data
         unidades_persistentes = self.crear_actualizar_unidades_persistentes_tmp(data)
-
-        if not unidades_persistentes:
-            raise ValidationError('No se realizaron cambios en las unidades persistentes')
 
         return Response({'success': True, 'detail': 'Se crean o actualizan unidades persistentes', 'data': unidades_persistentes}, status=status.HTTP_201_CREATED)
 
@@ -1226,11 +1237,7 @@ class AgrupacionesDocumentalesPersistenteTemporalCreateView(generics.CreateAPIVi
         agrupaciones_a_eliminar = agrupaciones_existentes_set - cat_serie_unidad_set
         agrupaciones_a_crear = cat_serie_unidad_set - agrupaciones_existentes_set
 
-        AgrupacionesDocumentalesPersistenteTemporal.objects.filter(
-            id_unidad_seccion_temporal=unidades_persistentes.id_unidad_seccion_temporal,
-            id_cat_serie_unidad_ccd_actual__in=[cat[0] for cat in agrupaciones_a_eliminar],
-            id_cat_serie_unidad_ccd_nueva__in=[cat[1] for cat in agrupaciones_a_eliminar]
-        ).delete()
+        self.delete_agrupaciones_persistentes_tmp(unidades_persistentes.id_unidad_seccion_temporal,agrupaciones_a_eliminar)
 
         data_response = []
         
@@ -1246,13 +1253,20 @@ class AgrupacionesDocumentalesPersistenteTemporalCreateView(generics.CreateAPIVi
             data_response.append(self.serializer_class(agrupaciones_persistentes).data)
 
         return data_response
+    
+    def  delete_agrupaciones_persistentes_tmp(self, id_unidad_seccion_temporal, agrupaciones_a_eliminar):
+
+        filtro = {'id_unidad_seccion_temporal': id_unidad_seccion_temporal}
+
+        if agrupaciones_a_eliminar is not None:
+            filtro['id_cat_serie_unidad_ccd_actual__in'] = [cat[0] for cat in agrupaciones_a_eliminar]
+            filtro['id_cat_serie_unidad_ccd_nueva__in'] = [cat[1] for cat in agrupaciones_a_eliminar]
+
+        AgrupacionesDocumentalesPersistenteTemporal.objects.filter(**filtro).delete()
 
     def post(self, request):
         data = request.data
         agrupaciones_persistentes = self.crear_actualizar_agrupaciones_persistentes_tmp(data)
-
-        if not agrupaciones_persistentes:
-            raise ValidationError('No se pudo guardar la informacion')
 
         return Response({'success':True, 'detail':'Se guardan catalogos persistentes', 'data':agrupaciones_persistentes}, status=status.HTTP_201_CREATED)
 
