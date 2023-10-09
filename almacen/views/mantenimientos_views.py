@@ -244,17 +244,22 @@ class DeleteRegistroMantenimiento(generics.DestroyAPIView):
         if registro_mantenimiento:
             inventario_bien = Inventario.objects.filter(id_bien=registro_mantenimiento.id_articulo.id_bien).first()
             if inventario_bien.tipo_doc_ultimo_movimiento == 'MANT' and inventario_bien.id_registro_doc_ultimo_movimiento == int(pk):
-                inventario_bien.id_registro_doc_ultimo_movimiento = registro_mantenimiento.id_reg_doc_anterior_mov
+                inventario_bien.id_registro_doc_ultimo_movimiento = registro_mantenimiento.id_reg_en_doc_anterior_mov
                 inventario_bien.tipo_doc_ultimo_movimiento = registro_mantenimiento.tipo_doc_anterior_mov
                 inventario_bien.fecha_ultimo_movimiento = registro_mantenimiento.fecha_estado_anterior
                 inventario_bien.cod_estado_activo = registro_mantenimiento.cod_estado_anterior
                 inventario_bien.save()
+                
+                if registro_mantenimiento.id_programacion_mtto:
+                    registro_mantenimiento.id_programacion_mtto.ejecutado = False
+                    registro_mantenimiento.id_programacion_mtto.save()
+                
                 registro_mantenimiento.delete()
                 
                 # Auditoria
                 bien = CatalogoBienes.objects.filter(id_bien=registro_mantenimiento.id_articulo.id_bien).first()
                 usuario = request.user.id_usuario
-                descripcion = {"nombre": str(bien.nombre), "serial": str(bien.doc_identificador_nro)}
+                descripcion = {"NombreBien": str(bien.nombre), "Serial": str(bien.doc_identificador_nro)}
                 direccion=Util.get_client_ip(request)
                 id_modulo = 0
             
@@ -727,7 +732,7 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
             programacion_mantenimientos = ProgramacionMantenimientos.objects.filter(id_programacion_mtto = datos_ingresados['id_programacion_mtto']).values().first() 
             if not programacion_mantenimientos:
                 raise NotFound('El id de programación de mantenimientos no existe')
-            if programacion_mantenimientos['id_articulo_id'] != id_articulo:
+            if programacion_mantenimientos['id_articulo_id'] != int(id_articulo):
                 raise ValidationError('El id de programación de mantenimientos no tiene relación con el artículo enviado')
         else:
             programacion_mantenimientos = None
@@ -751,14 +756,23 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
             raise NotFound('El bien seleeccionado no tiene movimientos registrados')
         if aux_fecha.days < 0:
             raise PermissionDenied('No se puede registrar el mantenimiento debido a que La fecha del registro del mantenimiento debe ser POSTERIOR O IGUAL a la fecha en la cual fue actualizado el estado anterior del activo')
+        
         datos_ingresados['cod_estado_anterior'] = inventario.cod_estado_activo.cod_estado
         datos_ingresados['fecha_estado_anterior'] = inventario.fecha_ultimo_movimiento
+        datos_ingresados['tipo_doc_anterior_mov'] = inventario.tipo_doc_ultimo_movimiento
+        datos_ingresados['id_reg_en_doc_anterior_mov'] = inventario.id_registro_doc_ultimo_movimiento
+        
         inventario.fecha_ultimo_movimiento = datos_ingresados['fecha_registrado']
         inventario.cod_estado_activo = cod_estado_final.first()
-        inventario.save()        
+        
         serializer = self.get_serializer(data=datos_ingresados)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        registro_mantenimiento = serializer.save()
+        
+        inventario.id_registro_doc_ultimo_movimiento = registro_mantenimiento.pk
+        inventario.tipo_doc_ultimo_movimiento = 'MANT'
+        inventario.save()        
+        
         return Response({'success':True, 'detail':'Mantenimiento registrado con éxito'}, status=status.HTTP_200_OK)
     
 class ControlMantenimientosProgramadosGetListView(generics.ListAPIView):
