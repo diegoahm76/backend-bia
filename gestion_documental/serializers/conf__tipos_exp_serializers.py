@@ -59,15 +59,19 @@ class XYGetSerializer(serializers.ModelSerializer):
         model= CatalogosSeriesUnidad
         fields='__all__'
     
-class ConfiguracionTipoExpedienteAgnoCreateSerializer(serializers.ModelSerializer):
+class ConfiguracionTipoExpedienteAgnoGetSerializer(serializers.ModelSerializer):
+    nombre_completo = serializers.SerializerMethodField()
     class Meta:
         model=ConfiguracionTipoExpedienteAgno
         fields='__all__'
 
-        validators = [
-            UniqueTogetherValidator(
-                queryset=ConfiguracionTipoExpedienteAgno.objects.all(),
-                fields=['id_cat_serie_undorg_ccd', 'agno_expediente'],
-                message='Esta terna ya tiene configuracion para el año seleccionado.'
-            )
-        ]
+    def get_nombre_completo(self, obj):
+    
+        if obj.id_persona_ult_config_implement:
+            nombre_completo = None
+            nombre_list = [obj.id_persona_ult_config_implement.primer_nombre, obj.id_persona_ult_config_implement.segundo_nombre, obj.id_persona_ult_config_implement.primer_apellido, obj.id_persona_ult_config_implement.segundo_apellido]
+            nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+            return nombre_completo.upper()
+
+
+    
