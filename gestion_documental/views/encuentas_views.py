@@ -81,12 +81,12 @@ class EncabezadoEncuestaUpdate(generics.UpdateAPIView):
             serializer.is_valid(raise_exception=True)
             instance = serializer.save()
             data_response_pregunta=[]
-            if 'preguntas_encuesta' in data_in :
+            if 'preguntas' in data_in :
                 crear_pregunta=PreguntasEncuestaCreate()
                 actualizar_pregunta=PreguntasEncuestaUpdate()
                 eliminar_pregunta=PreguntasEncuestaDelete()
 
-                id_preguntas= [opcion.get('id_pregunta_encuesta', None) for opcion in data_in['preguntas_encuesta']]
+                id_preguntas= [opcion.get('id_pregunta_encuesta', None) for opcion in data_in['preguntas']]
                 #BUSCA EN BASE DE DATOS LAS RESPUESTAS
                 respuestas_persistentes=list(PreguntasEncuesta.objects.filter(id_encabezado_encuesta=instance.id_encabezado_encuesta).values_list('id_pregunta_encuesta', flat=True))
                 print("EN BASE DE DATOS :"+str(respuestas_persistentes))
@@ -102,7 +102,7 @@ class EncabezadoEncuestaUpdate(generics.UpdateAPIView):
                     if respuesta_pregunta.status_code != status.HTTP_200_OK:
                         return respuesta_pregunta
            
-                for pre in data_in['preguntas_encuesta']:
+                for pre in data_in['preguntas']:
 
                     if 'id_pregunta_encuesta' in pre:
                         if pre:
