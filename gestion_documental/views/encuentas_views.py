@@ -7,11 +7,14 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from gestion_documental.models.encuencas_models import DatosEncuestasResueltas, EncabezadoEncuesta, OpcionesRta, PreguntasEncuesta
-from gestion_documental.serializers.encuentas_serializers import DatosEncuestasResueltasCreateSerializer, EncabezadoEncuestaCreateSerializer, EncabezadoEncuestaDeleteSerializer, EncabezadoEncuestaGetDetalleSerializer, EncabezadoEncuestaGetSerializer, EncabezadoEncuestaUpdateSerializer, OpcionesRtaCreateSerializer, OpcionesRtaDeleteSerializer, OpcionesRtaGetSerializer, OpcionesRtaUpdateSerializer, PreguntasEncuestaCreateSerializer, PreguntasEncuestaDeleteSerializer, PreguntasEncuestaGetSerializer, PreguntasEncuestaUpdateSerializer
+from gestion_documental.models.encuencas_models import DatosEncuestasResueltas, EncabezadoEncuesta, OpcionesRta, PreguntasEncuesta, RespuestaEncuesta
+from gestion_documental.serializers.encuentas_serializers import DatosEncuestasResueltasConteoSerializer, DatosEncuestasResueltasCreateSerializer, EncabezadoEncuestaCreateSerializer, EncabezadoEncuestaDeleteSerializer, EncabezadoEncuestaGetDetalleSerializer, EncabezadoEncuestaGetSerializer, EncabezadoEncuestaUpdateSerializer, EncuestaActivaGetSerializer, OpcionesRtaCreateSerializer, OpcionesRtaDeleteSerializer, OpcionesRtaGetSerializer, OpcionesRtaUpdateSerializer, PersonaRegistradaEncuentaGet, PreguntasEncuestaCreateSerializer, PreguntasEncuestaDeleteSerializer, PreguntasEncuestaGetSerializer, PreguntasEncuestaUpdateSerializer,RespuestaEncuestaCreateSerializer
 from django.db.models import Max
 from datetime import datetime
 from django.db import transaction
+
+from transversal.admin import PersonasAdmin
+from transversal.models.personas_models import Personas
    
 class EncabezadoEncuestaCreate(generics.CreateAPIView):
     serializer_class = EncabezadoEncuestaCreateSerializer
@@ -68,6 +71,9 @@ class EncabezadoEncuestaUpdate(generics.UpdateAPIView):
 
         if not instance:
             raise NotFound("No existe encuentas asociada e esta id")
+        if instance.item_ya_usado:
+            raise NotFound("No se puede editar esta encuesta")
+            
         try:
             data_in['fecha_ult_config_implement']=fecha_actual
             data_in['id_persona_ult_config_implement']=request.user.persona.id_persona
@@ -75,12 +81,12 @@ class EncabezadoEncuestaUpdate(generics.UpdateAPIView):
             serializer.is_valid(raise_exception=True)
             instance = serializer.save()
             data_response_pregunta=[]
-            if 'preguntas_encuesta' in data_in :
+            if 'preguntas' in data_in :
                 crear_pregunta=PreguntasEncuestaCreate()
                 actualizar_pregunta=PreguntasEncuestaUpdate()
                 eliminar_pregunta=PreguntasEncuestaDelete()
 
-                id_preguntas= [opcion.get('id_pregunta_encuesta', None) for opcion in data_in['preguntas_encuesta']]
+                id_preguntas= [opcion.get('id_pregunta_encuesta', None) for opcion in data_in['preguntas']]
                 #BUSCA EN BASE DE DATOS LAS RESPUESTAS
                 respuestas_persistentes=list(PreguntasEncuesta.objects.filter(id_encabezado_encuesta=instance.id_encabezado_encuesta).values_list('id_pregunta_encuesta', flat=True))
                 print("EN BASE DE DATOS :"+str(respuestas_persistentes))
@@ -96,7 +102,7 @@ class EncabezadoEncuestaUpdate(generics.UpdateAPIView):
                     if respuesta_pregunta.status_code != status.HTTP_200_OK:
                         return respuesta_pregunta
            
-                for pre in data_in['preguntas_encuesta']:
+                for pre in data_in['preguntas']:
 
                     if 'id_pregunta_encuesta' in pre:
                         if pre:
@@ -181,7 +187,10 @@ class PreguntasEncuestaUpdate(generics.UpdateAPIView):
 
         if not instance:
             raise NotFound("No existe encuentas asociada e esta id")
+        
+
         try:
+
             
             serializer = PreguntasEncuestaUpdateSerializer(instance, data=data_in,partial=True)
             serializer.is_valid(raise_exception=True)
@@ -391,6 +400,10 @@ class EncabezadoEncuestaDelete(generics.DestroyAPIView):
     
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()
+
+        if instance.item_ya_usado:
+            raise ValidationError("No se puede eliminar una encuesta si ya fue usada")
+
         serializer = self.get_serializer(instance)
 
         preguntas_intance=PreguntasEncuesta.objects.filter(id_encabezado_encuesta=instance.id_encabezado_encuesta)
@@ -421,9 +434,17 @@ class DatosEncuestasResueltasCreate(generics.CreateAPIView):
     def post(self,request):
         data_in = request.data
         usuario = request.user.persona.id_persona
+        datos_encuestas_resueltas=[]
         #print(usuario)
         try:
             with transaction.atomic():
+
+                encuenta=EncabezadoEncuesta.objects.filter(id_encabezado_encuesta=data_in['id_encuesta']).first()
+                if not encuenta:
+                    raise ValidationError("NO existe la encuesta que trata de responder")
+                if not encuenta.item_ya_usado:
+                    encuenta.item_ya_usado=True
+                    encuenta.save()
                 fecha_actual = datetime.now()
                 data_in['fecha_creacion'] = fecha_actual
 
@@ -444,10 +465,82 @@ class DatosEncuestasResueltasCreate(generics.CreateAPIView):
 
                         
                 #data_in['id_persona_ult_config_implement']=usuario
+                if not ('ids_opciones_preguntas_encuesta' in data_in):
+                    raise ValidationError('re requieren respuestas')
+                if len(data_in['ids_opciones_preguntas_encuesta']) ==0:
+                    raise ValidationError('se deben enviar respuestas')
+
+
                 serializer = self.serializer_class(data=data_in)
                 serializer.is_valid(raise_exception=True)
                 instance=serializer.save()
                 
-                return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+                for respuesta in data_in['ids_opciones_preguntas_encuesta']:
+                    if 'id_opcion_pregunta_encuesta' in respuesta:
+                        print(respuesta['id_opcion_pregunta_encuesta'])
+                        serializer_respuesta=RespuestaEncuestaCreateSerializer(data={**respuesta,'id_encuesta_resuelta':instance.id_datos_encuesta_resuelta})
+                        serializer_respuesta.is_valid(raise_exception=True)
+                        serializer_respuesta.save()         
+                        datos_encuestas_resueltas.append(serializer_respuesta.data)     
+                return Response({'success':True,'detail':'Se crearon los registros correctamente','data':{**serializer.data,'datos_encuestas_resueltas':datos_encuestas_resueltas}},status=status.HTTP_201_CREATED)
         except ValidationError as e:       
             raise ValidationError(e.detail)
+        
+class UsuarioRegistradoGet(generics.ListAPIView):
+    queryset = Personas.objects.all()
+    serializer_class = PersonaRegistradaEncuentaGet
+    def get(self,request):
+        data_in = request.data
+        usuario = request.user.persona
+        serializer = self.serializer_class(usuario)
+        
+        if not usuario:
+            raise NotFound("No existen encuentas registrados en el sistema.")
+
+        return Response({'success':True,
+                         'detail':'Se encontraron los siguientes registros.',
+                         'data':serializer.data},status=status.HTTP_200_OK)
+
+##INFORME ENCUESTAS RESUELTAS ENTREGA 68
+class EncuestasRealizadasGet(generics.ListAPIView):
+    queryset = EncabezadoEncuesta.objects.all()
+    serializer_class = EncuestaActivaGetSerializer
+    def get(self, request, *args, **kwargs):
+        instance = EncabezadoEncuesta.objects.filter(item_ya_usado=True)
+        serializer = self.serializer_class(instance,many=True)
+        
+        if not instance:
+            raise NotFound("No existen encuentas registrados en el sistema.")
+
+        return Response({'success':True,
+                         'detail':'Se encontraron los siguientes registros.',
+                         'data':serializer.data},status=status.HTTP_200_OK)
+    
+
+class ConteoEncuestasGet(generics.ListAPIView):
+    queryset = DatosEncuestasResueltas.objects.all()
+    serializer_class = DatosEncuestasResueltasConteoSerializer
+    def get(self, request,pk):
+        instance = DatosEncuestasResueltas.objects.filter(id_encuesta=pk)
+        serializer = self.serializer_class(instance)
+        cantidad_encuestas_resueltas = DatosEncuestasResueltas.objects.filter(id_encuesta=pk).count()
+
+        id_preguntas=[]
+        for encuenta in instance:
+            respuestas_contestadas = RespuestaEncuesta.objects.filter(id_encuesta_resuelta=encuenta.id_datos_encuesta_resuelta)
+            for respuesta in respuestas_contestadas:
+                print(respuesta)
+                print(respuesta.id_opcion_pregunta_encuesta.opcion_rta)
+                id_preguntas.append(respuesta.id_opcion_pregunta_encuesta.id_pregunta.id_pregunta_encuesta)
+            print("################")
+        print(cantidad_encuestas_resueltas)
+        print(id_preguntas)
+        if not instance:
+            raise NotFound("No existen encuentas registrados en el sistema.")
+        
+        serializer=self.serializer_class(instance,many=True)
+            
+     
+        return Response({'success':True,
+                         'detail':'Se encontraron los siguientes registros.',
+                         'data':serializer.data},status=status.HTTP_200_OK)
