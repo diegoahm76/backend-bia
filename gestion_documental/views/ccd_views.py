@@ -1349,12 +1349,9 @@ class AgrupacionesDocumentalesPersistenteTemporalGetView(generics.ListAPIView):
         except CuadrosClasificacionDocumental.DoesNotExist:
             raise NotFound('CCD no encontrado')
         
-        try:
-            unidades_persistentes = UnidadesSeccionPersistenteTemporal.objects.get(id_ccd_nuevo=ccd.id_ccd, 
+        unidades_persistentes = UnidadesSeccionPersistenteTemporal.objects.get(id_ccd_nuevo=ccd.id_ccd, 
                                                                                 id_unidad_seccion_actual=data_in['id_unidad_actual'],
                                                                                 id_unidad_seccion_nueva=data_in['id_unidad_nueva'])
-        except UnidadesSeccionPersistenteTemporal.DoesNotExist:
-            raise NotFound('unidades persistentes no encontradas')
 
         agrupaciones_persistentes = AgrupacionesDocumentalesPersistenteTemporal.objects.filter(id_unidad_seccion_temporal=unidades_persistentes.id_unidad_seccion_temporal)
         ids_agrupacion_doc_actual = [agrupacion.id_cat_serie_unidad_ccd_actual.id_cat_serie_und for agrupacion in agrupaciones_persistentes]
