@@ -813,7 +813,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
             else:
                 fecha_ingreso_existente = None
             if id_bien_inventario and fecha_ingreso_existente:
-                if fecha_entrega < fecha_ingreso_existente:
+                if fecha_entrega.date() < fecha_ingreso_existente:
                     raise ValidationError('la fecha de entrada tiene que ser posterior a la fecha de ingreso del bien en el inventario')
                 
         # CREACIÓN DE CONSUMOS
