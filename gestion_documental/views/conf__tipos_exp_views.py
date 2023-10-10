@@ -2,7 +2,7 @@
 from gestion_documental.models.ccd_models import CatalogosSeries, CatalogosSeriesUnidad
 from gestion_documental.models.conf__tipos_exp_models import ConfiguracionTipoExpedienteAgno
 from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, TablaRetencionDocumental
-from gestion_documental.serializers.conf__tipos_exp_serializers import CatalogosSeriesSecSubGetSerializer, ConfiguracionTipoExpedienteAgnoCreateSerializer, SecSubUnidadOrgaGetSerializer, XXGetSerializer, XYGetSerializer
+from gestion_documental.serializers.conf__tipos_exp_serializers import CatalogosSeriesSecSubGetSerializer, ConfiguracionTipoExpedienteAgnoCreateSerializer, ConfiguracionTipoExpedienteAgnoGetSerializer, SecSubUnidadOrgaGetSerializer, XXGetSerializer, XYGetSerializer
 from seguridad.utils import Util
 from datetime import datetime
 from rest_framework.permissions import IsAuthenticated
@@ -148,6 +148,8 @@ class ConfiguracionTipoExpedienteAgnoUpdate(generics.UpdateAPIView):
     def put(self,request,pk):
     
         try:
+            id_persona=request.user.persona.id_persona
+            
             hoy = date.today()
             age = hoy.year
             fecha_actual=datetime.now()
@@ -178,6 +180,7 @@ class ConfiguracionTipoExpedienteAgnoUpdate(generics.UpdateAPIView):
                 else:
                     raise ValidationError('Debe asigar un numero de digitos.')
             data['fecha_ult_config_implement']=fecha_actual
+            data['id_persona_ult_config_implement']=id_persona
             instance_previous=copy.copy(instance)
             serializer = self.serializer_class(instance,data=data, partial=True)
             serializer.is_valid(raise_exception=True)
@@ -219,7 +222,7 @@ class ConfiguracionTipoExpedienteAgnoUpdate(generics.UpdateAPIView):
 class ConfiguracionTipoExpedienteAgnoGetbyCatalogoUnidad(generics.ListAPIView):
     #erializer_class = CatalogosSeriesSecSubGetSerializer
     #serializer_class = XYGetSerializer
-    serializer_class = ConfiguracionTipoExpedienteAgnoCreateSerializer
+    serializer_class = ConfiguracionTipoExpedienteAgnoGetSerializer
     permission_classes = [IsAuthenticated]
     
     def get (self, request,uni,agno):
