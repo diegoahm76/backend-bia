@@ -950,9 +950,7 @@ class BusquedaCCDHomologacionView(generics.ListAPIView):
     
     def get_validacion_ccd(self):
         tca_actual = TablasControlAcceso.objects.filter(actual=True).first()
-        tca_filtro = TablasControlAcceso.objects.filter(
-            fecha_puesta_produccion=None, 
-            fecha_terminado__gt=tca_actual.fecha_puesta_produccion)
+        tca_filtro = TablasControlAcceso.objects.filter(fecha_puesta_produccion=None, fecha_terminado__gt=tca_actual.fecha_puesta_produccion)
         # trd_filtro = TablaRetencionDocumental.objects.exclude(fecha_terminado=None).filter(fecha_puesta_produccion=None)
         # ccd_filtro = CuadrosClasificacionDocumental.objects.exclude(fecha_terminado=None).filter(fecha_puesta_produccion=None)
         # trd_filtro = trd_filtro.filter(id_trd__in=tca_filtro.values('id_trd'))  
@@ -1280,7 +1278,7 @@ class PersistenciaConfirmadaCreateView(generics.CreateAPIView):
             unidades_persistentes = instancia_unidades_persistentes.crear_actualizar_unidades_persistentes_tmp(data)
             agrupaciones_persistentes = []
 
-            if 'catalagos_persistentes' in data and data['catalagos_persistentes']:
+            if 'catalagos_persistentes' in data:
 
                 for unidad_persistente in unidades_persistentes:
                     data_agrup = []
@@ -1567,10 +1565,7 @@ class UnidadesSeccionResponsableTemporalGetView(generics.ListAPIView):
         
         unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd)
         unidades_responsables_data = self.serializer_class(unidades_responsables, many=True).data
-        # ids_unidad_actual = [unidad.id_unidad_seccion_actual.id_unidad_organizacional for unidad in uniadades_responsables]
-        # ids_unidad_nueva = [unidad.id_unidad_seccion_nueva.id_unidad_organizacional for unidad in uniadades_responsables]
 
-        # return ids_unidad_actual, ids_unidad_nueva
         return unidades_responsables_data
 
     
