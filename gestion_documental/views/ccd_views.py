@@ -1352,11 +1352,15 @@ class AgrupacionesDocumentalesPersistenteTemporalGetView(generics.ListAPIView):
         unidades_persistentes = UnidadesSeccionPersistenteTemporal.objects.get(id_ccd_nuevo=ccd.id_ccd, 
                                                                                 id_unidad_seccion_actual=data_in['id_unidad_actual'],
                                                                                 id_unidad_seccion_nueva=data_in['id_unidad_nueva'])
+        
+        ids_agrupacion_doc_actual = None
+        ids_agrupacion_doc_nueva = None
 
-        agrupaciones_persistentes = AgrupacionesDocumentalesPersistenteTemporal.objects.filter(id_unidad_seccion_temporal=unidades_persistentes.id_unidad_seccion_temporal)
-        ids_agrupacion_doc_actual = [agrupacion.id_cat_serie_unidad_ccd_actual.id_cat_serie_und for agrupacion in agrupaciones_persistentes]
-        ids_agrupacion_doc_nueva = [agrupacion.id_cat_serie_unidad_ccd_nueva.id_cat_serie_und for agrupacion in agrupaciones_persistentes]
-    
+        if unidades_persistentes:
+            agrupaciones_persistentes = AgrupacionesDocumentalesPersistenteTemporal.objects.filter(id_unidad_seccion_temporal=unidades_persistentes.id_unidad_seccion_temporal)
+            ids_agrupacion_doc_actual = [agrupacion.id_cat_serie_unidad_ccd_actual.id_cat_serie_und for agrupacion in agrupaciones_persistentes]
+            ids_agrupacion_doc_nueva = [agrupacion.id_cat_serie_unidad_ccd_nueva.id_cat_serie_und for agrupacion in agrupaciones_persistentes]
+        
         return ids_agrupacion_doc_actual, ids_agrupacion_doc_nueva
     
     def get(self, request):
@@ -1365,23 +1369,26 @@ class AgrupacionesDocumentalesPersistenteTemporalGetView(generics.ListAPIView):
         id_unidad_actual = self.request.query_params.get('id_unidad_actual', None)
         id_unidad_nueva = self.request.query_params.get('id_unidad_nueva', None)
 
-        data = {
+        data_in = {
             "id_ccd_nuevo": id_ccd_nuevo,
             "id_unidad_actual": id_unidad_actual,
             "id_unidad_nueva": id_unidad_nueva  
             }
-        
-        ids_agrupacion_doc_actual, ids_agrupacion_doc_nueva = self.get_unidades_seccion(data)
-        unidad_cat_serie_actual = CatalogosSeriesUnidad.objects.filter(id_cat_serie_und__in=ids_agrupacion_doc_actual)
-        unidad_cat_serie_nueva = CatalogosSeriesUnidad.objects.filter(id_cat_serie_und__in=ids_agrupacion_doc_nueva)
-        unidad_cat_serie_actual_data = self.serializer_class(unidad_cat_serie_actual, many=True).data
-        unidad_cat_serie_nueva_data = self.serializer_class(unidad_cat_serie_nueva, many=True).data
-        data = {
-            'id_ccd_nuevo':data['id_ccd_nuevo'],
-            'agrupaciones_persistentes':obtener_cat_series_unidades_ccd(unidad_cat_serie_actual_data, unidad_cat_serie_nueva_data)
-        }
+        data = {}
+    
+        ids_agrupacion_doc_actual, ids_agrupacion_doc_nueva = self.get_unidades_seccion(data_in)
+        if ids_agrupacion_doc_actual is not None:
+            unidad_cat_serie_actual = CatalogosSeriesUnidad.objects.filter(id_cat_serie_und__in=ids_agrupacion_doc_actual)
+            unidad_cat_serie_nueva = CatalogosSeriesUnidad.objects.filter(id_cat_serie_und__in=ids_agrupacion_doc_nueva)
+            unidad_cat_serie_actual_data = self.serializer_class(unidad_cat_serie_actual, many=True).data
+            unidad_cat_serie_nueva_data = self.serializer_class(unidad_cat_serie_nueva, many=True).data
+            data = {
+                'id_ccd_nuevo':data_in['id_ccd_nuevo'],
+                'agrupaciones_persistentes':obtener_cat_series_unidades_ccd(unidad_cat_serie_actual_data, unidad_cat_serie_nueva_data)
+            }
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
+
 
 # ENTREGA 57
 class SeriesDocUnidadCCDActualGetView(generics.ListAPIView):
