@@ -74,12 +74,13 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                     pass
                 except:
                     raise ValidationError('El id de porcentaje de iva ingresado no existe')
-                try:
-                    id_unidad_medida_vida_util = UnidadesMedida.objects.get(
-                        id_unidad_medida=data['id_unidad_medida_vida_util'])
-                    pass
-                except:
-                    raise ValidationError('El id de unidad de medida vida util ingresado no existe')
+                if data['cod_tipo_bien'] == 'A':
+                    try:
+                        id_unidad_medida_vida_util = UnidadesMedida.objects.get(
+                            id_unidad_medida=data['id_unidad_medida_vida_util'])
+                        pass
+                    except:
+                        raise ValidationError('El id de unidad de medida vida util ingresado no existe')
                 try:
                     if data['id_marca']:
                         id_marca = Marcas.objects.get(id_marca=data['id_marca'])
