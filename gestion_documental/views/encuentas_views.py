@@ -7,8 +7,8 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from gestion_documental.models.encuencas_models import EncabezadoEncuesta, OpcionesRta, PreguntasEncuesta
-from gestion_documental.serializers.encuentas_serializers import EncabezadoEncuestaCreateSerializer, EncabezadoEncuestaDeleteSerializer, EncabezadoEncuestaGetDetalleSerializer, EncabezadoEncuestaGetSerializer, EncabezadoEncuestaUpdateSerializer, OpcionesRtaCreateSerializer, OpcionesRtaDeleteSerializer, OpcionesRtaGetSerializer, OpcionesRtaUpdateSerializer, PreguntasEncuestaCreateSerializer, PreguntasEncuestaDeleteSerializer, PreguntasEncuestaGetSerializer, PreguntasEncuestaUpdateSerializer
+from gestion_documental.models.encuencas_models import DatosEncuestasResueltas, EncabezadoEncuesta, OpcionesRta, PreguntasEncuesta
+from gestion_documental.serializers.encuentas_serializers import DatosEncuestasResueltasCreateSerializer, EncabezadoEncuestaCreateSerializer, EncabezadoEncuestaDeleteSerializer, EncabezadoEncuestaGetDetalleSerializer, EncabezadoEncuestaGetSerializer, EncabezadoEncuestaUpdateSerializer, OpcionesRtaCreateSerializer, OpcionesRtaDeleteSerializer, OpcionesRtaGetSerializer, OpcionesRtaUpdateSerializer, PreguntasEncuestaCreateSerializer, PreguntasEncuestaDeleteSerializer, PreguntasEncuestaGetSerializer, PreguntasEncuestaUpdateSerializer
 from django.db.models import Max
 from datetime import datetime
 from django.db import transaction
@@ -75,12 +75,12 @@ class EncabezadoEncuestaUpdate(generics.UpdateAPIView):
             serializer.is_valid(raise_exception=True)
             instance = serializer.save()
             data_response_pregunta=[]
-            if 'preguntas' in data_in :
+            if 'preguntas_encuesta' in data_in :
                 crear_pregunta=PreguntasEncuestaCreate()
                 actualizar_pregunta=PreguntasEncuestaUpdate()
                 eliminar_pregunta=PreguntasEncuestaDelete()
 
-                id_preguntas= [opcion.get('id_pregunta_encuesta', None) for opcion in data_in['preguntas']]
+                id_preguntas= [opcion.get('id_pregunta_encuesta', None) for opcion in data_in['preguntas_encuesta']]
                 #BUSCA EN BASE DE DATOS LAS RESPUESTAS
                 respuestas_persistentes=list(PreguntasEncuesta.objects.filter(id_encabezado_encuesta=instance.id_encabezado_encuesta).values_list('id_pregunta_encuesta', flat=True))
                 print("EN BASE DE DATOS :"+str(respuestas_persistentes))
@@ -96,7 +96,7 @@ class EncabezadoEncuestaUpdate(generics.UpdateAPIView):
                     if respuesta_pregunta.status_code != status.HTTP_200_OK:
                         return respuesta_pregunta
            
-                for pre in data_in['preguntas']:
+                for pre in data_in['preguntas_encuesta']:
 
                     if 'id_pregunta_encuesta' in pre:
                         if pre:
@@ -117,7 +117,7 @@ class EncabezadoEncuestaUpdate(generics.UpdateAPIView):
                
 
             response_data=serializer.data
-            response_data['preguntas']=data_response_pregunta
+            response_data['preguntas_encuesta']=data_response_pregunta
             return Response({
                 "success": True,
                 "detail": "Se actualizó el encabezado de encuesta correctamente",
@@ -407,3 +407,47 @@ class EncabezadoEncuestaDelete(generics.DestroyAPIView):
             "detail": "Se eliminó el encabezado de encuesta correctamente",
             "data": serializer.data
         }, status= status.HTTP_200_OK)
+    
+
+
+
+##ENCUENTA CONTESTADA
+
+class DatosEncuestasResueltasCreate(generics.CreateAPIView):
+    serializer_class = DatosEncuestasResueltasCreateSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = DatosEncuestasResueltas.objects.all()
+    
+    def post(self,request):
+        data_in = request.data
+        usuario = request.user.persona.id_persona
+        #print(usuario)
+        try:
+            with transaction.atomic():
+                fecha_actual = datetime.now()
+                data_in['fecha_creacion'] = fecha_actual
+
+                if 'tipo_usuario' in data_in:
+                    if data_in['tipo_usuario'] == 'I':
+                            if not  ('nro_documento_id' in data_in and data_in['nro_documento_id']):
+                                raise ValidationError('El campo '+'numero de documento id'+" es requerido.")
+                            if not  ('nombre_completo' in data_in and data_in['nombre_completo']):
+                                raise ValidationError('El campo '+'nombre completo'+" es requerido.")
+                            if not  ('cod_sexo' in data_in and data_in['cod_sexo']):
+                                raise ValidationError('El campo '+'sexo'+" es requerido.")
+                            if not  ('rango_edad' in data_in and data_in['rango_edad']):
+                                raise ValidationError('El campo '+'rango de edad'+" es requerido.")
+                            if not  ('email' in data_in and data_in['email']):
+                                raise ValidationError('El campo '+'email'+" es requerido.")
+                            if not  ('telefono' in data_in and data_in['telefono']):
+                                raise ValidationError('El campo '+'telefono'+" es requerido.")
+
+                        
+                #data_in['id_persona_ult_config_implement']=usuario
+                serializer = self.serializer_class(data=data_in)
+                serializer.is_valid(raise_exception=True)
+                instance=serializer.save()
+                
+                return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+        except ValidationError as e:       
+            raise ValidationError(e.detail)
