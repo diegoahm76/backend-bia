@@ -16,5 +16,8 @@ urlpatterns = [
     path('opciones_rta/delete/<str:pk>/',views.OpcionesRtaDelete.as_view(), name='eliminar-opcion'),
     #EncuentasContestados
     path('datos_encuestas_resueltas/create/',views.DatosEncuestasResueltasCreate.as_view(), name='crear-datos-encuentas'),
-
-]#DatosEncuestasResueltasCreateSerializer
+    path('usuario_registrado/get/',views.UsuarioRegistradoGet.as_view(), name='traer usuario registrado'),
+    #INFORMES
+    path('encuesta_realizadas/get/',views.EncuestasRealizadasGet.as_view(), name='get-encabezado'),
+    path('conteo_encuesta/get/<str:pk>/',views.ConteoEncuestasGet.as_view(), name='get-respuestas-conteo'),
+]#UsuarioRegistradoGet
