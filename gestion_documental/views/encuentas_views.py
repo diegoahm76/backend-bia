@@ -12,6 +12,7 @@ from gestion_documental.serializers.encuentas_serializers import DatosEncuestasR
 from django.db.models import Max
 from datetime import datetime
 from django.db import transaction
+from seguridad.utils import Util
 
 from transversal.admin import PersonasAdmin
 from transversal.models.personas_models import Personas
@@ -46,14 +47,30 @@ class EncabezadoEncuestaCreate(generics.CreateAPIView):
                         data_pregunta={**pre}
                         data_pregunta['id_encabezado_encuesta']=instance.id_encabezado_encuesta
                         #print(data_pregunta)
-                        response_pregunta=crear_pregunta.crear_pregunta(data_pregunta)
+                        response_pregunta=crear_pregunta.crear_pregunta(data_pregunta,request)
                         if response_pregunta.status_code!=status.HTTP_201_CREATED:
                             return response_pregunta
                         response_preguntas.append(response_pregunta.data['data'])
 
                 response_encabezado=serializer.data
                 response_encabezado['preguntas_encuesta']=response_preguntas
-                return Response({'success':True,'detail':'Se crearon los registros correctamente','data':response_encabezado},status=status.HTTP_201_CREATED)
+
+            #AUDITORIA DE CREAR ENCUESTA
+            id_usuario = request.user.id_usuario
+            direccion=Util.get_client_ip(request)
+            descripcion = {"NombreEncuesta": str(instance.nombre_encuesta)}
+            
+            auditoria_data = {
+                "id_usuario" : id_usuario,
+                "id_modulo" : 167,
+                "cod_permiso": "CR",
+                "subsistema": 'GEST',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+            }
+            #print(auditoria_data)
+            Util.save_auditoria(auditoria_data)
+            return Response({'success':True,'detail':'Se crearon los registros correctamente','data':response_encabezado},status=status.HTTP_201_CREATED)
         except ValidationError as e:       
             raise ValidationError(e.detail)
 
@@ -137,7 +154,7 @@ class PreguntasEncuestaCreate(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     queryset = PreguntasEncuesta.objects.all()
     
-    def crear_pregunta(self,data):
+    def crear_pregunta(self,data,request):
         try:
            
             valor_maximo = PreguntasEncuesta.objects.filter(id_encabezado_encuesta=data['id_encabezado_encuesta']).aggregate(Max('ordenamiento'))['ordenamiento__max']
@@ -167,13 +184,33 @@ class PreguntasEncuestaCreate(generics.CreateAPIView):
                         data_ops.append(response_pregunta.data['data'])
             data_response=serializer.data
             data_response['opciones_rta']=data_ops
+
+            #AUDITORIA DE CREAR ENCUESTA
+            # id_usuario = request.user.id_usuario
+            # direccion=Util.get_client_ip(request)
+            # descripcion = {"NombreEncuesta": str(instance.nombre_encuesta)}
+            
+            # auditoria_data = {
+            #     "id_usuario" : id_usuario,
+            #     "id_modulo" : 167,
+            #     "cod_permiso": "CR",
+            #     "subsistema": 'GEST',
+            #     "dirip": direccion,
+            #     "descripcion": descripcion, 
+            # }
+            # #print(auditoria_data)
+            # Util.save_auditoria(auditoria_data)
+
+
             return Response({'success':True,'detail':'Se crearon los registros correctamente','data':data_response},status=status.HTTP_201_CREATED)
         except ValidationError as e:       
             raise ValidationError(e.detail)
 
     def post(self,request):
         data_in = request.data
-        response=self.crear_pregunta(data_in)
+        usuario = request.user.id_usuario
+        direccion=Util.get_client_ip(request)
+        response=self.crear_pregunta({**data_in},request)
         return response
 
 

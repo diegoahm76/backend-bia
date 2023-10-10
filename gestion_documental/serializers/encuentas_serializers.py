@@ -6,7 +6,7 @@ from gestion_documental.choices.rango_edad_choices import RANGO_EDAD_CHOICES
 from gestion_documental.models.encuencas_models import DatosEncuestasResueltas, EncabezadoEncuesta, OpcionesRta, PreguntasEncuesta, RespuestaEncuesta
 from transversal.models.personas_models import Personas 
 import datetime
-from dateutil.relativedelta import relativedelta
+#from dateutil.relativedelta import relativedelta
 
 
 class  EncabezadoEncuestaCreateSerializer(serializers.ModelSerializer):
@@ -146,8 +146,11 @@ class PersonaRegistradaEncuentaGet(serializers.ModelSerializer):
             fecha_nacimiento = obj.fecha_nacimiento
             if fecha_nacimiento:
                 fecha_actual = datetime.date.today()
-                edad = relativedelta(fecha_actual, fecha_nacimiento)
-                años = edad.years
+                edad = fecha_actual.year - fecha_nacimiento.year
+                if (fecha_actual.month, fecha_actual.day) < (fecha_nacimiento.month, fecha_nacimiento.day):
+                    edad -= 1
+
+                años = edad
 
                 for categoria, limite_inferior, limite_superior in rangos:
                     if limite_superior is None:
