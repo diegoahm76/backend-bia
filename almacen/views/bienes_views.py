@@ -74,12 +74,13 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                     pass
                 except:
                     raise ValidationError('El id de porcentaje de iva ingresado no existe')
-                try:
-                    id_unidad_medida_vida_util = UnidadesMedida.objects.get(
-                        id_unidad_medida=data['id_unidad_medida_vida_util'])
-                    pass
-                except:
-                    raise ValidationError('El id de unidad de medida vida util ingresado no existe')
+                if data['cod_tipo_bien'] == 'A':
+                    try:
+                        id_unidad_medida_vida_util = UnidadesMedida.objects.get(
+                            id_unidad_medida=data['id_unidad_medida_vida_util'])
+                        pass
+                    except:
+                        raise ValidationError('El id de unidad de medida vida util ingresado no existe')
                 try:
                     if data['id_marca']:
                         id_marca = Marcas.objects.get(id_marca=data['id_marca'])
@@ -812,7 +813,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
             else:
                 fecha_ingreso_existente = None
             if id_bien_inventario and fecha_ingreso_existente:
-                if fecha_entrega < fecha_ingreso_existente:
+                if fecha_entrega.date() < fecha_ingreso_existente:
                     raise ValidationError('la fecha de entrada tiene que ser posterior a la fecha de ingreso del bien en el inventario')
                 
         # CREACIÓN DE CONSUMOS
