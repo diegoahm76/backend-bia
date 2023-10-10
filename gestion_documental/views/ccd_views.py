@@ -951,12 +951,10 @@ class BusquedaCCDHomologacionView(generics.ListAPIView):
     def get_validacion_ccd(self):
         tca_actual = TablasControlAcceso.objects.filter(actual=True).first()
         tca_filtro = TablasControlAcceso.objects.filter(fecha_puesta_produccion=None, fecha_terminado__gt=tca_actual.fecha_puesta_produccion)
-        # trd_filtro = TablaRetencionDocumental.objects.exclude(fecha_terminado=None).filter(fecha_puesta_produccion=None)
-        # ccd_filtro = CuadrosClasificacionDocumental.objects.exclude(fecha_terminado=None).filter(fecha_puesta_produccion=None)
-        # trd_filtro = trd_filtro.filter(id_trd__in=tca_filtro.values('id_trd'))  
-        # ccd_filtro = ccd_filtro.filter(id_ccd__in=trd_filtro.values('id_ccd'))
-        trd_filtro = TablaRetencionDocumental.objects.filter(id_trd__in=tca_filtro.values('id_trd'))
-        ccd_filtro = CuadrosClasificacionDocumental.objects.filter(id_ccd__in=trd_filtro.values('id_ccd')) 
+        trd_filtro = TablaRetencionDocumental.objects.exclude(fecha_terminado=None).filter(fecha_puesta_produccion=None)
+        ccd_filtro = CuadrosClasificacionDocumental.objects.exclude(fecha_terminado=None).filter(fecha_puesta_produccion=None)
+        trd_filtro = trd_filtro.filter(id_trd__in=tca_filtro.values('id_trd'))  
+        ccd_filtro = ccd_filtro.filter(id_ccd__in=trd_filtro.values('id_ccd'))
         return ccd_filtro.order_by('-fecha_terminado')
 
     def get(self, request):
