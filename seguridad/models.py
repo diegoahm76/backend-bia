@@ -105,6 +105,7 @@ class Modulos(models.Model):
     ruta_formulario = models.CharField(max_length=255, blank=True, null=True, db_column='TzrutaFormulario')
     nombre_icono = models.CharField(max_length=30, blank=True, null=True, db_column='TznombreIcono')
     id_menu = models.ForeignKey(EstructuraMenus, on_delete=models.SET_NULL, null=True, blank=True, db_column='TzId_Menu')
+    solo_usuario_web = models.BooleanField(default=False, db_column='TzsoloUsuarioWeb')
     
     def __str__(self):
         return str(self.nombre_modulo)
