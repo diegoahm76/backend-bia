@@ -86,6 +86,14 @@ class AgregarArchivoSoporteCreateSerializer(serializers.ModelSerializer):
 
         # Unir las palabras clave formateadas de nuevo con "|"
         return '|'.join(palabras_clave)
+    
+    def create(self, validated_data):
+        # Aquí puedes realizar la lógica de conversión de campos vacíos a None (null)
+        # Por ejemplo:
+        for field_name, field_value in validated_data.items():
+            if field_value == "":
+                validated_data[field_name] = None
+        return super().create(validated_data)
 
     class Meta:
         model = DocumentosDeArchivoExpediente
