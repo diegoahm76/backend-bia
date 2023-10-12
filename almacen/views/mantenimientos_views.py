@@ -708,7 +708,7 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
         
         cod_estado_final = EstadosArticulo.objects.filter(cod_estado=datos_ingresados['cod_estado_final'])
         persona_realiza = Personas.objects.filter(id_persona=datos_ingresados['id_persona_realiza']).values().filter()
-        datos_ingresados['id_persona_diligencia'] = request.user.id_usuario
+        datos_ingresados['id_persona_diligencia'] = request.user.persona.id_persona
         if not articulo:
             raise NotFound('Ingrese un articulo válido. Debe ser activo fijo, de nivel jerarquico 5 y un elemento')
         if not articulo['tiene_hoja_vida']:
