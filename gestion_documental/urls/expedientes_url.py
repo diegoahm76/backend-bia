@@ -20,10 +20,13 @@ urlpatterns = [
      path('expedientes/eliminar-archivo-soporte/<int:id_documento_de_archivo_exped>/',views.EliminarArchivoSoporte.as_view(), name='eliminar-archivo'),
      path('expedientes/listar-archivos-soporte/<int:id_expediente>/',views.ArchivosSoporteGetId.as_view(), name='listar-todos-archivos-soporte'),
      path('expedientes/editar-archivos-soporte/<int:id_documento_de_archivo_exped>/',views.UpdateArchivoSoporte.as_view(), name='editar-archivos-soporte'),
+     path('expedientes/listar-info-archivos/<int:id_documento_de_archivo_exped>/',views.DetalleArchivoSoporte.as_view(), name='listar-info-archivos-soporte'),
+
 
 
      #Reapertura_Expediente
      path('expedientes/buscar-expediente-cerrado/',views.ExpedienteSearchCerrado.as_view(), name='buscar-expediente'),
+     
   
 
 

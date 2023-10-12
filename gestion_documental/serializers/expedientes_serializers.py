@@ -53,7 +53,7 @@ class ExpedienteGetOrdenSerializer(serializers.ModelSerializer):
  
 
 
- #Cierre_Expediente  
+#Cierre_Expediente  
 class CierreExpedienteSerializer(serializers.ModelSerializer):
     
     class Meta:
@@ -112,6 +112,14 @@ class ListarTipologiasSerializer(serializers.ModelSerializer):
     class Meta:
         model = TipologiasDoc
         fields = ['id_tipologia_documental', 'nombre']
+
+
+class ArchivoSoporteSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = DocumentosDeArchivoExpediente
+        fields = '__all__'
+
   
 
  ######################### SERIALIZERS ARCHIVOS DIGITALES #########################
