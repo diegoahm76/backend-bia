@@ -7,16 +7,17 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from gestion_documental.models.encuencas_models import DatosEncuestasResueltas, EncabezadoEncuesta, OpcionesRta, PreguntasEncuesta, RespuestaEncuesta
+from gestion_documental.models.encuencas_models import TIPO_USUARIO_CHOICES, DatosEncuestasResueltas, EncabezadoEncuesta, OpcionesRta, PreguntasEncuesta, RespuestaEncuesta
 from gestion_documental.serializers.encuentas_serializers import DatosEncuestasResueltasConteoSerializer, DatosEncuestasResueltasCreateSerializer, EncabezadoEncuestaCreateSerializer, EncabezadoEncuestaDeleteSerializer, EncabezadoEncuestaGetDetalleSerializer, EncabezadoEncuestaGetSerializer, EncabezadoEncuestaUpdateSerializer, EncuestaActivaGetSerializer, OpcionesRtaCreateSerializer, OpcionesRtaDeleteSerializer, OpcionesRtaGetSerializer, OpcionesRtaUpdateSerializer, PersonaRegistradaEncuentaGet, PreguntasEncuestaCreateSerializer, PreguntasEncuestaDeleteSerializer, PreguntasEncuestaGetSerializer, PreguntasEncuestaUpdateSerializer,RespuestaEncuestaCreateSerializer
 from django.db.models import Max
 from datetime import datetime
 from django.db import transaction
 from seguridad.utils import Util
-
+from django.db.models import Count
 from transversal.admin import PersonasAdmin
 from transversal.models.personas_models import Personas
-   
+from transversal.models.base_models import Departamento, Municipio, Paises, Sexo, TipoDocumento
+from gestion_documental.choices.rango_edad_choices import RANGO_EDAD_CHOICES
 class EncabezadoEncuestaCreate(generics.CreateAPIView):
     serializer_class = EncabezadoEncuestaCreateSerializer
     permission_classes = [IsAuthenticated]
@@ -686,25 +687,127 @@ class ConteoEncuestasGet(generics.ListAPIView):
     serializer_class = DatosEncuestasResueltasConteoSerializer
     def get(self, request,pk):
         instance = DatosEncuestasResueltas.objects.filter(id_encuesta=pk)
+        encuesta= EncabezadoEncuesta.objects.filter(id_encabezado_encuesta=pk).first()
         serializer = self.serializer_class(instance)
+        data=[]
         cantidad_encuestas_resueltas = DatosEncuestasResueltas.objects.filter(id_encuesta=pk).count()
-
-        id_preguntas=[]
-        for encuenta in instance:
-            respuestas_contestadas = RespuestaEncuesta.objects.filter(id_encuesta_resuelta=encuenta.id_datos_encuesta_resuelta)
-            for respuesta in respuestas_contestadas:
-                print(respuesta)
-                print(respuesta.id_opcion_pregunta_encuesta.opcion_rta)
-                id_preguntas.append(respuesta.id_opcion_pregunta_encuesta.id_pregunta.id_pregunta_encuesta)
-            print("################")
-        print(cantidad_encuestas_resueltas)
-        print(id_preguntas)
-        if not instance:
-            raise NotFound("No existen encuentas registrados en el sistema.")
+        #print(cantidad_encuestas_resueltas)
+        #print("CANTIDAD: "+str(cantidad_encuestas_resueltas))
+        pregustas_encuesta = PreguntasEncuesta.objects.filter(id_encabezado_encuesta=pk)
         
-        serializer=self.serializer_class(instance,many=True)
+        for pregunta in pregustas_encuesta:
+            data_pregunta={}
+            data_pregunta['id_pregunta_encuesta'] = pregunta.id_pregunta_encuesta
+            data_pregunta['redaccion_pregunta'] = pregunta.redaccion_pregunta
+            data_pregunta['ordenamiento'] = pregunta.ordenamiento
+            #print(pregunta)
+            opciones = OpcionesRta.objects.filter(id_pregunta=pregunta.id_pregunta_encuesta)
+            data_respuestas=[]
+            for opcion in opciones:
+                data_opciones={}
+                #print(" "+str(opcion))
+                cantidad_de_respuestas = RespuestaEncuesta.objects.filter(id_opcion_pregunta_encuesta = opcion.id_opcion_rta).count()
+                data_opciones['id_opcion_rta'] = opcion.id_opcion_rta
+                data_opciones['opcion_rta'] =  opcion.opcion_rta
+                data_opciones['ordenamiento'] = opcion.ordenamiento
+                data_opciones['total'] = cantidad_de_respuestas
+                data_respuestas.append(data_opciones)
+                #print("CANTIDAD DE RESPUESTAS: "+str(cantidad_de_respuestas))
+                data_pregunta['opciones'] = data_respuestas
+            data.append(data_pregunta)
             
      
         return Response({'success':True,
                          'detail':'Se encontraron los siguientes registros.',
-                         'data':serializer.data},status=status.HTTP_200_OK)
+                         'data':{'total':cantidad_encuestas_resueltas,'preguntas':data}},status=status.HTTP_200_OK)
+    
+
+
+
+#DatosEncuestasResueltas
+class ConteoEncuestasRegionesGet(generics.ListAPIView):
+    queryset = DatosEncuestasResueltas.objects.all()
+
+    def get(self, request,pk):
+        instance = DatosEncuestasResueltas.objects.filter(id_encuesta=pk).values('id_municipio_para_nacional').annotate(cuenta=Count('id_municipio_para_nacional'))
+        datos_nulos = DatosEncuestasResueltas.objects.filter(id_encuesta=pk, id_municipio_para_nacional__isnull=True).count()
+        total = DatosEncuestasResueltas.objects.filter(id_encuesta=pk).count()
+        print(datos_nulos)
+        data=[]
+        for i in instance:
+
+            if i['id_municipio_para_nacional']:
+                municipio = Municipio.objects.filter(cod_municipio=i['id_municipio_para_nacional']).first()
+                print(municipio.nombre)
+                data.append({'nombre':municipio.nombre,'total':i['cuenta']})
+        data.append({'nombre':'NULOS','total':datos_nulos})
+
+        return Response({'success':True,
+                         'detail':'Se encontraron los siguientes registros.',
+                         'data':{'registros':data,'total':total}},status=status.HTTP_200_OK)
+    
+class ConteoEncuestasTiposUsuarioGet(generics.ListAPIView):
+    queryset = DatosEncuestasResueltas.objects.all()
+
+    def get(self, request,pk):
+        instance = DatosEncuestasResueltas.objects.filter(id_encuesta=pk).values('tipo_usuario').annotate(cuenta=Count('tipo_usuario'))
+        tipos=TIPO_USUARIO_CHOICES
+        total = DatosEncuestasResueltas.objects.filter(id_encuesta=pk).count()
+        data=[]
+        for i in instance:
+            for tipo in tipos:
+                if i['tipo_usuario'] == tipo[0]:
+                    data.append({'nombre':tipo[1],'total':i['cuenta']})
+                    print(data)
+                    break
+
+
+        
+                #print(tipo)
+        return Response({'success':True,
+                         'detail':'Se encontraron los siguientes registros.',
+                         'data':{'registros':data,'total':total}},status=status.HTTP_200_OK)
+    
+
+class ConteoEncuestasPorGenero(generics.ListAPIView):
+    queryset = DatosEncuestasResueltas.objects.all()
+
+    def get(self, request,pk):
+        instance = DatosEncuestasResueltas.objects.filter(id_encuesta=pk).values('cod_sexo').annotate(cuenta=Count('cod_sexo'))
+        datos_nulos = DatosEncuestasResueltas.objects.filter(id_encuesta=pk, cod_sexo__isnull=True).count()
+        total = DatosEncuestasResueltas.objects.filter(id_encuesta=pk).count()
+        #print(datos_nulos)
+        data=[]
+        for i in instance:
+            print(i)
+            if i['cod_sexo']:
+                sexo = Sexo.objects.filter(cod_sexo=i['cod_sexo']).first()
+                print(sexo.nombre)
+                data.append({'nombre':sexo.nombre,'total':i['cuenta']})
+        data.append({'nombre':'NULOS','total':datos_nulos})
+        return Response({'success':True,
+                         'detail':'Se encontraron los siguientes registros.',
+                         'data':{'registros':data,'total':total}},status=status.HTTP_200_OK)
+    
+
+class ConteoEncuestasPorRangoEdad(generics.ListAPIView):
+    queryset = DatosEncuestasResueltas.objects.all()
+
+    def get(self, request,pk):
+        instance = DatosEncuestasResueltas.objects.filter(id_encuesta=pk).values('rango_edad').annotate(cuenta=Count('rango_edad'))
+        datos_nulos = DatosEncuestasResueltas.objects.filter(id_encuesta=pk, rango_edad__isnull=True).count()
+        #print(datos_nulos)
+        total = DatosEncuestasResueltas.objects.filter(id_encuesta=pk).count()
+        data=[]
+        
+        for i in instance:
+            print(i)
+            for rango in RANGO_EDAD_CHOICES:
+                if i['rango_edad'] == rango[0]:
+                    data.append({'nombre':rango[1],'total':i['cuenta']})
+                    print(data)
+                    break
+        data.append({'nombre':'NULOS','total':datos_nulos})
+        return Response({'success':True,
+                         'detail':'Se encontraron los siguientes registros.',
+                         'data':{'registros':data,'total':total}},status=status.HTTP_200_OK)
