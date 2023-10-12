@@ -502,6 +502,7 @@ class CierreExpediente(generics.CreateAPIView):
                 fecha_cierre_reapertura=datetime.now(),
                 justificacion_cierre_reapertura=justificacion_cierre_reapertura,
                 id_persona_cierra_reabre=persona,  # Asignar la instancia de Personas
+                cod_etapa_archivo_pre_reapertura=None
             )
 
             # Actualizar el estado del expediente a "C" (cerrado)
