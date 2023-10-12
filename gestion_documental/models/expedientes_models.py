@@ -193,7 +193,7 @@ class CierresReaperturasExpediente(models.Model):
     fecha_cierre_reapertura = models.DateTimeField(db_column='T241fechaCierreReapertura')
     justificacion_cierre_reapertura = models.CharField(max_length=255, db_column='T241justificacionCierreReapertura')
     id_persona_cierra_reabre = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T241Id_PersonaCierraReabre')
-    cod_etapa_archivo_pre_reapertura= models.CharField(max_length=1, choices=etapa_actual_expediente_CHOICES, db_column='T241codEtapaEnArchivo_PreReApertura')
+    cod_etapa_archivo_pre_reapertura= models.CharField(null=True, blank=True,max_length=1, choices=etapa_actual_expediente_CHOICES, db_column='T241codEtapaEnArchivo_PreReApertura')
     class Meta:
         db_table = 'T241CierresReaperturas_Expediente'
         verbose_name = 'Cierre De reapertura '

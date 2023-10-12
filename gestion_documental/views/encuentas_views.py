@@ -7,16 +7,17 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from gestion_documental.models.encuencas_models import DatosEncuestasResueltas, EncabezadoEncuesta, OpcionesRta, PreguntasEncuesta, RespuestaEncuesta
+from gestion_documental.models.encuencas_models import TIPO_USUARIO_CHOICES, DatosEncuestasResueltas, EncabezadoEncuesta, OpcionesRta, PreguntasEncuesta, RespuestaEncuesta
 from gestion_documental.serializers.encuentas_serializers import DatosEncuestasResueltasConteoSerializer, DatosEncuestasResueltasCreateSerializer, EncabezadoEncuestaCreateSerializer, EncabezadoEncuestaDeleteSerializer, EncabezadoEncuestaGetDetalleSerializer, EncabezadoEncuestaGetSerializer, EncabezadoEncuestaUpdateSerializer, EncuestaActivaGetSerializer, OpcionesRtaCreateSerializer, OpcionesRtaDeleteSerializer, OpcionesRtaGetSerializer, OpcionesRtaUpdateSerializer, PersonaRegistradaEncuentaGet, PreguntasEncuestaCreateSerializer, PreguntasEncuestaDeleteSerializer, PreguntasEncuestaGetSerializer, PreguntasEncuestaUpdateSerializer,RespuestaEncuestaCreateSerializer
 from django.db.models import Max
 from datetime import datetime
 from django.db import transaction
 from seguridad.utils import Util
-
+from django.db.models import Count
 from transversal.admin import PersonasAdmin
 from transversal.models.personas_models import Personas
-   
+from transversal.models.base_models import Departamento, Municipio, Paises, Sexo, TipoDocumento
+from gestion_documental.choices.rango_edad_choices import RANGO_EDAD_CHOICES
 class EncabezadoEncuestaCreate(generics.CreateAPIView):
     serializer_class = EncabezadoEncuestaCreateSerializer
     permission_classes = [IsAuthenticated]
@@ -53,7 +54,7 @@ class EncabezadoEncuestaCreate(generics.CreateAPIView):
                         response_preguntas.append(response_pregunta.data['data'])
 
                 response_encabezado=serializer.data
-                response_encabezado['preguntas_encuesta']=response_preguntas
+                response_encabezado['preguntas']=response_preguntas
 
             #AUDITORIA DE CREAR ENCUESTA
             id_usuario = request.user.id_usuario
@@ -85,7 +86,7 @@ class EncabezadoEncuestaUpdate(generics.UpdateAPIView):
         fecha_actual = datetime.now()
         data_in=request.data
         instance = self.get_object()
-
+        previus = copy.copy(instance)
         if not instance:
             raise NotFound("No existe encuentas asociada e esta id")
         if instance.item_ya_usado:
@@ -115,7 +116,7 @@ class EncabezadoEncuestaUpdate(generics.UpdateAPIView):
                 print(id_opciones_no_en_json)
                 for ids in  id_opciones_no_en_json:
                     print (ids)
-                    respuesta_pregunta=eliminar_pregunta.eliminar(ids)
+                    respuesta_pregunta=eliminar_pregunta.eliminar(ids,request)
                     if respuesta_pregunta.status_code != status.HTTP_200_OK:
                         return respuesta_pregunta
            
@@ -125,14 +126,14 @@ class EncabezadoEncuestaUpdate(generics.UpdateAPIView):
                         if pre:
                            
                             #print(pre)
-                            response_pregunta=actualizar_pregunta.actualizar_pregunta(pre,pre['id_pregunta_encuesta'])
+                            response_pregunta=actualizar_pregunta.actualizar_pregunta(pre,pre['id_pregunta_encuesta'],request)
                             if response_pregunta.status_code!=status.HTTP_200_OK:
                                 return response_pregunta  
                             data_response_pregunta.append(response_pregunta.data['data'])
 
                     else:
                         id_encabezado=instance.id_encabezado_encuesta
-                        response_pregunta=crear_pregunta.crear_pregunta({**pre,"id_encabezado_encuesta":id_encabezado})
+                        response_pregunta=crear_pregunta.crear_pregunta({**pre,"id_encabezado_encuesta":id_encabezado},request)
                         if response_pregunta.status_code!=status.HTTP_201_CREATED:
                             return response_pregunta    
                         data_response_pregunta.append(response_pregunta.data['data'])
@@ -141,6 +142,22 @@ class EncabezadoEncuestaUpdate(generics.UpdateAPIView):
 
             response_data=serializer.data
             response_data['preguntas_encuesta']=data_response_pregunta
+
+            # AUDITORÍA ENCUESTA
+            usuario = request.user.id_usuario
+            descripcion = {"NombreEncuesta": str(previus.nombre_encuesta)}
+            direccion=Util.get_client_ip(request)
+            valores_actualizados = {'previous':previus, 'current':instance}
+            auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 167,
+                "cod_permiso": "AC",
+                "subsistema": 'GEST',
+                "dirip": direccion,
+                "descripcion": descripcion,
+                "valores_actualizados": valores_actualizados,
+            }
+            Util.save_auditoria(auditoria_data)
             return Response({
                 "success": True,
                 "detail": "Se actualizó el encabezado de encuesta correctamente",
@@ -177,7 +194,7 @@ class PreguntasEncuestaCreate(generics.CreateAPIView):
                 if data_in['opciones_rta']:
                     for opc_rta in  data_in['opciones_rta']:
                         
-                        response_pregunta=crear_opcion.crear_opciones_rta({**opc_rta,"id_pregunta":id_pregunta})
+                        response_pregunta=crear_opcion.crear_opciones_rta({**opc_rta,"id_pregunta":id_pregunta},request)
                         if response_pregunta.status_code!=status.HTTP_201_CREATED:
                             return response_pregunta   
                         #print (opc_rta)
@@ -185,21 +202,21 @@ class PreguntasEncuestaCreate(generics.CreateAPIView):
             data_response=serializer.data
             data_response['opciones_rta']=data_ops
 
-            #AUDITORIA DE CREAR ENCUESTA
-            # id_usuario = request.user.id_usuario
-            # direccion=Util.get_client_ip(request)
-            # descripcion = {"NombreEncuesta": str(instance.nombre_encuesta)}
+            #AUDITORIA DE CREAR PREGUNTA
+            id_usuario = request.user.id_usuario
+            direccion=Util.get_client_ip(request)
+            descripcion = {"IdEncuesta": str(instance.id_encabezado_encuesta),"RedaccionPregunta": str(instance.redaccion_pregunta)}
             
-            # auditoria_data = {
-            #     "id_usuario" : id_usuario,
-            #     "id_modulo" : 167,
-            #     "cod_permiso": "CR",
-            #     "subsistema": 'GEST',
-            #     "dirip": direccion,
-            #     "descripcion": descripcion, 
-            # }
-            # #print(auditoria_data)
-            # Util.save_auditoria(auditoria_data)
+            auditoria_data = {
+                "id_usuario" : id_usuario,
+                "id_modulo" : 167,
+                "cod_permiso": "CR",
+                "subsistema": 'GEST',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+            }
+            #print(auditoria_data)
+            Util.save_auditoria(auditoria_data)
 
 
             return Response({'success':True,'detail':'Se crearon los registros correctamente','data':data_response},status=status.HTTP_201_CREATED)
@@ -218,14 +235,16 @@ class PreguntasEncuestaUpdate(generics.UpdateAPIView):
     queryset = PreguntasEncuesta.objects.all()
     serializer_class = PreguntasEncuestaUpdateSerializer
     permission_classes = [IsAuthenticated]
-    def actualizar_pregunta(self,data,pk):
+    def actualizar_pregunta(self,data,pk,request):
         data_in=data
         instance = PreguntasEncuesta.objects.filter(id_pregunta_encuesta=pk).first()
 
         if not instance:
             raise NotFound("No existe encuentas asociada e esta id")
         
-
+        previus = copy.copy(instance)
+        
+        
         try:
 
             
@@ -255,26 +274,43 @@ class PreguntasEncuestaUpdate(generics.UpdateAPIView):
                     for opc_rta in  data_in['opciones_rta']:
                         if 'id_opcion_rta' in opc_rta and opc_rta['id_opcion_rta'] :
                             
-                            response_pregunta=actualizar_opcion.actualizar_opciones_rta({**opc_rta},opc_rta['id_opcion_rta'])
+                            response_pregunta=actualizar_opcion.actualizar_opciones_rta({**opc_rta},opc_rta['id_opcion_rta'],request)
                             if response_pregunta.status_code!=status.HTTP_200_OK:
                                 return response_pregunta   
                             
                             data_ops.append(response_pregunta.data['data'])
 
                         else:
-                            response_pregunta=crear_opcion.crear_opciones_rta({**opc_rta,"id_pregunta":id_pregunta})
+                            response_pregunta=crear_opcion.crear_opciones_rta({**opc_rta,"id_pregunta":id_pregunta},request)
                             if response_pregunta.status_code!=status.HTTP_201_CREATED:
                                 return response_pregunta   
                             
                             data_ops.append(response_pregunta.data['data'])
                             
                     for delete in id_opciones_no_en_json:
-                        datos_eliminados_response = eliminar_opcion.eliminar(delete)
+                        datos_eliminados_response = eliminar_opcion.eliminar(delete,request)
                         if datos_eliminados_response.status_code != status.HTTP_200_OK:
                             return datos_eliminados_response
                         #print (datos_eliminados_response)
             data_response=serializer.data
             data_response['opciones_rta']=data_ops
+            # AUDITORÍA PREGUNTA
+            usuario = request.user.id_usuario
+            descripcion = {"IdEncuesta": str(previus.id_encabezado_encuesta),"RedaccionPregunta": str(previus.redaccion_pregunta)}
+            direccion=Util.get_client_ip(request)
+            valores_actualizados = {'previous':previus, 'current':instance}
+            auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 167,
+                "cod_permiso": "AC",
+                "subsistema": 'GEST',
+                "dirip": direccion,
+                "descripcion": descripcion,
+                "valores_actualizados": valores_actualizados,
+            }
+            Util.save_auditoria(auditoria_data)
+
+            
             return Response({
                 "success": True,
                 "detail": "Se actualizó el encabezado de encuesta correctamente",
@@ -293,19 +329,37 @@ class PreguntasEncuestaDelete(generics.DestroyAPIView):
     queryset = PreguntasEncuesta.objects.all()
     serializer_class = PreguntasEncuestaDeleteSerializer
     permission_classes = [IsAuthenticated]
-    def eliminar(self,pk):
+    def eliminar(self,pk,request):
         instance = PreguntasEncuesta.objects.filter(id_pregunta_encuesta=pk).first()
+        previus = copy.copy(instance)
         if not instance:
             raise NotFound("No existe pregunta asociada a esta id.")
         serializer =PreguntasEncuestaDeleteSerializer(instance)
         instance.delete()
+        #AUDITORIA 
+        usuario = request.user.id_usuario
+        descripcion =  {"IdEncuentas" : str(previus.id_encabezado_encuesta), "RedaccionPregunta" : str(previus.redaccion_pregunta)}
+        dirip = Util.get_client_ip(request)
+    
+        auditoria_data = {
+            'id_usuario': usuario,
+            'id_modulo': 167,
+            'cod_permiso': 'BO',
+            'subsistema': 'GEST',
+            'dirip': dirip,
+            'descripcion': descripcion
+        }
+        
+        Util.save_auditoria(auditoria_data)
+
+
         return Response({
             "success": True,
             "detail": "Se eliminó la pregunta correctamente",
             "data": serializer.data
         }, status=status.HTTP_200_OK)
     def delete(self, request,pk):
-        response=self.eliminar(pk)
+        response=self.eliminar(pk,request)
         return response
     
 class OpcionesRtaCreate(generics.CreateAPIView):
@@ -313,7 +367,7 @@ class OpcionesRtaCreate(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     queryset = OpcionesRta.objects.all()
     
-    def crear_opciones_rta(self,data):
+    def crear_opciones_rta(self,data,request):
         try:
 
             valor_maximo = OpcionesRta.objects.filter(id_pregunta=data['id_pregunta']).aggregate(Max('ordenamiento'))['ordenamiento__max']
@@ -327,30 +381,67 @@ class OpcionesRtaCreate(generics.CreateAPIView):
             serializer = OpcionesRtaCreateSerializer(data=data)
             serializer.is_valid(raise_exception=True)
             instance=serializer.save()
+                        #AUDITORIA DE CREAR PREGUNTA
+            id_usuario = request.user.id_usuario
+            direccion=Util.get_client_ip(request)
+            descripcion = {"IdPregunta": str(instance.id_pregunta.id_pregunta_encuesta),"OpcionRta": str(instance.opcion_rta)}
+            
+            auditoria_data = {
+                "id_usuario" : id_usuario,
+                "id_modulo" : 167,
+                "cod_permiso": "CR",
+                "subsistema": 'GEST',
+                "dirip": direccion,
+                "descripcion": descripcion, 
+            }
+            #print(auditoria_data)
+            Util.save_auditoria(auditoria_data)
             return Response({'success':True,'detail':'Se crearon los registros correctamente','data':serializer.data},status=status.HTTP_201_CREATED)
+        
         except ValidationError as e:       
             raise ValidationError(e.detail)
 
     def post(self,request):
         data_in = request.data
-        response=self.crear_opciones_rta(data_in)
+        response=self.crear_opciones_rta(data_in,request)
         return response
 
 class OpcionesRtaUpdate(generics.UpdateAPIView):
     queryset = OpcionesRta.objects.all()
     serializer_class = OpcionesRtaUpdateSerializer
     permission_classes = [IsAuthenticated]
-    def actualizar_opciones_rta(self,data,pk):
+    def actualizar_opciones_rta(self,data,pk,request):
         data_in=data
         instance = OpcionesRta.objects.filter(id_opcion_rta=pk).first()
 
         if not instance:
             raise NotFound("No existe opcion asociada e esta id")
+        previus = copy.copy(instance)
         try:
  
             serializer = OpcionesRtaUpdateSerializer(instance, data=data_in,partial=True)
             serializer.is_valid(raise_exception=True)
             instance = serializer.save()
+
+
+
+
+          
+            # AUDITORÍA RESPUESTA
+            usuario = request.user.id_usuario
+            descripcion = {"IdPregunta": str(previus.id_pregunta),"OpcionRta": str(previus.opcion_rta)}
+            direccion=Util.get_client_ip(request)
+            valores_actualizados = {'previous':previus, 'current':instance}
+            auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 167,
+                "cod_permiso": "AC",
+                "subsistema": 'GEST',
+                "dirip": direccion,
+                "descripcion": descripcion,
+                "valores_actualizados": valores_actualizados,
+            }
+            Util.save_auditoria(auditoria_data)
             return Response({
                 "success": True,
                 "detail": "Se actualizó el encabezado de encuesta correctamente",
@@ -362,26 +453,44 @@ class OpcionesRtaUpdate(generics.UpdateAPIView):
 
     def put(self, request, pk):
 
-        response =self.actualizar_opciones_rta(request.data,pk)
+        response =self.actualizar_opciones_rta(request.data,pk,request)
         return response
 
 class OpcionesRtaDelete(generics.DestroyAPIView):
     queryset = OpcionesRta.objects.all()
     serializer_class = OpcionesRtaDeleteSerializer
     permission_classes = [IsAuthenticated]
-    def eliminar(self,pk):
+    def eliminar(self,pk,request):
         instance = OpcionesRta.objects.filter(id_opcion_rta=pk).first()
+        previus = copy.copy(instance)
         if not instance:
             raise NotFound("No existe pregunta asociada a esta id.")
         serializer =OpcionesRtaDeleteSerializer(instance)
         instance.delete()
+
+        #Auditoria ENCUESTA
+
+        usuario = request.user.id_usuario
+        descripcion =  {"IdPregunta" : str(previus.id_pregunta),'OpcionRta':previus.opcion_rta}
+        dirip = Util.get_client_ip(request)
+    
+        auditoria_data = {
+            'id_usuario': usuario,
+            'id_modulo': 167,
+            'cod_permiso': 'BO',
+            'subsistema': 'GEST',
+            'dirip': dirip,
+            'descripcion': descripcion
+        }
+        
+        Util.save_auditoria(auditoria_data)
         return Response({
             "success": True,
             "detail": "Se eliminó la opcion correctamente",
             "data": serializer.data
         }, status = status.HTTP_200_OK)
     def delete(self, request,pk):
-        response=self.eliminar(pk)
+        response=self.eliminar(pk,request)
         return response
 
 
@@ -437,7 +546,7 @@ class EncabezadoEncuestaDelete(generics.DestroyAPIView):
     
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()
-
+        previus = copy.copy(instance)
         if instance.item_ya_usado:
             raise ValidationError("No se puede eliminar una encuesta si ya fue usada")
 
@@ -452,6 +561,25 @@ class EncabezadoEncuestaDelete(generics.DestroyAPIView):
                 respuestas_instace.delete()
             preguntas_intance.delete()
         instance.delete()
+
+        #auditoria ENCUESTA
+
+        usuario = request.user.id_usuario
+        descripcion =  {"Nombre_encuesta" : str(previus.nombre_encuesta)}
+        dirip = Util.get_client_ip(request)
+    
+        auditoria_data = {
+            'id_usuario': usuario,
+            'id_modulo': 167,
+            'cod_permiso': 'BO',
+            'subsistema': 'GEST',
+            'dirip': dirip,
+            'descripcion': descripcion
+        }
+        
+        Util.save_auditoria(auditoria_data)
+        
+
         return Response({
             "success": True,
             "detail": "Se eliminó el encabezado de encuesta correctamente",
@@ -559,25 +687,127 @@ class ConteoEncuestasGet(generics.ListAPIView):
     serializer_class = DatosEncuestasResueltasConteoSerializer
     def get(self, request,pk):
         instance = DatosEncuestasResueltas.objects.filter(id_encuesta=pk)
+        encuesta= EncabezadoEncuesta.objects.filter(id_encabezado_encuesta=pk).first()
         serializer = self.serializer_class(instance)
+        data=[]
         cantidad_encuestas_resueltas = DatosEncuestasResueltas.objects.filter(id_encuesta=pk).count()
-
-        id_preguntas=[]
-        for encuenta in instance:
-            respuestas_contestadas = RespuestaEncuesta.objects.filter(id_encuesta_resuelta=encuenta.id_datos_encuesta_resuelta)
-            for respuesta in respuestas_contestadas:
-                print(respuesta)
-                print(respuesta.id_opcion_pregunta_encuesta.opcion_rta)
-                id_preguntas.append(respuesta.id_opcion_pregunta_encuesta.id_pregunta.id_pregunta_encuesta)
-            print("################")
-        print(cantidad_encuestas_resueltas)
-        print(id_preguntas)
-        if not instance:
-            raise NotFound("No existen encuentas registrados en el sistema.")
+        #print(cantidad_encuestas_resueltas)
+        #print("CANTIDAD: "+str(cantidad_encuestas_resueltas))
+        pregustas_encuesta = PreguntasEncuesta.objects.filter(id_encabezado_encuesta=pk)
         
-        serializer=self.serializer_class(instance,many=True)
+        for pregunta in pregustas_encuesta:
+            data_pregunta={}
+            data_pregunta['id_pregunta_encuesta'] = pregunta.id_pregunta_encuesta
+            data_pregunta['redaccion_pregunta'] = pregunta.redaccion_pregunta
+            data_pregunta['ordenamiento'] = pregunta.ordenamiento
+            #print(pregunta)
+            opciones = OpcionesRta.objects.filter(id_pregunta=pregunta.id_pregunta_encuesta)
+            data_respuestas=[]
+            for opcion in opciones:
+                data_opciones={}
+                #print(" "+str(opcion))
+                cantidad_de_respuestas = RespuestaEncuesta.objects.filter(id_opcion_pregunta_encuesta = opcion.id_opcion_rta).count()
+                data_opciones['id_opcion_rta'] = opcion.id_opcion_rta
+                data_opciones['opcion_rta'] =  opcion.opcion_rta
+                data_opciones['ordenamiento'] = opcion.ordenamiento
+                data_opciones['total'] = cantidad_de_respuestas
+                data_respuestas.append(data_opciones)
+                #print("CANTIDAD DE RESPUESTAS: "+str(cantidad_de_respuestas))
+                data_pregunta['opciones'] = data_respuestas
+            data.append(data_pregunta)
             
      
         return Response({'success':True,
                          'detail':'Se encontraron los siguientes registros.',
-                         'data':serializer.data},status=status.HTTP_200_OK)
+                         'data':{'total':cantidad_encuestas_resueltas,'preguntas':data}},status=status.HTTP_200_OK)
+    
+
+
+
+#DatosEncuestasResueltas
+class ConteoEncuestasRegionesGet(generics.ListAPIView):
+    queryset = DatosEncuestasResueltas.objects.all()
+
+    def get(self, request,pk):
+        instance = DatosEncuestasResueltas.objects.filter(id_encuesta=pk).values('id_municipio_para_nacional').annotate(cuenta=Count('id_municipio_para_nacional'))
+        datos_nulos = DatosEncuestasResueltas.objects.filter(id_encuesta=pk, id_municipio_para_nacional__isnull=True).count()
+        total = DatosEncuestasResueltas.objects.filter(id_encuesta=pk).count()
+        print(datos_nulos)
+        data=[]
+        for i in instance:
+
+            if i['id_municipio_para_nacional']:
+                municipio = Municipio.objects.filter(cod_municipio=i['id_municipio_para_nacional']).first()
+                print(municipio.nombre)
+                data.append({'nombre':municipio.nombre,'total':i['cuenta']})
+        data.append({'nombre':'NULOS','total':datos_nulos})
+
+        return Response({'success':True,
+                         'detail':'Se encontraron los siguientes registros.',
+                         'data':{'registros':data,'total':total}},status=status.HTTP_200_OK)
+    
+class ConteoEncuestasTiposUsuarioGet(generics.ListAPIView):
+    queryset = DatosEncuestasResueltas.objects.all()
+
+    def get(self, request,pk):
+        instance = DatosEncuestasResueltas.objects.filter(id_encuesta=pk).values('tipo_usuario').annotate(cuenta=Count('tipo_usuario'))
+        tipos=TIPO_USUARIO_CHOICES
+        total = DatosEncuestasResueltas.objects.filter(id_encuesta=pk).count()
+        data=[]
+        for i in instance:
+            for tipo in tipos:
+                if i['tipo_usuario'] == tipo[0]:
+                    data.append({'nombre':tipo[1],'total':i['cuenta']})
+                    print(data)
+                    break
+
+
+        
+                #print(tipo)
+        return Response({'success':True,
+                         'detail':'Se encontraron los siguientes registros.',
+                         'data':{'registros':data,'total':total}},status=status.HTTP_200_OK)
+    
+
+class ConteoEncuestasPorGenero(generics.ListAPIView):
+    queryset = DatosEncuestasResueltas.objects.all()
+
+    def get(self, request,pk):
+        instance = DatosEncuestasResueltas.objects.filter(id_encuesta=pk).values('cod_sexo').annotate(cuenta=Count('cod_sexo'))
+        datos_nulos = DatosEncuestasResueltas.objects.filter(id_encuesta=pk, cod_sexo__isnull=True).count()
+        total = DatosEncuestasResueltas.objects.filter(id_encuesta=pk).count()
+        #print(datos_nulos)
+        data=[]
+        for i in instance:
+            print(i)
+            if i['cod_sexo']:
+                sexo = Sexo.objects.filter(cod_sexo=i['cod_sexo']).first()
+                print(sexo.nombre)
+                data.append({'nombre':sexo.nombre,'total':i['cuenta']})
+        data.append({'nombre':'NULOS','total':datos_nulos})
+        return Response({'success':True,
+                         'detail':'Se encontraron los siguientes registros.',
+                         'data':{'registros':data,'total':total}},status=status.HTTP_200_OK)
+    
+
+class ConteoEncuestasPorRangoEdad(generics.ListAPIView):
+    queryset = DatosEncuestasResueltas.objects.all()
+
+    def get(self, request,pk):
+        instance = DatosEncuestasResueltas.objects.filter(id_encuesta=pk).values('rango_edad').annotate(cuenta=Count('rango_edad'))
+        datos_nulos = DatosEncuestasResueltas.objects.filter(id_encuesta=pk, rango_edad__isnull=True).count()
+        #print(datos_nulos)
+        total = DatosEncuestasResueltas.objects.filter(id_encuesta=pk).count()
+        data=[]
+        
+        for i in instance:
+            print(i)
+            for rango in RANGO_EDAD_CHOICES:
+                if i['rango_edad'] == rango[0]:
+                    data.append({'nombre':rango[1],'total':i['cuenta']})
+                    print(data)
+                    break
+        data.append({'nombre':'NULOS','total':datos_nulos})
+        return Response({'success':True,
+                         'detail':'Se encontraron los siguientes registros.',
+                         'data':{'registros':data,'total':total}},status=status.HTTP_200_OK)

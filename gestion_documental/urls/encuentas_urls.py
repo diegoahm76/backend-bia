@@ -20,4 +20,8 @@ urlpatterns = [
     #INFORMES
     path('encuesta_realizadas/get/',views.EncuestasRealizadasGet.as_view(), name='get-encabezado'),
     path('conteo_encuesta/get/<str:pk>/',views.ConteoEncuestasGet.as_view(), name='get-respuestas-conteo'),
-]#UsuarioRegistradoGet
+    path('reporte_region/get/<str:pk>/',views.ConteoEncuestasRegionesGet.as_view(), name='get-reporte_region'),
+    path('reporte_tipos_usuario/get/<str:pk>/',views.ConteoEncuestasTiposUsuarioGet.as_view(), name='get-reporte_n_usuarios'),
+    path('reporte_tipos_sexo/get/<str:pk>/',views.ConteoEncuestasPorGenero.as_view(), name='get-reporte_genero_usuarios'),
+    path('reporte_rango_edad/get/<str:pk>/',views.ConteoEncuestasPorRangoEdad.as_view(), name='get-reporte_edad'),
+]#ConteoEncuestasPorRangoEdad

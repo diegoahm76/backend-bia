@@ -6,7 +6,7 @@ from gestion_documental.views import archivos_digitales_views as views_archivos
 
 urlpatterns = [
     #Cierre de expedientes         
-     path('expedientes/buscar-expediente/',views.ExpedienteSearch.as_view(), name='buscar-expediente'),
+     path('expedientes/buscar-expediente-abierto/',views.ExpedienteSearch.as_view(), name='buscar-expediente'),
      path('expedientes/listar-trd/',views.TrdDateGet.as_view(), name='listar-trd'),
      path('expedientes/agregar-archivo-soporte/',views.AgregarArchivoSoporte.as_view(), name='listar-trd'),
      path('expedientes/orden-siguiente/',views.ExpedienteGetOrden.as_view(), name='orden-expediente'),
@@ -20,6 +20,17 @@ urlpatterns = [
      path('expedientes/eliminar-archivo-soporte/<int:id_documento_de_archivo_exped>/',views.EliminarArchivoSoporte.as_view(), name='eliminar-archivo'),
      path('expedientes/listar-archivos-soporte/<int:id_expediente>/',views.ArchivosSoporteGetId.as_view(), name='listar-todos-archivos-soporte'),
      path('expedientes/editar-archivos-soporte/<int:id_documento_de_archivo_exped>/',views.UpdateArchivoSoporte.as_view(), name='editar-archivos-soporte'),
+     path('expedientes/listar-info-archivos/<int:id_documento_de_archivo_exped>/',views.DetalleArchivoSoporte.as_view(), name='listar-info-archivos-soporte'),
+
+
+
+     #Reapertura_Expediente
+     path('expedientes/buscar-expediente-cerrado/',views.ExpedienteSearchCerrado.as_view(), name='buscar-expediente'),
+     
+  
+
+
+      
 
 
      
