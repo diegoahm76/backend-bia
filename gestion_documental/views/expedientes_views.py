@@ -553,7 +553,7 @@ class CierreExpediente(generics.CreateAPIView):
 
             serializer = CierreExpedienteSerializer(cierre_expediente)
 
-            return Response({'success': True, 'message': 'Cierre de expediente realizado con éxito', 'data': serializer.data,"persona_cierra":nombre_persona_cierra}, status=status.HTTP_201_CREATED)
+            return Response({'success': True, 'detail': 'Cierre de expediente realizado con éxito', 'data': serializer.data,"persona_cierra":nombre_persona_cierra}, status=status.HTTP_201_CREATED)
 
         except ExpedientesDocumentales.DoesNotExist:
             raise NotFound('El expediente especificado no existe.')
@@ -661,11 +661,9 @@ class EliminarArchivoSoporte(generics.DestroyAPIView):
                 # Si no hay más archivos de soporte con el mismo archivo de sistema, eliminar el archivo de sistema
                 archivo_digital.delete()
 
-            return Response({'success': True, 'detail': 'Archivo de soporte y su archivo de sistema asociado eliminados con éxito'}, status=status.HTTP_204_NO_CONTENT)
+            return Response({'success': True, 'detail': 'Archivo de soporte y su archivo de sistema asociado eliminados con éxito'}, status=status.HTTP_200_OK)
         except DocumentosDeArchivoExpediente.DoesNotExist:
-            return Response({'success': False, 'detail': 'El archivo de soporte especificado no existe.'}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            raise NotFound('El archivo de soporte especificado no existe.')
         
 
 #LISTAR_ARCHIVOS_SOPORTE_X_ID
@@ -787,7 +785,8 @@ class UpdateArchivoSoporte(generics.UpdateAPIView):
                 "respuesta": respuesta.data if uploaded_file else None,  # Devuelve la respuesta solo si se subió un nuevo archivo
             }
 
-            return Response(response_data, status=status.HTTP_200_OK)
+            # return Response(response_data, status=status.HTTP_200_OK)
+            return Response({ 'success': True,'detail': 'Se Actualizo correctamente el archivo de soporte.','data': response_data}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
@@ -801,7 +800,8 @@ class DetalleArchivoSoporte(generics.RetrieveAPIView):
         try:
             archivo_soporte = self.get_object()
             serializer = self.get_serializer(archivo_soporte)
-            return Response(serializer.data)
+
+            return Response({ 'success': True,'detail': 'Se encontraron los siguientes registros.','data': serializer.data}, status=status.HTTP_200_OK)
         except DocumentosDeArchivoExpediente.DoesNotExist:
             raise NotFound('El archivo soporte especificado no existe.')
         except Exception as e:
