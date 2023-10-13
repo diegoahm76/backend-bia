@@ -114,7 +114,7 @@ class CreateDespachoMaestroVivero(generics.UpdateAPIView):
         aux_validacion_bienes_repetidos = {}
         aux_validacion_unidades_dic = {}
         for i in items_despacho:
-            i['id_entrada_almacen_bien'] = i['id_entrada_bien']
+            # i['id_entrada_almacen_bien'] = i['id_entrada_bien']
             bien_solicitado = i.get('id_bien_solicitado')
             id_entrada_almacen_bien = i.get('id_entrada_almacen_bien')
             if id_entrada_almacen_bien:

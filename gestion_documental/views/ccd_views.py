@@ -28,7 +28,8 @@ from gestion_documental.serializers.ccd_serializers import (
     UnidadesSeccionPersistenteTemporalSerializer,
     AgrupacionesDocumentalesPersistenteTemporalSerializer,
     UnidadesSeccionResponsableTemporalSerializer,
-    UnidadesSeccionResponsableTemporalGetSerializer
+    UnidadesSeccionResponsableTemporalGetSerializer,
+    UnidadesSeccionPersistenteTemporalGetSerializer
 )
 from transversal.models.organigrama_models import Organigramas
 from gestion_documental.models.ccd_models import (
@@ -925,9 +926,7 @@ class BusquedaCCD(generics.ListAPIView):
         serializador = self.serializer_class(ccd, many=True, context = {'request':request})
         return Response({'succes': True, 'detail':'Resultados de la búsqueda', 'data':serializador.data}, status=status.HTTP_200_OK)
 
-
 #Permisos sobre Series de Expedientes de los CCD
-
 
 # HOMOLOGACIONES DE CCD - ENTREGA 55
 class BusquedaCCDView(generics.ListAPIView):
@@ -1104,7 +1103,7 @@ class CompararSeriesDocUnidadCatSerieView(generics.ListAPIView):
                                                                       id_catalogo_serie__id_serie_doc__id_ccd__id_ccd = ccd.id_ccd)
 
         instancia_agrupaciones_persistentes = AgrupacionesDocumentalesPersistenteTemporalGetView()
-        ids_agrupacion_doc_actual, ids_agrupacion_doc_nueva = instancia_agrupaciones_persistentes.get_unidades_seccion(data_in)
+        ids_agrupacion_doc_actual, ids_agrupacion_doc_nueva = instancia_agrupaciones_persistentes.get_agrupaciones_seccion(data_in)
 
         if ids_agrupacion_doc_actual and ids_agrupacion_doc_nueva:
             unidad_cat_serie_actual = unidad_cat_serie_actual.exclude(id_cat_serie_und__in=ids_agrupacion_doc_actual)
@@ -1309,7 +1308,7 @@ class PersistenciaConfirmadaCreateView(generics.CreateAPIView):
             return Response({'success':True, 'detail':'Se guardan catalogos persistentes', 'data':data_out}, status=status.HTTP_201_CREATED)
 
 class UnidadesSeccionPersistenteTemporalGetView(generics.ListAPIView):
-    serializer_class = SeriesDocUnidadHomologacionesSerializer
+    serializer_class = UnidadesSeccionPersistenteTemporalGetSerializer
     permission_classes = [IsAuthenticated]
 
     def get_unidades_seccion(self, id_ccd_nuevo):
@@ -1326,14 +1325,12 @@ class UnidadesSeccionPersistenteTemporalGetView(generics.ListAPIView):
     
     def get(self, request, id_ccd):
 
-        ids_unidad_actual, ids_unidad_nueva = self.get_unidades_seccion(id_ccd)
-        unidades_organizacionales_actual = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional__in=ids_unidad_actual).order_by('codigo')
-        unidades_organizacionales_nuevo = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional__in=ids_unidad_nueva).order_by('codigo')
-        unidades_actual = self.serializer_class(unidades_organizacionales_actual, many=True).data
-        unidades_nueva = self.serializer_class(unidades_organizacionales_nuevo, many=True).data
+        unidades_persistentes = UnidadesSeccionPersistenteTemporal.objects.filter(id_ccd_nuevo=id_ccd)
+        unidades_persistentes_data = self.serializer_class(unidades_persistentes, many=True).data
+        
         data = {
             'id_ccd_nuevo':id_ccd,
-            'unidades_persistentes': obtener_unidades_ccd(unidades_actual, unidades_nueva)
+            'unidades_persistentes': unidades_persistentes_data
         }
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
@@ -1342,7 +1339,7 @@ class AgrupacionesDocumentalesPersistenteTemporalGetView(generics.ListAPIView):
     serializer_class = SeriesDocUnidadCatSerieHomologacionesSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_unidades_seccion(self, data_in):
+    def get_agrupaciones_seccion(self, data_in):
         
         try:
             ccd = CuadrosClasificacionDocumental.objects.get(id_ccd=data_in['id_ccd_nuevo'])
@@ -1414,7 +1411,7 @@ class SeriesDocUnidadCCDActualGetView(generics.ListAPIView):
         Validacion_iguales = [unidad_val['iguales'] for unidad_val in unidades_validacion['coincidencias']]
 
         if True in Validacion_iguales:
-            raise PermissionDenied('Existe una homologacion persistente ')
+            raise PermissionDenied('Existe una homologacion persistente')
     
         instance_unidades_persistentes = UnidadesSeccionPersistenteTemporalGetView()
         ids_unidad_actual, ids_unidad_nueva = instance_unidades_persistentes.get_unidades_seccion(ccd.id_ccd)
@@ -1463,14 +1460,10 @@ class SeriesDocUnidadCatSerieCCDActualGetView(generics.ListAPIView):
             raise NotFound('CCD no encontrado o no cumple con TRD y TCA terminados')
         
         try:
+            organigrama_actual = Organigramas.objects.get(id_organigrama=ccd_actual.id_organigrama.id_organigrama, actual=True)
             organigrama = Organigramas.objects.get(id_organigrama=ccd.id_organigrama.id_organigrama)
         except Organigramas.DoesNotExist:
             raise NotFound('No se ha encontrado organigrama')
-        
-        try:
-            organigrama_actual = Organigramas.objects.get(id_organigrama=ccd_actual.id_organigrama.id_organigrama, actual=True)
-        except Organigramas.DoesNotExist:
-            raise NotFound('No se ha encontrado organigrama como actual')
         
         if not UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=data_in['id_unidad_actual']).exists(): 
             raise NotFound('No se encontro unidad organizacional actual')
@@ -1479,7 +1472,7 @@ class SeriesDocUnidadCatSerieCCDActualGetView(generics.ListAPIView):
                                                                        id_catalogo_serie__id_serie_doc__id_ccd__id_ccd = ccd_actual.id_ccd)
 
         instancia_agrupaciones_persistentes = AgrupacionesDocumentalesPersistenteTemporalGetView()
-        ids_agrupacion_doc_actual, ids_agrupacion_doc_nueva = instancia_agrupaciones_persistentes.get_unidades_seccion(data_in)
+        ids_agrupacion_doc_actual, ids_agrupacion_doc_nueva = instancia_agrupaciones_persistentes.get_agrupaciones_seccion(data_in)
 
         if ids_agrupacion_doc_actual:
             unidad_cat_serie_actual = unidad_cat_serie_actual.exclude(id_cat_serie_und__in=ids_agrupacion_doc_actual)
