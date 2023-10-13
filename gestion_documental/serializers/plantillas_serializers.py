@@ -20,6 +20,7 @@ class PlantillasDocBusquedaAvanzadaSerializer(serializers.ModelSerializer):
     nombre_tipologia=serializers.ReadOnlyField(source='id_tipologia_doc_trd.nombre',default=None)
     archivos_digitales = ArchivosDigitalesSerializer(source='id_archivo_digital', read_only=True)
     nombre_completo = serializers.SerializerMethodField()
+    cod_tipo_acceso_display = serializers.CharField(source='get_cod_tipo_acceso_display', read_only=True)
     class Meta:
         model = PlantillasDoc
         
@@ -34,7 +35,7 @@ class PlantillasDocBusquedaAvanzadaSerializer(serializers.ModelSerializer):
                 'otras_tipologias',
                 'codigo_formato_calidad_asociado',
                 'version_formato_calidad_asociado',
-                'cod_tipo_acceso',
+                'cod_tipo_acceso','cod_tipo_acceso_display',
                 'observacion',
                 'activa',
                 'fecha_creacion',
