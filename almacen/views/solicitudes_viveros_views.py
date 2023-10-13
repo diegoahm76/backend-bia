@@ -291,10 +291,10 @@ class RevisionSolicitudBienConsumosViveroPorSupervisor(generics.UpdateAPIView):
             raise NotFound('El estado de aprobación debe ser A o R')
 
         instance = SolicitudesConsumibles.objects.filter(id_solicitud_consumibles=int(id_solicitud)).first()
-        if instance.es_solicitud_de_conservacion != True:
-            raise NotFound('La solicitud que ingresó no es de vivero')
         if not instance:
             raise NotFound('Debe de ingresar un id de solicitud válido')
+        if instance.es_solicitud_de_conservacion != True:
+            raise NotFound('La solicitud que ingresó no es de vivero')
         if instance.revisada_responsable == True:
             raise NotFound('Esta solicitud ya ha sido aprobada')
         if instance.id_funcionario_responsable_unidad.id_persona != user_logeado.persona.id_persona:
