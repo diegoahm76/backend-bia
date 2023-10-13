@@ -26,6 +26,8 @@ urlpatterns = [
 
      #Reapertura_Expediente
      path('expedientes/buscar-expediente-cerrado/',views.ExpedienteSearchCerrado.as_view(), name='buscar-expediente'),
+     path('expedientes/info-expediente-cerrado/<int:id_expediente>/',views.CierresReaperturasExpedienteDetailView.as_view(), name='informacion-expediente-cerrado'),
+
      
   
 

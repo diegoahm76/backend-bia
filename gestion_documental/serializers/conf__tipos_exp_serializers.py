@@ -16,6 +16,12 @@ class ConfiguracionTipoExpedienteAgnoCreateSerializer(serializers.ModelSerialize
         model = ConfiguracionTipoExpedienteAgno
         fields = '__all__'
 
+class ConfiguracionTipoExpedienteAgnoHistorialSerializer(serializers.ModelSerializer):
+    cod_tipo_expediente_display = serializers.CharField(source='get_cod_tipo_expediente_display', read_only=True)
+    class Meta:
+        model = ConfiguracionTipoExpedienteAgno
+        fields = '__all__'
+
 class ConfiguracionTipoExpedienteAgnoUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConfiguracionTipoExpedienteAgno
@@ -61,6 +67,8 @@ class XYGetSerializer(serializers.ModelSerializer):
     
 class ConfiguracionTipoExpedienteAgnoGetSerializer(serializers.ModelSerializer):
     nombre_completo = serializers.SerializerMethodField()
+    persona_ultimo_consecutivo_nombre_completo = serializers.SerializerMethodField()
+    cod_tipo_expediente_display = serializers.CharField(source='get_cod_tipo_expediente_display', read_only=True)
     class Meta:
         model=ConfiguracionTipoExpedienteAgno
         fields='__all__'
@@ -70,6 +78,14 @@ class ConfiguracionTipoExpedienteAgnoGetSerializer(serializers.ModelSerializer):
         if obj.id_persona_ult_config_implement:
             nombre_completo = None
             nombre_list = [obj.id_persona_ult_config_implement.primer_nombre, obj.id_persona_ult_config_implement.segundo_nombre, obj.id_persona_ult_config_implement.primer_apellido, obj.id_persona_ult_config_implement.segundo_apellido]
+            nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+            return nombre_completo.upper()
+    
+    def get_persona_ultimo_consecutivo_nombre_completo(self, obj):
+    
+        if obj.id_persona_consecutivo_actual:
+            nombre_completo = None
+            nombre_list = [obj.id_persona_consecutivo_actual.primer_nombre, obj.id_persona_consecutivo_actual.segundo_nombre, obj.id_persona_consecutivo_actual.primer_apellido, obj.id_persona_consecutivo_actual.segundo_apellido]
             nombre_completo = ' '.join(item for item in nombre_list if item is not None)
             return nombre_completo.upper()
 
