@@ -502,6 +502,7 @@ class CierreExpediente(generics.CreateAPIView):
                 fecha_cierre_reapertura=datetime.now(),
                 justificacion_cierre_reapertura=justificacion_cierre_reapertura,
                 id_persona_cierra_reabre=persona,  # Asignar la instancia de Personas
+                cod_etapa_archivo_pre_reapertura=None
             )
 
             # Actualizar el estado del expediente a "C" (cerrado)
@@ -535,26 +536,26 @@ class CierreExpediente(generics.CreateAPIView):
                 
 
         
-            # Auditoria cierre_expediente
-            usuario = request.user.id_usuario
-            descripcion = {"IDExpediente": str(id_expediente_doc), "CodigoOperacion": "Cierre", "ConsecutivoExpediente": str(expediente.codigo_exp_consec_por_agno), "TituloExpediente": str(expediente.titulo_expediente)}
+            # # Auditoria cierre_expediente
+            # usuario = request.user.id_usuario
+            # descripcion = {"IDExpediente": str(id_expediente_doc), "CodigoOperacion": "Cierre", "ConsecutivoExpediente": str(expediente.codigo_exp_consec_por_agno), "TituloExpediente": str(expediente.titulo_expediente)}
 
            
-            direccion = Util.get_client_ip(request)
-            auditoria_data = {
-                "id_usuario" : usuario,
-                "id_modulo" : 146,
-                "cod_permiso": "CR",
-                "subsistema": 'GEST',
-                "dirip": direccion,
-                "descripcion": descripcion,
-            }
-            Util.save_auditoria(auditoria_data)
+            # direccion = Util.get_client_ip(request)
+            # auditoria_data = {
+            #     "id_usuario" : usuario,
+            #     "id_modulo" : 146,
+            #     "cod_permiso": "CR",
+            #     "subsistema": 'GEST',
+            #     "dirip": direccion,
+            #     "descripcion": descripcion,
+            # }
+            # Util.save_auditoria(auditoria_data)
 
             serializer = CierreExpedienteSerializer(cierre_expediente)
 
-            return Response({'success': True, 'detail': 'Cierre de expediente realizado con éxito', 'data': serializer.data,"persona_cierra":nombre_persona_cierra}, status=status.HTTP_201_CREATED)
-
+            return Response({'success': True, 'detail': 'Cierre de expediente realizado con éxito', 
+                             'data': serializer.data,"persona_cierra":nombre_persona_cierra}, status=status.HTTP_201_CREATED)
         except ExpedientesDocumentales.DoesNotExist:
             raise NotFound('El expediente especificado no existe.')
         except Exception as e:
@@ -869,7 +870,7 @@ class ListarArchivosDigitales(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
 
-#REAPERTURA DE EXPEDIENTES
+############################################  REAPERTURA DE EXPEDIENTES  #################################################################
 
 #BUSCAR_EXPEDIENTES_CERRADOS
 class ExpedienteSearchCerrado(generics.ListAPIView):
@@ -955,3 +956,125 @@ class ExpedienteSearchCerrado(generics.ListAPIView):
             'data': serializer.data
         }, status=status.HTTP_200_OK)
 
+#INFORMACION_EXPEDIENTE_CERRADO
+# class CierresReaperturasExpedienteDetailView(generics.RetrieveAPIView):
+#     serializer_class = CierreExpedienteSerializer
+#     queryset = CierresReaperturasExpediente.objects.all()
+
+#     def retrieve(self, request, id_expediente, *args, **kwargs):
+#         # Obtiene el expediente por su ID o devuelve un 404 si no existe
+#         expediente = get_object_or_404(ExpedientesDocumentales, pk=id_expediente)
+
+#         # Si el expediente está cerrado (estado 'C'), filtra los cierres relacionados
+#         if expediente.estado == 'C':
+#             queryset = self.queryset.filter(id_expediente_doc=id_expediente)
+
+#             # Obtén el último registro de cierre por fecha
+#             ultimo_cierre = queryset.order_by('-fecha_cierre_reapertura').first()
+
+#             if ultimo_cierre:
+#                 titulo_expediente = expediente.titulo_expediente
+
+#                 # Obtener el nombre de la persona que realiza el cierre
+#                 nombre_persona_cierra = ""
+#                 persona = ultimo_cierre.id_persona_cierra_reabre
+
+#                 if persona.primer_nombre:
+#                     nombre_persona_cierra += persona.primer_nombre
+
+#                 if persona.segundo_nombre:
+#                     nombre_persona_cierra += " " + persona.segundo_nombre
+
+#                 if persona.primer_apellido:
+#                     nombre_persona_cierra += " " + persona.primer_apellido
+
+#                 if persona.segundo_apellido:
+#                     nombre_persona_cierra += " " + persona.segundo_apellido
+
+#                 # Obtener la fecha de cierre
+#                 fecha_cierre = ultimo_cierre.fecha_cierre_reapertura.strftime("%Y-%m-%d")
+
+#                 # Crear la cadena de texto
+#                 cierre_realizado_por = f"El expediente fue cerrado el dia {fecha_cierre} por {nombre_persona_cierra}."
+
+#                 serializer = self.get_serializer(ultimo_cierre)
+#                 response_data = {
+#                     'titulo_expediente': titulo_expediente,
+#                     'nombre_persona_cierra': cierre_realizado_por,
+#                     'cierre_expediente': serializer.data
+#                 }
+#                 return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': response_data,}, status=status.HTTP_200_OK)
+
+#             else:
+#                 raise NotFound('No se encontraron cierres para el expediente')
+#         else:
+#             raise NotFound('El expediente no está cerrado')
+class CierresReaperturasExpedienteDetailView(generics.RetrieveAPIView):
+    serializer_class = CierreExpedienteSerializer
+    queryset = CierresReaperturasExpediente.objects.all()
+
+    def retrieve(self, request, id_expediente, *args, **kwargs):
+        # Obtiene el expediente por su ID o devuelve un 404 si no existe
+        expediente = get_object_or_404(ExpedientesDocumentales, pk=id_expediente)
+
+        # Si el expediente está cerrado (estado 'C'), filtra los cierres relacionados
+        if expediente.estado == 'C':
+            queryset = self.queryset.filter(id_expediente_doc=id_expediente)
+
+            # Obtén el último registro de cierre por fecha
+            ultimo_cierre = queryset.order_by('-fecha_cierre_reapertura').first()
+
+            if ultimo_cierre:
+                titulo_expediente = expediente.titulo_expediente
+
+                # Obtener el nombre de la persona que realiza el cierre
+                nombre_persona_cierra = ""
+                persona = ultimo_cierre.id_persona_cierra_reabre
+
+                if persona.primer_nombre:
+                    nombre_persona_cierra += persona.primer_nombre
+
+                if persona.segundo_nombre:
+                    nombre_persona_cierra += " " + persona.segundo_nombre
+
+                if persona.primer_apellido:
+                    nombre_persona_cierra += " " + persona.primer_apellido
+
+                if persona.segundo_apellido:
+                    nombre_persona_cierra += " " + persona.segundo_apellido
+
+                # Obtener la fecha de cierre
+                fecha_cierre = ultimo_cierre.fecha_cierre_reapertura.strftime("%Y-%m-%d")
+
+                # Crear la cadena de texto
+                cierre_realizado_por = f"El expediente fue cerrado el día {fecha_cierre} por {nombre_persona_cierra}."
+
+                # Realiza una consulta para buscar IndicesElectronicosExp relacionados con este cierre
+                indices_electronicos = IndicesElectronicosExp.objects.filter(fecha_cierre=ultimo_cierre.fecha_cierre_reapertura)
+
+                if indices_electronicos:
+                    observacion_firma_cierre = indices_electronicos[0].observacion_firme_cierre
+                    id_persona_firma_cierre = indices_electronicos[0].id_persona_firma_cierre_id
+                else:
+                    observacion_firma_cierre = None
+                    id_persona_firma_cierre = None
+
+                # Si se encuentra información de IndicesElectronicosExp, agrégala a la cadena de texto
+                if id_persona_firma_cierre is not None:
+                    cierre_realizado_por += f" La firma de cierre fue realizada por la persona con ID {id_persona_firma_cierre} y la observación fue: {observacion_firma_cierre}."
+
+                serializer = self.get_serializer(ultimo_cierre)
+                response_data = {
+                    'titulo_expediente': titulo_expediente,
+                    'nombre_persona_cierra': cierre_realizado_por,
+                    'cierre_expediente': serializer.data
+                }
+                return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': response_data}, status=status.HTTP_200_OK)
+
+            else:
+                raise NotFound('No se encontraron cierres para el expediente')
+        else:
+            raise NotFound('El expediente no está cerrado')
+
+
+        
