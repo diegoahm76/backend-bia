@@ -70,7 +70,7 @@ class ListarPermisosModulo(ListAPIView):
     queryset = PermisosModuloRol.objects.all()
     
     def get(self, request):
-        modulos = Modulos.objects.all()
+        modulos = Modulos.objects.filter(solo_usuario_web=False)
         serializer_modulos = ModulosRolSerializer(modulos, many=True)
         modulos_data = serializer_modulos.data
         

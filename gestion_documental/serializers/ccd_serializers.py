@@ -472,6 +472,36 @@ class AgrupacionesDocumentalesPersistenteTemporalSerializer(serializers.ModelSer
         model = AgrupacionesDocumentalesPersistenteTemporal
         fields = '__all__'
 
+
+class UnidadesSeccionPersistenteTemporalGetSerializer(serializers.ModelSerializer):
+    id_unidad_actual = serializers.ReadOnlyField(source='id_unidad_seccion_actual.id_unidad_organizacional',default=None)
+    cod_unidad_actual = serializers.ReadOnlyField(source='id_unidad_seccion_actual.codigo',default=None)
+    nom_unidad_actual = serializers.ReadOnlyField(source='id_unidad_seccion_actual.nombre',default=None)
+    id_organigrama_unidad_actual = serializers.ReadOnlyField(source='id_unidad_seccion_actual.id_organigrama.id_organigrama',default=None)
+    id_unidad_nueva = serializers.ReadOnlyField(source='id_unidad_seccion_nueva.id_unidad_organizacional',default=None)
+    cod_unidad_nueva = serializers.ReadOnlyField(source='id_unidad_seccion_nueva.codigo',default=None)
+    nom_unidad_nueva = serializers.ReadOnlyField(source='id_unidad_seccion_nueva.nombre',default=None)
+    id_organigrama_unidad_nueva = serializers.ReadOnlyField(source='id_unidad_seccion_nueva.id_organigrama.id_organigrama',default=None)
+    tiene_agrupaciones = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UnidadesSeccionPersistenteTemporal
+        fields = ['id_unidad_seccion_temporal',
+                  'id_unidad_actual',
+                  'cod_unidad_actual',
+                  'nom_unidad_actual',
+                  'id_organigrama_unidad_actual',
+                  'id_unidad_nueva',
+                  'cod_unidad_nueva',
+                  'nom_unidad_nueva',
+                  'id_organigrama_unidad_nueva',
+                  'tiene_agrupaciones']
+        
+    def get_tiene_agrupaciones(self,obj):
+        agrupaciones = AgrupacionesDocumentalesPersistenteTemporal.objects.filter(id_unidad_seccion_temporal=obj.id_unidad_seccion_temporal)
+        tiene_agrupaciones = True if agrupaciones else False
+        return tiene_agrupaciones
+
 class UnidadesSeccionResponsableTemporalSerializer(serializers.ModelSerializer):
     class Meta:
         model = UnidadesSeccionResponsableTemporal
