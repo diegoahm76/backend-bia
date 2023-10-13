@@ -2,7 +2,7 @@
 from gestion_documental.models.ccd_models import CatalogosSeries, CatalogosSeriesUnidad
 from gestion_documental.models.conf__tipos_exp_models import ConfiguracionTipoExpedienteAgno
 from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, TablaRetencionDocumental
-from gestion_documental.serializers.conf__tipos_exp_serializers import CatalogosSeriesSecSubGetSerializer, ConfiguracionTipoExpedienteAgnoCreateSerializer, ConfiguracionTipoExpedienteAgnoGetSerializer, SecSubUnidadOrgaGetSerializer, XXGetSerializer, XYGetSerializer
+from gestion_documental.serializers.conf__tipos_exp_serializers import CatalogosSeriesSecSubGetSerializer, ConfiguracionTipoExpedienteAgnoCreateSerializer, ConfiguracionTipoExpedienteAgnoGetSerializer, ConfiguracionTipoExpedienteAgnoHistorialSerializer, SecSubUnidadOrgaGetSerializer, XXGetSerializer, XYGetSerializer
 from seguridad.utils import Util
 from datetime import datetime
 from rest_framework.permissions import IsAuthenticated
@@ -247,7 +247,7 @@ class ConfiguracionTipoExpedienteAgnoGetbyCatalogoUnidad(generics.ListAPIView):
 
 class ConfiguracionTipoExpedienteAgnoGetHistorico(generics.ListAPIView):
 
-    serializer_class = ConfiguracionTipoExpedienteAgnoCreateSerializer
+    serializer_class = ConfiguracionTipoExpedienteAgnoHistorialSerializer
     permission_classes = [IsAuthenticated]
     
     def get (self, request,uni,agno):
