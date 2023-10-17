@@ -2,6 +2,7 @@ from datetime import datetime, timedelta,date
 from transversal.models.base_models import ClasesTerceroPersona
 from transversal.models.personas_models import Personas
 from transversal.models.base_models import ClasesTercero
+from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from django.core.mail import EmailMultiAlternatives
 from email_validator import validate_email, EmailNotValidError, EmailUndeliverableError, EmailSyntaxError
 from backend.settings.base import EMAIL_HOST_USER, AUTHENTICATION_360_NRS
@@ -211,8 +212,7 @@ class Util:
         
             return True
         except Exception as err:
-            print("Error: " + repr(err))
-            return False
+            raise ValidationError ("Error: " + repr(err))
         
     @staticmethod
     def save_auditoria_maestro_detalle(data):
@@ -344,8 +344,8 @@ class Util:
                 auditoria_user.save()
         
             return True
-        except:
-            return False
+        except Exception as err:
+            raise ValidationError ("Error: " + repr(err))
         
     @staticmethod
     def guardar_persona(data):

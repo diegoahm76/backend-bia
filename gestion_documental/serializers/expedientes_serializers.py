@@ -71,6 +71,7 @@ class CierreExpedienteSerializer(serializers.ModelSerializer):
 
 
 
+
 #ArchivosSoporte_CierreReapertura
 class ArchivosSoporteCierreReaperturaSerializer(serializers.ModelSerializer):
     
@@ -132,6 +133,18 @@ class ArchivoSoporteSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
   
+class CierreExpedienteDetailSerializer(serializers.ModelSerializer):
+    def create(self, validated_data):
+        # Aquí puedes realizar la lógica de conversión de campos vacíos a None (null)
+        # Por ejemplo:
+        for field_name, field_value in validated_data.items():
+            if field_value == "":
+                validated_data[field_name] = None
+    
+    class Meta:
+        model =  CierresReaperturasExpediente
+        fields = '__all__'
+
 
  ######################### SERIALIZERS ARCHIVOS DIGITALES #########################
 class ArchivosDigitalesSerializer(serializers.ModelSerializer):
