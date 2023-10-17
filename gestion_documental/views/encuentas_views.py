@@ -627,6 +627,14 @@ class DatosEncuestasResueltasCreate(generics.CreateAPIView):
                                 raise ValidationError('El campo '+'email'+" es requerido.")
                             if not  ('telefono' in data_in and data_in['telefono']):
                                 raise ValidationError('El campo '+'telefono'+" es requerido.")
+                if 'tipo_usuario' in data_in:
+                    if  data_in['tipo_usuario'] == 'A':
+                        data_in ['nro_documento_id'] = None
+                        data_in ['nombre_completo'] = None
+                        data_in ['cod_sexo'] = None
+                        data_in ['rango_edad'] = None
+                        data_in ['email'] = None
+                        data_in ['telefono'] = None
 
                         
                 #data_in['id_persona_ult_config_implement']=usuario
