@@ -45,6 +45,9 @@ class ExpedientesDocumentalesGetSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExpedientesDocumentales
         fields = '__all__'
+
+
+
 #Orden_Siguiente_Expediente
 class ExpedienteGetOrdenSerializer(serializers.ModelSerializer):
     class Meta:
@@ -55,10 +58,18 @@ class ExpedienteGetOrdenSerializer(serializers.ModelSerializer):
 
 #Cierre_Expediente  
 class CierreExpedienteSerializer(serializers.ModelSerializer):
+    def create(self, validated_data):
+        # Aquí puedes realizar la lógica de conversión de campos vacíos a None (null)
+        # Por ejemplo:
+        for field_name, field_value in validated_data.items():
+            if field_value == "":
+                validated_data[field_name] = None
     
     class Meta:
         model =  CierresReaperturasExpediente
         fields = '__all__'
+
+
 
 #ArchivosSoporte_CierreReapertura
 class ArchivosSoporteCierreReaperturaSerializer(serializers.ModelSerializer):
