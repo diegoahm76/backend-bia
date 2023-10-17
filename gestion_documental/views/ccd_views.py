@@ -1501,7 +1501,35 @@ class SeriesDocUnidadCatSerieCCDActualGetView(generics.ListAPIView):
         }
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
-    
+
+class UnidadesSeccionResponsableCCDNuevoGetView(generics.ListAPIView):
+    serializer_class = SeriesDocUnidadHomologacionesSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_unidades_ccd(self, id_ccd):
+        ccd_filro = BusquedaCCDHomologacionView().get_validacion_ccd()
+        
+        try:
+            ccd = ccd_filro.get(id_ccd=id_ccd)
+        except CuadrosClasificacionDocumental.DoesNotExist:
+            raise NotFound('CCD no encontrado o no cumple con TRD y TCA terminados')
+        
+        try:
+            organigrama = Organigramas.objects.get(id_organigrama=ccd.id_organigrama.id_organigrama)
+        except Organigramas.DoesNotExist:
+            raise NotFound('No se ha encontrado organigrama')
+        
+        unidades_organizacionales = UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama.id_organigrama, cod_agrupacion_documental__isnull=False)
+
+        return unidades_organizacionales.order_by('codigo')
+
+    def get(self, request, id_ccd):
+
+        unidades_organizacionales = self.get_unidades_ccd(id_ccd)
+        serializer = self.serializer_class(unidades_organizacionales, many=True)
+
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
+
 class UnidadesSeccionResponsableTemporalCreateView(generics.CreateAPIView):
     serializer_class = UnidadesSeccionResponsableTemporalSerializer
     permission_classes = [IsAuthenticated]
@@ -1589,4 +1617,6 @@ class UnidadesSeccionResponsableTemporalGetView(generics.ListAPIView):
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
 
+
+# ENTREGA 58
 
