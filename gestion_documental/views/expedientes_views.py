@@ -1143,4 +1143,4 @@ class ReaperturaExpediente(generics.CreateAPIView):
         except ExpedientesDocumentales.DoesNotExist:
             raise NotFound('El expediente especificado no existe.')
         except Exception as e:
-            raise ValidationError(str(e))        
+            raise ValidationError((e.args))        
