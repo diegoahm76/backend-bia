@@ -60,7 +60,7 @@ class  PlantillasDocBusquedaAvanzadaDetalleSerializer(serializers.ModelSerialize
 
 
 class  PlantillasDocGetSeriallizer(serializers.ModelSerializer):
-    nombre_creador=serializers.ReadOnlyField(source='id_persona_crea_plantilla.nombre',default=None)
+    #nombre_creador=serializers.ReadOnlyField(source='id_persona_crea_plantilla.nombre',default=None)
     nombre_completo = serializers.SerializerMethodField()
     cod_tipo_acceso_display = serializers.CharField(source='get_cod_tipo_acceso_display', default=None)
     class Meta:
