@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from rest_framework.serializers import ReadOnlyField
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
+from gestion_documental.models.ccd_models import CatalogosSeriesUnidad
 from gestion_documental.models.tca_models import TablasControlAcceso
 from gestion_documental.models.trd_models import (
     HistoricosCatSeriesUnidadOrgCCDTRD,
@@ -286,3 +287,32 @@ class GetTipologiasDocumentalesSerializer(serializers.ModelSerializer):
     class Meta:
         model = TipologiasDoc
         fields = '__all__'
+
+#Enetrega 61 reportes de permisos de documentos
+
+class TablasControlAccesoGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TablasControlAcceso
+        fields = ['id_tca','nombre','nombre','version']
+
+class TablaRetencionDocumentalPermisosGetsSerializer(serializers.ModelSerializer):
+    #id_ccd
+    nombre_ccd = serializers.ReadOnlyField(source='id_ccd.nombre',default=None)
+    version_ccd = serializers.ReadOnlyField(source='id_ccd.version',default=None)
+    id_organigrama = serializers.ReadOnlyField(source='id_ccd.id_organigrama.id_organigrama',default=None)
+    nombre_organigrama = serializers.ReadOnlyField(source='id_ccd.id_organigrama.nombre',default=None)
+    version_organigrama = serializers.ReadOnlyField(source='id_ccd.id_organigrama.version',default=None)
+    tablas_control_acceso = TablasControlAccesoGetSerializer(source='tablascontrolacceso', many=False, read_only=True,default=None)
+    class Meta:
+        model = TablaRetencionDocumental
+        fields = '__all__'
+        #fields = ['id_trd','nombre_ccd','version_ccd','tablas_control_acceso']
+        # extra_kwargs = {
+        #     'id_trd': {'required': True},
+        #     'id_ccd': {'required': True}}
+class UnidadSeccionSubseccionGetSerializer(serializers.ModelSerializer):
+    nombre_unidad = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre',default=None)
+    class Meta:
+        model = CatalogosSeriesUnidad
+        fields = '__all__'
+

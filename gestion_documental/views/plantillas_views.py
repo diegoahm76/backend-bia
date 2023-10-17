@@ -38,7 +38,7 @@ class PlantillasDocCreate(generics.CreateAPIView):
         #FIN PRUEBAS
         #ruta = os.path.join("home", "BIA", "Otros", "Plantillas")
        
-        print(ruta)
+        #print(ruta)
     
         #raise ValidationError(ruta)
         #archivo = request.FILES['archivo']
@@ -516,8 +516,8 @@ class OtrasTipologiasDocGetActivo(generics.ListAPIView):
     def get (self, request):
         #instance = PlantillasDoc.objects.filter(activo=True)
         instance = PlantillasDoc.objects.filter(activa=True).values('otras_tipologias').distinct()
-        for x in instance:
-            print(x)
+        # for x in instance:
+        #     print(x)
     
         if not instance:
             raise NotFound("No existen registros")
