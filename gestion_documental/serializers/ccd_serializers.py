@@ -482,25 +482,28 @@ class UnidadesSeccionPersistenteTemporalGetSerializer(serializers.ModelSerialize
     cod_unidad_nueva = serializers.ReadOnlyField(source='id_unidad_seccion_nueva.codigo',default=None)
     nom_unidad_nueva = serializers.ReadOnlyField(source='id_unidad_seccion_nueva.nombre',default=None)
     id_organigrama_unidad_nueva = serializers.ReadOnlyField(source='id_unidad_seccion_nueva.id_organigrama.id_organigrama',default=None)
+    iguales = serializers.SerializerMethodField()
     tiene_agrupaciones = serializers.SerializerMethodField()
 
     class Meta:
         model = UnidadesSeccionPersistenteTemporal
-        fields = ['id_unidad_seccion_temporal',
-                  'id_unidad_actual',
-                  'cod_unidad_actual',
-                  'nom_unidad_actual',
-                  'id_organigrama_unidad_actual',
-                  'id_unidad_nueva',
-                  'cod_unidad_nueva',
-                  'nom_unidad_nueva',
-                  'id_organigrama_unidad_nueva',
+        fields = ['id_unidad_seccion_temporal','id_unidad_actual',
+                  'cod_unidad_actual','nom_unidad_actual',
+                  'id_organigrama_unidad_actual','id_unidad_nueva',
+                  'cod_unidad_nueva','nom_unidad_nueva',
+                  'id_organigrama_unidad_nueva','iguales',
                   'tiene_agrupaciones']
         
     def get_tiene_agrupaciones(self,obj):
         agrupaciones = AgrupacionesDocumentalesPersistenteTemporal.objects.filter(id_unidad_seccion_temporal=obj.id_unidad_seccion_temporal)
         tiene_agrupaciones = True if agrupaciones else False
         return tiene_agrupaciones
+    
+    def get_iguales(self, obj):
+        iguales = True if obj.id_unidad_seccion_actual.nombre == obj.id_unidad_seccion_nueva.nombre else False
+        return iguales
+        
+
 
 class UnidadesSeccionResponsableTemporalSerializer(serializers.ModelSerializer):
     class Meta:
