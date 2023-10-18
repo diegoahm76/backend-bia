@@ -315,7 +315,7 @@ class UnidadSeccionSubseccionGetSerializer(serializers.ModelSerializer):
     #nombre_unidad = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre',default=None)
     class Meta:
         model = UnidadesOrganizacionales
-        fields = '__all__'
+        fields = ['id_unidad_organizacional','nombre']
 
 class PermisosUndsOrgActualesSerieExpCCDSerializer(serializers.ModelSerializer):
     nombre_unidad_ornaginazional_actual = serializers.ReadOnlyField(source='id_und_organizacional_actual.nombre',default=None)
@@ -330,3 +330,17 @@ class SerieSubserieReporteSerializer(serializers.ModelSerializer):
     class Meta:
         model = CatalogosSeries
         fields = ['id_catalogo_serie' ,'id_serie_doc','nombre_serie','id_subserie_doc','nombre_subserie']
+
+class DenegacionPermisosGetUnidadSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = PermisosUndsOrgActualesSerieExpCCD
+        fields = [
+            'id_permisos_und_org_actual_serie_exp_ccd',
+            'id_cat_serie_und_org_ccd',
+            'denegar_anulacion_docs',
+            'denegar_borrado_docs',
+            'excluir_und_actual_respon_series_doc_restriccion',
+            'denegar_conceder_acceso_doc_na_resp_series',
+            'denegar_conceder_acceso_exp_na_resp_series'
+        ]
