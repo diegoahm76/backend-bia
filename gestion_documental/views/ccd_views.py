@@ -1361,16 +1361,19 @@ class AgrupacionesDocumentalesPersistenteTemporalGetView(generics.ListAPIView):
         except CuadrosClasificacionDocumental.DoesNotExist:
             raise NotFound('CCD no encontrado')
         
-        unidades_persistentes = UnidadesSeccionPersistenteTemporal.objects.get(id_ccd_nuevo=ccd.id_ccd, 
+        try:
+            unidades_persistentes = UnidadesSeccionPersistenteTemporal.objects.get(id_ccd_nuevo=ccd.id_ccd, 
                                                                                 id_unidad_seccion_actual=data_in['id_unidad_actual'],
                                                                                 id_unidad_seccion_nueva=data_in['id_unidad_nueva'])
-        
+        except UnidadesSeccionPersistenteTemporal.DoesNotExist:
+            unidades_persistentes = None
+
         ids_agrupacion_doc_actual = None
         ids_agrupacion_doc_nueva = None
 
         if unidades_persistentes:
             agrupaciones_persistentes = AgrupacionesDocumentalesPersistenteTemporal.objects.filter(id_unidad_seccion_temporal=unidades_persistentes.id_unidad_seccion_temporal)
-            ids_agrupacion_doc_actual = [agrupacion.id_cat_serie_unidad_ccd_actual.id_cat_serie_und for agrupacion in agrupaciones_persistentes]
+            ids_agrupacion_doc_actual = [agrupacion.id_cat_serie_unidad_ccd_actual for agrupacion in agrupaciones_persistentes]
             ids_agrupacion_doc_nueva = [agrupacion.id_cat_serie_unidad_ccd_nueva.id_cat_serie_und for agrupacion in agrupaciones_persistentes]
         
         return ids_agrupacion_doc_actual, ids_agrupacion_doc_nueva
