@@ -1373,7 +1373,7 @@ class AgrupacionesDocumentalesPersistenteTemporalGetView(generics.ListAPIView):
 
         if unidades_persistentes:
             agrupaciones_persistentes = AgrupacionesDocumentalesPersistenteTemporal.objects.filter(id_unidad_seccion_temporal=unidades_persistentes.id_unidad_seccion_temporal)
-            ids_agrupacion_doc_actual = [agrupacion.id_cat_serie_unidad_ccd_actual for agrupacion in agrupaciones_persistentes]
+            ids_agrupacion_doc_actual = [agrupacion.id_cat_serie_unidad_ccd_actual.id_cat_serie_und for agrupacion in agrupaciones_persistentes]
             ids_agrupacion_doc_nueva = [agrupacion.id_cat_serie_unidad_ccd_nueva.id_cat_serie_und for agrupacion in agrupaciones_persistentes]
         
         return ids_agrupacion_doc_actual, ids_agrupacion_doc_nueva
