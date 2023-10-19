@@ -518,14 +518,10 @@ class UnidadesSeccionResponsableTemporalGetSerializer(serializers.ModelSerialize
 
     class Meta:
         model = UnidadesSeccionResponsableTemporal
-        fields = ['id_unidad_seccion_responsable_temporal', 
-                  'id_unidad_seccion_actual',
-                  'cod_unidad_actual',
-                  'nom_unidad_actual',
-                  'id_unidad_seccion_nueva',
-                  'cod_unidad_nueva',
-                  'nom_unidad_nueva'
-                   ]
+        fields = ['id_unidad_seccion_responsable_temporal', 'id_unidad_seccion_actual',
+                  'cod_unidad_actual', 'nom_unidad_actual',
+                  'id_unidad_seccion_nueva', 'cod_unidad_nueva',
+                  'nom_unidad_nueva']
 
 
 #   LLAMADO DE SERIALIZADOR DENTRO DE OTRO SERIALIZADOR CON RELACION
