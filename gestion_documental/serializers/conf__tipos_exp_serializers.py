@@ -18,9 +18,28 @@ class ConfiguracionTipoExpedienteAgnoCreateSerializer(serializers.ModelSerialize
 
 class ConfiguracionTipoExpedienteAgnoHistorialSerializer(serializers.ModelSerializer):
     cod_tipo_expediente_display = serializers.CharField(source='get_cod_tipo_expediente_display', read_only=True)
+    persona_ultima_conf = serializers.SerializerMethodField()
+    persona_consectivo_actual= serializers.SerializerMethodField()
     class Meta:
         model = ConfiguracionTipoExpedienteAgno
         fields = '__all__'
+
+    def get_persona_ultima_conf(self, obj):
+    
+        if obj.id_persona_ult_config_implement:
+            nombre_completo = None
+            nombre_list = [obj.id_persona_ult_config_implement.primer_nombre, obj.id_persona_ult_config_implement.segundo_nombre, obj.id_persona_ult_config_implement.primer_apellido, obj.id_persona_ult_config_implement.segundo_apellido]
+            nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+            return nombre_completo.upper()
+    
+    def get_persona_consectivo_actual(self, obj):
+    
+        if obj.id_persona_consecutivo_actual:
+            nombre_completo = None
+            nombre_list = [obj.id_persona_consecutivo_actual.primer_nombre, obj.id_persona_consecutivo_actual.segundo_nombre, obj.id_persona_consecutivo_actual.primer_apellido, obj.id_persona_consecutivo_actual.segundo_apellido]
+            nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+            return nombre_completo.upper()
+    
 
 class ConfiguracionTipoExpedienteAgnoUpdateSerializer(serializers.ModelSerializer):
     class Meta:
