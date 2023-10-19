@@ -298,6 +298,7 @@ class TablasControlAccesoGetSerializer(serializers.ModelSerializer):
 
 class TablaRetencionDocumentalPermisosGetsSerializer(serializers.ModelSerializer):
     #id_ccd
+    id_ccd = serializers.ReadOnlyField(source='id_ccd.id_ccd',default=None)
     nombre_ccd = serializers.ReadOnlyField(source='id_ccd.nombre',default=None)
     version_ccd = serializers.ReadOnlyField(source='id_ccd.version',default=None)
     id_organigrama = serializers.ReadOnlyField(source='id_ccd.id_organigrama.id_organigrama',default=None)
