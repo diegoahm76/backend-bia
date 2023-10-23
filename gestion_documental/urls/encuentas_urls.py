@@ -28,4 +28,5 @@ urlpatterns = [
     path('encuesta_disponibles/get/',views.EncuestasDisponbles.as_view(), name='listar-encuesta-disponibles'),
     path('asignacion_encuesta/get/<str:enc>/',views.EncuestasAsignadasGet.as_view(), name='listado-asignacion-encuesta'),
     path('asignacion_encuesta/create/',views.AsignacionEncuestaCreate.as_view(), name='crear-asignacion-encuesta'),
-]#EncuestasDisponbles
+    path('asignacion_encuesta_usuario/get/<str:pk>/',views.EncuestasAsignadasUsuarioGet.as_view(), name='listado-usuarios-encuesta'),
+]#EncuestasAsignadasUsuarioGet

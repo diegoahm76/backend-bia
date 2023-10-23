@@ -133,6 +133,7 @@ class AsignarEncuesta(models.Model):
     id_encuesta = models.ForeignKey(EncabezadoEncuesta, on_delete=models.CASCADE, db_column='TXXXId_Encuesta')
     id_persona = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='TXXXId_Persona')
     id_alerta_generada = models.ForeignKey(AlertasGeneradas, on_delete=models.CASCADE, db_column='TXXXId_Alerta_Generada', null=True, blank=True)
+    
     def __str__(self):
         return f'Respuesta de Encuesta {self.id_asignar_encuesta}'
 
