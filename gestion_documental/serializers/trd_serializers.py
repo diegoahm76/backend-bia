@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from rest_framework.serializers import ReadOnlyField
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
-from gestion_documental.models.ccd_models import CatalogosSeriesUnidad
+from gestion_documental.models.ccd_models import CatalogosSeries, CatalogosSeriesUnidad
+from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
 from gestion_documental.models.tca_models import TablasControlAcceso
 from gestion_documental.models.trd_models import (
     HistoricosCatSeriesUnidadOrgCCDTRD,
@@ -297,6 +298,7 @@ class TablasControlAccesoGetSerializer(serializers.ModelSerializer):
 
 class TablaRetencionDocumentalPermisosGetsSerializer(serializers.ModelSerializer):
     #id_ccd
+    id_ccd = serializers.ReadOnlyField(source='id_ccd.id_ccd',default=None)
     nombre_ccd = serializers.ReadOnlyField(source='id_ccd.nombre',default=None)
     version_ccd = serializers.ReadOnlyField(source='id_ccd.version',default=None)
     id_organigrama = serializers.ReadOnlyField(source='id_ccd.id_organigrama.id_organigrama',default=None)
@@ -311,8 +313,35 @@ class TablaRetencionDocumentalPermisosGetsSerializer(serializers.ModelSerializer
         #     'id_trd': {'required': True},
         #     'id_ccd': {'required': True}}
 class UnidadSeccionSubseccionGetSerializer(serializers.ModelSerializer):
-    nombre_unidad = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre',default=None)
+    #nombre_unidad = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre',default=None)
     class Meta:
-        model = CatalogosSeriesUnidad
+        model = UnidadesOrganizacionales
+        fields = ['id_unidad_organizacional','nombre']
+
+class PermisosUndsOrgActualesSerieExpCCDSerializer(serializers.ModelSerializer):
+    nombre_unidad_ornaginazional_actual = serializers.ReadOnlyField(source='id_und_organizacional_actual.nombre',default=None)
+
+    class Meta:
+        model = PermisosUndsOrgActualesSerieExpCCD
         fields = '__all__'
 
+class SerieSubserieReporteSerializer(serializers.ModelSerializer):
+    nombre_serie = serializers.ReadOnlyField(source='id_serie_doc.nombre',default=None)
+    nombre_subserie = serializers.ReadOnlyField(source='id_subserie_doc.nombre',default=None)
+    class Meta:
+        model = CatalogosSeries
+        fields = ['id_catalogo_serie' ,'id_serie_doc','nombre_serie','id_subserie_doc','nombre_subserie']
+
+class DenegacionPermisosGetUnidadSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = PermisosUndsOrgActualesSerieExpCCD
+        fields = [
+            'id_permisos_und_org_actual_serie_exp_ccd',
+            'id_cat_serie_und_org_ccd',
+            'denegar_anulacion_docs',
+            'denegar_borrado_docs',
+            'excluir_und_actual_respon_series_doc_restriccion',
+            'denegar_conceder_acceso_doc_na_resp_series',
+            'denegar_conceder_acceso_exp_na_resp_series'
+        ]
