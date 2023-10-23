@@ -948,15 +948,43 @@ class EncuestasAsignadasGet(generics.ListAPIView):
     
 
 
-# class DeleteAsignacion(generics.DestroyAPIView):
-#     serializer_class=AsignarEncuestaGetSerializer
-#     queryset=AsignarEncuesta.objects.all()
+class DeleteAsignacion(generics.DestroyAPIView):
+    serializer_class=AsignarEncuestaGetSerializer
+    queryset=AsignarEncuesta.objects.all()
     
-#     def delete(self, request, pk):
-#         instance = self.queryset.filter(id_asignar_encuesta=pk).first()
+    def delete(self, request, pk):
+      
+        instance = self.queryset.filter(id_asignar_encuesta=pk).first()
 
-#         instance.delete()
+        if not instance:
+            raise NotFound("Dato no encontrado.")
         
-#         return Response({'success':True,
-#                          'detail':'Se elimino correctamente los siguientes registros.',
-#                          'data':'serializer.data'},status=status.HTTP_200_OK)
+        previus = copy.copy(instance)  
+
+        alerta_generada = AlertasGeneradas.objects.filter(id_alerta_generada=instance.id_alerta_generada).first()
+
+        if alerta_generada:
+            alerta_generada.delete()
+
+        instance.delete()
+
+        #AlertasBandejaAlertaPersona
+        
+        return Response({'success':True,
+                         'detail':'Se elimino correctamente los siguientes registros.',
+                         'data':'serializer.data'},status=status.HTTP_200_OK)
+    
+
+class EncuestasAsignadasUsuarioGet(generics.ListAPIView):
+    queryset = AsignarEncuesta.objects.all()
+    serializer_class = AsignarEncuestaGetSerializer
+    def get(self, request,pk):
+        instance = AsignarEncuesta.objects.filter(id_persona=pk)
+        serializer = self.serializer_class(instance,many=True)
+        
+        if not instance:
+            raise NotFound("No existen encuentas registrados en el sistema.")
+
+        return Response({'success':True,
+                         'detail':'Se encontraron los siguientes registros.',
+                         'data':serializer.data},status=status.HTTP_200_OK)
