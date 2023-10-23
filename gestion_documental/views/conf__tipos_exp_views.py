@@ -56,8 +56,7 @@ class ConfiguracionTipoExpedienteAgnoGet(generics.ListAPIView):
         return Response({'succes':True, 'detail':'Se encontraron los siguientes registros','data':unidades_unicas}, status=status.HTTP_200_OK)
 
 class SerieSubserioUnidadGet(generics.ListAPIView):
-    #erializer_class = CatalogosSeriesSecSubGetSerializer
-    #serializer_class = XYGetSerializer
+
     serializer_class = XXGetSerializer
     permission_classes = [IsAuthenticated]
     
@@ -252,11 +251,7 @@ class ConfiguracionTipoExpedienteAgnoGetHistorico(generics.ListAPIView):
     
     def get (self, request,uni,agno):
        
-  
-
-    
         instance=ConfiguracionTipoExpedienteAgno.objects.filter(id_cat_serie_undorg_ccd=uni,agno_expediente=agno)
-
 
         if not instance:
             raise NotFound("No existen registros asociados.")

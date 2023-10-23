@@ -141,5 +141,8 @@ class GetListSexoBase(generics.ListAPIView):
         data = serializer.data
 
         
-        return Response({'success':True, 'detail':'Se encontraron los siguientes municipios', 'data':data}, status=status.HTTP_200_OK)
+        return Response({'success':True,
+                          'detail':'Se encontraron los siguientes municipios', 
+                          'data':data},
+                         status=status.HTTP_200_OK)
     

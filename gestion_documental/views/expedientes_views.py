@@ -1,6 +1,7 @@
 from datetime import datetime
 import hashlib
 import os
+from django.db.utils import IntegrityError
 from django.core.files.base import ContentFile
 import secrets
 from rest_framework.parsers import MultiPartParser
@@ -12,7 +13,7 @@ from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCr
 from seguridad.utils import Util
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, CierreExpedienteSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, ListarTRDSerializer, ListarTipologiasSerializer
+from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, ListarTRDSerializer, ListarTipologiasSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Max 
@@ -534,23 +535,21 @@ class CierreExpediente(generics.CreateAPIView):
             if persona.segundo_apellido:
                 nombre_persona_cierra += " " + persona.segundo_apellido
                 
-
-        
-            # # Auditoria cierre_expediente
-            # usuario = request.user.id_usuario
-            # descripcion = {"IDExpediente": str(id_expediente_doc), "CodigoOperacion": "Cierre", "ConsecutivoExpediente": str(expediente.codigo_exp_consec_por_agno), "TituloExpediente": str(expediente.titulo_expediente)}
+            # Auditoria cierre_expediente
+            usuario = request.user.id_usuario
+            descripcion = {"IDExpediente": str(id_expediente_doc), "CodigoOperacion": "Cierre", "ConsecutivoExpediente": str(expediente.codigo_exp_consec_por_agno), "TituloExpediente": str(expediente.titulo_expediente)}
 
            
-            # direccion = Util.get_client_ip(request)
-            # auditoria_data = {
-            #     "id_usuario" : usuario,
-            #     "id_modulo" : 146,
-            #     "cod_permiso": "CR",
-            #     "subsistema": 'GEST',
-            #     "dirip": direccion,
-            #     "descripcion": descripcion,
-            # }
-            # Util.save_auditoria(auditoria_data)
+            direccion = Util.get_client_ip(request)
+            auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 146,
+                "cod_permiso": "CR",
+                "subsistema": 'GEST',
+                "dirip": direccion,
+                "descripcion": descripcion,
+            }
+            Util.save_auditoria(auditoria_data)
 
             serializer = CierreExpedienteSerializer(cierre_expediente)
 
@@ -559,7 +558,7 @@ class CierreExpediente(generics.CreateAPIView):
         except ExpedientesDocumentales.DoesNotExist:
             raise NotFound('El expediente especificado no existe.')
         except Exception as e:
-            raise ValidationError(str(e))
+            raise ValidationError((e.args))
 
 # class CierreExpediente(generics.CreateAPIView):
 #     serializer_class = CierreExpedienteSerializer
@@ -642,7 +641,7 @@ class EliminarArchivoSoporte(generics.DestroyAPIView):
 
     def destroy(self, request, *args, **kwargs):
         try:
-            instance = self.get_object()
+            # instance = self.get_object()
             # Obtener el id_documento_de_archivo_exped de la solicitud
             id_documento_de_archivo_exped = kwargs.get('id_documento_de_archivo_exped')
 
@@ -797,16 +796,16 @@ class DetalleArchivoSoporte(generics.RetrieveAPIView):
     serializer_class = ArchivoSoporteSerializer
     lookup_field = 'id_documento_de_archivo_exped'  # Campo utilizado para buscar el archivo de soporte
 
-    def retrieve(self, request, *args, **kwargs):
+    def retrieve(self, request, id_documento_de_archivo_exped, *args, **kwargs):
         try:
-            archivo_soporte = self.get_object()
+            archivo_soporte = self.queryset.get(id_documento_de_archivo_exped=id_documento_de_archivo_exped)
             serializer = self.get_serializer(archivo_soporte)
 
             return Response({ 'success': True,'detail': 'Se encontraron los siguientes registros.','data': serializer.data}, status=status.HTTP_200_OK)
         except DocumentosDeArchivoExpediente.DoesNotExist:
             raise NotFound('El archivo soporte especificado no existe.')
         except Exception as e:
-            raise ValidationError(str(e))
+            raise ValidationError((e.args))
 
 ########################## CRUD DE ARCHIVOS DIGITALES  ##########################
 
@@ -1010,7 +1009,7 @@ class ExpedienteSearchCerrado(generics.ListAPIView):
 #         else:
 #             raise NotFound('El expediente no está cerrado')
 class CierresReaperturasExpedienteDetailView(generics.RetrieveAPIView):
-    serializer_class = CierreExpedienteSerializer
+    serializer_class = CierreExpedienteDetailSerializer
     queryset = CierresReaperturasExpediente.objects.all()
 
     def retrieve(self, request, id_expediente, *args, **kwargs):
@@ -1049,20 +1048,6 @@ class CierresReaperturasExpedienteDetailView(generics.RetrieveAPIView):
                 # Crear la cadena de texto
                 cierre_realizado_por = f"El expediente fue cerrado el día {fecha_cierre} por {nombre_persona_cierra}."
 
-                # Realiza una consulta para buscar IndicesElectronicosExp relacionados con este cierre
-                indices_electronicos = IndicesElectronicosExp.objects.filter(fecha_cierre=ultimo_cierre.fecha_cierre_reapertura)
-
-                if indices_electronicos:
-                    observacion_firma_cierre = indices_electronicos[0].observacion_firme_cierre
-                    id_persona_firma_cierre = indices_electronicos[0].id_persona_firma_cierre_id
-                else:
-                    observacion_firma_cierre = None
-                    id_persona_firma_cierre = None
-
-                # Si se encuentra información de IndicesElectronicosExp, agrégala a la cadena de texto
-                if id_persona_firma_cierre is not None:
-                    cierre_realizado_por += f" La firma de cierre fue realizada por la persona con ID {id_persona_firma_cierre} y la observación fue: {observacion_firma_cierre}."
-
                 serializer = self.get_serializer(ultimo_cierre)
                 response_data = {
                     'titulo_expediente': titulo_expediente,
@@ -1077,4 +1062,85 @@ class CierresReaperturasExpedienteDetailView(generics.RetrieveAPIView):
             raise NotFound('El expediente no está cerrado')
 
 
-        
+class ReaperturaExpediente(generics.CreateAPIView):
+    serializer_class = CierreExpedienteSerializer
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        try:
+            id_expediente_doc = request.data.get('id_expediente_doc')
+            justificacion_reapertura = request.data.get('justificacion_reapertura')
+            user = request.user
+            expediente = get_object_or_404(ExpedientesDocumentales, pk=id_expediente_doc)
+
+            # Verificar si el expediente está cerrado (estado 'C')
+            if expediente.estado != 'C':
+                raise ValidationError('El expediente no está cerrado, por lo que no se puede reabrir.')
+
+            persona = user.persona
+
+            DocumentoArchivo = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=id_expediente_doc)
+            # Obtener el código de la etapa actual antes de la reapertura
+            etapa_actual_anterior = expediente.cod_etapa_de_archivo_actual_exped
+
+            # Crear el registro de reapertura de expediente
+            reapertura_expediente = CierresReaperturasExpediente.objects.create(
+                id_expediente_doc=expediente,
+                cod_operacion='R',  # 'R' para reapertura
+                fecha_cierre_reapertura=datetime.now(),
+                justificacion_cierre_reapertura=justificacion_reapertura,
+                id_persona_cierra_reabre=persona,
+                cod_etapa_archivo_pre_reapertura=etapa_actual_anterior
+            )
+
+
+            # Actualizar los campos de ExpedientesDocumentales
+            expediente.estado = 'A'  # 'A' para abierto
+            expediente.fecha_folio_final = None
+            expediente.fecha_cierre_reapertura_actual = datetime.now()
+            expediente.fecha_firma_cierre_indice_elec = None
+            expediente.fecha_paso_a_archivo_central = None
+            expediente.fecha_paso_a_archivo_historico = None
+            expediente.fecha_eliminacion_x_dispo_final = None
+            if expediente.cod_etapa_de_archivo_actual_exped != 'G':
+                expediente.cod_etapa_de_archivo_actual_exped = 'G'
+                expediente.ubicacion_fisica_esta_actualizada = False
+
+            # Guardar los cambios en el expediente
+            expediente.save()
+
+            # Crear registros de archivos de soporte para la reapertura
+            for archivo_soporte in DocumentoArchivo:
+                ArchivosSoporte_CierreReapertura.objects.create(
+                    id_cierre_reapertura_exp=reapertura_expediente,
+                    id_doc_archivo_exp_soporte=archivo_soporte,
+                )
+
+            # Auditoria reapertura_expediente
+            usuario = request.user.id_usuario
+            descripcion = {"IDExpediente": str(id_expediente_doc), "CodigoOperacion": "Reapertura", "ConsecutivoExpediente": str(expediente.codigo_exp_consec_por_agno), "TituloExpediente": str(expediente.titulo_expediente)}
+
+           
+            direccion = Util.get_client_ip(request)
+            auditoria_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 149,
+                "cod_permiso": "CR",
+                "subsistema": 'GEST',
+                "dirip": direccion,
+                "descripcion": descripcion,
+            }
+            Util.save_auditoria(auditoria_data)
+
+            serializer = CierreExpedienteSerializer(reapertura_expediente)
+
+            return Response({
+                'success': True,
+                'detail': 'Reapertura de expediente realizada con éxito',
+                'data': serializer.data
+            }, status=status.HTTP_201_CREATED)
+        except ExpedientesDocumentales.DoesNotExist:
+            raise NotFound('El expediente especificado no existe.')
+        except Exception as e:
+            raise ValidationError((e.args))        

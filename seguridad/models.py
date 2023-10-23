@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 
 from transversal.models.personas_models import Personas
+from transversal.models.entidades_models import SucursalesEmpresas
 from .managers import CustomUserManager
 from rest_framework_simplejwt.tokens import RefreshToken
 from transversal.choices.paises_choices import paises_CHOICES
@@ -160,6 +161,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     tipo_usuario = models.CharField(max_length=1, default='E', choices=tipo_usuario_CHOICES, db_column='TztipoUsuario')
     profile_img = models.ImageField(null=True, blank=True, default='/placeholder.png', upload_to='seguridad/usuarios/', db_column='TzrutaFoto') #Juan Camilo Text Choices
     # email = models.EmailField(blank=True,null=True db_column='TzemailUsuario') #Añadido por Juan
+    sucursal_defecto = models.ForeignKey(SucursalesEmpresas, on_delete=models.SET_NULL, null=True, blank=True, db_column='TzId_SucursalPorDefecto')
     
     USERNAME_FIELD = 'nombre_de_usuario'
     REQUIRED_FIELDS = []
