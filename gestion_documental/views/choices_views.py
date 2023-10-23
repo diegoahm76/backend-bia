@@ -52,7 +52,10 @@ class GetCod_tipo_PQR(APIView):
 
 class GetEstruc_tipo_exp(APIView):
     def get(self, request):
-        return Response({'success':True, 'detail':'Las estructuras de los tipos de expediente  son los siguientes', 'data':tipo_expediente_LIST }, status=status.HTTP_200_OK) 
+        return Response({'success':True, 
+                         'detail':'Las estructuras de los tipos de expediente  son los siguientes',
+                          'data':tipo_expediente_LIST },
+                            status=status.HTTP_200_OK) 
 #tipo_expediente_LIST
 
 class TipoExpediente(APIView):
