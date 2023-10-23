@@ -24,4 +24,8 @@ urlpatterns = [
     path('reporte_tipos_usuario/get/<str:pk>/',views.ConteoEncuestasTiposUsuarioGet.as_view(), name='get-reporte_n_usuarios'),
     path('reporte_tipos_sexo/get/<str:pk>/',views.ConteoEncuestasPorGenero.as_view(), name='get-reporte_genero_usuarios'),
     path('reporte_rango_edad/get/<str:pk>/',views.ConteoEncuestasPorRangoEdad.as_view(), name='get-reporte_edad'),
-]#ConteoEncuestasPorRangoEdad
+
+    path('encuesta_disponibles/get/',views.EncuestasDisponbles.as_view(), name='listar-encuesta-disponibles'),
+    path('asignacion_encuesta/get/<str:enc>/',views.EncuestasAsignadasGet.as_view(), name='listado-asignacion-encuesta'),
+    path('asignacion_encuesta/create/',views.AsignacionEncuestaCreate.as_view(), name='crear-asignacion-encuesta'),
+]#EncuestasDisponbles
