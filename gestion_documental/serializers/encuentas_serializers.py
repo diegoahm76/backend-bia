@@ -3,7 +3,8 @@ from rest_framework import serializers
 from rest_framework.serializers import ReadOnlyField
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from gestion_documental.choices.rango_edad_choices import RANGO_EDAD_CHOICES
-from gestion_documental.models.encuencas_models import DatosEncuestasResueltas, EncabezadoEncuesta, OpcionesRta, PreguntasEncuesta, RespuestaEncuesta
+from gestion_documental.models.encuencas_models import AsignarEncuesta, DatosEncuestasResueltas, EncabezadoEncuesta, OpcionesRta, PreguntasEncuesta, RespuestaEncuesta
+from transversal.models.alertas_models import AlertasGeneradas
 from transversal.models.personas_models import Personas 
 import datetime
 #from dateutil.relativedelta import relativedelta
@@ -222,3 +223,27 @@ class DatosEncuestasResueltasConteoSerializer(serializers.ModelSerializer):
     class Meta:
         model = DatosEncuestasResueltas
         fields = '__all__'
+
+class AlertasGeneradasEncuestaPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AlertasGeneradas
+        fields = '__all__'
+
+class AsignarEncuestaPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AsignarEncuesta
+        fields = '__all__'
+
+class AsignarEncuestaGetSerializer(serializers.ModelSerializer):
+    nombre_completo = serializers.SerializerMethodField()
+    nombre_encuesta=serializers.ReadOnlyField(source='id_encuesta.nombre_encuesta',default=None)
+    class Meta:
+        model = AsignarEncuesta
+        fields = '__all__'
+    def get_nombre_completo(self, obj):
+        nombre_completo_responsable = None
+        nombre_list = [obj.id_persona.primer_nombre, obj.id_persona.segundo_nombre,
+                        obj.id_persona.primer_apellido, obj.id_persona.segundo_apellido]
+        nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+        return nombre_completo_responsable
