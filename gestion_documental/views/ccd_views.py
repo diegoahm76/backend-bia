@@ -1494,12 +1494,6 @@ class SeriesDocUnidadCatSerieCCDActualGetView(generics.ListAPIView):
         except CuadrosClasificacionDocumental.DoesNotExist:
             raise NotFound('CCD no encontrado o no cumple con TRD y TCA terminados')
         
-        try:
-            organigrama_actual = Organigramas.objects.get(id_organigrama=ccd_actual.id_organigrama.id_organigrama, actual=True)
-            organigrama = Organigramas.objects.get(id_organigrama=ccd.id_organigrama.id_organigrama)
-        except Organigramas.DoesNotExist:
-            raise NotFound('No se ha encontrado organigrama')
-        
         if not UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=data_in['id_unidad_actual']).exists(): 
             raise NotFound('No se encontro unidad organizacional actual')
         
@@ -1566,6 +1560,7 @@ class UnidadesSeccionResponsableTemporalCreateView(generics.CreateAPIView):
             (id_unidad['id_unidad_actual'], id_unidad['id_unidad_nueva'])
             for id_unidad in data_in['unidades_responsables']
         )
+        print("UNIDADES NUEVAS", unidades_nuevas_set)
         all_ids = {id_unidad for tupla in unidades_nuevas_set for id_unidad in tupla}
 
         if not UnidadesOrganizacionales.objects.filter(id_unidad_organizacional__in=all_ids).count() == len(all_ids):
@@ -1578,7 +1573,7 @@ class UnidadesSeccionResponsableTemporalCreateView(generics.CreateAPIView):
         )
         unidades_a_eliminar = unidades_existentes_set - unidades_nuevas_set
         unidades_a_crear = unidades_nuevas_set - unidades_existentes_set
-
+        print("UNIDADES A ELIMINAR", unidades_a_eliminar)
         self.delete_unidades_responsable_tmp(ccd.id_ccd, unidades_a_eliminar)
 
         for unidad in unidades_a_crear:
@@ -1609,9 +1604,6 @@ class UnidadesSeccionResponsableTemporalCreateView(generics.CreateAPIView):
     def post(self, request):
         data = request.data
         unidades_responsables = self.crear_actualizar_unidades_responsable_tmp(data)
-
-        if not unidades_responsables:
-            raise ValidationError('No se realizaron cambios en las unidades responsables')
 
         return Response({'success': True, 'detail': 'Se crean o actualizan unidades responsables', 'data': unidades_responsables}, status=status.HTTP_201_CREATED)
 
@@ -1669,3 +1661,5 @@ class ValidacionCCDDelegacionView(generics.ListAPIView):
         serializer = self.serializer_class(unidades_organizacionales_nuevo, many=True)
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
