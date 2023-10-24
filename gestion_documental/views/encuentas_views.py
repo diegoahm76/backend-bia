@@ -15,7 +15,7 @@ from django.db import transaction
 from seguridad.utils import Util
 from django.db.models import Count
 from transversal.admin import PersonasAdmin
-from transversal.models.alertas_models import AlertasGeneradas, BandejaAlertaPersona, ConfiguracionClaseAlerta
+from transversal.models.alertas_models import AlertasBandejaAlertaPersona, AlertasGeneradas, BandejaAlertaPersona, ConfiguracionClaseAlerta
 
 from transversal.models.personas_models import Personas
 from transversal.models.base_models import Departamento, Municipio, Paises, Sexo, TipoDocumento
@@ -926,7 +926,8 @@ class AsignacionEncuestaCreate(generics.CreateAPIView):
                 serializer2 = self.serialier_asignacion(data=data_asignacion)
                 serializer2.is_valid(raise_exception=True)
                 instance2=serializer2.save()
-
+        else:
+             raise NotFound("Este usuario no cuenta con bandeja,comuniquese con soporte.")
         return Response({'success':True,
                          'detail':'Se encontraron los siguientes registros.',
                          'data':serializer2.data},status=status.HTTP_200_OK)
@@ -961,18 +962,26 @@ class DeleteAsignacion(generics.DestroyAPIView):
         
         previus = copy.copy(instance)  
 
-        alerta_generada = AlertasGeneradas.objects.filter(id_alerta_generada=instance.id_alerta_generada).first()
+        alerta_generada = AlertasGeneradas.objects.filter(id_alerta_generada=instance.id_alerta_generada.id_alerta_generada).first()
 
+
+        bandeja = AlertasBandejaAlertaPersona.objects.filter(id_alerta_generada=instance.id_alerta_generada).first()
+
+        #print(alerta_generada)
+        #print(bandeja)
         if alerta_generada:
             alerta_generada.delete()
 
-        instance.delete()
+        if bandeja:
+            bandeja.delete()
 
-        #AlertasBandejaAlertaPersona
+        instance.delete()
+        serializer = self.serializer_class(previus)
+       
         
         return Response({'success':True,
                          'detail':'Se elimino correctamente los siguientes registros.',
-                         'data':'serializer.data'},status=status.HTTP_200_OK)
+                         'data':serializer.data},status=status.HTTP_200_OK)
     
 
 class EncuestasAsignadasUsuarioGet(generics.ListAPIView):
