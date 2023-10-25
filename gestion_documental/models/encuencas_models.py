@@ -141,3 +141,4 @@ class AsignarEncuesta(models.Model):
         db_table = 'TXXXAsignar_Encuesta'
         verbose_name = 'Respuesta de Encuesta'
         verbose_name_plural = 'Respuestas de Encuesta'
+        unique_together = (('id_encuesta', 'id_persona'),)
