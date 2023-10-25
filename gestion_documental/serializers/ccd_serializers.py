@@ -521,6 +521,8 @@ class UnidadesSeccionResponsableTemporalGetSerializer(serializers.ModelSerialize
                   'cod_unidad_actual', 'nom_unidad_actual',
                   'id_unidad_seccion_nueva', 'cod_unidad_nueva',
                   'nom_unidad_nueva']
+        
+
 
 
 #   LLAMADO DE SERIALIZADOR DENTRO DE OTRO SERIALIZADOR CON RELACION

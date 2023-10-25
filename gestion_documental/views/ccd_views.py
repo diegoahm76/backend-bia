@@ -1662,4 +1662,49 @@ class ValidacionCCDDelegacionView(generics.ListAPIView):
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+class UnidadesOrganizacionalesActualResponsableView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class_per = UnidadesSeccionPersistenteTemporalGetSerializer
+    serializer_class_res = UnidadesSeccionResponsableTemporalGetSerializer
+
+    def get(self, request, id_ccd_nuevo):
+        ccd_filro = BusquedaCCDHomologacionView().get_validacion_ccd()
+
+        try:
+            ccd = ccd_filro.get(id_ccd=id_ccd_nuevo)
+        except CuadrosClasificacionDocumental.DoesNotExist:
+            raise NotFound('CCD no encontrado o no cumple con TRD y TCA terminados')
+        
+        unidades_persistentes = UnidadesSeccionPersistenteTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd)
+        unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd, es_registro_asig_seccion_responsable=True)
+
+        serializer_per = self.serializer_class_per(unidades_persistentes, many=True)
+        serializer_res = self.serializer_class_res(unidades_responsables, many=True)
+        data_out = []
+        for unidad in serializer_per.data:
+            data_json = {
+                'id_unidad_actual': unidad['id_unidad_actual'],
+                'cod_unidad_actual': unidad['cod_unidad_actual'],
+                'nom_unidad_actual': unidad['nom_unidad_actual'],
+                'id_unidad_nueva': unidad['id_unidad_nueva'],
+                'cod_unidad_nueva': unidad['cod_unidad_nueva'],
+                'nom_unidad_nueva': unidad['nom_unidad_nueva'],
+            }
+            data_out.append(data_json)
+
+        for unidad in serializer_res.data:
+            data_json = {
+                'id_unidad_actual': unidad['id_unidad_seccion_actual'],
+                'cod_unidad_actual': unidad['cod_unidad_actual'],
+                'nom_unidad_actual': unidad['nom_unidad_actual'],
+                'id_unidad_nueva': unidad['id_unidad_seccion_nueva'],
+                'cod_unidad_nueva': unidad['cod_unidad_nueva'],
+                'nom_unidad_nueva': unidad['nom_unidad_nueva'],
+            }
+            data_out.append(data_json)
+
+        data_out = sorted(data_out, key=lambda x: x['cod_unidad_actual'], reverse=False)
+
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data_out}, status=status.HTTP_200_OK)
+    
 
