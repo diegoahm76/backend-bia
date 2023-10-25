@@ -135,6 +135,11 @@ class PermisosExpedientesNoPropios(generics.ListAPIView):
         serializador = self.serializer_class(denegacion_permisos)
         return serializador.data
     
+
+
+
+
+    
     def get(self, request, uni):
         instance2 = CatalogosSeriesUnidad.objects.filter(id_unidad_organizacional=uni)
 
@@ -144,9 +149,12 @@ class PermisosExpedientesNoPropios(generics.ListAPIView):
         for x in instance2:
             
             response = permisos.get( request, x.id_cat_serie_und)
-        
-            #print( x.id_cat_serie_und)
+            data_permisos = []
+            for aux in response.data['data']:
+               if aux['id_permisos_und_org_actual_serie_exp_ccd']:
+                   data_permisos.append(aux)
             data_denegacion = {}
+            #raise ValidationError("QUE TALLL")
             respuesta = self.denegaciones(x.id_cat_serie_und)
             if respuesta:
                 data_denegacion = respuesta
@@ -156,7 +164,7 @@ class PermisosExpedientesNoPropios(generics.ListAPIView):
             #print(response_permisos.data['data'])
             data.append({
                 'catalogo':self.serializer_serie_subserie(x.id_catalogo_serie,many=False).data,
-                'permisos':response.data['data'],
+                'permisos':data_permisos,
                 'denegacion':data_denegacion
                 })
         return Response({'succes': True, 'detail':'Resultados encontrados', 'data':data}, status=status.HTTP_200_OK)
