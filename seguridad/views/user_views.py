@@ -160,6 +160,8 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                     if 'justificacion_bloqueo' not in request.data or not request.data['justificacion_bloqueo']:
                         raise ValidationError('Se requiere una justificación para cambiar el estado de bloqueo del usuario')
                     justificacion = request.data['justificacion_bloqueo']
+
+                # Validación de 
                 
 
                 # ASIGNAR ROLES

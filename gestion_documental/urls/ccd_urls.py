@@ -38,7 +38,7 @@ urlpatterns = [
     # path('asignar/create/<str:id_ccd>/',views.AsignarSeriesYSubseriesAUnidades.as_view(),name='asignar-series-documentales'),
     # path('asignar/get/<str:id_ccd>/',views.GetAsignaciones.as_view(),name='asignar-series-documentales')
 
-    # HOMOLOGACIONES
+    # ACTIVIDADES PREVIAS AL CAMBIO DEL CCD
     path('get-validacion-homologacion/', views.BusquedaCCDView.as_view(),name='validacion-ccd-homologacion'),
     path('get-homologacion-busqueda/', views.BusquedaCCDHomologacionView.as_view(),name='buscar-ccd-homologacion'),
     path('get-homologacion-ccd/<str:id_ccd>/', views.CompararSeriesDocUnidadView.as_view(),name='homologacion-ccd'),
@@ -54,8 +54,7 @@ urlpatterns = [
     path('unidades-responsables-ccd/create/', views.UnidadesSeccionResponsableTemporalCreateView.as_view(),name='crear-unidades-responsable-ccd'),
     path('unidades-responsables-ccd/get/<str:id_ccd>/', views.UnidadesSeccionResponsableTemporalGetView.as_view(),name='obtener-unidades-responsables-ccd'),
     path('get-validacion-delegacion-ccd/get/<str:id_ccd_nuevo>/', views.ValidacionCCDDelegacionView.as_view(),name='obtener-persistencia-confirmada-ccd'),
-    
-
+    path('get-unidades-actual-responsable-ccd/get/<str:id_ccd_nuevo>/', views.UnidadesOrganizacionalesActualResponsableView.as_view(),name='obtener-unidades-ccd-actual-responsable'),
 
 
 
