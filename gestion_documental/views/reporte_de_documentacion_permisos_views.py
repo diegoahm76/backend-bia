@@ -125,23 +125,39 @@ class PermisosExpedientesNoPropios(generics.ListAPIView):
     queryset = PermisosUndsOrgActualesSerieExpCCD.objects.filter()
     permission_classes = [IsAuthenticated]
     serializer_serie_subserie = SerieSubserieReporteSerializer
+
+
+    def denegaciones(self, id_cat_serie_und):
+        denegacion_permisos = self.queryset.filter(id_cat_serie_und_org_ccd=id_cat_serie_und, id_und_organizacional_actual=None).first()
+        #print(denegacion_permisos)
+        if not denegacion_permisos:
+            return None
+        serializador = self.serializer_class(denegacion_permisos)
+        return serializador.data
+    
     def get(self, request, uni):
         instance2 = CatalogosSeriesUnidad.objects.filter(id_unidad_organizacional=uni)
 
         permisos = UnidadesExternasPermisosGetView()
-        denegacion = DenegacionPermisosGetView()
+        
         data=[]
         for x in instance2:
             
             response = permisos.get( request, x.id_cat_serie_und)
-            response_permisos = denegacion.get( request, x.id_cat_serie_und)
-            datos_denegacion = response_permisos.data['data']
-            datos_denegacion['id_cat_serie_und'] = x.id_cat_serie_und
+        
+            #print( x.id_cat_serie_und)
+            data_denegacion = {}
+            respuesta = self.denegaciones(x.id_cat_serie_und)
+            if respuesta:
+                data_denegacion = respuesta
+            #print(datos_denegacion)
+            #print('$$$$')
+            
             #print(response_permisos.data['data'])
             data.append({
                 'catalogo':self.serializer_serie_subserie(x.id_catalogo_serie,many=False).data,
                 'permisos':response.data['data'],
-                'denegacion':datos_denegacion
+                'denegacion':data_denegacion
                 })
         return Response({'succes': True, 'detail':'Resultados encontrados', 'data':data}, status=status.HTTP_200_OK)
     
