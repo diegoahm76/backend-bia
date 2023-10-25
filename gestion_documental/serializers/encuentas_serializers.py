@@ -233,6 +233,13 @@ class AsignarEncuestaPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = AsignarEncuesta
         fields = '__all__'
+        validators = [
+            UniqueTogetherValidator(
+                queryset=AsignarEncuesta.objects.all(),
+                fields = ['id_encuesta', 'id_persona'],
+                message='La encuesta ya se encuentra asignada a esta persona'
+            )
+        ]  
 
 class AsignarEncuestaGetSerializer(serializers.ModelSerializer):
     nombre_completo = serializers.SerializerMethodField()
