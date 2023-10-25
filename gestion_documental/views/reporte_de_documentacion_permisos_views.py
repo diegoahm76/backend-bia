@@ -162,11 +162,13 @@ class PermisosExpedientesNoPropios(generics.ListAPIView):
             #print('$$$$')
             
             #print(response_permisos.data['data'])
-            data.append({
-                'catalogo':self.serializer_serie_subserie(x.id_catalogo_serie,many=False).data,
-                'permisos':data_permisos,
-                'denegacion':data_denegacion
-                })
+            if data_denegacion and len(data_permisos) >= 0:
+
+                data.append({
+                    'catalogo':self.serializer_serie_subserie(x.id_catalogo_serie,many=False).data,
+                    'permisos':data_permisos,
+                    'denegacion':data_denegacion
+                    })
         return Response({'succes': True, 'detail':'Resultados encontrados', 'data':data}, status=status.HTTP_200_OK)
     
 class PermisosDenegacion(generics.ListAPIView):
