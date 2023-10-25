@@ -114,10 +114,11 @@ class UserPutAdminSerializer(serializers.ModelSerializer):
     is_active = serializers.BooleanField(required=False)
     is_blocked = serializers.BooleanField(write_only=True)
     justificacion = serializers.CharField(max_length=255, write_only=True, required=False)
+    #sucursal_defecto = serializers.ReadOnlyField(source='sucursal_defecto.id_sucursal_empresa', default=None)
 
     class Meta:
         model = User
-        fields = ['is_active', 'is_blocked', 'tipo_usuario', 'profile_img', 'justificacion']
+        fields = ['is_active', 'is_blocked', 'tipo_usuario', 'profile_img', 'justificacion', 'sucursal_defecto']
 
 class UsuarioRolesLookSerializers(serializers.ModelSerializer):
     nombre_usuario = serializers.ReadOnlyField(source='id_usuario.nombre_de_usuario', default=None)

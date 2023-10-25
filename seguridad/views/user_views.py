@@ -123,7 +123,11 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                 user_serializer.is_valid(raise_exception=True)
                 tipo_usuario_ant = user.tipo_usuario
                 tipo_usuario_act = user_serializer.validated_data.get('tipo_usuario')
-
+                sucursal_entidad_ant = user.sucursal_defecto
+                sucursal_entidad_act = user_serializer.validated_data.get('sucursal_defecto')
+                if sucursal_entidad_ant is not None:
+                    sucursal_entidad_ant = sucursal_entidad_ant.id_sucursal_empresa
+                
                 # VALIDACIÓN NO SE PUEDE INTERNO A EXTERNO
                 if tipo_usuario_ant == 'I' and tipo_usuario_act == 'E':
                     raise ValidationError('No se puede actualizar el usuario de interno a externo')
@@ -161,8 +165,15 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                         raise ValidationError('Se requiere una justificación para cambiar el estado de bloqueo del usuario')
                     justificacion = request.data['justificacion_bloqueo']
 
-                # Validación de 
+                # Validacion de sucursal
+                if tipo_usuario_act == 'E' and sucursal_entidad_act is not None:
+                    raise PermissionDenied('Una usuario externo no puede tener una sucursal de entidad asignada')
                 
+                # ASIGNAR SUCURSAL ENTIDAD
+                if tipo_usuario_act == 'I':
+                    
+                    if sucursal_entidad_act is None:
+                        raise ValidationError('La sucursal de entidad debe ser asignada')
 
                 # ASIGNAR ROLES
                 roles_actuales = UsuariosRol.objects.filter(id_usuario=pk)
