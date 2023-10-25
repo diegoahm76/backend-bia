@@ -5,15 +5,19 @@ from django.db.utils import IntegrityError
 from django.core.files.base import ContentFile
 import secrets
 from rest_framework.parsers import MultiPartParser
+from gestion_documental.models.conf__tipos_exp_models import ConfiguracionTipoExpedienteAgno
+from gestion_documental.models.depositos_models import CarpetaCaja
 from gestion_documental.models.expedientes_models import ExpedientesDocumentales,ArchivosDigitales,DocumentosDeArchivoExpediente,IndicesElectronicosExp,Docs_IndiceElectronicoExp,CierresReaperturasExpediente,ArchivosSoporte_CierreReapertura
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from django.shortcuts import get_object_or_404
-from gestion_documental.models.trd_models import TablaRetencionDocumental, TipologiasDoc
+from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, TablaRetencionDocumental, TipologiasDoc
+from gestion_documental.serializers.conf__tipos_exp_serializers import ConfiguracionTipoExpedienteAgnoGetSerializer
+from gestion_documental.serializers.trd_serializers import BusquedaTRDNombreVersionSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from seguridad.utils import Util
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, ListarTRDSerializer, ListarTipologiasSerializer
+from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, ListarTRDSerializer, ListarTipologiasSerializer, SerieSubserieUnidadTRDGetSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Max 
@@ -23,6 +27,123 @@ from rest_framework.response import Response
 from django.db import transaction
 from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
 
+########################## CRUD DE APERTURA DE EXPEDIENTES DOCUMENTALES ##########################
+
+#OBTENER_TRD_ACTUAL
+class TrdActualGet(generics.ListAPIView):
+    serializer_class = BusquedaTRDNombreVersionSerializer
+    queryset = TablaRetencionDocumental.objects.filter(actual=True)
+    permission_classes = [IsAuthenticated]
+    
+    def get (self,request):
+        trd_actual = self.queryset.all().first()
+        
+        if trd_actual:
+            serializador = self.serializer_class(trd_actual)
+            
+            return Response({'success':True,'detail':'Busqueda exitosa','data':serializador.data},status=status.HTTP_200_OK)
+        return Response({'success':True,'detail':'Busqueda exitosa, no existe TRD actual'},status=status.HTTP_200_OK)
+
+#OBTENER TRIPLETAS TRD
+class SerieSubserieUnidadTRDGetView(generics.ListAPIView):
+    serializer_class = SerieSubserieUnidadTRDGetSerializer 
+    queryset = CatSeriesUnidadOrgCCDTRD.objects.filter()
+    permission_classes = [IsAuthenticated]
+
+    def get (self, request):
+        id_trd = request.query_params.get('id_trd', '')
+        id_unidad_organizacional = request.query_params.get('id_unidad_organizacional', '')
+        
+        if id_trd == '' or id_unidad_organizacional == '':
+            raise ValidationError('Debe enviar el TRD y la Unidad Organizacional seleccionada')
+        
+        catalogos_serie_unidad_trd = self.queryset.filter(id_trd=id_trd, id_cat_serie_und__id_unidad_organizacional=id_unidad_organizacional)
+        serializador = self.serializer_class(catalogos_serie_unidad_trd, many=True)
+        return Response({'succes': True, 'detail':'Resultados encontrados', 'data':serializador.data}, status=status.HTTP_200_OK)
+
+
+#OBTENER CONFIGURACION EXPEDIENTE
+class ConfiguracionExpedienteGet(generics.ListAPIView):
+    serializer_class = ConfiguracionTipoExpedienteAperturaGetSerializer
+    queryset = ConfiguracionTipoExpedienteAgno.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get (self, request, id_catserie_unidadorg):
+        current_year = datetime.now().year
+        config_expediente = self.queryset.filter(id_cat_serie_undorg_ccd=id_catserie_unidadorg, agno_expediente=current_year).first()
+        
+        if not config_expediente:
+            raise NotFound('La Serie-Subserie-Unidad seleccionada no cuenta con una configuración, debe elegir otra')
+        
+        serializer = self.serializer_class(config_expediente)
+        
+        return Response({'success':True, 'detail':'Consulta exitosa', 'data':serializer.data},status=status.HTTP_200_OK)
+
+class AperturaExpedienteCreate(generics.CreateAPIView):
+    serializer_class = AperturaExpedienteSimpleSerializer
+    serializer_class_complejo = AperturaExpedienteComplejoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+        data = request.data
+        
+        # Crear codigo expediente
+        tripleta_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_catserie_unidadorg=data['id_cat_serie_und_org_ccd_trd_prop']).first()
+        
+        if not tripleta_trd:
+            raise ValidationError('Debe enviar el id de la tripleta de TRD seleccionada')
+        
+        cod_unidad = tripleta_trd.id_cat_serie_und.id_unidad_organizacional.codigo
+        cod_serie = tripleta_trd.id_cat_serie_und.id_catalogo_serie.id_serie_doc.codigo
+        cod_subserie = tripleta_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc.codigo if tripleta_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc else None
+        
+        codigo_exp_und_serie_subserie = cod_unidad + '.' + cod_serie + '.' + cod_subserie if cod_subserie else cod_unidad + '.' + cod_serie
+        
+        
+        current_date = datetime.now()
+        instances_carpetas = None
+        
+        if data.get('carpetas_caja'):
+            instances_carpetas = CarpetaCaja.objects.filter(id_carpeta_caja__in=set(data.get('carpetas_caja')))
+            instances_expediente_asociado = instances_carpetas.exclude(id_expediente=None)
+            
+            if len(set(data.get('carpetas_caja'))) != len(instances_carpetas):
+                raise ValidationError('Debe enviar carpetas existentes en el sistema')
+            
+            if instances_expediente_asociado:
+                raise ValidationError('Alguna(s) de las carpetas seleccionadas ya poseen expedientes asociados. Debe seleccionar carpetas sin expedientes')
+        
+        data['codigo_exp_und_serie_subserie'] = codigo_exp_und_serie_subserie
+        data['codigo_exp_Agno'] = current_date.year
+        
+        # VALIDAR DESPUÉS
+        data['codigo_exp_consec_por_agno'] = None if data['cod_tipo_expediente'] == 'C' else None # TEMPORAL
+            
+        data['estado'] = 'A'
+        data['fecha_folio_inicial'] = current_date
+        data['cod_etapa_de_archivo_actual_exped'] = 'G'
+        data['tiene_carpeta_fisica'] = True if data.get('carpetas_caja') else False
+        data['ubicacion_fisica_esta_actualizada'] = True
+        data['fecha_creacion_manual'] = current_date
+        data['id_persona_crea_manual'] = request.user.persona.id_persona
+        
+        if data['cod_tipo_expediente'] == 'S':
+            serializer = self.serializer_class(data=data, context = {'request':request})
+            serializer.is_valid(raise_exception=True)
+            expediente_creado = serializer.save()
+        elif data['cod_tipo_expediente'] == 'C':
+            serializer = self.serializer_class_complejo(data=data, context = {'request':request})
+            serializer.is_valid(raise_exception=True)
+            expediente_creado = serializer.save()
+        
+        if data.get('carpetas_caja'):
+            for carpeta in data.get('carpetas_caja'):
+                instance_carpeta = instances_carpetas.filter(id_carpeta_caja=carpeta).first()
+                instance_carpeta.id_expediente = expediente_creado
+                instance_carpeta.save()
+                
+        return Response({'success':True, 'detail':'Apertura realizada de manera exitosa', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+        
 
 ########################## CRUD DE CIERRE DE EXPEDIENTES DOCUMENTALES ##########################
 
