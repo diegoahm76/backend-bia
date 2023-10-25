@@ -135,10 +135,13 @@ class PermisosExpedientesNoPropios(generics.ListAPIView):
             
             response = permisos.get( request, x.id_cat_serie_und)
             response_permisos = denegacion.get( request, x.id_cat_serie_und)
+            datos_denegacion = response_permisos.data['data']
+            datos_denegacion['id_cat_serie_und'] = x.id_cat_serie_und
+            #print(response_permisos.data['data'])
             data.append({
                 'catalogo':self.serializer_serie_subserie(x.id_catalogo_serie,many=False).data,
                 'permisos':response.data['data'],
-                'denegacion':response_permisos.data['data']
+                'denegacion':datos_denegacion
                 })
         return Response({'succes': True, 'detail':'Resultados encontrados', 'data':data}, status=status.HTTP_200_OK)
     
