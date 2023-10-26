@@ -15,7 +15,7 @@ from datetime import datetime,date,timedelta
 from gestion_documental.models.expedientes_models import ExpedientesDocumentales
 from seguridad.models import Personas
 from gestion_documental.models.depositos_models import  CarpetaCaja, Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
-from gestion_documental.serializers.depositos_serializers import CarpetaCajaConsultSerializer, CarpetaCajaGetOrdenSerializer, CarpetaCajaRotuloSerializer,BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteGetOrdenSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejaListCarpetaInfoSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaGetOrdenSerializer, CajaListBandejaInfoSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteDeleteSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajaListDepositoInfoSerializer, CajaListEstanteInfoSerializer, CajaRotuloSerializer, CajasByBandejaListSerializer, CarpetaCajaCreateSerializer, CarpetaCajaDeleteSerializer, CarpetaCajaMoveSerializer, CarpetaCajaSearchAdvancedSerializer, CarpetaCajaSearchSerializer, CarpetaCajaUpDateSerializer, CarpetaListCajaInfoSerializer, CarpetasByCajaListSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoGetAllSerializer, DepositoListCarpetaInfoSerializer, DepositoSearchSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, EstanteListCarpetaInfoSerializer, MoveEstanteSerializer, ReviewExpedienteSerializer
+from gestion_documental.serializers.depositos_serializers import  BandejaEstanteSerializer, CajaBandejaSerializer, CarpetaCajaConsultSerializer, CarpetaCajaGetOrdenSerializer, CarpetaCajaRotuloSerializer,BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteGetOrdenSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejaListCarpetaInfoSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaGetOrdenSerializer, CajaListBandejaInfoSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteDeleteSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajaListDepositoInfoSerializer, CajaListEstanteInfoSerializer, CajaRotuloSerializer, CajasByBandejaListSerializer, CarpetaCajaCreateSerializer, CarpetaCajaDeleteSerializer, CarpetaCajaMoveSerializer, CarpetaCajaSearchAdvancedSerializer, CarpetaCajaSearchSerializer, CarpetaCajaSerializer, CarpetaCajaUpDateSerializer, CarpetaListCajaInfoSerializer, CarpetasByCajaListSerializer, DepositoChoicesSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoGetAllSerializer, DepositoListCarpetaInfoSerializer, DepositoSearchSerializer, DepositoSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, EstanteListCarpetaInfoSerializer, MoveEstanteSerializer, ReviewExpedienteSerializer
 from seguridad.utils import Util
 
 
@@ -2213,3 +2213,476 @@ class ReviewExpediente(generics.ListAPIView):
 
         except ExpedientesDocumentales.DoesNotExist:
             return Response({'success': False, 'detail': 'El expediente no fue encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+#CHOICES_DEPOSITOS
+class DepositoChoices(generics.ListAPIView):
+    serializer_class = DepositoChoicesSerializer
+    queryset = Deposito.objects.all().order_by('orden_ubicacion_por_entidad')
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            return Response({
+                'success': False,
+                'detail': 'No se encontraron datos de depósitos registrados.',
+                'data': []
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.get_serializer(queryset, many=True)
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes depósitos ordenados por orden_ubicacion_por_entidad.',
+            'data': serializer.data
+        })
+
+#BUSQUEDA_AVANZADA_DEPOSITO
+class BusquedaDepositoArchivoFisico(generics.ListAPIView):
+    serializer_class = DepositoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        tipo_elemento = self.request.query_params.get('tipo_elemento')
+        identificacion_deposito = self.request.query_params.get('identificacion_deposito')
+        nombre_deposito = self.request.query_params.get('nombre_deposito')
+
+        # Validar si se proporcionó tipo_elemento y si es válido
+        if not tipo_elemento or tipo_elemento not in ['Depósito de Archivo']:
+            raise NotFound('El campo tipo_elemento es requerido y debe ser uno de los valores válidos: (Depósito de Archivo), (Estante), (Bandeja), (Caja), (Carpeta).')
+
+        queryset = []
+
+        if tipo_elemento == 'Depósito de Archivo':
+            queryset = Deposito.objects.all().order_by('orden_ubicacion_por_entidad')
+
+            if identificacion_deposito:
+                queryset = queryset.filter(identificacion_por_entidad__icontains=identificacion_deposito)
+
+            if nombre_deposito:
+                queryset = queryset.filter(nombre_deposito__icontains=nombre_deposito)
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset:
+            raise NotFound('No se encontraron resultados que coincidan con los criterios de búsqueda.')
+
+        serialized_data = self.serializer_class(queryset, many=True).data
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes resultados.',
+            'data': serialized_data
+        }, status=status.HTTP_200_OK)
+
+
+
+
+#BUSQUEDA_AVANZADA_ESTANTE
+class BusquedaEstanteArchivoFisico(generics.ListAPIView):
+    serializer_class = EstanteDepositoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        tipo_elemento = self.request.query_params.get('tipo_elemento')
+        identificacion_estante = self.request.query_params.get('identificacion_estante')
+        deposito_archivo = self.request.query_params.get('deposito_archivo')
+
+        # Validar si se proporcionó tipo_elemento y si es válido
+        if not tipo_elemento or tipo_elemento != 'Estante':
+            raise NotFound('El campo tipo_elemento es requerido y debe ser "Estante".')
+
+        queryset = EstanteDeposito.objects.all().order_by('orden_ubicacion_por_deposito')
+
+        if identificacion_estante:
+            queryset = queryset.filter(identificacion_por_deposito__icontains=identificacion_estante)
+
+        if deposito_archivo:
+            # Filtrar los estantes relacionados con ese depósito
+            queryset = queryset.filter(id_deposito=deposito_archivo)
+
+
+        # Ordenar por 'orden_ubicacion_por_deposito' de forma ascendente
+        queryset = queryset.order_by('orden_ubicacion_por_deposito')
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset:
+            raise NotFound('No se encontraron resultados que coincidan con los criterios de búsqueda.')
+
+        serialized_data = self.serializer_class(queryset, many=True).data
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes resultados.',
+            'data': serialized_data
+        }, status=status.HTTP_200_OK)
+
+
+# BUSQUEDA_AVANZADA_ESTANTE
+class BusquedaEstanteArchivoFisico(generics.ListAPIView):
+    serializer_class = EstanteDepositoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        tipo_elemento = self.request.query_params.get('tipo_elemento')
+        identificacion_estante = self.request.query_params.get('identificacion_estante')
+        deposito_archivo = self.request.query_params.get('deposito_archivo')
+
+        # Validar si se proporcionó tipo_elemento y si es válido
+        if not tipo_elemento or tipo_elemento != 'Estante':
+            raise NotFound('El campo tipo_elemento es requerido y debe ser "Estante".')
+
+        queryset = EstanteDeposito.objects.all()  # Eliminamos 'order_by'
+
+        if identificacion_estante:
+            queryset = queryset.filter(identificacion_por_deposito__icontains=identificacion_estante)
+
+        if deposito_archivo:
+            # Filtrar los estantes relacionados con ese depósito
+            queryset = queryset.filter(id_deposito__nombre_deposito__icontains=deposito_archivo)
+
+        # Ordenar por 'orden_ubicacion_por_deposito' de forma ascendente
+        queryset = queryset.order_by('orden_ubicacion_por_deposito')
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset:
+            raise NotFound('No se encontraron resultados que coincidan con los criterios de búsqueda.')
+
+        serialized_data = self.serializer_class(queryset, many=True).data
+
+        # Obtener los depósitos correspondientes a los estantes filtrados
+        depositos = [estante.id_deposito for estante in queryset]
+
+        depositos_serialized = DepositoSerializer(depositos, many=True).data
+
+        for data, dep in zip(serialized_data, depositos_serialized):
+            data['deposito_identificacion'] = dep['identificacion_por_entidad']
+            data['deposito_nombre'] = dep['nombre_deposito']
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes resultados.',
+            'data': serialized_data
+        }, status=status.HTTP_200_OK)
+
+# BUSQUEDA_AVANZADA_BANDEJA
+class BusquedaBandejaArchivoFisico(generics.ListAPIView):
+    serializer_class = BandejaEstanteSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        tipo_elemento = self.request.query_params.get('tipo_elemento')
+        identificacion_bandeja = self.request.query_params.get('identificacion_bandeja')
+        identificacion_estante = self.request.query_params.get('identificacion_estante')
+        deposito_archivo = self.request.query_params.get('deposito_archivo')
+
+        # Validar si se proporcionó tipo_elemento y si es válido
+        if not tipo_elemento or tipo_elemento != 'Bandeja':
+            raise NotFound('El campo tipo_elemento es requerido y debe ser "Bandeja".')
+
+        queryset = BandejaEstante.objects.all()
+
+        if identificacion_bandeja:
+            queryset = queryset.filter(identificacion_por_estante__icontains=identificacion_bandeja)
+
+        if identificacion_estante:
+            queryset = queryset.filter(id_estante_deposito__identificacion_por_deposito__icontains=identificacion_estante)
+
+        if deposito_archivo:
+            queryset = queryset.filter(id_estante_deposito__id_deposito__nombre_deposito__icontains=deposito_archivo)
+
+        queryset = queryset.order_by('orden_ubicacion_por_estante')
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset:
+            raise NotFound('No se encontraron resultados que coincidan con los criterios de búsqueda.')
+
+        serialized_data = self.serializer_class(queryset, many=True).data
+
+        for data in serialized_data:
+            # Acceder a la información de Estante y Depósito correspondiente a través de las relaciones
+            estante_deposito = data['id_estante_deposito']
+
+            estante_instace =BandejaEstante.objects.filter(id_estante_deposito = estante_deposito).first()
+
+            if not estante_instace:
+                raise ValidationError('Estante no valido')
+
+            deposito_archivo = estante_instace.id_estante_deposito.id_deposito
+
+            # Agregar identificación y nombre del depósito a los resultados
+            data['identificacion_deposito'] = deposito_archivo.identificacion_por_entidad
+            data['nombre_deposito'] = deposito_archivo.nombre_deposito
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes resultados.',
+            'data': serialized_data
+        }, status=status.HTTP_200_OK)
+
+# BUSQUEDA_AVANZADA_CAJA
+class BusquedaCajaArchivoFisico(generics.ListAPIView):
+    serializer_class = CajaBandejaSerializer  # Utiliza el serializador adecuado
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        tipo_elemento = self.request.query_params.get('tipo_elemento')
+        identificacion_caja = self.request.query_params.get('identificacion_caja')
+        identificacion_bandeja = self.request.query_params.get('identificacion_bandeja')
+        identificacion_estante = self.request.query_params.get('identificacion_estante')
+        deposito_archivo = self.request.query_params.get('deposito_archivo')
+
+        # Validar si se proporcionó tipo_elemento y si es válido
+        if not tipo_elemento or tipo_elemento != 'Caja':
+            raise NotFound('El campo tipo_elemento es requerido y debe ser "Caja".')
+
+        queryset = CajaBandeja.objects.all()  # Reemplaza con el modelo real de tus cajas
+
+        if identificacion_caja:
+            queryset = queryset.filter(identificacion_por_bandeja__icontains=identificacion_caja)
+
+        if identificacion_bandeja:
+            queryset = queryset.filter(id_bandeja_estante__identificacion_por_estante__icontains=identificacion_bandeja)
+
+        if identificacion_estante:
+            queryset = queryset.filter(id_bandeja_estante__id_estante_deposito__identificacion_por_deposito__icontains=identificacion_estante)    
+
+        if deposito_archivo:
+            queryset = queryset.filter(id_bandeja_estante__id_estante_deposito__id_deposito__nombre_deposito__icontains=deposito_archivo)
+
+        queryset = queryset.order_by('orden_ubicacion_por_bandeja')
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset:
+            raise NotFound('No se encontraron resultados que coincidan con los criterios de búsqueda.')
+
+        serialized_data = self.serializer_class(queryset, many=True).data
+
+        for data in serialized_data:
+            # Acceder a la información de Bandeja, Estante y Depósito correspondientes a través de las relaciones
+            bandeja_instace = data['id_bandeja_estante']
+
+            bandeja_instace =CajaBandeja.objects.filter(id_bandeja_estante = bandeja_instace).first()
+
+            estante_instace = bandeja_instace.id_bandeja_estante.id_estante_deposito
+            deposito_archivo = estante_instace.id_deposito
+
+            # Agregar identificación y nombre de la bandeja, estante y depósito a los resultados
+            data['identificacion_bandeja'] = bandeja_instace.id_bandeja_estante.identificacion_por_estante
+            data['id_estante'] = estante_instace.id_estante_deposito
+            data['identificacion_estante'] = estante_instace.identificacion_por_deposito
+            data['id_deposito'] = deposito_archivo.id_deposito
+            data['identificacion_deposito'] = deposito_archivo.identificacion_por_entidad
+            data['nombre_deposito'] = deposito_archivo.nombre_deposito
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes resultados.',
+            'data': serialized_data
+        }, status=status.HTTP_200_OK)
+    
+
+# BUSQUEDA_AVANZADA_CARPETA
+class BusquedaCarpetaArchivoFisico(generics.ListAPIView):
+    serializer_class = CarpetaCajaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        tipo_elemento = self.request.query_params.get('tipo_elemento')
+        identificacion_carpeta = self.request.query_params.get('identificacion_carpeta')
+        identificacion_caja = self.request.query_params.get('identificacion_caja')
+        identificacion_bandeja = self.request.query_params.get('identificacion_bandeja')
+        identificacion_estante = self.request.query_params.get('identificacion_estante')
+        deposito_archivo = self.request.query_params.get('deposito_archivo')
+        numero_expediente = self.request.query_params.get('numero_expediente')  # Nuevo parámetro
+        codigo_exp_und_serie_subserie =self.request.query_params.get('numero_expediente')  # Nuevo parámetro
+        codigo_exp_Agno =self.request.query_params.get('numero_expediente')  # Nuevo parámetro
+        codigo_exp_consec_por_agno =self.request.query_params.get('numero_expediente')  # Nuevo parámetro
+        
+        # Validar si se proporcionó tipo_elemento y si es válido
+        if not tipo_elemento or tipo_elemento != 'Carpeta':
+            raise NotFound('El campo tipo_elemento es requerido y debe ser "Carpeta".')
+
+        queryset = CarpetaCaja.objects.all()
+
+        if identificacion_carpeta:
+            queryset = queryset.filter(identificacion_por_caja__icontains=identificacion_carpeta)
+
+        if identificacion_caja:
+            queryset = queryset.filter(id_caja_bandeja__identificacion_por_bandeja__icontains=identificacion_caja)
+
+        if identificacion_bandeja:
+            queryset = queryset.filter(id_caja_bandeja__id_bandeja_estante__identificacion_por_estante__icontains=identificacion_bandeja)
+
+        if identificacion_estante:
+            queryset = queryset.filter(id_caja_bandeja__id_bandeja_estante__id_estante_deposito__identificacion_por_deposito__icontains=identificacion_estante)
+
+        if deposito_archivo:
+            queryset = queryset.filter(id_caja_bandeja__id_bandeja_estante__id_estante_deposito__id_deposito__nombre_deposito__icontains=deposito_archivo)
+
+        # Aplicar filtro por 'numero_expediente' si se proporciona
+        if numero_expediente:
+            parts = numero_expediente.split('-')
+            if len(parts) != 3:
+                raise ValidationError("El parámetro 'numero_expediente' debe tener tres partes separadas por guiones en este orden. (Ejemplo: 'codigo_exp_und_serie_subserie'-'codigo_exp_Agno'-'codigo_exp_consec_por_agno').")
+
+            queryset = queryset.filter(
+                Q(id_expediente__codigo_exp_und_serie_subserie__icontains=parts[0]) |
+                Q(id_expediente__codigo_exp_Agno__icontains=parts[1]) |
+                Q(id_expediente__codigo_exp_consec_por_agno__icontains=parts[2])
+            )
+
+        #
+        # if numero_expediente:
+        #     queryset = queryset.filter(id_expediente__codigo_exp_und_serie_subserie__icontains=numero_expediente) | \
+        #     queryset.filter(id_expediente__codigo_exp_Agno__icontains=numero_expediente)| \
+        #     queryset.filter(id_expediente__codigo_exp_consec_por_agno__icontains=numero_expediente)| \
+            # queryset.filter(id_expediente__codigo_exp_und_serie_subserie__icontains=numero_expediente ,id_expediente__codigo_exp_Agno__icontains=numero_expediente ,id_expediente__codigo_exp_consec_por_agno__icontains=numero_expediente)
+
+        queryset = queryset.order_by('orden_ubicacion_por_caja')
+
+        return queryset
+
+    def get_serialized_data(self, data):
+        expediente_instance = data.get('id_expediente')
+        if expediente_instance:
+            expediente_instance = CarpetaCaja.objects.filter(id_expediente=expediente_instance).first()
+            data['numero_expediente'] = f"{expediente_instance.id_expediente.codigo_exp_und_serie_subserie}-{expediente_instance.id_expediente.codigo_exp_Agno}-{expediente_instance.id_expediente.codigo_exp_consec_por_agno}"
+        else:
+            data['numero_expediente'] = None
+
+        caja_instance = data.get('id_caja_bandeja')
+        caja_instance = CarpetaCaja.objects.filter(id_caja_bandeja=caja_instance).first()
+
+        if caja_instance:
+            bandeja_instance = caja_instance.id_caja_bandeja.id_bandeja_estante
+            estante_instance = bandeja_instance.id_estante_deposito
+            deposito_archivo = estante_instance.id_deposito
+
+            data['identificacion_caja'] = caja_instance.id_caja_bandeja.identificacion_por_bandeja 
+            data['id_bandeja'] = bandeja_instance.id_bandeja_estante 
+            data['identificacion_bandeja'] = bandeja_instance.identificacion_por_estante
+            data['id_estante'] = estante_instance.id_estante_deposito
+            data['identificacion_estante'] = estante_instance.identificacion_por_deposito
+            data['id_deposito'] = deposito_archivo.id_deposito
+            data['identificacion_deposito'] = deposito_archivo.identificacion_por_entidad
+            data['nombre_deposito'] = deposito_archivo.nombre_deposito
+
+        return data
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset:
+            raise NotFound('No se encontraron resultados que coincidan con los criterios de búsqueda.')
+        
+        if not queryset.exists():
+            raise NotFound('No se encontraron resultados que coincidan con los criterios de búsqueda.')
+
+
+        serialized_data = [self.get_serialized_data(item) for item in self.serializer_class(queryset, many=True).data]
+
+        response_data = {
+            'success': True,
+            'detail': 'Se encontraron los siguientes resultados.',
+            'data': serialized_data
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+
+#listar_toda_info
+class ListarInformacion(generics.ListAPIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_deposito):
+        try:
+            deposito = Deposito.objects.get(id_deposito=id_deposito)
+        except Deposito.DoesNotExist:
+            return Response({'error': 'Depósito no encontrado.'}, status=404)
+
+        data = {
+            'deposito': {
+                'id_deposito': deposito.id_deposito,
+                'nombre_deposito': deposito.nombre_deposito,
+                'identificacion_deposito':deposito.identificacion_por_entidad,
+                'orden_deposito':deposito.orden_ubicacion_por_entidad,
+                'Informacion_Mostrar': f"Depósito - {deposito.nombre_deposito}"
+                # Otros campos de información del depósito que desees incluir
+            },
+            'estantes': [],
+        }
+
+        estantes = EstanteDeposito.objects.filter(id_deposito=deposito).order_by('orden_ubicacion_por_deposito')
+        for estante in estantes:
+            estante_data = {
+                'id_estante': estante.id_estante_deposito,
+                'identificacion_por_estante': estante.identificacion_por_deposito,
+                'orden_estante': estante.orden_ubicacion_por_deposito,
+                'Informacion_Mostrar': f"{estante.orden_ubicacion_por_deposito} - Estante {estante.identificacion_por_deposito}",
+                'bandejas': [],
+            }
+
+            bandejas = BandejaEstante.objects.filter(id_estante_deposito=estante).order_by('orden_ubicacion_por_estante')
+            for bandeja in bandejas:
+                bandeja_data = {
+                    'id_bandeja': bandeja.id_bandeja_estante,
+                    'identificacion_por_bandeja': bandeja.identificacion_por_estante,
+                    'orden_bandeja': bandeja.orden_ubicacion_por_estante,
+                    'Informacion_Mostrar': f"{bandeja.orden_ubicacion_por_estante} - Bandeja {bandeja.identificacion_por_estante}",
+                    'cajas': [],
+                }
+
+                cajas = CajaBandeja.objects.filter(id_bandeja_estante=bandeja).order_by('orden_ubicacion_por_bandeja')
+                for caja in cajas:
+                    caja_data = {
+                        'id_caja': caja.id_caja_bandeja,
+                        'identificacion_por_caja': caja.identificacion_por_bandeja,
+                        'orden_caja':caja.orden_ubicacion_por_bandeja,
+                        'Informacion_Mostrar': f"{caja.orden_ubicacion_por_bandeja} - Caja {caja.identificacion_por_bandeja}",
+                        'carpetas': [],
+                    }
+
+                    carpetas = CarpetaCaja.objects.filter(id_caja_bandeja=caja).order_by('orden_ubicacion_por_caja')
+                    for carpeta in carpetas:
+                        carpeta_data = {
+                            'id_carpeta': carpeta.id_carpeta_caja,
+                            'identificacion_por_carpeta': carpeta.identificacion_por_caja,
+                            'orden_carpeta': carpeta.orden_ubicacion_por_caja,
+                            'id_expediente': carpeta.id_expediente.id_expediente_documental,
+                            'titulo_expediente': carpeta.id_expediente.titulo_expediente, 
+                            'Informacion_Mostrar': f"{carpeta.orden_ubicacion_por_caja} - Carpeta {carpeta.identificacion_por_caja}",
+
+                            # Otros campos de información de la carpeta que desees incluir
+                        }
+                        caja_data['carpetas'].append(carpeta_data)
+
+                    bandeja_data['cajas'].append(caja_data)
+
+                estante_data['bandejas'].append(bandeja_data)
+
+            data['estantes'].append(estante_data)
+
+        return Response(data)
