@@ -9,7 +9,7 @@ from gestion_documental.models.depositos_models import CarpetaCaja
 from gestion_documental.models.expedientes_models import ExpedientesDocumentales,ArchivosDigitales,DocumentosDeArchivoExpediente,IndicesElectronicosExp,Docs_IndiceElectronicoExp,CierresReaperturasExpediente,ArchivosSoporte_CierreReapertura
 from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, TablaRetencionDocumental, TipologiasDoc
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from datetime import datetime
 from django.conf import settings
 import os
@@ -295,6 +295,7 @@ class AperturaExpedienteSimpleSerializer(serializers.ModelSerializer):
             'cod_etapa_de_archivo_actual_exped',
             'tiene_carpeta_fisica',
             'ubicacion_fisica_esta_actualizada',
+            'creado_automaticamente',
             'fecha_creacion_manual',
             'id_persona_crea_manual'
         ]
@@ -320,6 +321,64 @@ class AperturaExpedienteComplejoSerializer(AperturaExpedienteSimpleSerializer):
         fields = AperturaExpedienteSimpleSerializer.Meta.fields + ['id_persona_titular_exp_complejo']
         extra_kwargs = AperturaExpedienteSimpleSerializer.Meta.extra_kwargs | {'id_persona_titular_exp_complejo': {'required': False,'allow_null':True}}
 
+class AperturaExpedienteUpdateAutSerializer(serializers.ModelSerializer):
+        
+    def validate_palabras_clave_expediente(self, palabras):
+        palabras_split = palabras.split('|')
+        
+        if len(palabras_split) > 5:
+            raise ValidationError('No debe enviar más de 5 palabras clave')
+        
+        return palabras
+        
+    class Meta:
+        model =  ExpedientesDocumentales
+        fields = [
+            'palabras_clave_expediente'
+        ]
+
+class AperturaExpedienteUpdateNoAutSerializer(AperturaExpedienteUpdateAutSerializer):
+    
+    def validate_fecha_apertura_expediente(self, fecha_apertura):
+        documentos = self.instance.documentosdearchivoexpediente_set.all()
+        
+        for documento in documentos:
+            if documento.fecha_incorporacion_doc_a_Exp < fecha_apertura:
+                raise PermissionDenied('No puede actualizar la fecha de apertura a una menor a la fecha de incorporación de un documento del expediente elegido')
+        
+        return fecha_apertura
+    
+    class Meta:
+        model =  ExpedientesDocumentales
+        fields = AperturaExpedienteSimpleSerializer.Meta.fields + ['descripcion_expediente', 'fecha_apertura_expediente']
+
+class AnularExpedienteSerializer(serializers.ModelSerializer):
+        
+    class Meta:
+        model =  ExpedientesDocumentales
+        fields = [
+            'anulado',
+            'observacion_anulacion',
+            'fecha_anulacion',
+            'id_persona_anula'
+        ]
+        extra_kwargs = {
+            'observacion_anulacion': {'required': True, 'allow_blank':False, 'allow_null':False}
+        }
+        
+class BorrarExpedienteSerializer(serializers.ModelSerializer):
+        
+    class Meta:
+        model =  ExpedientesDocumentales
+        fields = [
+            'anulado',
+            'observacion_anulacion',
+            'fecha_anulacion',
+            'id_persona_anula'
+        ]
+        extra_kwargs = {
+            'observacion_anulacion': {'required': True, 'allow_blank':False, 'allow_null':False}
+        }
 
 #Buscar-Expediente
 class ExpedienteSearchSerializer(serializers.ModelSerializer):
@@ -328,10 +387,36 @@ class ExpedienteSearchSerializer(serializers.ModelSerializer):
     nombre_subserie_origen = serializers.ReadOnlyField(source='id_subserie_origen.nombre', default=None)
     nombre_unidad_org = serializers.ReadOnlyField(source='id_und_seccion_propietaria_serie.nombre', default=None)
     nombre_trd_origen = serializers.ReadOnlyField(source='id_trd_origen.nombre', default=None)
+    nombre_persona_titular = serializers.SerializerMethodField()
+    
+    def get_nombre_persona_titular(self, obj):
+        nombre_persona_titular = None
+        if obj.id_persona_titular_exp_complejo:
+            nombre_list = [obj.id_persona_titular_exp_complejo.primer_nombre, obj.id_persona_titular_exp_complejo.segundo_nombre,
+                            obj.id_persona_titular_exp_complejo.primer_apellido, obj.id_persona_titular_exp_complejo.segundo_apellido]
+            nombre_persona_titular = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_titular = nombre_persona_titular if nombre_persona_titular != "" else None
+        return nombre_persona_titular
 
     class Meta:
         model =  ExpedientesDocumentales
-        fields = ['codigo_exp_und_serie_subserie','id_expediente_documental','titulo_expediente','id_und_seccion_propietaria_serie','nombre_unidad_org','id_serie_origen','nombre_serie_origen','id_subserie_origen','nombre_subserie_origen','nombre_subserie_origen','id_trd_origen','nombre_trd_origen','fecha_apertura_expediente']
+        fields = [
+            'codigo_exp_und_serie_subserie',
+            'id_expediente_documental',
+            'titulo_expediente',
+            'id_und_seccion_propietaria_serie',
+            'nombre_unidad_org',
+            'id_serie_origen',
+            'nombre_serie_origen',
+            'id_subserie_origen',
+            'nombre_subserie_origen',
+            'nombre_subserie_origen',
+            'id_trd_origen',
+            'nombre_trd_origen',
+            'fecha_apertura_expediente',
+            'id_persona_titular_exp_complejo',
+            'nombre_persona_titular'
+        ]
 
 
 class ListarTRDSerializer(serializers.ModelSerializer):

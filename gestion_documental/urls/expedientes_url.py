@@ -10,8 +10,10 @@ urlpatterns = [
     path('expedientes/serie-subserie-unidad-trd/get/',views.SerieSubserieUnidadTRDGetView.as_view(), name='tripleta-trd'),
     path('expedientes/configuracion-expediente/get/<str:id_catserie_unidadorg>/',views.ConfiguracionExpedienteGet.as_view(), name='configuracion-expediente'),
     path('expedientes/apertura-expediente/create/',views.AperturaExpedienteCreate.as_view(), name='apertura-expediente-create'),
-    # path('expedientes/apertura-expediente/update/',views.AperturaExpedienteUpdate.as_view(), name='apertura-expediente-update'),
-    # path('expedientes/apertura-expediente/anular/',views.AnularExpediente.as_view(), name='anular-expediente'),
+    path('expedientes/apertura-expediente/get/<str:id_expediente_documental>/',views.AperturaExpedienteGet.as_view(), name='apertura-expediente-get'),
+    path('expedientes/apertura-expediente/update/<str:id_expediente_documental>/',views.AperturaExpedienteUpdate.as_view(), name='apertura-expediente-update'),
+    path('expedientes/apertura-expediente/anular/<str:id_expediente_documental>/',views.AnularExpediente.as_view(), name='anular-expediente'),
+    path('expedientes/apertura-expediente/borrar/<str:id_expediente_documental>/',views.BorrarExpediente.as_view(), name='borrar-expediente'),
     
     #Cierre de expedientes         
      path('expedientes/buscar-expediente-abierto/',views.ExpedienteSearch.as_view(), name='buscar-expediente'),
