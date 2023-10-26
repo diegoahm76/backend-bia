@@ -136,7 +136,13 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                 if tipo_usuario_ant == 'E' and tipo_usuario_act == 'I':
                     
                     persona = Personas.objects.get(user=user)
-                    
+                    print("PERSONA = ",persona.id_persona)
+                    print("PERSONA = ",persona.id_cargo)
+
+                    if persona.fecha_a_finalizar_cargo_actual is None:
+                        raise PermissionDenied('La persona propietaria del usuario no tiene fecha de finalizacion del cargo actual')
+
+
                     if persona.id_cargo is None or persona.fecha_a_finalizar_cargo_actual <= datetime.now().date():
                         raise PermissionDenied('La persona propietaria del usuario no tiene cargo actual o la fecha final del cargo ha vencido')
                     
