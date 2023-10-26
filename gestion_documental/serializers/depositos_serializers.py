@@ -3,7 +3,7 @@ from rest_framework.serializers import ReadOnlyField
 from django.db.models import F
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from django.db.models import Max 
-
+import django_filters
 from gestion_documental.models.depositos_models import  CarpetaCaja, Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
 from gestion_documental.models.expedientes_models import ExpedientesDocumentales
 
@@ -677,3 +677,50 @@ class ReviewExpedienteSerializer(serializers.ModelSerializer):
         if expediente and expediente.cod_tipo_expediente == 'C' and expediente.id_persona_titular_exp_complejo:
             return expediente.id_persona_titular_exp_complejo.nombre_completo
         return ''    
+    
+
+#Choices_Depositos
+class DepositoChoicesSerializer(serializers.ModelSerializer):
+    # Define un campo calculado que contiene la concatenación de nombre_deposito e identificacion_por_entidad
+    nombre_identificacion_concat = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Deposito
+        fields = ['id_deposito', 'nombre_deposito', 'identificacion_por_entidad', 'orden_ubicacion_por_entidad', 'nombre_identificacion_concat']
+
+    def get_nombre_identificacion_concat(self, obj):
+        # Concatena los valores de nombre_deposito e identificacion_por_entidad con un guion "-"
+        return f"{obj.nombre_deposito} - {obj.identificacion_por_entidad}"    
+    
+
+#Busqueda_avanzada
+class  DepositoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  Deposito
+        fields = '__all__'
+
+
+class EstanteDepositoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EstanteDeposito
+        fields = '__all__'
+
+
+class BandejaEstanteSerializer(serializers.ModelSerializer):
+    identificacion_estante = serializers.CharField(source='id_estante_deposito.identificacion_por_deposito', read_only=True)
+    deposito_archivo = serializers.CharField(source='id_estante_deposito.id_deposito.nombre_deposito', read_only=True)
+
+    class Meta:
+        model = BandejaEstante
+        fields = '__all__'
+
+class CajaBandejaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CajaBandeja
+        fields = '__all__'
+
+
+class CarpetaCajaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CarpetaCaja
+        fields = '__all__'
