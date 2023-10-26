@@ -95,7 +95,7 @@ urlpatterns = [
      path('archivoFisico/busqueda-avanzada-bandeja/',views.BusquedaBandejaArchivoFisico.as_view(),name='busqueda-archivo-fisico-bandeja'),
      path('archivoFisico/busqueda-avanzada-caja/',views.BusquedaCajaArchivoFisico.as_view(),name='busqueda-archivo-fisico-caja'),
      path('archivoFisico/busqueda-avanzada-carpeta/',views.BusquedaCarpetaArchivoFisico.as_view(),name='busqueda-archivo-fisico-carpeta'),
-     path('archivoFisico/detalles_deposito/<int:id_deposito>/', views.ListarInformacion.as_view(), name='listar-informacion'),
+     path('archivoFisico/informacion-arbol/<int:id_deposito>/', views.ListarInformacionArbol.as_view(), name='listar-informacion'),
 
 
 

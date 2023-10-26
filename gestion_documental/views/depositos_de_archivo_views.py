@@ -2612,8 +2612,8 @@ class BusquedaCarpetaArchivoFisico(generics.ListAPIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 
-#listar_toda_info
-class ListarInformacion(generics.ListAPIView):
+#LISTAR_INFORMACION_ARBOL
+class ListarInformacionArbol(generics.ListAPIView):
 
     permission_classes = [IsAuthenticated]
 
@@ -2624,6 +2624,8 @@ class ListarInformacion(generics.ListAPIView):
             return Response({'error': 'Depósito no encontrado.'}, status=404)
 
         data = {
+            'success': True,
+            'detail': 'Se encontraron los siguientes resultados.',
             'deposito': {
                 'id_deposito': deposito.id_deposito,
                 'nombre_deposito': deposito.nombre_deposito,
