@@ -17,7 +17,7 @@ from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCr
 from seguridad.utils import Util
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, ListarTRDSerializer, ListarTipologiasSerializer, SerieSubserieUnidadTRDGetSerializer
+from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AnularExpedienteSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, AperturaExpedienteUpdateAutSerializer, AperturaExpedienteUpdateNoAutSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, BorrarExpedienteSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, ExpedienteAperturaSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, ListarTRDSerializer, ListarTipologiasSerializer, SerieSubserieUnidadTRDGetSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Max 
@@ -126,6 +126,7 @@ class AperturaExpedienteCreate(generics.CreateAPIView):
         data['ubicacion_fisica_esta_actualizada'] = True
         data['fecha_creacion_manual'] = current_date
         data['id_persona_crea_manual'] = request.user.persona.id_persona
+        data['creado_automaticamente'] = False
         
         if data['cod_tipo_expediente'] == 'S':
             serializer = self.serializer_class(data=data, context = {'request':request})
@@ -143,7 +144,131 @@ class AperturaExpedienteCreate(generics.CreateAPIView):
                 instance_carpeta.save()
                 
         return Response({'success':True, 'detail':'Apertura realizada de manera exitosa', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+
+class AperturaExpedienteGet(generics.ListAPIView):
+    serializer_class = ExpedienteAperturaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_expediente_documental):
+        expediente = ExpedientesDocumentales.objects.filter(id_expediente_documental=id_expediente_documental).first()
         
+        if not expediente:
+            raise NotFound('No se encontró el expediente ingresado')
+        
+        serializer = self.serializer_class(expediente)
+        
+        return Response({'success':True, 'detail':'Se encontró el siguiente expediente', 'data':serializer.data}, status=status.HTTP_200_OK)
+
+class AperturaExpedienteUpdate(generics.UpdateAPIView):
+    serializer_class = AperturaExpedienteUpdateAutSerializer
+    serializer_class_no_aut = AperturaExpedienteUpdateNoAutSerializer
+    permission_classes = [IsAuthenticated]
+
+    def update(self, request, id_expediente_documental):
+        data = request.data
+        
+        expediente = ExpedientesDocumentales.objects.filter(id_expediente_documental=id_expediente_documental).first()
+        
+        if not expediente:
+            raise NotFound('No se encontró el expediente indicado')
+        
+        if expediente.creado_automaticamente:
+            serializer = self.serializer_class(expediente, data=data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        else:
+            serializer = self.serializer_class_no_aut(expediente, data=data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        
+        instances_carpetas_ya_asociadas = CarpetaCaja.objects.filter(id_expediente=id_expediente_documental)
+        carpetas_caja = data.get('carpetas_caja')
+        
+        if carpetas_caja:
+            instances_carpetas = CarpetaCaja.objects.filter(id_carpeta_caja__in=set(data.get('carpetas_caja')))
+            instances_carpetas_ya_asociadas_list = list(instances_carpetas_ya_asociadas.values_list('id_carpeta_caja', flat=True))
+            
+            instances_expediente_asociado = instances_carpetas.exclude(id_expediente=None).exclude(id_expediente=id_expediente_documental)
+            
+            if len(set(data.get('carpetas_caja'))) != len(instances_carpetas):
+                raise ValidationError('Debe enviar carpetas existentes en el sistema')
+            
+            if instances_expediente_asociado:
+                raise ValidationError('Alguna(s) de las carpetas seleccionadas ya poseen expedientes asociados distinto al ingresado')
+            
+            nuevas_carpetas = [carpeta for carpeta in instances_carpetas if carpeta.id_carpeta_caja not in instances_carpetas_ya_asociadas_list]
+            
+            for nueva_carpeta in nuevas_carpetas:
+                nueva_carpeta.id_expediente = expediente
+                nueva_carpeta.save()
+                
+            carpetas_removidas = [carpeta for carpeta in instances_carpetas_ya_asociadas if carpeta.id_carpeta_caja not in list(instances_carpetas.values_list('id_carpeta_caja', flat=True))]
+
+            for carpeta_removida in carpetas_removidas:
+                carpeta_removida.id_expediente = None
+                carpeta_removida.save()
+        elif carpetas_caja == []:
+            for carpeta_removida in instances_carpetas_ya_asociadas:
+                carpeta_removida.id_expediente = None
+                carpeta_removida.save()
+                
+        return Response({'success':True, 'detail':'Expediente actualizado de manera exitosa', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+
+class AnularExpediente(generics.UpdateAPIView):
+    serializer_class = AnularExpedienteSerializer
+    permission_classes = [IsAuthenticated] # PENDIENTE VALIDACIÓN permisos de Creación de Expediente en la Serie Documental elegida y adicionalmente la persona como tal debe tener permisos de Anulación del módulo
+
+    def update(self, request, id_expediente_documental):
+        data = request.data
+        
+        expediente = ExpedientesDocumentales.objects.filter(id_expediente_documental=id_expediente_documental).first()
+        
+        if not expediente:
+            raise NotFound('No se encontró el expediente indicado')
+        
+        if expediente.creado_automaticamente:
+            raise PermissionDenied('No puede anular un expediente creado automaticamente')
+        
+        if expediente.cod_etapa_de_archivo_actual_exped != 'G':
+            raise PermissionDenied('Solo puede anular expedientes en etapa de Gestión')
+                    
+        if expediente.estado != 'A':
+            raise PermissionDenied('No puede anular un expediente cerrado. Debe realizar una reapertura primero')
+        
+        data['anulado'] = True
+        data['fecha_anulacion'] = datetime.now()
+        data['id_persona_anula'] = request.user.persona.id_persona
+        
+        serializer = self.serializer_class(expediente, data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+                
+        return Response({'success':True, 'detail':'Expediente anulado de manera exitosa', 'data':serializer.data}, status=status.HTTP_201_CREATED)
+
+class BorrarExpediente(generics.DestroyAPIView):
+    serializer_class = BorrarExpedienteSerializer
+    permission_classes = [IsAuthenticated] # PENDIENTE VALIDACIÓN permisos de Creación de Expediente en la Serie Documental elegida y adicionalmente la persona como tal debe tener permisos de Anulación del módulo
+
+    def delete(self, request, id_expediente_documental):
+        expediente = ExpedientesDocumentales.objects.filter(id_expediente_documental=id_expediente_documental).first()
+        
+        if not expediente:
+            raise NotFound('No se encontró el expediente indicado')
+        
+        if expediente.creado_automaticamente:
+            raise PermissionDenied('No puede anular un expediente creado automaticamente')
+        
+        if expediente.documentosdearchivoexpediente_set.all():
+            raise PermissionDenied('No puede borrar un expediente con documentos asociados')
+        
+        if expediente.cod_tipo_expediente != 'S':
+            ultimo_expediente_comp = ExpedientesDocumentales.objects.filter(cod_tipo_expediente='C').order_by('codigo_exp_consec_por_agno').last()
+            if expediente.id_expediente_documental != ultimo_expediente_comp.id_expediente_documental:
+                raise PermissionDenied('Solo puede borrar el expediente con el último consecutivo')
+                
+        expediente.delete()
+        
+        return Response({'success':True, 'detail':'Expediente borrado de manera exitosa'}, status=status.HTTP_200_OK)
 
 ########################## CRUD DE CIERRE DE EXPEDIENTES DOCUMENTALES ##########################
 
@@ -161,6 +286,7 @@ class ExpedienteSearch(generics.ListAPIView):
         palabras_clave_expediente = self.request.query_params.get('palabras_clave_expediente', '').strip()
         codigos_uni_serie_subserie = self.request.query_params.get('codigos_uni_serie_subserie', '').strip()
         trd_nombre = self.request.query_params.get('trd_nombre', '').strip()
+        id_persona_titular_exp_complejo = self.request.query_params.get('id_persona_titular_exp_complejo')
 
 
 
@@ -184,6 +310,9 @@ class ExpedienteSearch(generics.ListAPIView):
         if codigos_uni_serie_subserie:
             queryset = queryset.filter(codigo_exp_und_serie_subserie__startswith=codigos_uni_serie_subserie)
 
+        if id_persona_titular_exp_complejo:
+            queryset = queryset.filter(id_persona_titular_exp_complejo=id_persona_titular_exp_complejo)
+        
         if trd_nombre:
             queries = []
             
