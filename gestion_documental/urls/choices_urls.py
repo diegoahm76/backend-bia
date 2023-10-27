@@ -22,6 +22,8 @@ urlpatterns = [
     path('tipo-acceso/', views.TipoAcceso.as_view(), name='tipo-acceso'),
     path('estructura-tipo-expendiente/', views.GetEstruc_tipo_exp.as_view(), name='estructura-tipo-expendiente'),
     path('rango-edad/', views.RangoEdad.as_view(), name='rango-edad'),
+    path('cod-nivel-consecutivo/', views.CodNivelConsecutivo.as_view(), name='codigo-nivel-consecutivo'),
+
     #RangoEdad
     
 ]
