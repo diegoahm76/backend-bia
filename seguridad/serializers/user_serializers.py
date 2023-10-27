@@ -489,6 +489,8 @@ class UsuarioFullSerializer(serializers.ModelSerializer):
     justificacion_ultimo_cambio_activacion = serializers.SerializerMethodField()
     fecha_ultimo_cambio_bloqueo = serializers.SerializerMethodField()
     justificacion_ultimo_cambio_bloqueo = serializers.SerializerMethodField()
+    id_sucursal_empresa = serializers.ReadOnlyField(source='sucursal_defecto.id_sucursal_empresa',default=None)
+    descripcion_sucursal_empresa = serializers.ReadOnlyField(source='sucursal_defecto.descripcion_sucursal',default=None)
     
     #RETORNAR NOMBRE COMPLETO
     def get_nombre_completo(self, obj):
@@ -590,7 +592,9 @@ class UsuarioFullSerializer(serializers.ModelSerializer):
             'id_usuario_creador',
             'primer_nombre_usuario_creador',
             'primer_apellido_usuario_creador',
-            'roles'
+            'roles',
+            'id_sucursal_empresa',
+            'descripcion_sucursal_empresa'
         ]
         model = User
 
