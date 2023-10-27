@@ -54,16 +54,21 @@ class UnidadesSeccionSubseccionGet(generics.ListAPIView):
         
         catalogo_series_unidad= CatalogosSeriesUnidad.objects.filter(id_cat_serie_und__in=catalogo_ids_list).order_by('id_unidad_organizacional')
 
-        unidades=[]
-        
+        unidades = set()  # Usamos un conjunto para garantizar elementos únicos
+
         for x in catalogo_series_unidad.distinct():
-            
-            unidad=x.id_unidad_organizacional
+            unidad = x.id_unidad_organizacional
             if unidad.cod_agrupacion_documental:
                 serializer = self.serializer_class(unidad)
-                unidades.append(serializer.data)
-        #serializer = self.serializer_class(catalogo_series_unidad,many=True)
-        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':unidades},status=status.HTTP_200_OK)
+                unidades.add(tuple(serializer.data.items()))  # Agregamos la tupla a 'unidades'
+
+        # Ahora 'unidades' contiene datos únicos
+
+        # Convertimos 'unidades' de conjunto a lista para la respuesta
+        unidades_unicas = [dict(item) for item in unidades]
+
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': unidades_unicas}, status=status.HTTP_200_OK)
+        
     
 
 #PermisosUndsOrgActualesSerieExpCCD
