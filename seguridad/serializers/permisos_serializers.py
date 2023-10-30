@@ -93,7 +93,6 @@ class ModulosRolSerializer(serializers.ModelSerializer):
             
             value = {
                 'value': True,
-                # 'value': False,
                 'id': permiso['id_permiso_modulo']
             }
             
