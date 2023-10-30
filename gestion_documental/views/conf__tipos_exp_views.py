@@ -11,6 +11,7 @@ from rest_framework import generics, status
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from datetime import date
 import copy
+from django.db import transaction
 
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 class ConfiguracionTipoExpedienteAgnoGet(generics.ListAPIView):
@@ -92,8 +93,8 @@ class ConfiguracionTipoExpedienteAgnoCreate(generics.CreateAPIView):
         age = hoy.year 
         data_in = request.data
 
-        if data_in['agno_expediente'] != age and data_in['agno_expediente'] != age+1:
-            raise ValidationError('Solo se pueden crear configuraciones correspondientes a '+str(age)+' o '+str(age+1))
+        # if data_in['agno_expediente'] != age and data_in['agno_expediente'] != age+1:
+        #     raise ValidationError('Solo se pueden crear configuraciones correspondientes a '+str(age)+' o '+str(age+1))
  
         
         if 'cod_tipo_expediente' in data_in and data_in['cod_tipo_expediente'] == 'C':
@@ -118,6 +119,7 @@ class ConfiguracionTipoExpedienteAgnoCreate(generics.CreateAPIView):
         id_unidad=instance.id_cat_serie_undorg_ccd.id_cat_serie_und.id_unidad_organizacional.id_unidad_organizacional
         unidad_nombre=instance.id_cat_serie_undorg_ccd.id_cat_serie_und.id_unidad_organizacional.nombre
                     #AUDITORIA 
+        modulo=147
         if instance.agno_expediente == age:
                 modulo=147
         if instance.agno_expediente == age+1:
@@ -259,3 +261,91 @@ class ConfiguracionTipoExpedienteAgnoGetHistorico(generics.ListAPIView):
         serializador=self.serializer_class(instance,many=True)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data}, status=status.HTTP_200_OK)
     
+
+
+
+
+class ConfiguracionTipoExpedienteAgnoGetConsect(generics.UpdateAPIView):
+    serializer_class = ConfiguracionTipoExpedienteAgnoCreateSerializer
+    queryset = ConfiguracionTipoExpedienteAgno.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def generar_radicado(self,pk,id_usuario,fecha_actual):
+        try:
+            with transaction.atomic():
+              
+                id_persona=id_usuario
+                
+                hoy = datetime.strptime(fecha_actual, "%Y-%m-%dT%H:%M:%S")
+                age = hoy.year
+                fecha_actual=datetime.now()
+    
+            
+                
+                instance = ConfiguracionTipoExpedienteAgno.objects.filter(id_cat_serie_undorg_ccd=pk,agno_expediente=age).first()
+                
+                #print(instance)
+                if not instance:
+                    instance_agno_anterior = ConfiguracionTipoExpedienteAgno.objects.filter(id_cat_serie_undorg_ccd=pk,agno_expediente=age-1).first()
+                    if not instance_agno_anterior:
+                        raise NotFound("la terna seleccionada no tiene configuración, por tanto, debe remitirse al módulo de “Configuración de Tipos de Expediente Actuales”")
+                    print(instance_agno_anterior)
+
+                    data_configuracion={
+
+                        "id_cat_serie_undorg_ccd": pk,
+                        "agno_expediente": age,
+                        "cod_tipo_expediente": instance_agno_anterior.cod_tipo_expediente,
+                        "consecutivo_inicial": 1,
+                        "cantidad_digitos": instance_agno_anterior.cantidad_digitos,
+                        "consecutivo_actual":0
+                        }
+                
+                    serializer_2 = ConfiguracionTipoExpedienteAgnoCreateSerializer(data=data_configuracion)
+                    serializer_2.is_valid(raise_exception=True)
+                    
+                    instance=serializer_2.save()
+                if instance.cod_tipo_expediente == 'S':
+                     return Response({'success':True,'detail':"Esta terna cuenta con configuracion simple y no requiere radicado","data":None},status=status.HTTP_200_OK)
+    
+                consecutivo = instance.consecutivo_actual+1
+
+                data_nueva={
+                    "consecutivo_actual": consecutivo,
+                    "fecha_consecutivo_actual": fecha_actual,
+                    "id_persona_consecutivo_actual": id_persona,
+
+                }
+            
+                if not instance.item_ya_usado:
+                    data_nueva["item_ya_usado"]=True
+                
+                serializer = ConfiguracionTipoExpedienteAgnoCreateSerializer(instance,data=data_nueva, partial=True)
+                serializer.is_valid(raise_exception=True)
+                instance=serializer.save()
+                print(instance.consecutivo_actual)
+                numero_con_ceros = str(instance.consecutivo_actual).zfill(instance.cantidad_digitos)  
+                print(numero_con_ceros)
+                respuesta = {'agno_expediente':serializer.data['agno_expediente'],
+                        'id_config_tipo_expediente_agno':serializer.data['id_config_tipo_expediente_agno'],
+                        'cod_tipo_expediente':serializer.data['cod_tipo_expediente'],
+                        'consecutivo_actual':consecutivo,
+                        'cantidad_digitos':serializer.data['cantidad_digitos'],
+                        'radicado_actual':numero_con_ceros}
+                return Response({'success':True,'detail':"Se actualizo la configuracion Correctamente.","data":respuesta},status=status.HTTP_200_OK)
+        except ValidationError  as e:
+            error_message = {'error': e.detail}
+            raise ValidationError  (e.detail) 
+        
+    def put(self,request,pk):
+        data = request.data
+        fecha_actual=data['fecha_actual']
+        id_persona = data['id_persona']
+        try:
+            data=self.generar_radicado(pk,id_persona,fecha_actual)
+            return data
+        
+        except ValidationError  as e:
+            error_message = {'error': e.detail}
+            raise ValidationError  (e.detail) 
