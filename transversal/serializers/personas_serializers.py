@@ -778,7 +778,7 @@ class PersonasFilterSerializer(serializers.ModelSerializer):
     segundo_apellido = serializers.SerializerMethodField()
     razon_social = serializers.SerializerMethodField()
     tipo_persona_desc = serializers.CharField(source='get_tipo_persona_display')
-    
+    tipo_usuario = serializers.SerializerMethodField()
     def get_tiene_usuario(self, obj):
         usuario = User.objects.filter(persona=obj.id_persona).exists()   
         return usuario
@@ -813,7 +813,16 @@ class PersonasFilterSerializer(serializers.ModelSerializer):
         razon_social2 = obj.razon_social
         razon_social2 = razon_social2.upper() if razon_social2 else razon_social2
         return razon_social2
-        
+    def get_tipo_usuario(self, obj):
+        id = obj.id_persona
+        usuario = User.objects.filter(persona=id).first()
+        if usuario:
+            if usuario.tipo_usuario == 'I':
+                return 'Interno'
+            else:
+                return 'Externo'
+        else :
+            return None
     class Meta:
         model = Personas
         fields = [
@@ -831,7 +840,8 @@ class PersonasFilterSerializer(serializers.ModelSerializer):
             'nombre_comercial',
             'digito_verificacion',
             'cod_naturaleza_empresa',
-            'tiene_usuario'
+            'tiene_usuario',
+            'tipo_usuario'
         ]
 
 class UsuarioAdminSerializer(serializers.ModelSerializer):
