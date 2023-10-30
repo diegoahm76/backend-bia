@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from gestion_documental.models.encuencas_models import TIPO_USUARIO_CHOICES, AsignarEncuesta, DatosEncuestasResueltas, EncabezadoEncuesta, OpcionesRta, PreguntasEncuesta, RespuestaEncuesta
-from gestion_documental.serializers.encuentas_serializers import AlertasGeneradasEncuestaPostSerializer, AsignarEncuestaGetSerializer, AsignarEncuestaPostSerializer, DatosEncuestasResueltasConteoSerializer, DatosEncuestasResueltasCreateSerializer, EncabezadoEncuestaCreateSerializer, EncabezadoEncuestaDeleteSerializer, EncabezadoEncuestaGetDetalleSerializer, EncabezadoEncuestaGetSerializer, EncabezadoEncuestaUpdateSerializer, EncuestaActivaGetSerializer, OpcionesRtaCreateSerializer, OpcionesRtaDeleteSerializer, OpcionesRtaGetSerializer, OpcionesRtaUpdateSerializer, PersonaRegistradaEncuentaGet, PreguntasEncuestaCreateSerializer, PreguntasEncuestaDeleteSerializer, PreguntasEncuestaGetSerializer, PreguntasEncuestaUpdateSerializer,RespuestaEncuestaCreateSerializer
+from gestion_documental.serializers.encuentas_serializers import AlertasGeneradasEncuestaPostSerializer, AsignarEncuestaGetSerializer, AsignarEncuestaPostSerializer, DatosEncuestasResueltasConteoSerializer, DatosEncuestasResueltasCreateSerializer, EncabezadoEncuestaCreateSerializer, EncabezadoEncuestaDeleteSerializer, EncabezadoEncuestaGetDetalleSerializer, EncabezadoEncuestaGetSerializer, EncabezadoEncuestaUpdateSerializer, EncuestaActivaGetSerializer, OpcionesRtaCreateSerializer, OpcionesRtaDeleteSerializer, OpcionesRtaGetSerializer, OpcionesRtaUpdateSerializer, PersonaRegistradaEncuentaGet, PersonasFilterEncuestaSerializer, PreguntasEncuestaCreateSerializer, PreguntasEncuestaDeleteSerializer, PreguntasEncuestaGetSerializer, PreguntasEncuestaUpdateSerializer,RespuestaEncuestaCreateSerializer
 from django.db.models import Max
 from datetime import datetime
 from django.db import transaction
@@ -23,6 +23,7 @@ from gestion_documental.choices.rango_edad_choices import RANGO_EDAD_CHOICES
 from django.template.loader import render_to_string
 
 from transversal.serializers.alertas_serializers import AlertasBandejaAlertaPersonaPostSerializer
+from transversal.serializers.personas_serializers import PersonasFilterSerializer
 class EncabezadoEncuestaCreate(generics.CreateAPIView):
     serializer_class = EncabezadoEncuestaCreateSerializer
     permission_classes = [IsAuthenticated]
@@ -997,3 +998,32 @@ class EncuestasAsignadasUsuarioGet(generics.ListAPIView):
         return Response({'success':True,
                          'detail':'Se encontraron los siguientes registros.',
                          'data':serializer.data},status=status.HTTP_200_OK)
+    
+class GetPersonasByFilters(generics.ListAPIView):
+    serializer_class = PersonasFilterEncuestaSerializer
+    queryset = Personas.objects.all()
+
+    def get(self,request,tip):
+        filter = {}
+        print(tip)
+        for key,value in request.query_params.items():
+            if key in ['tipo_documento','numero_documento','primer_nombre','primer_apellido','razon_social','nombre_comercial']:
+                if key in ['primer_nombre','primer_apellido','razon_social','nombre_comercial']:
+                    if value != "":
+                        filter[key+'__icontains']=  value
+                elif key == "numero_documento":
+                    if value != "":
+                        filter[key+'__icontains'] = value
+                else:
+                    if value != "":
+                        filter[key] = value
+        #filter['tipo_persona'] = ti               
+        personas = self.queryset.all().filter(**filter)
+        
+        serializer = self.serializer_class(personas, many=True)
+        data =[]
+        for ser in serializer.data:
+            if ser['usuario'] == tip:
+                data.append(ser)
+           
+        return Response({'success':True, 'detail':'Se encontraron las siguientes personas que coinciden con los criterios de búsqueda', 'data':data}, status=status.HTTP_200_OK)
