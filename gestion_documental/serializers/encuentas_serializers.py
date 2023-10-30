@@ -245,6 +245,7 @@ class AsignarEncuestaPostSerializer(serializers.ModelSerializer):
 class AsignarEncuestaGetSerializer(serializers.ModelSerializer):
     nombre_completo = serializers.SerializerMethodField()
     nombre_encuesta=serializers.ReadOnlyField(source='id_encuesta.nombre_encuesta',default=None)
+    usuario =  serializers.SerializerMethodField()
     class Meta:
         model = AsignarEncuesta
         fields = '__all__'
@@ -255,6 +256,18 @@ class AsignarEncuestaGetSerializer(serializers.ModelSerializer):
         nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
         nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
         return nombre_completo_responsable
+    def get_usuario(self, obj):
+        id = obj.id_persona.id_persona
+        usuario = User.objects.filter(persona=id).first()
+        if usuario:
+            if usuario.tipo_usuario == 'I':
+                return 'Interno'
+            else:
+                return 'Externo'
+        else :
+            return None
+        
+
     
 
 class PersonasFilterEncuestaSerializer(serializers.ModelSerializer):
