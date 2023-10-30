@@ -92,7 +92,8 @@ class ModulosRolSerializer(serializers.ModelSerializer):
             nombre_permiso = str(permiso['nombre_permiso'])
             
             value = {
-                'value': True,
+                # 'value': True,
+                'value': False,
                 'id': permiso['id_permiso_modulo']
             }
             
