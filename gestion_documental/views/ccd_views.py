@@ -29,7 +29,8 @@ from gestion_documental.serializers.ccd_serializers import (
     AgrupacionesDocumentalesPersistenteTemporalSerializer,
     UnidadesSeccionResponsableTemporalSerializer,
     UnidadesSeccionResponsableTemporalGetSerializer,
-    UnidadesSeccionPersistenteTemporalGetSerializer
+    UnidadesSeccionPersistenteTemporalGetSerializer,
+    OficinaUnidadOrganizacionalSerializer
 )
 from transversal.models.organigrama_models import Organigramas
 from gestion_documental.models.ccd_models import (
@@ -1649,16 +1650,21 @@ class ValidacionCCDDelegacionView(generics.ListAPIView):
         except CuadrosClasificacionDocumental.DoesNotExist:
             raise NotFound('CCD no encontrado o no cumple con TRD y TCA terminados')
         
+        try:
+            ccd_actual = CuadrosClasificacionDocumental.objects.get(actual=True)
+        except CuadrosClasificacionDocumental.DoesNotExist:
+            raise NotFound('CCD no se encuentra como actual')
+        
         unidades_persistentes = UnidadesSeccionPersistenteTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd)
-        ids_unidad_ccd_nuevo = [unidad.id_unidad_seccion_nueva.id_unidad_organizacional for unidad in unidades_persistentes]
+        ids_unidad_ccd_actual = [unidad.id_unidad_seccion_actual.id_unidad_organizacional for unidad in unidades_persistentes]
 
-        unidades_persistentes = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd, es_registro_asig_seccion_responsable=True)
-        ids_unidad_ccd_nuevo = ids_unidad_ccd_nuevo + [unidad.id_unidad_seccion_nueva.id_unidad_organizacional for unidad in unidades_persistentes]        
+        unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd, es_registro_asig_seccion_responsable=True)
+        ids_unidad_ccd_actual = ids_unidad_ccd_actual + [unidad.id_unidad_seccion_actual.id_unidad_organizacional for unidad in unidades_responsables]        
         
-        unidades_organizacionales_nuevo = UnidadesOrganizacionales.objects.filter(id_organigrama=ccd.id_organigrama.id_organigrama,cod_agrupacion_documental__isnull=False
-                                                                                  ).exclude(id_unidad_organizacional__in=ids_unidad_ccd_nuevo)
+        unidades_organizacionales_actual = UnidadesOrganizacionales.objects.filter(id_organigrama=ccd_actual.id_organigrama.id_organigrama,cod_agrupacion_documental__isnull=False
+                                                                                  ).exclude(id_unidad_organizacional__in=ids_unidad_ccd_actual)
         
-        serializer = self.serializer_class(unidades_organizacionales_nuevo, many=True)
+        serializer = self.serializer_class(unidades_organizacionales_actual, many=True)
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
 
@@ -1706,5 +1712,17 @@ class UnidadesOrganizacionalesActualResponsableView(generics.ListAPIView):
         data_out = sorted(data_out, key=lambda x: x['cod_unidad_actual'], reverse=False)
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data_out}, status=status.HTTP_200_OK)
-    
+
+
+
+class OficinaUnidadOrganizacionalGetView(generics.ListAPIView):
+    serializer_class = OficinaUnidadOrganizacionalSerializer
+    permission_classes = [IsAuthenticated]
+
+
+
+
+
+
+
 
