@@ -16,6 +16,10 @@ from gestion_documental.choices.operacion_realizada_choices import operacion_rea
 from gestion_documental.choices.tipos_pqr_choices import cond_tipos_pqr_list
 from gestion_documental.choices.tipo_dato_alojar_choices import tipo_dato_alojar_CHOICES
 from gestion_documental.choices.tipo_acceso_choices import tipo_acceso_list
+from gestion_documental.choices.tipo_elemento_choices import tipo_elemento_CHOICES
+from gestion_documental.choices.cod_nivel_consecutivo_choices import cod_nivel_consecutivo_CHOICES
+
+
 
 
 
@@ -98,6 +102,11 @@ class OperacionRealizada(APIView):
         choices = operacion_realizada_CHOICES
         return Response(choices)
     
+class TipoElemento(APIView):
+    def get(self,request):
+        choices = tipo_elemento_CHOICES
+        return Response(choices)
+    
 class TipoDatoAlojar(APIView):
     def get(self,request):
         choices = tipo_dato_alojar_CHOICES
@@ -112,4 +121,9 @@ class RangoEdad(APIView):
     def get(self,request):
         choices = RANGO_EDAD_LIST
         return Response(choices)  
+    
+class CodNivelConsecutivo(APIView):
+    def get(self,request):
+        choices = cod_nivel_consecutivo_CHOICES
+        return Response(choices) 
 #RANGO_EDAD_LIST

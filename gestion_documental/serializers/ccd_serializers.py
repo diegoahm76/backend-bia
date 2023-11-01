@@ -503,8 +503,7 @@ class UnidadesSeccionPersistenteTemporalGetSerializer(serializers.ModelSerialize
         iguales = True if obj.id_unidad_seccion_actual.nombre == obj.id_unidad_seccion_nueva.nombre else False
         return iguales
         
-
-
+        
 class UnidadesSeccionResponsableTemporalSerializer(serializers.ModelSerializer):
     class Meta:
         model = UnidadesSeccionResponsableTemporal
@@ -522,6 +521,11 @@ class UnidadesSeccionResponsableTemporalGetSerializer(serializers.ModelSerialize
                   'cod_unidad_actual', 'nom_unidad_actual',
                   'id_unidad_seccion_nueva', 'cod_unidad_nueva',
                   'nom_unidad_nueva']
+        
+class OficinaUnidadOrganizacionalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UnidadesOrganizacionales
+        fields = '__all__'
 
 
 #   LLAMADO DE SERIALIZADOR DENTRO DE OTRO SERIALIZADOR CON RELACION
@@ -538,7 +542,6 @@ class UnidadesSeccionResponsableTemporalGetSerializer(serializers.ModelSerialize
 # class CompararSeriesDocUnidadCatSerieSerializer(serializers.ModelSerializer):
 #     serie = SeriesDocSerializer(source='id_catalogo_serie.id_serie_doc', read_only=True)
 #     subserie = SubseriesDocSerializer(source='id_catalogo_serie.id_subserie_doc', read_only=True)
-
 
 #     class Meta:
 #         model = CatalogosSeriesUnidad

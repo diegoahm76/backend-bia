@@ -10,6 +10,7 @@ urlpatterns = [#ConfiguracionTiemposRespuestaUpdate
     path('configuracion-tipo-expediente-agno/update/<str:pk>/',views.ConfiguracionTipoExpedienteAgnoUpdate.as_view(),name='actualizar-configuracion-tipo-expediente-agno'),
     path('configuracion-tipo-expediente-agno/get-serie-unidad/<str:uni>/<str:agno>/',views.ConfiguracionTipoExpedienteAgnoGetbyCatalogoUnidad.as_view(),name='listar-configuracion-tipo-expediente-agno'),
     path('configuracion-tipo-expediente-agno/get-serie-unidad/historico/<str:uni>/<str:agno>/',views.ConfiguracionTipoExpedienteAgnoGetHistorico.as_view(),name='listar-configuracion-tipo-expediente-agno-historico'),
+    path('generar_n_radicado/update/<str:pk>/',views.ConfiguracionTipoExpedienteAgnoGetConsect.as_view(),name='generar-radicado-tipo-expediente-agno'),
 
     #ConfiguracionTipoExpedienteAgnoGetHistorico
 ]

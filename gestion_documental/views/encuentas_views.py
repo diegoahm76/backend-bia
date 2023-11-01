@@ -7,17 +7,23 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from gestion_documental.models.encuencas_models import TIPO_USUARIO_CHOICES, DatosEncuestasResueltas, EncabezadoEncuesta, OpcionesRta, PreguntasEncuesta, RespuestaEncuesta
-from gestion_documental.serializers.encuentas_serializers import DatosEncuestasResueltasConteoSerializer, DatosEncuestasResueltasCreateSerializer, EncabezadoEncuestaCreateSerializer, EncabezadoEncuestaDeleteSerializer, EncabezadoEncuestaGetDetalleSerializer, EncabezadoEncuestaGetSerializer, EncabezadoEncuestaUpdateSerializer, EncuestaActivaGetSerializer, OpcionesRtaCreateSerializer, OpcionesRtaDeleteSerializer, OpcionesRtaGetSerializer, OpcionesRtaUpdateSerializer, PersonaRegistradaEncuentaGet, PreguntasEncuestaCreateSerializer, PreguntasEncuestaDeleteSerializer, PreguntasEncuestaGetSerializer, PreguntasEncuestaUpdateSerializer,RespuestaEncuestaCreateSerializer
+from gestion_documental.models.encuencas_models import TIPO_USUARIO_CHOICES, AsignarEncuesta, DatosEncuestasResueltas, EncabezadoEncuesta, OpcionesRta, PreguntasEncuesta, RespuestaEncuesta
+from gestion_documental.serializers.encuentas_serializers import AlertasGeneradasEncuestaPostSerializer, AsignarEncuestaGetSerializer, AsignarEncuestaPostSerializer, DatosEncuestasResueltasConteoSerializer, DatosEncuestasResueltasCreateSerializer, EncabezadoEncuestaCreateSerializer, EncabezadoEncuestaDeleteSerializer, EncabezadoEncuestaGetDetalleSerializer, EncabezadoEncuestaGetSerializer, EncabezadoEncuestaUpdateSerializer, EncuestaActivaGetSerializer, OpcionesRtaCreateSerializer, OpcionesRtaDeleteSerializer, OpcionesRtaGetSerializer, OpcionesRtaUpdateSerializer, PersonaRegistradaEncuentaGet, PersonasFilterEncuestaSerializer, PreguntasEncuestaCreateSerializer, PreguntasEncuestaDeleteSerializer, PreguntasEncuestaGetSerializer, PreguntasEncuestaUpdateSerializer,RespuestaEncuestaCreateSerializer
 from django.db.models import Max
 from datetime import datetime
 from django.db import transaction
 from seguridad.utils import Util
 from django.db.models import Count
 from transversal.admin import PersonasAdmin
+from transversal.models.alertas_models import AlertasBandejaAlertaPersona, AlertasGeneradas, BandejaAlertaPersona, ConfiguracionClaseAlerta
+
 from transversal.models.personas_models import Personas
 from transversal.models.base_models import Departamento, Municipio, Paises, Sexo, TipoDocumento
 from gestion_documental.choices.rango_edad_choices import RANGO_EDAD_CHOICES
+from django.template.loader import render_to_string
+
+from transversal.serializers.alertas_serializers import AlertasBandejaAlertaPersonaPostSerializer
+from transversal.serializers.personas_serializers import PersonasFilterSerializer
 class EncabezadoEncuestaCreate(generics.CreateAPIView):
     serializer_class = EncabezadoEncuestaCreateSerializer
     permission_classes = [IsAuthenticated]
@@ -819,3 +825,205 @@ class ConteoEncuestasPorRangoEdad(generics.ListAPIView):
         return Response({'success':True,
                          'detail':'Se encontraron los siguientes registros.',
                          'data':{'registros':data,'total':total}},status=status.HTTP_200_OK)
+    
+
+
+#ASIGNACION DE ENCUESTAS
+
+
+class EncuestasDisponbles(generics.ListAPIView):
+    queryset = EncabezadoEncuesta.objects.all()
+    serializer_class = EncuestaActivaGetSerializer
+    def get(self, request, *args, **kwargs):
+        instance = EncabezadoEncuesta.objects.filter(activo=True)
+        serializer = self.serializer_class(instance,many=True)
+        
+        if not instance:
+            raise NotFound("No existen encuentas registrados en el sistema.")
+
+        return Response({'success':True,
+                         'detail':'Se encontraron los siguientes registros.',
+                         'data':serializer.data},status=status.HTTP_200_OK)
+
+class AsignacionEncuestaCreate(generics.CreateAPIView):
+    queryset = AlertasGeneradas.objects.all()
+    serializer_class = AlertasGeneradasEncuestaPostSerializer
+    serialier_asignacion = AsignarEncuestaPostSerializer
+    def post(self,request):
+        data_in = request.data
+        data_alerga_generada={}
+        programada = ConfiguracionClaseAlerta.objects.filter(cod_clase_alerta='Gst_AsigE').first()
+
+        if not programada:
+            raise NotFound("No existe la alerta") 
+        data_alerga_generada['nombre_clase_alerta']=programada.nombre_clase_alerta
+   
+  
+        data_alerga_generada['mensaje'] = programada.mensaje_base_dia#VALIDAR CAMPO <1000
+
+
+        # if programada.complemento_mensaje:
+        #     data_alerga_generada['mensaje']+=" "+programada.complemento_mensaje
+        
+    
+        #FIN
+        data_alerga_generada['cod_categoria_alerta']=programada.cod_categoria_clase_alerta
+        data_alerga_generada['nivel_prioridad']=programada.nivel_prioridad
+    
+        data_alerga_generada['id_modulo_generador'] = 167
+
+        data_alerga_generada['envio_email']=programada.envios_email
+        data_alerga_generada['id_elemento_implicado']=data_in['id_encuesta']
+        
+        serializer = self.serializer_class(data=data_alerga_generada)
+        serializer.is_valid(raise_exception=True)
+        instance=serializer.save()
+
+
+        bandejas_notificaciones=BandejaAlertaPersona.objects.filter(id_persona=data_in['id_persona']).first()
+        if bandejas_notificaciones:
+            #print(bandejas_notificaciones.id_persona.id_persona)
+                alerta_bandeja={}
+                alerta_bandeja['leido']=False
+                alerta_bandeja['archivado']=False
+                email_persona=bandejas_notificaciones.id_persona
+                #print("HOLAAAAAAAAAAAAAAAAAAA SI ENTRO ACA")
+                print( programada.envios_email)
+                if programada.envios_email:
+                    if  email_persona and email_persona.email:
+                        alerta_bandeja['email_usado'] = email_persona.email
+                        subject = programada.nombre_clase_alerta
+                        
+                        template = "alerta.html"
+
+                        context = {'Nombre_alerta':programada.nombre_clase_alerta,'primer_nombre': email_persona.primer_nombre,"mensaje":data_alerga_generada['mensaje']}
+                        template = render_to_string((template), context)
+                        email_data = {'template': template, 'email_subject': subject, 'to_email':email_persona.email}
+                        Util.send_email(email_data)
+                        alerta_bandeja['fecha_envio_email']=datetime.now()
+
+                    else:
+                        alerta_bandeja['email_usado'] = None
+                else:
+                    alerta_bandeja['email_usado'] = None
+
+                alerta_bandeja['id_alerta_generada']=instance.id_alerta_generada
+                alerta_bandeja['id_bandeja_alerta_persona']=bandejas_notificaciones.id_bandeja_alerta
+                
+                #print(alerta_bandeja)
+                
+                serializer_alerta_bandeja=AlertasBandejaAlertaPersonaPostSerializer(data=alerta_bandeja)
+                bandejas_notificaciones.pendientes_leer=True
+                bandejas_notificaciones.save()
+                serializer_alerta_bandeja.is_valid(raise_exception=True)
+                instance_alerta_bandeja=serializer_alerta_bandeja.save()
+                print(serializer_alerta_bandeja.data)
+
+                data_asignacion={}
+                data_asignacion['id_encuesta']=data_in['id_encuesta']
+                data_asignacion['id_persona']=data_in['id_persona']
+                data_asignacion['id_alerta_generada']=instance.id_alerta_generada
+                #raise ValidationError(instance.id_alerta_generada)
+                serializer2 = self.serialier_asignacion(data=data_asignacion)
+                serializer2.is_valid(raise_exception=True)
+                instance2=serializer2.save()
+        else:
+             raise NotFound("Este usuario no cuenta con bandeja,comuniquese con soporte.")
+        return Response({'success':True,
+                         'detail':'Se encontraron los siguientes registros.',
+                         'data':serializer2.data},status=status.HTTP_200_OK)
+
+
+class EncuestasAsignadasGet(generics.ListAPIView):
+    queryset = AsignarEncuesta.objects.all()
+    serializer_class = AsignarEncuestaGetSerializer
+    def get(self, request,enc):
+        instance = AsignarEncuesta.objects.filter(id_encuesta=enc)
+        serializer = self.serializer_class(instance,many=True)
+        
+        if not instance:
+            raise NotFound("No existen encuentas registrados en el sistema.")
+
+        return Response({'success':True,
+                         'detail':'Se encontraron los siguientes registros.',
+                         'data':serializer.data},status=status.HTTP_200_OK)
+    
+
+
+class DeleteAsignacion(generics.DestroyAPIView):
+    serializer_class=AsignarEncuestaGetSerializer
+    queryset=AsignarEncuesta.objects.all()
+    
+    def delete(self, request, pk):
+      
+        instance = self.queryset.filter(id_asignar_encuesta=pk).first()
+
+        if not instance:
+            raise NotFound("Dato no encontrado.")
+        
+        previus = copy.copy(instance)  
+
+        alerta_generada = AlertasGeneradas.objects.filter(id_alerta_generada=instance.id_alerta_generada.id_alerta_generada).first()
+
+
+        bandeja = AlertasBandejaAlertaPersona.objects.filter(id_alerta_generada=instance.id_alerta_generada).first()
+
+        #print(alerta_generada)
+        #print(bandeja)
+        if alerta_generada:
+            alerta_generada.delete()
+
+        if bandeja:
+            bandeja.delete()
+
+        instance.delete()
+        serializer = self.serializer_class(previus)
+       
+        
+        return Response({'success':True,
+                         'detail':'Se elimino correctamente los siguientes registros.',
+                         'data':serializer.data},status=status.HTTP_200_OK)
+    
+
+class EncuestasAsignadasUsuarioGet(generics.ListAPIView):
+    queryset = AsignarEncuesta.objects.all()
+    serializer_class = AsignarEncuestaGetSerializer
+    def get(self, request,pk):
+        instance = AsignarEncuesta.objects.filter(id_persona=pk)
+        serializer = self.serializer_class(instance,many=True)
+        
+        if not instance:
+            raise NotFound("No existen encuentas registrados en el sistema.")
+
+        return Response({'success':True,
+                         'detail':'Se encontraron los siguientes registros.',
+                         'data':serializer.data},status=status.HTTP_200_OK)
+    
+class GetPersonasByFilters(generics.ListAPIView):
+    serializer_class = PersonasFilterEncuestaSerializer
+    queryset = Personas.objects.all()
+
+    def get(self,request,tip):
+        filter = {}
+        print(tip)
+        for key,value in request.query_params.items():
+            if key in ['tipo_documento','numero_documento','primer_nombre','primer_apellido','razon_social','nombre_comercial']:
+                if key in ['primer_nombre','primer_apellido','razon_social','nombre_comercial']:
+                    if value != "":
+                        filter[key+'__icontains']=  value
+                elif key == "numero_documento":
+                    if value != "":
+                        filter[key+'__icontains'] = value
+                else:
+                    if value != "":
+                        filter[key] = value
+        #filter['tipo_persona'] = ti               
+        personas = self.queryset.all().filter(**filter)
+        
+        serializer = self.serializer_class(personas, many=True)
+        data =[]
+        for ser in serializer.data:
+            if ser['usuario'] == tip:
+                data.append(ser)
+           
+        return Response({'success':True, 'detail':'Se encontraron las siguientes personas que coinciden con los criterios de búsqueda', 'data':data}, status=status.HTTP_200_OK)

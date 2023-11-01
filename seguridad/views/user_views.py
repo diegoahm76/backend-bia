@@ -123,7 +123,11 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                 user_serializer.is_valid(raise_exception=True)
                 tipo_usuario_ant = user.tipo_usuario
                 tipo_usuario_act = user_serializer.validated_data.get('tipo_usuario')
-
+                sucursal_entidad_ant = user.sucursal_defecto
+                sucursal_entidad_act = user_serializer.validated_data.get('sucursal_defecto')
+                if sucursal_entidad_ant is not None:
+                    sucursal_entidad_ant = sucursal_entidad_ant.id_sucursal_empresa
+                
                 # VALIDACIÓN NO SE PUEDE INTERNO A EXTERNO
                 if tipo_usuario_ant == 'I' and tipo_usuario_act == 'E':
                     raise ValidationError('No se puede actualizar el usuario de interno a externo')
@@ -132,7 +136,13 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                 if tipo_usuario_ant == 'E' and tipo_usuario_act == 'I':
                     
                     persona = Personas.objects.get(user=user)
-                    
+                    print("PERSONA = ",persona.id_persona)
+                    print("PERSONA = ",persona.id_cargo)
+
+                    if persona.fecha_a_finalizar_cargo_actual is None:
+                        raise PermissionDenied('La persona propietaria del usuario no tiene fecha de finalizacion del cargo actual')
+
+
                     if persona.id_cargo is None or persona.fecha_a_finalizar_cargo_actual <= datetime.now().date():
                         raise PermissionDenied('La persona propietaria del usuario no tiene cargo actual o la fecha final del cargo ha vencido')
                     
@@ -160,7 +170,16 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                     if 'justificacion_bloqueo' not in request.data or not request.data['justificacion_bloqueo']:
                         raise ValidationError('Se requiere una justificación para cambiar el estado de bloqueo del usuario')
                     justificacion = request.data['justificacion_bloqueo']
+
+                # Validacion de sucursal
+                if tipo_usuario_act == 'E' and sucursal_entidad_act is not None:
+                    raise PermissionDenied('Una usuario externo no puede tener una sucursal de entidad asignada')
                 
+                # ASIGNAR SUCURSAL ENTIDAD
+                if tipo_usuario_act == 'I':
+                    
+                    if sucursal_entidad_act is None:
+                        raise ValidationError('La sucursal de entidad debe ser asignada')
 
                 # ASIGNAR ROLES
                 roles_actuales = UsuariosRol.objects.filter(id_usuario=pk)

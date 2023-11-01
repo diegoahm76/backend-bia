@@ -18,7 +18,7 @@ class GetSucursalesEmpresasView(generics.ListAPIView):
     def get(self, request, id):
         queryset = SucursalesEmpresas.objects.all().filter(id_persona_empresa=id)
         serializer = self.serializer_class(queryset, many=True)
-        return Response({'success': True, 'detail':'Se muestra los datos la facilidad de pago', 'data': serializer.data}, status=status.HTTP_200_OK)   
+        return Response({'success': True, 'detail':'Se muestra los datos las sucursales de la entidad', 'data': serializer.data}, status=status.HTTP_200_OK)   
 
 
 class getSucursalEmpresaById(generics.RetrieveAPIView):
@@ -97,7 +97,7 @@ class PutSucursalEmpresa(generics.RetrieveUpdateAPIView):
             descripcion_sucursal = sucursal_serializer.validated_data.get('descripcion_sucursal')
 
             aprobado = False
-            print("SUCURSAL", sucursal.descripcion_sucursal)
+            
             if sucursal.descripcion_sucursal == descripcion_sucursal:
                 aprobado = True
             else:
@@ -109,7 +109,6 @@ class PutSucursalEmpresa(generics.RetrieveUpdateAPIView):
             if aprobado == True:
                 sucursal_serializer.save()
                 usuario = request.user.id_usuario
-                print("ID SUCURSAL", sucursal.direccion)
                 persona=Personas.objects.get(id_persona=request.data['id_persona_empresa'])
                 dirip = Util.get_client_ip(request)
                 descripcion ={ "nombre razón social": str(persona.razon_social),"sucursal" :str(sucursal.descripcion_sucursal)}
