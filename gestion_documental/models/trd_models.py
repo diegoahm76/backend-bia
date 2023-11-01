@@ -48,7 +48,8 @@ class FormatosTiposMedio(models.Model):
     registro_precargado=models.BooleanField(default=False, db_column='T210registroPrecargado')
     activo = models.BooleanField(default=True, db_column='T210activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T210itemYaUsado')
-
+    control_tamagno_max = models.BooleanField(null=True, db_column='T210controlarTamagnoMax')
+    tamagno_max_mb = models.SmallIntegerField(null=True,blank=True ,db_column='T210tamagnoMaxEnMB')
     def __str__(self):
         return str(self.nombre)
 
