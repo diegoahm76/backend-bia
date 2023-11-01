@@ -950,11 +950,18 @@ class RegisterFormatosTiposMedio(generics.CreateAPIView):
         
         if data['cod_tipo_medio_doc'] != "E" and data['cod_tipo_medio_doc'] !="F":
             raise ValidationError('El codigo tipo medio ingresado no es valido para crear.')
-        
+        if data['cod_tipo_medio_doc'] == "E":
+            if data['control_tamagno_max']:
+                print('control acceso')
+                if not data['tamagno_max_mb']:
+                    raise ValidationError('el tamaño maximo es requerido.') 
+                else:
+                    if data['tamagno_max_mb'] <= 0:
+                        raise ValidationError('el tamaño maximo debe ser mayor a 0.')
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
-        return Response({'success':True, 'detail':'Se ha creado el Formato Tipo Medio exitosamente.'}, status=status.HTTP_201_CREATED)
+        return Response({'success':True, 'detail':'Se ha creado el Formato Tipo Medio exitosamente.','data':serializador.data}, status=status.HTTP_201_CREATED)
 
 #ACTUALIZAR FORMATOS TIPO MEDIO
 class UpdateFormatosTiposMedio(generics.RetrieveUpdateAPIView):
@@ -963,19 +970,27 @@ class UpdateFormatosTiposMedio(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
+        data=request.data
         formato_tipo_medio = FormatosTiposMedio.objects.filter(id_formato_tipo_medio=pk).first()
-
+        previus = copy.copy(formato_tipo_medio)
         if formato_tipo_medio:
-            if not formato_tipo_medio.registro_precargado:
-                if formato_tipo_medio.item_ya_usado:
-                    raise PermissionDenied('Este formato tipo medio ya está siendo usado, por lo cual no es actualizable')
-
-                serializer = self.serializer_class(formato_tipo_medio, data=request.data, many=False)
-                serializer.is_valid(raise_exception=True)
-                serializer.save()
-                return Response({'success':True, 'detail':'Registro actualizado exitosamente'}, status=status.HTTP_201_CREATED)
+            if  formato_tipo_medio.registro_precargado:
+                if 'nombre' in data and  previus.nombre != data['nombre']:
+                    raise ValidationError('No se puede cambiar el nombre de un registro precargado.')
+                if  'cod_tipo_medio_doc' in data and previus.cod_tipo_medio_doc != data['cod_tipo_medio_doc']:
+                    raise ValidationError('No se puede cambiar el codigo de un registro precargado.')
+            if data['cod_tipo_medio_doc'] == "E":
+                    
+                if not data['tamagno_max_mb']:
+                    raise ValidationError('el tamaño maximo es requerido.') 
             else:
-                raise PermissionDenied('No puede actualizar un formato tipo medio precargado')
+                if data['tamagno_max_mb'] <= 0:
+                    raise ValidationError('el tamaño maximo debe ser mayor a 0.')
+            serializer = self.serializer_class(formato_tipo_medio, data=request.data, many=False)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response({'success':True, 'detail':'Registro actualizado exitosamente','data':serializer.data}, status=status.HTTP_201_CREATED)
+
         else:
             raise NotFound('No existe el formato tipo medio')
 
