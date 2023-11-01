@@ -1,6 +1,7 @@
 from datetime import datetime
 import hashlib
 import os
+import json
 from django.db.utils import IntegrityError
 from django.core.files.base import ContentFile
 import secrets
@@ -10,14 +11,14 @@ from gestion_documental.models.depositos_models import CarpetaCaja
 from gestion_documental.models.expedientes_models import ExpedientesDocumentales,ArchivosDigitales,DocumentosDeArchivoExpediente,IndicesElectronicosExp,Docs_IndiceElectronicoExp,CierresReaperturasExpediente,ArchivosSoporte_CierreReapertura
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from django.shortcuts import get_object_or_404
-from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, TablaRetencionDocumental, TipologiasDoc
+from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, FormatosTiposMedio, TablaRetencionDocumental, TipologiasDoc
 from gestion_documental.serializers.conf__tipos_exp_serializers import ConfiguracionTipoExpedienteAgnoGetSerializer
 from gestion_documental.serializers.trd_serializers import BusquedaTRDNombreVersionSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from seguridad.utils import Util
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AnularExpedienteSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, AperturaExpedienteUpdateAutSerializer, AperturaExpedienteUpdateNoAutSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, BorrarExpedienteSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, ExpedienteAperturaSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, ListarTRDSerializer, ListarTipologiasSerializer, SerieSubserieUnidadTRDGetSerializer
+from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AnularExpedienteSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, AperturaExpedienteUpdateAutSerializer, AperturaExpedienteUpdateNoAutSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, BorrarExpedienteSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, ExpedienteAperturaSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, IndexarDocumentosCreateSerializer, ListExpedientesComplejosSerializer, ListarTRDSerializer, ListarTipologiasSerializer, SerieSubserieUnidadTRDGetSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Max 
@@ -1394,3 +1395,148 @@ class ReaperturaExpediente(generics.CreateAPIView):
             raise NotFound('El expediente especificado no existe.')
         except Exception as e:
             raise ValidationError((e.args))        
+        
+class TrdActualRetiradosGet(generics.ListAPIView):
+    serializer_class = BusquedaTRDNombreVersionSerializer 
+    queryset = TablaRetencionDocumental.objects.filter(Q(actual=True) | (Q(actual=False) & ~Q(fecha_retiro_produccion=None)))
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        filter={}
+        for key, value in request.query_params.items():
+            if key in ['nombre','version']:
+                if value != '':
+                    filter[key+'__icontains'] = value
+        
+        trd = self.queryset.filter(**filter).order_by('-actual')
+        serializador = self.serializer_class(trd, many=True, context = {'request':request})
+        return Response({'succes': True, 'detail':'Resultados de la búsqueda', 'data':serializador.data}, status=status.HTTP_200_OK)
+
+class ListExpedientesComplejosGet(generics.ListAPIView):
+    serializer_class = ListExpedientesComplejosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_catserie_unidadorg):
+        expedientes = ExpedientesDocumentales.objects.filter(id_cat_serie_und_org_ccd_trd_prop=id_catserie_unidadorg)
+        
+        serializer = self.serializer_class(expedientes, many=True)
+        return Response({'succes': True, 'detail':'Resultados de la búsqueda', 'data':serializer.data}, status=status.HTTP_200_OK)
+    
+class IndexarDocumentosCreate(generics.CreateAPIView):
+    serializer_class = IndexarDocumentosCreateSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def create(self, request, id_expediente_documental):
+        data = request.data
+        data_documentos = json.loads(data['data_documentos'])
+        archivos = request.FILES.getlist('archivos')
+        
+        expediente = ExpedientesDocumentales.objects.filter(id_expediente_documental=id_expediente_documental).first()
+        if not expediente:
+            raise NotFound('No se encontró el expediente ingresado')
+        
+        indice_electronico = IndicesElectronicosExp.objects.filter(id_expediente_doc=id_expediente_documental).first()
+        if not indice_electronico:
+            raise NotFound('Debe crear el índice electrónico del expediente elegido antes de continuar')
+        
+        if len(data_documentos) != len(archivos):
+            raise ValidationError('Debe enviar la data para cada archivo subido')
+        
+        # Hallar identificacion doc
+        identificacion_doc = ''
+        if expediente.cod_tipo_expediente == 'S':
+            identificacion_doc = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}"
+        else:
+            identificacion_doc = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{expediente.codigo_exp_consec_por_agno:<04d}"
+        
+        documento_principal = None
+        
+        for data, archivo in zip(data_documentos, archivos):
+            # VALIDAR FORMATO ARCHIVO 
+            archivo_nombre = archivo.name
+            nombre_sin_extension, extension = os.path.splitext(archivo_nombre)
+            extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+            
+            tipologia = TipologiasDoc.objects.filter(id_tipologia_documental=data['id_tipologia_documental']).first()
+            formatos_tipos_medio_list = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc=tipologia.cod_tipo_medio_doc.cod_tipo_medio_doc).values_list('nombre', flat=True)
+            
+            if extension_sin_punto.lower() not in list(formatos_tipos_medio_list) and extension_sin_punto.upper() not in list(formatos_tipos_medio_list):
+                raise ValidationError(f'El formato del documento {archivo_nombre} no se encuentra definido para la Tipología Documental elegida')
+            
+            # CREAR ARCHIVO EN T238
+            # Obtiene el año actual para determinar la carpeta de destino
+            year_expediente = expediente.fecha_apertura_expediente.year
+            ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(year_expediente))
+
+            # Calcula el hash MD5 del archivo
+            md5_hash = hashlib.md5()
+            for chunk in archivo.chunks():
+                md5_hash.update(chunk)
+
+            # Obtiene el valor hash MD5
+            md5_value = md5_hash.hexdigest()
+
+            # Crea el archivo digital y obtiene su ID
+            data_archivo = {
+                'es_Doc_elec_archivo': True,
+                'ruta': ruta,
+                'md5_hash': md5_value  # Agregamos el hash MD5 al diccionario de datos
+            }
+            
+            archivo_class = ArchivosDgitalesCreate()
+            respuesta = archivo_class.crear_archivo(data_archivo, archivo)
+            
+            # CREAR DOCUMENTO EN T237
+            data['id_expediente_documental'] = id_expediente_documental
+            data['identificacion_doc_en_expediente'] = f"{identificacion_doc}{data['orden_en_expediente']:010d}" if expediente.cod_tipo_expediente == 'S' else f"{identificacion_doc}{data['orden_en_expediente']:06d}"
+            data['nombre_original_del_archivo'] = archivo.name
+            data['es_version_original'] = True
+            data['es_un_archivo_anexo'] = True if str(data['orden_en_expediente']) != '1' else False
+            data['id_doc_de_arch_del_cual_es_anexo'] = None if not documento_principal else documento_principal.id_documento_de_archivo_exped
+            data['anexo_corresp_a_lista_chequeo'] = False
+            data['id_archivo_sistema'] = respuesta.data.get('data').get('id_archivo_digital')
+            data['documento_requiere_rta'] = False
+            data['creado_automaticamente'] = False
+            data['fecha_indexacion_manual_sistema'] = datetime.now()
+            data['id_und_org_oficina_creadora'] = request.user.persona.id_unidad_organizacional_actual.id_unidad_organizacional
+            data['id_persona_que_crea'] = request.user.persona.id_persona
+            data['id_und_org_oficina_respon_actual'] = request.user.persona.id_unidad_organizacional_actual.id_unidad_organizacional
+            
+            serializer_documento = self.serializer_class(data=data)
+            serializer_documento.is_valid(raise_exception=True)
+            doc_creado = serializer_documento.save()
+            
+            # CREAR REGISTRO EN T240
+            
+            # Calcular la página de inicio
+            last_index_doc = Docs_IndiceElectronicoExp.objects.filter(id_indice_electronico_exp=indice_electronico).order_by('-pagina_fin').first()
+            if last_index_doc:
+                pagina_inicio = last_index_doc.pagina_fin + 1
+            else:
+                pagina_inicio = 1
+
+            # Calcular la página final
+            pagina_inicio = int(pagina_inicio)
+            nro_folios_del_doc = int(data['nro_folios_del_doc'])
+            pagina_fin = pagina_inicio + nro_folios_del_doc - 1
+            
+            Docs_IndiceElectronicoExp.objects.create(
+                id_indice_electronico_exp=indice_electronico,
+                id_doc_archivo_exp=doc_creado,
+                identificación_doc_exped=doc_creado.identificacion_doc_en_expediente,
+                nombre_documento=doc_creado.nombre_asignado_documento,
+                id_tipologia_documental=doc_creado.id_tipologia_documental,
+                fecha_creacion_doc=doc_creado.fecha_creacion_doc,
+                fecha_incorporacion_exp=doc_creado.fecha_incorporacion_doc_a_Exp,
+                valor_huella=md5_value,
+                funcion_resumen="MD5",
+                orden_doc_expediente=doc_creado.orden_en_expediente,
+                pagina_inicio=pagina_inicio,
+                pagina_fin=pagina_fin,
+                formato=doc_creado.id_archivo_sistema.formato,
+                tamagno_kb=doc_creado.id_archivo_sistema.tamagno_kb,
+                cod_origen_archivo=doc_creado.cod_origen_archivo,
+                es_un_archivo_anexo=doc_creado.es_un_archivo_anexo,
+            )
+        
+        return Response({'success':True, 'detail':'Indexación de documentos realizado correctamente'}, status=status.HTTP_201_CREATED)

@@ -254,7 +254,7 @@ class AperturaExpedienteSimpleSerializer(serializers.ModelSerializer):
         if current_date.year != fecha_apertura.year:
             raise ValidationError('No debe enviar una fecha con año distinto al actual')
         
-        request_data = self.context["request"].data
+        request_data = self.initial_data
         
         if request_data['cod_tipo_expediente'] == 'C':
             ultimo_expediente = ExpedientesDocumentales.objects.filter(codigo_exp_und_serie_subserie = request_data['codigo_exp_und_serie_subserie']).order_by('fecha_apertura_expediente').last()
@@ -589,3 +589,199 @@ class ArchivosDigitalesCreateSerializer(serializers.ModelSerializer):
         except FileNotFoundError as e:
 
              raise serializers.ValidationError(str(e))
+
+class ListExpedientesComplejosSerializer(serializers.ModelSerializer):
+    carpetas_caja = serializers.SerializerMethodField()
+    documentos_agregados = serializers.SerializerMethodField()
+    
+    def get_carpetas_caja(self, obj):
+        carpetas_caja = None
+        carpetas_caja = obj.carpetacaja_set.all()
+        serializer = CarpetaCajaAperturaSerializer(carpetas_caja, many=True)
+        data_output = []
+        
+        if carpetas_caja:
+            carpetas_caja_data = json.loads(json.dumps(serializer.data))
+            
+            carpetas_caja_data = sorted(carpetas_caja_data, key=operator.itemgetter("deposito"))
+            
+            for depositos, estantes in itertools.groupby(carpetas_caja_data, key=operator.itemgetter("deposito")):
+                estantes_depositos = list(estantes)
+                for estante in estantes_depositos:
+                    del estante['deposito']
+                
+                estante_data = sorted(estantes_depositos, key=operator.itemgetter("estante"))
+                data_estante = []
+                
+                for estantes, bandejas in itertools.groupby(estante_data, key=operator.itemgetter("estante")):
+                    bandejas_estantes = list(bandejas)
+                    for bandeja in bandejas_estantes:
+                        del bandeja['estante']
+                    
+                    bandeja_data = sorted(bandejas_estantes, key=operator.itemgetter("bandeja"))
+                    data_bandeja = []
+                    
+                    for bandejas, cajas in itertools.groupby(bandeja_data, key=operator.itemgetter("bandeja")):
+                        cajas_bandejas = list(cajas)
+                        for caja in cajas_bandejas:
+                            del caja['bandeja']
+                        
+                        caja_data = sorted(cajas_bandejas, key=operator.itemgetter("caja"))
+                        data_caja = []
+                        
+                        for cajas, carpetas in itertools.groupby(caja_data, key=operator.itemgetter("caja")):
+                            carpetas_cajas = list(carpetas)
+                            for carpeta in carpetas_cajas:
+                                del carpeta['caja']
+                            
+                            items_data = {
+                                "caja": cajas,
+                                "carpetas": carpetas_cajas
+                            }
+                            
+                            data_caja.append(items_data)
+                        
+                        items_data = {
+                            "bandeja": bandejas,
+                            "cajas": data_caja
+                        }
+                        
+                        data_bandeja.append(items_data)
+                    
+                    items_data = {
+                        "estante": estantes,
+                        "bandejas": data_bandeja
+                    }
+                    
+                    data_estante.append(items_data)
+                
+                items_data = {
+                    "deposito": depositos,
+                    "estantes": data_estante
+                }
+                
+                data_output.append(items_data)
+        
+        return data_output
+    
+    def get_documentos_agregados(self, obj):
+        documentos = obj.documentosdearchivoexpediente_set.all().order_by('orden_en_expediente')
+        
+        documentos = documentos.values(
+            "id_documento_de_archivo_exped",
+            "orden_en_expediente",
+            "nombre_asignado_documento",
+            tipologia = F("id_tipologia_documental__nombre")
+        ) if documentos else []
+        
+        return documentos
+    
+    class Meta:
+        model =  ExpedientesDocumentales
+        fields = [
+            'id_expediente_documental',
+            'codigo_exp_und_serie_subserie',
+            'codigo_exp_Agno',
+            'codigo_exp_consec_por_agno',
+            'titulo_expediente',
+            'descripcion_expediente',
+            'fecha_apertura_expediente',
+            'carpetas_caja',
+            'documentos_agregados'
+        ]
+        
+class IndexarDocumentosCreateSerializer(serializers.ModelSerializer):
+    
+    def validate_fecha_incorporacion_doc_a_Exp(self, fecha_incorp):
+        request_data = self.initial_data
+        ultimo_doc_expediente = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=request_data['id_expediente_documental']).order_by('orden_en_expediente').last()
+        
+        if ultimo_doc_expediente and fecha_incorp < ultimo_doc_expediente.fecha_incorporacion_doc_a_Exp:
+            raise ValidationError(f'La fecha de incorporación de los documentos deben ser mayor al último documento ya ingresado del expediente elegido ({str(ultimo_doc_expediente.fecha_incorporacion_doc_a_Exp)})')
+        
+        return fecha_incorp
+    
+    def validate_fecha_creacion_doc(self, fecha_creacion):
+        request_data = self.initial_data
+        fecha_incorp = datetime.strptime(request_data['fecha_incorporacion_doc_a_Exp'], '%Y-%m-%d')
+        print("fecha_creacion: ", fecha_creacion)
+        print("fecha_incorp: ", fecha_incorp)
+        
+        if fecha_creacion > fecha_incorp:
+            raise ValidationError('La Fecha de Creación del Documento tiene que ser igual o anterior a la Fecha de Incorporación al Expediente')
+        
+        return fecha_creacion
+    
+    def validate_codigo_radicado_consecutivo(self, codigo_radicado_consecutivo):
+        request_data = self.initial_data
+        if codigo_radicado_consecutivo and not request_data.get('codigo_radicado_agno'):
+            raise ValidationError('Debe llenar mínimo el Consecutivo y el Año o los 3 campos')
+            
+        return codigo_radicado_consecutivo
+    
+    def validate_codigo_radicado_agno(self, codigo_radicado_agno):
+        request_data = self.initial_data
+        if codigo_radicado_agno and not request_data.get('codigo_radicado_consecutivo'):
+            raise ValidationError('Debe llenar mínimo el Consecutivo y el Año o los 3 campos')
+            
+        return codigo_radicado_agno
+    
+    def validate_codigo_radicado_prefijo(self, codigo_radicado_prefijo):
+        request_data = self.initial_data
+        if codigo_radicado_prefijo and not request_data.get('codigo_radicado_agno') and not request_data.get('codigo_radicado_consecutivo'):
+            raise ValidationError('Debe llenar mínimo el Consecutivo y el Año o los 3 campos')
+            
+        return codigo_radicado_prefijo
+    
+    def validate_palabras_clave_documento(self, palabras):
+        palabras_split = palabras.split('|')
+        
+        if len(palabras_split) > 5:
+            raise ValidationError('No debe enviar más de 5 palabras clave')
+        
+        return palabras
+    
+    class Meta:
+        model =  DocumentosDeArchivoExpediente
+        fields = [
+            'id_expediente_documental',
+            'identificacion_doc_en_expediente',
+            'nombre_asignado_documento',
+            'nombre_original_del_archivo',
+            'fecha_creacion_doc',
+            'fecha_incorporacion_doc_a_Exp',
+            'descripcion',
+            'asunto',
+            'cod_categoria_archivo',
+            'es_version_original',
+            'tiene_replica_fisica',
+            'nro_folios_del_doc',
+            'cod_origen_archivo',
+            'orden_en_expediente',
+            'id_tipologia_documental',
+            'codigo_radicado_prefijo',
+            'codigo_radicado_agno',
+            'codigo_radicado_consecutivo',
+            'es_un_archivo_anexo',
+            'id_doc_de_arch_del_cual_es_anexo',
+            'anexo_corresp_a_lista_chequeo',
+            'id_archivo_sistema',
+            'palabras_clave_documento',
+            'documento_requiere_rta',
+            'creado_automaticamente',
+            'fecha_indexacion_manual_sistema',
+            'id_und_org_oficina_creadora',
+            'id_persona_que_crea',
+            'id_und_org_oficina_respon_actual'
+        ]
+        extra_kwargs = {
+            'fecha_incorporacion_doc_a_Exp': {'required': True, 'allow_null':False},
+            'fecha_creacion_doc': {'required': True, 'allow_null':False},
+            'id_tipologia_documental': {'required': True, 'allow_null':False},
+            'nro_folios_del_doc': {'required': True, 'allow_null':False},
+            'cod_origen_archivo': {'required': True, 'allow_blank':False, 'allow_null':False},
+            'cod_categoria_archivo': {'required': True, 'allow_blank':False, 'allow_null':False},
+            'tiene_replica_fisica': {'required': True, 'allow_null':False},
+            'nombre_asignado_documento': {'required': True, 'allow_blank':False, 'allow_null':False},
+            'descripcion': {'required': True, 'allow_blank':False, 'allow_null':False},
+        }
