@@ -15,6 +15,11 @@ urlpatterns = [
     path('expedientes/apertura-expediente/anular/<str:id_expediente_documental>/',views.AnularExpediente.as_view(), name='anular-expediente'),
     path('expedientes/apertura-expediente/borrar/<str:id_expediente_documental>/',views.BorrarExpediente.as_view(), name='borrar-expediente'),
     
+    #Indexación de documentos
+    path('expedientes/trd-actual-retirados/',views.TrdActualRetiradosGet.as_view(), name='trd-actual-retirados'),
+    path('expedientes/list-complejos/get/<str:id_catserie_unidadorg>/',views.ListExpedientesComplejosGet.as_view(), name='list-exp-complejos'),
+    path('expedientes/indexar-documentos/create/<str:id_expediente_documental>/',views.IndexarDocumentosCreate.as_view(), name='indexar-documentos'),
+    
     #Cierre de expedientes         
      path('expedientes/buscar-expediente-abierto/',views.ExpedienteSearch.as_view(), name='buscar-expediente'),
      path('expedientes/listar-trd/',views.TrdDateGet.as_view(), name='listar-trd'),
