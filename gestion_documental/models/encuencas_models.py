@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from gestion_documental.choices.rango_edad_choices import RANGO_EDAD_CHOICES
+from transversal.models.alertas_models import AlertasGeneradas
 
 from transversal.models.base_models import Departamento, Municipio, Paises, Sexo, TipoDocumento
 
@@ -125,3 +126,19 @@ class RespuestaEncuesta(models.Model):
         db_table = 'T252Respuestas_Encuesta'
         verbose_name = 'Respuesta de Encuesta'
         verbose_name_plural = 'Respuestas de Encuesta'
+
+
+class AsignarEncuesta(models.Model):
+    id_asignar_encuesta = models.BigAutoField(primary_key=True, db_column='TXXXIdAsignar_Encuesta')
+    id_encuesta = models.ForeignKey(EncabezadoEncuesta, on_delete=models.CASCADE, db_column='TXXXId_Encuesta')
+    id_persona = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='TXXXId_Persona')
+    id_alerta_generada = models.ForeignKey(AlertasGeneradas, on_delete=models.CASCADE, db_column='TXXXId_Alerta_Generada', null=True, blank=True)
+    
+    def __str__(self):
+        return f'Respuesta de Encuesta {self.id_asignar_encuesta}'
+
+    class Meta:
+        db_table = 'TXXXAsignar_Encuesta'
+        verbose_name = 'Respuesta de Encuesta'
+        verbose_name_plural = 'Respuestas de Encuesta'
+        unique_together = (('id_encuesta', 'id_persona'),)

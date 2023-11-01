@@ -89,6 +89,17 @@ urlpatterns = [
      path('archivoFisico/listar-carpetas/<int:id_caja_bandeja>/',views.CarpetaGetAll.as_view(),name='listar-todos-carpetas'),
      path('archivoFisico/consultar-expediente/<int:id_carpeta_caja>/',views.ConsultarNumeroExpediente.as_view(),name='consultar-expediente'),
      path('archivoFisico/ver-expediente/<int:id_carpeta_caja>/',views.ReviewExpediente.as_view(),name='ver-expediente'),
+     path('archivoFisico/choices-deposito/',views.DepositoChoices.as_view(),name='choices-deposito'),
+     path('archivoFisico/busqueda-avanzada-deposito/',views.BusquedaDepositoArchivoFisico.as_view(),name='busqueda-archivo-fisico-deposito'),
+     path('archivoFisico/busqueda-avanzada-estante/',views.BusquedaEstanteArchivoFisico.as_view(),name='busqueda-archivo-fisico-estante'),
+     path('archivoFisico/busqueda-avanzada-bandeja/',views.BusquedaBandejaArchivoFisico.as_view(),name='busqueda-archivo-fisico-bandeja'),
+     path('archivoFisico/busqueda-avanzada-caja/',views.BusquedaCajaArchivoFisico.as_view(),name='busqueda-archivo-fisico-caja'),
+     path('archivoFisico/busqueda-avanzada-carpeta/',views.BusquedaCarpetaArchivoFisico.as_view(),name='busqueda-archivo-fisico-carpeta'),
+     path('archivoFisico/informacion-arbol/<int:id_deposito>/', views.ListarInformacionArbol.as_view(), name='listar-informacion'),
+
+
+
+
 
 
      

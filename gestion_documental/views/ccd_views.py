@@ -29,7 +29,8 @@ from gestion_documental.serializers.ccd_serializers import (
     AgrupacionesDocumentalesPersistenteTemporalSerializer,
     UnidadesSeccionResponsableTemporalSerializer,
     UnidadesSeccionResponsableTemporalGetSerializer,
-    UnidadesSeccionPersistenteTemporalGetSerializer
+    UnidadesSeccionPersistenteTemporalGetSerializer,
+    OficinaUnidadOrganizacionalSerializer
 )
 from transversal.models.organigrama_models import Organigramas
 from gestion_documental.models.ccd_models import (
@@ -1494,12 +1495,6 @@ class SeriesDocUnidadCatSerieCCDActualGetView(generics.ListAPIView):
         except CuadrosClasificacionDocumental.DoesNotExist:
             raise NotFound('CCD no encontrado o no cumple con TRD y TCA terminados')
         
-        try:
-            organigrama_actual = Organigramas.objects.get(id_organigrama=ccd_actual.id_organigrama.id_organigrama, actual=True)
-            organigrama = Organigramas.objects.get(id_organigrama=ccd.id_organigrama.id_organigrama)
-        except Organigramas.DoesNotExist:
-            raise NotFound('No se ha encontrado organigrama')
-        
         if not UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=data_in['id_unidad_actual']).exists(): 
             raise NotFound('No se encontro unidad organizacional actual')
         
@@ -1566,6 +1561,7 @@ class UnidadesSeccionResponsableTemporalCreateView(generics.CreateAPIView):
             (id_unidad['id_unidad_actual'], id_unidad['id_unidad_nueva'])
             for id_unidad in data_in['unidades_responsables']
         )
+        print("UNIDADES NUEVAS", unidades_nuevas_set)
         all_ids = {id_unidad for tupla in unidades_nuevas_set for id_unidad in tupla}
 
         if not UnidadesOrganizacionales.objects.filter(id_unidad_organizacional__in=all_ids).count() == len(all_ids):
@@ -1578,7 +1574,7 @@ class UnidadesSeccionResponsableTemporalCreateView(generics.CreateAPIView):
         )
         unidades_a_eliminar = unidades_existentes_set - unidades_nuevas_set
         unidades_a_crear = unidades_nuevas_set - unidades_existentes_set
-
+        print("UNIDADES A ELIMINAR", unidades_a_eliminar)
         self.delete_unidades_responsable_tmp(ccd.id_ccd, unidades_a_eliminar)
 
         for unidad in unidades_a_crear:
@@ -1609,9 +1605,6 @@ class UnidadesSeccionResponsableTemporalCreateView(generics.CreateAPIView):
     def post(self, request):
         data = request.data
         unidades_responsables = self.crear_actualizar_unidades_responsable_tmp(data)
-
-        if not unidades_responsables:
-            raise ValidationError('No se realizaron cambios en las unidades responsables')
 
         return Response({'success': True, 'detail': 'Se crean o actualizan unidades responsables', 'data': unidades_responsables}, status=status.HTTP_201_CREATED)
 
@@ -1657,15 +1650,79 @@ class ValidacionCCDDelegacionView(generics.ListAPIView):
         except CuadrosClasificacionDocumental.DoesNotExist:
             raise NotFound('CCD no encontrado o no cumple con TRD y TCA terminados')
         
+        try:
+            ccd_actual = CuadrosClasificacionDocumental.objects.get(actual=True)
+        except CuadrosClasificacionDocumental.DoesNotExist:
+            raise NotFound('CCD no se encuentra como actual')
+        
         unidades_persistentes = UnidadesSeccionPersistenteTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd)
-        ids_unidad_ccd_nuevo = [unidad.id_unidad_seccion_nueva.id_unidad_organizacional for unidad in unidades_persistentes]
+        ids_unidad_ccd_actual = [unidad.id_unidad_seccion_actual.id_unidad_organizacional for unidad in unidades_persistentes]
 
-        unidades_persistentes = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd, es_registro_asig_seccion_responsable=True)
-        ids_unidad_ccd_nuevo = ids_unidad_ccd_nuevo + [unidad.id_unidad_seccion_nueva.id_unidad_organizacional for unidad in unidades_persistentes]        
+        unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd, es_registro_asig_seccion_responsable=True)
+        ids_unidad_ccd_actual = ids_unidad_ccd_actual + [unidad.id_unidad_seccion_actual.id_unidad_organizacional for unidad in unidades_responsables]        
         
-        unidades_organizacionales_nuevo = UnidadesOrganizacionales.objects.filter(id_organigrama=ccd.id_organigrama.id_organigrama,cod_agrupacion_documental__isnull=False
-                                                                                  ).exclude(id_unidad_organizacional__in=ids_unidad_ccd_nuevo)
+        unidades_organizacionales_actual = UnidadesOrganizacionales.objects.filter(id_organigrama=ccd_actual.id_organigrama.id_organigrama,cod_agrupacion_documental__isnull=False
+                                                                                  ).exclude(id_unidad_organizacional__in=ids_unidad_ccd_actual)
         
-        serializer = self.serializer_class(unidades_organizacionales_nuevo, many=True)
+        serializer = self.serializer_class(unidades_organizacionales_actual, many=True)
 
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+class UnidadesOrganizacionalesActualResponsableView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class_per = UnidadesSeccionPersistenteTemporalGetSerializer
+    serializer_class_res = UnidadesSeccionResponsableTemporalGetSerializer
+
+    def get(self, request, id_ccd_nuevo):
+        ccd_filro = BusquedaCCDHomologacionView().get_validacion_ccd()
+
+        try:
+            ccd = ccd_filro.get(id_ccd=id_ccd_nuevo)
+        except CuadrosClasificacionDocumental.DoesNotExist:
+            raise NotFound('CCD no encontrado o no cumple con TRD y TCA terminados')
+        
+        unidades_persistentes = UnidadesSeccionPersistenteTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd)
+        unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd, es_registro_asig_seccion_responsable=True)
+
+        serializer_per = self.serializer_class_per(unidades_persistentes, many=True)
+        serializer_res = self.serializer_class_res(unidades_responsables, many=True)
+        data_out = []
+        for unidad in serializer_per.data:
+            data_json = {
+                'id_unidad_actual': unidad['id_unidad_actual'],
+                'cod_unidad_actual': unidad['cod_unidad_actual'],
+                'nom_unidad_actual': unidad['nom_unidad_actual'],
+                'id_unidad_nueva': unidad['id_unidad_nueva'],
+                'cod_unidad_nueva': unidad['cod_unidad_nueva'],
+                'nom_unidad_nueva': unidad['nom_unidad_nueva'],
+            }
+            data_out.append(data_json)
+
+        for unidad in serializer_res.data:
+            data_json = {
+                'id_unidad_actual': unidad['id_unidad_seccion_actual'],
+                'cod_unidad_actual': unidad['cod_unidad_actual'],
+                'nom_unidad_actual': unidad['nom_unidad_actual'],
+                'id_unidad_nueva': unidad['id_unidad_seccion_nueva'],
+                'cod_unidad_nueva': unidad['cod_unidad_nueva'],
+                'nom_unidad_nueva': unidad['nom_unidad_nueva'],
+            }
+            data_out.append(data_json)
+
+        data_out = sorted(data_out, key=lambda x: x['cod_unidad_actual'], reverse=False)
+
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data_out}, status=status.HTTP_200_OK)
+
+
+
+class OficinaUnidadOrganizacionalGetView(generics.ListAPIView):
+    serializer_class = OficinaUnidadOrganizacionalSerializer
+    permission_classes = [IsAuthenticated]
+
+
+
+
+
+
+
+

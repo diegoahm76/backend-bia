@@ -114,10 +114,11 @@ class UserPutAdminSerializer(serializers.ModelSerializer):
     is_active = serializers.BooleanField(required=False)
     is_blocked = serializers.BooleanField(write_only=True)
     justificacion = serializers.CharField(max_length=255, write_only=True, required=False)
+    #sucursal_defecto = serializers.ReadOnlyField(source='sucursal_defecto.id_sucursal_empresa', default=None)
 
     class Meta:
         model = User
-        fields = ['is_active', 'is_blocked', 'tipo_usuario', 'profile_img', 'justificacion']
+        fields = ['is_active', 'is_blocked', 'tipo_usuario', 'profile_img', 'justificacion', 'sucursal_defecto']
 
 class UsuarioRolesLookSerializers(serializers.ModelSerializer):
     nombre_usuario = serializers.ReadOnlyField(source='id_usuario.nombre_de_usuario', default=None)
@@ -488,6 +489,8 @@ class UsuarioFullSerializer(serializers.ModelSerializer):
     justificacion_ultimo_cambio_activacion = serializers.SerializerMethodField()
     fecha_ultimo_cambio_bloqueo = serializers.SerializerMethodField()
     justificacion_ultimo_cambio_bloqueo = serializers.SerializerMethodField()
+    id_sucursal_empresa = serializers.ReadOnlyField(source='sucursal_defecto.id_sucursal_empresa',default=None)
+    descripcion_sucursal_empresa = serializers.ReadOnlyField(source='sucursal_defecto.descripcion_sucursal',default=None)
     
     #RETORNAR NOMBRE COMPLETO
     def get_nombre_completo(self, obj):
@@ -589,7 +592,9 @@ class UsuarioFullSerializer(serializers.ModelSerializer):
             'id_usuario_creador',
             'primer_nombre_usuario_creador',
             'primer_apellido_usuario_creador',
-            'roles'
+            'roles',
+            'id_sucursal_empresa',
+            'descripcion_sucursal_empresa'
         ]
         model = User
 

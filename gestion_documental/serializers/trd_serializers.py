@@ -201,7 +201,30 @@ class FormatosTiposMedioPostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FormatosTiposMedio
-        fields = ['cod_tipo_medio_doc', 'nombre', 'activo']
+        #fields = ['cod_tipo_medio_doc', 'nombre', 'activo']
+        fields = '__all__'
+        extra_kwargs = {
+            'cod_tipo_medio_doc': {'required': True},
+            'nombre': {'required': True}
+        }
+        validators = [
+           UniqueTogetherValidator(
+               queryset=FormatosTiposMedio.objects.all(),
+               fields = ['cod_tipo_medio_doc', 'nombre'],
+               message='No puede registrar un tipo de medio más de una vez con el mismo nombre'
+           )
+        ]
+
+
+class FormatosTiposMedioPutSerializer(serializers.ModelSerializer):
+    nombre = serializers.CharField(max_length=30)
+    id_formato_tipo_medio = serializers.ReadOnlyField()
+    cod_tipo_medio_doc = serializers.ReadOnlyField()
+    nombre = serializers.ReadOnlyField()
+    class Meta:
+        model = FormatosTiposMedio
+        #fields = ['cod_tipo_medio_doc', 'nombre', 'activo']
+        fields = '__all__'
         extra_kwargs = {
             'cod_tipo_medio_doc': {'required': True},
             'nombre': {'required': True}

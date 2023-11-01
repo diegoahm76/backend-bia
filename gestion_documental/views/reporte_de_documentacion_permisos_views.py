@@ -54,16 +54,21 @@ class UnidadesSeccionSubseccionGet(generics.ListAPIView):
         
         catalogo_series_unidad= CatalogosSeriesUnidad.objects.filter(id_cat_serie_und__in=catalogo_ids_list).order_by('id_unidad_organizacional')
 
-        unidades=[]
-        
+        unidades = set()  # Usamos un conjunto para garantizar elementos únicos
+
         for x in catalogo_series_unidad.distinct():
-            
-            unidad=x.id_unidad_organizacional
+            unidad = x.id_unidad_organizacional
             if unidad.cod_agrupacion_documental:
                 serializer = self.serializer_class(unidad)
-                unidades.append(serializer.data)
-        #serializer = self.serializer_class(catalogo_series_unidad,many=True)
-        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':unidades},status=status.HTTP_200_OK)
+                unidades.add(tuple(serializer.data.items()))  # Agregamos la tupla a 'unidades'
+
+        # Ahora 'unidades' contiene datos únicos
+
+        # Convertimos 'unidades' de conjunto a lista para la respuesta
+        unidades_unicas = [dict(item) for item in unidades]
+
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.', 'data': unidades_unicas}, status=status.HTTP_200_OK)
+        
     
 
 #PermisosUndsOrgActualesSerieExpCCD
@@ -125,21 +130,50 @@ class PermisosExpedientesNoPropios(generics.ListAPIView):
     queryset = PermisosUndsOrgActualesSerieExpCCD.objects.filter()
     permission_classes = [IsAuthenticated]
     serializer_serie_subserie = SerieSubserieReporteSerializer
+
+
+    def denegaciones(self, id_cat_serie_und):
+        denegacion_permisos = self.queryset.filter(id_cat_serie_und_org_ccd=id_cat_serie_und, id_und_organizacional_actual=None).first()
+        #print(denegacion_permisos)
+        if not denegacion_permisos:
+            return None
+        serializador = self.serializer_class(denegacion_permisos)
+        return serializador.data
+    
+
+
+
+
+    
     def get(self, request, uni):
         instance2 = CatalogosSeriesUnidad.objects.filter(id_unidad_organizacional=uni)
 
         permisos = UnidadesExternasPermisosGetView()
-        denegacion = DenegacionPermisosGetView()
+        
         data=[]
         for x in instance2:
             
             response = permisos.get( request, x.id_cat_serie_und)
-            response_permisos = denegacion.get( request, x.id_cat_serie_und)
-            data.append({
-                'catalogo':self.serializer_serie_subserie(x.id_catalogo_serie,many=False).data,
-                'permisos':response.data['data'],
-                'denegacion':response_permisos.data['data']
-                })
+            data_permisos = []
+            for aux in response.data['data']:
+               if aux['id_permisos_und_org_actual_serie_exp_ccd']:
+                   data_permisos.append(aux)
+            data_denegacion = {}
+            #raise ValidationError("QUE TALLL")
+            respuesta = self.denegaciones(x.id_cat_serie_und)
+            if respuesta:
+                data_denegacion = respuesta
+            #print(datos_denegacion)
+            #print('$$$$')
+            
+            #print(response_permisos.data['data'])
+            if data_denegacion and len(data_permisos) >= 0:
+
+                data.append({
+                    'catalogo':self.serializer_serie_subserie(x.id_catalogo_serie,many=False).data,
+                    'permisos':data_permisos,
+                    'denegacion':data_denegacion
+                    })
         return Response({'succes': True, 'detail':'Resultados encontrados', 'data':data}, status=status.HTTP_200_OK)
     
 class PermisosDenegacion(generics.ListAPIView):

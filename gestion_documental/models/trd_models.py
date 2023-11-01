@@ -1,10 +1,13 @@
 from django.db import models
 from django.forms import ValidationError
-from gestion_documental.models.ccd_models import CatalogosSeriesUnidad, CuadrosClasificacionDocumental
+from gestion_documental.models.ccd_models import CatalogosSeriesUnidad, CuadrosClasificacionDocumental 
 from gestion_documental.choices.disposicion_final_series_choices import disposicion_final_series_CHOICES
 from gestion_documental.choices.tipos_medios_doc_choices import tipos_medios_doc_CHOICES
 from gestion_documental.choices.tipos_medios_formato_choices import tipos_medios_formato_CHOICES
+from gestion_documental.choices.cod_nivel_consecutivo_choices import cod_nivel_consecutivo_CHOICES
 from transversal.models.personas_models import Personas
+from transversal.models.organigrama_models import UnidadesOrganizacionales
+
 
 
 class TablaRetencionDocumental(models.Model):
@@ -45,7 +48,8 @@ class FormatosTiposMedio(models.Model):
     registro_precargado=models.BooleanField(default=False, db_column='T210registroPrecargado')
     activo = models.BooleanField(default=True, db_column='T210activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T210itemYaUsado')
-
+    control_tamagno_max = models.BooleanField(null=True, db_column='T210controlarTamagnoMax')
+    tamagno_max_mb = models.SmallIntegerField(null=True,blank=True ,db_column='T210tamagnoMaxEnMB')
     def __str__(self):
         return str(self.nombre)
 
@@ -157,3 +161,46 @@ class HistoricosCatSeriesUnidadOrgCCDTRD(models.Model):
         db_table = 'T219Historicos_CatSeries_UndOrg_CCD_TRD'
         verbose_name= 'Historicos Categoria Series UnidadOrg CCD TRD'
         verbose_name_plural = 'Historicos Categorias Series UnidadOrg CCD TRD'
+
+class ConfigTipologiasDocAgno(models.Model):
+    id_config_tipologia_doc_agno = models.AutoField(primary_key=True, editable=False, db_column='T246ConfigTipologiasDocAgno')
+    agno_tipologia = models.SmallIntegerField(db_column='T246agnoTipologia')
+    id_tipologia_doc = models.ForeignKey(TipologiasDoc, on_delete=models.CASCADE, db_column='T246Id_TipologiaDoc')
+    maneja_consecutivo = models.BooleanField(default=False, db_column='T246manejaConsecutivo')
+    cod_nivel_consecutivo = models.CharField(max_length=2,null=True, blank=True, choices=cod_nivel_consecutivo_CHOICES, db_column='T246codNivelDelConsecutivo')
+    item_ya_usado = models.BooleanField(default=False, db_column='T246itemYaUsado')
+    class Meta:
+        db_table = 'T246ConfigTipologiasDocAgno'
+        verbose_name = 'Configuracion de tipologia documental'
+        verbose_name_plural = 'Configuracion de tipologias documentales'
+        unique_together = [('id_tipologia_doc'),( 'agno_tipologia')]
+
+
+class ConsecPorNivelesTipologiasDocAgno(models.Model):
+    id_consec_nivel_tipologias_doc_agno = models.AutoField(primary_key=True, editable=False, db_column='T247IdConsecPorNivel_TipologiasDocAgno')
+    id_config_tipologia_doc_agno = models.ForeignKey(ConfigTipologiasDocAgno, on_delete=models.CASCADE, db_column='T247Id_ConfigTipologiaDocAgno')
+    id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, null=True, blank=True, on_delete=models.SET_NULL, db_column='T247Id_UnidadOrganizacional')
+    id_trd = models.ForeignKey(TablaRetencionDocumental, null=True, blank=True, on_delete=models.SET_NULL, db_column='T247Id_TRD')
+    consecutivo_inicial = models.IntegerField(db_column='T247consecutivoInicial')
+    cantidad_digitos = models.SmallIntegerField(db_column='T247cantidadDigitos')
+    prefijo_consecutivo = models.CharField(max_length=10, null=True, blank =True, db_column='T247prefijoConsecutivo')
+    item_ya_usado = models.BooleanField(default=False, db_column='T247itemYaUsado')
+    id_persona_ult_config_implemen = models.ForeignKey(Personas, related_name='id_persona_ult_config_implemen', null=True, blank=True, on_delete=models.SET_NULL, db_column='T247Id_PersonaUltConfigImplemen')
+    fecha_ult_config_implemen = models.DateTimeField(auto_now=True, null=True, blank=True, db_column='T247fechaUltConfigImplemen')
+    consecutivo_actual = models.IntegerField(db_column='T247consecutivoActual')
+    fecha_consecutivo_actual = models.DateTimeField(auto_now=True, null=True, blank=True, db_column='T247fechaConsecutivoActual')
+    id_persona_consecutivo_actual = models.ForeignKey(Personas, null=True, blank=True,related_name='id_persona_consecutivo_actual', on_delete=models.SET_NULL, db_column='T247Id_PersonaConsecutivoActual')
+
+    class Meta:
+        db_table = 'T247ConsecPorNiveles_TipologiasDocAgno'
+        verbose_name = 'Consecutivo por nivel de tipologia documental'
+        verbose_name_plural = 'Consecutivos por niveles de tipologias documentales'
+        unique_together = [('id_config_tipologia_doc_agno'),( 'id_unidad_organizacional')]
+
+
+
+
+
+
+
+

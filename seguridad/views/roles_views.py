@@ -55,7 +55,7 @@ class GetRolByName(ListAPIView):
 class GetRol(ListAPIView):
     serializer_class=RolesSerializer
     permission_classes = [IsAuthenticated]
-    queryset=Roles.objects.all().exclude(id_rol=1).order_by('id_rol')
+    queryset=Roles.objects.all().exclude(id_rol=1).order_by('nombre_rol')
     
 class RegisterRol(CreateAPIView):
     serializer_class=RolesSerializer
