@@ -1714,12 +1714,78 @@ class UnidadesOrganizacionalesActualResponsableView(generics.ListAPIView):
         return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data_out}, status=status.HTTP_200_OK)
 
 
-
-class OficinaUnidadOrganizacionalGetView(generics.ListAPIView):
+class OficinasUnidadOrganizacionalGetView(generics.ListAPIView):
     serializer_class = OficinaUnidadOrganizacionalSerializer
+
+    def get_oficinas_unidad(self, id_unidad_org_padre, id_ccd):
+
+        try:
+            ccd = CuadrosClasificacionDocumental.objects.get(id_ccd=id_ccd)
+        except CuadrosClasificacionDocumental.DoesNotExist:
+            raise NotFound('CCD no se han encontrado')
+        
+        try:
+            unidad_org = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=id_unidad_org_padre)
+        except UnidadesOrganizacionales.DoesNotExist:
+            raise ValidationError('No se encontro unidad organizacional')
+        
+        oficinas_unidad = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre=id_unidad_org_padre, cod_agrupacion_documental__isnull=True)
+        serializer = self.serializer_class(oficinas_unidad, many=True)
+
+        data = {
+            'id_ccd': ccd.id_ccd,
+            'id_unidad': unidad_org.id_unidad_organizacional,
+            'cod_unidad': unidad_org.codigo,
+            'nom_unidad': unidad_org.nombre,
+            'oficinas': serializer.data 
+            }
+
+        return data 
+
+
+class OficinasUnidadOrganizacionalActualGetView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
+    def get(self, request, id_unidad_org_actual):
 
+        try:
+            unidad_actual = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=id_unidad_org_actual)
+        except UnidadesOrganizacionales.DoesNotExist:
+            raise ValidationError('No se encontraron unidades organizacionales')
+
+        try:
+            ccd = CuadrosClasificacionDocumental.objects.get(id_organigrama=unidad_actual.id_organigrama.id_organigrama, actual=True)
+        except CuadrosClasificacionDocumental.DoesNotExist:
+            raise NotFound('CCD no se encuentra como actual')
+        
+        oficina_instance = OficinasUnidadOrganizacionalGetView()
+        data_oficinas = oficina_instance.get_oficinas_unidad(unidad_actual.id_unidad_organizacional, ccd.id_ccd)
+
+        return Response({'success': True, 'detail': 'Oficina de la unidad actual', 'data': data_oficinas}, status=status.HTTP_200_OK)
+
+
+class OficinasUnidadOrganizacionalNuevaGetView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        ccd_filro = BusquedaCCDHomologacionView().get_validacion_ccd()
+        id_ccd_nuevo = self.request.query_params.get('id_ccd_nuevo', None)
+        id_unidad_nueva = self.request.query_params.get('id_unidad_nueva', None)
+
+        try:
+            ccd = ccd_filro.get(id_ccd=id_ccd_nuevo)
+        except CuadrosClasificacionDocumental.DoesNotExist:
+            raise NotFound('CCD no encontrado o no cumple con TRD y TCA terminados')
+
+        try:
+            unidad_nueva = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=id_unidad_nueva)
+        except UnidadesOrganizacionales.DoesNotExist:
+            raise ValidationError('No se encontraron unidades organizacionales')
+
+        oficina_instance = OficinasUnidadOrganizacionalGetView()
+        data_oficinas = oficina_instance.get_oficinas_unidad(unidad_nueva.id_unidad_organizacional, ccd.id_ccd)
+
+        return Response({'success': True, 'detail': 'Oficina de la unidad nueva', 'data': data_oficinas}, status=status.HTTP_200_OK)
 
 
 
