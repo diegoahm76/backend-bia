@@ -1729,14 +1729,14 @@ class OficinasUnidadOrganizacionalGetView(generics.ListAPIView):
         except UnidadesOrganizacionales.DoesNotExist:
             raise ValidationError('No se encontro unidad organizacional')
         
-        oficinas_unidad = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre=id_unidad_org_padre, cod_agrupacion_documental__isnull=True)
+        oficinas_unidad = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre=id_unidad_org_padre, cod_agrupacion_documental__isnull=True).order_by('codigo')
         serializer = self.serializer_class(oficinas_unidad, many=True)
 
         data = {
             'id_ccd': ccd.id_ccd,
-            'id_unidad': unidad_org.id_unidad_organizacional,
-            'cod_unidad': unidad_org.codigo,
-            'nom_unidad': unidad_org.nombre,
+            'id_unidad_organizacional': unidad_org.id_unidad_organizacional,
+            'codigo': unidad_org.codigo,
+            'nombre': unidad_org.nombre,
             'oficinas': serializer.data 
             }
 
