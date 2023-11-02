@@ -18,7 +18,11 @@ urlpatterns = [
     #Indexación de documentos
     path('expedientes/trd-actual-retirados/',views.TrdActualRetiradosGet.as_view(), name='trd-actual-retirados'),
     path('expedientes/list-complejos/get/<str:id_catserie_unidadorg>/',views.ListExpedientesComplejosGet.as_view(), name='list-exp-complejos'),
-    path('expedientes/indexar-documentos/create/<str:id_expediente_documental>/',views.IndexarDocumentosCreate.as_view(), name='indexar-documentos'),
+    path('expedientes/indexar-documentos/create/<str:id_expediente_documental>/',views.IndexarDocumentosCreate.as_view(), name='indexar-documentos-create'),
+    path('expedientes/indexar-documentos/get/<str:id_documento_de_archivo_exped>/',views.IndexarDocumentosGet.as_view(), name='indexar-documentos-get'),
+    path('expedientes/indexar-documentos/update/<str:id_documento_de_archivo_exped>/',views.IndexarDocumentosUpdate.as_view(), name='indexar-documentos-update'),
+    path('expedientes/indexar-documentos/anular/<str:id_documento_de_archivo_exped>/',views.IndexarDocumentosAnular.as_view(), name='indexar-documentos-anular'),
+    path('expedientes/indexar-documentos/delete/<str:id_documento_de_archivo_exped>/',views.IndexarDocumentosBorrar.as_view(), name='indexar-documentos-borrar'),
     
     #Cierre de expedientes         
      path('expedientes/buscar-expediente-abierto/',views.ExpedienteSearch.as_view(), name='buscar-expediente'),

@@ -2,6 +2,7 @@ from datetime import datetime
 import hashlib
 import os
 import json
+import copy
 from django.db.utils import IntegrityError
 from django.core.files.base import ContentFile
 import secrets
@@ -18,7 +19,7 @@ from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCr
 from seguridad.utils import Util
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AnularExpedienteSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, AperturaExpedienteUpdateAutSerializer, AperturaExpedienteUpdateNoAutSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, BorrarExpedienteSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, ExpedienteAperturaSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, IndexarDocumentosCreateSerializer, ListExpedientesComplejosSerializer, ListarTRDSerializer, ListarTipologiasSerializer, SerieSubserieUnidadTRDGetSerializer
+from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AnularExpedienteSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, AperturaExpedienteUpdateAutSerializer, AperturaExpedienteUpdateNoAutSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, BorrarExpedienteSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, ExpedienteAperturaSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, IndexarDocumentosAnularSerializer, IndexarDocumentosCreateSerializer, IndexarDocumentosGetSerializer, IndexarDocumentosUpdateAutSerializer, IndexarDocumentosUpdateSerializer, ListExpedientesComplejosSerializer, ListarTRDSerializer, ListarTipologiasSerializer, SerieSubserieUnidadTRDGetSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Max 
@@ -1449,7 +1450,9 @@ class IndexarDocumentosCreate(generics.CreateAPIView):
         else:
             identificacion_doc = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{expediente.codigo_exp_consec_por_agno:<04d}"
         
-        documento_principal = None
+        documento_principal = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=id_expediente_documental, es_un_archivo_anexo=False, orden_en_expediente=1).first()
+        if not documento_principal:
+            documento_principal = None
         
         for data, archivo in zip(data_documentos, archivos):
             # VALIDAR FORMATO ARCHIVO 
@@ -1506,6 +1509,9 @@ class IndexarDocumentosCreate(generics.CreateAPIView):
             serializer_documento.is_valid(raise_exception=True)
             doc_creado = serializer_documento.save()
             
+            if str(data['orden_en_expediente']) == '1':
+                documento_principal = doc_creado
+            
             # CREAR REGISTRO EN T240
             
             # Calcular la página de inicio
@@ -1540,3 +1546,157 @@ class IndexarDocumentosCreate(generics.CreateAPIView):
             )
         
         return Response({'success':True, 'detail':'Indexación de documentos realizado correctamente'}, status=status.HTTP_201_CREATED)
+
+class IndexarDocumentosGet(generics.ListAPIView):
+    serializer_class = IndexarDocumentosGetSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_documento_de_archivo_exped):
+        doc_expediente = DocumentosDeArchivoExpediente.objects.filter(id_documento_de_archivo_exped=id_documento_de_archivo_exped).first()
+        
+        serializer = self.serializer_class(doc_expediente)
+        return Response({'succes': True, 'detail':'Resultados de la búsqueda', 'data':serializer.data}, status=status.HTTP_200_OK)
+    
+class IndexarDocumentosUpdate(generics.UpdateAPIView):
+    serializer_class = IndexarDocumentosUpdateSerializer
+    serializer_aut_class = IndexarDocumentosUpdateAutSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def update(self, request, id_documento_de_archivo_exped):
+        data = request.data
+        
+        doc_expediente = DocumentosDeArchivoExpediente.objects.filter(id_documento_de_archivo_exped=id_documento_de_archivo_exped).first()
+        if not doc_expediente:
+            raise NotFound('No se encontró el documento del expediente elegido')
+        
+        if doc_expediente.creado_automaticamente:
+            serializer = self.serializer_aut_class(doc_expediente, data=data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        else:
+            serializer = self.serializer_class(doc_expediente, data=data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        
+            if data.get('nro_folios_del_doc'):
+                indice_electronico = IndicesElectronicosExp.objects.filter(id_expediente_doc=doc_expediente.id_expediente_documental).first()
+                index_doc = Docs_IndiceElectronicoExp.objects.filter(id_indice_electronico_exp=indice_electronico, id_doc_archivo_exp=doc_expediente.id_documento_de_archivo_exped).first()
+                
+                # Calcular la página final
+                pagina_inicio = index_doc.pagina_inicio
+                nro_folios_del_doc = int(data.get('nro_folios_del_doc'))
+                pagina_fin = pagina_inicio + nro_folios_del_doc - 1
+                
+                index_doc.pagina_fin = pagina_fin
+                index_doc.save()
+                
+                pagina_fin_next = pagina_fin
+                
+                index_doc_next = Docs_IndiceElectronicoExp.objects.filter(id_indice_electronico_exp=indice_electronico, id_doc_archivo_exp__orden_en_expediente__gt=doc_expediente.orden_en_expediente).order_by('id_doc_archivo_exp__orden_en_expediente')
+                if index_doc_next:
+                    for index_doc_after in index_doc_next:
+                        # Calcular la página de inicio
+                        pagina_inicio_next = pagina_fin_next + 1
+
+                        # Calcular la página final
+                        nro_folios_del_doc = index_doc_after.id_doc_archivo_exp.nro_folios_del_doc
+                        pagina_fin_next = pagina_inicio_next + nro_folios_del_doc - 1
+                        
+                        index_doc_after.pagina_inicio = pagina_inicio_next
+                        index_doc_after.pagina_fin = pagina_fin_next
+                        index_doc_after.save()
+        
+        return Response({'success':True, 'detail':'Actualización de documento realizado correctamente'}, status=status.HTTP_201_CREATED)
+
+class IndexarDocumentosAnular(generics.UpdateAPIView):
+    serializer_class = IndexarDocumentosAnularSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def update(self, request, id_documento_de_archivo_exped):
+        data = request.data
+        
+        doc_expediente = DocumentosDeArchivoExpediente.objects.filter(id_documento_de_archivo_exped=id_documento_de_archivo_exped).first()
+        if not doc_expediente:
+            raise NotFound('No se encontró el documento del expediente elegido')
+        
+        if doc_expediente.id_expediente_documental.estado != 'A':
+            raise PermissionDenied('No puede anular el documento elegido porque el expediente se encuentra cerrado')
+
+        data['anulado'] = True
+        data['fecha_anulacion'] = datetime.now()
+        data['id_persona_anula'] = request.user.persona.id_persona
+            
+        serializer = self.serializer_class(doc_expediente, data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        
+        doc_indice_elect = doc_expediente.docs_indiceelectronicoexp_set.first()
+        doc_indice_elect.anulado = True
+        doc_indice_elect.save()
+        
+        if not doc_expediente.es_un_archivo_anexo:
+            docs_expedientes_anexos = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=doc_expediente.id_expediente_documental, es_un_archivo_anexo=True)
+            
+            for doc_expediente_anexo in docs_expedientes_anexos:
+                doc_expediente_anexo.anulado = True
+                doc_expediente_anexo.fecha_anulacion = data['fecha_anulacion']
+                doc_expediente_anexo.observacion_anulacion = 'Anulado debido a que el archivo del cual este es anexo fue anulado.'
+                doc_expediente_anexo.id_persona_anula = request.user.persona
+                doc_expediente_anexo.save()
+                
+                doc_indice_elect_anexo = doc_expediente_anexo.docs_indiceelectronicoexp_set.first()
+                doc_indice_elect_anexo.anulado = True
+                doc_indice_elect_anexo.save()
+        
+        return Response({'success':True, 'detail':'Anulación de documento realizado correctamente'}, status=status.HTTP_201_CREATED)
+
+class IndexarDocumentosBorrar(generics.DestroyAPIView):
+    serializer_class = IndexarDocumentosAnularSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self, request, id_documento_de_archivo_exped):
+        doc_expediente = DocumentosDeArchivoExpediente.objects.filter(id_documento_de_archivo_exped=id_documento_de_archivo_exped).first()
+        if not doc_expediente:
+            raise NotFound('No se encontró el documento del expediente elegido')
+        
+        if doc_expediente.id_expediente_documental.estado != 'A':
+            raise PermissionDenied('No puede borrar el documento elegido porque el expediente se encuentra cerrado')
+        
+        id_expediente_documental = doc_expediente.id_expediente_documental.id_expediente_documental
+        orden_en_expediente = doc_expediente.orden_en_expediente
+        
+        if not doc_expediente.es_un_archivo_anexo:
+            docs_expedientes_anexos = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=doc_expediente.id_expediente_documental, es_un_archivo_anexo=True)
+            for doc_expediente_anexo in docs_expedientes_anexos:
+                doc_expediente_anexo.id_archivo_sistema.delete()
+            
+            docs_expedientes_anexos.delete()
+        
+        doc_expediente.id_archivo_sistema.delete()
+        doc_expediente.delete()
+        
+        docs_expediente = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=id_expediente_documental)
+        if not docs_expediente:
+            doc_indice_elect = IndicesElectronicosExp.objects.filter(id_expediente_doc=id_expediente_documental).first()
+            if doc_indice_elect:
+                doc_indice_elect.delete()
+        else:
+            indice_electronico = IndicesElectronicosExp.objects.filter(id_expediente_doc=id_expediente_documental).first()
+            index_doc_previous = Docs_IndiceElectronicoExp.objects.filter(id_indice_electronico_exp=indice_electronico, id_doc_archivo_exp__orden_en_expediente__lt=orden_en_expediente).order_by('id_doc_archivo_exp__orden_en_expediente').last()
+            
+            index_doc_next = Docs_IndiceElectronicoExp.objects.filter(id_indice_electronico_exp=indice_electronico, id_doc_archivo_exp__orden_en_expediente__gt=orden_en_expediente).order_by('id_doc_archivo_exp__orden_en_expediente')
+            pagina_fin_previous = index_doc_previous.pagina_fin
+            if index_doc_next:
+                for index_doc_after in index_doc_next:
+                    # Calcular la página de inicio
+                    pagina_inicio_next = pagina_fin_previous + 1
+
+                    # Calcular la página final
+                    nro_folios_del_doc = index_doc_after.id_doc_archivo_exp.nro_folios_del_doc
+                    pagina_fin_previous = pagina_inicio_next + nro_folios_del_doc - 1
+                    
+                    index_doc_after.pagina_inicio = pagina_inicio_next
+                    index_doc_after.pagina_fin = pagina_fin_previous
+                    index_doc_after.save()
+        
+        return Response({'success':True, 'detail':'Borrado de documento realizado correctamente'}, status=status.HTTP_201_CREATED)
