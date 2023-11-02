@@ -1719,6 +1719,37 @@ class OficinaUnidadOrganizacionalGetView(generics.ListAPIView):
     serializer_class = OficinaUnidadOrganizacionalSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_oficinas_unidad(self, id_unidad_org_actual, id_unidad_org_nueva):
+        
+        try:
+            UnidadesOrganizacionales.objects.get(id_unidad_organizacional=id_unidad_org_actual)
+            UnidadesOrganizacionales.objects.get(id_unidad_organizacional=id_unidad_org_nueva)
+        except UnidadesOrganizacionales.DoesNotExist:
+            raise ValidationError('No se encontraron unidades organizacionales')
+        
+        oficinas_unidad_actual = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre=id_unidad_org_actual, cod_agrupacion_documental__isnull=True)
+        oficinas_unidad_nueva = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre=id_unidad_org_nueva, cod_agrupacion_documental__isnull=True)
+
+        serializer_actual = self.serializer_class_per(oficinas_unidad_actual, many=True)
+        serializer_nueva = self.serializer_class_res(oficinas_unidad_nueva, many=True)
+        
+        
+    def get(self, request):
+
+        id_ccd_nuevo = self.request.query_params.get('id_ccd_nuevo', None)
+        id_unidad_actual = self.request.query_params.get('id_unidad_actual', None)
+        id_unidad_nueva = self.request.query_params.get('id_unidad_nueva', None)
+
+        ccd_filro = BusquedaCCDHomologacionView().get_validacion_ccd()
+
+        try:
+            ccd = ccd_filro.get(id_ccd=id_ccd_nuevo)
+        except CuadrosClasificacionDocumental.DoesNotExist:
+            raise NotFound('CCD no encontrado o no cumple con TRD y TCA terminados')
+        
+        data = self.get_oficinas_unidad(id_unidad_actual, id_unidad_nueva)
+
+
 
 
 
