@@ -98,7 +98,7 @@ class ConfigTiposRadicadoAgnoUpdate(generics.UpdateAPIView):
 
             if 'consecutivo_inicial' in data_in:
                 if data_in['consecutivo_inicial']:
-                    data_in['consecutivo_inicial']=data_in['consecutivo_inicial']-1
+                    data_in['consecutivo_actual']=data_in['consecutivo_inicial']-1
             if 'cantidad_digitos' in data_in and data_in['cantidad_digitos']:
                 if data_in['cantidad_digitos'] > 20:
                     raise ValidationError('La cantidad de digitos no puede ser mayor a 20')
@@ -272,6 +272,63 @@ class ConfigTiposRadicadoAgnoGet(generics.ListAPIView):
         serializador = self.serializer_class(queryset, many=True)
                          
         return Response({'succes':True, 'detail':'Se encontró el siguiente histórico','data':serializador.data}, status=status.HTTP_200_OK)
+
+
+
+class ConfigTiposRadicadoAgnoGenerarN(generics.UpdateAPIView):
+    serializer_class = ConfigTiposRadicadoAgnoUpDateSerializer
+    queryset = ConfigTiposRadicadoAgno.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def generar_n_radicado(self,data):
+        
+        data_in=data
+        print(data_in)
+        hoy = date.today()
+        age=hoy.year
+        # # Obtener la instancia existente para actualizar
+        instance =ConfigTiposRadicadoAgno.objects.filter(agno_radicado=age,cod_tipo_radicado=data_in['cod_tipo_radicado']).first()
+        if not instance:
+            raise NotFound("No se existe este tipo de configuracion de radicado.")
+        
+        if not instance.implementar:
+            instance =ConfigTiposRadicadoAgno.objects.filter(agno_radicado=age,cod_tipo_radicado='U').first()
+            if not instance:
+                raise NotFound("No se existe este tipo de configuracion de radicado.")
+        print(instance.implementar)
+        print(instance.prefijo_consecutivo)
+        print(instance.consecutivo_inicial)
+        print(instance.consecutivo_actual)
+        new_data={}
+        new_data['consecutivo_actual'] = instance.consecutivo_actual+1
+        new_data['id_persona_consecutivo_actual'] = data_in['id_persona']
+        new_data['fecha_consecutivo_actual'] = data_in['fecha_actual']
+         
+        serializer =ConfigTiposRadicadoAgnoUpDateSerializer(instance, data=new_data, partial=True)
+        serializer.is_valid(raise_exception=True)
+            
+        instance = serializer.save()
+        numero_con_ceros = str(instance.consecutivo_actual).zfill(instance.cantidad_digitos)
+        radicado_nuevo= instance.prefijo_consecutivo+'-'+numero_con_ceros
+        
+        
+        #raise ValidationError("siu generando radicado")
+        
+        return Response({
+            'success': True,
+            'detail': 'Se actualizó la configuracion de los  consecutivos correctamente.',
+            'data': {**serializer.data,'radicado_nuevo':radicado_nuevo}
+        }, status=status.HTTP_200_OK)
+
+    def put(self, request):
+        data_in = request.data
+        usuario = request.user.persona.id_persona
+        #direccion=#
+        data_in['user']=usuario#id_persona_config_implementacion
+
+        response= self.generar_n_radicado(data_in,)
+        return response
+
 
 
 def actualizar_conf_agno_sig():
