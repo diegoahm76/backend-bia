@@ -265,6 +265,7 @@ class ConfiguracionTipoExpedienteAgnoGetHistorico(generics.ListAPIView):
 
 
 
+
 class ConfiguracionTipoExpedienteAgnoGetConsect(generics.UpdateAPIView):
     serializer_class = ConfiguracionTipoExpedienteAgnoCreateSerializer
     queryset = ConfiguracionTipoExpedienteAgno.objects.all()
