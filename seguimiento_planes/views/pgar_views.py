@@ -2,6 +2,9 @@ from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
+from django.db.models.functions import Concat
+from django.db.models import Q, Value as V
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from seguimiento_planes.serializers.pgar_serializers import PlanGestionAmbientalRegionalSerializer, ObjetivoSerializer, LineaEstrategicaSerializer, MetaEstrategicaSerializer, EntidadesSerializer, PgarIndicadorSerializer, ActividadSerializer
 from seguimiento_planes.models.pgar_models import PlanGestionAmbientalRegional, Objetivo, LineaEstrategica, MetaEstrategica, Entidades, PgarIndicador, Actividad
 
@@ -568,3 +571,33 @@ class ActividadId(generics.RetrieveAPIView):
             return Response({'success': False, 'detail': 'No existe una actividad con ese id'}, status=status.HTTP_404_NOT_FOUND)
         serializer = ActividadSerializer(actividad)
         return Response({'success': True, 'detail': 'Actividad', 'actividades': serializer.data}, status=status.HTTP_200_OK)
+    
+
+class BusquedaAvanzada(generics.ListAPIView):
+    queryset = PlanGestionAmbientalRegional.objects.all()
+    serializer_class = PlanGestionAmbientalRegionalSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_busqueda_pgar(self):
+
+        nombre_pgar = self.request.query_params.get('nombre_pgar', '')
+        nombres_pgar = nombre_pgar.split()
+
+        planesgar = PlanGestionAmbientalRegional.objects.annotate(nombre_contribuyente=Concat('nombres', V(' '), 'apellidos'))
+
+        for nombre_plan_gar in nombres_pgar:
+            planesgar = planesgar.filter(nombre_plan__icontains=nombre_plan_gar)
+
+        return planesgar.values('id_plan', 'nombre_plan', 'agno_inicio', 'agno_fin')
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_busqueda_pgar()
+
+        if not queryset.exists():
+            raise NotFound('No se encontraron resultados.')
+    
+        data = [{'id_plan': item['id_plan'], 'nombre_plan': item['nombre_plan'], 'agno_inicio': item['agno_inicio'], 'agno_fin': item['agno_fin']} for item in queryset]
+
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
+        
+
