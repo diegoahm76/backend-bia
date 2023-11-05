@@ -85,6 +85,25 @@ class PlanGestionAmbientalRegionalId(generics.RetrieveAPIView):
         serializer = PlanGestionAmbientalRegionalSerializer(plan)
         return Response({'success': True, 'detail': 'Plan de gestion ambiental regional', 'planes': serializer.data}, status=status.HTTP_200_OK)
 
+# Busqueda avanzada por nombre de plan de gestion ambiental regional
+
+class BusquedaAvanzada(generics.ListAPIView):
+    queryset = PlanGestionAmbientalRegional.objects.all()
+    serializer_class = PlanGestionAmbientalRegionalSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        nombre_pgar = request.query_params.get('nombre_pgar', '')
+
+        # Realiza la búsqueda utilizando el campo 'nombre_plan' en el modelo
+        queryset = PlanGestionAmbientalRegional.objects.filter(nombre_plan__icontains=nombre_pgar)
+
+        if not queryset.exists():
+            raise NotFound('No se encontraron resultados.')
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
+  
 # ---------------------------------------- Objetivo ----------------------------------------
 
 # Listar todos los objetivos
@@ -571,33 +590,5 @@ class ActividadId(generics.RetrieveAPIView):
             return Response({'success': False, 'detail': 'No existe una actividad con ese id'}, status=status.HTTP_404_NOT_FOUND)
         serializer = ActividadSerializer(actividad)
         return Response({'success': True, 'detail': 'Actividad', 'actividades': serializer.data}, status=status.HTTP_200_OK)
-    
-
-class BusquedaAvanzada(generics.ListAPIView):
-    queryset = PlanGestionAmbientalRegional.objects.all()
-    serializer_class = PlanGestionAmbientalRegionalSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_busqueda_pgar(self):
-
-        nombre_pgar = self.request.query_params.get('nombre_pgar', '')
-        nombres_pgar = nombre_pgar.split()
-
-        planesgar = PlanGestionAmbientalRegional.objects.annotate(nombre_contribuyente=Concat('nombres', V(' '), 'apellidos'))
-
-        for nombre_plan_gar in nombres_pgar:
-            planesgar = planesgar.filter(nombre_plan__icontains=nombre_plan_gar)
-
-        return planesgar.values('id_plan', 'nombre_plan', 'agno_inicio', 'agno_fin')
-
-    def get(self, request, *args, **kwargs):
-        queryset = self.get_busqueda_pgar()
-
-        if not queryset.exists():
-            raise NotFound('No se encontraron resultados.')
-    
-        data = [{'id_plan': item['id_plan'], 'nombre_plan': item['nombre_plan'], 'agno_inicio': item['agno_inicio'], 'agno_fin': item['agno_fin']} for item in queryset]
-
-        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
-        
+          
 
