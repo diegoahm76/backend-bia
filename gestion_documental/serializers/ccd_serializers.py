@@ -523,10 +523,16 @@ class UnidadesSeccionResponsableTemporalGetSerializer(serializers.ModelSerialize
                   'nom_unidad_nueva']
         
 class OficinaUnidadOrganizacionalSerializer(serializers.ModelSerializer):
+    
     class Meta:
         model = UnidadesOrganizacionales
-        fields = '__all__'
+        fields = ['id_unidad_organizacional', 'codigo', 'nombre']
 
+
+class OficinasDelegacionTemporalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UnidadesSeccionResponsableTemporal
+        fields = '__all__'
 
 #   LLAMADO DE SERIALIZADOR DENTRO DE OTRO SERIALIZADOR CON RELACION
 # class SeriesDocSerializer(serializers.ModelSerializer):
