@@ -2,6 +2,9 @@ from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
+from django.db.models.functions import Concat
+from django.db.models import Q, Value as V
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from seguimiento_planes.serializers.pnd_serializers import PlanNacionalDesarrolloSerializer, SectorSerializer, ProgramaSerializer, ProductoSerializer, PndIndicadorSerializer
 from seguimiento_planes.models.pnd_models import PlanNacionalDesarrollo, Sector, Programa, Producto, PndIndicador
 
@@ -90,6 +93,24 @@ class ConsultarPlanNacionalDesarrolloId(generics.ListAPIView):
         serializador = self.serializer_class(plan_nacional_desarrollo)
         return Response({'success': True, 'detail': 'Se encontro el plan nacional de desarrollo', 'data': serializador.data}, status=status.HTTP_200_OK)
     
+# Busqueda Avanzada Planes Nacionales de Desarrollo
+
+class BusquedaAvanzadaPlanNacionalDesarrollo(generics.ListAPIView):
+    queryset = PlanNacionalDesarrollo.objects.all()
+    serializer_class = PlanNacionalDesarrolloSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        nombre_plan = request.query_params.get('nombre_plan', '')
+
+        # Realiza la búsqueda utilizando el campo 'nombre_plan' en el modelo
+        queryset = PlanNacionalDesarrollo.objects.filter(nombre_plan__icontains=nombre_plan)
+
+        if not queryset.exists():
+            raise NotFound('No se encontraron resultados.')
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)    
 
 # ---------------------------------------- Sectores ----------------------------------------
 
