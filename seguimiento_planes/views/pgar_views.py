@@ -31,6 +31,10 @@ class PlanGestionAmbientalRegionalCreate(generics.CreateAPIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
+        data = request.data
+        # Comprobar si el campo 'nombre_plan' ya existe
+        if PlanGestionAmbientalRegional.objects.filter(nombre_plan=data['nombre_plan']).exists():
+            return Response({'success': False, 'detail': 'Ya existe un plan de gestion ambiental regional con ese nombre'}, status=status.HTTP_400_BAD_REQUEST)
         serializer = PlanGestionAmbientalRegionalSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -46,13 +50,17 @@ class PlanGestionAmbientalRegionalUpdate(generics.UpdateAPIView):
 
     def put(self, request, pk):
         try:
+            data = request.data
+            if PlanGestionAmbientalRegional.objects.filter(nombre_plan=data['nombre_plan']).exists():
+                return Response({'success': False, 'detail': 'Ya existe un plan de gestion ambiental regional con ese nombre'}, status=status.HTTP_400_BAD_REQUEST)
+
             plan = PlanGestionAmbientalRegional.objects.get(pk=pk)
         except PlanGestionAmbientalRegional.DoesNotExist:
             return Response({'success': False, 'detail': 'No existe un plan de gestion ambiental regional con ese id'}, status=status.HTTP_404_NOT_FOUND)
         serializer = PlanGestionAmbientalRegionalSerializer(plan, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'success': True, 'detail': 'Plan de gestion ambiental regional actualizado correctamente'}, status=status.HTTP_200_OK)
+            return Response({'success': True, 'detail': 'Plan de gestion ambiental regional actualizado correctamente', 'data': serializer.data}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Eliminar un plan de gestion ambiental regional
@@ -114,6 +122,7 @@ class ObjetivoList(generics.ListCreateAPIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
+        data = request.data
         objetivos = Objetivo.objects.all()
         serializer = ObjetivoSerializer(objetivos, many=True)
         return Response({'success': True, 'detail': 'Lista de objetivos', 'objetivos': serializer.data}, status=status.HTTP_200_OK)
@@ -147,7 +156,7 @@ class ObjetivoUpdate(generics.UpdateAPIView):
         serializer = ObjetivoSerializer(objetivo, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'success': True, 'detail': 'Objetivo actualizado correctamente'}, status=status.HTTP_200_OK)
+            return Response({'success': True, 'detail': 'Objetivo actualizado correctamente', 'data': serializer.data}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 # Eliminar un objetivo
@@ -223,7 +232,7 @@ class LineaEstrategicaUpdate(generics.UpdateAPIView):
         serializer = LineaEstrategicaSerializer(linea_estrategica, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'success': True, 'detail': 'Linea estrategica actualizada correctamente'}, status=status.HTTP_200_OK)
+            return Response({'success': True, 'detail': 'Linea estrategica actualizada correctamente', 'data': serializer.data}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Eliminar una linea estrategica
@@ -299,7 +308,7 @@ class MetaEstrategicaUpdate(generics.UpdateAPIView):
         serializer = MetaEstrategicaSerializer(meta_estrategica, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'success': True, 'detail': 'Meta estrategica actualizada correctamente'}, status=status.HTTP_200_OK)
+            return Response({'success': True, 'detail': 'Meta estrategica actualizada correctamente', 'data': serializer.data}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 # Eliminar una meta estrategica
@@ -348,16 +357,6 @@ class EntidadesList(generics.ListCreateAPIView):
 
 # Crear una entidad
 
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
-
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
-
 class EntidadesCreate(generics.CreateAPIView):
     queryset = Entidades.objects.all()
     serializer_class = EntidadesSerializer
@@ -403,7 +402,7 @@ class EntidadesUpdate(generics.UpdateAPIView):
         serializer = EntidadesSerializer(entidad, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response({'success': True, 'detail': 'Entidad actualizada correctamente'}, status=status.HTTP_200_OK)
+            return Response({'success': True, 'detail': 'Entidad actualizada correctamente', 'data': serializer.data}, status=status.HTTP_200_OK)
         
 # Eliminar una entidad
 
@@ -482,7 +481,7 @@ class PgarIndicadorUpdate(generics.UpdateAPIView):
         serializer = PgarIndicadorSerializer(indicador, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'success': True, 'detail': 'Indicador actualizado correctamente'}, status=status.HTTP_200_OK)
+            return Response({'success': True, 'detail': 'Indicador actualizado correctamente', 'data': serializer.data}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Eliminar un indicador
@@ -558,7 +557,7 @@ class ActividadUpdate(generics.UpdateAPIView):
         serializer = ActividadSerializer(actividad, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'success': True, 'detail': 'Actividad actualizada correctamente'}, status=status.HTTP_200_OK)
+            return Response({'success': True, 'detail': 'Actividad actualizada correctamente', 'data': serializer.data}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Eliminar una actividad

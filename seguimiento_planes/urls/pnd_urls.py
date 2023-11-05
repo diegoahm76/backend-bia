@@ -8,6 +8,7 @@ urlpatterns=[
     path('actualizar-planes-nacionales-desarrollo/<str:pk>/',views.ActualizarPlanNacionalDesarrollo.as_view(),name='actualizarplanesnacionalesdesarrollo'),
     path('eliminar-planes-nacionales-desarrollo/<str:pk>/',views.EliminarPlanNacionalDesarrollo.as_view(),name='eliminarplanesnacionalesdesarrollo'),
     path('consultar-planes-nacionales-desarrollo-id/<str:pk>/',views.ConsultarPlanNacionalDesarrolloId.as_view(),name='consultarplanesnacionalesdesarrolloid'),
+    path('busqueda-avanzada-plan-nacional-desarrollo/', views.BusquedaAvanzadaPlanNacionalDesarrollo.as_view(), name='busquedaavanzadaplnacionaldesarrollo'),
     # Sectores
     path('consultar-sectores/',views.ConsultarSector.as_view(),name='consultarsectores'),
     path('crear-sectores/',views.CrearSector.as_view(),name='crearsectores'),
