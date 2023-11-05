@@ -8,6 +8,7 @@ urlpatterns=[
     path('editar-plan-gestion-ambiental-regional/<int:pk>/',views.PlanGestionAmbientalRegionalUpdate.as_view(),name='editarplangestionambientalregional'),
     path('eliminar-plan-gestion-ambiental-regional/<int:pk>/',views.PlanGestionAmbientalRegionalDelete.as_view(),name='eliminarplangestionambientalregional'),
     path('detalle-plan-gestion-ambiental-regional/<int:pk>/',views.PlanGestionAmbientalRegionalId.as_view(),name='detalleplangestionambientalregional'),
+    path('busqueda-avanzada-pgar/', views.BusquedaAvanzada.as_view(), name='busquedaavanzada'),
     # Objetivo
     path('consultar-objetivos/',views.ObjetivoList.as_view(),name='consultarobjetivos'),
     path('crear-objetivo/',views.ObjetivoCreate.as_view(),name='crearobjetivo'),
