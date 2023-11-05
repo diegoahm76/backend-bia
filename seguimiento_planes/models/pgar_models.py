@@ -79,7 +79,6 @@ class Entidades(models.Model):
         verbose_name = 'Entidad'
         verbose_name_plural = 'Entidades'
 
-
 class PgarIndicador(models.Model):
     id_indicador = models.AutoField(
         primary_key=True, editable=False, db_column='T503IdIndicador')

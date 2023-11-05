@@ -326,18 +326,42 @@ class EntidadesList(generics.ListCreateAPIView):
 
 # Crear una entidad
 
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
+
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
+
 class EntidadesCreate(generics.CreateAPIView):
     queryset = Entidades.objects.all()
     serializer_class = EntidadesSerializer
     permission_classes = (IsAuthenticated,)
 
+    def perform_create(self, serializer):
+        # Establecer 'activo' en True y determinar 'item_ya_usado' en función de las relaciones
+        serializer.save(activo=True, item_ya_usado=self.has_relations(serializer.validated_data))
+
+    def has_relations(self, validated_data):
+        # Comprueba si hay relaciones con otras tablas
+        if 'pgarindicador' in validated_data:
+            # Si se proporciona un valor para 'pgarindicador', se considera que la entidad tiene relaciones
+            return True
+        return False
+
     def post(self, request):
         serializer = EntidadesSerializer(data=request.data)
         if serializer.is_valid():
+            # Comprobar si el campo 'item_ya_usado' no se establece manualmente
+            if 'item_ya_usado' in request.data:
+                return Response({'success': False, 'detail': 'No puedes establecer manualmente "item_ya_usado"'}, status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
             return Response({'success': True, 'detail': 'Entidad creada correctamente'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+ 
 # Actualizar una entidad
 
 class EntidadesUpdate(generics.UpdateAPIView):
@@ -350,12 +374,15 @@ class EntidadesUpdate(generics.UpdateAPIView):
             entidad = Entidades.objects.get(pk=pk)
         except Entidades.DoesNotExist:
             return Response({'success': False, 'detail': 'No existe una entidad con ese id'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = EntidadesSerializer(entidad, data=request.data)
+
+        if entidad.item_ya_usado:
+            return Response({'success': False, 'detail': 'No se puede actualizar una entidad con "item_ya_usado" en True'}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = EntidadesSerializer(entidad, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response({'success': True, 'detail': 'Entidad actualizada correctamente'}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+        
 # Eliminar una entidad
 
 class EntidadesDelete(generics.DestroyAPIView):
@@ -368,9 +395,13 @@ class EntidadesDelete(generics.DestroyAPIView):
             entidad = Entidades.objects.get(pk=pk)
         except Entidades.DoesNotExist:
             return Response({'success': False, 'detail': 'No existe una entidad con ese id'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if entidad.item_ya_usado or entidad.activo:
+            return Response({'success': False, 'detail': 'No se puede eliminar una entidad con "item_ya_usado" o "activo" en True'}, status=status.HTTP_400_BAD_REQUEST)
+
         entidad.delete()
         return Response({'success': True, 'detail': 'Entidad eliminada correctamente'}, status=status.HTTP_200_OK)
-    
+        
 # Listar una entidad por id
 
 class EntidadesId(generics.RetrieveAPIView):
