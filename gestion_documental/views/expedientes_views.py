@@ -16,6 +16,7 @@ from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, Forma
 from gestion_documental.serializers.conf__tipos_exp_serializers import ConfiguracionTipoExpedienteAgnoGetSerializer
 from gestion_documental.serializers.trd_serializers import BusquedaTRDNombreVersionSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
+from gestion_documental.views.conf__tipos_exp_views import ConfiguracionTipoExpedienteAgnoGetConsect
 from seguridad.utils import Util
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -118,9 +119,21 @@ class AperturaExpedienteCreate(generics.CreateAPIView):
         data['codigo_exp_und_serie_subserie'] = codigo_exp_und_serie_subserie
         data['codigo_exp_Agno'] = current_date.year
         
-        # VALIDAR DESPUÉS
-        data['codigo_exp_consec_por_agno'] = None if data['cod_tipo_expediente'] == 'C' else None # TEMPORAL
+        # OBTENER CONSECUTIVO ACTUAL
+        codigo_exp_consec_por_agno = None
+        
+        if data['cod_tipo_expediente'] == 'C':
+            # LLAMAR CLASE PARA GENERAR CONSECUTIVO
+            fecha_actual = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+            clase_consec = ConfiguracionTipoExpedienteAgnoGetConsect()
+            codigo_exp_consec_por_agno = clase_consec.generar_radicado(
+                data['id_cat_serie_und_org_ccd_trd_prop'],
+                request.user.persona.id_persona,
+                fecha_actual
+            )
+            codigo_exp_consec_por_agno = codigo_exp_consec_por_agno.data.get('data').get('consecutivo_actual')
             
+        data['codigo_exp_consec_por_agno'] = codigo_exp_consec_por_agno
         data['estado'] = 'A'
         data['fecha_folio_inicial'] = current_date
         data['cod_etapa_de_archivo_actual_exped'] = 'G'
