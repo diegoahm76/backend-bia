@@ -20,11 +20,11 @@ class PlanGestionAmbientalRegionalList(generics.ListCreateAPIView):
     def get(self, request):
         planes = PlanGestionAmbientalRegional.objects.all()
         serializer = PlanGestionAmbientalRegionalSerializer(planes, many=True)
-        return Response({'success': True, 'detail': 'Lista de planes de gestion ambiental regional', 'planes': serializer.data}, status=status.HTTP_200_OK)
-    
+        if not planes.exists():
+            return Response({'success': False, 'detail': 'No se encontraron resultados'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'success': True, 'detail': 'Lista de planes de gestion ambiental regional', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # Crear un plan de gestion ambiental regional
-
 class PlanGestionAmbientalRegionalCreate(generics.CreateAPIView):
     queryset = PlanGestionAmbientalRegional.objects.all()
     serializer_class = PlanGestionAmbientalRegionalSerializer
@@ -38,7 +38,7 @@ class PlanGestionAmbientalRegionalCreate(generics.CreateAPIView):
         serializer = PlanGestionAmbientalRegionalSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'success': True, 'detail': 'Plan de gestion ambiental regional creado correctamente'}, status=status.HTTP_201_CREATED)
+            return Response({'success': True, 'detail': 'Plan de gestion ambiental regional creado correctamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 # Actualizar un plan de gestion ambiental regional
@@ -91,7 +91,7 @@ class PlanGestionAmbientalRegionalId(generics.RetrieveAPIView):
         except PlanGestionAmbientalRegional.DoesNotExist:
             return Response({'success': False, 'detail': 'No existe un plan de gestion ambiental regional con ese id'}, status=status.HTTP_404_NOT_FOUND)
         serializer = PlanGestionAmbientalRegionalSerializer(plan)
-        return Response({'success': True, 'detail': 'Plan de gestion ambiental regional', 'planes': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Plan de gestion ambiental regional', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # Busqueda avanzada por nombre de plan de gestion ambiental regional
 
@@ -125,7 +125,7 @@ class ObjetivoList(generics.ListCreateAPIView):
         data = request.data
         objetivos = Objetivo.objects.all()
         serializer = ObjetivoSerializer(objetivos, many=True)
-        return Response({'success': True, 'detail': 'Lista de objetivos', 'objetivos': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Lista de objetivos', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # Crear un objetivo
 
@@ -135,10 +135,14 @@ class ObjetivoCreate(generics.CreateAPIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
+        data = request.data
+        # Comprobar si el campo 'descripcion_objetivo' ya existe
+        if Objetivo.objects.filter(descripcion_objetivo=data['descripcion_objetivo']).exists():
+            return Response({'success': False, 'detail': 'Ya existe un objetivo con esa descripcion'}, status=status.HTTP_400_BAD_REQUEST)
         serializer = ObjetivoSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'success': True, 'detail': 'Objetivo creado correctamente'}, status=status.HTTP_201_CREATED)
+            return Response({'success': True, 'detail': 'Objetivo creado correctamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Actualizar un objetivo
@@ -150,6 +154,10 @@ class ObjetivoUpdate(generics.UpdateAPIView):
 
     def put(self, request, pk):
         try:
+            data = request.data
+            # Comprobar si el campo 'descripcion_objetivo' ya existe
+            if Objetivo.objects.filter(descripcion_objetivo=data['descripcion_objetivo']).exists():
+                return Response({'success': False, 'detail': 'Ya existe un objetivo con esa descripcion'}, status=status.HTTP_400_BAD_REQUEST)
             objetivo = Objetivo.objects.get(pk=pk)
         except Objetivo.DoesNotExist:
             return Response({'success': False, 'detail': 'No existe un objetivo con ese id'}, status=status.HTTP_404_NOT_FOUND)
@@ -187,8 +195,22 @@ class ObjetivoId(generics.RetrieveAPIView):
         except Objetivo.DoesNotExist:
             return Response({'success': False, 'detail': 'No existe un objetivo con ese id'}, status=status.HTTP_404_NOT_FOUND)
         serializer = ObjetivoSerializer(objetivo)
-        return Response({'success': True, 'detail': 'Objetivo', 'objetivos': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Objetivo', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+# Listar objetivos por id de plan de gestion ambiental regional
+
+class ObjetivoPgarId(generics.ListAPIView):
+    queryset = Objetivo.objects.all()
+    serializer_class = ObjetivoSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, pk):
+        try:
+            objetivos = Objetivo.objects.filter(id_plan=pk)
+        except Objetivo.DoesNotExist:
+            return Response({'success': False, 'detail': 'No existen objetivos con ese id de plan de gestion ambiental regional'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ObjetivoSerializer(objetivos, many=True)
+        return Response({'success': True, 'detail': 'Lista de objetivos', 'data': serializer.data}, status=status.HTTP_200_OK)
 # ---------------------------------------- LineaEstrategica ----------------------------------------
 
 # Listar todas las lineas estrategicas
@@ -201,7 +223,7 @@ class LineaEstrategicaList(generics.ListCreateAPIView):
     def get(self, request):
         lineas_estrategicas = LineaEstrategica.objects.all()
         serializer = LineaEstrategicaSerializer(lineas_estrategicas, many=True)
-        return Response({'success': True, 'detail': 'Lista de lineas estrategicas', 'lineas_estrategicas': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Lista de lineas estrategicas', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 # Crear una linea estrategica
 
@@ -211,10 +233,14 @@ class LineaEstrategicaCreate(generics.CreateAPIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
+        data = request.data
+        # Comprobar si el campo 'descripcion_linea_estrategica' ya existe
+        if LineaEstrategica.objects.filter(descripcion_linea_estrategica=data['descripcion_linea_estrategica']).exists():
+            return Response({'success': False, 'detail': 'Ya existe una linea estrategica con esa descripcion'}, status=status.HTTP_400_BAD_REQUEST)    
         serializer = LineaEstrategicaSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'success': True, 'detail': 'Linea estrategica creada correctamente'}, status=status.HTTP_201_CREATED)
+            return Response({'success': True, 'detail': 'Linea estrategica creada correctamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Actualizar una linea estrategica
@@ -226,6 +252,10 @@ class LineaEstrategicaUpdate(generics.UpdateAPIView):
 
     def put(self, request, pk):
         try:
+            data = request.data
+            # Comprobar si el campo 'descripcion_linea_estrategica' ya existe
+            if LineaEstrategica.objects.filter(descripcion_linea_estrategica=data['descripcion_linea_estrategica']).exists():
+                return Response({'success': False, 'detail': 'Ya existe una linea estrategica con esa descripcion'}, status=status.HTTP_400_BAD_REQUEST)    
             linea_estrategica = LineaEstrategica.objects.get(pk=pk)
         except LineaEstrategica.DoesNotExist:
             return Response({'success': False, 'detail': 'No existe una linea estrategica con ese id'}, status=status.HTTP_404_NOT_FOUND)
@@ -263,8 +293,22 @@ class LineaEstrategicaId(generics.RetrieveAPIView):
         except LineaEstrategica.DoesNotExist:
             return Response({'success': False, 'detail': 'No existe una linea estrategica con ese id'}, status=status.HTTP_404_NOT_FOUND)
         serializer = LineaEstrategicaSerializer(linea_estrategica)
-        return Response({'success': True, 'detail': 'Linea estrategica', 'lineas_estrategicas': serializer.data}, status=status.HTTP_200_OK)
-    
+        return Response({'success': True, 'detail': 'Linea estrategica', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Listar lineas estrategicas por id de objetivo
+
+class LineaEstrategicaObjetivoId(generics.ListAPIView):
+    queryset = LineaEstrategica.objects.all()
+    serializer_class = LineaEstrategicaSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, pk):
+        try:
+            lineas_estrategicas = LineaEstrategica.objects.filter(id_obejtivo=pk)
+        except LineaEstrategica.DoesNotExist:
+            return Response({'success': False, 'detail': 'No existen lineas estrategicas con ese id de objetivo'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = LineaEstrategicaSerializer(lineas_estrategicas, many=True)
+        return Response({'success': True, 'detail': 'Lista de lineas estrategicas', 'data': serializer.data}, status=status.HTTP_200_OK)   
 # ---------------------------------------- MetaEstrategica ----------------------------------------
 
 # Listar todas las metas estrategicas
@@ -277,7 +321,7 @@ class MetaEstrategicaList(generics.ListCreateAPIView):
     def get(self, request):
         metas_estrategicas = MetaEstrategica.objects.all()
         serializer = MetaEstrategicaSerializer(metas_estrategicas, many=True)
-        return Response({'success': True, 'detail': 'Lista de metas estrategicas', 'metas_estrategicas': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Lista de metas estrategicas', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 # Crear una meta estrategica
 
@@ -287,10 +331,14 @@ class MetaEstrategicaCreate(generics.CreateAPIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
+        data = request.data
+        # Comprobar si el campo 'descripcion_meta_estrategica' ya existe
+        if MetaEstrategica.objects.filter(descripcion_meta_estrategica=data['descripcion_meta_estrategica']).exists():
+            return Response({'success': False, 'detail': 'Ya existe una meta estrategica con esa descripcion'}, status=status.HTTP_400_BAD_REQUEST)
         serializer = MetaEstrategicaSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'success': True, 'detail': 'Meta estrategica creada correctamente'}, status=status.HTTP_201_CREATED)
+            return Response({'success': True, 'detail': 'Meta estrategica creada correctamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Actualizar una meta estrategica
@@ -302,6 +350,10 @@ class MetaEstrategicaUpdate(generics.UpdateAPIView):
 
     def put(self, request, pk):
         try:
+            data = request.data
+            # Comprobar si el campo 'descripcion_meta_estrategica' ya existe
+            if MetaEstrategica.objects.filter(descripcion_meta_estrategica=data['descripcion_meta_estrategica']).exists():
+                return Response({'success': False, 'detail': 'Ya existe una meta estrategica con esa descripcion'}, status=status.HTTP_400_BAD_REQUEST)
             meta_estrategica = MetaEstrategica.objects.get(pk=pk)
         except MetaEstrategica.DoesNotExist:
             return Response({'success': False, 'detail': 'No existe una meta estrategica con ese id'}, status=status.HTTP_404_NOT_FOUND)
@@ -339,8 +391,22 @@ class MetaEstrategicaId(generics.RetrieveAPIView):
         except MetaEstrategica.DoesNotExist:
             return Response({'success': False, 'detail': 'No existe una meta estrategica con ese id'}, status=status.HTTP_404_NOT_FOUND)
         serializer = MetaEstrategicaSerializer(meta_estrategica)
-        return Response({'success': True, 'detail': 'Meta estrategica', 'metas_estrategicas': serializer.data}, status=status.HTTP_200_OK)
-    
+        return Response({'success': True, 'detail': 'Meta estrategica', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Listar metas estrategicas por id de linea estrategica
+
+class MetaEstrategicaLineaEstrategicaId(generics.ListAPIView):
+    queryset = MetaEstrategica.objects.all()
+    serializer_class = MetaEstrategicaSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, pk):
+        try:
+            metas_estrategicas = MetaEstrategica.objects.filter(id_linea_estrategica=pk)
+        except MetaEstrategica.DoesNotExist:
+            return Response({'success': False, 'detail': 'No existen metas estrategicas con ese id de linea estrategica'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = MetaEstrategicaSerializer(metas_estrategicas, many=True)
+        return Response({'success': True, 'detail': 'Lista de metas estrategicas', 'data': serializer.data}, status=status.HTTP_200_OK) 
 # ---------------------------------------- Entidades ----------------------------------------
 
 # Listar todas las entidades
@@ -353,7 +419,7 @@ class EntidadesList(generics.ListCreateAPIView):
     def get(self, request):
         entidades = Entidades.objects.all()
         serializer = EntidadesSerializer(entidades, many=True)
-        return Response({'success': True, 'detail': 'Lista de entidades', 'entidades': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Lista de entidades', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # Crear una entidad
 
@@ -380,7 +446,7 @@ class EntidadesCreate(generics.CreateAPIView):
             if 'item_ya_usado' in request.data:
                 return Response({'success': False, 'detail': 'No puedes establecer manualmente "item_ya_usado"'}, status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
-            return Response({'success': True, 'detail': 'Entidad creada correctamente'}, status=status.HTTP_201_CREATED)
+            return Response({'success': True, 'detail': 'Entidad creada correctamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
  
 # Actualizar una entidad
@@ -436,7 +502,7 @@ class EntidadesId(generics.RetrieveAPIView):
         except Entidades.DoesNotExist:
             return Response({'success': False, 'detail': 'No existe una entidad con ese id'}, status=status.HTTP_404_NOT_FOUND)
         serializer = EntidadesSerializer(entidad)
-        return Response({'success': True, 'detail': 'Entidad', 'entidades': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Entidad', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # ---------------------------------------- PgarIndicador ----------------------------------------
 
@@ -450,7 +516,7 @@ class PgarIndicadorList(generics.ListCreateAPIView):
     def get(self, request):
         indicadores = PgarIndicador.objects.all()
         serializer = PgarIndicadorSerializer(indicadores, many=True)
-        return Response({'success': True, 'detail': 'Lista de indicadores', 'indicadores': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Lista de indicadores', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # Crear un indicador
 
@@ -460,10 +526,14 @@ class PgarIndicadorCreate(generics.CreateAPIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
+        data = request.data
+        # Comprobar si el campo 'descripcion_indicador' ya existe
+        if PgarIndicador.objects.filter(descripcion_indicador=data['descripcion_indicador']).exists():
+            return Response({'success': False, 'detail': 'Ya existe un indicador con esa descripcion'}, status=status.HTTP_400_BAD_REQUEST)
         serializer = PgarIndicadorSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'success': True, 'detail': 'Indicador creado correctamente'}, status=status.HTTP_201_CREATED)
+            return Response({'success': True, 'detail': 'Indicador creado correctamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 # Actualizar un indicador
@@ -475,6 +545,10 @@ class PgarIndicadorUpdate(generics.UpdateAPIView):
 
     def put(self, request, pk):
         try:
+            data = request.data
+            # Comprobar si el campo 'descripcion_indicador' ya existe
+            if PgarIndicador.objects.filter(descripcion_indicador=data['descripcion_indicador']).exists():
+                return Response({'success': False, 'detail': 'Ya existe un indicador con esa descripcion'}, status=status.HTTP_400_BAD_REQUEST)
             indicador = PgarIndicador.objects.get(pk=pk)
         except PgarIndicador.DoesNotExist:
             return Response({'success': False, 'detail': 'No existe un indicador con ese id'}, status=status.HTTP_404_NOT_FOUND)
@@ -512,7 +586,7 @@ class PgarIndicadorId(generics.RetrieveAPIView):
         except PgarIndicador.DoesNotExist:
             return Response({'success': False, 'detail': 'No existe un indicador con ese id'}, status=status.HTTP_404_NOT_FOUND)
         serializer = PgarIndicadorSerializer(indicador)
-        return Response({'success': True, 'detail': 'Indicador', 'indicadores': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Indicador', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # ---------------------------------------- Actividad ----------------------------------------
 
@@ -526,7 +600,7 @@ class ActividadList(generics.ListCreateAPIView):
     def get(self, request):
         actividades = Actividad.objects.all()
         serializer = ActividadSerializer(actividades, many=True)
-        return Response({'success': True, 'detail': 'Lista de actividades', 'actividades': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Lista de actividades', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # Crear una actividad
 
@@ -536,10 +610,14 @@ class ActividadCreate(generics.CreateAPIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
+        data = request.data
+        # Comprobar si el campo 'descripcion_linea_base' ya existe
+        if Actividad.objects.filter(descripcion_linea_base=data['descripcion_linea_base']).exists():
+            return Response({'success': False, 'detail': 'Ya existe una actividad con esa descripcion'}, status=status.HTTP_400_BAD_REQUEST)
         serializer = ActividadSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'success': True, 'detail': 'Actividad creada correctamente'}, status=status.HTTP_201_CREATED)
+            return Response({'success': True, 'detail': 'Actividad creada correctamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Actualizar una actividad
@@ -551,6 +629,11 @@ class ActividadUpdate(generics.UpdateAPIView):
 
     def put(self, request, pk):
         try:
+            data = request.data
+            # Comprobar si el campo 'descripcion_linea_base' ya existe
+            if Actividad.objects.filter(descripcion_linea_base=data['descripcion_linea_base']).exists():
+                return Response({'success': False, 'detail': 'Ya existe una actividad con esa descripcion'}, status=status.HTTP_400_BAD_REQUEST)
+
             actividad = Actividad.objects.get(pk=pk)
         except Actividad.DoesNotExist:
             return Response({'success': False, 'detail': 'No existe una actividad con ese id'}, status=status.HTTP_404_NOT_FOUND)
@@ -588,6 +671,36 @@ class ActividadId(generics.RetrieveAPIView):
         except Actividad.DoesNotExist:
             return Response({'success': False, 'detail': 'No existe una actividad con ese id'}, status=status.HTTP_404_NOT_FOUND)
         serializer = ActividadSerializer(actividad)
-        return Response({'success': True, 'detail': 'Actividad', 'actividades': serializer.data}, status=status.HTTP_200_OK)
-          
+        return Response({'success': True, 'detail': 'Actividad', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Listar actividades por id de meta estrategica
+
+class ActividadMetaEstrategicaId(generics.ListAPIView):
+    queryset = Actividad.objects.all()
+    serializer_class = ActividadSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, pk):
+        try:
+            actividades = Actividad.objects.filter(id_meta_estrategica=pk)
+        except Actividad.DoesNotExist:
+            return Response({'success': False, 'detail': 'No existen actividades con ese id de meta estrategica'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ActividadSerializer(actividades, many=True)
+        return Response({'success': True, 'detail': 'Lista de actividades', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+# Listar actividades por id indicador
+
+class ActividadIndicadorId(generics.ListAPIView):
+    queryset = Actividad.objects.all()
+    serializer_class = ActividadSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, pk):
+        try:
+            actividades = Actividad.objects.filter(id_indicador=pk)
+        except Actividad.DoesNotExist:
+            return Response({'success': False, 'detail': 'No existen actividades con ese id de indicador'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ActividadSerializer(actividades, many=True)
+        return Response({'success': True, 'detail': 'Lista de actividades', 'data': serializer.data}, status=status.HTTP_200_OK)        
 
