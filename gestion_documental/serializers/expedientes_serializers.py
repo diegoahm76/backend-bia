@@ -258,8 +258,8 @@ class AperturaExpedienteSimpleSerializer(serializers.ModelSerializer):
         
         if request_data['cod_tipo_expediente'] == 'C':
             ultimo_expediente = ExpedientesDocumentales.objects.filter(codigo_exp_und_serie_subserie = request_data['codigo_exp_und_serie_subserie']).order_by('fecha_apertura_expediente').last()
-            if fecha_apertura > ultimo_expediente.fecha_apertura_expediente:
-                raise ValidationError('La fecha tiene que ser posterior a la fecha de apertura del último expediente')
+            if ultimo_expediente and fecha_apertura < ultimo_expediente.fecha_apertura_expediente:
+                raise ValidationError(f'La fecha tiene que ser posterior a la fecha de apertura del último expediente ({str(ultimo_expediente.fecha_apertura_expediente)})')
             
         return fecha_apertura
             
