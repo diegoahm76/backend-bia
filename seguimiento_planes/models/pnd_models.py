@@ -64,7 +64,7 @@ class Producto(models.Model):
         max_length=255, db_column='T509descripcionProducto')
     medida_producto = models.CharField(
         max_length=255, db_column='T509medidaProducto')
-    id_sector = models.ForeignKey(
+    id_programa = models.ForeignKey(
         Programa, on_delete=models.CASCADE, db_column='T509IdPrograma')
 
     def __str__(self):
