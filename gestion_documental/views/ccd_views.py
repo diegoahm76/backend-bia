@@ -1737,7 +1737,6 @@ class OficinasUnidadOrganizacionalGetView(generics.ListAPIView):
             'id_unidad_organizacional': unidad_org.id_unidad_organizacional,
             'codigo': unidad_org.codigo,
             'nombre': unidad_org.nombre,
-            'id_unidad_org_padre':unidad_org.id_unidad_org_padre,
             'oficinas': serializer.data 
             }
 
@@ -1801,54 +1800,62 @@ class OficinasDelegacionTemporalCreateView(generics.CreateAPIView):
             raise NotFound('CCD no encontrado o no cumple con TRD y TCA terminados')
         
         unidades_nuevas_set = set(
-            (id_unidad['id_unidad_actual'], id_unidad['id_unidad_nueva'], id_unidad['id_unidad_padre'])
-            for id_unidad in data_in['delegacion_oficinas']
+            (id_unidad['id_unidad_actual'], id_unidad['id_unidad_nueva'])
+            for id_unidad in data_in['oficinas_delegadas']
         )
-        print(unidades_nuevas_set)
 
         all_ids = {id_unidad for tupla in unidades_nuevas_set if tupla is not None for id_unidad in tupla if id_unidad is not None}
 
         if not UnidadesOrganizacionales.objects.filter(id_unidad_organizacional__in=all_ids).count() == len(all_ids):
             raise NotFound('No se encontraron todas las unidades organizacionales')
         
-        unidades_responsables_existentes = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd)
-
-        unidades_existentes_set = set(
-            (unidad.id_unidad_seccion_actual.id_unidad_organizacional, unidad.id_unidad_seccion_nueva.id_unidad_organizacional, unidad.id_unidad_seccion_actual_padre)
-            for unidad in unidades_responsables_existentes
+        unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd, es_registro_asig_seccion_responsable=True)
+        unidades_persistentes = UnidadesSeccionPersistenteTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd)
+        unidades_delegadas_existentes = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd, es_registro_asig_seccion_responsable=False)
+        
+        unidades_responsables_set = set(
+            (unidad.id_unidad_seccion_actual.id_unidad_organizacional, unidad.id_unidad_seccion_nueva.id_unidad_organizacional)
+            for unidad in unidades_responsables
         )
 
-        unidades_a_eliminar = unidades_existentes_set - unidades_nuevas_set
-        unidades_a_crear = unidades_nuevas_set - unidades_existentes_set
+        unidades_persistentes_set = set(
+            (unidad.id_unidad_seccion_actual.id_unidad_organizacional, unidad.id_unidad_seccion_nueva.id_unidad_organizacional)
+            for unidad in unidades_persistentes
+        )
 
-        
-
-
-
-
-
-
-
-
-
-
-        unidades_responsables_existentes = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd)
         unidades_existentes_set = set(
             (unidad.id_unidad_seccion_actual.id_unidad_organizacional, unidad.id_unidad_seccion_nueva.id_unidad_organizacional)
-            for unidad in unidades_responsables_existentes
+            for unidad in unidades_delegadas_existentes
         )
-        unidades_a_eliminar = unidades_existentes_set - unidades_nuevas_set
-        unidades_a_crear = unidades_nuevas_set - unidades_existentes_set
 
-        self.delete_unidades_responsable_tmp(ccd.id_ccd, unidades_a_eliminar)
+        unidades_delegadas_nuevas = unidades_nuevas_set - unidades_responsables_set - unidades_persistentes_set
+        unidades_persistentes_nuevas = unidades_nuevas_set - unidades_responsables_set - unidades_existentes_set - unidades_delegadas_nuevas
 
-        for unidad in unidades_a_crear:
+        for unidad in unidades_persistentes_nuevas:
             data = {
                 'id_ccd_nuevo': ccd.id_ccd,
                 'id_unidad_seccion_actual': unidad[0],
                 'id_unidad_seccion_nueva': unidad[1],
                 'es_registro_asig_seccion_responsable': False,
-                'id_unidad_seccion_actual_padre':unidad[2]
+                'id_unidad_seccion_actual_padre':unidad[0]
+            }
+            serializer = self.serializer_class(data=data)
+            serializer.is_valid(raise_exception=True)
+            unidades_persistentes_create = serializer.save()
+
+        unidades_a_eliminar = unidades_existentes_set - unidades_nuevas_set - unidades_responsables_set - unidades_persistentes_set
+        unidades_a_crear = unidades_delegadas_nuevas - unidades_existentes_set - unidades_responsables_set - unidades_persistentes_set
+
+        self.delete_unidades_responsable_tmp(ccd.id_ccd, unidades_a_eliminar)
+
+        for unidad in unidades_a_crear:
+            unidad_padre = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=unidad[0])
+            data = {
+                'id_ccd_nuevo': ccd.id_ccd,
+                'id_unidad_seccion_actual': unidad[0],
+                'id_unidad_seccion_nueva': unidad[1],
+                'es_registro_asig_seccion_responsable': False,
+                'id_unidad_seccion_actual_padre': unidad_padre.id_unidad_org_padre
             }
             serializer = self.serializer_class(data=data)
             serializer.is_valid(raise_exception=True)
@@ -1856,7 +1863,6 @@ class OficinasDelegacionTemporalCreateView(generics.CreateAPIView):
 
         unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd)
         unidades_responsables_data = self.serializer_class(unidades_responsables, many=True).data
-
         
         return unidades_responsables_data
     

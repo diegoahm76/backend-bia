@@ -526,7 +526,7 @@ class OficinaUnidadOrganizacionalSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = UnidadesOrganizacionales
-        fields = ['id_unidad_organizacional', 'codigo', 'nombre', "id_unidad_org_padre"]
+        fields = ['id_unidad_organizacional', 'codigo', 'nombre']
 
 
 class OficinasDelegacionTemporalSerializer(serializers.ModelSerializer):
