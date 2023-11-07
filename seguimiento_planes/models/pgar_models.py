@@ -40,7 +40,7 @@ class LineaEstrategica(models.Model):
         primary_key=True, editable=False, db_column='T502IdLineaEstrategica')
     descripcion_linea_estrategica = models.CharField(
         max_length=255, db_column='T502descripcionLineaEstrategica')
-    id_obejtivo = models.ForeignKey(
+    id_obejetivo = models.ForeignKey(
         Objetivo, on_delete=models.CASCADE, db_column='T502IdObjetivo')
 
     def __str__(self):
