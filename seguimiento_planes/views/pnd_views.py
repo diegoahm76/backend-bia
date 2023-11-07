@@ -2,6 +2,9 @@ from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
+from django.db.models.functions import Concat
+from django.db.models import Q, Value as V
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from seguimiento_planes.serializers.pnd_serializers import PlanNacionalDesarrolloSerializer, SectorSerializer, ProgramaSerializer, ProductoSerializer, PndIndicadorSerializer
 from seguimiento_planes.models.pnd_models import PlanNacionalDesarrollo, Sector, Programa, Producto, PndIndicador
 
@@ -18,7 +21,6 @@ class ConsultarPlanNacionalDesarrollo(generics.ListAPIView):
         planes_nacionales_desarrollo = self.queryset.all()
         serializador = self.serializer_class(planes_nacionales_desarrollo, many=True)
         return Response({'success': True, 'detail': 'Se encontraron los siguientes planes nacionales de desarrollo', 'data': serializador.data}, status=status.HTTP_200_OK)
-
 
 # Craer Plan Nacional de Desarrollo
 
@@ -41,7 +43,6 @@ class CrearPlanNacionalDesarrollo(generics.CreateAPIView):
         return Response({'success': True, 'detail': 'Se creo el plan nacional de desarrollo de manera exitosa', 'data': serializador.data}, status=status.HTTP_201_CREATED)
     
 # Actualziar Plan Nacional de Desarrollo
-
 class ActualizarPlanNacionalDesarrollo(generics.UpdateAPIView):
     serializer_class = PlanNacionalDesarrolloSerializer
     queryset = PlanNacionalDesarrollo.objects.all()
@@ -90,6 +91,24 @@ class ConsultarPlanNacionalDesarrolloId(generics.ListAPIView):
         serializador = self.serializer_class(plan_nacional_desarrollo)
         return Response({'success': True, 'detail': 'Se encontro el plan nacional de desarrollo', 'data': serializador.data}, status=status.HTTP_200_OK)
     
+# Busqueda Avanzada Planes Nacionales de Desarrollo
+
+class BusquedaAvanzadaPlanNacionalDesarrollo(generics.ListAPIView):
+    queryset = PlanNacionalDesarrollo.objects.all()
+    serializer_class = PlanNacionalDesarrolloSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        nombre_plan = request.query_params.get('nombre_plan', '')
+
+        # Realiza la búsqueda utilizando el campo 'nombre_plan' en el modelo
+        queryset = PlanNacionalDesarrollo.objects.filter(nombre_plan__icontains=nombre_plan)
+
+        if not queryset.exists():
+            raise NotFound('No se encontraron resultados.')
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)    
 
 # ---------------------------------------- Sectores ----------------------------------------
 
@@ -173,6 +192,19 @@ class ConsultarSectorId(generics.ListAPIView):
         serializador = self.serializer_class(sector)
         return Response({'success': True, 'detail': 'Se encontro el sector', 'data': serializador.data}, status=status.HTTP_200_OK)
 
+# Listar sectores por id de plan de desarrollo
+
+class ConsultarSectorPlanId(generics.ListAPIView):
+    serializer_class = SectorSerializer
+    queryset = Sector.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        sector = self.queryset.all().filter(id_plan_desarrollo=pk).first()
+        if not sector:
+            return Response({'success': False, 'detail': 'El plan nacional de desarrollo ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+        serializador = self.serializer_class(sector)
+        return Response({'success': True, 'detail': 'Se encontro el plan nacional de desarrollo', 'data': serializador.data}, status=status.HTTP_200_OK)
 # ---------------------------------------- Programas ----------------------------------------
 
 # Listar Programas
@@ -255,6 +287,19 @@ class ConsultarProgramaId(generics.ListAPIView):
         serializador = self.serializer_class(programa)
         return Response({'success': True, 'detail': 'Se encontro el programa', 'data': serializador.data}, status=status.HTTP_200_OK)
 
+# Listar programas por id de sector
+
+class ConsultarProgramaSectorId(generics.ListAPIView):
+    serializer_class = ProgramaSerializer
+    queryset = Programa.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        programa = self.queryset.all().filter(id_sector=pk).first()
+        if not programa:
+            return Response({'success': False, 'detail': 'El sector ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+        serializador = self.serializer_class(programa)
+        return Response({'success': True, 'detail': 'Se encontro el sector', 'data': serializador.data}, status=status.HTTP_200_OK)
 # ---------------------------------------- Productos ----------------------------------------
 
 # Listar Productos
@@ -337,6 +382,19 @@ class ConsultarProductoId(generics.ListAPIView):
         serializador = self.serializer_class(producto)
         return Response({'success': True, 'detail': 'Se encontro el producto', 'data': serializador.data}, status=status.HTTP_200_OK)
 
+# Listar productos por id de programa
+
+class ConsultarProductoProgramaId(generics.ListAPIView):
+    serializer_class = ProductoSerializer
+    queryset = Producto.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        producto = self.queryset.all().filter(id_sector=pk).first()
+        if not producto:
+            return Response({'success': False, 'detail': 'El programa ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+        serializador = self.serializer_class(producto)
+        return Response({'success': True, 'detail': 'Se encontro el programa', 'data': serializador.data}, status=status.HTTP_200_OK)
 # ---------------------------------------- Indicadores ----------------------------------------
 
 # Listar Indicadores
@@ -418,4 +476,17 @@ class ConsultarIndicadorId(generics.ListAPIView):
             return Response({'success': False, 'detail': 'El indicador ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
         serializador = self.serializer_class(indicador)
         return Response({'success': True, 'detail': 'Se encontro el indicador', 'data': serializador.data}, status=status.HTTP_200_OK)
-    
+
+# Listar indicadores por id de producto
+
+class ConsultarIndicadorProductoId(generics.ListAPIView):
+    serializer_class = PndIndicadorSerializer
+    queryset = PndIndicador.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        indicador = self.queryset.all().filter(id_producto=pk).first()
+        if not indicador:
+            return Response({'success': False, 'detail': 'El producto ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+        serializador = self.serializer_class(indicador)
+        return Response({'success': True, 'detail': 'Se encontro el producto', 'data': serializador.data}, status=status.HTTP_200_OK)

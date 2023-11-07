@@ -8,24 +8,28 @@ urlpatterns=[
     path('editar-plan-gestion-ambiental-regional/<int:pk>/',views.PlanGestionAmbientalRegionalUpdate.as_view(),name='editarplangestionambientalregional'),
     path('eliminar-plan-gestion-ambiental-regional/<int:pk>/',views.PlanGestionAmbientalRegionalDelete.as_view(),name='eliminarplangestionambientalregional'),
     path('detalle-plan-gestion-ambiental-regional/<int:pk>/',views.PlanGestionAmbientalRegionalId.as_view(),name='detalleplangestionambientalregional'),
+    path('busqueda-avanzada-pgar/', views.BusquedaAvanzada.as_view(), name='busquedaavanzada'),
     # Objetivo
     path('consultar-objetivos/',views.ObjetivoList.as_view(),name='consultarobjetivos'),
     path('crear-objetivo/',views.ObjetivoCreate.as_view(),name='crearobjetivo'),
     path('editar-objetivo/<int:pk>/',views.ObjetivoUpdate.as_view(),name='editarobjetivo'),
     path('eliminar-objetivo/<int:pk>/',views.ObjetivoDelete.as_view(),name='eliminarobjetivo'),
     path('detalle-objetivo/<int:pk>/',views.ObjetivoId.as_view(),name='detalleobjetivo'),
+    path('detalle-objetivo-pgar/<int:pk>/',views.ObjetivoPgarId.as_view(),name='detalleobjetivopgar'),
     # Linea Estrategica
     path('consultar-lineas-estrategicas/',views.LineaEstrategicaList.as_view(),name='consultarlineasestrategicas'),
     path('crear-linea-estrategica/',views.LineaEstrategicaCreate.as_view(),name='crearlineaestrategica'),
     path('editar-linea-estrategica/<int:pk>/',views.LineaEstrategicaUpdate.as_view(),name='editarlineaestrategica'),
     path('eliminar-linea-estrategica/<int:pk>/',views.LineaEstrategicaDelete.as_view(),name='eliminarlineaestrategica'),
     path('detalle-linea-estrategica/<int:pk>/',views.LineaEstrategicaId.as_view(),name='detallelineaestrategica'),
+    path('detalle-linea-estrategica-objetivo/<int:pk>/',views.LineaEstrategicaObjetivoId.as_view(),name='detallelineaestrategicaobjetivo'),
     # Meta Estrategica
     path('consultar-metas-estrategicas/',views.MetaEstrategicaList.as_view(),name='consultarmetasestrategicas'),
     path('crear-meta-estrategica/',views.MetaEstrategicaCreate.as_view(),name='crearmetaestrategica'),
     path('editar-meta-estrategica/<int:pk>/',views.MetaEstrategicaUpdate.as_view(),name='editarmetaestrategica'),
     path('eliminar-meta-estrategica/<int:pk>/',views.MetaEstrategicaDelete.as_view(),name='eliminarmetaestrategica'),
     path('detalle-meta-estrategica/<int:pk>/',views.MetaEstrategicaId.as_view(),name='detallemetaestrategica'),
+    path('detalle-meta-estrategica-linea-estrategica/<int:pk>/',views.MetaEstrategicaLineaEstrategicaId.as_view(),name='detallemetaestrategicalineaestrategica'),
     # Entidades
     path('consultar-entidades/',views.EntidadesList.as_view(),name='consultarentidades'),
     path('crear-entidad/',views.EntidadesCreate.as_view(),name='crearentidad'),
@@ -44,6 +48,8 @@ urlpatterns=[
     path('editar-actividad/<int:pk>/',views.ActividadUpdate.as_view(),name='editaractividad'),
     path('eliminar-actividad/<int:pk>/',views.ActividadDelete.as_view(),name='eliminaractividad'),
     path('detalle-actividad/<int:pk>/',views.ActividadId.as_view(),name='detalleactividad'),
+    path('detalle-actividad-meta-estrategica/<int:pk>/',views.ActividadMetaEstrategicaId.as_view(),name='detalleactividadmetaestrategica'),
+    path('detalle-actividad-indicador/<int:pk>/',views.ActividadIndicadorId.as_view(),name='detalleactividadindicador'),
 ]
     
 
