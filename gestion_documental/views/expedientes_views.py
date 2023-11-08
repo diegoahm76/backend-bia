@@ -1474,7 +1474,12 @@ class IndexarDocumentosCreate(generics.CreateAPIView):
             extension_sin_punto = extension[1:] if extension.startswith('.') else extension
             
             tipologia = TipologiasDoc.objects.filter(id_tipologia_documental=data['id_tipologia_documental']).first()
-            formatos_tipos_medio_list = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc=tipologia.cod_tipo_medio_doc.cod_tipo_medio_doc).values_list('nombre', flat=True)
+            if not tipologia:
+                raise ValidationError("Debe elegir una tipología válida")
+                
+            cod_tipo_medio_doc_list = ['E', 'F'] if tipologia.cod_tipo_medio_doc.cod_tipo_medio_doc == 'H' else [tipologia.cod_tipo_medio_doc.cod_tipo_medio_doc]
+            
+            formatos_tipos_medio_list = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc__in=cod_tipo_medio_doc_list).values_list('nombre', flat=True)
             
             if extension_sin_punto.lower() not in list(formatos_tipos_medio_list) and extension_sin_punto.upper() not in list(formatos_tipos_medio_list):
                 raise ValidationError(f'El formato del documento {archivo_nombre} no se encuentra definido para la Tipología Documental elegida')
