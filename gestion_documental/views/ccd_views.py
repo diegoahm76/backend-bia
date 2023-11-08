@@ -1730,7 +1730,7 @@ class OficinasUnidadOrganizacionalGetView(generics.ListAPIView):
             raise ValidationError('No se encontro unidad organizacional')
         
         oficinas_unidad = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre=id_unidad_org_padre, cod_agrupacion_documental__isnull=True).order_by('codigo')
-        serializer = self.serializer_class(oficinas_unidad, many=True)
+        serializer = self.serializer_class(oficinas_unidad, context={'id_ccd_nuevo': ccd.id_ccd}, many=True)
 
         data = {
             'id_ccd': ccd.id_ccd,
