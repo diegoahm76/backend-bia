@@ -18,6 +18,7 @@ urlpatterns = [
     #Indexación de documentos
     path('expedientes/trd-actual-retirados/',views.TrdActualRetiradosGet.as_view(), name='trd-actual-retirados'),
     path('expedientes/list-complejos/get/<str:id_catserie_unidadorg>/',views.ListExpedientesComplejosGet.as_view(), name='list-exp-complejos'),
+    path('expedientes/simple/get/<str:id_expediente_documental>/',views.ExpedientesSimpleGet.as_view(), name='exp-simple-get'),
     path('expedientes/indexar-documentos/create/<str:id_expediente_documental>/',views.IndexarDocumentosCreate.as_view(), name='indexar-documentos-create'),
     path('expedientes/indexar-documentos/get/<str:id_documento_de_archivo_exped>/',views.IndexarDocumentosGet.as_view(), name='indexar-documentos-get'),
     path('expedientes/indexar-documentos/update/<str:id_documento_de_archivo_exped>/',views.IndexarDocumentosUpdate.as_view(), name='indexar-documentos-update'),
