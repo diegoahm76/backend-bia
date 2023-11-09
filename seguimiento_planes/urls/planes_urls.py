@@ -9,11 +9,11 @@ urlpatterns=[
     path('eliminar-ods/<str:pk>/',views.ObjetivoDesarrolloSostenibleDelete.as_view(),name='eliminarods'),
     path('consultar-ods-id/<str:pk>/',views.ObjetivoDesarrolloSostenibleDetail.as_view(),name='consultarodsid'),
     # Planes
-    path('consultar-planes-/',views.ConsultarPlanes.as_view(),name='consultarplanesnacionalesdesarrollo'),
-    path('crear-planes-/',views.CrearPlanes.as_view(),name='crearplanesnacionalesdesarrollo'),
-    path('actualizar-planes-/<str:pk>/',views.ActualizarPlanes.as_view(),name='actualizarplanesnacionalesdesarrollo'),
-    path('eliminar-planes-/<str:pk>/',views.EliminarPlanes.as_view(),name='eliminarplanesnacionalesdesarrollo'),
-    path('consultar-planes--id/<str:pk>/',views.ConsultarPlanesId.as_view(),name='consultarplanesnacionalesdesarrolloid'),
+    path('consultar-planes/',views.ConsultarPlanes.as_view(),name='consultarplanesnacionalesdesarrollo'),
+    path('crear-planes/',views.CrearPlanes.as_view(),name='crearplanesnacionalesdesarrollo'),
+    path('actualizar-planes/<str:pk>/',views.ActualizarPlanes.as_view(),name='actualizarplanesnacionalesdesarrollo'),
+    path('eliminar-planes/<str:pk>/',views.EliminarPlanes.as_view(),name='eliminarplanesnacionalesdesarrollo'),
+    path('consultar-planes-id/<str:pk>/',views.ConsultarPlanesId.as_view(),name='consultarplanesnacionalesdesarrolloid'),
     path('busqueda-avanzada-planes/', views.BusquedaAvanzadaPlanes.as_view(), name='busquedaavanzadaplnacionaldesarrollo'),
     # Ejes Estratégicos
     path('consultar-ejes-estrategicos/',views.EjeEstractegicoList.as_view(),name='consultarejesestrategicos'),
