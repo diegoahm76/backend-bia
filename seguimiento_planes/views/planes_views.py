@@ -5,8 +5,8 @@ from rest_framework import generics, status
 from django.db.models.functions import Concat
 from django.db.models import Q, Value as V
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
-from seguimiento_planes.serializers.planes_serializer import ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoSerializer, RubloSerializer, IndicadorSerializer, MetasSerializer
-from seguimiento_planes.models.planes_models import ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rublo, Indicador, Metas
+from seguimiento_planes.serializers.planes_serializer import ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubloSerializer, IndicadorSerializer, MetasSerializer
+from seguimiento_planes.models.planes_models import ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rublo, Indicador, Metas, TipoEje
 
 # ---------------------------------------- Objetivos Desarrollo Sostenible Tabla Básica ----------------------------------------
 
@@ -1329,3 +1329,90 @@ class MetaListIdIndicador(generics.ListAPIView):
             raise NotFound('No se encontraron resultados.')
         serializer = MetasSerializer(meta, many=True)
         return Response({'success': True, 'detail': 'Meta encontrada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# ---------------------------------------- Tipo Eje Tabla Básica ----------------------------------------
+
+# Listar todos los Tipos Eje
+
+class TipoEjeList(generics.ListCreateAPIView):
+    queryset = TipoEje.objects.all()
+    serializer_class = TipoEjeSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        tipos_eje = TipoEje.objects.all()
+        serializer = TipoEjeSerializer(tipos_eje, many=True)
+        if not tipos_eje:
+            raise NotFound('No se encontraron resultados.')
+        return Response({'success': True, 'detail': 'Listado de Tipos Eje.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Crear un Tipo Eje
+
+class TipoEjeCreate(generics.ListCreateAPIView):
+    queryset = TipoEje.objects.all()
+    serializer_class = TipoEjeSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self,request):
+        data_in = request.data
+        try:
+            data_in['registro_precargado']=False
+            data_in['item_ya_usado']=False
+            data_in['activo']=True
+            serializer = self.serializer_class(data=data_in)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        except ValidationError as e:       
+            raise ValidationError(e.detail)
+        return Response({'success': True, 'detail': 'Tipo Eje creado correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+
+# Actualizar un Tipo Eje
+
+class TipoEjeUpdate(generics.RetrieveUpdateAPIView):
+    queryset = TipoEje.objects.all()
+    serializer_class = TipoEjeSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def put(self, request, pk):
+        data = request.data
+        tipo_eje = self.queryset.all().filter(id_tipo_eje=pk).first()
+        if not tipo_eje:
+            return Response({'success': False, 'detail': 'El Tipo Eje ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+        if not tipo_eje.item_ya_usado == True:
+            return Response({'success': False, 'detail': 'El Tipo Eje ya ha sido usado en un Plan, por lo tanto no puede ser modificado'}, status=status.HTTP_403_FORBIDDEN)
+        serializer = TipoEjeSerializer(tipo_eje, data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Tipo Eje actualizado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Eliminar un Tipo Eje
+
+class TipoEjeDelete(generics.RetrieveUpdateAPIView):
+    queryset = TipoEje.objects.all()
+    serializer_class = TipoEjeSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def delete(self, request, pk):
+        tipo_eje = self.queryset.all().filter(id_tipo_eje=pk).first()
+        if not tipo_eje:
+            return Response({'success': False, 'detail': 'El Tipo Eje ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+        if not tipo_eje.item_ya_usado == True:
+            return Response({'success': False, 'detail': 'El Tipo Eje ya ha sido usado en un Plan, por lo tanto no puede ser eliminado'}, status=status.HTTP_403_FORBIDDEN)
+        if tipo_eje.registro_precargado:
+            return Response({'success': False, 'detail': 'El Tipo Eje es un registro precargado, por lo tanto no puede ser eliminado'}, status=status.HTTP_403_FORBIDDEN)
+        tipo_eje.delete()
+        return Response({'success': True, 'detail': 'Tipo Eje eliminado correctamente.'}, status=status.HTTP_200_OK)
+
+# listar un Tipo Eje por id
+
+class TipoEjeDetail(generics.RetrieveAPIView):
+    queryset = TipoEje.objects.all()
+    serializer_class = TipoEjeSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, pk):
+        tipo_eje = self.queryset.all().filter(id_tipo_eje=pk).first()
+        if not tipo_eje:
+            raise NotFound('No se encontraron resultados.')
+        serializer = TipoEjeSerializer(tipo_eje)
+        return Response({'success': True, 'detail': 'Tipo Eje encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
