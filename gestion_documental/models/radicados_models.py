@@ -93,7 +93,7 @@ class PQRSDF(models.Model):
     cod_relacion_con_el_titular = models.CharField(max_length=2, choices=RELACION_TITULAR, db_column='T257codRelacionConElTitular')
     es_anonima = models.BooleanField(default=False, db_column='T257esAnonima')
     fecha_registro = models.DateTimeField(db_column='T257fechaRegistro')
-    id_medio_solicitud = models.SmallIntegerField(db_column='T257Id_MedioSolicitud')
+    id_medio_solicitud = models.ForeignKey(MediosSolicitud,on_delete=models.CASCADE,db_column='T257Id_MedioSolicitud')
     cod_forma_presentacion = models.CharField(max_length=1, choices=FORMA_PRESENTACION, db_column='T257codFormaPresentacion')
     asunto = models.CharField(max_length=100, db_column='T257asunto')
     descripcion = models.CharField(max_length=500, db_column='T257descripcion')
