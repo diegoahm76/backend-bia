@@ -16,6 +16,7 @@ from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, Forma
 from gestion_documental.serializers.conf__tipos_exp_serializers import ConfiguracionTipoExpedienteAgnoGetSerializer
 from gestion_documental.serializers.trd_serializers import BusquedaTRDNombreVersionSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
+from gestion_documental.views.conf__tipos_exp_views import ConfiguracionTipoExpedienteAgnoGetConsect
 from seguridad.utils import Util
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -118,9 +119,21 @@ class AperturaExpedienteCreate(generics.CreateAPIView):
         data['codigo_exp_und_serie_subserie'] = codigo_exp_und_serie_subserie
         data['codigo_exp_Agno'] = current_date.year
         
-        # VALIDAR DESPUÉS
-        data['codigo_exp_consec_por_agno'] = None if data['cod_tipo_expediente'] == 'C' else None # TEMPORAL
+        # OBTENER CONSECUTIVO ACTUAL
+        codigo_exp_consec_por_agno = None
+        
+        if data['cod_tipo_expediente'] == 'C':
+            # LLAMAR CLASE PARA GENERAR CONSECUTIVO
+            fecha_actual = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+            clase_consec = ConfiguracionTipoExpedienteAgnoGetConsect()
+            codigo_exp_consec_por_agno = clase_consec.generar_radicado(
+                data['id_cat_serie_und_org_ccd_trd_prop'],
+                request.user.persona.id_persona,
+                fecha_actual
+            )
+            codigo_exp_consec_por_agno = codigo_exp_consec_por_agno.data.get('data').get('consecutivo_actual')
             
+        data['codigo_exp_consec_por_agno'] = codigo_exp_consec_por_agno
         data['estado'] = 'A'
         data['fecha_folio_inicial'] = current_date
         data['cod_etapa_de_archivo_actual_exped'] = 'G'
@@ -1419,10 +1432,25 @@ class ListExpedientesComplejosGet(generics.ListAPIView):
 
     def get(self, request, id_catserie_unidadorg):
         expedientes = ExpedientesDocumentales.objects.filter(id_cat_serie_und_org_ccd_trd_prop=id_catserie_unidadorg)
+        if not expedientes:
+            raise NotFound("No se encontró expedientes para la tripleta del TRD seleccionado")
         
         serializer = self.serializer_class(expedientes, many=True)
         return Response({'succes': True, 'detail':'Resultados de la búsqueda', 'data':serializer.data}, status=status.HTTP_200_OK)
+
+class ExpedientesSimpleGet(generics.ListAPIView):
+    serializer_class = ListExpedientesComplejosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_expediente_documental):
+        expediente = ExpedientesDocumentales.objects.filter(id_expediente_documental=id_expediente_documental).first()
+        if not expediente:
+            raise NotFound("No se encontró el expediente seleccionado")
+        
+        serializer = self.serializer_class(expediente)
+        return Response({'succes': True, 'detail':'Resultados de la búsqueda', 'data':serializer.data}, status=status.HTTP_200_OK)
     
+
 class IndexarDocumentosCreate(generics.CreateAPIView):
     serializer_class = IndexarDocumentosCreateSerializer
     permission_classes = [IsAuthenticated]
@@ -1461,7 +1489,12 @@ class IndexarDocumentosCreate(generics.CreateAPIView):
             extension_sin_punto = extension[1:] if extension.startswith('.') else extension
             
             tipologia = TipologiasDoc.objects.filter(id_tipologia_documental=data['id_tipologia_documental']).first()
-            formatos_tipos_medio_list = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc=tipologia.cod_tipo_medio_doc.cod_tipo_medio_doc).values_list('nombre', flat=True)
+            if not tipologia:
+                raise ValidationError("Debe elegir una tipología válida")
+                
+            cod_tipo_medio_doc_list = ['E', 'F'] if tipologia.cod_tipo_medio_doc.cod_tipo_medio_doc == 'H' else [tipologia.cod_tipo_medio_doc.cod_tipo_medio_doc]
+            
+            formatos_tipos_medio_list = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc__in=cod_tipo_medio_doc_list).values_list('nombre', flat=True)
             
             if extension_sin_punto.lower() not in list(formatos_tipos_medio_list) and extension_sin_punto.upper() not in list(formatos_tipos_medio_list):
                 raise ValidationError(f'El formato del documento {archivo_nombre} no se encuentra definido para la Tipología Documental elegida')
@@ -1553,7 +1586,9 @@ class IndexarDocumentosGet(generics.ListAPIView):
 
     def get(self, request, id_documento_de_archivo_exped):
         doc_expediente = DocumentosDeArchivoExpediente.objects.filter(id_documento_de_archivo_exped=id_documento_de_archivo_exped).first()
-        
+        if not doc_expediente:
+            raise NotFound("No se encuentra el documento ingresado")
+            
         serializer = self.serializer_class(doc_expediente)
         return Response({'succes': True, 'detail':'Resultados de la búsqueda', 'data':serializer.data}, status=status.HTTP_200_OK)
     

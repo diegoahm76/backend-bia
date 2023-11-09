@@ -153,6 +153,10 @@ urlpatterns = [
     # path('complete/', login_required(complete), name='social-auth-complete'),
     # path('oidc_login/', views.oidc_login, name='oidc_login'),
 
+    # SEGUIMIENTO PLANES
+    path('api/seguimiento/planes/',include('seguimiento_planes.urls.planes_urls')),
+
+
     
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

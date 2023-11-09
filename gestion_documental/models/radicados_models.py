@@ -7,9 +7,10 @@ from gestion_documental.choices.tipo_radicado_choices import TIPOS_RADICADO_CHOI
 from transversal.models.base_models import Municipio
 from transversal.models.entidades_models import SucursalesEmpresas
 from transversal.models.organigrama_models import UnidadesOrganizacionales
+
+
 class ConfigTiposRadicadoAgno(models.Model):
 
-    
     id_config_tipo_radicado_agno = models.SmallAutoField(primary_key=True, db_column='T235IdConfigTipoRadicadoAgno')
     agno_radicado = models.SmallIntegerField(db_column='T235agnoRadicado')
     cod_tipo_radicado = models.CharField(max_length=1, choices=TIPOS_RADICADO_CHOICES, db_column='T235codTipoRadicado')
@@ -27,8 +28,8 @@ class ConfigTiposRadicadoAgno(models.Model):
         db_table = 'T235ConfigTiposRadicadoAgno'
         unique_together = ['agno_radicado', 'cod_tipo_radicado']
 
-class TiposPQR(models.Model):
 
+class TiposPQR(models.Model):
 
     cod_tipo_pqr = models.CharField( primary_key=True,max_length=1,choices=TIPOS_PQR,db_column='T252CodTipoPQR')
     nombre = models.CharField(max_length=15,unique=True,db_column='T252nombre', verbose_name='Nombre del Tipo de PQR' )
@@ -40,6 +41,7 @@ class TiposPQR(models.Model):
         db_table = 'T252TiposPQR'  
         verbose_name = 'Tipo de PQR'  
         verbose_name_plural = 'Tipos de PQR' 
+
 
 class MediosSolicitud(models.Model):
     id_medio_solicitud = models.SmallAutoField(primary_key=True, db_column='T253IdMedioSolicitud')
@@ -83,7 +85,6 @@ FORMA_PRESENTACION = [
     ('E', 'Escrita'),
 ]    
 
-    
 
 class PQRSDF(models.Model):
     id_PQRSDF = models.AutoField(primary_key=True, db_column='T257IdPQRSDF')
@@ -121,7 +122,6 @@ class PQRSDF(models.Model):
         db_table = 'T257PQRSDF'
 
 
-
 class Estados_PQR(models.Model):
     id_estado_PQR = models.AutoField(primary_key=True, db_column='T255IdEstado_PQR')
     PQRSDF = models.ForeignKey(PQRSDF,on_delete=models.CASCADE,db_column='T255Id_PQRSDF', null=True)
@@ -134,7 +134,7 @@ class Estados_PQR(models.Model):
     class Meta:
        # managed = False  # Evita que Django gestione esta tabla en la base de datos.
         db_table = 'T255Estados_PQR'
-from django.db import models
+
 
 class InfoDenuncias_PQRSDF(models.Model):
     id_info_denuncia_PQRSDF = models.AutoField(primary_key=True, db_column='T256IdInfoDenuncia_PQRSDF')
@@ -155,6 +155,7 @@ class InfoDenuncias_PQRSDF(models.Model):
     class Meta:
         #managed = False  # Evita que Django gestione esta tabla en la base de datos.
         db_table = 'T256InfoDenuncias_PQRSDF'
+
 
 class Anexos(models.Model):
     id_anexo = models.AutoField(primary_key=True, db_column='T258IdAnexo')
@@ -223,6 +224,7 @@ class modulos_radican(models.Model):
     class Meta:
         db_table = 'T261ModulosQueRadican'
 
+
 class SolicitudAlUsuarioSobrePQRSDF(models.Model):
     id_solicitud_al_usuario_sobre_pqrsdf = models.AutoField(primary_key=True, db_column='T266IdSolicitudAlUsuarioSobrePQR')
     id_pqrsdf = models.ForeignKey(PQRSDF, models.CASCADE, db_column='T266Id_PQRSDF')
@@ -242,6 +244,8 @@ class SolicitudAlUsuarioSobrePQRSDF(models.Model):
 
     class Meta:
         db_table = 'T266SolicitudAlUsuarioSobrePQRSDF'
+
+
 class ComplementosUsu_PQR(models.Model):
     idComplementoUsu_PQR = models.AutoField(primary_key=True, db_column='T267IdComplementoUsu_PQR')
     id_PQRSDF = models.ForeignKey(PQRSDF,on_delete=models.CASCADE,null=True, db_column='T267Id_PQRSDF')
@@ -291,7 +295,6 @@ class BandejaTareasPersona(models.Model):
         unique_together = ('id_persona',)
 
 
-
 COD_TIPO_TAREA_CHOICES = (
     ('Rpqr', 'Responder PQRSDF'),
     ('Rtra', 'Responder Trámite'),
@@ -310,6 +313,7 @@ COD_ESTADO_SOLICITUD_CHOICES = (
     ('Re', 'Respondida por el propietario'),
    
 )
+
 
 class TareaBandejaTareasPersona(models.Model):
     id_tarea_bandeja_tareas_persona = models.AutoField(primary_key=True, db_column='T265IdTarea_BandejaTareas_Persona')
@@ -339,7 +343,6 @@ class TareaBandejaTareasPersona(models.Model):
         db_table = 'T265Tareas_BandejaTareas_Persona'
         unique_together = ('id_asignacion', )
 
-from django.db import models
 
 class AsignacionPQR(models.Model):
     id_asignacion_pqr = models.AutoField(primary_key=True,db_column='T268IdAsignacion_PQR')
@@ -361,7 +364,6 @@ class AsignacionPQR(models.Model):
         db_table = 'T268Asignacion_PQR'
         unique_together = (('id_pqrsdf', 'consecutivo_asign_x_pqrsdf'), )
 
-from django.db import models
 
 class RespuestaPQR(models.Model):
     id_respuesta_pqr = models.AutoField(primary_key=True,db_column='T269IdRespuesta_PQR')
@@ -381,7 +383,6 @@ class RespuestaPQR(models.Model):
         unique_together = (('id_pqrsdf', 'id_persona_responde', 'fecha_respuesta'), )
 
 
-
 class Anexos_PQR(models.Model):
     id_anexo_PQR = models.AutoField(primary_key=True,db_column='T259IdAnexo_PQR')
     id_PQRSDF = models.ForeignKey(PQRSDF,on_delete=models.CASCADE,null=True,db_column='T259Id_PQRSDF')
@@ -393,3 +394,4 @@ class Anexos_PQR(models.Model):
     class Meta:
         unique_together = [("id_anexo",)]
         db_table = 'T259Anexos_PQR'
+

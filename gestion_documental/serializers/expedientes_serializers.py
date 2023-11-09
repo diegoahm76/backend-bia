@@ -258,8 +258,8 @@ class AperturaExpedienteSimpleSerializer(serializers.ModelSerializer):
         
         if request_data['cod_tipo_expediente'] == 'C':
             ultimo_expediente = ExpedientesDocumentales.objects.filter(codigo_exp_und_serie_subserie = request_data['codigo_exp_und_serie_subserie']).order_by('fecha_apertura_expediente').last()
-            if fecha_apertura > ultimo_expediente.fecha_apertura_expediente:
-                raise ValidationError('La fecha tiene que ser posterior a la fecha de apertura del último expediente')
+            if ultimo_expediente and fecha_apertura < ultimo_expediente.fecha_apertura_expediente:
+                raise ValidationError(f'La fecha tiene que ser posterior a la fecha de apertura del último expediente ({str(ultimo_expediente.fecha_apertura_expediente)})')
             
         return fecha_apertura
             
@@ -274,6 +274,7 @@ class AperturaExpedienteSimpleSerializer(serializers.ModelSerializer):
     class Meta:
         model =  ExpedientesDocumentales
         fields = [
+            'id_expediente_documental',
             'titulo_expediente',
             'descripcion_expediente',
             'id_unidad_org_oficina_respon_original',
@@ -300,6 +301,7 @@ class AperturaExpedienteSimpleSerializer(serializers.ModelSerializer):
             'id_persona_crea_manual'
         ]
         extra_kwargs = {
+            'id_expediente_documental': {'read_only':True},
             'titulo_expediente': {'required': True, 'allow_blank':False, 'allow_null':False},
             'descripcion_expediente': {'required': False, 'allow_blank':True, 'allow_null':True},
             'id_unidad_org_oficina_respon_original': {'required': True, 'allow_null':False},
@@ -742,6 +744,7 @@ class IndexarDocumentosCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model =  DocumentosDeArchivoExpediente
         fields = [
+            'id_documento_de_archivo_exped',
             'id_expediente_documental',
             'identificacion_doc_en_expediente',
             'nombre_asignado_documento',
@@ -773,6 +776,7 @@ class IndexarDocumentosCreateSerializer(serializers.ModelSerializer):
             'id_und_org_oficina_respon_actual'
         ]
         extra_kwargs = {
+            'id_documento_de_archivo_exped': {'read_only': True},
             'fecha_incorporacion_doc_a_Exp': {'required': True, 'allow_null':False},
             'fecha_creacion_doc': {'required': True, 'allow_null':False},
             'id_tipologia_documental': {'required': True, 'allow_null':False},
