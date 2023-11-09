@@ -258,8 +258,8 @@ class AperturaExpedienteSimpleSerializer(serializers.ModelSerializer):
         
         if request_data['cod_tipo_expediente'] == 'C':
             ultimo_expediente = ExpedientesDocumentales.objects.filter(codigo_exp_und_serie_subserie = request_data['codigo_exp_und_serie_subserie']).order_by('fecha_apertura_expediente').last()
-            if fecha_apertura > ultimo_expediente.fecha_apertura_expediente:
-                raise ValidationError('La fecha tiene que ser posterior a la fecha de apertura del último expediente')
+            if ultimo_expediente and fecha_apertura < ultimo_expediente.fecha_apertura_expediente:
+                raise ValidationError(f'La fecha tiene que ser posterior a la fecha de apertura del último expediente ({str(ultimo_expediente.fecha_apertura_expediente)})')
             
         return fecha_apertura
             
@@ -274,6 +274,7 @@ class AperturaExpedienteSimpleSerializer(serializers.ModelSerializer):
     class Meta:
         model =  ExpedientesDocumentales
         fields = [
+            'id_expediente_documental',
             'titulo_expediente',
             'descripcion_expediente',
             'id_unidad_org_oficina_respon_original',
@@ -300,6 +301,7 @@ class AperturaExpedienteSimpleSerializer(serializers.ModelSerializer):
             'id_persona_crea_manual'
         ]
         extra_kwargs = {
+            'id_expediente_documental': {'read_only':True},
             'titulo_expediente': {'required': True, 'allow_blank':False, 'allow_null':False},
             'descripcion_expediente': {'required': False, 'allow_blank':True, 'allow_null':True},
             'id_unidad_org_oficina_respon_original': {'required': True, 'allow_null':False},
@@ -704,8 +706,6 @@ class IndexarDocumentosCreateSerializer(serializers.ModelSerializer):
     def validate_fecha_creacion_doc(self, fecha_creacion):
         request_data = self.initial_data
         fecha_incorp = datetime.strptime(request_data['fecha_incorporacion_doc_a_Exp'], '%Y-%m-%d')
-        print("fecha_creacion: ", fecha_creacion)
-        print("fecha_incorp: ", fecha_incorp)
         
         if fecha_creacion > fecha_incorp:
             raise ValidationError('La Fecha de Creación del Documento tiene que ser igual o anterior a la Fecha de Incorporación al Expediente')
@@ -744,6 +744,7 @@ class IndexarDocumentosCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model =  DocumentosDeArchivoExpediente
         fields = [
+            'id_documento_de_archivo_exped',
             'id_expediente_documental',
             'identificacion_doc_en_expediente',
             'nombre_asignado_documento',
@@ -775,6 +776,7 @@ class IndexarDocumentosCreateSerializer(serializers.ModelSerializer):
             'id_und_org_oficina_respon_actual'
         ]
         extra_kwargs = {
+            'id_documento_de_archivo_exped': {'read_only': True},
             'fecha_incorporacion_doc_a_Exp': {'required': True, 'allow_null':False},
             'fecha_creacion_doc': {'required': True, 'allow_null':False},
             'id_tipologia_documental': {'required': True, 'allow_null':False},
@@ -784,4 +786,147 @@ class IndexarDocumentosCreateSerializer(serializers.ModelSerializer):
             'tiene_replica_fisica': {'required': True, 'allow_null':False},
             'nombre_asignado_documento': {'required': True, 'allow_blank':False, 'allow_null':False},
             'descripcion': {'required': True, 'allow_blank':False, 'allow_null':False},
+        }
+
+class IndexarDocumentosGetSerializer(serializers.ModelSerializer):
+    tiene_consecutivo_documento = serializers.SerializerMethodField()
+    nombre_tipologia = serializers.CharField(source='id_tipologia_documental.nombre', read_only=True)
+    categoria_archivo = serializers.CharField(source='get_cod_categoria_archivo_display', read_only=True)
+    origen_archivo = serializers.CharField(source='get_cod_origen_archivo_display', read_only=True)
+    nombre_persona_anula = serializers.SerializerMethodField()
+    
+    def get_tiene_consecutivo_documento(self, obj):
+        tiene_consecutivo_documento = False
+        if obj.codigo_radicado_consecutivo:
+            tiene_consecutivo_documento = True
+            
+        return tiene_consecutivo_documento
+    
+    def get_nombre_persona_anula(self, obj):
+        nombre_persona_anula = None
+        if obj.id_persona_anula:
+            nombre_list = [obj.id_persona_anula.primer_nombre, obj.id_persona_anula.segundo_nombre,
+                            obj.id_persona_anula.primer_apellido, obj.id_persona_anula.segundo_apellido]
+            nombre_persona_anula = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_anula = nombre_persona_anula if nombre_persona_anula != "" else None
+        return nombre_persona_anula
+    
+    class Meta:
+        model =  DocumentosDeArchivoExpediente
+        fields = [
+            'id_documento_de_archivo_exped',
+            'id_expediente_documental',
+            'identificacion_doc_en_expediente',
+            'nombre_asignado_documento',
+            'nombre_original_del_archivo',
+            'fecha_creacion_doc',
+            'fecha_incorporacion_doc_a_Exp',
+            'descripcion',
+            'asunto',
+            'cod_categoria_archivo',
+            'categoria_archivo',
+            'es_version_original',
+            'tiene_replica_fisica',
+            'nro_folios_del_doc',
+            'cod_origen_archivo',
+            'origen_archivo',
+            'orden_en_expediente',
+            'id_tipologia_documental',
+            'nombre_tipologia',
+            'tiene_consecutivo_documento',
+            'codigo_radicado_prefijo',
+            'codigo_radicado_agno',
+            'codigo_radicado_consecutivo',
+            'es_un_archivo_anexo',
+            'id_doc_de_arch_del_cual_es_anexo',
+            'anexo_corresp_a_lista_chequeo',
+            'id_archivo_sistema',
+            'palabras_clave_documento',
+            'documento_requiere_rta',
+            'creado_automaticamente',
+            'fecha_indexacion_manual_sistema',
+            'id_und_org_oficina_creadora',
+            'id_persona_que_crea',
+            'id_und_org_oficina_respon_actual',
+            'anulado',
+            'observacion_anulacion',
+            'fecha_anulacion',
+            'id_persona_anula',
+            'nombre_persona_anula'
+        ]
+
+class IndexarDocumentosUpdateSerializer(serializers.ModelSerializer):
+    def validate_fecha_incorporacion_doc_a_Exp(self, fecha_incorp):
+        doc_siguiente_expediente = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=self.instance.id_expediente_documental, orden_en_expediente__gte=self.instance.orden_en_expediente).order_by('orden_en_expediente').first()
+        doc_anterior_expediente = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=self.instance.id_expediente_documental, orden_en_expediente__lte=self.instance.orden_en_expediente).order_by('orden_en_expediente').last()
+        
+        if doc_anterior_expediente and fecha_incorp < doc_anterior_expediente.fecha_incorporacion_doc_a_Exp:
+            raise ValidationError(f'La fecha de incorporación del documento elegido no puede ser menor a la fecha de incorporación del anterior documento ({str(doc_anterior_expediente.fecha_incorporacion_doc_a_Exp)})')
+        
+        if doc_siguiente_expediente and fecha_incorp > doc_siguiente_expediente.fecha_incorporacion_doc_a_Exp:
+            raise ValidationError(f'La fecha de incorporación del documento elegido no puede ser mayor a la fecha de incorporación del siguiente documento ({str(doc_siguiente_expediente.fecha_incorporacion_doc_a_Exp)})')
+        
+        return fecha_incorp
+    
+    def validate_fecha_creacion_doc(self, fecha_creacion):
+        request_data = self.initial_data
+        if request_data.get('fecha_incorporacion_doc_a_Exp'):
+            fecha_incorp = datetime.strptime(request_data['fecha_incorporacion_doc_a_Exp'], '%Y-%m-%d')
+        else:
+            fecha_incorp = self.instance.fecha_incorporacion_doc_a_Exp
+        
+        if fecha_creacion > fecha_incorp:
+            raise ValidationError('La Fecha de Creación del Documento tiene que ser igual o anterior a la Fecha de Incorporación al Expediente')
+        
+        return fecha_creacion
+    
+    def validate_palabras_clave_documento(self, palabras):
+        palabras_split = palabras.split('|')
+        
+        if len(palabras_split) > 5:
+            raise ValidationError('No debe enviar más de 5 palabras clave')
+        
+        return palabras
+    
+    class Meta:
+        model =  DocumentosDeArchivoExpediente
+        fields = [
+            'fecha_creacion_doc',
+            'fecha_incorporacion_doc_a_Exp',
+            'descripcion',
+            'asunto',
+            'nombre_asignado_documento',
+            'id_persona_titular',
+            'cod_categoria_archivo',
+            'tiene_replica_fisica',
+            'nro_folios_del_doc',
+            'cod_origen_archivo',
+            'palabras_clave_documento'
+        ]
+
+class IndexarDocumentosUpdateAutSerializer(serializers.ModelSerializer):
+    def validate_palabras_clave_documento(self, palabras):
+        palabras_split = palabras.split('|')
+        
+        if len(palabras_split) > 5:
+            raise ValidationError('No debe enviar más de 5 palabras clave')
+        
+        return palabras
+    
+    class Meta:
+        model =  DocumentosDeArchivoExpediente
+        fields = ['palabras_clave_documento']
+        
+class IndexarDocumentosAnularSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model =  DocumentosDeArchivoExpediente
+        fields = [
+            'anulado',
+            'observacion_anulacion',
+            'fecha_anulacion',
+            'id_persona_anula'
+        ]
+        extra_kwargs = {
+            'observacion_anulacion': {'required': True, 'allow_blank':False, 'allow_null':False}
         }
