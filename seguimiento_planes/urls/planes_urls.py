@@ -93,4 +93,10 @@ urlpatterns=[
     path('actualizar-metas/<str:pk>/',views.MetaUpdate.as_view(),name='actualizarmetas'),
     path('eliminar-metas/<str:pk>/',views.MetaDelete.as_view(),name='eliminarmetas'),
     path('consultar-metas-id/<str:pk>/',views.MetaDetail.as_view(),name='consultarmetasid'),
+    # Tipos de Ejes
+    path('consultar-tipos-ejes/',views.TipoEjeList.as_view(),name='consultartiposejes'),
+    path('crear-tipos-ejes/',views.TipoEjeCreate.as_view(),name='creartiposejes'),
+    path('actualizar-tipos-ejes/<str:pk>/',views.TipoEjeUpdate.as_view(),name='actualizartiposejes'),
+    path('eliminar-tipos-ejes/<str:pk>/',views.TipoEjeDelete.as_view(),name='eliminartiposejes'),
+    path('consultar-tipos-ejes-id/<str:pk>/',views.TipoEjeDetail.as_view(),name='consultartiposejesid'),
 ]

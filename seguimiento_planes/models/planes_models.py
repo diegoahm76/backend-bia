@@ -45,15 +45,35 @@ class Planes(models.Model):
         verbose_name = 'Plan Nacional Desarrollo'
         verbose_name_plural = 'Planes Nacionales Desarrollos'
 
+class TipoEje(models.Model):
+    id_tipo_eje = models.AutoField(
+        primary_key=True, editable=False, db_column='T514IdTipoEje')
+    nombre_tipo_eje = models.CharField(
+        max_length=255, db_column='T514nombreTipoEje')
+    activo = models.BooleanField(default=True, db_column='T514activo')
+    item_ya_usado = models.BooleanField(default=False, db_column='T514itemYaUsado')
+    registro_precargado = models.BooleanField(default=False, db_column='T514registroPrecargado')
+    
+
+    def __str__(self):
+        return str(self.id_tipo_eje)
+
+    class Meta:
+        db_table = 'T514TipoEje'
+        verbose_name = 'Tipo Eje'
+        verbose_name_plural = 'Tipos Ejes'
+
 class EjeEstractegico(models.Model):
     id_eje_estrategico = models.AutoField(
         primary_key=True, editable=False, db_column='T502IdEjeEstrategico')
     nombre = models.CharField(
         max_length=255, db_column='T502nombreEjeEstrategico')
-    tipo_eje = models.CharField(
-        max_length=30, db_column='T502tipoEje')
+    # tipo_eje = models.CharField(
+    #     max_length=30, db_column='T502tipoEje')
     id_plan = models.ForeignKey(
         Planes, on_delete=models.CASCADE, db_column='T502IdPlanes')
+    id_tipo_eje = models.ForeignKey(
+        TipoEje, on_delete=models.CASCADE, db_column='T502IdTipoEje')
 
     def __str__(self):
         return str(self.id_eje_estrategico)
