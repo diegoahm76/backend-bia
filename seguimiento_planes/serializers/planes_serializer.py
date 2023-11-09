@@ -24,7 +24,7 @@ class PlanesSerializer(serializers.ModelSerializer):
 
 class EjeEstractegicoSerializer(serializers.ModelSerializer):
          
-    nombre_plan = serializers.ReadOnlyField(source='id_plan_desarrollo.nombre_plan', default=None)
+    nombre_plan = serializers.ReadOnlyField(source='id_plan.nombre_plan', default=None)
     nombre_tipo_eje = serializers.ReadOnlyField(source='id_tipo_eje.nombre_tipo_eje', default=None)
             
     class Meta:

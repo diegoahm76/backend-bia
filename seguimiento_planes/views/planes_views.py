@@ -119,7 +119,6 @@ class CrearPlanes(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
-        print('PASOOOOOOOO')
         planes = self.queryset.filter(nombre_plan=data["nombre_plan"]).first()
         print('PLANESSSS', planes)
         if planes:
@@ -220,8 +219,7 @@ class EjeEstractegicoCreate(generics.ListCreateAPIView):
 
     def post(self,request):
         data = request.data
-        print('PASOOOOOOOO')
-        eje = self.queryset.filter(nombre_eje=data["nombre_eje"]).first()
+        eje = self.queryset.filter(nombre=data["nombre"]).first()
         print('eje estrategico', eje)
         if eje:
             return Response({'success': False, 'detail': 'El eje estratégico ya existe'}, status=status.HTTP_403_FORBIDDEN)
@@ -239,7 +237,7 @@ class EjeEstractegicoUpdate(generics.RetrieveUpdateAPIView):
 
     def put(self, request, pk):
         data = request.data
-        eje = self.queryset.all().filter(id_eje=pk).first()
+        eje = self.queryset.all().filter(id_eje_estrategico=pk).first()
         if not eje:
             return Response({'success': False, 'detail': 'El Eje Estratégico ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
         serializer = EjeEstractegicoSerializer(eje, data=data)
