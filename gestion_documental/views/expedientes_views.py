@@ -1432,10 +1432,25 @@ class ListExpedientesComplejosGet(generics.ListAPIView):
 
     def get(self, request, id_catserie_unidadorg):
         expedientes = ExpedientesDocumentales.objects.filter(id_cat_serie_und_org_ccd_trd_prop=id_catserie_unidadorg)
+        if not expedientes:
+            raise NotFound("No se encontró expedientes para la tripleta del TRD seleccionado")
         
         serializer = self.serializer_class(expedientes, many=True)
         return Response({'succes': True, 'detail':'Resultados de la búsqueda', 'data':serializer.data}, status=status.HTTP_200_OK)
+
+class ExpedientesSimpleGet(generics.ListAPIView):
+    serializer_class = ListExpedientesComplejosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_expediente_documental):
+        expediente = ExpedientesDocumentales.objects.filter(id_expediente_documental=id_expediente_documental).first()
+        if not expediente:
+            raise NotFound("No se encontró el expediente seleccionado")
+        
+        serializer = self.serializer_class(expediente)
+        return Response({'succes': True, 'detail':'Resultados de la búsqueda', 'data':serializer.data}, status=status.HTTP_200_OK)
     
+
 class IndexarDocumentosCreate(generics.CreateAPIView):
     serializer_class = IndexarDocumentosCreateSerializer
     permission_classes = [IsAuthenticated]
@@ -1571,7 +1586,9 @@ class IndexarDocumentosGet(generics.ListAPIView):
 
     def get(self, request, id_documento_de_archivo_exped):
         doc_expediente = DocumentosDeArchivoExpediente.objects.filter(id_documento_de_archivo_exped=id_documento_de_archivo_exped).first()
-        
+        if not doc_expediente:
+            raise NotFound("No se encuentra el documento ingresado")
+            
         serializer = self.serializer_class(doc_expediente)
         return Response({'succes': True, 'detail':'Resultados de la búsqueda', 'data':serializer.data}, status=status.HTTP_200_OK)
     
