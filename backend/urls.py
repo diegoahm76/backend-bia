@@ -154,8 +154,8 @@ urlpatterns = [
     # path('oidc_login/', views.oidc_login, name='oidc_login'),
 
     # SEGUIMIENTO PLANES
-    path('api/seguimiento/pnd/',include('seguimiento_planes.urls.pnd_urls')),
-    path('api/seguimiento/pgar/',include('seguimiento_planes.urls.pgar_urls')),
+    path('api/seguimiento/planes/',include('seguimiento_planes.urls.planes_urls')),
+
 
     
 ]
