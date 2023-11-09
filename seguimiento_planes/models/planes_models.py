@@ -8,6 +8,7 @@ class ObjetivoDesarrolloSostenible(models.Model):
         max_length=30, db_column='T500nombreObjetivo')
     activo = models.BooleanField(default=True, db_column='T500activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T500itemYaUsado')
+    registro_precargado = models.BooleanField(default=False, db_column='T500registroPrecargado')
 
     def __str__(self):
         return str(self.id_objetivo)
@@ -167,6 +168,7 @@ class Entidad(models.Model):
         max_length=255, db_column='T508nombreEntidad')
     activo = models.BooleanField(default=True, db_column='T508activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T508itemYaUsado')
+    registro_precargado = models.BooleanField(default=False, db_column='T508registroPrecargado')
 
     def __str__(self):
         return str(self.id_entidad)
@@ -183,6 +185,7 @@ class Medicion(models.Model):
         max_length=255, db_column='T509nombreMedicion')
     activo = models.BooleanField(default=True, db_column='T509activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T509itemYaUsado')
+    registro_precargado = models.BooleanField(default=False, db_column='T509registroPrecargado')
     
 
     def __str__(self):
@@ -200,6 +203,7 @@ class Tipo(models.Model):
         max_length=255, db_column='T510nombreTipo')
     activo = models.BooleanField(default=True, db_column='T510activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T510itemYaUsado')
+    registro_precargado = models.BooleanField(default=False, db_column='T510registroPrecargado')
     
 
     def __str__(self):
