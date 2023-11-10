@@ -1,18 +1,17 @@
 from rest_framework import serializers
-from seguimiento_planes.models.planes_models import ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rublo, Indicador, Metas
+from seguimiento_planes.models.planes_models import ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje
 
 class ObjetivoDesarrolloSostenibleSerializer(serializers.ModelSerializer):
-        
-        class Meta:
-            model = ObjetivoDesarrolloSostenible
-            fields = '__all__'
+    class Meta:
+        model = ObjetivoDesarrolloSostenible
+        fields = '__all__'
 
 class ObjetivoDesarrolloSostenibleSerializerUpdate(serializers.ModelSerializer):
         
-        class Meta:
-            model = ObjetivoDesarrolloSostenible
-            fields = '__all__'
-            def update(self, instance, validated_data):
+    class Meta:
+        model = ObjetivoDesarrolloSostenible
+        fields = '__all__'
+        def update(self, instance, validated_data):
                 validated_data.pop('item_ya_usado', None)  # Excluir el campo específico
                 return super().update(instance, validated_data)
 
@@ -25,7 +24,8 @@ class PlanesSerializer(serializers.ModelSerializer):
 
 class EjeEstractegicoSerializer(serializers.ModelSerializer):
          
-    nombre_plan = serializers.ReadOnlyField(source='id_plan_desarrollo.nombre_plan', default=None)
+    nombre_plan = serializers.ReadOnlyField(source='id_plan.nombre_plan', default=None)
+    nombre_tipo_eje = serializers.ReadOnlyField(source='id_tipo_eje.nombre_tipo_eje', default=None)
             
     class Meta:
         model = EjeEstractegico
@@ -90,17 +90,17 @@ class TipoSerializer(serializers.ModelSerializer):
         model = Tipo
         fields = '__all__'
 
-class RubloSerializer(serializers.ModelSerializer):
+class RubroSerializer(serializers.ModelSerializer):
                 
     class Meta:
-        model = Rublo
+        model = Rubro
         fields = '__all__'
 
 class IndicadorSerializer(serializers.ModelSerializer):
 
     nombre_medicion = serializers.ReadOnlyField(source='id_medicion.nombre_medicion', default=None)
     nombre_tipo = serializers.ReadOnlyField(source='id_tipo.nombre_tipo', default=None)
-    nombre_rublo = serializers.ReadOnlyField(source='id_rublo.nombre_rublo', default=None)
+    nombre_rubro = serializers.ReadOnlyField(source='id_rubro.nombre_rubro', default=None)
     nombre_actividad = serializers.ReadOnlyField(source='id_actividad.nombre_actividad', default=None)
     nombre_plan = serializers.ReadOnlyField(source='id_plan.nombre_plan', default=None)
                 
@@ -114,4 +114,10 @@ class MetasSerializer(serializers.ModelSerializer):
                 
     class Meta:
         model = Metas
+        fields = '__all__'
+
+class TipoEjeSerializer(serializers.ModelSerializer):
+                    
+    class Meta:
+        model = TipoEje
         fields = '__all__'
