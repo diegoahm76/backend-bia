@@ -234,9 +234,9 @@ class Tipo(models.Model):
         verbose_name = 'Tipo'
         verbose_name_plural = 'Tipos'
 
-class Rublo(models.Model):
-    id_rublo = models.AutoField(
-        primary_key=True, editable=False, db_column='T511IdRublo')
+class Rubro(models.Model):
+    id_rubro = models.AutoField(
+        primary_key=True, editable=False, db_column='T511IdRubro')
     cod_pre = models.CharField(
         max_length=255, db_column='T511codPre')
     cuenta = models.CharField(
@@ -245,12 +245,12 @@ class Rublo(models.Model):
         max_length=255, db_column='T511valcuenta')        
 
     def __str__(self):
-        return str(self.id_rublo)
+        return str(self.id_rubro)
 
     class Meta:
-        db_table = 'T511Rublo'
-        verbose_name = 'Rublo'
-        verbose_name_plural = 'Rublos'
+        db_table = 'T511Rubro'
+        verbose_name = 'Rubro'
+        verbose_name_plural = 'Rubros'
 
 class Indicador(models.Model):
     id_indicador = models.AutoField(
@@ -268,8 +268,8 @@ class Indicador(models.Model):
         Medicion, on_delete=models.CASCADE, db_column='T512IdMedicion')
     id_tipo = models.ForeignKey(
         Tipo, on_delete=models.CASCADE, db_column='T512IdTipo')
-    id_rublo = models.ForeignKey(
-        Rublo, on_delete=models.CASCADE, db_column='T512IdRublo')
+    id_rubro = models.ForeignKey(
+        Rubro, on_delete=models.CASCADE, db_column='T512IdRubro')
     id_actividad = models.ForeignKey(
         Actividad, on_delete=models.CASCADE, db_column='T512IdActividad')
     id_plan = models.ForeignKey(
