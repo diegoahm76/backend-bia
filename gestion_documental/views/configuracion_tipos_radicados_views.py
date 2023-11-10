@@ -293,12 +293,12 @@ class ConfigTiposRadicadoAgnoGenerarN(generics.UpdateAPIView):
         
         if not instance.implementar:
             instance =ConfigTiposRadicadoAgno.objects.filter(agno_radicado=age,cod_tipo_radicado='U').first()
-            if not instance:
+            if not instance: 
                 raise NotFound("No se existe este tipo de configuracion de radicado.")
-        print(instance.implementar)
-        print(instance.prefijo_consecutivo)
-        print(instance.consecutivo_inicial)
-        print(instance.consecutivo_actual)
+        # print(instance.implementar)
+        # print(instance.prefijo_consecutivo)
+        # print(instance.consecutivo_inicial)
+        # print(instance.consecutivo_actual)
         new_data={}
         new_data['consecutivo_actual'] = instance.consecutivo_actual+1
         new_data['id_persona_consecutivo_actual'] = data_in['id_persona']
