@@ -675,31 +675,6 @@ class ApoderadoPersonaPostSerializer(serializers.ModelSerializer):
                 'fecha_inicio': {'required': True},
             }
         
-        
-# class SucursalesEmpresasSerializer(serializers.ModelSerializer):
-#     id_empresa = PersonasSerializer(read_only=True)
-    
-#     class Meta:
-#         model = SucursalesEmpresas
-#         fields = '__all__'
-        
-
-# class SucursalesEmpresasPostSerializer(serializers.ModelSerializer):
-#     sucursal = serializers.CharField(validators=[UniqueValidator(queryset=SucursalesEmpresas.objects.all())])
-#     class Meta:
-#         model = SucursalesEmpresas
-#         fields = '__all__'
-#         extra_kwargs = {
-#                 'id_empresa': {'required': True},
-#                 'sucursal': {'required': True},
-#                 'direccion': {'required': True},
-#                 'direccion_sucursal_georeferenciada': {'required': True},
-#                 'pais_sucursal_exterior': {'required': True},
-#                 'direccion_correspondencias': {'required': True},
-#                 'email_sucursal': {'required': True},
-#                 'telefono_sucursal': {'required': True},
-#             }
-        
 
 class HistoricoEmailsSerializer(serializers.ModelSerializer):
     nombre_completo = serializers.SerializerMethodField()
