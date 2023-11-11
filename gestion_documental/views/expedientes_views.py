@@ -157,7 +157,27 @@ class AperturaExpedienteCreate(generics.CreateAPIView):
                 instance_carpeta = instances_carpetas.filter(id_carpeta_caja=carpeta).first()
                 instance_carpeta.id_expediente = expediente_creado
                 instance_carpeta.save()
-                
+        
+        # AUDITORIA
+        usuario = request.user.id_usuario
+        descripcion = {
+            "CodigoExpUndSerieSubserie": str(codigo_exp_und_serie_subserie),
+            "CodigoExpAgno": str(data['codigo_exp_Agno'])
+        }
+        if codigo_exp_consec_por_agno:
+            descripcion['CodigoExpConsecPorAgno'] = str(codigo_exp_consec_por_agno)
+        
+        direccion = Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 160,
+            "cod_permiso": "CR",
+            "subsistema": 'GEST',
+            "dirip": direccion,
+            "descripcion": descripcion,
+        }
+        Util.save_auditoria(auditoria_data)
+            
         return Response({'success':True, 'detail':'Apertura realizada de manera exitosa', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 
 class AperturaExpedienteGet(generics.ListAPIView):
@@ -186,6 +206,8 @@ class AperturaExpedienteUpdate(generics.UpdateAPIView):
         
         if not expediente:
             raise NotFound('No se encontró el expediente indicado')
+        
+        previous_expediente = copy.copy(expediente)
         
         if expediente.creado_automaticamente:
             serializer = self.serializer_class(expediente, data=data, partial=True)
@@ -226,7 +248,29 @@ class AperturaExpedienteUpdate(generics.UpdateAPIView):
             for carpeta_removida in instances_carpetas_ya_asociadas:
                 carpeta_removida.id_expediente = None
                 carpeta_removida.save()
-                
+        
+        # AUDITORIA
+        usuario = request.user.id_usuario
+        descripcion = {
+            "CodigoExpUndSerieSubserie": str(expediente.codigo_exp_und_serie_subserie),
+            "CodigoExpAgno": str(expediente.codigo_exp_Agno)
+        }
+        if expediente.codigo_exp_consec_por_agno:
+            descripcion['CodigoExpConsecPorAgno'] = str(expediente.codigo_exp_consec_por_agno)
+        
+        direccion = Util.get_client_ip(request)
+        valores_actualizados = {'previous': previous_expediente, 'current':expediente}
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 160,
+            "cod_permiso": "AC",
+            "subsistema": 'GEST',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_actualizados": valores_actualizados
+        }
+        Util.save_auditoria(auditoria_data)
+        
         return Response({'success':True, 'detail':'Expediente actualizado de manera exitosa', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 
 class AnularExpediente(generics.UpdateAPIView):
@@ -257,7 +301,27 @@ class AnularExpediente(generics.UpdateAPIView):
         serializer = self.serializer_class(expediente, data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-                
+        
+        # AUDITORIA
+        usuario = request.user.id_usuario
+        descripcion = {
+            "CodigoExpUndSerieSubserie": str(expediente.codigo_exp_und_serie_subserie),
+            "CodigoExpAgno": str(expediente.codigo_exp_Agno)
+        }
+        if expediente.codigo_exp_consec_por_agno:
+            descripcion['CodigoExpConsecPorAgno'] = str(expediente.codigo_exp_consec_por_agno)
+        
+        direccion = Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 160,
+            "cod_permiso": "AN",
+            "subsistema": 'GEST',
+            "dirip": direccion,
+            "descripcion": descripcion,
+        }
+        Util.save_auditoria(auditoria_data)
+        
         return Response({'success':True, 'detail':'Expediente anulado de manera exitosa', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 
 class BorrarExpediente(generics.DestroyAPIView):
@@ -277,10 +341,31 @@ class BorrarExpediente(generics.DestroyAPIView):
             raise PermissionDenied('No puede borrar un expediente con documentos asociados')
         
         if expediente.cod_tipo_expediente != 'S':
-            ultimo_expediente_comp = ExpedientesDocumentales.objects.filter(cod_tipo_expediente='C').order_by('codigo_exp_consec_por_agno').last()
+            ultimo_expediente_comp = ExpedientesDocumentales.objects.filter(cod_tipo_expediente='C', codigo_exp_und_serie_subserie=expediente.codigo_exp_und_serie_subserie).order_by('codigo_exp_consec_por_agno').last()
             if expediente.id_expediente_documental != ultimo_expediente_comp.id_expediente_documental:
                 raise PermissionDenied('Solo puede borrar el expediente con el último consecutivo')
-                
+        
+        # AUDITORIA
+        usuario = request.user.id_usuario
+        descripcion = {
+            "CodigoExpUndSerieSubserie": str(expediente.codigo_exp_und_serie_subserie),
+            "CodigoExpAgno": str(expediente.codigo_exp_Agno)
+        }
+        if expediente.codigo_exp_consec_por_agno:
+            descripcion['CodigoExpConsecPorAgno'] = str(expediente.codigo_exp_consec_por_agno)
+        
+        direccion = Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 160,
+            "cod_permiso": "BO",
+            "subsistema": 'GEST',
+            "dirip": direccion,
+            "descripcion": descripcion,
+        }
+        Util.save_auditoria(auditoria_data)
+        
+        # BORRAR
         expediente.delete()
         
         return Response({'success':True, 'detail':'Expediente borrado de manera exitosa'}, status=status.HTTP_200_OK)
@@ -1697,13 +1782,22 @@ class IndexarDocumentosBorrar(generics.DestroyAPIView):
         if doc_expediente.id_expediente_documental.estado != 'A':
             raise PermissionDenied('No puede borrar el documento elegido porque el expediente se encuentra cerrado')
         
+        descripcion = {
+            "NombreAsignadoDocumento": doc_expediente.nombre_asignado_documento,
+            "IdentificacionDocEnExpediente": doc_expediente.identificacion_doc_en_expediente
+        }
+        
         id_expediente_documental = doc_expediente.id_expediente_documental.id_expediente_documental
         orden_en_expediente = doc_expediente.orden_en_expediente
         
         if not doc_expediente.es_un_archivo_anexo:
             docs_expedientes_anexos = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=doc_expediente.id_expediente_documental, es_un_archivo_anexo=True)
+            cont = 1
             for doc_expediente_anexo in docs_expedientes_anexos:
-                doc_expediente_anexo.id_archivo_sistema.delete()
+                descripcion['NombreAsignadoDocumentoAnexo'+str(cont)] = doc_expediente_anexo.nombre_asignado_documento
+                if doc_expediente_anexo.id_archivo_sistema:
+                    doc_expediente_anexo.id_archivo_sistema.delete()
+                cont += 1
             
             docs_expedientes_anexos.delete()
         
@@ -1720,8 +1814,8 @@ class IndexarDocumentosBorrar(generics.DestroyAPIView):
             index_doc_previous = Docs_IndiceElectronicoExp.objects.filter(id_indice_electronico_exp=indice_electronico, id_doc_archivo_exp__orden_en_expediente__lt=orden_en_expediente).order_by('id_doc_archivo_exp__orden_en_expediente').last()
             
             index_doc_next = Docs_IndiceElectronicoExp.objects.filter(id_indice_electronico_exp=indice_electronico, id_doc_archivo_exp__orden_en_expediente__gt=orden_en_expediente).order_by('id_doc_archivo_exp__orden_en_expediente')
-            pagina_fin_previous = index_doc_previous.pagina_fin
             if index_doc_next:
+                pagina_fin_previous = index_doc_previous.pagina_fin
                 for index_doc_after in index_doc_next:
                     # Calcular la página de inicio
                     pagina_inicio_next = pagina_fin_previous + 1
@@ -1733,5 +1827,18 @@ class IndexarDocumentosBorrar(generics.DestroyAPIView):
                     index_doc_after.pagina_inicio = pagina_inicio_next
                     index_doc_after.pagina_fin = pagina_fin_previous
                     index_doc_after.save()
+        
+        # AUDITORIA
+        usuario = request.user.id_usuario
+        direccion = Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 161,
+            "cod_permiso": "BO",
+            "subsistema": 'GEST',
+            "dirip": direccion,
+            "descripcion": descripcion,
+        }
+        Util.save_auditoria(auditoria_data)
         
         return Response({'success':True, 'detail':'Borrado de documento realizado correctamente'}, status=status.HTTP_201_CREATED)

@@ -41,5 +41,12 @@ urlpatterns = [
     path('catalogo-trd/get-tipologias/<str:id_catserie_unidadorg>/', views.GetTipologiasSeriesSubSUnidadOrgTRD.as_view(), name='catalogo-trd-get-tipologias'),
 
     #Configuracion_tipologias_docmentales
+    path('configuracion-tipologia/listar-tipologias/', views.ListarTipologiasdocumentales.as_view(),name='listar-tipologias-doc'),
+    path('configuracion-tipologia/configuracion-tipologia-actual/', views.CrearConfigurarTipologia.as_view(),name='configuracion-tipologias-doc'),
+    path('configuracion-tipologia/configuracion-tipologia-Empresa/', views.CrearConfigurarTipologiaEmpresa.as_view(),name='configuracion-tipologias-doc'),
+    path('configuracion-tipologia/listar-configuraciones/', views.ListaConfiguraciones.as_view(),name='listar-configuraciones-doc'),
+
+    
+
     
 ]

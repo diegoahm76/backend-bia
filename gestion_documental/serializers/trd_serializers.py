@@ -5,6 +5,8 @@ from gestion_documental.models.ccd_models import CatalogosSeries, CatalogosSerie
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
 from gestion_documental.models.tca_models import TablasControlAcceso
 from gestion_documental.models.trd_models import (
+    ConfigTipologiasDocAgno,
+    ConsecPorNivelesTipologiasDocAgno,
     HistoricosCatSeriesUnidadOrgCCDTRD,
     TipologiasDoc,
     TablaRetencionDocumental,
@@ -368,3 +370,19 @@ class DenegacionPermisosGetUnidadSerializer(serializers.ModelSerializer):
             'denegar_conceder_acceso_doc_na_resp_series',
             'denegar_conceder_acceso_exp_na_resp_series'
         ]
+
+#Configuracion de tipologias documentales
+class TipologiasDocumentalesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipologiasDoc
+        fields = '__all__'
+
+class ConfigTipologiasDocAgnoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConfigTipologiasDocAgno
+        fields = '__all__'
+
+class ConsecPorNivelesTipologiasDocAgnoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConsecPorNivelesTipologiasDocAgno
+        fields = '__all__'

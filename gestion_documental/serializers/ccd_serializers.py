@@ -532,11 +532,15 @@ class OficinaUnidadOrganizacionalSerializer(serializers.ModelSerializer):
     def get_unidad_delegada(self, obj):
         id_ccd_nuevo = self.context.get('id_ccd_nuevo')
         id_unidad_delegada = None
-        unidad_delegada = UnidadesSeccionResponsableTemporal.objects.get(id_ccd_nuevo=id_ccd_nuevo, 
+        try:
+            unidad_delegada = UnidadesSeccionResponsableTemporal.objects.get(id_ccd_nuevo=id_ccd_nuevo, 
                                                                             id_unidad_seccion_actual=obj.id_unidad_organizacional, 
-                                                                            es_registro_asig_seccion_responsable=False)
+                                                                            es_registro_asig_seccion_responsable=False) 
+        except UnidadesSeccionResponsableTemporal.DoesNotExist:
+            unidad_delegada = None
         
-        id_unidad_delegada = unidad_delegada.id_unidad_seccion_nueva.id_unidad_organizacional
+        if unidad_delegada is not None:
+            id_unidad_delegada = unidad_delegada.id_unidad_seccion_nueva.id_unidad_organizacional
         
         return id_unidad_delegada
 

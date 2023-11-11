@@ -49,7 +49,6 @@ import copy
 
 # Creación y actualización de Catalogo de Bienes
 
-
 class CreateCatalogoDeBienes(generics.UpdateAPIView):
     serializer_class = CatalogoBienesSerializer
     permission_classes = [IsAuthenticated]

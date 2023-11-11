@@ -8,6 +8,7 @@ class ObjetivoDesarrolloSostenible(models.Model):
         max_length=30, db_column='T500nombreObjetivo')
     activo = models.BooleanField(default=True, db_column='T500activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T500itemYaUsado')
+    registro_precargado = models.BooleanField(default=False, db_column='T500registroPrecargado')
 
     def __str__(self):
         return str(self.id_objetivo)
@@ -44,15 +45,35 @@ class Planes(models.Model):
         verbose_name = 'Plan Nacional Desarrollo'
         verbose_name_plural = 'Planes Nacionales Desarrollos'
 
+class TipoEje(models.Model):
+    id_tipo_eje = models.AutoField(
+        primary_key=True, editable=False, db_column='T514IdTipoEje')
+    nombre_tipo_eje = models.CharField(
+        max_length=255, db_column='T514nombreTipoEje')
+    activo = models.BooleanField(default=True, db_column='T514activo')
+    item_ya_usado = models.BooleanField(default=False, db_column='T514itemYaUsado')
+    registro_precargado = models.BooleanField(default=False, db_column='T514registroPrecargado')
+    
+
+    def __str__(self):
+        return str(self.id_tipo_eje)
+
+    class Meta:
+        db_table = 'T514TipoEje'
+        verbose_name = 'Tipo Eje'
+        verbose_name_plural = 'Tipos Ejes'
+
 class EjeEstractegico(models.Model):
     id_eje_estrategico = models.AutoField(
         primary_key=True, editable=False, db_column='T502IdEjeEstrategico')
     nombre = models.CharField(
         max_length=255, db_column='T502nombreEjeEstrategico')
-    tipo_eje = models.CharField(
-        max_length=30, db_column='T502tipoEje')
+    # tipo_eje = models.CharField(
+    #     max_length=30, db_column='T502tipoEje')
     id_plan = models.ForeignKey(
         Planes, on_delete=models.CASCADE, db_column='T502IdPlanes')
+    id_tipo_eje = models.ForeignKey(
+        TipoEje, on_delete=models.CASCADE, db_column='T502IdTipoEje')
 
     def __str__(self):
         return str(self.id_eje_estrategico)
@@ -167,6 +188,7 @@ class Entidad(models.Model):
         max_length=255, db_column='T508nombreEntidad')
     activo = models.BooleanField(default=True, db_column='T508activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T508itemYaUsado')
+    registro_precargado = models.BooleanField(default=False, db_column='T508registroPrecargado')
 
     def __str__(self):
         return str(self.id_entidad)
@@ -183,6 +205,7 @@ class Medicion(models.Model):
         max_length=255, db_column='T509nombreMedicion')
     activo = models.BooleanField(default=True, db_column='T509activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T509itemYaUsado')
+    registro_precargado = models.BooleanField(default=False, db_column='T509registroPrecargado')
     
 
     def __str__(self):
@@ -200,6 +223,7 @@ class Tipo(models.Model):
         max_length=255, db_column='T510nombreTipo')
     activo = models.BooleanField(default=True, db_column='T510activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T510itemYaUsado')
+    registro_precargado = models.BooleanField(default=False, db_column='T510registroPrecargado')
     
 
     def __str__(self):
@@ -210,9 +234,9 @@ class Tipo(models.Model):
         verbose_name = 'Tipo'
         verbose_name_plural = 'Tipos'
 
-class Rublo(models.Model):
-    id_rublo = models.AutoField(
-        primary_key=True, editable=False, db_column='T511IdRublo')
+class Rubro(models.Model):
+    id_rubro = models.AutoField(
+        primary_key=True, editable=False, db_column='T511IdRubro')
     cod_pre = models.CharField(
         max_length=255, db_column='T511codPre')
     cuenta = models.CharField(
@@ -221,12 +245,12 @@ class Rublo(models.Model):
         max_length=255, db_column='T511valcuenta')        
 
     def __str__(self):
-        return str(self.id_rublo)
+        return str(self.id_rubro)
 
     class Meta:
-        db_table = 'T511Rublo'
-        verbose_name = 'Rublo'
-        verbose_name_plural = 'Rublos'
+        db_table = 'T511Rubro'
+        verbose_name = 'Rubro'
+        verbose_name_plural = 'Rubros'
 
 class Indicador(models.Model):
     id_indicador = models.AutoField(
@@ -244,8 +268,8 @@ class Indicador(models.Model):
         Medicion, on_delete=models.CASCADE, db_column='T512IdMedicion')
     id_tipo = models.ForeignKey(
         Tipo, on_delete=models.CASCADE, db_column='T512IdTipo')
-    id_rublo = models.ForeignKey(
-        Rublo, on_delete=models.CASCADE, db_column='T512IdRublo')
+    id_rubro = models.ForeignKey(
+        Rubro, on_delete=models.CASCADE, db_column='T512IdRubro')
     id_actividad = models.ForeignKey(
         Actividad, on_delete=models.CASCADE, db_column='T512IdActividad')
     id_plan = models.ForeignKey(

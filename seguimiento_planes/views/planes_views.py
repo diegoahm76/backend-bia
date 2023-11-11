@@ -5,8 +5,8 @@ from rest_framework import generics, status
 from django.db.models.functions import Concat
 from django.db.models import Q, Value as V
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
-from seguimiento_planes.serializers.planes_serializer import ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoSerializer, RubloSerializer, IndicadorSerializer, MetasSerializer
-from seguimiento_planes.models.planes_models import ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rublo, Indicador, Metas
+from seguimiento_planes.serializers.planes_serializer import ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubroSerializer, IndicadorSerializer, MetasSerializer
+from seguimiento_planes.models.planes_models import ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje
 
 # ---------------------------------------- Objetivos Desarrollo Sostenible Tabla Básica ----------------------------------------
 
@@ -60,7 +60,7 @@ class ObjetivoDesarrolloSostenibleUpdate(generics.RetrieveUpdateAPIView):
             return Response({'success': False, 'detail': 'El Objetivo Desarrollo Sostenible ya ha sido usado en un Planes, por lo tanto no puede ser modificado'}, status=status.HTTP_403_FORBIDDEN)
         serializer = ObjetivoDesarrolloSostenibleSerializer(objetivo, data=data)
         serializer.is_valid(raise_exception=True)
-        serializer.update()
+        serializer.save()
         return Response({'success': True, 'detail': 'Objetivo Desarrollo Sostenible actualizado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 # Eliminar un Objetivo Desarrollo Sostenible
@@ -95,12 +95,12 @@ class ObjetivoDesarrolloSostenibleDetail(generics.RetrieveAPIView):
         serializer = ObjetivoDesarrolloSostenibleSerializer(objetivo)
         return Response({'success': True, 'detail': 'Objetivo Desarrollo Sostenible encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
-# ---------------------------------------- PLAN DESARROLLO NACIONAL ----------------------------------------
+# ---------------------------------------- PLANES ----------------------------------------
 
 # Listar Planes Nacionales de Desarrollo
 
 class ConsultarPlanes(generics.ListAPIView):
-    serializer_class = Planes
+    serializer_class = PlanesSerializer
     queryset = Planes.objects.all()
     permission_classes = [IsAuthenticated]
 
@@ -112,20 +112,17 @@ class ConsultarPlanes(generics.ListAPIView):
         return Response({'success': True, 'detail': 'Se encontraron los siguientes planes', 'data': serializador.data}, status=status.HTTP_200_OK)
 
 # Craer Planes
-
 class CrearPlanes(generics.CreateAPIView):
-    serializer_class = Planes
+    serializer_class = PlanesSerializer
     queryset = Planes.objects.all()
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         data = request.data
-        print('PASOOOOOOOO')
-        planes = self.queryset.all().filter(
-            nombre_plan=data["nombre_plan"]).first()
+        planes = self.queryset.filter(nombre_plan=data["nombre_plan"]).first()
         print('PLANESSSS', planes)
-        if not planes:
-            return Response({'success': False, 'detail': 'El planes ya existe'}, status=status.HTTP_403_FORBIDDEN)
+        if planes:
+            return Response({'success': False, 'detail': 'El plan ya existe'}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -133,7 +130,7 @@ class CrearPlanes(generics.CreateAPIView):
     
 # Actualziar Planes
 class ActualizarPlanes(generics.UpdateAPIView):
-    serializer_class = Planes
+    serializer_class = PlanesSerializer
     queryset = Planes.objects.all()
     permission_classes = [IsAuthenticated]
 
@@ -142,19 +139,17 @@ class ActualizarPlanes(generics.UpdateAPIView):
         # persona_logeada = request.user.persona.id_persona
         # data['id_persona_modifica'] = persona_logeada
 
-        plan_nacional_desarrollo = self.queryset.all().filter(id_plan=pk).first()
-
-        if not plan_nacional_desarrollo:
-            return Response({'success': False, 'detail': 'El planes ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
-        serializador = self.serializer_class(plan_nacional_desarrollo, data=data)
+        planes = self.get_object()
+        if planes.nombre_plan != data["nombre_plan"] and self.queryset.filter(nombre_plan=data["nombre_plan"]).exists():
+            return Response({'success': False, 'detail': 'El plan ya existe'}, status=status.HTTP_403_FORBIDDEN)
+        serializador = self.serializer_class(planes, data=data, partial=True)
         serializador.is_valid(raise_exception=True)
         serializador.save()
-        return Response({'success': True, 'detail': 'Se actualizo el plan de manera exitosa', 'data': serializador.data}, status=status.HTTP_200_OK)
-    
+        return Response({'success': True, 'detail': 'Se actualizo el plan de manera exitosa', 'data': serializador.data}, status=status.HTTP_200_OK) 
 # Eliminar Planes
 
 class EliminarPlanes(generics.DestroyAPIView):
-    serializer_class = Planes
+    serializer_class = PlanesSerializer
     queryset = Planes.objects.all()
     permission_classes = [IsAuthenticated]
 
@@ -169,7 +164,7 @@ class EliminarPlanes(generics.DestroyAPIView):
 # Listar plan de desarrollo por id
 
 class ConsultarPlanesId(generics.ListAPIView):
-    serializer_class = Planes
+    serializer_class = PlanesSerializer
     queryset = Planes.objects.all()
     permission_classes = [IsAuthenticated]
 
@@ -184,7 +179,7 @@ class ConsultarPlanesId(generics.ListAPIView):
 
 class BusquedaAvanzadaPlanes(generics.ListAPIView):
     queryset = Planes.objects.all()
-    serializer_class = Planes
+    serializer_class = PlanesSerializer
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
@@ -197,8 +192,7 @@ class BusquedaAvanzadaPlanes(generics.ListAPIView):
             raise NotFound('No se encontraron resultados.')
 
         serializer = self.get_serializer(queryset, many=True)
-        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)    
-
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # ---------------------------------------- Ejes Estratégicos ----------------------------------------
 
@@ -225,8 +219,7 @@ class EjeEstractegicoCreate(generics.ListCreateAPIView):
 
     def post(self,request):
         data = request.data
-        print('PASOOOOOOOO')
-        eje = self.queryset.filter(nombre_eje=data["nombre_eje"]).first()
+        eje = self.queryset.filter(nombre=data["nombre"]).first()
         print('eje estrategico', eje)
         if eje:
             return Response({'success': False, 'detail': 'El eje estratégico ya existe'}, status=status.HTTP_403_FORBIDDEN)
@@ -244,12 +237,12 @@ class EjeEstractegicoUpdate(generics.RetrieveUpdateAPIView):
 
     def put(self, request, pk):
         data = request.data
-        eje = self.queryset.all().filter(id_eje=pk).first()
+        eje = self.queryset.all().filter(id_eje_estrategico=pk).first()
         if not eje:
             return Response({'success': False, 'detail': 'El Eje Estratégico ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
         serializer = EjeEstractegicoSerializer(eje, data=data)
         serializer.is_valid(raise_exception=True)
-        serializer.update()
+        serializer.save()
         return Response({'success': True, 'detail': 'Eje Estratégico actualizado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # Eliminar un Eje Estratégico
@@ -260,7 +253,7 @@ class EjeEstractegicoDelete(generics.RetrieveUpdateAPIView):
     permission_classes = (IsAuthenticated,)
 
     def delete(self, request, pk):
-        eje = self.queryset.all().filter(id_eje=pk).first()
+        eje = self.queryset.all().filter(id_eje_estrategico=pk).first()
         if not eje:
             return Response({'success': False, 'detail': 'El Eje Estratégico ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
         eje.delete()
@@ -274,7 +267,7 @@ class EjeEstractegicoDetail(generics.RetrieveAPIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, pk):
-        eje = self.queryset.all().filter(id_eje=pk).first()
+        eje = self.queryset.all().filter(id_eje_estrategico=pk).first()        
         if not eje:
             raise NotFound('No se encontraron resultados.')
         serializer = EjeEstractegicoSerializer(eje)
@@ -342,7 +335,7 @@ class ObjetivoUpdate(generics.RetrieveUpdateAPIView):
             return Response({'success': False, 'detail': 'El Objetivo ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
         serializer = ObjetivoSerializer(objetivo, data=data)
         serializer.is_valid(raise_exception=True)
-        serializer.update()
+        serializer.save()
         return Response({'success': True, 'detail': 'Objetivo actualizado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # Eliminar un Objetivo
@@ -449,7 +442,7 @@ class ProgramaUpdate(generics.RetrieveUpdateAPIView):
             return Response({'success': False, 'detail': 'El Programa ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
         serializer = ProgramaSerializer(programa, data=data)
         serializer.is_valid(raise_exception=True)
-        serializer.update()
+        serializer.save()
         return Response({'success': True, 'detail': 'Programa actualizado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 # Eliminar un Programa
@@ -541,7 +534,7 @@ class ProyectoUpdate(generics.RetrieveUpdateAPIView):
             return Response({'success': False, 'detail': 'El Proyecto ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
         serializer = ProyectoSerializer(proyecto, data=data)
         serializer.is_valid(raise_exception=True)
-        serializer.update()
+        serializer.save()
         return Response({'success': True, 'detail': 'Proyecto actualizado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # Eliminar un Proyecto
@@ -633,7 +626,7 @@ class ProductosUpdate(generics.RetrieveUpdateAPIView):
             return Response({'success': False, 'detail': 'El Producto ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
         serializer = ProductosSerializer(producto, data=data)
         serializer.is_valid(raise_exception=True)
-        serializer.update()
+        serializer.save()
         return Response({'success': True, 'detail': 'Producto actualizado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # Eliminar un Producto
@@ -725,7 +718,7 @@ class ActividadUpdate(generics.RetrieveUpdateAPIView):
             return Response({'success': False, 'detail': 'La Actividad ingresada no existe'}, status=status.HTTP_404_NOT_FOUND)
         serializer = ActividadSerializer(actividad, data=data)
         serializer.is_valid(raise_exception=True)
-        serializer.update()
+        serializer.save()
         return Response({'success': True, 'detail': 'Actividad actualizada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # Eliminar un Actividad
@@ -832,11 +825,11 @@ class EntidadUpdate(generics.RetrieveUpdateAPIView):
         entidad = self.queryset.all().filter(id_entidad=pk).first()
         if not entidad:
             return Response({'success': False, 'detail': 'La Entidad ingresada no existe'}, status=status.HTTP_404_NOT_FOUND)
-        if not entidad.item_ya_usado == True:
+        if entidad.item_ya_usado == True:
             return Response({'success': False, 'detail': 'La Entidad ya ha sido usado en un Plan, por lo tanto no puede ser modificado'}, status=status.HTTP_403_FORBIDDEN)
         serializer = EntidadSerializer(entidad, data=data)
         serializer.is_valid(raise_exception=True)
-        serializer.update()
+        serializer.save()
         return Response({'success': True, 'detail': 'Entidad actualizada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # Eliminar una Entidad
@@ -850,7 +843,7 @@ class EntidadDelete(generics.RetrieveUpdateAPIView):
         entidad = self.queryset.all().filter(id_entidad=pk).first()
         if not entidad:
             return Response({'success': False, 'detail': 'La Entidad ingresada no existe'}, status=status.HTTP_404_NOT_FOUND)
-        if not entidad.item_ya_usado == True:
+        if entidad.item_ya_usado == True:
             return Response({'success': False, 'detail': 'La Entidad ya ha sido usado en un Plan, por lo tanto no puede ser eliminado'}, status=status.HTTP_403_FORBIDDEN)
         if entidad.registro_precargado:
             return Response({'success': False, 'detail': 'La Entidad es un registro precargado, por lo tanto no puede ser eliminado'}, status=status.HTTP_403_FORBIDDEN)
@@ -919,11 +912,11 @@ class MedicionUpdate(generics.RetrieveUpdateAPIView):
         medicion = self.queryset.all().filter(id_medicion=pk).first()
         if not medicion:
             return Response({'success': False, 'detail': 'La Medicion ingresada no existe'}, status=status.HTTP_404_NOT_FOUND)
-        if not medicion.item_ya_usado == True:
+        if medicion.item_ya_usado == True:
             return Response({'success': False, 'detail': 'La Medicion ya ha sido usado en un Plan, por lo tanto no puede ser modificado'}, status=status.HTTP_403_FORBIDDEN)
         serializer = MedicionSerializer(medicion, data=data)
         serializer.is_valid(raise_exception=True)
-        serializer.update()
+        serializer.save()
         return Response({'success': True, 'detail': 'Medicion actualizada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # Eliminar una Medicion
@@ -937,7 +930,7 @@ class MedicionDelete(generics.RetrieveUpdateAPIView):
         medicion = self.queryset.all().filter(id_medicion=pk).first()
         if not medicion:
             return Response({'success': False, 'detail': 'La Medicion ingresada no existe'}, status=status.HTTP_404_NOT_FOUND)
-        if not medicion.item_ya_usado == True:
+        if medicion.item_ya_usado == True:
             return Response({'success': False, 'detail': 'La Medicion ya ha sido usado en un Plan, por lo tanto no puede ser eliminado'}, status=status.HTTP_403_FORBIDDEN)
         if medicion.registro_precargado:
             return Response({'success': False, 'detail': 'La Medicion es un registro precargado, por lo tanto no puede ser eliminado'}, status=status.HTTP_403_FORBIDDEN)
@@ -1006,11 +999,11 @@ class TipoUpdate(generics.RetrieveUpdateAPIView):
         tipo = self.queryset.all().filter(id_tipo=pk).first()
         if not tipo:
             return Response({'success': False, 'detail': 'El Tipo ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
-        if not tipo.item_ya_usado == True:
+        if tipo.item_ya_usado == True:
             return Response({'success': False, 'detail': 'El Tipo ya ha sido usado en un Plan, por lo tanto no puede ser modificado'}, status=status.HTTP_403_FORBIDDEN)
         serializer = TipoSerializer(tipo, data=data)
         serializer.is_valid(raise_exception=True)
-        serializer.update()
+        serializer.save()
         return Response({'success': True, 'detail': 'Tipo actualizado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # Eliminar un Tipo
@@ -1024,7 +1017,7 @@ class TipoDelete(generics.RetrieveUpdateAPIView):
         tipo = self.queryset.all().filter(id_tipo=pk).first()
         if not tipo:
             return Response({'success': False, 'detail': 'El Tipo ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
-        if not tipo.item_ya_usado == True:
+        if tipo.item_ya_usado == True:
             return Response({'success': False, 'detail': 'El Tipo ya ha sido usado en un Plan, por lo tanto no puede ser eliminado'}, status=status.HTTP_403_FORBIDDEN)
         if tipo.registro_precargado:
             return Response({'success': False, 'detail': 'El Tipo es un registro precargado, por lo tanto no puede ser eliminado'}, status=status.HTTP_403_FORBIDDEN)
@@ -1045,83 +1038,83 @@ class TipoDetail(generics.RetrieveAPIView):
         serializer = TipoSerializer(tipo)
         return Response({'success': True, 'detail': 'Tipo encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
-# ---------------------------------------- Rublo ----------------------------------------
+# ---------------------------------------- Rubro ----------------------------------------
 
-# Listar todos los Rublos
+# Listar todos los Rubros
 
-class RubloList(generics.ListCreateAPIView):
-    queryset = Rublo.objects.all()
-    serializer_class = RubloSerializer
+class RubroList(generics.ListCreateAPIView):
+    queryset = Rubro.objects.all()
+    serializer_class = RubroSerializer
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
-        rublos = Rublo.objects.all()
-        serializer = RubloSerializer(rublos, many=True)
-        if not rublos:
+        rubros = Rubro.objects.all()
+        serializer = RubroSerializer(rubros, many=True)
+        if not rubros:
             raise NotFound('No se encontraron resultados.')
-        return Response({'success': True, 'detail': 'Listado de Rublos.', 'data': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Listado de rubros.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
-# Crear un Rublo
+# Crear un Rubro
 
-class RubloCreate(generics.ListCreateAPIView):
-    queryset = Rublo.objects.all()
-    serializer_class = RubloSerializer
+class RubroCreate(generics.ListCreateAPIView):
+    queryset = Rubro.objects.all()
+    serializer_class = RubroSerializer
     permission_classes = (IsAuthenticated,)
 
     def post(self,request):
-        data = data.data
-        rublo = self.queryset.filter(nombre_rublo=data["nombre_rublo"]).first()
-        if rublo:
-            return Response({'success': False, 'detail': 'El rublo ya existe'}, status=status.HTTP_403_FORBIDDEN)
+        data = request.data
+        rubro = self.queryset.filter(cod_pre=data["cod_pre"]).first()
+        if rubro:
+            return Response({'success': False, 'detail': 'Codigo ya existe '}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
-        return Response({'success': True, 'detail': 'Rublo creado correctamente.', 'data': serializador.data}, status=status.HTTP_201_CREATED)
+        return Response({'success': True, 'detail': 'rubro creado correctamente.', 'data': serializador.data}, status=status.HTTP_201_CREATED)
 
-# Actualizar un Rublo
+# Actualizar un Rubro
 
-class RubloUpdate(generics.RetrieveUpdateAPIView):
-    queryset = Rublo.objects.all()
-    serializer_class = RubloSerializer
+class RubroUpdate(generics.RetrieveUpdateAPIView):
+    queryset = Rubro.objects.all()
+    serializer_class = RubroSerializer
     permission_classes = (IsAuthenticated,)
 
     def put(self, request, pk):
         data = request.data
-        rublo = self.queryset.all().filter(id_rublo=pk).first()
-        if not rublo:
-            return Response({'success': False, 'detail': 'El Rublo ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = RubloSerializer(rublo, data=data)
+        rubro = self.queryset.all().filter(id_rubro=pk).first()
+        if not rubro:
+            return Response({'success': False, 'detail': 'El Rubro ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = RubroSerializer(rubro, data=data)
         serializer.is_valid(raise_exception=True)
-        serializer.update()
-        return Response({'success': True, 'detail': 'Rublo actualizado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Rubro actualizado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
-# Eliminar un Rublo
+# Eliminar un Rubro
 
-class RubloDelete(generics.RetrieveUpdateAPIView):
-    queryset = Rublo.objects.all()
-    serializer_class = RubloSerializer
+class RubroDelete(generics.RetrieveUpdateAPIView):
+    queryset = Rubro.objects.all()
+    serializer_class = RubroSerializer
     permission_classes = (IsAuthenticated,)
 
     def delete(self, request, pk):
-        rublo = self.queryset.all().filter(id_rublo=pk).first()
-        if not rublo:
-            return Response({'success': False, 'detail': 'El Rublo ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
-        rublo.delete()
-        return Response({'success': True, 'detail': 'Rublo eliminado correctamente.'}, status=status.HTTP_200_OK)
+        rubro = self.queryset.all().filter(id_rubro=pk).first()
+        if not rubro:
+            return Response({'success': False, 'detail': 'El rubro ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+        rubro.delete()
+        return Response({'success': True, 'detail': 'Rubro eliminado correctamente.'}, status=status.HTTP_200_OK)
 
-# listar un Rublo por id
+# listar un Rubro por id
 
-class RubloDetail(generics.RetrieveAPIView):
-    queryset = Rublo.objects.all()
-    serializer_class = RubloSerializer
+class RubroDetail(generics.RetrieveAPIView):
+    queryset = Rubro.objects.all()
+    serializer_class = RubroSerializer
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, pk):
-        rublo = self.queryset.all().filter(id_rublo=pk).first()
-        if not rublo:
+        rubro = self.queryset.all().filter(id_rubro=pk).first()
+        if not rubro:
             raise NotFound('No se encontraron resultados.')
-        serializer = RubloSerializer(rublo)
-        return Response({'success': True, 'detail': 'Rublo encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+        serializer = RubroSerializer(rubro)
+        return Response({'success': True, 'detail': 'Rubro encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # ---------------------------------------- Indicador ----------------------------------------
 
@@ -1170,7 +1163,7 @@ class IndicadorUpdate(generics.RetrieveUpdateAPIView):
             return Response({'success': False, 'detail': 'El Indicador ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
         serializer = IndicadorSerializer(indicador, data=data)
         serializer.is_valid(raise_exception=True)
-        serializer.update()
+        serializer.save()
         return Response({'success': True, 'detail': 'Indicador actualizado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # Eliminar un Indicador
@@ -1229,15 +1222,15 @@ class IndicadorListIdActividad(generics.ListAPIView):
         serializer = IndicadorSerializer(indicador, many=True)
         return Response({'success': True, 'detail': 'Indicador encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
-# Listar Indicador por id Rublo
+# Listar Indicador por id Rubro
 
-class IndicadorListIdRublo(generics.ListAPIView):
+class IndicadorListIdRubro(generics.ListAPIView):
     queryset = Indicador.objects.all()
     serializer_class = IndicadorSerializer
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, pk):
-        indicador = self.queryset.all().filter(id_rublo=pk)
+        indicador = self.queryset.all().filter(id_rubro=pk)
         if not indicador:
             raise NotFound('No se encontraron resultados.')
         serializer = IndicadorSerializer(indicador, many=True)
@@ -1290,7 +1283,7 @@ class MetaUpdate(generics.RetrieveUpdateAPIView):
             return Response({'success': False, 'detail': 'La Meta ingresada no existe'}, status=status.HTTP_404_NOT_FOUND)
         serializer = MetasSerializer(meta, data=data)
         serializer.is_valid(raise_exception=True)
-        serializer.update()
+        serializer.save()
         return Response({'success': True, 'detail': 'Meta actualizada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # Eliminar un Meta
@@ -1334,3 +1327,90 @@ class MetaListIdIndicador(generics.ListAPIView):
             raise NotFound('No se encontraron resultados.')
         serializer = MetasSerializer(meta, many=True)
         return Response({'success': True, 'detail': 'Meta encontrada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# ---------------------------------------- Tipo Eje Tabla Básica ----------------------------------------
+
+# Listar todos los Tipos Eje
+
+class TipoEjeList(generics.ListCreateAPIView):
+    queryset = TipoEje.objects.all()
+    serializer_class = TipoEjeSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        tipos_eje = TipoEje.objects.all()
+        serializer = TipoEjeSerializer(tipos_eje, many=True)
+        if not tipos_eje:
+            raise NotFound('No se encontraron resultados.')
+        return Response({'success': True, 'detail': 'Listado de Tipos Eje.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Crear un Tipo Eje
+
+class TipoEjeCreate(generics.ListCreateAPIView):
+    queryset = TipoEje.objects.all()
+    serializer_class = TipoEjeSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self,request):
+        data_in = request.data
+        try:
+            data_in['registro_precargado']=False
+            data_in['item_ya_usado']=False
+            data_in['activo']=True
+            serializer = self.serializer_class(data=data_in)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        except ValidationError as e:       
+            raise ValidationError(e.detail)
+        return Response({'success': True, 'detail': 'Tipo Eje creado correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+
+# Actualizar un Tipo Eje
+
+class TipoEjeUpdate(generics.RetrieveUpdateAPIView):
+    queryset = TipoEje.objects.all()
+    serializer_class = TipoEjeSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def put(self, request, pk):
+        data = request.data
+        tipo_eje = self.queryset.all().filter(id_tipo_eje=pk).first()
+        if not tipo_eje:
+            return Response({'success': False, 'detail': 'El Tipo Eje ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+        if tipo_eje.item_ya_usado == True:
+            return Response({'success': False, 'detail': 'El Tipo Eje ya ha sido usado en un Plan, por lo tanto no puede ser modificado'}, status=status.HTTP_403_FORBIDDEN)
+        serializer = TipoEjeSerializer(tipo_eje, data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Tipo Eje actualizado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Eliminar un Tipo Eje
+
+class TipoEjeDelete(generics.RetrieveUpdateAPIView):
+    queryset = TipoEje.objects.all()
+    serializer_class = TipoEjeSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def delete(self, request, pk):
+        tipo_eje = self.queryset.all().filter(id_tipo_eje=pk).first()
+        if not tipo_eje:
+            return Response({'success': False, 'detail': 'El Tipo Eje ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+        if tipo_eje.item_ya_usado == True:
+            return Response({'success': False, 'detail': 'El Tipo Eje ya ha sido usado en un Plan, por lo tanto no puede ser eliminado'}, status=status.HTTP_403_FORBIDDEN)
+        if tipo_eje.registro_precargado:
+            return Response({'success': False, 'detail': 'El Tipo Eje es un registro precargado, por lo tanto no puede ser eliminado'}, status=status.HTTP_403_FORBIDDEN)
+        tipo_eje.delete()
+        return Response({'success': True, 'detail': 'Tipo Eje eliminado correctamente.'}, status=status.HTTP_200_OK)
+
+# listar un Tipo Eje por id
+
+class TipoEjeDetail(generics.RetrieveAPIView):
+    queryset = TipoEje.objects.all()
+    serializer_class = TipoEjeSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, pk):
+        tipo_eje = self.queryset.all().filter(id_tipo_eje=pk).first()
+        if not tipo_eje:
+            raise NotFound('No se encontraron resultados.')
+        serializer = TipoEjeSerializer(tipo_eje)
+        return Response({'success': True, 'detail': 'Tipo Eje encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
