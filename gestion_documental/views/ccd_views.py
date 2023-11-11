@@ -1769,19 +1769,22 @@ class OficinasUnidadOrganizacionalActualGetView(generics.ListAPIView):
         data_oficinas = oficina_instance.get_oficinas_unidad(unidad_actual.id_unidad_organizacional, ccd.id_ccd)
         
         for oficina in data_oficinas['oficinas']:
-            id_unidad_delegada = None
+            unidad_delegada = None
 
             try:
-                unidad_delegada = UnidadesSeccionResponsableTemporal.objects.get(id_ccd_nuevo=ccd_nuevo.id_ccd, 
+                unidad_delegada_obj = UnidadesSeccionResponsableTemporal.objects.get(id_ccd_nuevo=ccd_nuevo.id_ccd, 
                                                                                 id_unidad_seccion_actual=oficina['id_unidad_organizacional'], 
                                                                                 es_registro_asig_seccion_responsable=False) 
             except UnidadesSeccionResponsableTemporal.DoesNotExist:
-                unidad_delegada = None
+                unidad_delegada_obj = None
             
-            if unidad_delegada is not None:
-                id_unidad_delegada = unidad_delegada.id_unidad_seccion_nueva.id_unidad_organizacional
+            if unidad_delegada_obj is not None:
+                unidad_delegada = {
+                    'label': unidad_delegada_obj.id_unidad_seccion_nueva.nombre,
+                    'value': unidad_delegada_obj.id_unidad_seccion_nueva.id_unidad_organizacional
+                    }
             
-            oficina['unidad_delegada'] = id_unidad_delegada
+            oficina['unidad_delegada'] = unidad_delegada
             
         return Response({'success': True, 'detail': 'Oficina de la unidad actual', 'data': data_oficinas}, status=status.HTTP_200_OK)
 
