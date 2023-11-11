@@ -523,26 +523,10 @@ class UnidadesSeccionResponsableTemporalGetSerializer(serializers.ModelSerialize
                   'nom_unidad_nueva']
         
 class OficinaUnidadOrganizacionalSerializer(serializers.ModelSerializer):
-    unidad_delegada =  serializers.SerializerMethodField()  
     
     class Meta:
         model = UnidadesOrganizacionales
-        fields = ['id_unidad_organizacional', 'codigo', 'nombre', 'unidad_delegada']
-
-    def get_unidad_delegada(self, obj):
-        id_ccd_nuevo = self.context.get('id_ccd_nuevo')
-        id_unidad_delegada = None
-        try:
-            unidad_delegada = UnidadesSeccionResponsableTemporal.objects.get(id_ccd_nuevo=id_ccd_nuevo, 
-                                                                            id_unidad_seccion_actual=obj.id_unidad_organizacional, 
-                                                                            es_registro_asig_seccion_responsable=False) 
-        except UnidadesSeccionResponsableTemporal.DoesNotExist:
-            unidad_delegada = None
-        
-        if unidad_delegada is not None:
-            id_unidad_delegada = unidad_delegada.id_unidad_seccion_nueva.id_unidad_organizacional
-        
-        return id_unidad_delegada
+        fields = ['id_unidad_organizacional', 'codigo', 'nombre']
 
 
 class OficinasDelegacionTemporalSerializer(serializers.ModelSerializer):

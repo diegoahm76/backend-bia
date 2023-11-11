@@ -55,7 +55,7 @@ urlpatterns = [
     path('unidades-responsables-ccd/get/<str:id_ccd>/', views.UnidadesSeccionResponsableTemporalGetView.as_view(),name='obtener-unidades-responsables-ccd'),
     path('get-validacion-delegacion-ccd/get/<str:id_ccd_nuevo>/', views.ValidacionCCDDelegacionView.as_view(),name='obtener-persistencia-confirmada-ccd'),
     path('get-unidades-actual-responsable-ccd/get/<str:id_ccd_nuevo>/', views.UnidadesOrganizacionalesActualResponsableView.as_view(),name='obtener-unidades-ccd-actual-responsable'),
-    path('get-oficinas-unidad-actual/get/<str:id_unidad_org_actual>/', views.OficinasUnidadOrganizacionalActualGetView.as_view(),name='obtener-oficinas-unidad-actual'),
+    path('get-oficinas-unidad-actual/get/', views.OficinasUnidadOrganizacionalActualGetView.as_view(),name='obtener-oficinas-unidad-actual'),
     path('get-oficinas-unidad-nueva/get/', views.OficinasUnidadOrganizacionalNuevaGetView.as_view(),name='obtener-oficinas-unidad-nueva'),
     path('oficinas-delegadas-ccd/create/', views.OficinasDelegacionTemporalCreateView.as_view(),name='crear-delegacion-oficinas-ccd'),
     
