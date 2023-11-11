@@ -1745,10 +1745,18 @@ class OficinasUnidadOrganizacionalGetView(generics.ListAPIView):
 class OficinasUnidadOrganizacionalActualGetView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, id_unidad_org_actual):
+    def get(self, request):
+        ccd_filro = BusquedaCCDHomologacionView().get_validacion_ccd()
+        id_ccd_nuevo = self.request.query_params.get('id_ccd_nuevo', None)
+        id_unidad_actual = self.request.query_params.get('id_unidad_actual', None)
 
         try:
-            unidad_actual = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=id_unidad_org_actual)
+            ccd_nuevo = ccd_filro.get(id_ccd=id_ccd_nuevo)
+        except CuadrosClasificacionDocumental.DoesNotExist:
+            raise NotFound('CCD no encontrado o no cumple con TRD y TCA terminados')
+
+        try:
+            unidad_actual = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=id_unidad_actual)
         except UnidadesOrganizacionales.DoesNotExist:
             raise ValidationError('No se encontraron unidades organizacionales')
 
@@ -1759,7 +1767,22 @@ class OficinasUnidadOrganizacionalActualGetView(generics.ListAPIView):
         
         oficina_instance = OficinasUnidadOrganizacionalGetView()
         data_oficinas = oficina_instance.get_oficinas_unidad(unidad_actual.id_unidad_organizacional, ccd.id_ccd)
+        
+        for oficina in data_oficinas['oficinas']:
+            id_unidad_delegada = None
 
+            try:
+                unidad_delegada = UnidadesSeccionResponsableTemporal.objects.get(id_ccd_nuevo=ccd_nuevo.id_ccd, 
+                                                                                id_unidad_seccion_actual=oficina['id_unidad_organizacional'], 
+                                                                                es_registro_asig_seccion_responsable=False) 
+            except UnidadesSeccionResponsableTemporal.DoesNotExist:
+                unidad_delegada = None
+            
+            if unidad_delegada is not None:
+                id_unidad_delegada = unidad_delegada.id_unidad_seccion_nueva.id_unidad_organizacional
+            
+            oficina['unidad_delegada'] = id_unidad_delegada
+            
         return Response({'success': True, 'detail': 'Oficina de la unidad actual', 'data': data_oficinas}, status=status.HTTP_200_OK)
 
 
@@ -1785,7 +1808,6 @@ class OficinasUnidadOrganizacionalNuevaGetView(generics.ListAPIView):
         data_oficinas = oficina_instance.get_oficinas_unidad(unidad_nueva.id_unidad_organizacional, ccd.id_ccd)
 
         return Response({'success': True, 'detail': 'Oficina de la unidad nueva', 'data': data_oficinas}, status=status.HTTP_200_OK)
-
 
 class OficinasDelegacionTemporalCreateView(generics.CreateAPIView):
     serializer_class = OficinasDelegacionTemporalSerializer
