@@ -1855,7 +1855,7 @@ class OficinasDelegacionTemporalCreateView(generics.CreateAPIView):
                 'id_unidad_seccion_actual': unidad[0],
                 'id_unidad_seccion_nueva': unidad[1],
                 'es_registro_asig_seccion_responsable': False,
-                'id_unidad_seccion_actual_padre': unidad_padre.id_unidad_org_padre
+                'id_unidad_seccion_actual_padre': unidad_padre.id_unidad_org_padre.id_unidad_organizacional
             }
             serializer = self.serializer_class(data=data)
             serializer.is_valid(raise_exception=True)
