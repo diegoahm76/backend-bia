@@ -165,7 +165,7 @@ class UpdateVinculacionColaboradorView(generics.RetrieveUpdateDestroyAPIView):
             fecha_inicio_cargo = persona.fecha_inicio_cargo_actual
             fecha_asignacion_unidad = persona.fecha_asignacion_unidad
 
-            if persona.fecha_a_finalizar_cargo_actual > fecha_actual:
+            if persona.fecha_a_finalizar_cargo_actual > fecha_actual.date():
                 if unidad != persona.id_unidad_organizacional_actual.id_unidad_organizacional or cargo != persona.id_cargo.id_cargo:
                     if fecha_finalizar_cargo != persona.fecha_a_finalizar_cargo_actual:
                         fecha_minima = (datetime.today() + timedelta(days=1)).date()
