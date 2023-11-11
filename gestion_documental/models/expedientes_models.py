@@ -225,3 +225,16 @@ class ArchivosSoporte_CierreReapertura(models.Model):
         verbose_name = 'Archivo De Soporte De Cierre Reapertura'
         verbose_name_plural = 'Archivos De Soportes De Cierres Reapertura'
         unique_together = ('id_cierre_reapertura_exp', 'id_doc_archivo_exp_soporte')
+        
+class DobleVerificacionTmp(models.Model):
+    id_doble_verificacion = models.AutoField(primary_key=True, db_column='T270IdDobleVerificacion')
+    id_expediente = models.ForeignKey(ExpedientesDocumentales, on_delete=models.CASCADE, db_column='T270Id_Expediente')
+    id_persona_firma = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T270Id_PersonaFirma')
+    codigo_generado = models.CharField(max_length=6, db_column='T270codigoGenerado')
+    fecha_hora_codigo = models.DateTimeField(auto_now_add=True, db_column="T270fechaHoraCodigo")
+
+    class Meta:
+        db_table = 'T270DobleVerificacion_Tmp'
+        verbose_name = 'Doble Verificacion Tmp'
+        verbose_name_plural = 'Doble Verificacion Tmp'
+        unique_together = ('id_expediente', 'id_persona_firma')
