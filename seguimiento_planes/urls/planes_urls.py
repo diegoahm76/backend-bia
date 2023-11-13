@@ -103,4 +103,11 @@ urlpatterns=[
     path('actualizar-tipos-ejes/<str:pk>/',views.TipoEjeUpdate.as_view(),name='actualizartiposejes'),
     path('eliminar-tipos-ejes/<str:pk>/',views.TipoEjeDelete.as_view(),name='eliminartiposejes'),
     path('consultar-tipos-ejes-id/<str:pk>/',views.TipoEjeDetail.as_view(),name='consultartiposejesid'),
+    # Subprogramas
+    path('consultar-subprogramas/',views.SubprogramaList.as_view(),name='consultarsubprogramas'),
+    path('crear-subprogramas/',views.SubprogramaCreate.as_view(),name='crearsubprogramas'),
+    path('actualizar-subprogramas/<str:pk>/',views.SubprogramaUpdate.as_view(),name='actualizarsubprogramas'),
+    path('eliminar-subprogramas/<str:pk>/',views.SubprogramaDelete.as_view(),name='eliminarsubprogramas'),
+    path('consultar-subprogramas-id/<str:pk>/',views.SubprogramaDetail.as_view(),name='consultarsubprogramasid'),
+    path('consultar-subprogramas-id-programa/<str:pk>/',views.SubprogramaListIdPrograma.as_view(),name='consultarsubprogramasidprograma'),
 ]
