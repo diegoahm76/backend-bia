@@ -50,8 +50,13 @@ urlpatterns = [
      path('expedientes/reapertura-expediente/',views.ReaperturaExpediente.as_view(), name='reapertura-expediente'),
 
 
-     
-  
+     #Firma de Cierre de Indice Electronico
+     path('expedientes/buscar-expedientes/',views.ExpedientesSearchAll.as_view(), name='buscar-expedientes-all'),
+     path('expedientes/firma-cierre/informacion-indice/get/<str:id_expediente_doc>/',views.InformacionIndiceGetView.as_view(), name='informacion-indice-get'),
+     path('expedientes/firma-cierre/envio-codigo/<str:id_indice_electronico_exp>/',views.EnvioCodigoView.as_view(), name='envio-codigo-cierre'),
+     path('expedientes/firma-cierre/validacion-codigo/',views.ValidacionCodigoView.as_view(), name='validacion-codigo-cierre'),
+     path('expedientes/firma-cierre/',views.FirmaCierreView.as_view(), name='firma-cierre-indice'),
+     path('expedientes/firma-cierre/get/<str:id_indice_electronico_exp>/',views.FirmaCierreGetView.as_view(), name='firma-cierre-indice-get'),
 
 
       
