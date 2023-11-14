@@ -30,6 +30,7 @@ class Planes(models.Model):
             ('PND', 'Plan Nacional Desarrollo'),
             ('PAI', 'Plan Accion Institucional'),
             ('PGR', 'Plan Gestion Ambiental Regional'),
+            ('PES', 'Plan de desarrollo economico y social')
         ], db_column='T501tipoPlan')
     agno_inicio = models.IntegerField(
         null=True, blank=True, db_column='T501agnoInicio')
@@ -126,6 +127,8 @@ class Programa(models.Model):
 class Proyecto(models.Model):
     id_proyecto = models.AutoField(
         primary_key=True, editable=False, db_column='T505IdProyecto')
+    numero_proyecto = models.IntegerField(
+        null=True, blank=True, db_column='T505numeroProyecto')
     nombre_proyecto = models.CharField(
         max_length=255, db_column='T505nombreProyecto')
     pondera_1 = models.IntegerField(
@@ -150,6 +153,8 @@ class Proyecto(models.Model):
 class Productos(models.Model):
     id_producto = models.AutoField(
         primary_key=True, editable=False, db_column='T506IdProducto')
+    numero_producto = models.IntegerField(
+        null=True, blank=True, db_column='T506numeroProducto')
     nombre_producto = models.CharField(
         max_length=255, db_column='T506nombreProducto')
     id_proyecto = models.ForeignKey(
@@ -166,6 +171,8 @@ class Productos(models.Model):
 class Actividad(models.Model):
     id_actividad = models.AutoField(
         primary_key=True, editable=False, db_column='T507IdActividad')
+    numero_actividad = models.IntegerField(
+        null=True, blank=True, db_column='T507numeroActividad')
     nombre_actividad = models.CharField(
         max_length=255, db_column='T507nombreActividad')
     id_producto = models.ForeignKey(
@@ -307,3 +314,19 @@ class Metas(models.Model):
         db_table = 'T513Meta'
         verbose_name = 'Meta'
         verbose_name_plural = 'Metas'
+
+class Subprograma(models.Model):
+    id_subprograma = models.AutoField(
+        primary_key=True, editable=False, db_column='T515IdSubprograma')
+    nombre_subprograma = models.CharField(
+        max_length=255, db_column='T515nombreSubprograma')
+    id_programa = models.ForeignKey(
+        Programa, on_delete=models.CASCADE, db_column='T515IdPrograma')
+
+    def __str__(self):
+        return str(self.id_subprograma)
+
+    class Meta:
+        db_table = 'T515Subprograma'
+        verbose_name = 'Subprograma'
+        verbose_name_plural = 'Subprogramas'

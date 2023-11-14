@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from seguimiento_planes.models.planes_models import ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje
+from seguimiento_planes.models.planes_models import ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma
 
 class ObjetivoDesarrolloSostenibleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -120,4 +120,12 @@ class TipoEjeSerializer(serializers.ModelSerializer):
                     
     class Meta:
         model = TipoEje
+        fields = '__all__'
+
+class SubprogramaSerializer(serializers.ModelSerializer):
+             
+    nombre_programa = serializers.ReadOnlyField(source='id_programa.nombre_programa', default=None)
+                
+    class Meta:
+        model = Subprograma
         fields = '__all__'
