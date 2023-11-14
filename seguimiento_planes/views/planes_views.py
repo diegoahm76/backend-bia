@@ -157,7 +157,7 @@ class EliminarPlanes(generics.DestroyAPIView):
         plan_nacional_desarrollo = self.queryset.all().filter(id_plan=pk).first()
 
         if not plan_nacional_desarrollo:
-            return Response({'success': False, 'detail': 'El planes ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('El planes ingresado no existe.')
         plan_nacional_desarrollo.delete()
         return Response({'success': True, 'detail': 'Se elimino el planes de manera exitosa'}, status=status.HTTP_200_OK)
     
