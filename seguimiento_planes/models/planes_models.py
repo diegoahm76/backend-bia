@@ -126,8 +126,8 @@ class Programa(models.Model):
 class Proyecto(models.Model):
     id_proyecto = models.AutoField(
         primary_key=True, editable=False, db_column='T505IdProyecto')
-    numero_proyecto = models.CharField(
-        max_length=255, db_column='T505numeroProyecto')
+    numero_proyecto = models.IntegerField(
+        null=True, blank=True, db_column='T505numeroProyecto')
     nombre_proyecto = models.CharField(
         max_length=255, db_column='T505nombreProyecto')
     pondera_1 = models.IntegerField(
@@ -152,8 +152,8 @@ class Proyecto(models.Model):
 class Productos(models.Model):
     id_producto = models.AutoField(
         primary_key=True, editable=False, db_column='T506IdProducto')
-    numero_producto = models.CharField(
-        max_length=255, db_column='T506numeroProducto')
+    numero_producto = models.IntegerField(
+        null=True, blank=True, db_column='T506numeroProducto')
     nombre_producto = models.CharField(
         max_length=255, db_column='T506nombreProducto')
     id_proyecto = models.ForeignKey(
@@ -170,8 +170,8 @@ class Productos(models.Model):
 class Actividad(models.Model):
     id_actividad = models.AutoField(
         primary_key=True, editable=False, db_column='T507IdActividad')
-    numero_actividad = models.CharField(
-        max_length=255, db_column='T507numeroActividad')
+    numero_actividad = models.IntegerField(
+        null=True, blank=True, db_column='T507numeroActividad')
     nombre_actividad = models.CharField(
         max_length=255, db_column='T507nombreActividad')
     id_producto = models.ForeignKey(
