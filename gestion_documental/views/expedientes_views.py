@@ -9,7 +9,7 @@ import secrets
 from rest_framework.parsers import MultiPartParser
 from gestion_documental.models.conf__tipos_exp_models import ConfiguracionTipoExpedienteAgno
 from gestion_documental.models.depositos_models import CarpetaCaja
-from gestion_documental.models.expedientes_models import ExpedientesDocumentales,ArchivosDigitales,DocumentosDeArchivoExpediente,IndicesElectronicosExp,Docs_IndiceElectronicoExp,CierresReaperturasExpediente,ArchivosSoporte_CierreReapertura
+from gestion_documental.models.expedientes_models import DobleVerificacionTmp, ExpedientesDocumentales,ArchivosDigitales,DocumentosDeArchivoExpediente,IndicesElectronicosExp,Docs_IndiceElectronicoExp,CierresReaperturasExpediente,ArchivosSoporte_CierreReapertura
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from django.shortcuts import get_object_or_404
 from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, FormatosTiposMedio, TablaRetencionDocumental, TipologiasDoc
@@ -20,7 +20,7 @@ from gestion_documental.views.conf__tipos_exp_views import ConfiguracionTipoExpe
 from seguridad.utils import Util
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AnularExpedienteSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, AperturaExpedienteUpdateAutSerializer, AperturaExpedienteUpdateNoAutSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, BorrarExpedienteSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, ExpedienteAperturaSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, IndexarDocumentosAnularSerializer, IndexarDocumentosCreateSerializer, IndexarDocumentosGetSerializer, IndexarDocumentosUpdateAutSerializer, IndexarDocumentosUpdateSerializer, ListExpedientesComplejosSerializer, ListarTRDSerializer, ListarTipologiasSerializer, SerieSubserieUnidadTRDGetSerializer
+from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AnularExpedienteSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, AperturaExpedienteUpdateAutSerializer, AperturaExpedienteUpdateNoAutSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, BorrarExpedienteSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, EnvioCodigoSerializer, ExpedienteAperturaSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, FirmaCierreGetSerializer, IndexarDocumentosAnularSerializer, IndexarDocumentosCreateSerializer, IndexarDocumentosGetSerializer, IndexarDocumentosUpdateAutSerializer, IndexarDocumentosUpdateSerializer, InformacionIndiceGetSerializer, ListExpedientesComplejosSerializer, ListarTRDSerializer, ListarTipologiasSerializer, SerieSubserieUnidadTRDGetSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Max 
@@ -29,6 +29,8 @@ from rest_framework.parsers import FileUploadParser
 from rest_framework.response import Response
 from django.db import transaction
 from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
+
+from transversal.models.personas_models import Personas
 
 ########################## CRUD DE APERTURA DE EXPEDIENTES DOCUMENTALES ##########################
 
@@ -157,7 +159,27 @@ class AperturaExpedienteCreate(generics.CreateAPIView):
                 instance_carpeta = instances_carpetas.filter(id_carpeta_caja=carpeta).first()
                 instance_carpeta.id_expediente = expediente_creado
                 instance_carpeta.save()
-                
+        
+        # AUDITORIA
+        usuario = request.user.id_usuario
+        descripcion = {
+            "CodigoExpUndSerieSubserie": str(codigo_exp_und_serie_subserie),
+            "CodigoExpAgno": str(data['codigo_exp_Agno'])
+        }
+        if codigo_exp_consec_por_agno:
+            descripcion['CodigoExpConsecPorAgno'] = str(codigo_exp_consec_por_agno)
+        
+        direccion = Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 160,
+            "cod_permiso": "CR",
+            "subsistema": 'GEST',
+            "dirip": direccion,
+            "descripcion": descripcion,
+        }
+        Util.save_auditoria(auditoria_data)
+            
         return Response({'success':True, 'detail':'Apertura realizada de manera exitosa', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 
 class AperturaExpedienteGet(generics.ListAPIView):
@@ -186,6 +208,8 @@ class AperturaExpedienteUpdate(generics.UpdateAPIView):
         
         if not expediente:
             raise NotFound('No se encontró el expediente indicado')
+        
+        previous_expediente = copy.copy(expediente)
         
         if expediente.creado_automaticamente:
             serializer = self.serializer_class(expediente, data=data, partial=True)
@@ -226,7 +250,29 @@ class AperturaExpedienteUpdate(generics.UpdateAPIView):
             for carpeta_removida in instances_carpetas_ya_asociadas:
                 carpeta_removida.id_expediente = None
                 carpeta_removida.save()
-                
+        
+        # AUDITORIA
+        usuario = request.user.id_usuario
+        descripcion = {
+            "CodigoExpUndSerieSubserie": str(expediente.codigo_exp_und_serie_subserie),
+            "CodigoExpAgno": str(expediente.codigo_exp_Agno)
+        }
+        if expediente.codigo_exp_consec_por_agno:
+            descripcion['CodigoExpConsecPorAgno'] = str(expediente.codigo_exp_consec_por_agno)
+        
+        direccion = Util.get_client_ip(request)
+        valores_actualizados = {'previous': previous_expediente, 'current':expediente}
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 160,
+            "cod_permiso": "AC",
+            "subsistema": 'GEST',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_actualizados": valores_actualizados
+        }
+        Util.save_auditoria(auditoria_data)
+        
         return Response({'success':True, 'detail':'Expediente actualizado de manera exitosa', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 
 class AnularExpediente(generics.UpdateAPIView):
@@ -257,7 +303,27 @@ class AnularExpediente(generics.UpdateAPIView):
         serializer = self.serializer_class(expediente, data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-                
+        
+        # AUDITORIA
+        usuario = request.user.id_usuario
+        descripcion = {
+            "CodigoExpUndSerieSubserie": str(expediente.codigo_exp_und_serie_subserie),
+            "CodigoExpAgno": str(expediente.codigo_exp_Agno)
+        }
+        if expediente.codigo_exp_consec_por_agno:
+            descripcion['CodigoExpConsecPorAgno'] = str(expediente.codigo_exp_consec_por_agno)
+        
+        direccion = Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 160,
+            "cod_permiso": "AN",
+            "subsistema": 'GEST',
+            "dirip": direccion,
+            "descripcion": descripcion,
+        }
+        Util.save_auditoria(auditoria_data)
+        
         return Response({'success':True, 'detail':'Expediente anulado de manera exitosa', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 
 class BorrarExpediente(generics.DestroyAPIView):
@@ -277,10 +343,31 @@ class BorrarExpediente(generics.DestroyAPIView):
             raise PermissionDenied('No puede borrar un expediente con documentos asociados')
         
         if expediente.cod_tipo_expediente != 'S':
-            ultimo_expediente_comp = ExpedientesDocumentales.objects.filter(cod_tipo_expediente='C').order_by('codigo_exp_consec_por_agno').last()
+            ultimo_expediente_comp = ExpedientesDocumentales.objects.filter(cod_tipo_expediente='C', codigo_exp_und_serie_subserie=expediente.codigo_exp_und_serie_subserie).order_by('codigo_exp_consec_por_agno').last()
             if expediente.id_expediente_documental != ultimo_expediente_comp.id_expediente_documental:
                 raise PermissionDenied('Solo puede borrar el expediente con el último consecutivo')
-                
+        
+        # AUDITORIA
+        usuario = request.user.id_usuario
+        descripcion = {
+            "CodigoExpUndSerieSubserie": str(expediente.codigo_exp_und_serie_subserie),
+            "CodigoExpAgno": str(expediente.codigo_exp_Agno)
+        }
+        if expediente.codigo_exp_consec_por_agno:
+            descripcion['CodigoExpConsecPorAgno'] = str(expediente.codigo_exp_consec_por_agno)
+        
+        direccion = Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 160,
+            "cod_permiso": "BO",
+            "subsistema": 'GEST',
+            "dirip": direccion,
+            "descripcion": descripcion,
+        }
+        Util.save_auditoria(auditoria_data)
+        
+        # BORRAR
         expediente.delete()
         
         return Response({'success':True, 'detail':'Expediente borrado de manera exitosa'}, status=status.HTTP_200_OK)
@@ -1697,13 +1784,22 @@ class IndexarDocumentosBorrar(generics.DestroyAPIView):
         if doc_expediente.id_expediente_documental.estado != 'A':
             raise PermissionDenied('No puede borrar el documento elegido porque el expediente se encuentra cerrado')
         
+        descripcion = {
+            "NombreAsignadoDocumento": doc_expediente.nombre_asignado_documento,
+            "IdentificacionDocEnExpediente": doc_expediente.identificacion_doc_en_expediente
+        }
+        
         id_expediente_documental = doc_expediente.id_expediente_documental.id_expediente_documental
         orden_en_expediente = doc_expediente.orden_en_expediente
         
         if not doc_expediente.es_un_archivo_anexo:
             docs_expedientes_anexos = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=doc_expediente.id_expediente_documental, es_un_archivo_anexo=True)
+            cont = 1
             for doc_expediente_anexo in docs_expedientes_anexos:
-                doc_expediente_anexo.id_archivo_sistema.delete()
+                descripcion['NombreAsignadoDocumentoAnexo'+str(cont)] = doc_expediente_anexo.nombre_asignado_documento
+                if doc_expediente_anexo.id_archivo_sistema:
+                    doc_expediente_anexo.id_archivo_sistema.delete()
+                cont += 1
             
             docs_expedientes_anexos.delete()
         
@@ -1720,8 +1816,8 @@ class IndexarDocumentosBorrar(generics.DestroyAPIView):
             index_doc_previous = Docs_IndiceElectronicoExp.objects.filter(id_indice_electronico_exp=indice_electronico, id_doc_archivo_exp__orden_en_expediente__lt=orden_en_expediente).order_by('id_doc_archivo_exp__orden_en_expediente').last()
             
             index_doc_next = Docs_IndiceElectronicoExp.objects.filter(id_indice_electronico_exp=indice_electronico, id_doc_archivo_exp__orden_en_expediente__gt=orden_en_expediente).order_by('id_doc_archivo_exp__orden_en_expediente')
-            pagina_fin_previous = index_doc_previous.pagina_fin
             if index_doc_next:
+                pagina_fin_previous = index_doc_previous.pagina_fin
                 for index_doc_after in index_doc_next:
                     # Calcular la página de inicio
                     pagina_inicio_next = pagina_fin_previous + 1
@@ -1734,4 +1830,273 @@ class IndexarDocumentosBorrar(generics.DestroyAPIView):
                     index_doc_after.pagina_fin = pagina_fin_previous
                     index_doc_after.save()
         
+        # AUDITORIA
+        usuario = request.user.id_usuario
+        direccion = Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 161,
+            "cod_permiso": "BO",
+            "subsistema": 'GEST',
+            "dirip": direccion,
+            "descripcion": descripcion,
+        }
+        Util.save_auditoria(auditoria_data)
+        
         return Response({'success':True, 'detail':'Borrado de documento realizado correctamente'}, status=status.HTTP_201_CREATED)
+
+########################## CRUD DE CIERRE DE EXPEDIENTES DOCUMENTALES ##########################
+
+#BUSCAR UN EXPEDIENTE
+class ExpedientesSearchAll(generics.ListAPIView):
+    serializer_class = ExpedienteSearchSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        titulo_expediente = self.request.query_params.get('titulo_expediente', '').strip()
+        codigo_exp_und_serie_subserie = self.request.query_params.get('codigo_exp_und_serie_subserie', '').strip()
+        fecha_apertura_expediente = self.request.query_params.get('fecha_apertura_expediente', '').strip()
+        nombre_serie_origen = self.request.query_params.get('id_serie_origen', '').strip()
+        nombre_subserie_origen = self.request.query_params.get('id_subserie_origen', '').strip()
+        palabras_clave_expediente = self.request.query_params.get('palabras_clave_expediente', '').strip()
+        codigos_uni_serie_subserie = self.request.query_params.get('codigos_uni_serie_subserie', '').strip()
+        trd_nombre = self.request.query_params.get('trd_nombre', '').strip()
+        id_persona_titular_exp_complejo = self.request.query_params.get('id_persona_titular_exp_complejo')
+
+
+
+        # Filtrar por atributos específicos referentes a un expediente (unión de parámetros)
+        queryset = ExpedientesDocumentales.objects.all()  # Filtrar por estado 'A'
+        if titulo_expediente:
+            queryset = queryset.filter(titulo_expediente__icontains=titulo_expediente)
+
+        if codigo_exp_und_serie_subserie:
+            queryset = queryset.filter(codigo_exp_und_serie_subserie=codigo_exp_und_serie_subserie)
+
+        if fecha_apertura_expediente:
+            queryset = queryset.filter(fecha_apertura_expediente__icontains=fecha_apertura_expediente)
+
+        if nombre_serie_origen:
+            queryset = queryset.filter(id_serie_origen__nombre__icontains=nombre_serie_origen)
+
+        if nombre_subserie_origen:
+            queryset = queryset.filter(id_subserie_origen__nombre__icontains=nombre_subserie_origen)
+   
+        if codigos_uni_serie_subserie:
+            queryset = queryset.filter(codigo_exp_und_serie_subserie__startswith=codigos_uni_serie_subserie)
+
+        if id_persona_titular_exp_complejo:
+            queryset = queryset.filter(id_persona_titular_exp_complejo=id_persona_titular_exp_complejo)
+        
+        if trd_nombre:
+            queries = []
+            
+            if trd_nombre.lower() == 'actual':
+                queries.append(queryset.filter(id_trd_origen__nombre__icontains=trd_nombre))
+                queries.append(queryset.filter(id_trd_origen__fecha_retiro_produccion__icontains=trd_nombre))
+                queries.append(queryset.filter(id_trd_origen__actual=True))
+            elif trd_nombre.lower() == 'no actual':
+                queries.append(queryset.filter(id_trd_origen__nombre__icontains=trd_nombre))
+                queries.append(queryset.filter(id_trd_origen__fecha_retiro_produccion__icontains=trd_nombre))
+                queries.append(queryset.filter(id_trd_origen__actual=False))
+            else:
+                queries.append(queryset.filter(id_trd_origen__nombre__icontains=trd_nombre))
+                queries.append(queryset.filter(id_trd_origen__fecha_retiro_produccion__icontains=trd_nombre))
+                queries.append(queryset.filter(id_trd_origen__actual__icontains=trd_nombre))
+            
+            # Combinamos todas las consultas utilizando comas
+            queryset = queries[0]
+            for query in queries[1:]:
+                queryset = queryset | query
+            
+            
+        if palabras_clave_expediente:
+            search_vector = SearchVector('palabras_clave_expediente')
+            search_query = SearchQuery(palabras_clave_expediente)
+            queryset = queryset.annotate(rank=SearchRank(search_vector, search_query)).filter(rank__gt=0)
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            raise NotFound('No se encontraron datos que coincidan con los criterios de búsqueda.')
+
+        serializer = ExpedienteSearchSerializer(queryset, many=True)
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes registros.',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+        
+class InformacionIndiceGetView(generics.ListAPIView):
+    serializer_class = InformacionIndiceGetSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_expediente_doc):
+        indice_electronico_exp = IndicesElectronicosExp.objects.filter(id_expediente_doc=id_expediente_doc).first()
+        if not indice_electronico_exp:
+            raise NotFound('No se encontró el indice electrónico al expediente elegido')
+        
+        serializer = self.serializer_class(indice_electronico_exp)
+        return Response({'success':True, 'detail':'Se encontró la siguiente información', 'data':serializer.data}, status=status.HTTP_200_OK)
+    
+class EnvioCodigoView(generics.CreateAPIView):
+    serializer_class = EnvioCodigoSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def create(self, request, id_indice_electronico_exp):
+        persona = request.user.persona
+        
+        indice_electronico_exp = IndicesElectronicosExp.objects.filter(id_indice_electronico_exp=id_indice_electronico_exp).first()
+        if not indice_electronico_exp:
+            raise NotFound('No se encontró el indice del expediente ingresado')
+        
+        if not indice_electronico_exp.abierto:
+            raise PermissionDenied('No puede realizar esta acción para un indice que ya se encuentra cerrado')
+        
+        verification_code = secrets.randbelow(10**6)
+        verification_code_str = f'{verification_code:06}'
+        
+        # GUARDAR O ACTUALIZAR REGISTRO EN T270
+        doble_verificacion = DobleVerificacionTmp.objects.filter(id_expediente=indice_electronico_exp.id_expediente_doc, id_persona_firma=persona.id_persona).first()
+        
+        if doble_verificacion:
+            segundos = (datetime.now() - doble_verificacion.fecha_hora_codigo).total_seconds()
+            if segundos < 60:
+                raise ValidationError('Debe esperar un minuto antes de solicitar otro código')
+            doble_verificacion.codigo_generado = verification_code_str
+            doble_verificacion.fecha_hora_codigo = datetime.now()
+            doble_verificacion.save()
+        else:
+            DobleVerificacionTmp.objects.create(
+                id_persona_firma=persona,
+                id_expediente=indice_electronico_exp.id_expediente_doc,
+                codigo_generado=verification_code_str,
+                fecha_hora_codigo=datetime.now()
+            )
+        
+        # ENVIAR SMS Y/O EMAIL
+        
+        if persona.telefono_celular:
+            sms = f'Ingrese el siguiente código para continuar con el cierre del índice electrónico: {verification_code_str}'
+            Util.send_sms(persona.telefono_celular, sms)
+        
+        if persona.email:
+            subject = "Código de Verificación - "
+            template = "codigo-cierre-indice.html"
+            Util.notificacion(persona,subject,template,nombre_de_usuario=request.user.nombre_de_usuario,verification_code_str=verification_code_str)
+        
+        # serializer = self.serializer_class(indice_electronico_exp)
+        return Response({'success':True, 'detail':'Se ha realizado el envío del código de verificación'}, status=status.HTTP_200_OK)
+    
+class ValidacionCodigoView(generics.UpdateAPIView):
+    serializer_class = EnvioCodigoSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def update(self, request):
+        id_indice_electronico_exp = request.data.get('id_indice_electronico_exp')
+        codigo = request.data.get('codigo')
+        
+        if not id_indice_electronico_exp or not codigo:
+            raise ValidationError('Debe enviar el indice del expediente y el código')
+        
+        persona = request.user.persona
+        current_time = datetime.now()
+        
+        indice_electronico_exp = IndicesElectronicosExp.objects.filter(id_indice_electronico_exp=id_indice_electronico_exp).first()
+        if not indice_electronico_exp:
+            raise NotFound('No se encontró el indice del expediente ingresado')
+        
+        if not indice_electronico_exp.abierto:
+            raise PermissionDenied('No puede realizar esta acción para un indice que ya se encuentra cerrado')
+        
+        doble_verificacion = DobleVerificacionTmp.objects.filter(id_expediente=indice_electronico_exp.id_expediente_doc, id_persona_firma=persona.id_persona).first()
+        if not doble_verificacion:
+            raise ValidationError('No se encuentra un código para el índice ingresado')
+        
+        minutos = (current_time - doble_verificacion.fecha_hora_codigo).total_seconds() / 60.0
+        if minutos > 15:
+            raise ValidationError('El código ingresado ha expirado')
+        else:
+            if doble_verificacion.codigo_generado != codigo:
+                raise ValidationError('El código es inválido. Intente nuevamente')
+        
+        return Response({'success':True, 'detail':'El código es válido'}, status=status.HTTP_200_OK)
+
+class FirmaCierreView(generics.UpdateAPIView):
+    serializer_class = EnvioCodigoSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def update(self, request):
+        id_indice_electronico_exp = request.data.get('id_indice_electronico_exp')
+        observacion = request.data.get('observacion', '')
+        
+        if not id_indice_electronico_exp or observacion == '':
+            raise ValidationError('Debe enviar el indice del expediente y la observación')
+        
+        persona = request.user.persona
+        current_time = datetime.now()
+        
+        indice_electronico_exp = IndicesElectronicosExp.objects.filter(id_indice_electronico_exp=id_indice_electronico_exp).first()
+        if not indice_electronico_exp:
+            raise NotFound('No se encontró el indice del expediente ingresado')
+        
+        if not indice_electronico_exp.abierto:
+            raise PermissionDenied('No puede realizar esta acción para un indice que ya se encuentra cerrado')
+        
+        doble_verificacion = DobleVerificacionTmp.objects.filter(id_expediente=indice_electronico_exp.id_expediente_doc, id_persona_firma=persona.id_persona).first()
+        if not doble_verificacion:
+            raise ValidationError('No se ha generado aún código de verificación para el índice ingresado')
+        
+        # ACTUALIZAR EN T239
+        previous_indice_electronico_exp = copy.copy(indice_electronico_exp)
+        
+        indice_electronico_exp.abierto = False
+        indice_electronico_exp.fecha_cierre = current_time
+        indice_electronico_exp.id_persona_firma_cierre = persona
+        indice_electronico_exp.fecha_envio_cod_verificacion = doble_verificacion.fecha_hora_codigo
+        indice_electronico_exp.email_envio_cod_verificacion = doble_verificacion.id_persona_firma.email
+        indice_electronico_exp.nro_cel_envio_cod_verificacion = doble_verificacion.id_persona_firma.telefono_celular
+        indice_electronico_exp.fecha_intro_cod_verificacion_ok = current_time
+        indice_electronico_exp.observacion_firme_cierre = observacion
+        indice_electronico_exp.save()
+        
+        # ACTUALIZAR EN T236
+        indice_electronico_exp.id_expediente_doc.fecha_firma_cierre_indice_elec = current_time
+        indice_electronico_exp.id_expediente_doc.save()
+        
+        # AUDITORIA
+        usuario = request.user.id_usuario
+        descripcion = {
+            "IdExpedienteDoc": str(indice_electronico_exp.id_expediente_doc.id_expediente_documental)
+        }
+        direccion = Util.get_client_ip(request)
+        valores_actualizados = {'previous': previous_indice_electronico_exp, 'current':indice_electronico_exp}
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 150,
+            "cod_permiso": "CR",
+            "subsistema": 'GEST',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_actualizados": valores_actualizados
+        }
+        Util.save_auditoria(auditoria_data)
+        
+        return Response({'success':True, 'detail':'Se realizó la firma correcta del cierre del índice electrónico'}, status=status.HTTP_200_OK)
+    
+class FirmaCierreGetView(generics.ListAPIView):
+    serializer_class = FirmaCierreGetSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_indice_electronico_exp):
+        indice_electronico_exp = IndicesElectronicosExp.objects.filter(id_indice_electronico_exp=id_indice_electronico_exp).first()
+        if not indice_electronico_exp:
+            raise NotFound('No se encontró el indice del expediente ingresado')
+        
+        serializer = self.serializer_class(indice_electronico_exp)
+        
+        return Response({'success':True, 'detail':'Se encontró la siguiente información', 'data':serializer.data}, status=status.HTTP_200_OK)
