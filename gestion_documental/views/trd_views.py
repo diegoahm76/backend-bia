@@ -1,4 +1,5 @@
 import json
+from transversal.serializers.organigrama_serializers import UnidadesGetSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from django.db.models import Q
@@ -47,7 +48,8 @@ from gestion_documental.models.ccd_models import (
     SeriesDoc
 )
 from transversal.models.organigrama_models import (
-    Organigramas
+    Organigramas,
+    UnidadesOrganizacionales
 )
 from gestion_documental.models.trd_models import (
     ConfigTipologiasDocAgno,
@@ -1180,7 +1182,7 @@ class ListarTipologiasdocumentales(generics.ListAPIView):
     serializer_class = TipologiasDocumentalesSerializer
     permission_classes = [IsAuthenticated]
 
-
+#////////////////////////////////////////////////////////////////////////////////////////////////////
 class CrearConfigurarTipologiaEmpresa(generics.CreateAPIView):
     serializer_class = ConsecPorNivelesTipologiasDocAgnoSerializer
     permission_classes = [IsAuthenticated]
@@ -1323,6 +1325,7 @@ class CrearConfigurarTipologiaEmpresa(generics.CreateAPIView):
                 "T247Id_PersonaUltConfigImplemen": persona_logueada.id_persona,  # Asignar el ID de la persona logueada
                 "Persona_ult_config_implemen": nombre_persona_config,
                 "T247fechaUltConfigImplemen": fecha_ultima_config,
+                "T247consecutivoActual":consec_por_niveles.consecutivo_actual,
                 "T247consecutivoActualAMostrar": t247_consecutivo_actual,
                 
 
@@ -1336,8 +1339,8 @@ class CrearConfigurarTipologiaEmpresa(generics.CreateAPIView):
         
 #///////////////////////////////////////////////////////////////////////////////////////////////
 
-class CrearConfigurarTipologiaSS(generics.CreateAPIView):
-    serializer_class = ConsecPorNivelesTipologiasDocAgnoSerializer
+class ConfigurarTipologiaSS(generics.CreateAPIView):
+    serializer_class = ConsecPorNivelesTipologiasDocAgnoSerializer  # Asegúrate de usar el serializador correcto
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -1345,7 +1348,7 @@ class CrearConfigurarTipologiaSS(generics.CreateAPIView):
         maneja_consecutivo = data.get('maneja_consecutivo', False)
         current_year = datetime.now().year
         fecha_ultima_config = datetime.now()
-        # Procesa los datos para agregar un documento de archivo expediente
+
         user = request.user
         persona_logueada = user.persona
 
@@ -1382,20 +1385,24 @@ class CrearConfigurarTipologiaSS(generics.CreateAPIView):
                 nivel_consecutivo = data['nivel_consecutivo']
 
                 if nivel_consecutivo == 'SS':
-                    if 'valor_inicial' not in data or 'cantidad_digitos' not in data:
+                    # Validar datos requeridos para Nivel SS
+                    if 'valor_inicial' not in data or 'cantidad_digitos' not in data or 'prefijo_consecutivo' not in data:
                         return Response({
                             'success': False,
-                            'detail': 'Valor Inicial y Cantidad de Dígitos son campos obligatorios para Nivel Sección-Subsección.',
+                            'detail': 'Valor Inicial, Cantidad de Dígitos y Prefijo Consecutivo son campos obligatorios para Nivel SS.',
                         }, status=status.HTTP_400_BAD_REQUEST)
 
                     valor_inicial = data['valor_inicial']
                     cantidad_digitos = data['cantidad_digitos']
+                    prefijo_consecutivo = data['prefijo_consecutivo']
 
-                    if not (isinstance(valor_inicial, int) and valor_inicial > 0) or not (1 <= cantidad_digitos <= 20):
-                        return Response({
-                            'success': False,
-                            'detail': 'Valor Inicial debe ser un entero mayor a 0 y Cantidad de Dígitos debe estar entre 1 y 20.',
-                        }, status=status.HTTP_400_BAD_REQUEST)
+                    # Validar prefijo único para la misma tipología y sección en la TRD actual
+                    if ConsecPorNivelesTipologiasDocAgno.objects.filter(
+                        id_config_tipologia_doc_agno__id_tipologia_doc=tipologia_id,
+                        consecutivo_inicial__isnull=False,
+                        prefijo_consecutivo=prefijo_consecutivo
+                    ).exists():
+                        raise ValidationError('El prefijo ya está siendo utilizado en otra sección/subsección para la misma tipología.')
 
                     # Crear o actualizar la configuración de consecutivo en ConfigTipologiasDocAgno
                     config_tipologia, created = ConfigTipologiasDocAgno.objects.get_or_create(
@@ -1416,7 +1423,8 @@ class CrearConfigurarTipologiaSS(generics.CreateAPIView):
                             'cantidad_digitos': cantidad_digitos,
                             'item_ya_usado': False,
                             'consecutivo_actual': valor_inicial - 1,
-                            'id_persona_ult_config_implemen': persona_logueada,  # Asignar la instancia de Personas
+                            'prefijo_consecutivo': prefijo_consecutivo,
+                            'id_persona_ult_config_implemen': persona_logueada,
                         }
                     )
                 else:
@@ -1439,6 +1447,7 @@ class CrearConfigurarTipologiaSS(generics.CreateAPIView):
                         'cantidad_digitos': None,
                         'item_ya_usado': False,
                         'consecutivo_actual': None,
+                        'prefijo_consecutivo': None,
                         'id_persona_ult_config_implemen': persona_logueada,
                     }
                 )
@@ -1446,7 +1455,6 @@ class CrearConfigurarTipologiaSS(generics.CreateAPIView):
             # Formatear T247consecutivoInicial y T247consecutivoActual con ceros a la izquierda
             t247_consecutivo_inicial = str(consec_por_niveles.consecutivo_inicial).zfill(cantidad_digitos)
             t247_consecutivo_actual = str(consec_por_niveles.consecutivo_actual).zfill(cantidad_digitos)
-
 
             nombre_persona_config = ""
             if persona_logueada.primer_nombre:
@@ -1461,7 +1469,6 @@ class CrearConfigurarTipologiaSS(generics.CreateAPIView):
             if persona_logueada.segundo_apellido:
                 nombre_persona_config += " " + persona_logueada.segundo_apellido
 
-
             response_data = {
                 "T246IdConfigTipologiaDocAgno": config_tipologia.id_config_tipologia_doc_agno,
                 "T246agnoTipologia": current_year,
@@ -1471,17 +1478,17 @@ class CrearConfigurarTipologiaSS(generics.CreateAPIView):
                 "T246itemYaUsado": config_tipologia.item_ya_usado,
                 "T247IdConsecPorNiveles_TipologiasDocAgno": consec_por_niveles.id_consec_nivel_tipologias_doc_agno,
                 "T247Id_ConfigTipologiaDocAgno": config_tipologia.id_config_tipologia_doc_agno,
-                "T247Id_UnidadOrganizacional": None,
+                "T247Id_UnidadOrganizacional": None,  # PEDIENTE
                 "T247consecutivoInicial": valor_inicial,
-                "T247consecutivoActual": valor_inicial - 1,
                 "T247cantidadDigitos": consec_por_niveles.cantidad_digitos,
                 "T247itemYaUsado": consec_por_niveles.item_ya_usado,
-                "T247Id_PersonaUltConfigImplemen": persona_logueada.id_persona,  # Asignar el ID de la persona logueada
+                "T247Id_PersonaUltConfigImplemen": persona_logueada.id_persona,
                 "Persona_ult_config_implemen": nombre_persona_config,
                 "T247fechaUltConfigImplemen": fecha_ultima_config,
+                "T247consecutivoActual":consec_por_niveles.consecutivo_actual,
                 "T247consecutivoActualAMostrar": t247_consecutivo_actual,
-                
-
+                "T247prefijoConsecutivo": prefijo_consecutivo,
+                "prefijoConsecutivoAMosotrar": f"{prefijo_consecutivo}-{t247_consecutivo_actual}",  
             }
 
             return Response({
@@ -1564,14 +1571,30 @@ class ListaConfiguraciones(generics.ListAPIView):
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         serializer = ConfigTipologiasDocAgnoSerializer(queryset, many=True)
-
+        user = request.user
+        persona_logueada = user.persona
         # Puedes ajustar este bloque según tu modelo y lógica
         data = []
         for config_tipologia in queryset:
-            consec_por_niveles = ConsecPorNivelesTipologiasDocAgno.objects.get(
-                id_config_tipologia_doc_agno=config_tipologia
+            try:
+                consec_por_niveles = ConsecPorNivelesTipologiasDocAgno.objects.get(
+                    id_config_tipologia_doc_agno=config_tipologia
+                )
+            except ConsecPorNivelesTipologiasDocAgno.DoesNotExist:
+                consec_por_niveles = None
+
+            nombre_persona_config = ""
+            if consec_por_niveles and consec_por_niveles.id_persona_ult_config_implemen:
+                nombre_persona_config = (
+                    f"{consec_por_niveles.id_persona_ult_config_implemen.primer_apellido} "
+                    f"{consec_por_niveles.id_persona_ult_config_implemen.segundo_apellido}"
+                )
+
+            t247_consecutivo_actual = (
+                str(consec_por_niveles.consecutivo_actual).zfill(consec_por_niveles.cantidad_digitos)
+                if consec_por_niveles and consec_por_niveles.consecutivo_actual is not None
+                else None
             )
-            nombre_persona_config = f"{config_tipologia.id_persona_ult_config_implemen.primer_nombre} {config_tipologia.id_persona_ult_config_implemen.primer_apellido}"
 
             item = {
                 "T246IdConfigTipologiaDocAgno": config_tipologia.id_config_tipologia_doc_agno,
@@ -1580,16 +1603,44 @@ class ListaConfiguraciones(generics.ListAPIView):
                 "T246manejaConsecutivo": config_tipologia.maneja_consecutivo,
                 "T246codNivelDelConsecutivo": config_tipologia.cod_nivel_consecutivo,
                 "T246itemYaUsado": config_tipologia.item_ya_usado,
-                "T247IdConsecPorNiveles_TipologiasDocAgno": consec_por_niveles.id_consec_nivel_tipologias_doc_agno,
+                "T247IdConsecPorNiveles_TipologiasDocAgno": (
+                    consec_por_niveles.id_consec_nivel_tipologias_doc_agno
+                    if consec_por_niveles
+                    else None
+                ),
                 "T247Id_ConfigTipologiaDocAgno": config_tipologia.id_config_tipologia_doc_agno,
-                "T247Id_UnidadOrganizacional": config_tipologia.id_unidad_organizacional,
-                "T247consecutivoInicial": consec_por_niveles.consecutivo_inicial,
-                "T247cantidadDigitos": consec_por_niveles.cantidad_digitos,
-                "T247itemYaUsado": consec_por_niveles.item_ya_usado,
-                "T247Id_PersonaUltConfigImplemen": config_tipologia.id_persona_ult_config_implemen.id_persona,
+                "T247Id_UnidadOrganizacional": (
+                    consec_por_niveles.id_unidad_organizacional.id_unidad_organizacional
+                    if consec_por_niveles and consec_por_niveles.id_unidad_organizacional
+                    else None
+                ),
+                "T247consecutivoInicial": (
+                    consec_por_niveles.consecutivo_inicial if consec_por_niveles else None
+                ),
+                "T247cantidadDigitos": (
+                    consec_por_niveles.cantidad_digitos if consec_por_niveles else None
+                ),
+                "T247itemYaUsado": (
+                    consec_por_niveles.item_ya_usado if consec_por_niveles else None
+                ),
+                "T247Id_PersonaUltConfigImplemen": (
+                    consec_por_niveles.id_persona_ult_config_implemen.id_persona
+                    if consec_por_niveles and consec_por_niveles.id_persona_ult_config_implemen
+                    else None
+                ),
                 "Persona_ult_config_implemen": nombre_persona_config,
-                "T247fechaUltConfigImplemen": config_tipologia.fecha_ult_config_implemen,
-                "T247consecutivoActualAMostrar": consec_por_niveles.consecutivo_actual,
+                "T247fechaUltConfigImplemen": (
+                    consec_por_niveles.fecha_ult_config_implemen if consec_por_niveles else None
+                ),
+                "T247consecutivoActualAMostrar": t247_consecutivo_actual,
+                "T247Id_UnidadOrganizacional": (
+                    consec_por_niveles.id_unidad_organizacional.id_unidad_organizacional
+                    if consec_por_niveles and consec_por_niveles.id_unidad_organizacional
+                    else None
+                ),
+
+                "T247prefijoConsecutivo": consec_por_niveles.prefijo_consecutivo,
+                "prefijoConsecutivoAMosotrar": f"{consec_por_niveles.prefijo_consecutivo}-{t247_consecutivo_actual}", 
             }
             data.append(item)
 
@@ -1600,3 +1651,129 @@ class ListaConfiguraciones(generics.ListAPIView):
         })
 
 
+class ListaConfiguracionesPorAgnoYTipologia(generics.ListAPIView):
+    serializer_class = ConfigTipologiasDocAgnoSerializer
+
+    def get_queryset(self):
+        # Obtener parámetros de la solicitud
+        agno_tipologia = self.request.query_params.get('agno_tipologia', None)
+        id_tipologia_doc = self.request.query_params.get('id_tipologia_doc', None)
+
+        # Validar que se proporcionen ambos parámetros
+        if not agno_tipologia or not id_tipologia_doc:
+            raise ValidationError("Se deben proporcionar 'agno_tipologia' y 'id_tipologia_doc' en los parámetros de la solicitud.")
+
+        try:
+            # Obtener la configuración según los parámetros proporcionados
+            queryset = ConfigTipologiasDocAgno.objects.filter(
+                agno_tipologia=agno_tipologia,
+                id_tipologia_doc=id_tipologia_doc
+            )
+        except ConfigTipologiasDocAgno.DoesNotExist:
+            queryset = []
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        try:
+            queryset = self.get_queryset()
+            serializer = ConfigTipologiasDocAgnoSerializer(queryset, many=True)
+
+            data = []
+            for config_tipologia in queryset:
+                tipo_configuracion = config_tipologia.cod_nivel_consecutivo
+                id_tipologia = config_tipologia.id_tipologia_doc.id_tipologia_documental if config_tipologia.id_tipologia_doc else None
+                nombre_tipologia = config_tipologia.id_tipologia_doc.nombre if config_tipologia.id_tipologia_doc else None
+
+                if tipo_configuracion is None:
+                    # Caso 1
+                    item = {
+                        "id_config_tipologia_doc_agno":config_tipologia.id_config_tipologia_doc_agno,
+                        "tipo_configuracion": tipo_configuracion,
+                        "agno_tipologia": config_tipologia.agno_tipologia,
+                        "id_tipologia": id_tipologia,
+                        "nombre_tipologia": nombre_tipologia
+                    }
+                    
+                elif tipo_configuracion == "EM":
+                    # Caso 2
+                    consec_por_niveles = ConsecPorNivelesTipologiasDocAgno.objects.filter(
+                        id_config_tipologia_doc_agno=config_tipologia
+                    ).first()
+
+                    id_tipologia = config_tipologia.id_tipologia_doc.id_tipologia_documental if config_tipologia.id_tipologia_doc else None
+                    nombre_tipologia = config_tipologia.id_tipologia_doc.nombre if config_tipologia.id_tipologia_doc else None
+
+                    # Verifica y concatena solo campos no nulos
+                    nombre_persona_config = " ".join(filter(None, [
+                        consec_por_niveles.id_persona_ult_config_implemen.primer_nombre,
+                        consec_por_niveles.id_persona_ult_config_implemen.segundo_nombre,
+                        consec_por_niveles.id_persona_ult_config_implemen.primer_apellido,
+                        consec_por_niveles.id_persona_ult_config_implemen.segundo_apellido
+                    ])) if consec_por_niveles and consec_por_niveles.id_persona_ult_config_implemen else ""
+
+
+                    t247_consecutivo_actual = (
+                        str(consec_por_niveles.consecutivo_actual).zfill(consec_por_niveles.cantidad_digitos)
+                        if consec_por_niveles and consec_por_niveles.consecutivo_actual is not None
+                        else None
+                    )
+
+                    item = {
+
+                        "id_config_tipologia_doc_agno":config_tipologia.id_config_tipologia_doc_agno,
+                        "id_tipologia": id_tipologia,
+                        "nombre_tipologia": nombre_tipologia,
+                        "agno_tipologia": config_tipologia.agno_tipologia,
+                        "tipo_configuracion": tipo_configuracion,
+                        "consecutivo_inicial": consec_por_niveles.consecutivo_inicial,
+                        "cantidad_digitos": consec_por_niveles.cantidad_digitos,
+                        "T247Id_PersonaUltConfigImplemen": (
+                            consec_por_niveles.id_persona_ult_config_implemen.id_persona
+                            if consec_por_niveles and consec_por_niveles.id_persona_ult_config_implemen
+                            else None
+                        ),
+                        "Persona_ult_config_implemen": nombre_persona_config,
+                        "T247fechaUltConfigImplemen": (
+                            consec_por_niveles.fecha_ult_config_implemen if consec_por_niveles else None
+                        ),
+                        "consecutivo_final": t247_consecutivo_actual,
+                        "fecha_consecutivo_final": (
+                            consec_por_niveles.fecha_consecutivo_actual if consec_por_niveles else None
+                        ),
+                    }
+                elif tipo_configuracion == "SS":
+                    # Caso 3
+                    item = {"tipo_configuracion": tipo_configuracion}
+                else:
+                    # Otros casos, si es necesario
+                    item = {"tipo_configuracion": "Otro"}
+
+                data.append(item)
+
+            return Response({
+                'success': True,
+                'detail': 'Lista de configuraciones',
+                'data': data
+            })
+        except Exception as e:
+            return Response({
+                'success': False,
+                'detail': str(e),
+                'data': []
+            })
+
+
+class GetActualSeccionSubsecciones(generics.ListAPIView):
+    serializer_class = UnidadesGetSerializer
+    queryset = UnidadesOrganizacionales.objects.all()
+    
+    def get(self, request):
+        trd_actual = TablaRetencionDocumental.objects.filter(actual=True).first()
+        if not trd_actual:
+            raise NotFound('No existe aún una TRD actual')
+        id_organigrama = trd_actual.id_ccd.id_organigrama.id_organigrama
+
+        unidades = UnidadesOrganizacionales.objects.filter(Q(id_organigrama=id_organigrama) & Q(activo=True) & ~Q(cod_agrupacion_documental=None))
+        serializer = self.serializer_class(unidades, many=True)
+        return Response({'success':True, 'detail':'Se encontraron las siguientes unidades', 'data':serializer.data}, status=status.HTTP_200_OK)
