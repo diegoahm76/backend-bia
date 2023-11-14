@@ -57,6 +57,7 @@ urlpatterns=[
     path('eliminar-actividades/<str:pk>/',views.ActividadDelete.as_view(),name='eliminaractividades'),
     path('consultar-actividades-id/<str:pk>/',views.ActividadDetail.as_view(),name='consultaractividadesid'),
     path('consultar-actividades-id-productos/<str:pk>/',views.ActividadListIdProductos.as_view(),name='consultaractividadesidproductos'),
+    path('consultar-actividades-id-plan/<str:pk>/',views.ActividadListIdPlanes.as_view(),name='consultaractividadesidplan'),
     # Entidades
     path('consultar-entidades/',views.EntidadList.as_view(),name='consultarentidades'),
     path('crear-entidades/',views.EntidadCreate.as_view(),name='crearentidades'),

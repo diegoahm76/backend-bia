@@ -30,6 +30,7 @@ class Planes(models.Model):
             ('PND', 'Plan Nacional Desarrollo'),
             ('PAI', 'Plan Accion Institucional'),
             ('PGR', 'Plan Gestion Ambiental Regional'),
+            ('PES', 'Plan de desarrollo economico y social')
         ], db_column='T501tipoPlan')
     agno_inicio = models.IntegerField(
         null=True, blank=True, db_column='T501agnoInicio')
