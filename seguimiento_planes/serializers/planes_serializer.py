@@ -100,7 +100,7 @@ class IndicadorSerializer(serializers.ModelSerializer):
 
     nombre_medicion = serializers.ReadOnlyField(source='id_medicion.nombre_medicion', default=None)
     nombre_tipo = serializers.ReadOnlyField(source='id_tipo.nombre_tipo', default=None)
-    id_producto = serializers.ReadOnlyField(source='id_producto.nombre_producto', default=None)
+    nombre_producto = serializers.ReadOnlyField(source='id_producto.nombre_producto', default=None)
     nombre_actividad = serializers.ReadOnlyField(source='id_actividad.nombre_actividad', default=None)
     nombre_plan = serializers.ReadOnlyField(source='id_plan.nombre_plan', default=None)
                 
