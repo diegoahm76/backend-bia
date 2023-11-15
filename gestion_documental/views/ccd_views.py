@@ -1816,6 +1816,45 @@ class OficinasDelegacionTemporalCreateView(generics.CreateAPIView):
     serializer_class = OficinasDelegacionTemporalSerializer
     permission_classes = [IsAuthenticated]
 
+    def crear_unidad_persistente_responsable_tmp(self, data_in):
+        
+        unidades_responsables_set = set(
+            (id_unidad['id_unidad_actual'], id_unidad['id_unidad_nueva'])
+            for id_unidad in data_in['unidad_responsable']
+        )
+
+        all_ids = {id_unidad for tupla in unidades_responsables_set if tupla is not None for id_unidad in tupla if id_unidad is not None}
+
+        if not UnidadesOrganizacionales.objects.filter(id_unidad_organizacional__in=all_ids).count() == len(all_ids):
+            raise NotFound('No se encontraron todas las unidades organizacionales')
+        
+        if len(unidades_responsables_set) == 1:
+        
+            for unidad_responsable in unidades_responsables_set:
+                        
+                try:
+                    unidad = UnidadesSeccionResponsableTemporal.objects.get(id_ccd_nuevo=data_in['id_ccd_nuevo'], id_unidad_seccion_actual=unidad_responsable[0])
+                except UnidadesSeccionResponsableTemporal.DoesNotExist:
+                    unidad = None
+
+                if unidad is None:
+                    data = {
+                            'id_ccd_nuevo': data_in['id_ccd_nuevo'],
+                            'id_unidad_seccion_actual': unidad_responsable[0],
+                            'id_unidad_seccion_nueva': unidad_responsable[1],
+                            'es_registro_asig_seccion_responsable': False,
+                            'id_unidad_seccion_actual_padre':unidad_responsable[0]
+                        }
+
+                    serializer = self.serializer_class(data=data)
+                    serializer.is_valid(raise_exception=True)
+                    unidades_persistentes_create = serializer.save()
+                
+        unidad = UnidadesSeccionResponsableTemporal.objects.get(id_ccd_nuevo=data_in['id_ccd_nuevo'], id_unidad_seccion_actual=unidad_responsable[0])
+
+        return unidad.id_unidad_seccion_actual
+
+
     def crear_actualizar_delegacion_oficina_tmp(self, data_in):
         ccd_filro = BusquedaCCDHomologacionView().get_validacion_ccd()
 
@@ -1823,57 +1862,47 @@ class OficinasDelegacionTemporalCreateView(generics.CreateAPIView):
             ccd = ccd_filro.get(id_ccd=data_in['id_ccd_nuevo'])
         except CuadrosClasificacionDocumental.DoesNotExist:
             raise NotFound('CCD no encontrado o no cumple con TRD y TCA terminados')
-        
-        unidades_nuevas_set = set(
+
+        oficinas_nuevas_set = set(
             (id_unidad['id_unidad_actual'], id_unidad['id_unidad_nueva'])
             for id_unidad in data_in['oficinas_delegadas']
         )
 
-        all_ids = {id_unidad for tupla in unidades_nuevas_set if tupla is not None for id_unidad in tupla if id_unidad is not None}
+        all_ids = {id_unidad for tupla in oficinas_nuevas_set if tupla is not None for id_unidad in tupla if id_unidad is not None}
 
         if not UnidadesOrganizacionales.objects.filter(id_unidad_organizacional__in=all_ids).count() == len(all_ids):
             raise NotFound('No se encontraron todas las unidades organizacionales')
         
-        unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd, es_registro_asig_seccion_responsable=True)
-        unidades_persistentes = UnidadesSeccionPersistenteTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd)
-        unidades_delegadas_existentes = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd, es_registro_asig_seccion_responsable=False)
+        unidad_responsable = self.crear_unidad_persistente_responsable_tmp(data_in)
         
-        unidades_responsables_set = set(
-            (unidad.id_unidad_seccion_actual.id_unidad_organizacional, unidad.id_unidad_seccion_nueva.id_unidad_organizacional)
-            for unidad in unidades_responsables
-        )
+        # unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd, es_registro_asig_seccion_responsable=True)
+        # unidades_persistentes = UnidadesSeccionPersistenteTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd)
 
-        unidades_persistentes_set = set(
-            (unidad.id_unidad_seccion_actual.id_unidad_organizacional, unidad.id_unidad_seccion_nueva.id_unidad_organizacional)
-            for unidad in unidades_persistentes
-        )
+        unidades_delegadas_existentes = UnidadesSeccionResponsableTemporal.objects.filter(
+            id_ccd_nuevo=ccd.id_ccd, es_registro_asig_seccion_responsable=False, 
+            id_unidad_seccion_actual_padre=unidad_responsable).exclude(id_unidad_seccion_actual=unidad_responsable)
+        
+        # unidades_responsables_set = set(
+        #     (unidad.id_unidad_seccion_actual.id_unidad_organizacional, unidad.id_unidad_seccion_nueva.id_unidad_organizacional)
+        #     for unidad in unidades_responsables
+        # )
 
-        unidades_existentes_set = set(
+        # unidades_persistentes_set = set(
+        #     (unidad.id_unidad_seccion_actual.id_unidad_organizacional, unidad.id_unidad_seccion_nueva.id_unidad_organizacional)
+        #     for unidad in unidades_persistentes
+        # )
+
+        oficinas_existentes_set = set(
             (unidad.id_unidad_seccion_actual.id_unidad_organizacional, unidad.id_unidad_seccion_nueva.id_unidad_organizacional)
             for unidad in unidades_delegadas_existentes
         )
 
-        unidades_delegadas_nuevas = unidades_nuevas_set - unidades_responsables_set - unidades_persistentes_set
-        unidades_persistentes_nuevas = unidades_nuevas_set - unidades_responsables_set - unidades_existentes_set - unidades_delegadas_nuevas
+        oficinas_a_eliminar = oficinas_existentes_set - oficinas_nuevas_set
+        oficinas_a_crear = oficinas_nuevas_set - oficinas_existentes_set
 
-        for unidad in unidades_persistentes_nuevas:
-            data = {
-                'id_ccd_nuevo': ccd.id_ccd,
-                'id_unidad_seccion_actual': unidad[0],
-                'id_unidad_seccion_nueva': unidad[1],
-                'es_registro_asig_seccion_responsable': False,
-                'id_unidad_seccion_actual_padre':unidad[0]
-            }
-            serializer = self.serializer_class(data=data)
-            serializer.is_valid(raise_exception=True)
-            unidades_persistentes_create = serializer.save()
+        self.delete_unidades_responsable_tmp(ccd.id_ccd, oficinas_a_eliminar)
 
-        unidades_a_eliminar = unidades_existentes_set - unidades_nuevas_set - unidades_responsables_set - unidades_persistentes_set
-        unidades_a_crear = unidades_delegadas_nuevas - unidades_existentes_set - unidades_responsables_set - unidades_persistentes_set
-
-        self.delete_unidades_responsable_tmp(ccd.id_ccd, unidades_a_eliminar)
-
-        for unidad in unidades_a_crear:
+        for unidad in oficinas_a_crear:
             unidad_padre = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=unidad[0])
             data = {
                 'id_ccd_nuevo': ccd.id_ccd,
@@ -1890,8 +1919,10 @@ class OficinasDelegacionTemporalCreateView(generics.CreateAPIView):
         unidades_responsables_data = self.serializer_class(unidades_responsables, many=True).data
         
         return unidades_responsables_data
+        
     
     def delete_unidades_responsable_tmp(self, id_ccd_nuevo, unidades_a_eliminar):
+ 
         unidades = UnidadesSeccionResponsableTemporal.objects.filter(
             id_ccd_nuevo=id_ccd_nuevo,
             es_registro_asig_seccion_responsable=False,
@@ -1900,9 +1931,11 @@ class OficinasDelegacionTemporalCreateView(generics.CreateAPIView):
         )
         unidades.delete()
 
+    @transaction.atomic
     def post(self, request):
         data = request.data
         unidades_responsables = self.crear_actualizar_delegacion_oficina_tmp(data)
 
-        return Response({'success': True, 'detail': 'Se crean o actualizan unidades responsables', 'data': unidades_responsables}, status=status.HTTP_201_CREATED)
+        return Response({'success': True, 'detail': 'Se crean o actualizan oficinas delegadas', 'data': unidades_responsables}, status=status.HTTP_201_CREATED)
+
 
