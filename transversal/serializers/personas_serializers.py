@@ -922,3 +922,112 @@ class HistoricoRepresentLegalSerializer(serializers.ModelSerializer):
     class Meta:
         model = HistoricoRepresentLegales
         fields = ['id_historico_represent_legal', 'consec_representacion', 'fecha_cambio_sistema', 'fecha_inicio_cargo', 'id_persona_empresa', 'nombre_comercial', 'razon_social','id_persona_represent_legal','nombre_completo_replegal']
+
+class EmpresaSerializer(serializers.ModelSerializer):
+    id_persona = serializers.SerializerMethodField()
+    tipo_documento_id = serializers.SerializerMethodField()
+    tipo_documento = serializers.SerializerMethodField()
+    numero_documento = serializers.SerializerMethodField()
+    nombre_comercial = serializers.SerializerMethodField()
+    razon_social = serializers.SerializerMethodField()
+    tipo_persona = serializers.SerializerMethodField()
+    tipo_persona_desc = serializers.CharField(source='get_tipo_persona_display')
+    persona_representante = serializers.SerializerMethodField()
+
+    def get_id_persona(sefl, obj):
+        return obj.id_persona
+    
+    def get_tipo_documento_id(self, obj):
+        return obj.tipo_documento_id
+    
+    def get_tipo_documento(self, obj):
+        return obj.tipo_documento.nombre
+    
+    def get_numero_documento(self, obj):
+        return obj.numero_documento
+    
+    def get_nombre_comercial(self, obj):
+        nombre_comercial1 = obj.nombre_comercial
+        nombre_comercial1 = nombre_comercial1.upper() if nombre_comercial1 else nombre_comercial1
+        return nombre_comercial1
+    
+    def get_razon_social(self, obj):
+        razon_social2 = obj.razon_social
+        razon_social2 = razon_social2.upper() if razon_social2 else razon_social2
+        return razon_social2
+    
+    def get_tipo_persona(self, obj):
+        return obj.tipo_persona
+    
+    def get_persona_representante(self, obj):
+        persona = Personas.objects.filter(id_persona=obj.representante_legal.id_persona).first()
+        representante_serializer = RepresentanteLegalSerializer(persona, read_only=True)
+        representante = representante_serializer.data if representante_serializer else None
+        return representante
+    class Meta:
+        model = Personas
+        fields = [
+            'id_persona',
+            'tipo_documento_id',
+            'tipo_documento',
+            'numero_documento',
+            'nombre_comercial',
+            'razon_social',
+            'tipo_persona',
+            'tipo_persona_desc',
+            'persona_representante'
+        ]
+
+class RepresentanteLegalSerializer(serializers.ModelSerializer):
+    tipo_persona = serializers.SerializerMethodField()
+    tipo_persona_desc = serializers.CharField(source='get_tipo_persona_display')
+    tipo_documento_id = serializers.SerializerMethodField()
+    tipo_documento = serializers.SerializerMethodField()
+    numero_documento = serializers.SerializerMethodField()
+    primer_nombre = serializers.SerializerMethodField()
+    segundo_nombre = serializers.SerializerMethodField()
+    primer_apellido = serializers.SerializerMethodField()
+    segundo_apellido = serializers.SerializerMethodField()
+    nombre_completo = serializers.SerializerMethodField()
+
+    def get_tipo_persona(self, obj):
+        return obj.tipo_persona
+    
+    def get_tipo_documento_id(self, obj):
+        return obj.tipo_documento_id
+    
+    def get_tipo_documento(self, obj):
+        return obj.tipo_documento.nombre
+    
+    
+    def get_numero_documento(self, obj):
+        return obj.numero_documento
+
+    def get_primer_nombre(self,obj):
+        return obj.primer_nombre
+    
+    def get_segundo_nombre(self, obj):
+         return obj.segundo_nombre
+    
+    def get_primer_apellido(self, obj):
+         return obj.primer_apellido
+    
+    def get_segundo_apellido(self, obj):
+         return obj.segundo_apellido
+    
+    def get_nombre_completo(self, obj):
+        return f"{obj.primer_nombre} {obj.segundo_nombre} {obj.primer_apellido} {obj.segundo_apellido}"
+    class Meta:
+        model = Personas
+        fields = [
+            'tipo_persona',
+            'tipo_persona_desc',
+            'tipo_documento_id',
+            'tipo_documento',
+            'numero_documento',
+            'primer_nombre',
+            'segundo_nombre',
+            'primer_apellido',
+            'segundo_apellido',
+            'nombre_completo'
+        ]
