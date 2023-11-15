@@ -57,6 +57,7 @@ urlpatterns=[
     path('eliminar-actividades/<str:pk>/',views.ActividadDelete.as_view(),name='eliminaractividades'),
     path('consultar-actividades-id/<str:pk>/',views.ActividadDetail.as_view(),name='consultaractividadesid'),
     path('consultar-actividades-id-productos/<str:pk>/',views.ActividadListIdProductos.as_view(),name='consultaractividadesidproductos'),
+    path('consultar-actividades-id-plan/<str:pk>/',views.ActividadListIdPlanes.as_view(),name='consultaractividadesidplan'),
     # Entidades
     path('consultar-entidades/',views.EntidadList.as_view(),name='consultarentidades'),
     path('crear-entidades/',views.EntidadCreate.as_view(),name='crearentidades'),
@@ -75,28 +76,39 @@ urlpatterns=[
     path('actualizar-tipos/<str:pk>/',views.TipoUpdate.as_view(),name='actualizartipos'),
     path('eliminar-tipos/<str:pk>/',views.TipoDelete.as_view(),name='eliminartipos'),
     path('consultar-tipos-id/<str:pk>/',views.TipoDetail.as_view(),name='consultartiposid'),
-    # Rublos
-    path('consultar-rublos/',views.RubloList.as_view(),name='consultarrublos'),
-    path('crear-rublos/',views.RubloCreate.as_view(),name='crearrublos'),
-    path('actualizar-rublos/<str:pk>/',views.RubloUpdate.as_view(),name='actualizarrublos'),
-    path('eliminar-rublos/<str:pk>/',views.RubloDelete.as_view(),name='eliminarrublos'),
-    path('consultar-rublos-id/<str:pk>/',views.RubloDetail.as_view(),name='consultarrublosid'),
+    # Rubros
+    path('consultar-rubros/',views.RubroList.as_view(),name='consultarrubros'),
+    path('crear-rubros/',views.RubroCreate.as_view(),name='crearrubros'),
+    path('actualizar-rubros/<str:pk>/',views.RubroUpdate.as_view(),name='actualizarrubros'),
+    path('eliminar-rubros/<str:pk>/',views.RubroDelete.as_view(),name='eliminarrubros'),
+    path('consultar-rubros-id/<str:pk>/',views.RubroDetail.as_view(),name='consultarrubrosid'),
     # Indicadores
     path('consultar-indicadores/',views.IndicadorList.as_view(),name='consultarindicadores'),
     path('crear-indicadores/',views.IndicadorCreate.as_view(),name='crearindicadores'),
     path('actualizar-indicadores/<str:pk>/',views.IndicadorUpdate.as_view(),name='actualizarindicadores'),
     path('eliminar-indicadores/<str:pk>/',views.IndicadorDelete.as_view(),name='eliminarindicadores'),
     path('consultar-indicadores-id/<str:pk>/',views.IndicadorDetail.as_view(),name='consultarindicadoresid'),
+    path('consultar-indicadores-id-plan/<str:pk>/',views.IndicadorListIdPlanes.as_view(),name='consultarindicadoresidplan'),
+    path('consultar-indicadores-id-actividad/<str:pk>/',views.IndicadorListIdActividad.as_view(),name='consultarindicadoresidactividad'),
+    path('consultar-indicadores-id-rubro/<str:pk>/',views.IndicadorListIdRubro.as_view(),name='consultarindicadoresidrubro'),
     # Metas
     path('consultar-metas/',views.MetaList.as_view(),name='consultarmetas'),
     path('crear-metas/',views.MetaCreate.as_view(),name='crearmetas'),
     path('actualizar-metas/<str:pk>/',views.MetaUpdate.as_view(),name='actualizarmetas'),
     path('eliminar-metas/<str:pk>/',views.MetaDelete.as_view(),name='eliminarmetas'),
     path('consultar-metas-id/<str:pk>/',views.MetaDetail.as_view(),name='consultarmetasid'),
+    path('consultar-metas-id-indicador/<str:pk>/',views.MetaListIdIndicador.as_view(),name='consultarmetasidindicador'),
     # Tipos de Ejes
     path('consultar-tipos-ejes/',views.TipoEjeList.as_view(),name='consultartiposejes'),
     path('crear-tipos-ejes/',views.TipoEjeCreate.as_view(),name='creartiposejes'),
     path('actualizar-tipos-ejes/<str:pk>/',views.TipoEjeUpdate.as_view(),name='actualizartiposejes'),
     path('eliminar-tipos-ejes/<str:pk>/',views.TipoEjeDelete.as_view(),name='eliminartiposejes'),
     path('consultar-tipos-ejes-id/<str:pk>/',views.TipoEjeDetail.as_view(),name='consultartiposejesid'),
+    # Subprogramas
+    path('consultar-subprogramas/',views.SubprogramaList.as_view(),name='consultarsubprogramas'),
+    path('crear-subprogramas/',views.SubprogramaCreate.as_view(),name='crearsubprogramas'),
+    path('actualizar-subprogramas/<str:pk>/',views.SubprogramaUpdate.as_view(),name='actualizarsubprogramas'),
+    path('eliminar-subprogramas/<str:pk>/',views.SubprogramaDelete.as_view(),name='eliminarsubprogramas'),
+    path('consultar-subprogramas-id/<str:pk>/',views.SubprogramaDetail.as_view(),name='consultarsubprogramasid'),
+    path('consultar-subprogramas-id-programa/<str:pk>/',views.SubprogramaListIdPrograma.as_view(),name='consultarsubprogramasidprograma'),
 ]

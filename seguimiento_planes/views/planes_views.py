@@ -5,8 +5,8 @@ from rest_framework import generics, status
 from django.db.models.functions import Concat
 from django.db.models import Q, Value as V
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
-from seguimiento_planes.serializers.planes_serializer import ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubloSerializer, IndicadorSerializer, MetasSerializer
-from seguimiento_planes.models.planes_models import ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rublo, Indicador, Metas, TipoEje
+from seguimiento_planes.serializers.planes_serializer import ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubroSerializer, IndicadorSerializer, MetasSerializer, SubprogramaSerializer
+from seguimiento_planes.models.planes_models import ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma
 
 # ---------------------------------------- Objetivos Desarrollo Sostenible Tabla Básica ----------------------------------------
 
@@ -119,7 +119,6 @@ class CrearPlanes(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
-        print('PASOOOOOOOO')
         planes = self.queryset.filter(nombre_plan=data["nombre_plan"]).first()
         print('PLANESSSS', planes)
         if planes:
@@ -158,7 +157,7 @@ class EliminarPlanes(generics.DestroyAPIView):
         plan_nacional_desarrollo = self.queryset.all().filter(id_plan=pk).first()
 
         if not plan_nacional_desarrollo:
-            return Response({'success': False, 'detail': 'El planes ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('El planes ingresado no existe.')
         plan_nacional_desarrollo.delete()
         return Response({'success': True, 'detail': 'Se elimino el planes de manera exitosa'}, status=status.HTTP_200_OK)
     
@@ -220,8 +219,7 @@ class EjeEstractegicoCreate(generics.ListCreateAPIView):
 
     def post(self,request):
         data = request.data
-        print('PASOOOOOOOO')
-        eje = self.queryset.filter(nombre_eje=data["nombre_eje"]).first()
+        eje = self.queryset.filter(nombre=data["nombre"]).first()
         print('eje estrategico', eje)
         if eje:
             return Response({'success': False, 'detail': 'El eje estratégico ya existe'}, status=status.HTTP_403_FORBIDDEN)
@@ -239,7 +237,7 @@ class EjeEstractegicoUpdate(generics.RetrieveUpdateAPIView):
 
     def put(self, request, pk):
         data = request.data
-        eje = self.queryset.all().filter(id_eje=pk).first()
+        eje = self.queryset.all().filter(id_eje_estrategico=pk).first()
         if not eje:
             return Response({'success': False, 'detail': 'El Eje Estratégico ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
         serializer = EjeEstractegicoSerializer(eje, data=data)
@@ -255,7 +253,7 @@ class EjeEstractegicoDelete(generics.RetrieveUpdateAPIView):
     permission_classes = (IsAuthenticated,)
 
     def delete(self, request, pk):
-        eje = self.queryset.all().filter(id_eje=pk).first()
+        eje = self.queryset.all().filter(id_eje_estrategico=pk).first()
         if not eje:
             return Response({'success': False, 'detail': 'El Eje Estratégico ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
         eje.delete()
@@ -269,7 +267,7 @@ class EjeEstractegicoDetail(generics.RetrieveAPIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, pk):
-        eje = self.queryset.all().filter(id_eje=pk).first()
+        eje = self.queryset.all().filter(id_eje_estrategico=pk).first()        
         if not eje:
             raise NotFound('No se encontraron resultados.')
         serializer = EjeEstractegicoSerializer(eje)
@@ -827,7 +825,7 @@ class EntidadUpdate(generics.RetrieveUpdateAPIView):
         entidad = self.queryset.all().filter(id_entidad=pk).first()
         if not entidad:
             return Response({'success': False, 'detail': 'La Entidad ingresada no existe'}, status=status.HTTP_404_NOT_FOUND)
-        if not entidad.item_ya_usado == True:
+        if entidad.item_ya_usado == True:
             return Response({'success': False, 'detail': 'La Entidad ya ha sido usado en un Plan, por lo tanto no puede ser modificado'}, status=status.HTTP_403_FORBIDDEN)
         serializer = EntidadSerializer(entidad, data=data)
         serializer.is_valid(raise_exception=True)
@@ -845,7 +843,7 @@ class EntidadDelete(generics.RetrieveUpdateAPIView):
         entidad = self.queryset.all().filter(id_entidad=pk).first()
         if not entidad:
             return Response({'success': False, 'detail': 'La Entidad ingresada no existe'}, status=status.HTTP_404_NOT_FOUND)
-        if not entidad.item_ya_usado == True:
+        if entidad.item_ya_usado == True:
             return Response({'success': False, 'detail': 'La Entidad ya ha sido usado en un Plan, por lo tanto no puede ser eliminado'}, status=status.HTTP_403_FORBIDDEN)
         if entidad.registro_precargado:
             return Response({'success': False, 'detail': 'La Entidad es un registro precargado, por lo tanto no puede ser eliminado'}, status=status.HTTP_403_FORBIDDEN)
@@ -914,7 +912,7 @@ class MedicionUpdate(generics.RetrieveUpdateAPIView):
         medicion = self.queryset.all().filter(id_medicion=pk).first()
         if not medicion:
             return Response({'success': False, 'detail': 'La Medicion ingresada no existe'}, status=status.HTTP_404_NOT_FOUND)
-        if not medicion.item_ya_usado == True:
+        if medicion.item_ya_usado == True:
             return Response({'success': False, 'detail': 'La Medicion ya ha sido usado en un Plan, por lo tanto no puede ser modificado'}, status=status.HTTP_403_FORBIDDEN)
         serializer = MedicionSerializer(medicion, data=data)
         serializer.is_valid(raise_exception=True)
@@ -932,7 +930,7 @@ class MedicionDelete(generics.RetrieveUpdateAPIView):
         medicion = self.queryset.all().filter(id_medicion=pk).first()
         if not medicion:
             return Response({'success': False, 'detail': 'La Medicion ingresada no existe'}, status=status.HTTP_404_NOT_FOUND)
-        if not medicion.item_ya_usado == True:
+        if medicion.item_ya_usado == True:
             return Response({'success': False, 'detail': 'La Medicion ya ha sido usado en un Plan, por lo tanto no puede ser eliminado'}, status=status.HTTP_403_FORBIDDEN)
         if medicion.registro_precargado:
             return Response({'success': False, 'detail': 'La Medicion es un registro precargado, por lo tanto no puede ser eliminado'}, status=status.HTTP_403_FORBIDDEN)
@@ -1001,7 +999,7 @@ class TipoUpdate(generics.RetrieveUpdateAPIView):
         tipo = self.queryset.all().filter(id_tipo=pk).first()
         if not tipo:
             return Response({'success': False, 'detail': 'El Tipo ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
-        if not tipo.item_ya_usado == True:
+        if tipo.item_ya_usado == True:
             return Response({'success': False, 'detail': 'El Tipo ya ha sido usado en un Plan, por lo tanto no puede ser modificado'}, status=status.HTTP_403_FORBIDDEN)
         serializer = TipoSerializer(tipo, data=data)
         serializer.is_valid(raise_exception=True)
@@ -1019,7 +1017,7 @@ class TipoDelete(generics.RetrieveUpdateAPIView):
         tipo = self.queryset.all().filter(id_tipo=pk).first()
         if not tipo:
             return Response({'success': False, 'detail': 'El Tipo ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
-        if not tipo.item_ya_usado == True:
+        if tipo.item_ya_usado == True:
             return Response({'success': False, 'detail': 'El Tipo ya ha sido usado en un Plan, por lo tanto no puede ser eliminado'}, status=status.HTTP_403_FORBIDDEN)
         if tipo.registro_precargado:
             return Response({'success': False, 'detail': 'El Tipo es un registro precargado, por lo tanto no puede ser eliminado'}, status=status.HTTP_403_FORBIDDEN)
@@ -1040,83 +1038,83 @@ class TipoDetail(generics.RetrieveAPIView):
         serializer = TipoSerializer(tipo)
         return Response({'success': True, 'detail': 'Tipo encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
-# ---------------------------------------- Rublo ----------------------------------------
+# ---------------------------------------- Rubro ----------------------------------------
 
-# Listar todos los Rublos
+# Listar todos los Rubros
 
-class RubloList(generics.ListCreateAPIView):
-    queryset = Rublo.objects.all()
-    serializer_class = RubloSerializer
+class RubroList(generics.ListCreateAPIView):
+    queryset = Rubro.objects.all()
+    serializer_class = RubroSerializer
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
-        rublos = Rublo.objects.all()
-        serializer = RubloSerializer(rublos, many=True)
-        if not rublos:
+        rubros = Rubro.objects.all()
+        serializer = RubroSerializer(rubros, many=True)
+        if not rubros:
             raise NotFound('No se encontraron resultados.')
-        return Response({'success': True, 'detail': 'Listado de Rublos.', 'data': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Listado de rubros.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
-# Crear un Rublo
+# Crear un Rubro
 
-class RubloCreate(generics.ListCreateAPIView):
-    queryset = Rublo.objects.all()
-    serializer_class = RubloSerializer
+class RubroCreate(generics.ListCreateAPIView):
+    queryset = Rubro.objects.all()
+    serializer_class = RubroSerializer
     permission_classes = (IsAuthenticated,)
 
     def post(self,request):
-        data = data.data
-        rublo = self.queryset.filter(nombre_rublo=data["nombre_rublo"]).first()
-        if rublo:
-            return Response({'success': False, 'detail': 'El rublo ya existe'}, status=status.HTTP_403_FORBIDDEN)
+        data = request.data
+        rubro = self.queryset.filter(cod_pre=data["cod_pre"]).first()
+        if rubro:
+            return Response({'success': False, 'detail': 'Codigo ya existe '}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
-        return Response({'success': True, 'detail': 'Rublo creado correctamente.', 'data': serializador.data}, status=status.HTTP_201_CREATED)
+        return Response({'success': True, 'detail': 'rubro creado correctamente.', 'data': serializador.data}, status=status.HTTP_201_CREATED)
 
-# Actualizar un Rublo
+# Actualizar un Rubro
 
-class RubloUpdate(generics.RetrieveUpdateAPIView):
-    queryset = Rublo.objects.all()
-    serializer_class = RubloSerializer
+class RubroUpdate(generics.RetrieveUpdateAPIView):
+    queryset = Rubro.objects.all()
+    serializer_class = RubroSerializer
     permission_classes = (IsAuthenticated,)
 
     def put(self, request, pk):
         data = request.data
-        rublo = self.queryset.all().filter(id_rublo=pk).first()
-        if not rublo:
-            return Response({'success': False, 'detail': 'El Rublo ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = RubloSerializer(rublo, data=data)
+        rubro = self.queryset.all().filter(id_rubro=pk).first()
+        if not rubro:
+            return Response({'success': False, 'detail': 'El Rubro ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = RubroSerializer(rubro, data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({'success': True, 'detail': 'Rublo actualizado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Rubro actualizado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
-# Eliminar un Rublo
+# Eliminar un Rubro
 
-class RubloDelete(generics.RetrieveUpdateAPIView):
-    queryset = Rublo.objects.all()
-    serializer_class = RubloSerializer
+class RubroDelete(generics.RetrieveUpdateAPIView):
+    queryset = Rubro.objects.all()
+    serializer_class = RubroSerializer
     permission_classes = (IsAuthenticated,)
 
     def delete(self, request, pk):
-        rublo = self.queryset.all().filter(id_rublo=pk).first()
-        if not rublo:
-            return Response({'success': False, 'detail': 'El Rublo ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
-        rublo.delete()
-        return Response({'success': True, 'detail': 'Rublo eliminado correctamente.'}, status=status.HTTP_200_OK)
+        rubro = self.queryset.all().filter(id_rubro=pk).first()
+        if not rubro:
+            return Response({'success': False, 'detail': 'El rubro ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+        rubro.delete()
+        return Response({'success': True, 'detail': 'Rubro eliminado correctamente.'}, status=status.HTTP_200_OK)
 
-# listar un Rublo por id
+# listar un Rubro por id
 
-class RubloDetail(generics.RetrieveAPIView):
-    queryset = Rublo.objects.all()
-    serializer_class = RubloSerializer
+class RubroDetail(generics.RetrieveAPIView):
+    queryset = Rubro.objects.all()
+    serializer_class = RubroSerializer
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, pk):
-        rublo = self.queryset.all().filter(id_rublo=pk).first()
-        if not rublo:
+        rubro = self.queryset.all().filter(id_rubro=pk).first()
+        if not rubro:
             raise NotFound('No se encontraron resultados.')
-        serializer = RubloSerializer(rublo)
-        return Response({'success': True, 'detail': 'Rublo encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+        serializer = RubroSerializer(rubro)
+        return Response({'success': True, 'detail': 'Rubro encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # ---------------------------------------- Indicador ----------------------------------------
 
@@ -1224,15 +1222,15 @@ class IndicadorListIdActividad(generics.ListAPIView):
         serializer = IndicadorSerializer(indicador, many=True)
         return Response({'success': True, 'detail': 'Indicador encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
-# Listar Indicador por id Rublo
+# Listar Indicador por id Rubro
 
-class IndicadorListIdRublo(generics.ListAPIView):
+class IndicadorListIdRubro(generics.ListAPIView):
     queryset = Indicador.objects.all()
     serializer_class = IndicadorSerializer
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, pk):
-        indicador = self.queryset.all().filter(id_rublo=pk)
+        indicador = self.queryset.all().filter(id_rubro=pk)
         if not indicador:
             raise NotFound('No se encontraron resultados.')
         serializer = IndicadorSerializer(indicador, many=True)
@@ -1378,7 +1376,7 @@ class TipoEjeUpdate(generics.RetrieveUpdateAPIView):
         tipo_eje = self.queryset.all().filter(id_tipo_eje=pk).first()
         if not tipo_eje:
             return Response({'success': False, 'detail': 'El Tipo Eje ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
-        if not tipo_eje.item_ya_usado == True:
+        if tipo_eje.item_ya_usado == True:
             return Response({'success': False, 'detail': 'El Tipo Eje ya ha sido usado en un Plan, por lo tanto no puede ser modificado'}, status=status.HTTP_403_FORBIDDEN)
         serializer = TipoEjeSerializer(tipo_eje, data=data)
         serializer.is_valid(raise_exception=True)
@@ -1396,7 +1394,7 @@ class TipoEjeDelete(generics.RetrieveUpdateAPIView):
         tipo_eje = self.queryset.all().filter(id_tipo_eje=pk).first()
         if not tipo_eje:
             return Response({'success': False, 'detail': 'El Tipo Eje ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
-        if not tipo_eje.item_ya_usado == True:
+        if tipo_eje.item_ya_usado == True:
             return Response({'success': False, 'detail': 'El Tipo Eje ya ha sido usado en un Plan, por lo tanto no puede ser eliminado'}, status=status.HTTP_403_FORBIDDEN)
         if tipo_eje.registro_precargado:
             return Response({'success': False, 'detail': 'El Tipo Eje es un registro precargado, por lo tanto no puede ser eliminado'}, status=status.HTTP_403_FORBIDDEN)
@@ -1416,3 +1414,95 @@ class TipoEjeDetail(generics.RetrieveAPIView):
             raise NotFound('No se encontraron resultados.')
         serializer = TipoEjeSerializer(tipo_eje)
         return Response({'success': True, 'detail': 'Tipo Eje encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+# ---------------------------------------- Subprograma ----------------------------------------
+
+# Listar todos los Subprogramas
+
+class SubprogramaList(generics.ListCreateAPIView):
+    queryset = Subprograma.objects.all()
+    serializer_class = SubprogramaSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        subprogramas = Subprograma.objects.all()
+        serializer = SubprogramaSerializer(subprogramas, many=True)
+        if not subprogramas:
+            raise NotFound('No se encontraron resultados.')
+        return Response({'success': True, 'detail': 'Listado de Subprogramas.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Crear un Subprograma
+
+class SubprogramaCreate(generics.ListCreateAPIView):
+    queryset = Subprograma.objects.all()
+    serializer_class = SubprogramaSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self,request):
+        data = request.data
+        subprograma = self.queryset.filter(nombre_subprograma=data["nombre_subprograma"]).first()
+        if subprograma:
+            return Response({'success': False, 'detail': 'El subprograma ya existe'}, status=status.HTTP_403_FORBIDDEN)
+        serializador = self.serializer_class(data=data)
+        serializador.is_valid(raise_exception=True)
+        serializador.save()
+        return Response({'success': True, 'detail': 'Subprograma creado correctamente.', 'data': serializador.data}, status=status.HTTP_201_CREATED)
+
+# Actualizar un Subprograma
+
+class SubprogramaUpdate(generics.RetrieveUpdateAPIView):
+    queryset = Subprograma.objects.all()
+    serializer_class = SubprogramaSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def put(self, request, pk):
+        data = request.data
+        subprograma = self.queryset.all().filter(id_subprograma=pk).first()
+        if not subprograma:
+            return Response({'success': False, 'detail': 'El Subprograma ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = SubprogramaSerializer(subprograma, data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Subprograma actualizado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Eliminar un Subprograma
+
+class SubprogramaDelete(generics.RetrieveUpdateAPIView):
+    queryset = Subprograma.objects.all()
+    serializer_class = SubprogramaSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def delete(self, request, pk):
+        subprograma = self.queryset.all().filter(id_subprograma=pk).first()
+        if not subprograma:
+            return Response({'success': False, 'detail': 'El Subprograma ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+        subprograma.delete()
+        return Response({'success': True, 'detail': 'Subprograma eliminado correctamente.'}, status=status.HTTP_200_OK)
+
+# listar un Subprograma por id
+
+class SubprogramaDetail(generics.RetrieveAPIView):
+    queryset = Subprograma.objects.all()
+    serializer_class = SubprogramaSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, pk):
+        subprograma = self.queryset.all().filter(id_subprograma=pk).first()
+        if not subprograma:
+            raise NotFound('No se encontraron resultados.')
+        serializer = SubprogramaSerializer(subprograma)
+        return Response({'success': True, 'detail': 'Subprograma encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Listar Subprograma por id programa
+
+class SubprogramaListIdPrograma(generics.ListAPIView):
+    queryset = Subprograma.objects.all()
+    serializer_class = SubprogramaSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, pk):
+        subprograma = self.queryset.all().filter(id_programa=pk)
+        if not subprograma:
+            raise NotFound('No se encontraron resultados.')
+        serializer = SubprogramaSerializer(subprograma, many=True)
+        return Response({'success': True, 'detail': 'Subprograma encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)

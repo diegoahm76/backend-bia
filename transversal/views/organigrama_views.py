@@ -1613,3 +1613,19 @@ class GetHistoricoUnidadEntidad(generics.ListAPIView):
         queryset = self.queryset.all()
         serializer = self.serializer_class(queryset, many=True)
         return Response({'success':True, 'detail':'Se encontró el siguiente histórico de traslados masivos de unidad por entidad', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+class GetActualSeccionSubsecciones(generics.ListAPIView):
+    serializer_class = UnidadesGetSerializer
+    queryset = UnidadesOrganizacionales.objects.all()
+    
+    def get(self, request, id_organigrama):
+        # Verifica si el organigrama está activo
+        organigrama = Organigramas.objects.filter(id_organigrama=id_organigrama, actual=True).first()
+
+        if organigrama:
+            unidades = UnidadesOrganizacionales.objects.filter(Q(id_organigrama=id_organigrama) & ~Q(cod_agrupacion_documental=None))
+            serializer = self.serializer_class(unidades, many=True)
+            return Response({'success': True, 'detail': 'Se encontraron las siguientes unidades', 'data': serializer.data}, status=status.HTTP_200_OK)
+        else:
+            raise NotFound('El organigrama no está activo o no existe')
