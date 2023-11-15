@@ -1,14 +1,14 @@
 tipo_direccion_LIST = [
     {
-        "value": "RES",
+        "value": "Res",
         "label": "Residencia"
     },
     {
-        "value": "LAB",
+        "value": "Lab",
         "label": "Laboral"
     },
     {
-        "value": "NOT",
+        "value": "Not",
         "label": "Notificación"
     }
 ]
