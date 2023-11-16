@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from gestion_documental.models.radicados_models import PQRSDF, AsignacionPQR, ComplementosUsu_PQR, EstadosSolicitudes, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
+from gestion_documental.models.radicados_models import PQRSDF, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
 
 
 
@@ -91,4 +91,17 @@ class ComplementosUsu_PQRGetSerializer(serializers.ModelSerializer):
 class SolicitudDeDigitalizacionPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = SolicitudDeDigitalizacion
+        fields = '__all__'
+
+##CAMBIO DE ESTADO DE LA SOLICITUD DE PQR
+class Estados_PQRPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Estados_PQR
+        fields = '__all__'
+
+
+class PQRSDFPutSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = PQRSDF
         fields = '__all__'

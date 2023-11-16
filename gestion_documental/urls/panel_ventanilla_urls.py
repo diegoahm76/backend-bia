@@ -10,4 +10,5 @@ urlpatterns = [
 
     #SOLICITUD DE DIGITALIZACION
     path('pqrsdf/solicitudd_digitalizacion/create/', views.SolicitudDeDigitalizacionCreate.as_view(),name='crear-solicitud-digitalizacion'),
+    path('estado/create/',views.Estados_PQRCreate.as_view(),name='crear-estado-pqrsdf')
 ]
