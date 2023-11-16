@@ -1,11 +1,7 @@
 from rest_framework import serializers
 
-<<<<<<< HEAD
 from gestion_documental.models.radicados_models import PQRSDF, EstadosSolicitudes, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, TiposPQR, MediosSolicitud
 from transversal.models.personas_models import Personas
-=======
-from gestion_documental.models.radicados_models import PQRSDF, AsignacionPQR, ComplementosUsu_PQR, EstadosSolicitudes, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
->>>>>>> develop
 
 class TiposPQRGetSerializer(serializers.ModelSerializer):
     cod_tipo_pqr_legible = serializers.SerializerMethodField()
