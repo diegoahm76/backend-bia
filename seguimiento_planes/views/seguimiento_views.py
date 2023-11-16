@@ -5,7 +5,7 @@ from rest_framework import generics, status
 from django.db.models.functions import Concat
 from django.db.models import Q, Value as V
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
-from seguimiento_planes.serializers.seguimiento_serializer import FuenteFinanciacionIndicadoresSerializer, SectorSerializer, SectorSerializerUpdate, DetalleInversionCuentasSerializer, ModalidadSerializer, ModalidadSerializerUpdate, UbicacionesSerializer, UbicacionesSerializerUpdate, FuenteRecursosPaaSerializer, IntervaloSerializer, IntervaloSerializerUpdate, EstadoVFSerializer, EstadoVFSerializerUpdate, CodigosUNSPSerializer, CodigosUNSPSerializerUpdate
+from seguimiento_planes.serializers.seguimiento_serializer import FuenteRecursosPaaSerializerUpdate, FuenteFinanciacionIndicadoresSerializer, SectorSerializer, SectorSerializerUpdate, DetalleInversionCuentasSerializer, ModalidadSerializer, ModalidadSerializerUpdate, UbicacionesSerializer, UbicacionesSerializerUpdate, FuenteRecursosPaaSerializer, IntervaloSerializer, IntervaloSerializerUpdate, EstadoVFSerializer, EstadoVFSerializerUpdate, CodigosUNSPSerializer, CodigosUNSPSerializerUpdate
 from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, Sector, DetalleInversionCuentas, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP
 
 # ---------------------------------------- Fuentes de financiacion indicadores ----------------------------------------
@@ -187,14 +187,11 @@ class DetalleInversionCuentasUpdate(generics.UpdateAPIView):
 
     def put(self, request, pk):
         data = request.data
-        detalle = self.get_object(pk)
+        detalle = self.get_object()
         serializer = self.serializer_class(detalle, data=data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'success': True, 'detail': 'Se actualizó el registro de detalle de inversión cuentas correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
-        else:
-            raise ValidationError('Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo.')
-
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Se actualizó el registro de detalle de inversión cuentas correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 # Eliminar un registro de detalle de inversión cuentas
 
 class DetalleInversionCuentasDelete(generics.DestroyAPIView):
@@ -361,7 +358,7 @@ class UbicacionesDelete(generics.DestroyAPIView):
         ubicacion.delete()
         return Response({'success': True, 'detail': 'Se eliminó el registro de ubicación correctamente.', 'data': []}, status=status.HTTP_200_OK)
 
-# ---------------------------------------- Fuentes de recursos PAA ----------------------------------------
+# ---------------------------------------- Fuentes de recursos PAA tabla básica----------------------------------------
 
 # Listar todos los registros de fuentes de recursos PAA
 
@@ -384,46 +381,54 @@ class FuenteRecursosPaaCreate(generics.CreateAPIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
-        serializer = FuenteRecursosPaaSerializer(data=request.data)
-        if serializer.is_valid():
+        data_in = request.data
+        try:
+            data_in['registro_precargado'] = False
+            data_in['item_ya_usado'] = False
+            data_in['activo'] = True
+            serializer = FuenteRecursosPaaSerializer(data=data_in)
+            serializer.is_valid(raise_exception=True)
             serializer.save()
-            return Response({'success': True, 'detail': 'Se creó el registro de fuente de recursos PAA correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
-        else:
-            print(serializer.errors)  # Imprime los errores de validación
-            raise ValidationError('Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo.')
-        
+        except ValidationError as e:
+            raise ValidationError(e.detail)
+        return Response({'success': True, 'detail': 'Se creó el registro de fuente de recursos PAA correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+
 # Actualizar un registro de fuente de recursos PAA
 
 class FuenteRecursosPaaUpdate(generics.UpdateAPIView):
     queryset = FuenteRecursosPaa.objects.all()
-    serializer_class = FuenteRecursosPaaSerializer
+    serializer_class = FuenteRecursosPaaSerializerUpdate
     permission_classes = (IsAuthenticated,)
 
     def put(self, request, pk):
         data = request.data
-        fuente = self.get_object(pk)
-        serializer = self.serializer_class(fuente, data=data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'success': True, 'detail': 'Se actualizó el registro de fuente de recursos PAA correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
-        else:
-            raise ValidationError('Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo.')
+        fuente = self.queryset.all().filter(id_fuente=pk).first()
+        if not fuente:
+            raise NotFound("No se encontró un registro de fuente de recursos PAA con este ID.")
+        if fuente.item_ya_usado:
+            raise ValidationError("No puedes actualizar este registro porque ya ha sido usado.")
+        if fuente.registro_precargado:
+            raise ValidationError("No puedes actualizar este registro porque es un registro precargado.")
+        serializer = FuenteRecursosPaaSerializerUpdate(fuente, data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Se actualizó el registro de fuente de recursos PAA correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # Eliminar un registro de fuente de recursos PAA
 
 class FuenteRecursosPaaDelete(generics.DestroyAPIView):
     queryset = FuenteRecursosPaa.objects.all()
-    serializer_class = FuenteRecursosPaaSerializer
+    serializer_class = FuenteRecursosPaaSerializerUpdate
     permission_classes = (IsAuthenticated,)
 
-    def get_object(self, pk):
-        try:
-            return FuenteRecursosPaa.objects.get(pk=pk)
-        except FuenteRecursosPaa.DoesNotExist:
-            raise NotFound("No se encontró un registro de fuente de recursos PAA con este ID.")
-
     def delete(self, request, pk):
-        fuente = self.get_object(pk)
+        fuente = self.queryset.all().filter(id_fuente=pk).first()
+        if not fuente:
+            raise NotFound("No se encontró un registro de fuente de recursos PAA con este ID.")
+        if fuente.item_ya_usado:
+            raise ValidationError("No puedes eliminar este registro porque ya ha sido usado.")
+        if fuente.registro_precargado:
+            raise ValidationError("No puedes eliminar este registro porque es un registro precargado.")
         fuente.delete()
         return Response({'success': True, 'detail': 'Se eliminó el registro de fuente de recursos PAA correctamente.', 'data': []}, status=status.HTTP_200_OK)
 
