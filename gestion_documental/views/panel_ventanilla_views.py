@@ -124,7 +124,7 @@ class SolicitudDeDigitalizacionCreate(generics.CreateAPIView):
         print(respuesta_estado_asociado.data['data'])
         
         #CAMBIAMOS EL ESTADO ACTUAL DE LA PQRSDF  self.serializer_class(unidad_medida,data)
-        serializador_pqrs = self.serializer_pqrs(pqr,data={'id_estado_actual_solicitud':data_respuesta_estado_asociado['id_estado_PQR']},partial=True)
+        serializador_pqrs = self.serializer_pqrs(pqr,data={'id_estado_actual_solicitud':9,'id_estado_actual_solicitud':datetime.now()},partial=True)
         serializador_pqrs.is_valid(raise_exception=True)
         prueba = serializador_pqrs.save()
         print(prueba)
