@@ -386,3 +386,4 @@ class ConsecPorNivelesTipologiasDocAgnoSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConsecPorNivelesTipologiasDocAgno
         fields = '__all__'
+

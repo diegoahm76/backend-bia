@@ -222,7 +222,10 @@ class modulos_radican(models.Model):
     class Meta:
         db_table = 'T261ModulosQueRadican'
 
-
+TIPOS_OFICIO_CHOICES = (
+    ('S', 'Solicitud'),
+    ('R', 'Requerimiento'),
+)
 class SolicitudAlUsuarioSobrePQRSDF(models.Model):
     id_solicitud_al_usuario_sobre_pqrsdf = models.AutoField(primary_key=True, db_column='T266IdSolicitudAlUsuarioSobrePQR')
     id_pqrsdf = models.ForeignKey(PQRSDF, models.CASCADE, db_column='T266Id_PQRSDF')
@@ -239,7 +242,7 @@ class SolicitudAlUsuarioSobrePQRSDF(models.Model):
     id_estado_actual_solicitud = models.ForeignKey(EstadosSolicitudes, models.CASCADE, db_column='T266Id_EstadoActualSolicitud')
     fecha_ini_estado_actual = models.DateTimeField(db_column='T266fechaIniEstadoActual')
     id_doc_de_archivo_exp = models.ForeignKey(DocumentosDeArchivoExpediente, models.CASCADE, db_column='T266Id_DocDeArch_Exp', blank=True, null=True)
-
+    cod_tipo_oficio = models.CharField(max_length=1,choices=TIPOS_OFICIO_CHOICES,db_column='T266codTipoOficio')
     class Meta:
         db_table = 'T266SolicitudAlUsuarioSobrePQRSDF'
 
