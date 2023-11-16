@@ -85,6 +85,22 @@ FORMA_PRESENTACION = [
     ('E', 'Escrita'),
 ]    
 
+class T262Radicados(models.Model):
+    id_radicado = models.AutoField(primary_key=True, db_column='T262IdRadicado')
+    id_modulo_que_radica = models.SmallIntegerField(db_column='T262Id_ModuloQueRadica')
+    cod_tipo_radicado = models.CharField(max_length=1, choices=TIPOS_RADICADO_CHOICES, db_column='T262codTipoRadicado')
+    prefijo_radicado = models.CharField(max_length=10, db_column='T262prefijoRadicado')
+    agno_radicado = models.SmallIntegerField(db_column='T262agnoRadicado')
+    nro_radicado = models.CharField(max_length=20, db_column='T262nroRadicado')
+    fecha_radicado = models.DateTimeField(db_column='T262fechaRadicado')
+    id_persona_radica = models.ForeignKey('transversal.Personas',on_delete=models.CASCADE,db_column='T262Id_PersonaRadica')
+    id_radicado_asociado = models.ForeignKey('self',on_delete=models.CASCADE,null=True, db_column='T262Id_RadicadoAsociado')
+
+    class Meta:
+        unique_together = [
+            ("cod_tipo_radicado", "prefijo_radicado", "agno_radicado", "nro_radicado")
+        ]
+        db_table = 'T262Radicados'  # Nombre de la tabla personalizado
 
 class PQRSDF(models.Model):
     id_PQRSDF = models.AutoField(primary_key=True, db_column='T257IdPQRSDF')
@@ -105,14 +121,14 @@ class PQRSDF(models.Model):
     id_sucursal_especifica_implicada = models.ForeignKey(SucursalesEmpresas,on_delete=models.CASCADE,db_column='T257Id_SucursalEspecificaImplicada', null=True)
     id_persona_recibe = models.ForeignKey('transversal.Personas',on_delete=models.CASCADE,db_column='T257Id_PersonaRecibe', null=True,related_name='persona_recibe_ralacion')
     id_sucursal_recepcion_fisica = models.ForeignKey(SucursalesEmpresas,on_delete=models.CASCADE,db_column='T257Id_Sucursal_RecepcionFisica', null=True,related_name='sucursal_recepciona_ralacion')
-    id_radicado = models.ForeignKey('T262Radicados',on_delete=models.CASCADE,db_column='T257Id_Radicado', null=True)#IMPLEMENTAR TABLA RADICADOS
+    id_radicado = models.ForeignKey(T262Radicados,on_delete=models.CASCADE,db_column='T257Id_Radicado', null=True)
     fecha_radicado = models.DateTimeField(db_column='T257fechaRadicado', null=True)
     requiere_digitalizacion = models.BooleanField(default=False, db_column='T257requiereDigitalizacion')
     fecha_envio_definitivo_a_digitalizacion = models.DateTimeField(db_column='T257fechaEnvioDefinitivoADigitalizacion', null=True)
     fecha_digitalizacion_completada = models.DateTimeField(db_column='T257fechaDigitalizacionCompletada', null=True)
     fecha_rta_final_gestion = models.DateTimeField(db_column='T257fechaRtaFinalGestion', null=True)
     id_persona_rta_final_gestion = models.ForeignKey('transversal.Personas',on_delete=models.CASCADE,db_column='T257Id_PersonaRtaFinalGestion', null=True,related_name='persona_rta_final_gestion_ralacion')
-    id_estado_actual_solicitud = models.ForeignKey('Estados_PQR',on_delete=models.CASCADE,db_column='T257Id_EstadoActualSolicitud')
+    id_estado_actual_solicitud = models.ForeignKey(EstadosSolicitudes,on_delete=models.CASCADE,db_column='T257Id_EstadoActualSolicitud')
     fecha_ini_estado_actual = models.DateTimeField(db_column='T257fechaIniEstadoActual')
     id_doc_dearch_exp = models.ForeignKey(DocumentosDeArchivoExpediente,on_delete=models.CASCADE,db_column='T257Id_DocDeArch_Exp', null=True)
     id_expediente_doc = models.ForeignKey(ExpedientesDocumentales,on_delete=models.CASCADE,db_column='T257Id_ExpedienteDoc', null=True)
@@ -197,24 +213,6 @@ class MetadatosAnexosTmp(models.Model):
         #managed = False  # Evita que Django gestione esta tabla en la base de datos.
         db_table = 'T260Metadatos_Anexos_Tmp'
         unique_together = ('id_anexo',)  # Restricción para que Id_Anexo sea único
-
-
-class T262Radicados(models.Model):
-    id_radicado = models.AutoField(primary_key=True, db_column='T262IdRadicado')
-    id_modulo_que_radica = models.SmallIntegerField(db_column='T262Id_ModuloQueRadica')
-    cod_tipo_radicado = models.CharField(max_length=1, choices=TIPOS_RADICADO_CHOICES, db_column='T262codTipoRadicado')
-    prefijo_radicado = models.CharField(max_length=10, db_column='T262prefijoRadicado')
-    agno_radicado = models.SmallIntegerField(db_column='T262agnoRadicado')
-    nro_radicado = models.CharField(max_length=20, db_column='T262nroRadicado')
-    fecha_radicado = models.DateTimeField(db_column='T262fechaRadicado')
-    id_persona_radica = models.ForeignKey('transversal.Personas',on_delete=models.CASCADE,db_column='T262Id_PersonaRadica')
-    id_radicado_asociado = models.ForeignKey('self',on_delete=models.CASCADE,null=True, db_column='T262Id_RadicadoAsociado')
-
-    class Meta:
-        unique_together = [
-            ("cod_tipo_radicado", "prefijo_radicado", "agno_radicado", "nro_radicado")
-        ]
-        db_table = 'T262Radicados'  # Nombre de la tabla personalizado
 
 
 class modulos_radican(models.Model):

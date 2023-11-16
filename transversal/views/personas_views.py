@@ -627,7 +627,7 @@ class GetClasesTerceroByPersona(generics.ListAPIView):
             if clases_tercero_persona:
                 list_clases_tercero = [clases.id_clase_tercero for clases in clases_tercero_persona]
                 
-                serializador = self.serializer_class(list_clases_tercero,many =True)
+                serializador = self.serializer_class(list_clases_tercero,many = True)
             
                 return Response({'success':True, 'detail':'Se encontraron clases tercero para la persona seleccionada','data':serializador.data},status=status.HTTP_200_OK)
             
