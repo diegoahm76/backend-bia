@@ -156,6 +156,7 @@ urlpatterns = [
 
     # SEGUIMIENTO PLANES
     path('api/seguimiento/planes/',include('seguimiento_planes.urls.planes_urls')),
+    path('api/seguimiento-planes/',include('seguimiento_planes.urls.seguimiento_urls')),
 
 
     
