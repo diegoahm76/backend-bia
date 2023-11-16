@@ -109,6 +109,10 @@ class SolicitudDeDigitalizacionCreate(generics.CreateAPIView):
         
         if  not pqr.requiere_digitalizacion:
             raise ValidationError("No requiere digitalizacion")
+        print(pqr.id_estado_actual_solicitud)
+        if pqr.id_estado_actual_solicitud:
+            if pqr.id_estado_actual_solicitud.id_estado_solicitud == 3:
+                raise ValidationError('No se puede realizar la solicitud porque tiene pendientes')
         #CREA UN ESTADO NUEVO DE PQR T255
         data_estado = {}
         data_estado['PQRSDF'] = request.data['id_pqrsdf']
@@ -121,13 +125,13 @@ class SolicitudDeDigitalizacionCreate(generics.CreateAPIView):
         data_estado_asociado['estado_solicitud'] = 9
         data_estado_asociado['estado_PQR_asociado'] =data_respuesta_estado_asociado['id_estado_PQR']
         respuesta_estado_asociado = self.creador_estados.crear_estado(self,data_estado_asociado)
-        print(respuesta_estado_asociado.data['data'])
+        
         
         #CAMBIAMOS EL ESTADO ACTUAL DE LA PQRSDF  self.serializer_class(unidad_medida,data)
-        serializador_pqrs = self.serializer_pqrs(pqr,data={'id_estado_actual_solicitud':9,'id_estado_actual_solicitud':datetime.now()},partial=True)
+        serializador_pqrs = self.serializer_pqrs(pqr,data={'id_estado_actual_solicitud':3,'fecha_envio_definitivo_a_digitalizacion':datetime.now(),'fecha_digitalizacion_completada':datetime.now()},partial=True)
         serializador_pqrs.is_valid(raise_exception=True)
         prueba = serializador_pqrs.save()
-        print(prueba)
+        
         #raise ValidationError("HOLA")
         data_in = request.data
         data_in['fecha_solicitud'] = datetime.now()

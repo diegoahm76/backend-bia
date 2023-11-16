@@ -11,15 +11,17 @@ class EstadosSolicitudesGetSerializer(serializers.ModelSerializer):
 
 
 class PQRSDFGetSerializer(serializers.ModelSerializer):
-    estado_solicitud = serializers.ReadOnlyField(source='id_estado_actual_solicitud.estado_solicitud.nombre',default=None)
+    estado_solicitud = serializers.ReadOnlyField(source='id_estado_actual_solicitud.nombre',default=None)
     nombre_sucursal = serializers.ReadOnlyField(source='id_sucursal_recepcion_fisica.descripcion_sucursal',default=None)
     radicado = serializers.SerializerMethodField()
     nombre_completo_titular = serializers.SerializerMethodField()
     tipo_solicitud = serializers.SerializerMethodField()
     estado_asignacion_grupo = serializers.SerializerMethodField()
+    numero_solicitudes_digitalizacion = serializers.SerializerMethodField()
+    numero_solicitudes_usuario = serializers.SerializerMethodField()
     class Meta:
         model = PQRSDF
-        fields = ['id_PQRSDF','tipo_solicitud','nombre_completo_titular','asunto','cantidad_anexos','radicado','fecha_radicado','requiere_digitalizacion','estado_solicitud','estado_asignacion_grupo','nombre_sucursal']
+        fields = ['id_PQRSDF','tipo_solicitud','nombre_completo_titular','asunto','cantidad_anexos','radicado','fecha_radicado','requiere_digitalizacion','estado_solicitud','estado_asignacion_grupo','nombre_sucursal','numero_solicitudes_digitalizacion','numero_solicitudes_usuario']
 
     def get_radicado(self, obj):
         cadena = ""
@@ -59,6 +61,12 @@ class PQRSDFGetSerializer(serializers.ModelSerializer):
                 return "Pendiente"
         else:
             return "Pendiente"
+    def get_numero_solicitudes_digitalizacion(self,obj):
+        id= obj.id_PQRSDF
+        numero_solicitudes = SolicitudDeDigitalizacion.objects.filter(id_pqrsdf=id).count()
+        return numero_solicitudes
+    def get_numero_solicitudes_usuario(self,obj):
+        return 0
 class ComplementosUsu_PQRGetSerializer(serializers.ModelSerializer):
     tipo = serializers.SerializerMethodField()
     nombre_completo_titular = serializers.SerializerMethodField()
