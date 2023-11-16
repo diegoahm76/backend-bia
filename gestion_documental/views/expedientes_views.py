@@ -1860,7 +1860,7 @@ class ExpedientesSearchAll(generics.ListAPIView):
         nombre_subserie_origen = self.request.query_params.get('id_subserie_origen', '').strip()
         palabras_clave_expediente = self.request.query_params.get('palabras_clave_expediente', '').strip()
         codigos_uni_serie_subserie = self.request.query_params.get('codigos_uni_serie_subserie', '').strip()
-        trd_nombre = self.request.query_params.get('trd_nombre', '').strip()
+        id_trd_origen = self.request.query_params.get('id_trd_origen', '')
         id_persona_titular_exp_complejo = self.request.query_params.get('id_persona_titular_exp_complejo')
 
 
@@ -1888,27 +1888,8 @@ class ExpedientesSearchAll(generics.ListAPIView):
         if id_persona_titular_exp_complejo:
             queryset = queryset.filter(id_persona_titular_exp_complejo=id_persona_titular_exp_complejo)
         
-        if trd_nombre:
-            queries = []
-            
-            if trd_nombre.lower() == 'actual':
-                queries.append(queryset.filter(id_trd_origen__nombre__icontains=trd_nombre))
-                queries.append(queryset.filter(id_trd_origen__fecha_retiro_produccion__icontains=trd_nombre))
-                queries.append(queryset.filter(id_trd_origen__actual=True))
-            elif trd_nombre.lower() == 'no actual':
-                queries.append(queryset.filter(id_trd_origen__nombre__icontains=trd_nombre))
-                queries.append(queryset.filter(id_trd_origen__fecha_retiro_produccion__icontains=trd_nombre))
-                queries.append(queryset.filter(id_trd_origen__actual=False))
-            else:
-                queries.append(queryset.filter(id_trd_origen__nombre__icontains=trd_nombre))
-                queries.append(queryset.filter(id_trd_origen__fecha_retiro_produccion__icontains=trd_nombre))
-                queries.append(queryset.filter(id_trd_origen__actual__icontains=trd_nombre))
-            
-            # Combinamos todas las consultas utilizando comas
-            queryset = queries[0]
-            for query in queries[1:]:
-                queryset = queryset | query
-            
+        if id_trd_origen and id_trd_origen != '':
+            queryset = queryset.filter(id_trd_origen=id_trd_origen)
             
         if palabras_clave_expediente:
             search_vector = SearchVector('palabras_clave_expediente')

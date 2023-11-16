@@ -111,7 +111,7 @@ def create_historico_personas(sender, instance, **kwargs):
                 
                 historico_direccion = HistoricoDireccion.objects.create(
                     direccion = direccion,
-                    tipo_direccion = 'LAB',
+                    tipo_direccion = 'Lab',
                     id_persona = current,
                     cod_municipio = cod_municipio,
                     cod_pais_exterior = cod_pais_exterior
@@ -128,7 +128,7 @@ def create_historico_personas(sender, instance, **kwargs):
                 
                 historico_direccion = HistoricoDireccion.objects.create(
                     direccion = direccion,
-                    tipo_direccion = 'RES',
+                    tipo_direccion = 'Res',
                     id_persona = current,
                     cod_municipio = cod_municipio,
                     cod_pais_exterior = cod_pais_exterior
@@ -148,7 +148,7 @@ def create_historico_personas(sender, instance, **kwargs):
                 
                 historico_direccion = HistoricoDireccion.objects.create(
                     direccion = direccion,
-                    tipo_direccion = 'NOT',
+                    tipo_direccion = 'Not',
                     id_persona = current,
                     cod_municipio = cod_municipio,
                     cod_pais_exterior = cod_pais_exterior

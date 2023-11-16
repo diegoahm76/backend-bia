@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from gestion_documental.models.radicados_models import TiposPQR, MediosSolicitud
+from gestion_documental.models.radicados_models import PQRSDF, AsignacionPQR, ComplementosUsu_PQR, EstadosSolicitudes, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
 
 class TiposPQRGetSerializer(serializers.ModelSerializer):
     cod_tipo_pqr_legible = serializers.SerializerMethodField()
@@ -48,3 +48,4 @@ class MediosSolicitudUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = MediosSolicitud
         fields = '__all__'
+
