@@ -52,6 +52,7 @@ class MediosSolicitudUpdateSerializer(serializers.ModelSerializer):
 
 class SolicitudesSerializer(serializers.ModelSerializer):
     nombre_und_org_oficina_solicita = serializers.ReadOnlyField(source='id_und_org_oficina_solicita.nombre')
+    nombre_tipo_oficio = serializers.ReadOnlyField(source='get_cod_tipo_oficio_display')
     numero_radicado_salida = serializers.SerializerMethodField()
 
     def get_numero_radicado_salida(self, obj):
@@ -72,7 +73,9 @@ class SolicitudesSerializer(serializers.ModelSerializer):
             'asunto',
             'descripcion',
             'fecha_radicado_salida',
-            'numero_radicado_salida'
+            'numero_radicado_salida',
+            'cod_tipo_oficio',
+            'nombre_tipo_oficio'
         ]
 
 class PQRSDFSerializer(serializers.ModelSerializer):
