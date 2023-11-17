@@ -18,6 +18,9 @@ from gestion_documental.choices.tipo_dato_alojar_choices import tipo_dato_alojar
 from gestion_documental.choices.tipo_acceso_choices import tipo_acceso_list
 from gestion_documental.choices.tipo_elemento_choices import tipo_elemento_CHOICES
 from gestion_documental.choices.cod_nivel_consecutivo_choices import cod_nivel_consecutivo_CHOICES
+from gestion_documental.choices.tipo_consulta_pqrsdf_choices import tipo_consulta_pqrsdf_CHOICES
+from gestion_documental.choices.tipo_representacion_pqrsdf_choices import tipo_representacion_pqrsdf_CHOICES
+from gestion_documental.choices.estado_pqrsdf_choices import estado_pqrsdf_CHOICES
 
 
 
@@ -127,3 +130,18 @@ class CodNivelConsecutivo(APIView):
         choices = cod_nivel_consecutivo_CHOICES
         return Response(choices) 
 #RANGO_EDAD_LIST
+
+class TipoConsultaPQRSDF(APIView):
+    def get(self, request):
+        choices = tipo_consulta_pqrsdf_CHOICES
+        return Response(choices)
+    
+class TipoRepresentacionPQRSDF(APIView):
+    def get(self, request):
+        choices = tipo_representacion_pqrsdf_CHOICES
+        return Response(choices)
+
+class EstadoPQRSDF(APIView):
+    def get(self, request):
+        choices = estado_pqrsdf_CHOICES
+        return Response(choices)
