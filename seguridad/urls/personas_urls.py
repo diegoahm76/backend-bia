@@ -49,7 +49,10 @@ urlpatterns = [
     
     path('autorizacion-notificaciones-self/', views.AutorizacionNotificacionesPersonas.as_view(), name='autorizacion-notificaciones-self'),
     
-    
+    # - Empresas
+    path('get-empresa-by-document/<str:tipo_documento>/<str:numero_documento>/', views.GetEmpresasByTipoDocumentoAndNumeroDocumento.as_view(), name='get-empresa-by-document'),
+    path('get-empresas-filters/', views.GetEmpresasByFilters.as_view(), name='get-empresas-filters'),
+
     #ADMINISTRACIÓ DE PERSONAS
     path('register-persona-natural-admin-personas/', views.RegisterPersonaNaturalAdmin.as_view(), name='register-personal-natural-admin-personas'),
     path('update-persona-natural-admin-personas/<str:id_persona>/', views.UpdatePersonaNaturalAdminPersonas.as_view(), name='update-personal-natural-admin-personas'),
@@ -69,7 +72,7 @@ urlpatterns = [
     #Creacion de persona y usuario por portal
     
     # Apoderados Personas
-    #path('apoderados-personas/get-list/', views.getApoderadosPersona.as_view(), name="apoderados-personas-get"),
+    path('apoderados-personas/get-list/<str:id_poderdante>/', views.GetApoderadosByPoderdanteId.as_view(), name="apoderados-personas-get"),
     #path('apoderados-personas/get-by-id/<str:pk>/', views.getApoderadoPersonaById.as_view(), name='apoderado-persona-id-get'),
     #path('apoderados-personas/delete/<str:pk>/', views.deleteApoderadoPersona.as_view(), name='apoderado-persona-delete'),
     #path('apoderados-personas/update/<str:pk>/', views.updateApoderadoPersona.as_view(), name='apoderado-persona-update'),

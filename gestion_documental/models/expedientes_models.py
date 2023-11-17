@@ -225,3 +225,34 @@ class ArchivosSoporte_CierreReapertura(models.Model):
         verbose_name = 'Archivo De Soporte De Cierre Reapertura'
         verbose_name_plural = 'Archivos De Soportes De Cierres Reapertura'
         unique_together = ('id_cierre_reapertura_exp', 'id_doc_archivo_exp_soporte')
+        
+class DobleVerificacionTmp(models.Model):
+    id_doble_verificacion = models.AutoField(primary_key=True, db_column='T270IdDobleVerificacion')
+    id_expediente = models.ForeignKey(ExpedientesDocumentales, on_delete=models.CASCADE, db_column='T270Id_Expediente')
+    id_persona_firma = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T270Id_PersonaFirma')
+    codigo_generado = models.CharField(max_length=6, db_column='T270codigoGenerado')
+    fecha_hora_codigo = models.DateTimeField(auto_now_add=True, db_column="T270fechaHoraCodigo")
+
+    class Meta:
+        db_table = 'T270DobleVerificacion_Tmp'
+        verbose_name = 'Doble Verificacion Tmp'
+        verbose_name_plural = 'Doble Verificacion Tmp'
+        unique_together = ('id_expediente', 'id_persona_firma')
+        
+class ConcesionesAccesoAExpsYDocs(models.Model):
+    id_concesion_acc = models.AutoField(primary_key=True, db_column='T272IdConcesionAcc')
+    id_persona_concede_acceso = models.ForeignKey(Personas, on_delete=models.CASCADE, related_name='id_persona_concede_acceso_exp', db_column='T272Id_PersonaQueConcedeAcceso')
+    id_persona_recibe_acceso = models.ForeignKey(Personas, on_delete=models.CASCADE, related_name='id_persona_recibe_acceso_exp', db_column='T272Id_PersonaALaQueSeConcedeAcceso')
+    id_unidad_org_destinatario_conceder = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, related_name='id_unidad_org_destinatario_conceder_exp', db_column='T272Id_UndOrgDestinatarioAlConceder')
+    id_expediente = models.ForeignKey(ExpedientesDocumentales, on_delete=models.SET_NULL, blank=True, null=True, db_column='T272Id_Expediente')
+    con_acceso_tipologias_reservadas = models.BooleanField(blank=True, null=True, db_column='T272conAccesoATipologiasReservadas')
+    id_documento_exp = models.ForeignKey(DocumentosDeArchivoExpediente, on_delete=models.SET_NULL, blank=True, null=True, db_column='T272Id_DocumentoExp')
+    fecha_registro = models.DateTimeField(auto_now_add=True, db_column="T272fechaRegistro")
+    fecha_acceso_inicia = models.DateField(db_column="T272fechaAccesoInicia")
+    fecha_acceso_termina = models.DateField(db_column="T272fechaAccesoTermina")
+    observacion = models.CharField(max_length=150, db_column='T272observacion')
+
+    class Meta:
+        db_table = 'T272ConcesionesAccesoAExpsYDocs'
+        verbose_name = 'Concesion Acceso a Exps y Docs'
+        verbose_name_plural = 'Concesiones Acceso a Exps y Docs'

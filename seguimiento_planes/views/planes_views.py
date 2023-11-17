@@ -5,8 +5,8 @@ from rest_framework import generics, status
 from django.db.models.functions import Concat
 from django.db.models import Q, Value as V
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
-from seguimiento_planes.serializers.planes_serializer import ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubroSerializer, IndicadorSerializer, MetasSerializer
-from seguimiento_planes.models.planes_models import ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje
+from seguimiento_planes.serializers.planes_serializer import ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubroSerializer, IndicadorSerializer, MetasSerializer, SubprogramaSerializer
+from seguimiento_planes.models.planes_models import ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma
 
 # ---------------------------------------- Objetivos Desarrollo Sostenible Tabla Básica ----------------------------------------
 
@@ -157,7 +157,7 @@ class EliminarPlanes(generics.DestroyAPIView):
         plan_nacional_desarrollo = self.queryset.all().filter(id_plan=pk).first()
 
         if not plan_nacional_desarrollo:
-            return Response({'success': False, 'detail': 'El planes ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('El planes ingresado no existe.')
         plan_nacional_desarrollo.delete()
         return Response({'success': True, 'detail': 'Se elimino el planes de manera exitosa'}, status=status.HTTP_200_OK)
     
@@ -1414,3 +1414,95 @@ class TipoEjeDetail(generics.RetrieveAPIView):
             raise NotFound('No se encontraron resultados.')
         serializer = TipoEjeSerializer(tipo_eje)
         return Response({'success': True, 'detail': 'Tipo Eje encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+# ---------------------------------------- Subprograma ----------------------------------------
+
+# Listar todos los Subprogramas
+
+class SubprogramaList(generics.ListCreateAPIView):
+    queryset = Subprograma.objects.all()
+    serializer_class = SubprogramaSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        subprogramas = Subprograma.objects.all()
+        serializer = SubprogramaSerializer(subprogramas, many=True)
+        if not subprogramas:
+            raise NotFound('No se encontraron resultados.')
+        return Response({'success': True, 'detail': 'Listado de Subprogramas.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Crear un Subprograma
+
+class SubprogramaCreate(generics.ListCreateAPIView):
+    queryset = Subprograma.objects.all()
+    serializer_class = SubprogramaSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self,request):
+        data = request.data
+        subprograma = self.queryset.filter(nombre_subprograma=data["nombre_subprograma"]).first()
+        if subprograma:
+            return Response({'success': False, 'detail': 'El subprograma ya existe'}, status=status.HTTP_403_FORBIDDEN)
+        serializador = self.serializer_class(data=data)
+        serializador.is_valid(raise_exception=True)
+        serializador.save()
+        return Response({'success': True, 'detail': 'Subprograma creado correctamente.', 'data': serializador.data}, status=status.HTTP_201_CREATED)
+
+# Actualizar un Subprograma
+
+class SubprogramaUpdate(generics.RetrieveUpdateAPIView):
+    queryset = Subprograma.objects.all()
+    serializer_class = SubprogramaSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def put(self, request, pk):
+        data = request.data
+        subprograma = self.queryset.all().filter(id_subprograma=pk).first()
+        if not subprograma:
+            return Response({'success': False, 'detail': 'El Subprograma ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = SubprogramaSerializer(subprograma, data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Subprograma actualizado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Eliminar un Subprograma
+
+class SubprogramaDelete(generics.RetrieveUpdateAPIView):
+    queryset = Subprograma.objects.all()
+    serializer_class = SubprogramaSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def delete(self, request, pk):
+        subprograma = self.queryset.all().filter(id_subprograma=pk).first()
+        if not subprograma:
+            return Response({'success': False, 'detail': 'El Subprograma ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+        subprograma.delete()
+        return Response({'success': True, 'detail': 'Subprograma eliminado correctamente.'}, status=status.HTTP_200_OK)
+
+# listar un Subprograma por id
+
+class SubprogramaDetail(generics.RetrieveAPIView):
+    queryset = Subprograma.objects.all()
+    serializer_class = SubprogramaSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, pk):
+        subprograma = self.queryset.all().filter(id_subprograma=pk).first()
+        if not subprograma:
+            raise NotFound('No se encontraron resultados.')
+        serializer = SubprogramaSerializer(subprograma)
+        return Response({'success': True, 'detail': 'Subprograma encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Listar Subprograma por id programa
+
+class SubprogramaListIdPrograma(generics.ListAPIView):
+    queryset = Subprograma.objects.all()
+    serializer_class = SubprogramaSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, pk):
+        subprograma = self.queryset.all().filter(id_programa=pk)
+        if not subprograma:
+            raise NotFound('No se encontraron resultados.')
+        serializer = SubprogramaSerializer(subprograma, many=True)
+        return Response({'success': True, 'detail': 'Subprograma encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)

@@ -92,6 +92,7 @@ urlpatterns = [
     path('api/gestor/configuracion-tiempos-respuesta-accion/',include('gestion_documental.urls.configuracion_tiempos_respuesta_urls')),
     path('api/gestor/configuracion-tipos-expendientes/',include('gestion_documental.urls.conf__tipos_exp_urls')),
     path('api/gestor/resportes-permisos-doc/',include('gestion_documental.urls.documentacion_permisos_urls')),
+    path('api/gestor/panel_ventanilla/',include('gestion_documental.urls.panel_ventanilla_urls')),
     
     #ALMACEN
     path('api/almacen/hoja-de-vida/', include('almacen.urls.hoja_de_vida_urls')),
@@ -155,6 +156,7 @@ urlpatterns = [
 
     # SEGUIMIENTO PLANES
     path('api/seguimiento/planes/',include('seguimiento_planes.urls.planes_urls')),
+    path('api/seguimiento-planes/',include('seguimiento_planes.urls.seguimiento_urls')),
 
 
     

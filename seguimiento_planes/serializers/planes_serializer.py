@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from seguimiento_planes.models.planes_models import ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje
+from seguimiento_planes.models.planes_models import ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma
 
 class ObjetivoDesarrolloSostenibleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -100,7 +100,7 @@ class IndicadorSerializer(serializers.ModelSerializer):
 
     nombre_medicion = serializers.ReadOnlyField(source='id_medicion.nombre_medicion', default=None)
     nombre_tipo = serializers.ReadOnlyField(source='id_tipo.nombre_tipo', default=None)
-    nombre_rubro = serializers.ReadOnlyField(source='id_rubro.nombre_rubro', default=None)
+    nombre_producto = serializers.ReadOnlyField(source='id_producto.nombre_producto', default=None)
     nombre_actividad = serializers.ReadOnlyField(source='id_actividad.nombre_actividad', default=None)
     nombre_plan = serializers.ReadOnlyField(source='id_plan.nombre_plan', default=None)
                 
@@ -120,4 +120,12 @@ class TipoEjeSerializer(serializers.ModelSerializer):
                     
     class Meta:
         model = TipoEje
+        fields = '__all__'
+
+class SubprogramaSerializer(serializers.ModelSerializer):
+             
+    nombre_programa = serializers.ReadOnlyField(source='id_programa.nombre_programa', default=None)
+                
+    class Meta:
+        model = Subprograma
         fields = '__all__'

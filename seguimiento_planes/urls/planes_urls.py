@@ -57,6 +57,7 @@ urlpatterns=[
     path('eliminar-actividades/<str:pk>/',views.ActividadDelete.as_view(),name='eliminaractividades'),
     path('consultar-actividades-id/<str:pk>/',views.ActividadDetail.as_view(),name='consultaractividadesid'),
     path('consultar-actividades-id-productos/<str:pk>/',views.ActividadListIdProductos.as_view(),name='consultaractividadesidproductos'),
+    path('consultar-actividades-id-plan/<str:pk>/',views.ActividadListIdPlanes.as_view(),name='consultaractividadesidplan'),
     # Entidades
     path('consultar-entidades/',views.EntidadList.as_view(),name='consultarentidades'),
     path('crear-entidades/',views.EntidadCreate.as_view(),name='crearentidades'),
@@ -103,4 +104,11 @@ urlpatterns=[
     path('actualizar-tipos-ejes/<str:pk>/',views.TipoEjeUpdate.as_view(),name='actualizartiposejes'),
     path('eliminar-tipos-ejes/<str:pk>/',views.TipoEjeDelete.as_view(),name='eliminartiposejes'),
     path('consultar-tipos-ejes-id/<str:pk>/',views.TipoEjeDetail.as_view(),name='consultartiposejesid'),
+    # Subprogramas
+    path('consultar-subprogramas/',views.SubprogramaList.as_view(),name='consultarsubprogramas'),
+    path('crear-subprogramas/',views.SubprogramaCreate.as_view(),name='crearsubprogramas'),
+    path('actualizar-subprogramas/<str:pk>/',views.SubprogramaUpdate.as_view(),name='actualizarsubprogramas'),
+    path('eliminar-subprogramas/<str:pk>/',views.SubprogramaDelete.as_view(),name='eliminarsubprogramas'),
+    path('consultar-subprogramas-id/<str:pk>/',views.SubprogramaDetail.as_view(),name='consultarsubprogramasid'),
+    path('consultar-subprogramas-id-programa/<str:pk>/',views.SubprogramaListIdPrograma.as_view(),name='consultarsubprogramasidprograma'),
 ]
