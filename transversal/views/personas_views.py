@@ -63,6 +63,7 @@ from seguridad.models import (
 )
 
 from transversal.serializers.personas_serializers import (
+    EmpresaSerializer,
     EstadoCivilSerializer,
     EstadoCivilPostSerializer,
     EstadoCivilPutSerializer,
@@ -626,7 +627,7 @@ class GetClasesTerceroByPersona(generics.ListAPIView):
             if clases_tercero_persona:
                 list_clases_tercero = [clases.id_clase_tercero for clases in clases_tercero_persona]
                 
-                serializador = self.serializer_class(list_clases_tercero,many =True)
+                serializador = self.serializer_class(list_clases_tercero,many = True)
             
                 return Response({'success':True, 'detail':'Se encontraron clases tercero para la persona seleccionada','data':serializador.data},status=status.HTTP_200_OK)
             
@@ -916,7 +917,7 @@ class GetPersonasByFilters(generics.ListAPIView):
         filter = {}
         
         for key,value in request.query_params.items():
-            if key in ['tipo_documento','numero_documento','primer_nombre','primer_apellido','razon_social','nombre_comercial']:
+            if key in ['tipo_documento','numero_documento','primer_nombre','primer_apellido','razon_social','nombre_comercial', 'tipo_persona']:
                 if key in ['primer_nombre','primer_apellido','razon_social','nombre_comercial']:
                     if value != "":
                         filter[key+'__icontains']=  value
@@ -1396,7 +1397,60 @@ class HistoricoRepresentLegalView(generics.ListAPIView):
         id_persona_empresa = self.kwargs['id_persona_empresa']
         queryset = HistoricoRepresentLegales.objects.filter(id_persona_empresa=id_persona_empresa)
         return queryset
+
+class GetEmpresasByTipoDocumentoAndNumeroDocumento(generics.GenericAPIView):
+    serializer_class = EmpresaSerializer
+    queryset = Personas.objects.all()
     
+    def get(self, request, tipo_documento, numero_documento):
+        empresa = self.queryset.all().filter(tipo_documento=tipo_documento, numero_documento=numero_documento).first()
+        if empresa:
+            empresa_serializer = self.serializer_class(empresa)
+            return Response({'success':True, 'detail': 'Se encontro la siguiente empresa', 'data': empresa_serializer.data}, status=status.HTTP_200_OK)
+        else:
+             raise NotFound("No existe una empresa con los parametros ingresados")
+
+class GetEmpresasByFilters(generics.ListAPIView):
+    serializer_class = EmpresaSerializer
+    queryset = Personas.objects.filter(representante_legal = not None)
+
+    def get(self, request):
+        filter = {}
+        for key,value in request.query_params.items():
+            if key in ['tipo_persona','tipo_documento','numero_documento', 'razon_social','nombre_comercial']:
+                if key in ['razon_social','nombre_comercial']:
+                    if value != "":
+                        filter[key+'__icontains'] = value
+                if key in ['numero_documento']:
+                    if value != "":
+                        filter[key+'__icontains'] = value
+                else:
+                    if value != "":
+                        filter[key] = value
+        empresas = self.queryset.filter(**filter)
+        if empresas:
+            serializador = self.serializer_class(empresas, many=True)
+            return Response({'success':True, 'detail': 'Se encontraron las siguientes empresas', 'data': serializador.data}, status=status.HTTP_200_OK)
+        else:
+            raise NotFound("No existen empresas con los criterios de busqueda especificados")
+        
+class GetApoderadosByPoderdanteId(generics.ListAPIView):
+    serializer_class = PersonasFilterSerializer
+    queryset = Personas.objects.all()
+    def get(self, request, id_poderdante):
+        # fecha_actual = datetime.strptime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
+        apoderados_serializer = []
+        apoderados = ApoderadoPersona.objects.filter(Q(persona_poderdante=id_poderdante) & Q(Q(fecha_cierre__gte = datetime.now()) | Q(fecha_cierre = None)))
+        if apoderados:
+            for apoderado in apoderados:
+                apoderado_persona = self.queryset.filter(id_persona=apoderado.persona_apoderada_id).first()
+                if(apoderado_persona):
+                    apoderados_serializer.append(apoderado_persona)
+            serializador = self.serializer_class(apoderados_serializer, many=True)
+            return Response({'success':True, 'detail': 'Se encontraron los siguientes apoderados', 'data': serializador.data}, status=status.HTTP_200_OK)
+        else:
+            raise NotFound("No existen apoderados para el poderdante seleccionado")
+
 
 # class ValidacionTokenView(generics.ListAPIView):
 #     permission_classes = [IsAuthenticated]  

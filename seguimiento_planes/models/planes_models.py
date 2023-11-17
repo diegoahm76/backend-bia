@@ -20,7 +20,7 @@ class ObjetivoDesarrolloSostenible(models.Model):
 
 class Planes(models.Model):
     id_plan = models.AutoField(
-        primary_key=True, editable=False, db_column='T501IdPlanes')
+        primary_key=True, editable=False, db_column='T501IdPlan')
     nombre_plan = models.CharField(
         max_length=30, db_column='T501nombrePlan')
     sigla_plan = models.CharField(
@@ -30,6 +30,7 @@ class Planes(models.Model):
             ('PND', 'Plan Nacional Desarrollo'),
             ('PAI', 'Plan Accion Institucional'),
             ('PGR', 'Plan Gestion Ambiental Regional'),
+            ('PES', 'Plan de desarrollo economico y social')
         ], db_column='T501tipoPlan')
     agno_inicio = models.IntegerField(
         null=True, blank=True, db_column='T501agnoInicio')
@@ -71,7 +72,7 @@ class EjeEstractegico(models.Model):
     # tipo_eje = models.CharField(
     #     max_length=30, db_column='T502tipoEje')
     id_plan = models.ForeignKey(
-        Planes, on_delete=models.CASCADE, db_column='T502IdPlanes')
+        Planes, on_delete=models.CASCADE, db_column='T502IdPlan')
     id_tipo_eje = models.ForeignKey(
         TipoEje, on_delete=models.CASCADE, db_column='T502IdTipoEje')
 
@@ -89,7 +90,7 @@ class Objetivo(models.Model):
     nombre_objetivo = models.CharField(
         max_length=255, db_column='T503descripcionObjetivo')
     id_plan = models.ForeignKey(
-        Planes, on_delete=models.CASCADE, db_column='T503IdPlanes')    
+        Planes, on_delete=models.CASCADE, db_column='T503IdPlan')    
     
     def __str__(self):
         return str(self.id_objetivo)
@@ -113,7 +114,7 @@ class Programa(models.Model):
     porcentaje_4 = models.IntegerField(
         null=True, blank=True, db_column='T504porcentaje4')
     id_plan = models.ForeignKey(
-        Planes, on_delete=models.CASCADE, db_column='T504IdPlanes')
+        Planes, on_delete=models.CASCADE, db_column='T504IdPlan')
 
     def __str__(self):
         return str(self.id_programa)
@@ -126,6 +127,8 @@ class Programa(models.Model):
 class Proyecto(models.Model):
     id_proyecto = models.AutoField(
         primary_key=True, editable=False, db_column='T505IdProyecto')
+    numero_proyecto = models.IntegerField(
+        null=True, blank=True, db_column='T505numeroProyecto')
     nombre_proyecto = models.CharField(
         max_length=255, db_column='T505nombreProyecto')
     pondera_1 = models.IntegerField(
@@ -150,6 +153,8 @@ class Proyecto(models.Model):
 class Productos(models.Model):
     id_producto = models.AutoField(
         primary_key=True, editable=False, db_column='T506IdProducto')
+    numero_producto = models.IntegerField(
+        null=True, blank=True, db_column='T506numeroProducto')
     nombre_producto = models.CharField(
         max_length=255, db_column='T506nombreProducto')
     id_proyecto = models.ForeignKey(
@@ -166,12 +171,14 @@ class Productos(models.Model):
 class Actividad(models.Model):
     id_actividad = models.AutoField(
         primary_key=True, editable=False, db_column='T507IdActividad')
+    numero_actividad = models.IntegerField(
+        null=True, blank=True, db_column='T507numeroActividad')
     nombre_actividad = models.CharField(
         max_length=255, db_column='T507nombreActividad')
     id_producto = models.ForeignKey(
         Productos, on_delete=models.CASCADE, db_column='T507IdProducto')
     id_plan = models.ForeignKey(
-        Planes, on_delete=models.CASCADE, db_column='T507IdPlanes')
+        Planes, on_delete=models.CASCADE, db_column='T507IdPlan')
 
     def __str__(self):
         return str(self.id_actividad)
@@ -268,12 +275,12 @@ class Indicador(models.Model):
         Medicion, on_delete=models.CASCADE, db_column='T512IdMedicion')
     id_tipo = models.ForeignKey(
         Tipo, on_delete=models.CASCADE, db_column='T512IdTipo')
-    id_rubro = models.ForeignKey(
-        Rubro, on_delete=models.CASCADE, db_column='T512IdRubro')
+    id_producto = models.ForeignKey(
+        Productos, on_delete=models.CASCADE, db_column='T512IdProducto')
     id_actividad = models.ForeignKey(
         Actividad, on_delete=models.CASCADE, db_column='T512IdActividad')
     id_plan = models.ForeignKey(
-        Planes, on_delete=models.CASCADE, db_column='T512IdPlanes')
+        Planes, on_delete=models.CASCADE, db_column='T512IdPlan')
 
     def __str__(self):
         return str(self.id_indicador)
@@ -307,3 +314,19 @@ class Metas(models.Model):
         db_table = 'T513Meta'
         verbose_name = 'Meta'
         verbose_name_plural = 'Metas'
+
+class Subprograma(models.Model):
+    id_subprograma = models.AutoField(
+        primary_key=True, editable=False, db_column='T515IdSubprograma')
+    nombre_subprograma = models.CharField(
+        max_length=255, db_column='T515nombreSubprograma')
+    id_programa = models.ForeignKey(
+        Programa, on_delete=models.CASCADE, db_column='T515IdPrograma')
+
+    def __str__(self):
+        return str(self.id_subprograma)
+
+    class Meta:
+        db_table = 'T515Subprograma'
+        verbose_name = 'Subprograma'
+        verbose_name_plural = 'Subprogramas'

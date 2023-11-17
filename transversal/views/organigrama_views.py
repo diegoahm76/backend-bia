@@ -1620,14 +1620,12 @@ class GetActualSeccionSubsecciones(generics.ListAPIView):
     queryset = UnidadesOrganizacionales.objects.all()
     
     def get(self, request, id_organigrama):
-        organigrama = Organigramas.objects.filter(id_organigrama=id_organigrama).first()
+        # Verifica si el organigrama está activo
+        organigrama = Organigramas.objects.filter(id_organigrama=id_organigrama, actual=True).first()
+
         if organigrama:
-            unidades = UnidadesOrganizacionales.objects.filter(
-                Q(id_organigrama=id_organigrama) & 
-                ~Q(cod_agrupacion_documental=None) &
-                Q(actual=True)  # Agregar esta condición para filtrar por 'actual' en True
-            )
+            unidades = UnidadesOrganizacionales.objects.filter(Q(id_organigrama=id_organigrama) & ~Q(cod_agrupacion_documental=None))
             serializer = self.serializer_class(unidades, many=True)
-            return Response({'success':True, 'detail':'Se encontraron las siguientes unidades', 'data':serializer.data}, status=status.HTTP_200_OK)
+            return Response({'success': True, 'detail': 'Se encontraron las siguientes unidades', 'data': serializer.data}, status=status.HTTP_200_OK)
         else:
-            raise NotFound('Debe consultar por un organigrama válido')
+            raise NotFound('El organigrama no está activo o no existe')

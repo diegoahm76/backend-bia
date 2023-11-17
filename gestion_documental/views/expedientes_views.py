@@ -9,7 +9,7 @@ import secrets
 from rest_framework.parsers import MultiPartParser
 from gestion_documental.models.conf__tipos_exp_models import ConfiguracionTipoExpedienteAgno
 from gestion_documental.models.depositos_models import CarpetaCaja
-from gestion_documental.models.expedientes_models import ExpedientesDocumentales,ArchivosDigitales,DocumentosDeArchivoExpediente,IndicesElectronicosExp,Docs_IndiceElectronicoExp,CierresReaperturasExpediente,ArchivosSoporte_CierreReapertura
+from gestion_documental.models.expedientes_models import DobleVerificacionTmp, ExpedientesDocumentales,ArchivosDigitales,DocumentosDeArchivoExpediente,IndicesElectronicosExp,Docs_IndiceElectronicoExp,CierresReaperturasExpediente,ArchivosSoporte_CierreReapertura
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from django.shortcuts import get_object_or_404
 from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, FormatosTiposMedio, TablaRetencionDocumental, TipologiasDoc
@@ -20,7 +20,7 @@ from gestion_documental.views.conf__tipos_exp_views import ConfiguracionTipoExpe
 from seguridad.utils import Util
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AnularExpedienteSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, AperturaExpedienteUpdateAutSerializer, AperturaExpedienteUpdateNoAutSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, BorrarExpedienteSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, ExpedienteAperturaSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, IndexarDocumentosAnularSerializer, IndexarDocumentosCreateSerializer, IndexarDocumentosGetSerializer, IndexarDocumentosUpdateAutSerializer, IndexarDocumentosUpdateSerializer, ListExpedientesComplejosSerializer, ListarTRDSerializer, ListarTipologiasSerializer, SerieSubserieUnidadTRDGetSerializer
+from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AnularExpedienteSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, AperturaExpedienteUpdateAutSerializer, AperturaExpedienteUpdateNoAutSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, BorrarExpedienteSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, EnvioCodigoSerializer, ExpedienteAperturaSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, FirmaCierreGetSerializer, IndexarDocumentosAnularSerializer, IndexarDocumentosCreateSerializer, IndexarDocumentosGetSerializer, IndexarDocumentosUpdateAutSerializer, IndexarDocumentosUpdateSerializer, InformacionIndiceGetSerializer, ListExpedientesComplejosSerializer, ListarTRDSerializer, ListarTipologiasSerializer, SerieSubserieUnidadTRDGetSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Max 
@@ -29,6 +29,8 @@ from rest_framework.parsers import FileUploadParser
 from rest_framework.response import Response
 from django.db import transaction
 from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
+
+from transversal.models.personas_models import Personas
 
 ########################## CRUD DE APERTURA DE EXPEDIENTES DOCUMENTALES ##########################
 
@@ -1842,3 +1844,240 @@ class IndexarDocumentosBorrar(generics.DestroyAPIView):
         Util.save_auditoria(auditoria_data)
         
         return Response({'success':True, 'detail':'Borrado de documento realizado correctamente'}, status=status.HTTP_201_CREATED)
+
+########################## CRUD DE CIERRE DE EXPEDIENTES DOCUMENTALES ##########################
+
+#BUSCAR UN EXPEDIENTE
+class ExpedientesSearchAll(generics.ListAPIView):
+    serializer_class = ExpedienteSearchSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        titulo_expediente = self.request.query_params.get('titulo_expediente', '').strip()
+        codigo_exp_und_serie_subserie = self.request.query_params.get('codigo_exp_und_serie_subserie', '').strip()
+        fecha_apertura_expediente = self.request.query_params.get('fecha_apertura_expediente', '').strip()
+        nombre_serie_origen = self.request.query_params.get('id_serie_origen', '').strip()
+        nombre_subserie_origen = self.request.query_params.get('id_subserie_origen', '').strip()
+        palabras_clave_expediente = self.request.query_params.get('palabras_clave_expediente', '').strip()
+        codigos_uni_serie_subserie = self.request.query_params.get('codigos_uni_serie_subserie', '').strip()
+        id_trd_origen = self.request.query_params.get('id_trd_origen', '')
+        id_persona_titular_exp_complejo = self.request.query_params.get('id_persona_titular_exp_complejo')
+
+
+
+        # Filtrar por atributos específicos referentes a un expediente (unión de parámetros)
+        queryset = ExpedientesDocumentales.objects.all()  # Filtrar por estado 'A'
+        if titulo_expediente:
+            queryset = queryset.filter(titulo_expediente__icontains=titulo_expediente)
+
+        if codigo_exp_und_serie_subserie:
+            queryset = queryset.filter(codigo_exp_und_serie_subserie=codigo_exp_und_serie_subserie)
+
+        if fecha_apertura_expediente:
+            queryset = queryset.filter(fecha_apertura_expediente__icontains=fecha_apertura_expediente)
+
+        if nombre_serie_origen:
+            queryset = queryset.filter(id_serie_origen__nombre__icontains=nombre_serie_origen)
+
+        if nombre_subserie_origen:
+            queryset = queryset.filter(id_subserie_origen__nombre__icontains=nombre_subserie_origen)
+   
+        if codigos_uni_serie_subserie:
+            queryset = queryset.filter(codigo_exp_und_serie_subserie__startswith=codigos_uni_serie_subserie)
+
+        if id_persona_titular_exp_complejo:
+            queryset = queryset.filter(id_persona_titular_exp_complejo=id_persona_titular_exp_complejo)
+        
+        if id_trd_origen and id_trd_origen != '':
+            queryset = queryset.filter(id_trd_origen=id_trd_origen)
+            
+        if palabras_clave_expediente:
+            search_vector = SearchVector('palabras_clave_expediente')
+            search_query = SearchQuery(palabras_clave_expediente)
+            queryset = queryset.annotate(rank=SearchRank(search_vector, search_query)).filter(rank__gt=0)
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            raise NotFound('No se encontraron datos que coincidan con los criterios de búsqueda.')
+
+        serializer = ExpedienteSearchSerializer(queryset, many=True)
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes registros.',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+        
+class InformacionIndiceGetView(generics.ListAPIView):
+    serializer_class = InformacionIndiceGetSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_expediente_doc):
+        indice_electronico_exp = IndicesElectronicosExp.objects.filter(id_expediente_doc=id_expediente_doc).first()
+        if not indice_electronico_exp:
+            raise NotFound('No se encontró el indice electrónico al expediente elegido')
+        
+        serializer = self.serializer_class(indice_electronico_exp)
+        return Response({'success':True, 'detail':'Se encontró la siguiente información', 'data':serializer.data}, status=status.HTTP_200_OK)
+    
+class EnvioCodigoView(generics.CreateAPIView):
+    serializer_class = EnvioCodigoSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def create(self, request, id_indice_electronico_exp):
+        persona = request.user.persona
+        
+        indice_electronico_exp = IndicesElectronicosExp.objects.filter(id_indice_electronico_exp=id_indice_electronico_exp).first()
+        if not indice_electronico_exp:
+            raise NotFound('No se encontró el indice del expediente ingresado')
+        
+        if not indice_electronico_exp.abierto:
+            raise PermissionDenied('No puede realizar esta acción para un indice que ya se encuentra cerrado')
+        
+        verification_code = secrets.randbelow(10**6)
+        verification_code_str = f'{verification_code:06}'
+        
+        # GUARDAR O ACTUALIZAR REGISTRO EN T270
+        doble_verificacion = DobleVerificacionTmp.objects.filter(id_expediente=indice_electronico_exp.id_expediente_doc, id_persona_firma=persona.id_persona).first()
+        
+        if doble_verificacion:
+            segundos = (datetime.now() - doble_verificacion.fecha_hora_codigo).total_seconds()
+            if segundos < 60:
+                raise ValidationError('Debe esperar un minuto antes de solicitar otro código')
+            doble_verificacion.codigo_generado = verification_code_str
+            doble_verificacion.fecha_hora_codigo = datetime.now()
+            doble_verificacion.save()
+        else:
+            DobleVerificacionTmp.objects.create(
+                id_persona_firma=persona,
+                id_expediente=indice_electronico_exp.id_expediente_doc,
+                codigo_generado=verification_code_str,
+                fecha_hora_codigo=datetime.now()
+            )
+        
+        # ENVIAR SMS Y/O EMAIL
+        
+        if persona.telefono_celular:
+            sms = f'Ingrese el siguiente código para continuar con el cierre del índice electrónico: {verification_code_str}'
+            Util.send_sms(persona.telefono_celular, sms)
+        
+        if persona.email:
+            subject = "Código de Verificación - "
+            template = "codigo-cierre-indice.html"
+            Util.notificacion(persona,subject,template,nombre_de_usuario=request.user.nombre_de_usuario,verification_code_str=verification_code_str)
+        
+        # serializer = self.serializer_class(indice_electronico_exp)
+        return Response({'success':True, 'detail':'Se ha realizado el envío del código de verificación'}, status=status.HTTP_200_OK)
+    
+class ValidacionCodigoView(generics.UpdateAPIView):
+    serializer_class = EnvioCodigoSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def update(self, request):
+        id_indice_electronico_exp = request.data.get('id_indice_electronico_exp')
+        codigo = request.data.get('codigo')
+        
+        if not id_indice_electronico_exp or not codigo:
+            raise ValidationError('Debe enviar el indice del expediente y el código')
+        
+        persona = request.user.persona
+        current_time = datetime.now()
+        
+        indice_electronico_exp = IndicesElectronicosExp.objects.filter(id_indice_electronico_exp=id_indice_electronico_exp).first()
+        if not indice_electronico_exp:
+            raise NotFound('No se encontró el indice del expediente ingresado')
+        
+        if not indice_electronico_exp.abierto:
+            raise PermissionDenied('No puede realizar esta acción para un indice que ya se encuentra cerrado')
+        
+        doble_verificacion = DobleVerificacionTmp.objects.filter(id_expediente=indice_electronico_exp.id_expediente_doc, id_persona_firma=persona.id_persona).first()
+        if not doble_verificacion:
+            raise ValidationError('No se encuentra un código para el índice ingresado')
+        
+        minutos = (current_time - doble_verificacion.fecha_hora_codigo).total_seconds() / 60.0
+        if minutos > 15:
+            raise ValidationError('El código ingresado ha expirado')
+        else:
+            if doble_verificacion.codigo_generado != codigo:
+                raise ValidationError('El código es inválido. Intente nuevamente')
+        
+        return Response({'success':True, 'detail':'El código es válido'}, status=status.HTTP_200_OK)
+
+class FirmaCierreView(generics.UpdateAPIView):
+    serializer_class = EnvioCodigoSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def update(self, request):
+        id_indice_electronico_exp = request.data.get('id_indice_electronico_exp')
+        observacion = request.data.get('observacion', '')
+        
+        if not id_indice_electronico_exp or observacion == '':
+            raise ValidationError('Debe enviar el indice del expediente y la observación')
+        
+        persona = request.user.persona
+        current_time = datetime.now()
+        
+        indice_electronico_exp = IndicesElectronicosExp.objects.filter(id_indice_electronico_exp=id_indice_electronico_exp).first()
+        if not indice_electronico_exp:
+            raise NotFound('No se encontró el indice del expediente ingresado')
+        
+        if not indice_electronico_exp.abierto:
+            raise PermissionDenied('No puede realizar esta acción para un indice que ya se encuentra cerrado')
+        
+        doble_verificacion = DobleVerificacionTmp.objects.filter(id_expediente=indice_electronico_exp.id_expediente_doc, id_persona_firma=persona.id_persona).first()
+        if not doble_verificacion:
+            raise ValidationError('No se ha generado aún código de verificación para el índice ingresado')
+        
+        # ACTUALIZAR EN T239
+        previous_indice_electronico_exp = copy.copy(indice_electronico_exp)
+        
+        indice_electronico_exp.abierto = False
+        indice_electronico_exp.fecha_cierre = current_time
+        indice_electronico_exp.id_persona_firma_cierre = persona
+        indice_electronico_exp.fecha_envio_cod_verificacion = doble_verificacion.fecha_hora_codigo
+        indice_electronico_exp.email_envio_cod_verificacion = doble_verificacion.id_persona_firma.email
+        indice_electronico_exp.nro_cel_envio_cod_verificacion = doble_verificacion.id_persona_firma.telefono_celular
+        indice_electronico_exp.fecha_intro_cod_verificacion_ok = current_time
+        indice_electronico_exp.observacion_firme_cierre = observacion
+        indice_electronico_exp.save()
+        
+        # ACTUALIZAR EN T236
+        indice_electronico_exp.id_expediente_doc.fecha_firma_cierre_indice_elec = current_time
+        indice_electronico_exp.id_expediente_doc.save()
+        
+        # AUDITORIA
+        usuario = request.user.id_usuario
+        descripcion = {
+            "IdExpedienteDoc": str(indice_electronico_exp.id_expediente_doc.id_expediente_documental)
+        }
+        direccion = Util.get_client_ip(request)
+        valores_actualizados = {'previous': previous_indice_electronico_exp, 'current':indice_electronico_exp}
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 150,
+            "cod_permiso": "CR",
+            "subsistema": 'GEST',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_actualizados": valores_actualizados
+        }
+        Util.save_auditoria(auditoria_data)
+        
+        return Response({'success':True, 'detail':'Se realizó la firma correcta del cierre del índice electrónico'}, status=status.HTTP_200_OK)
+    
+class FirmaCierreGetView(generics.ListAPIView):
+    serializer_class = FirmaCierreGetSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_indice_electronico_exp):
+        indice_electronico_exp = IndicesElectronicosExp.objects.filter(id_indice_electronico_exp=id_indice_electronico_exp).first()
+        if not indice_electronico_exp:
+            raise NotFound('No se encontró el indice del expediente ingresado')
+        
+        serializer = self.serializer_class(indice_electronico_exp)
+        
+        return Response({'success':True, 'detail':'Se encontró la siguiente información', 'data':serializer.data}, status=status.HTTP_200_OK)

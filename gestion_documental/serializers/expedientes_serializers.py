@@ -390,6 +390,7 @@ class ExpedienteSearchSerializer(serializers.ModelSerializer):
     nombre_unidad_org = serializers.ReadOnlyField(source='id_und_seccion_propietaria_serie.nombre', default=None)
     nombre_trd_origen = serializers.ReadOnlyField(source='id_trd_origen.nombre', default=None)
     nombre_persona_titular = serializers.SerializerMethodField()
+    desc_estado = serializers.CharField(source='get_estado_display', read_only=True)
     
     def get_nombre_persona_titular(self, obj):
         nombre_persona_titular = None
@@ -417,7 +418,10 @@ class ExpedienteSearchSerializer(serializers.ModelSerializer):
             'nombre_trd_origen',
             'fecha_apertura_expediente',
             'id_persona_titular_exp_complejo',
-            'nombre_persona_titular'
+            'nombre_persona_titular',
+            'estado',
+            'desc_estado',
+            'fecha_cierre_reapertura_actual'
         ]
 
 
@@ -930,3 +934,86 @@ class IndexarDocumentosAnularSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'observacion_anulacion': {'required': True, 'allow_blank':False, 'allow_null':False}
         }
+        
+class DocsIndiceElectronicoExpSerializer(serializers.ModelSerializer):
+    nombre_tipologia = serializers.CharField(source='id_tipologia_documental.nombre', read_only=True)
+    origen_archivo = serializers.CharField(source='get_cod_origen_archivo_display', read_only=True)
+    
+    class Meta:
+        model =  Docs_IndiceElectronicoExp
+        fields = [
+            'id_doc_indice_electronico_exp',
+            'id_doc_archivo_exp',
+            'nombre_documento',
+            'id_tipologia_documental',
+            'nombre_tipologia',
+            'fecha_creacion_doc',
+            'fecha_incorporacion_exp',
+            'valor_huella',
+            'funcion_resumen',
+            'orden_doc_expediente',
+            'pagina_inicio',
+            'pagina_fin',
+            'formato',
+            'tamagno_kb',
+            'cod_origen_archivo',
+            'origen_archivo',
+            'es_un_archivo_anexo',
+            'tipologia_no_creada_trd'
+        ]
+
+class InformacionIndiceGetSerializer(serializers.ModelSerializer):
+    docs_indice_electronico_exp = serializers.SerializerMethodField()
+    
+    def get_docs_indice_electronico_exp(self, obj):
+        docs_indice = Docs_IndiceElectronicoExp.objects.filter(id_indice_electronico_exp=obj.id_indice_electronico_exp)
+        serializer_docs_indice = DocsIndiceElectronicoExpSerializer(docs_indice, many=True)
+        return serializer_docs_indice.data
+
+    class Meta:
+        model =  IndicesElectronicosExp
+        fields = [
+            'id_indice_electronico_exp',
+            'abierto',
+            'fecha_indice_electronico',
+            'fecha_cierre',
+            'docs_indice_electronico_exp'
+        ]
+        
+class EnvioCodigoSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model =  IndicesElectronicosExp
+        fields = [
+            'id_indice_electronico_exp',
+            'abierto',
+            'fecha_indice_electronico',
+            'fecha_cierre',
+            'docs_indice_electronico_exp'
+        ]
+        
+class FirmaCierreGetSerializer(serializers.ModelSerializer):
+    nombre_persona_firma_cierre = serializers.SerializerMethodField()
+    telefono_celular = serializers.ReadOnlyField(source='id_persona_firma_cierre.telefono_celular', default=None)
+    email = serializers.ReadOnlyField(source='id_persona_firma_cierre.email', default=None)
+    
+    def get_nombre_persona_firma_cierre(self, obj):
+        nombre_persona_firma_cierre = None
+        if obj.id_persona_firma_cierre:
+            nombre_list = [obj.id_persona_firma_cierre.primer_nombre, obj.id_persona_firma_cierre.segundo_nombre,
+                            obj.id_persona_firma_cierre.primer_apellido, obj.id_persona_firma_cierre.segundo_apellido]
+            nombre_persona_firma_cierre = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_firma_cierre = nombre_persona_firma_cierre if nombre_persona_firma_cierre != "" else None
+        return nombre_persona_firma_cierre
+
+    class Meta:
+        model =  IndicesElectronicosExp
+        fields = [
+            'id_indice_electronico_exp',
+            'id_persona_firma_cierre',
+            'nombre_persona_firma_cierre',
+            'fecha_cierre',
+            'telefono_celular',
+            'email',
+            'observacion_firme_cierre'
+        ]
