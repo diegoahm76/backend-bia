@@ -9,9 +9,10 @@ import secrets
 from rest_framework.parsers import MultiPartParser
 from gestion_documental.models.conf__tipos_exp_models import ConfiguracionTipoExpedienteAgno
 from gestion_documental.models.depositos_models import CarpetaCaja
-from gestion_documental.models.expedientes_models import DobleVerificacionTmp, ExpedientesDocumentales,ArchivosDigitales,DocumentosDeArchivoExpediente,IndicesElectronicosExp,Docs_IndiceElectronicoExp,CierresReaperturasExpediente,ArchivosSoporte_CierreReapertura
+from gestion_documental.models.expedientes_models import ConcesionesAccesoAExpsYDocs, DobleVerificacionTmp, ExpedientesDocumentales,ArchivosDigitales,DocumentosDeArchivoExpediente,IndicesElectronicosExp,Docs_IndiceElectronicoExp,CierresReaperturasExpediente,ArchivosSoporte_CierreReapertura
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from django.shortcuts import get_object_or_404
+from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
 from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, FormatosTiposMedio, TablaRetencionDocumental, TipologiasDoc
 from gestion_documental.serializers.conf__tipos_exp_serializers import ConfiguracionTipoExpedienteAgnoGetSerializer
 from gestion_documental.serializers.trd_serializers import BusquedaTRDNombreVersionSerializer
@@ -20,7 +21,7 @@ from gestion_documental.views.conf__tipos_exp_views import ConfiguracionTipoExpe
 from seguridad.utils import Util
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AnularExpedienteSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, AperturaExpedienteUpdateAutSerializer, AperturaExpedienteUpdateNoAutSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, BorrarExpedienteSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, EnvioCodigoSerializer, ExpedienteAperturaSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, FirmaCierreGetSerializer, IndexarDocumentosAnularSerializer, IndexarDocumentosCreateSerializer, IndexarDocumentosGetSerializer, IndexarDocumentosUpdateAutSerializer, IndexarDocumentosUpdateSerializer, InformacionIndiceGetSerializer, ListExpedientesComplejosSerializer, ListarTRDSerializer, ListarTipologiasSerializer, SerieSubserieUnidadTRDGetSerializer
+from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AnularExpedienteSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, AperturaExpedienteUpdateAutSerializer, AperturaExpedienteUpdateNoAutSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, BorrarExpedienteSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConcesionAccesoDocumentosCreateSerializer, ConcesionAccesoDocumentosGetSerializer, ConcesionAccesoExpedientesCreateSerializer, ConcesionAccesoExpedientesGetSerializer, ConcesionAccesoPersonasFilterSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, EnvioCodigoSerializer, ExpedienteAperturaSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, FirmaCierreGetSerializer, IndexarDocumentosAnularSerializer, IndexarDocumentosCreateSerializer, IndexarDocumentosGetSerializer, IndexarDocumentosUpdateAutSerializer, IndexarDocumentosUpdateSerializer, InformacionIndiceGetSerializer, ListExpedientesComplejosSerializer, ListarTRDSerializer, ListarTipologiasSerializer, SerieSubserieUnidadTRDGetSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Max 
@@ -29,6 +30,7 @@ from rest_framework.parsers import FileUploadParser
 from rest_framework.response import Response
 from django.db import transaction
 from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
+from transversal.models.organigrama_models import Organigramas
 
 from transversal.models.personas_models import Personas
 
@@ -2081,3 +2083,187 @@ class FirmaCierreGetView(generics.ListAPIView):
         serializer = self.serializer_class(indice_electronico_exp)
         
         return Response({'success':True, 'detail':'Se encontró la siguiente información', 'data':serializer.data}, status=status.HTTP_200_OK)
+
+class ConcesionAccesoPermisoGetView(generics.ListAPIView):
+    serializer_class = FirmaCierreGetSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_expediente):
+        id_unidad_organizacional_actual = request.user.persona.id_unidad_organizacional_actual
+        if not id_unidad_organizacional_actual:
+            raise NotFound('La persona logueada no se encuentra vinculada como colaborador')
+        
+        expediente = ExpedientesDocumentales.objects.filter(id_expediente_documental=id_expediente).first()
+        if not expediente:
+            raise NotFound('No se encontró el expediente ingresado')
+        
+        id_cat_serie_und = expediente.id_cat_serie_und_org_ccd_trd_prop.id_cat_serie_und.id_cat_serie_und
+        
+        permiso_und_ord_ccd = PermisosUndsOrgActualesSerieExpCCD.objects.filter(id_cat_serie_und_org_ccd=id_cat_serie_und, id_und_organizacional_actual=id_unidad_organizacional_actual.id_unidad_organizacional, conceder_acceso_expedientes_no_propios=True).first()
+        if not permiso_und_ord_ccd:
+            raise PermissionDenied('No tiene permiso para acceder a este módulo')
+        
+        if expediente.id_und_org_oficina_respon_actual.id_unidad_organizacional == id_unidad_organizacional_actual.id_unidad_organizacional:
+            if permiso_und_ord_ccd.denegar_conceder_acceso_exp_na_resp_series:
+                raise PermissionDenied('No tiene permiso para acceder a este módulo')
+        
+        return Response({'success':True, 'detail':'Se encontró el permiso para acceder a este módulo'}, status=status.HTTP_200_OK)
+
+class ConcesionAccesoPersonasDocumentoView(generics.ListAPIView):
+    serializer_class = ConcesionAccesoPersonasFilterSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request):
+        filter = {}
+        numero_documento = request.query_params.get('numero_documento')
+        tipo_documento = request.query_params.get('tipo_documento')
+        
+        organigrama_actual = Organigramas.objects.filter(actual=True).first()
+        if not organigrama_actual:
+            raise ValidationError('No existe organigrama actual en el sistema')
+        
+        if not numero_documento or not tipo_documento:
+            raise PermissionDenied('Debe de seleccionar el tipo de documento y digitar el número de documento')
+
+        for key,value in request.query_params.items():
+            if key in ['tipo_documento','numero_documento']:
+                filter[key]=value
+        
+        persona = Personas.objects.filter(**filter).filter(~Q(id_cargo=None) and ~Q(id_unidad_organizacional_actual=None) and Q(es_unidad_organizacional_actual=True)).filter(id_unidad_organizacional_actual__id_organigrama=organigrama_actual.id_organigrama)
+
+        if persona: 
+            serializador = self.serializer_class(persona,many=True)
+            return Response ({'success':True,'detail':'Se encontraron personas: ','data':serializador.data},status=status.HTTP_200_OK) 
+        
+        else:
+            return Response ({'success':True,'detail':'No existe la persona, o no está en una unidad organizacional actual','data':[]},status=status.HTTP_200_OK) 
+
+class ConcesionAccesoPersonasFiltroView(generics.ListAPIView):
+    serializer_class = ConcesionAccesoPersonasFilterSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        filter={}
+        organigrama_actual = Organigramas.objects.filter(actual=True).first()
+        if not organigrama_actual:
+            raise ValidationError('No existe organigrama actual en el sistema')
+        
+        for key,value in request.query_params.items():
+            if key in ['tipo_documento','numero_documento','primer_nombre','segundo_nombre','primer_apellido','segundo_apellido','id_unidad_organizacional_actual']:
+                if key == 'numero_documento':
+                    if value != '':
+                        filter[key+'__icontains']=value
+                elif key == 'tipo_documento':
+                    if value != '':
+                        filter[key]=value
+                elif key == 'id_unidad_organizacional_actual':
+                    if value != '':
+                        filter[key]=value
+                else:
+                    if value != '':
+                        filter[key+'__icontains']=value
+                
+        personas = Personas.objects.filter(**filter).filter(~Q(id_cargo=None) & ~Q(id_unidad_organizacional_actual=None) & Q(es_unidad_organizacional_actual=True)).filter(id_unidad_organizacional_actual__id_organigrama=organigrama_actual.id_organigrama)
+
+        if personas:
+            serializador = self.serializer_class(personas, many=True)
+            return Response ({'success':True,'detail':'Se encontraron personas: ','data':serializador.data},status=status.HTTP_200_OK) 
+        
+        else:
+            return Response ({'success':True,'detail':'No se encontraron personas','data':[]},status=status.HTTP_200_OK) 
+
+class ConcesionAccesoExpedientesCreateView(generics.CreateAPIView):
+    serializer_class = ConcesionAccesoExpedientesCreateSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def create(self, request, id_expediente):
+        data = request.data
+        persona_logueada = request.user.persona.id_persona
+        
+        expediente = ExpedientesDocumentales.objects.filter(id_expediente_documental=id_expediente).first()
+        if not expediente:
+            raise NotFound('No se encontró el expediente ingresado')
+        
+        for item in data:
+            item['id_persona_concede_acceso'] = persona_logueada
+            item['id_expediente'] = id_expediente
+            
+            fecha_acceso_inicia = datetime.strptime(item['fecha_acceso_inicia'], '%Y-%m-%d')
+            fecha_acceso_termina = datetime.strptime(item['fecha_acceso_termina'], '%Y-%m-%d')
+            
+            if fecha_acceso_inicia > fecha_acceso_termina:
+                raise ValidationError('La fecha desde de la concesión no puede ser mayor a la fecha hasta')
+        
+        serializer = self.serializer_class(data=data, many=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        
+        return Response({'success':True, 'detail':'Se concedió acceso correctamente a las personas elegidas', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+
+class ConcesionAccesoDocumentosCreateView(generics.CreateAPIView):
+    serializer_class = ConcesionAccesoDocumentosCreateSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def create(self, request, id_documento_de_archivo_exped):
+        data = request.data
+        persona_logueada = request.user.persona.id_persona
+        
+        doc_expediente = DocumentosDeArchivoExpediente.objects.filter(id_documento_de_archivo_exped=id_documento_de_archivo_exped).first()
+        if not doc_expediente:
+            raise NotFound('No se encontró el expediente ingresado')
+        
+        for item in data:
+            item['id_persona_concede_acceso'] = persona_logueada
+            item['id_documento_exp'] = id_documento_de_archivo_exped
+            
+            fecha_acceso_inicia = datetime.strptime(item['fecha_acceso_inicia'], '%Y-%m-%d')
+            fecha_acceso_termina = datetime.strptime(item['fecha_acceso_termina'], '%Y-%m-%d')
+            
+            if fecha_acceso_inicia > fecha_acceso_termina:
+                raise ValidationError('La fecha desde de la concesión no puede ser mayor a la fecha hasta')
+        
+        serializer = self.serializer_class(data=data, many=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        
+        return Response({'success':True, 'detail':'Se concedió acceso correctamente a las personas elegidas', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+    
+class ConcesionAccesoExpedientesGetView(generics.ListAPIView):
+    serializer_class = ConcesionAccesoExpedientesGetSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_expediente):
+        propios = request.query_params.get('propios', '')
+        if propios != '':
+            propios = True if propios.lower() == 'true' else False
+            
+        persona_logueada = request.user.persona.id_persona
+            
+        concesiones = ConcesionesAccesoAExpsYDocs.objects.filter(id_expediente=id_expediente)
+        concesiones = concesiones.filter(id_persona_concede_acceso=persona_logueada) if propios else concesiones
+        if not concesiones:
+            raise NotFound('No ha encontraron concesiones de expedientes')
+        
+        serializer = self.serializer_class(concesiones, many=True)
+        
+        return Response({'success':True, 'detail':'Se encontraron las siguientes concesiones realizadas', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class ConcesionAccesoDocumentosGetView(generics.ListAPIView):
+    serializer_class = ConcesionAccesoDocumentosGetSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_documento_de_archivo_exped):
+        propios = request.query_params.get('propios', '')
+        if propios != '':
+            propios = True if propios.lower() == 'true' else False
+            
+        persona_logueada = request.user.persona.id_persona
+            
+        concesiones = ConcesionesAccesoAExpsYDocs.objects.filter(id_documento_exp=id_documento_de_archivo_exped)
+        concesiones = concesiones.filter(id_persona_concede_acceso=persona_logueada) if propios else concesiones
+        if not concesiones:
+            raise NotFound('No ha encontraron concesiones de documentos de expedientes')
+        
+        serializer = self.serializer_class(concesiones, many=True)
+        
+        return Response({'success':True, 'detail':'Se encontraron las siguientes concesiones realizadas', 'data': serializer.data}, status=status.HTTP_200_OK)

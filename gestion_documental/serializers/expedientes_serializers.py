@@ -6,7 +6,7 @@ from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from django.db.models import Max, F
 from gestion_documental.models.conf__tipos_exp_models import ConfiguracionTipoExpedienteAgno
 from gestion_documental.models.depositos_models import CarpetaCaja 
-from gestion_documental.models.expedientes_models import ExpedientesDocumentales,ArchivosDigitales,DocumentosDeArchivoExpediente,IndicesElectronicosExp,Docs_IndiceElectronicoExp,CierresReaperturasExpediente,ArchivosSoporte_CierreReapertura
+from gestion_documental.models.expedientes_models import ConcesionesAccesoAExpsYDocs, ExpedientesDocumentales,ArchivosDigitales,DocumentosDeArchivoExpediente,IndicesElectronicosExp,Docs_IndiceElectronicoExp,CierresReaperturasExpediente,ArchivosSoporte_CierreReapertura
 from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, TablaRetencionDocumental, TipologiasDoc
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError, PermissionDenied
@@ -15,6 +15,9 @@ from django.conf import settings
 import os
 import operator, itertools
 import json
+from transversal.models.personas_models import Personas
+
+from transversal.serializers.personas_serializers import PersonasFilterSerializer
 
 
 ######################### SERIALIZERS EXPEDIENTE #########################
@@ -1016,4 +1019,120 @@ class FirmaCierreGetSerializer(serializers.ModelSerializer):
             'telefono_celular',
             'email',
             'observacion_firme_cierre'
+        ]
+      
+class ConcesionAccesoPersonasFilterSerializer(PersonasFilterSerializer):
+    nombre_unidad_organizacional_actual = serializers.ReadOnlyField(source='id_unidad_organizacional_actual.nombre', default=None)
+    
+    class Meta:
+        model =  Personas
+        fields = PersonasFilterSerializer.Meta.fields + [
+            'id_unidad_organizacional_actual',
+            'es_unidad_organizacional_actual',
+            'nombre_unidad_organizacional_actual',
+        ]
+
+class ConcesionAccesoExpedientesCreateSerializer(serializers.ModelSerializer):
+        
+    class Meta:
+        model =  ConcesionesAccesoAExpsYDocs
+        fields = [
+            'id_concesion_acc',
+            'id_persona_concede_acceso',
+            'id_persona_recibe_acceso',
+            'id_unidad_org_destinatario_conceder',
+            'id_expediente',
+            'con_acceso_tipologias_reservadas',
+            'fecha_acceso_inicia',
+            'fecha_acceso_termina',
+            'observacion'
+        ]
+        extra_kwargs = {
+            'id_concesion_acc': {'read_only':True},
+            'id_persona_recibe_acceso': {'required': True, 'allow_null':False},
+            'id_unidad_org_destinatario_conceder': {'required': True, 'allow_null':False},
+            'con_acceso_tipologias_reservadas': {'required': True, 'allow_null':False},
+            'fecha_acceso_inicia': {'required': True, 'allow_null':False},
+            'fecha_acceso_termina': {'required': True, 'allow_null':False},
+            'observacion': {'required': True, 'allow_blank':False, 'allow_null':False},
+        }
+        
+class ConcesionAccesoDocumentosCreateSerializer(serializers.ModelSerializer):
+        
+    class Meta:
+        model =  ConcesionesAccesoAExpsYDocs
+        fields = [
+            'id_concesion_acc',
+            'id_persona_concede_acceso',
+            'id_persona_recibe_acceso',
+            'id_unidad_org_destinatario_conceder',
+            'id_documento_exp',
+            'fecha_acceso_inicia',
+            'fecha_acceso_termina',
+            'observacion'
+        ]
+        extra_kwargs = {
+            'id_concesion_acc': {'read_only':True},
+            'id_persona_recibe_acceso': {'required': True, 'allow_null':False},
+            'id_unidad_org_destinatario_conceder': {'required': True, 'allow_null':False},
+            'fecha_acceso_inicia': {'required': True, 'allow_null':False},
+            'fecha_acceso_termina': {'required': True, 'allow_null':False},
+            'observacion': {'required': True, 'allow_blank':False, 'allow_null':False},
+        }
+        
+class ConcesionAccesoExpedientesGetSerializer(serializers.ModelSerializer):
+    nombre_persona_recibe_acceso = serializers.SerializerMethodField()
+    nombre_unidad_org_destinatario_conceder = serializers.ReadOnlyField(source='id_unidad_org_destinatario_conceder.id_unidad_organizacional.nombre', default=None)
+
+    def get_nombre_persona_recibe_acceso(self, obj):
+        nombre_persona_recibe_acceso = None
+        if obj.id_persona_recibe_acceso:
+            nombre_list = [obj.id_persona_recibe_acceso.primer_nombre, obj.id_persona_recibe_acceso.segundo_nombre,
+                            obj.id_persona_recibe_acceso.primer_apellido, obj.id_persona_recibe_acceso.segundo_apellido]
+            nombre_persona_recibe_acceso = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_recibe_acceso = nombre_persona_recibe_acceso if nombre_persona_recibe_acceso != "" else None
+        return nombre_persona_recibe_acceso
+        
+    class Meta:
+        model =  ConcesionesAccesoAExpsYDocs
+        fields = [
+            'id_concesion_acc',
+            'id_persona_concede_acceso',
+            'id_persona_recibe_acceso',
+            'nombre_persona_recibe_acceso',
+            'id_unidad_org_destinatario_conceder',
+            'nombre_unidad_org_destinatario_conceder',
+            'id_expediente',
+            'con_acceso_tipologias_reservadas',
+            'fecha_acceso_inicia',
+            'fecha_acceso_termina',
+            'observacion'
+        ]
+        
+class ConcesionAccesoDocumentosGetSerializer(serializers.ModelSerializer):
+    nombre_persona_recibe_acceso = serializers.SerializerMethodField()
+    nombre_unidad_org_destinatario_conceder = serializers.ReadOnlyField(source='id_unidad_org_destinatario_conceder.id_unidad_organizacional.nombre', default=None)
+
+    def get_nombre_persona_recibe_acceso(self, obj):
+        nombre_persona_recibe_acceso = None
+        if obj.id_persona_recibe_acceso:
+            nombre_list = [obj.id_persona_recibe_acceso.primer_nombre, obj.id_persona_recibe_acceso.segundo_nombre,
+                            obj.id_persona_recibe_acceso.primer_apellido, obj.id_persona_recibe_acceso.segundo_apellido]
+            nombre_persona_recibe_acceso = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_recibe_acceso = nombre_persona_recibe_acceso if nombre_persona_recibe_acceso != "" else None
+        return nombre_persona_recibe_acceso
+        
+    class Meta:
+        model =  ConcesionesAccesoAExpsYDocs
+        fields = [
+            'id_concesion_acc',
+            'id_persona_concede_acceso',
+            'id_persona_recibe_acceso',
+            'nombre_persona_recibe_acceso',
+            'id_unidad_org_destinatario_conceder',
+            'nombre_unidad_org_destinatario_conceder',
+            'id_documento_exp',
+            'fecha_acceso_inicia',
+            'fecha_acceso_termina',
+            'observacion'
         ]
