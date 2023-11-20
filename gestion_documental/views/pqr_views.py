@@ -1,14 +1,17 @@
 
 import copy
+from datetime import datetime
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.models.radicados_models import PQRSDF, MediosSolicitud, TiposPQR
+from gestion_documental.models.radicados_models import PQRSDF, EstadosSolicitudes, MediosSolicitud, TiposPQR
 from rest_framework.response import Response
-from gestion_documental.serializers.pqr_serializers import MediosSolicitudCreateSerializer, MediosSolicitudDeleteSerializer, MediosSolicitudSearchSerializer, MediosSolicitudUpdateSerializer, PQRSDFSerializer, TiposPQRGetSerializer, TiposPQRUpdateSerializer
+from gestion_documental.serializers.pqr_serializers import MediosSolicitudCreateSerializer, MediosSolicitudDeleteSerializer, MediosSolicitudSearchSerializer, MediosSolicitudUpdateSerializer, PQRSDFPostSerializer, PQRSDFSerializer, TiposPQRGetSerializer, TiposPQRUpdateSerializer
+from gestion_documental.views.panel_ventanilla_views import Estados_PQRCreate
 from seguridad.utils import Util
 
 from django.db.models import Q
+from django.db import transaction
 class TiposPQRGet(generics.ListAPIView):
     serializer_class = TiposPQRGetSerializer
     queryset = TiposPQR.objects.all()
@@ -81,8 +84,7 @@ class GetPQRSDFForStatus(generics.ListAPIView):
         else:
             return Response({'success':True, 'detail':'No se encontraron PQRSDF asociadas al titular'},status=status.HTTP_200_OK) 
 
-
-
+ 
  ########################## MEDIOS DE SOLICITUD ##########################
 
 
