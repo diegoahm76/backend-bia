@@ -14,7 +14,8 @@ from almacen.serializers.bienes_serializers import (
     EntradaSerializer,
     CatalogoBienesActivoFijoPutSerializer,
     SerializerItemEntradaConsumoPut,
-    TiposEntradasSerializer
+    TiposEntradasSerializer,
+    CatalagoBienesYSerializer
 )
 from almacen.models.hoja_de_vida_models import (
     HojaDeVidaComputadores,
@@ -46,6 +47,16 @@ from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from datetime import timezone
 import copy
+
+
+
+class CatalogoBienesCreate(generics.CreateAPIView):
+    serializer_class = CatalagoBienesYSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create_catalogo_bienes(self, data_in):
+        nivel_jerarquico = data_in['nivel']
+
 
 # Creación y actualización de Catalogo de Bienes
 
