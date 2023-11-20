@@ -65,8 +65,12 @@ urlpatterns = [
      path('expedientes/concesion-acceso/personas/get-by-filters/',views.ConcesionAccesoPersonasFiltroView.as_view(), name='concesion-acceso-personas-get-by-filters'),
      path('expedientes/concesion-acceso/expedientes/create/<str:id_expediente>/',views.ConcesionAccesoExpedientesCreateView.as_view(), name='concesion-acceso-exp-create'),
      path('expedientes/concesion-acceso/documentos/create/<str:id_documento_de_archivo_exped>/',views.ConcesionAccesoDocumentosCreateView.as_view(), name='concesion-acceso-doc-create'),
+     path('expedientes/concesion-acceso/expedientes/update/<str:id_expediente>/',views.ConcesionAccesoExpedientesUpdateView.as_view(), name='concesion-acceso-exp-update'),
+     path('expedientes/concesion-acceso/documentos/update/<str:id_documento_de_archivo_exped>/',views.ConcesionAccesoDocumentosUpdateView.as_view(), name='concesion-acceso-doc-update'),
      path('expedientes/concesion-acceso/expedientes/get/<str:id_expediente>/',views.ConcesionAccesoExpedientesGetView.as_view(), name='concesion-acceso-exp-get'),
      path('expedientes/concesion-acceso/documentos/get/<str:id_documento_de_archivo_exped>/',views.ConcesionAccesoDocumentosGetView.as_view(), name='concesion-acceso-doc-get'),
+     path('expedientes/concesion-acceso/expedientes/user/get/',views.ConcesionAccesoExpedientesUserGetView.as_view(), name='concesion-acceso-exp-user-get'),
+     path('expedientes/concesion-acceso/documentos/user/get/',views.ConcesionAccesoDocumentosUserGetView.as_view(), name='concesion-acceso-doc-user-get'),
      
 
 

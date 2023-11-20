@@ -1057,6 +1057,17 @@ class ConcesionAccesoExpedientesCreateSerializer(serializers.ModelSerializer):
             'observacion': {'required': True, 'allow_blank':False, 'allow_null':False},
         }
         
+class ConcesionAccesoUpdateSerializer(serializers.ModelSerializer):
+        
+    class Meta:
+        model =  ConcesionesAccesoAExpsYDocs
+        fields = [
+            'con_acceso_tipologias_reservadas',
+            'fecha_acceso_inicia',
+            'fecha_acceso_termina',
+            'observacion'
+        ]
+        
 class ConcesionAccesoDocumentosCreateSerializer(serializers.ModelSerializer):
         
     class Meta:
@@ -1082,7 +1093,10 @@ class ConcesionAccesoDocumentosCreateSerializer(serializers.ModelSerializer):
         
 class ConcesionAccesoExpedientesGetSerializer(serializers.ModelSerializer):
     nombre_persona_recibe_acceso = serializers.SerializerMethodField()
-    nombre_unidad_org_destinatario_conceder = serializers.ReadOnlyField(source='id_unidad_org_destinatario_conceder.id_unidad_organizacional.nombre', default=None)
+    nombre_persona_concede_acceso = serializers.SerializerMethodField()
+    nombre_unidad_org_destinatario_conceder = serializers.ReadOnlyField(source='id_unidad_org_destinatario_conceder.nombre', default=None)
+    titulo_expediente = serializers.ReadOnlyField(source='id_expediente.titulo_expediente', default=None)
+    codigo_exp_und_serie_subserie = serializers.ReadOnlyField(source='id_expediente.codigo_exp_und_serie_subserie', default=None)
 
     def get_nombre_persona_recibe_acceso(self, obj):
         nombre_persona_recibe_acceso = None
@@ -1092,17 +1106,29 @@ class ConcesionAccesoExpedientesGetSerializer(serializers.ModelSerializer):
             nombre_persona_recibe_acceso = ' '.join(item for item in nombre_list if item is not None)
             nombre_persona_recibe_acceso = nombre_persona_recibe_acceso if nombre_persona_recibe_acceso != "" else None
         return nombre_persona_recibe_acceso
+    
+    def get_nombre_persona_concede_acceso(self, obj):
+        nombre_persona_concede_acceso = None
+        if obj.id_persona_concede_acceso:
+            nombre_list = [obj.id_persona_concede_acceso.primer_nombre, obj.id_persona_concede_acceso.segundo_nombre,
+                            obj.id_persona_concede_acceso.primer_apellido, obj.id_persona_concede_acceso.segundo_apellido]
+            nombre_persona_concede_acceso = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_concede_acceso = nombre_persona_concede_acceso if nombre_persona_concede_acceso != "" else None
+        return nombre_persona_concede_acceso
         
     class Meta:
         model =  ConcesionesAccesoAExpsYDocs
         fields = [
             'id_concesion_acc',
             'id_persona_concede_acceso',
+            'nombre_persona_concede_acceso',
             'id_persona_recibe_acceso',
             'nombre_persona_recibe_acceso',
             'id_unidad_org_destinatario_conceder',
             'nombre_unidad_org_destinatario_conceder',
             'id_expediente',
+            'titulo_expediente',
+            'codigo_exp_und_serie_subserie',
             'con_acceso_tipologias_reservadas',
             'fecha_acceso_inicia',
             'fecha_acceso_termina',
@@ -1111,7 +1137,10 @@ class ConcesionAccesoExpedientesGetSerializer(serializers.ModelSerializer):
         
 class ConcesionAccesoDocumentosGetSerializer(serializers.ModelSerializer):
     nombre_persona_recibe_acceso = serializers.SerializerMethodField()
-    nombre_unidad_org_destinatario_conceder = serializers.ReadOnlyField(source='id_unidad_org_destinatario_conceder.id_unidad_organizacional.nombre', default=None)
+    nombre_persona_concede_acceso = serializers.SerializerMethodField()
+    nombre_unidad_org_destinatario_conceder = serializers.ReadOnlyField(source='id_unidad_org_destinatario_conceder.nombre', default=None)
+    identificacion_doc_en_expediente = serializers.ReadOnlyField(source='id_documento_exp.identificacion_doc_en_expediente', default=None)
+    nombre_asignado_documento = serializers.ReadOnlyField(source='id_documento_exp.nombre_asignado_documento', default=None)
 
     def get_nombre_persona_recibe_acceso(self, obj):
         nombre_persona_recibe_acceso = None
@@ -1121,17 +1150,29 @@ class ConcesionAccesoDocumentosGetSerializer(serializers.ModelSerializer):
             nombre_persona_recibe_acceso = ' '.join(item for item in nombre_list if item is not None)
             nombre_persona_recibe_acceso = nombre_persona_recibe_acceso if nombre_persona_recibe_acceso != "" else None
         return nombre_persona_recibe_acceso
+    
+    def get_nombre_persona_concede_acceso(self, obj):
+        nombre_persona_concede_acceso = None
+        if obj.id_persona_concede_acceso:
+            nombre_list = [obj.id_persona_concede_acceso.primer_nombre, obj.id_persona_concede_acceso.segundo_nombre,
+                            obj.id_persona_concede_acceso.primer_apellido, obj.id_persona_concede_acceso.segundo_apellido]
+            nombre_persona_concede_acceso = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_concede_acceso = nombre_persona_concede_acceso if nombre_persona_concede_acceso != "" else None
+        return nombre_persona_concede_acceso
         
     class Meta:
         model =  ConcesionesAccesoAExpsYDocs
         fields = [
             'id_concesion_acc',
             'id_persona_concede_acceso',
+            'nombre_persona_concede_acceso',
             'id_persona_recibe_acceso',
             'nombre_persona_recibe_acceso',
             'id_unidad_org_destinatario_conceder',
             'nombre_unidad_org_destinatario_conceder',
             'id_documento_exp',
+            'identificacion_doc_en_expediente',
+            'nombre_asignado_documento',
             'fecha_acceso_inicia',
             'fecha_acceso_termina',
             'observacion'
