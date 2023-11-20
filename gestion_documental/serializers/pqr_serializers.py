@@ -114,3 +114,16 @@ class PQRSDFSerializer(serializers.ModelSerializer):
     class Meta:
         model = PQRSDF
         fields = '__all__'
+
+class PQRSDFPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PQRSDF
+        fields = '__all__'
+        # extra_kwargs = {
+        #     'cod_tipo_PQRSDF': {'required': True},
+        #     'id_medio_solicitud': {'required': True},
+        #     'cod_forma_presentacion': {'required': True},
+        #     'asunto': {'required': True},
+        #     'descripcion': {'required': True},
+        #     'id_sucursal_especifica_implicada': {'required': True},
+        # }

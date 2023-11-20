@@ -40,7 +40,6 @@ class EntradaCreateSerializer(serializers.ModelSerializer):
             'id_creador': {'required': True}
         }
 
-
 class EntradaUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model= EntradasAlmacen
@@ -63,7 +62,6 @@ class EntradaUpdateSerializer(serializers.ModelSerializer):
             "id_persona_ult_act_dif_creador":{'read_only': True},
         }
 
-
 class CreateUpdateItemEntradaConsumoSerializer(serializers.ModelSerializer):
     class Meta:
         model= ItemEntradaAlmacen
@@ -84,7 +82,6 @@ class CreateUpdateItemEntradaConsumoSerializer(serializers.ModelSerializer):
             'valor_total_item': {'required': True},
             'id_bodega': {'required': True}
         }
-
 
 class SerializerItemEntradaConsumo(serializers.ModelSerializer):
     class Meta:
@@ -170,7 +167,6 @@ class SerializerUpdateItemEntradaActivosFijos(serializers.ModelSerializer):
             'cod_estado': {'required': True}
         }
 
-
 class ItemEntradaSerializer(serializers.ModelSerializer):
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
     nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
@@ -190,4 +186,11 @@ class EntradaSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = EntradasAlmacen
+        fields = '__all__'
+
+
+class CatalagoBienesYSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CatalogoBienes
         fields = '__all__'
