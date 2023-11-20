@@ -12,7 +12,6 @@ urlpatterns = [
     path('tipos_pqr/update/<str:pk>/', views.TiposPQRUpdate.as_view(), name='update-tipos-radicado'),
     path('get_pqrsdf/<str:id_persona_titular>/', views.GetPQRSDFForStatus.as_view(), name='get-pqrsdf'),
 
-
     
     #Medios_Solicitud
     path('tipos_pqr/crear-medio-solicitud/',views.MediosSolicitudCreate.as_view(), name='crear-medio-solicitud'),
