@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
 from gestion_documental.models.radicados_models import PQRSDF, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, SolicitudDeDigitalizacion, T262Radicados
 from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
-from gestion_documental.serializers.ventanilla_pqrs_serializers import ComplementosUsu_PQRGetSerializer, Estados_PQRPostSerializer, EstadosSolicitudesGetSerializer, PQRSDFGetSerializer, PQRSDFPutSerializer, SolicitudDeDigitalizacionPostSerializer
+from gestion_documental.serializers.ventanilla_pqrs_serializers import ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_PQRPostSerializer, EstadosSolicitudesGetSerializer, PQRSDFCabezeraGetSerializer, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer
 from seguridad.utils import Util
 from datetime import datetime
 from rest_framework.permissions import IsAuthenticated
@@ -141,3 +141,93 @@ class SolicitudDeDigitalizacionCreate(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
         return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':serializer.data,}, status=status.HTTP_200_OK)
+    
+
+
+
+class SolicitudDeDigitalizacionComplementoCreate(generics.CreateAPIView):
+    serializer_class = SolicitudDeDigitalizacionPostSerializer
+    serializer_complemento = ComplementosUsu_PQRPutSerializer
+    queryset =SolicitudDeDigitalizacion.objects.all()
+    permission_classes = [IsAuthenticated]
+    #creador_estados = Estados_PQRCreate
+    def post(self, request):
+        data_in = request.data
+
+        complemento= ComplementosUsu_PQR.objects.filter(idComplementoUsu_PQR=request.data['id_complemento_usu_pqr']).first()
+        if not complemento:
+            raise NotFound("No existe pqrsdf")
+        
+        if  not complemento.requiere_digitalizacion:
+            raise ValidationError("No requiere digitalizacion")
+        data_in['fecha_solicitud'] = datetime.now()
+        data_in['digitalizacion_completada'] = False
+        data_in['devuelta_sin_completar'] = False
+        data_in['id_persona_digitalizo'] = request.user.persona.id_persona
+
+        #print(pqr.id_estado_actual_solicitud)
+        
+        
+        serializer = self.serializer_class(data=data_in)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        #Actualizacion de fecha de complemento
+        data_complemento = {}
+        data_complemento['fecha_envio_definitivo_digitalizacion'] = datetime.now()
+        complemento_serializer = self.serializer_complemento(complemento,data=data_complemento,partial=True )
+        complemento_serializer.is_valid(raise_exception=True)
+        complemento_serializer.save()
+        return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':serializer.data,'complemento':complemento_serializer.data}, status=status.HTTP_200_OK)
+
+
+
+class CabezerasPQRSDFGet(generics.ListAPIView):
+    serializer_class = PQRSDFCabezeraGetSerializer
+    queryset =PQRSDF.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request):
+        tipo_busqueda = 'PQRSDF'
+        data_respuesta = []
+        filter={}
+        
+        for key, value in request.query_params.items():
+
+            if key == 'radicado':
+                if value !='':
+                    filter['id_radicado__nro_radicado__icontains'] = value
+            if key =='estado_actual_solicitud':
+                if value != '':
+                    filter['id_estado_actual_solicitud__estado_solicitud__nombre__icontains'] = value    
+            if key == 'tipo_solicitud':
+                if value != '':
+                    tipo_busqueda = False
+        
+        if tipo_busqueda == 'PQRSDF':
+            instance = self.get_queryset().filter(**filter).order_by('fecha_radicado')
+
+            if not instance:
+                raise NotFound("No existen registros")
+
+            serializador = self.serializer_class(instance,many=True)
+            data_respuesta = serializador.data
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_respuesta,}, status=status.HTTP_200_OK)
+
+
+class Historico_Solicitud_PQRSDFGet(generics.ListAPIView):
+    serializer_class = PQRSDFHistoricoGetSerializer
+    queryset =PQRSDF.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,pqr):
+
+        instance =PQRSDF.objects.filter(id_PQRSDF=pqr).first()
+
+        if not instance:
+                raise NotFound("No existen registros")
+
+        serializador = self.serializer_class(instance)
+        data_respuesta = serializador.data
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_respuesta,}, status=status.HTTP_200_OK)

@@ -25,7 +25,11 @@ urlpatterns = [
     path('cod-nivel-consecutivo/', views.CodNivelConsecutivo.as_view(), name='codigo-nivel-consecutivo'),
     path('tipo-consulta-pqrsdf/', views.TipoConsultaPQRSDF.as_view(), name='estado-pqrsdf'),
     path('tipo-representacion-pqrsdf/', views.TipoRepresentacionPQRSDF.as_view(), name='estado-pqrsdf'),
-    path('estado-pqrsdf/', views.EstadoPQRSDF.as_view(), name='estado-pqrsdf')
+    path('estado-pqrsdf/', views.EstadoPQRSDF.as_view(), name='estado-pqrsdf'),
+    path('forma-presentacion-pqrsdf/', views.FormaPresentacionPQRSDF.as_view(), name='forma-presentacion-pqrsdf'),
+    path('medio-almacenamiento/', views.MediosDeAlmacenamiento.as_view(), name='medio-almacenamiento'),
+    path('tipo-archivo/', views.TipoArchivosChoices.as_view(), name='tipo-archivo'),
+    path('origen-archivo/', views.OrigenArchivoChoices.as_view(), name='tipo-archivo')
     #RangoEdad
     
 ]
