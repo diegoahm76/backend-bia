@@ -1,5 +1,15 @@
 from django.db import models
-from gestion_documental.choices.tipos_pqr_choices import TIPOS_PQR
+from gestion_documental.choices.pqrsdf_choices import (
+    TIPOS_PQR,
+    COD_TIPO_TAREA_CHOICES,
+    COD_ESTADO_ASIGNACION_CHOICES,
+    COD_ESTADO_SOLICITUD_CHOICES,
+    RELACION_TITULAR,
+    FORMA_PRESENTACION,
+    TIPOS_OFICIO_CHOICES
+    
+)
+
 from gestion_documental.models.expedientes_models import ArchivosDigitales, DocumentosDeArchivoExpediente, ExpedientesDocumentales
 from gestion_documental.models.trd_models import TipologiasDoc
 from seguridad.models import Personas
@@ -7,10 +17,14 @@ from gestion_documental.choices.tipo_radicado_choices import TIPOS_RADICADO_CHOI
 from transversal.models.base_models import Municipio
 from transversal.models.entidades_models import SucursalesEmpresas
 from transversal.models.organigrama_models import UnidadesOrganizacionales
+<<<<<<< HEAD
 from gestion_documental.choices.forma_presentacion_pqrsdf_choices import forma_presentacion_pqrsdf_CHOICES
 from gestion_documental.choices.medio_almacenamiento_choices import medio_almacenamiento_CHOICES
 from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
 from gestion_documental.choices.origen_archivo_choices import origen_archivo_CHOICES
+=======
+
+>>>>>>> develop
 class ConfigTiposRadicadoAgno(models.Model):
 
     id_config_tipo_radicado_agno = models.SmallAutoField(primary_key=True, db_column='T235IdConfigTipoRadicadoAgno')
@@ -39,6 +53,7 @@ class TiposPQR(models.Model):
     
     def __str__(self):
         return self.nombre
+    
     class Meta:
         db_table = 'T252TiposPQR'  
         verbose_name = 'Tipo de PQR'  
@@ -75,6 +90,7 @@ class EstadosSolicitudes(models.Model):
         verbose_name_plural = 'Estados de Solictud' 
 
 
+<<<<<<< HEAD
 RELACION_TITULAR = [
         ('MP', 'Misma persona'),
         ('RL', 'Representante legal'),
@@ -82,6 +98,8 @@ RELACION_TITULAR = [
 
     ]
 
+=======
+>>>>>>> develop
 class T262Radicados(models.Model):
     id_radicado = models.AutoField(primary_key=True, db_column='T262IdRadicado')
     id_modulo_que_radica = models.SmallIntegerField(db_column='T262Id_ModuloQueRadica')
@@ -219,10 +237,6 @@ class modulos_radican(models.Model):
     class Meta:
         db_table = 'T261ModulosQueRadican'
 
-TIPOS_OFICIO_CHOICES = (
-    ('S', 'Solicitud'),
-    ('R', 'Requerimiento'),
-)
 class SolicitudAlUsuarioSobrePQRSDF(models.Model):
     id_solicitud_al_usuario_sobre_pqrsdf = models.AutoField(primary_key=True, db_column='T266IdSolicitudAlUsuarioSobrePQR')
     id_pqrsdf = models.ForeignKey(PQRSDF, models.CASCADE, db_column='T266Id_PQRSDF')
@@ -291,26 +305,6 @@ class BandejaTareasPersona(models.Model):
     class Meta:
         db_table = 'T264BandejasTareas_Persona'
         unique_together = ('id_persona',)
-
-
-COD_TIPO_TAREA_CHOICES = (
-    ('Rpqr', 'Responder PQRSDF'),
-    ('Rtra', 'Responder Trámite'),
-  
-)
-
-COD_ESTADO_ASIGNACION_CHOICES = (
-    ('Ac', 'Aceptado'),
-    ('Re', 'Rechazado'),
- 
-)
-
-COD_ESTADO_SOLICITUD_CHOICES = (
-    ('De', 'Delegada'),
-    ('Ep', 'En Proceso de Respuesta'),
-    ('Re', 'Respondida por el propietario'),
-   
-)
 
 
 class TareaBandejaTareasPersona(models.Model):
