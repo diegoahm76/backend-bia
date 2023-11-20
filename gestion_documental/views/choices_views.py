@@ -21,7 +21,7 @@ from gestion_documental.choices.cod_nivel_consecutivo_choices import cod_nivel_c
 from gestion_documental.choices.tipo_consulta_pqrsdf_choices import tipo_consulta_pqrsdf_CHOICES
 from gestion_documental.choices.tipo_representacion_pqrsdf_choices import tipo_representacion_pqrsdf_CHOICES
 from gestion_documental.choices.estado_pqrsdf_choices import estado_pqrsdf_CHOICES
-from gestion_documental.choices.forma_presentacion_pqrsdf_choices import forma_presentacion_pqrsdf_CHOICES
+from gestion_documental.choices.pqrsdf_choices import (FORMA_PRESENTACION)
 from gestion_documental.choices.medio_almacenamiento_choices import medio_almacenamiento_CHOICES
 from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
 from gestion_documental.choices.origen_archivo_choices import origen_archivo_CHOICES
@@ -148,7 +148,7 @@ class EstadoPQRSDF(APIView):
     
 class FormaPresentacionPQRSDF(APIView):
     def get(self, request):
-        choices = forma_presentacion_pqrsdf_CHOICES
+        choices = FORMA_PRESENTACION
         return Response(choices)
     
 class MediosDeAlmacenamiento(APIView):

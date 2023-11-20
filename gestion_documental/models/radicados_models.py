@@ -17,14 +17,9 @@ from gestion_documental.choices.tipo_radicado_choices import TIPOS_RADICADO_CHOI
 from transversal.models.base_models import Municipio
 from transversal.models.entidades_models import SucursalesEmpresas
 from transversal.models.organigrama_models import UnidadesOrganizacionales
-<<<<<<< HEAD
-from gestion_documental.choices.forma_presentacion_pqrsdf_choices import forma_presentacion_pqrsdf_CHOICES
 from gestion_documental.choices.medio_almacenamiento_choices import medio_almacenamiento_CHOICES
 from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
 from gestion_documental.choices.origen_archivo_choices import origen_archivo_CHOICES
-=======
-
->>>>>>> develop
 class ConfigTiposRadicadoAgno(models.Model):
 
     id_config_tipo_radicado_agno = models.SmallAutoField(primary_key=True, db_column='T235IdConfigTipoRadicadoAgno')
@@ -90,16 +85,6 @@ class EstadosSolicitudes(models.Model):
         verbose_name_plural = 'Estados de Solictud' 
 
 
-<<<<<<< HEAD
-RELACION_TITULAR = [
-        ('MP', 'Misma persona'),
-        ('RL', 'Representante legal'),
-        ('AP', 'Apoderado'),
-
-    ]
-
-=======
->>>>>>> develop
 class T262Radicados(models.Model):
     id_radicado = models.AutoField(primary_key=True, db_column='T262IdRadicado')
     id_modulo_que_radica = models.SmallIntegerField(db_column='T262Id_ModuloQueRadica')
@@ -126,7 +111,7 @@ class PQRSDF(models.Model):
     es_anonima = models.BooleanField(default=False, db_column='T257esAnonima')
     fecha_registro = models.DateTimeField(db_column='T257fechaRegistro')
     id_medio_solicitud = models.ForeignKey(MediosSolicitud,on_delete=models.CASCADE,db_column='T257Id_MedioSolicitud')
-    cod_forma_presentacion = models.CharField(max_length=1, choices=forma_presentacion_pqrsdf_CHOICES, db_column='T257codFormaPresentacion')
+    cod_forma_presentacion = models.CharField(max_length=1, choices=FORMA_PRESENTACION, db_column='T257codFormaPresentacion')
     asunto = models.CharField(max_length=100, db_column='T257asunto')
     descripcion = models.CharField(max_length=500, db_column='T257descripcion')
     cantidad_anexos = models.SmallIntegerField(db_column='T257cantidadAnexos')
