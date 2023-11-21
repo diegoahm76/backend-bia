@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
 from gestion_documental.models.radicados_models import PQRSDF, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, SolicitudDeDigitalizacion, T262Radicados
 from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
-from gestion_documental.serializers.ventanilla_pqrs_serializers import ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_PQRPostSerializer, EstadosSolicitudesGetSerializer, PQRSDFCabezeraGetSerializer, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer
+from gestion_documental.serializers.ventanilla_pqrs_serializers import ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_PQRPostSerializer, EstadosSolicitudesGetSerializer, PQRSDFAnexosGetSerializer, PQRSDFCabezeraGetSerializer, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer
 from seguridad.utils import Util
 from datetime import datetime
 from rest_framework.permissions import IsAuthenticated
@@ -235,14 +235,34 @@ class Historico_Solicitud_PQRSDFGet(generics.ListAPIView):
 
         instance =PQRSDF.objects.filter(id_PQRSDF=pqr).first()
 
-        estado_actual = instance.id_estado_actual_solicitud
-        #print(estado_actual)
+        # estado_actual = instance.id_estado_actual_solicitud
+        # #print(estado_actual)
 
-        estados = Estados_PQR.objects.filter(PQRSDF=instance,estado_solicitud=estado_actual).order_by('-fecha_iniEstado').first()
-        estados_asociados = Estados_PQR.objects.filter(PQRSDF=instance,estado_PQR_asociado=estados).order_by('-fecha_iniEstado')
-        for x in estados_asociados:
-            print(x.estado_solicitud.nombre)
+        # estados = Estados_PQR.objects.filter(PQRSDF=instance,estado_solicitud=estado_actual).order_by('-fecha_iniEstado').first()
+        # estados_asociados = Estados_PQR.objects.filter(PQRSDF=instance,estado_PQR_asociado=estados).order_by('-fecha_iniEstado')
+        # for x in estados_asociados:
+        #     print(x.estado_solicitud.nombre)
         #print(estados)
+        if not instance:
+                raise NotFound("No existen registros")
+
+        serializador = self.serializer_class(instance)
+        data_respuesta = serializador.data
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_respuesta,}, status=status.HTTP_200_OK)
+
+
+
+class PQRSDFInfoGet(generics.ListAPIView):
+    serializer_class = PQRSDFAnexosGetSerializer
+    queryset =PQRSDF.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,pqr):
+
+        instance =PQRSDF.objects.filter(id_PQRSDF=pqr).first()
+
+
         if not instance:
                 raise NotFound("No existen registros")
 

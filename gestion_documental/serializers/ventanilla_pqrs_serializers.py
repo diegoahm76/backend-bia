@@ -20,9 +20,10 @@ class PQRSDFGetSerializer(serializers.ModelSerializer):
     estado_asignacion_grupo = serializers.SerializerMethodField()
     numero_solicitudes_digitalizacion = serializers.SerializerMethodField()
     numero_solicitudes_usuario = serializers.SerializerMethodField()
+    tiene_complementos = serializers.SerializerMethodField()
     class Meta:
         model = PQRSDF
-        fields = ['id_PQRSDF','tipo_solicitud','nombre_completo_titular','asunto','cantidad_anexos','radicado','fecha_radicado','requiere_digitalizacion','estado_solicitud','estado_asignacion_grupo','nombre_sucursal','numero_solicitudes_digitalizacion','numero_solicitudes_usuario']
+        fields = ['id_PQRSDF','tipo_solicitud','nombre_completo_titular','asunto','cantidad_anexos','radicado','fecha_radicado','requiere_digitalizacion','estado_solicitud','estado_asignacion_grupo','nombre_sucursal','numero_solicitudes_digitalizacion','numero_solicitudes_usuario','tiene_complementos']
 
     def get_radicado(self, obj):
         cadena = ""
@@ -68,6 +69,14 @@ class PQRSDFGetSerializer(serializers.ModelSerializer):
         return numero_solicitudes
     def get_numero_solicitudes_usuario(self,obj):
         return 0
+    
+    def get_tiene_complementos(self,obj):
+        id= obj.id_PQRSDF
+        complementos = ComplementosUsu_PQR.objects.filter(id_PQRSDF=id).first()
+        if complementos:
+            return True
+        else:
+            return False
 class ComplementosUsu_PQRGetSerializer(serializers.ModelSerializer):
     tipo = serializers.SerializerMethodField()
     nombre_completo_titular = serializers.SerializerMethodField()
@@ -223,3 +232,26 @@ class PQRSDFHistoricoGetSerializer(serializers.ModelSerializer):
             nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
             nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
             return nombre_completo_responsable
+        
+
+class PQRSDFAnexosGetSerializer(serializers.ModelSerializer):
+    radicado = serializers.SerializerMethodField()
+    titular = serializers.SerializerMethodField()
+    class Meta:
+        model = PQRSDF
+        fields = ['id_PQRSDF','radicado','titular','cantidad_anexos','asunto']
+    def get_radicado(self, obj):
+        cadena = ""
+        if obj.id_radicado:
+            cadena= str(obj.id_radicado.prefijo_radicado)+'-'+str(obj.id_radicado.agno_radicado)+'-'+str(obj.id_radicado.nro_radicado)
+            return cadena
+    def get_titular(self, obj):
+
+        if obj.id_persona_titular:
+            nombre_completo_responsable = None
+            nombre_list = [obj.id_persona_titular.primer_nombre, obj.id_persona_titular.segundo_nombre,
+                            obj.id_persona_titular.primer_apellido, obj.id_persona_titular.segundo_apellido]
+            nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+            return nombre_completo_responsable
+        
