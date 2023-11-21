@@ -1093,6 +1093,8 @@ class ConcesionAccesoDocumentosCreateSerializer(serializers.ModelSerializer):
         
 class ConcesionAccesoExpedientesGetSerializer(serializers.ModelSerializer):
     nombre_persona_recibe_acceso = serializers.SerializerMethodField()
+    tipo_documento_persona_recibe_acceso = serializers.ReadOnlyField(source='id_persona_recibe_acceso.tipo_documento.cod_tipo_documento', default=None)
+    numero_documento_persona_recibe_acceso = serializers.ReadOnlyField(source='id_persona_recibe_acceso.numero_documento', default=None)
     nombre_persona_concede_acceso = serializers.SerializerMethodField()
     nombre_unidad_org_destinatario_conceder = serializers.ReadOnlyField(source='id_unidad_org_destinatario_conceder.nombre', default=None)
     titulo_expediente = serializers.ReadOnlyField(source='id_expediente.titulo_expediente', default=None)
@@ -1123,6 +1125,8 @@ class ConcesionAccesoExpedientesGetSerializer(serializers.ModelSerializer):
             'id_persona_concede_acceso',
             'nombre_persona_concede_acceso',
             'id_persona_recibe_acceso',
+            'tipo_documento_persona_recibe_acceso',
+            'numero_documento_persona_recibe_acceso',
             'nombre_persona_recibe_acceso',
             'id_unidad_org_destinatario_conceder',
             'nombre_unidad_org_destinatario_conceder',
@@ -1137,6 +1141,8 @@ class ConcesionAccesoExpedientesGetSerializer(serializers.ModelSerializer):
         
 class ConcesionAccesoDocumentosGetSerializer(serializers.ModelSerializer):
     nombre_persona_recibe_acceso = serializers.SerializerMethodField()
+    tipo_documento_persona_recibe_acceso = serializers.ReadOnlyField(source='id_persona_recibe_acceso.tipo_documento.cod_tipo_documento', default=None)
+    numero_documento_persona_recibe_acceso = serializers.ReadOnlyField(source='id_persona_recibe_acceso.numero_documento', default=None)
     nombre_persona_concede_acceso = serializers.SerializerMethodField()
     nombre_unidad_org_destinatario_conceder = serializers.ReadOnlyField(source='id_unidad_org_destinatario_conceder.nombre', default=None)
     identificacion_doc_en_expediente = serializers.ReadOnlyField(source='id_documento_exp.identificacion_doc_en_expediente', default=None)
@@ -1167,6 +1173,8 @@ class ConcesionAccesoDocumentosGetSerializer(serializers.ModelSerializer):
             'id_persona_concede_acceso',
             'nombre_persona_concede_acceso',
             'id_persona_recibe_acceso',
+            'tipo_documento_persona_recibe_acceso',
+            'numero_documento_persona_recibe_acceso',
             'nombre_persona_recibe_acceso',
             'id_unidad_org_destinatario_conceder',
             'nombre_unidad_org_destinatario_conceder',
