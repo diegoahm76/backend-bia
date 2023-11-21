@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
 from gestion_documental.models.radicados_models import PQRSDF, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, SolicitudDeDigitalizacion, T262Radicados
 from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
-from gestion_documental.serializers.ventanilla_pqrs_serializers import ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_PQRPostSerializer, EstadosSolicitudesGetSerializer, PQRSDFCabezeraGetSerializer, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer
+from gestion_documental.serializers.ventanilla_pqrs_serializers import ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_PQRPostSerializer, EstadosSolicitudesGetSerializer, PQRSDFAnexosGetSerializer, PQRSDFCabezeraGetSerializer, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer
 from seguridad.utils import Util
 from datetime import datetime
 from rest_framework.permissions import IsAuthenticated
@@ -43,7 +43,7 @@ class PQRSDFGet(generics.ListAPIView):
                     filter['id_radicado__nro_radicado__icontains'] = value
             if key =='estado_actual_solicitud':
                 if value != '':
-                    filter['id_estado_actual_solicitud__estado_solicitud__nombre__icontains'] = value    
+                    filter['id_estado_actual_solicitud__nombre__icontains'] = value    
             if key == 'tipo_solicitud':
                 if value != '':
                     tipo_busqueda = False
@@ -83,7 +83,7 @@ class Estados_PQRCreate(generics.CreateAPIView):
 
     def crear_estado(self,data):
         data_in = data
-        data_in['fecha_iniEstado'] = datetime.now()
+        
 
         serializer = Estados_PQRPostSerializer(data=data_in)
         serializer.is_valid(raise_exception=True)
@@ -102,7 +102,7 @@ class SolicitudDeDigitalizacionCreate(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     creador_estados = Estados_PQRCreate
     def post(self, request):
-
+        fecha_actual = datetime.now()    
         pqr= PQRSDF.objects.filter(id_PQRSDF=request.data['id_pqrsdf']).first()
         if not pqr:
             raise NotFound("No existe pqrsdf")
@@ -110,13 +110,14 @@ class SolicitudDeDigitalizacionCreate(generics.CreateAPIView):
         if  not pqr.requiere_digitalizacion:
             raise ValidationError("No requiere digitalizacion")
         print(pqr.id_estado_actual_solicitud)
-        if pqr.id_estado_actual_solicitud:
-            if pqr.id_estado_actual_solicitud.id_estado_solicitud == 3:
-                raise ValidationError('No se puede realizar la solicitud porque tiene pendientes')
+        # if pqr.id_estado_actual_solicitud:
+        #     if pqr.id_estado_actual_solicitud.id_estado_solicitud == 3:
+        #         raise ValidationError('No se puede realizar la solicitud porque tiene pendientes')
         #CREA UN ESTADO NUEVO DE PQR T255
         data_estado = {}
         data_estado['PQRSDF'] = request.data['id_pqrsdf']
         data_estado['estado_solicitud'] = 3
+        data_estado['fecha_iniEstado'] = fecha_actual
         respuesta_estado = self.creador_estados.crear_estado(self,data_estado)
         data_respuesta_estado_asociado = respuesta_estado.data['data']
         #ASOCIAR ESTADO
@@ -124,6 +125,7 @@ class SolicitudDeDigitalizacionCreate(generics.CreateAPIView):
         data_estado_asociado['PQRSDF'] = request.data['id_pqrsdf'] 
         data_estado_asociado['estado_solicitud'] = 9
         data_estado_asociado['estado_PQR_asociado'] =data_respuesta_estado_asociado['id_estado_PQR']
+        data_estado_asociado['fecha_iniEstado'] = fecha_actual
         respuesta_estado_asociado = self.creador_estados.crear_estado(self,data_estado_asociado)
         
         
@@ -134,13 +136,13 @@ class SolicitudDeDigitalizacionCreate(generics.CreateAPIView):
         
         #raise ValidationError("HOLA")
         data_in = request.data
-        data_in['fecha_solicitud'] = datetime.now()
+        data_in['fecha_solicitud'] = fecha_actual
         data_in['digitalizacion_completada'] = False
         data_in['devuelta_sin_completar'] = False
         serializer = self.serializer_class(data=data_in)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
-        return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':serializer.data,}, status=status.HTTP_200_OK)
+        return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':serializer.data,'estados':respuesta_estado_asociado.data['data']}, status=status.HTTP_200_OK)
     
 
 
@@ -191,7 +193,8 @@ class CabezerasPQRSDFGet(generics.ListAPIView):
         tipo_busqueda = 'PQRSDF'
         data_respuesta = []
         filter={}
-        
+        historico =Historico_Solicitud_PQRSDFGet()
+        data_histo = []
         for key, value in request.query_params.items():
 
             if key == 'radicado':
@@ -209,10 +212,17 @@ class CabezerasPQRSDFGet(generics.ListAPIView):
 
             if not instance:
                 raise NotFound("No existen registros")
+            for x in instance:
+                #print(x)
+                respuesta = historico.get(self,x.id_PQRSDF)
+                #print()
+                data_histo.append({'cabezera':self.serializer_class(x).data,'detalle':respuesta.data['data']})
 
-            serializador = self.serializer_class(instance,many=True)
-            data_respuesta = serializador.data
-        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_respuesta,}, status=status.HTTP_200_OK)
+                #data_respuesta.append(historico.get(self,x.id_PQRSDF).data['data'])
+
+            #serializador = self.serializer_class(instance,many=True)
+            #data_respuesta = serializador.data
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_histo,}, status=status.HTTP_200_OK)
 
 
 class Historico_Solicitud_PQRSDFGet(generics.ListAPIView):
@@ -224,6 +234,34 @@ class Historico_Solicitud_PQRSDFGet(generics.ListAPIView):
     def get (self, request,pqr):
 
         instance =PQRSDF.objects.filter(id_PQRSDF=pqr).first()
+
+        # estado_actual = instance.id_estado_actual_solicitud
+        # #print(estado_actual)
+
+        # estados = Estados_PQR.objects.filter(PQRSDF=instance,estado_solicitud=estado_actual).order_by('-fecha_iniEstado').first()
+        # estados_asociados = Estados_PQR.objects.filter(PQRSDF=instance,estado_PQR_asociado=estados).order_by('-fecha_iniEstado')
+        # for x in estados_asociados:
+        #     print(x.estado_solicitud.nombre)
+        #print(estados)
+        if not instance:
+                raise NotFound("No existen registros")
+
+        serializador = self.serializer_class(instance)
+        data_respuesta = serializador.data
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_respuesta,}, status=status.HTTP_200_OK)
+
+
+
+class PQRSDFInfoGet(generics.ListAPIView):
+    serializer_class = PQRSDFAnexosGetSerializer
+    queryset =PQRSDF.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,pqr):
+
+        instance =PQRSDF.objects.filter(id_PQRSDF=pqr).first()
+
 
         if not instance:
                 raise NotFound("No existen registros")
