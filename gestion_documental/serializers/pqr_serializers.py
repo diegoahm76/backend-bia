@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from gestion_documental.models.radicados_models import PQRSDF, EstadosSolicitudes, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, TiposPQR, MediosSolicitud
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, EstadosSolicitudes, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, TiposPQR, MediosSolicitud
 from transversal.models.personas_models import Personas
 
 class TiposPQRGetSerializer(serializers.ModelSerializer):
@@ -127,3 +127,23 @@ class PQRSDFPostSerializer(serializers.ModelSerializer):
         #     'descripcion': {'required': True},
         #     'id_sucursal_especifica_implicada': {'required': True},
         # }
+
+class RadicadoPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = T262Radicados
+        fields = '__all__'
+
+class AnexosPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos
+        fields = '__all__'
+
+class AnexosPQRSDFPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos_PQR
+        fields = '__all__'
+
+class MetadatosPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MetadatosAnexosTmp
+        fields = '__all__'

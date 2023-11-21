@@ -4,9 +4,10 @@ from datetime import datetime
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.models.radicados_models import PQRSDF, EstadosSolicitudes, MediosSolicitud, TiposPQR
+from gestion_documental.models.radicados_models import PQRSDF, EstadosSolicitudes, MediosSolicitud, TiposPQR, modulos_radican
 from rest_framework.response import Response
-from gestion_documental.serializers.pqr_serializers import MediosSolicitudCreateSerializer, MediosSolicitudDeleteSerializer, MediosSolicitudSearchSerializer, MediosSolicitudUpdateSerializer, PQRSDFPostSerializer, PQRSDFSerializer, TiposPQRGetSerializer, TiposPQRUpdateSerializer
+from gestion_documental.serializers.pqr_serializers import AnexosPQRSDFPostSerializer, AnexosPostSerializer, MediosSolicitudCreateSerializer, MediosSolicitudDeleteSerializer, MediosSolicitudSearchSerializer, MediosSolicitudUpdateSerializer, MetadatosPostSerializer, PQRSDFPostSerializer, PQRSDFSerializer, RadicadoPostSerializer, TiposPQRGetSerializer, TiposPQRUpdateSerializer
+from gestion_documental.views.configuracion_tipos_radicados_views import ConfigTiposRadicadoAgnoGenerarN
 from gestion_documental.views.panel_ventanilla_views import Estados_PQRCreate
 from seguridad.utils import Util
 
@@ -84,7 +85,269 @@ class GetPQRSDFForStatus(generics.ListAPIView):
         else:
             return Response({'success':True, 'detail':'No se encontraron PQRSDF asociadas al titular'},status=status.HTTP_200_OK) 
 
- 
+
+class PQRSDFCreate(generics.CreateAPIView):
+    serializer_class = PQRSDFPostSerializer
+    creador_estados = Estados_PQRCreate
+
+    @transaction.atomic
+    def post(self, request):
+        try:
+            with transaction.atomic():
+                #Setea datos para modelos
+                data_pqrsdf = request.data['pqrsdf']
+                id_persona_guarda = request.data['id_persona_guarda']
+                isCreateForWeb = request.data['isCreateForWeb']
+                debe_radicar = isCreateForWeb and data_pqrsdf['es_anonima']
+                anexos = data_pqrsdf['anexos']
+
+                #Crea el pqrsdf
+                data_PQRSDF_creado = self.create_pqrsdf(data_pqrsdf)
+
+                #Guarda el nuevo estado Guardado en la tabla T255
+                self.create_historico_estado(data_PQRSDF_creado, 'GUARDADO', id_persona_guarda)
+                
+                #Guarda los anexos en la tabla T258 y la relación entre los anexos y el PQRSDF en la tabla T259
+                self.create_anexos(anexos, data_PQRSDF_creado, isCreateForWeb)
+                update_requiere_digitalizacion = all(anexo.ya_digitalizado for anexo in anexos)
+                if update_requiere_digitalizacion:
+                    self.update_pqrsdf(data_PQRSDF_creado, None, None)
+
+                #Si tiene que radicar, crea el radicado
+                if debe_radicar:
+                    #Obtiene los dias para la respuesta del PQRSDF
+                    tipo_pqr = self.get_tipos_pqr(data_pqrsdf['cod_tipo_PQRSDF'])
+                    dias_respuesta = tipo_pqr.tiempo_respuesta_en_dias
+                    
+                    #Crea el radicado
+                    data_for_create = {}
+                    data_for_create['fecha_actual'] = datetime.now()
+                    data_for_create['id_usuario'] = id_persona_guarda
+                    data_for_create['tipo_radicado'] = "E"
+                    data_for_create['modulo_radica'] = "PQRSDF"
+                    data_radicado = RadicadoCreate.post(self, data_for_create)
+
+                    #Actualiza el estado y la data del radicado al PQRSDF
+                    self.update_pqrsdf(data_PQRSDF_creado, data_radicado, dias_respuesta)
+
+                    #Guarda el nuevo estado Radicado en la tabla T255
+                    self.create_historico_estado(data_PQRSDF_creado, 'RADICADO', id_persona_guarda)
+                
+                return Response({'success':True, 'detail':'Se creo el PQRSDF correctamente', 'data':data_PQRSDF_creado}, status=status.HTTP_201_CREATED)
+        
+        except Exception as e:
+            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    
+    ##################################### METODOS DE CREACIÓN #################################
+    
+    def create_pqrsdf(self, data):
+        data_pqrsdf = self.set_data_pqrsdf(data)
+        serializer = self.get_serializer(data=data_pqrsdf)
+        serializer.is_valid(raise_exception=True)
+        serializador = serializer.save()
+        data_PQRSDF_creado = serializador.data
+        return data_PQRSDF_creado
+    
+    def create_historico_estado(self, data_PQRSDF, nombre_estado, id_persona_guarda):
+        data_estado_crear = self.set_data_estado(data_PQRSDF, nombre_estado, id_persona_guarda)
+        self.creador_estados.crear_estado(data_estado_crear)
+    
+    def update_pqrsdf(self, pqrsdf, data_radicado, dias_respuesta):
+        data_update_pqrsdf = self.set_data_update_radicado_pqrsdf(pqrsdf, data_radicado, dias_respuesta)
+        serializer = self.get_serializer(data=data_update_pqrsdf)
+        serializer.is_valid(raise_exception=True)
+        serializador = serializer.save()
+        data_pqrsdf_update = serializador.data
+        return data_pqrsdf_update
+    
+    def create_anexos(self, anexos, data_PQRSDF_creado, isCreateForWeb):
+        if anexos:
+            for anexo in anexos:
+                data_anexo = AnexosCreate.crear_anexo(anexo)
+
+                #Crea la relacion en la tabla T259
+                data_anexos_PQR = {}
+                data_anexos_PQR['id_PQRSDF'] = data_PQRSDF_creado.id_PQRSDF
+                data_anexos_PQR['id_anexo'] = data_anexo.data.id_anexo
+                AnexosPQRCreate.crear_anexo_pqr(data_anexos_PQR)
+
+                #Crea los metadatos del archivo cargado
+                data_metadatos = {}
+                data_metadatos['metadatos'] = anexo.metadatos
+                data_metadatos['anexo'] = data_anexo
+                data_metadatos['isCreateForWeb'] = isCreateForWeb
+                data_metadatos['fecha_registro'] = data_PQRSDF_creado.fecha_registro
+                MetadatosPQRCreate.create_metadatos_pqr(data_metadatos)
+
+            
+
+
+    ################################## METODOS PARA SETEAR DATOS ###############################
+
+    def set_data_pqrsdf(self, data):
+        data['fecha_registro'] = data['fecha_ini_estado_actual'] = datetime.now()
+        data['requiereDigitalizacion'] = True if data.cantidad_anexos != 0 else False
+    
+        estado = self.get_estado('GUARDADO')
+        data['id_estado_actual_solicitud'] = estado.id_estado_solicitud
+    
+        return data
+    
+    def set_data_update_radicado_pqrsdf(self, pqrsdf, data_radicado, dias_respuesta):
+        if data_radicado:
+            pqrsdf['id_radicado'] = data_radicado.id_radicado
+            pqrsdf['fecha_radicado'] = data_radicado.fecha_radicado
+            pqrsdf['dias_para_respuesta'] = dias_respuesta
+
+            estado = self.get_estado('RADICADO')
+            pqrsdf['id_estado_actual_solicitud'] = estado.id_estado_solicitud
+        else:
+            pqrsdf['requiereDigitalizacion'] = False
+
+        return pqrsdf
+
+    def set_data_estado(self, data, nombre_estado, id_persona_guarda):
+        data_estado = {}
+        data_estado['PQRSDF'] = data.id_PQRSDF
+        data_estado['fecha_iniEstado'] = data.fecha_ini_estado_actual
+        data_estado['persona_genera_estado'] = None if id_persona_guarda == 0 else id_persona_guarda
+
+        estado = self.get_estado(nombre_estado)
+        data_estado['estado_solicitud'] = estado.id_estado_solicitud
+
+        return data_estado
+    
+    ################################## METODOS ADICIONALES ###############################
+    
+    def get_tipos_pqr(self, cod_tipo_PQRSDF):
+        tipo_pqr = TiposPQR.objects.filter(cod_tipo_pqr=cod_tipo_PQRSDF).first()
+        if tipo_pqr.tiempo_respuesta_en_dias == None:
+            raise ValidationError("No se encuentra configurado el numero de dias para la respuesta. La entidad debe configurar todos los días de respuesta para todas las PQRSDF para realizar el proceso creación.")
+        return tipo_pqr
+    
+    def get_estado(self, nombre_estado):
+        estado = EstadosSolicitudes.objects.filter(nombre=nombre_estado)
+        return estado
+
+
+########################## RADICADOS ##########################
+class RadicadoCreate(generics.CreateAPIView):
+    serializer_class = RadicadoPostSerializer
+    config_radicados = ConfigTiposRadicadoAgnoGenerarN
+    
+    def post(self, request):
+        try:
+            with transaction.atomic():
+                config_tipos_radicado = self.get_config_tipos_radicado(request)
+                radicado_data = self.set_data_radicado(config_tipos_radicado, request.fecha_actual, request.id_usuario, request.modulo_radica)
+                serializer = self.get_serializer(data=radicado_data)
+                serializer.is_valid(raise_exception=True)
+                serializador = serializer.save()
+                return Response({'success':True, 'detail':'Se creo el radicado correctamente', 'data':serializador.data}, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({'error': 'Ocurrió un error durante la transacción.'}, status=500)
+
+
+    def get_config_tipos_radicado(self, request):
+        data = request
+        data_request = {
+            'user': { 'persona': { 'id_persona': request.id_usuario } },
+            'cod_tipo_radicado': request.tipo_radicado,
+            'fecha_actual': request.fecha_actual
+        }
+        config_tipos_radicados = self.config_radicados.put(self, data_request)
+        config_tipos_radicado_data = config_tipos_radicados.data
+        if config_tipos_radicado_data.implementar == False:
+            raise ValidationError("El sistema requiere que se maneje un radicado de entrada o unico, debe solicitar al administrador del sistema la configuración del radicado")
+        else:
+            return config_tipos_radicado_data
+        
+    def set_data_radicado(self, config_tipos_radicado, fecha_actual, id_usuario, modulo_radica):
+        radicado = {}
+        radicado['cod_tipo_radicado'] = config_tipos_radicado.cod_tipo_radicado
+        radicado['prefijo_radicado'] = config_tipos_radicado.prefijo_consecutivo
+        radicado['agno_radicado'] = config_tipos_radicado.prefijo_consecutivo.agno_radicado
+        radicado['nro_radicado'] = config_tipos_radicado.prefijo_consecutivo.consecutivo_actual
+        radicado['fecha_radicado'] = fecha_actual
+        radicado['id_persona_radica'] = id_usuario
+
+        modulo_radica = modulos_radican.objects.filter(nombre=modulo_radica)
+        radicado['id_modulo_que_radica'] = modulo_radica.id_ModuloQueRadica
+
+        return radicado
+        
+
+
+########################## ANEXOS Y ANEXOS PQR ##########################
+#Volver a leer las reglas para la creación de los Anexos
+class AnexosCreate(generics.CreateAPIView):
+    serializer_class = AnexosPostSerializer
+    
+    def crear_anexo(self, request):
+        try:
+            with transaction.atomic():
+                serializer = self.serializer_class(data=request)
+                serializer.is_valid(raise_exception=True)
+                serializador = serializer.save()
+                return Response({'success':True, 'detail':'Se creo el anexo correctamente', 'data':serializador.data}, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({'error': 'Ocurrió un error durante la transacción.'}, status=500)
+
+class AnexosPQRCreate(generics.CreateAPIView):
+    serializer_class = AnexosPQRSDFPostSerializer
+    
+    def crear_anexo_pqr(self, request):
+        try:
+            with transaction.atomic():
+                serializer = self.serializer_class(data=request)
+                serializer.is_valid(raise_exception=True)
+                serializador = serializer.save()
+                return Response({'success':True, 'detail':'Se creo el anexo pqr correctamente', 'data':serializador.data}, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({'error': 'Ocurrió un error durante la transacción.'}, status=500)
+
+
+########################## METADATOS ##########################   
+class MetadatosPQRCreate(generics.CreateAPIView):
+    serializer_class = MetadatosPostSerializer
+
+    def create_metadatos_pqr(self, data_metadatos):
+        try:
+            with transaction.atomic():
+                data_to_create = self.set_data_metadato(data_metadatos)
+                serializer = self.serializer_class(data=data_to_create)
+                serializer.is_valid(raise_exception=True)
+                serializador = serializer.save()
+                return Response({'success':True, 'detail':'Se creo el metadato del anexo correctamente', 'data':serializador.data}, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({'error': 'Ocurrió un error durante la transacción.'}, status=500)
+        
+    def set_data_metadato(self, data_metadatos):
+        metadato = {}
+        anexo = data_metadatos.anexo
+        data_metadato = data_metadatos.metadatos
+
+        if data_metadatos.isCreateForWeb:
+            metadato['fecha_creacion_doc'] = data_metadatos.fecha_registro
+            metadato['cod_origen_archivo'] = data_metadato.cod_origen_archivo
+            metadato['es_version_original'] = True
+            metadato['id_archivo_sistema'] = 1 #"TODO: CREAR EL ARCHIVO"
+        else:
+            data_metadato['id_anexo'] = anexo.id_anexo
+            data_metadato['fecha_creacion_doc'] = data_metadatos.fecha_registro
+            data_metadato['nro_folios_documento'] = anexo.numero_folios
+            metadato['es_version_original'] = True
+            data_metadato['id_archivo_sistema'] = 1 #"TODO: CREAR EL ARCHIVO"
+            metadato = data_metadato
+        
+        return metadato
+
+
  ########################## MEDIOS DE SOLICITUD ##########################
 
 
