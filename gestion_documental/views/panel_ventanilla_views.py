@@ -193,7 +193,8 @@ class CabezerasPQRSDFGet(generics.ListAPIView):
         tipo_busqueda = 'PQRSDF'
         data_respuesta = []
         filter={}
-        
+        historico =Historico_Solicitud_PQRSDFGet()
+        data_histo = []
         for key, value in request.query_params.items():
 
             if key == 'radicado':
@@ -211,10 +212,17 @@ class CabezerasPQRSDFGet(generics.ListAPIView):
 
             if not instance:
                 raise NotFound("No existen registros")
+            for x in instance:
+                #print(x)
+                respuesta = historico.get(self,x.id_PQRSDF)
+                #print()
+                data_histo.append({'cabezera':self.serializer_class(x).data,'detalle':respuesta.data['data']})
 
-            serializador = self.serializer_class(instance,many=True)
-            data_respuesta = serializador.data
-        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_respuesta,}, status=status.HTTP_200_OK)
+                #data_respuesta.append(historico.get(self,x.id_PQRSDF).data['data'])
+
+            #serializador = self.serializer_class(instance,many=True)
+            #data_respuesta = serializador.data
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_histo,}, status=status.HTTP_200_OK)
 
 
 class Historico_Solicitud_PQRSDFGet(generics.ListAPIView):

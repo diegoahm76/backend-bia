@@ -4,6 +4,7 @@ from gestion_documental.models.radicados_models import PQRSDF, AsignacionPQR, Co
 
 
 
+
 class EstadosSolicitudesGetSerializer(serializers.ModelSerializer):
     class Meta:
         model = EstadosSolicitudes
@@ -129,22 +130,19 @@ class ComplementosUsu_PQRPutSerializer(serializers.ModelSerializer):
 
 class SolicitudDeDigitalizacionGetSerializer(serializers.ModelSerializer):
     estado_digitalizacion = serializers.SerializerMethodField()
-    estado_asociado = serializers.SerializerMethodField()
+    fecha_respuesta = serializers.ReadOnlyField(source='fecha_rta_solicitud',default=None)
+    observaciones = serializers.ReadOnlyField(source='observacion_digitalizacion',default=None)
+    id = serializers.ReadOnlyField(source='id_solicitud_de_digitalizacion',default=None)
     class Meta:
         model = SolicitudDeDigitalizacion
-        fields = ['id_solicitud_de_digitalizacion','fecha_solicitud','fecha_rta_solicitud','estado_digitalizacion','observacion_digitalizacion','estado_asociado']
+        fields = ['id','fecha_respuesta','estado_digitalizacion','observaciones']
 
-    def get_estado_asociado(self,obj):
-        id = obj.id_pqrsdf
-        fecha = obj.fecha_solicitud
-        solicitud = Estados_PQR.objects.filter(PQRSDF=id,fecha_iniEstado=fecha).first()
-        print(solicitud.estado_solicitud.nombre)
-        return solicitud.estado_solicitud.nombre
+
     def get_estado_digitalizacion(self, obj):
         if obj.digitalizacion_completada and not obj.devuelta_sin_completar:
             return "COMPLETA"
         else:
-            return "PENDIENTE"
+            return "INCOMPLETA"
 
 
 class PQRSDFCabezeraGetSerializer(serializers.ModelSerializer):
@@ -168,44 +166,52 @@ class Estados_PQR_Actual_GetSerializer(serializers.ModelSerializer):
         fields = ['id_estado_PQR','nombre_estado','fecha_iniEstado']
 
 class PQRSDFHistoricoGetSerializer(serializers.ModelSerializer):
-    solicitudes = serializers.SerializerMethodField()
+    registros = serializers.SerializerMethodField()
     titular = serializers.SerializerMethodField()
     estado_actual_solicitud = serializers.ReadOnlyField(source='id_estado_actual_solicitud.nombre',default=None)#id_estado_actual_solicitud
     solicitud_actual = serializers.SerializerMethodField()
    # solicitud_actual = serializers.SerializerMethodField()
     class Meta:
         model = PQRSDF
-        fields = ['id_PQRSDF','cantidad_anexos','asunto','titular','estado_actual_solicitud','solicitud_actual','solicitudes']
+        fields = ['id_PQRSDF','cantidad_anexos','asunto','titular','estado_actual_solicitud','solicitud_actual','registros']
 
-    def get_solicitudes(self,obj):
+    def get_registros(self,obj):
         id = obj.id_PQRSDF
+        respuesta=[]
         if id:
-            solicitudes = SolicitudDeDigitalizacion.objects.filter(id_pqrsdf=id)
-            respuesta = SolicitudDeDigitalizacionGetSerializer(solicitudes,many=True)
-            return respuesta.data
+            estados = Estados_PQR.objects.filter(PQRSDF=obj)
+            #print(estados)
+            for estado in estados:
+                if estado.estado_solicitud.id_estado_solicitud == 10:
+                    solicitudes = SolicitudDeDigitalizacion.objects.filter(id_pqrsdf=id,fecha_rta_solicitud=estado.fecha_iniEstado).first()
+                    print(solicitudes)
+                    re = SolicitudDeDigitalizacionGetSerializer(solicitudes)
+                    respuesta.append({'accion':estado.estado_solicitud.nombre,**re.data})
+                else:
+                    respuesta.append({'accion':estado.estado_solicitud.nombre,'id':0,'fecha_respuesta':"2023-11-21T00:17:01.369238",'estado_digitalizacion':'NO APLICA','observaciones':'No menciona'})
+            return respuesta
     def get_solicitud_actual(self,obj):
         id = obj.id_PQRSDF
+        data =[]
         if id:
-
             estado_actual = obj.id_estado_actual_solicitud
-            
             if estado_actual:
-                estados = Estados_PQR.objects.filter(PQRSDF=obj,estado_solicitud=estado_actual).order_by('-fecha_iniEstado').first()
-                
-                if estados:
-                    estados_asociados = Estados_PQR.objects.filter(PQRSDF=obj,estado_PQR_asociado=estados).order_by('-fecha_iniEstado').first()
-                    
-                    if estados_asociados:
-                        solicitud = SolicitudDeDigitalizacion.objects.filter(id_pqrsdf=id,fecha_solicitud=estados_asociados.fecha_iniEstado).first()
+                estados = Estados_PQR.objects.filter(PQRSDF=obj,estado_solicitud__in=[9, 11])
+                for estado in estados:
+                    #print(estado.estado_solicitud.nombre)
+                    #print(estado.estado_solicitud)
+                    if estado.estado_solicitud.id_estado_solicitud == 9:
+                        
+                        solicitud = SolicitudDeDigitalizacion.objects.filter(id_pqrsdf=id,fecha_solicitud=estado.fecha_iniEstado).first()
+                        #dato = SolicitudDeDigitalizacionGetSerializer(solicitud)
                         if solicitud:
-                            solicitud_serializada = SolicitudDeDigitalizacionGetSerializer(solicitud)
-                            print("chi")
-                     
-                            return {'accion':estados_asociados.estado_solicitud.nombre,**solicitud_serializada.data}
+                            data.append({'accion':estado.estado_solicitud.nombre,'fecha_solicitud':solicitud.fecha_solicitud})
+                    if estado.estado_solicitud.id_estado_solicitud == 11:
+                         data.append({'accion':estado.estado_solicitud.nombre,'fecha_solicitud':estado.fecha_iniEstado})
         
                     
             
-            return {}
+            return data
             #return data_estado_actual.data
         
     def get_titular(self, obj):
