@@ -266,9 +266,10 @@ class PQRSDFInfoGet(generics.ListAPIView):
         if not instance:
                 raise NotFound("No existen registros")
         anexos_pqrs = Anexos_PQR.objects.filter(id_PQRSDF=instance)
-        # for x in anexos_pqrs:
-        #     info_anexo =self.serializer_class(x.id_anexo)
-        #     data.append(info_anexo.data)
+        for x in anexos_pqrs:
+            info_anexo =x.id_anexo
+            print(info_anexo)
+            #data.append(info_anexo.data)
         
         
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':'data',}, status=status.HTTP_200_OK)
