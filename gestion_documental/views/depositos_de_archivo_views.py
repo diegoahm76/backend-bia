@@ -2370,7 +2370,7 @@ class BusquedaEstanteArchivoFisico(generics.ListAPIView):
 
         for data, dep in zip(serialized_data, depositos_serialized):
             data['deposito_identificacion'] = dep['identificacion_por_entidad']
-            data['deposito_nombre'] = dep['nombre_deposito']
+            data['nombre_deposito'] = dep['nombre_deposito']
 
         return Response({
             'success': True,
