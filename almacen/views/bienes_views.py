@@ -14,7 +14,8 @@ from almacen.serializers.bienes_serializers import (
     EntradaSerializer,
     CatalogoBienesActivoFijoPutSerializer,
     SerializerItemEntradaConsumoPut,
-    TiposEntradasSerializer
+    TiposEntradasSerializer,
+    CatalagoBienesYSerializer
 )
 from almacen.models.hoja_de_vida_models import (
     HojaDeVidaComputadores,
@@ -46,6 +47,33 @@ from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from datetime import timezone
 import copy
+
+
+
+class CatalogoBienesCreate(generics.CreateAPIView):
+    serializer_class = CatalagoBienesYSerializer
+    permission_classes = [IsAuthenticated]
+
+    def generador_codigo_bien(self, codigo_bien_padre, nivel_jerarquico):
+
+        if codigo_bien_padre == None:
+            print(codigo_bien_padre)
+
+
+    def create_catalogo_bienes(self, data_in):
+        nivel_jerarquico = data_in['nivel_jerarquico']
+        id_bien_padre_in = data_in['id_bien_padre']
+
+        if id_bien_padre_in != None:
+            try:
+                id_bien_padre = CatalogoBienes.objects.get(id_bien=id_bien_padre)
+            except CatalogoBienes.DoesNotExist:
+                raise ValidationError('El id de bien padre ingresado no existe')
+            
+        
+
+
+
 
 # Creación y actualización de Catalogo de Bienes
 

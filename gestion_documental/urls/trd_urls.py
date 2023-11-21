@@ -48,6 +48,7 @@ urlpatterns = [
     path('configuracion-tipologia/listar-configuraciones/', views.ListaConfiguraciones.as_view(),name='listar-configuraciones-doc'),
     path('configuracion-tipologia/consulta-años-anteriores/', views.ListaConfiguracionesPorAgnoYTipologia.as_view(),name='consulta-años-anteriores'),
     path('configuracion-tipologia/seccion-subseccion-trd-actual/', views.GetActualSeccionSubsecciones.as_view(),name='consulta-años-anteriores'),
+    path('configuracion-tipologia/administrador-numeros-tipologias/', views.AsignarNuevoConsecutivo.as_view(),name='admnistrador-numeros-tipologias'),
 
 
     

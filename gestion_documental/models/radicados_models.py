@@ -1,5 +1,15 @@
 from django.db import models
-from gestion_documental.choices.tipos_pqr_choices import TIPOS_PQR
+from gestion_documental.choices.pqrsdf_choices import (
+    TIPOS_PQR,
+    COD_TIPO_TAREA_CHOICES,
+    COD_ESTADO_ASIGNACION_CHOICES,
+    COD_ESTADO_SOLICITUD_CHOICES,
+    RELACION_TITULAR,
+    FORMA_PRESENTACION,
+    TIPOS_OFICIO_CHOICES
+    
+)
+
 from gestion_documental.models.expedientes_models import ArchivosDigitales, DocumentosDeArchivoExpediente, ExpedientesDocumentales
 from gestion_documental.models.trd_models import TipologiasDoc
 from seguridad.models import Personas
@@ -7,8 +17,9 @@ from gestion_documental.choices.tipo_radicado_choices import TIPOS_RADICADO_CHOI
 from transversal.models.base_models import Municipio
 from transversal.models.entidades_models import SucursalesEmpresas
 from transversal.models.organigrama_models import UnidadesOrganizacionales
-
-
+from gestion_documental.choices.medio_almacenamiento_choices import medio_almacenamiento_CHOICES
+from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
+from gestion_documental.choices.origen_archivo_choices import origen_archivo_CHOICES
 class ConfigTiposRadicadoAgno(models.Model):
 
     id_config_tipo_radicado_agno = models.SmallAutoField(primary_key=True, db_column='T235IdConfigTipoRadicadoAgno')
@@ -37,6 +48,7 @@ class TiposPQR(models.Model):
     
     def __str__(self):
         return self.nombre
+    
     class Meta:
         db_table = 'T252TiposPQR'  
         verbose_name = 'Tipo de PQR'  
@@ -73,18 +85,22 @@ class EstadosSolicitudes(models.Model):
         verbose_name_plural = 'Estados de Solictud' 
 
 
-RELACION_TITULAR = [
-        ('MP', 'Misma persona'),
-        ('RL', 'Representante legal'),
-        ('AP', 'Apoderado'),
+class T262Radicados(models.Model):
+    id_radicado = models.AutoField(primary_key=True, db_column='T262IdRadicado')
+    id_modulo_que_radica = models.SmallIntegerField(db_column='T262Id_ModuloQueRadica')
+    cod_tipo_radicado = models.CharField(max_length=1, choices=TIPOS_RADICADO_CHOICES, db_column='T262codTipoRadicado')
+    prefijo_radicado = models.CharField(max_length=10, db_column='T262prefijoRadicado')
+    agno_radicado = models.SmallIntegerField(db_column='T262agnoRadicado')
+    nro_radicado = models.CharField(max_length=20, db_column='T262nroRadicado')
+    fecha_radicado = models.DateTimeField(db_column='T262fechaRadicado')
+    id_persona_radica = models.ForeignKey('transversal.Personas',on_delete=models.CASCADE,db_column='T262Id_PersonaRadica')
+    id_radicado_asociado = models.ForeignKey('self',on_delete=models.CASCADE,null=True, db_column='T262Id_RadicadoAsociado')
 
-    ]
-
-FORMA_PRESENTACION = [
-    ('V', 'Verbal'),
-    ('E', 'Escrita'),
-]    
-
+    class Meta:
+        unique_together = [
+            ("cod_tipo_radicado", "prefijo_radicado", "agno_radicado", "nro_radicado")
+        ]
+        db_table = 'T262Radicados'  # Nombre de la tabla personalizado
 
 class PQRSDF(models.Model):
     id_PQRSDF = models.AutoField(primary_key=True, db_column='T257IdPQRSDF')
@@ -105,7 +121,7 @@ class PQRSDF(models.Model):
     id_sucursal_especifica_implicada = models.ForeignKey(SucursalesEmpresas,on_delete=models.CASCADE,db_column='T257Id_SucursalEspecificaImplicada', null=True)
     id_persona_recibe = models.ForeignKey('transversal.Personas',on_delete=models.CASCADE,db_column='T257Id_PersonaRecibe', null=True,related_name='persona_recibe_ralacion')
     id_sucursal_recepcion_fisica = models.ForeignKey(SucursalesEmpresas,on_delete=models.CASCADE,db_column='T257Id_Sucursal_RecepcionFisica', null=True,related_name='sucursal_recepciona_ralacion')
-    id_radicado = models.ForeignKey('T262Radicados',on_delete=models.CASCADE,db_column='T257Id_Radicado', null=True)#IMPLEMENTAR TABLA RADICADOS
+    id_radicado = models.ForeignKey(T262Radicados,on_delete=models.CASCADE,db_column='T257Id_Radicado', null=True)
     fecha_radicado = models.DateTimeField(db_column='T257fechaRadicado', null=True)
     requiere_digitalizacion = models.BooleanField(default=False, db_column='T257requiereDigitalizacion')
     fecha_envio_definitivo_a_digitalizacion = models.DateTimeField(db_column='T257fechaEnvioDefinitivoADigitalizacion', null=True)
@@ -161,7 +177,7 @@ class Anexos(models.Model):
     id_anexo = models.AutoField(primary_key=True, db_column='T258IdAnexo')
     nombre_anexo = models.CharField(max_length=50, db_column='T258nombreAnexo')
     orden_anexo_doc = models.SmallIntegerField(db_column='T258ordenAnexoEnElDoc')
-    cod_medio_almacenamiento = models.CharField(max_length=1, choices=[('D', 'Digital'), ('F', 'Físico'), ('O', 'Otros')], db_column='T258codMedioAlmacenamiento')
+    cod_medio_almacenamiento = models.CharField(max_length=2, choices=medio_almacenamiento_CHOICES, db_column='T258codMedioAlmacenamiento')
     medio_almacenamiento_otros_Cual = models.CharField(max_length=30, db_column='T258medioAlmacenamientoOtros_Cual', null=True)
     numero_folios = models.SmallIntegerField(db_column='T258numeroFolios')
     ya_digitalizado = models.BooleanField(db_column='T258yaDigitalizado')
@@ -180,11 +196,11 @@ class MetadatosAnexosTmp(models.Model):
     fecha_creacion_doc = models.DateField(db_column='T260fechaCreacionDoc', null=True)
     descripcion = models.CharField(max_length=500, db_column='T260descripcion', null=True)
     asunto = models.CharField(max_length=150, db_column='T260asunto', null=True)
-    cod_categoria_archivo = models.CharField(max_length=2, choices=[('Tx', 'Texto'), ('Im', 'Imagen'), ('Au', 'Audio'), ('Vd', 'Video'), ('Mp', 'Modelado de Procesos'), ('Ge', 'Geoespacial'), ('Bd', 'Base de Datos'), ('Pw', 'Páginas Web'), ('Ce', 'Correo Electrónico')], db_column='T260codCategoriaArchivo', null=True)
+    cod_categoria_archivo = models.CharField(max_length=2, choices=tipo_archivo_CHOICES, db_column='T260codCategoriaArchivo', null=True)
     es_version_original = models.BooleanField(db_column='T260esVersionOriginal')
     tiene_replica_fisica = models.BooleanField(db_column='T260tieneReplicaFisica')
     nro_folios_documento = models.SmallIntegerField(db_column='T260nroFoliosDocumento')
-    cod_origen_archivo = models.CharField(max_length=1, choices=[('E', 'Electrónico'), ('F', 'Físico'), ('D', 'Digitalizado')], db_column='T260codOrigenArchivo')
+    cod_origen_archivo = models.CharField(max_length=1, choices=origen_archivo_CHOICES, db_column='T260codOrigenArchivo')
     id_tipologia_doc = models.ForeignKey(TipologiasDoc, on_delete=models.CASCADE, db_column='T260Id_TipologiaDoc', null=True)
     cod_tipologia_doc_Prefijo = models.CharField(max_length=10, db_column='T260codTipologiaDoc_Prefijo', null=True)
     cod_tipologia_doc_agno = models.SmallIntegerField(db_column='T260codTipologiaDoc_Agno', null=True)
@@ -199,24 +215,6 @@ class MetadatosAnexosTmp(models.Model):
         unique_together = ('id_anexo',)  # Restricción para que Id_Anexo sea único
 
 
-class T262Radicados(models.Model):
-    id_radicado = models.AutoField(primary_key=True, db_column='T262IdRadicado')
-    id_modulo_que_radica = models.SmallIntegerField(db_column='T262Id_ModuloQueRadica')
-    cod_tipo_radicado = models.CharField(max_length=1, choices=TIPOS_RADICADO_CHOICES, db_column='T262codTipoRadicado')
-    prefijo_radicado = models.CharField(max_length=10, db_column='T262prefijoRadicado')
-    agno_radicado = models.SmallIntegerField(db_column='T262agnoRadicado')
-    nro_radicado = models.CharField(max_length=20, db_column='T262nroRadicado')
-    fecha_radicado = models.DateTimeField(db_column='T262fechaRadicado')
-    id_persona_radica = models.ForeignKey('transversal.Personas',on_delete=models.CASCADE,db_column='T262Id_PersonaRadica')
-    id_radicado_asociado = models.ForeignKey('self',on_delete=models.CASCADE,null=True, db_column='T262Id_RadicadoAsociado')
-
-    class Meta:
-        unique_together = [
-            ("cod_tipo_radicado", "prefijo_radicado", "agno_radicado", "nro_radicado")
-        ]
-        db_table = 'T262Radicados'  # Nombre de la tabla personalizado
-
-
 class modulos_radican(models.Model):
     id_ModuloQueRadica = models.AutoField(primary_key=True,db_column='T261Id_ModuloQueRadica')
     nombre = models.CharField(max_length=100,unique=True,db_column='T261nombre')
@@ -224,10 +222,6 @@ class modulos_radican(models.Model):
     class Meta:
         db_table = 'T261ModulosQueRadican'
 
-TIPOS_OFICIO_CHOICES = (
-    ('S', 'Solicitud'),
-    ('R', 'Requerimiento'),
-)
 class SolicitudAlUsuarioSobrePQRSDF(models.Model):
     id_solicitud_al_usuario_sobre_pqrsdf = models.AutoField(primary_key=True, db_column='T266IdSolicitudAlUsuarioSobrePQR')
     id_pqrsdf = models.ForeignKey(PQRSDF, models.CASCADE, db_column='T266Id_PQRSDF')
@@ -296,26 +290,6 @@ class BandejaTareasPersona(models.Model):
     class Meta:
         db_table = 'T264BandejasTareas_Persona'
         unique_together = ('id_persona',)
-
-
-COD_TIPO_TAREA_CHOICES = (
-    ('Rpqr', 'Responder PQRSDF'),
-    ('Rtra', 'Responder Trámite'),
-  
-)
-
-COD_ESTADO_ASIGNACION_CHOICES = (
-    ('Ac', 'Aceptado'),
-    ('Re', 'Rechazado'),
- 
-)
-
-COD_ESTADO_SOLICITUD_CHOICES = (
-    ('De', 'Delegada'),
-    ('Ep', 'En Proceso de Respuesta'),
-    ('Re', 'Respondida por el propietario'),
-   
-)
 
 
 class TareaBandejaTareasPersona(models.Model):

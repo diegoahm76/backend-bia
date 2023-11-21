@@ -13,21 +13,24 @@ from gestion_documental.choices.tipo_origen_doc_choices import tipo_origen_doc_C
 from gestion_documental.choices.tipo_subsistema_creado_choices import tipo_subsistema_creado_CHOICES
 from gestion_documental.choices.tipo_radicado_choices import TIPOS_RADICADO_CHOICES
 from gestion_documental.choices.operacion_realizada_choices import operacion_realizada_CHOICES
-from gestion_documental.choices.tipos_pqr_choices import cond_tipos_pqr_list
+from gestion_documental.choices.pqrsdf_choices import cond_tipos_pqr_list
 from gestion_documental.choices.tipo_dato_alojar_choices import tipo_dato_alojar_CHOICES
 from gestion_documental.choices.tipo_acceso_choices import tipo_acceso_list
 from gestion_documental.choices.tipo_elemento_choices import tipo_elemento_CHOICES
 from gestion_documental.choices.cod_nivel_consecutivo_choices import cod_nivel_consecutivo_CHOICES
-
-
-
-
-
-
+from gestion_documental.choices.tipo_consulta_pqrsdf_choices import tipo_consulta_pqrsdf_CHOICES
+from gestion_documental.choices.tipo_representacion_pqrsdf_choices import tipo_representacion_pqrsdf_CHOICES
+from gestion_documental.choices.estado_pqrsdf_choices import estado_pqrsdf_CHOICES
+from gestion_documental.choices.pqrsdf_choices import (FORMA_PRESENTACION)
+from gestion_documental.choices.medio_almacenamiento_choices import medio_almacenamiento_CHOICES
+from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
+from gestion_documental.choices.origen_archivo_choices import origen_archivo_CHOICES
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+
+
 class TipoClasificacion(APIView):
     def get(self,request):
         choices = tipo_clasificacion_CHOICES
@@ -127,3 +130,38 @@ class CodNivelConsecutivo(APIView):
         choices = cod_nivel_consecutivo_CHOICES
         return Response(choices) 
 #RANGO_EDAD_LIST
+
+class TipoConsultaPQRSDF(APIView):
+    def get(self, request):
+        choices = tipo_consulta_pqrsdf_CHOICES
+        return Response(choices)
+    
+class TipoRepresentacionPQRSDF(APIView):
+    def get(self, request):
+        choices = tipo_representacion_pqrsdf_CHOICES
+        return Response(choices)
+
+class EstadoPQRSDF(APIView):
+    def get(self, request):
+        choices = estado_pqrsdf_CHOICES
+        return Response(choices)
+    
+class FormaPresentacionPQRSDF(APIView):
+    def get(self, request):
+        choices = FORMA_PRESENTACION
+        return Response(choices)
+    
+class MediosDeAlmacenamiento(APIView):
+    def get(self, request):
+        choices = medio_almacenamiento_CHOICES
+        return Response(choices)
+    
+class TipoArchivosChoices(APIView):
+    def get(self, request):
+        choices = tipo_archivo_CHOICES
+        return Response(choices)
+
+class OrigenArchivoChoices(APIView):
+    def get(self, request):
+        choices = origen_archivo_CHOICES
+        return Response(choices)

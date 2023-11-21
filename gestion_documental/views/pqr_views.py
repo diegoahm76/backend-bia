@@ -1,12 +1,17 @@
 
 import copy
+from datetime import datetime
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.models.radicados_models import MediosSolicitud, TiposPQR
+from gestion_documental.models.radicados_models import PQRSDF, EstadosSolicitudes, MediosSolicitud, TiposPQR
 from rest_framework.response import Response
-from gestion_documental.serializers.pqr_serializers import MediosSolicitudCreateSerializer, MediosSolicitudDeleteSerializer, MediosSolicitudSearchSerializer, MediosSolicitudUpdateSerializer, TiposPQRGetSerializer, TiposPQRUpdateSerializer
+from gestion_documental.serializers.pqr_serializers import MediosSolicitudCreateSerializer, MediosSolicitudDeleteSerializer, MediosSolicitudSearchSerializer, MediosSolicitudUpdateSerializer, PQRSDFPostSerializer, PQRSDFSerializer, TiposPQRGetSerializer, TiposPQRUpdateSerializer
+from gestion_documental.views.panel_ventanilla_views import Estados_PQRCreate
 from seguridad.utils import Util
+
+from django.db.models import Q
+from django.db import transaction
 class TiposPQRGet(generics.ListAPIView):
     serializer_class = TiposPQRGetSerializer
     queryset = TiposPQR.objects.all()
@@ -65,9 +70,21 @@ class TiposPQRUpdate(generics.UpdateAPIView):
         except ValidationError  as e:
             error_message = {'error': e.detail}
             raise ValidationError  (e.detail)    
-        
 
+class GetPQRSDFForStatus(generics.ListAPIView):
+    serializer_class = PQRSDFSerializer
+    queryset = PQRSDF.objects.all()
 
+    def get(self, request, id_persona_titular):
+        pqrsdf = self.queryset.filter(Q(id_persona_titular = id_persona_titular) & 
+                                      Q(Q(id_radicado = 0) | Q(id_radicado = None) | Q(~Q(id_radicado=0) & Q(requiere_rta = True) & Q(fecha_rta_final_gestion = None))))
+        if pqrsdf:
+            serializador = self.serializer_class(pqrsdf, many = True)
+            return Response({'success':True, 'detail':'Se encontraron PQRSDF asociadas al titular','data':serializador.data},status=status.HTTP_200_OK)
+        else:
+            return Response({'success':True, 'detail':'No se encontraron PQRSDF asociadas al titular'},status=status.HTTP_200_OK) 
+
+ 
  ########################## MEDIOS DE SOLICITUD ##########################
 
 
