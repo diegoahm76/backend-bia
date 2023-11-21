@@ -182,7 +182,7 @@ class Anexos(models.Model):
     numero_folios = models.SmallIntegerField(db_column='T258numeroFolios')
     ya_digitalizado = models.BooleanField(db_column='T258yaDigitalizado')
     observacion_digitalizacion = models.CharField(max_length=100, db_column='T258observacionDigitalizacion', null=True)
-    id_docu_arch_exp = models.ForeignKey(DocumentosDeArchivoExpediente,on_delete=models.CASCADE,db_column='T258Id_DocuDeArch_Exp', null=True)
+    id_docu_arch_exp = models.ForeignKey(ArchivosDigitales,on_delete=models.CASCADE,db_column='T258Id_DocuDeArch_Exp', null=True)
 
     class Meta:
         #managed = False  # Evita que Django gestione esta tabla en la base de datos.
