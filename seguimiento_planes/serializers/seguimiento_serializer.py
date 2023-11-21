@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, Sector, DetalleInversionCuentas, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP
+from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, Sector, DetalleInversionCuentas, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, FuenteFinanciacion, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP
 
 class FuenteFinanciacionIndicadoresSerializer(serializers.ModelSerializer):
 
@@ -26,7 +26,7 @@ class SectorSerializerUpdate(serializers.ModelSerializer):
 class DetalleInversionCuentasSerializer(serializers.ModelSerializer):
 
     nombre_sector = serializers.ReadOnlyField(source='id_sector.nombre_sector', default=None)
-    nombre_rubro = serializers.ReadOnlyField(source='id_rubro.nombre_rubro', default=None)
+    rubro = serializers.ReadOnlyField(source='id_rubro.cuenta', default=None)
     nombre_programa = serializers.ReadOnlyField(source='id_programa.nombre_programa', default=None)
     nombre_subprograma = serializers.ReadOnlyField(source='id_subprograma.nombre_subprograma', default=None)
     nombre_proyecto = serializers.ReadOnlyField(source='id_proyecto.nombre_proyecto', default=None)
@@ -114,3 +114,54 @@ class CodigosUNSPSerializerUpdate(serializers.ModelSerializer):
         def update(self, instance, validated_data):
                 validated_data.pop('item_ya_usado', None)  # Excluir el campo específico
                 return super().update(instance, validated_data)
+
+class ConceptoPOAISerializer(serializers.ModelSerializer):
+
+    nombre_indicador = serializers.ReadOnlyField(source='id_indicador.nombre_indicador', default=None)
+    nombre = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
+    class Meta:
+        model = ConceptoPOAI
+        fields = '__all__'
+
+class FuenteFinanciacionSerializer(serializers.ModelSerializer):
+
+    concepto = serializers.ReadOnlyField(source='id_concepto.nombre', default=None)
+    class Meta:
+        model = FuenteFinanciacion
+        fields = '__all__'
+
+class BancoProyectoSerializer(serializers.ModelSerializer):
+    
+    nombre_proyecto = serializers.ReadOnlyField(source='id_proyecto.nombre_proyecto', default=None)
+    nombre_actividad = serializers.ReadOnlyField(source='id_actividad.nombre_actividad', default=None)
+    nombre_indicador = serializers.ReadOnlyField(source='id_indicador.nombre_indicador', default=None)
+    nombre_meta = serializers.ReadOnlyField(source='id_meta.nombre_meta', default=None)
+    rubro = serializers.ReadOnlyField(source='id_rubro.cuenta', default=None)
+    
+    class Meta:
+        model = BancoProyecto
+        fields = '__all__'
+
+class PlanAnualAdquisicionesSerializer(serializers.ModelSerializer):
+    
+    nombre_plan = serializers.ReadOnlyField(source='id_plan.nombre_plan', default=None)
+    nombre_intervalo = serializers.ReadOnlyField(source='id_intervalo.nombre_intervalo', default=None)
+    nombre_modalidad = serializers.ReadOnlyField(source='id_modalidad.nombre_modalidad', default=None)
+    nombre_fuente = serializers.ReadOnlyField(source='id_recurso_paa.nombre_fuente', default=None)
+    nombre_estado = serializers.ReadOnlyField(source='id_estado_vf.nombre_estado', default=None)
+    nombre_unidad = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
+    nombre_ubicacion = serializers.ReadOnlyField(source='id_ubicacion.nombre_ubicacion', default=None)
+    persona_responsable = serializers.ReadOnlyField(source='id_persona_responsable.nombre_completo', default=None)
+    
+    class Meta:
+        model = PlanAnualAdquisiciones
+        fields = '__all__'
+
+class PAACodgigoUNSPSerializer(serializers.ModelSerializer):
+        
+        nombre_paa = serializers.ReadOnlyField(source='id_paa.nombre_paa', default=None)
+        nombre_unsp = serializers.ReadOnlyField(source='id_unsp.nombre_unsp', default=None)
+        
+        class Meta:
+            model = PAACodgigoUNSP
+            fields = '__all__'

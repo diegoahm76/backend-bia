@@ -5,8 +5,8 @@ from rest_framework import generics, status
 from django.db.models.functions import Concat
 from django.db.models import Q, Value as V
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
-from seguimiento_planes.serializers.seguimiento_serializer import FuenteRecursosPaaSerializerUpdate, FuenteFinanciacionIndicadoresSerializer, SectorSerializer, SectorSerializerUpdate, DetalleInversionCuentasSerializer, ModalidadSerializer, ModalidadSerializerUpdate, UbicacionesSerializer, UbicacionesSerializerUpdate, FuenteRecursosPaaSerializer, IntervaloSerializer, IntervaloSerializerUpdate, EstadoVFSerializer, EstadoVFSerializerUpdate, CodigosUNSPSerializer, CodigosUNSPSerializerUpdate
-from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, Sector, DetalleInversionCuentas, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP
+from seguimiento_planes.serializers.seguimiento_serializer import FuenteRecursosPaaSerializerUpdate, FuenteFinanciacionIndicadoresSerializer, SectorSerializer, SectorSerializerUpdate, DetalleInversionCuentasSerializer, ModalidadSerializer, ModalidadSerializerUpdate, UbicacionesSerializer, UbicacionesSerializerUpdate, FuenteRecursosPaaSerializer, IntervaloSerializer, IntervaloSerializerUpdate, EstadoVFSerializer, EstadoVFSerializerUpdate, CodigosUNSPSerializer, CodigosUNSPSerializerUpdate, ConceptoPOAISerializer, FuenteFinanciacionSerializer, BancoProyectoSerializer, PlanAnualAdquisicionesSerializer, PAACodgigoUNSPSerializer
+from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, Sector, DetalleInversionCuentas, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, FuenteFinanciacion, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP
 
 # ---------------------------------------- Fuentes de financiacion indicadores ----------------------------------------
 
@@ -653,3 +653,323 @@ class CodigosUNSPDelete(generics.DestroyAPIView):
             raise ValidationError("No puedes eliminar este registro porque es un registro precargado.")
         codigo.delete()
         return Response({'success': True, 'detail': 'Se eliminó el registro de código UNSP correctamente.', 'data': []}, status=status.HTTP_200_OK)
+    
+# ---------------------------------------- Conceptos POAI ----------------------------------------
+
+# Listar todos los registros de conceptos POAI
+
+class ConceptoPOAIList(generics.ListAPIView):
+    queryset = ConceptoPOAI.objects.all()
+    serializer_class = ConceptoPOAISerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        conceptos = self.get_queryset()
+        serializer = ConceptoPOAISerializer(conceptos, many=True)
+        if not conceptos:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros:', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+# Crear un registro de concepto POAI
+
+class ConceptoPOAICreate(generics.CreateAPIView):
+    serializer_class = ConceptoPOAISerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        serializer = ConceptoPOAISerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'success': True, 'detail': 'Se creó el registro de concepto POAI correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        else:
+            print(serializer.errors)  # Imprime los errores de validación
+            raise ValidationError('Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo.')
+
+# Actualizar un registro de concepto POAI
+
+class ConceptoPOAIUpdate(generics.UpdateAPIView):
+    queryset = ConceptoPOAI.objects.all()
+    serializer_class = ConceptoPOAISerializer
+    permission_classes = (IsAuthenticated,)
+
+    def put(self, request, pk):
+        data = request.data
+        concepto = self.get_object()
+        serializer = self.serializer_class(concepto, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Se actualizó el registro de concepto POAI correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Eliminar un registro de concepto POAI
+
+class ConceptoPOAIDelete(generics.DestroyAPIView):
+    queryset = ConceptoPOAI.objects.all()
+    serializer_class = ConceptoPOAISerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_object(self, pk):
+        try:
+            return ConceptoPOAI.objects.get(pk=pk)
+        except ConceptoPOAI.DoesNotExist:
+            raise NotFound("No se encontró un registro de concepto POAI con este ID.")
+
+    def delete(self, request, pk):
+        concepto = self.get_object(pk)
+        concepto.delete()
+        return Response({'success': True, 'detail': 'Se eliminó el registro de concepto POAI correctamente.', 'data': []}, status=status.HTTP_200_OK)
+
+# ---------------------------------------- Fuentes de financiación ----------------------------------------
+
+# Listar todos los registros de fuentes de financiación
+
+class FuenteFinanciacionList(generics.ListAPIView):
+    queryset = FuenteFinanciacion.objects.all()
+    serializer_class = FuenteFinanciacionSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        fuentes = self.get_queryset()
+        serializer = FuenteFinanciacionSerializer(fuentes, many=True)
+        if not fuentes:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros:', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Crear un registro de fuente de financiación
+
+class FuenteFinanciacionCreate(generics.CreateAPIView):
+    serializer_class = FuenteFinanciacionSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        serializer = FuenteFinanciacionSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'success': True, 'detail': 'Se creó el registro de fuente de financiación correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        else:
+            print(serializer.errors)  # Imprime los errores de validación
+            raise ValidationError('Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo.')
+
+# Actualizar un registro de fuente de financiación
+
+class FuenteFinanciacionUpdate(generics.UpdateAPIView):
+    queryset = FuenteFinanciacion.objects.all()
+    serializer_class = FuenteFinanciacionSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def put(self, request, pk):
+        data = request.data
+        fuente = self.get_object()
+        serializer = self.serializer_class(fuente, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Se actualizó el registro de fuente de financiación correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Eliminar un registro de fuente de financiación
+
+class FuenteFinanciacionDelete(generics.DestroyAPIView):
+    queryset = FuenteFinanciacion.objects.all()
+    serializer_class = FuenteFinanciacionSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_object(self, pk):
+        try:
+            return FuenteFinanciacion.objects.get(pk=pk)
+        except FuenteFinanciacion.DoesNotExist:
+            raise NotFound("No se encontró un registro de fuente de financiación con este ID.")
+
+    def delete(self, request, pk):
+        fuente = self.get_object(pk)
+        fuente.delete()
+        return Response({'success': True, 'detail': 'Se eliminó el registro de fuente de financiación correctamente.', 'data': []}, status=status.HTTP_200_OK)
+
+# ---------------------------------------- Fuentes de financiación  ----------------------------------------
+
+# Listar todos los registros de fuentes de financiación 
+
+class FuenteFinanciacionList(generics.ListAPIView):
+    queryset = FuenteFinanciacion.objects.all()
+    serializer_class = FuenteFinanciacionSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        fuentes = self.get_queryset()
+        serializer = FuenteFinanciacionSerializer(fuentes, many=True)
+        if not fuentes:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros de fuentes de financiación:', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Crear un registro de fuente de financiación
+
+class FuenteFinanciacionCreate(generics.CreateAPIView):
+    serializer_class = FuenteFinanciacionSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        serializer = FuenteFinanciacionSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'success': True, 'detail': 'Se creó el registro de fuente de financiación correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        else:
+            print(serializer.errors)  # Imprime los errores de validación
+            raise ValidationError('Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo.')
+
+# Actualizar un registro de fuente de financiación
+
+class FuenteFinanciacionUpdate(generics.UpdateAPIView):
+    queryset = FuenteFinanciacion.objects.all()
+    serializer_class = FuenteFinanciacionSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def put(self, request, pk):
+        data = request.data
+        fuente = self.get_object()
+        serializer = self.serializer_class(fuente, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Se actualizó el registro de fuente de financiación correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Eliminar un registro de fuente de financiación
+
+class FuenteFinanciacionDelete(generics.DestroyAPIView):
+    queryset = FuenteFinanciacion.objects.all()
+    serializer_class = FuenteFinanciacionSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_object(self, pk):
+        try:
+            return FuenteFinanciacion.objects.get(pk=pk)
+        except FuenteFinanciacion.DoesNotExist:
+            raise NotFound("No se encontró un registro de fuente de financiación con este ID.")
+
+    def delete(self, request, pk):
+        fuente = self.get_object(pk)
+        fuente.delete()
+        return Response({'success': True, 'detail': 'Se eliminó el registro de fuente de financiación correctamente.', 'data': []}, status=status.HTTP_200_OK)
+    
+# ---------------------------------------- Banco Proyecto ----------------------------------------
+
+# Listar todos los registros de bancos de proyecto
+
+class BancoProyectoList(generics.ListAPIView):
+    queryset = BancoProyecto.objects.all()
+    serializer_class = BancoProyectoSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        bancos = self.get_queryset()
+        serializer = BancoProyectoSerializer(bancos, many=True)
+        if not bancos:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes bancos de proyecto:', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+# Crear un registro de banco de proyecto
+
+class BancoProyectoCreate(generics.CreateAPIView):
+    serializer_class = BancoProyectoSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        serializer = BancoProyectoSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'success': True, 'detail': 'Se creó el banco de proyecto correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        else:
+            print(serializer.errors)  # Imprime los errores de validación
+            raise ValidationError('Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo.')
+
+# Actualizar un registro de banco de proyecto
+
+class BancoProyectoUpdate(generics.UpdateAPIView):
+    queryset = BancoProyecto.objects.all()
+    serializer_class = BancoProyectoSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def put(self, request, pk):
+        data = request.data
+        banco = self.get_object()
+        serializer = self.serializer_class(banco, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Se actualizó el banco de proyecto correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Eliminar un registro de banco de proyecto
+
+class BancoProyectoDelete(generics.DestroyAPIView):
+    queryset = BancoProyecto.objects.all()
+    serializer_class = BancoProyectoSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_object(self, pk):
+        try:
+            return BancoProyecto.objects.get(pk=pk)
+        except BancoProyecto.DoesNotExist:
+            raise NotFound("No se encontró un banco de proyecto con este ID.")
+
+    def delete(self, request, pk):
+        banco = self.get_object(pk)
+        banco.delete()
+        return Response({'success': True, 'detail': 'Se eliminó el banco de proyecto correctamente.', 'data': []}, status=status.HTTP_200_OK)
+
+# ---------------------------------------- Plan Anual de adquisiciones ----------------------------------------
+
+# Listar todos los registros de planes anuales de adquisiciones
+
+class PlanAnualAdquisicionesList(generics.ListAPIView):
+    queryset = PlanAnualAdquisiciones.objects.all()
+    serializer_class = PlanAnualAdquisicionesSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        planes = self.get_queryset()
+        serializer = PlanAnualAdquisicionesSerializer(planes, many=True)
+        if not planes:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes planes anuales de adquisiciones:', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Crear un registro de plan anual de adquisiciones
+
+class PlanAnualAdquisicionesCreate(generics.CreateAPIView):
+    serializer_class = PlanAnualAdquisicionesSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        serializer = PlanAnualAdquisicionesSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'success': True, 'detail': 'Se creó el plan anual de adquisiciones correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        else:
+            print(serializer.errors)  # Imprime los errores de validación
+            raise ValidationError('Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo.')
+    
+# Actualizar un registro de plan anual de adquisiciones
+
+class PlanAnualAdquisicionesUpdate(generics.UpdateAPIView):
+    queryset = PlanAnualAdquisiciones.objects.all()
+    serializer_class = PlanAnualAdquisicionesSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def put(self, request, pk):
+        data = request.data
+        plan = self.get_object()
+        serializer = self.serializer_class(plan, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Se actualizó el plan anual de adquisiciones correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Eliminar un registro de plan anual de adquisiciones
+
+class PlanAnualAdquisicionesDelete(generics.DestroyAPIView):
+    queryset = PlanAnualAdquisiciones.objects.all()
+    serializer_class = PlanAnualAdquisicionesSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_object(self, pk):
+        try:
+            return PlanAnualAdquisiciones.objects.get(pk=pk)
+        except PlanAnualAdquisiciones.DoesNotExist:
+            raise NotFound("No se encontró un plan anual de adquisiciones con este ID.")
+
+    def delete(self, request, pk):
+        plan = self.get_object(pk)
+        plan.delete()
+        return Response({'success': True, 'detail': 'Se eliminó el plan anual de adquisiciones correctamente.', 'data': []}, status=status.HTTP_200_OK)
