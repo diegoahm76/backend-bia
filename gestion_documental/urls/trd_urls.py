@@ -42,6 +42,8 @@ urlpatterns = [
 
     #Configuracion_tipologias_docmentales
     path('configuracion-tipologia/listar-tipologias/', views.ListarTipologiasdocumentales.as_view(),name='listar-tipologias-doc'),
+    path('configuracion-tipologia/listar-tipologias-por-año-actual/', views.GetConfiguracionesPorTipologiaAnioActual.as_view(), name='listar-tipologias-por-año-actual'),
+    path('configuracion-tipologia/listar-tipologias-por-año-anterior/', views.GetConfiguracionesPorTipologiaAnioAnterior.as_view(), name='listar-tipologias-por-año-anterior'),
     path('configuracion-tipologia/configuracion-tipologia-actual/', views.CrearConfigurarTipologia.as_view(),name='configuracion-tipologias-doc'),
     path('configuracion-tipologia/configuracion-tipologia-empresa/', views.CrearConfigurarTipologiaEmpresa.as_view(),name='configuracion-tipologias-em'),
     path('configuracion-tipologia/configuracion-tipologia-ss/', views.ConfigurarTipologiaSS.as_view(),name='configuracion-tipologias-ss'),
@@ -49,6 +51,8 @@ urlpatterns = [
     path('configuracion-tipologia/consulta-años-anteriores/', views.ListaConfiguracionesPorAgnoYTipologia.as_view(),name='consulta-años-anteriores'),
     path('configuracion-tipologia/seccion-subseccion-trd-actual/', views.GetActualSeccionSubsecciones.as_view(),name='consulta-años-anteriores'),
     path('configuracion-tipologia/administrador-numeros-tipologias/', views.AsignarNuevoConsecutivo.as_view(),name='admnistrador-numeros-tipologias'),
+    path('configuracion-tipologia/actualizar-tipologia-no-a-si/<int:pk>/',views.EditarConfiguracionTipologia.as_view(), name='actualizar-numeros-tipologias'),
+    
 
 
     
