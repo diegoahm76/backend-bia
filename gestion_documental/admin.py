@@ -1,5 +1,5 @@
 from django.contrib import admin
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, Estados_PQR, EstadosSolicitudes, T262Radicados
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, T262Radicados
 from gestion_documental.models.trd_models import (
     TablaRetencionDocumental,
     TiposMediosDocumentos,
@@ -63,3 +63,4 @@ admin.site.register(T262Radicados)
 admin.site.register(Estados_PQR)
 admin.site.register(Anexos_PQR)
 admin.site.register(Anexos)
+admin.site.register(MetadatosAnexosTmp)
