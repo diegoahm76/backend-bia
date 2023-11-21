@@ -40,4 +40,3 @@ class SubZonaHidrica (models.Model):
         db_table = 'T623SubZonasHidricas'
         verbose_name = 'Sub Zona Hidrica'
         verbose_name_plural = 'Sub Zona Hidricas'
-
