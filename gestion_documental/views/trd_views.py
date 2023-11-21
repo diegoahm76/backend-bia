@@ -1184,6 +1184,78 @@ class ListarTipologiasdocumentales(generics.ListAPIView):
     serializer_class = TipologiasDocumentalesSerializer
     permission_classes = [IsAuthenticated]
 
+
+class GetConfiguracionesPorTipologiaAnioActual(generics.ListAPIView):
+    serializer_class = ConfigTipologiasDocAgnoSerializer
+
+    def get_queryset(self):
+        # Obtener el parámetro de la URL
+        id_tipologia = self.request.query_params.get('id_tipologia')
+
+        # Validar que el parámetro esté presente
+        if id_tipologia is None:
+            return ConfigTipologiasDocAgno.objects.none()
+
+        # Obtener el año actual
+        year_actual = timezone.now().year
+
+        # Filtrar configuraciones por id_tipologia y año actual
+        queryset = ConfigTipologiasDocAgno.objects.filter(
+            id_tipologia_doc=id_tipologia,
+            agno_tipologia=year_actual
+        )
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        # Llamar al método get_queryset y obtener los resultados
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            # No se encontraron configuraciones para el id_tipologia y año actual proporcionados
+            raise ValidationError("No se encontraron configuraciones de esta tipologia para este año actual ")
+
+        serializer = self.serializer_class(queryset, many=True)
+
+        # Devolver la respuesta
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+class GetConfiguracionesPorTipologiaAnioAnterior(generics.ListAPIView):
+    serializer_class = ConfigTipologiasDocAgnoSerializer
+
+    def get_queryset(self):
+        # Obtener el parámetro de la URL
+        id_tipologia = self.request.query_params.get('id_tipologia')
+
+        # Validar que el parámetro esté presente
+        if id_tipologia is None:
+            return ConfigTipologiasDocAgno.objects.none()
+
+        # Obtener el año actual y el año anterior
+        year_actual = timezone.now().year
+        year_anterior = year_actual - 1
+
+        # Filtrar configuraciones por id_tipologia y año anterior
+        queryset = ConfigTipologiasDocAgno.objects.filter(
+            id_tipologia_doc=id_tipologia,
+            agno_tipologia=year_anterior
+        )
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        # Llamar al método get_queryset y obtener los resultados
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            # No se encontraron configuraciones para el id_tipologia y año anterior proporcionados
+            raise ValidationError("No se encontraron configuraciones de esta tipologia para este año anterior ")
+
+        serializer = self.serializer_class(queryset, many=True)
+
+        # Devolver la respuesta
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
 #////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1557,168 +1629,6 @@ class ConfigurarTipologiaSS(generics.CreateAPIView):
 
 
 
-# class ConfigurarTipologiaSS(generics.CreateAPIView):
-#     serializer_class = ConsecPorNivelesTipologiasDocAgnoSerializer
-
-#     def post(self, request):
-#         data = request.data
-#         maneja_consecutivo = data.get('maneja_consecutivo', False)
-#         current_year = datetime.now().year
-#         fecha_ultima_config = timezone.now()
-
-#         user = request.user
-#         persona_logueada = user.persona
-
-#         if not persona_logueada.id_unidad_organizacional_actual:
-#             raise ValidationError("No tiene permiso para realizar esta acción")
-
-#         tipologia_id = data.get('id_tipologia_doc')
-
-#         if ConsecPorNivelesTipologiasDocAgno.objects.filter(
-#             id_config_tipologia_doc_agno__id_tipologia_doc=tipologia_id,
-#             id_config_tipologia_doc_agno__agno_tipologia=current_year
-#         ).exists():
-#             raise ValidationError('La tipología documental ya fue configurada')
-
-#         try:
-#             tipologia = TipologiasDoc.objects.get(id_tipologia_documental=tipologia_id)
-#         except TipologiasDoc.DoesNotExist:
-#             raise NotFound('La tipología ingresada no existe')
-
-#         # Obtener la TRD actual
-#         trd_actual = TablaRetencionDocumental.objects.filter(actual=True).first()
-#         if not trd_actual:
-#             raise NotFound('No existe aún una TRD actual')
-
-#         with transaction.atomic():
-#             if maneja_consecutivo:
-#                 if 'nivel_consecutivo' not in data:
-#                     return Response({
-#                         'success': False,
-#                         'detail': 'El campo nivel_consecutivo es obligatorio si se maneja el consecutivo.',
-#                     }, status=status.HTTP_400_BAD_REQUEST)
-
-#                 nivel_consecutivo = data['nivel_consecutivo']
-
-#                 if nivel_consecutivo == 'SS':
-#                     configuraciones_por_unidad = data.get('configuracion_por_unidad', [])
-
-#                     for config_por_unidad in configuraciones_por_unidad:
-#                         id_unidad_organizacional = config_por_unidad.get('id_unidad_organizacional')
-#                         unidad_organizacional = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=id_unidad_organizacional)
-#                         valor_inicial = config_por_unidad.get('valor_inicial')
-#                         cantidad_digitos = config_por_unidad.get('cantidad_digitos')
-#                         prefijo_consecutivo = config_por_unidad.get('prefijo_consecutivo')
-
-#                         if not all([id_unidad_organizacional, valor_inicial, cantidad_digitos, prefijo_consecutivo]):
-#                             return Response({
-#                                 'success': False,
-#                                 'detail': 'Todos los campos de configuración por unidad son obligatorios.',
-#                             }, status=status.HTTP_400_BAD_REQUEST)
-
-#                         if ConsecPorNivelesTipologiasDocAgno.objects.filter(
-#                             id_config_tipologia_doc_agno__id_tipologia_doc=tipologia_id,
-#                             id_unidad_organizacional=unidad_organizacional,
-#                             consecutivo_inicial__isnull=False,
-#                             prefijo_consecutivo=prefijo_consecutivo
-#                         ).exists():
-#                             raise ValidationError('El prefijo ya está siendo utilizado en otra sección/subsección para la misma tipología.')
-
-#                         config_tipologia, created = ConfigTipologiasDocAgno.objects.get_or_create(
-#                             agno_tipologia=current_year,
-#                             id_tipologia_doc=tipologia,
-#                             maneja_consecutivo=maneja_consecutivo,
-#                             defaults={
-#                                 'cod_nivel_consecutivo': nivel_consecutivo,
-#                                 'item_ya_usado': False,
-#                             }
-#                         )
-
-#                         consec_por_niveles, _ = ConsecPorNivelesTipologiasDocAgno.objects.get_or_create(
-#                             id_config_tipologia_doc_agno=config_tipologia,
-#                             id_unidad_organizacional=unidad_organizacional,
-#                             id_trd=trd_actual,  # Asignar la TRD actual
-#                             defaults={
-#                                 'consecutivo_inicial': valor_inicial,
-#                                 'cantidad_digitos': cantidad_digitos,
-#                                 'item_ya_usado': False,
-#                                 'consecutivo_actual': valor_inicial - 1,
-#                                 'prefijo_consecutivo': prefijo_consecutivo,
-#                                 'id_persona_ult_config_implemen': persona_logueada,
-#                             }
-#                         )
-#                 else:
-#                     return Response({
-#                         'success': False,
-#                         'detail': 'Opción de Nivel de Consecutivo no válida.',
-#                     }, status=status.HTTP_400_BAD_REQUEST)
-#             else:
-#                 config_tipologia, created = ConfigTipologiasDocAgno.objects.get_or_create(
-#                     agno_tipologia=current_year,
-#                     id_tipologia_doc=tipologia,
-#                     maneja_consecutivo=maneja_consecutivo,
-#                     defaults={'item_ya_usado': False}
-#                 )
-
-#                 consec_por_niveles, _ = ConsecPorNivelesTipologiasDocAgno.objects.get_or_create(
-#                     id_config_tipologia_doc_agno=config_tipologia,
-#                     id_trd=trd_actual,  # Asignar la TRD actual
-#                     defaults={
-#                         'consecutivo_inicial': None,
-#                         'cantidad_digitos': None,
-#                         'item_ya_usado': False,
-#                         'consecutivo_actual': None,
-#                         'prefijo_consecutivo': None,
-#                         'id_persona_ult_config_implemen': persona_logueada,
-#                     }
-#                 )
-
-#         t247_consecutivo_inicial = str(consec_por_niveles.consecutivo_inicial).zfill(cantidad_digitos)
-#         t247_consecutivo_actual = str(consec_por_niveles.consecutivo_actual).zfill(cantidad_digitos)
-
-#         nombre_persona_config = " ".join(filter(None, [
-#             persona_logueada.primer_nombre,
-#             persona_logueada.segundo_nombre,
-#             persona_logueada.primer_apellido,
-#             persona_logueada.segundo_apellido,
-#         ]))
-
-#         response_data = {
-#             "T246IdConfigTipologiaDocAgno": config_tipologia.id_config_tipologia_doc_agno,
-#             "T246agnoTipologia": current_year,
-#             "T246Id_TipologiaDoc": tipologia_id,
-#             "T246manejaConsecutivo": maneja_consecutivo,
-#             "T246codNivelDelConsecutivo": config_tipologia.cod_nivel_consecutivo,
-#             "T246itemYaUsado": config_tipologia.item_ya_usado,
-#             "T247IdConsecPorNiveles_TipologiasDocAgno": consec_por_niveles.id_consec_nivel_tipologias_doc_agno,
-#             "T247Id_ConfigTipologiaDocAgno": config_tipologia.id_config_tipologia_doc_agno,
-#             "T247Id_UnidadOrganizacional": unidad_organizacional.id_unidad_organizacional,
-#             "Codigo_Seccion_Subseccion":unidad_organizacional.codigo,
-#             "Codigo_Tipo_Unidad_Seccion_Subseccion":unidad_organizacional.cod_tipo_unidad,
-#             "Seccion_Subseccion": unidad_organizacional.cod_agrupacion_documental,
-#             "T247Id_TRD_Actual": trd_actual.id_trd,  
-#             "T247consecutivoInicial": consec_por_niveles.consecutivo_inicial,
-#             "T247cantidadDigitos": consec_por_niveles.cantidad_digitos,
-#             "T247itemYaUsado": consec_por_niveles.item_ya_usado,
-#             "T247Id_PersonaUltConfigImplemen": persona_logueada.id_persona,
-#             "Persona_ult_config_implemen": nombre_persona_config,
-#             "T247fechaUltConfigImplemen": fecha_ultima_config,
-#             "T247consecutivoActual": consec_por_niveles.consecutivo_actual,
-#             "T247consecutivoActualAMostrar": t247_consecutivo_actual,
-#             "T247prefijoConsecutivo": consec_por_niveles.prefijo_consecutivo,
-#             "prefijoConsecutivoAMosotrar": f"{consec_por_niveles.prefijo_consecutivo}-{t247_consecutivo_actual}",
-#         }
-
-#         return Response({
-#             'success': True,
-#             'detail': 'Se ha configurado la tipología documental con éxito',
-#             'data': response_data
-#         }, status=status.HTTP_201_CREATED)
-
-
-
-
-
 #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1788,92 +1698,23 @@ class CrearConfigurarTipologia(generics.CreateAPIView):
 
 #LISTAR_TODAS_LAS_CONFIGURACIONES_EXISTENTES
 class ListaConfiguraciones(generics.ListAPIView):
-    serializer_class = ConfigTipologiasDocAgnoSerializer
-
-    def get_queryset(self):
-        return ConfigTipologiasDocAgno.objects.all()
-
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = ConfigTipologiasDocAgnoSerializer(queryset, many=True)
-        user = request.user
-        persona_logueada = user.persona
-        # Puedes ajustar este bloque según tu modelo y lógica
-        data = []
-        for config_tipologia in queryset:
-            try:
-                consec_por_niveles = ConsecPorNivelesTipologiasDocAgno.objects.get(
-                    id_config_tipologia_doc_agno=config_tipologia
+            # Obtener todos los datos de la tabla 247
+            consecutivos_247 = ConsecPorNivelesTipologiasDocAgno.objects.all()
+            serializer_247 = ConsecPorNivelesTipologiasDocAgnoSerializer(consecutivos_247, many=True).data
+
+            # Obtener los datos de la tabla 246 si hay configuraciones en la tabla 247
+            if consecutivos_247.exists():
+                # Obtener las configuraciones únicas de la tabla 246 asociadas a las de la tabla 247
+                configuraciones_246 = ConfigTipologiasDocAgno.objects.filter(
+                    id__in=consecutivos_247.values_list('id_config_tipologia_doc_agno_id', flat=True).distinct()
                 )
-            except ConsecPorNivelesTipologiasDocAgno.DoesNotExist:
-                consec_por_niveles = None
+                serializer_246 = ConfigTipologiasDocAgnoSerializer(configuraciones_246, many=True).data
+            else:
+                serializer_246 = []
 
-            nombre_persona_config = ""
-            if consec_por_niveles and consec_por_niveles.id_persona_ult_config_implemen:
-                nombre_persona_config = (
-                    f"{consec_por_niveles.id_persona_ult_config_implemen.primer_apellido} "
-                    f"{consec_por_niveles.id_persona_ult_config_implemen.segundo_apellido}"
-                )
-
-            t247_consecutivo_actual = (
-                str(consec_por_niveles.consecutivo_actual).zfill(consec_por_niveles.cantidad_digitos)
-                if consec_por_niveles and consec_por_niveles.consecutivo_actual is not None
-                else None
-            )
-
-            item = {
-                "T246IdConfigTipologiaDocAgno": config_tipologia.id_config_tipologia_doc_agno,
-                "T246agnoTipologia": config_tipologia.agno_tipologia,
-                "T246Id_TipologiaDoc": config_tipologia.id_tipologia_doc.id_tipologia_documental,
-                "T246manejaConsecutivo": config_tipologia.maneja_consecutivo,
-                "T246codNivelDelConsecutivo": config_tipologia.cod_nivel_consecutivo,
-                "T246itemYaUsado": config_tipologia.item_ya_usado,
-                "T247IdConsecPorNiveles_TipologiasDocAgno": (
-                    consec_por_niveles.id_consec_nivel_tipologias_doc_agno
-                    if consec_por_niveles
-                    else None
-                ),
-                "T247Id_ConfigTipologiaDocAgno": config_tipologia.id_config_tipologia_doc_agno,
-                "T247Id_UnidadOrganizacional": (
-                    consec_por_niveles.id_unidad_organizacional.id_unidad_organizacional
-                    if consec_por_niveles and consec_por_niveles.id_unidad_organizacional
-                    else None
-                ),
-                "T247consecutivoInicial": (
-                    consec_por_niveles.consecutivo_inicial if consec_por_niveles else None
-                ),
-                "T247cantidadDigitos": (
-                    consec_por_niveles.cantidad_digitos if consec_por_niveles else None
-                ),
-                "T247itemYaUsado": (
-                    consec_por_niveles.item_ya_usado if consec_por_niveles else None
-                ),
-                "T247Id_PersonaUltConfigImplemen": (
-                    consec_por_niveles.id_persona_ult_config_implemen.id_persona
-                    if consec_por_niveles and consec_por_niveles.id_persona_ult_config_implemen
-                    else None
-                ),
-                "Persona_ult_config_implemen": nombre_persona_config,
-                "T247fechaUltConfigImplemen": (
-                    consec_por_niveles.fecha_ult_config_implemen if consec_por_niveles else None
-                ),
-                "T247consecutivoActualAMostrar": t247_consecutivo_actual,
-                "T247Id_UnidadOrganizacional": (
-                    consec_por_niveles.id_unidad_organizacional.id_unidad_organizacional
-                    if consec_por_niveles and consec_por_niveles.id_unidad_organizacional
-                    else None
-                ),
-
-                "T247prefijoConsecutivo": consec_por_niveles.prefijo_consecutivo,
-                "prefijoConsecutivoAMosotrar": f"{consec_por_niveles.prefijo_consecutivo}-{t247_consecutivo_actual}", 
-            }
-            data.append(item)
-
-        return Response({
-            'success': True,
-            'detail': 'Lista de configuraciones',
-            'data': data
-        })
+            # Devolver la respuesta
+            return Response({'success': True, 'data_247': serializer_247, 'data_246': serializer_246}, status=status.HTTP_200_OK)
     
 
 
@@ -2069,7 +1910,6 @@ class GetActualSeccionSubsecciones(generics.ListAPIView):
 
 
 #ADMINISTRACION_NUMEROS_TIPOLOGIA
-
 class AsignarNuevoConsecutivo(generics.CreateAPIView):
     serializer_class = ConfigTipologiasDocAgnoSerializer
 
@@ -2277,156 +2117,441 @@ class AsignarNuevoConsecutivo(generics.CreateAPIView):
             'detail': 'Operación NO exitosa, el consecutivo es false'
         })
 
+#///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-# class AsignarNuevoConsecutivo(generics.CreateAPIView):
-#     def get(self, request):
-#         # Obtener parámetros de la solicitud
-#         id_tipologia_doc = request.GET.get('id_tipologia_doc')
-#         unidad_organizacional_id = request.GET.get('id_unidad_organizacional')
-#         id_persona = request.GET.get('id_persona')
-#         current_year = request.GET.get('year') or datetime.now().year
+#ACTUALIZAR_CONFIGURACIONES_TIPOLOGIAS_DOCUMENTALES
 
-#         # Validar si la tipología está activa
-#         try:
-#             tipologia = TipologiasDoc.objects.get(id_tipologia_documental=id_tipologia_doc, activo=True)
-#         except TipologiasDoc.DoesNotExist:
-#             raise ValidationError('La tipología documental no está activa.')
+class EditarConfiguracionTipologia(generics.UpdateAPIView):
+    serializer_class = ConfigTipologiasDocAgnoSerializer
+    permission_classes = [IsAuthenticated]
 
-#         # Validar si la unidad organizacional existe
-#         try:
-#             unidad_organizacional = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=unidad_organizacional_id)
-#         except UnidadesOrganizacionales.DoesNotExist:
-#             return Response({
-#                 'success': False,
-#                 'detail': 'La unidad organizacional no existe.'
-#             }, status=status.HTTP_400_BAD_REQUEST)
+    def put(self, request, pk, *args, **kwargs):
+        with transaction.atomic():
+            # Obtener la configuración actual para edición
+            config_tipologia_actual = get_object_or_404(ConfigTipologiasDocAgno, pk=pk)
 
-#         # Validar si la persona existe
-#         try:
-#             persona = Personas.objects.get(id_persona=id_persona)
-#         except Personas.DoesNotExist:
-#             return Response({
-#                 'success': False,
-#                 'detail': 'La persona no existe.'
-#             }, status=status.HTTP_400_BAD_REQUEST)
+            # Verificar si la configuración actual tiene el campo 'item_ya_usado' igual a False
+            if config_tipologia_actual.item_ya_usado:
+                return Response({
+                    'success': False,
+                    'detail': 'No se puede editar la configuración. El campo "item_ya_usado" es True.',
+                }, status=status.HTTP_400_BAD_REQUEST)
 
-#         # Buscar configuración para el año actual
-#         config_tipologia_actual = ConfigTipologiasDocAgno.objects.filter(
-#             agno_tipologia=current_year,
-#             id_tipologia_doc=tipologia
-#         ).first()
+            # Obtener el nuevo valor para 'maneja_consecutivo' del cuerpo de la solicitud
+            maneja_consecutivo_nuevo = request.data.get('maneja_consecutivo', False)
 
-#         if not config_tipologia_actual:
-#             # Buscar configuración para el año anterior
-#             config_tipologia_anterior = ConfigTipologiasDocAgno.objects.filter(
-#                 agno_tipologia=current_year - 1,
-#                 id_tipologia_doc=tipologia
-#             ).first()
+            # Verificar si hay un cambio en el valor de 'maneja_consecutivo'
+            if config_tipologia_actual.maneja_consecutivo != maneja_consecutivo_nuevo:
+                if maneja_consecutivo_nuevo:
+                    # Caso_1: Cambiar de NO a SÍ
+                    nivel_consecutivo = request.data.get('nivel_consecutivo')
 
-#             if not config_tipologia_anterior:
-#                 # No hay configuración ni para el año actual ni para el año anterior
+                    if nivel_consecutivo == 'EM':
+                        # Lógica para configuración por Empresa (EM)
+                        data = request.data
+                        maneja_consecutivo = data.get('maneja_consecutivo', False)
+                        current_year = datetime.now().year
+                        fecha_ultima_config = datetime.now()
+                        # Procesa los datos para agregar un documento de archivo expediente
+                        user = request.user
+                        persona_logueada = user.persona
+
+                        if not persona_logueada.id_unidad_organizacional_actual:
+                            raise ValidationError("No tiene permiso para realizar esta acción")
+
+                        if datetime.now().month > 7:
+                            next_year = current_year + 1
+                        else:
+                            next_year = current_year
+
+                        tipologia_id = data.get('id_tipologia_doc')
+
+                        # Verificar si la tipología ya fue configurada
+                        if ConsecPorNivelesTipologiasDocAgno.objects.filter(
+                            id_config_tipologia_doc_agno__id_tipologia_doc=tipologia_id,
+                            id_config_tipologia_doc_agno__agno_tipologia=current_year
+                        ).exists():
+                            raise ValidationError('La tipología documental ya fue configurada')
+
+                        try:
+                            tipologia = TipologiasDoc.objects.get(id_tipologia_documental=tipologia_id)
+                        except TipologiasDoc.DoesNotExist:
+                            raise NotFound('La tipología ingresada no existe')
+
+                        # Validar los campos necesarios para EM
+                        if 'valor_inicial' not in data or 'cantidad_digitos' not in data:
+                            return Response({
+                                'success': False,
+                                'detail': 'Valor Inicial y Cantidad de Dígitos son campos obligatorios para Nivel Empresa.',
+                            }, status=status.HTTP_400_BAD_REQUEST)
+
+                        valor_inicial = data['valor_inicial']
+                        cantidad_digitos = data['cantidad_digitos']
+
+                        if not (isinstance(valor_inicial, int) and valor_inicial > 0) or not (1 <= cantidad_digitos <= 20):
+                            return Response({
+                                'success': False,
+                                'detail': 'Valor Inicial debe ser un entero mayor a 0 y Cantidad de Dígitos debe estar entre 1 y 20.',
+                            }, status=status.HTTP_400_BAD_REQUEST)
+
+                        # Crear o actualizar la configuración de consecutivo en ConfigTipologiasDocAgno para EM
+                        config_tipologia, created = ConfigTipologiasDocAgno.objects.get_or_create(
+                            agno_tipologia=current_year,
+                            id_tipologia_doc=tipologia,
+                            maneja_consecutivo=maneja_consecutivo,
+                            defaults={
+                                'cod_nivel_consecutivo': nivel_consecutivo,
+                                'item_ya_usado': False,
+                            }
+                        )
+
+                        # Crear o actualizar la configuración de consecutivo en ConsecPorNivelesTipologiasDocAgno para EM
+                        consec_por_niveles, _ = ConsecPorNivelesTipologiasDocAgno.objects.get_or_create(
+                            id_config_tipologia_doc_agno=config_tipologia,
+                            defaults={
+                                'consecutivo_inicial': valor_inicial,
+                                'cantidad_digitos': cantidad_digitos,
+                                'item_ya_usado': False,
+                                'consecutivo_actual': valor_inicial - 1,
+                                'id_persona_ult_config_implemen': persona_logueada,
+                            }
+                        )
+
+                        # Formatear T247consecutivoInicial y T247consecutivoActual con ceros a la izquierda para EM
+                        t247_consecutivo_inicial = str(consec_por_niveles.consecutivo_inicial).zfill(cantidad_digitos)
+                        t247_consecutivo_actual = str(consec_por_niveles.consecutivo_actual).zfill(cantidad_digitos)
+
+                        nombre_persona_config = self.obtener_nombre_persona_config(persona_logueada)
+
+                        response_data = {
+                            "T246IdConfigTipologiaDocAgno": config_tipologia.id_config_tipologia_doc_agno,
+                            "T246agnoTipologia": current_year,
+                            "T246Id_TipologiaDoc": tipologia_id,
+                            "T246manejaConsecutivo": maneja_consecutivo,
+                            "T246codNivelDelConsecutivo": config_tipologia.cod_nivel_consecutivo,
+                            "T246itemYaUsado": config_tipologia.item_ya_usado,
+                            "T247IdConsecPorNiveles_TipologiasDocAgno": consec_por_niveles.id_consec_nivel_tipologias_doc_agno,
+                            "T247Id_ConfigTipologiaDocAgno": config_tipologia.id_config_tipologia_doc_agno,
+                            "T247Id_UnidadOrganizacional": None,
+                            "T247consecutivoInicial": valor_inicial,
+                            "T247cantidadDigitos": consec_por_niveles.cantidad_digitos,
+                            "T247itemYaUsado": consec_por_niveles.item_ya_usado,
+                            "T247Id_PersonaUltConfigImplemen": persona_logueada.id_persona,
+                            "Persona_ult_config_implemen": nombre_persona_config,
+                            "T247fechaUltConfigImplemen": fecha_ultima_config,
+                            "T247consecutivoActual": consec_por_niveles.consecutivo_actual,
+                            "T247consecutivoActualAMostrar": t247_consecutivo_actual,
+                        }
+
+                        return Response({
+                            'success': True,
+                            'detail': 'Se ha configurado la tipología documental para Empresa con éxito',
+                            'data': response_data
+                        }, status=status.HTTP_201_CREATED)
+
+                    elif nivel_consecutivo == 'SS':
+                        # Lógica para configuración por Sección/Subsección (SS)
+                        if 'valor_inicial_ss' not in data or 'cantidad_digitos_ss' not in data:
+                            return Response({
+                                'success': False,
+                                'detail': 'Valor Inicial y Cantidad de Dígitos son campos obligatorios para Nivel Sección/Subsección.',
+                            }, status=status.HTTP_400_BAD_REQUEST)
+
+                        valor_inicial_ss = data['valor_inicial_ss']
+                        cantidad_digitos_ss = data['cantidad_digitos_ss']
+
+                        if not (isinstance(valor_inicial_ss, int) and valor_inicial_ss > 0) or not (1 <= cantidad_digitos_ss <= 20):
+                            return Response({
+                                'success': False,
+                                'detail': 'Valor Inicial debe ser un entero mayor a 0 y Cantidad de Dígitos debe estar entre 1 y 20.',
+                            }, status=status.HTTP_400_BAD_REQUEST)
+
+                        # Crear o actualizar la configuración de consecutivo en ConfigTipologiasDocAgno para SS
+                        config_tipologia_ss, created_ss = ConfigTipologiasDocAgno.objects.get_or_create(
+                            agno_tipologia=current_year,
+                            id_tipologia_doc=tipologia,
+                            maneja_consecutivo=maneja_consecutivo,
+                            defaults={
+                                'cod_nivel_consecutivo': nivel_consecutivo,
+                                'item_ya_usado': False,
+                            }
+                        )
+
+                        # Crear o actualizar la configuración de consecutivo en ConsecPorNivelesTipologiasDocAgno para SS
+                        consec_por_niveles_ss, _ = ConsecPorNivelesTipologiasDocAgno.objects.get_or_create(
+                            id_config_tipologia_doc_agno=config_tipologia_ss,
+                            defaults={
+                                'consecutivo_inicial': valor_inicial_ss,
+                                'cantidad_digitos': cantidad_digitos_ss,
+                                'item_ya_usado': False,
+                                'consecutivo_actual': valor_inicial_ss - 1,
+                                'id_persona_ult_config_implemen': persona_logueada,
+                            }
+                        )
+
+                        # Formatear T247consecutivoInicial y T247consecutivoActual con ceros a la izquierda para SS
+                        t247_consecutivo_inicial_ss = str(consec_por_niveles_ss.consecutivo_inicial).zfill(cantidad_digitos_ss)
+                        t247_consecutivo_actual_ss = str(consec_por_niveles_ss.consecutivo_actual).zfill(cantidad_digitos_ss)
+
+                        nombre_persona_config_ss = self.obtener_nombre_persona_config(persona_logueada)
+
+                        response_data_ss = {
+                            "T246IdConfigTipologiaDocAgno": config_tipologia_ss.id_config_tipologia_doc_agno,
+                            "T246agnoTipologia": current_year,
+                            "T246Id_TipologiaDoc": tipologia_id,
+                            "T246manejaConsecutivo": maneja_consecutivo,
+                            "T246codNivelDelConsecutivo": config_tipologia_ss.cod_nivel_consecutivo,
+                            "T246itemYaUsado": config_tipologia_ss.item_ya_usado,
+                            "T247IdConsecPorNiveles_TipologiasDocAgno": consec_por_niveles_ss.id_consec_nivel_tipologias_doc_agno,
+                            "T247Id_ConfigTipologiaDocAgno": config_tipologia_ss.id_config_tipologia_doc_agno,
+                            "T247Id_UnidadOrganizacional": None,
+                            "T247consecutivoInicial": valor_inicial_ss,
+                            "T247cantidadDigitos": consec_por_niveles_ss.cantidad_digitos,
+                            "T247itemYaUsado": consec_por_niveles_ss.item_ya_usado,
+                            "T247Id_PersonaUltConfigImplemen": persona_logueada.id_persona,
+                            "Persona_ult_config_implemen": nombre_persona_config_ss,
+                            "T247fechaUltConfigImplemen": fecha_ultima_config,
+                            "T247consecutivoActual": consec_por_niveles_ss.consecutivo_actual,
+                            "T247consecutivoActualAMostrar": t247_consecutivo_actual_ss,
+                        }
+
+                        return Response({
+                            'success': True,
+                            'detail': 'Se ha configurado la tipología documental para Sección/Subsección con éxito',
+                            'data': response_data_ss
+                        }, status=status.HTTP_201_CREATED)
+
+                    else:
+                        return Response({
+                            'success': False,
+                            'detail': 'Opción de Nivel de Consecutivo no válida.',
+                        }, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    # Caso_2: Cambiar de SÍ a NO
+                   
+
+                    # Devolver resultados
+                    return Response({
+                        'success': True,
+                        'detail': 'Operación Exitosa, Caso_2',
+                        # ... (devolver datos relevantes de la edición)
+                    }, status=status.HTTP_200_OK)
+            else:
+                # No hay cambio en 'maneja_consecutivo', simplemente actualizar la configuración
+                serializer = self.serializer_class(config_tipologia_actual, data=request.data, partial=True)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+
+                # Devolver resultados
+                return Response({
+                    'success': True,
+                    'detail': 'Operación Exitosa, No hay cambio en "maneja_consecutivo"',
+                    # ... (devolver datos relevantes de la edición)
+                }, status=status.HTTP_200_OK)
+
+    def obtener_nombre_persona_config(self, persona):
+        nombre_persona_config = ""
+        if persona.primer_nombre:
+            nombre_persona_config += persona.primer_nombre
+
+        if persona.segundo_nombre:
+            nombre_persona_config += " " + persona.segundo_nombre
+
+        if persona.primer_apellido:
+            nombre_persona_config += " " + persona.primer_apellido
+
+        if persona.segundo_apellido:
+            nombre_persona_config += " " + persona.segundo_apellido
+
+        return nombre_persona_config
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# class EditarConfiguracionTipologia(generics.UpdateAPIView):
+#     serializer_class = ConfigTipologiasDocAgnoSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def put(self, request, pk):
+#         with transaction.atomic():
+#             # Obtener la configuración actual para edición
+#             config_tipologia_actual = get_object_or_404(ConfigTipologiasDocAgno, pk=pk)
+
+#             # Verificar si la configuración actual tiene el campo 'item_ya_usado' igual a False
+#             if config_tipologia_actual.item_ya_usado:
 #                 return Response({
 #                     'success': False,
-#                     'detail': 'No existe configuración de consecutivos para la tipología documental solicitada en el año actual ni en el anterior. '
-#                               'Por favor, diríjase al módulo de "Configuración de Tipologías Documentales" para continuar el proceso.'
+#                     'detail': 'No se puede editar la configuración. El campo "item_ya_usado" es True.',
 #                 }, status=status.HTTP_400_BAD_REQUEST)
 
-#             # Caso 1: No existe registro de configuración en el año enviado para la tipología solicitada
-#             with transaction.atomic():
-#                 config_tipologia_actual = ConfigTipologiasDocAgno.objects.create(
-#                     agno_tipologia=current_year,
-#                     id_tipologia_doc=tipologia,
-#                     item_ya_usado=False
-#                 )
+#             # Obtener el nuevo valor para 'maneja_consecutivo' del cuerpo de la solicitud
+#             maneja_consecutivo_nuevo = request.data.get('maneja_consecutivo', False)
 
-#                 # Copiar los registros de la tabla detalle (T247)
-#                 detalles_anterior = ConsecPorNivelesTipologiasDocAgno.objects.filter(
-#                     id_config_tipologia_doc_agno=config_tipologia_anterior
-#                 )
+#             # Verificar si hay un cambio en el valor de 'maneja_consecutivo'
+#             if config_tipologia_actual.maneja_consecutivo != maneja_consecutivo_nuevo:
+#                 if maneja_consecutivo_nuevo:
+#                     # Caso_1: Cambiar de NO a SÍ
+#                     nivel_consecutivo = request.data.get('nivel_consecutivo')
 
-#                 for detalle_anterior in detalles_anterior:
-#                     ConsecPorNivelesTipologiasDocAgno.objects.create(
-#                         id_config_tipologia_doc_agno=config_tipologia_actual,
-#                         id_unidad_organizacional=detalle_anterior.id_unidad_organizacional,
-#                         consecutivo_inicial=1,
-#                         cantidad_digitos=detalle_anterior.cantidad_digitos,
-#                         item_ya_usado=False,
-#                         consecutivo_actual=0,
-#                         id_persona_ult_config_implemen=None,
-#                         fecha_ult_config_implemen=None,
-#                         fecha_consecutivo_actual=None,
-#                         id_persona_consecutivo_actual=None
-#                     )
+#                     if nivel_consecutivo == 'EM':
+#                         # Lógica para configuración por Empresa (EM)
+#                         data = request.data
+#                         maneja_consecutivo = data.get('maneja_consecutivo', False)
+#                         current_year = datetime.now().year
+#                         fecha_ultima_config = datetime.now()
+#                         # Procesa los datos para agregar un documento de archivo expediente
+#                         user = request.user
+#                         persona_logueada = user.persona
 
-#         # Caso 2: Existe registro de configuración en el año enviado para la tipología solicitada
-#         if config_tipologia_actual.maneja_consecutivo:
-#             if config_tipologia_actual.cod_nivel_del_consecutivo == 'EM':
-#                 # Lógica para nivel de empresa
-#                 with transaction.atomic():
-#                     consecutivo_empresa = ConsecPorNivelesTipologiasDocAgno.objects.select_for_update().get(
-#                         id_config_tipologia_doc_agno=config_tipologia_actual
-#                     )
+#                         if not persona_logueada.id_unidad_organizacional_actual:
+#                             raise ValidationError("No tiene permiso para realizar esta acción")
 
-#                     # Actualizar el consecutivo y marcar como usado
-#                     consecutivo_empresa.consecutivo_actual += 1
-#                     consecutivo_empresa.fecha_consecutivo_actual = datetime.now()
-#                     consecutivo_empresa.id_persona_consecutivo_actual = persona
-#                     consecutivo_empresa.save()
+#                         if datetime.now().month > 7:
+#                             next_year = current_year + 1
+#                         else:
+#                             next_year = current_year
 
-#                     # Marcar como usado en T247
-#                     config_tipologia_actual.item_ya_usado = True
-#                     config_tipologia_actual.save()
+#                         tipologia_id = data.get('id_tipologia_doc')
 
-#                     # Actualizar T246itemYaUsado solo si está en False
-#                     if not config_tipologia_actual.item_ya_usado:
-#                         config_tipologia_actual.item_ya_usado = True
-#                         config_tipologia_actual.save()
+#                         # Verificar si la tipología ya fue configurada
+#                         if ConsecPorNivelesTipologiasDocAgno.objects.filter(
+#                             id_config_tipologia_doc_agno__id_tipologia_doc=tipologia_id,
+#                             id_config_tipologia_doc_agno__agno_tipologia=current_year
+#                         ).exists():
+#                             raise ValidationError('La tipología documental ya fue configurada')
 
-#                 # Devolver los resultados
+#                         try:
+#                             tipologia = TipologiasDoc.objects.get(id_tipologia_documental=tipologia_id)
+#                         except TipologiasDoc.DoesNotExist:
+#                             raise NotFound('La tipología ingresada no existe')
+#                         # Validar los campos necesarios
+#                         if 'valor_inicial' not in data or 'cantidad_digitos' not in data:
+#                             return Response({
+#                                 'success': False,
+#                                 'detail': 'Valor Inicial y Cantidad de Dígitos son campos obligatorios para Nivel Empresa.',
+#                             }, status=status.HTTP_400_BAD_REQUEST)
+
+#                         valor_inicial = data['valor_inicial']
+#                         cantidad_digitos = data['cantidad_digitos']
+
+#                         if not (isinstance(valor_inicial, int) and valor_inicial > 0) or not (1 <= cantidad_digitos <= 20):
+#                             return Response({
+#                                 'success': False,
+#                                 'detail': 'Valor Inicial debe ser un entero mayor a 0 y Cantidad de Dígitos debe estar entre 1 y 20.',
+#                             }, status=status.HTTP_400_BAD_REQUEST)
+
+#                         # Crear o actualizar la configuración de consecutivo en ConfigTipologiasDocAgno
+#                         config_tipologia, created = ConfigTipologiasDocAgno.objects.get_or_create(
+#                             agno_tipologia=current_year,
+#                             id_tipologia_doc=tipologia,
+#                             maneja_consecutivo=maneja_consecutivo,
+#                             defaults={
+#                                 'cod_nivel_consecutivo': nivel_consecutivo,
+#                                 'item_ya_usado': False,
+#                             }
+#                         )
+
+#                         # Crear o actualizar la configuración de consecutivo en ConsecPorNivelesTipologiasDocAgno
+#                         consec_por_niveles, _ = ConsecPorNivelesTipologiasDocAgno.objects.get_or_create(
+#                             id_config_tipologia_doc_agno=config_tipologia,
+#                             defaults={
+#                                 'consecutivo_inicial': valor_inicial,
+#                                 'cantidad_digitos': cantidad_digitos,
+#                                 'item_ya_usado': False,
+#                                 'consecutivo_actual': valor_inicial - 1,
+#                                 'id_persona_ult_config_implemen': persona_logueada,  # Asignar la instancia de Personas
+#                             }
+#                         )
+
+#                         # Formatear T247consecutivoInicial y T247consecutivoActual con ceros a la izquierda
+#                         t247_consecutivo_inicial = str(consec_por_niveles.consecutivo_inicial).zfill(cantidad_digitos)
+#                         t247_consecutivo_actual = str(consec_por_niveles.consecutivo_actual).zfill(cantidad_digitos)
+
+#                         nombre_persona_config = ""
+#                         if persona_logueada.primer_nombre:
+#                             nombre_persona_config += persona_logueada.primer_nombre
+
+#                         if persona_logueada.segundo_nombre:
+#                             nombre_persona_config += " " + persona_logueada.segundo_nombre
+
+#                         if persona_logueada.primer_apellido:
+#                             nombre_persona_config += " " + persona_logueada.primer_apellido
+
+#                         if persona_logueada.segundo_apellido:
+#                             nombre_persona_config += " " + persona_logueada.segundo_apellido
+
+#                         response_data = {
+#                             "T246IdConfigTipologiaDocAgno": config_tipologia.id_config_tipologia_doc_agno,
+#                             "T246agnoTipologia": current_year,
+#                             "T246Id_TipologiaDoc": tipologia_id,
+#                             "T246manejaConsecutivo": maneja_consecutivo,
+#                             "T246codNivelDelConsecutivo": config_tipologia.cod_nivel_consecutivo,
+#                             "T246itemYaUsado": config_tipologia.item_ya_usado,
+#                             "T247IdConsecPorNiveles_TipologiasDocAgno": consec_por_niveles.id_consec_nivel_tipologias_doc_agno,
+#                             "T247Id_ConfigTipologiaDocAgno": config_tipologia.id_config_tipologia_doc_agno,
+#                             "T247Id_UnidadOrganizacional": None,
+#                             "T247consecutivoInicial": valor_inicial,
+#                             "T247cantidadDigitos": consec_por_niveles.cantidad_digitos,
+#                             "T247itemYaUsado": consec_por_niveles.item_ya_usado,
+#                             "T247Id_PersonaUltConfigImplemen": persona_logueada.id_persona,  # Asignar el ID de la persona logueada
+#                             "Persona_ult_config_implemen": nombre_persona_config,
+#                             "T247fechaUltConfigImplemen": fecha_ultima_config,
+#                             "T247consecutivoActual": consec_por_niveles.consecutivo_actual,
+#                             "T247consecutivoActualAMostrar": t247_consecutivo_actual,
+#                         }
+
+#                         return Response({
+#                             'success': True,
+#                             'detail': 'Se ha configurado la tipología documental con éxito',
+#                             'data': response_data
+#                         }, status=status.HTTP_201_CREATED)
+#                     else:
+#                         return Response({
+#                             'success': False,
+#                             'detail': 'Opción de Nivel de Consecutivo no válida.',
+#                         }, status=status.HTTP_400_BAD_REQUEST)
+#                 else:
+#                     # Caso_2: Cambiar de SÍ a NO
+#                     # Lógica adicional si es necesario para el caso_2
+#                     # ...
+
+#                     # Devolver resultados
+#                     return Response({
+#                         'success': True,
+#                         'detail': 'Operación Exitosa, Caso_2',
+#                         # ... (devolver datos relevantes de la edición)
+#                     }, status=status.HTTP_200_OK)
+#             else:
+#                 # No hay cambio en 'maneja_consecutivo', simplemente actualizar la configuración
+#                 serializer = self.serializer_class(config_tipologia_actual, data=request.data, partial=True)
+#                 serializer.is_valid(raise_exception=True)
+#                 serializer.save()
+
+#                 # Devolver resultados
 #                 return Response({
 #                     'success': True,
-#                     'agno_tipologia': config_tipologia_actual.agno_tipologia,
-#                     'id_tipologia_doc': config_tipologia_actual.id_tipologia_doc.id_tipologia_documental,
-#                     'maneja_consecutivo': config_tipologia_actual.maneja_consecutivo,
-#                     'cod_nivel_del_consecutivo': config_tipologia_actual.cod_nivel_consecutivo,
-#                     'prefijo_consecutivo': consecutivo_empresa.prefijo_consecutivo,
-#                     'consecutivo_asignado': consecutivo_empresa.consecutivo_actual,
-#                     'cantidad_digitos': consecutivo_empresa.cantidad_digitos,
-#                     'consecutivo_armado': f"{consecutivo_empresa.prefijo_consecutivo}{consecutivo_empresa.consecutivo_actual}"
-#                 }, status=status.HTTP_200_OK)
-#             elif config_tipologia_actual.cod_nivel_del_consecutivo == 'SS':
-#                 # Lógica para nivel de Sección/Subsección
-#                 with transaction.atomic():
-#                     consecutivo_seccion_subseccion = ConsecPorNivelesTipologiasDocAgno.objects.select_for_update().get(
-#                         id_config_tipologia_doc_agno=config_tipologia_actual,
-#                         id_unidad_organizacional=unidad_organizacional
-#                     )
-
-#                     # Actualizar el consecutivo y marcar como usado
-#                     consecutivo_seccion_subseccion.consecutivo_actual += 1
-#                     consecutivo_seccion_subseccion.fecha_consecutivo_actual = datetime.now()
-#                     consecutivo_seccion_subseccion.id_persona_consecutivo_actual = persona
-#                     consecutivo_seccion_subseccion.save()
-
-#                     # Marcar como usado en T247
-#                     config_tipologia_actual.item_ya_usado = True
-#                     config_tipologia_actual.save()
-
-#                     # Actualizar T246itemYaUsado solo si está en False
-#                     if not config_tipologia_actual.item_ya_usado:
-#                         config_tipologia_actual.item_ya_usado = True
-#                         config_tipologia_actual.save()
-
-#                 # Devolver los resultados
-#                 return Response({
-#                     'success': True,
-#                     'agno_tipologia': config_tipologia_actual.agno_tipologia,
-#                     'id_tipologia_doc': config_tipologia_actual.id_tipologia_doc.id_tipologia_documental,
-#                     'maneja_consecutivo': config_tipologia_actual.maneja_consecutivo,
-#                     'cod_nivel_del_consecutivo': config_tipologia_actual.cod_nivel_consecutivo,
-#                     'prefijo_consecutivo': consecutivo_seccion_subseccion.prefijo_consecutivo,
-#                     'consecutivo_asignado': consecutivo_seccion_subseccion.consecutivo_actual,
-#                     'cantidad_digitos': consecutivo_seccion_subseccion.cantidad_digitos,
-#                     'consecutivo_armado': f"{consecutivo_seccion_subseccion.prefijo_consecutivo}{consecutivo_seccion_subseccion.consecutivo_actual}"
+#                     'detail': 'Operación Exitosa, No hay cambio en "maneja_consecutivo"',
+#                     # ... (devolver datos relevantes de la edición)
 #                 }, status=status.HTTP_200_OK)

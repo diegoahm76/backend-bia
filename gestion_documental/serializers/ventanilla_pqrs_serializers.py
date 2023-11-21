@@ -1,6 +1,7 @@
 from rest_framework import serializers
+from gestion_documental.models.expedientes_models import ArchivosDigitales
 
-from gestion_documental.models.radicados_models import PQRSDF, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
 
 
 
@@ -234,24 +235,25 @@ class PQRSDFHistoricoGetSerializer(serializers.ModelSerializer):
             return nombre_completo_responsable
         
 
-class PQRSDFAnexosGetSerializer(serializers.ModelSerializer):
-    radicado = serializers.SerializerMethodField()
-    titular = serializers.SerializerMethodField()
-    class Meta:
-        model = PQRSDF
-        fields = ['id_PQRSDF','radicado','titular','cantidad_anexos','asunto']
-    def get_radicado(self, obj):
-        cadena = ""
-        if obj.id_radicado:
-            cadena= str(obj.id_radicado.prefijo_radicado)+'-'+str(obj.id_radicado.agno_radicado)+'-'+str(obj.id_radicado.nro_radicado)
-            return cadena
-    def get_titular(self, obj):
 
-        if obj.id_persona_titular:
-            nombre_completo_responsable = None
-            nombre_list = [obj.id_persona_titular.primer_nombre, obj.id_persona_titular.segundo_nombre,
-                            obj.id_persona_titular.primer_apellido, obj.id_persona_titular.segundo_apellido]
-            nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
-            nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
-            return nombre_completo_responsable
-        
+
+class AnexosGetSerializer(serializers.ModelSerializer):
+
+    medio_almacenamiento = serializers.CharField(source='get_cod_medio_almacenamiento_display', default=None)
+    class Meta:
+        model = Anexos
+        fields = '__all__'  
+
+class AnexosDocumentoDigitalGetSerializer(serializers.ModelSerializer):
+
+    
+    #ruta_archivo = serializers.ReadOnlyField(source='id_docu_arch_exp.ruta_archivo',default=None)
+    class Meta:
+        model = Anexos
+        #fields = ['id_anexo','ruta_archivo']  
+        fields = '__all__'  
+
+class AnexoArchivosDigitalesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ArchivosDigitales
+        fields = ['ruta_archivo','nombre_de_Guardado']
