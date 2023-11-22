@@ -87,6 +87,7 @@ class CrearSubZonaHidricaVista(generics.CreateAPIView):
         try:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
+           
             
             # Agregar lógica adicional si es necesario, por ejemplo, asignar valores antes de guardar
             # serializer.validated_data['campo_adicional'] = valor

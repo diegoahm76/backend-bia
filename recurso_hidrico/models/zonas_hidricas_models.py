@@ -41,9 +41,11 @@ class SubZonaHidrica(models.Model):
     id_tipo_zona_hidrica = models.ForeignKey(TipoZonaHidrica, on_delete=models.CASCADE, db_column="T623Id_TipoZonaHidrica")
     
     # Nuevo campo agregado
-    codigo_rio = models.CharField(max_length=20, db_column="T623CodigoRio", null=True, blank=True)
+    codigo_rio = models.CharField(max_length=20, db_column="T623CodigoRio", null=True, blank=True,unique=True)
 
     class Meta:
         db_table = 'T623SubZonasHidricas'
         verbose_name = 'Sub Zona Hidrica'
         verbose_name_plural = 'Sub Zona Hidricas'
+        unique_together = ['nombre_sub_zona_hidrica', 'id_zona_hidrica']
+      
