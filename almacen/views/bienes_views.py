@@ -14,7 +14,8 @@ from almacen.serializers.bienes_serializers import (
     EntradaSerializer,
     CatalogoBienesActivoFijoPutSerializer,
     SerializerItemEntradaConsumoPut,
-    TiposEntradasSerializer
+    TiposEntradasSerializer,
+    CatalagoBienesYSerializer
 )
 from almacen.models.hoja_de_vida_models import (
     HojaDeVidaComputadores,
@@ -46,6 +47,96 @@ from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from datetime import timezone
 import copy
+
+
+
+class CatalogoBienesCreate(generics.CreateAPIView):
+    serializer_class = CatalagoBienesYSerializer
+    permission_classes = [IsAuthenticated]
+
+    def generador_codigo_bien(self, bien_padre, nivel_jerarquico):
+
+        catalago = CatalogoBienes.objects.filter(nivel_jerarquico=nivel_jerarquico)
+
+        if bien_padre != None:
+            catalago = catalago.filter(id_bien_padre = bien_padre.id_bien)
+
+        catalago = catalago.order_by('codigo_bien').last()
+        
+        if catalago == None:
+            if nivel_jerarquico == 1:
+                return '1'
+            if nivel_jerarquico == 2:
+                codigo_padre = bien_padre.codigo_bien
+                return codigo_padre + '1'
+            if nivel_jerarquico == 3:
+                codigo_padre = bien_padre.codigo_bien
+                return codigo_padre + '01'
+            if nivel_jerarquico == 4:
+                codigo_padre = bien_padre.codigo_bien
+                return codigo_padre + '001'
+            if nivel_jerarquico == 5:
+                codigo_padre = bien_padre.codigo_bien
+                return codigo_padre + '00001'
+            
+  
+        if nivel_jerarquico == 2:
+            codigo = str(int(catalago.codigo_bien) + 1)
+            print(codigo[1:])
+
+
+            if len(catalago.codigo_bien) == 1:
+                print("ALGO")
+        
+        codigo = str(int(catalago.codigo_bien) + 1)
+        print()
+
+        if nivel_jerarquico == 1:
+            if len(codigo) != 1:
+                print("ALGO")
+        
+        return codigo
+
+
+    def create_catalogo_bienes(self, data_in):
+        nivel_jerarquico = data_in['nivel_jerarquico']
+        id_bien_padre = data_in['id_bien_padre']
+        bien_padre = None
+
+        if nivel_jerarquico < 1 or nivel_jerarquico > 5:
+            raise ValidationError('El nivel jerarquico esta fuera de rango')
+
+        if id_bien_padre != None:
+
+            try:
+                bien_padre = CatalogoBienes.objects.get(id_bien=id_bien_padre)
+            except CatalogoBienes.DoesNotExist:
+                raise ValidationError('El id de bien padre ingresado no existe')
+            
+            if nivel_jerarquico != (bien_padre.nivel_jerarquico + 1):
+                raise ValidationError('El nivel jerarquico esta fuera de rango')
+
+        data_in['codigo_bien'] = self.generador_codigo_bien(bien_padre, nivel_jerarquico)
+        
+            
+        return data_in
+            
+    def post(self, request):
+        data_in = request.data
+        data = self.create_catalogo_bienes(data_in)
+        # serializer = CatalagoBienesYSerializer(data=data)
+        # serializer.is_valid(raise_exception=True)
+        # serializer.save()
+        return Response(data, status=status.HTTP_201_CREATED)
+            
+
+            
+
+            
+        
+
+
+
 
 # Creación y actualización de Catalogo de Bienes
 

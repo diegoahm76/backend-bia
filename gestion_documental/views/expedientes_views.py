@@ -22,7 +22,8 @@ from gestion_documental.views.conf__tipos_exp_views import ConfiguracionTipoExpe
 from seguridad.utils import Util
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AnularExpedienteSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, AperturaExpedienteUpdateAutSerializer, AperturaExpedienteUpdateNoAutSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, BorrarExpedienteSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConcesionAccesoDocumentosCreateSerializer, ConcesionAccesoDocumentosGetSerializer, ConcesionAccesoExpedientesCreateSerializer, ConcesionAccesoExpedientesGetSerializer, ConcesionAccesoPersonasFilterSerializer, ConcesionAccesoUpdateSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, EnvioCodigoSerializer, ExpedienteAperturaSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, FirmaCierreGetSerializer, IndexarDocumentosAnularSerializer, IndexarDocumentosCreateSerializer, IndexarDocumentosGetSerializer, IndexarDocumentosUpdateAutSerializer, IndexarDocumentosUpdateSerializer, InformacionIndiceGetSerializer, ListExpedientesComplejosSerializer, ListarTRDSerializer, ListarTipologiasSerializer, SerieSubserieUnidadTRDGetSerializer
+from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AnularExpedienteSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, AperturaExpedienteUpdateAutSerializer, AperturaExpedienteUpdateNoAutSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, BorrarExpedienteSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConcesionAccesoDocumentosCreateSerializer, ConcesionAccesoDocumentosGetSerializer, ConcesionAccesoExpedientesCreateSerializer, ConcesionAccesoExpedientesGetSerializer, ConcesionAccesoPersonasFilterSerializer, ConcesionAccesoUpdateSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, EnvioCodigoSerializer, ExpedienteAperturaSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, FirmaCierreGetSerializer, IndexarDocumentosAnularSerializer, IndexarDocumentosCreateSerializer, IndexarDocumentosGetSerializer, IndexarDocumentosUpdateAutSerializer, IndexarDocumentosUpdateSerializer, InformacionIndiceGetSerializer, ListExpedientesComplejosSerializer, ListarTRDSerializer, ListarTipologiasSerializer, ReubicacionFisicaExpedienteSerializer, SerieSubserieUnidadTRDGetSerializer
+from gestion_documental.serializers.depositos_serializers import  CarpetaCajaGetOrdenSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Max 
@@ -394,6 +395,8 @@ class ExpedienteSearch(generics.ListAPIView):
         codigos_uni_serie_subserie = self.request.query_params.get('codigos_uni_serie_subserie', '').strip()
         trd_nombre = self.request.query_params.get('trd_nombre', '').strip()
         id_persona_titular_exp_complejo = self.request.query_params.get('id_persona_titular_exp_complejo')
+        ubicacion_desactualizada = self.request.query_params.get('ubicacion_desactualizada', '').strip()
+
 
 
 
@@ -446,6 +449,11 @@ class ExpedienteSearch(generics.ListAPIView):
             search_vector = SearchVector('palabras_clave_expediente')
             search_query = SearchQuery(palabras_clave_expediente)
             queryset = queryset.annotate(rank=SearchRank(search_vector, search_query)).filter(rank__gt=0)
+
+        # Nuevo filtro para expedientes con ubicación física desactualizada
+        if ubicacion_desactualizada.lower() in ['true', 'false']:
+            ubicacion_desactualizada_bool = ubicacion_desactualizada.lower() == 'true'
+            queryset = queryset.filter(ubicacion_fisica_esta_actualizada=ubicacion_desactualizada_bool)
 
         return queryset
 
@@ -2086,6 +2094,182 @@ class FirmaCierreGetView(generics.ListAPIView):
         serializer = self.serializer_class(indice_electronico_exp)
         
         return Response({'success':True, 'detail':'Se encontró la siguiente información', 'data':serializer.data}, status=status.HTTP_200_OK)
+    
+
+#REUBICACION_FISICA_EXPEDIENTE
+class ExpedienteSearchConUbicacionDesactualizada(generics.ListAPIView):
+    serializer_class = ExpedienteSearchSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        titulo_expediente = self.request.query_params.get('titulo_expediente', '').strip()
+        codigo_exp_und_serie_subserie = self.request.query_params.get('codigo_exp_und_serie_subserie', '').strip()
+        fecha_apertura_expediente = self.request.query_params.get('fecha_apertura_expediente', '').strip()
+        nombre_serie_origen = self.request.query_params.get('id_serie_origen', '').strip()
+        nombre_subserie_origen = self.request.query_params.get('id_subserie_origen', '').strip()
+        palabras_clave_expediente = self.request.query_params.get('palabras_clave_expediente', '').strip()
+        codigos_uni_serie_subserie = self.request.query_params.get('codigos_uni_serie_subserie', '').strip()
+        trd_nombre = self.request.query_params.get('trd_nombre', '').strip()
+        id_persona_titular_exp_complejo = self.request.query_params.get('id_persona_titular_exp_complejo')
+        ubicacion_desactualizada = self.request.query_params.get('ubicacion_desactualizada', '').strip()
+
+        queryset = ExpedientesDocumentales.objects.all() 
+
+        if titulo_expediente:
+            queryset = queryset.filter(titulo_expediente__icontains=titulo_expediente)
+
+        if codigo_exp_und_serie_subserie:
+            queryset = queryset.filter(codigo_exp_und_serie_subserie=codigo_exp_und_serie_subserie)
+
+        if fecha_apertura_expediente:
+            queryset = queryset.filter(fecha_apertura_expediente__icontains=fecha_apertura_expediente)
+
+        if nombre_serie_origen:
+            queryset = queryset.filter(id_serie_origen__nombre__icontains=nombre_serie_origen)
+
+        if nombre_subserie_origen:
+            queryset = queryset.filter(id_subserie_origen__nombre__icontains=nombre_subserie_origen)
+
+        if codigos_uni_serie_subserie:
+            queryset = queryset.filter(codigo_exp_und_serie_subserie__startswith=codigos_uni_serie_subserie)
+
+        if id_persona_titular_exp_complejo:
+            queryset = queryset.filter(id_persona_titular_exp_complejo=id_persona_titular_exp_complejo)
+
+        if trd_nombre:
+            queries = []
+            
+            if trd_nombre.lower() == 'actual':
+                queries.append(queryset.filter(id_trd_origen__nombre__icontains=trd_nombre))
+                queries.append(queryset.filter(id_trd_origen__fecha_retiro_produccion__icontains=trd_nombre))
+                queries.append(queryset.filter(id_trd_origen__actual=True))
+            elif trd_nombre.lower() == 'no actual':
+                queries.append(queryset.filter(id_trd_origen__nombre__icontains=trd_nombre))
+                queries.append(queryset.filter(id_trd_origen__fecha_retiro_produccion__icontains=trd_nombre))
+                queries.append(queryset.filter(id_trd_origen__actual=False))
+            else:
+                queries.append(queryset.filter(id_trd_origen__nombre__icontains=trd_nombre))
+                queries.append(queryset.filter(id_trd_origen__fecha_retiro_produccion__icontains=trd_nombre))
+                queries.append(queryset.filter(id_trd_origen__actual__icontains=trd_nombre))
+            
+            queryset = queries[0]
+            for query in queries[1:]:
+                queryset = queryset | query
+
+        if palabras_clave_expediente:
+            search_vector = SearchVector('palabras_clave_expediente')
+            search_query = SearchQuery(palabras_clave_expediente)
+            queryset = queryset.annotate(rank=SearchRank(search_vector, search_query)).filter(rank__gt=0)
+
+         # Nuevo filtro para expedientes con ubicación física desactualizada
+        if ubicacion_desactualizada.lower() in ['true', 'false']:
+            ubicacion_desactualizada_bool = ubicacion_desactualizada.lower() == 'true'
+            queryset = queryset.filter(ubicacion_fisica_esta_actualizada=ubicacion_desactualizada_bool)
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            raise NotFound('No se encontraron datos que coincidan con los criterios de búsqueda.')
+
+        serializer = ExpedienteSearchSerializer(queryset, many=True)
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes registros.',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+    
+
+class ReubicacionFisicaExpedienteGet(generics.ListAPIView):
+    serializer_class = ReubicacionFisicaExpedienteSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_expediente_documental):
+        expediente = ExpedientesDocumentales.objects.filter(id_expediente_documental=id_expediente_documental).first()
+        
+        if not expediente:
+            raise NotFound('No se encontró el expediente ingresado')
+        
+        serializer = self.serializer_class(expediente)
+        
+        return Response({'success':True, 'detail':'Se encontró el siguiente expediente', 'data':serializer.data}, status=status.HTTP_200_OK)
+    
+
+
+class ExpedienteCarpetaAgregarEliminar(generics.UpdateAPIView):
+    lookup_field = 'id_expediente_documental'
+    queryset = ExpedientesDocumentales.objects.all()
+    serializer_class = ExpedientesDocumentalesGetSerializer
+
+    @transaction.atomic
+    def update(self, request, *args, **kwargs):
+        # Obtener el ID del expediente desde los parámetros de la URL
+        id_expediente_documental = self.kwargs.get(self.lookup_field)
+
+        try:
+            # Intentar obtener el expediente
+            expediente = ExpedientesDocumentales.objects.get(id_expediente_documental=id_expediente_documental)
+        except ExpedientesDocumentales.DoesNotExist:
+            # Si no se encuentra el expediente, devolver una respuesta de error
+            raise NotFound('No se encontró el expediente ingresado')
+        except ValidationError as e:
+            # Si ocurre una ValidationError, devolver una respuesta de error
+            ValidationError({"error": str(e)})
+
+        carpetas_nuevas_ids = request.data.get('carpetas_cajas_agregar', [])
+        carpetas_eliminar_ids = request.data.get('carpetas_cajas_eliminar', [])
+        
+        # Eliminar la asociación del expediente con las carpetas a eliminar
+        carpetas_eliminar = CarpetaCaja.objects.filter(id_carpeta_caja__in=carpetas_eliminar_ids)
+        carpetas_eliminadas = []
+
+        for carpeta_eliminar in carpetas_eliminar:
+            carpeta_eliminar.id_expediente = None
+            carpeta_eliminar.save()
+            carpetas_eliminadas.append(carpeta_eliminar)
+
+        # Asociar el expediente con las nuevas carpetas
+        carpetas_actualizadas = []
+
+        for carpeta_id in carpetas_nuevas_ids:
+            try:
+                carpeta_nueva = CarpetaCaja.objects.get(id_carpeta_caja=carpeta_id)
+                carpeta_nueva.id_expediente = expediente
+                carpeta_nueva.save()
+                carpetas_actualizadas.append(carpeta_nueva)
+            except CarpetaCaja.DoesNotExist:
+                return Response({"error": f"Carpeta con ID {carpeta_id} no encontrada"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Actualizar atributos en el expediente
+        expediente_actualizado = False
+
+        if not expediente.ubicacion_fisica_esta_actualizada:
+            expediente.ubicacion_fisica_esta_actualizada = True
+            expediente_actualizado = True
+
+        if not expediente.tiene_carpeta_fisica:
+            expediente.tiene_carpeta_fisica = True
+            expediente_actualizado = True
+
+        if expediente_actualizado:
+            expediente.save()
+
+        # Construir manualmente la respuesta
+        carpetas_agregadas_serializer = CarpetaCajaGetOrdenSerializer(carpetas_actualizadas, many=True)
+        carpetas_agregadas_data = carpetas_agregadas_serializer.data
+
+        carpetas_eliminadas_serializer = CarpetaCajaGetOrdenSerializer(carpetas_eliminadas, many=True)
+        carpetas_eliminadas_data = carpetas_eliminadas_serializer.data
+
+        return Response({
+            'success': True,
+            'detail': 'Se actualizaron los siguientes registros.',
+            "carpetas_agregadas": carpetas_agregadas_data,
+            "carpetas_eliminadas": carpetas_eliminadas_data,
+        })
 
 class ConcesionAccesoPermisoGetView(generics.ListAPIView):
     serializer_class = FirmaCierreGetSerializer

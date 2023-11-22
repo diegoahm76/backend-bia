@@ -1,6 +1,8 @@
 from django.db import models
 from seguimiento_planes.models.planes_models import ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma
 from recurso_hidrico.models.bibliotecas_models import Cuencas
+from transversal.models.organigrama_models import UnidadesOrganizacionales
+from transversal.models.personas_models import Personas
 
 class FuenteFinanciacionIndicadores(models.Model):
     id_fuente = models.AutoField(primary_key=True, editable=False, db_column='T516IdFuente')
@@ -149,3 +151,98 @@ class CodigosUNSP(models.Model):
         db_table = 'T524CodigosUNSP'
         verbose_name = 'Código UNSP'
         verbose_name_plural = 'Códigos UNSP'
+
+class ConceptoPOAI(models.Model):
+    id_concepto = models.AutoField(primary_key=True, editable=False, db_column='T525IdConcepto')
+    concepto = models.CharField(max_length=255, db_column='T525concepto')
+    valor_total = models.BigIntegerField(null=True, blank=True, db_column='T525valorTotal')
+    id_rubro = models.ForeignKey(Rubro, on_delete=models.CASCADE, db_column='T525IdRubro')
+    id_indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T525IdIndicador')
+    id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T525IdUnidadOrganizacional')
+
+    def __str__(self):
+        return str(self.concepto)
+    
+    class Meta:
+        db_table = 'T525ConceptoPOAI'
+        verbose_name = 'Concepto POAI'
+        verbose_name_plural = 'Conceptos POAI'
+
+class FuenteFinanciacion(models.Model):
+    id_fuente = models.AutoField(primary_key=True, editable=False, db_column='T526IdFuente')
+    # nombre_fuente = models.CharField(max_length=100, db_column='T526nombreFuente')
+    vano_1 = models.BigIntegerField(null=True, blank=True, db_column='T526vano1')
+    vano_2 = models.BigIntegerField(null=True, blank=True, db_column='T526vano2')
+    vano_3 = models.BigIntegerField(null=True, blank=True, db_column='T526vano3')
+    vano_4 = models.BigIntegerField(null=True, blank=True, db_column='T526vano4')
+    id_concepto = models.ForeignKey(ConceptoPOAI, on_delete=models.CASCADE, db_column='T526IdConcepto')
+
+    def __str__(self):
+        return str(self.nombre_fuente)
+    
+    class Meta: 
+        db_table = 'T526FuentesFinanciacion'
+        verbose_name = 'Fuentes de Financiación'
+        verbose_name_plural = 'Fuentes de Financiación'
+
+
+class BancoProyecto(models.Model):
+    id_banco = models.AutoField(primary_key=True, editable=False, db_column='T527IdBanco')
+    nombre_meta = models.CharField(max_length=255, db_column='T527nombreMeta')
+    banco_valor = models.BigIntegerField(null=True, blank=True, db_column='T527bancoValor')
+    objeto_contrato = models.CharField(max_length=255, db_column='T527objetoContrato')
+    id_proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, db_column='T527IdProyecto')
+    id_actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, db_column='T527IdActividad')
+    id_indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T527IdIndicador')
+    id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T527IdMeta')
+    id_rubro = models.ForeignKey(Rubro, on_delete=models.CASCADE, db_column='T527IdRubro')
+    id_fuente_financiacion = models.ForeignKey(FuenteFinanciacion, on_delete=models.CASCADE, db_column='T527IdFuenteFinanciacion')
+
+    def __str__(self):
+        return str(self.objeto_contrato)
+
+    class Meta:
+        db_table = 'T527BancoProyecto'
+        verbose_name = 'Banco de Proyecto'
+        verbose_name_plural = 'Bancos de Proyecto'
+
+class PlanAnualAdquisiciones(models.Model):
+    id_plan_anual = models.AutoField(primary_key=True, editable=False, db_column='T528IdPlanAnualAdquisiciones')
+    descripcion = models.CharField(max_length=255, db_column='T528descripcion')
+    mes_inicio = models.CharField(max_length=100, db_column='T528mesInicio')
+    mes_oferta = models.CharField(max_length=100, db_column='T528mesOferta')
+    duracion = models.BigIntegerField(null=True, blank=True, db_column='T528duracion')
+    valor_total_estimado = models.BigIntegerField(null=True, blank=True, db_column='T528valorTotalEstimado')
+    valor_vigencia_actual = models.BigIntegerField(null=True, blank=True, db_column='T528valorVigenciaActual')
+    vigencia_futura = models.BigIntegerField(null=True, blank=True, db_column='T528vigenciaFutura')
+    decreto_paa = models.BooleanField(default=False, db_column='T528decretoPAA')
+    suministro_paa = models.BooleanField(default=False, db_column='T528suministroPAA')
+    id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T528IdPlan')
+    id_intervalo = models.ForeignKey(Intervalo, on_delete=models.CASCADE, db_column='T528IdIntervalo')
+    id_modalidad = models.ForeignKey(Modalidad, on_delete=models.CASCADE, db_column='T528IdModalidad')
+    id_recurso_paa = models.ForeignKey(FuenteRecursosPaa, on_delete=models.CASCADE, db_column='T528IdRecursoPAA')
+    id_estado_vf = models.ForeignKey(EstadoVF, on_delete=models.CASCADE, db_column='T528IdEstadoVF')
+    id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T525IdUnidadOrganizacional')
+    id_ubicaion = models.ForeignKey(Ubicaciones, on_delete=models.CASCADE, db_column='T528IdUbicacion')
+    id_persona_responsable = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T528IdPersonaResponsable')
+
+    def __str__(self):
+        return str(self.descripcion)
+
+    class Meta:
+        db_table = 'T528PlanAnualAdquisiciones'
+        verbose_name = 'Plan Anual de Adquisiciones'
+        verbose_name_plural = 'Planes Anuales de Adquisiciones'
+
+class PAACodgigoUNSP: # Tabla intermedia
+    id_paacodigo = models.AutoField(primary_key=True, editable=False, db_column='T529IdPAACodigo')
+    id_plan = models.ForeignKey(PlanAnualAdquisiciones, on_delete=models.CASCADE, db_column='T529IdPlan')
+    id_codigo = models.ForeignKey(CodigosUNSP, on_delete=models.CASCADE, db_column='T529IdCodigo')
+
+    def __str__(self):
+        return str(self.id_paacodigo)
+
+    class Meta:
+        db_table = 'T529PAACodgigoUNSP'
+        verbose_name = 'PAACodgigoUNSP'
+        verbose_name_plural = 'PAACodgigoUNSP'
