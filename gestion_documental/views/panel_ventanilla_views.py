@@ -5,10 +5,11 @@ from rest_framework.response import Response
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
 from gestion_documental.models.radicados_models import PQRSDF, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, SolicitudDeDigitalizacion, T262Radicados
 from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
-from gestion_documental.serializers.ventanilla_pqrs_serializers import ComplementosUsu_PQRGetSerializer, Estados_PQRPostSerializer, EstadosSolicitudesGetSerializer, PQRSDFGetSerializer, PQRSDFPutSerializer, SolicitudDeDigitalizacionPostSerializer
+from gestion_documental.serializers.ventanilla_pqrs_serializers import ComplementosUsu_PQRGetSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, PQRSDFGetSerializer, PQRSDFPutSerializer, SolicitudDeDigitalizacionPostSerializer
 from seguridad.utils import Util
 from datetime import datetime
 from rest_framework.permissions import IsAuthenticated
+from django.db import transaction
 
 
 class EstadosSolicitudesGet(generics.ListAPIView):
@@ -93,6 +94,23 @@ class Estados_PQRCreate(generics.CreateAPIView):
     def post(self, request):
         respuesta = self.crear_estado(request.data)
         return respuesta
+    
+class Estados_PQRDelete(generics.RetrieveDestroyAPIView):
+    serializer_class = Estados_PQRSerializer
+    queryset = Estados_PQR.objects.all()
+
+    @transaction.atomic
+    def delete(self, request, id_PQRSDF):
+        try:
+            with transaction.atomic():
+                estado_pqr = self.queryset.filter(id_anexo = id_PQRSDF).first()
+                if estado_pqr:
+                    estado_pqr.delete()
+                    return Response({'success':True, 'detail':'El estado del pqr ha sido eliminado exitosamente'}, status=status.HTTP_200_OK)
+                else:
+                    raise NotFound('No se encontró ningún estado pqr asociado al anexo')
+        except Exception as e:
+            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
 
 class SolicitudDeDigitalizacionCreate(generics.CreateAPIView):

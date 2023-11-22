@@ -1,5 +1,6 @@
 from gestion_documental.choices.rango_edad_choices import RANGO_EDAD_LIST
 from gestion_documental.choices.tipo_clasificacion_choices import tipo_clasificacion_CHOICES
+from gestion_documental.choices.tipo_zonas_choices import TIPO_ZONAS_CHOICES
 from gestion_documental.choices.tipos_medios_doc_choices import tipos_medios_doc_CHOICES
 from gestion_documental.choices.disposicion_final_series_choices import disposicion_final_series_CHOICES
 from gestion_documental.choices.permisos_gd_choices import permisos_gd_CHOICES
@@ -164,4 +165,9 @@ class TipoArchivosChoices(APIView):
 class OrigenArchivoChoices(APIView):
     def get(self, request):
         choices = origen_archivo_CHOICES
+        return Response(choices)
+
+class TipoZonasChoices(APIView):
+    def get(self, request):
+        choices = TIPO_ZONAS_CHOICES
         return Response(choices)

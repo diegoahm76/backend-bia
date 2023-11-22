@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, EstadosSolicitudes, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, TiposPQR, MediosSolicitud
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, TiposPQR, MediosSolicitud
 from transversal.models.personas_models import Personas
 
 class TiposPQRGetSerializer(serializers.ModelSerializer):
@@ -119,23 +119,60 @@ class PQRSDFPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = PQRSDF
         fields = '__all__'
-        # extra_kwargs = {
-        #     'cod_tipo_PQRSDF': {'required': True},
-        #     'id_medio_solicitud': {'required': True},
-        #     'cod_forma_presentacion': {'required': True},
-        #     'asunto': {'required': True},
-        #     'descripcion': {'required': True},
-        #     'id_sucursal_especifica_implicada': {'required': True},
-        # }
+
+class PQRSDFPutSerializer(serializers.ModelSerializer):
+    class Meta:
+        model: PQRSDF
+        fields = [
+            'cod_tipo_PQRSDF',
+            'id_persona_titular',
+            'id_persona_interpone',
+            'cod_relacion_con_el_titular',
+            'es_anonima',
+            'id_medio_solicitud',
+            'cod_forma_presentacion',
+            'asunto',
+            'descripcion',
+            'cantidad_anexos',
+            'nro_folios_totales',
+            'requiere_rta',
+            'dias_para_respuesta',
+            'id_sucursal_especifica_implicada',
+            'id_persona_recibe',
+            'id_sucursal_recepcion_fisica',
+            'id_radicado',
+            'fecha_radicado',
+            'requiere_digitalizacion',
+            'id_estado_actual_solicitud',
+            'fecha_ini_estado_actual'
+        ]
 
 class RadicadoPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = T262Radicados
         fields = '__all__'
 
+class AnexosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos
+        fields = [
+            'id_anexo',
+            'nombre_anexo',
+            'orden_anexo_doc',
+            'cod_medio_almacenamiento',
+            'medio_almacenamiento_otros_Cual',
+            'numero_folios',
+            'ya_digitalizado'
+        ]
+
 class AnexosPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Anexos
+        fields = '__all__'
+
+class AnexosPQRSDFSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos_PQR
         fields = '__all__'
 
 class AnexosPQRSDFPostSerializer(serializers.ModelSerializer):
@@ -143,7 +180,36 @@ class AnexosPQRSDFPostSerializer(serializers.ModelSerializer):
         model = Anexos_PQR
         fields = '__all__'
 
+class MetadatosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MetadatosAnexosTmp
+        fields = [
+            'id_metadatos_anexo_tmp',
+            'id_anexo',
+            'fecha_creacion_doc',
+            'asunto',
+            'descripcion',
+            'cod_categoria_archivo',
+            'es_version_original',
+            'tiene_replica_fisica',
+            'nro_folios_documento',
+            'cod_origen_archivo',
+            'id_tipologia_doc',
+            'tipologia_no_creada_TRD',
+            'palabras_clave_doc',
+            'id_archivo_sistema'
+        ]
 class MetadatosPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = MetadatosAnexosTmp
+        fields = '__all__'
+
+class InfoDenunciasPQRSDFSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InfoDenuncias_PQRSDF
+        fields = '__all__'
+
+class InfoDenunciasPQRSDFPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InfoDenuncias_PQRSDF
         fields = '__all__'
