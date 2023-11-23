@@ -18,4 +18,9 @@ urlpatterns = [
     path('historico/get/',views.CabezerasPQRSDFGet.as_view(),name='listar-historico-pqrsdf'),
     #Historico_Solicitud_PQRSDFGet,
     path('historico/get/<str:pqr>/',views.Historico_Solicitud_PQRSDFGet.as_view(),name='listar-historico-pqrsdf-detalle'),
+
+    #Informacion de pqrsdf
+    path('pqrsdf/anexo/get/<str:pqr>/',views.PQRSDFInfoGet.as_view(),name='get-pqrsdf-id'),
+    path('pqrsdf/anexo-documento/get/<str:pk>/',views.PQRSDFAnexoDocumentoDigitalGet.as_view(),name='get-pqrsdf-id'),
+    path('pqrsdf/anexo-documento/meta-data/get/<str:pk>/',views.PQRSDFAnexoMetaDataGet.as_view(),name='get-pqrsdf-id'),
 ]

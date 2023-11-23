@@ -58,6 +58,13 @@ urlpatterns = [
      path('expedientes/firma-cierre/',views.FirmaCierreView.as_view(), name='firma-cierre-indice'),
      path('expedientes/firma-cierre/get/<str:id_indice_electronico_exp>/',views.FirmaCierreGetView.as_view(), name='firma-cierre-indice-get'),
 
+     #Reubicación Física de Expedientes
+     path('expedientes/buscar-expediente-ubicacion-desactualizada/', views.ExpedienteSearchConUbicacionDesactualizada.as_view(), name='buscar-expediente-desactualizada'),
+     path('expedientes/reubicacion-expediente/get/<str:id_expediente_documental>/',views.ReubicacionFisicaExpedienteGet.as_view(), name='reubicacion-expediente-get'),
+     path('expedientes/agregar-eliminar-expediente-carpeta/update/<str:id_expediente_documental>/',views.ExpedienteCarpetaAgregarEliminar.as_view(), name='Editar-expediente-get'),
+
+
+
 
      #Concesion de Acceso a Expedientes y Documentos
      path('expedientes/concesion-acceso/permiso/get/<str:id_expediente>/',views.ConcesionAccesoPermisoGetView.as_view(), name='concesion-acceso-permiso-get'),
@@ -74,5 +81,7 @@ urlpatterns = [
      
 
 
-     
+     #Consulta de Expedientes Documentales
+     path('expedientes/consulta/get-list/',views.ConsultaExpedientesGetView.as_view(), name='consulta-get-list'),
+     path('expedientes/consulta/documentos-expedientes/get/',views.ConsultaExpedientesDocumentosGetView.as_view(), name='consulta-documentos-get'),
 ]

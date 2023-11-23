@@ -3,12 +3,15 @@ from rest_framework import status, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
-from gestion_documental.models.radicados_models import PQRSDF, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, SolicitudDeDigitalizacion, T262Radicados
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, SolicitudDeDigitalizacion, T262Radicados
 from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
-from gestion_documental.serializers.ventanilla_pqrs_serializers import ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_PQRPostSerializer, EstadosSolicitudesGetSerializer, PQRSDFCabezeraGetSerializer, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer
+from gestion_documental.serializers.ventanilla_pqrs_serializers import AnexoArchivosDigitalesSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_PQRPostSerializer, EstadosSolicitudesGetSerializer, MetadatosAnexosTmpSerializerGet, PQRSDFCabezeraGetSerializer, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer
 from seguridad.utils import Util
 from datetime import datetime
 from rest_framework.permissions import IsAuthenticated
+from django.db.models import F, Value, CharField
+from django.db.models.functions import Concat
+
 
 
 class EstadosSolicitudesGet(generics.ListAPIView):
@@ -27,7 +30,9 @@ class EstadosSolicitudesGet(generics.ListAPIView):
 #PQRSDF
 class PQRSDFGet(generics.ListAPIView):
     serializer_class = PQRSDFGetSerializer
-    queryset =PQRSDF.objects.all()
+    #queryset =PQRSDF.objects.all()
+    queryset = PQRSDF.objects.annotate(mezcla=Concat(F('id_radicado__prefijo_radicado'), Value('-'), F('id_radicado__agno_radicado'), Value('-'), F('id_radicado__nro_radicado'), output_field=CharField()))
+                                              
     permission_classes = [IsAuthenticated]
 
 
@@ -40,7 +45,7 @@ class PQRSDFGet(generics.ListAPIView):
 
             if key == 'radicado':
                 if value !='':
-                    filter['id_radicado__nro_radicado__icontains'] = value
+                    filter['mezcla__icontains'] = value
             if key =='estado_actual_solicitud':
                 if value != '':
                     filter['id_estado_actual_solicitud__nombre__icontains'] = value    
@@ -186,35 +191,45 @@ class SolicitudDeDigitalizacionComplementoCreate(generics.CreateAPIView):
 class CabezerasPQRSDFGet(generics.ListAPIView):
     serializer_class = PQRSDFCabezeraGetSerializer
     queryset =PQRSDF.objects.all()
+    queryset_prueba = PQRSDF.objects.annotate(combinacion=Concat(F('id_radicado__prefijo_radicado'), Value('-'), F('id_radicado__agno_radicado'), Value('-'), F('id_radicado__nro_radicado'), output_field=CharField())
+)
     permission_classes = [IsAuthenticated]
 
 
+        
     def get (self, request):
         tipo_busqueda = 'PQRSDF'
         data_respuesta = []
         filter={}
-        
+        historico =Historico_Solicitud_PQRSDFGet()
+        data_histo = []
         for key, value in request.query_params.items():
 
             if key == 'radicado':
                 if value !='':
-                    filter['id_radicado__nro_radicado__icontains'] = value
+                    filter['combinacion__icontains'] = value
+ 
             if key =='estado_actual_solicitud':
                 if value != '':
                     filter['id_estado_actual_solicitud__estado_solicitud__nombre__icontains'] = value    
-            if key == 'tipo_solicitud':
-                if value != '':
-                    tipo_busqueda = False
+
         
-        if tipo_busqueda == 'PQRSDF':
-            instance = self.get_queryset().filter(**filter).order_by('fecha_radicado')
+        
+        instance = self.queryset_prueba.filter(**filter).order_by('fecha_radicado')
 
-            if not instance:
-                raise NotFound("No existen registros")
+        if not instance:
+            raise NotFound("No existen registros")
+        for x in instance:
+            print(x.combinacion)
+            respuesta = historico.get(self,x.id_PQRSDF)
+            #print()
+            data_histo.append({'cabecera':self.serializer_class(x).data,'detalle':respuesta.data['data']})
 
-            serializador = self.serializer_class(instance,many=True)
-            data_respuesta = serializador.data
-        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_respuesta,}, status=status.HTTP_200_OK)
+                #data_respuesta.append(historico.get(self,x.id_PQRSDF).data['data'])
+
+            #serializador = self.serializer_class(instance,many=True)
+            #data_respuesta = serializador.data
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_histo,}, status=status.HTTP_200_OK)
 
 
 class Historico_Solicitud_PQRSDFGet(generics.ListAPIView):
@@ -227,13 +242,13 @@ class Historico_Solicitud_PQRSDFGet(generics.ListAPIView):
 
         instance =PQRSDF.objects.filter(id_PQRSDF=pqr).first()
 
-        estado_actual = instance.id_estado_actual_solicitud
-        #print(estado_actual)
+        # estado_actual = instance.id_estado_actual_solicitud
+        # #print(estado_actual)
 
-        estados = Estados_PQR.objects.filter(PQRSDF=instance,estado_solicitud=estado_actual).order_by('-fecha_iniEstado').first()
-        estados_asociados = Estados_PQR.objects.filter(PQRSDF=instance,estado_PQR_asociado=estados).order_by('-fecha_iniEstado')
-        for x in estados_asociados:
-            print(x.estado_solicitud.nombre)
+        # estados = Estados_PQR.objects.filter(PQRSDF=instance,estado_solicitud=estado_actual).order_by('-fecha_iniEstado').first()
+        # estados_asociados = Estados_PQR.objects.filter(PQRSDF=instance,estado_PQR_asociado=estados).order_by('-fecha_iniEstado')
+        # for x in estados_asociados:
+        #     print(x.estado_solicitud.nombre)
         #print(estados)
         if not instance:
                 raise NotFound("No existen registros")
@@ -241,3 +256,70 @@ class Historico_Solicitud_PQRSDFGet(generics.ListAPIView):
         serializador = self.serializer_class(instance)
         data_respuesta = serializador.data
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_respuesta,}, status=status.HTTP_200_OK)
+
+
+
+class PQRSDFInfoGet(generics.ListAPIView):
+    serializer_class = AnexosGetSerializer
+    queryset =PQRSDF.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,pqr):
+        data=[]
+        instance =PQRSDF.objects.filter(id_PQRSDF=pqr).first()
+
+
+        if not instance:
+                raise NotFound("No existen registros")
+        anexos_pqrs = Anexos_PQR.objects.filter(id_PQRSDF=instance)
+        for x in anexos_pqrs:
+            info_anexo =x.id_anexo
+            data_anexo = self.serializer_class(info_anexo)
+            data.append(data_anexo.data)
+        
+        
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data,}, status=status.HTTP_200_OK)
+
+class PQRSDFAnexoDocumentoDigitalGet(generics.ListAPIView):
+    serializer_class = AnexoArchivosDigitalesSerializer
+    queryset =Anexos.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,pk):
+      
+        instance =Anexos.objects.filter(id_anexo=pk).first()
+
+        if not instance:
+                raise NotFound("No existen registros")
+        
+        meta_data = MetadatosAnexosTmp.objects.filter(id_anexo=instance.id_anexo).first()
+        if not meta_data:
+            raise NotFound("No existen registros")
+        archivo = meta_data.id_archivo_sistema
+        serializer= self.serializer_class(archivo)
+
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':{'id_anexo':instance.id_anexo,**serializer.data},}, status=status.HTTP_200_OK)
+    
+
+class PQRSDFAnexoMetaDataGet(generics.ListAPIView):
+    serializer_class = MetadatosAnexosTmpSerializerGet
+    queryset =Anexos.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,pk):
+      
+        instance =Anexos.objects.filter(id_anexo=pk).first()
+
+        if not instance:
+                raise NotFound("No existen registros")
+        
+        meta_data = MetadatosAnexosTmp.objects.filter(id_anexo=instance.id_anexo).first()
+        if not meta_data:
+            raise NotFound("No existen registros")
+   
+        serializer= self.serializer_class(meta_data)
+
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':{'id_anexo':instance.id_anexo,**serializer.data},}, status=status.HTTP_200_OK)

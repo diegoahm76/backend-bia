@@ -424,7 +424,9 @@ class ExpedienteSearchSerializer(serializers.ModelSerializer):
             'nombre_persona_titular',
             'estado',
             'desc_estado',
-            'fecha_cierre_reapertura_actual'
+            'fecha_cierre_reapertura_actual',
+            'ubicacion_fisica_esta_actualizada',
+            'descripcion_expediente'
         ]
 
 
@@ -1093,6 +1095,8 @@ class ConcesionAccesoDocumentosCreateSerializer(serializers.ModelSerializer):
         
 class ConcesionAccesoExpedientesGetSerializer(serializers.ModelSerializer):
     nombre_persona_recibe_acceso = serializers.SerializerMethodField()
+    tipo_documento_persona_recibe_acceso = serializers.ReadOnlyField(source='id_persona_recibe_acceso.tipo_documento.cod_tipo_documento', default=None)
+    numero_documento_persona_recibe_acceso = serializers.ReadOnlyField(source='id_persona_recibe_acceso.numero_documento', default=None)
     nombre_persona_concede_acceso = serializers.SerializerMethodField()
     nombre_unidad_org_destinatario_conceder = serializers.ReadOnlyField(source='id_unidad_org_destinatario_conceder.nombre', default=None)
     titulo_expediente = serializers.ReadOnlyField(source='id_expediente.titulo_expediente', default=None)
@@ -1123,6 +1127,8 @@ class ConcesionAccesoExpedientesGetSerializer(serializers.ModelSerializer):
             'id_persona_concede_acceso',
             'nombre_persona_concede_acceso',
             'id_persona_recibe_acceso',
+            'tipo_documento_persona_recibe_acceso',
+            'numero_documento_persona_recibe_acceso',
             'nombre_persona_recibe_acceso',
             'id_unidad_org_destinatario_conceder',
             'nombre_unidad_org_destinatario_conceder',
@@ -1137,6 +1143,8 @@ class ConcesionAccesoExpedientesGetSerializer(serializers.ModelSerializer):
         
 class ConcesionAccesoDocumentosGetSerializer(serializers.ModelSerializer):
     nombre_persona_recibe_acceso = serializers.SerializerMethodField()
+    tipo_documento_persona_recibe_acceso = serializers.ReadOnlyField(source='id_persona_recibe_acceso.tipo_documento.cod_tipo_documento', default=None)
+    numero_documento_persona_recibe_acceso = serializers.ReadOnlyField(source='id_persona_recibe_acceso.numero_documento', default=None)
     nombre_persona_concede_acceso = serializers.SerializerMethodField()
     nombre_unidad_org_destinatario_conceder = serializers.ReadOnlyField(source='id_unidad_org_destinatario_conceder.nombre', default=None)
     identificacion_doc_en_expediente = serializers.ReadOnlyField(source='id_documento_exp.identificacion_doc_en_expediente', default=None)
@@ -1167,6 +1175,8 @@ class ConcesionAccesoDocumentosGetSerializer(serializers.ModelSerializer):
             'id_persona_concede_acceso',
             'nombre_persona_concede_acceso',
             'id_persona_recibe_acceso',
+            'tipo_documento_persona_recibe_acceso',
+            'numero_documento_persona_recibe_acceso',
             'nombre_persona_recibe_acceso',
             'id_unidad_org_destinatario_conceder',
             'nombre_unidad_org_destinatario_conceder',
@@ -1176,4 +1186,267 @@ class ConcesionAccesoDocumentosGetSerializer(serializers.ModelSerializer):
             'fecha_acceso_inicia',
             'fecha_acceso_termina',
             'observacion'
+        ]
+
+
+class ReubicacionFisicaExpedienteSerializer(serializers.ModelSerializer):
+    tipo_documento_persona_titular_exp_complejo = serializers.ReadOnlyField(source='id_persona_titular_exp_complejo.tipo_documento.cod_tipo_documento', default=None)
+    nro_documento_persona_titular_exp_complejo = serializers.ReadOnlyField(source='id_persona_titular_exp_complejo.numero_documento', default=None)
+    nombre_persona_titular_exp_complejo = serializers.SerializerMethodField()
+    tipo_documento_persona_responsable_actual = serializers.ReadOnlyField(source='id_persona_responsable_actual.tipo_documento.cod_tipo_documento', default=None)
+    nro_documento_persona_responsable_actual = serializers.ReadOnlyField(source='id_persona_responsable_actual.numero_documento', default=None)
+    nombre_persona_responsable_actual = serializers.SerializerMethodField()
+    nombre_und_org_oficina_respon_actual = serializers.ReadOnlyField(source='id_und_org_oficina_respon_actual.nombre', default=None)
+    carpetas_caja = serializers.SerializerMethodField()
+    nombre_persona_anula = serializers.SerializerMethodField()
+
+    def get_nombre_persona_titular_exp_complejo(self, obj):
+        nombre_persona_titular_exp_complejo = None
+        if obj.id_persona_titular_exp_complejo:
+            nombre_list = [obj.id_persona_titular_exp_complejo.primer_nombre, obj.id_persona_titular_exp_complejo.segundo_nombre,
+                            obj.id_persona_titular_exp_complejo.primer_apellido, obj.id_persona_titular_exp_complejo.segundo_apellido]
+            nombre_persona_titular_exp_complejo = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_titular_exp_complejo = nombre_persona_titular_exp_complejo if nombre_persona_titular_exp_complejo != "" else None
+        return nombre_persona_titular_exp_complejo
+    
+    def get_nombre_persona_responsable_actual(self, obj):
+        nombre_persona_responsable_actual = None
+        if obj.id_persona_responsable_actual:
+            nombre_list = [obj.id_persona_responsable_actual.primer_nombre, obj.id_persona_responsable_actual.segundo_nombre,
+                            obj.id_persona_responsable_actual.primer_apellido, obj.id_persona_responsable_actual.segundo_apellido]
+            nombre_persona_responsable_actual = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_responsable_actual = nombre_persona_responsable_actual if nombre_persona_responsable_actual != "" else None
+        return nombre_persona_responsable_actual
+    
+    def get_carpetas_caja(self, obj):
+        carpetas_caja = None
+        carpetas_caja = obj.carpetacaja_set.all()
+        serializer = CarpetaCajaReubicacionSerializer(carpetas_caja, many=True)
+        data_output = []
+        
+        if carpetas_caja:
+            carpetas_caja_data = json.loads(json.dumps(serializer.data))
+            
+            carpetas_caja_data = sorted(carpetas_caja_data, key=operator.itemgetter("deposito","id_deposito"))
+            
+            for depositos, estantes in itertools.groupby(carpetas_caja_data, key=operator.itemgetter("deposito","id_deposito")):
+                estantes_depositos = list(estantes)
+                for estante in estantes_depositos:
+                    del estante['deposito']
+                    del estante['id_deposito']
+                
+                estante_data = sorted(estantes_depositos, key=operator.itemgetter("estante","id_estante"))
+                data_estante = []
+                
+                for estantes, bandejas in itertools.groupby(estante_data, key=operator.itemgetter("estante","id_estante")):
+                    bandejas_estantes = list(bandejas)
+                    for bandeja in bandejas_estantes:
+                        del bandeja['estante']
+                        del bandeja['id_estante']
+                    
+                    bandeja_data = sorted(bandejas_estantes, key=operator.itemgetter("bandeja","id_bandeja"))
+                    data_bandeja = []
+                    
+                    for bandejas, cajas in itertools.groupby(bandeja_data, key=operator.itemgetter("bandeja","id_bandeja")):
+                        cajas_bandejas = list(cajas)
+                        for caja in cajas_bandejas:
+                            del caja['bandeja']
+                            del caja['id_bandeja']
+                        
+                        caja_data = sorted(cajas_bandejas, key=operator.itemgetter("caja","id_caja"))
+                        data_caja = []
+                        
+                        for cajas, carpetas in itertools.groupby(caja_data, key=operator.itemgetter("caja","id_caja")):
+                            carpetas_cajas = list(carpetas)
+                            for carpeta in carpetas_cajas:
+                                del carpeta['caja']
+                            
+                            items_data = {
+                                "caja": cajas[0],
+                                "id_caja": cajas[1],
+                                "carpetas": carpetas_cajas
+                            }
+                            
+                            data_caja.append(items_data)
+                        
+                        items_data = {
+                            "bandeja": bandejas[0],
+                            "id_bandeja": bandejas[1],
+                            "cajas": data_caja
+                        }
+                        
+                        data_bandeja.append(items_data)
+                    
+                    items_data = {
+                        "estante": estantes[0],
+                        "id_estante": estantes[1],
+                        "bandejas": data_bandeja
+                    }
+                    
+                    data_estante.append(items_data)
+                
+                items_data = {
+                    "deposito": depositos[0],
+                    "id_deposito": depositos[1],
+                    "estantes": data_estante
+                }
+                
+                data_output.append(items_data)
+        
+        return data_output
+    
+    def get_nombre_persona_anula(self, obj):
+        nombre_persona_anula = None
+        if obj.id_persona_anula:
+            nombre_list = [obj.id_persona_anula.primer_nombre, obj.id_persona_anula.segundo_nombre,
+                            obj.id_persona_anula.primer_apellido, obj.id_persona_anula.segundo_apellido]
+            nombre_persona_anula = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_anula = nombre_persona_anula if nombre_persona_anula != "" else None
+        return nombre_persona_anula
+
+    class Meta:
+        model =  ExpedientesDocumentales
+        fields = [
+            'id_expediente_documental',
+            'codigo_exp_und_serie_subserie',
+            'codigo_exp_Agno',
+            'codigo_exp_consec_por_agno',
+            'titulo_expediente',
+            'descripcion_expediente',
+            'id_persona_titular_exp_complejo',
+            'tipo_documento_persona_titular_exp_complejo',
+            'nro_documento_persona_titular_exp_complejo',
+            'nombre_persona_titular_exp_complejo',
+            'id_und_org_oficina_respon_actual',
+            'nombre_und_org_oficina_respon_actual',
+            'id_persona_responsable_actual',
+            'tipo_documento_persona_responsable_actual',
+            'nro_documento_persona_responsable_actual',
+            'nombre_persona_responsable_actual',
+            'fecha_apertura_expediente',
+            'fecha_creacion_manual',
+            'palabras_clave_expediente',
+            'creado_automaticamente',
+            'anulado',
+            'observacion_anulacion',
+            'fecha_anulacion',
+            'id_persona_anula',
+            'nombre_persona_anula',
+            'carpetas_caja'
+        ]
+    
+class CarpetaCajaReubicacionSerializer(serializers.ModelSerializer):
+    carpeta = serializers.SerializerMethodField()
+    caja = serializers.ReadOnlyField(source='id_caja_bandeja.identificacion_por_bandeja', default=None)
+    id_caja = serializers.ReadOnlyField(source='id_caja_bandeja.id_caja_bandeja', default=None)
+    bandeja = serializers.ReadOnlyField(source='id_caja_bandeja.id_bandeja_estante.identificacion_por_estante', default=None)
+    id_bandeja = serializers.ReadOnlyField(source='id_caja_bandeja.id_bandeja_estante.id_bandeja_estante', default=None)
+    estante = serializers.ReadOnlyField(source='id_caja_bandeja.id_bandeja_estante.id_estante_deposito.identificacion_por_deposito', default=None)
+    id_estante = serializers.ReadOnlyField(source='id_caja_bandeja.id_bandeja_estante.id_estante_deposito.id_estante_deposito', default=None)
+    deposito = serializers.ReadOnlyField(source='id_caja_bandeja.id_bandeja_estante.id_estante_deposito.id_deposito.identificacion_por_entidad', default=None)
+    id_deposito = serializers.ReadOnlyField(source='id_caja_bandeja.id_bandeja_estante.id_estante_deposito.id_deposito.id_deposito', default=None)
+    
+    def get_carpeta(self, obj):
+        carpeta = 'Carpeta ' + str(obj.orden_ubicacion_por_caja) + ' - ' + obj.identificacion_por_caja
+        return carpeta
+    
+    class Meta:
+        model =  CarpetaCaja
+        fields = [
+            
+            'id_carpeta_caja',
+            'carpeta',
+            'caja',
+            'id_caja',
+            'id_bandeja',
+            'bandeja',
+            'estante',
+            'id_estante',
+            'deposito',
+            'id_deposito'
+        ]
+        
+class ConsultaExpedientesGetSerializer(serializers.ModelSerializer):
+    nombre_serie_origen = serializers.ReadOnlyField(source='id_serie_origen.nombre', default=None)
+    nombre_subserie_origen = serializers.ReadOnlyField(source='id_subserie_origen.nombre', default=None)
+    nombre_unidad_org = serializers.ReadOnlyField(source='id_und_seccion_propietaria_serie.nombre', default=None)
+    nombre_trd_origen = serializers.ReadOnlyField(source='id_trd_origen.nombre', default=None)
+    nombre_persona_titular = serializers.SerializerMethodField()
+    
+    def get_nombre_persona_titular(self, obj):
+        nombre_persona_titular = None
+        if obj.id_persona_titular_exp_complejo:
+            nombre_list = [obj.id_persona_titular_exp_complejo.primer_nombre, obj.id_persona_titular_exp_complejo.segundo_nombre,
+                            obj.id_persona_titular_exp_complejo.primer_apellido, obj.id_persona_titular_exp_complejo.segundo_apellido]
+            nombre_persona_titular = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_titular = nombre_persona_titular if nombre_persona_titular != "" else None
+        return nombre_persona_titular
+
+    class Meta:
+        model =  ExpedientesDocumentales
+        fields = [
+            'id_expediente_documental',
+            'id_cat_serie_und_org_ccd_trd_prop',
+            'codigo_exp_und_serie_subserie',
+            'id_trd_origen',
+            'nombre_trd_origen',
+            'titulo_expediente',
+            'id_und_seccion_propietaria_serie',
+            'nombre_unidad_org',
+            'id_serie_origen',
+            'nombre_serie_origen',
+            'id_subserie_origen',
+            'nombre_subserie_origen',
+            'codigo_exp_Agno',
+            'id_persona_titular_exp_complejo',
+            'nombre_persona_titular'
+        ]
+        
+class ConsultaExpedientesDocumentosGetSerializer(serializers.ModelSerializer):
+    pagina_inicio = serializers.SerializerMethodField()
+    pagina_fin = serializers.SerializerMethodField()
+    nombre_tipologia = serializers.CharField(source='id_tipologia_documental.nombre', read_only=True)
+    formato = serializers.ReadOnlyField(source='id_archivo_sistema.formato', default=None)
+    tamagno_kb = serializers.ReadOnlyField(source='id_archivo_sistema.tamagno_kb', default=None)
+    origen_archivo = serializers.CharField(source='get_cod_origen_archivo_display', read_only=True)
+    
+    def get_pagina_inicio(self, obj):
+        pagina_inicio = None
+        
+        doc_indice_electronico = obj.docs_indiceelectronicoexp_set.first()
+        if doc_indice_electronico:
+            pagina_inicio = doc_indice_electronico.pagina_inicio
+            
+        return pagina_inicio
+    
+    def get_pagina_fin(self, obj):
+        pagina_fin = None
+        
+        doc_indice_electronico = obj.docs_indiceelectronicoexp_set.first()
+        if doc_indice_electronico:
+            pagina_fin = doc_indice_electronico.pagina_fin
+            
+        return pagina_fin
+    
+    class Meta:
+        model =  DocumentosDeArchivoExpediente
+        fields = [
+            'id_documento_de_archivo_exped',
+            'id_expediente_documental',
+            'identificacion_doc_en_expediente',
+            'nombre_asignado_documento',
+            'id_tipologia_documental',
+            'nombre_tipologia',
+            'fecha_creacion_doc',
+            'fecha_incorporacion_doc_a_Exp',
+            'orden_en_expediente',
+            'pagina_inicio',
+            'pagina_fin',
+            'formato',
+            'tamagno_kb',
+            'cod_origen_archivo',
+            'origen_archivo',
+            'es_un_archivo_anexo',
+            'asunto',
+            'palabras_clave_documento'
         ]
