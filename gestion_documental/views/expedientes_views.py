@@ -22,7 +22,7 @@ from gestion_documental.views.conf__tipos_exp_views import ConfiguracionTipoExpe
 from seguridad.utils import Util
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AnularExpedienteSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, AperturaExpedienteUpdateAutSerializer, AperturaExpedienteUpdateNoAutSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, BorrarExpedienteSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConcesionAccesoDocumentosCreateSerializer, ConcesionAccesoDocumentosGetSerializer, ConcesionAccesoExpedientesCreateSerializer, ConcesionAccesoExpedientesGetSerializer, ConcesionAccesoPersonasFilterSerializer, ConcesionAccesoUpdateSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, EnvioCodigoSerializer, ExpedienteAperturaSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, FirmaCierreGetSerializer, IndexarDocumentosAnularSerializer, IndexarDocumentosCreateSerializer, IndexarDocumentosGetSerializer, IndexarDocumentosUpdateAutSerializer, IndexarDocumentosUpdateSerializer, InformacionIndiceGetSerializer, ListExpedientesComplejosSerializer, ListarTRDSerializer, ListarTipologiasSerializer, ReubicacionFisicaExpedienteSerializer, SerieSubserieUnidadTRDGetSerializer
+from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AnularExpedienteSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, AperturaExpedienteUpdateAutSerializer, AperturaExpedienteUpdateNoAutSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, BorrarExpedienteSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConcesionAccesoDocumentosCreateSerializer, ConcesionAccesoDocumentosGetSerializer, ConcesionAccesoExpedientesCreateSerializer, ConcesionAccesoExpedientesGetSerializer, ConcesionAccesoPersonasFilterSerializer, ConcesionAccesoUpdateSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, ConsultaExpedientesDocumentosGetSerializer, ConsultaExpedientesGetSerializer, EnvioCodigoSerializer, ExpedienteAperturaSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, FirmaCierreGetSerializer, IndexarDocumentosAnularSerializer, IndexarDocumentosCreateSerializer, IndexarDocumentosGetSerializer, IndexarDocumentosUpdateAutSerializer, IndexarDocumentosUpdateSerializer, InformacionIndiceGetSerializer, ListExpedientesComplejosSerializer, ListarTRDSerializer, ListarTipologiasSerializer, ReubicacionFisicaExpedienteSerializer, SerieSubserieUnidadTRDGetSerializer
 from gestion_documental.serializers.depositos_serializers import  CarpetaCajaGetOrdenSerializer
 from rest_framework.response import Response
 from rest_framework import status
@@ -2806,3 +2806,53 @@ class ConcesionAccesoDocumentosUserGetView(generics.ListAPIView):
         serializer = self.serializer_class(concesiones, many=True)
         
         return Response({'success':True, 'detail':'Se encontraron las siguientes concesiones', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class ConsultaExpedientesGetView(generics.ListAPIView):
+    serializer_class = ConsultaExpedientesGetSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        filter={}
+        for key, value in request.query_params.items():
+            if key in ['id_trd_origen','id_und_seccion_propietaria_serie','id_cat_serie_und_org_ccd_trd_prop','codigo_exp_Agno']:
+                if value != '':
+                    filter[key] = value
+            
+        expedientes = ExpedientesDocumentales.objects.filter(**filter)
+        
+        serializer = self.serializer_class(expedientes, many=True)
+        
+        return Response({'success':True, 'detail':'Se encontraron los siguientes expedientes', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+class ConsultaExpedientesDocumentosGetView(generics.ListAPIView):
+    serializer_class = ConsultaExpedientesDocumentosGetSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        palabras_clave_documento = self.request.query_params.get('palabras_clave_documento', '').strip()
+        
+        filter={}
+        for key, value in request.query_params.items():
+            if key in ['identificacion_doc_en_expediente','nombre_asignado_documento','nombre_tipologia','fecha_incorporacion_doc_a_Exp', 'asunto']:
+                if key in ['identificacion_doc_en_expediente', 'nombre_asignado_documento', 'asunto']:
+                    if value != '':
+                        filter[key + '__icontains'] = value
+                elif key == 'fecha_incorporacion_doc_a_Exp':
+                    if value != '':
+                        filter[key + '__date'] = value
+                elif key == 'nombre_tipologia':
+                    if value != '':
+                        filter['id_tipologia_documental__nombre__icontains'] = value
+                elif value != '':
+                    filter[key] = value
+        
+        documentos = DocumentosDeArchivoExpediente.objects.filter(**filter)
+        
+        if palabras_clave_documento:
+            search_vector = SearchVector('palabras_clave_documento')
+            search_query = SearchQuery(palabras_clave_documento)
+            documentos = documentos.annotate(rank=SearchRank(search_vector, search_query)).filter(rank__gt=0)
+        
+        serializer = self.serializer_class(documentos, many=True)
+        
+        return Response({'success':True, 'detail':'Se encontraron los siguientes documentos de expedientes', 'data': serializer.data}, status=status.HTTP_200_OK)
