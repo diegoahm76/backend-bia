@@ -119,13 +119,15 @@ class ConceptoPOAISerializer(serializers.ModelSerializer):
 
     nombre_indicador = serializers.ReadOnlyField(source='id_indicador.nombre_indicador', default=None)
     nombre = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
+    rubro = serializers.ReadOnlyField(source='id_rubro.cuenta', default=None)
+
     class Meta:
         model = ConceptoPOAI
         fields = '__all__'
 
 class FuenteFinanciacionSerializer(serializers.ModelSerializer):
 
-    concepto = serializers.ReadOnlyField(source='id_concepto.nombre', default=None)
+    concepto = serializers.ReadOnlyField(source='id_concepto.concepto', default=None)
     class Meta:
         model = FuenteFinanciacion
         fields = '__all__'
@@ -137,6 +139,7 @@ class BancoProyectoSerializer(serializers.ModelSerializer):
     nombre_indicador = serializers.ReadOnlyField(source='id_indicador.nombre_indicador', default=None)
     nombre_meta = serializers.ReadOnlyField(source='id_meta.nombre_meta', default=None)
     rubro = serializers.ReadOnlyField(source='id_rubro.cuenta', default=None)
+    nombre_fuente = serializers.ReadOnlyField(source='id_fuente.nombre_fuente', default=None)
     
     class Meta:
         model = BancoProyecto

@@ -87,6 +87,7 @@ class CrearSubZonaHidricaVista(generics.CreateAPIView):
         try:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
+           
             
             # Agregar lógica adicional si es necesario, por ejemplo, asignar valores antes de guardar
             # serializer.validated_data['campo_adicional'] = valor
@@ -111,7 +112,7 @@ class BorrarZonaHidricaVista(generics.DestroyAPIView):
             instance = self.get_object()
             self.perform_destroy(instance)
             return Response({'success': True, 'detail': 'Registro eliminado correctamente'},
-                            status=status.HTTP_204_NO_CONTENT)
+                            status=status.HTTP_200_OK)
         except ValidationError as e:
             # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
             raise ValidationError({e.detail})
