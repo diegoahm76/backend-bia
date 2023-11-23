@@ -47,4 +47,25 @@ urlpatterns=[
     path('crear-codigos-unsp/',views.CodigosUNSPCreate.as_view(),name='crearcodigosunsp'),
     path('actualizar-codigos-unsp/<str:pk>/',views.CodigosUNSPUpdate.as_view(),name='actualizarcodigosunsp'),
     path('eliminar-codigos-unsp/<str:pk>/',views.CodigosUNSPDelete.as_view(),name='eliminarcodigosunsp'),
+    # Conceptos POAI
+    path('consultar-conceptos-poai/',views.ConceptoPOAIList.as_view(),name='consultarconceptospoai'),
+    path('crear-conceptos-poai/',views.ConceptoPOAICreate.as_view(),name='crearconceptospoai'),
+    path('actualizar-conceptos-poai/<str:pk>/',views.ConceptoPOAIUpdate.as_view(),name='actualizarconceptospoai'),
+    path('eliminar-conceptos-poai/<str:pk>/',views.ConceptoPOAIDelete.as_view(),name='eliminarconceptospoai'),
+    # Fuente de financiacion
+    path('consultar-fuentes-financiacion/',views.FuenteFinanciacionList.as_view(),name='consultarfuentesfinanciacion'),
+    path('crear-fuentes-financiacion/',views.FuenteFinanciacionCreate.as_view(),name='crearfuentesfinanciacion'),
+    path('actualizar-fuentes-financiacion/<str:pk>/',views.FuenteFinanciacionUpdate.as_view(),name='actualizarfuentesfinanciacion'),
+    path('eliminar-fuentes-financiacion/<str:pk>/',views.FuenteFinanciacionDelete.as_view(),name='eliminarfuentesfinanciacion'),
+    # Banco de proyectos
+    path('consultar-banco-proyectos/',views.BancoProyectoList.as_view(),name='consultarbanco_proyectos'),
+    path('crear-banco-proyectos/',views.BancoProyectoCreate.as_view(),name='crearbanco_proyectos'),
+    path('actualizar-banco-proyectos/<str:pk>/',views.BancoProyectoUpdate.as_view(),name='actualizarbanco_proyectos'),
+    path('eliminar-banco-proyectos/<str:pk>/',views.BancoProyectoDelete.as_view(),name='eliminarbanco_proyectos'),
+    # Plan anual de adquisiciones
+    path('consultar-plan-anual-adquisiciones/',views.PlanAnualAdquisicionesList.as_view(),name='consultarplan_anual_adquisiciones'),
+    path('crear-plan-anual-adquisiciones/',views.PlanAnualAdquisicionesCreate.as_view(),name='crearplan_anual_adquisiciones'),
+    path('actualizar-plan-anual-adquisiciones/<str:pk>/',views.PlanAnualAdquisicionesUpdate.as_view(),name='actualizarplan_anual_adquisiciones'),
+    path('eliminar-plan-anual-adquisiciones/<str:pk>/',views.PlanAnualAdquisicionesDelete.as_view(),name='eliminarplan_anual_adquisiciones'),
+    # PAA Codigos UNSP
 ]

@@ -17,7 +17,9 @@ from gestion_documental.choices.tipo_radicado_choices import TIPOS_RADICADO_CHOI
 from transversal.models.base_models import Municipio
 from transversal.models.entidades_models import SucursalesEmpresas
 from transversal.models.organigrama_models import UnidadesOrganizacionales
-
+from gestion_documental.choices.medio_almacenamiento_choices import medio_almacenamiento_CHOICES
+from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
+from gestion_documental.choices.origen_archivo_choices import origen_archivo_CHOICES
 class ConfigTiposRadicadoAgno(models.Model):
 
     id_config_tipo_radicado_agno = models.SmallAutoField(primary_key=True, db_column='T235IdConfigTipoRadicadoAgno')
@@ -175,7 +177,7 @@ class Anexos(models.Model):
     id_anexo = models.AutoField(primary_key=True, db_column='T258IdAnexo')
     nombre_anexo = models.CharField(max_length=50, db_column='T258nombreAnexo')
     orden_anexo_doc = models.SmallIntegerField(db_column='T258ordenAnexoEnElDoc')
-    cod_medio_almacenamiento = models.CharField(max_length=1, choices=[('D', 'Digital'), ('F', 'Físico'), ('O', 'Otros')], db_column='T258codMedioAlmacenamiento')
+    cod_medio_almacenamiento = models.CharField(max_length=2, choices=medio_almacenamiento_CHOICES, db_column='T258codMedioAlmacenamiento')
     medio_almacenamiento_otros_Cual = models.CharField(max_length=30, db_column='T258medioAlmacenamientoOtros_Cual', null=True)
     numero_folios = models.SmallIntegerField(db_column='T258numeroFolios')
     ya_digitalizado = models.BooleanField(db_column='T258yaDigitalizado')
@@ -194,11 +196,11 @@ class MetadatosAnexosTmp(models.Model):
     fecha_creacion_doc = models.DateField(db_column='T260fechaCreacionDoc', null=True)
     descripcion = models.CharField(max_length=500, db_column='T260descripcion', null=True)
     asunto = models.CharField(max_length=150, db_column='T260asunto', null=True)
-    cod_categoria_archivo = models.CharField(max_length=2, choices=[('Tx', 'Texto'), ('Im', 'Imagen'), ('Au', 'Audio'), ('Vd', 'Video'), ('Mp', 'Modelado de Procesos'), ('Ge', 'Geoespacial'), ('Bd', 'Base de Datos'), ('Pw', 'Páginas Web'), ('Ce', 'Correo Electrónico')], db_column='T260codCategoriaArchivo', null=True)
-    es_version_original = models.BooleanField(db_column='T260esVersionOriginal')
-    tiene_replica_fisica = models.BooleanField(db_column='T260tieneReplicaFisica')
-    nro_folios_documento = models.SmallIntegerField(db_column='T260nroFoliosDocumento')
-    cod_origen_archivo = models.CharField(max_length=1, choices=[('E', 'Electrónico'), ('F', 'Físico'), ('D', 'Digitalizado')], db_column='T260codOrigenArchivo')
+    cod_categoria_archivo = models.CharField(max_length=2, choices=tipo_archivo_CHOICES, db_column='T260codCategoriaArchivo', null=True)
+    es_version_original = models.BooleanField(db_column='T260esVersionOriginal',null=True)
+    tiene_replica_fisica = models.BooleanField(db_column='T260tieneReplicaFisica',null=True)
+    nro_folios_documento = models.SmallIntegerField(db_column='T260nroFoliosDocumento',null=True)
+    cod_origen_archivo = models.CharField(max_length=1, choices=origen_archivo_CHOICES, db_column='T260codOrigenArchivo',null=True)
     id_tipologia_doc = models.ForeignKey(TipologiasDoc, on_delete=models.CASCADE, db_column='T260Id_TipologiaDoc', null=True)
     cod_tipologia_doc_Prefijo = models.CharField(max_length=10, db_column='T260codTipologiaDoc_Prefijo', null=True)
     cod_tipologia_doc_agno = models.SmallIntegerField(db_column='T260codTipologiaDoc_Agno', null=True)

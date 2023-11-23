@@ -1412,7 +1412,7 @@ class GetEmpresasByTipoDocumentoAndNumeroDocumento(generics.GenericAPIView):
 
 class GetEmpresasByFilters(generics.ListAPIView):
     serializer_class = EmpresaSerializer
-    queryset = Personas.objects.filter(representante_legal = not None)
+    queryset = Personas.objects.all().filter(representante_legal__isnull=False)
 
     def get(self, request):
         filter = {}

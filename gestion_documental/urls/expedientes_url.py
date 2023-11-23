@@ -31,7 +31,7 @@ urlpatterns = [
      path('expedientes/agregar-archivo-soporte/',views.AgregarArchivoSoporte.as_view(), name='listar-trd'),
      path('expedientes/orden-siguiente/',views.ExpedienteGetOrden.as_view(), name='orden-expediente'),
      path('expedientes/orden-actual/',views.ExpedienteGetOrdenActual.as_view(), name='orden-expediente-actual'),
-     path('expedientes/listar-topologias/',views.ListarTipologias.as_view(), name='listar-topologias'),
+     path('expedientes/listar-tipologias/',views.ListarTipologias.as_view(), name='listar-topologias'),
      path('expedientes/archivos-digitales/adjuntar/',views.UploadPDFView.as_view(), name='adjuntar-archvios'),
      path('expedientes/listar-archivos/',views.ListarArchivosDigitales.as_view(), name='listar-archvios-digitales'),
      path('expedientes/listar-expedientes/',views.ListaExpedientesDocumentales.as_view(), name='listar-expedientes'),
@@ -58,9 +58,30 @@ urlpatterns = [
      path('expedientes/firma-cierre/',views.FirmaCierreView.as_view(), name='firma-cierre-indice'),
      path('expedientes/firma-cierre/get/<str:id_indice_electronico_exp>/',views.FirmaCierreGetView.as_view(), name='firma-cierre-indice-get'),
 
+     #Reubicación Física de Expedientes
+     path('expedientes/buscar-expediente-ubicacion-desactualizada/', views.ExpedienteSearchConUbicacionDesactualizada.as_view(), name='buscar-expediente-desactualizada'),
+     path('expedientes/reubicacion-expediente/get/<str:id_expediente_documental>/',views.ReubicacionFisicaExpedienteGet.as_view(), name='reubicacion-expediente-get'),
+     path('expedientes/agregar-eliminar-expediente-carpeta/update/<str:id_expediente_documental>/',views.ExpedienteCarpetaAgregarEliminar.as_view(), name='Editar-expediente-get'),
 
-      
 
 
+
+     #Concesion de Acceso a Expedientes y Documentos
+     path('expedientes/concesion-acceso/permiso/get/<str:id_expediente>/',views.ConcesionAccesoPermisoGetView.as_view(), name='concesion-acceso-permiso-get'),
+     path('expedientes/concesion-acceso/personas/get-by-documento/',views.ConcesionAccesoPersonasDocumentoView.as_view(), name='concesion-acceso-personas-get-by-documento'),
+     path('expedientes/concesion-acceso/personas/get-by-filters/',views.ConcesionAccesoPersonasFiltroView.as_view(), name='concesion-acceso-personas-get-by-filters'),
+     path('expedientes/concesion-acceso/expedientes/create/<str:id_expediente>/',views.ConcesionAccesoExpedientesCreateView.as_view(), name='concesion-acceso-exp-create'),
+     path('expedientes/concesion-acceso/documentos/create/<str:id_documento_de_archivo_exped>/',views.ConcesionAccesoDocumentosCreateView.as_view(), name='concesion-acceso-doc-create'),
+     path('expedientes/concesion-acceso/expedientes/update/<str:id_expediente>/',views.ConcesionAccesoExpedientesUpdateView.as_view(), name='concesion-acceso-exp-update'),
+     path('expedientes/concesion-acceso/documentos/update/<str:id_documento_de_archivo_exped>/',views.ConcesionAccesoDocumentosUpdateView.as_view(), name='concesion-acceso-doc-update'),
+     path('expedientes/concesion-acceso/expedientes/get/<str:id_expediente>/',views.ConcesionAccesoExpedientesGetView.as_view(), name='concesion-acceso-exp-get'),
+     path('expedientes/concesion-acceso/documentos/get/<str:id_documento_de_archivo_exped>/',views.ConcesionAccesoDocumentosGetView.as_view(), name='concesion-acceso-doc-get'),
+     path('expedientes/concesion-acceso/expedientes/user/get/',views.ConcesionAccesoExpedientesUserGetView.as_view(), name='concesion-acceso-exp-user-get'),
+     path('expedientes/concesion-acceso/documentos/user/get/',views.ConcesionAccesoDocumentosUserGetView.as_view(), name='concesion-acceso-doc-user-get'),
      
+
+
+     #Consulta de Expedientes Documentales
+     path('expedientes/consulta/get-list/',views.ConsultaExpedientesGetView.as_view(), name='consulta-get-list'),
+     path('expedientes/consulta/documentos-expedientes/get/',views.ConsultaExpedientesDocumentosGetView.as_view(), name='consulta-documentos-get'),
 ]
