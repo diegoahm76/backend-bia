@@ -1212,7 +1212,7 @@ class UploadPDFView(generics.CreateAPIView):
 
             if respuesta.status_code != status.HTTP_201_CREATED:
                 return respuesta
-
+            
             # Retornar el hash MD5 junto con "respuesta"
             response_data = {
                 "mensaje": "Archivo subido exitosamente",
