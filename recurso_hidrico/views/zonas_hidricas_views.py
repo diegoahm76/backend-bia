@@ -112,7 +112,7 @@ class BorrarZonaHidricaVista(generics.DestroyAPIView):
             instance = self.get_object()
             self.perform_destroy(instance)
             return Response({'success': True, 'detail': 'Registro eliminado correctamente'},
-                            status=status.HTTP_204_NO_CONTENT)
+                            status=status.HTTP_200_OK)
         except ValidationError as e:
             # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
             raise ValidationError({e.detail})
