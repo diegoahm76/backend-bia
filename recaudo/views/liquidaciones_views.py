@@ -228,7 +228,7 @@ class ExpedientesDeudorGetView(generics.ListAPIView):
 
 
 def liquidacionPdf(request, pk):
-    liquidacion = LiquidacionesBase.objects.filter(pk=pk).get()
+    '''liquidacion = LiquidacionesBase.objects.filter(pk=pk).get()
     context = {
         'referencia_pago': liquidacion.id,
         'limite_pago': liquidacion.vencimiento,
@@ -238,5 +238,6 @@ def liquidacionPdf(request, pk):
         'valor_cuota': liquidacion.valor,
         'fecha_impresion': liquidacion.fecha_liquidacion,
         'codigo_barras': '',
-    }
+    } '''
+    context = {}
     return render(request, 'liquidacion.html', context=context)
