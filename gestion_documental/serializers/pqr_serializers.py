@@ -170,6 +170,11 @@ class AnexosPostSerializer(serializers.ModelSerializer):
         model = Anexos
         fields = '__all__'
 
+class AnexosPutSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos
+        fields = '__all__'
+
 class AnexosPQRSDFSerializer(serializers.ModelSerializer):
     class Meta:
         model = Anexos_PQR
@@ -204,12 +209,22 @@ class MetadatosPostSerializer(serializers.ModelSerializer):
         model = MetadatosAnexosTmp
         fields = '__all__'
 
+class MetadatosPutSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MetadatosAnexosTmp
+        fields = '__all__'
+
 class InfoDenunciasPQRSDFSerializer(serializers.ModelSerializer):
     class Meta:
         model = InfoDenuncias_PQRSDF
         fields = '__all__'
 
 class InfoDenunciasPQRSDFPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InfoDenuncias_PQRSDF
+        fields = '__all__'
+
+class InfoDenunciasPQRSDFPutSerializer(serializers.ModelSerializer):
     class Meta:
         model = InfoDenuncias_PQRSDF
         fields = '__all__'

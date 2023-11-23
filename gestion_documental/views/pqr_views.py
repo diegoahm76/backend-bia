@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MediosSolicitud, MetadatosAnexosTmp, TiposPQR, modulos_radican
 from rest_framework.response import Response
 from gestion_documental.models.trd_models import FormatosTiposMedio
-from gestion_documental.serializers.pqr_serializers import AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosSerializer, InfoDenunciasPQRSDFPostSerializer, InfoDenunciasPQRSDFSerializer, MediosSolicitudCreateSerializer, MediosSolicitudDeleteSerializer, MediosSolicitudSearchSerializer, MediosSolicitudUpdateSerializer, MetadatosPostSerializer, MetadatosSerializer, PQRSDFPostSerializer, PQRSDFPutSerializer, PQRSDFSerializer, RadicadoPostSerializer, TiposPQRGetSerializer, TiposPQRUpdateSerializer
+from gestion_documental.serializers.pqr_serializers import AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, InfoDenunciasPQRSDFPostSerializer, InfoDenunciasPQRSDFPutSerializer, InfoDenunciasPQRSDFSerializer, MediosSolicitudCreateSerializer, MediosSolicitudDeleteSerializer, MediosSolicitudSearchSerializer, MediosSolicitudUpdateSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, PQRSDFPostSerializer, PQRSDFPutSerializer, PQRSDFSerializer, RadicadoPostSerializer, TiposPQRGetSerializer, TiposPQRUpdateSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.configuracion_tipos_radicados_views import ConfigTiposRadicadoAgnoGenerarN
 from gestion_documental.views.panel_ventanilla_views import Estados_PQRCreate, Estados_PQRDelete
@@ -104,24 +104,27 @@ class PQRSDFCreate(generics.CreateAPIView):
                 debe_radicar = isCreateForWeb and data_pqrsdf['es_anonima']
                 denuncia = data_pqrsdf['denuncia']
                 anexos = data_pqrsdf['anexos']
+                fecha_actual = datetime.now()
 
                 #Crea el pqrsdf
-                data_PQRSDF_creado = self.create_pqrsdf(data_pqrsdf)
+                data_PQRSDF_creado = self.create_pqrsdf(data_pqrsdf, fecha_actual)
 
                 #Guarda el nuevo estado Guardado en la tabla T255
-                HistoricoEstadosCreate.create_historico_estado(data_PQRSDF_creado, 'GUARDADO', id_persona_guarda)
+                historicoEstadosCreate = HistoricoEstadosCreate()
+                historicoEstadosCreate.create_historico_estado(data_PQRSDF_creado, 'GUARDADO', id_persona_guarda, fecha_actual)
                 
                 #Crea la denuncia si el tipo del PQRSDF es de tipo Denuncia
-                if(data_pqrsdf['cod_tipo_PQRSDF'] == "D"):
-                    DenunciasCreate.crear_denuncia(denuncia, data_pqrsdf['id_PQRSDF'])
+                if(data_PQRSDF_creado['cod_tipo_PQRSDF'] == "D"):
+                    denunciasCreate = DenunciasCreate()
+                    denunciasCreate.crear_denuncia(denuncia, data_PQRSDF_creado['id_PQRSDF'])
 
                 #Guarda los anexos en la tabla T258 y la relación entre los anexos y el PQRSDF en la tabla T259 si tiene anexos
                 if anexos:
-                    AnexosCreate.create_anexos_pqrsdf(anexos, data_PQRSDF_creado, isCreateForWeb)
+                    anexosCreate = AnexosCreate()
+                    anexosCreate.create_anexos_pqrsdf(anexos, data_PQRSDF_creado['id_PQRSDF'], isCreateForWeb, fecha_actual)
                     update_requiere_digitalizacion = all(anexo.ya_digitalizado for anexo in anexos)
                     if update_requiere_digitalizacion:
-                        data_PQRSDF_creado['requiereDigitalizacion'] = False
-                        data_PQRSDF_creado = PQRSDFUpdate.put(data_PQRSDF_creado)
+                        data_PQRSDF_creado = self.update_requiereDigitalizacion_pqrsdf(data_PQRSDF_creado)
 
                 #Si tiene que radicar, crea el radicado
                 if debe_radicar:
@@ -129,23 +132,31 @@ class PQRSDFCreate(generics.CreateAPIView):
                         'pqrsdf': data_PQRSDF_creado,
                         'id_persona_guarda': id_persona_guarda
                     }
-                    data_PQRSDF_creado = RadicarPQRSDF.post(request_radicado)
+                    radicarPQRSDF = RadicarPQRSDF()
+                    data_PQRSDF_creado = radicarPQRSDF.post(request_radicado)
                 
                 return Response({'success':True, 'detail':'Se creo el PQRSDF correctamente', 'data':data_PQRSDF_creado}, status=status.HTTP_201_CREATED)
         
         except Exception as e:
             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
       
-    def create_pqrsdf(self, data):
-        data_pqrsdf = self.set_data_pqrsdf(data)
-        serializer = self.get_serializer(data=data_pqrsdf)
+    def create_pqrsdf(self, data, fecha_actual):
+        data_pqrsdf = self.set_data_pqrsdf(data, fecha_actual)
+        serializer = self.serializer_class(data=data_pqrsdf)
         serializer.is_valid(raise_exception=True)
-        serializador = serializer.save()
-        data_PQRSDF_creado = serializador.data
-        return data_PQRSDF_creado
+        serializer.save()
+        return serializer.data
+    
+    def update_requiereDigitalizacion_pqrsdf(self, data_PQRSDF_creado):
+        data_pqrsdf_update = data_PQRSDF_creado
+        data_pqrsdf_update['requiereDigitalizacion'] = False
+        serializer = self.serializer_class(data_PQRSDF_creado, data=data_pqrsdf_update, many=False)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return serializer.data
 
-    def set_data_pqrsdf(self, data):
-        data['fecha_registro'] = data['fecha_ini_estado_actual'] = datetime.now()
+    def set_data_pqrsdf(self, data, fecha_actual):
+        data['fecha_registro'] = data['fecha_ini_estado_actual'] = fecha_actual
         data['requiereDigitalizacion'] = True if data['cantidad_anexos'] != 0 else False
     
         estado = EstadosSolicitudes.objects.filter(nombre='GUARDADO').first()
@@ -161,16 +172,75 @@ class PQRSDFUpdate(generics.RetrieveUpdateAPIView):
     def put(self, request):
         try:
             with transaction.atomic():
-                pqrsdf = PQRSDF.objects.filter(id_PQRSDF=request.data.id_PQRSDF)
-                if(pqrsdf):
-                    serializer = self.serializer_class(data=request.data, many=False)
-                    serializer.is_valid(raise_exception=True)
-                    serializador = serializer.save()
-                    return Response({'success':True, 'detail':'Se creo el PQRSDF correctamente', 'data':serializador.data}, status=status.HTTP_201_CREATED)
+                pqrsdf_db = PQRSDF.objects.filter(id_PQRSDF=request.data.id_PQRSDF)
+                if pqrsdf_db:
+                    #Obtiene datos enviados de las diferentes tablas para actualizar
+                    pqrsdf = request.data['pqrsdf']
+                    denuncia = pqrsdf['denuncia']
+                    anexos = pqrsdf['anexos']
+                    isCreateForWeb = request.data['isCreateForWeb']
+                    fecha_actual = datetime.now()
+
+                    #Actualiza la denuncia en caso de que la tenga
+                    self.procesa_denuncia(denuncia, pqrsdf_db['cod_tipo_PQRSDF'], pqrsdf['cod_tipo_PQRSDF'], pqrsdf['id_PQRSDF'])
+
+                    #Actualiza los anexos y los metadatos
+                    self.procesa_anexos(anexos, pqrsdf['id_PQRSDF'], isCreateForWeb, fecha_actual)
+
+                    util_PQR = Util_PQR()
+                    data_pqrsdf_update = util_PQR.reemplazar_objetos(pqrsdf_db, pqrsdf)
+                    pqrsdf_update = self.update_pqrsdf(pqrsdf_db, data_pqrsdf_update)
+                    return Response({'success':True, 'detail':'Se creo el PQRSDF correctamente', 'data': pqrsdf_update}, status=status.HTTP_201_CREATED)
                 else:
                     return Response({'success':False, 'detail':'No se encontro el PQRSDF para actualizar'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    def update_pqrsdf(self, pqrsdf_db, pqrsdf_update):
+        serializer = self.serializer_class(pqrsdf_db, data=pqrsdf_update, many=False)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return serializer.data
+    
+    def procesa_denuncia(self, denuncia, cod_tipo_PQRSDF_DB, cod_tipo_PQRSDF, id_PQRSDF):
+        if cod_tipo_PQRSDF_DB == 'D' and cod_tipo_PQRSDF == 'D':
+            denunciasUpdate = DenunciasUpdate()
+            denunciasUpdate.put(denuncia)
+
+        elif cod_tipo_PQRSDF_DB == 'D' and not cod_tipo_PQRSDF == 'D':
+            denunciasDelete = DenunciasDelete()
+            denunciasDelete.delete(id_PQRSDF)
+
+        elif denuncia and not cod_tipo_PQRSDF_DB == 'D' and cod_tipo_PQRSDF == 'D':
+            denunciasCreate = DenunciasCreate()
+            denunciasCreate.crear_denuncia(denuncia, id_PQRSDF)
+
+    def procesa_anexos(self, anexos, id_PQRSDF, isCreateForWeb, fecha_actual):
+        nombres_anexos = anexos.get('nombre_anexo', [])
+        # Validar que no haya valores repetidos
+        if len(nombres_anexos) != len(set(nombres_anexos)):
+            raise ValidationError("error': 'No se permiten nombres de anexos repetidos.")
+
+        anexos_pqr_DB = Anexos_PQR.objects.filter(id_PQRSDF = id_PQRSDF)
+        if anexos_pqr_DB:
+            anexos_create = [anexos for anexo in anexos if anexo.id_anexo is None]
+            anexos_update = [anexos for anexo in anexos if anexo.id_anexo is not None]
+
+            diccionario_filtro = {anexo_update.id_anexo: anexo_update for anexo_update in anexos_update}
+            anexos_delete = [anexo_pqr for anexo_pqr in anexos_pqr_DB if not anexo_pqr.id_anexo in diccionario_filtro]
+
+            anexosCreate = AnexosCreate()
+            anexosUpdate = AnexosUpdate()
+            anexosDelete = AnexosDelete()
+
+            anexosCreate.create_anexos_pqrsdf(anexos_create, id_PQRSDF, isCreateForWeb, fecha_actual)
+            anexosUpdate.put(anexos_update)
+            anexosDelete.delete(anexos_delete)
+            
+        else:
+            anexosCreate = AnexosCreate()
+            anexosCreate.create_anexos_pqrsdf(anexos, id_PQRSDF, isCreateForWeb, fecha_actual)
+            
         
 class PQRSDFDelete(generics.RetrieveDestroyAPIView):
     serializer_class = PQRSDFSerializer
@@ -178,19 +248,20 @@ class PQRSDFDelete(generics.RetrieveDestroyAPIView):
     queryset = PQRSDF.objects.all()
 
     @transaction.atomic
-    def delete(self, request):
+    def delete(self, request, id_PQRSDF):
         try:
             with transaction.atomic():
-                pqrsdf_delete = self.queryset.filter(id_PQRSDF = request.data['id_PQRSDF'])
+                pqrsdf_delete = self.queryset.filter(id_PQRSDF = id_PQRSDF)
                 if pqrsdf_delete:
                     #Elimina los anexos, anexos_pqr, metadatos y el archivo adjunto
-                    if request.data['anexos']:
-                        AnexosDelete.delete(request.data['anexos'])
+                    anexos_pqr = Anexos_PQR.objects.filter(id_PQRSDF = id_PQRSDF)
+                    if anexos_pqr:
+                        AnexosDelete.delete(anexos_pqr)
 
                     #Elimina el estado creado en el historico
-                    self.borrar_estados.delete(request.data['id_PQRSDF'])
+                    self.borrar_estados.delete(id_PQRSDF)
                     #Elimina la denuncia en caso de que se tenga una denuncia asociada al pqrsdf
-                    DenunciasDelete.delete(request.data['id_PQRSDF'])
+                    DenunciasDelete.delete(id_PQRSDF)
                     #Elimina el pqrsdf
                     pqrsdf_delete.delete()
 
@@ -204,16 +275,16 @@ class PQRSDFDelete(generics.RetrieveDestroyAPIView):
         
 ########################## Historico Estados ##########################
 class HistoricoEstadosCreate(generics.CreateAPIView):
-    creador_estados = Estados_PQRCreate
+    creador_estados = Estados_PQRCreate()
 
-    def create_historico_estado(self, data_PQRSDF, nombre_estado, id_persona_guarda):
-        data_estado_crear = self.set_data_estado(data_PQRSDF, nombre_estado, id_persona_guarda)
+    def create_historico_estado(self, data_PQRSDF, nombre_estado, id_persona_guarda, fecha_actual):
+        data_estado_crear = self.set_data_estado(data_PQRSDF, nombre_estado, id_persona_guarda, fecha_actual)
         self.creador_estados.crear_estado(data_estado_crear)
 
-    def set_data_estado(self, data_PQRSDF, nombre_estado, id_persona_guarda):
+    def set_data_estado(self, data_PQRSDF, nombre_estado, id_persona_guarda, fecha_actual):
         data_estado = {}
-        data_estado['PQRSDF'] = data_PQRSDF.id_PQRSDF
-        data_estado['fecha_iniEstado'] = data_PQRSDF.fecha_ini_estado_actual
+        data_estado['PQRSDF'] = data_PQRSDF['id_PQRSDF']
+        data_estado['fecha_iniEstado'] = fecha_actual
         data_estado['persona_genera_estado'] = None if id_persona_guarda == 0 else id_persona_guarda #TODO: TENER EN CUENTA QUE TALVES ESTE DATO NO PUEDA SER NULL
 
         estado = EstadosSolicitudes.objects.filter(nombre=nombre_estado).first()
@@ -229,8 +300,8 @@ class RadicarPQRSDF(generics.CreateAPIView):
     def post(self, request):
         try:
             with transaction.atomic():
-                data_PQRSDF_creado = request.data['pqrsdf']
-                id_persona_guarda = request.data['id_persona_guarda']
+                data_PQRSDF_creado = request['pqrsdf']
+                id_persona_guarda = request['id_persona_guarda']
                 fecha_actual = datetime.now()
 
                 #Obtiene los dias para la respuesta del PQRSDF
@@ -243,14 +314,17 @@ class RadicarPQRSDF(generics.CreateAPIView):
                 data_for_create['id_usuario'] = id_persona_guarda
                 data_for_create['tipo_radicado'] = "E"
                 data_for_create['modulo_radica'] = "PQRSDF"
-                data_radicado = RadicadoCreate.post(data_for_create)
+                radicadoCreate = RadicadoCreate()
+                data_radicado = radicadoCreate.post(data_for_create)
 
                 #Actualiza el estado y la data del radicado al PQRSDF
+                PrsdfUpdate = PQRSDFUpdate()
                 data_update_pqrsdf = self.set_data_update_radicado_pqrsdf(data_PQRSDF_creado, data_radicado, dias_respuesta, fecha_actual)
-                data_PQRSDF_creado = PQRSDFUpdate.put(data_update_pqrsdf)
+                data_PQRSDF_creado = PrsdfUpdate.update_pqrsdf(data_PQRSDF_creado, data_update_pqrsdf)
 
                 #Guarda el nuevo estado Radicado en la tabla T255
-                HistoricoEstadosCreate.create_historico_estado(data_PQRSDF_creado, 'RADICADO', id_persona_guarda)
+                historicoEstadosCreate = HistoricoEstadosCreate()
+                historicoEstadosCreate.create_historico_estado(data_PQRSDF_creado, 'RADICADO', id_persona_guarda, fecha_actual)
 
                 response = {
                     'radicado': data_radicado,
@@ -269,12 +343,12 @@ class RadicarPQRSDF(generics.CreateAPIView):
         return tipo_pqr
     
     def set_data_update_radicado_pqrsdf(self, pqrsdf, data_radicado, dias_respuesta, fecha_actual):
-        pqrsdf['id_radicado'] = data_radicado.id_radicado
-        pqrsdf['fecha_radicado'] = data_radicado.fecha_radicado
+        pqrsdf['id_radicado'] = data_radicado['id_radicado']
+        pqrsdf['fecha_radicado'] = data_radicado['fecha_radicado']
         pqrsdf['dias_para_respuesta'] = dias_respuesta
 
         estado = EstadosSolicitudes.objects.filter(nombre='RADICADO').first()
-        pqrsdf['id_estado_actual_solicitud'] = estado.id_estado_solicitud
+        pqrsdf['id_estado_actual_solicitud'] = estado['id_estado_solicitud']
         pqrsdf['fecha_ini_estado_actual'] = fecha_actual
 
         return pqrsdf
@@ -283,43 +357,42 @@ class RadicadoCreate(generics.CreateAPIView):
     serializer_class = RadicadoPostSerializer
     config_radicados = ConfigTiposRadicadoAgnoGenerarN
     
-    def post(self, request):
+    def post(self, data_radicado):
         try:
-            with transaction.atomic():
-                config_tipos_radicado = self.get_config_tipos_radicado(request)
-                radicado_data = self.set_data_radicado(config_tipos_radicado, request.fecha_actual, request.id_usuario, request.modulo_radica)
-                serializer = self.get_serializer(data=radicado_data)
-                serializer.is_valid(raise_exception=True)
-                serializador = serializer.save()
-                return Response({'success':True, 'detail':'Se creo el radicado correctamente', 'data':serializador.data}, status=status.HTTP_201_CREATED)
+            config_tipos_radicado = self.get_config_tipos_radicado(data_radicado)
+            radicado_data = self.set_data_radicado(config_tipos_radicado, data_radicado['fecha_actual'], data_radicado['id_usuario'], data_radicado['modulo_radica'])
+            serializer = self.serializer_class(data=radicado_data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return serializer.data
 
         except Exception as e:
-            return Response({'error': 'Ocurrió un error durante la transacción.'}, status=500)
+            raise({'success': False, 'detail': str(e)})
 
 
     def get_config_tipos_radicado(self, request):
         data_request = {
-            'user': { 'persona': { 'id_persona': request.id_usuario } },
-            'cod_tipo_radicado': request.tipo_radicado,
-            'fecha_actual': request.fecha_actual
+            'id_persona': request['id_usuario'],
+            'cod_tipo_radicado': request['tipo_radicado'],
+            'fecha_actual': request['fecha_actual']
         }
-        config_tipos_radicados = self.config_radicados.put(self, data_request)
-        config_tipos_radicado_data = config_tipos_radicados.data
-        if config_tipos_radicado_data.implementar == False:
+        config_tipos_radicados = self.config_radicados.generar_n_radicado(self, data_request)
+        config_tipos_radicado_data = config_tipos_radicados.data['data']
+        if config_tipos_radicado_data['implementar'] == False:
             raise ValidationError("El sistema requiere que se maneje un radicado de entrada o unico, debe solicitar al administrador del sistema la configuración del radicado")
         else:
             return config_tipos_radicado_data
         
     def set_data_radicado(self, config_tipos_radicado, fecha_actual, id_usuario, modulo_radica):
         radicado = {}
-        radicado['cod_tipo_radicado'] = config_tipos_radicado.cod_tipo_radicado
-        radicado['prefijo_radicado'] = config_tipos_radicado.prefijo_consecutivo
-        radicado['agno_radicado'] = config_tipos_radicado.prefijo_consecutivo.agno_radicado
-        radicado['nro_radicado'] = config_tipos_radicado.prefijo_consecutivo.consecutivo_actual
+        radicado['cod_tipo_radicado'] = config_tipos_radicado['cod_tipo_radicado']
+        radicado['prefijo_radicado'] = config_tipos_radicado['prefijo_consecutivo']
+        radicado['agno_radicado'] = config_tipos_radicado['agno_radicado']
+        radicado['nro_radicado'] = config_tipos_radicado['consecutivo_actual']
         radicado['fecha_radicado'] = fecha_actual
         radicado['id_persona_radica'] = id_usuario
 
-        modulo_radica = modulos_radican.objects.filter(nombre=modulo_radica)
+        modulo_radica = modulos_radican.objects.filter(nombre=modulo_radica).first()
         radicado['id_modulo_que_radica'] = modulo_radica.id_ModuloQueRadica
 
         return radicado
@@ -331,36 +404,48 @@ class DenunciasCreate(generics.CreateAPIView):
 
     def crear_denuncia(self, data_denuncia, id_PQRSDF):
         try:
-            with transaction.atomic():
-                data_denuncia['id_PQRSDF'] = id_PQRSDF
-                data_to_create = self.set_data_metadato(data_denuncia)
-                serializer = self.serializer_class(data=data_to_create)
-                serializer.is_valid(raise_exception=True)
-                serializador = serializer.save()
-                return Response({'success':True, 'detail':'Se creo la denuncia correctamente', 'data':serializador.data}, status=status.HTTP_201_CREATED)
+            data_denuncia['id_PQRSDF'] = id_PQRSDF
+            serializer = self.serializer_class(data=data_denuncia)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return serializer.data
 
         except Exception as e:
-            return Response({'error': 'Ocurrió un error durante la transacción.'}, status=500)
+          raise ({'success': False, 'detail': str(e)})
+        
+class DenunciasUpdate(generics.RetrieveUpdateAPIView):
+    serializer_class = InfoDenunciasPQRSDFPutSerializer
+    queryset = InfoDenuncias_PQRSDF.objects.all()
+
+    def put(self, data_denuncia):
+        try:
+            denuncia_db = self.queryset.filter(id_info_denuncia_PQRSDF = data_denuncia.id_info_denuncia_PQRSDF).first()
+            if denuncia_db:
+                util_PQR = Util_PQR()
+                denuncia_update = util_PQR.reemplazar_objetos(denuncia_db, data_denuncia)
+                serializer = self.serializer_class(denuncia_db, data=denuncia_update, many=False)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                return serializer.data
+            else:
+                raise ValidationError("No se encuentra la denuncia que intenta actualziar")
+
+        except Exception as e:
+            raise({'success': False, 'detail': str(e)})   
+
 
 class DenunciasDelete(generics.RetrieveAPIView):
     serializer_class = InfoDenunciasPQRSDFSerializer
     queryset = InfoDenuncias_PQRSDF.objects.all()
 
-    @transaction.atomic
     def delete(self, request, id_PQRSDF):
         try:
-            with transaction.atomic():
-                denuncia = self.queryset.filter(id_PQRSDF = id_PQRSDF).first()
-                message = ""
-                if denuncia:
-                    denuncia.delete()
-                    message = "La denuncia ha sido eliminada exitosamente "
-                else:
-                    message = "No se cuenta con denuncias asociadas al PQRSDF"
-
-                return Response({'success':True, 'detail':message}, status=status.HTTP_200_OK)
+            denuncia = self.queryset.filter(id_PQRSDF = id_PQRSDF).first()
+            if denuncia:
+                denuncia.delete()
+            return True
         except Exception as e:
-            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            raise({'success': False, 'detail': str(e)})
 
 
 
@@ -368,10 +453,10 @@ class DenunciasDelete(generics.RetrieveAPIView):
 class AnexosCreate(generics.CreateAPIView):
     serializer_class = AnexosPostSerializer
     
-    def create_anexos_pqrsdf(self, anexos, data_PQRSDF_creado, isCreateForWeb):
-        lista_valores = anexos.get('nombre_anexo', [])
+    def create_anexos_pqrsdf(self, anexos, id_PQRSDF, isCreateForWeb, fecha_actual):
+        nombres_anexos = [anexo['nombre_anexo'] for anexo in anexos]
         # Validar que no haya valores repetidos
-        if len(lista_valores) != len(set(lista_valores)):
+        if len(nombres_anexos) != len(set(nombres_anexos)):
             raise ValidationError("error': 'No se permiten nombres de anexos repetidos.")
 
         for anexo in anexos:
@@ -379,35 +464,38 @@ class AnexosCreate(generics.CreateAPIView):
 
             #Crea la relacion en la tabla T259
             data_anexos_PQR = {}
-            data_anexos_PQR['id_PQRSDF'] = data_PQRSDF_creado.id_PQRSDF
-            data_anexos_PQR['id_anexo'] = data_anexo.data.id_anexo
-            AnexosPQRCreate.crear_anexo_pqr(data_anexos_PQR)
+            data_anexos_PQR['id_PQRSDF'] = id_PQRSDF
+            data_anexos_PQR['id_anexo'] = data_anexo['id_anexo']
+            anexosPQRCreate = AnexosPQRCreate()
+            anexosPQRCreate.crear_anexo_pqr(data_anexos_PQR)
 
             #Guardar el archivo en la tabla T238
-            if anexo.file:
-                archivo_creado = self.crear_archivos(anexo.file, data_PQRSDF_creado.fecha_registro)
-            else:
-                raise ValidationError("No se puede crear anexos sin archivo adjunto")
+            # if anexo['file']:
+            #     archivo_creado = self.crear_archivos(anexo['file'], fecha_actual)
+            # else:
+            #     raise ValidationError("No se puede crear anexos sin archivo adjunto")
 
             #Crea los metadatos del archivo cargado
             data_metadatos = {}
-            data_metadatos['metadatos'] = anexo.metadatos
+            data_metadatos['metadatos'] = anexo['metadatos']
             data_metadatos['anexo'] = data_anexo
             data_metadatos['isCreateForWeb'] = isCreateForWeb
-            data_metadatos['fecha_registro'] = data_PQRSDF_creado.fecha_registro
-            data_metadatos['id_archivo_digital'] = archivo_creado.data.get('data').get('id_archivo_digital')
-            MetadatosPQRCreate.create_metadatos_pqr(data_metadatos)
+            data_metadatos['fecha_registro'] = fecha_actual
+            data_metadatos['id_archivo_digital'] = 1
+            # data_metadatos['id_archivo_digital'] = archivo_creado.data.get('data').get('id_archivo_digital')
+            metadatosPQRCreate = MetadatosPQRCreate()
+            metadatosPQRCreate.create_metadatos_pqr(data_metadatos)
+        return True
 
     def crear_anexo(self, request):
         try:
-            with transaction.atomic():
-                serializer = self.serializer_class(data=request)
-                serializer.is_valid(raise_exception=True)
-                serializador = serializer.save()
-                return Response({'success':True, 'detail':'Se creo el anexo correctamente', 'data':serializador.data}, status=status.HTTP_201_CREATED)
+            serializer = self.serializer_class(data=request)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return serializer.data
 
         except Exception as e:
-            return Response({'error': 'Ocurrió un error durante la transacción.'}, status=500)
+            raise({'success': False, 'detail': str(e)})
 
     def crear_archivos(self, uploaded_file, fecha_creacion):
         #Valida extensión del archivo
@@ -442,57 +530,81 @@ class AnexosCreate(generics.CreateAPIView):
         }
         
         archivos_Digitales = ArchivosDgitalesCreate()
-        respuesta = archivos_Digitales.crear_archivo(data_archivo, uploaded_file)
-        return respuesta
+        archivo_creado = archivos_Digitales.crear_archivo(data_archivo, uploaded_file)
+        return archivo_creado
+    
+class AnexosUpdate(generics.RetrieveUpdateAPIView):
+    serializer_class = AnexosPutSerializer
+    queryset = Anexos.objects.all()
+
+    def put(self, anexos):
+        try:
+            for anexo in anexos:
+                anexo_update_db = self.queryset.filter(id_anexo = anexo.id_anexo).first()
+                if anexo_update_db:
+                    util_PQR = Util_PQR()
+                    data_anexo_update = util_PQR.reemplazar_objetos(anexo_update_db, anexo)
+                    self.update_anexo(anexo_update_db, data_anexo_update)
+                    MetadatosPQRUpdate.put(anexo.metadatos)
+                    
+                else:
+                    raise ValidationError("No se encontro el anexo que intenta actualizar")
+            return True
+
+        except Exception as e:
+            raise({'success': False, 'detail': str(e)})
+        
+    def update_anexo(self, anexo_db, anexo_update):
+        serializer = self.serializer_class(anexo_db, data=anexo_update, many=False)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return serializer.data
     
 class AnexosDelete(generics.RetrieveDestroyAPIView):
     serializer_class = AnexosSerializer
     queryset = Anexos.objects.all()
 
     @transaction.atomic
-    def delete(self, request, anexos):
+    def delete(self, anexos_pqr):
         try:
-            with transaction.atomic():
-                for anexo in anexos:
-                    anexo_delete = self.queryset.filter(id_anexo = anexo.id_anexo).first()
-                    if anexo_delete:
-                        MetadatosPQRDelete.delete(anexo.id_metadatos_anexo_tmp)
-                        AnexosPQRDelete.delete(anexo.id_anexo)
-                        anexo_delete.delete()
-                    else:
-                        raise NotFound('No se encontró ningún anexo con estos parámetros')
-                return Response({'success':True, 'detail':'Los anexos han sido eliminados exitosamente'}, status=status.HTTP_200_OK)
+            for anexo_pqr in anexos_pqr:
+                anexo_delete = self.queryset.filter(id_anexo = anexo_pqr.id_anexo).first()
+                if anexo_delete:
+                    MetadatosPQRDelete.delete(anexo_delete.id_anexo)
+                    AnexosPQRDelete.delete(anexo_pqr.id_anexo_PQR)
+                    anexo_delete.delete()
+                else:
+                    raise NotFound('No se encontró ningún anexo con estos parámetros')
+            return True
             
         except Exception as e:
-            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            raise({'success': False, 'detail': str(e)})
 
 class AnexosPQRCreate(generics.CreateAPIView):
     serializer_class = AnexosPQRSDFPostSerializer
     
     def crear_anexo_pqr(self, request):
         try:
-            with transaction.atomic():
-                serializer = self.serializer_class(data=request)
-                serializer.is_valid(raise_exception=True)
-                serializador = serializer.save()
-                return Response({'success':True, 'detail':'Se creo el anexo pqr correctamente', 'data':serializador.data}, status=status.HTTP_201_CREATED)
+            serializer = self.serializer_class(data=request)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return serializer.data
 
         except Exception as e:
-            return Response({'error': 'Ocurrió un error durante la transacción.'}, status=500)
+            raise({'success': False, 'detail': str(e)})
         
 class AnexosPQRDelete(generics.RetrieveDestroyAPIView):
     serializer_class = AnexosPQRSDFSerializer
     queryset = Anexos_PQR.objects.all()
 
     @transaction.atomic
-    def delete(self, request, id_anexo):
-        with transaction.atomic():
-            anexoPqr = self.queryset.filter(id_anexo = id_anexo).first()
-            if anexoPqr:
-                anexoPqr.delete()
-                return Response({'success':True, 'detail':'El anexo pqr ha sido eliminado exitosamente'}, status=status.HTTP_200_OK)
-            else:
-                raise NotFound('No se encontró ningún anexo pqr asociado al anexo')
+    def delete(self, request, id_anexo_PQR):
+        anexoPqr = self.queryset.filter(id_anexo_PQR = id_anexo_PQR).first()
+        if anexoPqr:
+            anexoPqr.delete()
+            return True
+        else:
+            raise NotFound('No se encontró ningún anexo pqr asociado al anexo')
 
 ########################## METADATOS ##########################   
 class MetadatosPQRCreate(generics.CreateAPIView):
@@ -500,51 +612,80 @@ class MetadatosPQRCreate(generics.CreateAPIView):
 
     def create_metadatos_pqr(self, data_metadatos):
         try:
-            with transaction.atomic():
-                data_to_create = self.set_data_metadato(data_metadatos)
-                serializer = self.serializer_class(data=data_to_create)
-                serializer.is_valid(raise_exception=True)
-                serializador = serializer.save()
-                return Response({'success':True, 'detail':'Se creo el metadato del anexo correctamente', 'data':serializador.data}, status=status.HTTP_201_CREATED)
+            data_to_create = self.set_data_metadato(data_metadatos)
+            serializer = self.serializer_class(data=data_to_create)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return serializer.data
 
         except Exception as e:
-            return Response({'error': 'Ocurrió un error durante la transacción.'}, status=500)
+            raise({'success': False, 'detail': str(e)})
         
     def set_data_metadato(self, data_metadatos):
         metadato = {}
-        anexo = data_metadatos.anexo
-        data_metadato = data_metadatos.metadatos
+        anexo = data_metadatos['anexo']
+        data_metadato = data_metadatos['metadatos']
 
-        if data_metadatos.isCreateForWeb:
-            metadato['fecha_creacion_doc'] = data_metadatos.fecha_registro
-            metadato['cod_origen_archivo'] = data_metadato.cod_origen_archivo
+        if data_metadatos['isCreateForWeb']:
+            metadato['id_anexo'] = anexo['id_anexo']
+            metadato['fecha_creacion_doc'] = data_metadatos['fecha_registro'].date()
+            metadato['cod_origen_archivo'] = "E"
             metadato['es_version_original'] = True
-            metadato['id_archivo_sistema'] = data_metadato.id_archivo_digital
+            metadato['id_archivo_sistema'] = data_metadatos['id_archivo_digital']
         else:
-            data_metadato['id_anexo'] = anexo.id_anexo
-            data_metadato['fecha_creacion_doc'] = data_metadatos.fecha_registro
-            data_metadato['nro_folios_documento'] = anexo.numero_folios
+            data_metadato['id_anexo'] = anexo['id_anexo']
+            data_metadato['fecha_creacion_doc'] = data_metadatos['fecha_registro'].date()
+            data_metadato['nro_folios_documento'] = anexo['numero_folios']
             metadato['es_version_original'] = True
-            data_metadato['id_archivo_sistema'] = data_metadato.id_archivo_digital
+            data_metadato['id_archivo_sistema'] = data_metadato['id_archivo_digital']
             metadato = data_metadato
         
         return metadato
     
+class MetadatosPQRUpdate(generics.RetrieveUpdateAPIView):
+    serializer_class = MetadatosPutSerializer
+    queryset = MetadatosAnexosTmp.objects.all()
+
+    def put(self, metadato_update):
+        try:
+            metadato_db = self.queryset.filter(id_metadatos_anexo_tmp = metadato_update.id_metadatos_anexo_tmp)
+            if metadato_db:
+                util_PQR = Util_PQR()
+                data_metadato_update = util_PQR.reemplazar_objetos(metadato_db, metadato_update)
+                serializer = self.serializer_class(metadato_db, data=data_metadato_update, many=False)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                return serializer.data
+            else:
+                raise NotFound('No se encontró el metadato que intenta actualizar')
+                
+        except Exception as e:
+            raise({'success': False, 'detail': str(e)})
 
 class MetadatosPQRDelete(generics.RetrieveDestroyAPIView):
     serializer_class = MetadatosSerializer
     queryset = MetadatosAnexosTmp.objects.all()
 
-    @transaction.atomic
-    def delete(self, request, id_metadato):
-        with transaction.atomic():
-            metadato = self.queryset.filter(id_metadatos_anexo_tmp = id_metadato).first()
+    def delete(self, id_anexo):
+        try:
+            metadato = self.queryset.filter(id_anexo = id_anexo).first()
             if metadato:
                 #TODO: Averiguar como se puede borrar un archivo, porque no se encuentra el metodo para ello
                 metadato.delete()
-                return Response({'success':True, 'detail':'El metadato ha sido eliminado exitosamente'}, status=status.HTTP_200_OK)
+                return True
             else:
                 raise NotFound('No se encontró ningún metadato con estos parámetros')
+        except Exception as e:
+          raise({'success': False, 'detail': str(e)})
+
+class Util_PQR:
+    # Funcion trasversal para update
+    @staticmethod
+    def reemplazar_objetos(objeto_existente, nuevo_objeto):
+        for campo in nuevo_objeto._meta.fields:
+            if hasattr(objeto_existente, campo.name):
+                setattr(objeto_existente, campo.name, getattr(nuevo_objeto, campo.name))
+        return objeto_existente
 
  ########################## MEDIOS DE SOLICITUD ##########################
 

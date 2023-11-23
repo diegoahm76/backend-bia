@@ -103,7 +103,7 @@ class Estados_PQRDelete(generics.RetrieveDestroyAPIView):
     def delete(self, request, id_PQRSDF):
         try:
             with transaction.atomic():
-                estado_pqr = self.queryset.filter(id_anexo = id_PQRSDF).first()
+                estado_pqr = self.queryset.filter(PQRSDF = id_PQRSDF).first()
                 if estado_pqr:
                     estado_pqr.delete()
                     return Response({'success':True, 'detail':'El estado del pqr ha sido eliminado exitosamente'}, status=status.HTTP_200_OK)
