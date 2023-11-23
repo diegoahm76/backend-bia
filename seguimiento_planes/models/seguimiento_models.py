@@ -170,7 +170,7 @@ class ConceptoPOAI(models.Model):
 
 class FuenteFinanciacion(models.Model):
     id_fuente = models.AutoField(primary_key=True, editable=False, db_column='T526IdFuente')
-    # nombre_fuente = models.CharField(max_length=100, db_column='T526nombreFuente')
+    nombre_fuente = models.CharField(max_length=100, db_column='T526nombreFuente')
     vano_1 = models.BigIntegerField(null=True, blank=True, db_column='T526vano1')
     vano_2 = models.BigIntegerField(null=True, blank=True, db_column='T526vano2')
     vano_3 = models.BigIntegerField(null=True, blank=True, db_column='T526vano3')

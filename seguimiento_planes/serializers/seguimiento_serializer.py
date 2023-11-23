@@ -139,6 +139,7 @@ class BancoProyectoSerializer(serializers.ModelSerializer):
     nombre_indicador = serializers.ReadOnlyField(source='id_indicador.nombre_indicador', default=None)
     nombre_meta = serializers.ReadOnlyField(source='id_meta.nombre_meta', default=None)
     rubro = serializers.ReadOnlyField(source='id_rubro.cuenta', default=None)
+    nombre_fuente = serializers.ReadOnlyField(source='id_fuente.nombre_fuente', default=None)
     
     class Meta:
         model = BancoProyecto
