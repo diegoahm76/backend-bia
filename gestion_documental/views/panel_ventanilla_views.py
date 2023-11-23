@@ -10,6 +10,9 @@ from seguridad.utils import Util
 from datetime import datetime
 from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
+from django.db.models import F, Value, CharField
+from django.db.models.functions import Concat
+
 
 
 class EstadosSolicitudesGet(generics.ListAPIView):
@@ -28,7 +31,9 @@ class EstadosSolicitudesGet(generics.ListAPIView):
 #PQRSDF
 class PQRSDFGet(generics.ListAPIView):
     serializer_class = PQRSDFGetSerializer
-    queryset =PQRSDF.objects.all()
+    #queryset =PQRSDF.objects.all()
+    queryset = PQRSDF.objects.annotate(mezcla=Concat(F('id_radicado__prefijo_radicado'), Value('-'), F('id_radicado__agno_radicado'), Value('-'), F('id_radicado__nro_radicado'), output_field=CharField()))
+                                              
     permission_classes = [IsAuthenticated]
 
 
@@ -41,7 +46,7 @@ class PQRSDFGet(generics.ListAPIView):
 
             if key == 'radicado':
                 if value !='':
-                    filter['id_radicado__nro_radicado__icontains'] = value
+                    filter['mezcla__icontains'] = value
             if key =='estado_actual_solicitud':
                 if value != '':
                     filter['id_estado_actual_solicitud__nombre__icontains'] = value    
@@ -204,9 +209,12 @@ class SolicitudDeDigitalizacionComplementoCreate(generics.CreateAPIView):
 class CabezerasPQRSDFGet(generics.ListAPIView):
     serializer_class = PQRSDFCabezeraGetSerializer
     queryset =PQRSDF.objects.all()
+    queryset_prueba = PQRSDF.objects.annotate(combinacion=Concat(F('id_radicado__prefijo_radicado'), Value('-'), F('id_radicado__agno_radicado'), Value('-'), F('id_radicado__nro_radicado'), output_field=CharField())
+)
     permission_classes = [IsAuthenticated]
 
 
+        
     def get (self, request):
         tipo_busqueda = 'PQRSDF'
         data_respuesta = []
@@ -217,24 +225,23 @@ class CabezerasPQRSDFGet(generics.ListAPIView):
 
             if key == 'radicado':
                 if value !='':
-                    filter['id_radicado__nro_radicado__icontains'] = value
+                    filter['combinacion__icontains'] = value
+ 
             if key =='estado_actual_solicitud':
                 if value != '':
                     filter['id_estado_actual_solicitud__estado_solicitud__nombre__icontains'] = value    
-            if key == 'tipo_solicitud':
-                if value != '':
-                    tipo_busqueda = False
-        
-        if tipo_busqueda == 'PQRSDF':
-            instance = self.get_queryset().filter(**filter).order_by('fecha_radicado')
 
-            if not instance:
-                raise NotFound("No existen registros")
-            for x in instance:
-                #print(x)
-                respuesta = historico.get(self,x.id_PQRSDF)
-                #print()
-                data_histo.append({'cabezera':self.serializer_class(x).data,'detalle':respuesta.data['data']})
+        
+        
+        instance = self.queryset_prueba.filter(**filter).order_by('fecha_radicado')
+
+        if not instance:
+            raise NotFound("No existen registros")
+        for x in instance:
+            print(x.combinacion)
+            respuesta = historico.get(self,x.id_PQRSDF)
+            #print()
+            data_histo.append({'cabecera':self.serializer_class(x).data,'detalle':respuesta.data['data']})
 
                 #data_respuesta.append(historico.get(self,x.id_PQRSDF).data['data'])
 
