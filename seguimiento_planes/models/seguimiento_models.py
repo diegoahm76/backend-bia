@@ -188,7 +188,6 @@ class FuenteFinanciacion(models.Model):
 
 class BancoProyecto(models.Model):
     id_banco = models.AutoField(primary_key=True, editable=False, db_column='T527IdBanco')
-    nombre_meta = models.CharField(max_length=255, db_column='T527nombreMeta')
     banco_valor = models.BigIntegerField(null=True, blank=True, db_column='T527bancoValor')
     objeto_contrato = models.CharField(max_length=255, db_column='T527objetoContrato')
     id_proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, db_column='T527IdProyecto')
