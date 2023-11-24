@@ -170,7 +170,7 @@ class ConceptoPOAI(models.Model):
 
 class FuenteFinanciacion(models.Model):
     id_fuente = models.AutoField(primary_key=True, editable=False, db_column='T526IdFuente')
-    # nombre_fuente = models.CharField(max_length=100, db_column='T526nombreFuente')
+    nombre_fuente = models.CharField(max_length=100, db_column='T526nombreFuente')
     vano_1 = models.BigIntegerField(null=True, blank=True, db_column='T526vano1')
     vano_2 = models.BigIntegerField(null=True, blank=True, db_column='T526vano2')
     vano_3 = models.BigIntegerField(null=True, blank=True, db_column='T526vano3')
@@ -188,7 +188,6 @@ class FuenteFinanciacion(models.Model):
 
 class BancoProyecto(models.Model):
     id_banco = models.AutoField(primary_key=True, editable=False, db_column='T527IdBanco')
-    nombre_meta = models.CharField(max_length=255, db_column='T527nombreMeta')
     banco_valor = models.BigIntegerField(null=True, blank=True, db_column='T527bancoValor')
     objeto_contrato = models.CharField(max_length=255, db_column='T527objetoContrato')
     id_proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, db_column='T527IdProyecto')
@@ -209,8 +208,36 @@ class BancoProyecto(models.Model):
 class PlanAnualAdquisiciones(models.Model):
     id_plan_anual = models.AutoField(primary_key=True, editable=False, db_column='T528IdPlanAnualAdquisiciones')
     descripcion = models.CharField(max_length=255, db_column='T528descripcion')
-    mes_inicio = models.CharField(max_length=100, db_column='T528mesInicio')
-    mes_oferta = models.CharField(max_length=100, db_column='T528mesOferta')
+    mes_inicio = models.CharField(
+        max_length=3, choices=[
+            ('ENE', 'Enero'),
+            ('FEB', 'Febrero'),
+            ('MAR', 'Marzo'),
+            ('ABR', 'Abril'),
+            ('MAY', 'Mayo'),
+            ('JUN', 'Junio'),
+            ('JUL', 'Julio'),
+            ('AGO', 'Agosto'),
+            ('SEP', 'Septiembre'),
+            ('OCT', 'Octubre'),
+            ('NOV', 'Noviembre'),
+            ('DIC', 'Diciembre'),
+                ], db_column='T528mesInicio')    
+    mes_oferta = models.CharField(
+        max_length=3, choices=[
+            ('ENE', 'Enero'),
+            ('FEB', 'Febrero'),
+            ('MAR', 'Marzo'),
+            ('ABR', 'Abril'),
+            ('MAY', 'Mayo'),
+            ('JUN', 'Junio'),
+            ('JUL', 'Julio'),
+            ('AGO', 'Agosto'),
+            ('SEP', 'Septiembre'),
+            ('OCT', 'Octubre'),
+            ('NOV', 'Noviembre'),
+            ('DIC', 'Diciembre'),
+        ], db_column='T528mesOferta')
     duracion = models.BigIntegerField(null=True, blank=True, db_column='T528duracion')
     valor_total_estimado = models.BigIntegerField(null=True, blank=True, db_column='T528valorTotalEstimado')
     valor_vigencia_actual = models.BigIntegerField(null=True, blank=True, db_column='T528valorVigenciaActual')

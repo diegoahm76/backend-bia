@@ -86,6 +86,15 @@ class ExpedienteAperturaSerializer(serializers.ModelSerializer):
     nro_documento_persona_responsable_actual = serializers.ReadOnlyField(source='id_persona_responsable_actual.numero_documento', default=None)
     nombre_persona_responsable_actual = serializers.SerializerMethodField()
     nombre_und_org_oficina_respon_actual = serializers.ReadOnlyField(source='id_und_org_oficina_respon_actual.nombre', default=None)
+    nombre_serie_origen = serializers.ReadOnlyField(source='id_serie_origen.nombre', default=None)
+    nombre_subserie_origen = serializers.ReadOnlyField(source='id_subserie_origen.nombre', default=None)
+    nombre_trd_origen = serializers.ReadOnlyField(source='id_trd_origen.nombre', default=None)
+    tipo_expediente = serializers.CharField(source='get_cod_tipo_expediente_display', read_only=True)
+    etapa_de_archivo_actual_exped = serializers.CharField(source='get_cod_etapa_de_archivo_actual_exped_display', read_only=True)
+    fecha_folio_inicial = serializers.DateTimeField(format="%d/%m/%Y")
+    fecha_folio_final = serializers.DateTimeField(format="%d/%m/%Y")
+    nombre_unidad_org_oficina_respon_original = serializers.ReadOnlyField(source='id_unidad_org_oficina_respon_original.nombre', default=None)
+    desc_estado = serializers.CharField(source='get_estado_display', read_only=True)
     carpetas_caja = serializers.SerializerMethodField()
     nombre_persona_anula = serializers.SerializerMethodField()
 
@@ -201,6 +210,22 @@ class ExpedienteAperturaSerializer(serializers.ModelSerializer):
             'nombre_persona_titular_exp_complejo',
             'id_und_org_oficina_respon_actual',
             'nombre_und_org_oficina_respon_actual',
+            'id_serie_origen',
+            'nombre_serie_origen',
+            'id_subserie_origen',
+            'nombre_subserie_origen',
+            'id_trd_origen',
+            'nombre_trd_origen',
+            'cod_tipo_expediente',
+            'tipo_expediente',
+            'cod_etapa_de_archivo_actual_exped',
+            'etapa_de_archivo_actual_exped',
+            'fecha_folio_inicial',
+            'fecha_folio_final',
+            'id_unidad_org_oficina_respon_original',
+            'nombre_unidad_org_oficina_respon_original',
+            'estado',
+            'desc_estado',
             'id_persona_responsable_actual',
             'tipo_documento_persona_responsable_actual',
             'nro_documento_persona_responsable_actual',
