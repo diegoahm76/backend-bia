@@ -78,7 +78,7 @@ class DepositoDelete(generics.DestroyAPIView):
        
         
         if not deposito:
-            raise ValidationError("No existe la deposito a eliminar")
+            raise NotFound("No existe la deposito a eliminar")
         
         if estantes:
             raise ValidationError("No se puede Eliminar deposito, si tiene estantes asignadas.")
@@ -87,14 +87,14 @@ class DepositoDelete(generics.DestroyAPIView):
         tiene_bandejas = BandejaEstante.objects.filter(id_estante_deposito__id_deposito=pk).exists()
 
         if tiene_bandejas:
-            return Response({'success': False, 'detail': 'No se puede eliminar el depósito porque tiene bandejas asociadas a él.'},
-                            status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se puede eliminar el depósito porque tiene bandejas asociadas a él.')
+    
 
         tiene_cajas = CajaBandeja.objects.filter(id_bandeja_estante__id_estante_deposito__id_deposito=pk).exists()
 
         if tiene_cajas:
-            return Response({'success': False, 'detail': 'No se puede eliminar el depósito porque tiene una o más cajas asociadas a él.'},
-                            status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se puede eliminar el depósito porque tiene una o más cajas asociadas a él.')
+           
         #reordenar
         depositos = Deposito.objects.filter(orden_ubicacion_por_entidad__gt=deposito.orden_ubicacion_por_entidad).order_by('orden_ubicacion_por_entidad') 
         deposito.delete()
@@ -170,11 +170,7 @@ class DepositoGet(generics.ListAPIView):
         queryset = self.get_queryset()
 
         if not queryset.exists():
-            return Response({
-                'success': False,
-                'detail': 'No se encontraron datos de depósitos registrados.',
-                'data': []
-            }, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound("No se encontraron datos de depósitos registrados.")
 
         serializer = self.get_serializer(queryset, many=True)
 
@@ -431,7 +427,7 @@ class EstanteDepositoDelete(generics.DestroyAPIView):
         estante = EstanteDeposito.objects.filter(id_estante_deposito=pk).first()
 
         if not estante:
-            raise ValidationError("No existe el estante que desea eliminar")
+            raise NotFound("No existe el estante que desea eliminar")
 
         # Verificar si el estante tiene bandejas
         tiene_bandejas = BandejaEstante.objects.filter(id_estante_deposito=pk).exists()
@@ -441,8 +437,7 @@ class EstanteDepositoDelete(generics.DestroyAPIView):
             tiene_cajas = CajaBandeja.objects.filter(id_bandeja_estante__id_estante_deposito=pk).exists()
 
             if tiene_cajas:
-                return Response({'success': False, 'detail': 'No se puede eliminar el estante porque tiene cajas asociadas a una o más bandejas.'},
-                                status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('No se puede eliminar el estante porque tiene cajas asociadas a una o más bandejas.')
 
         # Reordenar
         estantes = EstanteDeposito.objects.filter(orden_ubicacion_por_deposito__gt=estante.orden_ubicacion_por_deposito).order_by('orden_ubicacion_por_deposito') 
@@ -511,7 +506,7 @@ class MoveEstante(generics.UpdateAPIView):
         tiene_bandejas = BandejaEstante.objects.filter(id_estante_deposito=estante.id_estante_deposito).exists()
         
         if tiene_bandejas:
-            return Response({'success': False, 'detail': 'No se puede cambiar de depósito porque el estante tiene bandejas asociadas.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se puede cambiar de depósito porque el estante tiene bandejas asociadas.')
 
         # Paso 3: Obtener el depósito actual
         deposito_actual = f"{estante.id_deposito.identificacion_por_entidad}, {estante.id_deposito.nombre_deposito}"
@@ -525,7 +520,7 @@ class MoveEstante(generics.UpdateAPIView):
         try:
             deposito_destino_obj = Deposito.objects.get(identificacion_por_entidad=identificacion_por_entidad_destino, nombre_deposito=nombre_deposito_destino)
         except Deposito.DoesNotExist:
-            return Response({'success': False, 'detail': 'El depósito de destino no existe.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise NotFound('El depósito de destino no existe.')
 
         # Paso 6: Actualizar el depósito del estante
         estante.id_deposito = deposito_destino_obj
@@ -660,13 +655,13 @@ class BandejaEstanteDelete(generics.DestroyAPIView):
         bandeja = BandejaEstante.objects.filter(id_bandeja_estante=pk).first()
 
         if not bandeja:
-            raise ValidationError("No existe la bandeja que desea eliminar")
+            raise NotFound("No existe la bandeja que desea eliminar")
 
         tiene_cajas = CajaBandeja.objects.filter(id_bandeja_estante=pk).exists()
 
         if tiene_cajas:
-                return Response({'success': False, 'detail': 'No se puede eliminar la bandeja porque tiene una o mas cajas asociadas a esta bandeja.'},
-                                status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError("No se puede eliminar la bandeja porque tiene una o mas cajas asociadas a esta bandeja.")
+                
 
         #Reordenar
         bandejas = BandejaEstante.objects.filter(orden_ubicacion_por_estante__gt=bandeja.orden_ubicacion_por_estante).order_by('orden_ubicacion_por_estante') 
@@ -708,11 +703,8 @@ class BandejaEstanteSearch(generics.ListAPIView):
         queryset = self.get_queryset()
 
         if not queryset.exists():
-            return Response({
-                'success': True,
-                'detail': 'No se encontraron datos que coincidan con los criterios de búsqueda.',
-                'data': []
-            }, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontraron datos que coincidan con los criterios de búsqueda.')
+
 
         serializer = self.get_serializer(queryset, many=True)
 
@@ -737,18 +729,17 @@ class BandejaEstanteMove(generics.UpdateAPIView):
         try:
             deposito_destino = Deposito.objects.get(id_deposito=id_deposito_destino)
         except Deposito.DoesNotExist:
-            return Response({'success': False, 'detail': 'El depósito de destino no existe.'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('El depósito de destino no existe.')
         
         try:
             estante_destino = EstanteDeposito.objects.get(id_estante_deposito=id_estante_destino)
         except EstanteDeposito.DoesNotExist:
-            return Response({'success': False, 'detail': 'El estante de destino no existe.'}, status=status.HTTP_404_NOT_FOUND)
-
+            raise NotFound('El estante de destino no existe.')
             
         # Verificar si la bandeja tiene cajas asociadas
         tiene_cajas = CajaBandeja.objects.filter(id_bandeja_estante=bandeja.id_bandeja_estante).exists()
         if tiene_cajas:
-            return Response({'success': False, 'detail': 'No se puede mover la bandeja porque tiene cajas asociadas.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se puede mover la bandeja porque tiene cajas asociadas.')
 
         id_deposito_destino = request.data.get('id_deposito_destino')
         id_estante_destino = request.data.get('id_estante_destino')
@@ -976,31 +967,38 @@ class CajaEstanteBandejaMove(generics.UpdateAPIView):
         identificacion_estante_destino = request.data.get('identificacion_estante_destino')
         identificacion_deposito_destino = request.data.get('identificacion_deposito_destino')
 
-        
         # Validar si la bandeja de destino existe
         bandeja_destino = BandejaEstante.objects.filter(identificacion_por_estante=identificacion_bandeja_destino).first()
         if not bandeja_destino:
-            return Response({'success': False, 'detail': 'No se encontró la bandeja de destino especificada.'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontró la bandeja de destino especificada.')
 
         # Validar si el estante de destino existe
         estante_destino = EstanteDeposito.objects.filter(identificacion_por_deposito=identificacion_estante_destino).first()
         if not estante_destino:
-            return Response({'success': False, 'detail': 'No se encontró el estante de destino especificado.'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontró el estante de destino especificado.')
 
         # Validar si el depósito de destino existe
         deposito_destino = Deposito.objects.filter(identificacion_por_entidad=identificacion_deposito_destino).first()
         if not deposito_destino:
-            return Response({'success': False, 'detail': 'No se encontró el depósito de destino especificado.'}, status=status.HTTP_404_NOT_FOUND)
-
+            raise NotFound('No se encontró el depósito de destino especificado.')
        
         # Verificar si la caja tiene un expediente asociado
         if CarpetaCaja.id_expediente is not None:
             # Validar si el depósito de destino existe y está activo
             deposito_destino = Deposito.objects.filter(identificacion_por_entidad=identificacion_deposito_destino, activo=True).first()
             if not deposito_destino:
-                return Response({'success': False, 'detail': 'La caja tiene un expediente asociado y no puede ser movida a un depósito inactivo.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError('La caja tiene un expediente asociado y no puede ser movida a un depósito inactivo.')
 
-            
+            # Actualizar la ubicación física de los expedientes asociados
+            expedientes_a_actualizar = ExpedientesDocumentales.objects.filter(
+                carpetacaja__id_caja_bandeja=id_caja_bandeja,
+                ubicacion_fisica_esta_actualizada=False
+            )
+
+            for expediente in expedientes_a_actualizar:
+                expediente.ubicacion_fisica_esta_actualizada = True
+                expediente.save()
+
         # Retener los datos actuales de la caja (sin cambios)
         caja_actual_data = {
             'identificacion_bandeja': caja.id_bandeja_estante.identificacion_por_estante,
@@ -1016,7 +1014,7 @@ class CajaEstanteBandejaMove(generics.UpdateAPIView):
         return Response({
             'success': True,
             'detail': 'Caja movida exitosamente.',
-            'id_caja':id_caja_bandeja,
+            'id_caja': id_caja_bandeja,
             'caja_actual': caja_actual_data,
             'caja_destino': {
                 'identificacion_bandeja': identificacion_bandeja_destino,
@@ -1112,13 +1110,12 @@ class CajaEstanteDelete(generics.DestroyAPIView):
         caja = CajaBandeja.objects.filter(id_caja_bandeja=pk).first()
 
         if not caja:
-            raise ValidationError("No existe la caja que desea eliminar")
+            raise NotFound("No existe la caja que desea eliminar")
 
         tiene_carpetas = CarpetaCaja.objects.filter(id_carpeta_caja=pk).exists()
 
         if tiene_carpetas:
-                return Response({'success': False, 'detail': 'No se puede eliminar la caja porque tiene una o mas carpetas asociadas a esta caja.'},
-                                status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError("No se puede eliminar la caja porque tiene una o mas carpetas asociadas a esta caja.")
 
         #Reordenar
         cajas = CajaBandeja.objects.filter(orden_ubicacion_por_bandeja__gt=caja.orden_ubicacion_por_bandeja).order_by('orden_ubicacion_por_bandeja') 
@@ -1457,7 +1454,7 @@ class CarpetaCajaDelete(generics.DestroyAPIView):
 
         # Verificar si la carpeta tiene un expediente asociado
         if carpeta.id_expediente is not None:
-            return Response({'detail': 'No se puede eliminar la carpeta porque tiene uno o mas expedientes asociado.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('No se puede eliminar la carpeta porque tiene uno o mas expedientes asociado.')
 
         #Reordenar
         carpetas = CarpetaCaja.objects.filter(orden_ubicacion_por_caja__gt=carpeta.orden_ubicacion_por_caja).order_by('orden_ubicacion_por_caja') 
@@ -1660,11 +1657,9 @@ class CarpetaListDepositoInfo(generics.ListAPIView):
 class CarpetaCajaMove(generics.UpdateAPIView):
     serializer_class = CarpetaCajaMoveSerializer
     queryset = CarpetaCaja.objects.all()
-    permission_classes = [IsAuthenticated]
 
     @transaction.atomic
     def put(self, request, id_carpeta_caja):
-        # Obtener la caja actual
         carpeta = get_object_or_404(CarpetaCaja, id_carpeta_caja=id_carpeta_caja)
 
         # Obtener los datos de destino desde la solicitud
@@ -1676,31 +1671,37 @@ class CarpetaCajaMove(generics.UpdateAPIView):
         # Validar si la caja de destino existe
         caja_destino = CajaBandeja.objects.filter(identificacion_por_bandeja=identificacion_caja_destino).first()
         if not caja_destino:
-            return Response({'success': False, 'detail': 'No se encontró la caja de destino especificada.'}, status=status.HTTP_404_NOT_FOUND)
-        
+            raise NotFound('No se encontró la caja de destino especificada.')
+
         # Validar si la bandeja de destino existe
         bandeja_destino = BandejaEstante.objects.filter(identificacion_por_estante=identificacion_bandeja_destino).first()
         if not bandeja_destino:
-            return Response({'success': False, 'detail': 'No se encontró la bandeja de destino especificada.'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontró la bandeja de destino especificada.')
 
         # Validar si el estante de destino existe
         estante_destino = EstanteDeposito.objects.filter(identificacion_por_deposito=identificacion_estante_destino).first()
         if not estante_destino:
-            return Response({'success': False, 'detail': 'No se encontró el estante de destino especificado.'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontró el estante de destino especificado.')
 
         # Validar si el depósito de destino existe
         deposito_destino = Deposito.objects.filter(identificacion_por_entidad=identificacion_deposito_destino).first()
         if not deposito_destino:
-            return Response({'success': False, 'detail': 'No se encontró el depósito de destino especificado.'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound('No se encontró el depósito de destino especificado.')
 
-       
         # Verificar si la caja tiene un expediente asociado
-        if CarpetaCaja.id_expediente is not None:
+        if carpeta.id_expediente:
             # Validar si el depósito de destino existe y está activo
             deposito_destino = Deposito.objects.filter(identificacion_por_entidad=identificacion_deposito_destino, activo=True).first()
             if not deposito_destino:
-                return Response({'success': False, 'detail': 'La carpeta tiene un expediente asociado y no puede ser movida a un depósito inactivo.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise NotFound('La carpeta tiene un expediente asociado y no puede ser movida a un depósito inactivo.')
 
+            # Obtener el expediente asociado a la carpeta
+            expediente_asociado = carpeta.id_expediente
+
+            # Verificar si ubicacion_fisica_esta_actualizada es False
+            if not expediente_asociado.ubicacion_fisica_esta_actualizada:
+                expediente_asociado.ubicacion_fisica_esta_actualizada = True
+                expediente_asociado.save()
             
         # Retener los datos actuales de la caja (sin cambios)
         carpeta_actual_data = {
