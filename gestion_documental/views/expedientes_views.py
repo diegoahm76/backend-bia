@@ -2788,7 +2788,7 @@ class ConcesionAccesoExpedientesUserGetView(generics.ListAPIView):
     def get(self, request):
         persona_logueada = request.user.persona
             
-        concesiones = ConcesionesAccesoAExpsYDocs.objects.filter(id_persona_recibe_acceso=persona_logueada)
+        concesiones = ConcesionesAccesoAExpsYDocs.objects.filter(id_persona_recibe_acceso=persona_logueada).exclude(id_expediente=None)
         if not concesiones:
             raise NotFound('No se han encontrado concesiones de expedientes')
         
@@ -2803,7 +2803,7 @@ class ConcesionAccesoDocumentosUserGetView(generics.ListAPIView):
     def get(self, request):
         persona_logueada = request.user.persona.id_persona
             
-        concesiones = ConcesionesAccesoAExpsYDocs.objects.filter(id_persona_recibe_acceso=persona_logueada)
+        concesiones = ConcesionesAccesoAExpsYDocs.objects.filter(id_persona_recibe_acceso=persona_logueada).exclude(id_documento_exp=None)
         if not concesiones:
             raise NotFound('No se han encontrado concesiones de documentos de expedientes')
         
