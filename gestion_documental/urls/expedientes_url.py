@@ -84,4 +84,5 @@ urlpatterns = [
      #Consulta de Expedientes Documentales
      path('expedientes/consulta/get-list/',views.ConsultaExpedientesGetView.as_view(), name='consulta-get-list'),
      path('expedientes/consulta/documentos-expedientes/get/',views.ConsultaExpedientesDocumentosGetView.as_view(), name='consulta-documentos-get'),
+     path('expedientes/consulta/descargar/<str:id_expediente_documental>/',views.ZipFileAPIView.as_view(), name='descargar-documentos-get'),
 ]
