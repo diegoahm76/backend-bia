@@ -14,6 +14,7 @@ urlpatterns = [
 
     #COMPLEMENTOS
     path('complementos/digitalizacion/create/',views.SolicitudDeDigitalizacionComplementoCreate.as_view(),name='crear-solicitud-complemento-pqrsdf'),
+    path('complementos/anexos/get/<str:pk>/',views.ComplementoPQRSDFInfoAnexosGet.as_view(),name='listar-complemento-anexo'),
     #HISTORICO DE SOLICITUDES 
     path('historico/get/',views.CabezerasPQRSDFGet.as_view(),name='listar-historico-pqrsdf'),
     #Historico_Solicitud_PQRSDFGet,
@@ -23,4 +24,8 @@ urlpatterns = [
     path('pqrsdf/anexo/get/<str:pqr>/',views.PQRSDFInfoGet.as_view(),name='get-pqrsdf-id'),
     path('pqrsdf/anexo-documento/get/<str:pk>/',views.PQRSDFAnexoDocumentoDigitalGet.as_view(),name='get-pqrsdf-id'),
     path('pqrsdf/anexo-documento/meta-data/get/<str:pk>/',views.PQRSDFAnexoMetaDataGet.as_view(),name='get-pqrsdf-id'),
+    #ComplementoPQRSDFAnexoDocumentoDigitalGet
+    path('complemento-pqrsdf/anexo-documento/get/<str:pk>/',views.ComplementoPQRSDFAnexoDocumentoDigitalGet.as_view(),name='get-dcumento-complemento-id'),
+    #ComplementoPQRSDFAnexoMetaDataGet
+    path('complemento-pqrsdf/anexo-documento/meta-data/get/<str:pk>/',views.ComplementoPQRSDFAnexoMetaDataGet.as_view(),name='get-pqrsdf-id'),
 ]
