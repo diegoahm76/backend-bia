@@ -3,10 +3,14 @@ import hashlib
 import os
 import json
 import copy
+import io
+import zipfile
+from django.http import FileResponse
 from django.db.utils import IntegrityError
 from django.core.files.base import ContentFile
 import secrets
 from rest_framework.parsers import MultiPartParser
+from rest_framework.views import APIView
 from gestion_documental.models.conf__tipos_exp_models import ConfiguracionTipoExpedienteAgno
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
 from gestion_documental.models.depositos_models import CarpetaCaja
@@ -2856,3 +2860,37 @@ class ConsultaExpedientesDocumentosGetView(generics.ListAPIView):
         serializer = self.serializer_class(documentos, many=True)
         
         return Response({'success':True, 'detail':'Se encontraron los siguientes documentos de expedientes', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+class ZipFileAPIView(APIView):
+    def get(self, request, id_expediente_documental):
+        expediente = ExpedientesDocumentales.objects.filter(id_expediente_documental=id_expediente_documental).first()
+        if not expediente:
+            raise NotFound('No se encontró el expediente ingresado')
+        
+        documentos_expediente = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=id_expediente_documental)
+        if not documentos_expediente:
+            raise NotFound('No se encontraron documentos para el expediente elegido')
+        
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'a') as zip_file:
+            zip_file.writestr('Documentos/', '')
+            index_content = f"<h2>Documentos de Expediente: {expediente.titulo_expediente}</h2></br>"
+            
+            cont = 1
+            
+            for documento in documentos_expediente:
+                if documento.id_archivo_sistema:
+                    file = documento.id_archivo_sistema.ruta_archivo
+                    file_name = os.path.basename(file.name)
+                    zip_file.writestr(f'Documentos/{file_name}', file.read())
+
+                    index_content = index_content + "\n" + f"{cont}. {documento.id_archivo_sistema.nombre_de_Guardado}: {documento.nombre_asignado_documento} - <a href='Documentos/{file_name}'>Abrir Documento</a></br>"
+                    cont += 1
+                    
+            zip_file.writestr('Índice.html', f"<html><body>{index_content}</body></html>")
+
+        zip_buffer.seek(0)
+
+        response = FileResponse(zip_buffer, filename=f'Expediente {expediente.titulo_expediente}.zip', as_attachment=True)
+
+        return response
