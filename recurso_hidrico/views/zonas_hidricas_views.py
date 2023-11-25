@@ -2,9 +2,9 @@ from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from rest_framework.response import Response
 from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
-from recurso_hidrico.models.zonas_hidricas_models import ZonaHidrica, MacroCuencas,TipoZonaHidrica,SubZonaHidrica
+from recurso_hidrico.models.zonas_hidricas_models import TipoAguaZonaHidrica, ZonaHidrica, MacroCuencas,TipoZonaHidrica,SubZonaHidrica
 
-from recurso_hidrico.serializers.zonas_hidricas_serializers import ZonaHidricaSerializer, MacroCuencasSerializer,TipoZonaHidricaSerializer,SubZonaHidricaSerializer
+from recurso_hidrico.serializers.zonas_hidricas_serializers import TipoAguaZonaHidricaSerializer, ZonaHidricaSerializer, MacroCuencasSerializer,TipoZonaHidricaSerializer,SubZonaHidricaSerializer
 
 
 # Vista get para las 4 tablas de zonas hidricas
@@ -87,6 +87,7 @@ class CrearSubZonaHidricaVista(generics.CreateAPIView):
         try:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
+           
             
             # Agregar lógica adicional si es necesario, por ejemplo, asignar valores antes de guardar
             # serializer.validated_data['campo_adicional'] = valor
@@ -111,7 +112,7 @@ class BorrarZonaHidricaVista(generics.DestroyAPIView):
             instance = self.get_object()
             self.perform_destroy(instance)
             return Response({'success': True, 'detail': 'Registro eliminado correctamente'},
-                            status=status.HTTP_204_NO_CONTENT)
+                            status=status.HTTP_200_OK)
         except ValidationError as e:
             # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
             raise ValidationError({e.detail})
@@ -158,4 +159,17 @@ class ActualizarSubZonaHidricaVista(generics.UpdateAPIView):
         serializer.save()  # Guarda la instancia con los datos actualizados
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+
+class TipoAguaZonaHidricaListView (generics.ListAPIView):
+    queryset = TipoAguaZonaHidrica.objects.all()
+    serializer_class = TipoAguaZonaHidricaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        cuencas = TipoAguaZonaHidrica.objects.all()
+        serializer = self.serializer_class(cuencas,many=True)
+
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
     

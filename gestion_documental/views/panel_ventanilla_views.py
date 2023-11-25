@@ -21,6 +21,8 @@ class EstadosSolicitudesGet(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     def get (self, request):
         instance = self.get_queryset().filter(aplica_para_pqrsdf=True)
+        instance = self.get_queryset().filter(aplica_para_pqrsdf=True, id_estado_solicitud__in=[2,3,4,5])
+
 
         if not instance:
             raise NotFound("No existen registros")
@@ -322,6 +324,74 @@ class PQRSDFAnexoDocumentoDigitalGet(generics.ListAPIView):
     
 
 class PQRSDFAnexoMetaDataGet(generics.ListAPIView):
+    serializer_class = MetadatosAnexosTmpSerializerGet
+    queryset =Anexos.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,pk):
+      
+        instance =Anexos.objects.filter(id_anexo=pk).first()
+
+        if not instance:
+                raise NotFound("No existen registros")
+        
+        meta_data = MetadatosAnexosTmp.objects.filter(id_anexo=instance.id_anexo).first()
+        if not meta_data:
+            raise NotFound("No existen registros")
+   
+        serializer= self.serializer_class(meta_data)
+
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':{'id_anexo':instance.id_anexo,**serializer.data},}, status=status.HTTP_200_OK)
+
+class ComplementoPQRSDFInfoAnexosGet(generics.ListAPIView):
+    serializer_class = AnexosGetSerializer
+    queryset =ComplementosUsu_PQR.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,pk):
+        data=[]
+        instance =self.queryset.filter(idComplementoUsu_PQR=pk).first()
+
+
+        if not instance:
+                raise NotFound("No existen registros")
+        anexos_pqrs = Anexos_PQR.objects.filter(id_complemento_usu_PQR=instance)
+        for x in anexos_pqrs:
+            info_anexo =x.id_anexo
+            data_anexo = self.serializer_class(info_anexo)
+            data.append(data_anexo.data)
+        
+        
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data,}, status=status.HTTP_200_OK)
+
+
+
+class ComplementoPQRSDFAnexoDocumentoDigitalGet(generics.ListAPIView):
+    serializer_class = AnexoArchivosDigitalesSerializer
+    queryset =Anexos.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,pk):
+      
+        instance =Anexos.objects.filter(id_anexo=pk).first()
+
+        if not instance:
+                raise NotFound("No existen registros")
+        
+        meta_data = MetadatosAnexosTmp.objects.filter(id_anexo=instance.id_anexo).first()
+        if not meta_data:
+            raise NotFound("No existen registros")
+        archivo = meta_data.id_archivo_sistema
+        serializer= self.serializer_class(archivo)
+
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':{'id_anexo':instance.id_anexo,**serializer.data},}, status=status.HTTP_200_OK)
+    
+
+
+class ComplementoPQRSDFAnexoMetaDataGet(generics.ListAPIView):
     serializer_class = MetadatosAnexosTmpSerializerGet
     queryset =Anexos.objects.all()
     permission_classes = [IsAuthenticated]
