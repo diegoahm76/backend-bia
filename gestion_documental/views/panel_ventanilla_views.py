@@ -105,7 +105,7 @@ class Estados_PQRDelete(generics.RetrieveDestroyAPIView):
     queryset = Estados_PQR.objects.all()
 
     @transaction.atomic
-    def delete(self, request, id_PQRSDF):
+    def delete(self, id_PQRSDF):
         try:
             with transaction.atomic():
                 estado_pqr = self.queryset.filter(PQRSDF = id_PQRSDF).first()
