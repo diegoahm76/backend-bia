@@ -20,6 +20,8 @@ class EstadosSolicitudesGet(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     def get (self, request):
         instance = self.get_queryset().filter(aplica_para_pqrsdf=True)
+        instance = self.get_queryset().filter(aplica_para_pqrsdf=True, id_estado_solicitud__in=[2,3,4,5])
+
 
         if not instance:
             raise NotFound("No existen registros")

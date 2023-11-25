@@ -51,7 +51,11 @@ urlpatterns = [
     path('configuracion-tipologia/consulta-años-anteriores/', views.ListaConfiguracionesPorAgnoYTipologia.as_view(),name='consulta-años-anteriores'),
     path('configuracion-tipologia/seccion-subseccion-trd-actual/', views.GetActualSeccionSubsecciones.as_view(),name='consulta-años-anteriores'),
     path('configuracion-tipologia/administrador-numeros-tipologias/', views.AsignarNuevoConsecutivo.as_view(),name='admnistrador-numeros-tipologias'),
-    path('configuracion-tipologia/actualizar-tipologia-no-a-si/<int:pk>/',views.EditarConfiguracionTipologia.as_view(), name='actualizar-numeros-tipologias'),
+    path('configuracion-tipologia/actualizar-tipologia-no-a-em/<int:id_tipologia_doc>/',views.ActualizarConfiguracionEM.as_view(), name='actualizar--NoConsecutivo-a-em'),
+    path('configuracion-tipologia/actualizar-tipologia-no-a-ss/<int:id_tipologia_doc>/',views.ActualizarConfiguracionSS.as_view(), name='actualizar-numeros-tipologias'),
+    path('configuracion-tipologia/actualizar-tipologia-si-a-no-em/<int:id_tipologia_doc>/', views.ActualizarConfiguracionNoConsecutivoEm.as_view(), name='actualizar-configuracion-no-a-si'),
+    path('configuracion-tipologia/actualizar-tipologia-si-a-no-ss/<int:id_tipologia_doc>/', views.ActualizarConfiguracionNoConsecutivoSS.as_view(), name='actualizar-configuracion-no-a-si'),
+
     
 
 
