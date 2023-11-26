@@ -9,6 +9,8 @@ from gestion_documental.choices.pqrsdf_choices import (
     TIPOS_OFICIO_CHOICES
     
 )
+from gestion_documental.choices.tipo_zonas_choices import TIPO_ZONAS_CHOICES
+
 
 from gestion_documental.models.expedientes_models import ArchivosDigitales, DocumentosDeArchivoExpediente, ExpedientesDocumentales
 from gestion_documental.models.trd_models import TipologiasDoc
@@ -107,7 +109,7 @@ class PQRSDF(models.Model):
     cod_tipo_PQRSDF = models.CharField(max_length=1,choices=TIPOS_PQR,db_column='T257codTipoPQRSDF')#,max_length=1,choices=TIPOS_PQR
     id_persona_titular = models.ForeignKey('transversal.Personas',null=True,on_delete=models.CASCADE,db_column='T257Id_PersonaTitular', related_name='persona_titular_relacion')# models.ForeignKey('transversal.Personas',null=True, on_delete=models.CASCADE,
     id_persona_interpone = models.ForeignKey('transversal.Personas',null=True,on_delete=models.CASCADE,db_column='T257Id_PersonaInterpone',related_name='persona_interpone_relacion')
-    cod_relacion_con_el_titular = models.CharField(max_length=2, choices=RELACION_TITULAR, db_column='T257codRelacionConElTitular')
+    cod_relacion_con_el_titular = models.CharField(max_length=2, null=True, choices=RELACION_TITULAR, db_column='T257codRelacionConElTitular')
     es_anonima = models.BooleanField(default=False, db_column='T257esAnonima')
     fecha_registro = models.DateTimeField(db_column='T257fechaRegistro')
     id_medio_solicitud = models.ForeignKey(MediosSolicitud,on_delete=models.CASCADE,db_column='T257Id_MedioSolicitud')
@@ -156,7 +158,7 @@ class InfoDenuncias_PQRSDF(models.Model):
     id_info_denuncia_PQRSDF = models.AutoField(primary_key=True, db_column='T256IdInfoDenuncia_PQRSDF')
     id_PQRSDF = models.ForeignKey(PQRSDF,on_delete=models.CASCADE,db_column='T256Id_PQRSDF', null=True)
     cod_municipio_cocalizacion_hecho = models.ForeignKey(Municipio,on_delete=models.CASCADE,max_length=5, db_column='T256Cod_MunicipioLocalizacionHecho')
-    Cod_zona_localizacion = models.CharField(max_length=1, choices=[('U', 'Urbana'), ('R', 'Rural')], db_column='T256codZonaLocalizacion')
+    Cod_zona_localizacion = models.CharField(max_length=1, choices=TIPO_ZONAS_CHOICES, db_column='T256codZonaLocalizacion')
     barrio_vereda_localizacion = models.CharField(max_length=100, db_column='T256barrioOVeredaLocalizacion', null=True)
     direccion_localizacion = models.CharField(max_length=255, db_column='T256direccionLocalizacion', null=True)
     cod_recursos_fectados_presuntos = models.CharField(max_length=2, choices=[('Su', 'Suelo'), ('Ag', 'Agua'), ('Ai', 'Aire'), ('Fl', 'Flora'), ('Fs', 'Fauna silvestre'), ('Ot', 'Otros')], db_column='T256codRecursosAfectadosPresuntos')
