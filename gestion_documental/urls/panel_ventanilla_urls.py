@@ -24,8 +24,15 @@ urlpatterns = [
     path('pqrsdf/anexo/get/<str:pqr>/',views.PQRSDFInfoGet.as_view(),name='get-pqrsdf-id'),
     path('pqrsdf/anexo-documento/get/<str:pk>/',views.PQRSDFAnexoDocumentoDigitalGet.as_view(),name='get-pqrsdf-id'),
     path('pqrsdf/anexo-documento/meta-data/get/<str:pk>/',views.PQRSDFAnexoMetaDataGet.as_view(),name='get-pqrsdf-id'),
-    #ComplementoPQRSDFAnexoDocumentoDigitalGet
     path('complemento-pqrsdf/anexo-documento/get/<str:pk>/',views.ComplementoPQRSDFAnexoDocumentoDigitalGet.as_view(),name='get-dcumento-complemento-id'),
-    #ComplementoPQRSDFAnexoMetaDataGet
     path('complemento-pqrsdf/anexo-documento/meta-data/get/<str:pk>/',views.ComplementoPQRSDFAnexoMetaDataGet.as_view(),name='get-pqrsdf-id'),
+
+    #ENTREGA 102 ASIGNACION DE PQR
+    path('unidades/agrupacion/get/',views.SeccionSubseccionVentanillaGet.as_view(),name='listar-unidades'),
+    path('subseccion-grupo/get/<str:uni>/',views.SubseccionGrupoVentanillaGet.as_view(),name='listar-subseccion'),
+    path('persona-lider/get/<str:uni>/',views.PersonaLiderUnidadGet.as_view(),name='listar-persona-lider'),
+    #AsignacionPQRCreate
+    path('asignar-pqrsdf/create/',views.AsignacionPQRCreate.as_view(),name='crear-asignacion-grupo')
+    ,
+
 ]
