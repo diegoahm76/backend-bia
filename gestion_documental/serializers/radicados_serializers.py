@@ -16,28 +16,31 @@ class RadicadosImprimir(serializers.ModelSerializer):
     def get_nombre_tipo_radicado(self, obj):
         nombre_tipo_radicado = ''
         for choice in TIPOS_RADICADO_CHOICES:
-            if choice[0] == obj['radicado'].cod_tipo_radicado:
+            if choice[0] == obj['cod_tipo_radicado']:
                 nombre_tipo_radicado = choice[1]
                 break
         
         return nombre_tipo_radicado
     
     def get_numero_radicado_completo(self, obj):
-        radicado = obj['radicado']
-        return f"{radicado.prefijo_radicado} {radicado.agno_radicado} {radicado.nro_radicado}"
+        return f"{obj['prefijo_radicado']}-{obj['agno_radicado']}-{obj['nro_radicado']}"
 
     def get_asunto(self, obj):
-        return obj['pqrsdf'].asunto
+        return obj['asunto']
             
     def get_titular(self, obj):
-        persona_titular = Personas.objects.filter(id_persona = obj['pqrsdf'].id_persona_titular_id).first()
-        return f"{persona_titular.primer_nombre} {persona_titular.segundo_nombre} {persona_titular.primer_apellido} {persona_titular.segundo_apellido}"
+        nombre_persona_titular = ""
+        if obj['id_persona_titular']:
+            persona_titular = Personas.objects.filter(id_persona = obj['id_persona_titular']).first()
+            nombre_persona_titular = f"{persona_titular.primer_nombre} {persona_titular.segundo_nombre} {persona_titular.primer_apellido} {persona_titular.segundo_apellido}"
+        
+        return nombre_persona_titular
 
     def get_agno_radicado(self, obj):
-        return obj['radicado'].agno_radicado
+        return obj['agno_radicado']
     
     def get_fecha_radicado(self, obj):
-        return obj['radicado'].fecha_radicado
+        return obj['fecha_radicado']
     
     class Meta:
         model = T262Radicados
