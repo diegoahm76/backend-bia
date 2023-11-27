@@ -1430,7 +1430,7 @@ class ConsultaExpedientesGetSerializer(serializers.ModelSerializer):
 class ConsultaExpedientesDocumentosGetSerializer(serializers.ModelSerializer):
     pagina_inicio = serializers.SerializerMethodField()
     pagina_fin = serializers.SerializerMethodField()
-    nombre_tipologia = serializers.CharField(source='id_tipologia_documental.nombre', read_only=True)
+    nombre_tipologia = serializers.ReadOnlyField(source='id_tipologia_documental.nombre', read_only=True, default=None)
     formato = serializers.ReadOnlyField(source='id_archivo_sistema.formato', default=None)
     tamagno_kb = serializers.ReadOnlyField(source='id_archivo_sistema.tamagno_kb', default=None)
     origen_archivo = serializers.CharField(source='get_cod_origen_archivo_display', read_only=True)
@@ -1474,4 +1474,92 @@ class ConsultaExpedientesDocumentosGetSerializer(serializers.ModelSerializer):
             'es_un_archivo_anexo',
             'asunto',
             'palabras_clave_documento'
+        ]
+
+class ConsultaExpedientesDocumentosGetListSerializer(serializers.ModelSerializer):
+    nombre_persona_titular = serializers.SerializerMethodField()
+    label = serializers.SerializerMethodField()
+    
+    def get_nombre_persona_titular(self, obj):
+        nombre_persona_titular = None
+        if obj.id_persona_titular:
+            nombre_list = [obj.id_persona_titular.primer_nombre, obj.id_persona_titular.segundo_nombre,
+                            obj.id_persona_titular.primer_apellido, obj.id_persona_titular.segundo_apellido]
+            nombre_persona_titular = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_titular = nombre_persona_titular if nombre_persona_titular != "" else None
+        return nombre_persona_titular
+    
+    def get_label(self, obj):
+        label = [obj.identificacion_doc_en_expediente, obj.nombre_asignado_documento]
+        nombre_persona_titular = self.get_nombre_persona_titular(obj)
+        
+        if obj.codigo_tipologia_doc_prefijo:
+            label.append(str(obj.codigo_tipologia_doc_prefijo))
+        if obj.codigo_tipologia_doc_consecutivo:
+            label.append(str(obj.codigo_tipologia_doc_consecutivo))
+        if obj.codigo_tipologia_doc_agno:
+            label.append(str(obj.codigo_tipologia_doc_agno))
+        if nombre_persona_titular:
+            label.append(str(nombre_persona_titular))
+            
+        label = '-'.join(item for item in label if item is not None)
+        label = label if label != "" else None
+        
+        return label
+    
+    class Meta:
+        model =  DocumentosDeArchivoExpediente
+        fields = [
+            'id_documento_de_archivo_exped',
+            'id_expediente_documental',
+            'identificacion_doc_en_expediente',
+            'nombre_asignado_documento',
+            'codigo_tipologia_doc_prefijo',
+            'codigo_tipologia_doc_consecutivo',
+            'codigo_tipologia_doc_agno',
+            'id_persona_titular',
+            'nombre_persona_titular',
+            'label',
+            'orden_en_expediente',
+            'es_un_archivo_anexo',
+            'id_doc_de_arch_del_cual_es_anexo',
+            'palabras_clave_documento'
+        ]
+
+class ConsultaExpedientesDocumentosGetByIdSerializer(serializers.ModelSerializer):
+    fecha_creacion_doc = serializers.DateTimeField(format="%d/%m/%Y")
+    fecha_incorporacion_doc_a_Exp = serializers.DateTimeField(format="%d/%m/%Y")
+    numero_anexos = serializers.SerializerMethodField()
+    origen_archivo = serializers.CharField(source='get_cod_origen_archivo_display', read_only=True, default=None)
+    categoria_archivo = serializers.CharField(source='get_cod_categoria_archivo_display', read_only=True, default=None)
+    nombre_tipologia = serializers.CharField(source='id_tipologia_documental.nombre', read_only=True, default=None)
+    ruta_archivo = serializers.FileField(source='id_archivo_sistema.ruta_archivo', default=None)
+    
+    def get_numero_anexos(self, obj):
+        numero_anexos = 0
+        if not obj.es_un_archivo_anexo:
+            numero_anexos = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=obj.id_expediente_documental.id_expediente_documental, es_un_archivo_anexo=True)
+            numero_anexos = numero_anexos.count()
+            
+        return numero_anexos
+    
+    class Meta:
+        model =  DocumentosDeArchivoExpediente
+        fields = [
+            'id_documento_de_archivo_exped',
+            'id_expediente_documental',
+            'identificacion_doc_en_expediente',
+            'fecha_creacion_doc',
+            'fecha_incorporacion_doc_a_Exp',
+            'numero_anexos',
+            'cod_origen_archivo',
+            'origen_archivo',
+            'cod_categoria_archivo',
+            'categoria_archivo',
+            'id_tipologia_documental',
+            'nombre_tipologia',
+            'nro_folios_del_doc',
+            'asunto',
+            'descripcion',
+            'ruta_archivo'
         ]
