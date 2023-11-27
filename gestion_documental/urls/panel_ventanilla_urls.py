@@ -32,7 +32,8 @@ urlpatterns = [
     path('subseccion-grupo/get/<str:uni>/',views.SubseccionGrupoVentanillaGet.as_view(),name='listar-subseccion'),
     path('persona-lider/get/<str:uni>/',views.PersonaLiderUnidadGet.as_view(),name='listar-persona-lider'),
     #AsignacionPQRCreate
-    path('asignar-pqrsdf/create/',views.AsignacionPQRCreate.as_view(),name='crear-asignacion-grupo')
-    ,
+    path('asignar-pqrsdf/create/',views.AsignacionPQRCreate.as_view(),name='crear-asignacion-grupo'),
+    path('asignar-pqrsdf/get/<str:pqr>/',views.AsignacionPQRGet.as_view(),name='listar-asignacion-grupo'),
+    
 
 ]
