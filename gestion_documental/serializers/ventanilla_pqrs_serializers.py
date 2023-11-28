@@ -4,6 +4,8 @@ from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
+from transversal.models.personas_models import Personas
+from datetime import datetime, timedelta
 
 
 
@@ -24,9 +26,10 @@ class PQRSDFGetSerializer(serializers.ModelSerializer):
     numero_solicitudes_digitalizacion = serializers.SerializerMethodField()
     numero_solicitudes_usuario = serializers.SerializerMethodField()
     tiene_complementos = serializers.SerializerMethodField()
+    dias_respuesta = serializers.SerializerMethodField()
     class Meta:
         model = PQRSDF
-        fields = ['id_PQRSDF','tipo_solicitud','nombre_completo_titular','asunto','cantidad_anexos','radicado','fecha_radicado','requiere_digitalizacion','estado_solicitud','estado_asignacion_grupo','nombre_sucursal','numero_solicitudes_digitalizacion','numero_solicitudes_usuario','tiene_complementos']
+        fields = ['id_PQRSDF','tipo_solicitud','nombre_completo_titular','asunto','cantidad_anexos','radicado','fecha_radicado','requiere_digitalizacion','estado_solicitud','estado_asignacion_grupo','nombre_sucursal','numero_solicitudes_digitalizacion','numero_solicitudes_usuario','tiene_complementos','dias_respuesta']
 
     def get_radicado(self, obj):
         cadena = ""
@@ -80,6 +83,25 @@ class PQRSDFGetSerializer(serializers.ModelSerializer):
             return True
         else:
             return False
+    def get_dias_respuesta(self,obj):
+        fecha_radicado = obj.fecha_radicado
+        dias_respuesta = obj.dias_para_respuesta
+        if not fecha_radicado:
+            return None
+        
+        fecha_actual = datetime.now()
+        #print(obj.id_PQRSDF)
+        #print("FECHA RADICADO "+str(fecha_radicado))
+        #print("DIAS RESPUESTA "+str(dias_respuesta))
+        #print("FECHA ACTUAL " + str(fecha_actual))
+        fecha_limite =fecha_radicado + timedelta(hours=dias_respuesta * 24)
+        #print("fecha_limite " + str(fecha_limite) )
+        
+   
+        dias_faltan = fecha_limite - fecha_actual
+        #print("TIENE ESTOS DIAS "+str(dias_faltan.days))
+        #print("-----------")
+        return dias_faltan.days
 class ComplementosUsu_PQRGetSerializer(serializers.ModelSerializer):
     tipo = serializers.SerializerMethodField()
     nombre_completo_titular = serializers.SerializerMethodField()
@@ -356,3 +378,87 @@ class AsignacionPQRGetSerializer(serializers.ModelSerializer):
            unidad = UnidadesOrganizacionalesSecSubVentanillaGetSerializer(obj.id_und_org_seccion_asignada)
            data = unidad.data
            return data['nombre_unidad']
+        
+#ENTREGA 99
+
+class PQRSDFTitularGetSerializer(serializers.ModelSerializer):
+    nombres = serializers.SerializerMethodField()
+    apellidos = serializers.SerializerMethodField() 
+    tipo_documento = serializers.ReadOnlyField(source='id_persona_titular.tipo_documento.nombre',default=None)
+    numero_documento = serializers.ReadOnlyField(source='id_persona_titular.numero_documento',default=None)
+    class Meta:
+        model = PQRSDF
+        fields = ['id_PQRSDF','nombres','apellidos','tipo_documento','numero_documento']
+    def obtener_nombres(self, persona):
+        nombres = [
+            persona.primer_nombre,
+            persona.segundo_nombre,
+        ]
+        return ' '.join(item for item in nombres if item is not None)
+
+    def obtener_apellidos(self, persona):
+        apellidos = [
+            persona.primer_apellido,
+            persona.segundo_apellido,
+        ]
+        return ' '.join(item for item in apellidos if item is not None)
+
+    def get_nombres(self, obj):
+        if obj.id_persona_titular:
+            return self.obtener_nombres(obj.id_persona_titular)
+        return None
+
+    def get_apellidos(self, obj):
+        if obj.id_persona_titular:
+            return self.obtener_apellidos(obj.id_persona_titular)
+        return None
+    
+
+class PQRSDFTitularGetSerializer(serializers.ModelSerializer):
+    nombres = serializers.SerializerMethodField()
+    apellidos = serializers.SerializerMethodField() 
+    tipo_documento = serializers.ReadOnlyField(source='tipo_documento.nombre',default=None)
+    unidad_organizacional_actual = serializers.ReadOnlyField(source='id_unidad_organizacional_actual.nombre',default=None)
+    class Meta:
+        model = Personas
+        fields = ['nombres','apellidos','tipo_documento','numero_documento','unidad_organizacional_actual']
+    def obtener_nombres(self, persona):
+        nombres = [
+            persona.primer_nombre,
+            persona.segundo_nombre,
+        ]
+        return ' '.join(item for item in nombres if item is not None)
+
+    def obtener_apellidos(self, persona):
+        apellidos = [
+            persona.primer_apellido,
+            persona.segundo_apellido,
+        ]
+        return ' '.join(item for item in apellidos if item is not None)
+
+    def get_nombres(self, obj):
+        if obj:
+            return self.obtener_nombres(obj)
+        return None
+
+    def get_apellidos(self, obj):
+        if obj:
+            return self.obtener_apellidos(obj)
+        return None
+    
+
+class PQRSDFDetalleSolicitud(serializers.ModelSerializer):
+    #tipo_activo = serializers.CharField(source='id_bien.get_cod_tipo_bien_display')
+    estado_actual = serializers.ReadOnlyField(source='id_estado_actual_solicitud.nombre',default=None)
+    radicado = serializers.SerializerMethodField()
+    fecha_radicado_entrada = serializers.ReadOnlyField(source='fecha_radicado',default=None)
+    tipo = serializers.CharField(source='get_cod_tipo_PQRSDF_display')
+    class Meta:
+        model = PQRSDF
+        fields = ['tipo','id_PQRSDF','estado_actual','radicado','fecha_radicado_entrada','asunto','descripcion']
+
+    def get_radicado(self, obj):
+        cadena = ""
+        if obj.id_radicado:
+            cadena= str(obj.id_radicado.prefijo_radicado)+'-'+str(obj.id_radicado.agno_radicado)+'-'+str(obj.id_radicado.nro_radicado)
+            return cadena
