@@ -1,9 +1,13 @@
 import json
+import logging
+
+from django.http import JsonResponse
 from transversal.serializers.organigrama_serializers import UnidadesGetSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from django.core.serializers import serialize
 from django.shortcuts import get_list_or_404
+from transversal.models.organigrama_models import UnidadesOrganizacionales
 from django.db.models import Q
 import copy
 from django.db import transaction
@@ -2618,10 +2622,6 @@ class ActualizarConfiguracionEMaSS(generics.UpdateAPIView):
 
 
 
-
-
-
-
 # Actualizar Nível de Consecutivo de SS a EM: 
 class ActualizarConfiguracionSStoEM(generics.UpdateAPIView):
     serializer_class = ConsecPorNivelesTipologiasDocAgnoSerializer
@@ -2707,3 +2707,358 @@ class ActualizarConfiguracionSStoEM(generics.UpdateAPIView):
                 'success': False,
                 'detail': 'La tipología no existe.',
             }, status=status.HTTP_404_NOT_FOUND)
+        
+
+#Actualizar valores configuración dentro de una configuración existente tipo EMPRESA (EM)
+class ActualizarConfiguracionTipoEM(generics.UpdateAPIView):
+    serializer_class = ConsecPorNivelesTipologiasDocAgnoSerializer
+
+    def put(self, request, id_tipologia_doc):
+        try:
+            # Obtener la configuración existente
+            config_tipologia = get_object_or_404(ConfigTipologiasDocAgno, id_tipologia_doc=id_tipologia_doc)
+
+            # Validar que la configuración sea de tipo EM
+            if not config_tipologia.maneja_consecutivo or config_tipologia.cod_nivel_consecutivo != 'EM':
+                raise ValidationError('La configuración no es de tipo "EM".')
+
+            # Obtener los datos enviados por el usuario
+            data = request.data
+            nuevo_valor_inicial = data.get('valor_inicial')
+            nueva_cantidad_digitos = data.get('cantidad_digitos')
+
+            with transaction.atomic():
+                # Actualizar la configuración en T246ConfigTipologiasDocAgno
+                config_tipologia.valor_inicial = nuevo_valor_inicial
+                config_tipologia.cantidad_digitos = nueva_cantidad_digitos
+                config_tipologia.save()
+
+                # Actualizar la configuración en T247ConsecPorNiveles_TipologiasDocAgno
+                consec_por_niveles = ConsecPorNivelesTipologiasDocAgno.objects.get(
+                    id_config_tipologia_doc_agno=config_tipologia
+                )
+
+                consec_por_niveles.consecutivo_inicial = nuevo_valor_inicial
+                consec_por_niveles.cantidad_digitos = nueva_cantidad_digitos
+                consec_por_niveles.id_persona_ult_config_implemen = request.user.persona
+                consec_por_niveles.fecha_ult_config_implemen = datetime.now()
+                consec_por_niveles.consecutivo_actual = nuevo_valor_inicial - 1
+
+                # Si es la primera vez que se usa el consecutivo de empresa, actualizar T247itemYaUsado
+                if not consec_por_niveles.item_ya_usado:
+                    consec_por_niveles.item_ya_usado = True
+
+                consec_por_niveles.save()
+
+                # Formatear T247consecutivoInicial y T247consecutivoActual con ceros a la izquierda
+                t247_consecutivo_inicial = str(consec_por_niveles.consecutivo_inicial).zfill(nueva_cantidad_digitos)
+                t247_consecutivo_actual = str(consec_por_niveles.consecutivo_actual).zfill(nueva_cantidad_digitos)
+
+                nombre_persona_config = " ".join(filter(None, [
+                            request.user.persona.primer_nombre,
+                            request.user.persona.segundo_nombre,
+                            request.user.persona.primer_apellido,
+                            request.user.persona.segundo_apellido,
+                        ]))
+
+                # Generar la respuesta
+                response_data = {
+                    "T246IdConfigTipologiaDocAgno": config_tipologia.id_config_tipologia_doc_agno,
+                    "T246agnoTipologia": datetime.now().year,
+                    "T246Id_TipologiaDoc": config_tipologia.id_tipologia_doc.id_tipologia_documental,
+                    "T246manejaConsecutivo": config_tipologia.maneja_consecutivo,
+                    "T246codNivelDelConsecutivo": config_tipologia.cod_nivel_consecutivo,
+                    "T246itemYaUsado": config_tipologia.item_ya_usado,
+                    "T247IdConsecPorNiveles_TipologiasDocAgno": consec_por_niveles.id_consec_nivel_tipologias_doc_agno,
+                    "T247Id_ConfigTipologiaDocAgno": config_tipologia.id_config_tipologia_doc_agno,
+                    "T247Id_UnidadOrganizacional": None,
+                    "T247consecutivoInicial": nuevo_valor_inicial,
+                    "T247cantidadDigitos": nueva_cantidad_digitos,
+                    "T247itemYaUsado": consec_por_niveles.item_ya_usado,
+                    "T247Id_PersonaUltConfigImplemen": request.user.persona.id_persona,
+                    "Persona_ult_config_implemen": nombre_persona_config,
+                    "T247fechaUltConfigImplemen": datetime.now(),
+                    "T247consecutivoActual": consec_por_niveles.consecutivo_actual,
+                    "T247consecutivoActualAMostrar": t247_consecutivo_actual,
+                }
+
+                return Response({
+                    'success': True,
+                    'detail': 'Se ha actualizado la configuración tipo "EM".',
+                    'data': response_data
+                }, status=status.HTTP_200_OK)
+
+        except ConfigTipologiasDocAgno.DoesNotExist:
+            raise NotFound('La configuración no existe.')
+        
+
+#Actualizar valores configuración dentro de una configuración existente tipo SECCIÓN/SUBSECCIÓN (SS)
+
+# class ActualizarConfiguracionSeccionSubseccion(generics.UpdateAPIView):
+#     serializer_class = ConfigTipologiasDocAgnoSerializer
+
+#     def put(self, request, id_tipologia_doc):
+#         try:
+#             # Obtener la configuración existente
+#             config_tipologia = ConfigTipologiasDocAgno.objects.get(id_tipologia_doc=id_tipologia_doc)
+
+#             # Verificar el nivel consecutivo
+#             if not config_tipologia.maneja_consecutivo or config_tipologia.cod_nivel_consecutivo != 'SS':
+#                 return Response({
+#                     'success': False,
+#                     'detail': 'La tipología documental tiene como nivel consecutivo un valor diferente a "SS".',
+#                 }, status=status.HTTP_400_BAD_REQUEST)
+
+#             updated_configurations = []
+#             deleted_configurations = []
+
+#             with transaction.atomic():
+#                 for unidad_config_data in request.data.get('configuracion_por_unidad', []):
+#                     unidad_id = unidad_config_data.get('id_unidad_organizacional')
+
+#                     # Validar si la unidad organizacional existe
+#                     if not UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=unidad_id).exists():
+#                         # Agregar log para verificar si la validación está siendo ejecutada
+#                         logging.info(f'La unidad organizacional con ID {unidad_id} no existe.')
+                        
+#                         return Response({
+#                             'success': False,
+#                             'detail': f'La unidad organizacional con ID {unidad_id} no existe.',
+#                         }, status=status.HTTP_404_NOT_FOUND)
+
+#                     valor_inicial = unidad_config_data.get('valor_inicial')
+#                     cantidad_digitos = unidad_config_data.get('cantidad_digitos')
+#                     prefijo_consecutivo = unidad_config_data.get('prefijo_consecutivo')
+
+#                     # Obtener o crear la configuración de unidad
+#                     unidad_config, _ = ConsecPorNivelesTipologiasDocAgno.objects.get_or_create(
+#                         id_config_tipologia_doc_agno=config_tipologia,
+#                         id_unidad_organizacional=unidad_id,
+#                         defaults={
+#                             'consecutivo_inicial': valor_inicial,
+#                             'cantidad_digitos': cantidad_digitos,
+#                             'prefijo_consecutivo': prefijo_consecutivo,
+#                             'item_ya_usado': False,
+#                             'consecutivo_actual': valor_inicial - 1,
+#                             'id_persona_ult_config_implemen': None,  # Asegurar que sea None inicialmente
+#                         }
+#                     )
+
+#                     # Actualizar la configuración de unidad
+#                     unidad_config.consecutivo_inicial = valor_inicial
+#                     unidad_config.cantidad_digitos = cantidad_digitos
+#                     unidad_config.prefijo_consecutivo = prefijo_consecutivo
+#                     unidad_config.id_persona_ult_config_implemen
+#                     unidad_config.fecha_ult_config_implemen = timezone.now()
+#                     unidad_config.consecutivo_actual = valor_inicial - 1
+#                     unidad_config.save()
+
+#                     # Agregar la configuración actualizada a la lista
+#                     updated_configurations.append({
+#                         'id_unidad_organizacional': unidad_id,
+#                         'consecutivo_inicial': unidad_config.consecutivo_inicial,
+#                         'cantidad_digitos': unidad_config.cantidad_digitos,
+#                         'prefijo_consecutivo': unidad_config.prefijo_consecutivo,
+#                         'id_persona_ult_config_implemen': unidad_config.id_persona_ult_config_implemen.id_persona,
+#                         'fecha_ult_config_implemen': unidad_config.fecha_ult_config_implemen,
+#                         'consecutivo_actual': unidad_config.consecutivo_actual,
+#                     })
+
+#                 # Eliminar configuraciones por unidad organizacional
+#                 ids_a_eliminar = request.data.get('ids_a_eliminar', [])
+#                 for id_eliminar in ids_a_eliminar:
+#                     deleted_config = ConsecPorNivelesTipologiasDocAgno.objects.filter(
+#                         id_config_tipologia_doc_agno=config_tipologia,
+#                         id_unidad_organizacional=id_eliminar
+#                     ).first()
+
+#                     if deleted_config:
+#                         deleted_configurations.append({
+#                             'id_unidad_organizacional': id_eliminar,
+#                             'consecutivo_inicial': deleted_config.consecutivo_inicial,
+#                             'cantidad_digitos': deleted_config.cantidad_digitos,
+#                             'prefijo_consecutivo': deleted_config.prefijo_consecutivo,
+#                             'id_persona_ult_config_implemen': deleted_config.id_persona_ult_config_implemen.id_persona,
+#                             'fecha_ult_config_implemen': deleted_config.fecha_ult_config_implemen,
+#                             'consecutivo_actual': deleted_config.consecutivo_actual,
+#                         })
+
+#                         deleted_config.delete()
+
+#                 response_data = {
+#                     'success': True,
+#                     'detail': 'Se ha actualizado la configuración de sección/subsección.',
+#                     'data': {
+#                         'config_tipologia': self.serializer_class(config_tipologia).data,
+#                         'configuraciones_actualizadas': updated_configurations,
+#                         'configuraciones_eliminadas': deleted_configurations,
+#                     }
+#                 }
+
+#                 return Response(response_data, status=status.HTTP_200_OK)
+
+#         except ConfigTipologiasDocAgno.DoesNotExist:
+#             raise NotFound('La configuración no existe.')
+
+class ActualizarConfiguracionSeccionSubseccion(generics.UpdateAPIView):
+    serializer_class = ConfigTipologiasDocAgnoSerializer
+
+    def put(self, request, id_tipologia_doc):
+        try:
+            # Obtener la configuración existente
+            config_tipologia = ConfigTipologiasDocAgno.objects.get(id_tipologia_doc=id_tipologia_doc)
+
+            # Verificar el nivel consecutivo
+            if not config_tipologia.maneja_consecutivo or config_tipologia.cod_nivel_consecutivo != 'SS':
+                return Response({
+                    'success': False,
+                    'detail': 'La tipología documental tiene como nivel consecutivo un valor diferente a "SS".',
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            updated_configurations = []
+            deleted_configurations = []
+            added_configurations = []  # Lista para almacenar configuraciones agregadas
+
+            with transaction.atomic():
+                for unidad_config_data in request.data.get('configuracion_por_unidad', []):
+                    unidad_id = unidad_config_data.get('id_unidad_organizacional')
+
+                    # Validar si la unidad organizacional existe
+                    unidad_organizacional = get_object_or_404(UnidadesOrganizacionales, id_unidad_organizacional=unidad_id)
+
+                    valor_inicial = unidad_config_data.get('valor_inicial')
+                    cantidad_digitos = unidad_config_data.get('cantidad_digitos')
+                    prefijo_consecutivo = unidad_config_data.get('prefijo_consecutivo')
+
+                    # Obtener o crear la configuración de unidad
+                    unidad_config, _ = ConsecPorNivelesTipologiasDocAgno.objects.get_or_create(
+                        id_config_tipologia_doc_agno=config_tipologia,
+                        id_unidad_organizacional=unidad_organizacional,
+                        defaults={
+                            'consecutivo_inicial': valor_inicial,
+                            'cantidad_digitos': cantidad_digitos,
+                            'prefijo_consecutivo': prefijo_consecutivo,
+                            'item_ya_usado': False,
+                            'consecutivo_actual': valor_inicial - 1,
+                            'id_persona_ult_config_implemen': None,  # Asegurar que sea None inicialmente
+                        }
+                    )
+
+                    # Actualizar la configuración de unidad
+                    unidad_config.consecutivo_inicial = valor_inicial
+                    unidad_config.cantidad_digitos = cantidad_digitos
+                    unidad_config.prefijo_consecutivo = prefijo_consecutivo
+                    unidad_config.id_persona_ult_config_implemen
+                    unidad_config.fecha_ult_config_implemen = datetime.now()
+                    unidad_config.consecutivo_actual = valor_inicial - 1
+                    unidad_config.save()
+
+                    # Agregar la configuración actualizada a la lista
+                    updated_configurations.append({
+                        'id_unidad_organizacional': unidad_id,
+                        'consecutivo_inicial': unidad_config.consecutivo_inicial,
+                        'cantidad_digitos': unidad_config.cantidad_digitos,
+                        'prefijo_consecutivo': unidad_config.prefijo_consecutivo,
+                        'id_persona_ult_config_implemen': unidad_config.id_persona_ult_config_implemen.id_persona,
+                        'fecha_ult_config_implemen': unidad_config.fecha_ult_config_implemen,
+                        'consecutivo_actual': unidad_config.consecutivo_actual,
+                    })
+
+                # Eliminar configuraciones por unidad organizacional
+                ids_a_eliminar = request.data.get('ids_a_eliminar', [])
+                for id_eliminar in ids_a_eliminar:
+                    deleted_config = ConsecPorNivelesTipologiasDocAgno.objects.filter(
+                        id_config_tipologia_doc_agno=config_tipologia,
+                        id_unidad_organizacional=id_eliminar
+                    ).first()
+
+                    if deleted_config:
+                        deleted_configurations.append({
+                            'id_unidad_organizacional': id_eliminar,
+                            'consecutivo_inicial': deleted_config.consecutivo_inicial,
+                            'cantidad_digitos': deleted_config.cantidad_digitos,
+                            'prefijo_consecutivo': deleted_config.prefijo_consecutivo,
+                            'id_persona_ult_config_implemen': deleted_config.id_persona_ult_config_implemen.id_persona,
+                            'fecha_ult_config_implemen': deleted_config.fecha_ult_config_implemen,
+                            'consecutivo_actual': deleted_config.consecutivo_actual,
+                        })
+
+                        deleted_config.delete()
+
+                # Asociar nueva sección/subsección a la tipología
+                for nueva_config_data in request.data.get('configuracion_nueva', []):
+                    nueva_unidad_id = nueva_config_data.get('id_unidad_organizacional')
+                    nueva_valor_inicial = nueva_config_data.get('valor_inicial')
+                    nueva_cantidad_digitos = nueva_config_data.get('cantidad_digitos')
+                    nueva_prefijo_consecutivo = nueva_config_data.get('prefijo_consecutivo')
+
+                    # Obtener la instancia de UnidadesOrganizacionales
+                    nueva_unidad_organizacional = get_object_or_404(UnidadesOrganizacionales, id_unidad_organizacional=nueva_unidad_id)
+                    
+                     # Verificar si ya existe una configuración con los mismos valores
+                    if ConsecPorNivelesTipologiasDocAgno.objects.filter(
+                        id_unidad_organizacional=nueva_unidad_organizacional,
+                        id_config_tipologia_doc_agno=config_tipologia
+                    ).exists():
+                        return JsonResponse({
+                            'success': False,
+                            'detail': f'Ya existe una configuración para la unidad {nueva_unidad_id}.'
+                        }, status=400)
+
+
+                    # Crear la configuración de unidad
+                    # Obtener la TRD actual
+                    trd_actual = TablaRetencionDocumental.objects.filter(actual=True).first()
+                    if not trd_actual:
+                        raise NotFound('No existe aún una TRD actual')
+
+                    # Obtener la persona logueada
+                    user = request.user
+                    persona_logueada = user.persona
+
+                    # Crear la configuración de unidad
+                    nueva_unidad_config = ConsecPorNivelesTipologiasDocAgno.objects.create(
+                        id_config_tipologia_doc_agno=config_tipologia,
+                        id_unidad_organizacional=nueva_unidad_organizacional,
+                        id_trd=trd_actual,  # Asignar la TRD actual
+                        consecutivo_inicial=nueva_valor_inicial,
+                        cantidad_digitos=nueva_cantidad_digitos,
+                        prefijo_consecutivo=nueva_prefijo_consecutivo,
+                        item_ya_usado=False,
+                        consecutivo_actual=nueva_valor_inicial - 1,
+                        id_persona_ult_config_implemen=persona_logueada,
+                        fecha_ult_config_implemen=datetime.now(),
+                    )
+
+                    # Agregar la configuración agregada a la lista
+                    added_configurations.append({
+                        'id_unidad_organizacional': nueva_unidad_id,
+                        'consecutivo_inicial': nueva_unidad_config.consecutivo_inicial,
+                        'cantidad_digitos': nueva_unidad_config.cantidad_digitos,
+                        'prefijo_consecutivo': nueva_unidad_config.prefijo_consecutivo,
+                        'id_persona_ult_config_implemen': nueva_unidad_config.id_persona_ult_config_implemen.id_persona if nueva_unidad_config.id_persona_ult_config_implemen else None,
+                        'fecha_ult_config_implemen': nueva_unidad_config.fecha_ult_config_implemen,
+                        'consecutivo_actual': nueva_unidad_config.consecutivo_actual,
+                    })
+
+
+                response_data = {
+                    'success': True,
+                    'detail': 'Se ha actualizado la configuración de sección/subsección.',
+                    'data': {
+                        'config_tipologia': self.serializer_class(config_tipologia).data,
+                        'configuraciones_actualizadas': updated_configurations,
+                        'configuraciones_eliminadas': deleted_configurations,
+                        'configuraciones_agregadas': added_configurations,  # Nueva lista en la respuesta
+                    }
+                }
+
+                return Response(response_data, status=status.HTTP_200_OK)
+
+        except ConfigTipologiasDocAgno.DoesNotExist:
+            return Response({
+                'success': False,
+                'detail': 'La configuración no existe.',
+            }, status=status.HTTP_404_NOT_FOUND)
+
+
