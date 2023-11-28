@@ -57,6 +57,8 @@ urlpatterns = [
     path('configuracion-tipologia/actualizar-tipologia-si-a-no-ss/<int:id_tipologia_doc>/', views.ActualizarConfiguracionNoConsecutivoSS.as_view(), name='actualizar-configuracion-no-a-si'),
     path('configuracion-tipologia/actualizar-tipologia-em-a-ss/<int:id_tipologia_doc>/', views.ActualizarConfiguracionEMaSS.as_view(), name='actualizar-configuracion-em-a-ss'),
     path('configuracion-tipologia/actualizar-tipologia-ss-a-em/<int:id_tipologia_doc>/', views.ActualizarConfiguracionSStoEM.as_view(), name='actualizar-configuracion-ss-a-em'),
+    path('configuracion-tipologia/actualizar-tipologia-em/<int:id_tipologia_doc>/', views.ActualizarConfiguracionTipoEM.as_view(), name='actualizar-configuracion-em'),
+    path('configuracion-tipologia/actualizar-valores-ss/<int:id_tipologia_doc>/', views.ActualizarConfiguracionSeccionSubseccion.as_view(), name='actualizar-configuracion-valores-ss'),
 
     
 
