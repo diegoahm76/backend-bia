@@ -30,7 +30,9 @@ urlpatterns = [
     path('medio-almacenamiento/', views.MediosDeAlmacenamiento.as_view(), name='medio-almacenamiento'),
     path('tipo-archivo/', views.TipoArchivosChoices.as_view(), name='tipo-archivo'),
     path('origen-archivo/', views.OrigenArchivoChoices.as_view(), name='tipo-archivo'),
-    path('tipo-zona/', views.TipoZonasChoices.as_view(), name='tipo-zona')
+    path('tipo-zona/', views.TipoZonasChoices.as_view(), name='tipo-zona'),
+    path('tipo-solicitud/', views.TipoSolicitud.as_view(), name='tipo-solicitud'),
+    path('estado-solicitud/', views.EstadoSolicitud.as_view(), name='estado-solicitud')
     #RangoEdad
     
 ]

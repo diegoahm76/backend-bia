@@ -2,10 +2,10 @@ from rest_framework import generics,status
 from rest_framework.response import Response
 
 from gestion_documental.models.radicados_models import PQRSDF, ComplementosUsu_PQR, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, T262Radicados
-from gestion_documental.serializers.radicados_serializers import RadicadosImprimir
+from gestion_documental.serializers.radicados_serializers import RadicadosImprimirSerializer
 
 class GetRadicadosImprimir(generics.ListAPIView):
-    serializer_class = RadicadosImprimir
+    serializer_class = RadicadosImprimirSerializer
     queryset = T262Radicados.objects.all()
 
     def get(self, request):
