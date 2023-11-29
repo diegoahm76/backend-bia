@@ -67,17 +67,37 @@ class GeneradorCodigoCatalogo(generics.RetrieveAPIView):
         codigo_anterior  = catalago.codigo_bien[len(codigo_padre):] if catalago != None else niv_val[1][posicion]
 
         if codigo_anterior == niv_val[2][posicion]:
-            raise ValidationError('El codigo del bien esta fuera de rango')
+            raise ValidationError('No se puede generar mas codigos de bienes para este nivel jerarquico')
         
         codigo = str(int(codigo_padre+codigo_anterior) + 1)
 
         return codigo
     
-    def get(self, request, nivel_jerarquico, id_bien_padre):
+    def get(self, request, *args, **kwargs):
 
+        id_bien_padre = self.request.query_params.get('id_bien_padre', '')
+        nivel_jerarquico = self.request.query_params.get('nivel_jerarquico', '')
+        bien_padre = None
+
+        if nivel_jerarquico == '':
+            raise ValidationError('El nivel jerarquico es requerido')
+        
+        try:
+            nivel_jerarquico = int(nivel_jerarquico)
+        except:
+            raise ValidationError('El nivel jerarquico debe ser un numero entero')
+        
         if nivel_jerarquico < 1 or nivel_jerarquico > 5 or nivel_jerarquico == None:
             raise ValidationError('El nivel jerarquico esta fuera de rango')
-
+        
+        if id_bien_padre == '':
+            id_bien_padre = None
+        else:
+            try:
+                id_bien_padre = int(id_bien_padre)
+            except:
+                raise ValidationError('El id de bien padre debe ser un numero entero')
+        
         if id_bien_padre != None:
             try:
                 bien_padre = CatalogoBienes.objects.get(id_bien=id_bien_padre)
@@ -87,7 +107,7 @@ class GeneradorCodigoCatalogo(generics.RetrieveAPIView):
             id_bien_padre = bien_padre.id_bien
             
             if nivel_jerarquico != (bien_padre.nivel_jerarquico + 1):
-                raise ValidationError('El nivel jerarquico esta fuera de rango')
+                raise ValidationError('El nivel jerarquico esta fuera de rango respeto al bien padre')
         
         codigo_bien = self.generador_codigo_bien(bien_padre, nivel_jerarquico)
 
