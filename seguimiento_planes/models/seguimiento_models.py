@@ -3,6 +3,7 @@ from seguimiento_planes.models.planes_models import ObjetivoDesarrolloSostenible
 from recurso_hidrico.models.bibliotecas_models import Cuencas
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from transversal.models.personas_models import Personas
+from gestion_documental.models.expedientes_models import ArchivosDigitales
 
 class FuenteFinanciacionIndicadores(models.Model):
     id_fuente = models.AutoField(primary_key=True, editable=False, db_column='T516IdFuente')
@@ -261,7 +262,7 @@ class PlanAnualAdquisiciones(models.Model):
         verbose_name = 'Plan Anual de Adquisiciones'
         verbose_name_plural = 'Planes Anuales de Adquisiciones'
 
-class PAACodgigoUNSP: # Tabla intermedia
+class PAACodgigoUNSP(models.Model): # Tabla intermedia
     id_paacodigo = models.AutoField(primary_key=True, editable=False, db_column='T529IdPAACodigo')
     id_plan = models.ForeignKey(PlanAnualAdquisiciones, on_delete=models.CASCADE, db_column='T529IdPlan')
     id_codigo = models.ForeignKey(CodigosUNSP, on_delete=models.CASCADE, db_column='T529IdCodigo')
@@ -273,3 +274,60 @@ class PAACodgigoUNSP: # Tabla intermedia
         db_table = 'T529PAACodgigoUNSP'
         verbose_name = 'PAACodgigoUNSP'
         verbose_name_plural = 'PAACodgigoUNSP'
+
+class SeguimientoPAI(models.Model):
+    id_seguimiento_pai = models.AutoField(primary_key=True, editable=False, db_column='T530IdSeguiPAI')
+    razagada = models.BooleanField(default=False, db_column='T530razagada')
+    mes = models.CharField(
+        max_length=3, choices=[
+            ('ENE', 'Enero'),
+            ('FEB', 'Febrero'),
+            ('MAR', 'Marzo'),
+            ('ABR', 'Abril'),
+            ('MAY', 'Mayo'),
+            ('JUN', 'Junio'),
+            ('JUL', 'Julio'),
+            ('AGO', 'Agosto'),
+            ('SEP', 'Septiembre'),
+            ('OCT', 'Octubre'),
+            ('NOV', 'Noviembre'),
+            ('DIC', 'Diciembre'),
+        ], db_column='T530mes')
+    porcentaje_avance = models.BigIntegerField(null=True, blank=True, db_column='T530porcentajeAvance')
+    fecha_registro_avance = models.DateField(null=True, blank=True, db_column='T530fechaRegistroAvance')
+    entrega_vigencia = models.TextField(null=True, blank=True, db_column='T530entregaVigencia')
+    hizo = models.TextField(null=True, blank=True, db_column='T530hizo')
+    cuando = models.TextField(null=True, blank=True, db_column='T530cuando')
+    donde = models.TextField(null=True, blank=True, db_column='T530donde')
+    resultado = models.TextField(null=True, blank=True, db_column='T530resultado')
+    participacion = models.TextField(null=True, blank=True, db_column='T530participacion')
+    beneficiarios = models.TextField(null=True, blank=True, db_column='T530beneficiarios')
+    compromisos = models.TextField(null=True, blank=True, db_column='T530compromisos')
+    contratros = models.TextField(null=True, blank=True, db_column='T530contratros')
+    id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T530IdUnidadOrganizacional')
+    id_proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, db_column='T530IdProyecto')
+    id_producto = models.ForeignKey(Productos, on_delete=models.CASCADE, db_column='T530IdProducto')
+    id_actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, db_column='T530IdActividad')
+    id_indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T530IdIndicador')
+    id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T530IdMeta')
+
+    def __str__(self):
+        return str(self.id_seguimiento_pai)
+    
+    class Meta:
+        db_table = "T530SeguiminetoPAI"
+        verbose_name = "Seguimiento PAI"
+        verbose_name_plural = "Seguimiento PAI"
+
+class SeguimientoPAIDocumentos(models.Model): # Tabla intermedia
+    id_seguimiento_pai_documento = models.AutoField(primary_key=True, editable=False, db_column='T531IdSeguiPAIDoc')
+    id_seguimiento_pai = models.ForeignKey(SeguimientoPAI, on_delete=models.CASCADE, db_column='T531IdSeguiPAI')
+    id_archivo_digital = models.ForeignKey(ArchivosDigitales, on_delete=models.CASCADE, db_column='T531IdArchivoDigital')
+
+    def __str__(self):
+        return str(self.id_seguimiento_pai_documento)
+    
+    class Meta:
+        db_table = "T531SeguiminetoPAIDocumentos"
+        verbose_name = "Seguimiento PAI Documentos"
+        verbose_name_plural = "Seguimiento PAI Documentos"

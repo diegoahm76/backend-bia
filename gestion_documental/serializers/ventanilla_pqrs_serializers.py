@@ -268,9 +268,23 @@ class PQRSDFHistoricoGetSerializer(serializers.ModelSerializer):
 class AnexosGetSerializer(serializers.ModelSerializer):
 
     medio_almacenamiento = serializers.CharField(source='get_cod_medio_almacenamiento_display', default=None)
+    pqrsdf = serializers.SerializerMethodField()
     class Meta:
         model = Anexos
         fields = '__all__'  
+    def get_pqrsdf(self, obj):
+        return True
+    
+class AnexosComplementoGetSerializer(serializers.ModelSerializer):
+
+    medio_almacenamiento = serializers.CharField(source='get_cod_medio_almacenamiento_display', default=None)
+    complemento = serializers.SerializerMethodField()
+    class Meta:
+        model = Anexos
+        fields = '__all__'  
+    def get_complemento(self, obj):
+        return True
+
 
 class AnexosDocumentoDigitalGetSerializer(serializers.ModelSerializer):
 
