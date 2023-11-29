@@ -968,12 +968,14 @@ class IndexarDocumentosAnularSerializer(serializers.ModelSerializer):
 class DocsIndiceElectronicoExpSerializer(serializers.ModelSerializer):
     nombre_tipologia = serializers.CharField(source='id_tipologia_documental.nombre', read_only=True)
     origen_archivo = serializers.CharField(source='get_cod_origen_archivo_display', read_only=True)
+    documento_principal = serializers.ReadOnlyField(source='id_doc_indice_Anexo.identificación_doc_exped', default=None)
     
     class Meta:
         model =  Docs_IndiceElectronicoExp
         fields = [
             'id_doc_indice_electronico_exp',
             'id_doc_archivo_exp',
+            'identificación_doc_exped',
             'nombre_documento',
             'id_tipologia_documental',
             'nombre_tipologia',
@@ -989,6 +991,8 @@ class DocsIndiceElectronicoExpSerializer(serializers.ModelSerializer):
             'cod_origen_archivo',
             'origen_archivo',
             'es_un_archivo_anexo',
+            'id_doc_indice_Anexo',
+            'documento_principal',
             'tipologia_no_creada_trd'
         ]
 
