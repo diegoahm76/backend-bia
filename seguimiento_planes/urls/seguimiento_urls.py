@@ -68,4 +68,19 @@ urlpatterns=[
     path('actualizar-plan-anual-adquisiciones/<str:pk>/',views.PlanAnualAdquisicionesUpdate.as_view(),name='actualizarplan_anual_adquisiciones'),
     path('eliminar-plan-anual-adquisiciones/<str:pk>/',views.PlanAnualAdquisicionesDelete.as_view(),name='eliminarplan_anual_adquisiciones'),
     # PAA Codigos UNSP
-]
+    path('consultar-paa-codigos-unsp/',views.PAACodUNSPList.as_view(),name='consultarpaacodigosunsp'),
+    path('crear-paa-codigos-unsp/',views.PAACodUNSPCreate.as_view(),name='crearpaacodigosunsp'),
+    path('actualizar-paa-codigos-unsp/<str:pk>/',views.PAACodUNSPUpdate.as_view(),name='actualizarpaacodigosunsp'),
+    path('eliminar-paa-codigos-unsp/<str:pk>/',views.PAACodUNSPDelete.as_view(),name='eliminarpaacodigosunsp'),
+    # Seguimineto PAI
+    path('consultar-seguimiento-pai/',views.SeguimientoPAIList.as_view(),name='consultarseguimientopai'),
+    path('crear-seguimiento-pai/',views.SeguimientoPAICreate.as_view(),name='crearseguimientopai'),
+    path('actualizar-seguimiento-pai/<str:pk>/',views.SeguimientoPAIUpdate.as_view(),name='actualizarseguimientopai'),
+    path('eliminar-seguimiento-pai/<str:pk>/',views.SeguimientoPAIDelete.as_view(),name='eliminarseguimientopai'),
+    # Seguimiento PAI Documentos
+    path('consultar-seguimiento-pai-documentos/',views.SeguimientoPAIDocumentosList.as_view(),name='consultarseguimientopaidocumentos'),
+    path('crear-seguimiento-pai-documentos/',views.SeguimientoPAIDocumentosCreate.as_view(),name='crearseguimientopaidocumentos'),
+    path('actualizar-seguimiento-pai-documentos/<str:pk>/',views.SeguimientoPAIDocumentosUpdate.as_view(),name='actualizarseguimientopaidocumentos'),
+    path('eliminar-seguimiento-pai-documentos/<str:pk>/',views.SeguimientoPAIDocumentosDelete.as_view(),name='eliminarseguimientopaidocumentos'),
+    path('consltar-seguimiento-documentos-id-pai/<str:pk>/', views.SeguimientoPAIDocumentosListIdSeguimiento.as_view(),name='consultaridseguimientopai')
+    ]

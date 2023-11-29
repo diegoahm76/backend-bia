@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, Sector, DetalleInversionCuentas, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, FuenteFinanciacion, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP
+from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, Sector, DetalleInversionCuentas, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, FuenteFinanciacion, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos
 
 class FuenteFinanciacionIndicadoresSerializer(serializers.ModelSerializer):
 
@@ -162,9 +162,26 @@ class PlanAnualAdquisicionesSerializer(serializers.ModelSerializer):
 
 class PAACodgigoUNSPSerializer(serializers.ModelSerializer):
         
-        nombre_paa = serializers.ReadOnlyField(source='id_paa.nombre_paa', default=None)
-        nombre_unsp = serializers.ReadOnlyField(source='id_unsp.nombre_unsp', default=None)
+    nombre_paa = serializers.ReadOnlyField(source='id_paa.nombre_paa', default=None)
+    nombre_unsp = serializers.ReadOnlyField(source='id_unsp.nombre_unsp', default=None)
         
-        class Meta:
-            model = PAACodgigoUNSP
+    class Meta:
+        model = PAACodgigoUNSP
+        fields = '__all__'
+
+class SeguimientoPAISerializer(serializers.ModelSerializer):
+    nombre_proyecto = serializers.ReadOnlyField(source='id_proyecto.nombre_proyecto', default=None)
+    nombre_producto = serializers.ReadOnlyField(source='id_producto.nombre_producto', default=None)
+    nombre_actividad = serializers.ReadOnlyField(source='id_actividad.nombre_actividad', default=None)
+    nombre_unidad = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
+    nombre_indicador = serializers.ReadOnlyField(source='id_indicador.nombre_indicador', default=None)
+    nombre_meta = serializers.ReadOnlyField(source='id_meta.nombre_meta', default=None)
+
+    class Meta:
+            model = SeguimientoPAI
+            fields = '__all__'
+
+class SeguimientoPAIDocumentosSerializer(serializers.ModelSerializer):
+    class Meta:
+            model = SeguimientoPAIDocumentos
             fields = '__all__'
