@@ -47,10 +47,7 @@ from rest_framework.permissions import IsAuthenticated
 from datetime import datetime, timezone
 import copy
 
-
-class CatalogoBienesCreate(generics.CreateAPIView):
-    serializer_class = CatalagoBienesYSerializer
-    permission_classes = [IsAuthenticated]
+class GeneradorCodigoCatalogo(generics.RetrieveAPIView):
 
     def generador_codigo_bien(self, bien_padre, nivel_jerarquico):
         niv_val = [[1,2,3,4,5],['0','0','00','000','00000'],['9','9','99','999','99999']]
@@ -70,18 +67,63 @@ class CatalogoBienesCreate(generics.CreateAPIView):
         codigo_anterior  = catalago.codigo_bien[len(codigo_padre):] if catalago != None else niv_val[1][posicion]
 
         if codigo_anterior == niv_val[2][posicion]:
-            raise ValidationError('El codigo del bien esta fuera de rango')
+            raise ValidationError('No se puede generar mas codigos de bienes para este nivel jerarquico')
         
         codigo = str(int(codigo_padre+codigo_anterior) + 1)
 
         return codigo
+    
+    def get(self, request, *args, **kwargs):
+
+        id_bien_padre = self.request.query_params.get('id_bien_padre', '')
+        nivel_jerarquico = self.request.query_params.get('nivel_jerarquico', '')
+        bien_padre = None
+
+        if nivel_jerarquico == '':
+            raise ValidationError('El nivel jerarquico es requerido')
+        
+        try:
+            nivel_jerarquico = int(nivel_jerarquico)
+        except:
+            raise ValidationError('El nivel jerarquico debe ser un numero entero')
+        
+        if nivel_jerarquico < 1 or nivel_jerarquico > 5 or nivel_jerarquico == None:
+            raise ValidationError('El nivel jerarquico esta fuera de rango')
+        
+        if id_bien_padre == '':
+            id_bien_padre = None
+        else:
+            try:
+                id_bien_padre = int(id_bien_padre)
+            except:
+                raise ValidationError('El id de bien padre debe ser un numero entero')
+        
+        if id_bien_padre != None:
+            try:
+                bien_padre = CatalogoBienes.objects.get(id_bien=id_bien_padre)
+            except CatalogoBienes.DoesNotExist:
+                raise ValidationError('El id de bien padre ingresado no existe')
+            
+            id_bien_padre = bien_padre.id_bien
+            
+            if nivel_jerarquico != (bien_padre.nivel_jerarquico + 1):
+                raise ValidationError('El nivel jerarquico esta fuera de rango respeto al bien padre')
+        
+        codigo_bien = self.generador_codigo_bien(bien_padre, nivel_jerarquico)
+
+        return Response({'success':True, 'detail':'Codigo de bien generado exitosamente', 'data':codigo_bien}, status=status.HTTP_200_OK)
+
+
+class CatalogoBienesCreate(generics.CreateAPIView):
+    serializer_class = CatalagoBienesYSerializer
+    permission_classes = [IsAuthenticated]
 
     def create_catalogo_bienes(self, data):
         nivel_jerarquico = data['nivel_jerarquico']
         id_bien_padre = data['id_bien_padre']
         bien_padre = None
-
-        if nivel_jerarquico < 1 or nivel_jerarquico > 5:
+        
+        if nivel_jerarquico < 1 or nivel_jerarquico > 5 or nivel_jerarquico == None:
             raise ValidationError('El nivel jerarquico esta fuera de rango')
 
         if id_bien_padre != None:
@@ -94,8 +136,9 @@ class CatalogoBienesCreate(generics.CreateAPIView):
             
             if nivel_jerarquico != (bien_padre.nivel_jerarquico + 1):
                 raise ValidationError('El nivel jerarquico esta fuera de rango')
-    
-        data['codigo_bien'] = self.generador_codigo_bien(bien_padre, nivel_jerarquico)
+            
+        generador_instance = GeneradorCodigoCatalogo()
+        data['codigo_bien'] = generador_instance.generador_codigo_bien(bien_padre, nivel_jerarquico)
 
         try:
             unidad_medida = UnidadesMedida.objects.get(id_unidad_medida=data['id_unidad_medida'])
@@ -188,13 +231,6 @@ class CatalogoBienesCreateUpdate(generics.UpdateAPIView):
     serializer_class = CatalagoBienesYSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_object(self, id_bien):
-        try:
-            return CatalogoBienes.objects.get(id_bien=id_bien)
-        except CatalogoBienes.DoesNotExist:
-            raise ValidationError('No hay ningún bien referente al id bien ingresado')
-
-
     def put(self, request):
         data = request.data
         id_bien = data.get('id_bien')
@@ -217,93 +253,182 @@ class CatalogoBienesCreateUpdate(generics.UpdateAPIView):
                 raise ValidationError('No hay ningún bien referente al id bien ingresado')
             
             try:
-                id_unidad_medida = UnidadesMedida.objects.get(id_unidad_medida=data['id_unidad_medida'])
-            except:
+                unidad_medida = UnidadesMedida.objects.get(id_unidad_medida=data['id_unidad_medida'])
+            except UnidadesMedida.DoesNotExist:
                 raise ValidationError('El id de unidad de medida ingresado no existe')
             
             try:
-                id_porcentaje_iva = PorcentajesIVA.objects.get(id_porcentaje_iva=data['id_porcentaje_iva'])
-            except:
+                porcentaje_iva = PorcentajesIVA.objects.get(id_porcentaje_iva=data['id_porcentaje_iva'])
+            except PorcentajesIVA.DoesNotExist:
                 raise ValidationError('El id de porcentaje de iva ingresado no existe')
+            
+            catalogo_bien_data = {
+                'nombre': data['nombre'],
+                'descripcion': data['descripcion'],
+                'id_unidad_medida': unidad_medida.id_unidad_medida,
+                'id_porcentaje_iva': porcentaje_iva.id_porcentaje_iva,
+                'visible_solicitudes': data['visible_solicitudes']
+            }
 
-            if data['cod_tipo_bien'] == 'A':
+            if data['cod_tipo_bien'] == 'A':      
                 try:
-                    if data['id_marca']: id_marca = Marcas.objects.get(id_marca=data['id_marca'])
-                except:
-                    raise ValidationError('El id de marca ingresado no existe')
-
-                try:
-                    id_unidad_medida_vida_util = UnidadesMedida.objects.get(id_unidad_medida=data['id_unidad_medida_vida_util'])
-                except:
+                    unidad_medida_vida_util = UnidadesMedida.objects.get(id_unidad_medida=data['id_unidad_medida_vida_util'])
+                except UnidadesMedida.DoesNotExist:
                     raise ValidationError('El id de unidad de medida vida util ingresado no existe')
                 
-                cod_tipo_activo_instance = TiposActivo.objects.filter(cod_tipo_activo=data['cod_tipo_activo']).first()
-                cod_tipo_depreciacion_instance = TiposDepreciacionActivos.objects.filter(cod_tipo_depreciacion=data['cod_tipo_depreciacion']).first()
-                data_aux={}
-                data_aux['nombre'] = data['nombre']
-                data_aux['cod_tipo_activo'] = cod_tipo_activo_instance
-                data_aux['id_porcentaje_iva'] = id_porcentaje_iva
-                data_aux['cod_tipo_depreciacion'] = cod_tipo_depreciacion_instance
-                data_aux['id_unidad_medida_vida_util'] = id_unidad_medida_vida_util
-                data_aux['cantidad_vida_util'] = data['cantidad_vida_util']
-                data_aux['valor_residual'] = data['valor_residual']
-                data_aux['id_marca'] = id_marca
-                data_aux['maneja_hoja_vida'] = data['maneja_hoja_vida']
-                data_aux['visible_solicitudes'] = data['visible_solicitudes']
-                data_aux['descripcion'] = data['descripcion']
+                try:
+                    if data['id_marca']: marca = Marcas.objects.get(id_marca=data['id_marca'])
+                except Marcas.DoesNotExist:
+                    raise ValidationError('El id de marca ingresado no existe')
+                
+                try:
+                    tipo_activo = TiposActivo.objects.filter(cod_tipo_activo=data['cod_tipo_activo']).first()
+                except TiposActivo.DoesNotExist:
+                    raise ValidationError('El codigo de tipo de activo ingresado no existe')
+                
+                try:
+                    tipo_depreciacion = TiposDepreciacionActivos.objects.filter(cod_tipo_depreciacion=data['cod_tipo_depreciacion']).first()
+                except TiposDepreciacionActivos.DoesNotExist:
+                    raise ValidationError('El codigo de tipo de depreciacion ingresado no existe')
+                
+                catalogo_bien_data['id_marca'] = marca.id_marca
+                catalogo_bien_data['cod_tipo_activo'] = tipo_activo.cod_tipo_activo
+                catalogo_bien_data['cod_tipo_depreciacion'] = tipo_depreciacion.cod_tipo_depreciacion
+                catalogo_bien_data['id_unidad_medida_vida_util'] = unidad_medida_vida_util.id_unidad_medida
+                catalogo_bien_data['cantidad_vida_util'] = data['cantidad_vida_util']
+                catalogo_bien_data['valor_residual'] = data['valor_residual']
+                catalogo_bien_data['maneja_hoja_vida'] = data['maneja_hoja_vida']
 
-                catalogo_bien = self.get_object(id_bien)
-                serializer = self.get_serializer(catalogo_bien, data=data_aux, partial=True)
+                serializer = self.get_serializer(catalogo_bien, data=catalogo_bien_data, partial=True)
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
+                
+            elif data['cod_tipo_bien'] == 'C':                              
+                try:
+                    metodo_valoracion = MetodosValoracionArticulos.objects.filter(cod_metodo_valoracion=data['cod_metodo_valoracion']).first()
+                except MetodosValoracionArticulos.DoesNotExist:
+                    raise ValidationError('El codigo de metodo de valoracion ingresado no existe')
+                
+                catalogo_bien_data['cod_metodo_valoracion'] = metodo_valoracion.cod_metodo_valoracion
+                catalogo_bien_data['stock_minimo'] = data['stock_minimo']
+                catalogo_bien_data['stock_maximo'] = data['stock_maximo']
+                catalogo_bien_data['solicitable_vivero'] = data['solicitable_vivero']
 
-                return Response(serializer.data, status=status.HTTP_200_OK)
+                serializer = self.get_serializer(catalogo_bien, data=catalogo_bien_data, partial=True)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
             
-            elif data['cod_tipo_bien'] == 'C':
-                cod_metodo_valoracion_instance = MetodosValoracionArticulos.objects.filter(cod_metodo_valoracion=data['cod_metodo_valoracion']).first()
-                catalogo_bien.nombre = data['nombre']
-                catalogo_bien.cod_metodo_valoracion = cod_metodo_valoracion_instance
-                catalogo_bien.descripcion = data['descripcion']
-                catalogo_bien.id_unidad_medida = id_unidad_medida
-                catalogo_bien.id_porcentaje_iva = id_porcentaje_iva
-                catalogo_bien.stock_minimo = data['stock_minimo']
-                catalogo_bien.stock_maximo = data['stock_maximo']
-                catalogo_bien.solicitable_vivero = data['solicitable_vivero']
-                catalogo_bien.visible_solicitudes = data['visible_solicitudes']
-
-                catalogo_bien.save()
-                serializer = CatalogoBienesSerializer(
-                    catalogo_bien, many=False)
-                return Response(serializer.data, status=status.HTTP_200_OK)
             else:
-                raise ValidationError('No hay ningun bien referente al id_bien enviado')
+                raise ValidationError('El codigo de tipo de bien ingresado no existe')
+            
+            return Response({'success':True, 'detail':'Bien guardado exitosamente', 'data':data}, status=status.HTTP_201_CREATED)
 
 
-class CatalogoBienesUpdate(generics.UpdateAPIView):
+# class CatalogoBienesGetList(generics.ListAPIView):
+#     serializer_class = CatalogoBienesSerializer
+
+#     def get_catalogo_bienes(self, id_bien_padre):
+#         catalogo_bienes = CatalogoBienes.objects.filter(id_bien_padre=id_bien_padre).order_by('codigo_bien')
+#         serializer = self.serializer_class(catalogo_bienes, many=True)
+#         data_padre = serializer.data
+
+#         for data in data_padre:
+#             data['children'] = self.get_catalogo_bienes(data['id_bien'])
+#             if data['children'] == []:
+#                 del data['children']
+
+#         return data_padre
+
+#     def get(self, request):
+
+#         data = self.get_catalogo_bienes(None)
+
+#         return Response({'success': True, 'detail':'Se muestran el catalogo de bienes', 'data': data}, status=status.HTTP_200_OK)
+    
+
+class CatalogoBienesGetList(generics.ListAPIView):
     serializer_class = CatalogoBienesSerializer
-    permission_classes = [IsAuthenticated]
 
-    def get_object(self, id_bien):
-        try:
-            return CatalogoBienes.objects.get(id_bien=id_bien)
-        except CatalogoBienes.DoesNotExist:
-            raise ValidationError('No hay ningún bien referente al id bien ingresado')
+    def get_catalogo_bienes(self, id_bien_padre):
+        catalogo_bienes = CatalogoBienes.objects.filter(id_bien_padre=id_bien_padre).order_by('codigo_bien')
+        serializer = self.serializer_class(catalogo_bienes, many=True)
+        data_padre = serializer.data
 
-    def update(self, request, *args, **kwargs):
-        id_bien = request.data.get('id_bien')
+        for data in data_padre: 
+            data['editar'] = True
+            data['eliminar'] = False
+            data['crear'] = data['nivel_jerarquico'] != 5
+            data['children'] = self.get_catalogo_bienes(data['id_bien'])
 
-        if id_bien is None:
-            raise ValidationError('Se requiere el campo id_bien para la actualización')
+            if data['children'] == []:
+                data['eliminar'] = True
+                del data['children']
 
-        catalogo_bien = self.get_object(id_bien)
-        serializer = self.get_serializer(catalogo_bien, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        return data_padre
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def get(self, request):
+
+        data = self.get_catalogo_bienes(None)
+
+        return Response({'success': True, 'detail':'Se muestran el catalogo de bienes', 'data': data}, status=status.HTTP_200_OK)
 
 
 # Creación y actualización de Catalogo de Bienes
+
+class ValidacionCodigoBien(generics.ListAPIView):
+    serializer_class = CatalogoBienesSerializer
+    queryset = CatalogoBienes.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,nivel,codigo_bien):
+        if not codigo_bien.isdigit():
+            raise ValidationError('El códgio debe ser un número')
+        match nivel:
+            case '1':
+                if len(codigo_bien) != 1:
+                    raise ValidationError('El nivel 1 solo puede tener un caracter')
+                if int(codigo_bien) < 1 or int(codigo_bien) > 9:
+                    raise ValidationError('El nivel 1 debe ser un número entre 1 y 9')
+            case '2':
+                if len(codigo_bien) != 2:
+                    raise ValidationError('El nivel 2 debe ser de 2 caracteres')
+                codigo_padre = codigo_bien[0]
+                bien_padre = CatalogoBienes.objects.filter(
+                    codigo_bien=codigo_padre)
+                if not bien_padre:
+                    raise ValidationError('El padre no existe')
+            case '3':
+                if len(codigo_bien) != 4:
+                    raise ValidationError('El nivel 3 debe ser de 4 caracteres')
+                codigo_padre = codigo_bien[0:2]
+                bien_padre = CatalogoBienes.objects.filter(
+                    codigo_bien=codigo_padre)
+                if not bien_padre:
+                    raise ValidationError('El padre no existe')
+            case '4':
+                if len(codigo_bien) != 7:
+                    raise ValidationError('El nivel 4 debe ser de 7 caracteres')
+                codigo_padre = codigo_bien[0:4]
+                bien_padre = CatalogoBienes.objects.filter(
+                    codigo_bien=codigo_padre)
+                if not bien_padre:
+                    raise ValidationError('El padre no existe')
+            case '5':
+                if len(codigo_bien) != 12:
+                    raise ValidationError('El nivel 5 debe ser de 12 caracteres')
+                codigo_padre = codigo_bien[0:7]
+                bien_padre = CatalogoBienes.objects.filter(
+                    codigo_bien=codigo_padre)
+                if not bien_padre:
+                    raise ValidationError('El padre no existe')
+            case _:
+                raise ValidationError('Ingrese un nivel válido, un numero entre 1 y 5')
+
+        aux_bien = CatalogoBienes.objects.filter(codigo_bien=codigo_bien)
+        if aux_bien:
+            raise ValidationError('El código ingresado ya existe')
+        return Response({'success':True, 'detail':'Codigo de bien válido'}, status=status.HTTP_201_CREATED)
+
 
 class CreateCatalogoDeBienes(generics.UpdateAPIView):
     serializer_class = CatalogoBienesSerializer
@@ -764,7 +889,7 @@ class DeleteNodos(generics.RetrieveDestroyAPIView):
                 raise PermissionDenied('No se puede eliminar un bien si es padre de otros bienes')
             nodo.delete()
 
-            # Auditoria Crear Organigrama
+            # Auditoria borrar catalogo
             usuario = request.user.id_usuario
             descripcion = {"Codigo bien": str(
                 nodo.codigo_bien), "Numero elemento bien": str(nodo.nro_elemento_bien)}
@@ -2391,57 +2516,3 @@ class AnularEntrada(generics.UpdateAPIView):
         Util.save_auditoria_maestro_detalle(auditoria_data)
         return Response({'success':True, 'detail':'Solicitud anulada exitosamente'}, status=status.HTTP_201_CREATED)
 
-
-class ValidacionCodigoBien(generics.ListAPIView):
-    serializer_class = CatalogoBienesSerializer
-    queryset = CatalogoBienes.objects.all()
-    permission_classes = [IsAuthenticated]
-    
-    def get(self,request,nivel,codigo_bien):
-        if not codigo_bien.isdigit():
-            raise ValidationError('El códgio debe ser un número')
-        match nivel:
-            case '1':
-                if len(codigo_bien) != 1:
-                    raise ValidationError('El nivel 1 solo puede tener un caracter')
-                if int(codigo_bien) < 1 or int(codigo_bien) > 9:
-                    raise ValidationError('El nivel 1 debe ser un número entre 1 y 9')
-            case '2':
-                if len(codigo_bien) != 2:
-                    raise ValidationError('El nivel 2 debe ser de 2 caracteres')
-                codigo_padre = codigo_bien[0]
-                bien_padre = CatalogoBienes.objects.filter(
-                    codigo_bien=codigo_padre)
-                if not bien_padre:
-                    raise ValidationError('El padre no existe')
-            case '3':
-                if len(codigo_bien) != 4:
-                    raise ValidationError('El nivel 3 debe ser de 4 caracteres')
-                codigo_padre = codigo_bien[0:2]
-                bien_padre = CatalogoBienes.objects.filter(
-                    codigo_bien=codigo_padre)
-                if not bien_padre:
-                    raise ValidationError('El padre no existe')
-            case '4':
-                if len(codigo_bien) != 7:
-                    raise ValidationError('El nivel 4 debe ser de 7 caracteres')
-                codigo_padre = codigo_bien[0:4]
-                bien_padre = CatalogoBienes.objects.filter(
-                    codigo_bien=codigo_padre)
-                if not bien_padre:
-                    raise ValidationError('El padre no existe')
-            case '5':
-                if len(codigo_bien) != 12:
-                    raise ValidationError('El nivel 5 debe ser de 12 caracteres')
-                codigo_padre = codigo_bien[0:7]
-                bien_padre = CatalogoBienes.objects.filter(
-                    codigo_bien=codigo_padre)
-                if not bien_padre:
-                    raise ValidationError('El padre no existe')
-            case _:
-                raise ValidationError('Ingrese un nivel válido, un numero entre 1 y 5')
-
-        aux_bien = CatalogoBienes.objects.filter(codigo_bien=codigo_bien)
-        if aux_bien:
-            raise ValidationError('El código ingresado ya existe')
-        return Response({'success':True, 'detail':'Codigo de bien válido'}, status=status.HTTP_201_CREATED)

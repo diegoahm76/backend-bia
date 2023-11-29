@@ -123,6 +123,7 @@ class UserPutAdminSerializer(serializers.ModelSerializer):
 class UsuarioRolesLookSerializers(serializers.ModelSerializer):
     nombre_usuario = serializers.ReadOnlyField(source='id_usuario.nombre_de_usuario', default=None)
     id_persona = serializers.ReadOnlyField(source='id_usuario.persona.id_persona', default=None)
+    email = serializers.ReadOnlyField(source='id_usuario.persona.email', default=None)
     nombre_persona = serializers.SerializerMethodField()
     
     def get_nombre_persona(self, obj):
@@ -140,7 +141,7 @@ class UsuarioRolesLookSerializers(serializers.ModelSerializer):
     
     class Meta:
         model=UsuariosRol
-        fields=['id_rol', 'id_usuario', 'nombre_usuario', 'id_persona', 'nombre_persona']
+        fields=['id_rol', 'id_usuario', 'nombre_usuario', 'id_persona', 'nombre_persona', 'email']
         
 class RolesSerializers(serializers.ModelSerializer):
     nombre_rol = serializers.ReadOnlyField(source='id_rol.nombre_rol', default=None)
