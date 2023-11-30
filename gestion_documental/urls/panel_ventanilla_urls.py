@@ -35,9 +35,9 @@ urlpatterns = [
     path('asignar-pqrsdf/get/<str:pqr>/',views.AsignacionPQRGet.as_view(),name='listar-asignacion-grupo'),
     #ENTREGA 99 
     path('pqrsdf/titular/get/<str:pqr>/',views.PQRSDFPersonaTitularGet.as_view(),name='listar-persona-titular-pqrsdf'),
-    #PQRSDFPersonaSolicitaGet
+
     path('pqrsdf/solicita/get/',views.PQRSDFPersonaSolicitaGet.as_view(),name='listar-persona-solicita-pqrsdf'),
-    path('pqrsdf/detalle-solicitud/get/<str:pqr>/',views.PQRSDFDetalleComplementoGet.as_view(),name='listar-detalle-pqrsdf'),
+    path('pqrsdf/detalle-solicitud/get/<str:pqr>/',views.PQRSDFDetalleSolicitudGet.as_view(),name='listar-detalle-pqrsdf'),
     
 
 ]
