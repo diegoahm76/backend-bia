@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, SolicitudDeDigitalizacion, T262Radicados
 from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
-from gestion_documental.serializers.ventanilla_pqrs_serializers import AnexoArchivosDigitalesSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, LiderGetSerializer, MetadatosAnexosTmpSerializerGet, PQRSDFCabezeraGetSerializer, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer
+from gestion_documental.serializers.ventanilla_pqrs_serializers import AnexoArchivosDigitalesSerializer, AnexosComplementoGetSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, LiderGetSerializer, MetadatosAnexosTmpSerializerGet, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer
 from seguridad.utils import Util
 from datetime import datetime
 from rest_framework.permissions import IsAuthenticated
@@ -37,7 +37,8 @@ class EstadosSolicitudesGet(generics.ListAPIView):
 class PQRSDFGet(generics.ListAPIView):
     serializer_class = PQRSDFGetSerializer
     #queryset =PQRSDF.objects.all()
-    queryset = PQRSDF.objects.annotate(mezcla=Concat(F('id_radicado__prefijo_radicado'), Value('-'), F('id_radicado__agno_radicado'), Value('-'), F('id_radicado__nro_radicado'), output_field=CharField()))
+    queryset = PQRSDF.objects.annotate(mezcla=Concat(F('id_radicado__prefijo_radicado'), Value('-'), F('id_radicado__agno_radicado'),
+                                                      Value('-'), F('id_radicado__nro_radicado'), output_field=CharField()))
                                               
     permission_classes = [IsAuthenticated]
 
@@ -274,14 +275,6 @@ class Historico_Solicitud_PQRSDFGet(generics.ListAPIView):
 
         instance =PQRSDF.objects.filter(id_PQRSDF=pqr).first()
 
-        # estado_actual = instance.id_estado_actual_solicitud
-        # #print(estado_actual)
-
-        # estados = Estados_PQR.objects.filter(PQRSDF=instance,estado_solicitud=estado_actual).order_by('-fecha_iniEstado').first()
-        # estados_asociados = Estados_PQR.objects.filter(PQRSDF=instance,estado_PQR_asociado=estados).order_by('-fecha_iniEstado')
-        # for x in estados_asociados:
-        #     print(x.estado_solicitud.nombre)
-        #print(estados)
         if not instance:
                 raise NotFound("No existen registros")
 
@@ -357,7 +350,7 @@ class PQRSDFAnexoMetaDataGet(generics.ListAPIView):
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':{'id_anexo':instance.id_anexo,**serializer.data},}, status=status.HTTP_200_OK)
 
 class ComplementoPQRSDFInfoAnexosGet(generics.ListAPIView):
-    serializer_class = AnexosGetSerializer
+    serializer_class = AnexosComplementoGetSerializer
     queryset =ComplementosUsu_PQR.objects.all()
     permission_classes = [IsAuthenticated]
 
@@ -546,3 +539,52 @@ class AsignacionPQRGet(generics.ListAPIView):
         #return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':{'seccion':serializer_unidad.data,'hijos':serializer.data}}, status=status.HTTP_200_OK)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data}, status=status.HTTP_200_OK)
     
+
+##ENTREGA 99
+class PQRSDFPersonaTitularGet(generics.ListAPIView):
+    serializer_class = PQRSDFTitularGetSerializer
+    queryset = PQRSDF.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self,request,pqr):
+        
+        instance = self.get_queryset().filter(id_PQRSDF=pqr).first()
+        if not instance:
+            raise NotFound("No existen registros")
+        persona_titular = instance.id_persona_titular 
+        serializer = self.serializer_class(instance)
+
+        
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data}, status=status.HTTP_200_OK)
+
+class PQRSDFPersonaSolicitaGet(generics.ListAPIView):
+    serializer_class = PQRSDFTitularGetSerializer
+    queryset = PQRSDF.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self,request):
+        persona = request.user.persona
+        
+
+        serializer = self.serializer_class(persona)
+
+        #return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':{'seccion':serializer_unidad.data,'hijos':serializer.data}}, status=status.HTTP_200_OK)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data}, status=status.HTTP_200_OK)
+    
+
+class PQRSDFDetalleSolicitudGet(generics.ListAPIView):
+    serializer_class = PQRSDFDetalleSolicitud
+    queryset = PQRSDF.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self,request,pqr):
+        
+        instance = self.get_queryset().filter(id_PQRSDF=pqr).first()
+        if not instance:
+            raise NotFound("No existen registros")
+        persona_titular = instance.id_persona_titular 
+        serializer = self.serializer_class(instance)
+
+      
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data}, status=status.HTTP_200_OK)
+    
+
+    
+
