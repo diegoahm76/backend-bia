@@ -12,6 +12,7 @@ urlpatterns = [
     path('catalogo-bienes/validar-codigo/<str:nivel>/<str:codigo_bien>/',views.ValidacionCodigoBien.as_view(),name='validar-codigo'),
     
     #Catalogo Bienes Y
+    path('catalogo-bienes-generador-codigo/', views.GeneradorCodigoCatalogo.as_view(), name='catalogo-bienes-generador-codigo'),
     path('catalogo-bienes/create-update/', views.CatalogoBienesCreateUpdate.as_view(), name='catalogo-bienes-create-update'),
     path('catalogo-bienes/post/', views.CatalogoBienesCreate.as_view(), name='catalogo-bienes-create'),
     path('catalogo-bienes/get/list/',views.CatalogoBienesGetList.as_view(),name='catalogo-bienes-get-list'),

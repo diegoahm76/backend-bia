@@ -29,7 +29,8 @@ urlpatterns = [
     path('forma-presentacion-pqrsdf/', views.FormaPresentacionPQRSDF.as_view(), name='forma-presentacion-pqrsdf'),
     path('medio-almacenamiento/', views.MediosDeAlmacenamiento.as_view(), name='medio-almacenamiento'),
     path('tipo-archivo/', views.TipoArchivosChoices.as_view(), name='tipo-archivo'),
-    path('origen-archivo/', views.OrigenArchivoChoices.as_view(), name='tipo-archivo')
+    path('origen-archivo/', views.OrigenArchivoChoices.as_view(), name='tipo-archivo'),
+    path('tipo-zona/', views.TipoZonasChoices.as_view(), name='tipo-zona')
     #RangoEdad
     
 ]

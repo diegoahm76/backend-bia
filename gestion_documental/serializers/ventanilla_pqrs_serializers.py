@@ -2,6 +2,10 @@ from rest_framework import serializers
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
+from transversal.models.lideres_models import LideresUnidadesOrg
+from transversal.models.organigrama_models import UnidadesOrganizacionales
+from transversal.models.personas_models import Personas
+from datetime import datetime, timedelta
 
 
 
@@ -22,9 +26,10 @@ class PQRSDFGetSerializer(serializers.ModelSerializer):
     numero_solicitudes_digitalizacion = serializers.SerializerMethodField()
     numero_solicitudes_usuario = serializers.SerializerMethodField()
     tiene_complementos = serializers.SerializerMethodField()
+    dias_respuesta = serializers.SerializerMethodField()
     class Meta:
         model = PQRSDF
-        fields = ['id_PQRSDF','tipo_solicitud','nombre_completo_titular','asunto','cantidad_anexos','radicado','fecha_radicado','requiere_digitalizacion','estado_solicitud','estado_asignacion_grupo','nombre_sucursal','numero_solicitudes_digitalizacion','numero_solicitudes_usuario','tiene_complementos']
+        fields = ['id_PQRSDF','tipo_solicitud','nombre_completo_titular','asunto','cantidad_anexos','radicado','fecha_radicado','requiere_digitalizacion','estado_solicitud','estado_asignacion_grupo','nombre_sucursal','numero_solicitudes_digitalizacion','numero_solicitudes_usuario','tiene_complementos','dias_respuesta']
 
     def get_radicado(self, obj):
         cadena = ""
@@ -78,6 +83,25 @@ class PQRSDFGetSerializer(serializers.ModelSerializer):
             return True
         else:
             return False
+    def get_dias_respuesta(self,obj):
+        fecha_radicado = obj.fecha_radicado
+        dias_respuesta = obj.dias_para_respuesta
+        if not fecha_radicado:
+            return None
+        
+        fecha_actual = datetime.now()
+        #print(obj.id_PQRSDF)
+        #print("FECHA RADICADO "+str(fecha_radicado))
+        #print("DIAS RESPUESTA "+str(dias_respuesta))
+        #print("FECHA ACTUAL " + str(fecha_actual))
+        fecha_limite =fecha_radicado + timedelta(hours=dias_respuesta * 24)
+        #print("fecha_limite " + str(fecha_limite) )
+        
+   
+        dias_faltan = fecha_limite - fecha_actual
+        #print("TIENE ESTOS DIAS "+str(dias_faltan.days))
+        #print("-----------")
+        return dias_faltan.days
 class ComplementosUsu_PQRGetSerializer(serializers.ModelSerializer):
     tipo = serializers.SerializerMethodField()
     nombre_completo_titular = serializers.SerializerMethodField()
@@ -119,6 +143,10 @@ class SolicitudDeDigitalizacionPostSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 ##CAMBIO DE ESTADO DE LA SOLICITUD DE PQR
+class Estados_PQRSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Estados_PQR
+        fields = '__all__'
 class Estados_PQRPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Estados_PQR
@@ -240,9 +268,23 @@ class PQRSDFHistoricoGetSerializer(serializers.ModelSerializer):
 class AnexosGetSerializer(serializers.ModelSerializer):
 
     medio_almacenamiento = serializers.CharField(source='get_cod_medio_almacenamiento_display', default=None)
+    pqrsdf = serializers.SerializerMethodField()
     class Meta:
         model = Anexos
         fields = '__all__'  
+    def get_pqrsdf(self, obj):
+        return True
+    
+class AnexosComplementoGetSerializer(serializers.ModelSerializer):
+
+    medio_almacenamiento = serializers.CharField(source='get_cod_medio_almacenamiento_display', default=None)
+    complemento = serializers.SerializerMethodField()
+    class Meta:
+        model = Anexos
+        fields = '__all__'  
+    def get_complemento(self, obj):
+        return True
+
 
 class AnexosDocumentoDigitalGetSerializer(serializers.ModelSerializer):
 
@@ -265,3 +307,172 @@ class MetadatosAnexosTmpSerializerGet(serializers.ModelSerializer):
     class Meta:
         model = MetadatosAnexosTmp
         fields = ['id_metadatos_anexo_tmp','asunto','fecha_creacion_doc','origen_archivo','categoria_archivo','tiene_replica_fisica','es_version_original','palabras_clave_doc','nombre_tipologia_documental','descripcion']
+
+
+#asignacion PQR A SECCION O SUB O GRUPO
+
+class UnidadesOrganizacionalesSecSubVentanillaGetSerializer(serializers.ModelSerializer):
+    nombre_unidad = serializers.SerializerMethodField()
+    class Meta:
+        model = UnidadesOrganizacionales
+        fields = ['id_unidad_organizacional','nombre_unidad']
+    def get_nombre_unidad(self, obj):
+        tipo = ""
+        if obj.cod_agrupacion_documental == 'SEC':
+            tipo = " - SECCION - "
+        if obj.cod_agrupacion_documental == 'SUB':
+            tipo = " - SUBSECCION - "
+        if  not obj.cod_agrupacion_documental :
+            tipo = " - OFICINA - "
+        return str(obj.codigo)+tipo+str(obj.nombre)
+    
+class LiderGetSerializer(serializers.ModelSerializer):
+   
+    lider = serializers.SerializerMethodField()
+
+   # solicitud_actual = serializers.SerializerMethodField()
+    class Meta:
+        model = LideresUnidadesOrg
+        fields = ['id_unidad_organizacional','id_persona','lider']
+
+        
+    def get_lider(self, obj):
+
+        if obj.id_persona:
+            nombre_completo_responsable = None
+            nombre_list = [obj.id_persona.primer_nombre, obj.id_persona.segundo_nombre,
+                            obj.id_persona.primer_apellido, obj.id_persona.segundo_apellido]
+            nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+            return nombre_completo_responsable
+        else :
+         
+            return None
+class AsignacionPQRPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AsignacionPQR
+        fields = '__all__'
+
+
+class AsignacionPQRGetSerializer(serializers.ModelSerializer):
+    accion = serializers.SerializerMethodField()
+    asignado_para = serializers.SerializerMethodField()
+    estado_asignado = serializers.SerializerMethodField()
+    grupo = serializers.SerializerMethodField()
+    sec_sub = serializers.SerializerMethodField()
+    class Meta:
+        model = AsignacionPQR
+        fields = ['consecutivo_asign_x_pqrsdf','accion','fecha_asignacion','fecha_eleccion_estado','asignado_para','sec_sub','grupo','estado_asignado','justificacion_rechazo']
+    def get_accion(self,obj):
+        return "ASIGNACION DE PQRSDF"
+    def get_asignado_para(self,obj):
+          if obj.id_persona_asignada:
+            nombre_completo_responsable = None
+            nombre_list = [obj.id_persona_asignada.primer_nombre, obj.id_persona_asignada.segundo_nombre,
+                            obj.id_persona_asignada.primer_apellido, obj.id_persona_asignada.segundo_apellido]
+            nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+            return nombre_completo_responsable
+          else:
+              
+              return None
+    def get_estado_asignado(self,obj):
+        estado = obj.cod_estado_asignacion
+        if not estado:
+            return "EN ESPERA"
+        if estado == 'Ac':
+            return "ACEPTADO"
+        if estado == 'Re':
+            return "RECHAZADO"
+    def get_grupo(self,obj):
+        return ''
+    
+    def get_sec_sub(self,obj):
+        if obj.id_und_org_seccion_asignada:
+           unidad = UnidadesOrganizacionalesSecSubVentanillaGetSerializer(obj.id_und_org_seccion_asignada)
+           data = unidad.data
+           return data['nombre_unidad']
+        
+#ENTREGA 99
+
+class PQRSDFTitularGetSerializer(serializers.ModelSerializer):
+    nombres = serializers.SerializerMethodField()
+    apellidos = serializers.SerializerMethodField() 
+    tipo_documento = serializers.ReadOnlyField(source='id_persona_titular.tipo_documento.nombre',default=None)
+    numero_documento = serializers.ReadOnlyField(source='id_persona_titular.numero_documento',default=None)
+    class Meta:
+        model = PQRSDF
+        fields = ['id_PQRSDF','nombres','apellidos','tipo_documento','numero_documento']
+    def obtener_nombres(self, persona):
+        nombres = [
+            persona.primer_nombre,
+            persona.segundo_nombre,
+        ]
+        return ' '.join(item for item in nombres if item is not None)
+
+    def obtener_apellidos(self, persona):
+        apellidos = [
+            persona.primer_apellido,
+            persona.segundo_apellido,
+        ]
+        return ' '.join(item for item in apellidos if item is not None)
+
+    def get_nombres(self, obj):
+        if obj.id_persona_titular:
+            return self.obtener_nombres(obj.id_persona_titular)
+        return None
+
+    def get_apellidos(self, obj):
+        if obj.id_persona_titular:
+            return self.obtener_apellidos(obj.id_persona_titular)
+        return None
+    
+
+class PQRSDFTitularGetSerializer(serializers.ModelSerializer):
+    nombres = serializers.SerializerMethodField()
+    apellidos = serializers.SerializerMethodField() 
+    tipo_documento = serializers.ReadOnlyField(source='tipo_documento.nombre',default=None)
+    unidad_organizacional_actual = serializers.ReadOnlyField(source='id_unidad_organizacional_actual.nombre',default=None)
+    class Meta:
+        model = Personas
+        fields = ['nombres','apellidos','tipo_documento','numero_documento','unidad_organizacional_actual']
+    def obtener_nombres(self, persona):
+        nombres = [
+            persona.primer_nombre,
+            persona.segundo_nombre,
+        ]
+        return ' '.join(item for item in nombres if item is not None)
+
+    def obtener_apellidos(self, persona):
+        apellidos = [
+            persona.primer_apellido,
+            persona.segundo_apellido,
+        ]
+        return ' '.join(item for item in apellidos if item is not None)
+
+    def get_nombres(self, obj):
+        if obj:
+            return self.obtener_nombres(obj)
+        return None
+
+    def get_apellidos(self, obj):
+        if obj:
+            return self.obtener_apellidos(obj)
+        return None
+    
+
+class PQRSDFDetalleSolicitud(serializers.ModelSerializer):
+    #tipo_activo = serializers.CharField(source='id_bien.get_cod_tipo_bien_display')
+    estado_actual = serializers.ReadOnlyField(source='id_estado_actual_solicitud.nombre',default=None)
+    radicado = serializers.SerializerMethodField()
+    fecha_radicado_entrada = serializers.ReadOnlyField(source='fecha_radicado',default=None)
+    tipo = serializers.CharField(source='get_cod_tipo_PQRSDF_display')
+    class Meta:
+        model = PQRSDF
+        fields = ['tipo','id_PQRSDF','estado_actual','radicado','fecha_radicado_entrada','asunto','descripcion']
+
+    def get_radicado(self, obj):
+        cadena = ""
+        if obj.id_radicado:
+            cadena= str(obj.id_radicado.prefijo_radicado)+'-'+str(obj.id_radicado.agno_radicado)+'-'+str(obj.id_radicado.nro_radicado)
+            return cadena
