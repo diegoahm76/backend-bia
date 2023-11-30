@@ -1041,6 +1041,20 @@ class PAACodUNSPDelete(generics.DestroyAPIView):
         paa = self.get_object(pk)
         paa.delete()
         return Response({'success': True, 'detail': 'Se eliminó el PAA CodgigoUNSP correctamente.', 'data': []}, status=status.HTTP_200_OK)
+    
+# Listar registros de PAA CodgigoUNSP por ID de PAA
+
+class PAACodUNSPListIdPAA(generics.ListAPIView):
+    queryset = PAACodgigoUNSP.objects.all()
+    serializer_class = PAACodgigoUNSPSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, pk):
+        paas = self.get_queryset().filter(id_plan=pk)
+        serializer = PAACodgigoUNSPSerializer(paas, many=True)
+        if not paas:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes PAA CodgigoUNSP:', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # ---------------------------------------- Seguimiento PAI ----------------------------------------
 
