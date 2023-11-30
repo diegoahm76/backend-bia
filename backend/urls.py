@@ -94,6 +94,7 @@ urlpatterns = [
     path('api/gestor/resportes-permisos-doc/',include('gestion_documental.urls.documentacion_permisos_urls')),
     path('api/gestor/panel_ventanilla/',include('gestion_documental.urls.panel_ventanilla_urls')),
     path('api/gestor/radicados/',include('gestion_documental.urls.radicados_urls')),
+    path('api/gestor/central-digitalizacion/',include('gestion_documental.urls.central_digitalizacion_urls')),
     
     
     #ALMACEN

@@ -178,6 +178,7 @@ class PQRSDFPanelSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class AnexosPqrsdfPanelSerializer(serializers.ModelSerializer):
+    nombre_medio_almacenamiento = serializers.ReadOnlyField(source='get_cod_medio_almacenamiento_display')
     metadato = serializers.SerializerMethodField()
 
     def get_metadato(self, obj):
@@ -190,9 +191,11 @@ class AnexosPqrsdfPanelSerializer(serializers.ModelSerializer):
             'nombre_anexo',
             'orden_anexo_doc',
             'cod_medio_almacenamiento',
+            'nombre_medio_almacenamiento',
             'medio_almacenamiento_otros_Cual',
             'numero_folios',
             'ya_digitalizado',
+            'observacion_digitalizacion',
             'metadato'
         ]
 class MetadatoPanelSerializer(serializers.ModelSerializer):
