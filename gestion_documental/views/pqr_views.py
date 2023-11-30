@@ -122,7 +122,6 @@ class PQRSDFCreate(generics.CreateAPIView):
                 data_pqrsdf = json.loads(request.data.get('pqrsdf', ''))
                 isCreateForWeb = ast.literal_eval(request.data.get('isCreateForWeb', ''))
                 id_persona_guarda = ast.literal_eval(request.data.get('id_persona_guarda', ''))
-                archivos = request.FILES.getlist('archivo')
 
                 debe_radicar = isCreateForWeb and data_pqrsdf['es_anonima']
                 denuncia = data_pqrsdf['denuncia']
@@ -130,7 +129,7 @@ class PQRSDFCreate(generics.CreateAPIView):
                 valores_creados_detalles = []
 
                 util_PQR = Util_PQR()
-                anexos = util_PQR.set_archivo_in_anexo(data_pqrsdf['anexos'], archivos)
+                anexos = util_PQR.set_archivo_in_anexo(data_pqrsdf['anexos'], request.FILES, "create")
 
                 #Crea el pqrsdf
                 data_PQRSDF_creado = self.create_pqrsdf(data_pqrsdf, fecha_actual)
@@ -236,7 +235,6 @@ class PQRSDFUpdate(generics.RetrieveUpdateAPIView):
                 #Obtiene los datos enviado en el request
                 pqrsdf = json.loads(request.data.get('pqrsdf', ''))
                 isCreateForWeb = ast.literal_eval(request.data.get('isCreateForWeb', ''))
-                archivos = request.FILES.getlist('archivo')
 
                 pqrsdf_db = self.queryset.filter(id_PQRSDF=pqrsdf['id_PQRSDF']).first()
                 if pqrsdf_db:
@@ -248,7 +246,7 @@ class PQRSDFUpdate(generics.RetrieveUpdateAPIView):
                     self.procesa_denuncia(denuncia, pqrsdf_db.cod_tipo_PQRSDF, pqrsdf['cod_tipo_PQRSDF'], pqrsdf['id_PQRSDF'])
 
                     #Actualiza los anexos y los metadatos
-                    data_auditoria_anexos = self.procesa_anexos(anexos, archivos, pqrsdf['id_PQRSDF'], isCreateForWeb, fecha_actual)
+                    data_auditoria_anexos = self.procesa_anexos(anexos, request.FILES, pqrsdf['id_PQRSDF'], isCreateForWeb, fecha_actual)
 
                     #Actuaiza pqrsdf
                     pqrsdf_update = self.update_pqrsdf(pqrsdf_db, pqrsdf)
@@ -300,9 +298,10 @@ class PQRSDFUpdate(generics.RetrieveUpdateAPIView):
         if anexos_pqr_DB:
             util_PQR = Util_PQR()
             data_anexos_create = [anexo for anexo in anexos if 'id_anexo' not in list(anexo.keys())]
-            anexos_create = util_PQR.set_archivo_in_anexo(data_anexos_create, archivos)
+            anexos_create = util_PQR.set_archivo_in_anexo(data_anexos_create, archivos, "create")
             
-            anexos_update = [anexo for anexo in anexos if 'id_anexo' in list(anexo.keys())]
+            data_anexos_update = [anexo for anexo in anexos if 'id_anexo' in list(anexo.keys())]
+            anexos_update = util_PQR.set_archivo_in_anexo(data_anexos_update, archivos, "update")
 
             ids_anexos_update = [anexo_update['id_anexo'] for anexo_update in anexos_update]
             anexos_delete = [anexo_pqr for anexo_pqr in anexos_pqr_DB if getattr(anexo_pqr,'id_anexo_id') not in ids_anexos_update]
@@ -312,7 +311,7 @@ class PQRSDFUpdate(generics.RetrieveUpdateAPIView):
             anexosDelete = AnexosDelete()
 
             data_auditoria_create = anexosCreate.create_anexos_pqrsdf(anexos_create, id_PQRSDF, isCreateForWeb, fecha_actual)
-            data_auditoria_update = anexosUpdate.put(anexos_update)
+            data_auditoria_update = anexosUpdate.put(anexos_update, fecha_actual)
             data_auditoria_delete = anexosDelete.delete(anexos_delete)
             
         else:
@@ -732,7 +731,7 @@ class AnexosUpdate(generics.RetrieveUpdateAPIView):
     serializer_class = AnexosPutSerializer
     queryset = Anexos.objects.all()
 
-    def put(self, anexos):
+    def put(self, anexos, fecha_actual):
         try:
             nombres_anexos_auditoria = []
             for anexo in anexos:
@@ -740,8 +739,11 @@ class AnexosUpdate(generics.RetrieveUpdateAPIView):
                 if anexo_update_db:
                     previous_instancia = copy.copy(anexo_update_db)
                     self.update_anexo(anexo_update_db, anexo)
+
+                    #Actualiza metadatos
+                    archivo_editar = anexo['archivo'] if 'archivo' in anexo else None
                     metadatosPQRUpdate = MetadatosPQRUpdate()
-                    metadatosPQRUpdate.put(anexo.get('metadatos'))
+                    metadatosPQRUpdate.put(anexo.get('metadatos'), archivo_editar, fecha_actual)
 
                     descripcion_auditoria = {'NombreAnexo': anexo['nombre_anexo']}
                     nombres_anexos_auditoria.append({'descripcion': descripcion_auditoria, 'previous':previous_instancia, 'current':anexo_update_db})
@@ -850,10 +852,15 @@ class MetadatosPQRUpdate(generics.RetrieveUpdateAPIView):
     serializer_class = MetadatosPutSerializer
     queryset = MetadatosAnexosTmp.objects.all()
 
-    def put(self, metadato_update):
+    def put(self, metadato_update, archivo, fecha_actual):
         try:
             metadato_db = self.queryset.filter(id_metadatos_anexo_tmp = metadato_update['id_metadatos_anexo_tmp']).first()
             if metadato_db:
+                #Si se tiene archivo se borra el actual y se crea el archivo enviado y se asocia al metadato
+                if archivo:
+                    archivo_actualizado = self.actualizar_archivo(archivo, fecha_actual, metadato_update['id_archivo_sistema'])
+                    metadato_update['id_archivo_sistema'] = archivo_actualizado.data.get('data').get('id_archivo_digital')
+
                 serializer = self.serializer_class(metadato_db, data=metadato_update, many=False)
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
@@ -863,6 +870,15 @@ class MetadatosPQRUpdate(generics.RetrieveUpdateAPIView):
                 
         except Exception as e:
             raise({'success': False, 'detail': str(e)})
+    
+    def actualizar_archivo(self, archivo, fecha_actual, id_archivo_anterior):
+        #Borra archivo anterior del metadato
+        archivoDelete = ArchivoDelete()
+        archivoDelete.delete(id_archivo_anterior)
+
+        #Crea el nuevo archivo
+        archivo_creado = AnexosCreate.crear_archivos(self, archivo, fecha_actual)
+        return archivo_creado
 
 class MetadatosPQRDelete(generics.RetrieveDestroyAPIView):
     serializer_class = MetadatosSerializer
@@ -906,14 +922,23 @@ class Util_PQR:
         return objeto_existente
     
     @staticmethod
-    def set_archivo_in_anexo(anexos, archivos):
+    def set_archivo_in_anexo(anexos, archivos, proceso):
         if anexos != None and archivos != None:
-            if len(anexos)!= len(archivos):
-                    raise ValidationError("Se debe tener la misma cantidad de archivos y anexos.")
+            nombre_archivo_proceso = "archivo-" + proceso
+            archivos_filter = [
+                {"nombre archivo": nombre, "archivo":archivo} for nombre, archivo in archivos.items() if nombre_archivo_proceso in nombre
+            ]
+            if len(anexos)!= len(archivos_filter) and proceso == "create":
+                raise ValidationError("Se debe tener la misma cantidad de archivos y anexos.")
             
-            for indice, anexo in enumerate(anexos):
-                anexo['archivo'] = archivos[indice]
+            for anexo in anexos:
+                nombre_archivo_completo = nombre_archivo_proceso + "-" + anexo['nombre_anexo']
+                archivo_filter = [archivo["archivo"] for archivo in archivos_filter if archivo['nombre archivo'] == nombre_archivo_completo]
+                if archivo_filter:
+                    anexo['archivo'] = archivo_filter[0]
         return anexos
+    
+       
 
  ########################## MEDIOS DE SOLICITUD ##########################
 

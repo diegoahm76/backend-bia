@@ -1,3 +1,4 @@
+from gestion_documental.choices.central_digitalizacion_choices import ESTADO_SOLICITUD_CHOICES, TIPO_SOLICITUD_CHOICES
 from gestion_documental.choices.rango_edad_choices import RANGO_EDAD_LIST
 from gestion_documental.choices.tipo_clasificacion_choices import tipo_clasificacion_CHOICES
 from gestion_documental.choices.tipo_zonas_choices import TIPO_ZONAS_CHOICES
@@ -170,4 +171,14 @@ class OrigenArchivoChoices(APIView):
 class TipoZonasChoices(APIView):
     def get(self, request):
         choices = TIPO_ZONAS_CHOICES
+        return Response(choices)
+    
+class TipoSolicitud(APIView):
+    def get(self, request):
+        choices = TIPO_SOLICITUD_CHOICES
+        return Response(choices)
+
+class EstadoSolicitud(APIView):
+    def get(self, request):
+        choices = ESTADO_SOLICITUD_CHOICES
         return Response(choices)
