@@ -153,8 +153,14 @@ class PlanAnualAdquisicionesSerializer(serializers.ModelSerializer):
     nombre_fuente = serializers.ReadOnlyField(source='id_recurso_paa.nombre_fuente', default=None)
     nombre_estado = serializers.ReadOnlyField(source='id_estado_vf.nombre_estado', default=None)
     nombre_unidad = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
-    nombre_ubicacion = serializers.ReadOnlyField(source='id_ubicacion.nombre_ubicacion', default=None)
-    persona_responsable = serializers.ReadOnlyField(source='id_persona_responsable.nombre_completo', default=None)
+    nombre_ubicacion = serializers.ReadOnlyField(source='id_ubicaion.nombre_ubicacion', default=None)
+    persona_responsable = serializers.SerializerMethodField()
+    
+    def get_persona_responsable(self, obj):
+        persona_responsable = None
+        nombre_list = [obj.id_persona_responsable.primer_nombre, obj.id_persona_responsable.segundo_nombre, obj.id_persona_responsable.primer_apellido, obj.id_persona_responsable.segundo_apellido]
+        persona_responsable = ' '.join(item for item in nombre_list if item is not None)
+        return persona_responsable.upper()
     
     class Meta:
         model = PlanAnualAdquisiciones
@@ -162,8 +168,9 @@ class PlanAnualAdquisicionesSerializer(serializers.ModelSerializer):
 
 class PAACodgigoUNSPSerializer(serializers.ModelSerializer):
         
-    nombre_paa = serializers.ReadOnlyField(source='id_paa.nombre_paa', default=None)
-    nombre_unsp = serializers.ReadOnlyField(source='id_unsp.nombre_unsp', default=None)
+    nombre_paa = serializers.ReadOnlyField(source='id_plan.descripcion', default=None)
+    nombre_producto_unsp = serializers.ReadOnlyField(source='id_codigo.codigo_unsp', default=None)
+    codigo_unsp = serializers.ReadOnlyField(source='id_codigo.codigo_unsp', default=None)
         
     class Meta:
         model = PAACodgigoUNSP
