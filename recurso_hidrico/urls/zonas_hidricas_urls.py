@@ -1,6 +1,6 @@
 from django.urls import path
 from recurso_hidrico.views import zonas_hidricas_views as views
-
+# urls
 urlpatterns = [
         path('macro-cuencas/get/', views.MacroCuencasListView.as_view(), name='macro-cuencas'),
         path('zona_hidrica/get/<str:pk>/', views.ZonaHidricaListView.as_view(), name='zonas-hidricas'),
@@ -13,6 +13,7 @@ urlpatterns = [
 
         path('zona_hidrica/delete/<str:pk>/', views.BorrarZonaHidricaVista.as_view(), name='zonas-hidricas-actualizar'),
         path('sub_zona_hidrica/delete/<str:pk>/', views.BorrarSubZonaHidricaVista.as_view(), name='zonas-hidricas-actualizar'),
+
 
 
         path('zona_hidrica/update/<str:pk>/', views.ActualizarZonaHidricaVista.as_view(), name='zonas-hidricas-actualizar'),
