@@ -5,8 +5,11 @@ from rest_framework import generics, status
 from django.db.models.functions import Concat
 from django.db.models import Q, Value as V
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
-from seguimiento_planes.serializers.seguimiento_serializer import FuenteRecursosPaaSerializerUpdate, FuenteFinanciacionIndicadoresSerializer, SectorSerializer, SectorSerializerUpdate, DetalleInversionCuentasSerializer, ModalidadSerializer, ModalidadSerializerUpdate, UbicacionesSerializer, UbicacionesSerializerUpdate, FuenteRecursosPaaSerializer, IntervaloSerializer, IntervaloSerializerUpdate, EstadoVFSerializer, EstadoVFSerializerUpdate, CodigosUNSPSerializer, CodigosUNSPSerializerUpdate, ConceptoPOAISerializer, FuenteFinanciacionSerializer, BancoProyectoSerializer, PlanAnualAdquisicionesSerializer, PAACodgigoUNSPSerializer
-from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, Sector, DetalleInversionCuentas, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, FuenteFinanciacion, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.serializers.expedientes_serializers import ArchivosDigitalesCreateSerializer
+from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
+from seguimiento_planes.serializers.seguimiento_serializer import FuenteRecursosPaaSerializerUpdate, FuenteFinanciacionIndicadoresSerializer, SectorSerializer, SectorSerializerUpdate, DetalleInversionCuentasSerializer, ModalidadSerializer, ModalidadSerializerUpdate, UbicacionesSerializer, UbicacionesSerializerUpdate, FuenteRecursosPaaSerializer, IntervaloSerializer, IntervaloSerializerUpdate, EstadoVFSerializer, EstadoVFSerializerUpdate, CodigosUNSPSerializer, CodigosUNSPSerializerUpdate, ConceptoPOAISerializer, FuenteFinanciacionSerializer, BancoProyectoSerializer, PlanAnualAdquisicionesSerializer, PAACodgigoUNSPSerializer, SeguimientoPAISerializer, SeguimientoPAIDocumentosSerializer
+from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, Sector, DetalleInversionCuentas, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, FuenteFinanciacion, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos
 
 # ---------------------------------------- Fuentes de financiacion indicadores ----------------------------------------
 
@@ -973,3 +976,314 @@ class PlanAnualAdquisicionesDelete(generics.DestroyAPIView):
         plan = self.get_object(pk)
         plan.delete()
         return Response({'success': True, 'detail': 'Se eliminó el plan anual de adquisiciones correctamente.', 'data': []}, status=status.HTTP_200_OK)
+
+# ---------------------------------------- PAA CodgigoUNSP ----------------------------------------
+
+# Listar todos los registros de PAA CodgigoUNSP
+
+class PAACodUNSPList(generics.ListAPIView):
+    queryset = PAACodgigoUNSP.objects.all()
+    serializer_class = PAACodgigoUNSPSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        paas = self.get_queryset()
+        serializer = PAACodgigoUNSPSerializer(paas, many=True)
+        if not paas:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes PAA CodgigoUNSP:', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+# Crear un registro de PAA CodgigoUNSP
+
+class PAACodUNSPCreate(generics.CreateAPIView):
+    serializer_class = PAACodgigoUNSPSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        serializer = PAACodgigoUNSPSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'success': True, 'detail': 'Se creó el PAA CodgigoUNSP correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        else:
+            print(serializer.errors)  # Imprime los errores de validación
+            raise ValidationError('Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo.')
+    
+# Actualizar un registro de PAA CodgigoUNSP
+
+class PAACodUNSPUpdate(generics.UpdateAPIView):
+    queryset = PAACodgigoUNSP.objects.all()
+    serializer_class = PAACodgigoUNSPSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def put(self, request, pk):
+        data = request.data
+        paa = self.get_object()
+        serializer = self.serializer_class(paa, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Se actualizó el PAA CodgigoUNSP correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Eliminar un registro de PAA CodgigoUNSP
+
+class PAACodUNSPDelete(generics.DestroyAPIView):
+    queryset = PAACodgigoUNSP.objects.all()
+    serializer_class = PAACodgigoUNSPSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_object(self, pk):
+        try:
+            return PAACodgigoUNSP.objects.get(pk=pk)
+        except PAACodgigoUNSP.DoesNotExist:
+            raise NotFound("No se encontró un PAA CodgigoUNSP con este ID.")
+
+    def delete(self, request, pk):
+        paa = self.get_object(pk)
+        paa.delete()
+        return Response({'success': True, 'detail': 'Se eliminó el PAA CodgigoUNSP correctamente.', 'data': []}, status=status.HTTP_200_OK)
+    
+# Listar registros de PAA CodgigoUNSP por ID de PAA
+
+class PAACodUNSPListIdPAA(generics.ListAPIView):
+    queryset = PAACodgigoUNSP.objects.all()
+    serializer_class = PAACodgigoUNSPSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, pk):
+        paas = self.get_queryset().filter(id_plan=pk)
+        serializer = PAACodgigoUNSPSerializer(paas, many=True)
+        if not paas:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes PAA CodgigoUNSP:', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# ---------------------------------------- Seguimiento PAI ----------------------------------------
+
+# Listar todos los registros de seguimiento PAI
+
+class SeguimientoPAIList(generics.ListAPIView):
+    queryset = SeguimientoPAI.objects.all()
+    serializer_class = SeguimientoPAISerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        seguimientos = self.get_queryset()
+        serializer = SeguimientoPAISerializer(seguimientos, many=True)
+        if not seguimientos:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes seguimientos PAI:', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Crear un registro de seguimiento PAI
+
+class SeguimientoPAICreate(generics.CreateAPIView):
+    serializer_class = SeguimientoPAISerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        serializer = SeguimientoPAISerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'success': True, 'detail': 'Se creó el seguimiento PAI correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        else:
+            print(serializer.errors)  # Imprime los errores de validación
+            raise ValidationError('Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo.')
+
+# Actualizar un registro de seguimiento PAI
+
+class SeguimientoPAIUpdate(generics.UpdateAPIView):
+    queryset = SeguimientoPAI.objects.all()
+    serializer_class = SeguimientoPAISerializer
+    permission_classes = (IsAuthenticated,)
+
+    def put(self, request, pk):
+        data = request.data
+        seguimiento = self.get_object()
+        serializer = self.serializer_class(seguimiento, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Se actualizó el seguimiento PAI correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Eliminar un registro de seguimiento PAI
+
+class SeguimientoPAIDelete(generics.DestroyAPIView):
+    queryset = SeguimientoPAI.objects.all()
+    serializer_class = SeguimientoPAISerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_object(self, pk):
+        try:
+            return SeguimientoPAI.objects.get(pk=pk)
+        except SeguimientoPAI.DoesNotExist:
+            raise NotFound("No se encontró un seguimiento PAI con este ID.")
+
+    def delete(self, request, pk):
+        seguimiento = self.get_object(pk)
+        seguimiento.delete()
+        return Response({'success': True, 'detail': 'Se eliminó el seguimiento PAI correctamente.', 'data': []}, status=status.HTTP_200_OK)
+
+# ---------------------------------------- Seguimiento PAI ----------------------------------------
+
+# Listar todos los registros de seguimiento PAI
+
+class SeguimientoPAIList(generics.ListAPIView):
+    queryset = SeguimientoPAI.objects.all()
+    serializer_class = SeguimientoPAISerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        seguimientos = self.get_queryset()
+        serializer = SeguimientoPAISerializer(seguimientos, many=True)
+        if not seguimientos:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes seguimientos PAI:', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Crear un registro de seguimiento PAI
+
+class SeguimientoPAICreate(generics.CreateAPIView):
+    serializer_class = SeguimientoPAISerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        serializer = SeguimientoPAISerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'success': True, 'detail': 'Se creó el seguimiento PAI correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        else:
+            print(serializer.errors)  # Imprime los errores de validación
+            raise ValidationError('Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo.')
+    
+# Actualizar un registro de seguimiento PAI
+
+class SeguimientoPAIUpdate(generics.UpdateAPIView):
+    queryset = SeguimientoPAI.objects.all()
+    serializer_class = SeguimientoPAISerializer
+    permission_classes = (IsAuthenticated,)
+
+    def put(self, request, pk):
+        data = request.data
+        seguimiento = self.get_object()
+        serializer = self.serializer_class(seguimiento, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Se actualizó el seguimiento PAI correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Eliminar un registro de seguimiento PAI
+
+class SeguimientoPAIDelete(generics.DestroyAPIView):
+    queryset = SeguimientoPAI.objects.all()
+    serializer_class = SeguimientoPAISerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_object(self, pk):
+        try:
+            return SeguimientoPAI.objects.get(pk=pk)
+        except SeguimientoPAI.DoesNotExist:
+            raise NotFound("No se encontró un seguimiento PAI con este ID.")
+
+    def delete(self, request, pk):
+        seguimiento = self.get_object(pk)
+        seguimiento.delete()
+        return Response({'success': True, 'detail': 'Se eliminó el seguimiento PAI correctamente.', 'data': []}, status=status.HTTP_200_OK)
+
+# ---------------------------------------- Seguimiento PAI Documentos ----------------------------------------
+
+# Listar todos los registros de seguimiento PAI documentos
+
+class SeguimientoPAIDocumentosList(generics.ListAPIView):
+    queryset = SeguimientoPAIDocumentos.objects.all()
+    serializer_class = SeguimientoPAIDocumentosSerializer
+    permission_classes = (IsAuthenticated,)
+    serializer_archivo = ArchivosDigitalesCreateSerializer
+    def get(self, request):
+        documentos = self.get_queryset()
+        data_respuesta=[]
+        for documento in documentos:
+            archivo = ArchivosDigitales.objects.filter(id_archivo_digital=documento.id_archivo_digital.id_archivo_digital).first()
+            serializer_archivo = self.serializer_archivo(archivo)
+            data_respuesta.append({'data':self.serializer_class(documento).data,'archivo':serializer_archivo.data})
+            
+        #serializer = self.serializer_class(documentos, many=True)
+        if not documentos:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes documentos de seguimiento PAI:', 'data': data_respuesta}, status=status.HTTP_200_OK)
+
+# Crear un registro de seguimiento PAI documentos
+
+class SeguimientoPAIDocumentosCreate(generics.CreateAPIView):
+    serializer_class = SeguimientoPAIDocumentosSerializer
+    permission_classes = (IsAuthenticated,)
+    vista_archivos = ArchivosDgitalesCreate()
+    def post(self, request):
+        data_seguimiento_documentos=[]
+        id_seguimiento = request.data['id_seguimiento_pai']
+        archivos =request.FILES.getlist('archivo')
+        id_archivos=[]
+        for archivo in archivos:
+            respuesta_archivo=self.vista_archivos.crear_archivo({'es_Doc_elec_archivo':False},archivo)
+            
+            if respuesta_archivo.status_code != status.HTTP_201_CREATED:
+                return respuesta_archivo
+            data_archivo = respuesta_archivo.data['data']
+            id_archivos.append(data_archivo)
+            
+        for id_archivo in id_archivos:
+            serializer = self.serializer_class(data={'id_seguimiento_pai':id_seguimiento,'id_archivo_digital':id_archivo['id_archivo_digital']})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            data_seguimiento_documentos.append({'data':serializer.data,'archivo':id_archivo})
+
+
+       
+        return Response({'success': True, 'detail': 'Se creó el documento de seguimiento PAI correctamente.', 'data': data_seguimiento_documentos}, status=status.HTTP_201_CREATED)
+        
+# Actualizar un registro de seguimiento PAI documentos
+
+class SeguimientoPAIDocumentosUpdate(generics.UpdateAPIView):
+    queryset = SeguimientoPAIDocumentos.objects.all()
+    serializer_class = SeguimientoPAIDocumentosSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def put(self, request, pk):
+        data = request.data
+        documento = self.get_object()
+        serializer = self.serializer_class(documento, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Se actualizó el documento de seguimiento PAI correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Eliminar un registro de seguimiento PAI documentos
+
+class SeguimientoPAIDocumentosDelete(generics.DestroyAPIView):
+    queryset = SeguimientoPAIDocumentos.objects.all()
+    serializer_class = SeguimientoPAIDocumentosSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_object(self, pk):
+        try:
+            return SeguimientoPAIDocumentos.objects.get(pk=pk)
+        except SeguimientoPAIDocumentos.DoesNotExist:
+            raise NotFound("No se encontró un documento de seguimiento PAI con este ID.")
+
+    def delete(self, request, pk):
+        documento = self.get_object(pk)
+        documento.delete()
+        return Response({'success': True, 'detail': 'Se eliminó el documento de seguimiento PAI correctamente.', 'data': []}, status=status.HTTP_200_OK)
+
+# Listar Seguimiento PAI documentos por id seguimiento
+
+class SeguimientoPAIDocumentosListIdSeguimiento(generics.ListAPIView):
+    queryset = SeguimientoPAIDocumentos.objects.all()
+    serializer_class = SeguimientoPAIDocumentosSerializer
+    permission_classes = (IsAuthenticated,)
+    serializer_archivo = ArchivosDigitalesCreateSerializer
+    def get(self, request,id_seguimiento):
+        documentos = self.get_queryset().filter(id_seguimiento_pai=id_seguimiento)
+        data_respuesta=[]
+        for documento in documentos:
+            archivo = ArchivosDigitales.objects.filter(id_archivo_digital=documento.id_archivo_digital.id_archivo_digital).first()
+            serializer_archivo = self.serializer_archivo(archivo)
+            data_respuesta.append({'data':self.serializer_class(documento).data,'archivo':serializer_archivo.data})
+            
+        #serializer = self.serializer_class(documentos, many=True)
+        if not documentos:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes documentos de seguimiento PAI:', 'data': data_respuesta}, status=status.HTTP_200_OK)

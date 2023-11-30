@@ -1328,6 +1328,26 @@ class PersistenciaConfirmadaCreateView(generics.CreateAPIView):
                     agrupacion_persistentes = instancia_agrupacion_persistentes.crear_actualizar_agrupaciones_persistentes_tmp(data_a)
                     agrupaciones_persistentes.append(agrupacion_persistentes)
 
+                    # descripcion = {"numero_entrada_almacen": str(
+                    #     entrada_almacen.numero_entrada_almacen), "fecha_entrada": str(entrada_almacen.fecha_entrada)}
+                    # direccion = Util.get_client_ip(request)
+
+                    # # AUDITORIAS
+                    # auditoria_data = {
+                    #     "id_usuario": request.user.id_usuario,
+                    #     "id_modulo": 34,
+                    #     "cod_permiso": "AC",
+                    #     "subsistema": 'ALMA',
+                    #     "dirip": direccion,
+                    #     "descripcion": descripcion,
+                    #     "valores_actualizados_maestro": valores_actualizados_maestro,
+                    #     "valores_actualizados_detalles": valores_actualizados_detalles,
+                    #     "valores_creados_detalles": valores_creados_detalles,
+                    #     "valores_eliminados_detalles": valores_eliminados_detalles
+                    # }
+                    # Util.save_auditoria_maestro_detalle(auditoria_data)
+
+
             data_out = {
                 'unidades_persistentes': unidades_persistentes,
                 'agrupaciones_persistentes':agrupaciones_persistentes
@@ -1717,6 +1737,24 @@ class UnidadesOrganizacionalesActualResponsableView(generics.ListAPIView):
 class OficinasUnidadOrganizacionalGetView(generics.ListAPIView):
     serializer_class = OficinaUnidadOrganizacionalSerializer
 
+    def get_oficinas_hijas(self, id_unidad_org_padre):
+
+        try:
+            unidad_org = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=id_unidad_org_padre)
+        except UnidadesOrganizacionales.DoesNotExist:
+            raise ValidationError('No se encontro unidad organizacional')
+        
+        oficinas_unidad = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre=id_unidad_org_padre, cod_agrupacion_documental__isnull=True).order_by('codigo')
+        serializer = self.serializer_class(oficinas_unidad, many=True)
+
+        oficinas = serializer.data
+
+        for oficina in oficinas:
+            oficina_res = self.get_oficinas_hijas(oficina['id_unidad_organizacional'])
+            oficinas += oficina_res
+
+        return oficinas
+
     def get_oficinas_unidad(self, id_unidad_org_padre, id_ccd):
 
         try:
@@ -1729,15 +1767,14 @@ class OficinasUnidadOrganizacionalGetView(generics.ListAPIView):
         except UnidadesOrganizacionales.DoesNotExist:
             raise ValidationError('No se encontro unidad organizacional')
         
-        oficinas_unidad = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre=id_unidad_org_padre, cod_agrupacion_documental__isnull=True).order_by('codigo')
-        serializer = self.serializer_class(oficinas_unidad, context={'id_ccd_nuevo': ccd.id_ccd}, many=True)
+        oficinas_unidad = self.get_oficinas_hijas(id_unidad_org_padre)
 
         data = {
             'id_ccd': ccd.id_ccd,
             'id_unidad_organizacional': unidad_org.id_unidad_organizacional,
             'codigo': unidad_org.codigo,
             'nombre': unidad_org.nombre,
-            'oficinas': serializer.data 
+            'oficinas': oficinas_unidad 
             }
 
         return data 

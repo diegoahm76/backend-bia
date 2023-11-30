@@ -47,10 +47,7 @@ from rest_framework.permissions import IsAuthenticated
 from datetime import datetime, timezone
 import copy
 
-
-class CatalogoBienesCreate(generics.CreateAPIView):
-    serializer_class = CatalagoBienesYSerializer
-    permission_classes = [IsAuthenticated]
+class GeneradorCodigoCatalogo(generics.RetrieveAPIView):
 
     def generador_codigo_bien(self, bien_padre, nivel_jerarquico):
         niv_val = [[1,2,3,4,5],['0','0','00','000','00000'],['9','9','99','999','99999']]
@@ -70,18 +67,63 @@ class CatalogoBienesCreate(generics.CreateAPIView):
         codigo_anterior  = catalago.codigo_bien[len(codigo_padre):] if catalago != None else niv_val[1][posicion]
 
         if codigo_anterior == niv_val[2][posicion]:
-            raise ValidationError('El codigo del bien esta fuera de rango')
+            raise ValidationError('No se puede generar mas codigos de bienes para este nivel jerarquico')
         
         codigo = str(int(codigo_padre+codigo_anterior) + 1)
 
         return codigo
+    
+    def get(self, request, *args, **kwargs):
+
+        id_bien_padre = self.request.query_params.get('id_bien_padre', '')
+        nivel_jerarquico = self.request.query_params.get('nivel_jerarquico', '')
+        bien_padre = None
+
+        if nivel_jerarquico == '':
+            raise ValidationError('El nivel jerarquico es requerido')
+        
+        try:
+            nivel_jerarquico = int(nivel_jerarquico)
+        except:
+            raise ValidationError('El nivel jerarquico debe ser un numero entero')
+        
+        if nivel_jerarquico < 1 or nivel_jerarquico > 5 or nivel_jerarquico == None:
+            raise ValidationError('El nivel jerarquico esta fuera de rango')
+        
+        if id_bien_padre == '':
+            id_bien_padre = None
+        else:
+            try:
+                id_bien_padre = int(id_bien_padre)
+            except:
+                raise ValidationError('El id de bien padre debe ser un numero entero')
+        
+        if id_bien_padre != None:
+            try:
+                bien_padre = CatalogoBienes.objects.get(id_bien=id_bien_padre)
+            except CatalogoBienes.DoesNotExist:
+                raise ValidationError('El id de bien padre ingresado no existe')
+            
+            id_bien_padre = bien_padre.id_bien
+            
+            if nivel_jerarquico != (bien_padre.nivel_jerarquico + 1):
+                raise ValidationError('El nivel jerarquico esta fuera de rango respeto al bien padre')
+        
+        codigo_bien = self.generador_codigo_bien(bien_padre, nivel_jerarquico)
+
+        return Response({'success':True, 'detail':'Codigo de bien generado exitosamente', 'data':codigo_bien}, status=status.HTTP_200_OK)
+
+
+class CatalogoBienesCreate(generics.CreateAPIView):
+    serializer_class = CatalagoBienesYSerializer
+    permission_classes = [IsAuthenticated]
 
     def create_catalogo_bienes(self, data):
         nivel_jerarquico = data['nivel_jerarquico']
         id_bien_padre = data['id_bien_padre']
         bien_padre = None
-
-        if nivel_jerarquico < 1 or nivel_jerarquico > 5:
+        
+        if nivel_jerarquico < 1 or nivel_jerarquico > 5 or nivel_jerarquico == None:
             raise ValidationError('El nivel jerarquico esta fuera de rango')
 
         if id_bien_padre != None:
@@ -94,8 +136,9 @@ class CatalogoBienesCreate(generics.CreateAPIView):
             
             if nivel_jerarquico != (bien_padre.nivel_jerarquico + 1):
                 raise ValidationError('El nivel jerarquico esta fuera de rango')
-    
-        data['codigo_bien'] = self.generador_codigo_bien(bien_padre, nivel_jerarquico)
+            
+        generador_instance = GeneradorCodigoCatalogo()
+        data['codigo_bien'] = generador_instance.generador_codigo_bien(bien_padre, nivel_jerarquico)
 
         try:
             unidad_medida = UnidadesMedida.objects.get(id_unidad_medida=data['id_unidad_medida'])
