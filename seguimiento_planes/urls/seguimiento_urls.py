@@ -72,6 +72,7 @@ urlpatterns=[
     path('crear-paa-codigos-unsp/',views.PAACodUNSPCreate.as_view(),name='crearpaacodigosunsp'),
     path('actualizar-paa-codigos-unsp/<str:pk>/',views.PAACodUNSPUpdate.as_view(),name='actualizarpaacodigosunsp'),
     path('eliminar-paa-codigos-unsp/<str:pk>/',views.PAACodUNSPDelete.as_view(),name='eliminarpaacodigosunsp'),
+    path('consultar-paa-codigos-unsp-id-paa/<str:pk>/', views.PAACodUNSPListIdPAA.as_view(),name='consultaridpaacodigosunsp'),
     # Seguimineto PAI
     path('consultar-seguimiento-pai/',views.SeguimientoPAIList.as_view(),name='consultarseguimientopai'),
     path('crear-seguimiento-pai/',views.SeguimientoPAICreate.as_view(),name='crearseguimientopai'),
