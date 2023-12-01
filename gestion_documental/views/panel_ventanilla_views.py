@@ -14,7 +14,7 @@ from django.db.models import F, Value, CharField
 from django.db.models.functions import Concat
 from transversal.models.lideres_models import LideresUnidadesOrg
 from django.db.models import Max
-from transversal.models.organigrama_models import UnidadesOrganizacionales
+from transversal.models.organigrama_models import Organigramas, UnidadesOrganizacionales
 
 
 
@@ -425,8 +425,15 @@ class SeccionSubseccionVentanillaGet(generics.ListAPIView):
     queryset = UnidadesOrganizacionales.objects.all()
     permission_classes = [IsAuthenticated]
     def get(self,request):
-        data_respuesta = []
-        unidades = UnidadesOrganizacionales.objects.filter(cod_agrupacion_documental__in = ['SEC','SUB'])
+        organigrama = Organigramas.objects.filter(actual=True)
+        if not organigrama:
+            raise NotFound('No existe ningún organigrama activado')
+        if len(organigrama) > 1:
+            raise PermissionDenied('Existe más de un organigrama actual, contacte a soporte')
+        organigrama_actual = organigrama.first()
+        #unidades_organigrama_actual = UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama_actual.id_organigrama)
+
+        unidades = UnidadesOrganizacionales.objects.filter(cod_agrupacion_documental__in = ['SEC','SUB'],id_organigrama=organigrama_actual.id_organigrama)
         
         
         serializer = self.serializer_class(unidades,many=True)

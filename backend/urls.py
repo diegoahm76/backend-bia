@@ -94,6 +94,7 @@ urlpatterns = [
     path('api/gestor/resportes-permisos-doc/',include('gestion_documental.urls.documentacion_permisos_urls')),
     path('api/gestor/panel_ventanilla/',include('gestion_documental.urls.panel_ventanilla_urls')),
     path('api/gestor/radicados/',include('gestion_documental.urls.radicados_urls')),
+    path('api/gestor/central-digitalizacion/',include('gestion_documental.urls.central_digitalizacion_urls')),
     
     
     #ALMACEN
@@ -147,6 +148,7 @@ urlpatterns = [
     path('api/recaudo/liquidaciones/', include('recaudo.urls.liquidaciones_urls')),
     path('api/recaudo/procesos/', include('recaudo.urls.procesos_urls')),
     path('api/recaudo/cobros/', include('recaudo.urls.cobros_urls')),
+    path('api/recaudo/configuracion_baisca/', include('recaudo.urls.registros_configuracion_url')),
 
     #RECURSO HIDRICO
     path('api/hidrico/programas/',include('recurso_hidrico.urls.programas_urls')),

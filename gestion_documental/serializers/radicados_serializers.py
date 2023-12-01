@@ -4,7 +4,7 @@ from gestion_documental.choices.tipo_radicado_choices import TIPOS_RADICADO_CHOI
 from gestion_documental.models.radicados_models import T262Radicados
 from transversal.models.personas_models import Personas
 
-class RadicadosImprimir(serializers.ModelSerializer):
+class RadicadosImprimirSerializer(serializers.ModelSerializer):
     nombre_tipo_radicado = serializers.SerializerMethodField()
     numero_radicado_completo = serializers.SerializerMethodField()
     asunto = serializers.SerializerMethodField()

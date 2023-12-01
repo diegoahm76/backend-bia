@@ -77,3 +77,23 @@ class TipoActuacion(models.Model):
         db_table = 'T427TiposActuacion'
         verbose_name = 'Tipo actuación'
         verbose_name_plural = 'Tipos actuación'
+
+
+
+
+class RegistrosConfiguracion(models.Model):
+    id = models.AutoField(primary_key=True, db_column='T419IdRegistroConfiguracion')
+    Estado = models.BooleanField(db_column='T440Estado')  # Cambiado a campo booleano
+    TipoRenta = models.CharField(max_length=255, db_column='T440TipoRenta')
+    TipoCobro = models.CharField(max_length=255, db_column='T440TipoCobro')
+    Descripcion = models.CharField(max_length=255, db_column='T440Descripcion')
+
+    class Meta:
+        db_table = 'T440RegistrosConfiguración'
+        verbose_name = 'Registro configuración'
+        verbose_name_plural = 'Registros configuración'
+
+
+
+
+
