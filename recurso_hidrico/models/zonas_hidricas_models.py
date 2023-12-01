@@ -11,11 +11,11 @@ class MacroCuencas (models.Model):
 
 class ZonaHidrica(models.Model):
     id_zona_hidrica = models.AutoField(primary_key=True, db_column="T621IdZonaHidrica")
-    nombre_zona_hidrica = models.CharField(max_length=50, db_column="T621nombreZonaHidrica")
+    nombre_zona_hidrica = models.CharField(max_length=150, db_column="T621nombreZonaHidrica")
     id_macro_cuenca = models.ForeignKey(MacroCuencas, on_delete=models.CASCADE, db_column="T621Id_MacroCuenca")
 
     # Nuevo campo agregado
-    id_zona_hidrografica = models.CharField(max_length=30, db_column="T621IdZonaHidrografica")
+    id_zona_hidrografica = models.CharField(max_length=30, db_column="T621idZonaHidrografica")
 
     class Meta:
         db_table = 'T621ZonasHidricas'
@@ -46,8 +46,6 @@ class TipoAguaZonaHidrica (models.Model):
         verbose_name_plural = 'Tipo Zona Agua Hidricas'
 
 
-
-
 class SubZonaHidrica(models.Model):
     id_sub_zona_hidrica = models.AutoField(primary_key=True, editable=False, db_column="T623IdSubZonaHidrica")
     nombre_sub_zona_hidrica = models.CharField(max_length=50, db_column="T623nombreSubZonaHidrica")
@@ -55,11 +53,10 @@ class SubZonaHidrica(models.Model):
     id_tipo_zona_hidrica = models.ForeignKey(TipoZonaHidrica, on_delete=models.CASCADE, db_column="T623Id_TipoZonaHidrica")    
     id_tipo_agua_zona_hidrica = models.ForeignKey(TipoAguaZonaHidrica, on_delete=models.CASCADE, db_column="T623Id_tipo_agua_zona_hidrica")
     # Nuevo campo agregado
-    codigo_rio = models.CharField(max_length=20, db_column="T623CodigoRio", null=True, blank=True,unique=True)
+    codigo_rio = models.CharField(max_length=20, db_column="T623codigoRio", null=True, blank=True,unique=True)
 
     class Meta:
         db_table = 'T623SubZonasHidricas'
         verbose_name = 'Sub Zona Hidrica'
         verbose_name_plural = 'Sub Zona Hidricas'
         unique_together = ['nombre_sub_zona_hidrica', 'id_zona_hidrica']
-      

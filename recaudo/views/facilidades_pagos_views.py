@@ -156,16 +156,29 @@ class ListadoDeudoresViews(generics.ListAPIView):
         for nombre_apellido in nombres_apellidos:
             deudores = deudores.filter(nombre_contribuyente__icontains=nombre_apellido)
 
-        return deudores.values('id', 'identificacion', 'nombres', 'apellidos')
+        serializer = self.serializer_class(deudores, many=True)
+
+        data_deudores = serializer.data
+        instancia_obligaciones = CarteraDeudorListViews()
+        
+
+        for data in data_deudores:
+            response_data = instancia_obligaciones.obligaciones_deudor(data['identificacion'])
+            if response_data['obligaciones']:
+                data['obligaciones'] = True
+            else:
+                data['obligaciones'] = False
+
+        return data_deudores
+  
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_lista_deudores()
 
-        if not queryset.exists():
+        if not queryset:
             raise NotFound('No se encontraron resultados.')
     
-        data = [{'id_deudor': item['id'], 'identificacion': item['identificacion'], 'nombre_contribuyente': f"{item['nombres']} {item['apellidos']}"} for item in queryset]
-        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Se muestra los deudores', 'data': queryset}, status=status.HTTP_200_OK)
 
 
 ### VISTAS QUE SE MUESTRAN AL MOMENTO DE CREAR UNA FACILIDAD
@@ -554,12 +567,17 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
 
         if list_id_bienes:
             facilidad_pago, total_plazos = self.crear_facilidad_pago(facilidad_data)
+            try:
+                id_facilidad_pago = facilidad_pago.id
+            except:
+                raise ValidationError('No se creo facilidad de pago debido a datos faltantes')
+                
 
             for id_bien in list_id_bienes:
                 # CREAR RELACION DE BIEN Y FACILIDAD
                 det_bien_facilidad_data = {
                     'id_bien': id_bien,
-                    'id_facilidad_pago': facilidad_pago.id
+                    'id_facilidad_pago': id_facilidad_pago
                 }
                 det_bien_facilidad = instancia_det_bien_facilidad.crear_bienes_facilidad(det_bien_facilidad_data)
             
@@ -568,7 +586,7 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
                 instancia_garantias_facilidad = GarantiasFacilidadCreateView()
                 garantias_facilidad_data = {
                     'id_rol': data_in['id_rol'],
-                    'id_facilidad_pago': facilidad_pago.id,
+                    'id_facilidad_pago': id_facilidad_pago,
                     'documento_garantia': data_in['documento_garantia']
                 }
                 garantias_facilidad = instancia_garantias_facilidad.crear_garantias_facilidad(garantias_facilidad_data)
@@ -585,7 +603,7 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
         instancia_cumplimiento = CumplimientoRequisitosCreateView()
         for documento, requisito in zip(documentos_deudor, requisitos):
             cumplimiento_data = {
-                'id_facilidad_pago': facilidad_pago.id,
+                'id_facilidad_pago': id_facilidad_pago,
                 'id_requisito_actuacion': requisito.id,
                 'documento': documento
             }
@@ -600,7 +618,7 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
         ids_cartera = [int(id_str) for id_str in ids_param.strip('[]').split(',') if id_str]
         for id_cartera in ids_cartera:
             cartera_data = {
-                'id_facilidad_pago': facilidad_pago.id,
+                'id_facilidad_pago': id_facilidad_pago,
                 'id_cartera': id_cartera
             }
 

@@ -57,26 +57,6 @@ class SubZonaHidricaListView (generics.ListCreateAPIView):
 
 #crear datos
 
-class CrearZonaHidricaVista(generics.CreateAPIView):
-    queryset = ZonaHidrica.objects.all()
-    serializer_class = ZonaHidricaSerializer
-
-    def create(self, request, *args, **kwargs):
-        try:
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            
-            # Agregar lógica adicional si es necesario, por ejemplo, asignar valores antes de guardar
-            # serializer.validated_data['campo_adicional'] = valor
-
-            serializer.save()
-
-            return Response({'success': True, 'detail': 'Registro creado correctamente', 'data': serializer.data},
-                            status=status.HTTP_201_CREATED)
-        except ValidationError as e:
-            # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
-            raise ValidationError({'error': 'Error al crear el registro', 'detail': e.detail})
-        
 
 
 class CrearSubZonaHidricaVista(generics.CreateAPIView):
@@ -127,7 +107,7 @@ class BorrarSubZonaHidricaVista(generics.DestroyAPIView):
             instance = self.get_object()
             self.perform_destroy(instance)
             return Response({'success': True, 'detail': 'Registro eliminado correctamente'},
-                            status=status.HTTP_204_NO_CONTENT)
+                            status=status.HTTP_200_OK)
         except ValidationError as e:
             # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
             raise ValidationError({e.detail})
@@ -172,4 +152,30 @@ class TipoAguaZonaHidricaListView (generics.ListAPIView):
         serializer = self.serializer_class(cuencas,many=True)
 
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+    
+
+
+
+
+class CrearZonaHidricaVista(generics.CreateAPIView):
+    queryset = ZonaHidrica.objects.all()
+    serializer_class = ZonaHidricaSerializer
+
+    def create(self, request, *args, **kwargs):
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+           
+            
+            # Agregar lógica adicional si es necesario, por ejemplo, asignar valores antes de guardar
+            # serializer.validated_data['campo_adicional'] = valor
+
+            serializer.save()
+
+            return Response({'success': True, 'detail': 'Registro creado correctamente', 'data': serializer.data},
+                            status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
+            raise ValidationError({'error': 'Error al crear el registro', 'detail': e.detail})
+        
     

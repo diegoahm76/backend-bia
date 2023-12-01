@@ -1041,6 +1041,20 @@ class PAACodUNSPDelete(generics.DestroyAPIView):
         paa = self.get_object(pk)
         paa.delete()
         return Response({'success': True, 'detail': 'Se eliminó el PAA CodgigoUNSP correctamente.', 'data': []}, status=status.HTTP_200_OK)
+    
+# Listar registros de PAA CodgigoUNSP por ID de PAA
+
+class PAACodUNSPListIdPAA(generics.ListAPIView):
+    queryset = PAACodgigoUNSP.objects.all()
+    serializer_class = PAACodgigoUNSPSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, pk):
+        paas = self.get_queryset().filter(id_plan=pk)
+        serializer = PAACodgigoUNSPSerializer(paas, many=True)
+        if not paas:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes PAA CodgigoUNSP:', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # ---------------------------------------- Seguimiento PAI ----------------------------------------
 
@@ -1261,15 +1275,14 @@ class SeguimientoPAIDocumentosListIdSeguimiento(generics.ListAPIView):
     serializer_class = SeguimientoPAIDocumentosSerializer
     permission_classes = (IsAuthenticated,)
     serializer_archivo = ArchivosDigitalesCreateSerializer
-    def get(self, request,id_seguimiento):
-        documentos = self.get_queryset().filter(id_seguimiento_pai=id_seguimiento)
+    def get(self, request, pk):
+        documentos = self.get_queryset().filter(id_seguimiento_pai=pk)
         data_respuesta=[]
         for documento in documentos:
             archivo = ArchivosDigitales.objects.filter(id_archivo_digital=documento.id_archivo_digital.id_archivo_digital).first()
             serializer_archivo = self.serializer_archivo(archivo)
             data_respuesta.append({'data':self.serializer_class(documento).data,'archivo':serializer_archivo.data})
             
-        #serializer = self.serializer_class(documentos, many=True)
         if not documentos:
             raise NotFound("No se encontraron resultados para esta consulta.")
         return Response({'success': True, 'detail': 'Se encontraron los siguientes documentos de seguimiento PAI:', 'data': data_respuesta}, status=status.HTTP_200_OK)
