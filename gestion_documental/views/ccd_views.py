@@ -968,23 +968,25 @@ class BusquedaCCDHomologacionView(generics.ListAPIView):
 @staticmethod
 def obtener_unidades_ccd(unidades_actual, unidades_nueva):
     data_out = []
-    for unidad_actual in unidades_actual:
-        for unidad_nueva in unidades_nueva:
-            if unidad_actual['codigo'] == unidad_nueva['codigo']:
-                data_json = {
-                    'id_unidad_actual': unidad_actual['id_unidad_organizacional'],
-                    'cod_unidad_actual': unidad_actual['codigo'],
-                    'nom_unidad_actual': unidad_actual['nombre'],
-                    'id_organigrama_unidad_actual': unidad_actual['id_organigrama'],
-                    'id_unidad_nueva': unidad_nueva['id_unidad_organizacional'],
-                    'cod_unidad_nueva': unidad_nueva['codigo'],
-                    'nom_unidad_nueva': unidad_nueva['nombre'],
-                    'id_organigrama_unidad_nueva': unidad_nueva['id_organigrama']
-                }
-                data_json['iguales'] = unidad_actual['nombre'] == unidad_nueva['nombre']
-                data_out.append(data_json)
+    mapa_unidades = {unidad['codigo']: unidad for unidad in unidades_actual}
 
-    data_out = sorted(data_out, key=lambda x: x['iguales'], reverse=True)
+    for unidad_nueva in unidades_nueva:
+        unidad_actual = mapa_unidades.get(unidad_nueva['codigo'])
+        if unidad_actual:
+            data_json = {
+                'id_unidad_actual': unidad_actual['id_unidad_organizacional'],
+                'cod_unidad_actual': unidad_actual['codigo'],
+                'nom_unidad_actual': unidad_actual['nombre'],
+                'id_organigrama_unidad_actual': unidad_actual['id_organigrama'],
+                'id_unidad_nueva': unidad_nueva['id_unidad_organizacional'],
+                'cod_unidad_nueva': unidad_nueva['codigo'],
+                'nom_unidad_nueva': unidad_nueva['nombre'],
+                'id_organigrama_unidad_nueva': unidad_nueva['id_organigrama'],
+                'iguales': unidad_actual['nombre'] == unidad_nueva['nombre']
+            }
+            data_out.append(data_json)
+
+    data_out.sort(key=lambda x: x['iguales'], reverse=True)
     return data_out
 
 @staticmethod
