@@ -324,6 +324,45 @@ class CatalogoBienesCreateUpdate(generics.UpdateAPIView):
             return Response({'success':True, 'detail':'Bien guardado exitosamente', 'data':data}, status=status.HTTP_201_CREATED)
 
 
+class CatalogoBienesGetList(generics.ListAPIView):
+    serializer_class = CatalogoBienesSerializer
+
+    def get_catalogo_bienes(self, id_bien_padre, cont_padre):
+        catalogo_bienes = CatalogoBienes.objects.filter(nro_elemento_bien=None, id_bien_padre=id_bien_padre).order_by('codigo_bien')
+        serializer = self.serializer_class(catalogo_bienes, many=True)
+        cont = 0
+        data_out = []
+        data_padre = serializer.data
+
+        for data in data_padre:
+            key = cont_padre + '-' + str(cont) if cont_padre != None else str(cont)
+            data_out.append({
+                'key': key,
+                'data': {
+                    'nombre': data['nombre'],
+                    'codigo': data['codigo_bien'],
+                    'id_nodo': data['id_bien'],
+                    'editar': True,
+                    'eliminar': False if CatalogoBienes.objects.filter(id_bien_padre=data['id_bien']).exists() else True,
+                    'crear': data['nivel_jerarquico'] != 5,
+                    'bien': data,
+                },
+                'children': self.get_catalogo_bienes(data['id_bien'], key)
+            })
+
+            # if data_out['children'] == []:
+            #     data_out['eliminar'] = True
+            #     del data_out['children']
+
+            cont += 1
+        return data_out
+    
+    def get(self, request):
+        data = self.get_catalogo_bienes(None, None)
+
+        return Response({'success':True, 'detail':'Se muestran el catalogo de bienes', 'data':data}, status=status.HTTP_200_OK)
+    
+
 # class CatalogoBienesGetList(generics.ListAPIView):
 #     serializer_class = CatalogoBienesSerializer
 
@@ -346,31 +385,85 @@ class CatalogoBienesCreateUpdate(generics.UpdateAPIView):
 #         return Response({'success': True, 'detail':'Se muestran el catalogo de bienes', 'data': data}, status=status.HTTP_200_OK)
     
 
-class CatalogoBienesGetList(generics.ListAPIView):
-    serializer_class = CatalogoBienesSerializer
+# class CatalogoBienesGetList(generics.ListAPIView):
+#     serializer_class = CatalogoBienesSerializer
 
-    def get_catalogo_bienes(self, id_bien_padre):
-        catalogo_bienes = CatalogoBienes.objects.filter(id_bien_padre=id_bien_padre).order_by('codigo_bien')
-        serializer = self.serializer_class(catalogo_bienes, many=True)
-        data_padre = serializer.data
+#     def get_catalogo_bienes(self, id_bien_padre):
+#         catalogo_bienes = CatalogoBienes.objects.filter(id_bien_padre=id_bien_padre).order_by('codigo_bien')
+#         serializer = self.serializer_class(catalogo_bienes, many=True)
+#         data_padre = serializer.data
+#         data_out = {}
+#         cont = 0
 
-        for data in data_padre: 
-            data['editar'] = True
-            data['eliminar'] = False
-            data['crear'] = data['nivel_jerarquico'] != 5
-            data['children'] = self.get_catalogo_bienes(data['id_bien'])
+#         for data in data_padre:
+#             data_out['key'] = str(cont)
+#             data_out['data'] = {
+#                 'nombre': data['nombre'],
+#                 'codigo': data['codigo_bien'],
+#                 'id_nodo': data['id_bien'],
+#                 'editar': True,
+#                 'eliminar': False,
+#                 'crear': data['nivel_jerarquico'] != 5,
+#                 'bien': data,
+#             }
+#             data_out['children'] = self.get_catalogo_bienes(data['id_bien'])
 
-            if data['children'] == []:
-                data['eliminar'] = True
-                del data['children']
+            # if data_out['children'] == []:
+            #     data_out['eliminar'] = True
+            #     del data_out['children']
 
-        return data_padre
+#             data_padre[cont] = data_out
+#             cont += 1
 
-    def get(self, request):
+#         return data_padre
 
-        data = self.get_catalogo_bienes(None)
+#     def get(self, request):
 
-        return Response({'success': True, 'detail':'Se muestran el catalogo de bienes', 'data': data}, status=status.HTTP_200_OK)
+#         data = self.get_catalogo_bienes(None)
+
+#         return Response({'success': True, 'detail':'Se muestran el catalogo de bienes', 'data': data}, status=status.HTTP_200_OK)
+
+
+# class CatalogoBienesGetList(generics.ListAPIView):
+#     serializer_class = CatalogoBienesSerializer
+
+#     def crear_data(self, nodo, nodos_hijos):
+#         return {
+#             'key': str(nodo['id_bien']),
+#             'data': {
+#                 'nombre': nodo['nombre'],
+#                 'codigo': nodo['codigo_bien'],
+#                 'id_nodo': nodo['id_bien'],
+#                 'editar': True,
+#                 'eliminar': not bool(nodos_hijos),
+#                 'crear': True,
+#                 'bien': nodo,
+#             },
+#             'children': nodos_hijos,
+#         }
+
+#     def get(self, request):
+#         nodos = CatalogoBienes.objects.filter(nro_elemento_bien=None).order_by('nivel_jerarquico')
+#         nodos = self.serializer_class(nodos, many=True).data
+
+#         if not nodos:
+#             return Response({'success':True, 'detail':'No se encontró nada en almacén', 'data':nodos}, status=status.HTTP_200_OK)
+
+#         nodos_por_nivel = {i: [] for i in range(1, 6)}
+#         for nodo in nodos:
+#             nodos_por_nivel[nodo['nivel_jerarquico']].append(nodo)
+
+#         for nivel in range(5, 1, -1):
+#             for nodo in nodos_por_nivel[nivel]:
+#                 nodo_padre = next((n for n in nodos_por_nivel[nivel - 1] if n['id_bien'] == nodo['id_bien_padre']), None)
+#                 if nodo_padre:
+#                     if 'children' not in nodo_padre:
+#                         nodo_padre['children'] = []
+#                     nodo_padre['children'].append(self.crear_data(nodo, nodo.get('children', [])))
+
+#         data_all = [self.crear_data(nodo, nodo.get('children', [])) for nodo in nodos_por_nivel[1]]
+
+#         return Response({'success':True, 'detail':'Se encontró lo siguiente en almacén', 'data':data_all}, status=status.HTTP_200_OK)
 
 
 # Creación y actualización de Catalogo de Bienes
@@ -740,7 +833,7 @@ class GetCatalogoBienesList(generics.ListAPIView):
 
     def get(self, request):
         # GET TODOS LOS NODOS
-        nodos_principales = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=1)
+        nodos_principales = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=1).order_by('codigo_bien')
         nodos_principales = self.serializer_class(nodos_principales, many=True).data
         if not nodos_principales:
             return Response({'success':True, 'detail':'No se encontró nada en almacén', 'data':nodos_principales}, status=status.HTTP_200_OK)
@@ -757,7 +850,7 @@ class GetCatalogoBienesList(generics.ListAPIView):
             data['data']['id_nodo'] = nodo['id_bien']
             data['data']['editar'] = True
             
-            nodos_nivel_dos = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=2, id_bien_padre=nodo['id_bien'])
+            nodos_nivel_dos = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=2, id_bien_padre=nodo['id_bien']).order_by('codigo_bien')
             nodos_nivel_dos = self.serializer_class(nodos_nivel_dos, many=True).data
             
             data['data']['eliminar'] = True if not nodos_nivel_dos else False
@@ -776,7 +869,7 @@ class GetCatalogoBienesList(generics.ListAPIView):
                     data_dos['data']['id_nodo'] = nodo_dos['id_bien']
                     data_dos['data']['editar'] = True
                     
-                    nodos_nivel_tres = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=3, id_bien_padre=nodo_dos['id_bien'])
+                    nodos_nivel_tres = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=3, id_bien_padre=nodo_dos['id_bien']).order_by('codigo_bien')
                     nodos_nivel_tres = self.serializer_class(nodos_nivel_tres, many=True).data
                     
                     data_dos['data']['eliminar'] = True if not nodos_nivel_tres else False
@@ -795,7 +888,7 @@ class GetCatalogoBienesList(generics.ListAPIView):
                             data_tres['data']['id_nodo'] = nodo_tres['id_bien']
                             data_tres['data']['editar'] = True
                             
-                            nodos_nivel_cuatro = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=4, id_bien_padre=nodo_tres['id_bien'])
+                            nodos_nivel_cuatro = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=4, id_bien_padre=nodo_tres['id_bien']).order_by('codigo_bien')
                             nodos_nivel_cuatro = self.serializer_class(nodos_nivel_cuatro, many=True).data
                             
                             data_tres['data']['eliminar'] = True if not nodos_nivel_cuatro else False
@@ -814,7 +907,7 @@ class GetCatalogoBienesList(generics.ListAPIView):
                                     data_cuatro['data']['id_nodo'] = nodo_cuatro['id_bien']
                                     data_cuatro['data']['editar'] = True
                                     
-                                    nodos_nivel_cinco = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=5, id_bien_padre=nodo_cuatro['id_bien'])
+                                    nodos_nivel_cinco = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=5, id_bien_padre=nodo_cuatro['id_bien']).order_by('codigo_bien')
                                     nodos_nivel_cinco = self.serializer_class(nodos_nivel_cinco, many=True).data
                                     
                                     data_cuatro['data']['eliminar'] = True if not nodos_nivel_cinco else False
