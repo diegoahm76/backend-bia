@@ -6,7 +6,7 @@ from recurso_hidrico.models.zonas_hidricas_models import TipoAguaZonaHidrica, Zo
 
 from recurso_hidrico.serializers.zonas_hidricas_serializers import TipoAguaZonaHidricaSerializer, ZonaHidricaSerializer, MacroCuencasSerializer,TipoZonaHidricaSerializer,SubZonaHidricaSerializer
 
-
+import copy
 # Vista get para las 4 tablas de zonas hidricas
 class MacroCuencasListView (generics.ListAPIView):
     queryset = MacroCuencas.objects.all()
@@ -103,14 +103,17 @@ class BorrarSubZonaHidricaVista(generics.DestroyAPIView):
     serializer_class = SubZonaHidricaSerializer
 
     def destroy(self, request, *args, **kwargs):
-        try:
+            
             instance = self.get_object()
-            self.perform_destroy(instance)
-            return Response({'success': True, 'detail': 'Registro eliminado correctamente'},
+            
+            if not instance:
+                raise NotFound('No se encontró el registro')
+            previus = copy.copy(instance)
+            instance.delete()
+            serializer = self.get_serializer(previus)
+            return Response({'success': True, 'detail': 'Registro eliminado correctamente','data':serializer.data},
                             status=status.HTTP_200_OK)
-        except ValidationError as e:
-            # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
-            raise ValidationError({e.detail})
+        
         
 
 
