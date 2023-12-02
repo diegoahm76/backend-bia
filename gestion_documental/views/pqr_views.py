@@ -297,10 +297,10 @@ class PQRSDFUpdate(generics.RetrieveUpdateAPIView):
         anexos_pqr_DB = Anexos_PQR.objects.filter(id_PQRSDF = id_PQRSDF)
         if anexos_pqr_DB:
             util_PQR = Util_PQR()
-            data_anexos_create = [anexo for anexo in anexos if 'id_anexo' not in list(anexo.keys())]
+            data_anexos_create = [anexo for anexo in anexos if anexo['id_anexo'] == None]
             anexos_create = util_PQR.set_archivo_in_anexo(data_anexos_create, archivos, "create")
             
-            data_anexos_update = [anexo for anexo in anexos if 'id_anexo' in list(anexo.keys())]
+            data_anexos_update = [anexo for anexo in anexos if not anexo['id_anexo'] == None]
             anexos_update = util_PQR.set_archivo_in_anexo(data_anexos_update, archivos, "update")
 
             ids_anexos_update = [anexo_update['id_anexo'] for anexo_update in anexos_update]
@@ -316,7 +316,9 @@ class PQRSDFUpdate(generics.RetrieveUpdateAPIView):
             
         else:
             anexosCreate = AnexosCreate()
-            data_auditoria_create = anexosCreate.create_anexos_pqrsdf(anexos, id_PQRSDF, isCreateForWeb, fecha_actual)
+            util_PQR = Util_PQR()
+            anexos_create = util_PQR.set_archivo_in_anexo(anexos, archivos, "create")
+            data_auditoria_create = anexosCreate.create_anexos_pqrsdf(anexos_create, id_PQRSDF, isCreateForWeb, fecha_actual)
 
         return {
             'data_auditoria_create': data_auditoria_create,
