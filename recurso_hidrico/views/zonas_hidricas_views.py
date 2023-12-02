@@ -24,6 +24,7 @@ class ZonaHidricaListView (generics.ListCreateAPIView):
     queryset = ZonaHidrica.objects.all()
     serializer_class = ZonaHidricaSerializer
     permission_classes = [IsAuthenticated]
+    
     def get(self, request,pk):
         zonas = ZonaHidrica.objects.filter(id_macro_cuenca=pk)
         serializer = self.serializer_class(zonas,many=True)
@@ -35,6 +36,7 @@ class TipoZonaHidricaListView (generics.ListCreateAPIView):
     queryset = TipoZonaHidrica.objects.all()
     serializer_class = TipoZonaHidricaSerializer
     permission_classes = [IsAuthenticated]
+    
     def get(self, request):
         zonas = TipoZonaHidrica.objects.all()
         serializer = self.serializer_class(zonas,many=True)
@@ -42,22 +44,18 @@ class TipoZonaHidricaListView (generics.ListCreateAPIView):
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
     
 
-
 class SubZonaHidricaListView (generics.ListCreateAPIView):
     queryset = SubZonaHidrica.objects.all()
     serializer_class = SubZonaHidricaSerializer
     permission_classes = [IsAuthenticated]
+    
     def get(self, request,pk):
         zonas = SubZonaHidrica.objects.filter(id_zona_hidrica=pk)
         serializer = self.serializer_class(zonas,many=True)
 
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
     
-
-
 #crear datos
-
-
 
 class CrearSubZonaHidricaVista(generics.CreateAPIView):
     queryset = SubZonaHidrica.objects.all()
@@ -67,8 +65,7 @@ class CrearSubZonaHidricaVista(generics.CreateAPIView):
         try:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-           
-            
+                      
             # Agregar lógica adicional si es necesario, por ejemplo, asignar valores antes de guardar
             # serializer.validated_data['campo_adicional'] = valor
 
@@ -79,8 +76,7 @@ class CrearSubZonaHidricaVista(generics.CreateAPIView):
         except ValidationError as e:
             # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
             raise ValidationError({'error': 'Error al crear el registro', 'detail': e.detail})
-        
-    
+           
 
 #borrar lugar y rio 
 class BorrarZonaHidricaVista(generics.DestroyAPIView):
@@ -115,8 +111,6 @@ class BorrarSubZonaHidricaVista(generics.DestroyAPIView):
                             status=status.HTTP_200_OK)
         
         
-
-
 class ActualizarZonaHidricaVista(generics.UpdateAPIView):
     queryset = ZonaHidrica.objects.all()
     serializer_class = ZonaHidricaSerializer
@@ -129,7 +123,6 @@ class ActualizarZonaHidricaVista(generics.UpdateAPIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-
 
 class ActualizarSubZonaHidricaVista(generics.UpdateAPIView):
     queryset = SubZonaHidrica.objects.all()
@@ -144,7 +137,6 @@ class ActualizarSubZonaHidricaVista(generics.UpdateAPIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 
-
 class TipoAguaZonaHidricaListView (generics.ListAPIView):
     queryset = TipoAguaZonaHidrica.objects.all()
     serializer_class = TipoAguaZonaHidricaSerializer
@@ -157,9 +149,6 @@ class TipoAguaZonaHidricaListView (generics.ListAPIView):
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
     
 
-
-
-
 class CrearZonaHidricaVista(generics.CreateAPIView):
     queryset = ZonaHidrica.objects.all()
     serializer_class = ZonaHidricaSerializer
@@ -168,8 +157,7 @@ class CrearZonaHidricaVista(generics.CreateAPIView):
         try:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-           
-            
+                  
             # Agregar lógica adicional si es necesario, por ejemplo, asignar valores antes de guardar
             # serializer.validated_data['campo_adicional'] = valor
 
