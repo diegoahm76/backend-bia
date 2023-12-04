@@ -3,10 +3,11 @@ from rest_framework import status, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from gestion_documental.models.ccd_models import CatalogosSeriesUnidad
+from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, SolicitudDeDigitalizacion, T262Radicados
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, T262Radicados
 from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
-from gestion_documental.serializers.ventanilla_pqrs_serializers import AnexoArchivosDigitalesSerializer, AnexosComplementoGetSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, LiderGetSerializer, MetadatosAnexosTmpSerializerGet, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer
+from gestion_documental.serializers.ventanilla_pqrs_serializers import AnexoArchivosDigitalesSerializer, AnexosComplementoGetSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, LiderGetSerializer, MetadatosAnexosTmpSerializerGet, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer
 from seguridad.utils import Util
 from datetime import datetime
 from rest_framework.permissions import IsAuthenticated
@@ -16,6 +17,7 @@ from django.db.models.functions import Concat
 from transversal.models.lideres_models import LideresUnidadesOrg
 from django.db.models import Max
 from transversal.models.organigrama_models import Organigramas, UnidadesOrganizacionales
+import json
 
 
 
@@ -140,9 +142,9 @@ class SolicitudDeDigitalizacionCreate(generics.CreateAPIView):
         if  not pqr.requiere_digitalizacion:
             raise ValidationError("No requiere digitalizacion")
         print(pqr.id_estado_actual_solicitud)
-        # if pqr.id_estado_actual_solicitud:
-        #     if pqr.id_estado_actual_solicitud.id_estado_solicitud == 3:
-        #         raise ValidationError('No se puede realizar la solicitud porque tiene pendientes')
+        if pqr.id_estado_actual_solicitud:
+            if pqr.id_estado_actual_solicitud.id_estado_solicitud == 3:
+                raise ValidationError('No se puede realizar la solicitud porque tiene pendientes')
         
         solicitudes = SolicitudDeDigitalizacion.objects.filter(id_pqrsdf=request.data['id_pqrsdf'])
         for solicitude in solicitudes:
@@ -497,12 +499,12 @@ class AsignacionPQRCreate(generics.CreateAPIView):
             raise ValidationError("No se envio la pqrsdf")
         
         instance= AsignacionPQR.objects.filter(id_pqrsdf = data_in['id_pqrsdf'])
-        # for asignacion in instance:
-        #     #print(asignacion)
-        #     if asignacion.cod_estado_asignacion == 'Ac':
-        #         raise ValidationError("La solicitud  ya fue Aceptada.")
-        #     if  not asignacion.cod_estado_asignacion:
-        #         raise ValidationError("La solicitud esta pendiente por respuesta.")
+        for asignacion in instance:
+            #print(asignacion)
+            if asignacion.cod_estado_asignacion == 'Ac':
+                raise ValidationError("La solicitud  ya fue Aceptada.")
+            if  not asignacion.cod_estado_asignacion:
+                raise ValidationError("La solicitud esta pendiente por respuesta.")
         max_consecutivo = AsignacionPQR.objects.filter(id_pqrsdf=data_in['id_pqrsdf']).aggregate(Max('consecutivo_asign_x_pqrsdf'))
 
         if max_consecutivo['consecutivo_asign_x_pqrsdf__max'] == None:
@@ -531,7 +533,7 @@ class AsignacionPQRCreate(generics.CreateAPIView):
                 break
             aux = aux.id_unidad_org_padre
         if contador == 0:
-            raise ValidationError("No se puede realizar la asignación de la PQRSDF a ta unidad organizacional seleccionada porque no tiene sene documental de PORSDF")
+            raise ValidationError("No se puede realizar la asignación de la PQRSDF a una  unidad organizacional seleccionada porque no tiene serie  documental de PQRSDF")
         data_in['consecutivo_asign_x_pqrsdf'] = ultimo_consec 
         data_in['fecha_asignacion'] = datetime.now()
         data_in['id_persona_asigna'] = request.user.persona.id_persona
@@ -585,7 +587,7 @@ class PQRSDFPersonaTitularGet(generics.ListAPIView):
         if not instance:
             raise NotFound("No existen registros")
         persona_titular = instance.id_persona_titular 
-        serializer = self.serializer_class(instance)
+        serializer = self.serializer_class(persona_titular)
 
         
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data}, status=status.HTTP_200_OK)
@@ -620,5 +622,66 @@ class PQRSDFDetalleSolicitudGet(generics.ListAPIView):
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data}, status=status.HTTP_200_OK)
     
 
+class SolicitudAlUsuarioSobrePQRSDFGet(generics.ListAPIView):
+    serializer_class = PQRSDFDetalleSolicitud
+    queryset = PQRSDF.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self,request,pqr):
+        
+        instance = self.get_queryset().filter(id_PQRSDF=pqr).first()
+        if not instance:
+            raise NotFound("No existen registros")
     
+        serializer = self.serializer_class(instance)
 
+      
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data}, status=status.HTTP_200_OK)
+
+class SolicitudAlUsuarioSobrePQRSDFCreate(generics.CreateAPIView):
+    serializer_class = SolicitudAlUsuarioSobrePQRSDFCreateSerializer
+    queryset = SolicitudAlUsuarioSobrePQRSDF.objects.all()
+    vista_estados = Estados_PQRCreate()
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        fecha_actual =datetime.now()
+        solicitud_usu_PQRSDF = request.data.get('solicitud_usu_PQRSDF')
+        persona = request.user.persona
+        id_unidad = None
+        if persona.id_unidad_organizacional_actual:
+            id_unidad = persona.id_unidad_organizacional_actual.id_unidad_organizacional
+        if not solicitud_usu_PQRSDF:
+            raise ValidationError("Se requiere informacion del complemento")
+        data_in = json.loads(solicitud_usu_PQRSDF)
+        data_in['fecha_solicitud'] =fecha_actual
+        data_in['cod_tipo_oficio'] ='S'
+        data_in['id_persona_solicita'] = request.user.persona.id_persona
+        data_in['id_und_org_oficina_solicita'] = id_unidad
+        data_in['id_estado_actual_solicitud'] = 1 # 254 Estado guardado
+        data_in['fecha_ini_estado_actual'] = fecha_actual
+        data_in['cantidad_anexos'] = 0 #TODO: calcular cantidad de anexos
+
+        #Tiempo que tiene un usuario para responder una Solicitud de Complementación o Solicitud de Requerimientos. tabla T271
+        tiempo_respuesta = ConfiguracionTiemposRespuesta.objects.filter(nombre_configuracion='Tiempo que tiene un usuario para responder una Solicitud de Complementación o Solicitud de Requerimientos.').first()
+
+        if not tiempo_respuesta:
+            raise ValidationError("No se encontro el tiempo de respuesta comuniquese con un administrador"
+                                  )
+        data_in['dias_para_respuesta'] =tiempo_respuesta.tiempo_respuesta_en_dias
+
+
+        
+        serializer = self.serializer_class(data=data_in)
+        serializer.is_valid(raise_exception=True)
+        intance =serializer.save()
+         
+        #CREA UN ESTADO NUEVO DE PQR T255
+        data_estado = {}
+        data_estado['solicitud_usu_sobre_PQR'] = intance.id_solicitud_al_usuario_sobre_pqrsdf
+        data_estado['estado_solicitud'] = 1 # 254 Estado guardado
+        data_estado['persona_genera_estado'] = persona.id_persona
+        data_estado['fecha_iniEstado'] = fecha_actual
+        respuesta_estado = self.vista_estados.crear_estado(data_estado)
+        data_respuesta_estado_asociado = respuesta_estado.data['data']
+
+
+        return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'data':serializer.data,"estado":data_respuesta_estado_asociado}, status=status.HTTP_200_OK)
