@@ -4,7 +4,8 @@ from recaudo.models.liquidaciones_models import (
     Deudores,
     LiquidacionesBase,
     DetalleLiquidacionBase,
-    Expedientes
+    Expedientes,
+    CalculosLiquidacionBase
 )
 
 
@@ -59,4 +60,10 @@ class LiquidacionesBasePostSerializer(serializers.ModelSerializer):
 class DetallesLiquidacionBasePostSerializer(serializers.ModelSerializer):
     class Meta:
         model = DetalleLiquidacionBase
+        fields = '__all__'
+
+
+class CalculosLiquidacionBaseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CalculosLiquidacionBase
         fields = '__all__'
