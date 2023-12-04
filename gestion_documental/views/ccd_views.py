@@ -1747,20 +1747,11 @@ class UnidadesOrganizacionalesActualResponsableView(generics.ListAPIView):
         except CuadrosClasificacionDocumental.DoesNotExist:
             raise NotFound('CCD no encontrado o no cumple con TRD y TCA terminados')
         
-        try:
-            ccd_actual = CuadrosClasificacionDocumental.objects.get(actual=True)
-        except CuadrosClasificacionDocumental.DoesNotExist:
-            raise NotFound('CCD no se encuentra como actual')
-        
-        if ccd_actual.id_organigrama.id_organigrama == ccd.id_organigrama.id_organigrama:
-            mismo_organicrama = True
-        
         unidades_persistentes = UnidadesSeccionPersistenteTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd)
         unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd, es_registro_asig_seccion_responsable=True)
 
         serializer_per = self.serializer_class_per(unidades_persistentes, many=True)
         serializer_res = self.serializer_class_res(unidades_responsables, many=True)
-        data = {}
         data_out = []
         for unidad in serializer_per.data:
             data_json = {
@@ -1786,12 +1777,7 @@ class UnidadesOrganizacionalesActualResponsableView(generics.ListAPIView):
 
         data_out = sorted(data_out, key=lambda x: x['cod_unidad_actual'], reverse=False)
 
-        data = {
-            'mismo_organigrama': mismo_organicrama,
-            'unidades': data_out
-        }
-
-        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': data_out}, status=status.HTTP_200_OK)
 
 class OficinasUnidadOrganizacionalGetView(generics.ListAPIView):
     serializer_class = OficinaUnidadOrganizacionalSerializer
