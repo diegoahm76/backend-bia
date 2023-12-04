@@ -347,12 +347,7 @@ class CatalogoBienesGetList(generics.ListAPIView):
                     'crear': data['nivel_jerarquico'] != 5,
                     'bien': data,
                 },
-                'children': self.get_catalogo_bienes(data['id_bien'], key)
-            })
-
-            # if data_out['children'] == []:
-            #     data_out['eliminar'] = True
-            #     del data_out['children']
+                'children': self.get_catalogo_bienes(data['id_bien'], key)})
 
             cont += 1
         return data_out
@@ -375,45 +370,6 @@ class CatalogoBienesGetList(generics.ListAPIView):
 #             data['children'] = self.get_catalogo_bienes(data['id_bien'])
 #             if data['children'] == []:
 #                 del data['children']
-
-#         return data_padre
-
-#     def get(self, request):
-
-#         data = self.get_catalogo_bienes(None)
-
-#         return Response({'success': True, 'detail':'Se muestran el catalogo de bienes', 'data': data}, status=status.HTTP_200_OK)
-    
-
-# class CatalogoBienesGetList(generics.ListAPIView):
-#     serializer_class = CatalogoBienesSerializer
-
-#     def get_catalogo_bienes(self, id_bien_padre):
-#         catalogo_bienes = CatalogoBienes.objects.filter(id_bien_padre=id_bien_padre).order_by('codigo_bien')
-#         serializer = self.serializer_class(catalogo_bienes, many=True)
-#         data_padre = serializer.data
-#         data_out = {}
-#         cont = 0
-
-#         for data in data_padre:
-#             data_out['key'] = str(cont)
-#             data_out['data'] = {
-#                 'nombre': data['nombre'],
-#                 'codigo': data['codigo_bien'],
-#                 'id_nodo': data['id_bien'],
-#                 'editar': True,
-#                 'eliminar': False,
-#                 'crear': data['nivel_jerarquico'] != 5,
-#                 'bien': data,
-#             }
-#             data_out['children'] = self.get_catalogo_bienes(data['id_bien'])
-
-            # if data_out['children'] == []:
-            #     data_out['eliminar'] = True
-            #     del data_out['children']
-
-#             data_padre[cont] = data_out
-#             cont += 1
 
 #         return data_padre
 
