@@ -78,3 +78,14 @@ class DetalleLiquidacionBase(models.Model):
         db_table = "T404Detalles_LiquidacionesBase"
         verbose_name = 'Detalle liquidación base'
         verbose_name_plural = 'Detalles liquidación base'
+
+
+class CalculosLiquidacionBase(models.Model):
+    id = models.AutoField(primary_key=True, db_column="T450IdCalculos_LiquidacionBase")
+    id_liquidacion = models.ForeignKey(LiquidacionesBase, on_delete=models.CASCADE, db_column="T450Id_LiquidacionBase")
+    calculos = models.JSONField(db_column="T450calculos")
+
+    class Meta:
+        db_table = "T50Calculos_LiquidacionesBase"
+        verbose_name = 'Calculo liquidación base'
+        verbose_name_plural = 'Calculos liquidación base'
