@@ -2,6 +2,7 @@ from rest_framework.exceptions import ValidationError, NotFound, PermissionDenie
 from rest_framework import status, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from gestion_documental.models.ccd_models import CatalogosSeriesUnidad
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, SolicitudDeDigitalizacion, T262Radicados
 from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
@@ -487,25 +488,50 @@ class AsignacionPQRCreate(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     creador_estados = Estados_PQRCreate
     def post(self, request):
+        #CODIGO DE SERIE DOCUMENTAL DE PQRSDF
+        codigo= 39      
+        contador = 0  
         data_in = request.data
 
         if not 'id_pqrsdf' in data_in:
             raise ValidationError("No se envio la pqrsdf")
         
         instance= AsignacionPQR.objects.filter(id_pqrsdf = data_in['id_pqrsdf'])
-        for asignacion in instance:
-            #print(asignacion)
-            if asignacion.cod_estado_asignacion == 'Ac':
-                raise ValidationError("La solicitud  ya fue Aceptada.")
-            if  not asignacion.cod_estado_asignacion:
-                raise ValidationError("La solicitud esta pendiente por respuesta.")
+        # for asignacion in instance:
+        #     #print(asignacion)
+        #     if asignacion.cod_estado_asignacion == 'Ac':
+        #         raise ValidationError("La solicitud  ya fue Aceptada.")
+        #     if  not asignacion.cod_estado_asignacion:
+        #         raise ValidationError("La solicitud esta pendiente por respuesta.")
         max_consecutivo = AsignacionPQR.objects.filter(id_pqrsdf=data_in['id_pqrsdf']).aggregate(Max('consecutivo_asign_x_pqrsdf'))
 
         if max_consecutivo['consecutivo_asign_x_pqrsdf__max'] == None:
              ultimo_consec= 1
         else:
             ultimo_consec = max_consecutivo['consecutivo_asign_x_pqrsdf__max'] + 1
+        
+        unidad_asignar = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=data_in['id_und_org_seccion_asignada']).first()
+        if not unidad_asignar:
+            raise ValidationError("No existe la unidad asignada")
+        #VALIDACION ENTREGA 102 SERIE PQRSDF
+        aux = unidad_asignar
+        while aux:
+            
+            #print(str(aux.id_unidad_organizacional)+str(aux.cod_agrupacion_documental))
+            if aux.cod_agrupacion_documental == 'SEC':
+               
+                catalogos = CatalogosSeriesUnidad.objects.filter(id_unidad_organizacional=aux.id_unidad_organizacional,id_catalogo_serie__id_subserie_doc__isnull=True)
+                #print(catalogos)
+                contador = 0
+                for catalogo in catalogos:
+                    #print(str(catalogo.id_catalogo_serie.id_serie_doc.id_serie_doc)+"###"+str(catalogo.id_catalogo_serie.id_serie_doc.codigo)+" "+str(catalogo.id_catalogo_serie.id_serie_doc.nombre))
+                    if int(catalogo.id_catalogo_serie.id_serie_doc.codigo) == codigo:
+                        contador += 1
 
+                break
+            aux = aux.id_unidad_org_padre
+        if contador == 0:
+            raise ValidationError("No se puede realizar la asignación de la PQRSDF a ta unidad organizacional seleccionada porque no tiene sene documental de PORSDF")
         data_in['consecutivo_asign_x_pqrsdf'] = ultimo_consec 
         data_in['fecha_asignacion'] = datetime.now()
         data_in['id_persona_asigna'] = request.user.persona.id_persona
@@ -520,12 +546,13 @@ class AsignacionPQRCreate(generics.CreateAPIView):
         #data_estado_asociado['estado_PQR_asociado'] 
         data_estado_asociado['fecha_iniEstado'] =  datetime.now()
         data_estado_asociado['persona_genera_estado'] = request.user.persona.id_persona
-
+        #raise ValidationError("NONE")
         respuesta_estado_asociado = self.creador_estados.crear_estado(self,data_estado_asociado)
         data_estado = respuesta_estado_asociado.data['data']
         serializer = self.serializer_class(data=data_in)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+
         return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':serializer.data,'estado':data_estado}, status=status.HTTP_200_OK)
 
 

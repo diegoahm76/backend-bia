@@ -304,10 +304,20 @@ class MetadatosAnexosTmpSerializerGet(serializers.ModelSerializer):
     origen_archivo = serializers.CharField(source='get_cod_origen_archivo_display', default=None)
     categoria_archivo = serializers.CharField(source='get_cod_categoria_archivo_display', default=None)
     nombre_tipologia_documental = serializers.CharField(source='id_tipologia_doc.nombre', default=None)
+    numero_folios = serializers.SerializerMethodField()
+    fecha_creacion_archivo = serializers.ReadOnlyField(source='id_archivo_sistema.fecha_creacion_doc',default=None)
+    palabras_clave_doc = serializers.SerializerMethodField()
     class Meta:
         model = MetadatosAnexosTmp
-        fields = ['id_metadatos_anexo_tmp','asunto','fecha_creacion_doc','origen_archivo','categoria_archivo','tiene_replica_fisica','es_version_original','palabras_clave_doc','nombre_tipologia_documental','descripcion']
-
+        fields = ['id_metadatos_anexo_tmp','asunto','numero_folios','fecha_creacion_archivo','origen_archivo','categoria_archivo','tiene_replica_fisica','es_version_original','palabras_clave_doc','nombre_tipologia_documental','descripcion']
+    def get_numero_folios(self, obj):
+        return obj.nro_folios_documento
+    
+    def get_palabras_clave_doc(self, obj):
+        if obj.palabras_clave_doc:
+            lista_datos =  obj.palabras_clave_doc.split("|")
+            return lista_datos
+        return None
 
 #asignacion PQR A SECCION O SUB O GRUPO
 
