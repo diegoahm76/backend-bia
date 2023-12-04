@@ -44,7 +44,7 @@ class ConfigTiposRadicadoAgno(models.Model):
 
 class TiposPQR(models.Model):
 
-    cod_tipo_pqr = models.CharField( primary_key=True,max_length=1,choices=TIPOS_PQR,db_column='T252CodTipoPQR')
+    cod_tipo_pqr = models.CharField( primary_key=True,max_length=2,choices=TIPOS_PQR,db_column='T252CodTipoPQR')
     nombre = models.CharField(max_length=15,unique=True,db_column='T252nombre', verbose_name='Nombre del Tipo de PQR' )
     tiempo_respuesta_en_dias = models.SmallIntegerField(null=True,blank=True,db_column='T252tiempoRtaEnDias')
     
@@ -106,7 +106,7 @@ class T262Radicados(models.Model):
 
 class PQRSDF(models.Model):
     id_PQRSDF = models.AutoField(primary_key=True, db_column='T257IdPQRSDF')
-    cod_tipo_PQRSDF = models.CharField(max_length=1,choices=TIPOS_PQR,db_column='T257codTipoPQRSDF')#,max_length=1,choices=TIPOS_PQR
+    cod_tipo_PQRSDF = models.CharField(max_length=2,choices=TIPOS_PQR,db_column='T257codTipoPQRSDF')#,max_length=2,choices=TIPOS_PQR
     id_persona_titular = models.ForeignKey('transversal.Personas',null=True,on_delete=models.CASCADE,db_column='T257Id_PersonaTitular', related_name='persona_titular_relacion')# models.ForeignKey('transversal.Personas',null=True, on_delete=models.CASCADE,
     id_persona_interpone = models.ForeignKey('transversal.Personas',null=True,on_delete=models.CASCADE,db_column='T257Id_PersonaInterpone',related_name='persona_interpone_relacion')
     cod_relacion_con_el_titular = models.CharField(max_length=2, null=True, choices=RELACION_TITULAR, db_column='T257codRelacionConElTitular')
