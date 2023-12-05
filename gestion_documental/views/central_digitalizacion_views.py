@@ -15,10 +15,12 @@ from gestion_documental.serializers.pqr_serializers import AnexosPostSerializer,
 from gestion_documental.serializers.ventanilla_pqrs_serializers import ComplementosUsu_PQRPutSerializer
 from gestion_documental.views.panel_ventanilla_views import Estados_PQRCreate
 from gestion_documental.views.pqr_views import AnexosCreate, ArchivoDelete, MetadatosPQRDelete
+from seguridad.signals.roles_signals import IsAuthenticated
 
 class SolicitudesPendientesGet(generics.ListAPIView):
     serializer_class = SolicitudesPendientesSerializer
     queryset = SolicitudDeDigitalizacion.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         try:
@@ -47,6 +49,7 @@ class SolicitudesRespondidasGet(generics.ListAPIView):
     serializer_class = SolicitudesPendientesSerializer
     queryset = SolicitudDeDigitalizacion.objects.all()
     querysetRadicados = T262Radicados.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         try:
@@ -191,6 +194,7 @@ class DigitalizacionCreate(generics.CreateAPIView):
     serializer_class = MetadatosPostSerializer
     serializer_anexos_class = AnexosPostSerializer
     serializer_solicitud_class = SolicitudesPostSerializer
+    permission_classes = [IsAuthenticated]
 
     @transaction.atomic
     def post(self, request):
@@ -255,6 +259,7 @@ class DigitalizacionUpdate(generics.RetrieveUpdateAPIView):
     serializer_anexos_class = AnexosPostSerializer
     serializer_solicitud_class = SolicitudesPostSerializer
     queryset = MetadatosAnexosTmp.objects.all()
+    permission_classes = [IsAuthenticated]
 
     @transaction.atomic
     def put(self, request):
@@ -319,6 +324,7 @@ class DigitalizacionDelete(generics.RetrieveDestroyAPIView):
     serializer_anexos_class = AnexosPostSerializer
     serializer_solicitud_class = SolicitudesPostSerializer
     queryset = MetadatosAnexosTmp.objects.all()
+    permission_classes = [IsAuthenticated]
 
     @transaction.atomic
     def delete(self, request):
@@ -370,6 +376,7 @@ class ResponderDigitalizacion(generics.RetrieveUpdateAPIView):
     serializer_solicitudesUsu_class = SolicitudesAlUsuarioPostSerializer
     serializer_pqrsdf_class = PQRSDFPutSerializer
     queryset = SolicitudDeDigitalizacion.objects.all()
+    permission_classes = [IsAuthenticated]
 
     @transaction.atomic
     def put(self, request):
