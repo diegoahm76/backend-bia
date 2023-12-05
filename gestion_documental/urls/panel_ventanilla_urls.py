@@ -38,6 +38,7 @@ urlpatterns = [
 
     path('pqrsdf/solicita/get/',views.PQRSDFPersonaSolicitaGet.as_view(),name='listar-persona-solicita-pqrsdf'),
     path('pqrsdf/detalle-solicitud/get/<str:pqr>/',views.PQRSDFDetalleSolicitudGet.as_view(),name='listar-detalle-pqrsdf'),
+    path('pqrsdf/solicitud-al-usuario/create/',views.SolicitudAlUsuarioSobrePQRSDFCreate.as_view(),name='crear-solicitud-al-usuario-pqrsdf'),
     
 
 ]
