@@ -66,11 +66,13 @@ urlpatterns = [
     path('api/transversal/choices/', include('transversal.urls.choices_urls')),
     path('api/transversal/vinculacion/',include('transversal.urls.vinculacion_urls')),
     path('api/transversal/organigrama/', include('transversal.urls.organigrama_urls')),
+    path('api/transversal/organigrama/activacion/', include('transversal.urls.activacion_organigrama_urls')),
     path('api/transversal/notificaciones/', include('transversal.urls.notificaciones_urls')),
     path('api/transversal/configuracion/',include('transversal.urls.configuracionEntidades_urls')),
     path('api/transversal/sucursales/',include('transversal.urls.sucursalesEmpresas_urls')),
     path('api/transversal/lideres/',include('transversal.urls.lideres_urls')),
     path('api/transversal/alertas/',include('transversal.urls.alertas_urls')),
+    
 
 
     #GESTOR DOCUMENTAL
