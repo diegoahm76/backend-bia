@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from gestion_documental.choices.central_digitalizacion_choices import TIPO_SOLICITUD_CHOICES
 
-from gestion_documental.models.radicados_models import SolicitudDeDigitalizacion
+from gestion_documental.models.radicados_models import SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion
 from gestion_documental.serializers.pqr_serializers import AnexosPqrsdfPanelSerializer
 from transversal.models.personas_models import Personas
 
@@ -43,8 +43,14 @@ class SolicitudesPendientesSerializer(serializers.ModelSerializer):
         return obj['numero_anexos']
     
     def get_estado_digitalizacion(self, obj):
-        validate_anexos_SH =  all(not anexo.ya_digitalizado for anexo in obj['anexos'])
-        return 'Sin Hacer' if validate_anexos_SH else 'En Proceso'
+        estado = ''
+        if obj['peticion_estado'] == 'P':
+            validate_anexos_SH =  all(not anexo.ya_digitalizado for anexo in obj['anexos'])
+            estado = 'Sin Hacer' if validate_anexos_SH else 'En Proceso'
+        else:
+            estado = 'Completado' if obj['digitalizacion_completada'] else 'No Completado'
+
+        return estado
     
     def get_anexos(self, obj):
         anexos = []
@@ -57,6 +63,7 @@ class SolicitudesPendientesSerializer(serializers.ModelSerializer):
         fields = [
             'id_solicitud_de_digitalizacion',
             'fecha_solicitud',
+            'fecha_rta_solicitud',
             'nombre_tipo_solicitud',
             'numero_radicado',
             'asunto',
@@ -69,4 +76,9 @@ class SolicitudesPendientesSerializer(serializers.ModelSerializer):
 class SolicitudesPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = SolicitudDeDigitalizacion
+        fields = '__all__'
+
+class SolicitudesAlUsuarioPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SolicitudAlUsuarioSobrePQRSDF
         fields = '__all__'

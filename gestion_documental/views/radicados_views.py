@@ -1,8 +1,12 @@
 from rest_framework import generics,status
 from rest_framework.response import Response
-
+from rest_framework.permissions import IsAuthenticated
 from gestion_documental.models.radicados_models import PQRSDF, ComplementosUsu_PQR, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, T262Radicados
-from gestion_documental.serializers.radicados_serializers import RadicadosImprimirSerializer
+from gestion_documental.serializers.radicados_serializers import RadicadosImprimirSerializer ,PersonasSerializer
+from transversal.models.personas_models import Personas
+from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
+
+
 
 class GetRadicadosImprimir(generics.ListAPIView):
     serializer_class = RadicadosImprimirSerializer
@@ -81,3 +85,40 @@ class GetRadicadosImprimir(generics.ListAPIView):
         data['asunto'] = asunto
 
         return data
+    
+
+
+class FilterPersonasDocumento(generics.ListAPIView):
+    serializer_class = PersonasSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        numero_documento = self.request.query_params.get('numero_documento', '').strip()
+
+        # Validación: asegúrate de que el número de documento no esté vacío
+        if not numero_documento:
+            return Personas.objects.none()
+
+        # Filtrar por atributos específicos referentes a una persona (unión de parámetros)
+        queryset = Personas.objects.all()
+
+        if numero_documento:
+            queryset = queryset.filter(numero_documento__startswith=numero_documento)
+
+        # Puedes agregar más condiciones de filtro según sea necesario
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            raise NotFound('No se encontraron datos que coincidan con los criterios de búsqueda.')
+
+        serializer = PersonasSerializer(queryset, many=True)
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes registros.',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)

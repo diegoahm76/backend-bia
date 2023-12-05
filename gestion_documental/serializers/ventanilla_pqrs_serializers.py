@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from transversal.models.personas_models import Personas
@@ -304,10 +304,20 @@ class MetadatosAnexosTmpSerializerGet(serializers.ModelSerializer):
     origen_archivo = serializers.CharField(source='get_cod_origen_archivo_display', default=None)
     categoria_archivo = serializers.CharField(source='get_cod_categoria_archivo_display', default=None)
     nombre_tipologia_documental = serializers.CharField(source='id_tipologia_doc.nombre', default=None)
+    numero_folios = serializers.SerializerMethodField()
+    fecha_creacion_archivo = serializers.ReadOnlyField(source='id_archivo_sistema.fecha_creacion_doc',default=None)
+    palabras_clave_doc = serializers.SerializerMethodField()
     class Meta:
         model = MetadatosAnexosTmp
-        fields = ['id_metadatos_anexo_tmp','asunto','fecha_creacion_doc','origen_archivo','categoria_archivo','tiene_replica_fisica','es_version_original','palabras_clave_doc','nombre_tipologia_documental','descripcion']
-
+        fields = ['id_metadatos_anexo_tmp','asunto','numero_folios','fecha_creacion_archivo','origen_archivo','categoria_archivo','tiene_replica_fisica','es_version_original','palabras_clave_doc','nombre_tipologia_documental','descripcion']
+    def get_numero_folios(self, obj):
+        return obj.nro_folios_documento
+    
+    def get_palabras_clave_doc(self, obj):
+        if obj.palabras_clave_doc:
+            lista_datos =  obj.palabras_clave_doc.split("|")
+            return lista_datos
+        return None
 
 #asignacion PQR A SECCION O SUB O GRUPO
 
@@ -476,3 +486,9 @@ class PQRSDFDetalleSolicitud(serializers.ModelSerializer):
         if obj.id_radicado:
             cadena= str(obj.id_radicado.prefijo_radicado)+'-'+str(obj.id_radicado.agno_radicado)+'-'+str(obj.id_radicado.nro_radicado)
             return cadena
+        
+
+class SolicitudAlUsuarioSobrePQRSDFCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SolicitudAlUsuarioSobrePQRSDF
+        fields = '__all__'

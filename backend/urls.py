@@ -95,6 +95,7 @@ urlpatterns = [
     path('api/gestor/panel_ventanilla/',include('gestion_documental.urls.panel_ventanilla_urls')),
     path('api/gestor/radicados/',include('gestion_documental.urls.radicados_urls')),
     path('api/gestor/central-digitalizacion/',include('gestion_documental.urls.central_digitalizacion_urls')),
+    path('api/gestor/complementos-pqr/',include('gestion_documental.urls.complementos_pqr_urls')),
     
     
     #ALMACEN
