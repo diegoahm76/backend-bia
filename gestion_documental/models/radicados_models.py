@@ -45,7 +45,7 @@ class ConfigTiposRadicadoAgno(models.Model):
 class TiposPQR(models.Model):
 
     cod_tipo_pqr = models.CharField( primary_key=True,max_length=2,choices=TIPOS_PQR,db_column='T252CodTipoPQR')
-    nombre = models.CharField(max_length=15,unique=True,db_column='T252nombre', verbose_name='Nombre del Tipo de PQR' )
+    nombre = models.CharField(max_length=36,unique=True,db_column='T252nombre', verbose_name='Nombre del Tipo de PQR' )
     tiempo_respuesta_en_dias = models.SmallIntegerField(null=True,blank=True,db_column='T252tiempoRtaEnDias')
     
     def __str__(self):
