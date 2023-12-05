@@ -52,3 +52,11 @@ class RadicadosImprimirSerializer(serializers.ModelSerializer):
             'fecha_radicado',
             'agno_radicado'
         ]
+
+
+class PersonasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  Personas
+        fields = '__all__'
+
+ 
