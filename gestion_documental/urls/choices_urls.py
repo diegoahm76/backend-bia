@@ -32,7 +32,9 @@ urlpatterns = [
     path('origen-archivo/', views.OrigenArchivoChoices.as_view(), name='tipo-archivo'),
     path('tipo-zona/', views.TipoZonasChoices.as_view(), name='tipo-zona'),
     path('tipo-solicitud/', views.TipoSolicitud.as_view(), name='tipo-solicitud'),
-    path('estado-solicitud/', views.EstadoSolicitud.as_view(), name='estado-solicitud')
-    #RangoEdad
+    path('estado-solicitud/', views.EstadoSolicitud.as_view(), name='estado-solicitud'),
+    path('cod-relacion-persona-titular/',views.CodRelacionPersonaTitularChoices.as_view(), name='codigo-relacion-persona-titular'),
+    path('cod-forma-presentacion/',views.CodFormaPresentacion.as_view(), name='codigo-relacion-persona-titular')
+    
     
 ]

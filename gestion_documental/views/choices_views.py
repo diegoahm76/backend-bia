@@ -27,6 +27,8 @@ from gestion_documental.choices.pqrsdf_choices import (FORMA_PRESENTACION)
 from gestion_documental.choices.medio_almacenamiento_choices import medio_almacenamiento_CHOICES
 from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
 from gestion_documental.choices.origen_archivo_choices import origen_archivo_CHOICES
+from gestion_documental.choices.codigo_relacion_titular_choices import cod_relacion_persona_titular_CHOICES
+from gestion_documental.choices.codigo_forma_presentacion_choices import cod_forma_presentacion_CHOICES
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -181,4 +183,12 @@ class TipoSolicitud(APIView):
 class EstadoSolicitud(APIView):
     def get(self, request):
         choices = ESTADO_SOLICITUD_CHOICES
+class CodRelacionPersonaTitularChoices(APIView):
+    def get(self, request):
+        choices = cod_relacion_persona_titular_CHOICES
+        return Response(choices)
+    
+class CodFormaPresentacion(APIView):
+    def get(self, request):
+        choices = cod_forma_presentacion_CHOICES
         return Response(choices)
