@@ -2970,25 +2970,124 @@ class ConfiguracionAnioSiguienteNoConsecutivo(generics.UpdateAPIView):
 
     def put(self, request, id_tipologia_doc):
         try:
-            # Obtener la configuración existente
-            config_tipologia = ConfigTipologiasDocAgno.objects.get(id_tipologia_doc=id_tipologia_doc)
+            # Obtener todas las configuraciones existentes con el mismo id_tipologia_doc
+            config_tipologias = ConfigTipologiasDocAgno.objects.filter(id_tipologia_doc=id_tipologia_doc)
 
-            # Verificar si la configuración tiene cod_nivel_consecutivo como NULL
-            if config_tipologia.cod_nivel_consecutivo is None:
-                # Realizar las actualizaciones necesarias
-                with transaction.atomic():
-                    # Crear una nueva configuración para el año siguiente
-                    nueva_configuracion = ConfigTipologiasDocAgno.objects.create(
-                        id_tipologia_doc=config_tipologia.id_tipologia_doc,
-                        maneja_consecutivo=config_tipologia.maneja_consecutivo,
-                        agno_tipologia=datetime.now().year + 1,  # Obtener el año actual y sumar 1
+            if not config_tipologias.exists():
+                raise ValidationError('No existe ninguna configuración con este id.')
+
+            # Filtrar solo las configuraciones con cod_nivel_consecutivo como NULL
+            config_tipologia = config_tipologias.filter(cod_nivel_consecutivo__isnull=True).first()
+
+            if config_tipologia is None:
+                raise ValidationError('No existe ninguna configuración con cod_nivel_consecutivo NULL.')
+
+            # Verificar si ya existe una configuración para el año siguiente
+            config_anio_siguiente = ConfigTipologiasDocAgno.objects.filter(
+                id_tipologia_doc=id_tipologia_doc,
+                agno_tipologia=datetime.now().year + 1,
+            ).first()
+
+            if config_anio_siguiente:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Ya existe una configuración para el año siguiente.',
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Realizar las actualizaciones necesarias
+            with transaction.atomic():
+                # Crear una nueva configuración para el año siguiente
+                nueva_configuracion = ConfigTipologiasDocAgno.objects.create(
+                    id_tipologia_doc=config_tipologia.id_tipologia_doc,
+                    maneja_consecutivo=config_tipologia.maneja_consecutivo,
+                    agno_tipologia=datetime.now().year + 1,  # Obtener el año actual y sumar 1
+                    item_ya_usado=False,
+                    # Otros atributos que necesites actualizar
+                )
+
+                # Guardar los cambios en ambas configuraciones
+                nueva_configuracion.save()
+                config_tipologia.save()
+
+                # Retornar la respuesta con los datos actualizados
+                serializer = self.serializer_class(config_tipologia)
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Configuración actualizada exitosamente.',
+                    'nueva_configuracion': self.serializer_class(nueva_configuracion).data,
+                }, status=status.HTTP_200_OK)
+
+        except ValidationError:
+            return JsonResponse({
+                'success': False,
+                'message': 'La configuración no existe o no cumple con los requisitos para la actualización.'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+#2.Consecutivo por Empresa
+class ConfiguracionAnioSiguienteEmpresa(generics.UpdateAPIView):
+    serializer_class = ConfigTipologiasDocAgnoSerializer
+
+    def put(self, request, id_tipologia_doc):
+        try:
+            with transaction.atomic():
+                # Obtener la configuración existente y filtrar por cod_nivel_consecutivo
+                config_tipologia = ConfigTipologiasDocAgno.objects.filter(
+                    id_tipologia_doc=id_tipologia_doc,
+                    cod_nivel_consecutivo='EM'
+                ).first()
+                # Verificar si ya existe una configuración para el año siguiente
+                config_anio_siguiente = ConfigTipologiasDocAgno.objects.filter(
+                    id_tipologia_doc=id_tipologia_doc,
+                    agno_tipologia=datetime.now().year + 1,
+                ).first()
+
+                if config_anio_siguiente:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Ya existe una configuración para el año siguiente.',
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+                if config_tipologia is None:
+                    raise ValidationError('No existe ninguna configuración con este id y cod_nivel_consecutivo "EM".')
+
+                
+                # Crear una nueva configuración para el año siguiente
+                nueva_configuracion = ConfigTipologiasDocAgno.objects.create(
+                    id_tipologia_doc=config_tipologia.id_tipologia_doc,
+                    cod_nivel_consecutivo ="EM",
+                    maneja_consecutivo=config_tipologia.maneja_consecutivo,
+                    agno_tipologia=datetime.now().year + 1,  # Obtener el año actual y sumar 1
+                    item_ya_usado=False,
+                    # Otros atributos que necesites actualizar
+                )
+
+                # Guardar los cambios en ambas configuraciones
+                config_tipologia.save()
+
+                # Obtener la TRD actual (ajusta según tu modelo)
+                trd_actual = TablaRetencionDocumental.objects.filter(actual=True).first()
+                if not trd_actual:
+                    raise ValidationError('No existe aún una TRD actual')
+
+                # Obtener la persona logueada
+                user = request.user
+                persona_logueada = user.persona
+
+                # Clonar los registros de la tabla T247
+                for consecutivo in ConsecPorNivelesTipologiasDocAgno.objects.filter(
+                        id_config_tipologia_doc_agno=config_tipologia
+                ):
+                    ConsecPorNivelesTipologiasDocAgno.objects.create(
+                        id_config_tipologia_doc_agno=nueva_configuracion,
+                        id_unidad_organizacional=consecutivo.id_unidad_organizacional,
+                        consecutivo_inicial=consecutivo.consecutivo_inicial,
+                        cantidad_digitos=consecutivo.cantidad_digitos,
+                        prefijo_consecutivo=consecutivo.prefijo_consecutivo,
                         item_ya_usado=False,
-                        # Otros atributos que necesites actualizar
+                        consecutivo_actual=consecutivo.consecutivo_actual,
+                        id_persona_ult_config_implemen=persona_logueada,
+                        fecha_ult_config_implemen=datetime.now(),
                     )
-
-                    # Guardar los cambios en ambas configuraciones
-                    nueva_configuracion.save()
-                    config_tipologia.save()
 
                 # Retornar la respuesta con los datos actualizados
                 serializer = self.serializer_class(config_tipologia)
@@ -2997,9 +3096,92 @@ class ConfiguracionAnioSiguienteNoConsecutivo(generics.UpdateAPIView):
                     'message': 'Configuración actualizada exitosamente.',
                     'nueva_configuracion': self.serializer_class(nueva_configuracion).data,
                 }, status=status.HTTP_200_OK)
-            else:
-                raise ValidationError('La configuración no cumple con los requisitos para la actualización.')
 
-        except ConfigTipologiasDocAgno.DoesNotExist:
-            raise not NotFound('La configuración no existe.')
-            
+        except Exception as e:
+            raise NotFound('La tipologia documental no es de tipo EM. ')
+        
+
+class ConfiguracionAnioSiguienteSeccionSubseccion(generics.UpdateAPIView):
+    serializer_class = ConfigTipologiasDocAgnoSerializer
+
+    def put(self, request, id_tipologia_doc):
+        try:
+            # Obtener todas las configuraciones existentes con el mismo id_tipologia_doc
+            config_tipologias = ConfigTipologiasDocAgno.objects.filter(id_tipologia_doc=id_tipologia_doc)
+
+            if not config_tipologias.exists():
+                raise ValidationError('No existe ninguna configuración con este id.')
+
+            # Filtrar solo las configuraciones con cod_nivel_consecutivo como "SS"
+            config_tipologia = config_tipologias.filter(cod_nivel_consecutivo='SS').first()
+
+            if config_tipologia is None:
+                raise ValidationError('No existe ninguna configuración con cod_nivel_consecutivo "SS".')
+
+            # Verificar si ya existe una configuración para el año siguiente
+            config_anio_siguiente = ConfigTipologiasDocAgno.objects.filter(
+                id_tipologia_doc=id_tipologia_doc,
+                agno_tipologia=datetime.now().year + 1,
+            ).first()
+
+            if config_anio_siguiente:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Ya existe una configuración para el año siguiente.',
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Realizar las actualizaciones necesarias
+            with transaction.atomic():
+                # Crear una nueva configuración para el año siguiente
+                nueva_configuracion = ConfigTipologiasDocAgno.objects.create(
+                    id_tipologia_doc=config_tipologia.id_tipologia_doc,
+                    maneja_consecutivo=config_tipologia.maneja_consecutivo,
+                    cod_nivel_consecutivo ="SS",
+                    agno_tipologia=datetime.now().year + 1,  # Obtener el año actual y sumar 1
+                    item_ya_usado=False,
+                    # Otros atributos que necesites actualizar
+                )
+
+                # Guardar los cambios en ambas configuraciones
+                nueva_configuracion.save()
+                config_tipologia.save()
+
+                # Obtener la TRD actual (ajusta según tu modelo)
+                trd_actual = TablaRetencionDocumental.objects.filter(actual=True).first()
+                if not trd_actual:
+                    raise NotFound('No existe aún una TRD actual')
+
+                # Obtener la persona logueada
+                user = request.user
+                persona_logueada = user.persona
+
+                # Clonar los registros de la tabla T247
+                for consecutivo in ConsecPorNivelesTipologiasDocAgno.objects.filter(
+                        id_config_tipologia_doc_agno=config_tipologia
+                ):
+                    nuevo_consecutivo = ConsecPorNivelesTipologiasDocAgno.objects.create(
+                        id_config_tipologia_doc_agno=nueva_configuracion,
+                        id_unidad_organizacional=consecutivo.id_unidad_organizacional,
+                        id_trd=trd_actual,
+                        consecutivo_inicial=consecutivo.consecutivo_inicial,
+                        cantidad_digitos=consecutivo.cantidad_digitos,
+                        prefijo_consecutivo=consecutivo.prefijo_consecutivo,
+                        item_ya_usado=False,
+                        consecutivo_actual=consecutivo.consecutivo_inicial - 1,
+                        id_persona_ult_config_implemen=persona_logueada,
+                        fecha_ult_config_implemen=datetime.now(),
+                    )
+
+                # Retornar la respuesta con los datos actualizados
+                serializer = self.serializer_class(config_tipologia)
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Configuración actualizada exitosamente.',
+                    'nueva_configuracion': self.serializer_class(nueva_configuracion).data,
+                }, status=status.HTTP_200_OK)
+
+        except ValidationError:
+            return JsonResponse({
+                'success': False,
+                'message': 'La configuración no existe o no cumple con los requisitos para la actualización.'
+            }, status=status.HTTP_404_NOT_FOUND)
