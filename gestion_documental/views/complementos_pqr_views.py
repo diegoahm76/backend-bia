@@ -7,17 +7,64 @@ from rest_framework import generics,status
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound
 from django.db import transaction
-from gestion_documental.models.radicados_models import Anexos_PQR, ComplementosUsu_PQR
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, ComplementosUsu_PQR, TiposPQR
 
-from gestion_documental.serializers.complementos_pqr_serializers import ComplementoPQRSDFPostSerializer, ComplementoPQRSDFPutSerializer
+from gestion_documental.serializers.complementos_pqr_serializers import ComplementoPQRSDFPostSerializer, ComplementoPQRSDFPutSerializer, ComplementosSerializer, PQRSDFSerializer, PersonaSerializer
 from gestion_documental.serializers.pqr_serializers import RadicadoPostSerializer
 from gestion_documental.views.pqr_views import AnexosCreate, AnexosDelete, AnexosUpdate, RadicadoCreate, Util_PQR
 from seguridad.signals.roles_signals import IsAuthenticated
 from seguridad.utils import Util
+from transversal.models.personas_models import Personas
+from transversal.serializers.personas_serializers import PersonasFilterSerializer
+
+
+class ComplementosPQRSDFGet(generics.ListAPIView):
+    serializer_class = ComplementosSerializer
+    serializer_class_persona = PersonaSerializer
+    serializer_class_pqrsdf = PQRSDFSerializer
+    queryset = ComplementosUsu_PQR.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            if request.query_params.get('id_PQRSDF')==None or request.query_params.get('id_persona_titular')==None or request.query_params.get('id_persona_interpone')==None:
+                raise ValidationError('No se ingresaron parámetros necesarios para consultar el complemento de PQRSDF')
+            
+            id_PQRSDF = ast.literal_eval(request.query_params.get('id_PQRSDF', None))
+            id_persona_titular = ast.literal_eval(request.query_params.get('id_persona_titular', None))
+            id_persona_interpone = ast.literal_eval(request.query_params.get('id_persona_interpone', None))
+            
+            complementos_PQRSDF = self.queryset.filter(id_PQRSDF = id_PQRSDF)
+            data_complementos_pqrsdf = self.set_data_complementos_PQRSDF(id_PQRSDF, id_persona_titular, id_persona_interpone, complementos_PQRSDF)
+            return Response({'success':True, 'detail':'Se encontraron los siguientes complementos','data':data_complementos_pqrsdf},status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def set_data_complementos_PQRSDF(self, id_PQRSDF, id_persona_titular, id_persona_interpone, complementos_PQRSDF):
+        try:
+            pqrsdf = PQRSDF.objects.filter(id_PQRSDF = id_PQRSDF).first()
+            persona_titular = Personas.objects.filter(id_persona = id_persona_titular).first()
+            persona_interpone = Personas.objects.filter(id_persona = id_persona_interpone).first()
+
+            pqrsdf_serializer = self.serializer_class_pqrsdf(pqrsdf, many=False)
+            persona_titular_serializer = self.serializer_class_persona(persona_titular, many=False)
+            persona_interpone_serializer = self.serializer_class_persona(persona_interpone, many=False)
+            complementos_serializer = self.serializer_class(complementos_PQRSDF, many=True)
+
+            return {
+                'pqrsdf': pqrsdf_serializer.data,
+                'persona_titular': persona_titular_serializer.data,
+                'persona_interpone': persona_interpone_serializer.data,
+                'complementos_PQRSDF': complementos_serializer.data,
+            }
+        except Exception as e:
+            raise({'success': False, 'detail': str(e)})
+
+
 
 class ComplementoPQRSDFCreate(generics.CreateAPIView):
     serializer_class = ComplementoPQRSDFPostSerializer
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     @transaction.atomic
     def post(self, request):
@@ -45,8 +92,8 @@ class ComplementoPQRSDFCreate(generics.CreateAPIView):
                         data_complemento_PQRSDF_creado = self.update_requiereDigitalizacion_pqrsdf(data_complemento_PQRSDF_creado)
 
                 #Auditoria
-                # descripcion_auditoria = self.set_descripcion_auditoria(data_PQRSDF_creado)
-                # self.auditoria(request, descripcion_auditoria, isCreateForWeb, valores_creados_detalles)
+                descripcion_auditoria = self.set_descripcion_auditoria(data_complemento_PQRSDF_creado)
+                self.auditoria(request, descripcion_auditoria, isCreateForWeb, valores_creados_detalles)
 
                 return Response({'success':True, 'detail':'Se creo el complemento de PQRSDF correctamente', 'data':data_complemento_PQRSDF_creado}, status=status.HTTP_201_CREATED)
 
@@ -75,44 +122,53 @@ class ComplementoPQRSDFCreate(generics.CreateAPIView):
     
         return data
     
-    # def set_descripcion_auditoria(self, pqrsdf):
-    #     tipo_pqrsdf = TiposPQR.objects.filter(cod_tipo_pqr=pqrsdf['cod_tipo_PQRSDF']).first()
+    def set_descripcion_auditoria(self, complemento_PQRSDF):
+        pqrsdf = PQRSDF.objects.filter(id_PQRSDF = complemento_PQRSDF['id_PQRSDF']).first()
+        tipo_pqrsdf = TiposPQR.objects.filter(cod_tipo_pqr=pqrsdf.cod_tipo_PQRSDF).first()
 
-    #     persona = Personas.objects.filter(id_persona = pqrsdf['id_persona_titular']).first()
-    #     persona_serializer = PersonasFilterSerializer(persona)
-    #     nombre_persona_titular = persona_serializer.data['nombre_completo'] if persona_serializer.data['tipo_persona'] == 'N' else persona_serializer.data['razon_social']
+        #Persona interpone
+        persona_interpone = Personas.objects.filter(id_persona = complemento_PQRSDF['id_persona_interpone']).first()
+        persona_interpone_serializer = PersonasFilterSerializer(persona_interpone)
+        nombre_persona_interpone = persona_interpone_serializer.data['nombre_completo'] if persona_interpone_serializer.data['tipo_persona'] == 'N' else persona_interpone_serializer.data['razon_social']
+        
+        #Persona titular
+        persona = Personas.objects.filter(id_persona = pqrsdf.id_persona_titular_id).first()
+        persona_serializer = PersonasFilterSerializer(persona)
+        nombre_persona_titular = persona_serializer.data['nombre_completo'] if persona_serializer.data['tipo_persona'] == 'N' else persona_serializer.data['razon_social']
 
-    #     medioSolicitud = MediosSolicitud.objects.filter(id_medio_solicitud = pqrsdf['id_medio_solicitud']).first()
+        data = {}
+        if complemento_PQRSDF['id_PQRSDF']:
+            data['IdPQRSDF'] = str(complemento_PQRSDF['id_PQRSDF'])
+        else:
+            data['IdSolicitudUsuPQR'] = str(complemento_PQRSDF['id_solicitud_usu_PQR'])
 
-    #     data = {
-    #         'TipoPQRSDF': str(tipo_pqrsdf.nombre),
-    #         'NombrePersona': str(nombre_persona_titular),
-    #         'FechaRegistro': str(pqrsdf['fecha_registro']),
-    #         'MedioSolicitud': str(medioSolicitud.nombre)
-    #     }
+        data['NombrePersonaInterpone'] = str(nombre_persona_interpone)
+        data['FechaComplemento'] = str(complemento_PQRSDF['fecha_complemento'])
+        data['TipoPQRSDF'] = str(tipo_pqrsdf.nombre)
+        data['NombrePersonaTitular'] = str(nombre_persona_titular)
 
-    #     return data
+        return data
 
-    # def auditoria(self, request, descripcion_auditoria, isCreateForWeb, valores_creados_detalles):
-    #     # AUDITORIA
-    #     direccion = Util.get_client_ip(request)
-    #     descripcion = descripcion_auditoria
-    #     auditoria_data = {
-    #         "id_usuario": request.user.id_usuario,
-    #         "id_modulo": 171 if isCreateForWeb else 162,
-    #         "cod_permiso": 'AC' if isCreateForWeb else 'CR',
-    #         "subsistema": 'GEST',
-    #         "dirip": direccion,
-    #         "descripcion": descripcion,
-    #         "valores_creados_detalles": valores_creados_detalles
-    #     }
-    #     Util.save_auditoria_maestro_detalle(auditoria_data)
+    def auditoria(self, request, descripcion_auditoria, isCreateForWeb, valores_creados_detalles):
+        # AUDITORIA
+        direccion = Util.get_client_ip(request)
+        descripcion = descripcion_auditoria
+        auditoria_data = {
+            "id_usuario": request.user.id_usuario,
+            "id_modulo": 171 if isCreateForWeb else 162,
+            "cod_permiso": 'AC' if isCreateForWeb else 'CR',
+            "subsistema": 'GEST',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_creados_detalles": valores_creados_detalles
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
     
 
 class ComplementoPQRSDFUpdate(generics.RetrieveUpdateAPIView):
     serializer_class = ComplementoPQRSDFPutSerializer
     queryset = ComplementosUsu_PQR.objects.all()
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     @transaction.atomic
     def put(self, request):
@@ -136,8 +192,8 @@ class ComplementoPQRSDFUpdate(generics.RetrieveUpdateAPIView):
                     pqrsdf_update = self.update_complemento_pqrsdf(complemento_pqrsdf_db, complemento_pqrsdf)
 
                     #Auditoria
-                    # descripcion_auditoria = self.set_descripcion_auditoria(pqrsdf_update)
-                    # self.auditoria(request, descripcion_auditoria, isCreateForWeb, data_auditoria_anexos)
+                    descripcion_auditoria = self.set_descripcion_auditoria(pqrsdf_update)
+                    self.auditoria(request, descripcion_auditoria, isCreateForWeb, data_auditoria_anexos)
                     
                     return Response({'success':True, 'detail':'Se editó el complemento de PQRSDF correctamente', 'data': pqrsdf_update}, status=status.HTTP_201_CREATED)
                 else:
@@ -198,59 +254,132 @@ class ComplementoPQRSDFUpdate(generics.RetrieveUpdateAPIView):
             'data_auditoria_delete': data_auditoria_delete
         }
     
-    # def set_descripcion_auditoria(self, pqrsdf):
-    #     tipo_pqrsdf = TiposPQR.objects.filter(cod_tipo_pqr=pqrsdf['cod_tipo_PQRSDF']).first()
+    def set_descripcion_auditoria(self, complemento_PQRSDF):
+        pqrsdf = PQRSDF.objects.filter(id_PQRSDF = complemento_PQRSDF['id_PQRSDF']).first()
+        tipo_pqrsdf = TiposPQR.objects.filter(cod_tipo_pqr=pqrsdf.cod_tipo_PQRSDF).first()
 
-    #     persona = Personas.objects.filter(id_persona = pqrsdf['id_persona_titular']).first()
-    #     persona_serializer = PersonasFilterSerializer(persona)
-    #     nombre_persona_titular = persona_serializer.data['nombre_completo'] if persona_serializer.data['tipo_persona'] == 'N' else persona_serializer.data['razon_social']
+        #Persona interpone
+        persona_interpone = Personas.objects.filter(id_persona = complemento_PQRSDF['id_persona_interpone']).first()
+        persona_interpone_serializer = PersonasFilterSerializer(persona_interpone)
+        nombre_persona_interpone = persona_interpone_serializer.data['nombre_completo'] if persona_interpone_serializer.data['tipo_persona'] == 'N' else persona_interpone_serializer.data['razon_social']
+        
+        #Persona titular
+        persona = Personas.objects.filter(id_persona = pqrsdf.id_persona_titular_id).first()
+        persona_serializer = PersonasFilterSerializer(persona)
+        nombre_persona_titular = persona_serializer.data['nombre_completo'] if persona_serializer.data['tipo_persona'] == 'N' else persona_serializer.data['razon_social']
 
-    #     medioSolicitud = MediosSolicitud.objects.filter(id_medio_solicitud = pqrsdf['id_medio_solicitud']).first()
+        data = {}
+        if complemento_PQRSDF['id_PQRSDF']:
+            data['IdPQRSDF'] = str(complemento_PQRSDF['id_PQRSDF'])
+        else:
+            data['IdSolicitudUsuPQR'] = str(complemento_PQRSDF['id_solicitud_usu_PQR'])
 
-    #     data = {
-    #         'TipoPQRSDF': str(tipo_pqrsdf.nombre),
-    #         'NombrePersona': str(nombre_persona_titular),
-    #         'FechaRegistro': str(pqrsdf['fecha_registro']),
-    #         'MedioSolicitud': str(medioSolicitud.nombre)
-    #     }
+        data['NombrePersonaInterpone'] = str(nombre_persona_interpone)
+        data['FechaComplemento'] = str(complemento_PQRSDF['fecha_complemento'])
+        data['TipoPQRSDF'] = str(tipo_pqrsdf.nombre)
+        data['NombrePersonaTitular'] = str(nombre_persona_titular)
 
-    #     return data
+        return data
 
-    # def auditoria(self, request, descripcion_auditoria, isCreateForWeb, valores_detalles):
-    #     # AUDITORIA
-    #     direccion = Util.get_client_ip(request)
-    #     descripcion = descripcion_auditoria
-    #     auditoria_data = {
-    #         "id_usuario": request.user.id_usuario,
-    #         "id_modulo": 171 if isCreateForWeb else 162,
-    #         "cod_permiso": 'AC',
-    #         "subsistema": 'GEST',
-    #         "dirip": direccion,
-    #         "descripcion": descripcion,
-    #         "valores_actualizados_detalles": valores_detalles['data_auditoria_update'],
-    #         "valores_creados_detalles": valores_detalles['data_auditoria_create'],
-    #         "valores_eliminados_detalles": valores_detalles['data_auditoria_delete']
-    #     }
-    #     Util.save_auditoria_maestro_detalle(auditoria_data)
+    def auditoria(self, request, descripcion_auditoria, isCreateForWeb, valores_detalles):
+        # AUDITORIA
+        direccion = Util.get_client_ip(request)
+        descripcion = descripcion_auditoria
+        auditoria_data = {
+            "id_usuario": request.user.id_usuario,
+            "id_modulo": 171 if isCreateForWeb else 162,
+            "cod_permiso": 'AC',
+            "subsistema": 'GEST',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_actualizados_detalles": valores_detalles['data_auditoria_update'],
+            "valores_creados_detalles": valores_detalles['data_auditoria_create'],
+            "valores_eliminados_detalles": valores_detalles['data_auditoria_delete']
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
 
 class ComplementoPQRSDFDelete(generics.RetrieveDestroyAPIView):
-    serializer_class = ComplementoPQRSDFPutSerializer
     queryset = ComplementosUsu_PQR.objects.all()
-    # permission_classes = [IsAuthenticated]
-
+    permission_classes = [IsAuthenticated]
 
     @transaction.atomic
     def delete(self, request):
         try:
             with transaction.atomic():
-                pass
+                if request.query_params.get('idComplementoUsu_PQR')==None or request.query_params.get('isCreateForWeb')==None:
+                    raise ValidationError('No se ingresaron parámetros necesarios para eliminar el complemento de PQRSDF')
+                idComplementoUsu_PQR = int(request.query_params.get('idComplementoUsu_PQR', 0))
+                isCreateForWeb = ast.literal_eval(request.query_params.get('isCreateForWeb', False))
+
+                valores_eliminados_detalles = []
+                complemento_pqrsdf_delete = self.queryset.filter(idComplementoUsu_PQR = idComplementoUsu_PQR).first()
+                if complemento_pqrsdf_delete:
+                    if not complemento_pqrsdf_delete.id_radicado:
+                        #Elimina los anexos, anexos_pqr, metadatos y el archivo adjunto
+                        anexos_pqr = Anexos_PQR.objects.filter(id_complemento_usu_PQR = idComplementoUsu_PQR)
+                        if anexos_pqr:
+                            anexosDelete = AnexosDelete()
+                            valores_eliminados_detalles = anexosDelete.delete(anexos_pqr)
+                            #Elimina el pqrsdf
+                            complemento_pqrsdf_delete.delete()
+                            #Auditoria
+                            descripcion_auditoria = self.set_descripcion_auditoria(complemento_pqrsdf_delete)
+                            self.auditoria(request, descripcion_auditoria, isCreateForWeb, valores_eliminados_detalles)
+
+                        return Response({'success':True, 'detail':'El complemento de PQRSDF ha sido descartado'}, status=status.HTTP_200_OK)
+                    else:
+                        raise NotFound('No se permite borrar complementos de pqrsdf ya radicados')
+                else:
+                    raise NotFound('No se encontró ningún complemento de pqrsdf con estos parámetros')
         
         except Exception as e:
             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
+    def set_descripcion_auditoria(self, complemento_PQRSDF):
+        pqrsdf = PQRSDF.objects.filter(id_PQRSDF = complemento_PQRSDF.id_PQRSDF_id).first()
+        tipo_pqrsdf = TiposPQR.objects.filter(cod_tipo_pqr=pqrsdf.cod_tipo_PQRSDF).first()
+
+        #Persona interpone
+        persona_interpone = Personas.objects.filter(id_persona = complemento_PQRSDF.id_persona_interpone_id).first()
+        persona_interpone_serializer = PersonasFilterSerializer(persona_interpone)
+        nombre_persona_interpone = persona_interpone_serializer.data['nombre_completo'] if persona_interpone_serializer.data['tipo_persona'] == 'N' else persona_interpone_serializer.data['razon_social']
+        
+        #Persona titular
+        persona = Personas.objects.filter(id_persona = pqrsdf.id_persona_titular_id).first()
+        persona_serializer = PersonasFilterSerializer(persona)
+        nombre_persona_titular = persona_serializer.data['nombre_completo'] if persona_serializer.data['tipo_persona'] == 'N' else persona_serializer.data['razon_social']
+
+        data = {}
+        if complemento_PQRSDF.id_PQRSDF:
+            data['IdPQRSDF'] = str(complemento_PQRSDF.id_PQRSDF_id)
+        else:
+            data['IdSolicitudUsuPQR'] = str(complemento_PQRSDF.id_solicitud_usu_PQR_id)
+
+        data['NombrePersonaInterpone'] = str(nombre_persona_interpone)
+        data['FechaComplemento'] = str(complemento_PQRSDF.fecha_complemento)
+        data['TipoPQRSDF'] = str(tipo_pqrsdf.nombre)
+        data['NombrePersonaTitular'] = str(nombre_persona_titular)
+
+        return data
+    
+    def auditoria(self, request, descripcion_auditoria, isCreateForWeb, valores_eliminados_detalles):
+        # AUDITORIA
+        direccion = Util.get_client_ip(request)
+        descripcion = descripcion_auditoria
+        auditoria_data = {
+            "id_usuario": request.user.id_usuario,
+            "id_modulo": 171 if isCreateForWeb else 162,
+            "cod_permiso": 'BO',
+            "subsistema": 'GEST',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_eliminados_detalles": valores_eliminados_detalles
+        }
+        Util.save_auditoria_maestro_detalle(auditoria_data) 
+        
 class RadicarComplementoPQRSDF(generics.CreateAPIView):
     serializer_class = RadicadoPostSerializer
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     @transaction.atomic
     def post(self, request):
@@ -285,8 +414,8 @@ class RadicarComplementoPQRSDF(generics.CreateAPIView):
         complementoPQRSDFUpdate.update_complemento_pqrsdf(complemento_pqr_instance, complemento_pqrsdf_update)
 
         # #Auditoria
-        # descripciones = self.set_descripcion_auditoria(previous_instance, complemento_pqr_instance)
-        # self.auditoria(request, descripciones['descripcion'], isCreateForWeb, descripciones['data_auditoria_update'])
+        descripciones = self.set_descripcion_auditoria(previous_instance, complemento_pqr_instance)
+        self.auditoria(request, descripciones['descripcion'], isCreateForWeb, descripciones['data_auditoria_update'])
         
         return data_radicado
     
@@ -296,13 +425,13 @@ class RadicarComplementoPQRSDF(generics.CreateAPIView):
 
         return complemento_pqrsdf
     
-    def set_descripcion_auditoria(self, previous_pqrsdf, pqrsdf_update):
+    def set_descripcion_auditoria(self, previous_complemento_pqrsdf, complemento_pqrsdf_update):
         descripcion_auditoria_update = {
-            'IdRadicado': previous_pqrsdf.id_radicado,
-            'FechaRadicado': previous_pqrsdf.fecha_radicado
+            'IdRadicado': previous_complemento_pqrsdf.id_radicado,
+            'FechaRadicado': previous_complemento_pqrsdf.fecha_radicado
         }
 
-        data_auditoria_update = {'previous':previous_pqrsdf, 'current':pqrsdf_update}
+        data_auditoria_update = {'previous':previous_complemento_pqrsdf, 'current':complemento_pqrsdf_update}
 
         data = {
             'descripcion': descripcion_auditoria_update,

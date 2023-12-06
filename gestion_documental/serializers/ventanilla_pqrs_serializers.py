@@ -488,6 +488,15 @@ class PQRSDFDetalleSolicitud(serializers.ModelSerializer):
             return cadena
         
 
+class AnexosCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos
+        fields = '__all__'
+
+class MetadatosAnexosTmpCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MetadatosAnexosTmp
+        fields = '__all__'
 class SolicitudAlUsuarioSobrePQRSDFCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = SolicitudAlUsuarioSobrePQRSDF

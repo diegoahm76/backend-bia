@@ -4,8 +4,9 @@ from gestion_documental.choices.central_digitalizacion_choices import TIPO_SOLIC
 from gestion_documental.models.radicados_models import SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion
 from gestion_documental.serializers.pqr_serializers import AnexosPqrsdfPanelSerializer
 from transversal.models.personas_models import Personas
+from transversal.serializers.personas_serializers import PersonasFilterSerializer
 
-class SolicitudesPendientesSerializer(serializers.ModelSerializer):
+class SolicitudesSerializer(serializers.ModelSerializer):
     nombre_tipo_solicitud = serializers.SerializerMethodField()
     numero_radicado = serializers.SerializerMethodField()
     asunto = serializers.SerializerMethodField()
@@ -33,7 +34,8 @@ class SolicitudesPendientesSerializer(serializers.ModelSerializer):
         nombre_persona_titular = ""
         if obj['id_persona_titular']:
             persona_titular = Personas.objects.filter(id_persona = obj['id_persona_titular']).first()
-            nombre_persona_titular = f"{persona_titular.primer_nombre} {persona_titular.segundo_nombre} {persona_titular.primer_apellido} {persona_titular.segundo_apellido}"
+            persona_titular_serializer = PersonasFilterSerializer(persona_titular)
+            nombre_persona_titular = persona_titular_serializer.data['nombre_completo']
         elif obj['id_persona_titular'] == 0:
             nombre_persona_titular = "Anonimo"
         
