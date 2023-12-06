@@ -10,7 +10,7 @@ from django.db.models import Q
 from django.db import transaction
 from django.forms import model_to_dict
 
-from gestion_documental.serializers.central_digitalizacion_serializers import SolicitudesAlUsuarioPostSerializer, SolicitudesPendientesSerializer, SolicitudesPostSerializer
+from gestion_documental.serializers.central_digitalizacion_serializers import SolicitudesAlUsuarioPostSerializer, SolicitudesPostSerializer, SolicitudesSerializer
 from gestion_documental.serializers.pqr_serializers import AnexosPostSerializer, MetadatosPostSerializer, MetadatosPutSerializer, PQRSDFPutSerializer
 from gestion_documental.serializers.ventanilla_pqrs_serializers import ComplementosUsu_PQRPutSerializer
 from gestion_documental.views.panel_ventanilla_views import Estados_PQRCreate
@@ -18,7 +18,7 @@ from gestion_documental.views.pqr_views import AnexosCreate, ArchivoDelete, Meta
 from seguridad.signals.roles_signals import IsAuthenticated
 
 class SolicitudesPendientesGet(generics.ListAPIView):
-    serializer_class = SolicitudesPendientesSerializer
+    serializer_class = SolicitudesSerializer
     queryset = SolicitudDeDigitalizacion.objects.all()
     permission_classes = [IsAuthenticated]
 
@@ -46,7 +46,7 @@ class SolicitudesPendientesGet(generics.ListAPIView):
             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
 class SolicitudesRespondidasGet(generics.ListAPIView):
-    serializer_class = SolicitudesPendientesSerializer
+    serializer_class = SolicitudesSerializer
     queryset = SolicitudDeDigitalizacion.objects.all()
     querysetRadicados = T262Radicados.objects.all()
     permission_classes = [IsAuthenticated]
