@@ -79,7 +79,7 @@ class TipoActuacion(models.Model):
         verbose_name_plural = 'Tipos actuación'
 
 
-
+#PARTE DE STIVEN PRACTICANTE 
 
 class RegistrosConfiguracion(models.Model):
     id = models.AutoField(primary_key=True, db_column='T419IdRegistroConfiguracion')
@@ -135,7 +135,7 @@ class Variables(models.Model):
 class ValoresVariables(models.Model):
     id_valores_variables = models.AutoField(primary_key=True, db_column='T444IdValoresVariables')
     variables = models.ForeignKey('Variables', on_delete=models.CASCADE, db_column='T444IdVariables', related_name='valores_variables_variables')
-    fecha_inicio = models.DateField(db_column='T444FechaInicio')
+    fecha_inicio =  models.DateTimeField(auto_now_add=True, db_column='T444FechaInicio')  
     fecha_fin = models.DateField(db_column='T444FechaFin')
     valor = models.DecimalField(max_digits=10, decimal_places=2, db_column='T444Valor')
 
