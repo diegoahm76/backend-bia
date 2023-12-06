@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from transversal.models.personas_models import Personas
@@ -501,3 +501,26 @@ class SolicitudAlUsuarioSobrePQRSDFCreateSerializer(serializers.ModelSerializer)
     class Meta:
         model = SolicitudAlUsuarioSobrePQRSDF
         fields = '__all__'
+
+class Anexos_PQRCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos_PQR
+        fields = '__all__'
+
+class SolicitudAlUsuarioSobrePQRSDFGetSerializer(serializers.ModelSerializer):
+    tipo_tramite = serializers.SerializerMethodField()
+    numero_radicado = serializers.SerializerMethodField()
+    estado = serializers.ReadOnlyField(source='id_estado_actual_solicitud.nombre',default=None)
+    class Meta:
+        model = SolicitudAlUsuarioSobrePQRSDF
+        # fields = ['id_solicitud_al_usuario_sobre_pqrsdf']
+        fields = ['id_solicitud_al_usuario_sobre_pqrsdf','tipo_tramite','fecha_radicado_salida','numero_radicado','estado']
+
+    def get_tipo_tramite(self,obj):
+        return "Solicitud de Complemento de Información al Usuario"
+    def get_numero_radicado(self,obj):
+        cadena = ""
+        if obj.id_radicado_salida:
+            cadena= str(obj.id_radicado_salida.prefijo_radicado)+'-'+str(obj.id_radicado_salida.agno_radicado)+'-'+str(obj.id_radicado_salida.nro_radicado)
+            return cadena
+        return 'SIN RADICAR'

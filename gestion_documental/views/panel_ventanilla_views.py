@@ -7,7 +7,7 @@ from gestion_documental.models.configuracion_tiempos_respuesta_models import Con
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, T262Radicados
 from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
-from gestion_documental.serializers.ventanilla_pqrs_serializers import AnexoArchivosDigitalesSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpSerializerGet, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer
+from gestion_documental.serializers.ventanilla_pqrs_serializers import AnexoArchivosDigitalesSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpSerializerGet, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from seguridad.utils import Util
 from datetime import date, datetime
@@ -647,8 +647,8 @@ class AnexosCreate(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     archivos_Digitales = ArchivosDgitalesCreate()
 
-    def post(self, request):
-        data_in = request.data.copy()
+    def crear_anexo(self,data):
+        data_in = data
 
         # data_archivos=request.FILES['archivo']
         # data_archivo = {}
@@ -657,17 +657,23 @@ class AnexosCreate(generics.CreateAPIView):
         #     respuesta_archivo = self.archivos_Digitales.crear_archivo({"ruta":ruta,'es_Doc_elec_archivo':False},data_archivos)
         #     data_archivo = respuesta_archivo.data['data']
         data_in['ya_digitalizado'] = True
-        serializer = self.serializer_class(data=data_in)
+        serializer = AnexosCreateSerializer(data=data_in)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
         return Response({'succes': True, 'detail':'Se creo el anexo', 'data':serializer.data,}, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        respuesta = self.crear_anexo(request.data)
+        return respuesta
+
 class MetadatosAnexosTmpCreate(generics.CreateAPIView):
     serializer_class = MetadatosAnexosTmpCreateSerializer
     queryset = MetadatosAnexosTmp.objects.all()
     permission_classes = [IsAuthenticated]
-    def post(self, request):
-        data_in = request.data
+
+    def crear_meta_data(self,data):
+        data_in = data
         data_in['fecha_creacion_doc'] = date.today()
         serializer = self.serializer_class(data=data_in)
         serializer.is_valid(raise_exception=True)
@@ -675,28 +681,85 @@ class MetadatosAnexosTmpCreate(generics.CreateAPIView):
 
         return Response({'succes': True, 'detail':'Se creo el anexo', 'data':serializer.data}, status=status.HTTP_200_OK)
 
+    
+    def post(self, request):
+        data_in = request.data
+        respuesta = self.crear_meta_data(data_in)
+        return respuesta
+
 class SolicitudAlUsuarioSobrePQRSDFCreate(generics.CreateAPIView):
     serializer_class = SolicitudAlUsuarioSobrePQRSDFCreateSerializer
+    serializer_class_anexo_pqr = Anexos_PQRCreateSerializer
     queryset = SolicitudAlUsuarioSobrePQRSDF.objects.all()
     vista_estados = Estados_PQRCreate()
+    vista_anexos = AnexosCreate()
+    vista_archivos = ArchivosDgitalesCreate()
+    vista_meta_dato = MetadatosAnexosTmpCreate()
     permission_classes = [IsAuthenticated]
     def post(self, request):
         fecha_actual =datetime.now()
         solicitud_usu_PQRSDF = request.data.get('solicitud_usu_PQRSDF')
         persona = request.user.persona
         id_unidad = None
+        data_anexos =[]
+        data_meta=[]
+       
+        data_archivos=[]
         if persona.id_unidad_organizacional_actual:
             id_unidad = persona.id_unidad_organizacional_actual.id_unidad_organizacional
         if not solicitud_usu_PQRSDF:
             raise ValidationError("Se requiere informacion del complemento")
+        
+        archivos = request.FILES.getlist('archivo')
+        anexos = request.data.getlist('anexo')
+
+        if len(anexos) != len(archivos):
+            raise ValidationError("La cantidad de archivos y anexos no coinciden")
+        json_anexos =[]
+        for anexo in anexos:
+            json_anexo = json.loads(anexo)
+            json_anexos.append(json_anexo)
+
         data_in = json.loads(solicitud_usu_PQRSDF)
+
+        #for archivo in archivos:
+        for archivo in archivos:
+            if  archivo:
+                ruta = "home,BIA,Otros,PQRSDF,Complementos"
+                respuesta_archivo = self.vista_archivos.crear_archivo({"ruta":ruta,'es_Doc_elec_archivo':False},archivo)
+                data_archivo = respuesta_archivo.data['data']
+                if respuesta_archivo.status_code != status.HTTP_201_CREATED:
+                    return respuesta_archivo
+                #print(respuesta_archivo.data['data'])
+                data_archivos.append(respuesta_archivo.data['data'])
+
+      
+        for anexo,archivo in zip(json_anexos,data_archivos):
+            #print( archivo['id_archivo_digital'])
+            #print(anexo)
+            #print(anexo['meta_data'])
+            respuesta_anexo = self.vista_anexos.crear_anexo(anexo)
+            if respuesta_anexo.status_code != status.HTTP_200_OK:
+                return respuesta_anexo
+            data_anexo = respuesta_anexo.data['data']
+            meta_dato = anexo['meta_data']
+            meta_dato['id_anexo']= data_anexo['id_anexo']
+            meta_dato['id_archivo_sistema'] = archivo['id_archivo_digital']
+            respuest_meta_dato = self.vista_meta_dato.crear_meta_data(meta_dato)
+            if respuest_meta_dato.status_code != status.HTTP_200_OK:
+                return respuest_meta_dato
+            #print(respuest_meta_dato.data['data'])
+            data_anexos.append({**data_anexo,"meta_data":respuest_meta_dato.data['data'],'archivo':archivo})
+
+ 
+        # raise ValidationError("SIU")
         data_in['fecha_solicitud'] =fecha_actual
         data_in['cod_tipo_oficio'] ='S'
         data_in['id_persona_solicita'] = request.user.persona.id_persona
         data_in['id_und_org_oficina_solicita'] = id_unidad
         data_in['id_estado_actual_solicitud'] = 1 # 254 Estado guardado
         data_in['fecha_ini_estado_actual'] = fecha_actual
-        data_in['cantidad_anexos'] = 0 #TODO: calcular cantidad de anexos
+        data_in['cantidad_anexos'] =len(data_anexos)
 
         #Tiempo que tiene un usuario para responder una Solicitud de Complementación o Solicitud de Requerimientos. tabla T271
         tiempo_respuesta = ConfiguracionTiemposRespuesta.objects.filter(nombre_configuracion='Tiempo que tiene un usuario para responder una Solicitud de Complementación o Solicitud de Requerimientos.').first()
@@ -720,6 +783,31 @@ class SolicitudAlUsuarioSobrePQRSDFCreate(generics.CreateAPIView):
         data_estado['fecha_iniEstado'] = fecha_actual
         respuesta_estado = self.vista_estados.crear_estado(data_estado)
         data_respuesta_estado_asociado = respuesta_estado.data['data']
+        ##CREAR LA RELACION ENTRE EL ANEXO Y EL COMPLEMENTO T259
+        relacion_pqr=[]
+        for anexo in data_anexos:
+            data_relacion ={}
+            data_relacion['id_anexo'] = anexo['id_anexo']
+            data_relacion['id_solicitud_usu_sobre_PQR'] = intance.id_solicitud_al_usuario_sobre_pqrsdf
+            serializer_relacion = self.serializer_class_anexo_pqr(data=data_relacion) 
+            serializer_relacion.is_valid(raise_exception=True)
+            intance_3 =serializer_relacion.save()  
+            relacion_pqr.append(serializer_relacion.data)
 
 
-        return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'data':serializer.data,"estado":data_respuesta_estado_asociado}, status=status.HTTP_200_OK)
+        return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'data':serializer.data,"estado":data_respuesta_estado_asociado,'anexos':data_anexos,'relacion_pqr':relacion_pqr}, status=status.HTTP_200_OK)
+
+class SolicitudAlUsuarioSobrePQRSDFGetDetalle(generics.ListAPIView):
+
+    serializer_class = SolicitudAlUsuarioSobrePQRSDFGetSerializer
+    queryset =SolicitudAlUsuarioSobrePQRSDF.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self, request,pqr):
+        
+        instance = self.get_queryset().filter(id_pqrsdf=pqr,cod_tipo_oficio='S')
+        if not instance:
+            raise NotFound("No existen registros")
+        
+        serializador = self.serializer_class(instance,many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data,}, status=status.HTTP_200_OK)
+    

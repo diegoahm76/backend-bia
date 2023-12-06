@@ -41,6 +41,7 @@ urlpatterns = [
     path('pqrsdf/solicitud-al-usuario/create/',views.SolicitudAlUsuarioSobrePQRSDFCreate.as_view(),name='crear-solicitud-al-usuario-pqrsdf'),
     path('pqrsdf/anexo/meta-data/create/',views.MetadatosAnexosTmpCreate.as_view(),name='crear-metadatos-anexos-tmp'),
     path('pqrsdf/anexo/create/',views.AnexosCreate.as_view(),name='crear-anexos'),
+    path('pqrsdf/solicitud-usuario/get/<str:pqr>/',views.SolicitudAlUsuarioSobrePQRSDFGetDetalle.as_view(),name='listar-solicitud-al-usuario-pqrsdf'),
     
 
 ]
