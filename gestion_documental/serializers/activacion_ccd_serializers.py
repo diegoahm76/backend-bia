@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from gestion_documental.models.trd_models import TablaRetencionDocumental
 from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
+from gestion_documental.models.tca_models import TablasControlAcceso
 
 
 class CCDSerializer(serializers.ModelSerializer):
@@ -27,3 +28,32 @@ class CCDSerializer(serializers.ModelSerializer):
             'ruta_soporte',
             'actual'
         )
+
+class TCASerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TablasControlAcceso
+        fields = ['id_tca', 'version','nombre']
+
+class TRDSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TablaRetencionDocumental
+        fields = ['id_trd', 'version', 'nombre']
+
+class CCDPosiblesSerializer(serializers.ModelSerializer):
+    trd = serializers.SerializerMethodField()
+    tca = serializers.SerializerMethodField()
+
+    def get_trd(self,obj):
+        trd = TablaRetencionDocumental.objects.filter(id_ccd=obj.id_ccd).first()
+        serializer = TRDSerializer(trd)
+        return serializer.data
+    
+    def get_tca(self,obj):
+        trd = TablaRetencionDocumental.objects.filter(id_ccd=obj.id_ccd).first()
+        tca = TablasControlAcceso.objects.filter(id_trd=trd.id_trd).first()
+        serializer = TCASerializer(tca)
+        return serializer.data
+
+    class Meta:
+        model = CuadrosClasificacionDocumental
+        fields = ['id_ccd', 'nombre', 'version', 'trd', 'tca']
