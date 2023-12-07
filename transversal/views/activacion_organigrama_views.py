@@ -23,26 +23,17 @@ from gestion_documental.models.tca_models import TablasControlAcceso
 from gestion_documental.models.trd_models import TablaRetencionDocumental
 
 from transversal.serializers.activacion_organigrama_serializers import (
-    OrganigramaCambioDeOrganigramaActualSerializer,
+    OrganigramaCambioActualSerializer,
 )
 
-from transversal.serializers.organigrama_serializers import (
-    NewUserOrganigramaSerializer,
+from transversal.serializers.activacion_organigrama_serializers import (
+    OrganigramaSerializer,
+    
 )
 
 # TODO: Implementar el formulario "Cambio de Organigrama Actual" para la activación de un nuevo organigrama.
 
 # TODO: En el módulo de ACTIVACIÓN DEL ORGANIGRAMA, verificar si existe un Cuadro de Clasificación Documental (CCD) ACTUAL.
-
-# TODO: Manejar los dos escenarios dependiendo de la existencia del CCD ACTUAL:
-#     - NO Existe CCD ACTUAL:
-#         - Cargar un listado de Organigramas terminados sin fecha de puesta en producción (T017fechaTerminado<>"" y T017fechaPuestaEnProduccion="", tabla T017Organigramas).
-#         - Permitir al usuario seleccionar el organigrama a activar.
-#     - SI Existe CCD ACTUAL:
-#         - Cargar un listado de Organigramas terminados sin fecha de puesta en producción y ya usados en al menos un CCD terminado (T017fechaTerminado<>"" y T017fechaPuestaDeProduccion="", tabla T017Organigramas; campos T206Id_Organigrama, T206fechaTerminado<>"" de la tabla T206CuadrosClasificacionDoc).
-#         - Permitir al usuario seleccionar el organigrama a activar.
-#         - Cargar automáticamente y mostrar en forma NO editable el TRD unido al CCD y el TCA unido al TRD, siempre que el TCA esté terminado (campo T216fechaTerminado<>"" de la tabla T216TablasControlAcceso).
-#         - Validar la existencia del TRD y el TCA correspondientes; mostrar un mensaje informativo si no se encuentran.
 
 # TODO: Al activar el nuevo organigrama, actualizar los campos T017actual y T017fechaPuestaEnProduccion en la tabla T017Organigramas.
 # TODO: Si el escenario es "SI Existe CCD ACTUAL", activar también el CCD, TRD y TCA correspondientes.
@@ -71,7 +62,7 @@ from transversal.serializers.organigrama_serializers import (
 
 
 class OrganigramaActualGetView(generics.ListAPIView):
-    serializer_class = NewUserOrganigramaSerializer
+    serializer_class = OrganigramaSerializer
     permission_classes = [IsAuthenticated]
 
     def get_organigrama_actual(self):
@@ -89,7 +80,7 @@ class OrganigramaActualGetView(generics.ListAPIView):
     
 
 class OrganigramasPosiblesGetListView(generics.ListAPIView):
-    serializer_class = NewUserOrganigramaSerializer
+    serializer_class = OrganigramaSerializer
     permission_classes = [IsAuthenticated]
 
     def get_organigramas_posibles(self):
@@ -100,6 +91,23 @@ class OrganigramasPosiblesGetListView(generics.ListAPIView):
         organigramas_posibles = self.get_organigramas_posibles()
         serializer = self.serializer_class(organigramas_posibles, many=True)
         return Response({'success':True, 'detail':'Los organigramas posibles para activar son los siguientes', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+class OrganigramaCambioActualPutView(generics.UpdateAPIView):
+    serializer_class = OrganigramaCambioActualSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_organigrama(self, id_organigrama):
+        try:
+            organigrama = Organigramas.objects.get(id_organigrama=id_organigrama)
+        except Organigramas.DoesNotExist:
+            raise NotFound('El organigrama ingresado no existe')
+        return organigrama
+    
+    def get_organigrama_actual(self):
+        organigrama_actual = Organigramas.objects.filter(actual=True).first()
+        return organigrama_actual
+    
+    
 
 
     

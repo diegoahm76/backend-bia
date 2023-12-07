@@ -78,6 +78,7 @@ urlpatterns = [
     #GESTOR DOCUMENTAL
     path('api/gestor/ccd/', include('gestion_documental.urls.ccd_urls')),
     path('api/gestor/activar/', include('gestion_documental.urls.finalizar_urls')),
+    path('api/gestor/ccd/activacion/', include('gestion_documental.urls.activacion_ccd_urls')),
     path('api/gestor/trd/', include('gestion_documental.urls.trd_urls')),
     path('api/gestor/tca/', include('gestion_documental.urls.tca_urls')),
     path('api/gestor/choices/', include('gestion_documental.urls.choices_urls')),
@@ -165,6 +166,10 @@ urlpatterns = [
     # SEGUIMIENTO PLANES
     path('api/seguimiento/planes/',include('seguimiento_planes.urls.planes_urls')),
     path('api/seguimiento-planes/',include('seguimiento_planes.urls.seguimiento_urls')),
+    
+    # TRAMITES
+    path('api/tramites/',include('tramites.urls.tramites_urls')),
+    path('api/tramites/choices/',include('tramites.urls.choices_urls')),
 
 
     
