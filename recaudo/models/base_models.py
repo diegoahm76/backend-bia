@@ -123,7 +123,7 @@ class Variables(models.Model):
     id_variables = models.AutoField(primary_key=True, db_column='T443IdVariables')
     nombre = models.CharField(max_length=255, db_column='T443Nombre')
     tipo_cobro = models.ForeignKey('TipoCobro', on_delete=models.CASCADE, db_column='T443IdTipoCobro', related_name='variables_tipo_cobro')
-    tipo_renta = models.ForeignKey('TipoRenta', on_delete=models.CASCADE, db_column='T443IdTipoRenta', related_name='variables_tipo_renta')
+    tipo_renta = models.ForeignKey(TipoRenta, on_delete=models.CASCADE, db_column='T443IdTipoRenta', related_name='variables_tipo_renta')
 
     class Meta:
         db_table = 'T443Variables'
@@ -134,11 +134,11 @@ class Variables(models.Model):
 
 class ValoresVariables(models.Model):
     id_valores_variables = models.AutoField(primary_key=True, db_column='T444IdValoresVariables')
-    variables = models.ForeignKey('Variables', on_delete=models.CASCADE, db_column='T444IdVariables', related_name='valores_variables_variables')
+    variables = models.ForeignKey(Variables, on_delete=models.CASCADE, db_column='T444IdVariables', related_name='valores_variables_variables')
     fecha_inicio =  models.DateTimeField(auto_now_add=True, db_column='T444FechaInicio')  
     fecha_fin = models.DateField(db_column='T444FechaFin')
     valor = models.DecimalField(max_digits=10, decimal_places=2, db_column='T444Valor')
-
+    descripccion = models.CharField(max_length=255, db_column='T444Descripccion')
     class Meta:
         db_table = 'T444ValoresVariables'
         verbose_name = 'Valores Variables'
