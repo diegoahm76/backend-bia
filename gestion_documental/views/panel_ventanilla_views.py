@@ -7,9 +7,10 @@ from gestion_documental.models.configuracion_tiempos_respuesta_models import Con
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, T262Radicados
 from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
-from gestion_documental.serializers.ventanilla_pqrs_serializers import AnexoArchivosDigitalesSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpSerializerGet, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer
+from gestion_documental.serializers.ventanilla_pqrs_serializers import AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from seguridad.utils import Util
+from gestion_documental.utils import UtilsGestor
 from datetime import date, datetime
 from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
@@ -19,7 +20,7 @@ from transversal.models.lideres_models import LideresUnidadesOrg
 from django.db.models import Max
 from transversal.models.organigrama_models import Organigramas, UnidadesOrganizacionales
 import json
-
+from django.template.loader import render_to_string
 
 
 class EstadosSolicitudesGet(generics.ListAPIView):
@@ -702,7 +703,8 @@ class SolicitudAlUsuarioSobrePQRSDFCreate(generics.CreateAPIView):
         persona = request.user.persona
         id_unidad = None
         data_anexos =[]
-        data_meta=[]
+        #data_meta=[]
+        anexos_con_archivo =[]
        
         data_archivos=[]
         if persona.id_unidad_organizacional_actual:
@@ -797,7 +799,7 @@ class SolicitudAlUsuarioSobrePQRSDFCreate(generics.CreateAPIView):
 
         return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'data':serializer.data,"estado":data_respuesta_estado_asociado,'anexos':data_anexos,'relacion_pqr':relacion_pqr}, status=status.HTTP_200_OK)
 
-class SolicitudAlUsuarioSobrePQRSDFGetDetalle(generics.ListAPIView):
+class SolicitudAlUsuarioSobrePQRSDFGetByPQRS(generics.ListAPIView):
 
     serializer_class = SolicitudAlUsuarioSobrePQRSDFGetSerializer
     queryset =SolicitudAlUsuarioSobrePQRSDF.objects.all()
@@ -809,5 +811,51 @@ class SolicitudAlUsuarioSobrePQRSDFGetDetalle(generics.ListAPIView):
             raise NotFound("No existen registros")
         
         serializador = self.serializer_class(instance,many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data,}, status=status.HTTP_200_OK)
+    
+
+class SolicitudAlUsuarioSobrePQRSDAnexosFGetByPQRS(generics.ListAPIView):
+
+    serializer_class = Anexos_PQRAnexosGetSerializer
+    queryset = Anexos_PQR.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self, request,soli):
+        
+        instance = self.get_queryset().filter(id_solicitud_usu_sobre_PQR=soli)
+        if not instance:
+            raise NotFound("No existen registros")
+        
+        serializador = self.serializer_class(instance,many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data,}, status=status.HTTP_200_OK)
+       
+
+class SolicitudAlUsuarioSobrePQRSDFGetById(generics.ListAPIView):
+
+    serializer_class = SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer
+    queryset =SolicitudAlUsuarioSobrePQRSDF.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self, request,pk):
+        
+        instance = self.get_queryset().filter(id_solicitud_al_usuario_sobre_pqrsdf=pk).first()
+        if not instance:
+            raise NotFound("No existen registros")
+        
+        serializador = self.serializer_class(instance)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data,}, status=status.HTTP_200_OK)
+    
+#MetadatosAnexosTmpGetSerializer
+
+class MetadatosAnexosTmpFGetByIdAnexo(generics.ListAPIView):
+
+    serializer_class = MetadatosAnexosTmpGetSerializer
+    queryset =MetadatosAnexosTmp.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self, request,pk):
+        
+        instance = self.get_queryset().filter(id_anexo=pk).first()
+        if not instance:
+            raise NotFound("No existen registros")
+        
+        serializador = self.serializer_class(instance)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data,}, status=status.HTTP_200_OK)
     

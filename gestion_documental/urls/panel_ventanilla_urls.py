@@ -41,7 +41,13 @@ urlpatterns = [
     path('pqrsdf/solicitud-al-usuario/create/',views.SolicitudAlUsuarioSobrePQRSDFCreate.as_view(),name='crear-solicitud-al-usuario-pqrsdf'),
     path('pqrsdf/anexo/meta-data/create/',views.MetadatosAnexosTmpCreate.as_view(),name='crear-metadatos-anexos-tmp'),
     path('pqrsdf/anexo/create/',views.AnexosCreate.as_view(),name='crear-anexos'),
-    path('pqrsdf/solicitud-usuario/get/<str:pqr>/',views.SolicitudAlUsuarioSobrePQRSDFGetDetalle.as_view(),name='listar-solicitud-al-usuario-pqrsdf'),
+    path('pqrsdf/solicitud-usuario/get/<str:pqr>/',views.SolicitudAlUsuarioSobrePQRSDFGetByPQRS.as_view(),name='listar-solicitud-al-usuario-pqrsdf'),
+    path('pqrsdf/solicitud/anexos/get/<str:soli>/',views.SolicitudAlUsuarioSobrePQRSDAnexosFGetByPQRS.as_view(),name='listar-anexos-solicitud'),
+    path('pqrsdf/solicitud/get/id/<str:pk>/',views.SolicitudAlUsuarioSobrePQRSDFGetById.as_view(),name='listar-solicitud-id'),
+    #MetadatosAnexosTmpFGetByIdAnexo
+    path('pqrsdf/solicitud/anexos/meta-data/get/<str:pk>/',views.MetadatosAnexosTmpFGetByIdAnexo.as_view(),name='listar-meta-data_anexo'),
+
+    
     
 
 ]
