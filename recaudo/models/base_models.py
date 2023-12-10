@@ -77,3 +77,70 @@ class TipoActuacion(models.Model):
         db_table = 'T427TiposActuacion'
         verbose_name = 'Tipo actuación'
         verbose_name_plural = 'Tipos actuación'
+
+
+#PARTE DE STIVEN PRACTICANTE 
+
+class RegistrosConfiguracion(models.Model):
+    id = models.AutoField(primary_key=True, db_column='T419IdRegistroConfiguracion')
+    Estado = models.BooleanField(db_column='T440Estado')  # Cambiado a campo booleano
+    TipoRenta = models.CharField(max_length=255, db_column='T440TipoRenta')
+    TipoCobro = models.CharField(max_length=255, db_column='T440TipoCobro')
+    Descripcion = models.CharField(max_length=255, db_column='T440Descripcion')
+
+    class Meta:
+        db_table = 'T440RegistrosConfiguración'
+        verbose_name = 'Registro configuración'
+        verbose_name_plural = 'Registros configuración'
+
+
+
+
+class TipoCobro(models.Model):
+    id_tipo_cobro = models.AutoField(primary_key=True, db_column='T441IdTipoCobro')  
+    nombre_tipo_cobro = models.CharField(max_length=255, db_column='T441NombreTipoCobro')
+
+    class Meta:
+        db_table = 'T441TipoCobro'
+        verbose_name = 'Tipo Cobro'
+        verbose_name_plural = 'Tipo Cobro'
+
+
+
+class TipoRenta(models.Model):
+    id_tipo_renta = models.AutoField(primary_key=True, db_column='T442IdTipoRenta')  
+    nombre_tipo_renta = models.CharField(max_length=255, db_column='T442NombreTipoRenta')
+
+    class Meta:
+        db_table = 'T442TipoRenta'
+        verbose_name = 'Tipo Renta'
+        verbose_name_plural = 'Tipos de Renta'
+
+
+
+
+class Variables(models.Model):
+    id_variables = models.AutoField(primary_key=True, db_column='T443IdVariables')
+    nombre = models.CharField(max_length=255, db_column='T443Nombre')
+    tipo_cobro = models.ForeignKey('TipoCobro', on_delete=models.CASCADE, db_column='T443IdTipoCobro', related_name='variables_tipo_cobro')
+    tipo_renta = models.ForeignKey(TipoRenta, on_delete=models.CASCADE, db_column='T443IdTipoRenta', related_name='variables_tipo_renta')
+
+    class Meta:
+        db_table = 'T443Variables'
+        verbose_name = 'Variables'
+        verbose_name_plural = 'Variables'
+
+
+
+class ValoresVariables(models.Model):
+    id_valores_variables = models.AutoField(primary_key=True, db_column='T444IdValoresVariables')
+    variables = models.ForeignKey(Variables, on_delete=models.CASCADE, db_column='T444IdVariables', related_name='valores_variables_variables')
+    fecha_inicio =  models.DateTimeField(auto_now_add=True, db_column='T444FechaInicio')  
+    fecha_fin = models.DateField(db_column='T444FechaFin')
+    valor = models.DecimalField(max_digits=10, decimal_places=2, db_column='T444Valor')
+    descripccion = models.CharField(max_length=255, db_column='T444Descripccion')
+    class Meta:
+        db_table = 'T444ValoresVariables'
+        verbose_name = 'Valores Variables'
+        verbose_name_plural = 'Valores Variables'
+

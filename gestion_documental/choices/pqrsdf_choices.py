@@ -1,5 +1,7 @@
 TIPOS_PQR = [
-        ('P', 'Petición'),
+        ('PG', 'Petición General'),
+        ('PD', 'Petición De Documentos o Información'),
+        ('PC', 'Petición De Consulta'),
         ('Q', 'Queja'),
         ('R', 'Reclamo'),
         ('S', 'Sugerencia'),

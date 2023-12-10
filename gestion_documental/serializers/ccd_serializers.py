@@ -433,6 +433,12 @@ class BusquedaCCDHomologacionSerializer(serializers.ModelSerializer):
     nombre_organigrama = serializers.ReadOnlyField(source='id_organigrama.nombre',default=None)
     version_organigrama = serializers.ReadOnlyField(source='id_organigrama.version',default=None)
     usado = serializers.SerializerMethodField()
+    mismo_organigrama = serializers.SerializerMethodField()
+
+    def get_mismo_organigrama(self,obj):
+        ccd_actual = CuadrosClasificacionDocumental.objects.filter(actual=True).first()
+        mismo_organigrama = True if obj.id_organigrama.id_organigrama == ccd_actual.id_organigrama.id_organigrama else False
+        return mismo_organigrama
     
     def get_usado(self,obj):
         trd = TablaRetencionDocumental.objects.filter(id_ccd=obj.id_ccd)
@@ -441,7 +447,7 @@ class BusquedaCCDHomologacionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CuadrosClasificacionDocumental
-        fields = ['id_ccd', 'nombre', 'version', 'usado', 'fecha_terminado', 'id_organigrama', 'nombre_organigrama', 'version_organigrama']
+        fields = ['id_ccd', 'nombre', 'version', 'usado', 'fecha_terminado', 'id_organigrama', 'nombre_organigrama', 'version_organigrama', 'mismo_organigrama']
 
 class SeriesDocUnidadHomologacionesSerializer(serializers.ModelSerializer):
     id_organigrama = serializers.ReadOnlyField(source='id_organigrama.id_organigrama',default=None)
