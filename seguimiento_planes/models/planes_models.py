@@ -30,7 +30,8 @@ class Planes(models.Model):
             ('PND', 'Plan Nacional Desarrollo'),
             ('PAI', 'Plan Accion Institucional'),
             ('PGR', 'Plan Gestion Ambiental Regional'),
-            ('PES', 'Plan de desarrollo economico y social')
+            ('PES', 'Plan de desarrollo economico y social'),
+            ('POA', 'Plan Operativo Anual de Inversiones'),
         ], db_column='T501tipoPlan')
     agno_inicio = models.IntegerField(
         null=True, blank=True, db_column='T501agnoInicio')
@@ -241,24 +242,6 @@ class Tipo(models.Model):
         verbose_name = 'Tipo'
         verbose_name_plural = 'Tipos'
 
-class Rubro(models.Model):
-    id_rubro = models.AutoField(
-        primary_key=True, editable=False, db_column='T511IdRubro')
-    cod_pre = models.CharField(
-        max_length=255, db_column='T511codPre')
-    cuenta = models.CharField(
-        max_length=255, db_column='T511cuenta')
-    valcuenta = models.CharField(
-        max_length=255, db_column='T511valcuenta')        
-
-    def __str__(self):
-        return str(self.id_rubro)
-
-    class Meta:
-        db_table = 'T511Rubro'
-        verbose_name = 'Rubro'
-        verbose_name_plural = 'Rubros'
-
 class Indicador(models.Model):
     id_indicador = models.AutoField(
         primary_key=True, editable=False, db_column='T512IdIndicador')
@@ -271,6 +254,11 @@ class Indicador(models.Model):
             ('NUM', 'Numero'),
             ('POR', 'Porcentaje'),
         ], db_column='T512medida')
+    tipo_indicador = models.CharField(
+        max_length=3, choices=[
+            ('MAN', 'Mantenimiento'),
+            ('INC', 'Incremento'),
+        ], db_column='T512tipoIndicador')
     id_medicion = models.ForeignKey(
         Medicion, on_delete=models.CASCADE, db_column='T512IdMedicion')
     id_tipo = models.ForeignKey(
@@ -281,6 +269,8 @@ class Indicador(models.Model):
         Actividad, on_delete=models.CASCADE, db_column='T512IdActividad')
     id_plan = models.ForeignKey(
         Planes, on_delete=models.CASCADE, db_column='T512IdPlan')
+    id_proyecto = models.ForeignKey(
+        Proyecto, on_delete=models.CASCADE, db_column='T512IdProyecto')
 
     def __str__(self):
         return str(self.id_indicador)
@@ -289,6 +279,34 @@ class Indicador(models.Model):
         db_table = 'T512Indicador'
         verbose_name = 'Indicador'
         verbose_name_plural = 'Indicadores'
+
+class Rubro(models.Model):
+    id_rubro = models.AutoField(
+        primary_key=True, editable=False, db_column='T511IdRubro')
+    cod_pre = models.CharField(
+        max_length=255, db_column='T511codPre')
+    cuenta = models.CharField(
+        max_length=255, db_column='T511cuenta')
+    valcuenta = models.CharField(
+        max_length=255, db_column='T511valcuenta') 
+    id_programa = models.ForeignKey(
+        Programa, on_delete=models.CASCADE, db_column='T511IdPrograma')
+    id_proyecto = models.ForeignKey(
+        Proyecto, on_delete=models.CASCADE, db_column='T511IdProyecto')
+    id_producto = models.ForeignKey(
+        Productos, on_delete=models.CASCADE, db_column='T511IdProducto')
+    id_actividad = models.ForeignKey(
+        Actividad, on_delete=models.CASCADE, db_column='T511IdActividad')
+    id_indicador = models.ForeignKey(
+        Indicador, on_delete=models.CASCADE, db_column='T513IdIndicador')
+
+    def __str__(self):
+        return str(self.id_rubro)
+
+    class Meta:
+        db_table = 'T511Rubro'
+        verbose_name = 'Rubro'
+        verbose_name_plural = 'Rubros'
 
 class Metas(models.Model):
     id_meta = models.AutoField(
@@ -304,6 +322,23 @@ class Metas(models.Model):
         null=True, blank=True, db_column='T513porcentajeMeta')
     valor_meta = models.CharField(
         max_length=255, db_column='T513valorMeta')
+    cumplio = models.BooleanField(default=False, db_column='T513cumplio')
+    fecha_creacion_meta = models.DateField(
+        null=True, blank=True, db_column='T513fechaCreacionMeta')
+    agno_1 = models.IntegerField(
+        null=True, blank=True, db_column='T513agno1')
+    agno_2 = models.IntegerField(
+        null=True, blank=True, db_column='T513agno2')
+    agno_3 = models.IntegerField(
+        null=True, blank=True, db_column='T513agno3')
+    agno_4 = models.IntegerField(
+        null=True, blank=True, db_column='T513agno4')
+    valor_ejecutado_compromiso = models.BigIntegerField(
+        null=True, blank=True, db_column='T513valorEjecutadoCompromiso')
+    valor_ejecutado_obligado = models.BigIntegerField(
+        null=True, blank=True, db_column='T513valorEjecutadoObligado')
+    avance_fisico = models.IntegerField(
+        null=True, blank=True, db_column='T513avanceFisico')
     id_indicador = models.ForeignKey(
         Indicador, on_delete=models.CASCADE, db_column='T513IdIndicador')
 
