@@ -524,3 +524,45 @@ class SolicitudAlUsuarioSobrePQRSDFGetSerializer(serializers.ModelSerializer):
             cadena= str(obj.id_radicado_salida.prefijo_radicado)+'-'+str(obj.id_radicado_salida.agno_radicado)+'-'+str(obj.id_radicado_salida.nro_radicado)
             return cadena
         return 'SIN RADICAR'
+    
+class Anexos_PQRAnexosGetSerializer(serializers.ModelSerializer):
+   
+    archivo = serializers.SerializerMethodField()
+    numero = serializers.ReadOnlyField(source='id_anexo.orden_anexo_doc',default=None)
+    nombre = serializers.ReadOnlyField(source='id_anexo.nombre_anexo',default=None)
+    n_folios= serializers.ReadOnlyField(source='id_anexo.numero_folios',default=None)
+    medio_almacenamiento = serializers.ReadOnlyField(source='id_anexo.get_cod_medio_almacenamiento_display',default=None)
+    class Meta:
+        model = Anexos_PQR
+        fields = ['id_anexo_PQR','id_anexo','numero','nombre','n_folios','medio_almacenamiento','archivo']
+
+    def get_archivo(self,obj):
+        id_anexo = obj.id_anexo
+        meta_data = MetadatosAnexosTmp.objects.filter(id_anexo=id_anexo).first()
+        if meta_data:
+            data_archivo  = AnexoArchivosDigitalesSerializer(meta_data.id_archivo_sistema)
+            return data_archivo.data['ruta_archivo']
+        return "Archivo"
+    
+
+class SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SolicitudAlUsuarioSobrePQRSDF
+        fields = ['id_solicitud_al_usuario_sobre_pqrsdf','asunto','descripcion','fecha_solicitud']
+
+
+class MetadatosAnexosTmpGetSerializer(serializers.ModelSerializer):
+    categoria_archivo = serializers.ReadOnlyField(source='get_cod_categoria_archivo_display',default=None)
+    origen_archivo = serializers.ReadOnlyField(source='get_cod_origen_archivo_display',default=None)
+    nombre_tipologia_documental = serializers.ReadOnlyField(source='id_tipologia_doc.nombre',default=None)
+    palabras_clave_doc = serializers.SerializerMethodField()
+    class Meta:
+        model = MetadatosAnexosTmp
+        fields = ['id_metadatos_anexo_tmp','categoria_archivo','tiene_replica_fisica','origen_archivo','id_tipologia_doc','nombre_tipologia_documental','asunto','descripcion','palabras_clave_doc']
+    
+    
+    def get_palabras_clave_doc(self, obj):
+        if obj.palabras_clave_doc:
+            lista_datos =  obj.palabras_clave_doc.split("|")
+            return lista_datos
+        return None
