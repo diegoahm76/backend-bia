@@ -7,13 +7,14 @@ from rest_framework import status
 class UtilsGestor:
 
 
-    def generar_archivo_blanco():
+    def generar_archivo_blanco(data):
         
         
         template = "doc_blanco.html"
 
-        context = {"nombre_anexo":'HOLAAA QUE TAL?','medio_almacenamiento':'papel','asunto':'mata o quien sabe','categoria_archivo':'modelo','tipologia_documental':'documento'}
-        template = render_to_string((template), context)
+        #context = {"nombre_anexo":'HOLAAA QUE TAL?','medio_almacenamiento':'papel','asunto':'mata o quien sabe','categoria_archivo':'modelo','tipologia_documental':'documento'}
+        context = data
+        template = render_to_string((template), {'mi_json': context})
         buffer = HttpResponse(content_type='application/pdf')
         buffer['Content-Disposition'] = 'attachment; filename="output.pdf"'
 

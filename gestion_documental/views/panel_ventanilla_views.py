@@ -6,6 +6,7 @@ from gestion_documental.models.ccd_models import CatalogosSeriesUnidad
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, T262Radicados
+from gestion_documental.models.trd_models import TipologiasDoc
 from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
 from gestion_documental.serializers.ventanilla_pqrs_serializers import AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
@@ -22,7 +23,8 @@ from transversal.models.organigrama_models import Organigramas, UnidadesOrganiza
 import json
 from django.template.loader import render_to_string
 
-
+from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
+from gestion_documental.choices.origen_archivo_choices import origen_archivo_CHOICES
 class EstadosSolicitudesGet(generics.ListAPIView):
     serializer_class = EstadosSolicitudesGetSerializer
     queryset =EstadosSolicitudes.objects.all()
@@ -701,6 +703,7 @@ class SolicitudAlUsuarioSobrePQRSDFCreate(generics.CreateAPIView):
         fecha_actual =datetime.now()
         solicitud_usu_PQRSDF = request.data.get('solicitud_usu_PQRSDF')
         persona = request.user.persona
+        categoria = tipo_archivo_CHOICES
         id_unidad = None
         data_anexos =[]
         #data_meta=[]
@@ -715,8 +718,9 @@ class SolicitudAlUsuarioSobrePQRSDFCreate(generics.CreateAPIView):
         archivos = request.FILES.getlist('archivo')
         anexos = request.data.getlist('anexo')
 
-        if len(anexos) != len(archivos):
-            raise ValidationError("La cantidad de archivos y anexos no coinciden")
+        
+        archivos_blancos = len(anexos)-len(archivos)
+        contador = 0 #cuenta los anexos que tienen archivos digitales
         json_anexos =[]
         for anexo in anexos:
             json_anexo = json.loads(anexo)
@@ -734,7 +738,31 @@ class SolicitudAlUsuarioSobrePQRSDFCreate(generics.CreateAPIView):
                     return respuesta_archivo
                 #print(respuesta_archivo.data['data'])
                 data_archivos.append(respuesta_archivo.data['data'])
+                contador = contador+1
+        for i in range(archivos_blancos):
+            anexo_temporal = json_anexos[contador]
+            meta_dato = anexo_temporal['meta_data']
+            info_archivo = {}
+            info_archivo['Nombre del Anexo'] = anexo_temporal['nombre_anexo']
+            info_archivo['Asunto'] = meta_dato['asunto']
+            info_archivo['descripcion'] = meta_dato['descripcion']
+            for x in categoria:
+                if x[0] == meta_dato['cod_categoria_archivo']:
+                    info_archivo['Categoria de Archivo'] = x[1]
 
+            if meta_dato['id_tipologia_doc']:
+                tipologia = TipologiasDoc.objects.filter(id_tipologia_documental= meta_dato['id_tipologia_doc']).first()
+                if tipologia:
+                    info_archivo['Tipologia Documental'] =tipologia.nombre
+              
+            else:
+               info_archivo['Tipologia Documental'] = meta_dato['tipologia_no_creada_TRD']
+            #info_archivo['Medio_de_Almacenamiento'] = anexo_temporal['medio_almacenamiento']
+            
+            arch_blanco =  UtilsGestor.generar_archivo_blanco(info_archivo)
+            data_archivos.append(arch_blanco.data['data'])
+            i= i+1
+            contador = contador+1
       
         for anexo,archivo in zip(json_anexos,data_archivos):
             #print( archivo['id_archivo_digital'])
@@ -747,6 +775,7 @@ class SolicitudAlUsuarioSobrePQRSDFCreate(generics.CreateAPIView):
             meta_dato = anexo['meta_data']
             meta_dato['id_anexo']= data_anexo['id_anexo']
             meta_dato['id_archivo_sistema'] = archivo['id_archivo_digital']
+            meta_dato['nro_folios_documento'] = data_anexo['numero_folios']
             respuest_meta_dato = self.vista_meta_dato.crear_meta_data(meta_dato)
             if respuest_meta_dato.status_code != status.HTTP_200_OK:
                 return respuest_meta_dato
