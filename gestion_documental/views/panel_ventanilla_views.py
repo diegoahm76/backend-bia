@@ -699,6 +699,7 @@ class SolicitudAlUsuarioSobrePQRSDFCreate(generics.CreateAPIView):
     vista_archivos = ArchivosDgitalesCreate()
     vista_meta_dato = MetadatosAnexosTmpCreate()
     permission_classes = [IsAuthenticated]
+    @transaction.atomic
     def post(self, request):
         fecha_actual =datetime.now()
         solicitud_usu_PQRSDF = request.data.get('solicitud_usu_PQRSDF')
@@ -706,8 +707,9 @@ class SolicitudAlUsuarioSobrePQRSDFCreate(generics.CreateAPIView):
         categoria = tipo_archivo_CHOICES
         id_unidad = None
         data_anexos =[]
-        #data_meta=[]
-        anexos_con_archivo =[]
+        #DATOS PARA AUDITORIA MATESTRO DETALLE
+        valores_creados_detalles=[]
+       
        
         data_archivos=[]
         if persona.id_unidad_organizacional_actual:
@@ -771,6 +773,9 @@ class SolicitudAlUsuarioSobrePQRSDFCreate(generics.CreateAPIView):
             respuesta_anexo = self.vista_anexos.crear_anexo(anexo)
             if respuesta_anexo.status_code != status.HTTP_200_OK:
                 return respuesta_anexo
+            
+            ##AUDITORIA DETALLE
+            valores_creados_detalles.append({"NombreAnexo":anexo['nombre_anexo']})
             data_anexo = respuesta_anexo.data['data']
             meta_dato = anexo['meta_data']
             meta_dato['id_anexo']= data_anexo['id_anexo']
@@ -824,7 +829,18 @@ class SolicitudAlUsuarioSobrePQRSDFCreate(generics.CreateAPIView):
             serializer_relacion.is_valid(raise_exception=True)
             intance_3 =serializer_relacion.save()  
             relacion_pqr.append(serializer_relacion.data)
-
+        descripcion = {"IdPqrsdf":intance.id_pqrsdf,"IdPersonaSolicita":intance.id_persona_solicita,"fecha_solicitud":intance.fecha_solicitud}
+        direccion=Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : request.user.id_usuario,
+            "id_modulo" : 178,
+            "cod_permiso": "CR",
+            "subsistema": 'GEST',
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_creados_detalles": valores_creados_detalles
+            }
+        Util.save_auditoria_maestro_detalle(auditoria_data)
 
         return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'data':serializer.data,"estado":data_respuesta_estado_asociado,'anexos':data_anexos,'relacion_pqr':relacion_pqr}, status=status.HTTP_200_OK)
 
