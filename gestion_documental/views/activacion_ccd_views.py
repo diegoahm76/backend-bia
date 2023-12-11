@@ -30,15 +30,30 @@ class CCDActualGetView(generics.ListAPIView):
 
 class GetCCDPosiblesActivar(generics.ListAPIView):
     serializer_class = CCDPosiblesSerializer
-    queryset = CuadrosClasificacionDocumental.objects.filter(fecha_retiro_produccion=None, actual=False).exclude(fecha_terminado=None)
+    permission_classes = [IsAuthenticated]
+
+    def get_ccd_posibles_activar(self, id_organigrama):
+
+        ccd = CuadrosClasificacionDocumental.objects.filter(fecha_retiro_produccion=None, actual=False).exclude(fecha_terminado=None)
+
+        try:
+            organigrama = Organigramas.objects.get(id_organigrama=id_organigrama)
+        except Organigramas.DoesNotExist:
+            raise NotFound('El organigrama ingresado no existe')
+        
+        if organigrama.fecha_terminado == None or organigrama.fecha_retiro_produccion != None:
+            raise PermissionDenied('El organigrama ingresado ya está retirado o no está terminado')
+        
+        ccd_posibles_activar = ccd.filter(id_organigrama=organigrama.id_organigrama).select_related('tablaretenciondocumental__tablascontrolacceso')
+        ccd_posibles = [ccd for ccd in ccd_posibles_activar if ccd.tablaretenciondocumental.tablascontrolacceso is not None]
+        
+        return ccd_posibles
+
 
     def get(self, request):
-        id_organigrama = request.query_params.get('id_organigrama')
-
-        ccd_queryset = self.queryset.filter(id_organigrama__actual=True).select_related('tablaretenciondocumental__tablascontrolacceso') if not id_organigrama else self.queryset.filter(id_organigrama=id_organigrama).select_related('tablaretenciondocumental__tablascontrolacceso')
-
-        ccd_posibles = [ccd for ccd in ccd_queryset if ccd.tablaretenciondocumental.tablascontrolacceso is not None]
-
+        id_organigrama_in = request.query_params.get('id_organigrama')
+        id_organigrama = id_organigrama_in if id_organigrama_in else Organigramas.objects.filter(actual=True).first().id_organigrama
+        ccd_posibles = self.get_ccd_posibles_activar(id_organigrama)
         serializer = self.serializer_class(ccd_posibles, many=True)
 
         return Response({'success':True, 'detail':'Los CCD posibles que se pueden activar son los siguientes', 'data': serializer.data}, status=status.HTTP_200_OK)
@@ -66,3 +81,4 @@ class CCDTerminadoByOrganigramaGetListView(generics.ListAPIView):
         ccd_terminado_by_organigrama = self.get_ccd_terminado_by_organigrama(id_organigrama)
         serializer = self.serializer_class(ccd_terminado_by_organigrama, many=True)
         return Response({'success':True, 'detail':'CCD', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
