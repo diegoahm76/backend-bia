@@ -13,7 +13,7 @@ from gestion_documental.models.expedientes_models import ArchivosDigitales
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, ComplementosUsu_PQR, EstadosSolicitudes, MediosSolicitud, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, TiposPQR, modulos_radican
-from gestion_documental.serializers.radicados_serializers import AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, MedioSolicitudSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, OTROSSerializer, OtrosPostSerializer, OtrosSerializer, PersonasFilterSerializer, RadicadoPostSerializer, RadicadosImprimirSerializer ,PersonasSerializer
+from gestion_documental.serializers.radicados_serializers import AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, MedioSolicitudSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, OTROSPanelSerializer, OTROSSerializer, OtrosPostSerializer, OtrosSerializer, PersonasFilterSerializer, RadicadoPostSerializer, RadicadosImprimirSerializer ,PersonasSerializer
 from transversal.models.personas_models import Personas
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from transversal.models.base_models import ApoderadoPersona
@@ -104,6 +104,7 @@ class GetRadicadosImprimir(generics.ListAPIView):
     
 
 
+#LISTAR_SOLICITUD_OTRO_POR_ID_PERSONA_TITULAR
 class GetOTROSForStatus(generics.ListAPIView):
     serializer_class = OTROSSerializer
     queryset = Otros.objects.all()
@@ -120,7 +121,28 @@ class GetOTROSForStatus(generics.ListAPIView):
         else:
             return Response({'success': True, 'detail': 'No se encontraron OTROS asociados al titular'}, status=status.HTTP_200_OK)
         
-        
+class GetOTROSForPanel(generics.RetrieveAPIView):
+    serializer_class = OTROSPanelSerializer
+    queryset = Otros.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_otros):
+        # try:
+            data_otros = self.queryset.filter(id_otros = id_otros).first()
+            
+            if data_otros:
+                serializador = self.serializer_class(data_otros, many = False)
+                return Response({'success':True, 'detail':'Se encontro el OTROS por el id consultado','data':serializador.data},status=status.HTTP_200_OK)
+            else:
+                return Response({'success':True, 'detail':'No Se encontro el OTROS por el id consultado'},status=status.HTTP_200_OK)
+        # except Exception as e:
+            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+
 class FilterPersonasDocumento(generics.ListAPIView):
     serializer_class = PersonasSerializer
     permission_classes = [IsAuthenticated]
