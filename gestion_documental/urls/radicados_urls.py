@@ -18,6 +18,7 @@ urlpatterns = [
      path('otros/buscar-apoderados-otros/<int:id_poderdante>/', views.GetApoderadosByPoderdanteId.as_view(), name='buscar-apoderado-otros'),
      path('otros/crear-otros/',views.OtrosCreate.as_view(), name='crear-solicitud-otros'),
      path('otros/editar-otros/',views.OTROSUpdate.as_view(), name='editar-solicitud-otros'),
+     path('otros/eliminar-otros/',views.OTROSDelete.as_view(), name='eliminar-solicitud-otros'),
 
 
     

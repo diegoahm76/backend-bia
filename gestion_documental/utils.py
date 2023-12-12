@@ -1,4 +1,4 @@
-#from xhtml2pdf import pisa
+# from xhtml2pdf import pisa
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.core.files.base import ContentFile
@@ -13,11 +13,7 @@ class UtilsGestor:
     def generar_archivo_blanco(data):
         
         
-        template = "doc_blanco.html"
-
-       
-        context = data
-        template_content = render_to_string((template), {'mi_json': context})
+  
         # buffer = HttpResponse(content_type='application/pdf')
         # buffer['Content-Disposition'] = 'attachment; filename="output.pdf"'
 
@@ -28,13 +24,22 @@ class UtilsGestor:
         # pdf_bytes = buffer.getvalue()
 
         buffer = BytesIO()
-
+    #Archivo No Digitalizado Solo Almacenado en Fisico (Buscar en Carpeta Física)
         # Crear el objeto PDF utilizando ReportLab.
         p = canvas.Canvas(buffer)
-        p.drawString(100, 800, 'Hola Mundo')  # Agregar contenido al PDF, puedes omitir esto si todo el contenido está en el HTML
+        p.drawString(100, 800, 'Archivo No Digitalizado Solo Almacenado en Fisico (Buscar en Carpeta Física)')  # Agregar contenido al PDF, puedes omitir esto si todo el contenido está en el HTML
+       
+        y_position = 780  # Posición inicial en el eje Y
+
+        for key, value in data.items():
+            # Agregar cada clave y valor al PDF
+            p.drawString(100, y_position, f"{key}: {value}")
+            y_position -= 20  # Moverse hacia arriba para la siguiente línea
+            
+
+
         p.showPage()
         p.save()
-        buffer.write(template_content.encode('utf-8'))
 
     # Obtener el contenido del buffer como bytes
         pdf_bytes = buffer.getvalue()
