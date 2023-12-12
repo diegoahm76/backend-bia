@@ -8,7 +8,7 @@ from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSer
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, T262Radicados
 from gestion_documental.models.trd_models import TipologiasDoc
 from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
-from gestion_documental.serializers.ventanilla_pqrs_serializers import AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer
+from gestion_documental.serializers.ventanilla_pqrs_serializers import AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_OTROSSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from seguridad.utils import Util
 from gestion_documental.utils import UtilsGestor
@@ -21,10 +21,10 @@ from transversal.models.lideres_models import LideresUnidadesOrg
 from django.db.models import Max
 from transversal.models.organigrama_models import Organigramas, UnidadesOrganizacionales
 import json
-from django.template.loader import render_to_string
+
 
 from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
-from gestion_documental.choices.origen_archivo_choices import origen_archivo_CHOICES
+
 class EstadosSolicitudesGet(generics.ListAPIView):
     serializer_class = EstadosSolicitudesGetSerializer
     queryset =EstadosSolicitudes.objects.all()
@@ -66,6 +66,14 @@ class PQRSDFGet(generics.ListAPIView):
             if key == 'tipo_solicitud':
                 if value != '':
                     tipo_busqueda = False
+
+            if key == 'fecha_inicio':
+                if value != '':
+                    
+                    filter['fecha_radicado__gte'] = datetime.strptime(value, '%Y-%m-%d').date()
+            if key == 'fecha_fin':
+                if value != '':
+                    filter['fecha_radicado__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
         
         if tipo_busqueda == 'PQRSDF':
             instance = self.get_queryset().filter(**filter).order_by('fecha_radicado')
@@ -131,6 +139,29 @@ class Estados_PQRDelete(generics.RetrieveDestroyAPIView):
             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
 
+
+
+#OTROS
+class Estados_OTROSDelete(generics.RetrieveDestroyAPIView):
+    serializer_class = Estados_OTROSSerializer
+    queryset = Estados_PQR.objects.all()
+
+    @transaction.atomic
+    def delete(self, id_otros):
+        try:
+            with transaction.atomic():
+                estado_otros = self.queryset.filter(OTROS = id_otros).first()
+                if estado_otros:
+                    estado_otros.delete()
+                    return Response({'success':True, 'detail':'El estado de la solicitud otro ha sido eliminado exitosamente'}, status=status.HTTP_200_OK)
+                else:
+                    raise NotFound('No se encontró ningún estado otro asociado al anexo')
+        except Exception as e:
+            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+
+        
 class SolicitudDeDigitalizacionCreate(generics.CreateAPIView):
     serializer_class = SolicitudDeDigitalizacionPostSerializer
     serializer_pqrs = PQRSDFPutSerializer
@@ -904,3 +935,10 @@ class MetadatosAnexosTmpFGetByIdAnexo(generics.ListAPIView):
         serializador = self.serializer_class(instance)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data,}, status=status.HTTP_200_OK)
     
+
+class VistaCreadoraArchivo3(generics.CreateAPIView):
+
+    def post(self,request):
+        data = request.data
+        respuesta= UtilsGestor.generar_archivo_blanco(data)
+        return respuesta
