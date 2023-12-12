@@ -193,7 +193,7 @@ class InfoDenuncias_PQRSDF(models.Model):
     Cod_zona_localizacion = models.CharField(max_length=1, choices=TIPO_ZONAS_CHOICES, db_column='T256codZonaLocalizacion')
     barrio_vereda_localizacion = models.CharField(max_length=100, db_column='T256barrioOVeredaLocalizacion', null=True)
     direccion_localizacion = models.CharField(max_length=255, db_column='T256direccionLocalizacion', null=True)
-    cod_recursos_fectados_presuntos = models.CharField(max_length=2, choices=[('Su', 'Suelo'), ('Ag', 'Agua'), ('Ai', 'Aire'), ('Fl', 'Flora'), ('Fs', 'Fauna silvestre'), ('Ot', 'Otros')], db_column='T256codRecursosAfectadosPresuntos')
+    cod_recursos_fectados_presuntos = models.CharField(max_length=30, db_column='T256codRecursosAfectadosPresuntos')
     otro_recurso_Afectado_cual = models.CharField(max_length=50, db_column='T256otroRecursoAfectado_Cual', null=True)
     evidencias_soportan_hecho = models.CharField(max_length=1000, db_column='T256evidenciasSoportanHecho', null=True)
     nombre_completo_presunto_infractor = models.CharField(max_length=130, db_column='T256nombreCompleto_PresuntoInfractor', null=True)
