@@ -103,6 +103,24 @@ class GetRadicadosImprimir(generics.ListAPIView):
         return data
     
 
+
+class GetOTROSForStatus(generics.ListAPIView):
+    serializer_class = OTROSSerializer
+    queryset = Otros.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_persona_titular):
+        otros = self.queryset.filter(
+            Q(id_persona_titular=id_persona_titular) &
+            Q(Q(id_radicados=None) | Q(requiere_digitalizacion=True, fecha_digitalizacion_completada=None))
+        )
+        if otros:
+            serializer = self.serializer_class(otros, many=True)
+            return Response({'success': True, 'detail': 'Se encontraron OTROS asociados al titular', 'data': serializer.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success': True, 'detail': 'No se encontraron OTROS asociados al titular'}, status=status.HTTP_200_OK)
+        
+        
 class FilterPersonasDocumento(generics.ListAPIView):
     serializer_class = PersonasSerializer
     permission_classes = [IsAuthenticated]
@@ -937,7 +955,7 @@ class RadicarOTROS(generics.CreateAPIView):
 
     @transaction.atomic
     def post(self, request):
-        try:
+        # try:
             with transaction.atomic():
                 id_otros = request.data['id_otros']
                 id_persona_guarda = request.data['id_persona_guarda']
@@ -947,7 +965,7 @@ class RadicarOTROS(generics.CreateAPIView):
                                  'detail':'Se creo el radicado para otros', 
                                  'data': data_radicado_otros['radicado']}, status=status.HTTP_201_CREATED)
         
-        except Exception as e:
+        # except Exception as e:
             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
     def radicar_otros(self, request, id_otros, id_persona_guarda, isCreateForWeb):
@@ -961,7 +979,7 @@ class RadicarOTROS(generics.CreateAPIView):
         data_for_create['fecha_actual'] = fecha_actual
         data_for_create['id_usuario'] = id_persona_guarda
         data_for_create['tipo_radicado'] = "E"
-        data_for_create['modulo_radica'] = "otros"
+        data_for_create['modulo_radica'] = "OTROS"
         radicadoCreate = RadicadoCreate()
         data_radicado = radicadoCreate.post(data_for_create)
 
@@ -975,9 +993,9 @@ class RadicarOTROS(generics.CreateAPIView):
         historicoEstadosCreate = HistoricoEstadosCreate()
         historicoEstadosCreate.create_historico_estado(data_OTROS_creado, 'RADICADO', id_persona_guarda, fecha_actual)
 
-        #Auditoria
-        descripciones = self.set_descripcion_auditoria(previous_instance, data_OTROS_instance)
-        self.auditoria(request, descripciones['descripcion'], isCreateForWeb, descripciones['data_auditoria_update'])
+        # #Auditoria
+        # descripciones = self.set_descripcion_auditoria(previous_instance, data_OTROS_instance)
+        # self.auditoria(request, descripciones['descripcion'], isCreateForWeb, descripciones['data_auditoria_update'])
         
         return {
             'radicado': data_radicado,
@@ -985,9 +1003,9 @@ class RadicarOTROS(generics.CreateAPIView):
         }
     
     
-    def set_data_update_radicado_otros(self, otros, data_radicado, fecha_actual):
-        otros['id_radicado'] = data_radicado['id_radicado']
-        otros['fecha_radicado'] = data_radicado['fecha_radicado']
+    def set_data_update_radicado_otros(self, otros, id_radicados, fecha_actual):
+        otros['id_radicados'] = id_radicados['id_radicados']
+        otros['fecha_radicado'] = id_radicados['fecha_radicado']
 
         estado = EstadosSolicitudes.objects.filter(nombre='RADICADO').first()
         otros['id_estado_actual_solicitud'] = estado.id_estado_solicitud
@@ -997,7 +1015,7 @@ class RadicarOTROS(generics.CreateAPIView):
     
     def set_descripcion_auditoria(self, previous_otros, otros_update):
         descripcion_auditoria_update = {
-            'IdRadicado': previous_otros.id_radicado,
+            'IdRadicado': previous_otros.id_radicados,
             'FechaRadicado': previous_otros.fecha_radicado
         }
 
@@ -1016,7 +1034,7 @@ class RadicadoCreate(generics.CreateAPIView):
     config_radicados = ConfigTiposRadicadoAgnoGenerarN
     
     def post(self, data_radicado):
-        try:
+        # try:
             config_tipos_radicado = self.get_config_tipos_radicado(data_radicado)
             radicado_data = self.set_data_radicado(config_tipos_radicado, data_radicado['fecha_actual'], data_radicado['id_usuario'], data_radicado['modulo_radica'])
             serializer = self.serializer_class(data=radicado_data)
@@ -1024,7 +1042,7 @@ class RadicadoCreate(generics.CreateAPIView):
             serializer.save()
             return serializer.data
 
-        except Exception as e:
+        # except Exception as e:
             raise({'success': False, 'detail': str(e)})
 
 

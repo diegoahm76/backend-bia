@@ -22,6 +22,11 @@ from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
 from gestion_documental.models.tca_models import TablasControlAcceso
 from gestion_documental.models.trd_models import TablaRetencionDocumental
 
+from gestion_documental.views.activacion_ccd_views import (
+    CCDCambioActualPut,
+)
+
+
 from transversal.serializers.activacion_organigrama_serializers import (
     OrganigramaCambioActualSerializer,
 )
@@ -171,9 +176,26 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
             algo = self.activar_organigrama(organigrama_seleccionado, data_desactivar, data_activar, data_auditoria)
         
         else:
-            data_activar_org = data_activar
-            data_activar_org['justificacion_nueva_version'] = data['justificacion']
-            algo = self.activar_organigrama(organigrama_seleccionado, data_desactivar, data_activar_org, data_auditoria)
+            if not data.get('id_ccd'):
+                raise ValidationError('Debe seleccionar un CCD')
+            
+            try:
+                ccd_seleccionado = CuadrosClasificacionDocumental.objects.get(id_ccd=data['id_ccd'], id_organigrama=organigrama_seleccionado.id_organigrama)
+            except CuadrosClasificacionDocumental.DoesNotExist:
+                raise NotFound("El CCD seleccionado no existe")
+            
+            if ccd_seleccionado.fecha_terminado == None or ccd_seleccionado.fecha_retiro_produccion != None:
+                raise ValidationError('El CCD seleccionado no se encuentra terminado o ha sido retirado de producción')
+            
+            
+            data_activar['justificacion_nueva_version'] = data['justificacion']
+            algo = self.activar_organigrama(organigrama_seleccionado, data_desactivar, data_activar, data_auditoria)
+
+            # Activar CCD
+            data_activar_ccd = data_activar
+            data_activar_ccd['justificacion_nueva_version'] = "ACTIVACIÓN AUTOMÁTICA DESDE EL PROCESO DE 'CAMBIO DE ORGANIGRAMA ACTUAL'"
+            ccd_activar = CCDCambioActualPut()
+            ccd_activar.activar_ccd(ccd_actual, data_desactivar, data_activar, data_auditoria)
 
     
 
