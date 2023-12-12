@@ -15,6 +15,9 @@ class FuenteFinanciacionIndicadores(models.Model):
     valor_total = models.BigIntegerField(null=True, blank=True, db_column='T516valorTotal')
     id_indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T516IdIndicador')
     id_cuenca = models.ForeignKey(Cuencas, on_delete=models.CASCADE, db_column='T516IdCuenca')
+    id_proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, db_column='T516IdProyecto')
+    id_actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, db_column='T516IdActividad')
+    id_producto = models.ForeignKey(Productos, on_delete=models.CASCADE, db_column='T516IdProducto')
 
     def __str__(self):
         return str(self.nombre_fuente)
@@ -51,6 +54,8 @@ class DetalleInversionCuentas(models.Model):
     id_proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, db_column='T518IdProyecto')
     id_producto = models.ForeignKey(Productos, on_delete=models.CASCADE, db_column='T518IdProducto')
     id_actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, db_column='T518IdActividad')
+    id_indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T518IdIndicador')
+    id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T518IdMeta')
 
     def __str__(self):
         return str(self.cuenta)
@@ -298,13 +303,16 @@ class SeguimientoPAI(models.Model):
     entrega_vigencia = models.TextField(null=True, blank=True, db_column='T530entregaVigencia')
     hizo = models.TextField(null=True, blank=True, db_column='T530hizo')
     cuando = models.TextField(null=True, blank=True, db_column='T530cuando')
+    adelanto = models.TextField(null=True, blank=True, db_column='T530adelanto')
     donde = models.TextField(null=True, blank=True, db_column='T530donde')
     resultado = models.TextField(null=True, blank=True, db_column='T530resultado')
     participacion = models.TextField(null=True, blank=True, db_column='T530participacion')
     beneficiarios = models.TextField(null=True, blank=True, db_column='T530beneficiarios')
     compromisos = models.TextField(null=True, blank=True, db_column='T530compromisos')
     contratros = models.TextField(null=True, blank=True, db_column='T530contratros')
+    fecha_creacion = models.DateField(null=True, blank=True, db_column='T530fechaCreacion')
     id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T530IdUnidadOrganizacional')
+    id_programa = models.ForeignKey(Programa, on_delete=models.CASCADE, db_column='T530IdPrograma')
     id_proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, db_column='T530IdProyecto')
     id_producto = models.ForeignKey(Productos, on_delete=models.CASCADE, db_column='T530IdProducto')
     id_actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, db_column='T530IdActividad')

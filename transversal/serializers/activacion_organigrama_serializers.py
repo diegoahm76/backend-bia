@@ -1,18 +1,21 @@
 from rest_framework import serializers
 from gestion_documental.models.trd_models import TablaRetencionDocumental
+from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
 from transversal.models import Organigramas
 
-
-
-class CCDActiveSerializer(serializers.ModelSerializer):
+class OrganigramaSerializer(serializers.ModelSerializer):
     usado = serializers.SerializerMethodField()
+
     def get_usado(self,obj):
-        trd = TablaRetencionDocumental.objects.filter(id_ccd=obj.id_ccd)
-        usado = True if trd else False
-        
+        ccd = CuadrosClasificacionDocumental.objects.filter(id_organigrama=obj.id_organigrama)
+        usado = True if ccd else False
         return usado
+
+    class Meta:
+        model= Organigramas
+        fields= '__all__'
     
-class OrganigramaCambioDeOrganigramaActualSerializer(serializers.ModelSerializer):
+class OrganigramaCambioActualSerializer(serializers.ModelSerializer):
     class Meta:
         model= Organigramas
         fields=['justificacion_nueva_version']

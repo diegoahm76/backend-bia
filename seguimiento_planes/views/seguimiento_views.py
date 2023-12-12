@@ -1184,6 +1184,33 @@ class SeguimientoPAIDelete(generics.DestroyAPIView):
         seguimiento.delete()
         return Response({'success': True, 'detail': 'Se eliminó el seguimiento PAI correctamente.', 'data': []}, status=status.HTTP_200_OK)
 
+# Busqueda avanzada de seguimiento PAI
+class BusquedaAvanzadaSeguimientoPAI(generics.ListAPIView):
+    queryset = SeguimientoPAI.objects.all()
+    serializer_class = SeguimientoPAISerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        nombre_proyecto = request.query_params.get('nombre_proyecto', '')
+        nombre_producto = request.query_params.get('nombre_producto', '')
+        nombre_actividad = request.query_params.get('nombre_actividad', '')
+        # nombre_unidad = request.query_params.get('nombre_unidad', '')
+
+        # Realiza la búsqueda utilizando los campos correspondientes en los modelos relacionados
+        queryset = SeguimientoPAI.objects.filter(
+            id_proyecto__nombre_proyecto__icontains=nombre_proyecto,
+            id_producto__nombre_producto__icontains=nombre_producto,
+            id_actividad__nombre_actividad__icontains=nombre_actividad,
+            # id_unidad_organizacional__nombre__icontains=nombre_unidad
+        )
+
+        if not queryset.exists():
+            raise NotFound('No se encontraron resultados.')
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
 # ---------------------------------------- Seguimiento PAI Documentos ----------------------------------------
 
 # Listar todos los registros de seguimiento PAI documentos
