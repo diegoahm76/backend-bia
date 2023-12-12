@@ -183,6 +183,7 @@ class TipoSolicitud(APIView):
 class EstadoSolicitud(APIView):
     def get(self, request):
         choices = ESTADO_SOLICITUD_CHOICES
+        return Response(choices)
 class CodRelacionPersonaTitularChoices(APIView):
     def get(self, request):
         choices = cod_relacion_persona_titular_CHOICES
