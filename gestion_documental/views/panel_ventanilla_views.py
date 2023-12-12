@@ -11,7 +11,7 @@ from gestion_documental.serializers.permisos_serializers import DenegacionPermis
 from gestion_documental.serializers.ventanilla_pqrs_serializers import AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from seguridad.utils import Util
-#from gestion_documental.utils import UtilsGestor
+from gestion_documental.utils import UtilsGestor
 from datetime import date, datetime
 from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
@@ -904,3 +904,10 @@ class MetadatosAnexosTmpFGetByIdAnexo(generics.ListAPIView):
         serializador = self.serializer_class(instance)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data,}, status=status.HTTP_200_OK)
     
+
+class VistaCreadoraArchivo3(generics.CreateAPIView):
+
+    def post(self,request):
+        data = request.data
+        respuesta= UtilsGestor.generar_archivo_blanco(data)
+        return respuesta
