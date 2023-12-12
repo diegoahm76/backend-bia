@@ -21,6 +21,7 @@ urlpatterns = [
      path('otros/eliminar-otros/',views.OTROSDelete.as_view(), name='eliminar-solicitud-otros'),
      path('otros/radicar-otros/', views.RadicarOTROS.as_view(), name='radicar-otros'),
      path('otros/get_otros/<str:id_persona_titular>/', views.GetOTROSForStatus.as_view(), name='get-pqrsdf'),
+     path('otros/get_otros-panel/<int:id_otros>/', views.GetOTROSForPanel.as_view(), name='get_pqrsdf-panel'),
 
 
 

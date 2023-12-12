@@ -93,6 +93,101 @@ class SolicitudesSerializer(serializers.ModelSerializer):
             'cod_tipo_oficio',
             'nombre_tipo_oficio'
         ]
+class OTROSPanelSerializer(serializers.ModelSerializer):
+    anexos = serializers.SerializerMethodField()
+    
+    def get_anexos(self, obj):
+        anexos_pqr = Anexos_PQR.objects.filter(id_otros = obj.id_otros)
+        anexos = []
+
+        if anexos_pqr:
+            for anexo_pqr in anexos_pqr:
+                anexo = Anexos.objects.filter(id_anexo = anexo_pqr.id_anexo_id).first()
+                anexos.append(AnexosPqrsdfPanelSerializer(anexo).data)
+        return anexos
+    
+    def to_representation(self, instance):
+        # Organiza la representación para mostrar primero la data del modelo principal y luego los datos anexos
+        representation = super().to_representation(instance)
+        reordered_representation = {
+            'id_otros': representation['id_otros'],
+            'id_persona_titular': representation['id_persona_titular'],
+            'id_persona_interpone': representation['id_persona_interpone'],
+            'cod_relacion_titular': representation['cod_relacion_titular'],
+            'fecha_registro': representation['fecha_registro'],
+            'id_medio_solicitud': representation['id_medio_solicitud'],
+            'cod_forma_presentacion': representation['cod_forma_presentacion'],
+            'asunto': representation['asunto'],
+            'descripcion': representation['descripcion'],
+            'cantidad_anexos': representation['cantidad_anexos'],
+            'nro_folios_totales': representation['nro_folios_totales'],
+            'id_persona_recibe': representation['id_persona_recibe'],
+            'id_sucursal_recepciona_fisica': representation['id_sucursal_recepciona_fisica'],
+            'id_radicados': representation['id_radicados'],
+            'fecha_radicado': representation['fecha_radicado'],
+            'requiere_digitalizacion': representation['requiere_digitalizacion'],
+            'fecha_envio_definitivo_digitalizacion': representation['fecha_envio_definitivo_digitalizacion'],
+            'fecha_digitalizacion_completada': representation['fecha_digitalizacion_completada'],
+            'id_estado_actual_solicitud': representation['id_estado_actual_solicitud'],
+            'fecha_inicial_estado_actual': representation['fecha_inicial_estado_actual'],
+            'id_documento_archivo_expediente': representation['id_documento_archivo_expediente'],
+            'id_expediente_documental': representation['id_expediente_documental'],
+            'anexos': representation['anexos']
+        }
+        return reordered_representation
+    class Meta:
+        model = Otros
+        fields = '__all__'
+
+
+class AnexosPqrsdfPanelSerializer(serializers.ModelSerializer):
+    nombre_medio_almacenamiento = serializers.ReadOnlyField(source='get_cod_medio_almacenamiento_display')
+    metadatos = serializers.SerializerMethodField()
+
+    def get_metadatos(self, obj):
+        metadatos = MetadatosAnexosTmp.objects.filter(id_anexo = obj.id_anexo).first()
+        return MetadatoPanelSerializer(metadatos).data
+    class Meta:
+        model = Anexos
+        fields = [
+            'id_anexo',
+            'nombre_anexo',
+            'orden_anexo_doc',
+            'cod_medio_almacenamiento',
+            'nombre_medio_almacenamiento',
+            'medio_almacenamiento_otros_Cual',
+            'numero_folios',
+            'ya_digitalizado',
+            'observacion_digitalizacion',
+            'metadatos'
+        ]
+
+
+class MetadatoPanelSerializer(serializers.ModelSerializer):
+    archivo = serializers.SerializerMethodField()
+
+    def get_archivo(self, obj):
+        archivo = ArchivosDigitales.objects.filter(id_archivo_digital = obj.id_archivo_sistema_id).first()
+        return ArchivosSerializer(archivo).data
+    class Meta:
+        model = MetadatosAnexosTmp
+        fields = [
+            'id_metadatos_anexo_tmp',
+            'id_anexo',
+            'fecha_creacion_doc',
+            'asunto',
+            'descripcion',
+            'cod_categoria_archivo',
+            'es_version_original',
+            'tiene_replica_fisica',
+            'nro_folios_documento',
+            'cod_origen_archivo',
+            'id_tipologia_doc',
+            'tipologia_no_creada_TRD',
+            'palabras_clave_doc',
+            'id_archivo_sistema',
+            'archivo'
+        ]
 
 class OTROSSerializer(serializers.ModelSerializer):
     nombre_estado_solicitud = serializers.ReadOnlyField(source='id_estado_actual_solicitud.nombre')
