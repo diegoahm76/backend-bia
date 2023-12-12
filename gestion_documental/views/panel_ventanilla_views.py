@@ -8,7 +8,7 @@ from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSer
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, T262Radicados
 from gestion_documental.models.trd_models import TipologiasDoc
 from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
-from gestion_documental.serializers.ventanilla_pqrs_serializers import AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer
+from gestion_documental.serializers.ventanilla_pqrs_serializers import AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_OTROSSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from seguridad.utils import Util
 from gestion_documental.utils import UtilsGestor
@@ -131,6 +131,29 @@ class Estados_PQRDelete(generics.RetrieveDestroyAPIView):
             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
 
+
+
+#OTROS
+class Estados_OTROSDelete(generics.RetrieveDestroyAPIView):
+    serializer_class = Estados_OTROSSerializer
+    queryset = Estados_PQR.objects.all()
+
+    @transaction.atomic
+    def delete(self, id_otros):
+        try:
+            with transaction.atomic():
+                estado_otros = self.queryset.filter(OTROS = id_otros).first()
+                if estado_otros:
+                    estado_otros.delete()
+                    return Response({'success':True, 'detail':'El estado de la solicitud otro ha sido eliminado exitosamente'}, status=status.HTTP_200_OK)
+                else:
+                    raise NotFound('No se encontró ningún estado otro asociado al anexo')
+        except Exception as e:
+            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+
+        
 class SolicitudDeDigitalizacionCreate(generics.CreateAPIView):
     serializer_class = SolicitudDeDigitalizacionPostSerializer
     serializer_pqrs = PQRSDFPutSerializer

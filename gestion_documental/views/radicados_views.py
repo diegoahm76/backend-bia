@@ -13,11 +13,11 @@ from gestion_documental.models.expedientes_models import ArchivosDigitales
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, ComplementosUsu_PQR, EstadosSolicitudes, MediosSolicitud, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, TiposPQR, modulos_radican
-from gestion_documental.serializers.radicados_serializers import AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, MedioSolicitudSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, OtrosPostSerializer, OtrosSerializer, PersonasFilterSerializer, RadicadoPostSerializer, RadicadosImprimirSerializer ,PersonasSerializer
+from gestion_documental.serializers.radicados_serializers import AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, MedioSolicitudSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, OTROSSerializer, OtrosPostSerializer, OtrosSerializer, PersonasFilterSerializer, RadicadoPostSerializer, RadicadosImprimirSerializer ,PersonasSerializer
 from transversal.models.personas_models import Personas
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from transversal.models.base_models import ApoderadoPersona
-from gestion_documental.views.panel_ventanilla_views import Estados_PQRCreate, Estados_PQRDelete
+from gestion_documental.views.panel_ventanilla_views import Estados_OTROSDelete, Estados_PQRCreate, Estados_PQRDelete
 from gestion_documental.views.configuracion_tipos_radicados_views import ConfigTiposRadicadoAgnoGenerarN
 
 
@@ -179,7 +179,7 @@ class ListarMediosSolicitud(generics.ListAPIView):
         medios_serializer = self.serializer_class(medios_solicitud, many=True)
 
         # Obtén la instancia de OtrosSerializer
-        otros_serializer = OtrosSerializer()
+        otros_serializer = OtrosPostSerializer()
 
         # Agrega los medios de solicitud al contexto de OtrosSerializer
         context = {
@@ -578,6 +578,70 @@ class Util_OTROS:
         return anexos
     
 
+
+#BORRAR_OTROS
+class OTROSDelete(generics.RetrieveDestroyAPIView):
+    serializer_class = OTROSSerializer
+    borrar_estados = Estados_OTROSDelete
+    queryset = Otros.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def delete(self, request):
+        # try:
+            with transaction.atomic():
+                #Parametros para eliminacion
+                if request.query_params.get('id_otros')==None or request.query_params.get('isCreateForWeb')==None:
+                    raise ValidationError('No se ingresaron parámetros necesarios para eliminar el OTRO')
+                id_otros = int(request.query_params.get('id_otros', 0))
+                isCreateForWeb = ast.literal_eval(request.query_params.get('isCreateForWeb', False))
+
+                valores_eliminados_detalles = []
+                otros_delete = self.queryset.filter(id_otros = id_otros).first()
+                if otros_delete:
+                    if not otros_delete.id_radicados:
+                        #Elimina los anexos, anexos_pqr, metadatos y el archivo adjunto
+                        anexos_otros = Anexos_PQR.objects.filter(id_otros = id_otros)
+                        if anexos_otros:
+                            anexosDelete = AnexosDelete()
+                            valores_eliminados_detalles = anexosDelete.delete(anexos_otros)
+
+                        #Elimina el estado creado en el historico
+                        self.borrar_estados.delete(self, id_otros)
+                        #Elimina el pqrsdf
+                        otros_delete.delete()
+                        # #Auditoria
+                        # descripcion_auditoria = self.set_descripcion_auditoria(otros_delete)
+                        # self.auditoria(request, descripcion_auditoria, isCreateForWeb, valores_eliminados_detalles)
+
+                        return Response({'success':True, 'detail':'El OTRO ha sido descartado'}, status=status.HTTP_200_OK)
+                    else:
+                        raise NotFound('No se permite borrar la solicitud otros ya radicados')
+                else:
+                    raise NotFound('No se encontró ningún otro con estos parámetros')
+            
+        # except Exception as e:
+            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    def set_descripcion_auditoria(self, pqrsdf):
+        tipo_pqrsdf = TiposPQR.objects.filter(cod_tipo_pqr=pqrsdf.cod_tipo_PQRSDF).first()
+
+        persona = Personas.objects.filter(id_persona = pqrsdf.id_persona_titular_id).first()
+        persona_serializer = PersonasFilterSerializer(persona)
+        nombre_persona_titular = persona_serializer.data['nombre_completo'] if persona_serializer.data['tipo_persona'] == 'N' else persona_serializer.data['razon_social']
+
+        medioSolicitud = MediosSolicitud.objects.filter(id_medio_solicitud = pqrsdf.id_medio_solicitud_id).first()
+
+        data = {
+            'TipoPQRSDF': str(tipo_pqrsdf.nombre),
+            'NombrePersona': str(nombre_persona_titular),
+            'FechaRegistro': str(pqrsdf.fecha_registro),
+            'MedioSolicitud': str(medioSolicitud.nombre)
+        }
+
+        return data
+    
+
 ########################## Historico Estados ##########################
 class HistoricoEstadosCreate(generics.CreateAPIView):
     creador_estados = Estados_PQRCreate()
@@ -731,7 +795,7 @@ class AnexosDelete(generics.RetrieveDestroyAPIView):
 
     @transaction.atomic
     def delete(self, anexos_pqr):
-        try:
+        # try:
             nombres_anexos_auditoria = []
             for anexo_pqr in anexos_pqr:
                 anexo_delete = self.queryset.filter(id_anexo = anexo_pqr.id_anexo_id).first()
@@ -747,7 +811,7 @@ class AnexosDelete(generics.RetrieveDestroyAPIView):
                     raise NotFound('No se encontró ningún anexo con estos parámetros')
             return nombres_anexos_auditoria
             
-        except Exception as e:
+        # except Exception as e:
             raise({'success': False, 'detail': str(e)})
         
 class AnexosPQRDelete(generics.RetrieveDestroyAPIView):
@@ -838,14 +902,14 @@ class ArchivoDelete(generics.RetrieveDestroyAPIView):
     queryset = ArchivosDigitales.objects.all()
 
     def delete(self, id_archivo_digital):
-        try:
+        # try:
             archivo = self.queryset.filter(id_archivo_digital = id_archivo_digital).first()
             if archivo:
                 archivo.delete()
             else:
                 raise NotFound('No se encontró ningún metadato con estos parámetros') 
-        except Exception as e:
-          raise({'success': False, 'detail': str(e)})
+        # except Exception as e:
+        #   raise({'success': False, 'detail': str(e)})
         
 
 class MetadatosPQRDelete(generics.RetrieveDestroyAPIView):
@@ -853,7 +917,7 @@ class MetadatosPQRDelete(generics.RetrieveDestroyAPIView):
     queryset = MetadatosAnexosTmp.objects.all()
 
     def delete(self, id_anexo):
-        try:
+        # try:
             metadato = self.queryset.filter(id_anexo = id_anexo).first()
             if metadato:
                 archivoDelete = ArchivoDelete()
@@ -862,8 +926,8 @@ class MetadatosPQRDelete(generics.RetrieveDestroyAPIView):
                 return True
             else:
                 raise NotFound('No se encontró ningún metadato con estos parámetros')
-        except Exception as e:
-          raise({'success': False, 'detail': str(e)})
+        # except Exception as e:
+        #   raise({'success': False, 'detail': str(e)})
         
 
 ####################### RADICADOS ##########################

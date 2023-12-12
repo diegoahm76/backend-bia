@@ -67,6 +67,33 @@ class OtrosSerializer(serializers.ModelSerializer):
         model = Otros
         fields = '__all__'
 
+
+class OTROSSerializer(serializers.ModelSerializer):
+    nombre_estado_solicitud = serializers.ReadOnlyField(source='id_estado_actual_solicitud.nombre')
+    numero_radicado = serializers.ReadOnlyField(source='id_radicado.nro_radicado')
+    numero_radicado_entrada = serializers.SerializerMethodField()
+    nombre_completo_titular = serializers.SerializerMethodField()
+    solicitudes_pqr = serializers.SerializerMethodField()
+
+    def get_numero_radicado_entrada(self, obj):
+        radicado = T262Radicados.objects.filter(id_radicado=obj.id_radicado_id).first()
+        numero_radicado_entrada = ''
+        if radicado:  
+            data_radicado = [radicado.prefijo_radicado, str(radicado.fecha_radicado.year), str(radicado.nro_radicado)]
+            numero_radicado_entrada = '-'.join(data_radicado)
+        return numero_radicado_entrada
+
+    def get_nombre_completo_titular(self, obj):
+        persona = Personas.objects.filter(id_persona=obj.id_persona_titular_id).first()
+        nombre_completo = None
+        nombre_list = [persona.primer_nombre, persona.segundo_nombre, persona.primer_apellido, persona.segundo_apellido]
+        nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+        return nombre_completo
+
+    class Meta:
+        model = Otros
+        fields = '__all__'
+
 class MedioSolicitudSerializer(serializers.ModelSerializer):
     class Meta:
         model = MediosSolicitud
