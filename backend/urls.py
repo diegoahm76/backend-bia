@@ -66,16 +66,19 @@ urlpatterns = [
     path('api/transversal/choices/', include('transversal.urls.choices_urls')),
     path('api/transversal/vinculacion/',include('transversal.urls.vinculacion_urls')),
     path('api/transversal/organigrama/', include('transversal.urls.organigrama_urls')),
+    path('api/transversal/organigrama/activacion/', include('transversal.urls.activacion_organigrama_urls')),
     path('api/transversal/notificaciones/', include('transversal.urls.notificaciones_urls')),
     path('api/transversal/configuracion/',include('transversal.urls.configuracionEntidades_urls')),
     path('api/transversal/sucursales/',include('transversal.urls.sucursalesEmpresas_urls')),
     path('api/transversal/lideres/',include('transversal.urls.lideres_urls')),
     path('api/transversal/alertas/',include('transversal.urls.alertas_urls')),
+    
 
 
     #GESTOR DOCUMENTAL
     path('api/gestor/ccd/', include('gestion_documental.urls.ccd_urls')),
     path('api/gestor/activar/', include('gestion_documental.urls.finalizar_urls')),
+    path('api/gestor/ccd/activacion/', include('gestion_documental.urls.activacion_ccd_urls')),
     path('api/gestor/trd/', include('gestion_documental.urls.trd_urls')),
     path('api/gestor/tca/', include('gestion_documental.urls.tca_urls')),
     path('api/gestor/choices/', include('gestion_documental.urls.choices_urls')),
@@ -163,6 +166,10 @@ urlpatterns = [
     # SEGUIMIENTO PLANES
     path('api/seguimiento/planes/',include('seguimiento_planes.urls.planes_urls')),
     path('api/seguimiento-planes/',include('seguimiento_planes.urls.seguimiento_urls')),
+    
+    # TRAMITES
+    path('api/tramites/',include('tramites.urls.tramites_urls')),
+    path('api/tramites/choices/',include('tramites.urls.choices_urls')),
 
 
     
