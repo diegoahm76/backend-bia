@@ -66,6 +66,14 @@ class PQRSDFGet(generics.ListAPIView):
             if key == 'tipo_solicitud':
                 if value != '':
                     tipo_busqueda = False
+
+            if key == 'fecha_inicio':
+                if value != '':
+                    
+                    filter['fecha_radicado__gte'] = datetime.strptime(value, '%Y-%m-%d').date()
+            if key == 'fecha_fin':
+                if value != '':
+                    filter['fecha_radicado__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
         
         if tipo_busqueda == 'PQRSDF':
             instance = self.get_queryset().filter(**filter).order_by('fecha_radicado')
