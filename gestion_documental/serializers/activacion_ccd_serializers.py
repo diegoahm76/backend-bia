@@ -57,3 +57,16 @@ class CCDPosiblesSerializer(serializers.ModelSerializer):
     class Meta:
         model = CuadrosClasificacionDocumental
         fields = ['id_ccd', 'nombre', 'version', 'trd', 'tca']
+
+
+class CCDCambioActualSerializer(serializers.ModelSerializer):
+    class Meta:
+        model= CuadrosClasificacionDocumental
+        fields=['justificacion_nueva_version']
+
+
+class CCDActivarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model= CuadrosClasificacionDocumental
+        fields=['fecha_puesta_produccion', 'justificacion_puesta_produccion', 'actual']
+
