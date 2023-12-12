@@ -117,6 +117,14 @@ class AtributosEtapasView(generics.ListAPIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def put(self, request, etapa):
+        atributo = AtributosEtapas.objects.filter(pk=etapa).get()
+        serializer = AtributosEtapasPostSerializer(atributo, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class DeleteAtributosEtapasView(generics.ListAPIView):
     queryset = AtributosEtapas.objects.all()
@@ -440,3 +448,27 @@ class CategoriasEtapasFiltradoView(generics.ListAPIView):
             return Response({'success': True, 'data': etapasGeneral}, status=status.HTTP_200_OK)
         else:
             return Response({'success': False, 'data': 'No existe la etapa con el id enviado'}, status=status.HTTP_200_OK)
+
+
+class DeleteEtapaView(generics.ListAPIView):
+    queryset = EtapasProceso.objects.all()
+    serializer_class = EtapasProcesoSerializer
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request, etapa):
+        queryset = EtapasProceso.objects.filter(id=etapa)
+        queryset.delete()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+class DeleteCategoriaAtributoView(generics.ListAPIView):
+    queryset = CategoriaAtributo.objects.all()
+    serializer_class = CategoriaAtributoSerializer
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request, categoria):
+        queryset = CategoriaAtributo.objects.filter(id=categoria)
+        queryset.delete()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
