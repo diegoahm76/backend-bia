@@ -112,13 +112,10 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
 
             if temporal_all:
                 organigrama_anterior = list(temporal_all.values_list('id_unidad_org_anterior__id_organigrama__id_organigrama', flat=True).distinct())
-                id_organigrama_anterior = organigrama_anterior[0]
-                if organigrama_actual.id_organigrama != id_organigrama_anterior:
-                    temporal_all.delete()
-                    
                 organigrama_nuevo = list(temporal_all.values_list('id_unidad_org_nueva__id_organigrama__id_organigrama', flat=True).distinct())
-                # id_organigrama_nuevo = organigrama_nuevo[0]
-                if organigrama_seleccionado.id_organigrama not in organigrama_nuevo:
+                id_organigrama_anterior = organigrama_anterior[0] 
+
+                if (organigrama_seleccionado.id_organigrama not in organigrama_nuevo) or (organigrama_actual.id_organigrama != id_organigrama_anterior):
                     temporal_all.delete()
 
             # Auditoria Organigrama desactivado
