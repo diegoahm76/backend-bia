@@ -15,6 +15,10 @@ urlpatterns = [
      path('otros/buscar-personas-general/',views.GetPersonasByFilters.as_view(), name='buscar-personas-general'),
      path('otros/buscar-personas-otros/',views.GetPersonasByFiltersOtros.as_view(), name='buscar-personas-otros'),
      path('otros/buscar-empresa-otros/',views.GetEmpresasByFiltersOtros.as_view(), name='buscar-empresa-otros'),
+     path('otros/buscar-apoderados-otros/<int:id_poderdante>/', views.GetApoderadosByPoderdanteId.as_view(), name='buscar-apoderado-otros'),
+     path('otros/crear-otros/',views.OtrosCreate.as_view(), name='crear-solicitud-otros'),
+     path('otros/editar-otros/',views.OTROSUpdate.as_view(), name='editar-solicitud-otros'),
+
 
     
 ]
