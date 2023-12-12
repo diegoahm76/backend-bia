@@ -51,7 +51,19 @@ urlpatterns = [
     path('configuracion-tipologia/consulta-años-anteriores/', views.ListaConfiguracionesPorAgnoYTipologia.as_view(),name='consulta-años-anteriores'),
     path('configuracion-tipologia/seccion-subseccion-trd-actual/', views.GetActualSeccionSubsecciones.as_view(),name='consulta-años-anteriores'),
     path('configuracion-tipologia/administrador-numeros-tipologias/', views.AsignarNuevoConsecutivo.as_view(),name='admnistrador-numeros-tipologias'),
-    path('configuracion-tipologia/actualizar-tipologia-no-a-si/<int:pk>/',views.EditarConfiguracionTipologia.as_view(), name='actualizar-numeros-tipologias'),
+    path('configuracion-tipologia/actualizar-tipologia-no-a-em/<int:id_tipologia_doc>/',views.ActualizarConfiguracionEM.as_view(), name='actualizar--NoConsecutivo-a-em'),
+    path('configuracion-tipologia/actualizar-tipologia-no-a-ss/<int:id_tipologia_doc>/',views.ActualizarConfiguracionSS.as_view(), name='actualizar-numeros-tipologias'),
+    path('configuracion-tipologia/actualizar-tipologia-si-a-no-em/<int:id_tipologia_doc>/', views.ActualizarConfiguracionNoConsecutivoEm.as_view(), name='actualizar-configuracion-no-a-si'),
+    path('configuracion-tipologia/actualizar-tipologia-si-a-no-ss/<int:id_tipologia_doc>/', views.ActualizarConfiguracionNoConsecutivoSS.as_view(), name='actualizar-configuracion-no-a-si'),
+    path('configuracion-tipologia/actualizar-tipologia-em-a-ss/<int:id_tipologia_doc>/', views.ActualizarConfiguracionEMaSS.as_view(), name='actualizar-configuracion-em-a-ss'),
+    path('configuracion-tipologia/actualizar-tipologia-ss-a-em/<int:id_tipologia_doc>/', views.ActualizarConfiguracionSStoEM.as_view(), name='actualizar-configuracion-ss-a-em'),
+    path('configuracion-tipologia/actualizar-tipologia-em/<int:id_tipologia_doc>/', views.ActualizarConfiguracionTipoEM.as_view(), name='actualizar-configuracion-em'),
+    path('configuracion-tipologia/actualizar-valores-ss/<int:id_tipologia_doc>/', views.ActualizarConfiguracionSeccionSubseccion.as_view(), name='actualizar-configuracion-valores-ss'),
+    path('configuracion-tipologia/mantener-configuracion-no-consecutivo/<int:id_tipologia_doc>/', views.ConfiguracionAnioSiguienteNoConsecutivo.as_view(), name='actualizar-configuracion-año-proximo-no-consecutivo'),
+    path('configuracion-tipologia/mantener-configuracion-em/<int:id_tipologia_doc>/', views.ConfiguracionAnioSiguienteEmpresa.as_view(), name='actualizar-configuracion-año-proximo-em'),
+    path('configuracion-tipologia/mantener-configuracion-em/<int:id_tipologia_doc>/', views.ConfiguracionAnioSiguienteEmpresa.as_view(), name='actualizar-configuracion-año-proximo-em'),
+    path('configuracion-tipologia/mantener-configuracion-ss/<int:id_tipologia_doc>/', views.ConfiguracionAnioSiguienteSeccionSubseccion.as_view(), name='actualizar-configuracion-año-proximo-ss'),
+
     
 
 

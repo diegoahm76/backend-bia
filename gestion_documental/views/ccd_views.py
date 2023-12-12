@@ -968,23 +968,25 @@ class BusquedaCCDHomologacionView(generics.ListAPIView):
 @staticmethod
 def obtener_unidades_ccd(unidades_actual, unidades_nueva):
     data_out = []
-    for unidad_actual in unidades_actual:
-        for unidad_nueva in unidades_nueva:
-            if unidad_actual['codigo'] == unidad_nueva['codigo']:
-                data_json = {
-                    'id_unidad_actual': unidad_actual['id_unidad_organizacional'],
-                    'cod_unidad_actual': unidad_actual['codigo'],
-                    'nom_unidad_actual': unidad_actual['nombre'],
-                    'id_organigrama_unidad_actual': unidad_actual['id_organigrama'],
-                    'id_unidad_nueva': unidad_nueva['id_unidad_organizacional'],
-                    'cod_unidad_nueva': unidad_nueva['codigo'],
-                    'nom_unidad_nueva': unidad_nueva['nombre'],
-                    'id_organigrama_unidad_nueva': unidad_nueva['id_organigrama']
-                }
-                data_json['iguales'] = unidad_actual['nombre'] == unidad_nueva['nombre']
-                data_out.append(data_json)
+    mapa_unidades = {unidad['codigo']: unidad for unidad in unidades_actual}
 
-    data_out = sorted(data_out, key=lambda x: x['iguales'], reverse=True)
+    for unidad_nueva in unidades_nueva:
+        unidad_actual = mapa_unidades.get(unidad_nueva['codigo'])
+        if unidad_actual:
+            data_json = {
+                'id_unidad_actual': unidad_actual['id_unidad_organizacional'],
+                'cod_unidad_actual': unidad_actual['codigo'],
+                'nom_unidad_actual': unidad_actual['nombre'],
+                'id_organigrama_unidad_actual': unidad_actual['id_organigrama'],
+                'id_unidad_nueva': unidad_nueva['id_unidad_organizacional'],
+                'cod_unidad_nueva': unidad_nueva['codigo'],
+                'nom_unidad_nueva': unidad_nueva['nombre'],
+                'id_organigrama_unidad_nueva': unidad_nueva['id_organigrama'],
+                'iguales': unidad_actual['nombre'] == unidad_nueva['nombre']
+            }
+            data_out.append(data_json)
+
+    data_out.sort(key=lambda x: x['iguales'], reverse=True)
     return data_out
 
 @staticmethod
@@ -1172,7 +1174,7 @@ class UnidadesSeccionPersistenteTemporalCreateView(generics.CreateAPIView):
         unidades_a_eliminar = unidades_existentes_set - unidades_nuevas_set
         unidades_a_crear = unidades_nuevas_set - unidades_existentes_set
 
-        self.delete_unidades_persistentes_tmp(ccd.id_ccd, unidades_a_eliminar)
+        valores_eliminados_detalles = self.delete_unidades_persistentes_tmp(ccd.id_ccd, unidades_a_eliminar)
 
         unidades_responsables_existentes = UnidadesSeccionResponsableTemporal.objects.filter(
             id_ccd_nuevo=ccd.id_ccd,
@@ -1183,6 +1185,7 @@ class UnidadesSeccionPersistenteTemporalCreateView(generics.CreateAPIView):
         )
         instancia_responsable = UnidadesSeccionResponsableTemporalCreateView()
         instancia_responsable.delete_unidades_responsable_tmp(ccd.id_ccd, unidades_responsables_existentes_set)
+        valores_creados_detalles = []
 
         for unidad in unidades_a_crear:
             data = {
@@ -1193,13 +1196,29 @@ class UnidadesSeccionPersistenteTemporalCreateView(generics.CreateAPIView):
             serializer = self.serializer_class(data=data)
             serializer.is_valid(raise_exception=True)
             unidades_persistentes_create = serializer.save()
+            descripcion_registros_creados = {
+                'NombreCCDActual':str(ccd.nombre),
+                'VersionCCDActual':str(ccd.version),
+                'NombreCCDNueva':str(unidades_persistentes_create.id_ccd_nuevo.nombre),
+                'VersionCCDNueva':str(unidades_persistentes_create.id_ccd_nuevo.version),
+                'NombreUnidadOrgActual':str(unidades_persistentes_create.id_unidad_seccion_actual.nombre), 
+                'CodigoUnidadOrgActual':str(unidades_persistentes_create.id_unidad_seccion_actual.codigo),
+                'NombreUnidadOrgNueva':str(unidades_persistentes_create.id_unidad_seccion_nueva.nombre), 
+                'CodigoUnidadOrgNueva':str(unidades_persistentes_create.id_unidad_seccion_nueva.codigo),
+            }
+            valores_creados_detalles.append(descripcion_registros_creados)
+            
+        if valores_creados_detalles == []:
+            valores_creados_detalles = None
 
         unidades_persistentes = UnidadesSeccionPersistenteTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd)
         unidades_persistentes_data = self.serializer_class(unidades_persistentes, many=True).data
-        return unidades_persistentes_data
+        return unidades_persistentes_data, valores_eliminados_detalles, valores_creados_detalles
     
     def delete_unidades_persistentes_tmp(self, id_ccd_nuevo, unidades_a_eliminar):
+        ccd_actual = CuadrosClasificacionDocumental.objects.filter(actual=True).first()
         instancia_agrupaciones = AgrupacionesDocumentalesPersistenteTemporalCreateView()
+        valores_eliminados_detalles = []
         unidades = UnidadesSeccionPersistenteTemporal.objects.filter(
             id_ccd_nuevo=id_ccd_nuevo,
             id_unidad_seccion_actual__in=[unidad[0] for unidad in unidades_a_eliminar],
@@ -1207,9 +1226,22 @@ class UnidadesSeccionPersistenteTemporalCreateView(generics.CreateAPIView):
         )
         for unidad in unidades:
             instancia_agrupaciones.delete_agrupaciones_persistentes_tmp(unidad.id_unidad_seccion_temporal,None)
+        
+            descripcion_registros_eliminados = {
+                'NombreUnidadOrgActual':str(unidad.id_unidad_seccion_actual.nombre), 
+                'CodigoUnidadOrgActual':str(unidad.id_unidad_seccion_actual.codigo),
+                'NombreUnidadOrgNueva':str(unidad.id_unidad_seccion_nueva.nombre), 
+                'CodigoUnidadOrgNueva':str(unidad.id_unidad_seccion_nueva.codigo),
+            }
+            valores_eliminados_detalles.append(descripcion_registros_eliminados)
 
         unidades.delete()
 
+        if valores_eliminados_detalles == []:
+            valores_eliminados_detalles = None
+
+        return valores_eliminados_detalles
+        
     def post(self, request):
         data = request.data
         unidades_persistentes = self.crear_actualizar_unidades_persistentes_tmp(data)
@@ -1259,7 +1291,6 @@ class AgrupacionesDocumentalesPersistenteTemporalCreateView(generics.CreateAPIVi
             agrupaciones_persistentes = serializer.save()
             data_response.append(self.serializer_class(agrupaciones_persistentes).data)
 
-
         agrupaciones_persistentes = AgrupacionesDocumentalesPersistenteTemporal.objects.filter(id_unidad_seccion_temporal=unidades_persistentes.id_unidad_seccion_temporal)
         agrupaciones_persistentes_data = self.serializer_class(agrupaciones_persistentes, many=True).data
         return agrupaciones_persistentes_data
@@ -1288,9 +1319,19 @@ class PersistenciaConfirmadaCreateView(generics.CreateAPIView):
         data = request.data
         with transaction.atomic():
             if 'catalagos_persistentes' in data and 'unidades_persistentes' in data:
+
+                try:
+                    ccd_actual = CuadrosClasificacionDocumental.objects.get(actual=True)
+                except CuadrosClasificacionDocumental.DoesNotExist:
+                    raise NotFound('No se ha encontrado CCD actual')
+                
+                try:
+                    ccd_nuevo = CuadrosClasificacionDocumental.objects.get(id_ccd=data['id_ccd_nuevo'])
+                except CuadrosClasificacionDocumental.DoesNotExist:
+                    raise NotFound('No se ha encontrado CCD nuevo')
             
                 instancia_unidades_persistentes = UnidadesSeccionPersistenteTemporalCreateView()
-                unidades_persistentes = instancia_unidades_persistentes.crear_actualizar_unidades_persistentes_tmp(data)
+                unidades_persistentes, valores_eliminados_detalles, valores_creados_detalles = instancia_unidades_persistentes.crear_actualizar_unidades_persistentes_tmp(data)
                 agrupaciones_persistentes = []
                 
                 for unidad_persistente in unidades_persistentes:
@@ -1327,6 +1368,29 @@ class PersistenciaConfirmadaCreateView(generics.CreateAPIView):
                     instancia_agrupacion_persistentes = AgrupacionesDocumentalesPersistenteTemporalCreateView()
                     agrupacion_persistentes = instancia_agrupacion_persistentes.crear_actualizar_agrupaciones_persistentes_tmp(data_a)
                     agrupaciones_persistentes.append(agrupacion_persistentes)
+
+                    descripcion = {
+                        'NombreCCDActual':str(ccd_actual.nombre),
+                        'VersionCCDActual':str(ccd_actual.version),
+                        'NombreCCDNueva':str(ccd_nuevo.nombre),
+                        'VersionCCDNueva':str(ccd_nuevo.version)}
+                    
+                    direccion = Util.get_client_ip(request)
+
+                    # AUDITORIAS
+                    auditoria_data = {
+                        "id_usuario": request.user.id_usuario,
+                        "id_modulo": 137,
+                        "cod_permiso": "AC" if UnidadesSeccionPersistenteTemporal.objects.filter(id_ccd_nuevo=ccd_nuevo.id_ccd).exists() else "CR",
+                        "subsistema": 'GEST',
+                        "dirip": direccion,
+                        "descripcion": descripcion,
+                        #"valores_actualizados_detalles": valores_actualizados_detalles,
+                        "valores_creados_detalles": valores_creados_detalles,
+                        "valores_eliminados_detalles": valores_eliminados_detalles
+                    }
+                    Util.save_auditoria_maestro_detalle(auditoria_data)
+
 
             data_out = {
                 'unidades_persistentes': unidades_persistentes,
@@ -1676,6 +1740,7 @@ class UnidadesOrganizacionalesActualResponsableView(generics.ListAPIView):
 
     def get(self, request, id_ccd_nuevo):
         ccd_filro = BusquedaCCDHomologacionView().get_validacion_ccd()
+        mismo_organicrama = False
 
         try:
             ccd = ccd_filro.get(id_ccd=id_ccd_nuevo)
@@ -1717,6 +1782,24 @@ class UnidadesOrganizacionalesActualResponsableView(generics.ListAPIView):
 class OficinasUnidadOrganizacionalGetView(generics.ListAPIView):
     serializer_class = OficinaUnidadOrganizacionalSerializer
 
+    def get_oficinas_hijas(self, id_unidad_org_padre):
+
+        try:
+            unidad_org = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=id_unidad_org_padre)
+        except UnidadesOrganizacionales.DoesNotExist:
+            raise ValidationError('No se encontro unidad organizacional')
+        
+        oficinas_unidad = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre=id_unidad_org_padre, cod_agrupacion_documental__isnull=True).order_by('codigo')
+        serializer = self.serializer_class(oficinas_unidad, many=True)
+
+        oficinas = serializer.data
+
+        for oficina in oficinas:
+            oficina_res = self.get_oficinas_hijas(oficina['id_unidad_organizacional'])
+            oficinas += oficina_res
+
+        return oficinas
+
     def get_oficinas_unidad(self, id_unidad_org_padre, id_ccd):
 
         try:
@@ -1729,15 +1812,14 @@ class OficinasUnidadOrganizacionalGetView(generics.ListAPIView):
         except UnidadesOrganizacionales.DoesNotExist:
             raise ValidationError('No se encontro unidad organizacional')
         
-        oficinas_unidad = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre=id_unidad_org_padre, cod_agrupacion_documental__isnull=True).order_by('codigo')
-        serializer = self.serializer_class(oficinas_unidad, context={'id_ccd_nuevo': ccd.id_ccd}, many=True)
+        oficinas_unidad = self.get_oficinas_hijas(id_unidad_org_padre)
 
         data = {
             'id_ccd': ccd.id_ccd,
             'id_unidad_organizacional': unidad_org.id_unidad_organizacional,
             'codigo': unidad_org.codigo,
             'nombre': unidad_org.nombre,
-            'oficinas': serializer.data 
+            'oficinas': oficinas_unidad 
             }
 
         return data 

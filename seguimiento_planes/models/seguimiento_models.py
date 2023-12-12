@@ -3,6 +3,7 @@ from seguimiento_planes.models.planes_models import ObjetivoDesarrolloSostenible
 from recurso_hidrico.models.bibliotecas_models import Cuencas
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from transversal.models.personas_models import Personas
+from gestion_documental.models.expedientes_models import ArchivosDigitales
 
 class FuenteFinanciacionIndicadores(models.Model):
     id_fuente = models.AutoField(primary_key=True, editable=False, db_column='T516IdFuente')
@@ -14,6 +15,9 @@ class FuenteFinanciacionIndicadores(models.Model):
     valor_total = models.BigIntegerField(null=True, blank=True, db_column='T516valorTotal')
     id_indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T516IdIndicador')
     id_cuenca = models.ForeignKey(Cuencas, on_delete=models.CASCADE, db_column='T516IdCuenca')
+    id_proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, db_column='T516IdProyecto')
+    id_actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, db_column='T516IdActividad')
+    id_producto = models.ForeignKey(Productos, on_delete=models.CASCADE, db_column='T516IdProducto')
 
     def __str__(self):
         return str(self.nombre_fuente)
@@ -50,6 +54,8 @@ class DetalleInversionCuentas(models.Model):
     id_proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, db_column='T518IdProyecto')
     id_producto = models.ForeignKey(Productos, on_delete=models.CASCADE, db_column='T518IdProducto')
     id_actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, db_column='T518IdActividad')
+    id_indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T518IdIndicador')
+    id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T518IdMeta')
 
     def __str__(self):
         return str(self.cuenta)
@@ -170,7 +176,7 @@ class ConceptoPOAI(models.Model):
 
 class FuenteFinanciacion(models.Model):
     id_fuente = models.AutoField(primary_key=True, editable=False, db_column='T526IdFuente')
-    # nombre_fuente = models.CharField(max_length=100, db_column='T526nombreFuente')
+    nombre_fuente = models.CharField(max_length=100, db_column='T526nombreFuente')
     vano_1 = models.BigIntegerField(null=True, blank=True, db_column='T526vano1')
     vano_2 = models.BigIntegerField(null=True, blank=True, db_column='T526vano2')
     vano_3 = models.BigIntegerField(null=True, blank=True, db_column='T526vano3')
@@ -188,7 +194,6 @@ class FuenteFinanciacion(models.Model):
 
 class BancoProyecto(models.Model):
     id_banco = models.AutoField(primary_key=True, editable=False, db_column='T527IdBanco')
-    nombre_meta = models.CharField(max_length=255, db_column='T527nombreMeta')
     banco_valor = models.BigIntegerField(null=True, blank=True, db_column='T527bancoValor')
     objeto_contrato = models.CharField(max_length=255, db_column='T527objetoContrato')
     id_proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, db_column='T527IdProyecto')
@@ -209,8 +214,36 @@ class BancoProyecto(models.Model):
 class PlanAnualAdquisiciones(models.Model):
     id_plan_anual = models.AutoField(primary_key=True, editable=False, db_column='T528IdPlanAnualAdquisiciones')
     descripcion = models.CharField(max_length=255, db_column='T528descripcion')
-    mes_inicio = models.CharField(max_length=100, db_column='T528mesInicio')
-    mes_oferta = models.CharField(max_length=100, db_column='T528mesOferta')
+    mes_inicio = models.CharField(
+        max_length=3, choices=[
+            ('ENE', 'Enero'),
+            ('FEB', 'Febrero'),
+            ('MAR', 'Marzo'),
+            ('ABR', 'Abril'),
+            ('MAY', 'Mayo'),
+            ('JUN', 'Junio'),
+            ('JUL', 'Julio'),
+            ('AGO', 'Agosto'),
+            ('SEP', 'Septiembre'),
+            ('OCT', 'Octubre'),
+            ('NOV', 'Noviembre'),
+            ('DIC', 'Diciembre'),
+                ], db_column='T528mesInicio')    
+    mes_oferta = models.CharField(
+        max_length=3, choices=[
+            ('ENE', 'Enero'),
+            ('FEB', 'Febrero'),
+            ('MAR', 'Marzo'),
+            ('ABR', 'Abril'),
+            ('MAY', 'Mayo'),
+            ('JUN', 'Junio'),
+            ('JUL', 'Julio'),
+            ('AGO', 'Agosto'),
+            ('SEP', 'Septiembre'),
+            ('OCT', 'Octubre'),
+            ('NOV', 'Noviembre'),
+            ('DIC', 'Diciembre'),
+        ], db_column='T528mesOferta')
     duracion = models.BigIntegerField(null=True, blank=True, db_column='T528duracion')
     valor_total_estimado = models.BigIntegerField(null=True, blank=True, db_column='T528valorTotalEstimado')
     valor_vigencia_actual = models.BigIntegerField(null=True, blank=True, db_column='T528valorVigenciaActual')
@@ -234,7 +267,7 @@ class PlanAnualAdquisiciones(models.Model):
         verbose_name = 'Plan Anual de Adquisiciones'
         verbose_name_plural = 'Planes Anuales de Adquisiciones'
 
-class PAACodgigoUNSP: # Tabla intermedia
+class PAACodgigoUNSP(models.Model): # Tabla intermedia
     id_paacodigo = models.AutoField(primary_key=True, editable=False, db_column='T529IdPAACodigo')
     id_plan = models.ForeignKey(PlanAnualAdquisiciones, on_delete=models.CASCADE, db_column='T529IdPlan')
     id_codigo = models.ForeignKey(CodigosUNSP, on_delete=models.CASCADE, db_column='T529IdCodigo')
@@ -246,3 +279,63 @@ class PAACodgigoUNSP: # Tabla intermedia
         db_table = 'T529PAACodgigoUNSP'
         verbose_name = 'PAACodgigoUNSP'
         verbose_name_plural = 'PAACodgigoUNSP'
+
+class SeguimientoPAI(models.Model):
+    id_seguimiento_pai = models.AutoField(primary_key=True, editable=False, db_column='T530IdSeguiPAI')
+    razagada = models.BooleanField(default=False, db_column='T530razagada')
+    mes = models.CharField(
+        max_length=3, choices=[
+            ('ENE', 'Enero'),
+            ('FEB', 'Febrero'),
+            ('MAR', 'Marzo'),
+            ('ABR', 'Abril'),
+            ('MAY', 'Mayo'),
+            ('JUN', 'Junio'),
+            ('JUL', 'Julio'),
+            ('AGO', 'Agosto'),
+            ('SEP', 'Septiembre'),
+            ('OCT', 'Octubre'),
+            ('NOV', 'Noviembre'),
+            ('DIC', 'Diciembre'),
+        ], db_column='T530mes')
+    porcentaje_avance = models.BigIntegerField(null=True, blank=True, db_column='T530porcentajeAvance')
+    fecha_registro_avance = models.DateField(null=True, blank=True, db_column='T530fechaRegistroAvance')
+    entrega_vigencia = models.TextField(null=True, blank=True, db_column='T530entregaVigencia')
+    hizo = models.TextField(null=True, blank=True, db_column='T530hizo')
+    cuando = models.TextField(null=True, blank=True, db_column='T530cuando')
+    adelanto = models.TextField(null=True, blank=True, db_column='T530adelanto')
+    donde = models.TextField(null=True, blank=True, db_column='T530donde')
+    resultado = models.TextField(null=True, blank=True, db_column='T530resultado')
+    participacion = models.TextField(null=True, blank=True, db_column='T530participacion')
+    beneficiarios = models.TextField(null=True, blank=True, db_column='T530beneficiarios')
+    compromisos = models.TextField(null=True, blank=True, db_column='T530compromisos')
+    contratros = models.TextField(null=True, blank=True, db_column='T530contratros')
+    fecha_creacion = models.DateField(null=True, blank=True, db_column='T530fechaCreacion')
+    id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T530IdUnidadOrganizacional')
+    id_programa = models.ForeignKey(Programa, on_delete=models.CASCADE, db_column='T530IdPrograma')
+    id_proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, db_column='T530IdProyecto')
+    id_producto = models.ForeignKey(Productos, on_delete=models.CASCADE, db_column='T530IdProducto')
+    id_actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, db_column='T530IdActividad')
+    id_indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T530IdIndicador')
+    id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T530IdMeta')
+
+    def __str__(self):
+        return str(self.id_seguimiento_pai)
+    
+    class Meta:
+        db_table = "T530SeguiminetoPAI"
+        verbose_name = "Seguimiento PAI"
+        verbose_name_plural = "Seguimiento PAI"
+
+class SeguimientoPAIDocumentos(models.Model): # Tabla intermedia
+    id_seguimiento_pai_documento = models.AutoField(primary_key=True, editable=False, db_column='T531IdSeguiPAIDoc')
+    id_seguimiento_pai = models.ForeignKey(SeguimientoPAI, on_delete=models.CASCADE, db_column='T531IdSeguiPAI')
+    id_archivo_digital = models.ForeignKey(ArchivosDigitales, on_delete=models.CASCADE, db_column='T531IdArchivoDigital')
+
+    def __str__(self):
+        return str(self.id_seguimiento_pai_documento)
+    
+    class Meta:
+        db_table = "T531SeguiminetoPAIDocumentos"
+        verbose_name = "Seguimiento PAI Documentos"
+        verbose_name_plural = "Seguimiento PAI Documentos"

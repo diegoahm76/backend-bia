@@ -3,10 +3,14 @@ import hashlib
 import os
 import json
 import copy
+import io
+import zipfile
+from django.http import FileResponse
 from django.db.utils import IntegrityError
 from django.core.files.base import ContentFile
 import secrets
 from rest_framework.parsers import MultiPartParser
+from rest_framework.views import APIView
 from gestion_documental.models.conf__tipos_exp_models import ConfiguracionTipoExpedienteAgno
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
 from gestion_documental.models.depositos_models import CarpetaCaja
@@ -22,7 +26,7 @@ from gestion_documental.views.conf__tipos_exp_views import ConfiguracionTipoExpe
 from seguridad.utils import Util
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AnularExpedienteSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, AperturaExpedienteUpdateAutSerializer, AperturaExpedienteUpdateNoAutSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, BorrarExpedienteSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConcesionAccesoDocumentosCreateSerializer, ConcesionAccesoDocumentosGetSerializer, ConcesionAccesoExpedientesCreateSerializer, ConcesionAccesoExpedientesGetSerializer, ConcesionAccesoPersonasFilterSerializer, ConcesionAccesoUpdateSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, ConsultaExpedientesDocumentosGetSerializer, ConsultaExpedientesGetSerializer, EnvioCodigoSerializer, ExpedienteAperturaSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, FirmaCierreGetSerializer, IndexarDocumentosAnularSerializer, IndexarDocumentosCreateSerializer, IndexarDocumentosGetSerializer, IndexarDocumentosUpdateAutSerializer, IndexarDocumentosUpdateSerializer, InformacionIndiceGetSerializer, ListExpedientesComplejosSerializer, ListarTRDSerializer, ListarTipologiasSerializer, ReubicacionFisicaExpedienteSerializer, SerieSubserieUnidadTRDGetSerializer
+from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AnularExpedienteSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, AperturaExpedienteUpdateAutSerializer, AperturaExpedienteUpdateNoAutSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, BorrarExpedienteSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConcesionAccesoDocumentosCreateSerializer, ConcesionAccesoDocumentosGetSerializer, ConcesionAccesoExpedientesCreateSerializer, ConcesionAccesoExpedientesGetSerializer, ConcesionAccesoPersonasFilterSerializer, ConcesionAccesoUpdateSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, ConsultaExpedientesDocumentosGetByIdSerializer, ConsultaExpedientesDocumentosGetListSerializer, ConsultaExpedientesDocumentosGetSerializer, ConsultaExpedientesGetSerializer, EnvioCodigoSerializer, ExpedienteAperturaSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, FirmaCierreGetSerializer, IndexarDocumentosAnularSerializer, IndexarDocumentosCreateSerializer, IndexarDocumentosGetSerializer, IndexarDocumentosUpdateAutSerializer, IndexarDocumentosUpdateSerializer, InformacionIndiceGetSerializer, ListExpedientesComplejosSerializer, ListarTRDSerializer, ListarTipologiasSerializer, ReubicacionFisicaExpedienteSerializer, SerieSubserieUnidadTRDGetSerializer
 from gestion_documental.serializers.depositos_serializers import  CarpetaCajaGetOrdenSerializer
 from rest_framework.response import Response
 from rest_framework import status
@@ -1212,7 +1216,7 @@ class UploadPDFView(generics.CreateAPIView):
 
             if respuesta.status_code != status.HTTP_201_CREATED:
                 return respuesta
-
+            
             # Retornar el hash MD5 junto con "respuesta"
             response_data = {
                 "mensaje": "Archivo subido exitosamente",
@@ -2784,7 +2788,7 @@ class ConcesionAccesoExpedientesUserGetView(generics.ListAPIView):
     def get(self, request):
         persona_logueada = request.user.persona
             
-        concesiones = ConcesionesAccesoAExpsYDocs.objects.filter(id_persona_recibe_acceso=persona_logueada)
+        concesiones = ConcesionesAccesoAExpsYDocs.objects.filter(id_persona_recibe_acceso=persona_logueada).exclude(id_expediente=None)
         if not concesiones:
             raise NotFound('No se han encontrado concesiones de expedientes')
         
@@ -2799,7 +2803,7 @@ class ConcesionAccesoDocumentosUserGetView(generics.ListAPIView):
     def get(self, request):
         persona_logueada = request.user.persona.id_persona
             
-        concesiones = ConcesionesAccesoAExpsYDocs.objects.filter(id_persona_recibe_acceso=persona_logueada)
+        concesiones = ConcesionesAccesoAExpsYDocs.objects.filter(id_persona_recibe_acceso=persona_logueada).exclude(id_documento_exp=None)
         if not concesiones:
             raise NotFound('No se han encontrado concesiones de documentos de expedientes')
         
@@ -2856,3 +2860,95 @@ class ConsultaExpedientesDocumentosGetView(generics.ListAPIView):
         serializer = self.serializer_class(documentos, many=True)
         
         return Response({'success':True, 'detail':'Se encontraron los siguientes documentos de expedientes', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+class ZipFileAPIView(APIView):
+    def get(self, request, id_expediente_documental):
+        expediente = ExpedientesDocumentales.objects.filter(id_expediente_documental=id_expediente_documental).first()
+        if not expediente:
+            raise NotFound('No se encontró el expediente ingresado')
+        
+        documentos_expediente = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=id_expediente_documental)
+        if not documentos_expediente:
+            raise NotFound('No se encontraron documentos para el expediente elegido')
+        
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'a') as zip_file:
+            zip_file.writestr('Documentos/', '')
+            index_content = f"<h2>Documentos de Expediente: {expediente.titulo_expediente}</h2></br>"
+            
+            cont = 1
+            
+            for documento in documentos_expediente:
+                if documento.id_archivo_sistema:
+                    file = documento.id_archivo_sistema.ruta_archivo
+                    file_name = os.path.basename(file.name)
+                    zip_file.writestr(f'Documentos/{file_name}', file.read())
+
+                    index_content = index_content + "\n" + f"{cont}. {documento.id_archivo_sistema.nombre_de_Guardado}: {documento.nombre_asignado_documento} - <a href='Documentos/{file_name}'>Abrir Documento</a></br>"
+                    cont += 1
+                    
+            zip_file.writestr('Índice.html', f"<html><body>{index_content}</body></html>")
+
+        zip_buffer.seek(0)
+
+        response = FileResponse(zip_buffer, filename=f'Expediente {expediente.titulo_expediente}.zip', as_attachment=True)
+
+        return response
+
+class ConsultaExpedientesDocumentosGetListView(generics.ListAPIView):
+    serializer_class = ConsultaExpedientesDocumentosGetListSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_expediente_documental):
+        id_documento_de_archivo_exped = self.request.query_params.get('id_documento_de_archivo_exped', '')
+        nombre_asignado_documento = self.request.query_params.get('nombre_asignado_documento', '')
+        palabras_clave_documento = self.request.query_params.get('palabras_clave_documento', '').strip()
+        
+        documentos = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=id_expediente_documental)
+        
+        if id_documento_de_archivo_exped != '':
+            documentos = documentos.filter(id_documento_de_archivo_exped=id_documento_de_archivo_exped)
+        
+        if nombre_asignado_documento != '':
+            documentos = documentos.filter(nombre_asignado_documento__icontains=nombre_asignado_documento)
+        
+        if palabras_clave_documento:
+            search_vector = SearchVector('palabras_clave_documento')
+            search_query = SearchQuery(palabras_clave_documento)
+            documentos = documentos.annotate(rank=SearchRank(search_vector, search_query)).filter(rank__gt=0)
+        
+        serializer = self.serializer_class(documentos.order_by('orden_en_expediente'), many=True)
+        data = serializer.data
+        
+        if not data:
+            raise NotFound('No se encontraron documentos')
+        
+        data_principales = [item for item in data if not item['es_un_archivo_anexo']]
+        data_anexos = [item for item in data if item['es_un_archivo_anexo']]
+        
+        data_response = []
+        for item in data_principales:
+            item['anexos'] = [anexo for anexo in data if anexo['es_un_archivo_anexo'] and anexo['id_doc_de_arch_del_cual_es_anexo'] == item['id_documento_de_archivo_exped']]
+            data_response.append(item)
+        
+        if not data_principales and data_anexos:
+            for item in data_anexos:
+                item['anexos'] = []
+                data_response.append(item)
+        
+        return Response({'success':True, 'detail':'Se encontraron los siguientes documentos de expedientes', 'data': data_response}, status=status.HTTP_200_OK)
+
+class ConsultaExpedientesDocumentosGetByIdView(generics.ListAPIView):
+    serializer_class = ConsultaExpedientesDocumentosGetByIdSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_documento_de_archivo_exped):
+        documento = DocumentosDeArchivoExpediente.objects.filter(id_documento_de_archivo_exped=id_documento_de_archivo_exped).first()
+        if not documento:
+            raise NotFound('No se encontró el documento elegido')
+        
+        serializer = self.serializer_class(documento, context={'request':request})
+        
+        # PENDIENTE VALIDACION PERMISOS
+        
+        return Response({'success':True, 'detail':'Se encontró el documento elegido', 'permiso_descarga':True, 'data': serializer.data}, status=status.HTTP_200_OK)
