@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from transversal.models.personas_models import Personas
@@ -501,3 +501,68 @@ class SolicitudAlUsuarioSobrePQRSDFCreateSerializer(serializers.ModelSerializer)
     class Meta:
         model = SolicitudAlUsuarioSobrePQRSDF
         fields = '__all__'
+
+class Anexos_PQRCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos_PQR
+        fields = '__all__'
+
+class SolicitudAlUsuarioSobrePQRSDFGetSerializer(serializers.ModelSerializer):
+    tipo_tramite = serializers.SerializerMethodField()
+    numero_radicado = serializers.SerializerMethodField()
+    estado = serializers.ReadOnlyField(source='id_estado_actual_solicitud.nombre',default=None)
+    class Meta:
+        model = SolicitudAlUsuarioSobrePQRSDF
+        # fields = ['id_solicitud_al_usuario_sobre_pqrsdf']
+        fields = ['id_solicitud_al_usuario_sobre_pqrsdf','tipo_tramite','fecha_radicado_salida','numero_radicado','estado']
+
+    def get_tipo_tramite(self,obj):
+        return "Solicitud de Complemento de Información al Usuario"
+    def get_numero_radicado(self,obj):
+        cadena = ""
+        if obj.id_radicado_salida:
+            cadena= str(obj.id_radicado_salida.prefijo_radicado)+'-'+str(obj.id_radicado_salida.agno_radicado)+'-'+str(obj.id_radicado_salida.nro_radicado)
+            return cadena
+        return 'SIN RADICAR'
+    
+class Anexos_PQRAnexosGetSerializer(serializers.ModelSerializer):
+   
+    archivo = serializers.SerializerMethodField()
+    numero = serializers.ReadOnlyField(source='id_anexo.orden_anexo_doc',default=None)
+    nombre = serializers.ReadOnlyField(source='id_anexo.nombre_anexo',default=None)
+    n_folios= serializers.ReadOnlyField(source='id_anexo.numero_folios',default=None)
+    medio_almacenamiento = serializers.ReadOnlyField(source='id_anexo.get_cod_medio_almacenamiento_display',default=None)
+    class Meta:
+        model = Anexos_PQR
+        fields = ['id_anexo_PQR','id_anexo','numero','nombre','n_folios','medio_almacenamiento','archivo']
+
+    def get_archivo(self,obj):
+        id_anexo = obj.id_anexo
+        meta_data = MetadatosAnexosTmp.objects.filter(id_anexo=id_anexo).first()
+        if meta_data:
+            data_archivo  = AnexoArchivosDigitalesSerializer(meta_data.id_archivo_sistema)
+            return data_archivo.data['ruta_archivo']
+        return "Archivo"
+    
+
+class SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SolicitudAlUsuarioSobrePQRSDF
+        fields = ['id_solicitud_al_usuario_sobre_pqrsdf','asunto','descripcion','fecha_solicitud']
+
+
+class MetadatosAnexosTmpGetSerializer(serializers.ModelSerializer):
+    categoria_archivo = serializers.ReadOnlyField(source='get_cod_categoria_archivo_display',default=None)
+    origen_archivo = serializers.ReadOnlyField(source='get_cod_origen_archivo_display',default=None)
+    nombre_tipologia_documental = serializers.ReadOnlyField(source='id_tipologia_doc.nombre',default=None)
+    palabras_clave_doc = serializers.SerializerMethodField()
+    class Meta:
+        model = MetadatosAnexosTmp
+        fields = ['id_metadatos_anexo_tmp','categoria_archivo','tiene_replica_fisica','origen_archivo','id_tipologia_doc','nombre_tipologia_documental','asunto','descripcion','palabras_clave_doc']
+    
+    
+    def get_palabras_clave_doc(self, obj):
+        if obj.palabras_clave_doc:
+            lista_datos =  obj.palabras_clave_doc.split("|")
+            return lista_datos
+        return None

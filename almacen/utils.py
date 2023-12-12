@@ -241,7 +241,6 @@ class UtilAlmacen:
             aux_menor = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = unidad_instance.id_unidad_org_padre.id_unidad_organizacional).first()
             if aux_menor.id_nivel_organigrama.orden_nivel >= 2:
                 if aux_menor.id_unidad_org_padre.unidad_raiz == False:
-                    print("asdasdasd")
                     unidades_iguales_y_arriba.append(aux_menor.id_unidad_org_padre.nombre)
                     while count >= 1:
                         aux_menor = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = aux_menor.id_unidad_org_padre.id_unidad_organizacional).first()
