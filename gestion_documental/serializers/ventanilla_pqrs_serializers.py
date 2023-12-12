@@ -147,6 +147,17 @@ class Estados_PQRSerializer(serializers.ModelSerializer):
     class Meta:
         model = Estados_PQR
         fields = '__all__'
+
+
+
+#OTROS
+class Estados_OTROSSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Estados_PQR
+        fields = '__all__'
+
+
+        
 class Estados_PQRPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Estados_PQR

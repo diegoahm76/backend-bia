@@ -22,6 +22,11 @@ from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
 from gestion_documental.models.tca_models import TablasControlAcceso
 from gestion_documental.models.trd_models import TablaRetencionDocumental
 
+from gestion_documental.views.activacion_ccd_views import (
+    CCDCambioActualPut,
+)
+
+
 from transversal.serializers.activacion_organigrama_serializers import (
     OrganigramaCambioActualSerializer,
 )
@@ -33,7 +38,6 @@ from transversal.serializers.activacion_organigrama_serializers import (
 
 # TODO: Implementar el formulario "Cambio de Organigrama Actual" para la activación de un nuevo organigrama.
 
-# TODO: En el módulo de ACTIVACIÓN DEL ORGANIGRAMA, verificar si existe un Cuadro de Clasificación Documental (CCD) ACTUAL.
 
 # TODO: Al activar el nuevo organigrama, actualizar los campos T017actual y T017fechaPuestaEnProduccion en la tabla T017Organigramas.
 # TODO: Si el escenario es "SI Existe CCD ACTUAL", activar también el CCD, TRD y TCA correspondientes.
@@ -112,13 +116,10 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
 
             if temporal_all:
                 organigrama_anterior = list(temporal_all.values_list('id_unidad_org_anterior__id_organigrama__id_organigrama', flat=True).distinct())
-                id_organigrama_anterior = organigrama_anterior[0]
-                if organigrama_actual.id_organigrama != id_organigrama_anterior:
-                    temporal_all.delete()
-                    
                 organigrama_nuevo = list(temporal_all.values_list('id_unidad_org_nueva__id_organigrama__id_organigrama', flat=True).distinct())
-                # id_organigrama_nuevo = organigrama_nuevo[0]
-                if organigrama_seleccionado.id_organigrama not in organigrama_nuevo:
+                id_organigrama_anterior = organigrama_anterior[0] 
+
+                if (organigrama_seleccionado.id_organigrama not in organigrama_nuevo) or (organigrama_actual.id_organigrama != id_organigrama_anterior):
                     temporal_all.delete()
 
             # Auditoria Organigrama desactivado
@@ -174,9 +175,25 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
             algo = self.activar_organigrama(organigrama_seleccionado, data_desactivar, data_activar, data_auditoria)
         
         else:
-            data_activar_org = data_activar
-            data_activar_org['justificacion_nueva_version'] = data['justificacion']
-            algo = self.activar_organigrama(organigrama_seleccionado, data_desactivar, data_activar_org, data_auditoria)
+            if not data.get('id_ccd'):
+                raise ValidationError('Debe seleccionar un CCD')
+            
+            try:
+                ccd_seleccionado = CuadrosClasificacionDocumental.objects.get(id_ccd=data['id_ccd'], id_organigrama=organigrama_seleccionado.id_organigrama)
+            except CuadrosClasificacionDocumental.DoesNotExist:
+                raise NotFound("El CCD seleccionado no existe")
+            
+            if ccd_seleccionado.fecha_terminado == None or ccd_seleccionado.fecha_retiro_produccion != None:
+                raise ValidationError('El CCD seleccionado no se encuentra terminado o ha sido retirado de producción')
+            
+            data_activar['justificacion_nueva_version'] = data['justificacion']
+            algo = self.activar_organigrama(organigrama_seleccionado, data_desactivar, data_activar, data_auditoria)
+
+            # Activar CCD
+            data_activar_ccd = data_activar
+            data_activar_ccd['justificacion_nueva_version'] = "ACTIVACIÓN AUTOMÁTICA DESDE EL PROCESO DE 'CAMBIO DE ORGANIGRAMA ACTUAL'"
+            ccd_activar = CCDCambioActualPut()
+            ccd_activar.activar_ccd(ccd_actual, data_desactivar, data_activar, data_auditoria)
 
     
 

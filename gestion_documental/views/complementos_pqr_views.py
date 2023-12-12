@@ -60,8 +60,6 @@ class ComplementosPQRSDFGet(generics.ListAPIView):
         except Exception as e:
             raise({'success': False, 'detail': str(e)})
 
-
-
 class ComplementoPQRSDFCreate(generics.CreateAPIView):
     serializer_class = ComplementoPQRSDFPostSerializer
     permission_classes = [IsAuthenticated]
