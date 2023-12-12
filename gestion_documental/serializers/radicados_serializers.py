@@ -1,8 +1,10 @@
 from rest_framework import serializers
 from gestion_documental.choices.tipo_radicado_choices import TIPOS_RADICADO_CHOICES
 from seguridad.models import (User)
-from gestion_documental.models.radicados_models import T262Radicados, Otros, MediosSolicitud
+from gestion_documental.models.radicados_models import Anexos, Anexos_PQR, MetadatosAnexosTmp, T262Radicados, Otros, MediosSolicitud
 from transversal.models.personas_models import Personas
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+
 
 class RadicadosImprimirSerializer(serializers.ModelSerializer):
     nombre_tipo_radicado = serializers.SerializerMethodField()
@@ -145,4 +147,96 @@ class PersonasFilterSerializer(serializers.ModelSerializer):
             'tipo_usuario'
         ]
 
+
+class OtrosPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Otros
+        fields = '__all__'
+
+
+class AnexosPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos
+        fields = '__all__'
+
+
+
+class AnexosPQRSDFPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos_PQR
+        fields = '__all__'
+
+
+class MetadatosPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MetadatosAnexosTmp
+        fields = '__all__'
  
+
+
+class AnexosPutSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos
+        fields = '__all__'
+
+class MetadatosPutSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MetadatosAnexosTmp
+        fields = '__all__'
+
+class AnexosPQRSDFSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos_PQR
+        fields = '__all__'
+
+class ArchivosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ArchivosDigitales
+        fields = '__all__'
+
+
+class AnexosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos
+        fields = [
+            'id_anexo',
+            'nombre_anexo',
+            'orden_anexo_doc',
+            'cod_medio_almacenamiento',
+            'medio_almacenamiento_otros_Cual',
+            'numero_folios',
+            'ya_digitalizado'
+        ]
+
+
+class MetadatosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MetadatosAnexosTmp
+        fields = [
+            'id_metadatos_anexo_tmp',
+            'id_anexo',
+            'fecha_creacion_doc',
+            'asunto',
+            'descripcion',
+            'cod_categoria_archivo',
+            'es_version_original',
+            'tiene_replica_fisica',
+            'nro_folios_documento',
+            'cod_origen_archivo',
+            'id_tipologia_doc',
+            'tipologia_no_creada_TRD',
+            'palabras_clave_doc',
+            'id_archivo_sistema'
+        ]
+
+class AnexosPQRSDFSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos_PQR
+        fields = '__all__'
+
+
+
+class RadicadoPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = T262Radicados
+        fields = '__all__'
