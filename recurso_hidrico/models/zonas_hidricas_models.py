@@ -45,7 +45,7 @@ class TipoAguaZonaHidrica (models.Model):
 
 class SubZonaHidrica(models.Model):
     id_sub_zona_hidrica = models.AutoField(primary_key=True, editable=False, db_column="T623IdSubZonaHidrica")
-    nombre_sub_zona_hidrica = models.CharField(max_length=50, db_column="T623nombreSubzonaHidrica")
+    nombre_sub_zona_hidrica = models.CharField(max_length=255, db_column="T623nombreSubzonaHidrica")
     codigo_rio = models.CharField(max_length=10, null=True, blank=True,unique=True, db_column="T623codigoRio")
     id_zona_hidrica = models.ForeignKey(ZonaHidrica, on_delete=models.CASCADE, db_column="T623Id_ZonaHidrica")
     id_tipo_zona_hidrica = models.ForeignKey(TipoZonaHidrica, on_delete=models.CASCADE, db_column="T623Id_TipoZonaHidrica")    

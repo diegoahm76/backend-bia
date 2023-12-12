@@ -1,11 +1,12 @@
+from seguridad.utils import Util
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from rest_framework.response import Response
 from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
 from recurso_hidrico.models.zonas_hidricas_models import TipoAguaZonaHidrica, ZonaHidrica, MacroCuencas,TipoZonaHidrica,SubZonaHidrica
-
+from backend.settings.base import EMAIL_HOST_USER, AUTHENTICATION_360_NRS
 from recurso_hidrico.serializers.zonas_hidricas_serializers import TipoAguaZonaHidricaSerializer, ZonaHidricaSerializer, MacroCuencasSerializer,TipoZonaHidricaSerializer,SubZonaHidricaSerializer
-
+import re, requests
 import copy
 # Vista get para las 4 tablas de zonas hidricas
 class MacroCuencasListView (generics.ListAPIView):
@@ -170,3 +171,22 @@ class CrearZonaHidricaVista(generics.CreateAPIView):
             raise ValidationError({'error': 'Error al crear el registro', 'detail': e.detail})
         
     
+
+
+
+
+
+class EnviarSMSView(generics.CreateAPIView):
+    def post(self, request, *args, **kwargs):
+        telefono = request.data.get('telefono')
+        mensaje = request.data.get('mensaje')
+
+        if telefono and mensaje:
+            # Llama a la función send_sms con los datos proporcionados
+            Util.send_sms(telefono, mensaje)
+
+            # Puedes personalizar la respuesta según tus necesidades
+            return Response({'mensaje': 'SMS enviado correctamente'}, status=status.HTTP_200_OK)
+        else:
+            # Maneja el caso en el que no se proporcionan el teléfono o el mensaje
+            return Response({'error': 'Por favor, proporciona el teléfono y el mensaje.'}, status=status.HTTP_400_BAD_REQUEST)
