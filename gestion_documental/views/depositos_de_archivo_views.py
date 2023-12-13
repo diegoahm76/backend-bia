@@ -2670,14 +2670,21 @@ class ListarInformacionArbol(generics.ListAPIView):
 
                     carpetas = CarpetaCaja.objects.filter(id_caja_bandeja=caja).order_by('orden_ubicacion_por_caja')
                     for carpeta in carpetas:
+                        expediente_id = None
+                        titulo_expediente = None
+
+                        # Verificar si el objeto id_expediente no es None antes de acceder a sus atributos
+                        if carpeta.id_expediente:
+                            expediente_id = carpeta.id_expediente.id_expediente_documental
+                            titulo_expediente = carpeta.id_expediente.titulo_expediente
+
                         carpeta_data = {
                             'id_carpeta': carpeta.id_carpeta_caja,
                             'identificacion_por_carpeta': carpeta.identificacion_por_caja,
                             'orden_carpeta': carpeta.orden_ubicacion_por_caja,
-                            'id_expediente': carpeta.id_expediente.id_expediente_documental,
-                            'titulo_expediente': carpeta.id_expediente.titulo_expediente, 
+                            'id_expediente': expediente_id,
+                            'titulo_expediente': titulo_expediente,
                             'Informacion_Mostrar': f"{carpeta.orden_ubicacion_por_caja} - Carpeta {carpeta.identificacion_por_caja}",
-
                             # Otros campos de información de la carpeta que desees incluir
                         }
                         caja_data['carpetas'].append(carpeta_data)
