@@ -38,7 +38,6 @@ from transversal.serializers.activacion_organigrama_serializers import (
 
 # TODO: Implementar el formulario "Cambio de Organigrama Actual" para la activación de un nuevo organigrama.
 
-# TODO: En el módulo de ACTIVACIÓN DEL ORGANIGRAMA, verificar si existe un Cuadro de Clasificación Documental (CCD) ACTUAL.
 
 # TODO: Al activar el nuevo organigrama, actualizar los campos T017actual y T017fechaPuestaEnProduccion en la tabla T017Organigramas.
 # TODO: Si el escenario es "SI Existe CCD ACTUAL", activar también el CCD, TRD y TCA correspondientes.
@@ -186,7 +185,6 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
             
             if ccd_seleccionado.fecha_terminado == None or ccd_seleccionado.fecha_retiro_produccion != None:
                 raise ValidationError('El CCD seleccionado no se encuentra terminado o ha sido retirado de producción')
-            
             
             data_activar['justificacion_nueva_version'] = data['justificacion']
             algo = self.activar_organigrama(organigrama_seleccionado, data_desactivar, data_activar, data_auditoria)
