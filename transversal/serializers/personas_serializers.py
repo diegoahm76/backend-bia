@@ -995,6 +995,7 @@ class RepresentanteLegalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Personas
         fields = [
+            'id_persona',
             'tipo_persona',
             'tipo_persona_desc',
             'tipo_documento_id',
