@@ -116,7 +116,7 @@ class DatosEncuestasResueltas(models.Model):
 
 class RespuestaEncuesta(models.Model):
     id_respuesta_encuesta = models.BigAutoField(primary_key=True, db_column='T252IdRespuesta_Encuesta')
-    id_encuesta_resuelta = models.ForeignKey(DatosEncuestasResueltas, on_delete=models.CASCADE, db_column='T252Id_EncEncuestaResuelta')
+    id_encuesta_resuelta = models.ForeignKey(DatosEncuestasResueltas, on_delete=models.CASCADE, db_column='T252Id_DatosEncuestaResuelta')
     id_opcion_pregunta_encuesta = models.ForeignKey(OpcionesRta, on_delete=models.CASCADE, db_column='T252Id_Opcion_PreguntaEncuesta')
 
     def __str__(self):
