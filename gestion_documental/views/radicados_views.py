@@ -1001,7 +1001,7 @@ class RadicarOTROS(generics.CreateAPIView):
         data_for_create['fecha_actual'] = fecha_actual
         data_for_create['id_usuario'] = id_persona_guarda
         data_for_create['tipo_radicado'] = "E"
-        data_for_create['modulo_radica'] = "OTROS"
+        data_for_create['modulo_radica'] = "Otros"
         radicadoCreate = RadicadoCreate()
         data_radicado = radicadoCreate.post(data_for_create)
 
@@ -1025,9 +1025,9 @@ class RadicarOTROS(generics.CreateAPIView):
         }
     
     
-    def set_data_update_radicado_otros(self, otros, id_radicados, fecha_actual):
-        otros['id_radicados'] = id_radicados['id_radicados']
-        otros['fecha_radicado'] = id_radicados['fecha_radicado']
+    def set_data_update_radicado_otros(self, otros, data_radicado, fecha_actual):
+        otros['id_radicado'] = data_radicado['id_radicado']
+        otros['fecha_radicado'] = data_radicado['fecha_radicado']
 
         estado = EstadosSolicitudes.objects.filter(nombre='RADICADO').first()
         otros['id_estado_actual_solicitud'] = estado.id_estado_solicitud
@@ -1091,6 +1091,6 @@ class RadicadoCreate(generics.CreateAPIView):
         radicado['id_persona_radica'] = id_usuario
 
         modulo_radica = modulos_radican.objects.filter(nombre=modulo_radica).first()
-        radicado['id_modulo_que_radica'] = modulo_radica.id_ModuloQueRadica
+        radicado['id_modulo_que_radica'] = modulo_radica.id_ModuloQueRadica if modulo_radica else None
 
         return radicado
