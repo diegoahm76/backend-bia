@@ -36,6 +36,7 @@ class EncabezadoEncuestaCreate(generics.CreateAPIView):
         try:
             with transaction.atomic():
                 data_in['id_persona_ult_config_implement']=usuario
+                data_in['fecha_ult_config_implement']=datetime.now()
                 serializer = self.serializer_class(data=data_in)
                 serializer.is_valid(raise_exception=True)
                 instance=serializer.save()
