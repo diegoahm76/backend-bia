@@ -22,6 +22,7 @@ urlpatterns = [
     
 
         path('enviar_sms/', views.EnviarSMSView.as_view(), name='enviar_sms'),
+        path('enviar_correo/', views.EnviarCORREOView.as_view(), name='enviar_correo'),
 ]
     
 
