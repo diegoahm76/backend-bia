@@ -22,6 +22,11 @@ from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
 from gestion_documental.models.tca_models import TablasControlAcceso
 from gestion_documental.models.trd_models import TablaRetencionDocumental
 
+from gestion_documental.views.activacion_ccd_views import (
+    CCDCambioActualPut,
+)
+
+
 from transversal.serializers.activacion_organigrama_serializers import (
     OrganigramaCambioActualSerializer,
 )
@@ -33,7 +38,6 @@ from transversal.serializers.activacion_organigrama_serializers import (
 
 # TODO: Implementar el formulario "Cambio de Organigrama Actual" para la activación de un nuevo organigrama.
 
-# TODO: En el módulo de ACTIVACIÓN DEL ORGANIGRAMA, verificar si existe un Cuadro de Clasificación Documental (CCD) ACTUAL.
 
 # TODO: Al activar el nuevo organigrama, actualizar los campos T017actual y T017fechaPuestaEnProduccion en la tabla T017Organigramas.
 # TODO: Si el escenario es "SI Existe CCD ACTUAL", activar también el CCD, TRD y TCA correspondientes.
@@ -92,23 +96,104 @@ class OrganigramasPosiblesGetListView(generics.ListAPIView):
         serializer = self.serializer_class(organigramas_posibles, many=True)
         return Response({'success':True, 'detail':'Los organigramas posibles para activar son los siguientes', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+
+@transaction.atomic
 class OrganigramaCambioActualPutView(generics.UpdateAPIView):
     serializer_class = OrganigramaCambioActualSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_organigrama(self, id_organigrama):
-        try:
-            organigrama = Organigramas.objects.get(id_organigrama=id_organigrama)
-        except Organigramas.DoesNotExist:
-            raise NotFound('El organigrama ingresado no existe')
-        return organigrama
-    
-    def get_organigrama_actual(self):
-        organigrama_actual = Organigramas.objects.filter(actual=True).first()
-        return organigrama_actual
-    
-    
+    def activar_organigrama(self, organigrama_seleccionado, data_desactivar, data_activar, data_auditoria):
 
+        previous_activacion_organigrama = copy.copy(organigrama_seleccionado)
+        organigrama_actual = Organigramas.objects.filter(actual=True).first()
+        
+        if organigrama_actual:
+            temporal_all = TemporalPersonasUnidad.objects.all()
+            previous_desactivacion_organigrama = copy.copy(organigrama_actual)
+            serializer = self.serializer_class(organigrama_actual, data=data_desactivar)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
+            if temporal_all:
+                organigrama_anterior = list(temporal_all.values_list('id_unidad_org_anterior__id_organigrama__id_organigrama', flat=True).distinct())
+                organigrama_nuevo = list(temporal_all.values_list('id_unidad_org_nueva__id_organigrama__id_organigrama', flat=True).distinct())
+                id_organigrama_anterior = organigrama_anterior[0] 
+
+                if (organigrama_seleccionado.id_organigrama not in organigrama_nuevo) or (organigrama_actual.id_organigrama != id_organigrama_anterior):
+                    temporal_all.delete()
+
+            # Auditoria Organigrama desactivado
+            descripcion = {"NombreOrganigrama":str(organigrama_actual.nombre),"VersionOrganigrama":str(organigrama_actual.version)}
+            valores_actualizados={'previous':previous_desactivacion_organigrama, 'current':organigrama_actual}
+            data_auditoria['descripcion'] = descripcion
+            data_auditoria['valores_actualizados'] = valores_actualizados
+            Util.save_auditoria(data_auditoria)
+
+        serializer = self.serializer_class(organigrama_seleccionado, data=data_activar)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        # Auditoria Organigrama activado
+        descripcion = {"NombreOrganigrama":str(organigrama_seleccionado.nombre),"VersionOrganigrama":str(organigrama_seleccionado.version)}
+        valores_actualizados={'previous':previous_activacion_organigrama, 'current':organigrama_seleccionado}
+        data_auditoria['descripcion'] = descripcion
+        data_auditoria['valores_actualizados'] = valores_actualizados
+        Util.save_auditoria(data_auditoria)
+
+        return Response({'success':True, 'detail':'Organigrama Activado'}, status=status.HTTP_200_OK)
+
+
+    def put(self, request):
+        data = request.data
+        ccd_actual = CuadrosClasificacionDocumental.objects.filter(actual=True).first()
+        
+        data_auditoria = {
+            'id_usuario': request.user.id_usuario,
+            'id_modulo': 16,
+            'cod_permiso': 'AC',
+            'subsistema': 'TRSV',
+            'dirip': Util.get_client_ip(request)
+        }
+        
+        data_desactivar = {
+            'actual': False,
+            'fecha_retiro_produccion': datetime.now()
+            }
+        
+        data_activar = {
+            'actual': True,
+            'fecha_puesta_produccion': datetime.now()
+            }
+        
+        try:
+            organigrama_seleccionado = Organigramas.objects.get(id_organigrama=data['id_organigrama'])
+        except Organigramas.DoesNotExist:
+            raise NotFound("El organigrama seleccionado no existe")
+        
+        if not ccd_actual:
+            data_activar['justificacion_nueva_version'] = data['justificacion']
+            algo = self.activar_organigrama(organigrama_seleccionado, data_desactivar, data_activar, data_auditoria)
+        
+        else:
+            if not data.get('id_ccd'):
+                raise ValidationError('Debe seleccionar un CCD')
+            
+            try:
+                ccd_seleccionado = CuadrosClasificacionDocumental.objects.get(id_ccd=data['id_ccd'], id_organigrama=organigrama_seleccionado.id_organigrama)
+            except CuadrosClasificacionDocumental.DoesNotExist:
+                raise NotFound("El CCD seleccionado no existe")
+            
+            if ccd_seleccionado.fecha_terminado == None or ccd_seleccionado.fecha_retiro_produccion != None:
+                raise ValidationError('El CCD seleccionado no se encuentra terminado o ha sido retirado de producción')
+            
+            data_activar['justificacion_nueva_version'] = data['justificacion']
+            algo = self.activar_organigrama(organigrama_seleccionado, data_desactivar, data_activar, data_auditoria)
+
+            # Activar CCD
+            data_activar_ccd = data_activar
+            data_activar_ccd['justificacion_nueva_version'] = "ACTIVACIÓN AUTOMÁTICA DESDE EL PROCESO DE 'CAMBIO DE ORGANIGRAMA ACTUAL'"
+            ccd_activar = CCDCambioActualPut()
+            ccd_activar.activar_ccd(ccd_actual, data_desactivar, data_activar, data_auditoria)
 
     
 

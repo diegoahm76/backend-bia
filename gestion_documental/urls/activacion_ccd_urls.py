@@ -5,8 +5,8 @@ urlpatterns = [
     
     # ACTIVACION CCD
     path('get-ccd-actual/get/', views.CCDActualGetView.as_view(), name='ccd-actual-get'),
-    path('get-ccd-terminado-by-organigrama/<str:id_organigrama>/', views.CCDTerminadoByOrganigramaGetListView.as_view(), name='ccd-terminado-by-organigrama'),
     path('get-ccd-posibles/', views.GetCCDPosiblesActivar.as_view(), name='ccd-posibles-activar'),
+    
 
 
 

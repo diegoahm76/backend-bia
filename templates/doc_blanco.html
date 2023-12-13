@@ -113,11 +113,16 @@
                                                                 padding-top: 10px;
                                                             ">
                                                         {{mensaje  | safe}}
-                                                        <p>Nombre del Anexo: {{nombre_anexo | safe}}</p>
+                                                        <!-- <p>Nombre del Anexo: {{nombre_anexo | safe}}</p>
                                                         <p>Medio de Almacenamiento: {{medio_almacenamiento}}</p>
                                                         <p>Asunto: {{asunto}}</p>
                                                         <p>Categoría de Archivo: {{categoria_archivo}}</p>
-                                                        <p>Tipología Documental: {{tipologia_documental}}</p>
+                                                        <p>Tipología Documental: {{tipologia_documental}}</p> -->
+                                                        <ul>
+                                                            {% for clave, valor in mi_json.items %}
+                                                                <li>{{ clave }}: {{ valor }}</li>
+                                                            {% endfor %}
+                                                        </ul>
 
                                                         </tr>
 
