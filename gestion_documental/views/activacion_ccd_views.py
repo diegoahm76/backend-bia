@@ -146,8 +146,16 @@ class CCDCambioActualPut(generics.UpdateAPIView):
     serializer_class = CCDSerializer
     permission_classes = [IsAuthenticated]
 
-    def activar_ccd(self, ccd_seleccionado, data_desactivar, data_activar, data_auditoria):
+    def activar_ccd(self, ccd_seleccionado, id_organigrama, data_desactivar, data_activar, data_auditoria):
 
+        try:
+            organigrama_actual = Organigramas.objects.get(id_organigrama=id_organigrama, actual=True)
+        except Organigramas.DoesNotExist:
+            raise NotFound('El organigrama ingresado no existe o no está activo')
+        
+        if organigrama_actual.id_organigrama != ccd_seleccionado.id_organigrama:
+            raise PermissionDenied('El CCD seleccionado no pertenece al organigrama ingresado')
+        
         previous_activacion_ccd = copy.copy(ccd_seleccionado)
         ccd_actual = CuadrosClasificacionDocumental.objects.filter(actual=True).first()
 
@@ -191,12 +199,16 @@ class CCDCambioActualPut(generics.UpdateAPIView):
     def put(self, request):
         data = request.data
         ccd_actual = CuadrosClasificacionDocumental.objects.filter(actual=True).first()
+
+        organigrama_actual = Organigramas.objects.filter(actual=True).first()
+        if not organigrama_actual:
+            raise NotFound('No existe un organigrama actual')
         
         data_auditoria = {
             'id_usuario': request.user.id_usuario,
-            'id_modulo': 16,
+            'id_modulo': 28,
             'cod_permiso': 'AC',
-            'subsistema': 'TRSV',
+            'subsistema': 'GEST',
             'dirip': Util.get_client_ip(request)
         }
         
@@ -207,7 +219,8 @@ class CCDCambioActualPut(generics.UpdateAPIView):
         
         data_activar = {
             'actual': True,
-            'fecha_puesta_produccion': datetime.now()
+            'fecha_puesta_produccion': datetime.now(),
+            'justificacion_nueva_version': data['justificacion']
             }
         
         try:
@@ -215,14 +228,14 @@ class CCDCambioActualPut(generics.UpdateAPIView):
         except CuadrosClasificacionDocumental.DoesNotExist:
             raise NotFound("El CCD seleccionado no existe")
         
+        if (ccd_seleccionado.fecha_terminado == None) or (ccd_seleccionado.fecha_puesta_produccion != None):
+            raise PermissionDenied("El CCD seleccionado no esta terminado o ya está puesto en producción")
+        
         if not ccd_actual:
-            data_activar['justificacion_nueva_version'] = data['justificacion']
-            response_ccd = self.activar_ccd(ccd_seleccionado, data_desactivar, data_activar, data_auditoria)
+            response_ccd = self.activar_ccd(ccd_seleccionado, organigrama_actual.id_organigrama, data_desactivar, data_activar, data_auditoria)
 
         else:
-            data_activar_ccd = data_activar
-            data_activar_ccd['justificacion_nueva_version'] = data['justificacion']
-            response_ccd = self.activar_ccd(ccd_seleccionado, data_desactivar, data_activar_ccd, data_auditoria)
+            response_ccd = self.activar_ccd(ccd_seleccionado, organigrama_actual.id_organigrama, data_desactivar, data_activar, data_auditoria)
 
         if response_ccd.status_code != status.HTTP_200_OK:
             return response_ccd
