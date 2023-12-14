@@ -10,7 +10,7 @@ from datetime import timezone
 import copy
 import json
 from backend.settings.base import EMAIL_HOST_USER, AUTHENTICATION_360_NRS
-from seguridad.models import Personas
+from transversal.models.personas_models import Personas
 from conservacion.choices.cod_etapa_lote import cod_etapa_lote_CHOICES
 from conservacion.models.cuarentena_models import (
     BajasVivero,

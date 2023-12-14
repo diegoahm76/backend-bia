@@ -1,6 +1,5 @@
 from rest_framework import generics,status
 from rest_framework.response import Response
-from seguridad.models import Personas, User
 from seguridad.utils import Util
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from rest_framework.permissions import IsAuthenticated

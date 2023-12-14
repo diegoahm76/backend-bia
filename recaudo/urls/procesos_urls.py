@@ -17,9 +17,17 @@ urlpatterns = [
     path('procesos/', views.ProcesosGeneralView.as_view(), name='procesos'),
     path('procesos/<int:proceso>/', views.ProcesosGetGeneralView.as_view(), name='procesos'),
     path('crear-proceso/', views.ProcesosView.as_view(), name='crear-proceso'),
-    path('actualizar-proceso/<int:pk>/', views.UpdateProcesosView.as_view(), name='actualizar-proceso'),
+    path('actualizar-proceso/<int:pk>/', views.UpdateProcesosView.as_view(), name='actualizar-etapa-proceso'),
+    path('actualizar-categoria-proceso/<int:pk>/', views.UpdateCategoriaProcesosView.as_view(), name='actualizar-categoria-proceso'),
     path('atributos/', views.AtributosEtapasView.as_view(), name='atributos-etapas-agregar'),
+    path('atributos/<int:pk>/', views.AtributosEtapasView.as_view(), name='atributos-etapas-editar'),
+    path('eliminar-atributos-etapa/<int:etapa>/<int:categoria>/', views.DeleteAtributosEtapasView.as_view(), name='eliminar-atributos-etapas'),
     path('avaluos-bienes/', f_views.AvaluoCreateView.as_view(), name='avaluos-bienes'),
     path('categoria-atributos/', views.CategoriaAtributoView.as_view(), name='categoria-atributos'),
+    path('categoria-atributos/<int:pk>/', views.CategoriaAtributoView.as_view(), name='categoria-atributos'),
     path('etapas-filtrado/', views.EtapasFiltradoView.as_view(), name='categoria-atributos'),
+    path('categoria-por-etapas/<int:pk>/', views.CategoriasEtapasFiltradoView.as_view(), name='categoria-etapas-atributos'),
+    path('eliminar-etapa/<int:etapa>/', views.DeleteEtapaView.as_view(), name='eliminar-etapas-por-id'),
+    path('eliminar-categoria/<int:categoria>/', views.DeleteCategoriaAtributoView.as_view(), name='eliminar-etapas-por-id'),
+
 ]

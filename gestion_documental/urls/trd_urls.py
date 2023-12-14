@@ -39,4 +39,35 @@ urlpatterns = [
     # GetSeriesSubSUnidadOrgTRD 
     path('catalogo-trd/get-list/<str:id_trd>/', views.GetSeriesSubSUnidadOrgTRD.as_view(), name='catalogo-trd-get-list'),
     path('catalogo-trd/get-tipologias/<str:id_catserie_unidadorg>/', views.GetTipologiasSeriesSubSUnidadOrgTRD.as_view(), name='catalogo-trd-get-tipologias'),
+
+    #Configuracion_tipologias_docmentales
+    path('configuracion-tipologia/listar-tipologias/', views.ListarTipologiasdocumentales.as_view(),name='listar-tipologias-doc'),
+    path('configuracion-tipologia/listar-tipologias-por-año-actual/', views.GetConfiguracionesPorTipologiaAnioActual.as_view(), name='listar-tipologias-por-año-actual'),
+    path('configuracion-tipologia/listar-tipologias-por-año-anterior/', views.GetConfiguracionesPorTipologiaAnioAnterior.as_view(), name='listar-tipologias-por-año-anterior'),
+    path('configuracion-tipologia/configuracion-tipologia-actual/', views.CrearConfigurarTipologia.as_view(),name='configuracion-tipologias-doc'),
+    path('configuracion-tipologia/configuracion-tipologia-empresa/', views.CrearConfigurarTipologiaEmpresa.as_view(),name='configuracion-tipologias-em'),
+    path('configuracion-tipologia/configuracion-tipologia-ss/', views.ConfigurarTipologiaSS.as_view(),name='configuracion-tipologias-ss'),
+    path('configuracion-tipologia/listar-configuraciones/', views.ListaConfiguraciones.as_view(),name='listar-configuraciones-doc'),
+    path('configuracion-tipologia/consulta-años-anteriores/', views.ListaConfiguracionesPorAgnoYTipologia.as_view(),name='consulta-años-anteriores'),
+    path('configuracion-tipologia/seccion-subseccion-trd-actual/', views.GetActualSeccionSubsecciones.as_view(),name='consulta-años-anteriores'),
+    path('configuracion-tipologia/administrador-numeros-tipologias/', views.AsignarNuevoConsecutivo.as_view(),name='admnistrador-numeros-tipologias'),
+    path('configuracion-tipologia/actualizar-tipologia-no-a-em/<int:id_tipologia_doc>/',views.ActualizarConfiguracionEM.as_view(), name='actualizar--NoConsecutivo-a-em'),
+    path('configuracion-tipologia/actualizar-tipologia-no-a-ss/<int:id_tipologia_doc>/',views.ActualizarConfiguracionSS.as_view(), name='actualizar-numeros-tipologias'),
+    path('configuracion-tipologia/actualizar-tipologia-si-a-no-em/<int:id_tipologia_doc>/', views.ActualizarConfiguracionNoConsecutivoEm.as_view(), name='actualizar-configuracion-no-a-si'),
+    path('configuracion-tipologia/actualizar-tipologia-si-a-no-ss/<int:id_tipologia_doc>/', views.ActualizarConfiguracionNoConsecutivoSS.as_view(), name='actualizar-configuracion-no-a-si'),
+    path('configuracion-tipologia/actualizar-tipologia-em-a-ss/<int:id_tipologia_doc>/', views.ActualizarConfiguracionEMaSS.as_view(), name='actualizar-configuracion-em-a-ss'),
+    path('configuracion-tipologia/actualizar-tipologia-ss-a-em/<int:id_tipologia_doc>/', views.ActualizarConfiguracionSStoEM.as_view(), name='actualizar-configuracion-ss-a-em'),
+    path('configuracion-tipologia/actualizar-tipologia-em/<int:id_tipologia_doc>/', views.ActualizarConfiguracionTipoEM.as_view(), name='actualizar-configuracion-em'),
+    path('configuracion-tipologia/actualizar-valores-ss/<int:id_tipologia_doc>/', views.ActualizarConfiguracionSeccionSubseccion.as_view(), name='actualizar-configuracion-valores-ss'),
+    path('configuracion-tipologia/mantener-configuracion-no-consecutivo/<int:id_tipologia_doc>/', views.ConfiguracionAnioSiguienteNoConsecutivo.as_view(), name='actualizar-configuracion-año-proximo-no-consecutivo'),
+    path('configuracion-tipologia/mantener-configuracion-em/<int:id_tipologia_doc>/', views.ConfiguracionAnioSiguienteEmpresa.as_view(), name='actualizar-configuracion-año-proximo-em'),
+    path('configuracion-tipologia/mantener-configuracion-em/<int:id_tipologia_doc>/', views.ConfiguracionAnioSiguienteEmpresa.as_view(), name='actualizar-configuracion-año-proximo-em'),
+    path('configuracion-tipologia/mantener-configuracion-ss/<int:id_tipologia_doc>/', views.ConfiguracionAnioSiguienteSeccionSubseccion.as_view(), name='actualizar-configuracion-año-proximo-ss'),
+
+    
+
+
+    
+
+    
 ]

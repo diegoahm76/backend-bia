@@ -1,4 +1,4 @@
-from almacen.models.bienes_models import CatalogoBienes
+from almacen.models.bienes_models import CatalogoBienes, EstadosArticulo, MetodosValoracionArticulos, TiposActivo, TiposDepreciacionActivos
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from almacen.choices.estados_articulo_choices import estados_articulo_CHOICES
@@ -14,7 +14,8 @@ from almacen.serializers.bienes_serializers import (
     EntradaSerializer,
     CatalogoBienesActivoFijoPutSerializer,
     SerializerItemEntradaConsumoPut,
-    TiposEntradasSerializer
+    TiposEntradasSerializer,
+    CatalagoBienesYSerializer
 )
 from almacen.models.hoja_de_vida_models import (
     HojaDeVidaComputadores,
@@ -29,7 +30,7 @@ from almacen.models.inventario_models import (
     TiposEntradas
 )
 from almacen.utils import UtilAlmacen
-from seguridad.models import (
+from transversal.models.personas_models import (
     Personas
 )
 from almacen.serializers.inventario_serializers import (
@@ -43,11 +44,439 @@ from django.db.models import Q
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
-from datetime import datetime
-from datetime import timezone
+from datetime import datetime, timezone
 import copy
 
+class GeneradorCodigoCatalogo(generics.RetrieveAPIView):
+
+    def generador_codigo_bien(self, bien_padre, nivel_jerarquico):
+        niv_val = [[1,2,3,4,5],['0','0','00','000','00000'],['9','9','99','999','99999']]
+        
+        try:
+            posicion = niv_val[0].index(nivel_jerarquico)
+        except:
+            raise ValidationError('El nivel jerarquico esta fuera de rango')
+
+        catalago = CatalogoBienes.objects.filter(nivel_jerarquico=nivel_jerarquico)
+
+        if bien_padre != None:
+            catalago = catalago.filter(id_bien_padre = bien_padre.id_bien)
+
+        catalago = catalago.order_by('codigo_bien').last()
+        codigo_padre = bien_padre.codigo_bien if bien_padre != None else ''
+        codigo_anterior  = catalago.codigo_bien[len(codigo_padre):] if catalago != None else niv_val[1][posicion]
+
+        if codigo_anterior == niv_val[2][posicion]:
+            raise ValidationError('No se puede generar mas codigos de bienes para este nivel jerarquico')
+        
+        codigo = str(int(codigo_padre+codigo_anterior) + 1)
+
+        return codigo
+    
+    def get(self, request, *args, **kwargs):
+
+        id_bien_padre = self.request.query_params.get('id_bien_padre', '')
+        nivel_jerarquico = self.request.query_params.get('nivel_jerarquico', '')
+        bien_padre = None
+
+        if nivel_jerarquico == '':
+            raise ValidationError('El nivel jerarquico es requerido')
+        
+        try:
+            nivel_jerarquico = int(nivel_jerarquico)
+        except:
+            raise ValidationError('El nivel jerarquico debe ser un numero entero')
+        
+        if nivel_jerarquico < 1 or nivel_jerarquico > 5 or nivel_jerarquico == None:
+            raise ValidationError('El nivel jerarquico esta fuera de rango')
+        
+        if id_bien_padre == '':
+            id_bien_padre = None
+        else:
+            try:
+                id_bien_padre = int(id_bien_padre)
+            except:
+                raise ValidationError('El id de bien padre debe ser un numero entero')
+        
+        if id_bien_padre != None:
+            try:
+                bien_padre = CatalogoBienes.objects.get(id_bien=id_bien_padre)
+            except CatalogoBienes.DoesNotExist:
+                raise ValidationError('El id de bien padre ingresado no existe')
+            
+            id_bien_padre = bien_padre.id_bien
+            
+            if nivel_jerarquico != (bien_padre.nivel_jerarquico + 1):
+                raise ValidationError('El nivel jerarquico esta fuera de rango respeto al bien padre')
+        
+        codigo_bien = self.generador_codigo_bien(bien_padre, nivel_jerarquico)
+
+        return Response({'success':True, 'detail':'Codigo de bien generado exitosamente', 'data':codigo_bien}, status=status.HTTP_200_OK)
+
+
+class CatalogoBienesCreate(generics.CreateAPIView):
+    serializer_class = CatalagoBienesYSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create_catalogo_bienes(self, data):
+        nivel_jerarquico = data['nivel_jerarquico']
+        id_bien_padre = data['id_bien_padre']
+        bien_padre = None
+        
+        if nivel_jerarquico < 1 or nivel_jerarquico > 5 or nivel_jerarquico == None:
+            raise ValidationError('El nivel jerarquico esta fuera de rango')
+
+        if id_bien_padre != None:
+            try:
+                bien_padre = CatalogoBienes.objects.get(id_bien=id_bien_padre)
+            except CatalogoBienes.DoesNotExist:
+                raise ValidationError('El id de bien padre ingresado no existe')
+            
+            id_bien_padre = bien_padre.id_bien
+            
+            if nivel_jerarquico != (bien_padre.nivel_jerarquico + 1):
+                raise ValidationError('El nivel jerarquico esta fuera de rango')
+            
+        generador_instance = GeneradorCodigoCatalogo()
+        data['codigo_bien'] = generador_instance.generador_codigo_bien(bien_padre, nivel_jerarquico)
+
+        try:
+            unidad_medida = UnidadesMedida.objects.get(id_unidad_medida=data['id_unidad_medida'])
+        except UnidadesMedida.DoesNotExist:
+            raise ValidationError('El id de unidad de medida ingresado no existe')
+        
+        try:
+            porcentaje_iva = PorcentajesIVA.objects.get(id_porcentaje_iva=data['id_porcentaje_iva'])
+        except PorcentajesIVA.DoesNotExist:
+            raise ValidationError('El id de porcentaje de iva ingresado no existe')
+        
+        catalogo_bien_data = {
+            'nro_elemento_bien': data['nro_elemento_bien'],
+            'codigo_bien': data['codigo_bien'],
+            'nombre': data['nombre'],
+            'cod_tipo_bien': data['cod_tipo_bien'],
+            'nivel_jerarquico': data['nivel_jerarquico'],
+            'descripcion': data['descripcion'],
+            'id_unidad_medida': unidad_medida.id_unidad_medida,
+            'id_porcentaje_iva': porcentaje_iva.id_porcentaje_iva,
+            'visible_solicitudes': data['visible_solicitudes'],
+            'id_bien_padre': id_bien_padre
+        }
+
+        if data['cod_tipo_bien'] == 'A':      
+            try:
+                unidad_medida_vida_util = UnidadesMedida.objects.get(id_unidad_medida=data['id_unidad_medida_vida_util'])
+            except UnidadesMedida.DoesNotExist:
+                raise ValidationError('El id de unidad de medida vida util ingresado no existe')
+            
+            try:
+                if data['id_marca']: marca = Marcas.objects.get(id_marca=data['id_marca'])
+            except Marcas.DoesNotExist:
+                raise ValidationError('El id de marca ingresado no existe')
+            
+            try:
+                tipo_activo = TiposActivo.objects.filter(cod_tipo_activo=data['cod_tipo_activo']).first()
+            except TiposActivo.DoesNotExist:
+                raise ValidationError('El codigo de tipo de activo ingresado no existe')
+            
+            try:
+                tipo_depreciacion = TiposDepreciacionActivos.objects.filter(cod_tipo_depreciacion=data['cod_tipo_depreciacion']).first()
+            except TiposDepreciacionActivos.DoesNotExist:
+                raise ValidationError('El codigo de tipo de depreciacion ingresado no existe')
+            
+            catalogo_bien_data['cod_tipo_activo'] = tipo_activo.cod_tipo_activo
+            catalogo_bien_data['id_marca'] = marca.id_marca
+            catalogo_bien_data['cod_tipo_depreciacion'] = tipo_depreciacion.cod_tipo_depreciacion
+            catalogo_bien_data['cantidad_vida_util'] = data['cantidad_vida_util']
+            catalogo_bien_data['id_unidad_medida_vida_util'] = unidad_medida_vida_util.id_unidad_medida
+            catalogo_bien_data['valor_residual'] = data['valor_residual']
+            catalogo_bien_data['maneja_hoja_vida'] = data['maneja_hoja_vida']
+
+            serializer = self.serializer_class(data=catalogo_bien_data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            
+        elif data['cod_tipo_bien'] == 'C':                              
+            try:
+                metodo_valoracion = MetodosValoracionArticulos.objects.filter(cod_metodo_valoracion=data['cod_metodo_valoracion']).first()
+            except MetodosValoracionArticulos.DoesNotExist:
+                raise ValidationError('El codigo de metodo de valoracion ingresado no existe')
+            
+            catalogo_bien_data['nombre_cientifico'] = data['nombre_cientifico']
+            catalogo_bien_data['cod_metodo_valoracion'] = metodo_valoracion.cod_metodo_valoracion
+            catalogo_bien_data['stock_minimo'] = data['stock_minimo']
+            catalogo_bien_data['stock_maximo'] = data['stock_maximo']
+            catalogo_bien_data['solicitable_vivero'] = data['solicitable_vivero']
+
+            serializer = self.serializer_class(data=catalogo_bien_data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        
+        else:
+            raise ValidationError('El codigo de tipo de bien ingresado no existe')
+                        
+        return serializer.data
+            
+    def post(self, request):
+        data_in = request.data
+        data = self.create_catalogo_bienes(data_in)
+
+        if not data:
+            raise ValidationError('No se pudo crear el bien')
+
+        return Response({'success':True, 'detail':'Bien guardado exitosamente', 'data':data}, status=status.HTTP_201_CREATED)
+            
+
+class CatalogoBienesCreateUpdate(generics.UpdateAPIView):
+    serializer_class = CatalagoBienesYSerializer
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        data = request.data
+        id_bien = data.get('id_bien')
+
+        # CREATE
+        if id_bien == None:
+            catalogo_bien_instance = CatalogoBienesCreate()
+            data = catalogo_bien_instance.create_catalogo_bienes(data)
+
+            if not data:
+                raise ValidationError('No se pudo crear el bien')
+
+            return Response({'success':True, 'detail':'Bien guardado exitosamente', 'data':data}, status=status.HTTP_201_CREATED)
+
+        # UPDATE
+        else:
+            try:
+                catalogo_bien = CatalogoBienes.objects.get(id_bien=id_bien)
+            except CatalogoBienes.DoesNotExist:
+                raise ValidationError('No hay ningún bien referente al id bien ingresado')
+            
+            try:
+                unidad_medida = UnidadesMedida.objects.get(id_unidad_medida=data['id_unidad_medida'])
+            except UnidadesMedida.DoesNotExist:
+                raise ValidationError('El id de unidad de medida ingresado no existe')
+            
+            try:
+                porcentaje_iva = PorcentajesIVA.objects.get(id_porcentaje_iva=data['id_porcentaje_iva'])
+            except PorcentajesIVA.DoesNotExist:
+                raise ValidationError('El id de porcentaje de iva ingresado no existe')
+            
+            catalogo_bien_data = {
+                'nombre': data['nombre'],
+                'descripcion': data['descripcion'],
+                'id_unidad_medida': unidad_medida.id_unidad_medida,
+                'id_porcentaje_iva': porcentaje_iva.id_porcentaje_iva,
+                'visible_solicitudes': data['visible_solicitudes']
+            }
+
+            if data['cod_tipo_bien'] == 'A':      
+                try:
+                    unidad_medida_vida_util = UnidadesMedida.objects.get(id_unidad_medida=data['id_unidad_medida_vida_util'])
+                except UnidadesMedida.DoesNotExist:
+                    raise ValidationError('El id de unidad de medida vida util ingresado no existe')
+                
+                try:
+                    if data['id_marca']: marca = Marcas.objects.get(id_marca=data['id_marca'])
+                except Marcas.DoesNotExist:
+                    raise ValidationError('El id de marca ingresado no existe')
+                
+                try:
+                    tipo_activo = TiposActivo.objects.filter(cod_tipo_activo=data['cod_tipo_activo']).first()
+                except TiposActivo.DoesNotExist:
+                    raise ValidationError('El codigo de tipo de activo ingresado no existe')
+                
+                try:
+                    tipo_depreciacion = TiposDepreciacionActivos.objects.filter(cod_tipo_depreciacion=data['cod_tipo_depreciacion']).first()
+                except TiposDepreciacionActivos.DoesNotExist:
+                    raise ValidationError('El codigo de tipo de depreciacion ingresado no existe')
+                
+                catalogo_bien_data['id_marca'] = marca.id_marca
+                catalogo_bien_data['cod_tipo_activo'] = tipo_activo.cod_tipo_activo
+                catalogo_bien_data['cod_tipo_depreciacion'] = tipo_depreciacion.cod_tipo_depreciacion
+                catalogo_bien_data['id_unidad_medida_vida_util'] = unidad_medida_vida_util.id_unidad_medida
+                catalogo_bien_data['cantidad_vida_util'] = data['cantidad_vida_util']
+                catalogo_bien_data['valor_residual'] = data['valor_residual']
+                catalogo_bien_data['maneja_hoja_vida'] = data['maneja_hoja_vida']
+
+                serializer = self.get_serializer(catalogo_bien, data=catalogo_bien_data, partial=True)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                
+            elif data['cod_tipo_bien'] == 'C':                              
+                try:
+                    metodo_valoracion = MetodosValoracionArticulos.objects.filter(cod_metodo_valoracion=data['cod_metodo_valoracion']).first()
+                except MetodosValoracionArticulos.DoesNotExist:
+                    raise ValidationError('El codigo de metodo de valoracion ingresado no existe')
+                
+                catalogo_bien_data['cod_metodo_valoracion'] = metodo_valoracion.cod_metodo_valoracion
+                catalogo_bien_data['stock_minimo'] = data['stock_minimo']
+                catalogo_bien_data['stock_maximo'] = data['stock_maximo']
+                catalogo_bien_data['solicitable_vivero'] = data['solicitable_vivero']
+
+                serializer = self.get_serializer(catalogo_bien, data=catalogo_bien_data, partial=True)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+            
+            else:
+                raise ValidationError('El codigo de tipo de bien ingresado no existe')
+            
+            return Response({'success':True, 'detail':'Bien guardado exitosamente', 'data':data}, status=status.HTTP_201_CREATED)
+
+
+class CatalogoBienesGetList(generics.ListAPIView):
+    serializer_class = CatalogoBienesSerializer
+
+    def get_catalogo_bienes(self, id_bien_padre, cont_padre):
+        catalogo_bienes = CatalogoBienes.objects.filter(nro_elemento_bien=None, id_bien_padre=id_bien_padre).order_by('codigo_bien')
+        serializer = self.serializer_class(catalogo_bienes, many=True)
+        cont = 0
+        data_out = []
+        data_padre = serializer.data
+
+        for data in data_padre:
+            key = cont_padre + '-' + str(cont) if cont_padre != None else str(cont)
+            data_out.append({
+                'key': key,
+                'data': {
+                    'nombre': data['nombre'],
+                    'codigo': data['codigo_bien'],
+                    'id_nodo': data['id_bien'],
+                    'editar': True,
+                    'eliminar': False if CatalogoBienes.objects.filter(id_bien_padre=data['id_bien']).exists() else True,
+                    'crear': data['nivel_jerarquico'] != 5,
+                    'bien': data,
+                },
+                'children': self.get_catalogo_bienes(data['id_bien'], key)})
+
+            cont += 1
+        return data_out
+    
+    def get(self, request):
+        data = self.get_catalogo_bienes(None, None)
+
+        return Response({'success':True, 'detail':'Se muestran el catalogo de bienes', 'data':data}, status=status.HTTP_200_OK)
+    
+
+# class CatalogoBienesGetList(generics.ListAPIView):
+#     serializer_class = CatalogoBienesSerializer
+
+#     def get_catalogo_bienes(self, id_bien_padre):
+#         catalogo_bienes = CatalogoBienes.objects.filter(id_bien_padre=id_bien_padre).order_by('codigo_bien')
+#         serializer = self.serializer_class(catalogo_bienes, many=True)
+#         data_padre = serializer.data
+
+#         for data in data_padre:
+#             data['children'] = self.get_catalogo_bienes(data['id_bien'])
+#             if data['children'] == []:
+#                 del data['children']
+
+#         return data_padre
+
+#     def get(self, request):
+
+#         data = self.get_catalogo_bienes(None)
+
+#         return Response({'success': True, 'detail':'Se muestran el catalogo de bienes', 'data': data}, status=status.HTTP_200_OK)
+
+
+# class CatalogoBienesGetList(generics.ListAPIView):
+#     serializer_class = CatalogoBienesSerializer
+
+#     def crear_data(self, nodo, nodos_hijos):
+#         return {
+#             'key': str(nodo['id_bien']),
+#             'data': {
+#                 'nombre': nodo['nombre'],
+#                 'codigo': nodo['codigo_bien'],
+#                 'id_nodo': nodo['id_bien'],
+#                 'editar': True,
+#                 'eliminar': not bool(nodos_hijos),
+#                 'crear': True,
+#                 'bien': nodo,
+#             },
+#             'children': nodos_hijos,
+#         }
+
+#     def get(self, request):
+#         nodos = CatalogoBienes.objects.filter(nro_elemento_bien=None).order_by('nivel_jerarquico')
+#         nodos = self.serializer_class(nodos, many=True).data
+
+#         if not nodos:
+#             return Response({'success':True, 'detail':'No se encontró nada en almacén', 'data':nodos}, status=status.HTTP_200_OK)
+
+#         nodos_por_nivel = {i: [] for i in range(1, 6)}
+#         for nodo in nodos:
+#             nodos_por_nivel[nodo['nivel_jerarquico']].append(nodo)
+
+#         for nivel in range(5, 1, -1):
+#             for nodo in nodos_por_nivel[nivel]:
+#                 nodo_padre = next((n for n in nodos_por_nivel[nivel - 1] if n['id_bien'] == nodo['id_bien_padre']), None)
+#                 if nodo_padre:
+#                     if 'children' not in nodo_padre:
+#                         nodo_padre['children'] = []
+#                     nodo_padre['children'].append(self.crear_data(nodo, nodo.get('children', [])))
+
+#         data_all = [self.crear_data(nodo, nodo.get('children', [])) for nodo in nodos_por_nivel[1]]
+
+#         return Response({'success':True, 'detail':'Se encontró lo siguiente en almacén', 'data':data_all}, status=status.HTTP_200_OK)
+
+
 # Creación y actualización de Catalogo de Bienes
+
+class ValidacionCodigoBien(generics.ListAPIView):
+    serializer_class = CatalogoBienesSerializer
+    queryset = CatalogoBienes.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,nivel,codigo_bien):
+        if not codigo_bien.isdigit():
+            raise ValidationError('El códgio debe ser un número')
+        match nivel:
+            case '1':
+                if len(codigo_bien) != 1:
+                    raise ValidationError('El nivel 1 solo puede tener un caracter')
+                if int(codigo_bien) < 1 or int(codigo_bien) > 9:
+                    raise ValidationError('El nivel 1 debe ser un número entre 1 y 9')
+            case '2':
+                if len(codigo_bien) != 2:
+                    raise ValidationError('El nivel 2 debe ser de 2 caracteres')
+                codigo_padre = codigo_bien[0]
+                bien_padre = CatalogoBienes.objects.filter(
+                    codigo_bien=codigo_padre)
+                if not bien_padre:
+                    raise ValidationError('El padre no existe')
+            case '3':
+                if len(codigo_bien) != 4:
+                    raise ValidationError('El nivel 3 debe ser de 4 caracteres')
+                codigo_padre = codigo_bien[0:2]
+                bien_padre = CatalogoBienes.objects.filter(
+                    codigo_bien=codigo_padre)
+                if not bien_padre:
+                    raise ValidationError('El padre no existe')
+            case '4':
+                if len(codigo_bien) != 7:
+                    raise ValidationError('El nivel 4 debe ser de 7 caracteres')
+                codigo_padre = codigo_bien[0:4]
+                bien_padre = CatalogoBienes.objects.filter(
+                    codigo_bien=codigo_padre)
+                if not bien_padre:
+                    raise ValidationError('El padre no existe')
+            case '5':
+                if len(codigo_bien) != 12:
+                    raise ValidationError('El nivel 5 debe ser de 12 caracteres')
+                codigo_padre = codigo_bien[0:7]
+                bien_padre = CatalogoBienes.objects.filter(
+                    codigo_bien=codigo_padre)
+                if not bien_padre:
+                    raise ValidationError('El padre no existe')
+            case _:
+                raise ValidationError('Ingrese un nivel válido, un numero entre 1 y 5')
+
+        aux_bien = CatalogoBienes.objects.filter(codigo_bien=codigo_bien)
+        if aux_bien:
+            raise ValidationError('El código ingresado ya existe')
+        return Response({'success':True, 'detail':'Codigo de bien válido'}, status=status.HTTP_201_CREATED)
 
 
 class CreateCatalogoDeBienes(generics.UpdateAPIView):
@@ -59,8 +488,7 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
 
         # Update
         if data['id_bien'] != None:
-            catalogo_bien = CatalogoBienes.objects.filter(
-                id_bien=data['id_bien']).first()
+            catalogo_bien = CatalogoBienes.objects.filter(id_bien=data['id_bien']).first()
             if catalogo_bien:
                 try:
                     id_unidad_medida = UnidadesMedida.objects.get(
@@ -74,12 +502,13 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                     pass
                 except:
                     raise ValidationError('El id de porcentaje de iva ingresado no existe')
-                try:
-                    id_unidad_medida_vida_util = UnidadesMedida.objects.get(
-                        id_unidad_medida=data['id_unidad_medida_vida_util'])
-                    pass
-                except:
-                    raise ValidationError('El id de unidad de medida vida util ingresado no existe')
+                if data['cod_tipo_bien'] == 'A':
+                    try:
+                        id_unidad_medida_vida_util = UnidadesMedida.objects.get(
+                            id_unidad_medida=data['id_unidad_medida_vida_util'])
+                        pass
+                    except:
+                        raise ValidationError('El id de unidad de medida vida util ingresado no existe')
                 try:
                     if data['id_marca']:
                         id_marca = Marcas.objects.get(id_marca=data['id_marca'])
@@ -89,10 +518,12 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
 
                 match data['cod_tipo_bien']:
                     case 'A':
+                        cod_tipo_activo_instance = TiposActivo.objects.filter(cod_tipo_activo=data['cod_tipo_activo']).first()
+                        cod_tipo_depreciacion_instance = TiposDepreciacionActivos.objects.filter(cod_tipo_depreciacion=data['cod_tipo_depreciacion']).first()
                         catalogo_bien.nombre = data['nombre']
-                        catalogo_bien.cod_tipo_activo = data['cod_tipo_activo']
+                        catalogo_bien.cod_tipo_activo = cod_tipo_activo_instance
                         catalogo_bien.id_porcentaje_iva = id_porcentaje_iva
-                        catalogo_bien.cod_tipo_depreciacion = data['cod_tipo_depreciacion']
+                        catalogo_bien.cod_tipo_depreciacion = cod_tipo_depreciacion_instance
                         catalogo_bien.id_unidad_medida_vida_util = id_unidad_medida_vida_util
                         catalogo_bien.cantidad_vida_util = data['cantidad_vida_util']
                         catalogo_bien.valor_residual = data['valor_residual']
@@ -105,8 +536,9 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                             catalogo_bien, many=False)
                         return Response(serializer.data, status=status.HTTP_200_OK)
                     case 'C':
+                        cod_metodo_valoracion_instance = MetodosValoracionArticulos.objects.filter(cod_metodo_valoracion=data['cod_metodo_valoracion']).first()
                         catalogo_bien.nombre = data['nombre']
-                        catalogo_bien.cod_metodo_valoracion = data['cod_metodo_valoracion']
+                        catalogo_bien.cod_metodo_valoracion = cod_metodo_valoracion_instance
                         catalogo_bien.descripcion = data['descripcion']
                         catalogo_bien.id_unidad_medida = id_unidad_medida
                         catalogo_bien.id_porcentaje_iva = id_porcentaje_iva
@@ -200,18 +632,21 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                     pass
                                 except:
                                     raise ValidationError('El id de marca ingresado no existe')
+                                
+                                cod_tipo_activo_instance = TiposActivo.objects.filter(cod_tipo_activo=data['cod_tipo_activo']).first()
+                                cod_tipo_depreciacion_instance = TiposDepreciacionActivos.objects.filter(cod_tipo_depreciacion=data['cod_tipo_depreciacion']).first()
                                 catalogo_bien = CatalogoBienes.objects.create(
                                     id_bien=data['id_bien'],
                                     codigo_bien=data['codigo_bien'],
                                     nombre=data['nombre'],
                                     cod_tipo_bien=data['cod_tipo_bien'],
-                                    cod_tipo_activo=data['cod_tipo_activo'],
+                                    cod_tipo_activo=cod_tipo_activo_instance,
                                     nivel_jerarquico=data['nivel_jerarquico'],
                                     descripcion=data['descripcion'],
                                     id_marca=id_marca,
                                     id_unidad_medida=id_unidad_medida,
                                     id_porcentaje_iva=id_porcentaje_iva,
-                                    cod_tipo_depreciacion=data['cod_tipo_depreciacion'],
+                                    cod_tipo_depreciacion=cod_tipo_depreciacion_instance,
                                     cantidad_vida_util=data['cantidad_vida_util'],
                                     id_unidad_medida_vida_util=id_unidad_medida_vida_util,
                                     valor_residual=data['valor_residual'],
@@ -247,18 +682,21 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                 pass
                             except:
                                 raise ValidationError('El id de marca ingresado no existe')
+                            
+                            cod_tipo_activo_instance = TiposActivo.objects.filter(cod_tipo_activo=data['cod_tipo_activo']).first()
+                            cod_tipo_depreciacion_instance = TiposDepreciacionActivos.objects.filter(cod_tipo_depreciacion=data['cod_tipo_depreciacion']).first()
                             catalogo_bien = CatalogoBienes.objects.create(
                                 id_bien=data['id_bien'],
                                 codigo_bien=data['codigo_bien'],
                                 nombre=data['nombre'],
                                 cod_tipo_bien=data['cod_tipo_bien'],
-                                cod_tipo_activo=data['cod_tipo_activo'],
+                                cod_tipo_activo=cod_tipo_activo_instance,
                                 nivel_jerarquico=data['nivel_jerarquico'],
                                 descripcion=data['descripcion'],
                                 id_marca=id_marca,
                                 id_unidad_medida=id_unidad_medida,
                                 id_porcentaje_iva=id_porcentaje_iva,
-                                cod_tipo_depreciacion=data['cod_tipo_depreciacion'],
+                                cod_tipo_depreciacion=cod_tipo_depreciacion_instance,
                                 cantidad_vida_util=data['cantidad_vida_util'],
                                 id_unidad_medida_vida_util=id_unidad_medida_vida_util,
                                 valor_residual=data['valor_residual'],
@@ -286,6 +724,8 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                 pass
                             except:
                                 raise ValidationError('El id de porcentaje de iva ingresado no existe')
+                            
+                            cod_metodo_valoracion_instance = MetodosValoracionArticulos.objects.filter(cod_metodo_valoracion=data['cod_metodo_valoracion']).first()
                             catalogo_bien = CatalogoBienes.objects.create(
                                 id_bien=data['id_bien'],
                                 codigo_bien=data['codigo_bien'],
@@ -296,7 +736,7 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                                 descripcion=data['descripcion'],
                                 id_unidad_medida=id_unidad_medida,
                                 id_porcentaje_iva=id_porcentaje_iva,
-                                cod_metodo_valoracion=data['cod_metodo_valoracion'],
+                                cod_metodo_valoracion=cod_metodo_valoracion_instance,
                                 stock_minimo=data['stock_minimo'],
                                 stock_maximo=data['stock_maximo'],
                                 solicitable_vivero=data['solicitable_vivero'],
@@ -320,6 +760,7 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                         except:
                             raise ValidationError('El id de porcentaje de iva ingresado no existe')
 
+                        cod_metodo_valoracion_instance = MetodosValoracionArticulos.objects.filter(cod_metodo_valoracion=data['cod_metodo_valoracion']).first()
                         catalogo_bien = CatalogoBienes.objects.create(
                             id_bien=data['id_bien'],
                             codigo_bien=data['codigo_bien'],
@@ -330,7 +771,7 @@ class CreateCatalogoDeBienes(generics.UpdateAPIView):
                             descripcion=data['descripcion'],
                             id_unidad_medida=id_unidad_medida,
                             id_porcentaje_iva=id_porcentaje_iva,
-                            cod_metodo_valoracion=data['cod_metodo_valoracion'],
+                            cod_metodo_valoracion=cod_metodo_valoracion_instance,
                             stock_minimo=data['stock_minimo'],
                             stock_maximo=data['stock_maximo'],
                             solicitable_vivero=data['solicitable_vivero'],
@@ -348,7 +789,7 @@ class GetCatalogoBienesList(generics.ListAPIView):
 
     def get(self, request):
         # GET TODOS LOS NODOS
-        nodos_principales = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=1)
+        nodos_principales = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=1).order_by('codigo_bien')
         nodos_principales = self.serializer_class(nodos_principales, many=True).data
         if not nodos_principales:
             return Response({'success':True, 'detail':'No se encontró nada en almacén', 'data':nodos_principales}, status=status.HTTP_200_OK)
@@ -365,7 +806,7 @@ class GetCatalogoBienesList(generics.ListAPIView):
             data['data']['id_nodo'] = nodo['id_bien']
             data['data']['editar'] = True
             
-            nodos_nivel_dos = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=2, id_bien_padre=nodo['id_bien'])
+            nodos_nivel_dos = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=2, id_bien_padre=nodo['id_bien']).order_by('codigo_bien')
             nodos_nivel_dos = self.serializer_class(nodos_nivel_dos, many=True).data
             
             data['data']['eliminar'] = True if not nodos_nivel_dos else False
@@ -384,7 +825,7 @@ class GetCatalogoBienesList(generics.ListAPIView):
                     data_dos['data']['id_nodo'] = nodo_dos['id_bien']
                     data_dos['data']['editar'] = True
                     
-                    nodos_nivel_tres = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=3, id_bien_padre=nodo_dos['id_bien'])
+                    nodos_nivel_tres = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=3, id_bien_padre=nodo_dos['id_bien']).order_by('codigo_bien')
                     nodos_nivel_tres = self.serializer_class(nodos_nivel_tres, many=True).data
                     
                     data_dos['data']['eliminar'] = True if not nodos_nivel_tres else False
@@ -403,7 +844,7 @@ class GetCatalogoBienesList(generics.ListAPIView):
                             data_tres['data']['id_nodo'] = nodo_tres['id_bien']
                             data_tres['data']['editar'] = True
                             
-                            nodos_nivel_cuatro = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=4, id_bien_padre=nodo_tres['id_bien'])
+                            nodos_nivel_cuatro = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=4, id_bien_padre=nodo_tres['id_bien']).order_by('codigo_bien')
                             nodos_nivel_cuatro = self.serializer_class(nodos_nivel_cuatro, many=True).data
                             
                             data_tres['data']['eliminar'] = True if not nodos_nivel_cuatro else False
@@ -422,7 +863,7 @@ class GetCatalogoBienesList(generics.ListAPIView):
                                     data_cuatro['data']['id_nodo'] = nodo_cuatro['id_bien']
                                     data_cuatro['data']['editar'] = True
                                     
-                                    nodos_nivel_cinco = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=5, id_bien_padre=nodo_cuatro['id_bien'])
+                                    nodos_nivel_cinco = CatalogoBienes.objects.filter(nro_elemento_bien=None, nivel_jerarquico=5, id_bien_padre=nodo_cuatro['id_bien']).order_by('codigo_bien')
                                     nodos_nivel_cinco = self.serializer_class(nodos_nivel_cinco, many=True).data
                                     
                                     data_cuatro['data']['eliminar'] = True if not nodos_nivel_cinco else False
@@ -497,7 +938,7 @@ class DeleteNodos(generics.RetrieveDestroyAPIView):
                 raise PermissionDenied('No se puede eliminar un bien si es padre de otros bienes')
             nodo.delete()
 
-            # Auditoria Crear Organigrama
+            # Auditoria borrar catalogo
             usuario = request.user.id_usuario
             descripcion = {"Codigo bien": str(
                 nodo.codigo_bien), "Numero elemento bien": str(nodo.nro_elemento_bien)}
@@ -556,7 +997,7 @@ class SearchArticuloByDocIdentificador(generics.ListAPIView):
             # transforma un choices en un diccionario
             diccionario_cod_estado_activo = dict(
                 (x, y) for x, y in estados_articulo_CHOICES)
-            estado = diccionario_cod_estado_activo[inventario.cod_estado_activo]
+            estado = diccionario_cod_estado_activo[inventario.cod_estado_activo.cod_estado]
             data_serializado['estado'] = estado
             return Response({'success':True, 'detail':'Se encontraron elementos', 'Elementos': data_serializado}, status=status.HTTP_200_OK)
         try:
@@ -594,7 +1035,7 @@ class SearchArticulosByNombreDocIdentificador(generics.ListAPIView):
                 inventario_instance = inventario.filter(
                     id_bien=item['id_bien']).first()
                 estado = inventario_instance.cod_estado_activo if inventario_instance else None
-                item['estado'] = diccionario_cod_estado_activo[estado] if estado else None
+                item['estado'] = diccionario_cod_estado_activo[estado.cod_estado] if estado else None
 
             return Response({'success':True, 'detail':'Se encontraron elementos', 'Elementos': data_serializado}, status=status.HTTP_200_OK)
         try:
@@ -618,7 +1059,7 @@ class SearchArticulos(generics.ListAPIView):
                     filter[key] = value
         filter['nro_elemento_bien'] = None
         filter['nivel_jerarquico'] = 5
-        bien = CatalogoBienes.objects.filter(**filter).filter(Q(cod_tipo_activo__in=['Com','Veh','OAc']) | Q(cod_tipo_activo=None))
+        bien = CatalogoBienes.objects.filter(**filter).filter(Q(cod_tipo_activo__cod_tipo_activo__in=['Com','Veh','OAc']) | Q(cod_tipo_activo=None))
         serializador = self.serializer_class(bien, many=True)
         if bien:
             return Response({'success':True, 'detail':'Se encontró los elementos', 'data': serializador.data}, status=status.HTTP_200_OK)
@@ -645,7 +1086,7 @@ class GetCatalogoBienesByCodigo(generics.ListAPIView):
         filters['nivel_jerarquico'] = 5
         filters['nro_elemento_bien'] = None
 
-        bien = CatalogoBienes.objects.filter(**filters).filter(Q(cod_tipo_activo__in=['Com','Veh','OAc']) | Q(cod_tipo_activo=None)).first()
+        bien = CatalogoBienes.objects.filter(**filters).filter(Q(cod_tipo_activo__cod_tipo_activo__in=['Com','Veh','OAc']) | Q(cod_tipo_activo=None)).first()
         bien_serializer = self.serializer_class(bien)
 
         if bien:
@@ -724,7 +1165,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
         fecha_entrada = entrada_data.get('fecha_entrada')
         if fecha_entrada > str(datetime.now()):
             raise ValidationError('No se puede crear una entrada con una fecha superior a la actual')
-
+        
         # VALIDACIÓN DE EXITENCIA DE BODEGA PARA ENTRADA
         id_bodega_entrada = entrada_data['id_bodega']
         bodega_entrada = Bodegas.objects.filter(id_bodega=id_bodega_entrada).first()
@@ -800,7 +1241,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
             else:
                 fecha_ingreso_existente = None
             if id_bien_inventario and fecha_ingreso_existente:
-                if fecha_entrega < fecha_ingreso_existente:
+                if fecha_entrega.date() < fecha_ingreso_existente:
                     raise ValidationError('la fecha de entrada tiene que ser posterior a la fecha de ingreso del bien en el inventario')
                 
         # CREACIÓN DE CONSUMOS
@@ -847,12 +1288,14 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
                     id_bien_inventario.cantidad_entrante_consumo = cantidad
                     id_bien_inventario.save()
             else:
+                fecha_entrada_date = datetime.strptime(fecha_entrada, '%Y-%m-%d %H:%M:%S')
+                
                 registro_inventario = Inventario.objects.create(
                     id_bien=bien,
                     id_bodega=bodega,
                     cod_tipo_entrada=entrada_creada.id_tipo_entrada,
                     cantidad_entrante_consumo=cantidad,
-                    fecha_ingreso=fecha_entrada
+                    fecha_ingreso=fecha_entrada_date.date()
                 )
             serializador_item_entrada_consumo = SerializerItemEntradaConsumo(data=item, many=False)
             serializador_item_entrada_consumo.is_valid(raise_exception=True)
@@ -875,6 +1318,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
 
             # CREACIÓN DE UN ITEM ACTIVO FIJO EN BASE A CAMPOS HEREDADOS DEL PADRE
             bien_padre = CatalogoBienes.objects.filter(id_bien=id_bien_padre).first()
+            cod_estado_instance = EstadosArticulo.objects.filter(cod_estado=cod_estado).first()
             
             if not bien_padre:
                 raise ValidationError('El bien padre ingresado no existe')
@@ -923,35 +1367,38 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
                     tipo_doc_ultimo_movimiento = 'E_EMB'
                 case 8:
                     tipo_doc_ultimo_movimiento = 'E_INC'
-
+            
+            fecha_entrada_date = datetime.strptime(fecha_entrada, '%Y-%m-%d %H:%M:%S')
+            
             registro_inventario = Inventario.objects.create(
                 id_bien=elemento_creado,
                 id_bodega=bodega,
                 cod_tipo_entrada=entrada_creada.id_tipo_entrada,
-                fecha_ingreso=fecha_entrada,
+                fecha_ingreso=fecha_entrada_date.date(),
                 id_persona_origen=entrada_creada.id_proveedor,
                 numero_doc_origen=entrada_creada.numero_entrada_almacen,
                 valor_ingreso=valor_total_item,
                 ubicacion_en_bodega=True,
-                cod_estado_activo=cod_estado,
+                cod_estado_activo=cod_estado_instance,
                 fecha_ultimo_movimiento=datetime.now(),
                 tipo_doc_ultimo_movimiento=tipo_doc_ultimo_movimiento,
                 id_registro_doc_ultimo_movimiento=entrada_creada.id_entrada_almacen
             )
             if tiene_hoja_vida == True:
-                match bien_padre.cod_tipo_activo:
-                    case 'Com':
-                        create_hoja_vida = HojaDeVidaComputadores.objects.create(
-                            id_articulo=elemento_creado
-                        )
-                    case 'Veh':
-                        create_hoja_vida = HojaDeVidaVehiculos.objects.create(
-                            id_articulo=elemento_creado
-                        )
-                    case 'OAc':
-                        create_hoja_vida = HojaDeVidaOtrosActivos.objects.create(
-                            id_articulo=elemento_creado
-                        )
+                if bien_padre.cod_tipo_activo:
+                    match bien_padre.cod_tipo_activo.cod_tipo_activo:
+                        case 'Com':
+                            create_hoja_vida = HojaDeVidaComputadores.objects.create(
+                                id_articulo=elemento_creado
+                            )
+                        case 'Veh':
+                            create_hoja_vida = HojaDeVidaVehiculos.objects.create(
+                                id_articulo=elemento_creado
+                            )
+                        case 'OAc':
+                            create_hoja_vida = HojaDeVidaOtrosActivos.objects.create(
+                                id_articulo=elemento_creado
+                            )
             item['id_bien'] = elemento_creado.id_bien
             serializador_item_entrada = SerializerItemEntradaActivosFijos(data=item, many=False)
             serializador_item_entrada.is_valid(raise_exception=True)
@@ -1352,6 +1799,8 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
             id_bodega = item.get('id_bodega')
             valor_total_item = item.get('valor_total_item')
             cod_estado = item.get('cod_estado')
+            
+            cod_estado_instance = EstadosArticulo.objects.filter(cod_estado=cod_estado).first()
 
             # CREACIÓN DE UN ITEM ACTIVO FIJO EN BASE A CAMPOS HEREDADOS DEL PADRE
             bien_padre = CatalogoBienes.objects.filter(
@@ -1389,12 +1838,12 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
                 id_bien=elemento_creado,
                 id_bodega=bodega,
                 cod_tipo_entrada=entrada_almacen.id_tipo_entrada,
-                fecha_ingreso=entrada_almacen.fecha_entrada,
+                fecha_ingreso=entrada_almacen.fecha_entrada.date(),
                 id_persona_origen=entrada_almacen.id_proveedor,
                 numero_doc_origen=entrada_almacen.numero_entrada_almacen,
                 valor_ingreso=valor_total_item,
                 ubicacion_en_bodega=True,
-                cod_estado_activo=cod_estado,
+                cod_estado_activo=cod_estado_instance,
                 fecha_ultimo_movimiento=datetime.now(),
                 tipo_doc_ultimo_movimiento=tipo_doc_ultimo_movimiento,
                 id_registro_doc_ultimo_movimiento=entrada_almacen.id_entrada_almacen
@@ -1450,7 +1899,7 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
                     id_bodega=bodega,
                     cod_tipo_entrada=entrada_almacen.id_tipo_entrada,
                     cantidad_entrante_consumo=cantidad,
-                    fecha_ingreso=entrada_almacen.fecha_entrada
+                    fecha_ingreso=entrada_almacen.fecha_entrada.date()
                 )
             serializador_item_entrada_consumo = SerializerItemEntradaConsumo(
                 data=item, many=False)
@@ -1791,6 +2240,8 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
             valor_total_item = item.get('valor_total_item')
             cod_estado = item.get('cod_estado')
 
+            cod_estado_instance = EstadosArticulo.objects.filter(cod_estado=cod_estado).first()
+
             # CREACIÓN DE UN ITEM ACTIVO FIJO EN BASE A CAMPOS HEREDADOS DEL PADRE
             bien_padre = CatalogoBienes.objects.filter(
                 id_bien=id_bien_padre).first()
@@ -1827,30 +2278,31 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
                 id_bien=elemento_creado,
                 id_bodega=bodega,
                 cod_tipo_entrada=entrada_almacen.id_tipo_entrada,
-                fecha_ingreso=entrada_almacen.fecha_entrada,
+                fecha_ingreso=entrada_almacen.fecha_entrada.date(),
                 id_persona_origen=entrada_almacen.id_proveedor,
                 numero_doc_origen=entrada_almacen.numero_entrada_almacen,
                 valor_ingreso=valor_total_item,
                 ubicacion_en_bodega=True,
-                cod_estado_activo=cod_estado,
+                cod_estado_activo=cod_estado_instance,
                 fecha_ultimo_movimiento=datetime.now(),
                 tipo_doc_ultimo_movimiento=tipo_doc_ultimo_movimiento,
                 id_registro_doc_ultimo_movimiento=entrada_almacen.id_entrada_almacen
             )
             if tiene_hoja_vida == True:
-                match bien_padre.cod_tipo_activo:
-                    case 'Com':
-                        create_hoja_vida = HojaDeVidaComputadores.objects.create(
-                            id_articulo=elemento_creado
-                        )
-                    case 'Veh':
-                        create_hoja_vida = HojaDeVidaVehiculos.objects.create(
-                            id_articulo=elemento_creado
-                        )
-                    case 'OAc':
-                        create_hoja_vida = HojaDeVidaOtrosActivos.objects.create(
-                            id_articulo=elemento_creado
-                        )
+                if bien_padre.cod_tipo_activo:
+                    match bien_padre.cod_tipo_activo.cod_tipo_activo:
+                        case 'Com':
+                            create_hoja_vida = HojaDeVidaComputadores.objects.create(
+                                id_articulo=elemento_creado
+                            )
+                        case 'Veh':
+                            create_hoja_vida = HojaDeVidaVehiculos.objects.create(
+                                id_articulo=elemento_creado
+                            )
+                        case 'OAc':
+                            create_hoja_vida = HojaDeVidaOtrosActivos.objects.create(
+                                id_articulo=elemento_creado
+                            )
             item['id_bien'] = elemento_creado.id_bien
             serializador_item_entrada = SerializerItemEntradaActivosFijos(
                 data=item, many=False)
@@ -1888,7 +2340,7 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
                     id_bodega=bodega,
                     cod_tipo_entrada=entrada_almacen.id_tipo_entrada,
                     cantidad_entrante_consumo=cantidad,
-                    fecha_ingreso=entrada_almacen.fecha_entrada
+                    fecha_ingreso=entrada_almacen.fecha_entrada.date()
                 )
             serializador_item_entrada_consumo = SerializerItemEntradaConsumo(
                 data=item, many=False)
@@ -2113,57 +2565,3 @@ class AnularEntrada(generics.UpdateAPIView):
         Util.save_auditoria_maestro_detalle(auditoria_data)
         return Response({'success':True, 'detail':'Solicitud anulada exitosamente'}, status=status.HTTP_201_CREATED)
 
-
-class ValidacionCodigoBien(generics.ListAPIView):
-    serializer_class = CatalogoBienesSerializer
-    queryset = CatalogoBienes.objects.all()
-    permission_classes = [IsAuthenticated]
-    
-    def get(self,request,nivel,codigo_bien):
-        if not codigo_bien.isdigit():
-            raise ValidationError('El códgio debe ser un número')
-        match nivel:
-            case '1':
-                if len(codigo_bien) != 1:
-                    raise ValidationError('El nivel 1 solo puede tener un caracter')
-                if int(codigo_bien) < 1 or int(codigo_bien) > 9:
-                    raise ValidationError('El nivel 1 debe ser un número entre 1 y 9')
-            case '2':
-                if len(codigo_bien) != 2:
-                    raise ValidationError('El nivel 2 debe ser de 2 caracteres')
-                codigo_padre = codigo_bien[0]
-                bien_padre = CatalogoBienes.objects.filter(
-                    codigo_bien=codigo_padre)
-                if not bien_padre:
-                    raise ValidationError('El padre no existe')
-            case '3':
-                if len(codigo_bien) != 4:
-                    raise ValidationError('El nivel 3 debe ser de 4 caracteres')
-                codigo_padre = codigo_bien[0:2]
-                bien_padre = CatalogoBienes.objects.filter(
-                    codigo_bien=codigo_padre)
-                if not bien_padre:
-                    raise ValidationError('El padre no existe')
-            case '4':
-                if len(codigo_bien) != 7:
-                    raise ValidationError('El nivel 4 debe ser de 7 caracteres')
-                codigo_padre = codigo_bien[0:4]
-                bien_padre = CatalogoBienes.objects.filter(
-                    codigo_bien=codigo_padre)
-                if not bien_padre:
-                    raise ValidationError('El padre no existe')
-            case '5':
-                if len(codigo_bien) != 12:
-                    raise ValidationError('El nivel 5 debe ser de 12 caracteres')
-                codigo_padre = codigo_bien[0:7]
-                bien_padre = CatalogoBienes.objects.filter(
-                    codigo_bien=codigo_padre)
-                if not bien_padre:
-                    raise ValidationError('El padre no existe')
-            case _:
-                raise ValidationError('Ingrese un nivel válido, un numero entre 1 y 5')
-
-        aux_bien = CatalogoBienes.objects.filter(codigo_bien=codigo_bien)
-        if aux_bien:
-            raise ValidationError('El código ingresado ya existe')
-        return Response({'success':True, 'detail':'Codigo de bien válido'}, status=status.HTTP_201_CREATED)

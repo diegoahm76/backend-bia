@@ -6,19 +6,22 @@ from almacen.models.solicitudes_models import (
     SolicitudesConsumibles,
     ItemsSolicitudConsumible
 )
-from seguridad.models import ClasesTerceroPersona, Personas
-from seguridad.serializers.personas_serializers import PersonasFilterSerializer
+from transversal.models.base_models import ClasesTerceroPersona
+from transversal.models.personas_models import Personas
+from transversal.serializers.personas_serializers import PersonasFilterSerializer
 
 class CrearSolicitudesPostSerializer(serializers.ModelSerializer):
+    nombre_vivero_solicita = serializers.ReadOnlyField(source='id_vivero_solicita.nombre', default=None)
     
     class Meta:
         model = SolicitudesConsumibles
-        fields = '__all__'
+        exclude = ['id_vivero_solicita']
 
 class GetListSolicitudesSerializer(serializers.ModelSerializer):
     persona_solicita = serializers.SerializerMethodField()
     persona_responsable = serializers.SerializerMethodField()
     nombre_unidad_organizacional_destino = serializers.ReadOnlyField(source='id_unidad_para_la_que_solicita.nombre', default=None)
+    nombre_vivero_solicita = serializers.ReadOnlyField(source='id_vivero_solicita.nombre', default=None)
     
     def get_persona_solicita(self, obj):
         nombre_completo_solicita = None
@@ -49,6 +52,7 @@ class SolicitudesPendientesAprobarSerializer(serializers.ModelSerializer):
     persona_solicita = serializers.SerializerMethodField()
     persona_responsable = serializers.SerializerMethodField()
     nombre_unidad_organizacional_destino = serializers.ReadOnlyField(source='id_unidad_para_la_que_solicita.nombre', default=None)
+    nombre_vivero_solicita = serializers.ReadOnlyField(source='id_vivero_solicita.nombre', default=None)
     
     def get_persona_solicita(self, obj):
         nombre_completo_solicita = None
@@ -73,7 +77,7 @@ class SolicitudesPendientesAprobarSerializer(serializers.ModelSerializer):
     #VERIFICAR DE QUE LA FECHA DE VINCULACION DE LA PERSONA NO ESTE VENCIDA
     def get_responsable_vinculacion_vencida(self, obj):
         fecha_actual = datetime.now()
-        fecha_vencida_responsable2 = True if obj.id_funcionario_responsable_unidad.fecha_a_finalizar_cargo_actual < fecha_actual else False
+        fecha_vencida_responsable2 = True if obj.id_funcionario_responsable_unidad.fecha_a_finalizar_cargo_actual < fecha_actual.date() else False
         return fecha_vencida_responsable2
     #VERIFICAR SI LA PERSONA ES RESPONSABLE DE LA UNIDAD
     def get_responsable_unidad(self, obj):        

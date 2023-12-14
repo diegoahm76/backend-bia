@@ -1,17 +1,15 @@
 from django.core.mail import EmailMultiAlternatives
 from django.db.models import Sum
-from email_validator import validate_email, EmailNotValidError, EmailUndeliverableError, EmailSyntaxError
-from transversal.models.organigrama_models import NivelesOrganigrama, UnidadesOrganizacionales
-from backend.settings.base import EMAIL_HOST_USER, AUTHENTICATION_360_NRS
-from seguridad.models import Shortener, User, Modulos, Permisos, Auditorias
+from email_validator import validate_email, EmailUndeliverableError
+from transversal.models.organigrama_models import UnidadesOrganizacionales
+from backend.settings.base import EMAIL_HOST_USER
 from almacen.models.inventario_models import (
     Inventario
 )
 from almacen.models.bienes_models import EntradasAlmacen, ItemEntradaAlmacen
 from almacen.models.solicitudes_models import DespachoConsumo, ItemDespachoConsumo
-import re, requests
 from django.db.models import Q, F
-from datetime import datetime, date,timedelta
+from datetime import datetime, timedelta
 
 class UtilAlmacen:
     
@@ -59,9 +57,11 @@ class UtilAlmacen:
             
             entradas = EntradasAlmacen.objects.filter(fecha_entrada__gte=fecha_despacho, entrada_anulada=None)
             cantidad_total_entradas = [{'id_bien': inventario.id_bien.id_bien, 'id_bodega': inventario.id_bodega.id_bodega, 'cantidad_disponible': saldo_actual}]
+            
             if entradas:
                 entradas_id = [entrada.id_entrada_almacen for entrada in entradas] if entradas else []
-                cantidad_total_entradas = ItemEntradaAlmacen.objects.filter(id_entrada_almacen__in=entradas_id, id_bien=inventario.id_bien, id_bodega = inventario.id_bodega).values('id_bien', 'id_bodega').annotate(cantidad_disponible=saldo_actual - Sum('cantidad'))  
+                items_entradas = ItemEntradaAlmacen.objects.filter(id_entrada_almacen__in=entradas_id, id_bien=inventario.id_bien, id_bodega = inventario.id_bodega).values('id_bien', 'id_bodega').annotate(cantidad_disponible=saldo_actual - Sum('cantidad'))  
+                cantidad_total_entradas = items_entradas if items_entradas else cantidad_total_entradas
             cantidades_disponibles.append(cantidad_total_entradas[0])
         
         return cantidades_disponibles
@@ -241,7 +241,6 @@ class UtilAlmacen:
             aux_menor = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = unidad_instance.id_unidad_org_padre.id_unidad_organizacional).first()
             if aux_menor.id_nivel_organigrama.orden_nivel >= 2:
                 if aux_menor.id_unidad_org_padre.unidad_raiz == False:
-                    print("asdasdasd")
                     unidades_iguales_y_arriba.append(aux_menor.id_unidad_org_padre.nombre)
                     while count >= 1:
                         aux_menor = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = aux_menor.id_unidad_org_padre.id_unidad_organizacional).first()

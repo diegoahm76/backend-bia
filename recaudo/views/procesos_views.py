@@ -117,6 +117,26 @@ class AtributosEtapasView(generics.ListAPIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def put(self, request, etapa):
+        atributo = AtributosEtapas.objects.filter(pk=etapa).get()
+        serializer = AtributosEtapasPostSerializer(atributo, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DeleteAtributosEtapasView(generics.ListAPIView):
+    queryset = AtributosEtapas.objects.all()
+    serializer_class = AtributosEtapasSerializer
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request, etapa, categoria):
+        queryset = AtributosEtapas.objects.filter(id_etapa=etapa).filter(id_categoria=categoria)
+        queryset.delete()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+
 
 class FlujoProcesoView(generics.ListAPIView):
     queryset = FlujoProceso.objects.all()
@@ -145,7 +165,7 @@ class GraficaView(generics.ListAPIView):
         nuevasEtapas = []
         nuevoFlujo = []
         for item in querysetEtapas:
-            nuevasEtapas.append({'id': item.pk, 'data': {'etapa': item.etapa, 'descripcion': item.descripcion}})
+            nuevasEtapas.append({'id': item.pk, 'data': {'id': item.pk, 'etapa': item.etapa, 'descripcion': item.descripcion}})
         for item in querysetFlujos:
             data = {'fecha_flujo': item.fecha_flujo, 'descripcion': item.descripcion, 'requisitos': item.requisitos}
             nuevoFlujo.append({'id': item.pk, 'source': item.id_etapa_origen.pk, 'target': item.id_etapa_destino.pk, 'data': data})
@@ -252,6 +272,28 @@ class UpdateProcesosView(generics.ListAPIView):
             return Response({'success': False, 'data': 'No existe el proceso con el id enviado'}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class UpdateCategoriaProcesosView(generics.ListAPIView):
+    queryset = Procesos.objects.all()
+    serializer_class = ProcesosSerializer
+    #permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        id_categoria = request.data['id_categoria']
+        categoria = CategoriaAtributo.objects.filter(pk=id_categoria)
+        proceso = Procesos.objects.filter(pk=pk)
+        if len(proceso) == 1:
+            if len(categoria) == 1:
+                proceso = proceso.get()
+                categoria = categoria.get()
+                proceso.id_categoria = categoria
+                proceso.save()
+                return Response({'success': True, 'data': 'La categoria del proceso se ha actualizado con exito'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'success': False, 'data': 'No existe la categoria con el id enviado'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'success': False, 'data': 'No existe el proceso con el id enviado'}, status=status.HTTP_400_BAD_REQUEST)
+
+
 class ProcesosGeneralView(generics.ListAPIView):
     queryset = Procesos.objects.all()
     serializer_class = ProcesosSerializer
@@ -302,6 +344,14 @@ class CategoriaAtributoView(generics.ListAPIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def put(self, request, pk):
+        categoria = CategoriaAtributo.objects.filter(pk=pk).get()
+        serializer = CategoriaAtributoSerializer(categoria, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class EtapasFiltradoView(generics.ListAPIView):
     #permission_classes = [IsAuthenticated]
@@ -330,6 +380,18 @@ class EtapasFiltradoView(generics.ListAPIView):
                 if etapa == item['etapa']:
                     etapa_general = EtapasProcesoSerializer(item['etapa_general']).data
                     categorias.append(CategoriaAtributoSerializer(item['categoria_general']).data)
+
+            categorias_vistas = set()
+
+            nueva_lista = []
+
+            for elemento in categorias:
+                categoria = elemento["categoria"]
+
+                if categoria not in categorias_vistas:
+                    nueva_lista.append(elemento)
+                    categorias_vistas.add(categoria)
+            categorias = nueva_lista
             etapasGeneral.append(
                 {
                     'etapa': etapa_general,
@@ -338,3 +400,75 @@ class EtapasFiltradoView(generics.ListAPIView):
             )
 
         return Response({'success': True, 'data': etapasGeneral}, status=status.HTTP_200_OK)
+
+
+class CategoriasEtapasFiltradoView(generics.ListAPIView):
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        etapaGeneral = AtributosEtapas.objects.filter(pk=pk)
+
+        if len(etapaGeneral):
+            etapaG = etapaGeneral.get()
+            etapas = AtributosEtapas.objects.all()
+            etapasGeneral = []
+            etapasLista = []
+            etapasNombres = []
+
+            for etapa in etapas:
+                etapasNombres.append(etapa.id_etapa.etapa)
+                etapasLista.append(
+                    {
+                        'etapa_general': etapa.id_etapa,
+                        'etapa': etapa.id_etapa.etapa,
+                        'categoria_general': etapa.id_categoria,
+                        'categoria': etapa.id_categoria.categoria
+                    }
+                )
+
+            for etapa in etapasNombres:
+                categorias = []
+                for item in etapasLista:
+                    if etapa == etapaG.id_etapa.etapa:
+                        categorias.append(CategoriaAtributoSerializer(item['categoria_general']).data)
+                if len(categorias) > 0:
+                    categorias_vistas = set()
+
+                    nueva_lista = []
+
+                    for elemento in categorias:
+                        categoria = elemento["categoria"]
+
+                        if categoria not in categorias_vistas:
+                            nueva_lista.append(elemento)
+                            categorias_vistas.add(categoria)
+
+                    etapasGeneral = nueva_lista
+
+            return Response({'success': True, 'data': etapasGeneral}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success': False, 'data': 'No existe la etapa con el id enviado'}, status=status.HTTP_200_OK)
+
+
+class DeleteEtapaView(generics.ListAPIView):
+    queryset = EtapasProceso.objects.all()
+    serializer_class = EtapasProcesoSerializer
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request, etapa):
+        queryset = EtapasProceso.objects.filter(id=etapa)
+        queryset.delete()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+class DeleteCategoriaAtributoView(generics.ListAPIView):
+    queryset = CategoriaAtributo.objects.all()
+    serializer_class = CategoriaAtributoSerializer
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request, categoria):
+        queryset = CategoriaAtributo.objects.filter(id=categoria)
+        queryset.delete()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)

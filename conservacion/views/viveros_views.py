@@ -1,19 +1,17 @@
-from conservacion.serializers.viveros_serializers import PersonasAsignacionViveroSerializer
 from conservacion.serializers.viveros_serializers import ViveristaActualSerializers
 from conservacion.models.viveros_models import HistoricoResponsableVivero
 from conservacion.serializers.viveros_serializers import HistorialViveristaByViveroSerializers
 from rest_framework import generics, status
-from seguridad.serializers.personas_serializers import PersonasFilterSerializer
+from transversal.serializers.personas_serializers import PersonasFilterSerializer
 from seguridad.utils import Util  
 from django.db.models import Q
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
-from django.db.models.functions import Concat
 import copy
 
-from seguridad.models import Personas
+from transversal.models.personas_models import Personas
 from conservacion.models.viveros_models import (
     Vivero,
     HistorialAperturaViveros,
@@ -194,7 +192,8 @@ class CreateViveros(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     
     def post(self, request):
-        data = request.data
+        #data = request.data
+        data = request.data.copy()
         persona = request.user.persona.id_persona
         data['id_persona_crea'] = persona
     

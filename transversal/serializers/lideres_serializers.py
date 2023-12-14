@@ -43,7 +43,7 @@ class CreateAsignacionSerializer(serializers.ModelSerializer):
     def validate_id_persona(self, persona):
         current_date = datetime.now()
         
-        if not persona.es_unidad_organizacional_actual or persona.fecha_a_finalizar_cargo_actual < current_date or not persona.id_cargo or not persona.id_unidad_organizacional_actual:
+        if not persona.es_unidad_organizacional_actual or persona.fecha_a_finalizar_cargo_actual < current_date.date() or not persona.id_cargo or not persona.id_unidad_organizacional_actual:
             raise serializers.ValidationError('La persona elegida no se encuentra actualmente vinculada')
         
         return persona

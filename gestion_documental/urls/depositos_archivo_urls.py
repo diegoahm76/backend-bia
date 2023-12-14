@@ -46,13 +46,14 @@ urlpatterns = [
      path('cajaBandeja/listar-cajas-por-bandeja/<int:pk>/',views.CajasByBandejaList.as_view(), name='listar-cajas-por-bandeja'),
      path('cajaBandeja/buscar-estante/',views.CajaEstanteSearch.as_view(), name='buscar-estante'),
      path('cajaBandeja/actualizar-caja/<int:pk>/',views.cajaBandejaUpDate.as_view(),name='actualizar-caja'),
-     path('cajaBandeja/mover-caja/<int:id_caja_estante>/',views.CajaEstanteBandejaMove.as_view(), name='mover-caja'),
+     path('cajaBandeja/mover-caja/<int:id_caja_bandeja>/',views.CajaEstanteBandejaMove.as_view(), name='mover-caja'),
      path('cajaBandeja/busqueda-avanzada-caja/',views.CajaEstanteSearchAdvanced.as_view(), name='buscar-avanzada'),
      path('cajaBandeja/eliminar/<str:pk>/',views.CajaEstanteDelete.as_view(),name='eliminar-caja'),
      path('cajaBandeja/listar-bandejas-por-caja/<int:id_caja>/',views.CajaListBandejaInfo.as_view(),name='listar-bandejas-por-caja'),
      path('cajaBandeja/listar-estantes-por-caja/<int:id_caja>/',views.CajaListEstanteInfo.as_view(),name='listar-estantes-por-caja'),
      path('cajaBandeja/listar-depositos-por-caja/<int:id_caja>/',views.CajaListDepositoInfo.as_view(),name='listar-depositos-por-caja'),
      path('cajaBandeja/listar/',views.CajaBandejaAll.as_view(),name='listar-cajas'),
+     path('cajaBandeja/rotulo/<int:id_caja_bandeja>/',views.CajaRotulo.as_view(),name='rotulo-cajas'),
 
 
 
@@ -66,26 +67,35 @@ urlpatterns = [
      path('carpetaCaja/eliminar/<str:pk>/',views.CarpetaCajaDelete.as_view(),name='eliminar-carpeta'),
      path('carpetaCaja/actualizar-carpeta/<int:pk>/',views.CarpetaCajaUpDate.as_view(),name='actualizar-carpeta'),
      path('carpetaCaja/listar/',views.CarpetaCajaAll.as_view(),name='listar-carpetas'),
+     path('carpetaCaja/listar-cajas-por-carpeta/<int:id_carpeta>/',views.CarpetaListCajaInfo.as_view(),name='listar-cajas-por-carpeta'),
+     path('carpetaCaja/listar-bandejas-por-carpeta/<int:id_carpeta>/',views.CarpetaListBandejaInfo.as_view(),name='listar-bandejas-por-carpeta'),
+     path('carpetaCaja/listar-estantes-por-carpeta/<int:id_carpeta>/',views.EstanteListCarpetaInfo.as_view(),name='listar-estantes-por-carpeta'),
+     path('carpetaCaja/listar-depositos-por-carpeta/<int:id_carpeta>/',views.CarpetaListDepositoInfo.as_view(),name='listar-depositos-por-carpeta'),
+     path('carpetaCaja/mover-carpeta/<int:id_carpeta_caja>/',views.CarpetaCajaMove.as_view(), name='mover-carpeta'),
+     path('carpetCaja/busqueda-avanzada-carpetas/',views.CarpetaCajaSearchAdvanced.as_view(), name='buscar-avanzada'),
+     path('carpetaCaja/rotulo/<int:id_carpeta_caja>/',views.CarpetaRotulo.as_view(),name='rotulo-carpeta'),
 
 
-
-
-     
-     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+     #Archivo Físico
+     path('archivoFisico/listar-deposito-id/<int:pk>/',views.DepositoGetById.as_view(),name='listar-por-id-deposito'),
+     path('archivoFisico/listar-estante-id/<int:pk>/',views.EstanteGetById.as_view(),name='listar-por-id-estante'),
+     path('archivoFisico/listar-bandeja-id/<int:pk>/',views.BandejaGetById.as_view(),name='listar-por-id-bandeja'),
+     path('archivoFisico/listar-caja-id/<int:pk>/',views.CajaGetById.as_view(),name='listar-por-id-caja'),
+     path('archivoFisico/listar-carpeta-id/<int:pk>/',views.CarpetaGetById.as_view(),name='listar-por-id-carpeta'),
+     path('archivoFisico/listar-depositos/',views.DepositoGetAll.as_view(),name='listar-todos-depositos'),
+     path('archivoFisico/listar-estantes/<int:id_deposito>/',views.EstanteGetAll.as_view(),name='listar-todos-estantes'),
+     path('archivoFisico/listar-bandejas/<int:id_estante_deposito>/',views.BandejaGetAll.as_view(),name='listar-todos-bandejas'),
+     path('archivoFisico/listar-cajas/<int:id_bandeja_estante>/',views.CajaGetAll.as_view(),name='listar-todos-cajas'),
+     path('archivoFisico/listar-carpetas/<int:id_caja_bandeja>/',views.CarpetaGetAll.as_view(),name='listar-todos-carpetas'),
+     path('archivoFisico/consultar-expediente/<int:id_carpeta_caja>/',views.ConsultarNumeroExpediente.as_view(),name='consultar-expediente'),
+     path('archivoFisico/ver-expediente/<int:id_carpeta_caja>/',views.ReviewExpediente.as_view(),name='ver-expediente'),
+     path('archivoFisico/choices-deposito/',views.DepositoChoices.as_view(),name='choices-deposito'),
+     path('archivoFisico/busqueda-avanzada-deposito/',views.BusquedaDepositoArchivoFisico.as_view(),name='busqueda-archivo-fisico-deposito'),
+     path('archivoFisico/busqueda-avanzada-estante/',views.BusquedaEstanteArchivoFisico.as_view(),name='busqueda-archivo-fisico-estante'),
+     path('archivoFisico/busqueda-avanzada-bandeja/',views.BusquedaBandejaArchivoFisico.as_view(),name='busqueda-archivo-fisico-bandeja'),
+     path('archivoFisico/busqueda-avanzada-caja/',views.BusquedaCajaArchivoFisico.as_view(),name='busqueda-archivo-fisico-caja'),
+     path('archivoFisico/busqueda-avanzada-carpeta/',views.BusquedaCarpetaArchivoFisico.as_view(),name='busqueda-archivo-fisico-carpeta'),
+     path('archivoFisico/informacion-arbol/<int:id_deposito>/', views.ListarInformacionArbol.as_view(), name='listar-informacion'),
 
 
 

@@ -1,13 +1,15 @@
 from gestion_documental.serializers.ventanilla_serializers import PersonasSerializer, ActualizarAutorizacionesPersonaSerializer, AutorizacionNotificacionesSerializer
-from seguridad.models import Personas,HistoricoEmails,HistoricoDireccion
+from transversal.models.personas_models import Personas
 from rest_framework import generics,status
 from rest_framework.response import Response
 from datetime import date, datetime
 import copy
-from seguridad.serializers.personas_serializers import PersonaJuridicaPostSerializer, PersonaJuridicaUpdateSerializer, PersonaNaturalPostSerializer, PersonaNaturalUpdateSerializer
+from transversal.serializers.personas_serializers import PersonaJuridicaPostSerializer, PersonaJuridicaUpdateSerializer, PersonaNaturalPostSerializer, PersonaNaturalUpdateSerializer
 from seguridad.signals.roles_signals import IsAuthenticated
 from seguridad.utils import Util
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
+
+from transversal.views.bandeja_alertas_views import BandejaAlertaPersonaCreate
 
 
 class BusquedaPersonaParaRegistro(generics.RetrieveAPIView):
@@ -66,6 +68,13 @@ class RegisterPersonaNatural(generics.CreateAPIView):
             "descripcion": descripcion, 
         }
         Util.save_auditoria(auditoria_data)
+        #CREACION DE BANDEJA DE ALERTAS
+        crear_bandeja=BandejaAlertaPersonaCreate()
+
+        response_bandeja=crear_bandeja.crear_bandeja_persona({"id_persona":serializador.id_persona})
+            
+        if response_bandeja.status_code!=status.HTTP_201_CREATED:
+            raise ValidationError(response_bandeja)
         
         return Response({'success':True, 'detail':'Se creo la persona natural correctamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 
@@ -99,6 +108,13 @@ class RegisterPersonaJuridica(generics.CreateAPIView):
             "descripcion": descripcion, 
         }
         Util.save_auditoria(auditoria_data)
+        #CREACION DE BANDEJA DE ALERTAS
+        crear_bandeja=BandejaAlertaPersonaCreate()
+
+        response_bandeja=crear_bandeja.crear_bandeja_persona({"id_persona":serializador.id_persona})
+            
+        if response_bandeja.status_code!=status.HTTP_201_CREATED:
+            raise ValidationError(response_bandeja)
         
         return Response({'success':True, 'detail':'Se creo la persona jurídica correctamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 
@@ -192,7 +208,7 @@ class UpdatePersonaJuridicaByVentanilla(generics.UpdateAPIView):
                 else:
                     fecha_formateada = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
                     fecha_ahora = date.today()
-                    if fecha_formateada > fecha_ahora or fecha_formateada <= persona.fecha_inicio_cargo_rep_legal.date():
+                    if fecha_formateada > fecha_ahora or fecha_formateada <= persona.fecha_inicio_cargo_rep_legal:
                         raise PermissionDenied('La fecha de inicio del cargo del representante no debe ser superior a la del sistema y tiene que ser mayor a la fecha de inicio del representante legal anterior')
 
             else:
@@ -201,7 +217,7 @@ class UpdatePersonaJuridicaByVentanilla(generics.UpdateAPIView):
                 
                     fecha_formateada = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
                     print()
-                    if persona.fecha_inicio_cargo_rep_legal.date() != fecha_formateada:
+                    if persona.fecha_inicio_cargo_rep_legal != fecha_formateada:
                         raise PermissionDenied('No se puede actualizar la fecha de inicio de representante legal sin haber cambiado el representante')
                     
                 data['fecha_cambio_representante_legal'] = None

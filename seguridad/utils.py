@@ -1,15 +1,19 @@
 from datetime import datetime, timedelta,date
-import time
-from seguridad.models import ClasesTercero, ClasesTerceroPersona, Personas
+from transversal.models.base_models import ClasesTerceroPersona
+from transversal.models.personas_models import Personas
+from transversal.models.base_models import ClasesTercero
+from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from django.core.mail import EmailMultiAlternatives
 from email_validator import validate_email, EmailNotValidError, EmailUndeliverableError, EmailSyntaxError
 from backend.settings.base import EMAIL_HOST_USER, AUTHENTICATION_360_NRS
-from seguridad.models import Shortener, User, Modulos, Permisos, Auditorias
+from seguridad.models import User, Modulos, Permisos, Auditorias
+from transversal.models.base_models import Shortener
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
 import re, requests
 # from twilio.rest import Client
 from django.template.loader import render_to_string
+from seguridad.lists.fields_abrv_list import fields_abrv_LIST
 import os
 
 class Util:
@@ -170,6 +174,12 @@ class Util:
                 
                 for field, value in data_previous.__dict__.items():
                     new_value = getattr(data_current,field)
+                    
+                    # ABREVIATURAS
+                    abrv = next((item for item in fields_abrv_LIST if item["field"] == field), None)
+                    if abrv:
+                        field = abrv['abrv']
+                    
                     if value != new_value:
                         valores_actualizados += '' if not valores_actualizados else '|'
                         valores_actualizados += field + ":" + str(value) + " con " + str(new_value)
@@ -202,8 +212,7 @@ class Util:
         
             return True
         except Exception as err:
-            print("Error: " + repr(err))
-            return False
+            raise ValidationError ("Error: " + repr(err))
         
     @staticmethod
     def save_auditoria_maestro_detalle(data):
@@ -335,8 +344,8 @@ class Util:
                 auditoria_user.save()
         
             return True
-        except:
-            return False
+        except Exception as err:
+            raise ValidationError ("Error: " + repr(err))
         
     @staticmethod
     def guardar_persona(data):

@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db.models import Q, F
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
-from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
+from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
 from seguridad.utils import Util
 from datetime import datetime
 from rest_framework.permissions import IsAuthenticated
@@ -66,7 +66,7 @@ class UnidadesCCDGetView(generics.ListAPIView):
 
     def get (self, request, id_organigrama):
         nombre = request.query_params.get('nombre', '')
-        unidades_org = self.queryset.filter(nombre__icontains=nombre, id_organigrama=id_organigrama).exclude(cod_agrupacion_documental=None)
+        unidades_org = self.queryset.filter(nombre__icontains=nombre, id_organigrama=id_organigrama, activo=True).exclude(cod_agrupacion_documental=None)
         serializador = self.serializer_class(unidades_org, many=True)
         return Response({'succes': True, 'detail':'Resultados encontrados', 'data':serializador.data}, status=status.HTTP_200_OK)
     
@@ -94,7 +94,9 @@ class UnidadesPermisosGetView(generics.ListAPIView):
     def get_family(self, unidades_hijas):
         unidades_family = []
         for unidad in unidades_hijas:
-            hijas = self.queryset.filter(id_unidad_org_padre=unidad['id_und_organizacional_actual'], cod_agrupacion_documental=None, activo=True).values(
+            hijas = self.queryset.filter(id_unidad_org_padre=unidad['id_und_organizacional_actual']).values(
+                'activo',
+                'cod_agrupacion_documental',
                 id_und_organizacional_actual = F('id_unidad_organizacional'),
                 nombre_und_organizacional_actual = F('nombre'),
                 codigo_und_organizacional_actual = F('codigo')
@@ -111,23 +113,30 @@ class UnidadesPermisosGetView(generics.ListAPIView):
             raise NotFound('El registro del Catalogo Serie Subserie Unidad ingresado no existe')
         
         id_unidad_org_actual_admin_series = cat_serie_und.id_unidad_organizacional.id_unidad_org_actual_admin_series
-        unidades_permisos = PermisosUndsOrgActualesSerieExpCCD.objects.filter(id_cat_serie_und_org_ccd=id_cat_serie_und)
+        unidades_permisos = PermisosUndsOrgActualesSerieExpCCD.objects.filter(id_cat_serie_und_org_ccd=id_cat_serie_und, pertenece_seccion_actual_admin_serie=True)
         
         # OBTENER UNIDAD ADMIN Y FAMILIA
         unidades_data = [
             {
+                'activo':id_unidad_org_actual_admin_series.activo,
+                'cod_agrupacion_documental':id_unidad_org_actual_admin_series.cod_agrupacion_documental,
                 'id_und_organizacional_actual':id_unidad_org_actual_admin_series.id_unidad_organizacional,
                 'nombre_und_organizacional_actual':id_unidad_org_actual_admin_series.nombre,
                 'codigo_und_organizacional_actual':id_unidad_org_actual_admin_series.codigo,
             }
         ]
-        unidades_org = self.queryset.filter(id_unidad_org_padre=id_unidad_org_actual_admin_series.id_unidad_organizacional, cod_agrupacion_documental=None, activo=True).values(
+        unidades_org = self.queryset.filter(id_unidad_org_padre=id_unidad_org_actual_admin_series.id_unidad_organizacional).values(
+            'activo',
+            'cod_agrupacion_documental',
             id_und_organizacional_actual = F('id_unidad_organizacional'),
             nombre_und_organizacional_actual = F('nombre'),
             codigo_und_organizacional_actual = F('codigo')
         )
+        unidades_org = [unidad for unidad in unidades_org if unidad['activo'] and not unidad['cod_agrupacion_documental']]
+        
         unidades_family = self.get_family(unidades_org)
-        unidades_family = unidades_data + list(unidades_org) + unidades_family
+        unidades_family = [unidad for unidad in unidades_family if unidad['activo'] and not unidad['cod_agrupacion_documental']]
+        unidades_family = unidades_data + unidades_org + unidades_family
         
         for unidad in unidades_family:
             unidad['id_permisos_und_org_actual_serie_exp_ccd'] = None
@@ -161,6 +170,79 @@ class UnidadesPermisosGetView(generics.ListAPIView):
         # PENDIENTE VALIDACION SI TIENEN PERMISOS
         return Response({'succes': True, 'detail':'Resultados encontrados', 'data':data}, status=status.HTTP_200_OK)
 
+class UnidadesExternasPermisosGetView(generics.ListAPIView):
+    serializer_class = PermisosGetSerializer 
+    queryset = UnidadesOrganizacionales.objects.filter()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_cat_serie_und):
+        cat_serie_und = CatalogosSeriesUnidad.objects.filter(id_cat_serie_und=id_cat_serie_und).first()
+        if not cat_serie_und:
+            raise NotFound('El registro del Catalogo Serie Subserie Unidad ingresado no existe')
+        
+        id_unidad_org_actual_admin_series = cat_serie_und.id_unidad_organizacional.id_unidad_org_actual_admin_series
+        
+        organigrama_actual = Organigramas.objects.filter(actual=True).first()
+        unidades_organigrama_actual = organigrama_actual.unidadesorganizacionales_set.filter(activo=True)
+        unidades_permisos_clasificadas = PermisosUndsOrgActualesSerieExpCCD.objects.filter(id_cat_serie_und_org_ccd=id_cat_serie_und, pertenece_seccion_actual_admin_serie=False)
+        unidades_permisos_clasificadas_list = list(unidades_permisos_clasificadas.values_list('id_und_organizacional_actual', flat=True)) if unidades_permisos_clasificadas else []
+        
+        unidades_permisos_clasificadas_list.append(id_unidad_org_actual_admin_series.id_unidad_organizacional) 
+        
+        unidades_org_admin_hijas = self.queryset.filter(id_unidad_org_padre=id_unidad_org_actual_admin_series.id_unidad_organizacional).values(
+            'activo',
+            'cod_agrupacion_documental',
+            id_und_organizacional_actual = F('id_unidad_organizacional'),
+            nombre_und_organizacional_actual = F('nombre'),
+            codigo_und_organizacional_actual = F('codigo')
+        )
+        
+        unidades_primera_seccion = UnidadesPermisosGetView()
+        unidades_primera_seccion_family = unidades_primera_seccion.get_family(unidades_org_admin_hijas)
+        
+        unidades_permisos_clasificadas_list = unidades_permisos_clasificadas_list + [unidad['id_und_organizacional_actual'] for unidad in list(unidades_org_admin_hijas) if unidad['activo'] and not unidad['cod_agrupacion_documental']] + [unidad['id_und_organizacional_actual'] for unidad in unidades_primera_seccion_family if unidad['activo'] and not unidad['cod_agrupacion_documental']]
+        
+        unidades_organigrama_actual = unidades_organigrama_actual.exclude(id_unidad_organizacional__in=unidades_permisos_clasificadas_list)
+        
+        # OBTENER UNIDADES
+        unidades_organigrama_actual_data = unidades_organigrama_actual.values(
+            'activo',
+            'cod_agrupacion_documental',
+            id_und_organizacional_actual = F('id_unidad_organizacional'),
+            nombre_und_organizacional_actual = F('nombre'),
+            codigo_und_organizacional_actual = F('codigo')
+        )
+        
+        for unidad in unidades_organigrama_actual_data:
+            unidad['id_permisos_und_org_actual_serie_exp_ccd'] = None
+            unidad['id_cat_serie_und_org_ccd'] = id_cat_serie_und
+            unidad['pertenece_seccion_actual_admin_serie'] = False
+            unidad['crear_expedientes'] = False
+            unidad['crear_documentos_exps_no_propios'] = False
+            unidad['anular_documentos_exps_no_propios'] = False
+            unidad['borrar_documentos_exps_no_propios'] = False
+            unidad['conceder_acceso_documentos_exps_no_propios'] = False
+            unidad['conceder_acceso_expedientes_no_propios'] = False
+            unidad['consultar_expedientes_no_propios'] = False
+            unidad['descargar_expedientes_no_propios'] = False
+            unidad['mostrar'] = True
+            
+        if unidades_permisos_clasificadas:
+            serializador = self.serializer_class(unidades_permisos_clasificadas, many=True)
+            serializador_data = serializador.data
+            
+            serializador_data_id = [unidad['id_und_organizacional_actual'] for unidad in serializador_data]
+            unidades_propias = [unidad for unidad in unidades_organigrama_actual_data if unidad['id_und_organizacional_actual'] not in serializador_data_id]
+            for unidad in unidades_propias:
+                unidad['mostrar'] = False
+            
+            data = serializador_data + unidades_propias
+        else:
+            data = unidades_organigrama_actual_data
+            
+        # PENDIENTE VALIDACION SI TIENEN PERMISOS
+        return Response({'succes': True, 'detail':'Resultados encontrados', 'data':data}, status=status.HTTP_200_OK)
+
 class DenegacionPermisosGetView(generics.ListAPIView):
     serializer_class = DenegacionPermisosGetSerializer 
     queryset = PermisosUndsOrgActualesSerieExpCCD.objects.filter()
@@ -175,15 +257,15 @@ class UnidadesPermisosPutView(generics.UpdateAPIView):
     serializer_class_post = PermisosPostSerializer
     serializer_class_put = PermisosPutSerializer
     serializer_class_post_denegacion = PermisosPostDenegacionSerializer
-    serializer_class_put_denegacion = PermisosPutSerializer
+    serializer_class_put_denegacion = PermisosPutDenegacionSerializer
     queryset = PermisosUndsOrgActualesSerieExpCCD.objects.filter()
     permission_classes = [IsAuthenticated]
     
-    def put_denegacion_permisos(self, request, id_cat_serie_und):
-        data = request.data['denegacion_permisos']
+    def put_restricciones(self, request, id_cat_serie_und):
+        data = request.data['restricciones']
         instance = self.queryset.filter(id_cat_serie_und_org_ccd=id_cat_serie_und, id_und_organizacional_actual=None).first()
         
-        denegacion_permisos_list = [
+        restricciones_list = [
             data['denegar_anulacion_docs'],
             data['denegar_borrado_docs'],
             data['excluir_und_actual_respon_series_doc_restriccion'],
@@ -191,17 +273,24 @@ class UnidadesPermisosPutView(generics.UpdateAPIView):
             data['denegar_conceder_acceso_exp_na_resp_series']
         ]
         
+        if data['excluir_und_actual_respon_series_doc_restriccion']:
+            if not data['denegar_borrado_docs'] and not data['denegar_anulacion_docs']:
+                raise ValidationError('No puede marcar "Excluir a Sección o Subsección Actual Responsable de la Serie Documental, de las Restricciones de Anulación y Borrado" sin marcar por lo menos uno de los siguientes: "Denegar Borrar Documentos", "Denegar Anular Documentos"')
+        else:
+            if data['denegar_borrado_docs'] or data['denegar_anulacion_docs']:
+                raise ValidationError('No puede dejar desmarcado "Excluir a Sección o Subsección Actual Responsable de la Serie Documental, de las Restricciones de Anulación y Borrado" sin desmarcar los siguientes: "Denegar Borrar Documentos", "Denegar Anular Documentos"')
+        
         serializer = None
         
         if instance:
-            if True in denegacion_permisos_list:
+            if True in restricciones_list:
                 serializer = self.serializer_class_put_denegacion(instance, data=data)
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
             else:
                 instance.delete()
         else:
-            if True in denegacion_permisos_list:
+            if True in restricciones_list:
                 serializer = self.serializer_class_post_denegacion(data=data)
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
@@ -212,37 +301,96 @@ class UnidadesPermisosPutView(generics.UpdateAPIView):
 
     def put(self, request, id_cat_serie_und):
         data = request.data['unidades_permisos']
+        
+        cat_serie_und_org_ccd = CatalogosSeriesUnidad.objects.filter(id_cat_serie_und=id_cat_serie_und).first()
+        if not cat_serie_und_org_ccd:
+            raise ValidationError('Debe seleccionar un registro del Catalogo de Serie-Subserie-Unidad existente')
+        
         unidades_permisos_crear = [item for item in data if not item['id_permisos_und_org_actual_serie_exp_ccd']]
         unidades_permisos_actualizar = [item for item in data if item['id_permisos_und_org_actual_serie_exp_ccd']]
         
+        unidad_permiso_list = []
+        
+        usuario = request.user.id_usuario
+        direccion=Util.get_client_ip(request)
+        descripcion = {
+            "NombreCCD": str(cat_serie_und_org_ccd.id_catalogo_serie.id_serie_doc.id_ccd.nombre),
+            "VersionCCD": str(cat_serie_und_org_ccd.id_catalogo_serie.id_serie_doc.id_ccd.version),
+            "NombreSerie": str(cat_serie_und_org_ccd.id_catalogo_serie.id_serie_doc.nombre)
+        }
+        
+        if cat_serie_und_org_ccd.id_catalogo_serie.id_subserie_doc:
+            descripcion['NombreSubserie'] = str(cat_serie_und_org_ccd.id_catalogo_serie.id_subserie_doc.nombre)
+        
+        for unidad_permiso in data:
+            unidad_permiso_list = [
+                unidad_permiso['crear_expedientes'],
+                unidad_permiso['crear_documentos_exps_no_propios'],
+                unidad_permiso['anular_documentos_exps_no_propios'],
+                unidad_permiso['borrar_documentos_exps_no_propios'],
+                unidad_permiso['conceder_acceso_documentos_exps_no_propios'],
+                unidad_permiso['conceder_acceso_expedientes_no_propios'],
+                unidad_permiso['consultar_expedientes_no_propios'],
+                unidad_permiso['descargar_expedientes_no_propios']
+            ]
+            
+            if unidad_permiso['anular_documentos_exps_no_propios'] or unidad_permiso['borrar_documentos_exps_no_propios'] or unidad_permiso['conceder_acceso_documentos_exps_no_propios'] or unidad_permiso['conceder_acceso_expedientes_no_propios'] or unidad_permiso['descargar_expedientes_no_propios']:
+                if not unidad_permiso['consultar_expedientes_no_propios']:
+                    raise ValidationError('Debe marcar "Consultar Expediente" si marcó por lo menos uno de los siguientes: "Anular Documento", "Borrar Documento", "Conceder Acceso a Docs", "Conceder Acceso a Exps", "Descargar Expediente"')
+            
+            if not unidad_permiso['consultar_expedientes_no_propios']:
+                if unidad_permiso['anular_documentos_exps_no_propios'] or unidad_permiso['borrar_documentos_exps_no_propios'] or unidad_permiso['conceder_acceso_documentos_exps_no_propios'] or unidad_permiso['conceder_acceso_expedientes_no_propios'] or unidad_permiso['descargar_expedientes_no_propios']:
+                    raise ValidationError('No puede dejar desmarcado "Consultar Expediente" sin desmarcar los siguientes: "Anular Documento", "Borrar Documento", "Conceder Acceso a Docs", "Conceder Acceso a Exps", "Descargar Expediente"')
+                
         if unidades_permisos_crear:
             # PENDIENTE VALIDAR QUE NO CREE PERMISOS CON TODO EN FALSE
-            unidades_permisos_crear_serializer = self.serializer_class_post(data=unidades_permisos_crear, many=True)
-            unidades_permisos_crear_serializer.is_valid(raise_exception=True)
-            unidades_permisos_crear_serializer.save()
+            if True in unidad_permiso_list:
+                for unidad_permiso in unidades_permisos_crear:
+                    unidades_permisos_crear_serializer = self.serializer_class_post(data=unidad_permiso)
+                    unidades_permisos_crear_serializer.is_valid(raise_exception=True)
+                    unidad_permiso_creada = unidades_permisos_crear_serializer.save()
+                    
+                    descripcion['NombreUnidad'] = unidad_permiso_creada.id_und_organizacional_actual.nombre
+                    # AUDITORIA
+                    auditoria_data = {
+                        "id_usuario" : usuario,
+                        "id_modulo" : 135,
+                        "cod_permiso": "CR",
+                        "subsistema": 'GEST',
+                        "dirip": direccion,
+                        "descripcion": descripcion, 
+                    }
+                    Util.save_auditoria(auditoria_data)
+        
         if unidades_permisos_actualizar:
             for unidad_permiso in unidades_permisos_actualizar:
                 unidad_permiso_instance = self.queryset.filter(id_permisos_und_org_actual_serie_exp_ccd=unidad_permiso['id_permisos_und_org_actual_serie_exp_ccd']).first()
-                unidad_permiso_list = [
-                    unidad_permiso['pertenece_seccion_actual_admin_serie'],
-                    unidad_permiso['crear_expedientes'],
-                    unidad_permiso['crear_documentos_exps_no_propios'],
-                    unidad_permiso['anular_documentos_exps_no_propios'],
-                    unidad_permiso['borrar_documentos_exps_no_propios'],
-                    unidad_permiso['conceder_acceso_documentos_exps_no_propios'],
-                    unidad_permiso['conceder_acceso_expedientes_no_propios'],
-                    unidad_permiso['consultar_expedientes_no_propios'],
-                    unidad_permiso['descargar_expedientes_no_propios']
-                ]
+                previous_unidad_permiso_instance = copy.copy(unidad_permiso_instance)
+                
                 if True in unidad_permiso_list:
                     unidad_permiso_serializer = self.serializer_class_put(unidad_permiso_instance, data=unidad_permiso)
                     unidad_permiso_serializer.is_valid(raise_exception=True)
                     unidad_permiso_serializer.save()
+                    
+                    descripcion['NombreUnidad'] = unidad_permiso_instance.id_und_organizacional_actual.nombre
+                    # AUDITORIA
+                    auditoria_data = {
+                        "id_usuario" : usuario,
+                        "id_modulo" : 135,
+                        "cod_permiso": "AC",
+                        "subsistema": 'GEST',
+                        "dirip": direccion,
+                        "descripcion": descripcion,
+                        "valores_actualizados": {"previous":previous_unidad_permiso_instance, "current":unidad_permiso_instance}
+                    }
+                    Util.save_auditoria(auditoria_data)
+                    
                 else:
                     unidad_permiso_instance.delete()
                 
-        if request.data.get('denegacion_permisos'):
-            self.put_denegacion_permisos(request, id_cat_serie_und)
+        if request.data.get('restricciones'):
+            self.put_restricciones(request, id_cat_serie_und)
         
         # PENDIENTE VALIDACION SI TIENEN PERMISOS
+        
         return Response({'succes': True, 'detail':'Se realizó el guardado correctamente'}, status=status.HTTP_200_OK)

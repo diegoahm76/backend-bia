@@ -1,5 +1,5 @@
 import pytest
-from seguridad.models import EstadoCivil
+from transversal.models.base_models import EstadoCivil
 
 @pytest.mark.django_db
 def test_estado_civil():

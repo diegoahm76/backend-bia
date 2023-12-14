@@ -1,16 +1,5 @@
 from django.contrib import admin
 from .models import (
-    Municipio,
-    Departamento,
-    Paises,
-    EstadoCivil,
-    HistoricoDireccion,
-    Personas,
-    HistoricoEmails,
-    ApoderadoPersona,
-    TipoDocumento,
-    ClasesTercero,
-    ClasesTerceroPersona,
     User,
     HistoricoActivacion,
     OperacionesSobreUsuario,
@@ -22,130 +11,8 @@ from .models import (
     PermisosModulo,
     Auditorias,
     Login,
-    LoginErroneo,
-    Shortener,
-    Cargos
+    LoginErroneo
 )
-
-
-@admin.register(Municipio)
-class MunicipioAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'cod_municipio',)
-    list_display_links = list_display
-    search_fields = (
-        'nombre',
-    )
-    
-
-@admin.register(Departamento)
-class DepartamentoAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'cod_departamento',)
-    list_display_links = list_display
-    search_fields = (
-        'nombre',
-    )
-
-
-@admin.register(Paises)
-class PaisesAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'cod_pais',)
-    list_display_links = list_display
-    search_fields = (
-        'nombre',
-    )
-
-
-@admin.register(EstadoCivil)
-class EstadoCivilAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'cod_estado_civil', 'precargado')
-    list_display_links = list_display
-    search_fields = (
-        'nombre',
-        'cod_estado_civil',
-    )
-
-   
-@admin.register(HistoricoDireccion)
-class HistoricoDireccionAdmin(admin.ModelAdmin):
-    list_display = ('id_persona','direccion','tipo_direccion','fecha_cambio',)
-    list_display_links = list_display
-    search_fields = (
-        'direccion',
-        'id_persona'
-    )
-    filter_fields = (
-        'tipo_direccion',
-    )
-    list_filter = (
-        'tipo_direccion',
-    )
-   
-
-@admin.register(Personas)
-class PersonasAdmin(admin.ModelAdmin):
-    list_display = ('numero_documento', 'email', 'sexo', 'tipo_persona', 'municipio_residencia')
-    list_display_links = list_display
-    search_fields = (
-        'numero_documento', 
-        'email', 
-        'sexo', 
-        'tipo_persona',
-    )
-    list_filter = (
-        'tipo_persona', 
-        'estado_civil', 
-        'sexo',
-    )
-
-
-@admin.register(HistoricoEmails)
-class HistoricoEmailsAdmin(admin.ModelAdmin):
-    list_display = ('id_persona','email_notificacion','fecha_cambio',)
-    list_display_links = list_display
-    search_fields = (
-        'id_persona',
-        'cod_pais_exterior',
-    )
-
-    
-@admin.register(ApoderadoPersona)
-class ApoderadoPersonaAdmin(admin.ModelAdmin):
-    list_display = ('id_proceso','persona_poderdante','persona_apoderada', 'fecha_inicio',)
-    list_display_links = list_display
-    search_fields = (
-        'id_proceso',
-        'persona_poderdante',
-        'persona_apoderada',
-    )
-    list_filter = ('fecha_inicio',)
-
-
-@admin.register(TipoDocumento)
-class TipoDocumentoAdmin(admin.ModelAdmin):
-    list_display = ('cod_tipo_documento','nombre', 'precargado')
-    list_display_links = list_display
-    search_fields = (
-        'nombre',
-    )
-    
-    
-@admin.register(ClasesTercero)
-class ClasesTerceroAdmin(admin.ModelAdmin):
-    list_display = ('id_clase_tercero','nombre', )
-    list_display_links = list_display
-    search_fields = (
-        'nombre',
-    )
-
-
-@admin.register(ClasesTerceroPersona)
-class ClasesTerceroPersonaAdmin(admin.ModelAdmin):
-    list_display = ('id_persona','id_clase_tercero',)
-    list_display_links = list_display
-    search_fields = (
-        'id_persona',
-        'id_clase_tercero',
-    )
     
     
 @admin.register(User)
@@ -262,15 +129,4 @@ class LoginAdmin(admin.ModelAdmin):
 @admin.register(LoginErroneo)
 class LoginErroneoAdmin(admin.ModelAdmin):
     list_display = ('id_usuario','dirip', 'dispositivo_conexion', 'contador',)
-    list_display_links = list_display
-    
-    
-@admin.register(Shortener)
-class ShortenerAdmin(admin.ModelAdmin):
-    list_display = ('long_url','short_url',)
-    list_display_links = list_display
-    
-@admin.register(Cargos)
-class CargosAdmin(admin.ModelAdmin):
-    list_display = ('id_cargo','nombre',)
     list_display_links = list_display

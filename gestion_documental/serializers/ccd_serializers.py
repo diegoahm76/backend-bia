@@ -6,7 +6,10 @@ from gestion_documental.models.ccd_models import (
     SeriesDoc,
     SubseriesDoc,
     CatalogosSeries,
-    CatalogosSeriesUnidad
+    CatalogosSeriesUnidad,
+    UnidadesSeccionPersistenteTemporal,
+    AgrupacionesDocumentalesPersistenteTemporal,
+    UnidadesSeccionResponsableTemporal
 )
 from gestion_documental.models.trd_models import (
     TablaRetencionDocumental
@@ -424,3 +427,135 @@ class BusquedaCCDSerializer(serializers.ModelSerializer):
     class Meta:
         model = CuadrosClasificacionDocumental
         fields ='__all__'
+
+class BusquedaCCDHomologacionSerializer(serializers.ModelSerializer):
+    id_organigrama = serializers.ReadOnlyField(source='id_organigrama.id_organigrama',default=None)
+    nombre_organigrama = serializers.ReadOnlyField(source='id_organigrama.nombre',default=None)
+    version_organigrama = serializers.ReadOnlyField(source='id_organigrama.version',default=None)
+    usado = serializers.SerializerMethodField()
+    mismo_organigrama = serializers.SerializerMethodField()
+
+    def get_mismo_organigrama(self,obj):
+        ccd_actual = CuadrosClasificacionDocumental.objects.filter(actual=True).first()
+        mismo_organigrama = True if obj.id_organigrama.id_organigrama == ccd_actual.id_organigrama.id_organigrama else False
+        return mismo_organigrama
+    
+    def get_usado(self,obj):
+        trd = TablaRetencionDocumental.objects.filter(id_ccd=obj.id_ccd)
+        usado = True if trd else False
+        return usado
+
+    class Meta:
+        model = CuadrosClasificacionDocumental
+        fields = ['id_ccd', 'nombre', 'version', 'usado', 'fecha_terminado', 'id_organigrama', 'nombre_organigrama', 'version_organigrama', 'mismo_organigrama']
+
+class SeriesDocUnidadHomologacionesSerializer(serializers.ModelSerializer):
+    id_organigrama = serializers.ReadOnlyField(source='id_organigrama.id_organigrama',default=None)
+
+    class Meta:
+        model = UnidadesOrganizacionales
+        fields = ['id_unidad_organizacional', 'codigo', 'nombre', 'id_organigrama']
+
+class SeriesDocUnidadCatSerieHomologacionesSerializer(serializers.ModelSerializer):
+    id_serie = serializers.ReadOnlyField(source='id_catalogo_serie.id_serie_doc.id_serie_doc',default=None)
+    cod_serie = serializers.ReadOnlyField(source='id_catalogo_serie.id_serie_doc.codigo',default=None)
+    nombre_serie = serializers.ReadOnlyField(source='id_catalogo_serie.id_serie_doc.nombre',default=None)
+    id_subserie = serializers.ReadOnlyField(source='id_catalogo_serie.id_subserie_doc.id_subserie_doc',default=None)
+    cod_subserie = serializers.ReadOnlyField(source='id_catalogo_serie.id_subserie_doc.codigo',default=None)
+    nombre_subserie = serializers.ReadOnlyField(source='id_catalogo_serie.id_subserie_doc.nombre',default=None)
+
+    class Meta:
+        model = CatalogosSeriesUnidad
+        fields = ['id_unidad_organizacional', 'id_cat_serie_und', 'id_serie', 'cod_serie', 'nombre_serie', 'id_subserie', 'cod_subserie', 'nombre_subserie']
+
+class UnidadesSeccionPersistenteTemporalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UnidadesSeccionPersistenteTemporal
+        fields = '__all__'
+
+class AgrupacionesDocumentalesPersistenteTemporalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AgrupacionesDocumentalesPersistenteTemporal
+        fields = '__all__'
+
+
+class UnidadesSeccionPersistenteTemporalGetSerializer(serializers.ModelSerializer):
+    id_unidad_actual = serializers.ReadOnlyField(source='id_unidad_seccion_actual.id_unidad_organizacional',default=None)
+    cod_unidad_actual = serializers.ReadOnlyField(source='id_unidad_seccion_actual.codigo',default=None)
+    nom_unidad_actual = serializers.ReadOnlyField(source='id_unidad_seccion_actual.nombre',default=None)
+    id_organigrama_unidad_actual = serializers.ReadOnlyField(source='id_unidad_seccion_actual.id_organigrama.id_organigrama',default=None)
+    id_unidad_nueva = serializers.ReadOnlyField(source='id_unidad_seccion_nueva.id_unidad_organizacional',default=None)
+    cod_unidad_nueva = serializers.ReadOnlyField(source='id_unidad_seccion_nueva.codigo',default=None)
+    nom_unidad_nueva = serializers.ReadOnlyField(source='id_unidad_seccion_nueva.nombre',default=None)
+    id_organigrama_unidad_nueva = serializers.ReadOnlyField(source='id_unidad_seccion_nueva.id_organigrama.id_organigrama',default=None)
+    iguales = serializers.SerializerMethodField()
+    tiene_agrupaciones = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UnidadesSeccionPersistenteTemporal
+        fields = ['id_unidad_seccion_temporal','id_unidad_actual',
+                  'cod_unidad_actual','nom_unidad_actual',
+                  'id_organigrama_unidad_actual','id_unidad_nueva',
+                  'cod_unidad_nueva','nom_unidad_nueva',
+                  'id_organigrama_unidad_nueva','iguales',
+                  'tiene_agrupaciones']
+        
+    def get_tiene_agrupaciones(self,obj):
+        agrupaciones = AgrupacionesDocumentalesPersistenteTemporal.objects.filter(id_unidad_seccion_temporal=obj.id_unidad_seccion_temporal)
+        tiene_agrupaciones = True if agrupaciones else False
+        return tiene_agrupaciones
+    
+    def get_iguales(self, obj):
+        iguales = True if obj.id_unidad_seccion_actual.nombre == obj.id_unidad_seccion_nueva.nombre else False
+        return iguales
+        
+        
+class UnidadesSeccionResponsableTemporalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UnidadesSeccionResponsableTemporal
+        fields = '__all__'
+
+class UnidadesSeccionResponsableTemporalGetSerializer(serializers.ModelSerializer):
+    cod_unidad_actual = serializers.ReadOnlyField(source='id_unidad_seccion_actual.codigo',default=None)
+    nom_unidad_actual = serializers.ReadOnlyField(source='id_unidad_seccion_actual.nombre',default=None)
+    cod_unidad_nueva = serializers.ReadOnlyField(source='id_unidad_seccion_nueva.codigo',default=None)
+    nom_unidad_nueva = serializers.ReadOnlyField(source='id_unidad_seccion_nueva.nombre',default=None)
+
+    class Meta:
+        model = UnidadesSeccionResponsableTemporal
+        fields = ['id_unidad_seccion_responsable_temporal', 'id_unidad_seccion_actual',
+                  'cod_unidad_actual', 'nom_unidad_actual',
+                  'id_unidad_seccion_nueva', 'cod_unidad_nueva',
+                  'nom_unidad_nueva']
+        
+class OficinaUnidadOrganizacionalSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = UnidadesOrganizacionales
+        fields = ['id_unidad_organizacional', 'codigo', 'nombre']
+
+
+class OficinasDelegacionTemporalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UnidadesSeccionResponsableTemporal
+        fields = '__all__'
+
+#   LLAMADO DE SERIALIZADOR DENTRO DE OTRO SERIALIZADOR CON RELACION
+# class SeriesDocSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = SeriesDoc
+#         fields = ['id_serie_doc', 'codigo', 'nombre']
+
+# class SubseriesDocSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = SubseriesDoc
+#         fields = ['id_subserie_doc', 'codigo', 'nombre']
+
+# class CompararSeriesDocUnidadCatSerieSerializer(serializers.ModelSerializer):
+#     serie = SeriesDocSerializer(source='id_catalogo_serie.id_serie_doc', read_only=True)
+#     subserie = SubseriesDocSerializer(source='id_catalogo_serie.id_subserie_doc', read_only=True)
+
+#     class Meta:
+#         model = CatalogosSeriesUnidad
+#         fields = ['id_unidad_organizacional', 'id_catalogo_serie', 'serie', 'subserie']
+

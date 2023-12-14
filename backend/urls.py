@@ -66,23 +66,40 @@ urlpatterns = [
     path('api/transversal/choices/', include('transversal.urls.choices_urls')),
     path('api/transversal/vinculacion/',include('transversal.urls.vinculacion_urls')),
     path('api/transversal/organigrama/', include('transversal.urls.organigrama_urls')),
+    path('api/transversal/organigrama/activacion/', include('transversal.urls.activacion_organigrama_urls')),
     path('api/transversal/notificaciones/', include('transversal.urls.notificaciones_urls')),
     path('api/transversal/configuracion/',include('transversal.urls.configuracionEntidades_urls')),
     path('api/transversal/sucursales/',include('transversal.urls.sucursalesEmpresas_urls')),
     path('api/transversal/lideres/',include('transversal.urls.lideres_urls')),
     path('api/transversal/alertas/',include('transversal.urls.alertas_urls')),
+    
 
 
     #GESTOR DOCUMENTAL
     path('api/gestor/ccd/', include('gestion_documental.urls.ccd_urls')),
     path('api/gestor/activar/', include('gestion_documental.urls.finalizar_urls')),
+    path('api/gestor/ccd/activacion/', include('gestion_documental.urls.activacion_ccd_urls')),
     path('api/gestor/trd/', include('gestion_documental.urls.trd_urls')),
     path('api/gestor/tca/', include('gestion_documental.urls.tca_urls')),
     path('api/gestor/choices/', include('gestion_documental.urls.choices_urls')),
     path('api/gestor/ventanilla/',include('gestion_documental.urls.ventanilla_urls')),
     path('api/gestor/depositos-archivos/',include('gestion_documental.urls.depositos_archivo_urls')),
+    path('api/gestor/expedientes-archivos/',include('gestion_documental.urls.expedientes_url')),
     path('api/gestor/adminitrador_radicados/',include('gestion_documental.urls.tipos_radicados_consecutivos_url')),
+    path('api/gestor/pqr/',include('gestion_documental.urls.pqr_urls')),
+    path('api/gestor/encuestas/',include('gestion_documental.urls.encuentas_urls')),
     path('api/gestor/permisos/',include('gestion_documental.urls.permisos_urls')),
+    path('api/gestor/ctrl-acceso/',include('gestion_documental.urls.ctrl_acceso_urls')),
+    path('api/gestor/metadatos/',include('gestion_documental.urls.metadatos_urls')),
+    path('api/gestor/plantillas/',include('gestion_documental.urls.plantillas_urls')),
+    path('api/gestor/configuracion-tiempos-respuesta-accion/',include('gestion_documental.urls.configuracion_tiempos_respuesta_urls')),
+    path('api/gestor/configuracion-tipos-expendientes/',include('gestion_documental.urls.conf__tipos_exp_urls')),
+    path('api/gestor/resportes-permisos-doc/',include('gestion_documental.urls.documentacion_permisos_urls')),
+    path('api/gestor/panel_ventanilla/',include('gestion_documental.urls.panel_ventanilla_urls')),
+    path('api/gestor/radicados/',include('gestion_documental.urls.radicados_urls')),
+    path('api/gestor/central-digitalizacion/',include('gestion_documental.urls.central_digitalizacion_urls')),
+    path('api/gestor/complementos-pqr/',include('gestion_documental.urls.complementos_pqr_urls')),
+    
     
     #ALMACEN
     path('api/almacen/hoja-de-vida/', include('almacen.urls.hoja_de_vida_urls')),
@@ -95,6 +112,8 @@ urlpatterns = [
     path('api/almacen/choices/', include('almacen.urls.choices_urls')),
     path('api/almacen/mantenimientos/', include('almacen.urls.mantenimientos_urls')),
     path('api/almacen/vehiculos/', include('almacen.urls.vehiculos_urls')),
+    path('api/almacen/inventario/', include('almacen.urls.inventario_urls')),
+    path('api/almacen/reportes/', include('almacen.urls.reportes_urls')),
     
     # CONSERVACIÓN
     path('api/conservacion/choices/', include('conservacion.urls.choices_urls')),
@@ -133,14 +152,25 @@ urlpatterns = [
     path('api/recaudo/liquidaciones/', include('recaudo.urls.liquidaciones_urls')),
     path('api/recaudo/procesos/', include('recaudo.urls.procesos_urls')),
     path('api/recaudo/cobros/', include('recaudo.urls.cobros_urls')),
+    path('api/recaudo/configuracion_baisca/', include('recaudo.urls.registros_configuracion_url')),
 
     #RECURSO HIDRICO
     path('api/hidrico/programas/',include('recurso_hidrico.urls.programas_urls')),
     path('api/hidrico/bibliotecas/',include('recurso_hidrico.urls.bibliotecas_urls')),
+    path('api/hidrico/zonas-hidricas/',include('recurso_hidrico.urls.zonas_hidricas_urls')),
 
     # path('auth/', auth, name='social-auth'),
     # path('complete/', login_required(complete), name='social-auth-complete'),
     # path('oidc_login/', views.oidc_login, name='oidc_login'),
+
+    # SEGUIMIENTO PLANES
+    path('api/seguimiento/planes/',include('seguimiento_planes.urls.planes_urls')),
+    path('api/seguimiento-planes/',include('seguimiento_planes.urls.seguimiento_urls')),
+    
+    # TRAMITES
+    path('api/tramites/',include('tramites.urls.tramites_urls')),
+    path('api/tramites/choices/',include('tramites.urls.choices_urls')),
+
 
     
 ]

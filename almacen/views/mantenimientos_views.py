@@ -3,6 +3,7 @@ from rest_framework import generics, status
 from rest_framework.views import APIView
 from seguridad.utils import Util
 from almacen.serializers.mantenimientos_serializers import (
+    ControlMantenimientosProgramadosGetListSerializer,
     SerializerProgramacionMantenimientos,
     SerializerRegistroMantenimientos,
     AnularMantenimientoProgramadoSerializer,
@@ -24,7 +25,7 @@ from almacen.models.bienes_models import (
 from almacen.models.hoja_de_vida_models import (
     HojaDeVidaVehiculos
 )
-from seguridad.models import (
+from transversal.models.personas_models import (
     Personas
 )
 from almacen.models.inventario_models import (
@@ -111,9 +112,9 @@ class AnularMantenimientoProgramado(generics.RetrieveUpdateAPIView):
             valores_actualizados={'previous':mantenimiento_previous, 'current':mantenimiento}
             id_modulo = 0
             
-            if bien.cod_tipo_activo == 'Com':
+            if bien.cod_tipo_activo and bien.cod_tipo_activo.cod_tipo_activo == 'Com':
                 id_modulo = 21
-            elif bien.cod_tipo_activo == 'Veh':
+            elif bien.cod_tipo_activo and bien.cod_tipo_activo.cod_tipo_activo == 'Veh':
                 id_modulo = 22
             else:
                 id_modulo = 23
@@ -243,23 +244,28 @@ class DeleteRegistroMantenimiento(generics.DestroyAPIView):
         if registro_mantenimiento:
             inventario_bien = Inventario.objects.filter(id_bien=registro_mantenimiento.id_articulo.id_bien).first()
             if inventario_bien.tipo_doc_ultimo_movimiento == 'MANT' and inventario_bien.id_registro_doc_ultimo_movimiento == int(pk):
-                inventario_bien.id_registro_doc_ultimo_movimiento = registro_mantenimiento.id_reg_doc_anterior_mov
+                inventario_bien.id_registro_doc_ultimo_movimiento = registro_mantenimiento.id_reg_en_doc_anterior_mov
                 inventario_bien.tipo_doc_ultimo_movimiento = registro_mantenimiento.tipo_doc_anterior_mov
                 inventario_bien.fecha_ultimo_movimiento = registro_mantenimiento.fecha_estado_anterior
                 inventario_bien.cod_estado_activo = registro_mantenimiento.cod_estado_anterior
                 inventario_bien.save()
+                
+                if registro_mantenimiento.id_programacion_mtto:
+                    registro_mantenimiento.id_programacion_mtto.ejecutado = False
+                    registro_mantenimiento.id_programacion_mtto.save()
+                
                 registro_mantenimiento.delete()
                 
                 # Auditoria
                 bien = CatalogoBienes.objects.filter(id_bien=registro_mantenimiento.id_articulo.id_bien).first()
                 usuario = request.user.id_usuario
-                descripcion = {"nombre": str(bien.nombre), "serial": str(bien.doc_identificador_nro)}
+                descripcion = {"NombreBien": str(bien.nombre), "Serial": str(bien.doc_identificador_nro)}
                 direccion=Util.get_client_ip(request)
                 id_modulo = 0
             
-                if bien.cod_tipo_activo == 'Com':
+                if bien.cod_tipo_activo and bien.cod_tipo_activo.cod_tipo_activo == 'Com':
                     id_modulo = 24
-                elif bien.cod_tipo_activo == 'Veh':
+                elif bien.cod_tipo_activo and bien.cod_tipo_activo.cod_tipo_activo == 'Veh':
                     id_modulo = 25
                 else:
                     id_modulo = 26
@@ -309,9 +315,9 @@ class UpdateRegistroMantenimiento(generics.UpdateAPIView):
                 direccion=Util.get_client_ip(request)
                 id_modulo = 0
             
-                if bien.cod_tipo_activo == 'Com':
+                if bien.cod_tipo_activo and bien.cod_tipo_activo.cod_tipo_activo == 'Com':
                     id_modulo = 24
-                elif bien.cod_tipo_activo == 'Veh':
+                elif bien.cod_tipo_activo and bien.cod_tipo_activo.cod_tipo_activo == 'Veh':
                     id_modulo = 25
                 else:
                     id_modulo = 26
@@ -505,7 +511,7 @@ class ValidarFechasProgramacion(generics.CreateAPIView):
                 vehiculo = CatalogoBienes.objects.filter(id_bien=int(datos_ingresados['id_articulo'])).values().first()
                 if not vehiculo:
                     raise ValidationError('Debe ingresar el id de un articulo existente')
-                if vehiculo['cod_tipo_activo'] != 'Veh':
+                if vehiculo['cod_tipo_activo_id'] != 'Veh':
                     raise ValidationError('No se puedeprogramar por kilometraje un tipo de activo diferente a un vehículo')
                 # if not datos_ingresados['desde'].isdigit() or not datos_ingresados['hasta'].isdigit() or not datos_ingresados['cada'].isdigit():
                 #     raise ValidationError('En desde, cada o hasta debe ingresar un número entero')
@@ -545,7 +551,7 @@ class CreateProgramacionMantenimiento(generics.CreateAPIView):
                 raise ValidationError('El artículo no tiene hoja de vida por lo que no se puede programar mantenimiento')
             if articulo['cod_tipo_bien'] != 'A':
                 raise ValidationError('Para programar un mantenimiento el bien debe ser un activo fijo')
-            if articulo['cod_tipo_activo'] != 'Com' and articulo['cod_tipo_activo'] != 'Veh' and articulo['cod_tipo_activo'] != 'OAc':
+            if articulo['cod_tipo_activo_id'] != 'Com' and articulo['cod_tipo_activo_id'] != 'Veh' and articulo['cod_tipo_activo_id'] != 'OAc':
                 raise ValidationError('Para programar un mantenimiento el bien debe ser de tipo computador, vehiculo u otro tipo de activo')
             if articulo['nivel_jerarquico'] != 5:
                 raise ValidationError('Para programar un mantenimiento el bien debe ser de nivel 5')
@@ -618,13 +624,13 @@ class CreateProgramacionMantenimiento(generics.CreateAPIView):
                     if int(aux_v_f_p_2[2]) <= 0 or int(aux_v_f_p_2[2]) >= 31:
                             raise ValidationError('Abril, Junio, Septiembre y Noviembre solo pueden tener entre 1 y 30 días')
                 i['fecha_programada'] = (datetime.strptime(i['fecha_programada'], '%Y-%m-%d')).date()
-                i['fecha_generada'] = date.today()
+                i['fecha_generada'] = datetime.now().date()
                 i['fecha_solicitud'] = (datetime.strptime(i['fecha_solicitud'], '%Y-%m-%d')).date()
                 a = i['fecha_generada'] - i['fecha_programada']
                 if (i['fecha_generada'] > i['fecha_solicitud']) or (i['fecha_generada'] > i['fecha_programada']) or (i['fecha_solicitud'] > i['fecha_programada']):
                     raise ValidationError('La fecha de programación y la fecha de solicitud no pueden ser menores a la fecha de hoy')
                 
-            i['fecha_generada'] = date.today()
+            i['fecha_generada'] = datetime.now()
             
             serializer = self.get_serializer(data=i)
             serializer.is_valid(raise_exception=True)
@@ -702,14 +708,14 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
         
         cod_estado_final = EstadosArticulo.objects.filter(cod_estado=datos_ingresados['cod_estado_final'])
         persona_realiza = Personas.objects.filter(id_persona=datos_ingresados['id_persona_realiza']).values().filter()
-        datos_ingresados['id_persona_diligencia'] = request.user.id_usuario
+        datos_ingresados['id_persona_diligencia'] = request.user.persona.id_persona
         if not articulo:
             raise NotFound('Ingrese un articulo válido. Debe ser activo fijo, de nivel jerarquico 5 y un elemento')
         if not articulo['tiene_hoja_vida']:
             raise PermissionDenied('El artículo no tiene hoja de vida por lo que no se puede registrar mantenimiento')
         if articulo['cod_tipo_bien'] != 'A':
             raise NotFound('Para registrar un mantenimiento el bien debe ser un activo fijo')
-        if articulo['cod_tipo_activo'] != 'Com' and articulo['cod_tipo_activo'] != 'Veh' and articulo['cod_tipo_activo'] != 'OAc':
+        if articulo['cod_tipo_activo_id'] != 'Com' and articulo['cod_tipo_activo_id'] != 'Veh' and articulo['cod_tipo_activo_id'] != 'OAc':
             raise NotFound('Para registrar un mantenimiento el bien debe ser de tipo computador, vehiculo u otro tipo de activo')
         if articulo['nivel_jerarquico'] != 5:
             raise NotFound('Para registrar un mantenimiento el bien debe ser de nivel 5')
@@ -726,7 +732,7 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
             programacion_mantenimientos = ProgramacionMantenimientos.objects.filter(id_programacion_mtto = datos_ingresados['id_programacion_mtto']).values().first() 
             if not programacion_mantenimientos:
                 raise NotFound('El id de programación de mantenimientos no existe')
-            if programacion_mantenimientos['id_articulo_id'] != id_articulo:
+            if programacion_mantenimientos['id_articulo_id'] != int(id_articulo):
                 raise ValidationError('El id de programación de mantenimientos no tiene relación con el artículo enviado')
         else:
             programacion_mantenimientos = None
@@ -750,12 +756,32 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
             raise NotFound('El bien seleeccionado no tiene movimientos registrados')
         if aux_fecha.days < 0:
             raise PermissionDenied('No se puede registrar el mantenimiento debido a que La fecha del registro del mantenimiento debe ser POSTERIOR O IGUAL a la fecha en la cual fue actualizado el estado anterior del activo')
-        datos_ingresados['cod_estado_anterior'] = inventario.cod_estado_activo
+        
+        datos_ingresados['cod_estado_anterior'] = inventario.cod_estado_activo.cod_estado
         datos_ingresados['fecha_estado_anterior'] = inventario.fecha_ultimo_movimiento
+        datos_ingresados['tipo_doc_anterior_mov'] = inventario.tipo_doc_ultimo_movimiento
+        datos_ingresados['id_reg_en_doc_anterior_mov'] = inventario.id_registro_doc_ultimo_movimiento
+        
         inventario.fecha_ultimo_movimiento = datos_ingresados['fecha_registrado']
-        inventario.cod_estado_activo = datos_ingresados['cod_estado_final']
-        inventario.save()        
+        inventario.cod_estado_activo = cod_estado_final.first()
+        
         serializer = self.get_serializer(data=datos_ingresados)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        registro_mantenimiento = serializer.save()
+        
+        inventario.id_registro_doc_ultimo_movimiento = registro_mantenimiento.pk
+        inventario.tipo_doc_ultimo_movimiento = 'MANT'
+        inventario.save()        
+        
         return Response({'success':True, 'detail':'Mantenimiento registrado con éxito'}, status=status.HTTP_200_OK)
+    
+class ControlMantenimientosProgramadosGetListView(generics.ListAPIView):
+    serializer_class=ControlMantenimientosProgramadosGetListSerializer
+    queryset=ProgramacionMantenimientos.objects.filter(ejecutado=False)
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        mantenimientos_programados = self.queryset.all()
+        serializer = self.serializer_class(mantenimientos_programados, many=True)
+
+        return Response({'success':True,'detail':'Se encontró la siguiente información','data':serializer.data},status=status.HTTP_200_OK)

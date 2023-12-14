@@ -1,18 +1,21 @@
 from django.db import models
+from transversal.models.base_models import (Municipio)
 
-from seguridad.models import Municipio, Paises
+from transversal.models.base_models import Paises
 from transversal.models.entidades_models import SucursalesEmpresas
+from gestion_documental.models.expedientes_models import ExpedientesDocumentales
+
 
 #DEPOSITOS
 class Deposito(models.Model):
-    id_deposito = models.AutoField(primary_key=True,null=False, db_column='T230IdDeposito')
-    nombre_deposito = models.CharField(max_length=100, db_column='T230nombreDeposito',null=False)
-    identificacion_por_entidad = models.CharField(max_length=10, db_column='T230identificacionPorEntidad',null=False)
-    orden_ubicacion_por_entidad = models.SmallIntegerField(db_column='T230ordenUbicacionPorEntidad',null=False)
-    direccion_deposito = models.CharField(max_length=255, db_column='T230direccionDeposito',null=False)
-    cod_municipio_nal = models.ForeignKey(Municipio, on_delete=models.CASCADE, db_column='T230Cod_MunicipioNal',null=True)
-    cod_pais_exterior = models.ForeignKey(Paises, on_delete=models.CASCADE, db_column='T230Cod_PaisExterior',null=True)
-    id_sucursal_entidad = models.ForeignKey(SucursalesEmpresas, on_delete=models.CASCADE, db_column='T230Id_SucursalEntidad',null=False)
+    id_deposito = models.AutoField(primary_key=True, db_column='T230IdDeposito')
+    nombre_deposito = models.CharField(max_length=100, db_column='T230nombreDeposito')
+    identificacion_por_entidad = models.CharField(max_length=10, db_column='T230identificacionPorEntidad')
+    orden_ubicacion_por_entidad = models.SmallIntegerField(db_column='T230ordenUbicacionPorEntidad')
+    direccion_deposito = models.CharField(max_length=255, db_column='T230direccionDeposito')
+    cod_municipio_nal = models.ForeignKey(Municipio, on_delete=models.SET_NULL, db_column='T230Cod_MunicipioNal',null=True)
+    cod_pais_exterior = models.ForeignKey(Paises, on_delete=models.SET_NULL, db_column='T230Cod_PaisExterior',null=True)
+    id_sucursal_entidad = models.ForeignKey(SucursalesEmpresas, on_delete=models.CASCADE, db_column='T230Id_SucursalEntidad')
     activo = models.BooleanField(db_column='T230activo')
 
     def __str__(self):
@@ -46,7 +49,7 @@ class BandejaEstante(models.Model):
     id_bandeja_estante = models.AutoField(primary_key=True, null=False, db_column='T232IdBandeja_Estante')
     id_estante_deposito = models.ForeignKey(EstanteDeposito, on_delete=models.CASCADE, db_column='T232Id_Estante_Deposito')
     identificacion_por_estante = models.CharField(max_length=10, db_column='T232identificacionPorEstante')
-    orden_ubicacion_por_estante = models.SmallIntegerField(db_column='T232ordenUbicacionPorEstante', null=True)
+    orden_ubicacion_por_estante = models.SmallIntegerField(db_column='T232ordenUbicacionPorEstante')
 
     def __str__(self):
         return str(self.orden_ubicacion_por_estante)
@@ -62,7 +65,7 @@ class CajaBandeja(models.Model):
     id_caja_bandeja= models.AutoField(primary_key=True, null=False, db_column='T233IdCaja_Bandeja')
     id_bandeja_estante =models.ForeignKey(BandejaEstante, on_delete=models.CASCADE, db_column='T233Id_Bandeja_Estante')
     identificacion_por_bandeja=models.CharField(max_length=10, db_column='T233identificacionPorBandeja')
-    orden_ubicacion_por_bandeja  = models.SmallIntegerField(db_column='T233ordenUbicacionPorBandeja', null=True)
+    orden_ubicacion_por_bandeja  = models.SmallIntegerField(db_column='T233ordenUbicacionPorBandeja', )
     
     class Meta:
         db_table = 'T233Cajas_Bandeja'
@@ -76,9 +79,10 @@ class CarpetaCaja(models.Model):
     id_caja_bandeja = models.ForeignKey(CajaBandeja, on_delete=models.CASCADE, db_column='T234Id_Caja_Bandeja')
     identificacion_por_caja = models.CharField(max_length=10, db_column='T234identificacionPorCaja')
     orden_ubicacion_por_caja = models.SmallIntegerField(db_column='T234ordenUbicacionPorCaja')
-    id_expediente = models.SmallIntegerField(null=True, db_column='T234Id_Expediente')
-    id_prestamo_expediente = models.SmallIntegerField(null=True, db_column='T234Id_PrestamoExpediente')
-    # T234Id_PrestamoExpediente & T234Id_Expediente cambiar en modelo cuando se genere el tabla de expediente (kc)
+    id_expediente = models.ForeignKey(ExpedientesDocumentales,null=True, blank=True, on_delete=models.SET_NULL, db_column='T234Id_Expediente')
+    id_prestamo_expediente = models.SmallIntegerField(null=True, blank=True, db_column='T234Id_PrestamoExpediente')
+
+    # T234Id_PrestamoExpediente  cambiar en modelo cuando se genere el tabla de expediente (kc)
     class Meta:
         db_table = 'T234Carpetas_Caja'
         verbose_name = 'Carpeta en Caja'

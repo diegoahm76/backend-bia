@@ -1,6 +1,6 @@
 from almacen.models.generics_models import UnidadesMedida
 from almacen.models.inventario_models import TiposEntradas
-from seguridad.serializers.personas_serializers import PersonasSerializer
+from transversal.serializers.personas_serializers import PersonasSerializer
 from almacen.models.generics_models import Magnitudes
 from almacen.models.inventario_models import Inventario
 from rest_framework import serializers
@@ -17,6 +17,23 @@ class CatalogoBienesSerializer(serializers.ModelSerializer):
     class Meta:
         model= CatalogoBienes
         fields='__all__'
+
+# class CatalogoBienesCreateSerializer(serializers.ModelSerializer):
+#     marca=serializers.ReadOnlyField(source='id_marca.nombre',default=None)
+#     nombre_padre=serializers.ReadOnlyField(source='id_bien_padre.nombre',default=None)
+#     unidad_medida=serializers.ReadOnlyField(source='id_unidad_medida.abreviatura',default=None)
+#     unidad_medida_vida_util=serializers.ReadOnlyField(source='id_unidad_medida_vida_util.abreviatura',default=None)
+#     porcentaje_iva=serializers.ReadOnlyField(source='id_porcentaje_iva.porcentaje',default=None)
+    
+#     class Meta:
+#         model= CatalogoBienes
+#         fields='__all__'
+
+
+#     def get_hijos_bien(self, bien_padre):
+
+#         hijos_bien = CatalogoBienes.objects.filter(id_bien_padre=bien_padre)
+#         return hijos_bien
 
 class CatalogoBienesActivoFijoPutSerializer(serializers.ModelSerializer):
     doc_identificador_bien = serializers.CharField(source='doc_identificador_nro')
@@ -40,7 +57,6 @@ class EntradaCreateSerializer(serializers.ModelSerializer):
             'id_creador': {'required': True}
         }
 
-
 class EntradaUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model= EntradasAlmacen
@@ -63,7 +79,6 @@ class EntradaUpdateSerializer(serializers.ModelSerializer):
             "id_persona_ult_act_dif_creador":{'read_only': True},
         }
 
-
 class CreateUpdateItemEntradaConsumoSerializer(serializers.ModelSerializer):
     class Meta:
         model= ItemEntradaAlmacen
@@ -84,7 +99,6 @@ class CreateUpdateItemEntradaConsumoSerializer(serializers.ModelSerializer):
             'valor_total_item': {'required': True},
             'id_bodega': {'required': True}
         }
-
 
 class SerializerItemEntradaConsumo(serializers.ModelSerializer):
     class Meta:
@@ -170,7 +184,6 @@ class SerializerUpdateItemEntradaActivosFijos(serializers.ModelSerializer):
             'cod_estado': {'required': True}
         }
 
-
 class ItemEntradaSerializer(serializers.ModelSerializer):
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
     nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
@@ -191,3 +204,15 @@ class EntradaSerializer(serializers.ModelSerializer):
     class Meta:
         model = EntradasAlmacen
         fields = '__all__'
+
+
+class CatalagoBienesYSerializer(serializers.ModelSerializer):
+    marca=serializers.ReadOnlyField(source='id_marca.nombre',default=None)
+    nombre_padre=serializers.ReadOnlyField(source='id_bien_padre.nombre',default=None)
+    unidad_medida=serializers.ReadOnlyField(source='id_unidad_medida.abreviatura',default=None)
+    unidad_medida_vida_util=serializers.ReadOnlyField(source='id_unidad_medida_vida_util.abreviatura',default=None)
+    porcentaje_iva=serializers.ReadOnlyField(source='id_porcentaje_iva.porcentaje',default=None)
+    
+    class Meta:
+        model= CatalogoBienes
+        fields='__all__'

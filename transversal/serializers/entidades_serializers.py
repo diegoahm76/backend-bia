@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from seguridad.serializers.personas_serializers import PersonasSerializer
+from transversal.serializers.personas_serializers import PersonasSerializer
 from transversal.models.entidades_models import ConfiguracionEntidad, HistoricoPerfilesEntidad, SucursalesEmpresas
-from seguridad.models import Personas
+from transversal.models.personas_models import Personas
 
 
 
@@ -37,9 +37,10 @@ class SucursalesEmpresasPostSerializer(serializers.ModelSerializer):
 class SucursalesEmpresasPutSerializer(serializers.ModelSerializer):    
     class Meta:
         model = SucursalesEmpresas
-        fields = ['descripcion_sucursal','direccion','direccion_sucursal_georeferenciada','municipio','pais_sucursal_exterior',
-                  'direccion_notificacion','direccion_notificacion_referencia','municipio_notificacion','email_sucursal',
-                  'telefono_sucursal','es_principal','activo']
+        fields = ['descripcion_sucursal','direccion','direccion_sucursal_georeferenciada_lat',
+                  'direccion_sucursal_georeferenciada_lon', 'municipio','pais_sucursal_exterior',
+                  'direccion_notificacion','direccion_notificacion_referencia','municipio_notificacion',
+                  'email_sucursal', 'telefono_sucursal','es_principal','activo']
         
         
 

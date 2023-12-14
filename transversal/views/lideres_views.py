@@ -6,8 +6,8 @@ from rest_framework.exceptions import NotFound, ValidationError, PermissionDenie
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from datetime import datetime
-from seguridad.models import Personas
-from seguridad.serializers.personas_serializers import PersonasFilterSerializer
+from transversal.models.personas_models import Personas
+from transversal.serializers.personas_serializers import PersonasFilterSerializer
 from seguridad.utils import Util
 from transversal.models.organigrama_models import Organigramas
 from transversal.models.lideres_models import LideresUnidadesOrg

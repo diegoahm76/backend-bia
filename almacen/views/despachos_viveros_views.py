@@ -3,7 +3,7 @@ from almacen.serializers.bienes_serializers import CatalogoBienesSerializer
 from almacen.serializers.despachos_serializers import SerializersDespachoConsumo, SerializersItemDespachoConsumo, SerializersSolicitudesConsumibles, SerializersItemsSolicitudConsumible, SearchBienInventarioSerializer
 from rest_framework import generics,status
 from rest_framework.response import Response
-from seguridad.models import Personas, User
+from transversal.models.personas_models import Personas
 from rest_framework.decorators import api_view
 from seguridad.utils import Util
 from almacen.utils import UtilAlmacen
@@ -27,11 +27,6 @@ from almacen.models.solicitudes_models import (
     SolicitudesConsumibles, 
     ItemsSolicitudConsumible
 )
-from seguridad.models import (
-    Personas,
-    User,
-    ClasesTerceroPersona
-)
 from transversal.models.organigrama_models import (
     UnidadesOrganizacionales,
     NivelesOrganigrama
@@ -47,11 +42,6 @@ from almacen.models.generics_models import (
 from almacen.models.inventario_models import (
     Inventario
 )
-from almacen.serializers.solicitudes_serialiers import ( 
-    CrearSolicitudesPostSerializer,
-    CrearItemsSolicitudConsumiblePostSerializer
-    )
-from seguridad.serializers.personas_serializers import PersonasSerializer
 
 class CreateDespachoMaestroVivero(generics.UpdateAPIView):
     serializer_class = SerializersDespachoViverosConsumo
@@ -124,7 +114,7 @@ class CreateDespachoMaestroVivero(generics.UpdateAPIView):
         aux_validacion_bienes_repetidos = {}
         aux_validacion_unidades_dic = {}
         for i in items_despacho:
-            i['id_entrada_almacen_bien'] = i['id_entrada_bien']
+            # i['id_entrada_almacen_bien'] = i['id_entrada_bien']
             bien_solicitado = i.get('id_bien_solicitado')
             id_entrada_almacen_bien = i.get('id_entrada_almacen_bien')
             if id_entrada_almacen_bien:
@@ -280,7 +270,7 @@ class CreateDespachoMaestroVivero(generics.UpdateAPIView):
         
         # INSERT EN LA TABLA SOLICITUDES DE CONSUMIBLES
         despacho_creado = DespachoConsumo.objects.filter(Q(id_solicitud_consumo=info_despacho['id_solicitud_consumo']) & Q(numero_despacho_consumo=info_despacho['numero_despacho_consumo'])).first()
-        instancia_solicitud.id_despacho_consumo = despacho_creado.id_despacho_consumo
+        instancia_solicitud.id_despacho_consumo = despacho_creado
         instancia_solicitud.fecha_cierre_solicitud = despacho_creado.fecha_despacho
         instancia_solicitud.gestionada_almacen = True
         instancia_solicitud.solicitud_abierta = False

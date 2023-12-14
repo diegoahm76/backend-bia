@@ -19,7 +19,7 @@ class TasasInteres(models.Model):
 class PlanPagos(models.Model):
     id = models.AutoField(primary_key=True, db_column='T435IdPlanPago')
     id_facilidad_pago = models.ForeignKey(FacilidadesPago, on_delete=models.CASCADE, db_column='T435Id_FacilidadPago')
-    id_funcionario = models.ForeignKey('seguridad.Personas', on_delete=models.CASCADE, db_column='T435Id_Funcionario')
+    id_funcionario = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T435Id_Funcionario')
     id_tasa_interes = models.ForeignKey(TasasInteres, on_delete=models.CASCADE, db_column='T435Id_TasaInteres')
     tasa_diaria_aplicada = models.DecimalField(max_digits=30, decimal_places=2, db_column='T435tasaDiariaAplicada')
     abono_aplicado = models.DecimalField(max_digits=30, decimal_places=2, db_column='T435abonoAplicado')
@@ -58,7 +58,7 @@ class PlanPagosCuotas(models.Model):
 class ResolucionesPlanPago(models.Model):
     id = models.AutoField(primary_key=True, db_column='T437IdResolucionPlanPago')
     id_plan_pago = models.ForeignKey(PlanPagos, on_delete=models.CASCADE, db_column='T437Id_PlanPago')
-    doc_asociado = models.CharField(max_length=255, db_column='T437docAsociado')
+    doc_asociado = models.FileField(db_column='T437docAsociado')
     observacion = models.CharField(max_length=255, db_column='T437observacion')
     fecha_creacion_registro = models.DateTimeField(auto_now_add=True, db_column='T437fechaCreacionRegistro')
 

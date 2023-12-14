@@ -1,6 +1,7 @@
 from conservacion.utils import UtilConservacion
 from rest_framework import generics, status
 from rest_framework.views import APIView
+from seguridad.permissions.permissions_conservacion import PermisoEsCoordinadorViveros
 from seguridad.utils import Util  
 from django.db.models import Q, F, Sum
 from rest_framework.response import Response
@@ -29,22 +30,6 @@ from conservacion.serializers.solicitudes_funcionario_coordinador_serializer imp
 from conservacion.serializers.solicitudes_serializers import (
     GetSolicitudesViverosSerializer,
     ListarSolicitudIDSerializer,
-)
-from conservacion.models.viveros_models import (
-    Vivero
-)
-from almacen.models.bienes_models import (
-    CatalogoBienes
-)
-from transversal.models.organigrama_models import (
-    UnidadesOrganizacionales,
-)
-from seguridad.serializers.personas_serializers import (
-    PersonasSerializer
-)
-from seguridad.models import (
-    Personas,
-    User
 )
 
 class ListSolicitudesFuncionarioView(generics.ListAPIView):
@@ -215,7 +200,7 @@ class GestionarSolicitudesVencidasSupervisorView(generics.RetrieveUpdateAPIView)
 class ListSolicitudesCoordinadorView(generics.ListAPIView):
     serializer_class = GetSolicitudesViveroResponsableSerializer
     queryset = SolicitudesViveros.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoEsCoordinadorViveros]
 
     def get(self, request):
         usuario_logeado = request.user.persona.id_persona
@@ -228,7 +213,7 @@ class ListSolicitudesCoordinadorView(generics.ListAPIView):
 class GestionarSolicitudCoordinadorView(generics.RetrieveUpdateAPIView):
     serializer_class = GestionarSolicitudCoordinadorSerializer
     queryset = SolicitudesViveros.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoEsCoordinadorViveros]
 
     def patch(self, request, id_solicitud):
         data = request.data

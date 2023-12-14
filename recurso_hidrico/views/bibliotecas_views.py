@@ -1,3 +1,4 @@
+import copy
 import json
 from collections import Counter
 from django.forms import model_to_dict
@@ -209,7 +210,7 @@ class RegistroSeccionSubseccion(generics.CreateAPIView):
             "descripcion": descripcion,
             "valores_creados_detalles": detalles_audioria
             }
-            print(auditoria_data)
+            #print(auditoria_data)
             Util.save_auditoria_maestro_detalle(auditoria_data)
             #
             return Response({'success': True, 'detail': 'Se crearon los registros correctamente', 'data':  response_data}, status=status.HTTP_201_CREATED)
@@ -239,10 +240,12 @@ class ActualizarSeccionSubseccion(generics.UpdateAPIView):
         operaciones=[]
         data_in = request.data
         seccion = Secciones.objects.filter(id_seccion=pk).first()
-        
+        detalle_creados = []
+        detalle_actualizado = []
+        valores_eliminados_detalles=[]
         if not seccion:
             raise ValidationError("No se existe la seccion que trata de Actualizar.")
-        
+        previus=copy.copy(seccion)
         #pendiente validacion de instrumentos
         
         if 'subsecciones' in data_in: 
@@ -251,25 +254,6 @@ class ActualizarSeccionSubseccion(generics.UpdateAPIView):
                 #print("NO SUBSECCIONES")
             else:
 
-                # nombres_s=data_in['subsecciones']
-                
-                # nombre_subsecciones = [subseccion['nombre'] for subseccion in nombres_s if 'nombre' in subseccion]
-                # existen_repetidos=self.obtener_repetido(nombre_subsecciones)
-                # #verifica si en los que se van a crear existen repetidos
-                # if existen_repetidos:
-                #     raise ValidationError("Existe mas de una subseccion  con el nombre: "+str(existen_repetidos))
-                
-                # #verifica si los nombres de las subsecciones que van a crear no existan en la base de datos
-                # subsecciones_existentes=Subsecciones.objects.filter(id_seccion=seccion.id_seccion).values_list('nombre', flat=True)
-                
-
-                # if subsecciones_existentes:
-                #     elementos_comunes = list(set(list(subsecciones_existentes)) & set(nombre_subsecciones))
-                    
-                #     print(len(elementos_comunes))
-                #     if len(elementos_comunes)>0:
-                        
-                #         raise ValidationError(f"Ya existe una subseccion con estos nombres: {', '.join(str(x) for x in elementos_comunes)}")
 
                 for subseccion in data_in['subsecciones']: 
                     #print(subseccion)
@@ -286,13 +270,13 @@ class ActualizarSeccionSubseccion(generics.UpdateAPIView):
                         response_subseccion = registro_subseccion.actualizar_subseccion(subseccion_data,subseccion['id_subseccion'])
                         if response_subseccion.status_code != status.HTTP_200_OK:
                             return response_subseccion
+                        
+                        previo_detalle= Subsecciones(response_subseccion.data['previous'])
+                        current_detalle= Subsecciones(response_subseccion.data['data'])
+                        descripcion={'IdSeccion':response_subseccion.data.get('data', {}).get('id_seccion'),'Nombre':response_subseccion.data.get('data', {}).get('nombre')}
+                        detalle_actualizado.append({"descripcion":descripcion,"current":current_detalle,"previous":previo_detalle})
 
-                        # instancia_subseccion = Subsecciones.objects.filter(id_subseccion=subseccion['id_subseccion']).first()
-                        # if not instancia_subseccion:
-                        #     raise NotFound("La subseccion con el codigo : "+str(subseccion['id_subseccion']) +" no existe.")
-                        # instancia_subseccion.nombre=subseccion['nombre']
-                        # instancia_subseccion.descripcion=subseccion['descripcion']
-                        # instancia_subseccion.save()
+        
                     else:#si id_subseccion es nula se creada
                     
                         subseccion_data = {
@@ -305,7 +289,8 @@ class ActualizarSeccionSubseccion(generics.UpdateAPIView):
                         response_subseccion = registro_subseccion.crear_subseccion(request,subseccion_data)
                         if response_subseccion.status_code != status.HTTP_201_CREATED:
                             return response_subseccion
-
+                        detalle_creados.append({'IdSeccion':response_subseccion.data.get('data', {}).get('id_seccion'),'Nombre':response_subseccion.data.get('data', {}).get('nombre')})
+                        #print(response_subseccion.data.get('data', {}).get('nombre'))
                         # instancia_subseccion = Subsecciones.objects.create(
                         # id_seccion=seccion,
                         # nombre=subseccion['nombre'],
@@ -322,13 +307,32 @@ class ActualizarSeccionSubseccion(generics.UpdateAPIView):
                     response_subseccion=eliminarSubseccion.delete(request,eliminar)
                     if response_subseccion.status_code == status.HTTP_400_BAD_REQUEST:
                         return response_subseccion
-
+                    valores_eliminados_detalles.append({'IdSeccion':response_subseccion.data.get('data', {}).get('id_seccion'),'Nombre':response_subseccion.data.get('data', {}).get('nombre')})
 
 
         serializer = self.serializer_class(seccion,data=data_in)
         serializer.is_valid(raise_exception=True)
         
-        serializer.save()
+        instance=serializer.save()
+        descripcion = {"Nombre": str(instance.nombre)}
+        direccion=Util.get_client_ip(request)
+        valores_actualizados_maestro={"previous":previus,"current":instance}
+        auditoria_data = {
+        "id_usuario" : request.user.id_usuario,
+        "id_modulo" : 117,
+        "cod_permiso": "AC",
+        "subsistema": 'RECU',
+        "dirip": direccion,
+        "descripcion": descripcion,
+        "valores_actualizados_maestro":valores_actualizados_maestro,
+        "valores_creados_detalles": detalle_creados,
+        "valores_actualizados_detalles":detalle_actualizado,
+        "valores_eliminados_detalles":valores_eliminados_detalles
+        }
+        #print(auditoria_data)
+        #print(auditoria_data)
+        Util.save_auditoria_maestro_detalle(auditoria_data)
+
         
         return Response({'success':True,'detail':"Se actualizo la seccion Correctamente."},status=status.HTTP_200_OK)
     
@@ -374,16 +378,14 @@ class ActualizarSubsecciones(generics.UpdateAPIView):
     def actualizar_subseccion(self,data,pk):
         instancia_seccion = None
         subseccion = Subsecciones.objects.filter(id_subseccion=pk).first()
-        nombre_existente = Subsecciones.objects.filter(id_seccion=subseccion.id_seccion,nombre=data['nombre']).first()
-
-        #print(nombre_existente)
-        serializer = self.serializer_class(subseccion, data=data)
-
-      
-        
         if not subseccion:
             raise NotFound("No  existe la subseccion que trata de Actualizar.")
+        nombre_existente = Subsecciones.objects.filter(id_seccion=subseccion.id_seccion,nombre=data['nombre']).first()
         
+        #print(nombre_existente)
+
+        previus=copy.copy(subseccion)
+        serializer = self.serializer_class(subseccion, data=data)
         if nombre_existente  :
             if str(nombre_existente.id_subseccion)!= str(pk):
        
@@ -396,8 +398,8 @@ class ActualizarSubsecciones(generics.UpdateAPIView):
         except ValidationError  as e:
            
             raise ValidationError  (e.detail)
-        
-        return Response({'success':True,'detail':'Se actualizaron los registros correctamente','data':serializer.data},status=status.HTTP_200_OK)
+        previus_dict=ActualizarSubseccionesSerializer(previus)
+        return Response({'success':True,'detail':'Se actualizaron los registros correctamente','data':serializer.data,'previous':previus_dict.data},status=status.HTTP_200_OK)
         
 
     def put(self,request,pk):
@@ -434,10 +436,10 @@ class EliminarSubseccion(generics.DestroyAPIView):
         if Instrumento:
             raise ValidationError("No se puede Eliminar una subseccion, si tiene instrumentos asignados.")
         
-
+        previus=EliminarSubseccionSerializer(subseccion).data
         subseccion.delete()
         
-        return Response({'success':True,'detail':'Se elimino la Subseccion seleccionada.'},status=status.HTTP_200_OK)
+        return Response({'success':True,'detail':'Se elimino la Subseccion seleccionada.',"data":previus},status=status.HTTP_200_OK)
 
 class GetSeccionSubseccion(generics.RetrieveAPIView):
 

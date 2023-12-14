@@ -70,7 +70,7 @@ class ListarPermisosModulo(ListAPIView):
     queryset = PermisosModuloRol.objects.all()
     
     def get(self, request):
-        modulos = Modulos.objects.all()
+        modulos = Modulos.objects.filter(solo_usuario_web=False)
         serializer_modulos = ModulosRolSerializer(modulos, many=True)
         modulos_data = serializer_modulos.data
         
@@ -199,7 +199,7 @@ def util_prueba(id_usuario,tipo_entorno):
         if tipo_entorno == 'C':
             roles_list = roles_list.filter(id_rol=2)
         elif tipo_entorno == 'L':
-            if usuario_instance.persona.id_cargo is None or usuario_instance.persona.id_unidad_organizacional_actual is None or (usuario_instance.persona.fecha_a_finalizar_cargo_actual and usuario_instance.persona.fecha_a_finalizar_cargo_actual <= datetime.now()):
+            if usuario_instance.persona.id_cargo is None or usuario_instance.persona.id_unidad_organizacional_actual is None or (usuario_instance.persona.fecha_a_finalizar_cargo_actual and usuario_instance.persona.fecha_a_finalizar_cargo_actual <= datetime.now().date()):
                 subject = "Intento de ingreso a entorno laboral"
                 template = "ingreso-de-entorno.html"
                 
@@ -357,7 +357,7 @@ class GetPermisosRolByEntorno(ListAPIView):
             if tipo_entorno == 'C':
                 roles_list = roles_list.filter(id_rol=2)
             elif tipo_entorno == 'L':
-                if usuario_instance.persona.id_cargo is None or usuario_instance.persona.id_unidad_organizacional_actual is None or (usuario_instance.persona.fecha_a_finalizar_cargo_actual and usuario_instance.persona.fecha_a_finalizar_cargo_actual <= datetime.now()):
+                if usuario_instance.persona.id_cargo is None or usuario_instance.persona.id_unidad_organizacional_actual is None or (usuario_instance.persona.fecha_a_finalizar_cargo_actual and usuario_instance.persona.fecha_a_finalizar_cargo_actual <= datetime.now().date()):
                     subject = "Intento de ingreso a entorno laboral"
                     template = "ingreso-de-entorno.html"
                     

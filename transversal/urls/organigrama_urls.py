@@ -5,6 +5,7 @@ urlpatterns = [
     #ORGANIGRAMA
     path('create/', views.CreateOrgChart.as_view(),name="crear-organigrama"),
     path('get/', views.GetOrganigrama.as_view(), name='get-organigrama'),
+    path('get/<int:id_organigrama>/', views.GetOrganigramaById.as_view(), name='get-organigrama-id'),
     path('get-terminados/', views.GetOrganigramasTerminados.as_view(), name='get-terminados-organigrama'),
     path('update/<str:id_organigrama>/', views.UpdateOrganigrama.as_view(), name='update-organigrama'),
     path('finalizar/<str:pk>/', views.FinalizarOrganigrama.as_view(), name='finalizar-organigrama'),
@@ -18,6 +19,7 @@ urlpatterns = [
     path('unidades/get-list/', views.GetUnidades.as_view(), name='unidades-get-list'),
     path('unidades/get-by-organigrama/<str:id_organigrama>/', views.GetUnidadesByOrganigrama.as_view(), name='unidades-get-by-organigrama'),
     path('unidades/get-sec-sub/<str:id_organigrama>/', views.GetSeccionSubsecciones.as_view(), name='unidades-get-sec-sub'),
+    path('unidades/get-sec-sub-actual/<str:id_organigrama>/', views.GetActualSeccionSubsecciones.as_view(), name='unidades-get-sec-sub'),
     path('unidades/get-list/organigrama-actual/', views.GetUnidadesOrganigramaActual.as_view(), name='unidades-get-organigrama-actual'),
     path('unidades/get-list/organigrama-retirado-reciente/', views.GetUnidadesOrganigramaRetiradoReciente.as_view(), name='unidades-get-organigrama-retirado-reciente'),
     path('unidades/get-jerarquia/<str:id_organigrama>/', views.GetUnidadesJerarquizadas.as_view(), name='unidades-jerarquizadas'),

@@ -55,6 +55,7 @@ class LiquidacionesBase(models.Model):
     fecha_liquidacion = models.DateTimeField(db_column="T403fechaLiquidacion")
     vencimiento = models.DateTimeField(db_column="T403vencimiento")
     periodo_liquidacion = models.CharField(max_length=255, db_column="T403periodoLiquidacion")
+    ciclo_liquidacion = models.CharField(max_length=255, db_column="T403cicloliquidacion")
     valor = models.IntegerField(default=0, db_column="T403valor")
     estado = models.CharField(max_length=1, default='G', db_column="T403estado")
 
@@ -77,3 +78,14 @@ class DetalleLiquidacionBase(models.Model):
         db_table = "T404Detalles_LiquidacionesBase"
         verbose_name = 'Detalle liquidación base'
         verbose_name_plural = 'Detalles liquidación base'
+
+
+class CalculosLiquidacionBase(models.Model):
+    id = models.AutoField(primary_key=True, db_column="T450IdCalculos_LiquidacionBase")
+    id_liquidacion = models.ForeignKey(LiquidacionesBase, on_delete=models.CASCADE, db_column="T450Id_LiquidacionBase")
+    calculos = models.JSONField(db_column="T450calculos")
+
+    class Meta:
+        db_table = "T50Calculos_LiquidacionesBase"
+        verbose_name = 'Calculo liquidación base'
+        verbose_name_plural = 'Calculos liquidación base'

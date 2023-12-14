@@ -37,4 +37,28 @@ urlpatterns = [
     # Asignaciones
     # path('asignar/create/<str:id_ccd>/',views.AsignarSeriesYSubseriesAUnidades.as_view(),name='asignar-series-documentales'),
     # path('asignar/get/<str:id_ccd>/',views.GetAsignaciones.as_view(),name='asignar-series-documentales')
+
+    # ACTIVIDADES PREVIAS AL CAMBIO DEL CCD
+    path('get-validacion-homologacion/', views.BusquedaCCDView.as_view(),name='validacion-ccd-homologacion'),
+    path('get-homologacion-busqueda/', views.BusquedaCCDHomologacionView.as_view(),name='buscar-ccd-homologacion'),
+    path('get-homologacion-ccd/<str:id_ccd>/', views.CompararSeriesDocUnidadView.as_view(),name='homologacion-ccd'),
+    path('get-homologacion-cat-serie-ccd/', views.CompararSeriesDocUnidadCatSerieView.as_view(),name='homologacion-ccd-cat-serie'),
+    path('persistencia-unidades-ccd/create/', views.UnidadesSeccionPersistenteTemporalCreateView.as_view(),name='crear-persistencia-unidades-ccd'),
+    path('persistencia-agrupaciones-documental-ccd/create/', views.AgrupacionesDocumentalesPersistenteTemporalCreateView.as_view(),name='crear-persistencia-agrupaciones-documental-ccd'),
+    path('persistencia-confirmada-ccd/create/', views.PersistenciaConfirmadaCreateView.as_view(),name='crear-persistencia-confirmada-ccd'),
+    path('persistencia-unidades-ccd/get/<str:id_ccd>/', views.UnidadesSeccionPersistenteTemporalGetView.as_view(),name='obtener-persistencia-unidades-ccd'),
+    path('persistencia-agrupaciones-documental-ccd/get/', views.AgrupacionesDocumentalesPersistenteTemporalGetView.as_view(),name='obtener-persistencia-agrupaciones-documental-ccd'),
+    path('unidades-ccd-actual/get/<str:id_ccd>/', views.SeriesDocUnidadCCDActualGetView.as_view(),name='obtener-unidades-ccd-actual'),
+    path('cat-serie-ccd-actual/get/', views.SeriesDocUnidadCatSerieCCDActualGetView.as_view(),name='obtener-cat-serie-ccd-actual'),
+    path('unidades-ccd-nuevo/get/<str:id_ccd>/', views.UnidadesSeccionResponsableCCDNuevoGetView.as_view(),name='obtener-unidades-ccd-nuevo'),
+    path('unidades-responsables-ccd/create/', views.UnidadesSeccionResponsableTemporalCreateView.as_view(),name='crear-unidades-responsable-ccd'),
+    path('unidades-responsables-ccd/get/<str:id_ccd>/', views.UnidadesSeccionResponsableTemporalGetView.as_view(),name='obtener-unidades-responsables-ccd'),
+    path('get-validacion-delegacion-ccd/get/<str:id_ccd_nuevo>/', views.ValidacionCCDDelegacionView.as_view(),name='obtener-persistencia-confirmada-ccd'),
+    path('get-unidades-actual-responsable-ccd/get/<str:id_ccd_nuevo>/', views.UnidadesOrganizacionalesActualResponsableView.as_view(),name='obtener-unidades-ccd-actual-responsable'),
+    path('get-oficinas-unidad-actual/get/', views.OficinasUnidadOrganizacionalActualGetView.as_view(),name='obtener-oficinas-unidad-actual'),
+    path('get-oficinas-unidad-nueva/get/', views.OficinasUnidadOrganizacionalNuevaGetView.as_view(),name='obtener-oficinas-unidad-nueva'),
+    path('oficinas-delegadas-ccd/create/', views.OficinasDelegacionTemporalCreateView.as_view(),name='crear-delegacion-oficinas-ccd'),
+    
+
+
 ]

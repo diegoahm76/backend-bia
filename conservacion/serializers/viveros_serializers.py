@@ -1,4 +1,4 @@
-from seguridad.models import Personas
+from transversal.models.personas_models import Personas
 from conservacion.models.viveros_models import HistoricoResponsableVivero
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
@@ -10,7 +10,7 @@ from conservacion.models.viveros_models import (
 from almacen.models.bienes_models import (
     CatalogoBienes,
 )
-from seguridad.choices.municipios_choices import municipios_CHOICES
+from transversal.choices.municipios_choices import municipios_CHOICES
 from almacen.choices.cod_tipo_elemento_vivero_choices import cod_tipo_elemento_vivero_CHOICES
 
 class AbrirViveroSerializer(serializers.ModelSerializer):
@@ -71,6 +71,8 @@ class ViveroPostSerializer(serializers.ModelSerializer):
             'tiene_area_embolsado': {'required': True},
             'cod_tipo_vivero': {'required': True},
             'cod_origen_recursos_vivero': {'required': True},
+            'coordenadas_lat': {'required': False},
+            'coordenadas_lon': {'required': False},
             'id_persona_crea': {'required': True},
             'en_funcionamiento': {'read_only': True},
             'fecha_ultima_apertura': {'read_only': True},
@@ -101,6 +103,8 @@ class ViveroPutSerializer(serializers.ModelSerializer):
             'tiene_area_embolsado': {'required': False},
             'cod_tipo_vivero': {'required': False},
             'cod_origen_recursos_vivero': {'required': False},
+            'coordenadas_lat': {'required': False},
+            'coordenadas_lon': {'required': False},
             'en_funcionamiento': {'read_only': True},
             'fecha_ultima_apertura': {'read_only': True},
             'id_persona_abre': {'read_only': True},

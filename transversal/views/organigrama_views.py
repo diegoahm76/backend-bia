@@ -3,6 +3,7 @@ from rest_framework import generics, views
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from itertools import groupby
+from gestion_documental.models.plantillas_models import AccesoUndsOrg_PlantillaDoc
 from gestion_documental.models.tca_models import TablasControlAcceso
 from gestion_documental.serializers.ccd_serializers import CCDSerializer
 from seguridad.permissions.permissions_gestor import PermisoActualizarOrganigramas
@@ -41,7 +42,9 @@ from transversal.models.organigrama_models import (
     CambiosUnidadMasivos
     )
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from seguridad.models import User, Personas, HistoricoCargosUndOrgPersona
+from seguridad.models import User
+from transversal.models.base_models import HistoricoCargosUndOrgPersona
+from transversal.models.personas_models import Personas
 from datetime import datetime
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
@@ -158,7 +161,7 @@ class GetNivelesByOrganigrama(generics.ListAPIView):
 class UpdateUnidades(generics.UpdateAPIView):
     serializer_class=UnidadesPutSerializer
     queryset=UnidadesOrganizacionales.objects.all()
-    permission_classes = [IsAuthenticated, PermisoActualizarOrganigramas]
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
         data = request.data
@@ -520,7 +523,11 @@ class UpdateUnidades(generics.UpdateAPIView):
                                 unidad_es_padre = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre=unidad_instance.id_unidad_organizacional, activo=True)
                                 if unidad_es_padre:
                                     raise PermissionDenied('Error: No es posible desactivar una Unidad Organizacional mientras tenga Unidades hijas activas')
-                            
+                                #ELIMINA RELACIONES DE ACCESO EN PLANTILLAS
+                                accesos =AccesoUndsOrg_PlantillaDoc.objects.filter(id_und_organizacional=unidad_instance.id_unidad_organizacional)
+                                accesos.delete()
+                                
+                                
                             unidad_instance.activo = unidad['activo']
                             unidad_instance.save()
                 
@@ -729,7 +736,7 @@ class UpdateOrganigrama(generics.RetrieveUpdateAPIView):
             raise PermissionDenied('Ya está siendo usado este organigrama')
 
 class GetOrganigrama(generics.ListAPIView):
-    serializer_class = OrganigramaSerializer  
+    serializer_class = OrganigramaSerializer
 
     def get(self, request):
         consulta = request.query_params.get('pk')
@@ -748,7 +755,7 @@ class GetOrganigrama(generics.ListAPIView):
             niveles = 'No hay niveles registrados'
             unidades = 'No hay unidades registradas'
             datos_finales = {'Organigrama' : serializador.data, 'Niveles' : niveles, 'Unidades' : unidades}
-            return Response({'Organigrama' : datos_finales}, status=status.HTTP_200_OK)   
+            return Response({'Organigrama' : datos_finales}, status=status.HTTP_200_OK)
         unidades = UnidadesOrganizacionales.objects.filter(id_organigrama=int(consulta)).values()
         if len(unidades) == 0:
             unidades = 'No hay unidades registradas'
@@ -756,6 +763,18 @@ class GetOrganigrama(generics.ListAPIView):
             return Response({'Organigrama' : datos_finales}, status=status.HTTP_200_OK)
         datos_finales = {'Organigrama' : serializador.data, 'Niveles' : niveles, 'Unidades' : unidades}
         return Response({'Organigrama' : datos_finales}, status=status.HTTP_200_OK)
+    
+
+class GetOrganigramaById(generics.RetrieveAPIView):
+    serializer_class = OrganigramaSerializer
+
+    def get(self, request, id_organigrama):
+        organigrama = Organigramas.objects.get(id_organigrama=id_organigrama)
+        if not organigrama:
+            raise NotFound( 'No se encontró el organigrama ingresado')
+        serializador = self.serializer_class(organigrama, many=False)
+        return Response({'success':True, 'detail':'Se encontro el organigrama', 'data' :serializador.data}, status=status.HTTP_200_OK)
+        
 
 class GetSeccionSubsecciones(generics.ListAPIView):
     serializer_class = UnidadesGetSerializer
@@ -772,7 +791,7 @@ class GetSeccionSubsecciones(generics.ListAPIView):
             
 class GetOrganigramasTerminados(generics.ListAPIView):
     serializer_class = OrganigramaSerializer
-    queryset = Organigramas.objects.filter(~Q(fecha_terminado=None) & Q(fecha_retiro_produccion=None))  
+    queryset = Organigramas.objects.filter(~Q(fecha_terminado=None) & Q(fecha_retiro_produccion=None))
 
 class GetUnidadesJerarquizadas(generics.ListAPIView):
     serializer_class = UnidadesGetSerializer
@@ -822,11 +841,11 @@ class GetNuevoUserOrganigrama(generics.RetrieveAPIView):
         nuevo_user_organigrama = Personas.objects.filter(tipo_documento=tipo_documento, numero_documento=numero_documento).first()
         if not nuevo_user_organigrama:
             raise NotFound('No existe la persona con ese tipo y numero de documento.') 
-        if not nuevo_user_organigrama.fecha_a_finalizar_cargo_actual or nuevo_user_organigrama.fecha_a_finalizar_cargo_actual < fecha_sistema:
+        if not nuevo_user_organigrama.fecha_a_finalizar_cargo_actual or nuevo_user_organigrama.fecha_a_finalizar_cargo_actual < fecha_sistema.date():
             raise NotFound('La persona no se encuentra vinculada o la fecha de finalización del cargo ya expiro.') 
                 
         if nuevo_user_organigrama.id_persona == persona_log:
-            raise NotFound('La persona no se puede reasignar asi mismo.')              
+            raise NotFound('La persona no se puede reasignar asi mismo.')
         
         if nuevo_user_organigrama:
             serializador = self.serializer_class(nuevo_user_organigrama)
@@ -885,17 +904,17 @@ class AsignarOrganigramaUser(generics.CreateAPIView):
         
         persona_logueado = request.user.persona.id_persona
         
-        if organigrama.id_persona_cargo.id_persona != persona_logueado  and  persona_logueado != persona_super_usuario.persona.id_persona:
+        if organigrama.id_persona_cargo.id_persona != persona_logueado and persona_logueado != persona_super_usuario.persona.id_persona:
             raise NotFound('No tiene permisos para asignar este organigrama.')
         
         if persona.id_persona == organigrama.id_persona_cargo.id_persona:
             raise NotFound('La persona no se puede reasignar asi mismo.')
         
-        if not persona.fecha_a_finalizar_cargo_actual or persona.fecha_a_finalizar_cargo_actual < fecha_sistema:
-            raise NotFound('La persona no se encuentra vinculada o la fecha de finalización del cargo ya expiro.')             
+        if not persona.fecha_a_finalizar_cargo_actual or persona.fecha_a_finalizar_cargo_actual < fecha_sistema.date():
+            raise NotFound('La persona no se encuentra vinculada o la fecha de finalización del cargo ya expiro.')
         
         if organigrama.fecha_terminado != None:
-            raise NotFound('El organigrama ya se encuentra finalizado no se puede delegar.')             
+            raise NotFound('El organigrama ya se encuentra finalizado no se puede delegar.')
 
         
         #DELEGAR ORGANIGRAMA
@@ -904,7 +923,7 @@ class AsignarOrganigramaUser(generics.CreateAPIView):
         previous_organigrama = copy.copy(organigrama)
         organigrama.id_persona_cargo = persona
         organigrama.save()
-        return Response({'succes':True, 'detail':'Se delego a la persona.'},status=status.HTTP_201_CREATED)             
+        return Response({'succes':True, 'detail':'Se delego a la persona.'},status=status.HTTP_201_CREATED)
 
 class ReanudarOrganigrama(generics.RetrieveUpdateAPIView):
     serializer_class = NewUserOrganigramaSerializer
@@ -930,7 +949,7 @@ class ReanudarOrganigrama(generics.RetrieveUpdateAPIView):
         ccd_activo = CuadrosClasificacionDocumental.objects.filter(id_organigrama=id_organigrama).first()
         
         if ccd_activo:
-            raise NotFound('El Organigrama ya esta siendo utilizado por un CCD.')             
+            raise NotFound('El Organigrama ya esta siendo utilizado por un CCD.')
         
         organigrama.fecha_terminado = None
         organigrama.id_persona_cargo = persona_logueada
@@ -960,6 +979,7 @@ class CambioDeOrganigramaActual(generics.UpdateAPIView):
         previous_activacion_organigrama = copy.copy(organigrama_seleccionado)
         
         temporal_all = TemporalPersonasUnidad.objects.all()
+        # TODO: Preguntar acerca de temporal_all y si es necesario
         
         if not ccd_actual:
             organigrama_seleccionado.justificacion_nueva_version = data['justificacion']
@@ -987,8 +1007,8 @@ class CambioDeOrganigramaActual(generics.UpdateAPIView):
             organigrama_seleccionado.save()
             if temporal_all:
                 organigrama_nuevo = list(temporal_all.values_list('id_unidad_org_nueva__id_organigrama__id_organigrama', flat=True).distinct())
-                id_organigrama_nuevo = organigrama_nuevo[0]
-                if organigrama_seleccionado.id_organigrama != id_organigrama_nuevo:
+                # id_organigrama_nuevo = organigrama_nuevo
+                if organigrama_seleccionado.id_organigrama not in organigrama_nuevo:
                     temporal_all.delete()
 
             # Auditoria Organigrama activado
@@ -1001,7 +1021,7 @@ class CambioDeOrganigramaActual(generics.UpdateAPIView):
                 raise ValidationError('Debe seleccionar un CCD')
             
             #CCD SELECCIONADO
-            ccd_seleccionado =  self.queryset2.filter(id_ccd=data.get('id_ccd'), id_organigrama=organigrama_seleccionado.id_organigrama).first()
+            ccd_seleccionado = self.queryset2.filter(id_ccd=data.get('id_ccd'), id_organigrama=organigrama_seleccionado.id_organigrama).first()
             if not ccd_seleccionado:
                 raise ValidationError('Debe seleccionar un CCD que pertenezca al organigrama que desea activar')
             
@@ -1084,8 +1104,8 @@ class CambioDeOrganigramaActual(generics.UpdateAPIView):
                     temporal_all.delete()
                     
                 organigrama_nuevo = list(temporal_all.values_list('id_unidad_org_nueva__id_organigrama__id_organigrama', flat=True).distinct())
-                id_organigrama_nuevo = organigrama_nuevo[0]
-                if organigrama_seleccionado.id_organigrama != id_organigrama_nuevo:
+                # id_organigrama_nuevo = organigrama_nuevo[0]
+                if organigrama_seleccionado.id_organigrama not in organigrama_nuevo:
                     temporal_all.delete()
             
             
@@ -1459,9 +1479,10 @@ class GuardarActualizacionUnidadOrganizacional(generics.UpdateAPIView):
         
         # VALIDAR SI CAMBIAN ORGANIGRAMA
         temporal_all = TemporalPersonasUnidad.objects.all()
-        temporal_all_list = list(temporal_all.values_list('id_unidad_org_nueva__id_organigrama__id_organigrama', flat=True).distinct())
-        if temporal_all_list[0] != int(id_organigrama):
-            raise ValidationError('Si desea cambiar el organigrama nuevo debe desmarcar a todas las personas con cambios parciales antes de continuar')
+        if temporal_all:
+            temporal_all_list = list(temporal_all.values_list('id_unidad_org_nueva__id_organigrama__id_organigrama', flat=True).distinct())
+            if temporal_all_list[0] != int(id_organigrama):
+                raise ValidationError('Si desea cambiar el organigrama nuevo debe desmarcar a todas las personas con cambios parciales antes de continuar')
 
         for persona_nueva_unidad in personas_nuevas_unidades:
             id_persona = persona_nueva_unidad.get('id_persona')
@@ -1478,7 +1499,7 @@ class GuardarActualizacionUnidadOrganizacional(generics.UpdateAPIView):
 
             if temporal_persona:
                 if temporal_persona.id_unidad_org_nueva != nueva_unidad.id_unidad_organizacional:
-                    temporal_persona.id_unidad_org_nueva = nueva_unidad.id_unidad_organizacional
+                    temporal_persona.id_unidad_org_nueva = nueva_unidad
                     temporal_persona.save()
             else:
                 unidad_anterior = persona.id_unidad_organizacional_actual
@@ -1523,7 +1544,7 @@ class ProcederActualizacionUnidad(generics.UpdateAPIView):
                         fecha_inicial_historico = persona.fecha_asignacion_unidad,
                         fecha_final_historico = fecha_actual,
                         observaciones_vinculni_cargo = None,
-                        justificacion_cambio_und_org = f'Cambio masivo de unidad organizacional por {nombre_de_usuario} el {fecha_actual.strftime("%Y-%m-%d %H:%M:%S")} mediante proceso del sistema de Traslado Masivo de Unidad por Entidad',
+                        justificacion_cambio_und_org = f'Traslado Masivo de Unidad por Entidad por {nombre_de_usuario} el {fecha_actual.strftime("%Y-%m-%d %H:%M:%S")}',
                         desvinculado = False
                     )
                     historico.save()
@@ -1593,3 +1614,19 @@ class GetHistoricoUnidadEntidad(generics.ListAPIView):
         queryset = self.queryset.all()
         serializer = self.serializer_class(queryset, many=True)
         return Response({'success':True, 'detail':'Se encontró el siguiente histórico de traslados masivos de unidad por entidad', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+class GetActualSeccionSubsecciones(generics.ListAPIView):
+    serializer_class = UnidadesGetSerializer
+    queryset = UnidadesOrganizacionales.objects.all()
+    
+    def get(self, request, id_organigrama):
+        # Verifica si el organigrama está activo
+        organigrama = Organigramas.objects.filter(id_organigrama=id_organigrama, actual=True).first()
+
+        if organigrama:
+            unidades = UnidadesOrganizacionales.objects.filter(Q(id_organigrama=id_organigrama) & ~Q(cod_agrupacion_documental=None))
+            serializer = self.serializer_class(unidades, many=True)
+            return Response({'success': True, 'detail': 'Se encontraron las siguientes unidades', 'data': serializer.data}, status=status.HTTP_200_OK)
+        else:
+            raise NotFound('El organigrama no está activo o no existe')

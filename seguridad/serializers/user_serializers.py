@@ -6,8 +6,9 @@ from django.contrib import auth
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
-from seguridad.models import Personas, User, UsuariosRol, HistoricoActivacion,Login,LoginErroneo,PermisosModuloRol
-from seguridad.serializers.personas_serializers import PersonasSerializer
+from seguridad.models import OperacionesSobreUsuario, User, UsuariosRol, HistoricoActivacion,Login,LoginErroneo,PermisosModuloRol
+from transversal.models.personas_models import Personas
+from transversal.serializers.personas_serializers import PersonasSerializer
 from seguridad.serializers.permisos_serializers import PermisosModuloRolSerializer
 import re
 from seguridad.utils import Util
@@ -113,14 +114,16 @@ class UserPutAdminSerializer(serializers.ModelSerializer):
     is_active = serializers.BooleanField(required=False)
     is_blocked = serializers.BooleanField(write_only=True)
     justificacion = serializers.CharField(max_length=255, write_only=True, required=False)
+    #sucursal_defecto = serializers.ReadOnlyField(source='sucursal_defecto.id_sucursal_empresa', default=None)
 
     class Meta:
         model = User
-        fields = ['is_active', 'is_blocked', 'tipo_usuario', 'profile_img', 'justificacion']
+        fields = ['is_active', 'is_blocked', 'tipo_usuario', 'profile_img', 'justificacion', 'sucursal_defecto']
 
 class UsuarioRolesLookSerializers(serializers.ModelSerializer):
     nombre_usuario = serializers.ReadOnlyField(source='id_usuario.nombre_de_usuario', default=None)
     id_persona = serializers.ReadOnlyField(source='id_usuario.persona.id_persona', default=None)
+    email = serializers.ReadOnlyField(source='id_usuario.persona.email', default=None)
     nombre_persona = serializers.SerializerMethodField()
     
     def get_nombre_persona(self, obj):
@@ -138,7 +141,7 @@ class UsuarioRolesLookSerializers(serializers.ModelSerializer):
     
     class Meta:
         model=UsuariosRol
-        fields=['id_rol', 'id_usuario', 'nombre_usuario', 'id_persona', 'nombre_persona']
+        fields=['id_rol', 'id_usuario', 'nombre_usuario', 'id_persona', 'nombre_persona', 'email']
         
 class RolesSerializers(serializers.ModelSerializer):
     nombre_rol = serializers.ReadOnlyField(source='id_rol.nombre_rol', default=None)
@@ -218,6 +221,7 @@ class LoginSerializers(serializers.ModelSerializer):
 class LoginSerializer(serializers.ModelSerializer):
 
     email = serializers.CharField(max_length=255, min_length=3,read_only=True)
+    telefono_celular = serializers.CharField(max_length=15, read_only=True)
     password= serializers.CharField(max_length=68, min_length=6, write_only=True)
     nombre_de_usuario = serializers.CharField(max_length=68, min_length=6)
     nombre = serializers.CharField(read_only=True)
@@ -236,7 +240,7 @@ class LoginSerializer(serializers.ModelSerializer):
     
     class Meta:
         model=Login
-        fields= ['email', 'password', 'nombre_de_usuario', 'nombre', 'tokens', 'is_superuser', 'id_usuario', 'tipo_usuario', 'id_persona', 'tipo_persona', 'id_unidad_organizacional_actual', 'nombre_unidad_organizacional', 'activated_at', 'profile_img', 'permisos', 'representante_legal']
+        fields= ['email', 'telefono_celular', 'password', 'nombre_de_usuario', 'nombre', 'tokens', 'is_superuser', 'id_usuario', 'tipo_usuario', 'id_persona', 'tipo_persona', 'id_unidad_organizacional_actual', 'nombre_unidad_organizacional', 'activated_at', 'profile_img', 'permisos', 'representante_legal']
     
     def validate(self, attrs):
         nombre_de_usuario = attrs.get('nombre_de_usuario', '').lower()
@@ -268,6 +272,7 @@ class LoginSerializer(serializers.ModelSerializer):
 
         return {
             'email': user.persona.email,
+            'telefono_celular': user.persona.telefono_celular,
             'nombre_de_usuario': user.nombre_de_usuario,
             'nombre':nombre,
             'tokens': tokens,
@@ -407,10 +412,12 @@ class SetNewPasswordUnblockUserSerializer(serializers.Serializer):
             user.is_blocked = False
             user.save()
             
+            cod_operacion_instance = OperacionesSobreUsuario.objects.filter(cod_operacion='D').first()
+            
             # HISTORICO DESBLOQUEO
             HistoricoActivacion.objects.create(
                 id_usuario_afectado=user,
-                cod_operacion='D',
+                cod_operacion=cod_operacion_instance,
                 fecha_operacion=datetime.now(),
                 justificacion='Usuario desbloqueado por validación de datos',
                 usuario_operador=user
@@ -485,6 +492,8 @@ class UsuarioFullSerializer(serializers.ModelSerializer):
     justificacion_ultimo_cambio_activacion = serializers.SerializerMethodField()
     fecha_ultimo_cambio_bloqueo = serializers.SerializerMethodField()
     justificacion_ultimo_cambio_bloqueo = serializers.SerializerMethodField()
+    id_sucursal_empresa = serializers.ReadOnlyField(source='sucursal_defecto.id_sucursal_empresa',default=None)
+    descripcion_sucursal_empresa = serializers.ReadOnlyField(source='sucursal_defecto.descripcion_sucursal',default=None)
     
     #RETORNAR NOMBRE COMPLETO
     def get_nombre_completo(self, obj):
@@ -586,7 +595,9 @@ class UsuarioFullSerializer(serializers.ModelSerializer):
             'id_usuario_creador',
             'primer_nombre_usuario_creador',
             'primer_apellido_usuario_creador',
-            'roles'
+            'roles',
+            'id_sucursal_empresa',
+            'descripcion_sucursal_empresa'
         ]
         model = User
 

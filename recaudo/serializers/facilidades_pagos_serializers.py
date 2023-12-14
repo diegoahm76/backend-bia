@@ -12,10 +12,12 @@ from recaudo.models.facilidades_pagos_models import (
     RespuestaSolicitud,
     DetallesFacilidadPago
 )
+from recaudo.models.planes_pagos_models import PlanPagos
 from recaudo.models.base_models import TiposBien, TipoActuacion
 from recaudo.models.cobros_models import Deudores, Cartera
-from seguridad.models import Personas, Municipio
 
+from transversal.models.personas_models import Personas
+from transversal.models.base_models import Municipio
 
 class DetallesFacilidadPagoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -87,7 +89,7 @@ class DatosContactoDeudorSerializer(serializers.ModelSerializer):
     ciudad = serializers.SerializerMethodField()
 
     def get_ciudad(self, obj):
-        ubicacion = Municipio.objects.filter(cod_municipio=obj.municipio_residencia).first()
+        ubicacion = Municipio.objects.filter(cod_municipio=obj.municipio_residencia.cod_municipio).first()
         ubicacion = ubicacion.nombre
         return ubicacion
         
@@ -114,6 +116,7 @@ class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
     nombre_de_usuario = serializers.SerializerMethodField()
     nombre_funcionario = serializers.SerializerMethodField()
     id_facilidad = serializers.ReadOnlyField(source='id', default=None)
+    tiene_plan_pago = serializers.SerializerMethodField()
 
     def get_nombre_de_usuario(self, obj):
         return f"{obj.id_deudor.nombres} {obj.id_deudor.apellidos}"
@@ -121,9 +124,15 @@ class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
     def get_nombre_funcionario(self, obj):      
         return f"{obj.id_funcionario.primer_nombre} {obj.id_funcionario.primer_apellido}"
     
+    def get_tiene_plan_pago(self, obj):
+        tiene_plan_pago = False
+        if PlanPagos.objects.filter(id_facilidad_pago=obj.id).first():
+            tiene_plan_pago = True
+        return tiene_plan_pago
+    
     class Meta:
         model = FacilidadesPago
-        fields = ('id_facilidad','nombre_de_usuario','identificacion','numero_radicacion','fecha_generacion','nombre_funcionario')
+        fields = ('id_facilidad','nombre_de_usuario','identificacion','numero_radicacion','fecha_generacion','nombre_funcionario', 'tiene_plan_pago')
 
 
 class FacilidadesPagoFuncionarioPutSerializer(serializers.ModelSerializer):

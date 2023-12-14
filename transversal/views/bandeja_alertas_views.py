@@ -57,25 +57,7 @@ class AlertasBandejaAlertaPersonaUpdate(generics.UpdateAPIView):
     queryset = AlertasBandejaAlertaPersona.objects.all()
     permission_classes = [IsAuthenticated]
 
-    # def buscar_id_perfil(self,perfil):
-    #     perfiles_actuales=ConfiguracionEntidad.objects.first()
-    #     id=None
-    #     if perfil == 'Dire':
-    #         if perfiles_actuales.id_persona_director_actual:
-    #             id=perfiles_actuales.id_persona_director_actual.id_persona
-    #     elif perfil == 'CAlm':
-    #         if perfiles_actuales.id_persona_coord_almacen_actual:
-    #             id=perfiles_actuales.id_persona_coord_almacen_actual.id_persona
-    #     elif perfil == 'RTra':
-    #         if perfiles_actuales.id_persona_respon_transporte_actual:
-    #             id=perfiles_actuales.id_persona_respon_transporte_actual.id_persona
-    #     elif perfil == 'CViv':
-    #         if perfiles_actuales.id_persona_coord_viveros_actual:
-    #             id=perfiles_actuales.id_persona_coord_viveros_actual.id_persona
-    #     elif perfil == 'Alma':
-    #         if perfiles_actuales.id_persona_almacenista:
-    #             id=perfiles_actuales.id_persona_almacenista.id_persona
-    #     return id
+
     def buscar_codigo_por_id(self, id_persona):
         perfiles_actuales = ConfiguracionEntidad.objects.first()
         
@@ -255,7 +237,21 @@ class BandejaAlertaPersonaCreate(generics.CreateAPIView):
             serializador = BandejaAlertaPersonaPostSerializer(data=data_in)
             serializador.is_valid(raise_exception=True)
             instance=serializador.save()
-            return Response({'success': True, 'detail': 'Se crearon los registros correctamente', 'data': serializador.data}, status=status.HTTP_201_CREATED)
+            # personas_sin = Personas.objects.all().values_list('id_persona', flat=True)
+            # bandejas = BandejaAlertaPersona.objects.all().values_list('id_persona', flat=True)
+
+            # # Encuentra las personas que no tienen una bandeja asociada
+            # personas_sin_bandeja = set(personas_sin) - set(bandejas)
+            # for id_persona in personas_sin_bandeja:
+            #     print(id_persona)
+            #     # Ahora puedes buscar los detalles completos de cada persona si es necesario
+            #     #persona = Personas.objects.get(id_persona=id_persona)
+            #     serializador = BandejaAlertaPersonaPostSerializer(data={'id_persona': id_persona})
+            #     serializador.is_valid(raise_exception=True)
+            #     instance=serializador.save()
+            #     print(persona)
+            
+            return Response({'success': True, 'detail': 'Se crearon los registros correctamente', 'data':serializador.data}, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             raise ValidationError( e.detail)
 

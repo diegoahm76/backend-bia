@@ -6,9 +6,7 @@ from conservacion.models.inventario_models import InventarioViveros
 from conservacion.models.viveros_models import Vivero
 from conservacion.models.traslados_models import TrasladosViveros, ItemsTrasladoViveros
 from almacen.models.bienes_models import CatalogoBienes
-from seguridad.models import Personas, User
-from conservacion.models.siembras_models import CambiosDeEtapa
-from conservacion.choices.cod_etapa_lote import cod_etapa_lote_CHOICES
+from transversal.models.personas_models import Personas
 from datetime import datetime, timedelta
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
