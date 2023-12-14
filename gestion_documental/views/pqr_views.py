@@ -501,6 +501,8 @@ class RadicarPQRSDF(generics.CreateAPIView):
         data_for_create['modulo_radica'] = "PQRSDF"
         radicadoCreate = RadicadoCreate()
         data_radicado = radicadoCreate.post(data_for_create)
+        data_radicado['asunto'] = data_PQRSDF_instance.asunto
+        data_radicado['persona_titular'] = self.set_titular(data_PQRSDF_instance.id_persona_titular_id)
 
         #Actualiza el estado y la data del radicado al PQRSDF
         PrsdfUpdate = PQRSDFUpdate()
@@ -537,6 +539,12 @@ class RadicarPQRSDF(generics.CreateAPIView):
         pqrsdf['fecha_ini_estado_actual'] = fecha_actual
 
         return pqrsdf
+    
+    def set_titular(self, id_persona):
+        persona = Personas.objects.filter(id_persona = id_persona).first()
+        nombre_list = [persona.primer_nombre, persona.segundo_nombre, persona.primer_apellido, persona.segundo_apellido]
+        nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+        return nombre_completo
     
     def set_descripcion_auditoria(self, previous_pqrsdf, pqrsdf_update):
         descripcion_auditoria_update = {

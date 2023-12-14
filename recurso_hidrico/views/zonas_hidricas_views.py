@@ -4,10 +4,11 @@ from rest_framework.response import Response
 from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
 from recurso_hidrico.models.zonas_hidricas_models import TipoAguaZonaHidrica, ZonaHidrica, MacroCuencas,TipoZonaHidrica,SubZonaHidrica
-from backend.settings.base import EMAIL_HOST_USER, AUTHENTICATION_360_NRS
 from recurso_hidrico.serializers.zonas_hidricas_serializers import TipoAguaZonaHidricaSerializer, ZonaHidricaSerializer, MacroCuencasSerializer,TipoZonaHidricaSerializer,SubZonaHidricaSerializer
-import re, requests
 import copy
+from django.template.loader import render_to_string
+from django.core.mail import EmailMessage
+
 # Vista get para las 4 tablas de zonas hidricas
 class MacroCuencasListView (generics.ListAPIView):
     queryset = MacroCuencas.objects.all()
@@ -190,3 +191,39 @@ class EnviarSMSView(generics.CreateAPIView):
         else:
             # Maneja el caso en el que no se proporcionan el teléfono o el mensaje
             return Response({'error': 'Por favor, proporciona el teléfono y el mensaje.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+
+
+class EnviarCORREOView(generics.CreateAPIView):
+    def post(self, request, *args, **kwargs):
+        correo = request.data.get('correo')
+        nombre = request.data.get('nombre')
+        subject = request.data.get('asunto')
+        mensaje = request.data.get('mensaje')
+
+        if correo and nombre and subject:
+            # Configuración del correo electrónico
+            template = "alerta.html"
+
+            # Crear el contexto para la plantilla
+            context = {'Nombre_alerta': mensaje}
+
+            # Renderizar la plantilla
+            html_content = render_to_string(template, context)
+
+            # Configuración del correo electrónico en formato HTML y texto plano
+            email = EmailMessage()
+            email.subject = subject
+            email.body = html_content
+            email.to = [correo]
+            email.content_subtype = 'html'
+
+            # Enviar el correo electrónico
+            email.send()
+
+            # Puedes personalizar la respuesta según tus necesidades
+            return Response({'mensaje': 'Correo electrónico enviado correctamente'}, status=status.HTTP_200_OK)
+        else:
+            # Maneja el caso en el que no se proporciona el correo, el nombre o el asunto
+            return Response({'error': 'Por favor, proporciona el correo, el nombre y el asunto.'}, status=status.HTTP_400_BAD_REQUEST)

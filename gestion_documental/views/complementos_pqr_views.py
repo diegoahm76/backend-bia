@@ -7,9 +7,9 @@ from rest_framework import generics,status
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound
 from django.db import transaction
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, ComplementosUsu_PQR, TiposPQR
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, ComplementosUsu_PQR, SolicitudAlUsuarioSobrePQRSDF, TiposPQR
 
-from gestion_documental.serializers.complementos_pqr_serializers import ComplementoPQRSDFPostSerializer, ComplementoPQRSDFPutSerializer, ComplementosSerializer, PQRSDFSerializer, PersonaSerializer
+from gestion_documental.serializers.complementos_pqr_serializers import ComplementoPQRSDFPostSerializer, ComplementoPQRSDFPutSerializer, ComplementosSerializer, PQRSDFSerializer, PersonaSerializer, SolicitudPQRSerializer
 from gestion_documental.serializers.pqr_serializers import RadicadoPostSerializer
 from gestion_documental.views.pqr_views import AnexosCreate, AnexosDelete, AnexosUpdate, RadicadoCreate, Util_PQR
 from seguridad.signals.roles_signals import IsAuthenticated
@@ -451,3 +451,39 @@ class RadicarComplementoPQRSDF(generics.CreateAPIView):
             "valores_actualizados": valores_actualizados
         }
         Util.save_auditoria(auditoria_data)
+
+
+######################################## RESPUESTA A UNA SOLICITUD PQRSDF ##############################################################
+class RespuestaSolicitudGet(generics.GenericAPIView):
+    serializer_class = ComplementosSerializer
+    serializer_class_solicitud = SolicitudPQRSerializer
+    queryset = ComplementosUsu_PQR.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            if request.query_params.get('id_solicitud')==None or request.query_params.get('id_persona_titular')==None or request.query_params.get('id_persona_interpone')==None:
+                raise ValidationError('No se ingresaron parámetros necesarios para consultar el complemento de PQRSDF')
+            
+            id_solicitud = ast.literal_eval(request.query_params.get('id_solicitud', None))
+            id_persona_titular = ast.literal_eval(request.query_params.get('id_persona_titular', None))
+            id_persona_interpone = ast.literal_eval(request.query_params.get('id_persona_interpone', None))
+            
+            complemento_solicitud = self.queryset.filter(id_solicitud_usu_PQR = id_solicitud)
+            data_respuesta_solicitud = self.set_data_respuesta_solicitud(id_solicitud, id_persona_titular, id_persona_interpone, complemento_solicitud)
+            return Response({'success':True, 'detail':'Se encontraron los siguientes complementos','data':data_respuesta_solicitud},status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    def set_data_respuesta_solicitud(self, id_solicitud, id_persona_titular, id_persona_interpone, complemento_solicitud):
+        solicitud_db = SolicitudAlUsuarioSobrePQRSDF.objects.filter(id_solicitud_al_usuario_sobre_pqrsdf = id_solicitud).first()
+        solicitud_serializer = self.serializer_class_solicitud(solicitud_db, many=False)
+        solicitud_serializer_data = solicitud_serializer.data
+
+        complementosPQRSDFGet = ComplementosPQRSDFGet()
+        data_respuesta_solicitud = complementosPQRSDFGet.set_data_complementos_PQRSDF(solicitud_serializer_data['id_pqrsdf'], id_persona_titular, id_persona_interpone, complemento_solicitud)
+
+        data_respuesta_solicitud['complementos_PQRSDF'] = data_respuesta_solicitud['complementos_PQRSDF'][0]
+        data_respuesta_solicitud['solicitud'] = solicitud_serializer_data
+
+        return data_respuesta_solicitud
