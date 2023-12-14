@@ -6,6 +6,7 @@ urlpatterns = [
     path('create-complemento-pqrsdf/', views.ComplementoPQRSDFCreate.as_view(), name='create-complemento-pqrsdf'),
     path('update-complemento-pqrsdf/', views.ComplementoPQRSDFUpdate.as_view(), name='update-complemento-pqrsdf'),
     path('delete-complemento-pqrsdf/', views.ComplementoPQRSDFDelete.as_view(), name='delete-complemento-pqrsdf'),
-    path('radicar-complemento-pqrsdf/', views.RadicarComplementoPQRSDF.as_view(), name='radicar-complemento-pqrsdf')
+    path('radicar-complemento-pqrsdf/', views.RadicarComplementoPQRSDF.as_view(), name='radicar-complemento-pqrsdf'),
+    path('respuesta-solicitud-pqrsdf/', views.RespuestaSolicitudGet.as_view(), name='respuesta-solicitud-pqrsdf')
 
 ]
