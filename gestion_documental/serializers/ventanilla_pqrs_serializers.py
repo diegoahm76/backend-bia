@@ -74,7 +74,11 @@ class PQRSDFGetSerializer(serializers.ModelSerializer):
         numero_solicitudes = SolicitudDeDigitalizacion.objects.filter(id_pqrsdf=id).count()
         return numero_solicitudes
     def get_numero_solicitudes_usuario(self,obj):
-        return 0
+
+        id = obj.id_PQRSDF
+        conteo = SolicitudAlUsuarioSobrePQRSDF.objects.filter(id_pqrsdf=id).count()
+        
+        return conteo
     
     def get_tiene_complementos(self,obj):
         id= obj.id_PQRSDF
@@ -233,7 +237,7 @@ class PQRSDFHistoricoGetSerializer(serializers.ModelSerializer):
             for estado in estados:
                 if estado.estado_solicitud.id_estado_solicitud == 10:
                     solicitudes = SolicitudDeDigitalizacion.objects.filter(id_pqrsdf=id,fecha_rta_solicitud=estado.fecha_iniEstado).first()
-                    print(solicitudes)
+                    #print(solicitudes)
                     re = SolicitudDeDigitalizacionGetSerializer(solicitudes)
                     respuesta.append({'accion':estado.estado_solicitud.nombre,**re.data})
                 else:
