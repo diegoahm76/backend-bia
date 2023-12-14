@@ -30,7 +30,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 import datetime
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
-
+from rest_framework.generics import get_object_or_404
 
 class EtapasProcesoView(generics.ListAPIView):
     queryset = EtapasProceso.objects.all()
@@ -264,24 +264,38 @@ class UpdateProcesosView(generics.ListAPIView):
             return Response({'success': False, 'data': 'No existe el proceso con el id enviado'}, status=status.HTTP_400_BAD_REQUEST)
 
 
+
 class UpdateCategoriaProcesosView(generics.ListAPIView):
     queryset = Procesos.objects.all()
     serializer_class = ProcesosSerializer
-    #permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
-        id_categoria = request.data['id_categoria']
-        categoria = CategoriaAtributo.objects.filter(pk=id_categoria)
-        proceso = Procesos.objects.filter(pk=pk)
-        if len(proceso) == 1:
-            if len(categoria) == 1:
-                proceso = proceso.get()
-                categoria = categoria.get()
+        
+        id_categoria_nuevo = int(request.data.get('id_categoria'))
+        if not id_categoria_nuevo:
+            raise ValidationError("Es necesario el id de la categoria")
+    
+        try:
+            categoria_seleccionada = CategoriaAtributo.objects.get(id=id_categoria_nuevo)
+        except CategoriaAtributo.DoesNotExist:
+            raise NotFound("No se encontro categoria ingresada")
+        
+        proceso = get_object_or_404(Procesos, pk=pk)
+
+        if proceso:
+            id_categoria_actual = proceso.id_categoria.id
+            orden_categoria_actual = proceso.id_categoria.orden
+            nombre_categoria_actual = proceso.id_categoria.categoria
+
+            if orden_categoria_actual > int(categoria_seleccionada.orden):
+                return Response({'success': False, 'data': f'No se permite cambiar a una etapa anterior,Actualmente estas en  {nombre_categoria_actual}'}, status=status.HTTP_400_BAD_REQUEST)
+            elif id_categoria_nuevo == id_categoria_actual:
+                return Response({'success': False, 'data': f'La etapa seleccionada es igual a la que está actualmente en curso'}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                categoria = get_object_or_404(CategoriaAtributo, pk=id_categoria_nuevo)
                 proceso.id_categoria = categoria
                 proceso.save()
-                return Response({'success': True, 'data': 'La categoria del proceso se ha actualizado con exito'}, status=status.HTTP_200_OK)
-            else:
-                return Response({'success': False, 'data': 'No existe la categoria con el id enviado'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'success': True, 'data': 'La categoría del proceso se ha actualizado con éxito'}, status=status.HTTP_200_OK)
         else:
             return Response({'success': False, 'data': 'No existe el proceso con el id enviado'}, status=status.HTTP_400_BAD_REQUEST)
 
