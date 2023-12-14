@@ -71,32 +71,43 @@ class ComplementoPQRSDFCreate(generics.CreateAPIView):
                 data_complemento_pqrsdf = json.loads(request.data.get('complemento_pqrsdf', ''))
                 isCreateForWeb = ast.literal_eval(request.data.get('isCreateForWeb', ''))
                 id_persona_guarda = ast.literal_eval(request.data.get('id_persona_guarda', ''))
-
-                fecha_actual = datetime.now()
-                valores_creados_detalles = []
-
-                util_PQR = Util_PQR()
-                anexos = util_PQR.set_archivo_in_anexo(data_complemento_pqrsdf['anexos'], request.FILES, "create")
-
-                #Crea el pqrsdf
-                data_complemento_PQRSDF_creado = self.create_complemento_pqrsdf(data_complemento_pqrsdf, fecha_actual, id_persona_guarda, isCreateForWeb)
-
-                #Guarda los anexos en la tabla T258 y la relación entre los anexos y el PQRSDF en la tabla T259 si tiene anexos
-                if anexos:
-                    anexosCreate = AnexosCreate()
-                    valores_creados_detalles = anexosCreate.create_anexos_pqrsdf(anexos, None, data_complemento_PQRSDF_creado['idComplementoUsu_PQR'], isCreateForWeb, fecha_actual)
-                    update_requiere_digitalizacion = all(anexo.get('ya_digitalizado', False) for anexo in anexos)
-                    if update_requiere_digitalizacion:
-                        data_complemento_PQRSDF_creado = self.update_requiereDigitalizacion_pqrsdf(data_complemento_PQRSDF_creado)
-
-                #Auditoria
-                descripcion_auditoria = self.set_descripcion_auditoria(data_complemento_PQRSDF_creado)
-                self.auditoria(request, descripcion_auditoria, isCreateForWeb, valores_creados_detalles)
-
+                
+                #Crea el complemento con sus anexos
+                data_complemento_PQRSDF_creado = self.create_complemento_con_anexos(request, data_complemento_pqrsdf, id_persona_guarda, isCreateForWeb)
                 return Response({'success':True, 'detail':'Se creo el complemento de PQRSDF correctamente', 'data':data_complemento_PQRSDF_creado}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    def create_complemento_con_anexos(self, request, data_complemento, id_persona_guarda, isCreateForWeb):
+        fecha_actual = datetime.now()
+        valores_creados_detalles = []
+
+        util_PQR = Util_PQR()
+        anexos = util_PQR.set_archivo_in_anexo(data_complemento['anexos'], request.FILES, "create")
+
+        #Crea el pqrsdf
+        data_complemento_creado = self.create_complemento_pqrsdf(data_complemento, fecha_actual, id_persona_guarda, isCreateForWeb)
+
+        #Guarda los anexos en la tabla T258 y la relación entre los anexos y el PQRSDF en la tabla T259 si tiene anexos
+        if anexos:
+            anexosCreate = AnexosCreate()
+            valores_creados_detalles = anexosCreate.create_anexos_pqrsdf(anexos, None, data_complemento_creado['idComplementoUsu_PQR'], isCreateForWeb, fecha_actual)
+            update_requiere_digitalizacion = all(anexo.get('ya_digitalizado', False) for anexo in anexos)
+            if update_requiere_digitalizacion:
+                data_complemento_creado = self.update_requiereDigitalizacion_pqrsdf(data_complemento_creado)
+
+        #Auditoria
+        if data_complemento_creado['id_PQRSDF']:
+            id_PQRSDF = str(data_complemento_creado['id_PQRSDF'])
+        else:
+            solicitud = SolicitudAlUsuarioSobrePQRSDF.objects.filter(id_solicitud_al_usuario_sobre_pqrsdf = data_complemento_creado['id_solicitud_usu_PQR']).first()
+            id_PQRSDF = solicitud.id_pqrsdf_id
+
+        descripcion_auditoria = self.set_descripcion_auditoria(data_complemento_creado, id_PQRSDF)
+        self.auditoria(request, descripcion_auditoria, isCreateForWeb, valores_creados_detalles)
+
+        return data_complemento_creado
         
     def create_complemento_pqrsdf(self, data, fecha_actual, id_persona_guarda, isCreateForWeb):
         data_complemento_pqrsdf = self.set_data_complemento_pqrsdf(data, fecha_actual, id_persona_guarda, isCreateForWeb)
@@ -120,8 +131,8 @@ class ComplementoPQRSDFCreate(generics.CreateAPIView):
     
         return data
     
-    def set_descripcion_auditoria(self, complemento_PQRSDF):
-        pqrsdf = PQRSDF.objects.filter(id_PQRSDF = complemento_PQRSDF['id_PQRSDF']).first()
+    def set_descripcion_auditoria(self, complemento_PQRSDF, id_PQRSDF):
+        pqrsdf = PQRSDF.objects.filter(id_PQRSDF = id_PQRSDF).first()
         tipo_pqrsdf = TiposPQR.objects.filter(cod_tipo_pqr=pqrsdf.cod_tipo_PQRSDF).first()
 
         #Persona interpone
@@ -176,30 +187,41 @@ class ComplementoPQRSDFUpdate(generics.RetrieveUpdateAPIView):
                 complemento_pqrsdf = json.loads(request.data.get('complemento_pqrsdf', ''))
                 isCreateForWeb = ast.literal_eval(request.data.get('isCreateForWeb', ''))
 
+                #Actualiza el complemento con sus anexos
                 complemento_pqrsdf_db = self.queryset.filter(idComplementoUsu_PQR = complemento_pqrsdf['idComplementoUsu_PQR']).first()
                 if complemento_pqrsdf_db:
-                    anexos = complemento_pqrsdf['anexos']
-                    fecha_actual = datetime.now()
-
-                    #Actualiza los anexos y los metadatos
-                    data_auditoria_anexos = self.procesa_anexos(anexos, request.FILES, complemento_pqrsdf['idComplementoUsu_PQR'], isCreateForWeb, fecha_actual)
-                    update_requiere_digitalizacion = all(anexo.get('ya_digitalizado', False) for anexo in anexos)
-                    complemento_pqrsdf['requiere_digitalizacion'] = False if update_requiere_digitalizacion else True
-                    
-                    #Actuaiza pqrsdf
-                    pqrsdf_update = self.update_complemento_pqrsdf(complemento_pqrsdf_db, complemento_pqrsdf)
-
-                    #Auditoria
-                    descripcion_auditoria = self.set_descripcion_auditoria(pqrsdf_update)
-                    self.auditoria(request, descripcion_auditoria, isCreateForWeb, data_auditoria_anexos)
-                    
-                    return Response({'success':True, 'detail':'Se editó el complemento de PQRSDF correctamente', 'data': pqrsdf_update}, status=status.HTTP_201_CREATED)
+                    complemento_pqrsdf_update = self.update_complemento_con_anexos(request, complemento_pqrsdf_db, complemento_pqrsdf, isCreateForWeb)
+                    return Response({'success':True, 'detail':'Se editó el complemento de PQRSDF correctamente', 'data': complemento_pqrsdf_update}, status=status.HTTP_201_CREATED)
                 else:
                     return Response({'success':False, 'detail':'No se encontró el complemento de PQRSDF para actualizar'}, status=status.HTTP_404_NOT_FOUND)
         
         except Exception as e:
             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
+    
+    def update_complemento_con_anexos(self, request, complemento_pqrsdf_db, complemento_pqrsdf, isCreateForWeb):
+            anexos = complemento_pqrsdf['anexos']
+            fecha_actual = datetime.now()
+
+            #Actualiza los anexos y los metadatos
+            data_auditoria_anexos = self.procesa_anexos(anexos, request.FILES, complemento_pqrsdf['idComplementoUsu_PQR'], isCreateForWeb, fecha_actual)
+            update_requiere_digitalizacion = all(anexo.get('ya_digitalizado', False) for anexo in anexos)
+            complemento_pqrsdf['requiere_digitalizacion'] = False if update_requiere_digitalizacion else True
+            
+            #Actuaiza pqrsdf
+            complemento_pqrsdf_update = self.update_complemento_pqrsdf(complemento_pqrsdf_db, complemento_pqrsdf)
+
+            #Auditoria
+            if complemento_pqrsdf_update['id_PQRSDF']:
+                id_PQRSDF = str(complemento_pqrsdf_update['id_PQRSDF'])
+            else:
+                solicitud = SolicitudAlUsuarioSobrePQRSDF.objects.filter(id_solicitud_al_usuario_sobre_pqrsdf = complemento_pqrsdf_update['id_solicitud_usu_PQR']).first()
+                id_PQRSDF = solicitud.id_pqrsdf_id
+
+            descripcion_auditoria = self.set_descripcion_auditoria(complemento_pqrsdf_update, id_PQRSDF)
+            self.auditoria(request, descripcion_auditoria, isCreateForWeb, data_auditoria_anexos)
+
+            return complemento_pqrsdf_update
+
     def update_complemento_pqrsdf(self, complemento_pqrsdf_db, complemento_pqrsdf_update):
         try:
             serializer = self.serializer_class(complemento_pqrsdf_db, data=complemento_pqrsdf_update)
@@ -252,8 +274,8 @@ class ComplementoPQRSDFUpdate(generics.RetrieveUpdateAPIView):
             'data_auditoria_delete': data_auditoria_delete
         }
     
-    def set_descripcion_auditoria(self, complemento_PQRSDF):
-        pqrsdf = PQRSDF.objects.filter(id_PQRSDF = complemento_PQRSDF['id_PQRSDF']).first()
+    def set_descripcion_auditoria(self, complemento_PQRSDF, id_PQRSDF):
+        pqrsdf = PQRSDF.objects.filter(id_PQRSDF = id_PQRSDF).first()
         tipo_pqrsdf = TiposPQR.objects.filter(cod_tipo_pqr=pqrsdf.cod_tipo_PQRSDF).first()
 
         #Persona interpone
@@ -487,3 +509,48 @@ class RespuestaSolicitudGet(generics.GenericAPIView):
         data_respuesta_solicitud['solicitud'] = solicitud_serializer_data
 
         return data_respuesta_solicitud
+    
+class RespuestaSolicitudCreate(generics.CreateAPIView):
+    serializer_class = ComplementoPQRSDFPostSerializer
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        try:
+            with transaction.atomic():
+                data_respuesta_solicitud = json.loads(request.data.get('respuesta_solicitud', ''))
+                isCreateForWeb = ast.literal_eval(request.data.get('isCreateForWeb', ''))
+                id_persona_guarda = ast.literal_eval(request.data.get('id_persona_guarda', ''))
+                
+                #Crea el complemento con sus anexos
+                complementoPQRSDFCreate = ComplementoPQRSDFCreate()
+                data_respuesta_solicitud_creada = complementoPQRSDFCreate.create_complemento_con_anexos(request, data_respuesta_solicitud, id_persona_guarda, isCreateForWeb)
+                return Response({'success':True, 'detail':'Se creo la respuesta a la solicitud correctamente', 'data':data_respuesta_solicitud_creada}, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class RespuestaSolicitudUpdate(generics.RetrieveUpdateAPIView):
+    serializer_class = ComplementoPQRSDFPutSerializer
+    queryset = ComplementosUsu_PQR.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def put(self, request):
+        try:
+            with transaction.atomic():
+                #Obtiene los datos enviado en el request
+                respuesta_solicitud = json.loads(request.data.get('respuesta_solicitud', ''))
+                isCreateForWeb = ast.literal_eval(request.data.get('isCreateForWeb', ''))
+
+                #Actualiza el complemento con sus anexos
+                respuesta_solicitud_db = self.queryset.filter(idComplementoUsu_PQR = respuesta_solicitud['idComplementoUsu_PQR']).first()
+                if respuesta_solicitud_db:
+                    complementoPQRSDFUpdate = ComplementoPQRSDFUpdate()
+                    respuesta_solicitud_update = complementoPQRSDFUpdate.update_complemento_con_anexos(request, respuesta_solicitud_db, respuesta_solicitud, isCreateForWeb)
+                    return Response({'success':True, 'detail':'Se editó la respuesta de la solicitud correctamente', 'data': respuesta_solicitud_update}, status=status.HTTP_201_CREATED)
+                else:
+                    return Response({'success':False, 'detail':'No se encontró ninguna respuesta a la solicitud para actualizar'}, status=status.HTTP_404_NOT_FOUND)
+        
+        except Exception as e:
+            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
