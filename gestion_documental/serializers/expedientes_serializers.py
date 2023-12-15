@@ -433,6 +433,8 @@ class ExpedienteSearchSerializer(serializers.ModelSerializer):
         model =  ExpedientesDocumentales
         fields = [
             'codigo_exp_und_serie_subserie',
+            'codigo_exp_Agno',
+            'codigo_exp_consec_por_agno',
             'id_expediente_documental',
             'titulo_expediente',
             'id_und_seccion_propietaria_serie',
