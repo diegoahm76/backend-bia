@@ -76,8 +76,9 @@ class PQRSDFGet(generics.ListAPIView):
                     filter['fecha_radicado__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
         
         if tipo_busqueda == 'PQRSDF':
+            filter['id_radicado__isnull'] = False
             instance = self.get_queryset().filter(**filter).order_by('fecha_radicado')
-
+            
             if not instance:
                 raise NotFound("No existen registros")
 
