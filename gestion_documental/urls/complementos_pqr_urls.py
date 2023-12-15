@@ -13,6 +13,6 @@ urlpatterns = [
     path('respuesta-solicitud/create-respuesta-solicitud/', views.RespuestaSolicitudCreate.as_view(), name='create-respuesta-solicitud'),
     path('respuesta-solicitud/update-respuesta-solicitud/', views.RespuestaSolicitudUpdate.as_view(), name='update-respuesta-solicitud'),
     path('respuesta-solicitud/delete-respuesta-solicitud/', views.RespuestaSolicitudDelete.as_view(), name='delete-respuesta-solicitud'),
-    path('respuesta-solicitud/radicar-respuesta-solicitud/', views.RespuestaSolicitudDelete.as_view(), name='radicar-respuesta-solicitud')
+    path('respuesta-solicitud/radicar-respuesta-solicitud/', views.RadicarRespuestaSolicitud.as_view(), name='radicar-respuesta-solicitud')
 
 ]

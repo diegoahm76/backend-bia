@@ -618,7 +618,7 @@ class RadicarRespuestaSolicitud(generics.CreateAPIView):
     def post(self, request):
         try:
             with transaction.atomic():
-                id_complemento_PQRSDF = request.data['id_complemento_PQRSDF']
+                id_complemento_PQRSDF = request.data['id_complemento_solicitud']
                 id_persona_guarda = request.data['id_persona_guarda']
                 fecha_actual = datetime.now()
                 radicarComplementoPQRSDF = RadicarComplementoPQRSDF()
@@ -626,8 +626,9 @@ class RadicarRespuestaSolicitud(generics.CreateAPIView):
                 
                 #Obtiene datos necesarios para la actualización del estado
                 estado_respondida = EstadosSolicitudes.objects.filter(nombre='RESPONDIDA').first()
-                estado_ventanilla_con_pendientes = EstadosSolicitudes.objects.filter(nombre='VENTANILLA CON PENDIENTES').first()
-                estado_ventanilla_sin_pendientes = EstadosSolicitudes.objects.filter(nombre='VENTANILLA SIN PENDIENTES').first()
+                estado_usuario_respondida = EstadosSolicitudes.objects.filter(nombre='SOLICITUD AL USUARIO RESPONDIDA').first()
+                estado_ventanilla_con_pendientes = EstadosSolicitudes.objects.filter(nombre='EN VENTANILLA CON PENDIENTES').first()
+                estado_ventanilla_sin_pendientes = EstadosSolicitudes.objects.filter(nombre='EN VENTANILLA SIN PENDIENTES').first()
                 complemento = self.queryset.filter(idComplementoUsu_PQR = id_complemento_PQRSDF).first()
                 solicitud_usu_db = SolicitudAlUsuarioSobrePQRSDF.objects.filter(id_solicitud_al_usuario_sobre_pqrsdf = complemento.id_solicitud_usu_PQR_id).first()
 
@@ -640,11 +641,11 @@ class RadicarRespuestaSolicitud(generics.CreateAPIView):
 
                 #Crea el estado en la tabla de historicos para para asociar los estados de “SOLICITUD AL USUARIO RESPONDIDA” y “VENTANILLA CON PENDIENTES”
                 estado_pqrsdf = Estados_PQR.objects.filter(Q(PQRSDF=solicitud_usu_db.id_pqrsdf_id, estado_solicitud=estado_ventanilla_con_pendientes.id_estado_solicitud)).first()
-                data_estado_crear = self.set_data_estado_solicitud(solicitud_usu_db.id_pqrsdf_id, None, fecha_actual, id_persona_guarda, estado_pqrsdf.id_estado_PQR, estado_respondida.id_estado_solicitud)
+                data_estado_crear = self.set_data_estado_solicitud(solicitud_usu_db.id_pqrsdf_id, None, fecha_actual, id_persona_guarda, estado_pqrsdf.id_estado_PQR, estado_usuario_respondida.id_estado_solicitud)
                 self.crear_estado(data_estado_crear)
 
                 #Actualiza el estado de ventanilla con pendientes a ventanilla sin pendientes
-                self.crear_estado_sin_pendientes(solicitud_usu_db.id_pqrsdf_id, fecha_actual, id_persona_guarda, estado_ventanilla_con_pendientes.id_estado_solicitud, estado_ventanilla_sin_pendientes.id_estado_solicitud, estado_respondida.id_estado_solicitud)
+                self.crear_estado_sin_pendientes(solicitud_usu_db.id_pqrsdf_id, fecha_actual, id_persona_guarda, estado_pqrsdf.id_estado_PQR, estado_ventanilla_sin_pendientes.id_estado_solicitud, estado_respondida.id_estado_solicitud)
 
                 return Response({'success':True, 'detail':'Se creo el radicado para la respuesta a la solicitud', 'data': data_radicado_pqrsdf}, status=status.HTTP_201_CREATED)
         except Exception as e:
@@ -673,8 +674,8 @@ class RadicarRespuestaSolicitud(generics.CreateAPIView):
         serializer_solicitud_usu.is_valid(raise_exception=True)
         serializer_solicitud_usu.save()
 
-    def crear_estado_sin_pendientes(self, id_pqrsdf, fecha_actual, id_persona_digitalizo, id_estado_ventanilla_con_pendientes, id_estado_ventanilla_sin_pendientes, id_estado_respondida):
-        estados_pqrsdf_pendientes = Estados_PQR.objects.filter(Q(PQRSDF=id_pqrsdf, estado_PQR_asociado=id_estado_ventanilla_con_pendientes))
+    def crear_estado_sin_pendientes(self, id_pqrsdf, fecha_actual, id_persona_digitalizo, estado_PQR_asociado, id_estado_ventanilla_sin_pendientes, id_estado_respondida):
+        estados_pqrsdf_pendientes = Estados_PQR.objects.filter(Q(PQRSDF=id_pqrsdf, estado_PQR_asociado=estado_PQR_asociado))
         
         #Obtiene todos los tipos de solicitud creadas
         solicitudes_dig_enviadas = len(estados_pqrsdf_pendientes.filter(estado_solicitud=9))
