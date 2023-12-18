@@ -29,5 +29,6 @@ urlpatterns = [
     path('categoria-por-etapas/<int:pk>/', views.CategoriasEtapasFiltradoView.as_view(), name='categoria-etapas-atributos'),
     path('eliminar-etapa/<int:etapa>/', views.DeleteEtapaView.as_view(), name='eliminar-etapas-por-id'),
     path('eliminar-categoria/<int:categoria>/', views.DeleteCategoriaAtributoView.as_view(), name='eliminar-etapas-por-id'),
+    path('eliminar-atributo/<int:pk>/', views.DeleteAtributosView.as_view(), name='eliminar-atributo'),
 
 ]

@@ -25,7 +25,7 @@ class Expedientes(models.Model):
     numero_resolucion = models.CharField(max_length=255, db_column='T407codigoResolucion')
     cod_auto = models.CharField(max_length=255, db_column='T407codigoAuto')
     cod_recurso = models.CharField(max_length=255, db_column='T407codigoRecurso')
-    liquidado = models.BooleanField(default=False, db_column='T407liquidado')
+    estado = models.CharField(max_length=20, db_column='T407estado')
 
     class Meta:
         db_table = 'T407Expedientes'

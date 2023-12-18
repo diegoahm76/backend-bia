@@ -480,6 +480,7 @@ class OtrosCreate(generics.CreateAPIView):
         }
 
         return data
+    
 
 class OTROSUpdate(generics.RetrieveUpdateAPIView):
     serializer_class = OtrosPostSerializer
@@ -488,7 +489,7 @@ class OTROSUpdate(generics.RetrieveUpdateAPIView):
 
     @transaction.atomic
     def put(self, request):
-        try:
+        # try:
             with transaction.atomic():
                 #Obtiene los datos enviado en el request
                 otros = json.loads(request.data.get('otros', ''))
@@ -507,23 +508,23 @@ class OTROSUpdate(generics.RetrieveUpdateAPIView):
                     #Actuaiza otros
                     otros_update = self.update_otros(otros_db, otros)
 
-                    #Auditoria
-                    descripcion_auditoria = self.set_descripcion_auditoria(otros_update)
-                    self.auditoria(request, descripcion_auditoria, isCreateForWeb, data_auditoria_anexos)
+                    # #Auditoria
+                    # descripcion_auditoria = self.set_descripcion_auditoria(otros_update)
+                    # self.auditoria(request, descripcion_auditoria, isCreateForWeb, data_auditoria_anexos)
                     
                     return Response({'success':True, 'detail':'Se editó OTRO correctamente', 'data': otros_update}, status=status.HTTP_201_CREATED)
                 else:
                     return Response({'success':False, 'detail':'No se encontró el OTRO para actualizar'}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
+        # except Exception as e:
             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
     def update_otros(self, otros_db, otros_update):
-        try:
+        # try:
             serializer = self.serializer_class(otros_db, data=otros_update)
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return serializer.data
-        except Exception as e:
+        # except Exception as e:
             raise({'success': False, 'detail': str(e)})
     
 
@@ -540,12 +541,12 @@ class OTROSUpdate(generics.RetrieveUpdateAPIView):
 
         anexos_pqr_DB = Anexos_PQR.objects.filter(id_otros = id_otros)
         if anexos_pqr_DB:
-            Util_OTROS = Util_OTROS()
+            util_OTROS = Util_OTROS()
             data_anexos_create = [anexo for anexo in anexos if anexo['id_anexo'] == None]
-            anexos_create = Util_OTROS.set_archivo_in_anexo(data_anexos_create, archivos, "create")
+            anexos_create = util_OTROS.set_archivo_in_anexo(data_anexos_create, archivos, "create")
             
             data_anexos_update = [anexo for anexo in anexos if not anexo['id_anexo'] == None]
-            anexos_update = Util_OTROS.set_archivo_in_anexo(data_anexos_update, archivos, "update")
+            anexos_update = util_OTROS.set_archivo_in_anexo(data_anexos_update, archivos, "update")
 
             ids_anexos_update = [anexo_update['id_anexo'] for anexo_update in anexos_update]
             anexos_delete = [anexo_pqr for anexo_pqr in anexos_pqr_DB if getattr(anexo_pqr,'id_anexo_id') not in ids_anexos_update]
@@ -560,8 +561,8 @@ class OTROSUpdate(generics.RetrieveUpdateAPIView):
             
         else:
             anexosCreate = AnexosCreate()
-            Util_OTROS = Util_OTROS()
-            anexos_create = Util_OTROS.set_archivo_in_anexo(anexos, archivos, "create")
+            util_OTROS = Util_OTROS()
+            anexos_create = util_OTROS.set_archivo_in_anexo(anexos, archivos, "create")
             data_auditoria_create = anexosCreate.create_anexos_otros(anexos_create, id_otros, isCreateForWeb, fecha_actual)
 
         return {
@@ -587,7 +588,6 @@ class OTROSUpdate(generics.RetrieveUpdateAPIView):
         }
 
         return data
-
 
 
 #UTIL
@@ -616,7 +616,6 @@ class Util_OTROS:
                 if archivo_filter:
                     anexo['archivo'] = archivo_filter[0]
         return anexos
-    
 
 
 #BORRAR_OTROS
@@ -800,7 +799,7 @@ class AnexosUpdate(generics.RetrieveUpdateAPIView):
     queryset = Anexos.objects.all()
 
     def put(self, anexos, fecha_actual):
-        try:
+        # try:
             nombres_anexos_auditoria = []
             for anexo in anexos:
                 anexo_update_db = self.queryset.filter(id_anexo = anexo['id_anexo']).first()
@@ -820,7 +819,7 @@ class AnexosUpdate(generics.RetrieveUpdateAPIView):
                     raise ValidationError("No se encontro el anexo que intenta actualizar")
             return nombres_anexos_auditoria
 
-        except Exception as e:
+        # except Exception as e:
             raise({'success': False, 'detail': str(e)})
         
     def update_anexo(self, anexo_db, anexo_update):
@@ -910,7 +909,7 @@ class MetadatosPQRUpdate(generics.RetrieveUpdateAPIView):
     queryset = MetadatosAnexosTmp.objects.all()
 
     def put(self, metadato_update, archivo, fecha_actual):
-        try:
+        # try:
             metadato_db = self.queryset.filter(id_metadatos_anexo_tmp = metadato_update['id_metadatos_anexo_tmp']).first()
             if metadato_db:
                 #Si se tiene archivo se borra el actual y se crea el archivo enviado y se asocia al metadato
@@ -925,7 +924,7 @@ class MetadatosPQRUpdate(generics.RetrieveUpdateAPIView):
             else:
                 raise NotFound('No se encontró el metadato que intenta actualizar')
                 
-        except Exception as e:
+        # except Exception as e:
             raise({'success': False, 'detail': str(e)})
     
     def actualizar_archivo(self, archivo, fecha_actual, id_archivo_anterior):
@@ -1001,7 +1000,7 @@ class RadicarOTROS(generics.CreateAPIView):
         data_for_create['fecha_actual'] = fecha_actual
         data_for_create['id_usuario'] = id_persona_guarda
         data_for_create['tipo_radicado'] = "E"
-        data_for_create['modulo_radica'] = "OTROS"
+        data_for_create['modulo_radica'] = "Otros"
         radicadoCreate = RadicadoCreate()
         data_radicado = radicadoCreate.post(data_for_create)
 
@@ -1025,9 +1024,9 @@ class RadicarOTROS(generics.CreateAPIView):
         }
     
     
-    def set_data_update_radicado_otros(self, otros, id_radicados, fecha_actual):
-        otros['id_radicados'] = id_radicados['id_radicados']
-        otros['fecha_radicado'] = id_radicados['fecha_radicado']
+    def set_data_update_radicado_otros(self, otros, data_radicado, fecha_actual):
+        otros['id_radicados'] = data_radicado['id_radicado']
+        otros['fecha_radicado'] = data_radicado['fecha_radicado']
 
         estado = EstadosSolicitudes.objects.filter(nombre='RADICADO').first()
         otros['id_estado_actual_solicitud'] = estado.id_estado_solicitud
@@ -1091,6 +1090,6 @@ class RadicadoCreate(generics.CreateAPIView):
         radicado['id_persona_radica'] = id_usuario
 
         modulo_radica = modulos_radican.objects.filter(nombre=modulo_radica).first()
-        radicado['id_modulo_que_radica'] = modulo_radica.id_ModuloQueRadica
+        radicado['id_modulo_que_radica'] = modulo_radica.id_ModuloQueRadica if modulo_radica else None
 
         return radicado
