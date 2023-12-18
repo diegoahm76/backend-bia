@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from transversal.models.personas_models import Personas
@@ -614,3 +614,21 @@ class MetadatosAnexosTmpGetSerializer(serializers.ModelSerializer):
             lista_datos =  obj.palabras_clave_doc.split("|")
             return lista_datos
         return None
+    
+
+
+#ENTREGA 109 
+
+class InfoDenuncias_PQRSDFGetByPqrsdfSerializer(serializers.ModelSerializer):
+    municipio_localizacion_hecho = serializers.ReadOnlyField(source='cod_municipio_cocalizacion_hecho.nombre',default=None)
+    #es un choices 
+    nombre_zona_localizacion = serializers.ReadOnlyField(source='get_Cod_zona_localizacion_display',default=None)
+    class Meta:
+        model = InfoDenuncias_PQRSDF
+        fields = ['id_info_denuncia_PQRSDF','municipio_localizacion_hecho','Cod_zona_localizacion','nombre_zona_localizacion',
+                  'barrio_vereda_localizacion','direccion_localizacion','cod_recursos_fectados_presuntos',
+                  'otro_recurso_Afectado_cual','nombre_completo_presunto_infractor'
+                ,'telefono_presunto_infractor'
+                ,'direccion_presunto_infractor'
+                ,'ya_habia_puesto_en_conocimiento'
+                ,'ante_que_autoridad_había_interpuesto']
