@@ -37,12 +37,15 @@ class PQRSDFGetSerializer(serializers.ModelSerializer):
     nombre_sucursal_recepcion_fisica = serializers.ReadOnlyField(source='id_sucursal_recepcion_fisica.descripcion',default=None)
     es_pqrsdf = serializers.SerializerMethodField()
     tipo_PQRSDF = serializers.ReadOnlyField(source='get_cod_tipo_PQRSDF_display',default=True)
+    persona_asignada = serializers.SerializerMethodField()
+    unidad_asignada = serializers.SerializerMethodField()
+    
     class Meta:
         model = PQRSDF
         fields = ['id_PQRSDF','cod_tipo_PQRSDF','tipo_PQRSDF','tipo_solicitud','nombre_completo_titular','asunto','cantidad_anexos','radicado','fecha_radicado','requiere_digitalizacion',
-                  'estado_solicitud','estado_asignacion_grupo','nombre_sucursal','numero_solicitudes_digitalizacion','numero_solicitudes_usuario',
+                  'estado_solicitud','nombre_sucursal','numero_solicitudes_digitalizacion','numero_solicitudes_usuario',
                   'tiene_complementos','dias_respuesta','medio_solicitud','forma_presentacion','numero_folios','persona_recibe',
-                  'nombre_sucursal_implicada','nombre_sucursal_recepcion_fisica','fecha_registro','es_pqrsdf']
+                  'nombre_sucursal_implicada','nombre_sucursal_recepcion_fisica','fecha_registro','estado_asignacion_grupo','persona_asignada','unidad_asignada','es_pqrsdf']
 
     def get_radicado(self, obj):
         cadena = ""
@@ -90,11 +93,11 @@ class PQRSDFGetSerializer(serializers.ModelSerializer):
                 if estado_asignacion_grupo.cod_estado_asignacion == 'Re':
                     return "Rechazado"
                 if estado_asignacion_grupo.cod_estado_asignacion == '':
-                    return "Pendiente"
+                    return None
             else:
-                return "Pendiente"
+                return None
         else:
-            return "Pendiente"
+            return None
     def get_numero_solicitudes_digitalizacion(self,obj):
         id= obj.id_PQRSDF
         numero_solicitudes = SolicitudDeDigitalizacion.objects.filter(id_pqrsdf=id).count()
@@ -134,6 +137,54 @@ class PQRSDFGetSerializer(serializers.ModelSerializer):
         return dias_faltan.days
     def get_numero_folios(self,obj):
         return 10
+    
+    def get_persona_asignada(self,obj):
+        id= obj.id_PQRSDF
+        estado_asignacion_grupo = AsignacionPQR.objects.filter(id_pqrsdf=id).first()
+        if estado_asignacion_grupo:
+
+            if estado_asignacion_grupo.cod_estado_asignacion == 'Ac':
+                if estado_asignacion_grupo.id_persona_asignada:
+                    nombre_completo_responsable = None
+                    nombre_list = [estado_asignacion_grupo.id_persona_asignada.primer_nombre, estado_asignacion_grupo.id_persona_asignada.segundo_nombre,
+                                estado_asignacion_grupo.id_persona_asignada.primer_apellido, estado_asignacion_grupo.id_persona_asignada.segundo_apellido]
+                    nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+                    return nombre_completo_responsable
+                else:
+                    return 'No tiene persona asignada'
+            else:
+                if estado_asignacion_grupo.cod_estado_asignacion == 'Re':
+                    return 'La solicitud fue rechazada'
+                if estado_asignacion_grupo.cod_estado_asignacion == '':
+                    return None         
+                if estado_asignacion_grupo.cod_estado_asignacion == None:
+                    return None
+
+        else:
+            return None
+    def get_unidad_asignada (self,obj):
+        id = obj.id_PQRSDF
+        estado_asignacion_grupo = AsignacionPQR.objects.filter(id_pqrsdf=id).first()
+
+        if estado_asignacion_grupo:
+            if estado_asignacion_grupo.cod_estado_asignacion == 'Ac':#
+
+                
+                if estado_asignacion_grupo.id_und_org_seccion_asignada:
+                    return estado_asignacion_grupo.id_und_org_seccion_asignada.nombre
+                
+                if estado_asignacion_grupo.id_und_org_oficina_asignada:
+                    return estado_asignacion_grupo.id_und_org_oficina_asignada.nombre
+                
+            else:
+                if estado_asignacion_grupo.cod_estado_asignacion == 'Re':
+                    return 'La solicitud fue rechazada'
+                if estado_asignacion_grupo.cod_estado_asignacion == '':
+                    return None
+                if estado_asignacion_grupo.cod_estado_asignacion == None:
+                    return None
+                
+
 class ComplementosUsu_PQRGetSerializer(serializers.ModelSerializer):
     tipo = serializers.SerializerMethodField()
     nombre_completo_titular = serializers.SerializerMethodField()
@@ -623,12 +674,35 @@ class InfoDenuncias_PQRSDFGetByPqrsdfSerializer(serializers.ModelSerializer):
     municipio_localizacion_hecho = serializers.ReadOnlyField(source='cod_municipio_cocalizacion_hecho.nombre',default=None)
     #es un choices 
     nombre_zona_localizacion = serializers.ReadOnlyField(source='get_Cod_zona_localizacion_display',default=None)
+    nombre_recursos_afectados_presuntos = serializers.SerializerMethodField()
     class Meta:
         model = InfoDenuncias_PQRSDF
         fields = ['id_info_denuncia_PQRSDF','municipio_localizacion_hecho','Cod_zona_localizacion','nombre_zona_localizacion',
-                  'barrio_vereda_localizacion','direccion_localizacion','cod_recursos_fectados_presuntos',
+                  'barrio_vereda_localizacion','direccion_localizacion','cod_recursos_fectados_presuntos','nombre_recursos_afectados_presuntos',
                   'otro_recurso_Afectado_cual','nombre_completo_presunto_infractor'
                 ,'telefono_presunto_infractor'
                 ,'direccion_presunto_infractor'
                 ,'ya_habia_puesto_en_conocimiento'
-                ,'ante_que_autoridad_había_interpuesto']
+                ,'ante_que_autoridad_había_interpuesto','evidencias_soportan_hecho']
+        
+    def get_nombre_recursos_afectados_presuntos(self, obj):
+        cadena = obj.cod_recursos_fectados_presuntos
+        CHOICES = [
+            ('Su', 'Suelo'),
+            ('Ag', 'Agua'),
+            ('Ai', 'Aire'),
+            ('Fl', 'Flora'),
+            ('Fs', 'Fauna silvestre'),
+            ('Ot', 'Otros'),
+        ]
+
+        valores_legibles = cadena.split('|')
+        arreglo = []
+
+        for codigo in valores_legibles:
+            for code, nombre in CHOICES:
+                if codigo == code:
+                    arreglo.append(nombre)
+
+        return arreglo
+

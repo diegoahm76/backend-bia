@@ -941,8 +941,16 @@ class InfoDenuncias_PQRSDFGetByPQRSDF(generics.ListAPIView):
     queryset = InfoDenuncias_PQRSDF.objects.all()
     permission_classes = [IsAuthenticated]
     def get(self, request,pqr):
+        pqrsdf = PQRSDF.objects.filter(id_PQRSDF=pqr).first()
+
+        if not pqrsdf:
+            raise NotFound("No existen pqrsdf asociada a esta id")
         
+        if pqrsdf.cod_tipo_PQRSDF != 'D':
+            raise ValidationError("No es una denuncia")
         instance = self.get_queryset().filter(id_PQRSDF=pqr)
+
+        
         if not instance:
             raise NotFound("No existen registros")
         
