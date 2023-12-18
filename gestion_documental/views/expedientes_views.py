@@ -2042,6 +2042,9 @@ class FirmaCierreView(generics.UpdateAPIView):
         if not indice_electronico_exp:
             raise NotFound('No se encontró el indice del expediente ingresado')
         
+        if indice_electronico_exp.id_expediente_doc.estado == 'A':
+            raise PermissionDenied('No puede firmar el cierre de un índice asociado a un expediente abierto. Debe cerrarlo primero para continuar')
+        
         if not indice_electronico_exp.abierto:
             raise PermissionDenied('No puede realizar esta acción para un indice que ya se encuentra cerrado')
         
