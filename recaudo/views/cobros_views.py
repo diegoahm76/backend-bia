@@ -33,7 +33,7 @@ class CarteraGeneralView(generics.ListAPIView):
 
 class CarteraDeudoresView(generics.ListAPIView):
     serializer_class = CarteraGeneralSerializer
-    
+
     def get(self, request):
         nombres = request.GET.get('nombres', None)
         apellidos = request.GET.get('apellidos', None)

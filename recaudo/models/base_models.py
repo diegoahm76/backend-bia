@@ -144,3 +144,13 @@ class ValoresVariables(models.Model):
         verbose_name = 'Valores Variables'
         verbose_name_plural = 'Valores Variables'
 
+
+class LeyesLiquidacion(models.Model):
+    id_ley = models.AutoField(primary_key=True, db_column='T451IdLey')
+    ley = models.TextField(db_column='T451Ley')
+
+    class Meta:
+        db_table = 'T451Leyes'
+        verbose_name = 'Ley'
+        verbose_name_plural = 'Leyes'
+
