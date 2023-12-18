@@ -1522,3 +1522,17 @@ class PlanesGetAll(generics.ListAPIView):
         if not planes:
             raise NotFound('No se encontraron resultados.')
         return Response({'success': True, 'detail': 'Listado de planes.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+# CONSULTA POR ID PLAN
+
+class PlanesGetId(generics.ListAPIView):
+    serializer_class = PlanesSerializerGet
+    queryset = Planes.objects.all()
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, pk):
+        planes = Planes.objects.all().filter(id_plan=pk)
+        serializer = self.serializer_class(planes, many=True)
+        if not planes:
+            raise NotFound('No se encontraron resultados.')
+        return Response({'success': True, 'detail': 'Listado de planes.', 'data': serializer.data}, status=status.HTTP_200_OK)
