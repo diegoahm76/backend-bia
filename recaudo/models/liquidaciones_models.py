@@ -35,7 +35,7 @@ class Expedientes(models.Model):
 
 class OpcionesLiquidacionBase(models.Model):
     id = models.AutoField(primary_key=True, db_column='T402IdOpcionLiquidacionBase')
-    nombre = models.CharField(max_length=255, db_column='T402nombre')
+    nombre = models.CharField(max_length=255, unique=True, db_column='T402nombre')
     estado = models.IntegerField(default=1, db_column='T402estado')
     version = models.IntegerField(default=1, db_column='T402version')
     funcion = models.TextField(db_column='T402funcion')
