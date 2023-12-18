@@ -17,6 +17,7 @@ urlpatterns=[
     path('busqueda-avanzada-planes/', views.BusquedaAvanzadaPlanes.as_view(), name='busquedaavanzadaplnacionaldesarrollo'),
 
     path('consultar-planes-total/',views.PlanesGetAll.as_view(),name='consultarplanesnacionalesdesarrollo'),
+    path('consultar-planes-total-id/<str:pk>/',views.PlanesGetId.as_view(),name='consultarplanetotalid'),
     # Ejes Estratégicos
     path('consultar-ejes-estrategicos/',views.EjeEstractegicoList.as_view(),name='consultarejesestrategicos'),
     path('crear-ejes-estrategicos/',views.EjeEstractegicoCreate.as_view(),name='crearejesestrategicos'),
