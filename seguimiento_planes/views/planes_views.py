@@ -1544,7 +1544,7 @@ class PlanesGetAll(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
-        print("HOLAAA")
+
         planes = Planes.objects.all()
         serializer = self.serializer_class(planes, many=True)
         if not planes:

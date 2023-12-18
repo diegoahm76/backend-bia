@@ -74,6 +74,9 @@ class PQRSDFGet(generics.ListAPIView):
             if key == 'fecha_fin':
                 if value != '':
                     filter['fecha_radicado__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
+            if key == 'tipo_PQRSDF':
+                if value != '':
+                    filter['cod_tipo_PQRSDF__icontains'] = value
         
         if tipo_busqueda == 'PQRSDF':
             filter['id_radicado__isnull'] = False
