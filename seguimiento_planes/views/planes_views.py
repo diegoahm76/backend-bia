@@ -1222,6 +1222,20 @@ class IndicadorListIdActividad(generics.ListAPIView):
         serializer = IndicadorSerializer(indicador, many=True)
         return Response({'success': True, 'detail': 'Indicador encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+# Listar Indicador por id producto
+
+class IndicadorListIdProducto(generics.ListAPIView):
+    queryset = Indicador.objects.all()
+    serializer_class = IndicadorSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, pk):
+        indicador = self.queryset.all().filter(id_producto=pk)
+        if not indicador:
+            raise NotFound('No se encontraron resultados.')
+        serializer = IndicadorSerializer(indicador, many=True)
+        return Response({'success': True, 'detail': 'Indicador encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
 # Listar Indicador por id Rubro
 
 class IndicadorListIdRubro(generics.ListAPIView):
@@ -1252,6 +1266,20 @@ class MetaList(generics.ListCreateAPIView):
             raise NotFound('No se encontraron resultados.')
         return Response({'success': True, 'detail': 'Listado de Metas.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+# Listar por periodo de tiempo, debe ingresar el usuario fecha_inicial y fecha final
+    
+class MetaListPeriodoTiempo(generics.ListAPIView):
+    queryset = Metas.objects.all()
+    serializer_class = MetasSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        data = request.query_params
+        metas = Metas.objects.all().filter(fecha_creacion_meta__range=[data["fecha_inicio"], data["fecha_fin"]])
+        serializer = MetasSerializer(metas, many=True)
+        if not metas:
+            raise NotFound('No se encontraron resultados.')
+        return Response({'success': True, 'detail': 'Listado de Metas.', 'data': serializer.data}, status=status.HTTP_200_OK)
 # Crear un Meta
 
 class MetaCreate(generics.ListCreateAPIView):

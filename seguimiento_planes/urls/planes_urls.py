@@ -93,6 +93,8 @@ urlpatterns=[
     path('consultar-indicadores-id/<str:pk>/',views.IndicadorDetail.as_view(),name='consultarindicadoresid'),
     path('consultar-indicadores-id-plan/<str:pk>/',views.IndicadorListIdPlanes.as_view(),name='consultarindicadoresidplan'),
     path('consultar-indicadores-id-actividad/<str:pk>/',views.IndicadorListIdActividad.as_view(),name='consultarindicadoresidactividad'),
+    # Listar Indicador por id producto
+    path('consultar-indicadores-id-producto/<str:pk>/',views.IndicadorListIdProducto.as_view(),name='consultarindicadoresidproducto'),
     path('consultar-indicadores-id-rubro/<str:pk>/',views.IndicadorListIdRubro.as_view(),name='consultarindicadoresidrubro'),
     # Metas
     path('consultar-metas/',views.MetaList.as_view(),name='consultarmetas'),
@@ -101,7 +103,10 @@ urlpatterns=[
     path('eliminar-metas/<str:pk>/',views.MetaDelete.as_view(),name='eliminarmetas'),
     path('consultar-metas-id/<str:pk>/',views.MetaDetail.as_view(),name='consultarmetasid'),
     path('consultar-metas-id-indicador/<str:pk>/',views.MetaListIdIndicador.as_view(),name='consultarmetasidindicador'),
-    # Tipos de Ejes
+    # Listar por periodo de tiempo, debe ingresar el usuario fecha_inicial y fecha final
+    path('consultar-metas-periodo/',views.MetaListPeriodoTiempo.as_view(),name='consultarmetasperiodo'),
+    
+    # Tipos de Ejes 
     path('consultar-tipos-ejes/',views.TipoEjeList.as_view(),name='consultartiposejes'),
     path('crear-tipos-ejes/',views.TipoEjeCreate.as_view(),name='creartiposejes'),
     path('actualizar-tipos-ejes/<str:pk>/',views.TipoEjeUpdate.as_view(),name='actualizartiposejes'),
