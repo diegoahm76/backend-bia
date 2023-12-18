@@ -25,7 +25,7 @@ class Expedientes(models.Model):
     numero_resolucion = models.CharField(max_length=255, db_column='T407codigoResolucion')
     cod_auto = models.CharField(max_length=255, db_column='T407codigoAuto')
     cod_recurso = models.CharField(max_length=255, db_column='T407codigoRecurso')
-    estado = models.CharField(max_length=20, db_column='T407estado')
+    estado = models.CharField(max_length=20, db_column='T407estado' , default='activo')
 
     class Meta:
         db_table = 'T407Expedientes'
@@ -35,7 +35,7 @@ class Expedientes(models.Model):
 
 class OpcionesLiquidacionBase(models.Model):
     id = models.AutoField(primary_key=True, db_column='T402IdOpcionLiquidacionBase')
-    nombre = models.CharField(max_length=255, db_column='T402nombre')
+    nombre = models.CharField(max_length=255, unique=True, db_column='T402nombre')
     estado = models.IntegerField(default=1, db_column='T402estado')
     version = models.IntegerField(default=1, db_column='T402version')
     funcion = models.TextField(db_column='T402funcion')
@@ -56,7 +56,7 @@ class LiquidacionesBase(models.Model):
     vencimiento = models.DateTimeField(db_column="T403vencimiento")
     periodo_liquidacion = models.CharField(max_length=255, db_column="T403periodoLiquidacion")
     ciclo_liquidacion = models.CharField(max_length=255, db_column="T403cicloliquidacion")
-    valor = models.IntegerField(default=0, db_column="T403valor")
+    valor = models.DecimalField(max_digits=20, decimal_places=2, default=0, db_column="T403valor")
     estado = models.CharField(max_length=1, default='G', db_column="T403estado")
 
     class Meta:
@@ -70,7 +70,7 @@ class DetalleLiquidacionBase(models.Model):
     id_opcion_liq = models.ForeignKey(OpcionesLiquidacionBase, db_column="T404Id_OpcionLiquidacionBase", on_delete=models.CASCADE)
     id_liquidacion = models.ForeignKey(LiquidacionesBase, on_delete=models.CASCADE, db_column="T404Id_LiquidacionBase", related_name='detalles')
     variables = models.JSONField(db_column="T404variables")
-    valor = models.IntegerField(default=0, db_column="T404valor")
+    valor = models.DecimalField(max_digits=20, decimal_places=2, default=0, db_column="T404valor")
     estado = models.IntegerField(default=1, db_column="T404estado")
     concepto = models.TextField(db_column="T404concepto")
 

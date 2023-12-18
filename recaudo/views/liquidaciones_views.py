@@ -115,7 +115,7 @@ class LiquidacionBaseView(generics.ListAPIView):
             id_expediente = request.data['id_expediente']
             if id_expediente is not None:
                 expediente = Expedientes.objects.get(pk=id_expediente)
-                expediente.liquidado = True
+                expediente.estado = 'guardado'
                 serializer.save()
                 expediente.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
