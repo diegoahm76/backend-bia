@@ -1280,6 +1280,23 @@ class MetaListPeriodoTiempo(generics.ListAPIView):
         if not metas:
             raise NotFound('No se encontraron resultados.')
         return Response({'success': True, 'detail': 'Listado de Metas.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# # Listar por periodo de tiempo, debe ingresar el usuario fecha_inicial y fecha final e id_indicador
+    
+class MetaListPeriodoTiempoPorIndicador(generics.ListAPIView):
+        queryset = Metas.objects.all()
+        serializer_class = MetasSerializer
+        permission_classes = (IsAuthenticated,)
+
+        def get(self, request):
+            data = request.query_params
+            metas = Metas.objects.all().filter(fecha_creacion_meta__range=[data["fecha_inicio"], data["fecha_fin"]], id_indicador=data["id_indicador"])
+            serializer = MetasSerializer(metas, many=True)
+            if not metas:
+                raise NotFound('No se encontraron resultados.')
+            return Response({'success': True, 'detail': 'Listado de Metas.', 'data': serializer.data}, status=status.HTTP_200_OK)
+        
+
 # Crear un Meta
 
 class MetaCreate(generics.ListCreateAPIView):

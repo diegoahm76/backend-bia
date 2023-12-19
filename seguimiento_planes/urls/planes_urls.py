@@ -105,6 +105,8 @@ urlpatterns=[
     path('consultar-metas-id-indicador/<str:pk>/',views.MetaListIdIndicador.as_view(),name='consultarmetasidindicador'),
     # Listar por periodo de tiempo, debe ingresar el usuario fecha_inicial y fecha final
     path('consultar-metas-periodo/',views.MetaListPeriodoTiempo.as_view(),name='consultarmetasperiodo'),
+        # Listar por periodo de tiempo, debe ingresar el usuario fecha_inicial y fecha final e id indicador
+    path('consultar-metas-periodo-indicador/',views.MetaListPeriodoTiempoPorIndicador.as_view(),name='consultarmetasperiodoindicador'),
     
     # Tipos de Ejes 
     path('consultar-tipos-ejes/',views.TipoEjeList.as_view(),name='consultartiposejes'),
