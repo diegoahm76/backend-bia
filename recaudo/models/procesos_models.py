@@ -60,6 +60,7 @@ class CategoriaAtributo(models.Model):
     id = models.AutoField(primary_key=True, db_column='T418IdCategoriaAtributo')
     categoria = models.CharField(max_length=255, db_column='T418categoriaAtributo')
     orden = models.PositiveIntegerField(default=1, db_column='T418orden')
+    id_etapa = models.ForeignKey(EtapasProceso, on_delete=models.CASCADE, db_column='T418IdEtapaProceso', null=True, default=None)
 
     class Meta:
         db_table = 'T418CategoriasAtributo'
