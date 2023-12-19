@@ -144,7 +144,12 @@ class AperturaExpedienteCreate(generics.CreateAPIView):
                 fecha_actual
             )
             codigo_exp_consec_por_agno = codigo_exp_consec_por_agno.data.get('data').get('consecutivo_actual')
-            
+        else:
+            expediente = ExpedientesDocumentales.objects.filter(id_cat_serie_und_org_ccd_trd_prop=data['id_cat_serie_und_org_ccd_trd_prop'], codigo_exp_Agno=current_date.year).first()
+        
+            if expediente:
+                raise ValidationError('Ya existe un expediente simple para este año en la Serie-Subserie-Unidad seleccionada')
+                
         data['codigo_exp_consec_por_agno'] = codigo_exp_consec_por_agno
         data['estado'] = 'A'
         data['fecha_folio_inicial'] = current_date
