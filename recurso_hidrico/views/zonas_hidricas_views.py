@@ -175,8 +175,6 @@ class CrearZonaHidricaVista(generics.CreateAPIView):
 
 
 
-
-
 class EnviarSMSView(generics.CreateAPIView):
     def post(self, request, *args, **kwargs):
         telefono = request.data.get('telefono')
