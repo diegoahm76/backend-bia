@@ -1080,3 +1080,6 @@ class MediosSolicitudUpdate(generics.UpdateAPIView):
             return Response({'success': True, "detail": "El medio de solicitud se actualizó con éxito.", "data": serializer.data}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+################################################### RESPUESTA A UNA SOLICITUD PQRSDF ###################################################################

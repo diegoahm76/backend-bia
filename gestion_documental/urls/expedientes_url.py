@@ -87,4 +87,12 @@ urlpatterns = [
      path('expedientes/consulta/descargar/<str:id_expediente_documental>/',views.ZipFileAPIView.as_view(), name='descargar-documentos-get'),
      path('expedientes/consulta/documentos-expedientes/get-list/<str:id_expediente_documental>/',views.ConsultaExpedientesDocumentosGetListView.as_view(), name='consulta-documentos-get-list'),
      path('expedientes/consulta/documentos-expedientes/metadata/get/<str:id_documento_de_archivo_exped>/',views.ConsultaExpedientesDocumentosGetByIdView.as_view(), name='consulta-documentos-metadata-get'),
+    
+     #Indice_Electronico_Expedientes_Documentales
+     path('expedientes/indice-electronico/<str:id_expediente_doc>/', views.ExpedienteIndiceElectronicoXML.as_view(), name='detalle-expediente-get'),
+
+
+
+
+
 ]

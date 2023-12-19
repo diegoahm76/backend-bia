@@ -2431,6 +2431,7 @@ class BusquedaBandejaArchivoFisico(generics.ListAPIView):
             # Agregar identificación y nombre del depósito a los resultados
             data['identificacion_deposito'] = deposito_archivo.identificacion_por_entidad
             data['nombre_deposito'] = deposito_archivo.nombre_deposito
+            data['id_deposito'] = deposito_archivo.id_deposito
 
         return Response({
             'success': True,
@@ -2673,6 +2674,19 @@ class ListarInformacionArbol(generics.ListAPIView):
                         expediente_id = None
                         titulo_expediente = None
 
+                        # Obtener el ID del expediente asociado a la carpeta
+                        id_expediente = carpeta.id_expediente_id
+
+                        # Verificar si el ID del expediente es nulo
+                        if id_expediente is None:
+                            return Response({'success': False, 'detail': 'La carpeta no tiene expedientes asociados.'}, status=status.HTTP_404_NOT_FOUND)
+
+                        # Obtener el expediente asociado utilizando el ID
+                        expediente = ExpedientesDocumentales.objects.get(id_expediente_documental=id_expediente)
+
+                        # Construir el número de expediente en el formato deseado
+                        numero_expediente = f"{expediente.codigo_exp_und_serie_subserie}-{expediente.codigo_exp_Agno}-{expediente.codigo_exp_consec_por_agno}"
+
                         # Verificar si el objeto id_expediente no es None antes de acceder a sus atributos
                         if carpeta.id_expediente:
                             expediente_id = carpeta.id_expediente.id_expediente_documental
@@ -2684,6 +2698,7 @@ class ListarInformacionArbol(generics.ListAPIView):
                             'orden_carpeta': carpeta.orden_ubicacion_por_caja,
                             'id_expediente': expediente_id,
                             'titulo_expediente': titulo_expediente,
+                            'numero_expediente': numero_expediente,
                             'Informacion_Mostrar': f"{carpeta.orden_ubicacion_por_caja} - Carpeta {carpeta.identificacion_por_caja}",
                             # Otros campos de información de la carpeta que desees incluir
                         }
