@@ -1569,3 +1569,19 @@ class ConsultaExpedientesDocumentosGetByIdSerializer(serializers.ModelSerializer
             'descripcion',
             'ruta_archivo'
         ]
+
+
+
+
+#IndiceElectronicoXML
+class DocsIndiceElectronicoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Docs_IndiceElectronicoExp
+        fields = '__all__'
+
+class IndiceElectronicoXMLSerializer(serializers.ModelSerializer):
+    documentos = DocsIndiceElectronicoSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = IndicesElectronicosExp
+        fields = '__all__'

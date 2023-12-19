@@ -26,7 +26,7 @@ from gestion_documental.views.conf__tipos_exp_views import ConfiguracionTipoExpe
 from seguridad.utils import Util
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AnularExpedienteSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, AperturaExpedienteUpdateAutSerializer, AperturaExpedienteUpdateNoAutSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, BorrarExpedienteSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConcesionAccesoDocumentosCreateSerializer, ConcesionAccesoDocumentosGetSerializer, ConcesionAccesoExpedientesCreateSerializer, ConcesionAccesoExpedientesGetSerializer, ConcesionAccesoPersonasFilterSerializer, ConcesionAccesoUpdateSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, ConsultaExpedientesDocumentosGetByIdSerializer, ConsultaExpedientesDocumentosGetListSerializer, ConsultaExpedientesDocumentosGetSerializer, ConsultaExpedientesGetSerializer, EnvioCodigoSerializer, ExpedienteAperturaSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, FirmaCierreGetSerializer, IndexarDocumentosAnularSerializer, IndexarDocumentosCreateSerializer, IndexarDocumentosGetSerializer, IndexarDocumentosUpdateAutSerializer, IndexarDocumentosUpdateSerializer, InformacionIndiceGetSerializer, ListExpedientesComplejosSerializer, ListarTRDSerializer, ListarTipologiasSerializer, ReubicacionFisicaExpedienteSerializer, SerieSubserieUnidadTRDGetSerializer
+from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AnularExpedienteSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, AperturaExpedienteUpdateAutSerializer, AperturaExpedienteUpdateNoAutSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, BorrarExpedienteSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConcesionAccesoDocumentosCreateSerializer, ConcesionAccesoDocumentosGetSerializer, ConcesionAccesoExpedientesCreateSerializer, ConcesionAccesoExpedientesGetSerializer, ConcesionAccesoPersonasFilterSerializer, ConcesionAccesoUpdateSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, ConsultaExpedientesDocumentosGetByIdSerializer, ConsultaExpedientesDocumentosGetListSerializer, ConsultaExpedientesDocumentosGetSerializer, ConsultaExpedientesGetSerializer, EnvioCodigoSerializer, ExpedienteAperturaSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, FirmaCierreGetSerializer, IndexarDocumentosAnularSerializer, IndexarDocumentosCreateSerializer, IndexarDocumentosGetSerializer, IndexarDocumentosUpdateAutSerializer, IndexarDocumentosUpdateSerializer, IndiceElectronicoXMLSerializer, InformacionIndiceGetSerializer, ListExpedientesComplejosSerializer, ListarTRDSerializer, ListarTipologiasSerializer, ReubicacionFisicaExpedienteSerializer, SerieSubserieUnidadTRDGetSerializer
 from gestion_documental.serializers.depositos_serializers import  CarpetaCajaGetOrdenSerializer
 from rest_framework.response import Response
 from rest_framework import status
@@ -2955,3 +2955,55 @@ class ConsultaExpedientesDocumentosGetByIdView(generics.ListAPIView):
         # PENDIENTE VALIDACION PERMISOS
         
         return Response({'success':True, 'detail':'Se encontró el documento elegido', 'permiso_descarga':True, 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+#INDICE_ELECTRONICO_XML
+class ExpedienteIndiceElectronicoXML(generics.ListAPIView):
+    serializer_class = IndiceElectronicoXMLSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_expediente_doc, *args, **kwargs):
+        try:
+            # Obtén el índice electrónico asociado al expediente
+            indice_electronico_exp = IndicesElectronicosExp.objects.filter(id_expediente_doc=id_expediente_doc).first()
+            if not indice_electronico_exp:
+                raise NotFound('No se encontró el índice del expediente ingresado')
+
+            # Obtén los documentos asociados al expediente filtrando por id_expediente_doc
+            documentos = Docs_IndiceElectronicoExp.objects.filter(id_indice_electronico_exp=indice_electronico_exp)
+
+            # Lista para almacenar los datos de cada documento
+            datos_documentos = []
+
+            for documento in documentos:
+                datos_documento = {
+                    'Id_Documento': documento.id_doc_indice_electronico_exp,
+                    'Nombre_Documento': documento.nombre_documento,
+                    'Tipologia_Documental': str(documento.id_tipologia_documental),
+                    'Fecha_Creacion_Documento': documento.fecha_creacion_doc.isoformat(),
+                    'Fecha_Incorporacion_Expediente': documento.fecha_incorporacion_exp.isoformat(),
+                    'Valor_Huella': documento.valor_huella,
+                    'Funcion_Resumen': documento.funcion_resumen,
+                    'Orden_Documento_Expediente': documento.orden_doc_expediente,
+                    'Pagina_Inicio': documento.pagina_inicio,
+                    'Pagina_Fin': documento.pagina_fin,
+                    'Formato': documento.formato,
+                    'Tamano': documento.tamagno_kb,
+                }
+                datos_documentos.append(datos_documento)
+
+            # Agrega la información de los documentos al resultado de la respuesta
+            serializer = self.serializer_class(indice_electronico_exp)
+            response_data = {
+                'success': True,
+                'detail': 'Se encontró la siguiente información',
+                'data': {
+                    'indice_electronico_exp': serializer.data,
+                    'documentos': datos_documentos,
+                }
+            }
+
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Docs_IndiceElectronicoExp.DoesNotExist:
+            return Response({'error': 'No se encontraron documentos asociados al índice del expediente'}, status=404)
