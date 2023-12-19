@@ -254,7 +254,7 @@ class ConfiguracionTipoExpedienteAperturaGetSerializer(serializers.ModelSerializ
         # codigo_exp_und_serie_subserie = cod_unidad + '.' + cod_serie + '.' + cod_subserie if cod_subserie else cod_unidad + '.' + cod_serie
         
         # expediente = ExpedientesDocumentales.objects.filter(codigo_exp_und_serie_subserie=codigo_exp_und_serie_subserie, codigo_exp_Agno=obj.agno_expediente)
-        expediente = ExpedientesDocumentales.objects.filter(codigo_exp_und_serie_subserie=obj.id_cat_serie_undorg_ccd, codigo_exp_Agno=obj.agno_expediente)
+        expediente = ExpedientesDocumentales.objects.filter(id_cat_serie_und_org_ccd_trd_prop=obj.id_cat_serie_undorg_ccd, codigo_exp_Agno=obj.agno_expediente)
         
         if expediente:
             serializer = ExpedienteAperturaSerializer(expediente, many=True)
