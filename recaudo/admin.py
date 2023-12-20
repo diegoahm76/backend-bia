@@ -7,7 +7,8 @@ from recaudo.models.base_models import (
     RangosEdad,
     TiposBien,
     TiposPago,
-    TipoActuacion
+    TipoActuacion,
+    LeyesLiquidacion
 )
 
 from recaudo.models.cobros_models import (
@@ -59,6 +60,7 @@ admin.site.register(RangosEdad),
 admin.site.register(TiposBien),
 admin.site.register(TiposPago),
 admin.site.register(TipoActuacion),
+admin.site.register(LeyesLiquidacion),
 
 #Cobros
 admin.site.register(DocumentosCobro),
