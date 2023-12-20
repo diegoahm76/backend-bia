@@ -248,46 +248,36 @@ def liquidacionPdf(request, pk):
     info = CalculosLiquidacionBase.objects.filter(id_liquidacion=liquidacion.id).get()
 
     context = {
-        'ley': ley.ley if ley.ley is not None else '',
-        'referencia_pago': liquidacion.id,
+        'rp': liquidacion.id, #referencia pago
         'limite_pago': liquidacion.vencimiento,
+        'doc_cobro': '',
+        'ley': ley.ley if ley.ley is not None else '',
+        'fecha_impresion': liquidacion.fecha_liquidacion,
+        'anio': liquidacion.fecha_liquidacion.year,
         'cedula': liquidacion.id_deudor.identificacion,
-        'titular': liquidacion.id_deudor.nombres + ' ' + liquidacion.id_deudor.apellidos,
-
+        'titular': liquidacion.id_deudor.nombres.upper() + ' ' + liquidacion.id_deudor.apellidos.upper(),
         'representante_legal': '',
-        'ubicacion': liquidacion.id_deudor.ubicacion_id.nombre,
+        'direccion': liquidacion.id_deudor.ubicacion_id.nombre.upper(),
         'telefono': liquidacion.id_deudor.telefono,
+        'expediente': liquidacion.id_expediente.cod_expediente,
+        'exp_resolucion': liquidacion.id_expediente.numero_resolucion,
+        'nombre_fuente': str(info.calculos['nombre_fuente']).upper(),
+        'predio': str(info.calculos['predio']).upper(),
+        'municipio': str(info.calculos['municipio']).upper(),
+        'caudal_consecionado': info.calculos['caudal_consecionado'],
+        'uso': str(info.calculos['uso']).upper(),
+        'fr': info.calculos['factor_regional'], #factor regional
+        'tt': info.calculos['tarifa_tasa'], #tarifa de la tasa
 
         'numero_cuota': liquidacion.periodo_liquidacion,
         'valor_cuota': liquidacion.valor,
-        'fecha_impresion': liquidacion.fecha_liquidacion,
+
         'codigo_barras': '',
-        'anio': liquidacion.fecha_liquidacion.year,
-        'periodo': '1-PRIMER SEMESTRE' if liquidacion.fecha_liquidacion.month < 7 else '2-SEGUNDO SEMESTRE',
 
-        'expediente': liquidacion.id_expediente.cod_expediente,
-
-        'permiso_vertimiento': '',
-        'resolucion_psmv': '',
-
-        'pa': '', #SI o NO
-        'aa': '', #SI o NO
-
-        'doc_cobro': '',
-
-        'nombre_tramo': '',
-        'tarifa_minima': '',
-        'uso': info.calculos['uso'],
-        'predio': info.calculos['predio'],
-        'municipio': info.calculos['municipio'],
-        'tarifa_tasa': info.calculos['tarifa_tasa'],
-        'nombre_fuente': info.calculos['nombre_fuente'],
-        'factor_regional': info.calculos['factor_regional'],
-        'caudal_consecionado': info.calculos['caudal_consecionado'],
         'factor_costo_oportunidad': info.calculos['factor_costo_oportunidad']
     }
 
-    pathToTemplate = str(settings.BASE_DIR) + '/recaudo/templates/Documento.docx'
+    pathToTemplate = str(settings.BASE_DIR) + '/recaudo/templates/TUA.docx'
     outputPath = str(settings.BASE_DIR) + '/recaudo/templates/output.docx'
 
     doc = DocxTemplate(pathToTemplate)
