@@ -253,11 +253,30 @@ def liquidacionPdf(request, pk):
         'limite_pago': liquidacion.vencimiento,
         'cedula': liquidacion.id_deudor.identificacion,
         'titular': liquidacion.id_deudor.nombres + ' ' + liquidacion.id_deudor.apellidos,
+
+        'representante_legal': '',
+        'ubicacion': liquidacion.id_deudor.ubicacion_id.nombre,
+        'telefono': liquidacion.id_deudor.telefono,
+
         'numero_cuota': liquidacion.periodo_liquidacion,
         'valor_cuota': liquidacion.valor,
         'fecha_impresion': liquidacion.fecha_liquidacion,
         'codigo_barras': '',
+        'anio': liquidacion.fecha_liquidacion.year,
+        'periodo': '1-PRIMER SEMESTRE' if liquidacion.fecha_liquidacion.month < 7 else '2-SEGUNDO SEMESTRE',
 
+        'expediente': liquidacion.id_expediente.cod_expediente,
+
+        'permiso_vertimiento': '',
+        'resolucion_psmv': '',
+
+        'pa': '', #SI o NO
+        'aa': '', #SI o NO
+
+        'doc_cobro': '',
+
+        'nombre_tramo': '',
+        'tarifa_minima': '',
         'uso': info.calculos['uso'],
         'predio': info.calculos['predio'],
         'municipio': info.calculos['municipio'],
