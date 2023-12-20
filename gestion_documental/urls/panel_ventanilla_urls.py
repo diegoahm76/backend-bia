@@ -49,6 +49,14 @@ urlpatterns = [
     
     path('pqrsdf/archivo/create/',views.VistaCreadoraArchivo3.as_view(),name='crear-archivo'),
 
+    #ARREGLOS ENTREGA 107
+    #InfoDenuncias_PQRSDFGetByPQRSDF lista denuncias por pqrsdf
+    path('pqrsdf/denuncias/get/<str:pqr>/',views.InfoDenuncias_PQRSDFGetByPQRSDF.as_view(),name='listar-denuncias-pqrsdf'),
+
+    #OPAS TramiteListOpasGetView
+    path('opas/tramite/get/',views.TramiteListOpasGetView.as_view(),name='listar-tramite-opas'),
+
+
     
     
 

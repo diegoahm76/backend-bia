@@ -17,6 +17,7 @@ urlpatterns=[
     path('busqueda-avanzada-planes/', views.BusquedaAvanzadaPlanes.as_view(), name='busquedaavanzadaplnacionaldesarrollo'),
 
     path('consultar-planes-total/',views.PlanesGetAll.as_view(),name='consultarplanesnacionalesdesarrollo'),
+    path('consultar-planes-total-id/<str:pk>/',views.PlanesGetId.as_view(),name='consultarplanetotalid'),
     # Ejes Estratégicos
     path('consultar-ejes-estrategicos/',views.EjeEstractegicoList.as_view(),name='consultarejesestrategicos'),
     path('crear-ejes-estrategicos/',views.EjeEstractegicoCreate.as_view(),name='crearejesestrategicos'),
@@ -38,6 +39,8 @@ urlpatterns=[
     path('eliminar-programas/<str:pk>/',views.ProgramaDelete.as_view(),name='eliminarprogramas'),
     path('consultar-programas-id/<str:pk>/',views.ProgramaDetail.as_view(),name='consultarprogramasid'),
     path('consultar-programas-id-planes/<str:pk>/',views.ProgramaListIdPlanes.as_view(),name='consultarprogramasidplanes'),
+    # Listar por periodo de tiempo, debe ingresar el usuario fecha_inicial y fecha final e id plan 
+    path('consultar-programas-periodo/',views.ProgramaListPeriodoTiempo.as_view(),name='consultarprogramasperiodo'),
     # Proyectos
     path('consultar-proyectos/',views.ProyectoList.as_view(),name='consultarproyectos'),
     path('crear-proyectos/',views.ProyectoCreate.as_view(),name='crearproyectos'),
@@ -45,6 +48,8 @@ urlpatterns=[
     path('eliminar-proyectos/<str:pk>/',views.ProyectoDelete.as_view(),name='eliminarproyectos'),
     path('consultar-proyectos-id/<str:pk>/',views.ProyectoDetail.as_view(),name='consultarproyectosid'),
     path('consultar-proyectos-id-programas/<str:pk>/',views.ProyectoListIdProgramas.as_view(),name='consultarproyectosidprogramas'),
+    # Listar por periodo de tiempo, debe ingresar el usuario fecha_inicial y fecha final e id plan 
+    path('consultar-proyectos-periodo/',views.ProyectoListPeriodoTiempo.as_view(),name='consultarproyectosperiodo'),
     # Productos
     path('consultar-productos/',views.ProductosList.as_view(),name='consultarproductos'),
     path('crear-productos/',views.ProductosCreate.as_view(),name='crearproductos'),
@@ -92,6 +97,8 @@ urlpatterns=[
     path('consultar-indicadores-id/<str:pk>/',views.IndicadorDetail.as_view(),name='consultarindicadoresid'),
     path('consultar-indicadores-id-plan/<str:pk>/',views.IndicadorListIdPlanes.as_view(),name='consultarindicadoresidplan'),
     path('consultar-indicadores-id-actividad/<str:pk>/',views.IndicadorListIdActividad.as_view(),name='consultarindicadoresidactividad'),
+    # Listar Indicador por id producto
+    path('consultar-indicadores-id-producto/<str:pk>/',views.IndicadorListIdProducto.as_view(),name='consultarindicadoresidproducto'),
     path('consultar-indicadores-id-rubro/<str:pk>/',views.IndicadorListIdRubro.as_view(),name='consultarindicadoresidrubro'),
     # Metas
     path('consultar-metas/',views.MetaList.as_view(),name='consultarmetas'),
@@ -100,7 +107,12 @@ urlpatterns=[
     path('eliminar-metas/<str:pk>/',views.MetaDelete.as_view(),name='eliminarmetas'),
     path('consultar-metas-id/<str:pk>/',views.MetaDetail.as_view(),name='consultarmetasid'),
     path('consultar-metas-id-indicador/<str:pk>/',views.MetaListIdIndicador.as_view(),name='consultarmetasidindicador'),
-    # Tipos de Ejes
+    # Listar por periodo de tiempo, debe ingresar el usuario fecha_inicial y fecha final
+    path('consultar-metas-periodo/',views.MetaListPeriodoTiempo.as_view(),name='consultarmetasperiodo'),
+        # Listar por periodo de tiempo, debe ingresar el usuario fecha_inicial y fecha final e id indicador
+    path('consultar-metas-periodo-indicador/',views.MetaListPeriodoTiempoPorIndicador.as_view(),name='consultarmetasperiodoindicador'),
+    
+    # Tipos de Ejes 
     path('consultar-tipos-ejes/',views.TipoEjeList.as_view(),name='consultartiposejes'),
     path('crear-tipos-ejes/',views.TipoEjeCreate.as_view(),name='creartiposejes'),
     path('actualizar-tipos-ejes/<str:pk>/',views.TipoEjeUpdate.as_view(),name='actualizartiposejes'),

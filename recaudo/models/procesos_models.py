@@ -47,7 +47,7 @@ class TiposAtributos(models.Model):
 
 class EtapasProceso(models.Model):
     id = models.AutoField(primary_key=True, db_column='T417IdEtapaProceso')
-    etapa = models.CharField(max_length=255, db_column='T417etapa')
+    etapa = models.CharField(max_length=255, unique=True, db_column='T417etapa')
     descripcion = models.CharField(max_length=255, db_column='T417descripcion')
 
     class Meta:
@@ -60,6 +60,7 @@ class CategoriaAtributo(models.Model):
     id = models.AutoField(primary_key=True, db_column='T418IdCategoriaAtributo')
     categoria = models.CharField(max_length=255, db_column='T418categoriaAtributo')
     orden = models.PositiveIntegerField(default=1, db_column='T418orden')
+    id_etapa = models.ForeignKey(EtapasProceso, on_delete=models.CASCADE, db_column='T418IdEtapaProceso', null=True, default=None)
 
     class Meta:
         db_table = 'T418CategoriasAtributo'
