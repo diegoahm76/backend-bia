@@ -10,7 +10,7 @@ from django.db.models import Q
 from django.db import transaction
 from django.forms import model_to_dict
 
-from gestion_documental.serializers.central_digitalizacion_serializers import SolicitudesAlUsuarioPostSerializer, SolicitudesPendientesSerializer, SolicitudesPostSerializer
+from gestion_documental.serializers.central_digitalizacion_serializers import SolicitudesAlUsuarioPostSerializer, SolicitudesPostSerializer, SolicitudesSerializer
 from gestion_documental.serializers.pqr_serializers import AnexosPostSerializer, MetadatosPostSerializer, MetadatosPutSerializer, PQRSDFPutSerializer
 from gestion_documental.serializers.ventanilla_pqrs_serializers import ComplementosUsu_PQRPutSerializer
 from gestion_documental.views.panel_ventanilla_views import Estados_PQRCreate
@@ -18,7 +18,7 @@ from gestion_documental.views.pqr_views import AnexosCreate, ArchivoDelete, Meta
 from seguridad.signals.roles_signals import IsAuthenticated
 
 class SolicitudesPendientesGet(generics.ListAPIView):
-    serializer_class = SolicitudesPendientesSerializer
+    serializer_class = SolicitudesSerializer
     queryset = SolicitudDeDigitalizacion.objects.all()
     permission_classes = [IsAuthenticated]
 
@@ -46,7 +46,7 @@ class SolicitudesPendientesGet(generics.ListAPIView):
             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
 class SolicitudesRespondidasGet(generics.ListAPIView):
-    serializer_class = SolicitudesPendientesSerializer
+    serializer_class = SolicitudesSerializer
     queryset = SolicitudDeDigitalizacion.objects.all()
     querysetRadicados = T262Radicados.objects.all()
     permission_classes = [IsAuthenticated]
@@ -85,6 +85,29 @@ class SolicitudesRespondidasGet(generics.ListAPIView):
 
         condiciones &= Q(Q(digitalizacion_completada = True) or Q(devuelta_sin_completar = True))
         return condiciones
+    
+class SolicitudByIdGet(generics.GenericAPIView):
+    serializer_class = SolicitudesSerializer
+    queryset = SolicitudDeDigitalizacion.objects.all()
+    querysetRadicados = T262Radicados.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_solicitud):
+        try:
+            solicitud = self.queryset.filter(id_solicitud_de_digitalizacion = id_solicitud)
+            if solicitud:
+                #Obtiene los datos de la solicitud y anexos para serializar
+                procesaSolicitudes = ProcesaSolicitudes()
+                peticion_estado = "P" if not solicitud.first().devuelta_sin_completar and not solicitud.first().digitalizacion_completada else "R"
+                solicitudes_respondidas = procesaSolicitudes.procesa_solicitudes(solicitud, None, None, None, peticion_estado)
+
+                serializer = self.serializer_class(solicitudes_respondidas, many=True)
+                return Response({'success':True, 'detail':'Se encontro la solicitud por el id asociado', 'data':serializer.data[0]}, status=status.HTTP_200_OK)
+            else:
+                return Response({'success':True, 'detail':'No se encontro la solicitud por el id asociado'},status=status.HTTP_200_OK) 
+        except Exception as e:
+            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
         
 class ProcesaSolicitudes:
     querysetRadicados = T262Radicados.objects.all()
@@ -202,8 +225,13 @@ class DigitalizacionCreate(generics.CreateAPIView):
             with transaction.atomic():
                 fecha_actual = datetime.now()
                 data_digitalizacion = json.loads(request.data.get('data_digitalizacion', ''))
+
                 #Guardar el archivo en la tabla T238
-                archivo_creado = self.create_archivo_adjunto(request.data['archivo'], fecha_actual)
+                archivo = request.data.get('archivo', None)
+                if archivo:
+                    archivo_creado = self.create_archivo_adjunto(archivo, fecha_actual)
+                else:
+                    raise ValidationError("Se debe tener un archivo para digitalizar el anexo")
                 
                 #Crea el metadato en la DB
                 data_to_create = self.set_data_metadato(data_digitalizacion, fecha_actual, archivo_creado.data.get('data').get('id_archivo_digital'))
@@ -223,7 +251,7 @@ class DigitalizacionCreate(generics.CreateAPIView):
     def create_archivo_adjunto(self, archivo, fecha_actual):
         if archivo:
             anexosCreate = AnexosCreate()
-            archivo_creado = anexosCreate.crear_archivos(self, archivo, fecha_actual)
+            archivo_creado = anexosCreate.crear_archivos(archivo, fecha_actual)
             return archivo_creado
         else:
             raise ValidationError("No se puede digitalizar anexos sin archivo adjunto")
@@ -297,7 +325,8 @@ class DigitalizacionUpdate(generics.RetrieveUpdateAPIView):
         archivoDelete.delete(id_archivo_anterior)
 
         #Crea el nuevo archivo
-        archivo_creado = AnexosCreate.crear_archivos(self, archivo, fecha_actual)
+        anexosCreate = AnexosCreate()
+        archivo_creado = anexosCreate.crear_archivos(archivo, fecha_actual)
         return archivo_creado
     
     def update_anexo(self, observacion_digitalizacion, id_anexo):

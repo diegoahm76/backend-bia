@@ -67,10 +67,14 @@ class ActividadSerializer(serializers.ModelSerializer):
              
     nombre_producto = serializers.ReadOnlyField(source='id_producto.nombre_producto', default=None)
     nombre_plan = serializers.ReadOnlyField(source='id_plan.nombre_plan', default=None)
-                
+    indicadores = serializers.SerializerMethodField()     
     class Meta:
         model = Actividad
         fields = '__all__'
+    def get_indicadores (self, obj):
+        instance = Indicador.objects.filter(id_actividad=obj.id_actividad)
+        data = IndicadorSerializer(instance, many=True).data
+        return data
 
 class EntidadSerializer(serializers.ModelSerializer):
                 
@@ -91,6 +95,12 @@ class TipoSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class RubroSerializer(serializers.ModelSerializer):
+
+    nombre_programa = serializers.ReadOnlyField(source='id_programa.nombre_programa', default=None)
+    nombre_actividad = serializers.ReadOnlyField(source='id_actividad.nombre_actividad', default=None)
+    nombre_proyecto = serializers.ReadOnlyField(source='id_proyecto.nombre_proyecto', default=None)
+    nombre_producto = serializers.ReadOnlyField(source='id_producto.nombre_producto', default=None)
+    nombre_indicador = serializers.ReadOnlyField(source='id_indicador.nombre_indicador', default=None)
                 
     class Meta:
         model = Rubro
@@ -103,10 +113,16 @@ class IndicadorSerializer(serializers.ModelSerializer):
     nombre_producto = serializers.ReadOnlyField(source='id_producto.nombre_producto', default=None)
     nombre_actividad = serializers.ReadOnlyField(source='id_actividad.nombre_actividad', default=None)
     nombre_plan = serializers.ReadOnlyField(source='id_plan.nombre_plan', default=None)
-                
+    nombre_proyecto = serializers.ReadOnlyField(source='id_proyecto.nombre_proyecto', default=None)
+    metas = serializers.SerializerMethodField()     
     class Meta:
         model = Indicador
         fields = '__all__'
+
+    def get_metas(self, obj):
+        instance = Metas.objects.filter(id_indicador=obj.id_indicador)
+        data = MetasSerializer(instance, many=True).data
+        return data
 
 class MetasSerializer(serializers.ModelSerializer):
 
@@ -129,3 +145,77 @@ class SubprogramaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subprograma
         fields = '__all__'
+class ProductosActividadesSerializer(serializers.ModelSerializer):
+         
+    nombre_proyecto = serializers.ReadOnlyField(source='id_proyecto.nombre_proyecto', default=None)
+    actividades = serializers.SerializerMethodField()
+    class Meta:
+        model = Productos
+        fields = '__all__'
+    def get_actividades(self, obj):
+        #ActividadSerializer
+        actividades = Actividad.objects.filter(id_producto=obj.id_producto)
+        serializer = ActividadSerializer(actividades, many=True)
+        return serializer.data
+    
+    
+class ProyectoSerializerProductos(serializers.ModelSerializer):
+         
+    nombre_programa = serializers.ReadOnlyField(source='id_programa.nombre_programa', default=None)
+    productos = serializers.SerializerMethodField()
+    class Meta:
+        model = Proyecto
+        fields = '__all__'
+    def get_productos(self, obj):
+        #ProductosSerializer
+        productos = Productos.objects.filter(id_proyecto=obj.id_proyecto)
+        serializer = ProductosActividadesSerializer(productos, many=True)
+        return serializer.data
+
+
+class ObjetivoSerializerGetAll(serializers.ModelSerializer):
+         
+    nombre_plan = serializers.ReadOnlyField(source='id_plan.nombre_plan', default=None)
+            
+    class Meta:
+        model = Objetivo
+        fields = '__all__'
+class ProgramaSerializerGetProyectos(serializers.ModelSerializer):
+         
+    nombre_plan = serializers.ReadOnlyField(source='id_plan.nombre_plan', default=None)
+    proyectos = serializers.SerializerMethodField()
+            
+    class Meta:
+        model = Programa
+        fields = '__all__'
+    def get_proyectos(self, obj):
+        #ProyectoSerializer
+        proyectos = Proyecto.objects.filter(id_programa=obj.id_programa)
+        serializer = ProyectoSerializerProductos(proyectos, many=True)
+        return serializer.data
+
+class PlanesSerializerGet(serializers.ModelSerializer):
+    objetivos = serializers.SerializerMethodField()
+    ejes_estractegicos = serializers.SerializerMethodField()
+    programas = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Planes
+        fields = '__all__'
+
+    def get_objetivos(self, obj):
+        #ObjetivoSerializer
+        objetivos = Objetivo.objects.filter(id_plan=obj.id_plan)
+        serializer = ObjetivoSerializerGetAll(objetivos, many=True)
+        return serializer.data
+    
+    def get_ejes_estractegicos(self, obj):
+        #EjeEstractegicoSerializer
+        ejes_estractegicos = EjeEstractegico.objects.filter(id_plan=obj.id_plan)
+        serializer = EjeEstractegicoSerializer(ejes_estractegicos, many=True)
+        return serializer.data
+    def get_programas(self, obj):
+        #ProgramaSerializer
+        programas = Programa.objects.filter(id_plan=obj.id_plan)
+        serializer = ProgramaSerializerGetProyectos(programas, many=True)
+        return serializer.data

@@ -78,6 +78,9 @@ urlpatterns=[
     path('crear-seguimiento-pai/',views.SeguimientoPAICreate.as_view(),name='crearseguimientopai'),
     path('actualizar-seguimiento-pai/<str:pk>/',views.SeguimientoPAIUpdate.as_view(),name='actualizarseguimientopai'),
     path('eliminar-seguimiento-pai/<str:pk>/',views.SeguimientoPAIDelete.as_view(),name='eliminarseguimientopai'),
+    path('consultar-seguimiento-pai-avanzado/',views.BusquedaAvanzadaSeguimientoPAI.as_view(),name='consultarseguimientopaiavanzado'),
+    # Listar por periodo de tiempo SeguimientoPAIListPeriodo
+    path('consultar-seguimiento-pai-periodo/',views.SeguimientoPAIListPeriodo.as_view(),name='consultarseguimientopaiperiodo'),
     # Seguimiento PAI Documentos
     path('consultar-seguimiento-pai-documentos/',views.SeguimientoPAIDocumentosList.as_view(),name='consultarseguimientopaidocumentos'),
     path('crear-seguimiento-pai-documentos/',views.SeguimientoPAIDocumentosCreate.as_view(),name='crearseguimientopaidocumentos'),

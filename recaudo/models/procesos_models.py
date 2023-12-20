@@ -47,7 +47,7 @@ class TiposAtributos(models.Model):
 
 class EtapasProceso(models.Model):
     id = models.AutoField(primary_key=True, db_column='T417IdEtapaProceso')
-    etapa = models.CharField(max_length=255, db_column='T417etapa')
+    etapa = models.CharField(max_length=255, unique=True, db_column='T417etapa')
     descripcion = models.CharField(max_length=255, db_column='T417descripcion')
 
     class Meta:

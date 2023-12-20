@@ -98,6 +98,10 @@ class ArchivosDgitalesCreate(generics.CreateAPIView):
 
             nombre = archivo.name
             nombre_sin_extension, extension = os.path.splitext(nombre)
+
+            if len(nombre_sin_extension) > 20:
+                nombre_sin_extension = nombre_sin_extension[:20]
+                
             extension_sin_punto = extension[1:] if extension.startswith('.') else extension
 
             data['formato'] = extension_sin_punto

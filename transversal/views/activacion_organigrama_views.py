@@ -1,7 +1,180 @@
-# TODO: Implementar validaciones adicionales previas al proceso de Activación del Organigrama.
+from rest_framework import status, generics, views
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
-# TODO: Validar la existencia de un CCD ACTIVO antes de ejecutar las validaciones.
-# - Consultar en la tabla T206CuadrosClasificacionDoc para verificar si hay algún registro con T206actual = True.
+from django.db.models import Q, F
+from datetime import datetime
+from django.db import transaction
+import copy
+
+from transversal.models.organigrama_models import (
+    Organigramas,
+    UnidadesOrganizacionales,
+    NivelesOrganigrama,
+    TemporalPersonasUnidad
+    )
+
+from seguridad.models import User
+from seguridad.utils import Util
+from transversal.models.personas_models import Personas
+from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
+from gestion_documental.models.tca_models import TablasControlAcceso
+from gestion_documental.models.trd_models import TablaRetencionDocumental
+
+from gestion_documental.views.activacion_ccd_views import (
+    CCDCambioActualPut,
+)
+
+
+from transversal.serializers.activacion_organigrama_serializers import (
+    OrganigramaCambioActualSerializer,
+)
+
+from transversal.serializers.activacion_organigrama_serializers import (
+    OrganigramaSerializer,
+    
+)
+
+
+class OrganigramaActualGetView(generics.ListAPIView):
+    serializer_class = OrganigramaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_organigrama_actual(self):
+        organigrama_actual = Organigramas.objects.filter(actual=True).first()
+        return organigrama_actual
+    
+    def get (self,request):
+        organigrama_actual = self.get_organigrama_actual()
+
+        if not organigrama_actual:
+            return Response({'success':True,'detail':'Busqueda exitosa, no existe organigrama actual'},status=status.HTTP_200_OK)
+        
+        serializer = self.serializer_class(organigrama_actual)
+        return Response({'success':True, 'detail':'Organigrama Actual', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+class OrganigramasPosiblesGetListView(generics.ListAPIView):
+    serializer_class = OrganigramaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_organigramas_posibles(self):
+        organigramas_posibles = Organigramas.objects.filter(actual=False, fecha_retiro_produccion=None).exclude(fecha_terminado=None)
+        return organigramas_posibles
+    
+    def get (self,request):
+        organigramas_posibles = self.get_organigramas_posibles()
+        serializer = self.serializer_class(organigramas_posibles, many=True)
+        return Response({'success':True, 'detail':'Los organigramas posibles para activar son los siguientes', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+@transaction.atomic
+class OrganigramaCambioActualPutView(generics.UpdateAPIView):
+    serializer_class = OrganigramaCambioActualSerializer
+    permission_classes = [IsAuthenticated]
+
+    def activar_organigrama(self, organigrama_seleccionado, data_desactivar, data_activar, data_auditoria):
+
+        previous_activacion_organigrama = copy.copy(organigrama_seleccionado)
+        organigrama_actual = Organigramas.objects.filter(actual=True).first()
+        
+        if organigrama_actual:
+            temporal_all = TemporalPersonasUnidad.objects.all()
+            previous_desactivacion_organigrama = copy.copy(organigrama_actual)
+            serializer = self.serializer_class(organigrama_actual, data=data_desactivar)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
+            if temporal_all:
+                organigrama_anterior = list(temporal_all.values_list('id_unidad_org_anterior__id_organigrama__id_organigrama', flat=True).distinct())
+                organigrama_nuevo = list(temporal_all.values_list('id_unidad_org_nueva__id_organigrama__id_organigrama', flat=True).distinct())
+                id_organigrama_anterior = organigrama_anterior[0] 
+
+                if (organigrama_seleccionado.id_organigrama not in organigrama_nuevo) or (organigrama_actual.id_organigrama != id_organigrama_anterior):
+                    temporal_all.delete()
+
+            # Auditoria Organigrama desactivado
+            descripcion = {"NombreOrganigrama":str(organigrama_actual.nombre),"VersionOrganigrama":str(organigrama_actual.version)}
+            valores_actualizados={'previous':previous_desactivacion_organigrama, 'current':organigrama_actual}
+            data_auditoria['descripcion'] = descripcion
+            data_auditoria['valores_actualizados'] = valores_actualizados
+            Util.save_auditoria(data_auditoria)
+
+        serializer = self.serializer_class(organigrama_seleccionado, data=data_activar)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        # Auditoria Organigrama activado
+        descripcion = {"NombreOrganigrama":str(organigrama_seleccionado.nombre),"VersionOrganigrama":str(organigrama_seleccionado.version)}
+        valores_actualizados={'previous':previous_activacion_organigrama, 'current':organigrama_seleccionado}
+        data_auditoria['descripcion'] = descripcion
+        data_auditoria['valores_actualizados'] = valores_actualizados
+        Util.save_auditoria(data_auditoria)
+
+        return Response({'success':True, 'detail':'Organigrama Activado'}, status=status.HTTP_200_OK)
+
+
+    def put(self, request):
+        data = request.data
+        ccd_actual = CuadrosClasificacionDocumental.objects.filter(actual=True).first()
+        
+        data_auditoria = {
+            'id_usuario': request.user.id_usuario,
+            'id_modulo': 16,
+            'cod_permiso': 'AC',
+            'subsistema': 'TRSV',
+            'dirip': Util.get_client_ip(request)
+        }
+        
+        data_desactivar = {
+            'actual': False,
+            'fecha_retiro_produccion': datetime.now()
+            }
+        
+        data_activar = {
+            'actual': True,
+            'fecha_puesta_produccion': datetime.now()
+            }
+        
+        try:
+            organigrama_seleccionado = Organigramas.objects.get(id_organigrama=data['id_organigrama'])
+        except Organigramas.DoesNotExist:
+            raise NotFound("El organigrama seleccionado no existe")
+        
+        if not ccd_actual:
+            data_activar['justificacion_nueva_version'] = data['justificacion']
+            response_org = self.activar_organigrama(organigrama_seleccionado, data_desactivar, data_activar, data_auditoria)
+        
+        else:
+            if not data.get('id_ccd'):
+                raise ValidationError('Debe seleccionar un CCD')
+            
+            try:
+                ccd_seleccionado = CuadrosClasificacionDocumental.objects.get(id_ccd=data['id_ccd'], id_organigrama=organigrama_seleccionado.id_organigrama)
+            except CuadrosClasificacionDocumental.DoesNotExist:
+                raise NotFound("El CCD seleccionado no existe")
+            
+            if ccd_seleccionado.fecha_terminado == None or ccd_seleccionado.fecha_retiro_produccion != None:
+                raise ValidationError('El CCD seleccionado no se encuentra terminado o ha sido retirado de producción')
+            
+            data_activar['justificacion_nueva_version'] = data['justificacion']
+            response_org = self.activar_organigrama(organigrama_seleccionado, data_desactivar, data_activar, data_auditoria)
+
+            # Activar CCD
+            data_activar_ccd = data_activar
+            data_activar_ccd['justificacion_nueva_version'] = "ACTIVACIÓN AUTOMÁTICA DESDE EL PROCESO DE 'CAMBIO DE ORGANIGRAMA ACTUAL'"
+            ccd_activar = CCDCambioActualPut()
+            response_ccd = ccd_activar.activar_ccd(ccd_seleccionado, organigrama_seleccionado.id_organigrama, data_desactivar, data_activar, data_auditoria)
+
+            if response_ccd.status_code != status.HTTP_200_OK:
+                return response_ccd
+            
+        if response_org.status_code != status.HTTP_200_OK:
+            return response_org
+
+        return Response({'success':True, 'detail':'Organigrama Activado'}, status=status.HTTP_200_OK)
+    
 
 # TODO: Verificar que se hayan completado los módulos en el siguiente orden:
 # 1. Homologación de Secciones Persistentes del CCD.

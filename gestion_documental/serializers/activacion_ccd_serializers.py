@@ -1,0 +1,72 @@
+from rest_framework import serializers
+from gestion_documental.models.trd_models import TablaRetencionDocumental
+from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
+from gestion_documental.models.tca_models import TablasControlAcceso
+
+
+class CCDSerializer(serializers.ModelSerializer):
+    usado = serializers.SerializerMethodField()
+    
+    def get_usado(self,obj):
+        trd = TablaRetencionDocumental.objects.filter(id_ccd=obj.id_ccd)
+        usado = True if trd else False
+        
+        return usado
+    
+    class Meta:
+        model = CuadrosClasificacionDocumental
+        fields = (
+            'id_ccd',
+            'id_organigrama',
+            'version',
+            'nombre',
+            'fecha_terminado',
+            'usado',
+            'fecha_puesta_produccion',
+            'fecha_retiro_produccion',
+            'justificacion',
+            'ruta_soporte',
+            'actual'
+        )
+
+class TCASerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TablasControlAcceso
+        fields = ['id_tca', 'version','nombre']
+
+class TRDSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TablaRetencionDocumental
+        fields = ['id_trd', 'version', 'nombre']
+
+class CCDPosiblesSerializer(serializers.ModelSerializer):
+    trd = serializers.SerializerMethodField()
+    tca = serializers.SerializerMethodField()
+
+    def get_trd(self,obj):
+        trd = TablaRetencionDocumental.objects.filter(id_ccd=obj.id_ccd).first()
+        serializer = TRDSerializer(trd)
+        return serializer.data
+    
+    def get_tca(self,obj):
+        trd = TablaRetencionDocumental.objects.filter(id_ccd=obj.id_ccd).first()
+        tca = TablasControlAcceso.objects.filter(id_trd=trd.id_trd).first()
+        serializer = TCASerializer(tca)
+        return serializer.data
+
+    class Meta:
+        model = CuadrosClasificacionDocumental
+        fields = ['id_ccd', 'nombre', 'version', 'trd', 'tca']
+
+
+class CCDCambioActualSerializer(serializers.ModelSerializer):
+    class Meta:
+        model= CuadrosClasificacionDocumental
+        fields=['justificacion_nueva_version']
+
+
+class CCDActivarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model= CuadrosClasificacionDocumental
+        fields=['fecha_puesta_produccion', 'justificacion_puesta_produccion', 'actual']
+

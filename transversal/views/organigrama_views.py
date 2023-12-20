@@ -979,6 +979,7 @@ class CambioDeOrganigramaActual(generics.UpdateAPIView):
         previous_activacion_organigrama = copy.copy(organigrama_seleccionado)
         
         temporal_all = TemporalPersonasUnidad.objects.all()
+        # TODO: Preguntar acerca de temporal_all y si es necesario
         
         if not ccd_actual:
             organigrama_seleccionado.justificacion_nueva_version = data['justificacion']
@@ -1006,8 +1007,8 @@ class CambioDeOrganigramaActual(generics.UpdateAPIView):
             organigrama_seleccionado.save()
             if temporal_all:
                 organigrama_nuevo = list(temporal_all.values_list('id_unidad_org_nueva__id_organigrama__id_organigrama', flat=True).distinct())
-                id_organigrama_nuevo = organigrama_nuevo[0]
-                if organigrama_seleccionado.id_organigrama != id_organigrama_nuevo:
+                # id_organigrama_nuevo = organigrama_nuevo
+                if organigrama_seleccionado.id_organigrama not in organigrama_nuevo:
                     temporal_all.delete()
 
             # Auditoria Organigrama activado
@@ -1103,8 +1104,8 @@ class CambioDeOrganigramaActual(generics.UpdateAPIView):
                     temporal_all.delete()
                     
                 organigrama_nuevo = list(temporal_all.values_list('id_unidad_org_nueva__id_organigrama__id_organigrama', flat=True).distinct())
-                id_organigrama_nuevo = organigrama_nuevo[0]
-                if organigrama_seleccionado.id_organigrama != id_organigrama_nuevo:
+                # id_organigrama_nuevo = organigrama_nuevo[0]
+                if organigrama_seleccionado.id_organigrama not in organigrama_nuevo:
                     temporal_all.delete()
             
             
