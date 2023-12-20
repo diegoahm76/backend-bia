@@ -1,7 +1,7 @@
 
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
-from recaudo.models.tasa_retributiva__vertimiento_models import documento_formulario_recuado
-from recaudo.serializers.tasa_retributiva__vertimiento_serializers import documento_formulario_recuados_serializer
+from recaudo.models.tasa_retributiva_vertimiento_models import documento_formulario_recuado
+from recaudo.serializers.tasa_retributiva_vertimiento_serializers import documento_formulario_recuados_serializer
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework import generics,status
