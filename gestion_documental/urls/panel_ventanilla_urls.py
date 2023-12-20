@@ -53,6 +53,8 @@ urlpatterns = [
     #InfoDenuncias_PQRSDFGetByPQRSDF lista denuncias por pqrsdf
     path('pqrsdf/denuncias/get/<str:pqr>/',views.InfoDenuncias_PQRSDFGetByPQRSDF.as_view(),name='listar-denuncias-pqrsdf'),
 
+    #OPAS TramiteListOpasGetView
+    path('opas/tramite/get/',views.TramiteListOpasGetView.as_view(),name='listar-tramite-opas'),
 
 
     
