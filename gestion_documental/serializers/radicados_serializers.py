@@ -1,8 +1,10 @@
 from rest_framework import serializers
 from gestion_documental.choices.tipo_radicado_choices import TIPOS_RADICADO_CHOICES
 from seguridad.models import (User)
-from gestion_documental.models.radicados_models import T262Radicados, Otros, MediosSolicitud
+from gestion_documental.models.radicados_models import Anexos, Anexos_PQR, EstadosSolicitudes, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, Otros, MediosSolicitud
 from transversal.models.personas_models import Personas
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+
 
 class RadicadosImprimirSerializer(serializers.ModelSerializer):
     nombre_tipo_radicado = serializers.SerializerMethodField()
@@ -64,6 +66,154 @@ class OtrosSerializer(serializers.ModelSerializer):
     class Meta:
         model = Otros
         fields = '__all__'
+class SolicitudesSerializer(serializers.ModelSerializer):
+    nombre_und_org_oficina_solicita = serializers.ReadOnlyField(source='id_und_org_oficina_solicita.nombre')
+    nombre_tipo_oficio = serializers.ReadOnlyField(source='get_cod_tipo_oficio_display')
+    numero_radicado_salida = serializers.SerializerMethodField()
+
+    def get_numero_radicado_salida(self, obj):
+        radicado = T262Radicados.objects.filter(id_radicado=obj.id_radicado_salida_id).first()
+        numero_radicado_salida = ''
+        if radicado:  
+            data_radicado = [radicado.prefijo_radicado, str(radicado.fecha_radicado.year), str(radicado.nro_radicado)]
+            numero_radicado_salida = '-'.join(data_radicado)
+        return numero_radicado_salida
+    class Meta:
+        model = SolicitudAlUsuarioSobrePQRSDF
+        fields = [
+            'id_solicitud_al_usuario_sobre_pqrsdf',
+            'id_pqrsdf',
+            'id_und_org_oficina_solicita',
+            'nombre_und_org_oficina_solicita',
+            'fecha_solicitud',
+            'asunto',
+            'descripcion',
+            'fecha_radicado_salida',
+            'numero_radicado_salida',
+            'cod_tipo_oficio',
+            'nombre_tipo_oficio'
+        ]
+class OTROSPanelSerializer(serializers.ModelSerializer):
+    anexos = serializers.SerializerMethodField()
+    
+    def get_anexos(self, obj):
+        anexos_pqr = Anexos_PQR.objects.filter(id_otros = obj.id_otros)
+        anexos = []
+
+        if anexos_pqr:
+            for anexo_pqr in anexos_pqr:
+                anexo = Anexos.objects.filter(id_anexo = anexo_pqr.id_anexo_id).first()
+                anexos.append(AnexosPqrsdfPanelSerializer(anexo).data)
+        return anexos
+    
+    def to_representation(self, instance):
+        # Organiza la representación para mostrar primero la data del modelo principal y luego los datos anexos
+        representation = super().to_representation(instance)
+        reordered_representation = {
+            'id_otros': representation['id_otros'],
+            'id_persona_titular': representation['id_persona_titular'],
+            'id_persona_interpone': representation['id_persona_interpone'],
+            'cod_relacion_titular': representation['cod_relacion_titular'],
+            'fecha_registro': representation['fecha_registro'],
+            'id_medio_solicitud': representation['id_medio_solicitud'],
+            'cod_forma_presentacion': representation['cod_forma_presentacion'],
+            'asunto': representation['asunto'],
+            'descripcion': representation['descripcion'],
+            'cantidad_anexos': representation['cantidad_anexos'],
+            'nro_folios_totales': representation['nro_folios_totales'],
+            'id_persona_recibe': representation['id_persona_recibe'],
+            'id_sucursal_recepciona_fisica': representation['id_sucursal_recepciona_fisica'],
+            'id_radicados': representation['id_radicados'],
+            'fecha_radicado': representation['fecha_radicado'],
+            'requiere_digitalizacion': representation['requiere_digitalizacion'],
+            'fecha_envio_definitivo_digitalizacion': representation['fecha_envio_definitivo_digitalizacion'],
+            'fecha_digitalizacion_completada': representation['fecha_digitalizacion_completada'],
+            'id_estado_actual_solicitud': representation['id_estado_actual_solicitud'],
+            'fecha_inicial_estado_actual': representation['fecha_inicial_estado_actual'],
+            'id_documento_archivo_expediente': representation['id_documento_archivo_expediente'],
+            'id_expediente_documental': representation['id_expediente_documental'],
+            'anexos': representation['anexos']
+        }
+        return reordered_representation
+    class Meta:
+        model = Otros
+        fields = '__all__'
+
+
+class AnexosPqrsdfPanelSerializer(serializers.ModelSerializer):
+    nombre_medio_almacenamiento = serializers.ReadOnlyField(source='get_cod_medio_almacenamiento_display')
+    metadatos = serializers.SerializerMethodField()
+
+    def get_metadatos(self, obj):
+        metadatos = MetadatosAnexosTmp.objects.filter(id_anexo = obj.id_anexo).first()
+        return MetadatoPanelSerializer(metadatos).data
+    class Meta:
+        model = Anexos
+        fields = [
+            'id_anexo',
+            'nombre_anexo',
+            'orden_anexo_doc',
+            'cod_medio_almacenamiento',
+            'nombre_medio_almacenamiento',
+            'medio_almacenamiento_otros_Cual',
+            'numero_folios',
+            'ya_digitalizado',
+            'observacion_digitalizacion',
+            'metadatos'
+        ]
+
+
+class MetadatoPanelSerializer(serializers.ModelSerializer):
+    archivo = serializers.SerializerMethodField()
+
+    def get_archivo(self, obj):
+        archivo = ArchivosDigitales.objects.filter(id_archivo_digital = obj.id_archivo_sistema_id).first()
+        return ArchivosSerializer(archivo).data
+    class Meta:
+        model = MetadatosAnexosTmp
+        fields = [
+            'id_metadatos_anexo_tmp',
+            'id_anexo',
+            'fecha_creacion_doc',
+            'asunto',
+            'descripcion',
+            'cod_categoria_archivo',
+            'es_version_original',
+            'tiene_replica_fisica',
+            'nro_folios_documento',
+            'cod_origen_archivo',
+            'id_tipologia_doc',
+            'tipologia_no_creada_TRD',
+            'palabras_clave_doc',
+            'id_archivo_sistema',
+            'archivo'
+        ]
+
+class OTROSSerializer(serializers.ModelSerializer):
+    nombre_estado_solicitud = serializers.ReadOnlyField(source='id_estado_actual_solicitud.nombre')
+    numero_radicado = serializers.ReadOnlyField(source='id_radicados.nro_radicado')
+    numero_radicado_entrada = serializers.SerializerMethodField()
+    nombre_completo_titular = serializers.SerializerMethodField()
+
+    def get_numero_radicado_entrada(self, obj):
+        radicado = obj.id_radicados
+        numero_radicado_entrada = ''
+        if radicado:
+            data_radicado = [radicado.prefijo_radicado, str(radicado.fecha_radicado.year), str(radicado.nro_radicado)]
+            numero_radicado_entrada = '-'.join(data_radicado)
+        return numero_radicado_entrada
+
+    def get_nombre_completo_titular(self, obj):
+        persona = obj.id_persona_titular
+        nombre_completo = None
+        nombre_list = [persona.primer_nombre, persona.segundo_nombre, persona.primer_apellido, persona.segundo_apellido]
+        nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+        return nombre_completo
+
+    class Meta:
+        model = Otros
+        fields = '__all__'
+
 
 class MedioSolicitudSerializer(serializers.ModelSerializer):
     class Meta:
@@ -145,4 +295,96 @@ class PersonasFilterSerializer(serializers.ModelSerializer):
             'tipo_usuario'
         ]
 
+
+class OtrosPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Otros
+        fields = '__all__'
+
+
+class AnexosPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos
+        fields = '__all__'
+
+
+
+class AnexosPQRSDFPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos_PQR
+        fields = '__all__'
+
+
+class MetadatosPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MetadatosAnexosTmp
+        fields = '__all__'
  
+
+
+class AnexosPutSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos
+        fields = '__all__'
+
+class MetadatosPutSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MetadatosAnexosTmp
+        fields = '__all__'
+
+class AnexosPQRSDFSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos_PQR
+        fields = '__all__'
+
+class ArchivosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ArchivosDigitales
+        fields = '__all__'
+
+
+class AnexosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos
+        fields = [
+            'id_anexo',
+            'nombre_anexo',
+            'orden_anexo_doc',
+            'cod_medio_almacenamiento',
+            'medio_almacenamiento_otros_Cual',
+            'numero_folios',
+            'ya_digitalizado'
+        ]
+
+
+class MetadatosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MetadatosAnexosTmp
+        fields = [
+            'id_metadatos_anexo_tmp',
+            'id_anexo',
+            'fecha_creacion_doc',
+            'asunto',
+            'descripcion',
+            'cod_categoria_archivo',
+            'es_version_original',
+            'tiene_replica_fisica',
+            'nro_folios_documento',
+            'cod_origen_archivo',
+            'id_tipologia_doc',
+            'tipologia_no_creada_TRD',
+            'palabras_clave_doc',
+            'id_archivo_sistema'
+        ]
+
+class AnexosPQRSDFSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos_PQR
+        fields = '__all__'
+
+
+
+class RadicadoPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = T262Radicados
+        fields = '__all__'

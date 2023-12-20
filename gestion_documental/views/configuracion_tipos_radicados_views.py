@@ -295,10 +295,7 @@ class ConfigTiposRadicadoAgnoGenerarN(generics.UpdateAPIView):
             instance =ConfigTiposRadicadoAgno.objects.filter(agno_radicado=age,cod_tipo_radicado='U').first()
             if not instance: 
                 raise NotFound("No se existe este tipo de configuracion de radicado.")
-        # print(instance.implementar)
-        # print(instance.prefijo_consecutivo)
-        # print(instance.consecutivo_inicial)
-        # print(instance.consecutivo_actual)
+
         new_data={}
         new_data['consecutivo_actual'] = instance.consecutivo_actual+1
         new_data['id_persona_consecutivo_actual'] = data_in['id_persona']
@@ -309,7 +306,7 @@ class ConfigTiposRadicadoAgnoGenerarN(generics.UpdateAPIView):
             
         instance = serializer.save()
         numero_con_ceros = str(instance.consecutivo_actual).zfill(instance.cantidad_digitos)
-        radicado_nuevo= instance.prefijo_consecutivo+'-'+numero_con_ceros
+        radicado_nuevo= instance.prefijo_consecutivo+'-'+str(instance.agno_radicado)+'-'+numero_con_ceros
         
         
         #raise ValidationError("siu generando radicado")

@@ -49,7 +49,7 @@ class TiposDepreciacionActivos(models.Model):
 
 class CatalogoBienes(models.Model):
     id_bien = models.AutoField(primary_key=True, db_column='T057IdBien')
-    codigo_bien = models.CharField(max_length=12, db_column='T057codigoBien')
+    codigo_bien = models.CharField(max_length=14, db_column='T057codigoBien')
     nro_elemento_bien = models.SmallIntegerField(null=True, blank=True, db_column='T057nroElementoEnElBien')
     nombre = models.CharField(max_length=255, db_column='T057nombre')
     cod_tipo_bien = models.CharField(max_length=1, choices=cod_tipo_bien_CHOICES, db_column='T057codTipoBien')

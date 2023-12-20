@@ -22,6 +22,11 @@ from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
 from gestion_documental.models.tca_models import TablasControlAcceso
 from gestion_documental.models.trd_models import TablaRetencionDocumental
 
+from gestion_documental.views.activacion_ccd_views import (
+    CCDCambioActualPut,
+)
+
+
 from transversal.serializers.activacion_organigrama_serializers import (
     OrganigramaCambioActualSerializer,
 )
@@ -30,35 +35,6 @@ from transversal.serializers.activacion_organigrama_serializers import (
     OrganigramaSerializer,
     
 )
-
-# TODO: Implementar el formulario "Cambio de Organigrama Actual" para la activación de un nuevo organigrama.
-
-# TODO: En el módulo de ACTIVACIÓN DEL ORGANIGRAMA, verificar si existe un Cuadro de Clasificación Documental (CCD) ACTUAL.
-
-# TODO: Al activar el nuevo organigrama, actualizar los campos T017actual y T017fechaPuestaEnProduccion en la tabla T017Organigramas.
-# TODO: Si el escenario es "SI Existe CCD ACTUAL", activar también el CCD, TRD y TCA correspondientes.
-# TODO: Desactivar las versiones anteriores de CCD, TRD y TCA, actualizando los campos T206fechaRetiroDeProduccion, T206actual en la tabla T206CuadrosClasificacionDoc y campos similares en las tablas T212TablasRetencionDoc y T216TablasControlAcceso.
-# TODO: En el campo T206justificacionNuevaVersion del registro del CCD que se está activando, asignar el valor "ACTIVACIÓN AUTOMÁTICA DESDE EL PROCESO DE 'CAMBIO DE ORGANIGRAMA ACTUAL'".
-# TODO: Permitir la creación de una nueva versión del organigrama en caso de futuras modificaciones, permitiendo la opción de clonar un organigrama existente y estableciendo los campos T017fechaTerminado, T017fechaPuestaEnProduccion, T017fechaRetiroDeProduccion, T017Actual y T017rutaResolucion según sea necesario.
-
-# TODO: Implementar la funcionalidad para que el usuario escriba una justificación para la activación del organigrama (campo T017justiifcacionNuevaVersion) en el formulario "Cambio de Organigrama Actual".
-
-# TODO: Tomar la fecha del sistema y asignarla a los campos T017fechaPuestaEnProduccion y T017actual del registro correspondiente en la tabla T017Organigramas.
-
-# TODO: En caso de existir un organigrama actual a desactivar, actualizar la fecha del sistema en el campo T017fechaRetiroDeProduccion y establecer T017actual en False en el registro de la tabla T017Organigramas correspondiente al organigrama actual.
-
-# TODO: Si la activación involucra CCD, TRD y TCA (escenario 2), poner T017actual=True y T017fechaPuestaEnProduccion=FechaDelSistema en las tablas T206CuadrosClasificacionDoc, T212TablasRetencionDoc y T216TablasControlAcceso.
-
-# TODO: Desactivar las versiones anteriores de CCD, TRD y TCA:
-#     - Actualizar los campos TxxfechaRetiroDeProduccion=FechaDelSistema y Txxactual en False en los registros de las tablas T206CuadrosClasificacionDoc, T212TablasRetencionDoc y T216TablasControlAcceso.
-
-# TODO: Asignar el valor "ACTIVACIÓN AUTOMÁTICA DESDE EL PROCESO DE 'CAMBIO DE ORGANIGRAMA ACTUAL'" al campo T206justificacionNuevaVersion en la tabla T206CuadrosClasificacionDoc del registro del CCD que se está activando.
-
-# TODO: Asegurar que a partir del momento en que el nuevo organigrama se establezca como el actual, esté disponible para su uso en el sistema, y prohibir cambios en él hasta que se realice un nuevo proceso de cambio de organigrama.
-
-# TODO: Implementar la funcionalidad para crear una nueva versión del organigrama en caso de modificaciones futuras:
-#     - Ofrecer la opción de crear desde cero o clonar un organigrama existente.
-#     - Si se elige clonar, generar una nueva versión con campos T017fechaTerminado vacío, T017fechaPuestaEnProduccion y T017fechaRetiroDeProduccion vacíos, T017Actual en False y T017rutaResolucion vacío.
 
 
 class OrganigramaActualGetView(generics.ListAPIView):
@@ -112,13 +88,10 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
 
             if temporal_all:
                 organigrama_anterior = list(temporal_all.values_list('id_unidad_org_anterior__id_organigrama__id_organigrama', flat=True).distinct())
-                id_organigrama_anterior = organigrama_anterior[0]
-                if organigrama_actual.id_organigrama != id_organigrama_anterior:
-                    temporal_all.delete()
-                    
                 organigrama_nuevo = list(temporal_all.values_list('id_unidad_org_nueva__id_organigrama__id_organigrama', flat=True).distinct())
-                # id_organigrama_nuevo = organigrama_nuevo[0]
-                if organigrama_seleccionado.id_organigrama not in organigrama_nuevo:
+                id_organigrama_anterior = organigrama_anterior[0] 
+
+                if (organigrama_seleccionado.id_organigrama not in organigrama_nuevo) or (organigrama_actual.id_organigrama != id_organigrama_anterior):
                     temporal_all.delete()
 
             # Auditoria Organigrama desactivado
@@ -171,19 +144,37 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
         
         if not ccd_actual:
             data_activar['justificacion_nueva_version'] = data['justificacion']
-            algo = self.activar_organigrama(organigrama_seleccionado, data_desactivar, data_activar, data_auditoria)
+            response_org = self.activar_organigrama(organigrama_seleccionado, data_desactivar, data_activar, data_auditoria)
         
         else:
-            data_activar_org = data_activar
-            data_activar_org['justificacion_nueva_version'] = data['justificacion']
-            algo = self.activar_organigrama(organigrama_seleccionado, data_desactivar, data_activar_org, data_auditoria)
+            if not data.get('id_ccd'):
+                raise ValidationError('Debe seleccionar un CCD')
+            
+            try:
+                ccd_seleccionado = CuadrosClasificacionDocumental.objects.get(id_ccd=data['id_ccd'], id_organigrama=organigrama_seleccionado.id_organigrama)
+            except CuadrosClasificacionDocumental.DoesNotExist:
+                raise NotFound("El CCD seleccionado no existe")
+            
+            if ccd_seleccionado.fecha_terminado == None or ccd_seleccionado.fecha_retiro_produccion != None:
+                raise ValidationError('El CCD seleccionado no se encuentra terminado o ha sido retirado de producción')
+            
+            data_activar['justificacion_nueva_version'] = data['justificacion']
+            response_org = self.activar_organigrama(organigrama_seleccionado, data_desactivar, data_activar, data_auditoria)
 
+            # Activar CCD
+            data_activar_ccd = data_activar
+            data_activar_ccd['justificacion_nueva_version'] = "ACTIVACIÓN AUTOMÁTICA DESDE EL PROCESO DE 'CAMBIO DE ORGANIGRAMA ACTUAL'"
+            ccd_activar = CCDCambioActualPut()
+            response_ccd = ccd_activar.activar_ccd(ccd_seleccionado, organigrama_seleccionado.id_organigrama, data_desactivar, data_activar, data_auditoria)
+
+            if response_ccd.status_code != status.HTTP_200_OK:
+                return response_ccd
+            
+        if response_org.status_code != status.HTTP_200_OK:
+            return response_org
+
+        return Response({'success':True, 'detail':'Organigrama Activado'}, status=status.HTTP_200_OK)
     
-
-# TODO: Implementar validaciones adicionales previas al proceso de Activación del Organigrama.
-
-# TODO: Validar la existencia de un CCD ACTIVO antes de ejecutar las validaciones.
-# - Consultar en la tabla T206CuadrosClasificacionDoc para verificar si hay algún registro con T206actual = True.
 
 # TODO: Verificar que se hayan completado los módulos en el siguiente orden:
 # 1. Homologación de Secciones Persistentes del CCD.
