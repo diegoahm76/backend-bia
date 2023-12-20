@@ -243,7 +243,10 @@ class AnexosTramite(models.Model):
     id_respuesta_solicitud = models.ForeignKey('RespuestaSolicitudesAlRequerimiento', on_delete=models.SET_NULL, null=True, blank=True, db_column='T287Id_RespuestaSolicitud')
     id_acto_administrativo = models.ForeignKey('ActosAdministrativos', on_delete=models.SET_NULL, null=True, blank=True, db_column='T287Id_ActoAdministrativo')
     id_recurso_reposicion = models.ForeignKey(RecursosReposicion, on_delete=models.SET_NULL, null=True, blank=True, db_column='T287Id_RecursoReposicion')
-    id_anexo = models.ForeignKey(Anexos, on_delete=models.CASCADE, db_column='T287Id_Anexo')
+    id_anexo = models.ForeignKey(Anexos, blank=True, null=True, on_delete=models.SET_NULL, db_column='T287Id_Anexo')
+    nombre = models.CharField(max_length=255, db_column='T287nombre')
+    descripcion = models.CharField(max_length=255, db_column='T287descripcion')
+    id_archivo = models.ForeignKey(ArchivosDigitales, on_delete=models.CASCADE, db_column='T287Id_Archivo')
 
     def __str__(self):
         return str(self.id_anexo_tramite)

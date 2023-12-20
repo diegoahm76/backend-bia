@@ -410,7 +410,21 @@ class ProgramaList(generics.ListCreateAPIView):
         if not programas:
             raise NotFound('No se encontraron resultados.')
         return Response({'success': True, 'detail': 'Listado de Programas.', 'data': serializer.data}, status=status.HTTP_200_OK)
-    
+
+# Listar por periodo de tiempo, debe ingresar el usuario fecha_inicial y fecha final e id plan 
+
+class ProgramaListPeriodoTiempo(generics.ListAPIView):
+    queryset = Programa.objects.all()
+    serializer_class = ProgramaSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        data = request.query_params
+        programas = Programa.objects.filter(fecha_creacion__range=[data['fecha_inicio'], data['fecha_fin']], id_plan=data['id_plan'])
+        serializer = ProgramaSerializer(programas, many=True)
+        if not programas:
+            raise NotFound('No se encontraron resultados.')
+        return Response({'success': True, 'detail': 'Listado de Programas.', 'data': serializer.data}, status=status.HTTP_200_OK)    
 # Crear un Programa
 
 class ProgramaCreate(generics.ListCreateAPIView):
@@ -498,6 +512,22 @@ class ProyectoList(generics.ListCreateAPIView):
 
     def get(self, request):
         proyectos = Proyecto.objects.all()
+        serializer = ProyectoSerializer(proyectos, many=True)
+        if not proyectos:
+            raise NotFound('No se encontraron resultados.')
+        return Response({'success': True, 'detail': 'Listado de Proyectos.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Listar por periodo de tiempo, debe ingresar el usuario fecha_inicial y fecha final e id plan 
+
+class ProyectoListPeriodoTiempo(generics.ListAPIView):
+    queryset = Proyecto.objects.all()
+    serializer_class = ProyectoSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        data = request.query_params
+        print(data, 'data')
+        proyectos = Proyecto.objects.filter(fecha_creacion__range=[data['fecha_inicio'], data['fecha_fin']], id_plan=data['id_plan'])
         serializer = ProyectoSerializer(proyectos, many=True)
         if not proyectos:
             raise NotFound('No se encontraron resultados.')

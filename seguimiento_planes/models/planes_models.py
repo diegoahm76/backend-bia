@@ -116,6 +116,9 @@ class Programa(models.Model):
         null=True, blank=True, db_column='T504porcentaje4')
     id_plan = models.ForeignKey(
         Planes, on_delete=models.CASCADE, db_column='T504IdPlan')
+    cumplio = models.BooleanField(default=False, db_column='T504cumplio')
+    fecha_creacion = models.DateField(
+        null=True, blank=True, db_column='T504fechaCreacion')
 
     def __str__(self):
         return str(self.id_programa)
@@ -142,6 +145,11 @@ class Proyecto(models.Model):
         null=True, blank=True, db_column='T505pondera4')
     id_programa = models.ForeignKey(
         Programa, on_delete=models.CASCADE, db_column='T505IdPrograma')
+    id_plan = models.ForeignKey(
+        Planes, on_delete=models.CASCADE, db_column='T505IdPlan')
+    cumplio = models.BooleanField(default=False, db_column='T505cumplio')
+    fecha_creacion = models.DateField(
+        null=True, blank=True, db_column='T505fechaCreacion')
 
     def __str__(self):
         return str(self.id_proyecto)
@@ -160,6 +168,10 @@ class Productos(models.Model):
         max_length=255, db_column='T506nombreProducto')
     id_proyecto = models.ForeignKey(
         Proyecto, on_delete=models.CASCADE, db_column='T506IdProyecto')
+    id_plan = models.ForeignKey(
+        Planes, on_delete=models.CASCADE, db_column='T506IdPlan')
+    id_programa = models.ForeignKey(
+        Programa, on_delete=models.CASCADE, db_column='T506IdPrograma')
 
     def __str__(self):
         return str(self.id_producto)
@@ -180,6 +192,10 @@ class Actividad(models.Model):
         Productos, on_delete=models.CASCADE, db_column='T507IdProducto')
     id_plan = models.ForeignKey(
         Planes, on_delete=models.CASCADE, db_column='T507IdPlan')
+    id_proyecto = models.ForeignKey(
+        Proyecto, on_delete=models.CASCADE, db_column='T507IdProyecto')
+    id_programa = models.ForeignKey(
+        Programa, on_delete=models.CASCADE, db_column='T507IdPrograma')
 
     def __str__(self):
         return str(self.id_actividad)
@@ -271,6 +287,8 @@ class Indicador(models.Model):
         Planes, on_delete=models.CASCADE, db_column='T512IdPlan')
     id_proyecto = models.ForeignKey(
         Proyecto, on_delete=models.CASCADE, db_column='T512IdProyecto')
+    id_programa = models.ForeignKey(
+        Programa, on_delete=models.CASCADE, db_column='T512IdPrograma')
 
     def __str__(self):
         return str(self.id_indicador)

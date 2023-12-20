@@ -39,6 +39,8 @@ urlpatterns=[
     path('eliminar-programas/<str:pk>/',views.ProgramaDelete.as_view(),name='eliminarprogramas'),
     path('consultar-programas-id/<str:pk>/',views.ProgramaDetail.as_view(),name='consultarprogramasid'),
     path('consultar-programas-id-planes/<str:pk>/',views.ProgramaListIdPlanes.as_view(),name='consultarprogramasidplanes'),
+    # Listar por periodo de tiempo, debe ingresar el usuario fecha_inicial y fecha final e id plan 
+    path('consultar-programas-periodo/',views.ProgramaListPeriodoTiempo.as_view(),name='consultarprogramasperiodo'),
     # Proyectos
     path('consultar-proyectos/',views.ProyectoList.as_view(),name='consultarproyectos'),
     path('crear-proyectos/',views.ProyectoCreate.as_view(),name='crearproyectos'),
@@ -46,6 +48,8 @@ urlpatterns=[
     path('eliminar-proyectos/<str:pk>/',views.ProyectoDelete.as_view(),name='eliminarproyectos'),
     path('consultar-proyectos-id/<str:pk>/',views.ProyectoDetail.as_view(),name='consultarproyectosid'),
     path('consultar-proyectos-id-programas/<str:pk>/',views.ProyectoListIdProgramas.as_view(),name='consultarproyectosidprogramas'),
+    # Listar por periodo de tiempo, debe ingresar el usuario fecha_inicial y fecha final e id plan 
+    path('consultar-proyectos-periodo/',views.ProyectoListPeriodoTiempo.as_view(),name='consultarproyectosperiodo'),
     # Productos
     path('consultar-productos/',views.ProductosList.as_view(),name='consultarproductos'),
     path('crear-productos/',views.ProductosCreate.as_view(),name='crearproductos'),
