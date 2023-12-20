@@ -12,6 +12,8 @@ from rest_framework.permissions import IsAuthenticated
 import json
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from transversal.models.organigrama_models import UnidadesOrganizacionales
+
+
 class PlantillasDocCreate(generics.CreateAPIView):
     queryset = PlantillasDoc.objects.all()
     serializer_class = PlantillasDocCreateSerializer
