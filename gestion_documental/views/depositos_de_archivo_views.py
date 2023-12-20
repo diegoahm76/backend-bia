@@ -2673,24 +2673,16 @@ class ListarInformacionArbol(generics.ListAPIView):
                     for carpeta in carpetas:
                         expediente_id = None
                         titulo_expediente = None
+                        numero_expediente = None
 
-                        # Obtener el ID del expediente asociado a la carpeta
-                        id_expediente = carpeta.id_expediente_id
+                        # Obtener el objeto ExpedientesDocumentales asociado a la carpeta
+                        expediente = carpeta.id_expediente
 
-                        # Verificar si el ID del expediente es nulo
-                        if id_expediente is None:
-                            return Response({'success': False, 'detail': 'La carpeta no tiene expedientes asociados.'}, status=status.HTTP_404_NOT_FOUND)
-
-                        # Obtener el expediente asociado utilizando el ID
-                        expediente = ExpedientesDocumentales.objects.get(id_expediente_documental=id_expediente)
-
-                        # Construir el número de expediente en el formato deseado
-                        numero_expediente = f"{expediente.codigo_exp_und_serie_subserie}-{expediente.codigo_exp_Agno}-{expediente.codigo_exp_consec_por_agno}"
-
-                        # Verificar si el objeto id_expediente no es None antes de acceder a sus atributos
-                        if carpeta.id_expediente:
-                            expediente_id = carpeta.id_expediente.id_expediente_documental
-                            titulo_expediente = carpeta.id_expediente.titulo_expediente
+                        # Verificar si el objeto expediente no es None antes de acceder a sus atributos
+                        if expediente:
+                            expediente_id = expediente.id_expediente_documental
+                            titulo_expediente = expediente.titulo_expediente
+                            numero_expediente = f"{expediente.codigo_exp_und_serie_subserie}-{expediente.codigo_exp_Agno}-{expediente.codigo_exp_consec_por_agno}"
 
                         carpeta_data = {
                             'id_carpeta': carpeta.id_carpeta_caja,
