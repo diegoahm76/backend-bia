@@ -467,7 +467,7 @@ class RadicarComplementoPQRSDF(generics.CreateAPIView):
     
     def set_titular(self, complemento):
         if complemento.id_PQRSDF_id:
-            id_PQRSDF = complemento.id_PQRSDF
+            id_PQRSDF = complemento.id_PQRSDF_id
         else:
             solicitud = SolicitudAlUsuarioSobrePQRSDF.objects.filter(id_solicitud_al_usuario_sobre_pqrsdf = complemento.id_solicitud_usu_PQR_id).first()
             id_PQRSDF = solicitud.id_pqrsdf_id
