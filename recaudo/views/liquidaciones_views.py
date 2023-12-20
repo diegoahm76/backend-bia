@@ -1,9 +1,13 @@
+from recaudo.models.base_models import (
+    LeyesLiquidacion
+)
 from recaudo.models.liquidaciones_models import (
     OpcionesLiquidacionBase,
     Deudores,
     LiquidacionesBase,
     DetalleLiquidacionBase,
-    Expedientes
+    Expedientes,
+    CalculosLiquidacionBase
 )
 from recaudo.serializers.liquidaciones_serializers import (
     OpcionesLiquidacionBaseSerializer,
@@ -21,6 +25,8 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
 from django.shortcuts import render
+from docxtpl import DocxTemplate
+from django.conf import settings
 
 
 class OpcionesLiquidacionBaseView(generics.ListAPIView):
@@ -164,6 +170,14 @@ class DetallesLiquidacionBaseView(generics.GenericAPIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def put(self, request, liquidacion):
+        detalle = DetalleLiquidacionBase.objects.filter(pk=liquidacion).get()
+        serializer = DetallesLiquidacionBasePostSerializer(detalle, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class ExpedientesView(generics.ListAPIView):
     queryset = Expedientes.objects.filter(id_deudor__isnull=False)
@@ -229,8 +243,12 @@ class ExpedientesDeudorGetView(generics.ListAPIView):
 
 
 def liquidacionPdf(request, pk):
-    '''liquidacion = LiquidacionesBase.objects.filter(pk=pk).get()
+    ley = LeyesLiquidacion.objects.all().first()
+    liquidacion = LiquidacionesBase.objects.filter(pk=pk).get()
+    info = CalculosLiquidacionBase.objects.filter(id_liquidacion=liquidacion.id).get()
+
     context = {
+        'ley': ley.ley if ley.ley is not None else '',
         'referencia_pago': liquidacion.id,
         'limite_pago': liquidacion.vencimiento,
         'cedula': liquidacion.id_deudor.identificacion,
@@ -239,8 +257,24 @@ def liquidacionPdf(request, pk):
         'valor_cuota': liquidacion.valor,
         'fecha_impresion': liquidacion.fecha_liquidacion,
         'codigo_barras': '',
-    } '''
-    context = {}
+
+        'uso': info.calculos['uso'],
+        'predio': info.calculos['predio'],
+        'municipio': info.calculos['municipio'],
+        'tarifa_tasa': info.calculos['tarifa_tasa'],
+        'nombre_fuente': info.calculos['nombre_fuente'],
+        'factor_regional': info.calculos['factor_regional'],
+        'caudal_consecionado': info.calculos['caudal_consecionado'],
+        'factor_costo_oportunidad': info.calculos['factor_costo_oportunidad']
+    }
+
+    pathToTemplate = str(settings.BASE_DIR) + '/recaudo/templates/Documento.docx'
+    outputPath = str(settings.BASE_DIR) + '/recaudo/templates/output.docx'
+
+    doc = DocxTemplate(pathToTemplate)
+    doc.render(context)
+    doc.save(outputPath)
+
     return render(request, 'liquidacion.html', context=context)
 
 
