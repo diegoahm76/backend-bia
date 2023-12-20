@@ -139,6 +139,14 @@ class ObtenerLiquidacionBaseView(generics.GenericAPIView):
         serializer = self.serializer_class(queryset)
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
 
+    def put(self, request, pk):
+        liquidacion = LiquidacionesBase.objects.filter(pk=pk).get()
+        serializer = LiquidacionesBasePostSerializer(liquidacion, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class ObtenerLiquidacionPorIdExpedienteBaseView(generics.GenericAPIView):
     serializer_class = LiquidacionesBaseSerializer
