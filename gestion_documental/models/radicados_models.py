@@ -296,6 +296,7 @@ class ComplementosUsu_PQR(models.Model):
     fecha_envio_definitivo_digitalizacion = models.DateTimeField(null=True, db_column='T267fechaEnvioDefinitivoADigitalizacion')
     fecha_digitalizacion_completada = models.DateTimeField(null=True, db_column='T267fechaDigitalizacionCompletada')
     fecha_integracion_solic_origen = models.DateTimeField(null=True, db_column='T267fechaIntegracionASolicOrigen')
+    complemento_asignado_unidad = models.BooleanField(db_column='T267complementoAsignadoAUndOrg',default=False)
     id_doc_arch_exp = models.ForeignKey(DocumentosDeArchivoExpediente,on_delete=models.CASCADE,null=True, db_column='T267Id_DocDeArch_Exp')
 
     class Meta:
