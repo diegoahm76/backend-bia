@@ -94,16 +94,6 @@ class RegistrosConfiguracion(models.Model):
         verbose_name_plural = 'Registros configuración'
 
 
-
-class TipoCobro(models.Model):
-    id_tipo_cobro = models.AutoField(primary_key=True, db_column='T441IdTipoCobro')  
-    nombre_tipo_cobro = models.CharField(max_length=255, db_column='T441NombreTipoCobro')
-
-    class Meta:
-        db_table = 'T441TipoCobro'
-        verbose_name = 'Tipo Cobro'
-        verbose_name_plural = 'Tipo Cobro'
-
 class TipoCobro(models.Model):
     id_tipo_cobro = models.AutoField(primary_key=True, db_column='T441IdTipoCobro')  
     nombre_tipo_cobro = models.CharField(max_length=255, db_column='T441NombreTipoCobro')
@@ -116,7 +106,6 @@ class TipoCobro(models.Model):
         verbose_name_plural = 'Tipo Cobro'
 
 
-
 class TipoRenta(models.Model):
     id_tipo_renta = models.AutoField(primary_key=True, db_column='T442IdTipoRenta')  
     nombre_tipo_renta = models.CharField(max_length=255, db_column='T442NombreTipoRenta')
@@ -125,8 +114,6 @@ class TipoRenta(models.Model):
         db_table = 'T442TipoRenta'
         verbose_name = 'Tipo Renta'
         verbose_name_plural = 'Tipos de Renta'
-
-
 
 
 class Variables(models.Model):
@@ -141,7 +128,6 @@ class Variables(models.Model):
         verbose_name_plural = 'Variables'
 
 
-
 class ValoresVariables(models.Model):
     id_valores_variables = models.AutoField(primary_key=True, db_column='T444IdValoresVariables')
     variables = models.ForeignKey(Variables, on_delete=models.CASCADE, db_column='T444IdVariables', related_name='valores_variables_variables')
@@ -149,41 +135,6 @@ class ValoresVariables(models.Model):
     fecha_fin = models.DateField(db_column='T444FechaFin')
     valor = models.DecimalField(max_digits=10, decimal_places=2, db_column='T444Valor')
     descripccion = models.CharField(max_length=255, db_column='T444Descripccion')
-    class Meta:
-        db_table = 'T444ValoresVariables'
-        verbose_name = 'Valores Variables'
-        verbose_name_plural = 'Valores Variables'
-
-
-class TipoRenta(models.Model):
-    id_tipo_renta = models.AutoField(primary_key=True, db_column='T442IdTipoRenta')  
-    nombre_tipo_renta = models.CharField(max_length=255, db_column='T442NombreTipoRenta')
-
-    class Meta:
-        db_table = 'T442TipoRenta'
-        verbose_name = 'Tipo Renta'
-        verbose_name_plural = 'Tipos de Renta'
-
-
-class Variables(models.Model):
-    id_variables = models.AutoField(primary_key=True, db_column='T443IdVariables')
-    nombre = models.CharField(max_length=255, db_column='T443Nombre')
-    tipo_cobro = models.ForeignKey('TipoCobro', on_delete=models.CASCADE, db_column='T443IdTipoCobro', related_name='variables_tipo_cobro')
-    tipo_renta = models.ForeignKey('TipoRenta', on_delete=models.CASCADE, db_column='T443IdTipoRenta', related_name='variables_tipo_renta')
-
-    class Meta:
-        db_table = 'T443Variables'
-        verbose_name = 'Variables'
-        verbose_name_plural = 'Variables'
-
-
-class ValoresVariables(models.Model):
-    id_valores_variables = models.AutoField(primary_key=True, db_column='T444IdValoresVariables')
-    variables = models.ForeignKey('Variables', on_delete=models.CASCADE, db_column='T444IdVariables', related_name='valores_variables_variables')
-    fecha_inicio = models.DateField(db_column='T444FechaInicio')
-    fecha_fin = models.DateField(db_column='T444FechaFin')
-    valor = models.DecimalField(max_digits=10, decimal_places=2, db_column='T444Valor')
-
     class Meta:
         db_table = 'T444ValoresVariables'
         verbose_name = 'Valores Variables'
