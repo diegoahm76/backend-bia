@@ -139,7 +139,8 @@ class ValoresVariables(models.Model):
     fecha_inicio =  models.DateTimeField(auto_now_add=True, db_column='T444FechaInicio')  
     fecha_fin = models.DateField(db_column='T444FechaFin')
     valor = models.DecimalField(max_digits=10, decimal_places=2, db_column='T444Valor')
-    descripccion = models.CharField(max_length=255, db_column='T444Descripccion')
+    descripcion = models.CharField(max_length=255, db_column='T444Descripcion')  
+
     class Meta:
         db_table = 'T444ValoresVariables'
         verbose_name = 'Valores Variables'
