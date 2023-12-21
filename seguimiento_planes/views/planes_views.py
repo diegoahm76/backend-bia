@@ -119,10 +119,6 @@ class CrearPlanes(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
-        planes = self.queryset.filter(nombre_plan=data["nombre_plan"]).first()
-        print('PLANESSSS', planes)
-        if planes:
-            return Response({'success': False, 'detail': 'El plan ya existe'}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -140,8 +136,6 @@ class ActualizarPlanes(generics.UpdateAPIView):
         # data['id_persona_modifica'] = persona_logeada
 
         planes = self.get_object()
-        if planes.nombre_plan != data["nombre_plan"] and self.queryset.filter(nombre_plan=data["nombre_plan"]).exists():
-            return Response({'success': False, 'detail': 'El plan ya existe'}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(planes, data=data, partial=True)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -219,10 +213,6 @@ class EjeEstractegicoCreate(generics.ListCreateAPIView):
 
     def post(self,request):
         data = request.data
-        eje = self.queryset.filter(nombre=data["nombre"]).first()
-        print('eje estrategico', eje)
-        if eje:
-            return Response({'success': False, 'detail': 'El eje estratégico ya existe'}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -313,9 +303,6 @@ class ObjetivoCreate(generics.ListCreateAPIView):
 
     def post(self,request):
         data = request.data
-        objetivo = self.queryset.filter(nombre_objetivo=data["nombre_objetivo"]).first()
-        if objetivo:
-            return Response({'success': False, 'detail': 'El objetivo ya existe'}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -410,7 +397,21 @@ class ProgramaList(generics.ListCreateAPIView):
         if not programas:
             raise NotFound('No se encontraron resultados.')
         return Response({'success': True, 'detail': 'Listado de Programas.', 'data': serializer.data}, status=status.HTTP_200_OK)
-    
+
+# Listar por periodo de tiempo, debe ingresar el usuario fecha_inicial y fecha final e id plan 
+
+class ProgramaListPeriodoTiempo(generics.ListAPIView):
+    queryset = Programa.objects.all()
+    serializer_class = ProgramaSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        data = request.query_params
+        programas = Programa.objects.filter(fecha_creacion__range=[data['fecha_inicio'], data['fecha_fin']], id_plan=data['id_plan'])
+        serializer = ProgramaSerializer(programas, many=True)
+        if not programas:
+            raise NotFound('No se encontraron resultados.')
+        return Response({'success': True, 'detail': 'Listado de Programas.', 'data': serializer.data}, status=status.HTTP_200_OK)    
 # Crear un Programa
 
 class ProgramaCreate(generics.ListCreateAPIView):
@@ -420,9 +421,6 @@ class ProgramaCreate(generics.ListCreateAPIView):
 
     def post(self,request):
         data = request.data
-        programa = self.queryset.filter(nombre_programa=data["nombre_programa"]).first()
-        if programa:
-            return Response({'success': False, 'detail': 'El programa ya existe'}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -487,6 +485,27 @@ class ProgramaListIdPlanes(generics.ListAPIView):
         serializer = ProgramaSerializer(programa, many=True)
         return Response({'success': True, 'detail': 'Programa encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+# Busqueda Avanzada Programas por nombre programa y nombre plan
+
+class BusquedaAvanzadaProgramas(generics.ListAPIView):
+    queryset = Programa.objects.all()
+    serializer_class = ProgramaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        nombre_programa = request.query_params.get('nombre_programa', '')
+        nombre_plan = request.query_params.get('nombre_plan', '')
+
+        # Realiza la búsqueda utilizando el campo 'nombre_programa' en el modelo
+        queryset = Programa.objects.filter(nombre_programa__icontains=nombre_programa, id_plan__nombre_plan__icontains=nombre_plan)
+
+        if not queryset.exists():
+            raise NotFound('No se encontraron resultados.')
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
 # ---------------------------------------- Proyectos ----------------------------------------
 
 # Listar todos los Proyectos
@@ -503,6 +522,22 @@ class ProyectoList(generics.ListCreateAPIView):
             raise NotFound('No se encontraron resultados.')
         return Response({'success': True, 'detail': 'Listado de Proyectos.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+# Listar por periodo de tiempo, debe ingresar el usuario fecha_inicial y fecha final e id plan 
+
+class ProyectoListPeriodoTiempo(generics.ListAPIView):
+    queryset = Proyecto.objects.all()
+    serializer_class = ProyectoSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        data = request.query_params
+        print(data, 'data')
+        proyectos = Proyecto.objects.filter(fecha_creacion__range=[data['fecha_inicio'], data['fecha_fin']], id_plan=data['id_plan'])
+        serializer = ProyectoSerializer(proyectos, many=True)
+        if not proyectos:
+            raise NotFound('No se encontraron resultados.')
+        return Response({'success': True, 'detail': 'Listado de Proyectos.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
 # Crear un Proyecto
 
 class ProyectoCreate(generics.ListCreateAPIView):
@@ -512,9 +547,6 @@ class ProyectoCreate(generics.ListCreateAPIView):
 
     def post(self,request):
         data = request.data
-        proyecto = self.queryset.filter(nombre_proyecto=data["nombre_proyecto"]).first()
-        if proyecto:
-            return Response({'success': False, 'detail': 'El proyecto ya existe'}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -579,6 +611,28 @@ class ProyectoListIdProgramas(generics.ListAPIView):
         serializer = ProyectoSerializer(proyecto, many=True)
         return Response({'success': True, 'detail': 'Proyecto encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+# Busqueda Avanzada proyectos por nombre plan, nombre programa y nombre proyecto
+
+class BusquedaAvanzadaProyectos(generics.ListAPIView):
+    queryset = Proyecto.objects.all()
+    serializer_class = ProyectoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        nombre_programa = request.query_params.get('nombre_programa', '')
+        nombre_plan = request.query_params.get('nombre_plan', '')
+        nombre_proyecto = request.query_params.get('nombre_proyecto', '')
+
+        # Realiza la búsqueda utilizando el campo 'nombre_proyecto' en el modelo
+        queryset = Proyecto.objects.filter(nombre_proyecto__icontains=nombre_proyecto, id_programa__nombre_programa__icontains=nombre_programa, id_plan__nombre_plan__icontains=nombre_plan)
+
+        if not queryset.exists():
+            raise NotFound('No se encontraron resultados.')
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
 # ---------------------------------------- Productos ----------------------------------------
 
 # Listar todos los Productos
@@ -595,6 +649,21 @@ class ProductosList(generics.ListCreateAPIView):
             raise NotFound('No se encontraron resultados.')
         return Response({'success': True, 'detail': 'Listado de Productos.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+# Listar por periodo de tiempo, debe ingresar el usuario fecha_inicial y fecha final e id plan 
+
+class ProductosListPeriodoTiempo(generics.ListAPIView):
+    queryset = Productos.objects.all()
+    serializer_class = ProductosSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        data = request.query_params
+        productos = Productos.objects.filter(fecha_creacion__range=[data['fecha_inicio'], data['fecha_fin']], id_plan=data['id_plan'])
+        serializer = ProductosSerializer(productos, many=True)
+        if not productos:
+            raise NotFound('No se encontraron resultados.')
+        return Response({'success': True, 'detail': 'Listado de Productos.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
 # Crear un Producto
 
 class ProductosCreate(generics.ListCreateAPIView):
@@ -604,9 +673,6 @@ class ProductosCreate(generics.ListCreateAPIView):
 
     def post(self,request):
         data = request.data
-        producto = self.queryset.filter(nombre_producto=data["nombre_producto"]).first()
-        if producto:
-            return Response({'success': False, 'detail': 'El producto ya existe'}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -671,6 +737,28 @@ class ProductosListIdProyectos(generics.ListAPIView):
         serializer = ProductosSerializer(producto, many=True)
         return Response({'success': True, 'detail': 'Producto encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+# Busqueda Avanzada Productos por nombre plan, nombre programa, nombre proyecto y nombre producto
+    
+class BusquedaAvanzadaProductos(generics.ListAPIView):
+    queryset = Productos.objects.all()
+    serializer_class = ProductosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        nombre_programa = request.query_params.get('nombre_programa', '')
+        nombre_plan = request.query_params.get('nombre_plan', '')
+        nombre_proyecto = request.query_params.get('nombre_proyecto', '')
+        nombre_producto = request.query_params.get('nombre_producto', '')
+
+        # Realiza la búsqueda utilizando el campo 'nombre_producto' en el modelo
+        queryset = Productos.objects.filter(nombre_producto__icontains=nombre_producto, id_proyecto__nombre_proyecto__icontains=nombre_proyecto, id_proyecto__id_programa__nombre_programa__icontains=nombre_programa, id_proyecto__id_plan__nombre_plan__icontains=nombre_plan)
+
+        if not queryset.exists():
+            raise NotFound('No se encontraron resultados.')
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
 # ---------------------------------------- Actividades ----------------------------------------
 
 # Listar todos los Actividades
@@ -687,6 +775,21 @@ class ActividadList(generics.ListCreateAPIView):
             raise NotFound('No se encontraron resultados.')
         return Response({'success': True, 'detail': 'Listado de Actividades.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+# Listar por periodo de tiempo, debe ingresar el usuario fecha_inicial y fecha final e id plan 
+
+class ActividadListPeriodoTiempo(generics.ListAPIView):
+    queryset = Actividad.objects.all()
+    serializer_class = ActividadSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        data = request.query_params
+        actividades = Actividad.objects.filter(fecha_creacion__range=[data['fecha_inicio'], data['fecha_fin']], id_plan=data['id_plan'])
+        serializer = ActividadSerializer(actividades, many=True)
+        if not actividades:
+            raise NotFound('No se encontraron resultados.')
+        return Response({'success': True, 'detail': 'Listado de Actividades.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
 # Crear un Actividad
 
 class ActividadCreate(generics.ListCreateAPIView):
@@ -696,9 +799,6 @@ class ActividadCreate(generics.ListCreateAPIView):
 
     def post(self,request):
         data = request.data
-        actividad = self.queryset.filter(nombre_actividad=data["nombre_actividad"]).first()
-        if actividad:
-            return Response({'success': False, 'detail': 'La actividad ya existe'}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -776,6 +876,29 @@ class ActividadListIdPlanes(generics.ListAPIView):
             raise NotFound('No se encontraron resultados.')
         serializer = ActividadSerializer(actividad, many=True)
         return Response({'success': True, 'detail': 'Actividad encontrada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Busqueda Avanzada Actividades por nombre plan, nombre programa, nombre proyecto, nombre producto y nombre actividad
+    
+class BusquedaAvanzadaActividades(generics.ListAPIView):
+    queryset = Actividad.objects.all()
+    serializer_class = ActividadSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        nombre_programa = request.query_params.get('nombre_programa', '')
+        nombre_plan = request.query_params.get('nombre_plan', '')
+        nombre_proyecto = request.query_params.get('nombre_proyecto', '')
+        nombre_producto = request.query_params.get('nombre_producto', '')
+        nombre_actividad = request.query_params.get('nombre_actividad', '')
+
+        # Realiza la búsqueda utilizando el campo 'nombre_actividad' en el modelo
+        queryset = Actividad.objects.filter(nombre_actividad__icontains=nombre_actividad, id_producto__nombre_producto__icontains=nombre_producto, id_producto__id_proyecto__nombre_proyecto__icontains=nombre_proyecto, id_producto__id_proyecto__id_programa__nombre_programa__icontains=nombre_programa, id_producto__id_proyecto__id_plan__nombre_plan__icontains=nombre_plan)
+
+        if not queryset.exists():
+            raise NotFound('No se encontraron resultados.')
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # ---------------------------------------- Entidades Tabla Básica ----------------------------------------
 
@@ -1063,9 +1186,6 @@ class RubroCreate(generics.ListCreateAPIView):
 
     def post(self,request):
         data = request.data
-        rubro = self.queryset.filter(cod_pre=data["cod_pre"]).first()
-        if rubro:
-            return Response({'success': False, 'detail': 'Codigo ya existe '}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -1131,6 +1251,21 @@ class IndicadorList(generics.ListCreateAPIView):
         if not indicadores:
             raise NotFound('No se encontraron resultados.')
         return Response({'success': True, 'detail': 'Listado de Indicadores.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Listar por periodo de tiempo, debe ingresar el usuario fecha_inicial y fecha final e id plan 
+
+class IndicadorListPeriodoTiempo(generics.ListAPIView):
+    queryset = Indicador.objects.all()
+    serializer_class = IndicadorSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        data = request.query_params
+        indicadores = Indicador.objects.filter(fecha_creacion__range=[data['fecha_inicio'], data['fecha_fin']], id_plan=data['id_plan'])
+        serializer = IndicadorSerializer(indicadores, many=True)
+        if not indicadores:
+            raise NotFound('No se encontraron resultados.')
+        return Response({'success': True, 'detail': 'Listado de Indicadores.', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 # Crear un Indicador
 
@@ -1141,9 +1276,6 @@ class IndicadorCreate(generics.ListCreateAPIView):
 
     def post(self,request):
         data = request.data
-        indicador = self.queryset.filter(nombre_indicador=data["nombre_indicador"]).first()
-        if indicador:
-            return Response({'success': False, 'detail': 'El indicador ya existe'}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -1222,6 +1354,20 @@ class IndicadorListIdActividad(generics.ListAPIView):
         serializer = IndicadorSerializer(indicador, many=True)
         return Response({'success': True, 'detail': 'Indicador encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+# Listar Indicador por id producto
+
+class IndicadorListIdProducto(generics.ListAPIView):
+    queryset = Indicador.objects.all()
+    serializer_class = IndicadorSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, pk):
+        indicador = self.queryset.all().filter(id_producto=pk)
+        if not indicador:
+            raise NotFound('No se encontraron resultados.')
+        serializer = IndicadorSerializer(indicador, many=True)
+        return Response({'success': True, 'detail': 'Indicador encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
 # Listar Indicador por id Rubro
 
 class IndicadorListIdRubro(generics.ListAPIView):
@@ -1235,6 +1381,30 @@ class IndicadorListIdRubro(generics.ListAPIView):
             raise NotFound('No se encontraron resultados.')
         serializer = IndicadorSerializer(indicador, many=True)
         return Response({'success': True, 'detail': 'Indicador encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Busqueda Avanzada Actividades por nombre plan, nombre programa, nombre proyecto, nombre producto, nombre actividad y nombre indicador
+    
+class BusquedaAvanzadaIndicadores(generics.ListAPIView):
+    queryset = Indicador.objects.all()
+    serializer_class = IndicadorSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        nombre_programa = request.query_params.get('nombre_programa', '')
+        nombre_plan = request.query_params.get('nombre_plan', '')
+        nombre_proyecto = request.query_params.get('nombre_proyecto', '')
+        nombre_producto = request.query_params.get('nombre_producto', '')
+        nombre_actividad = request.query_params.get('nombre_actividad', '')
+        nombre_indicador = request.query_params.get('nombre_indicador', '')
+
+        # Realiza la búsqueda utilizando el campo 'nombre_indicador' en el modelo
+        queryset = Indicador.objects.filter(nombre_indicador__icontains=nombre_indicador, id_actividad__nombre_actividad__icontains=nombre_actividad, id_actividad__id_producto__nombre_producto__icontains=nombre_producto, id_actividad__id_producto__id_proyecto__nombre_proyecto__icontains=nombre_proyecto, id_actividad__id_producto__id_proyecto__id_programa__nombre_programa__icontains=nombre_programa, id_actividad__id_producto__id_proyecto__id_plan__nombre_plan__icontains=nombre_plan)
+
+        if not queryset.exists():
+            raise NotFound('No se encontraron resultados.')
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # ---------------------------------------- Metas ----------------------------------------
 
@@ -1252,6 +1422,51 @@ class MetaList(generics.ListCreateAPIView):
             raise NotFound('No se encontraron resultados.')
         return Response({'success': True, 'detail': 'Listado de Metas.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+# Listar por periodo de tiempo, debe ingresar el usuario fecha_inicial y fecha final
+    
+class MetaListPeriodoTiempo(generics.ListAPIView):
+    queryset = Metas.objects.all()
+    serializer_class = MetasSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        data = request.query_params
+        metas = Metas.objects.all().filter(fecha_creacion_meta__range=[data["fecha_inicio"], data["fecha_fin"]])
+        serializer = MetasSerializer(metas, many=True)
+        if not metas:
+            raise NotFound('No se encontraron resultados.')
+        return Response({'success': True, 'detail': 'Listado de Metas.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# # Listar por periodo de tiempo, debe ingresar el usuario fecha_inicial y fecha final e id_indicador
+    
+class MetaListPeriodoTiempoPorIndicador(generics.ListAPIView):
+        queryset = Metas.objects.all()
+        serializer_class = MetasSerializer
+        permission_classes = (IsAuthenticated,)
+
+        def get(self, request):
+            data = request.query_params
+            metas = Metas.objects.all().filter(fecha_creacion_meta__range=[data["fecha_inicio"], data["fecha_fin"]], id_indicador=data["id_indicador"])
+            serializer = MetasSerializer(metas, many=True)
+            if not metas:
+                raise NotFound('No se encontraron resultados.')
+            return Response({'success': True, 'detail': 'Listado de Metas.', 'data': serializer.data}, status=status.HTTP_200_OK)
+        
+# Listar por periodo de tiempo, debe ingresar el usuario fecha_inicial y fecha final e id plan 
+
+class MetaListPeriodoTiempoPorPlan(generics.ListAPIView):
+    queryset = Metas.objects.all()
+    serializer_class = MetasSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        data = request.query_params
+        metas = Metas.objects.all().filter(fecha_creacion_meta__range=[data["fecha_inicio"], data["fecha_fin"]], id_plan=data["id_plan"])
+        serializer = MetasSerializer(metas, many=True)
+        if not metas:
+            raise NotFound('No se encontraron resultados.')
+        return Response({'success': True, 'detail': 'Listado de Metas.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
 # Crear un Meta
 
 class MetaCreate(generics.ListCreateAPIView):
@@ -1261,9 +1476,6 @@ class MetaCreate(generics.ListCreateAPIView):
 
     def post(self,request):
         data = request.data
-        meta = self.queryset.filter(nombre_meta=data["nombre_meta"]).first()
-        if meta:
-            return Response({'success': False, 'detail': 'La meta ya existe'}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -1327,6 +1539,32 @@ class MetaListIdIndicador(generics.ListAPIView):
             raise NotFound('No se encontraron resultados.')
         serializer = MetasSerializer(meta, many=True)
         return Response({'success': True, 'detail': 'Meta encontrada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Busqueda Avanzada Actividades por nombre plan, nombre programa, nombre proyecto, nombre producto, nombre actividad, nombre indicador y nombre meta
+
+class BusquedaAvanzadaMetas(generics.ListAPIView):
+    queryset = Metas.objects.all()
+    serializer_class = MetasSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        nombre_programa = request.query_params.get('nombre_programa', '')
+        nombre_plan = request.query_params.get('nombre_plan', '')
+        nombre_proyecto = request.query_params.get('nombre_proyecto', '')
+        nombre_producto = request.query_params.get('nombre_producto', '')
+        nombre_actividad = request.query_params.get('nombre_actividad', '')
+        nombre_indicador = request.query_params.get('nombre_indicador', '')
+        nombre_meta = request.query_params.get('nombre_meta', '')
+
+        # Realiza la búsqueda utilizando el campo 'nombre_meta' en el modelo
+        queryset = Metas.objects.filter(nombre_meta__icontains=nombre_meta, id_indicador__nombre_indicador__icontains=nombre_indicador, id_indicador__id_actividad__nombre_actividad__icontains=nombre_actividad, id_indicador__id_actividad__id_producto__nombre_producto__icontains=nombre_producto, id_indicador__id_actividad__id_producto__id_proyecto__nombre_proyecto__icontains=nombre_proyecto, id_indicador__id_actividad__id_producto__id_proyecto__id_programa__nombre_programa__icontains=nombre_programa, id_indicador__id_actividad__id_producto__id_proyecto__id_plan__nombre_plan__icontains=nombre_plan)
+
+        if not queryset.exists():
+            raise NotFound('No se encontraron resultados.')
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
+
 
 # ---------------------------------------- Tipo Eje Tabla Básica ----------------------------------------
 
@@ -1440,9 +1678,6 @@ class SubprogramaCreate(generics.ListCreateAPIView):
 
     def post(self,request):
         data = request.data
-        subprograma = self.queryset.filter(nombre_subprograma=data["nombre_subprograma"]).first()
-        if subprograma:
-            return Response({'success': False, 'detail': 'El subprograma ya existe'}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -1508,7 +1743,6 @@ class SubprogramaListIdPrograma(generics.ListAPIView):
         return Response({'success': True, 'detail': 'Subprograma encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 
-
 # CONSULTA TOTAL
 class PlanesGetAll(generics.ListAPIView):
     serializer_class = PlanesSerializerGet
@@ -1516,7 +1750,7 @@ class PlanesGetAll(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
-        print("HOLAAA")
+
         planes = Planes.objects.all()
         serializer = self.serializer_class(planes, many=True)
         if not planes:

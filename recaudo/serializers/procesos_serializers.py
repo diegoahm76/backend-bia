@@ -27,9 +27,12 @@ class TiposAtributosSerializer(serializers.ModelSerializer):
 
 
 class CategoriaAtributoSerializer(serializers.ModelSerializer):
+    nombre_etapa = serializers.ReadOnlyField(source='id_etapa.etapa')
     class Meta:
         model = CategoriaAtributo
         fields = '__all__'
+
+
 
 
 class AtributosEtapasSerializer(serializers.ModelSerializer):

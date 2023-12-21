@@ -1135,7 +1135,29 @@ class SeguimientoPAIList(generics.ListAPIView):
         if not seguimientos:
             raise NotFound("No se encontraron resultados para esta consulta.")
         return Response({'success': True, 'detail': 'Se encontraron los siguientes seguimientos PAI:', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+# Listar por periodo de tiempo
 
+class SeguimientoPAIListPeriodo(generics.ListAPIView):
+    serializer_class = SeguimientoPAISerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        fecha_inicio = self.request.query_params.get('fecha_inicio', None)
+        fecha_fin = self.request.query_params.get('fecha_fin', None)
+        queryset = SeguimientoPAI.objects.all()
+
+        if fecha_inicio is not None and fecha_fin is not None:
+            queryset = queryset.filter(fecha_creacion__gte=fecha_inicio, fecha_creacion__lte=fecha_fin)
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        seguimientos = self.get_queryset()
+        serializer = SeguimientoPAISerializer(seguimientos, many=True)
+        if not seguimientos:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes seguimientos PAI:', 'data': serializer.data}, status=status.HTTP_200_OK)
 # Crear un registro de seguimiento PAI
 
 class SeguimientoPAICreate(generics.CreateAPIView):

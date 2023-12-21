@@ -247,13 +247,14 @@ class ConfiguracionTipoExpedienteAperturaGetSerializer(serializers.ModelSerializ
     expediente = serializers.SerializerMethodField()
     
     def get_expediente(self, obj):
-        cod_unidad = obj.id_cat_serie_undorg_ccd.id_cat_serie_und.id_unidad_organizacional.codigo
-        cod_serie = obj.id_cat_serie_undorg_ccd.id_cat_serie_und.id_catalogo_serie.id_serie_doc.codigo
-        cod_subserie = obj.id_cat_serie_undorg_ccd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc.codigo if obj.id_cat_serie_undorg_ccd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc else None
+        # cod_unidad = obj.id_cat_serie_undorg_ccd.id_cat_serie_und.id_unidad_organizacional.codigo
+        # cod_serie = obj.id_cat_serie_undorg_ccd.id_cat_serie_und.id_catalogo_serie.id_serie_doc.codigo
+        # cod_subserie = obj.id_cat_serie_undorg_ccd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc.codigo if obj.id_cat_serie_undorg_ccd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc else None
         
-        codigo_exp_und_serie_subserie = cod_unidad + '.' + cod_serie + '.' + cod_subserie if cod_subserie else cod_unidad + '.' + cod_serie
+        # codigo_exp_und_serie_subserie = cod_unidad + '.' + cod_serie + '.' + cod_subserie if cod_subserie else cod_unidad + '.' + cod_serie
         
-        expediente = ExpedientesDocumentales.objects.filter(codigo_exp_und_serie_subserie=codigo_exp_und_serie_subserie, codigo_exp_Agno=obj.agno_expediente)
+        # expediente = ExpedientesDocumentales.objects.filter(codigo_exp_und_serie_subserie=codigo_exp_und_serie_subserie, codigo_exp_Agno=obj.agno_expediente)
+        expediente = ExpedientesDocumentales.objects.filter(id_cat_serie_und_org_ccd_trd_prop=obj.id_cat_serie_undorg_ccd, codigo_exp_Agno=obj.agno_expediente)
         
         if expediente:
             serializer = ExpedienteAperturaSerializer(expediente, many=True)
@@ -1429,6 +1430,7 @@ class ConsultaExpedientesGetSerializer(serializers.ModelSerializer):
             'id_subserie_origen',
             'nombre_subserie_origen',
             'codigo_exp_Agno',
+            'codigo_exp_consec_por_agno',
             'id_persona_titular_exp_complejo',
             'nombre_persona_titular'
         ]
@@ -1569,3 +1571,19 @@ class ConsultaExpedientesDocumentosGetByIdSerializer(serializers.ModelSerializer
             'descripcion',
             'ruta_archivo'
         ]
+
+
+
+
+#IndiceElectronicoXML
+class DocsIndiceElectronicoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Docs_IndiceElectronicoExp
+        fields = '__all__'
+
+class IndiceElectronicoXMLSerializer(serializers.ModelSerializer):
+    documentos = DocsIndiceElectronicoSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = IndicesElectronicosExp
+        fields = '__all__'

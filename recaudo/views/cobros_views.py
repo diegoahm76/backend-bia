@@ -37,12 +37,18 @@ class CarteraDeudoresView(generics.ListAPIView):
     def get(self, request):
         nombres = request.GET.get('nombres', None)
         apellidos = request.GET.get('apellidos', None)
+        identificacion = request.GET.get('identificacion', None)
+
         deudores = Deudores.objects.all()
         if nombres is not None:
             deudores = deudores.filter(nombres__contains=nombres)
 
         if apellidos is not None:
             deudores = deudores.filter(apellidos__contains=apellidos)
+
+        if identificacion is not None:
+            deudores = deudores.filter(identificacion__contains=identificacion)
+
 
         queryset = Cartera.objects.filter(id_deudor__in=deudores)
         serializer = self.serializer_class(queryset, many=True)

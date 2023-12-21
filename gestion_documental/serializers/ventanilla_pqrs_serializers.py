@@ -2,12 +2,13 @@ from rest_framework import serializers
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
+from tramites.models.tramites_models import PermisosAmbSolicitudesTramite
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from transversal.models.personas_models import Personas
 from datetime import datetime, timedelta
 
-
+from django.db.models import Q
 
 
 class EstadosSolicitudesGetSerializer(serializers.ModelSerializer):
@@ -191,15 +192,27 @@ class ComplementosUsu_PQRGetSerializer(serializers.ModelSerializer):
     radicado = serializers.SerializerMethodField()
     numero_solicitudes = serializers.SerializerMethodField()
     es_complemento = serializers.SerializerMethodField()
-    
+    medio_solicitud = serializers.ReadOnlyField(source='id_medio_solicitud.nombre')
+    nombre_completo_recibe = serializers.SerializerMethodField()
     class Meta:
         model = ComplementosUsu_PQR
-        fields = ['idComplementoUsu_PQR','tipo','nombre_completo_titular','asunto','cantidad_anexos','radicado','requiere_digitalizacion','numero_solicitudes','es_complemento']
+        fields = ['idComplementoUsu_PQR','tipo','nombre_completo_titular','asunto','cantidad_anexos','radicado','fecha_radicado','requiere_digitalizacion','numero_solicitudes','es_complemento','complemento_asignado_unidad','fecha_complemento','medio_solicitud','nro_folios_totales','nombre_completo_recibe','asunto','descripcion']
     
     def get_es_complemento(self, obj):
         return True
     def get_tipo(self, obj):
         return "Complemento de PQRSDF"
+    
+    def get_nombre_completo_recibe(self, obj):
+        if obj.id_persona_recibe:
+            nombre_completo_responsable = None
+            nombre_list = [obj.id_persona_recibe.primer_nombre, obj.id_persona_recibe.segundo_nombre,
+                            obj.id_persona_recibe.primer_apellido, obj.id_persona_recibe.segundo_apellido]
+            nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+            return nombre_completo_responsable
+        else:
+            return 'No Identificado'
     def get_nombre_completo_titular(self, obj):
 
         if obj.id_persona_interpone:
@@ -705,4 +718,109 @@ class InfoDenuncias_PQRSDFGetByPqrsdfSerializer(serializers.ModelSerializer):
                     arreglo.append(nombre)
 
         return arreglo
+    
+
+#OPAS
+class OPAGetSerializer(serializers.ModelSerializer):
+    id_persona_titular = serializers.ReadOnlyField(source='id_solicitud_tramite.id_persona_titular.id_persona', default=None)
+    nombre_completo_titular = serializers.SerializerMethodField()
+    tipo_solicitud = serializers.SerializerMethodField()
+    id_persona_interpone = serializers.ReadOnlyField(source='id_solicitud_tramite.id_persona_interpone.id_persona', default=None)
+    nombre_persona_interpone = serializers.SerializerMethodField()
+    cod_relacion_con_el_titular = serializers.ReadOnlyField(source='id_solicitud_tramite.cod_relacion_con_el_titular', default=None)
+    relacion_con_el_titular = serializers.CharField(source='id_solicitud_tramite.get_cod_relacion_con_el_titular_display')
+    cod_tipo_operacion_tramite = serializers.ReadOnlyField(source='id_solicitud_tramite.cod_tipo_operacion_tramite', default=None)
+    tipo_operacion_tramite = serializers.CharField(source='id_solicitud_tramite.get_cod_tipo_operacion_tramite_display')
+    nombre_proyecto = serializers.ReadOnlyField(source='id_solicitud_tramite.nombre_proyecto', default=None)
+    costo_proyecto = serializers.ReadOnlyField(source='id_solicitud_tramite.costo_proyecto', default=None)
+    id_estado_actual_solicitud = serializers.ReadOnlyField(source='id_solicitud_tramite.id_estado_actual_solicitud.id_estado_solicitud', default=None)
+    estado_actual_solicitud = serializers.ReadOnlyField(source='id_solicitud_tramite.id_estado_actual_solicitud.nombre', default=None)
+    fecha_ini_estado_actual = serializers.ReadOnlyField(source='id_solicitud_tramite.fecha_ini_estado_actual', default=None)
+    cod_tipo_permiso_ambiental = serializers.ReadOnlyField(source='id_permiso_ambiental.cod_tipo_permiso_ambiental', default=None)
+    tipo_permiso_ambiental = serializers.CharField(source='id_permiso_ambiental.get_cod_tipo_permiso_ambiental_display')
+    permiso_ambiental = serializers.ReadOnlyField(source='id_permiso_ambiental.nombre', default=None)
+    asunto = serializers.SerializerMethodField()
+    cantidad_anexos = serializers.SerializerMethodField()
+    radicado = serializers.SerializerMethodField()
+    fecha_radicado = serializers.ReadOnlyField(source='id_solicitud_tramite.fecha_radicado', default=None)
+    nombre_sucursal = serializers.SerializerMethodField()
+    requiere_digitalizacion = serializers.ReadOnlyField(source='id_solicitud_tramite.requiere_digitalizacion', default=None)
+    def get_nombre_sucursal(self, obj):
+        return 'NO APLICA'
+    def get_radicado(self, obj):
+        cadena = ""
+        if obj.id_solicitud_tramite.id_radicado:
+            cadena= str(obj.id_solicitud_tramite.id_radicado.prefijo_radicado)+'-'+str(obj.id_solicitud_tramite.id_radicado.agno_radicado)+'-'+str(obj.id_solicitud_tramite.id_radicado.nro_radicado)
+            return cadena
+        else:
+            return 'SIN RADICAR'
+
+    def get_cantidad_anexos(self, obj):
+        return 'NO APLICA'
+    def get_asunto(self, obj):
+        return 'No APLICA'
+    def get_nombre_completo_titular(self, obj):
+        nombre_persona_titular = None
+        if obj.id_solicitud_tramite.id_persona_titular:
+            if obj.id_solicitud_tramite.id_persona_titular.tipo_persona == 'J':
+                nombre_persona_titular = obj.id_solicitud_tramite.id_persona_titular.razon_social
+            else:
+                nombre_list = [obj.id_solicitud_tramite.id_persona_titular.primer_nombre, obj.id_solicitud_tramite.id_persona_titular.segundo_nombre,
+                                obj.id_solicitud_tramite.id_persona_titular.primer_apellido, obj.id_solicitud_tramite.id_persona_titular.segundo_apellido]
+                nombre_persona_titular = ' '.join(item for item in nombre_list if item is not None)
+                nombre_persona_titular = nombre_persona_titular if nombre_persona_titular != "" else None
+        return nombre_persona_titular
+    
+    def get_nombre_persona_interpone(self, obj):
+        nombre_persona_interpone = None
+        if obj.id_solicitud_tramite.id_persona_interpone:
+            if obj.id_solicitud_tramite.id_persona_interpone.tipo_persona == 'J':
+                nombre_persona_interpone = obj.id_solicitud_tramite.id_persona_interpone.razon_social
+            else:
+                nombre_list = [obj.id_solicitud_tramite.id_persona_interpone.primer_nombre, obj.id_solicitud_tramite.id_persona_interpone.segundo_nombre,
+                                obj.id_solicitud_tramite.id_persona_interpone.primer_apellido, obj.id_solicitud_tramite.id_persona_interpone.segundo_apellido]
+                nombre_persona_interpone = ' '.join(item for item in nombre_list if item is not None)
+                nombre_persona_interpone = nombre_persona_interpone if nombre_persona_interpone != "" else None
+        return nombre_persona_interpone
+    def get_tipo_solicitud(self, obj):
+        return "OPA"
+    # SERIALIZERMETHODFIELD ARCHIVOS
+    
+    class Meta:
+        model = PermisosAmbSolicitudesTramite
+        fields = [
+            'id_solicitud_tramite',
+            'id_persona_titular',
+            'nombre_completo_titular',
+            'tipo_solicitud',
+            'asunto',
+            'cantidad_anexos',
+            'radicado',
+            'fecha_radicado',
+            'nombre_sucursal',
+            'requiere_digitalizacion',
+            'id_estado_actual_solicitud',
+            'estado_actual_solicitud',
+            'id_persona_interpone',
+            'nombre_persona_interpone',
+            'cod_relacion_con_el_titular',
+            'relacion_con_el_titular',
+            'cod_tipo_operacion_tramite',
+            'tipo_operacion_tramite',
+            'nombre_proyecto',
+            'costo_proyecto',
+            'fecha_ini_estado_actual',
+            'id_permiso_ambiental',
+            'cod_tipo_permiso_ambiental',
+            'tipo_permiso_ambiental',
+            'permiso_ambiental',
+            # 'cod_departamento',
+            # 'departamento',
+            # 'cod_municipio',
+            # 'municipio',
+            # 'direccion',
+            'descripcion_direccion',
+            'coordenada_x',
+            'coordenada_y'
+        ]
 

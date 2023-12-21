@@ -86,6 +86,6 @@ class CalculosLiquidacionBase(models.Model):
     calculos = models.JSONField(db_column="T450calculos")
 
     class Meta:
-        db_table = "T50Calculos_LiquidacionesBase"
+        db_table = "T450Calculos_LiquidacionesBase"
         verbose_name = 'Calculo liquidación base'
         verbose_name_plural = 'Calculos liquidación base'

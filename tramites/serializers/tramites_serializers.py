@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib import auth
 
-from tramites.models.tramites_models import PermisosAmbSolicitudesTramite, PermisosAmbientales, SolicitudesTramites
+from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, PermisosAmbientales, SolicitudesTramites
 from transversal.models.base_models import Departamento
 from transversal.models.personas_models import Personas
 
@@ -148,4 +148,29 @@ class TramiteListGetSerializer(serializers.ModelSerializer):
             'descripcion_direccion',
             'coordenada_x',
             'coordenada_y'
+        ]
+        
+class AnexosUpdateSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = AnexosTramite
+        fields = '__all__'
+        
+class AnexosGetSerializer(serializers.ModelSerializer):
+    formato = serializers.ReadOnlyField(source='id_archivo.formato', default=None)
+    tamagno_kb = serializers.ReadOnlyField(source='id_archivo.tamagno_kb', default=None)
+    ruta_archivo = serializers.ReadOnlyField(source='id_archivo.ruta_archivo.url', default=None)
+    
+    class Meta:
+        model = AnexosTramite
+        fields = [
+            'id_anexo_tramite',
+            'id_solicitud_tramite',
+            'id_permiso_amb_solicitud_tramite',
+            'id_archivo',
+            'nombre',
+            'descripcion',
+            'formato',
+            'tamagno_kb',
+            'ruta_archivo'
         ]
