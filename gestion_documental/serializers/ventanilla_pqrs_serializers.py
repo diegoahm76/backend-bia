@@ -192,15 +192,27 @@ class ComplementosUsu_PQRGetSerializer(serializers.ModelSerializer):
     radicado = serializers.SerializerMethodField()
     numero_solicitudes = serializers.SerializerMethodField()
     es_complemento = serializers.SerializerMethodField()
-    
+    medio_solicitud = serializers.ReadOnlyField(source='id_medio_solicitud.nombre')
+    nombre_completo_recibe = serializers.SerializerMethodField()
     class Meta:
         model = ComplementosUsu_PQR
-        fields = ['idComplementoUsu_PQR','tipo','nombre_completo_titular','asunto','cantidad_anexos','radicado','requiere_digitalizacion','numero_solicitudes','es_complemento']
+        fields = ['idComplementoUsu_PQR','tipo','nombre_completo_titular','asunto','cantidad_anexos','radicado','fecha_radicado','requiere_digitalizacion','numero_solicitudes','es_complemento','complemento_asignado_unidad','fecha_complemento','medio_solicitud','nro_folios_totales','nombre_completo_recibe','asunto','descripcion']
     
     def get_es_complemento(self, obj):
         return True
     def get_tipo(self, obj):
         return "Complemento de PQRSDF"
+    
+    def get_nombre_completo_recibe(self, obj):
+        if obj.id_persona_recibe:
+            nombre_completo_responsable = None
+            nombre_list = [obj.id_persona_recibe.primer_nombre, obj.id_persona_recibe.segundo_nombre,
+                            obj.id_persona_recibe.primer_apellido, obj.id_persona_recibe.segundo_apellido]
+            nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+            return nombre_completo_responsable
+        else:
+            return 'No Identificado'
     def get_nombre_completo_titular(self, obj):
 
         if obj.id_persona_interpone:
