@@ -1,3 +1,6 @@
+import json
+import os
+import hashlib
 from rest_framework import status
 from rest_framework import generics, views
 from rest_framework.views import APIView
@@ -5,9 +8,12 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
+from gestion_documental.models.trd_models import FormatosTiposMedio
+from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 
-from tramites.models.tramites_models import PermisosAmbSolicitudesTramite, PermisosAmbientales
-from tramites.serializers.tramites_serializers import InicioTramiteCreateSerializer, ListTramitesGetSerializer, PersonaTitularInfoGetSerializer
+from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, PermisosAmbientales, SolicitudesTramites
+from tramites.serializers.tramites_serializers import AnexosGetSerializer, AnexosUpdateSerializer, InicioTramiteCreateSerializer, ListTramitesGetSerializer, PersonaTitularInfoGetSerializer, TramiteListGetSerializer
+from transversal.models.base_models import Municipio
 from transversal.models.personas_models import Personas
 
 class ListTramitesGetView(generics.ListAPIView):
@@ -38,6 +44,17 @@ class PersonaTitularInfoGetView(generics.ListAPIView):
         
         return Response({'success': True, 'detail':'Se encontró la siguiente información', 'data': serializer.data}, status=status.HTTP_200_OK)   
 
+class TramiteListGetView(generics.ListAPIView):
+    serializer_class = TramiteListGetSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_persona_titular):
+        tramites_opas = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite__id_medio_solicitud=2, id_solicitud_tramite__id_persona_titular=id_persona_titular, id_permiso_ambiental__cod_tipo_permiso_ambiental = 'O')
+
+        serializer = self.serializer_class(tramites_opas, many=True)
+        
+        return Response({'success': True, 'detail':'Se encontró la siguiente información', 'data': serializer.data}, status=status.HTTP_200_OK)   
+
 class InicioTramiteCreateView(generics.CreateAPIView):
     serializer_class = InicioTramiteCreateSerializer
     permission_classes = [IsAuthenticated]
@@ -45,11 +62,21 @@ class InicioTramiteCreateView(generics.CreateAPIView):
     def create(self, request):
         data = request.data
         
+        direccion = request.data.get('direccion', '')
         descripcion_direccion = request.data.get('descripcion_direccion', '')
         coordenada_x = data.get('coordenada_x')
         coordenada_y = data.get('coordenada_y')
+        cod_municipio = data.get('cod_municipio', '')
+        if direccion == '':
+            raise ValidationError('La dirección es obligatoria')
         if descripcion_direccion == '':
             raise ValidationError('La descripción de la dirección es obligatoria')
+        if cod_municipio == '':
+            raise ValidationError('El municipio es obligatorio')
+        
+        municipio = Municipio.objects.filter(cod_municipio=cod_municipio).first()
+        if not municipio:
+            raise ValidationError('El municipio es incorrecto')
         
         id_permiso_ambiental = data.get('id_permiso_ambiental')
         if not id_permiso_ambiental:
@@ -68,10 +95,10 @@ class InicioTramiteCreateView(generics.CreateAPIView):
             data['cod_relacion_con_el_titular'] = 'RL' # VALIDAR PARA CASO DE APODERADOS
         
         data['cod_tipo_operacion_tramite'] = 'N'
-        data['nombre_proyecto'] = 'N/A'
+        data['nombre_proyecto'] = permiso_ambiental.nombre
         data['costo_proyecto'] = 0
         data['fecha_inicio_tramite'] = datetime.now()
-        data['id_medio_solicitud'] = 2
+        # data['id_medio_solicitud'] = 2 # QUE LO MANDE FRONTEND
         data['id_persona_registra'] = request.user.persona.id_persona
         data['id_estado_actual_solicitud'] = 1
         data['fecha_ini_estado_actual'] = datetime.now()
@@ -86,7 +113,9 @@ class InicioTramiteCreateView(generics.CreateAPIView):
             id_solicitud_tramite = tramite_creado,
             descripcion_direccion = descripcion_direccion,
             coordenada_x = coordenada_x,
-            coordenada_y = coordenada_y
+            coordenada_y = coordenada_y,
+            cod_municipio = municipio,
+            direccion = direccion
         )
         
         data_serializada = serializer.data
@@ -94,5 +123,174 @@ class InicioTramiteCreateView(generics.CreateAPIView):
         data_serializada['descripcion_direccion'] = descripcion_direccion
         data_serializada['coordenada_x'] = coordenada_x
         data_serializada['coordenada_y'] = coordenada_y
+        data_serializada['cod_municipio'] = cod_municipio
+        data_serializada['direccion'] = direccion
         
-        return Response({'success': True, 'detail':'Se realizó la creación del inicio del trámite correctamente', 'data': data_serializada}, status=status.HTTP_200_OK)   
+        return Response({'success': True, 'detail':'Se realizó la creación del inicio del trámite correctamente', 'data': data_serializada}, status=status.HTTP_201_CREATED)   
+
+class InicioTramiteUpdateView(generics.UpdateAPIView):
+    serializer_class = InicioTramiteCreateSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def update(self, request, id_solicitud_tramite):
+        data = request.data
+        
+        solicitud = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
+        if not solicitud:
+            raise NotFound('No se encontró la solicitud')
+        
+        permiso_amb_solicitud = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
+        
+        id_permiso_ambiental = data.get('id_permiso_ambiental')
+        direccion = request.data.get('direccion', '')
+        descripcion_direccion = request.data.get('descripcion_direccion', '')
+        coordenada_x = data.get('coordenada_x')
+        coordenada_y = data.get('coordenada_y')
+        cod_municipio = data.get('cod_municipio', '')
+        
+        # ACTUALIZAR PERMISO AMBIENTAL SOLICITUD
+        if id_permiso_ambiental != permiso_amb_solicitud.id_permiso_ambiental.id_permiso_ambiental:
+            permiso_ambiental = PermisosAmbientales.objects.filter(id_permiso_ambiental=id_permiso_ambiental).first()
+            if not permiso_ambiental:
+                raise ValidationError('No se encontró el trámite elegido')
+            
+            permiso_amb_solicitud.id_permiso_ambiental = permiso_ambiental
+            solicitud.nombre_proyecto = permiso_ambiental.nombre
+            solicitud.save()
+            
+        if direccion != '' and direccion != permiso_amb_solicitud.direccion:
+            permiso_amb_solicitud.direccion = direccion
+        if descripcion_direccion != '' and descripcion_direccion != permiso_amb_solicitud.descripcion_direccion:
+            permiso_amb_solicitud.descripcion_direccion = descripcion_direccion
+        if coordenada_x != '' and coordenada_x != permiso_amb_solicitud.coordenada_x:
+            permiso_amb_solicitud.coordenada_x = coordenada_x
+        if coordenada_y != '' and coordenada_y != permiso_amb_solicitud.coordenada_y:
+            permiso_amb_solicitud.coordenada_y = coordenada_y
+        if cod_municipio != '' and cod_municipio != permiso_amb_solicitud.cod_municipio.cod_municipio:
+            municipio = Municipio.objects.filter(cod_municipio=cod_municipio).first()
+            if not municipio:
+                raise ValidationError('El municipio es incorrecto')
+            permiso_amb_solicitud.cod_municipio = municipio
+        
+        permiso_amb_solicitud.save()
+        
+        serializer = self.serializer_class(solicitud)
+        
+        data_serializada = serializer.data
+        data_serializada['id_permiso_ambiental'] = id_permiso_ambiental
+        # data_serializada['direccion'] = direccion
+        data_serializada['descripcion_direccion'] = descripcion_direccion
+        data_serializada['coordenada_x'] = coordenada_x
+        data_serializada['coordenada_y'] = coordenada_y
+        data_serializada['direccion'] = direccion
+        data_serializada['cod_municipio'] = cod_municipio
+        
+        return Response({'success': True, 'detail':'Se realizó la actualización del inicio del trámite correctamente', 'data': data_serializada}, status=status.HTTP_201_CREATED)   
+
+class AnexosUpdateView(generics.UpdateAPIView):
+    serializer_class = AnexosUpdateSerializer
+    serializer_get_class = AnexosGetSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def update(self, request, id_solicitud_tramite):
+        data = request.data
+        data_anexos = json.loads(data['data_anexos'])
+        archivos = request.FILES.getlist('archivos')
+        
+        solicitud_tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
+        if not solicitud_tramite:
+            raise NotFound('No se encontró el trámite del OPA elegido')
+        
+        anexos_instances = AnexosTramite.objects.filter(id_solicitud_tramite=id_solicitud_tramite)
+        
+        anexos_crear = [anexo for anexo in data_anexos if not anexo['id_anexo_tramite']]
+        anexos_actualizar = [anexo for anexo in data_anexos if anexo['id_anexo_tramite']]
+        anexos_eliminar = anexos_instances.exclude(id_anexo_tramite__in=[anexo['id_anexo_tramite'] for anexo in anexos_actualizar])
+        
+        if len(anexos_crear) != len(archivos):
+            raise ValidationError('Debe enviar la data para cada archivo anexado')
+        
+        # ELIMINAR ANEXOS
+        for anexo in anexos_eliminar:
+            anexo.id_archivo.delete()
+            anexo.delete()
+        
+        # CREAR ANEXOS
+        for data, archivo in zip(anexos_crear, archivos):
+            # VALIDAR FORMATO ARCHIVO 
+            archivo_nombre = archivo.name
+            nombre_sin_extension, extension = os.path.splitext(archivo_nombre)
+            extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+            
+            formatos_tipos_medio_list = FormatosTiposMedio.objects.all().values_list('nombre', flat=True)
+            
+            if extension_sin_punto.lower() not in list(formatos_tipos_medio_list) and extension_sin_punto.upper() not in list(formatos_tipos_medio_list):
+                raise ValidationError(f'El formato del anexo {archivo_nombre} no es válido')
+            
+            # CREAR ARCHIVO EN T238
+            # Obtiene el año actual para determinar la carpeta de destino
+            current_year = datetime.now().year
+            ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year))
+
+            # Calcula el hash MD5 del archivo
+            md5_hash = hashlib.md5()
+            for chunk in archivo.chunks():
+                md5_hash.update(chunk)
+
+            # Obtiene el valor hash MD5
+            md5_value = md5_hash.hexdigest()
+
+            # Crea el archivo digital y obtiene su ID
+            data_archivo = {
+                'es_Doc_elec_archivo': True,
+                'ruta': ruta,
+                'md5_hash': md5_value  # Agregamos el hash MD5 al diccionario de datos
+            }
+            
+            archivo_class = ArchivosDgitalesCreate()
+            respuesta = archivo_class.crear_archivo(data_archivo, archivo)
+            
+            # CREAR DOCUMENTO EN T287
+            data['id_solicitud_tramite'] = id_solicitud_tramite
+            data['id_permiso_amb_solicitud_tramite'] = solicitud_tramite.permisosambsolicitudestramite_set.first().id_permiso_amb_solicitud_tramite
+            data['nombre'] = archivo_nombre
+            data['id_archivo'] = respuesta.data.get('data').get('id_archivo_digital')
+            
+            serializer_crear = self.serializer_class(data=data)
+            serializer_crear.is_valid(raise_exception=True)
+            serializer_crear.save()
+        
+        # ACTUALIZAR ANEXOS
+        for anexo in anexos_actualizar:
+            anexo_instance = anexos_instances.filter(id_anexo_tramite=anexo['id_anexo_tramite']).first()
+            if anexo['descripcion'] != anexo_instance.descripcion:
+                anexo_instance.descripcion = anexo['descripcion']
+                anexo_instance.save()
+        
+        anexos_instances = AnexosTramite.objects.filter(id_solicitud_tramite=id_solicitud_tramite)
+        serializer_get = self.serializer_get_class(anexos_instances, many=True, context={'request': request})
+        
+        return Response({'success':True, 'detail':'Anexos procesados correctamente', 'data':serializer_get.data}, status=status.HTTP_201_CREATED)
+
+class AnexosGetView(generics.ListAPIView):
+    serializer_class = AnexosGetSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_solicitud_tramite):
+        solicitud_tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
+        if not solicitud_tramite:
+            raise NotFound('No se encontró el trámite del OPA elegido')
+        
+        anexos_instances = AnexosTramite.objects.filter(id_solicitud_tramite=id_solicitud_tramite)
+        serializer_get = self.serializer_class(anexos_instances, many=True, context={'request': request})
+        
+        return Response({'success':True, 'detail':'Se encontraron los siguientes anexos del trámite', 'data':serializer_get.data}, status=status.HTTP_200_OK)
+
+# class RadicarCreateView(generics.CreateAPIView):
+#     serializer_class = AnexosGetSerializer
+#     permission_classes = [IsAuthenticated]
+    
+#     def create(self, request):
+#         data = request.data
+        
+#         return Response({'success': True, 'detail':'Se realizó la creación del inicio del trámite correctamente'}, status=status.HTTP_201_CREATED)   

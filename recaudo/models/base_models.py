@@ -82,7 +82,7 @@ class TipoActuacion(models.Model):
 #PARTE DE STIVEN PRACTICANTE 
 
 class RegistrosConfiguracion(models.Model):
-    id = models.AutoField(primary_key=True, db_column='T419IdRegistroConfiguracion')
+    id = models.AutoField(primary_key=True, db_column='T440IdRegistroConfiguracion')
     Estado = models.BooleanField(db_column='T440Estado')  # Cambiado a campo booleano
     TipoRenta = models.CharField(max_length=255, db_column='T440TipoRenta')
     TipoCobro = models.CharField(max_length=255, db_column='T440TipoCobro')
@@ -92,7 +92,6 @@ class RegistrosConfiguracion(models.Model):
         db_table = 'T440RegistrosConfiguración'
         verbose_name = 'Registro configuración'
         verbose_name_plural = 'Registros configuración'
-
 
 
 
@@ -145,4 +144,15 @@ class ValoresVariables(models.Model):
         db_table = 'T444ValoresVariables'
         verbose_name = 'Valores Variables'
         verbose_name_plural = 'Valores Variables'
+
+
+
+class LeyesLiquidacion(models.Model):
+    id_ley = models.AutoField(primary_key=True, db_column='T451IdLey')
+    ley = models.TextField(db_column='T451Ley')
+
+    class Meta:
+        db_table = 'T451Leyes'
+        verbose_name = 'Ley'
+        verbose_name_plural = 'Leyes'
 

@@ -4,3 +4,4 @@ from .garantias_models import *
 from .liquidaciones_models import *
 from .facilidades_pagos_models import *
 from .procesos_models import *
+from .tasa_retributiva_vertimiento_models import *

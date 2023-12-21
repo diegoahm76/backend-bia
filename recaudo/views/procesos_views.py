@@ -138,6 +138,18 @@ class DeleteAtributosEtapasView(generics.ListAPIView):
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
+class DeleteAtributosView(generics.ListAPIView):
+    queryset = AtributosEtapas.objects.all()
+    serializer_class = AtributosEtapasSerializer
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        queryset = AtributosEtapas.objects.filter(pk=pk)
+        queryset.delete()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
 class FlujoProcesoView(generics.ListAPIView):
     queryset = FlujoProceso.objects.all()
     serializer_class = FlujoProcesoSerializer

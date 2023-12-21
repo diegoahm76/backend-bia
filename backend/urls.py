@@ -72,6 +72,8 @@ urlpatterns = [
     path('api/transversal/sucursales/',include('transversal.urls.sucursalesEmpresas_urls')),
     path('api/transversal/lideres/',include('transversal.urls.lideres_urls')),
     path('api/transversal/alertas/',include('transversal.urls.alertas_urls')),
+    path('api/transversal/email/', include('transversal.urls.email_urls')),
+    
     
 
 
@@ -152,6 +154,7 @@ urlpatterns = [
     path('api/recaudo/liquidaciones/', include('recaudo.urls.liquidaciones_urls')),
     path('api/recaudo/procesos/', include('recaudo.urls.procesos_urls')),
     path('api/recaudo/cobros/', include('recaudo.urls.cobros_urls')),
+    path('api/recaudo/formulario/', include('recaudo.urls.tasa_retributiva_vertimiento_urls')),
     path('api/recaudo/configuracion_baisca/', include('recaudo.urls.registros_configuracion_url')),
 
     #RECURSO HIDRICO

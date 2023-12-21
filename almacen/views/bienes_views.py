@@ -50,7 +50,7 @@ import copy
 class GeneradorCodigoCatalogo(generics.RetrieveAPIView):
 
     def generador_codigo_bien(self, bien_padre, nivel_jerarquico):
-        niv_val = [[1,2,3,4,5],['0','0','00','000','00000'],['9','9','99','999','99999']]
+        niv_val = [[1,2,3,4,5,6],['0','0','00','00','000','00000'],['9','9','99','99','999','99999']]
         
         try:
             posicion = niv_val[0].index(nivel_jerarquico)
@@ -87,7 +87,7 @@ class GeneradorCodigoCatalogo(generics.RetrieveAPIView):
         except:
             raise ValidationError('El nivel jerarquico debe ser un numero entero')
         
-        if nivel_jerarquico < 1 or nivel_jerarquico > 5 or nivel_jerarquico == None:
+        if nivel_jerarquico < 1 or nivel_jerarquico > 6 or nivel_jerarquico == None:
             raise ValidationError('El nivel jerarquico esta fuera de rango')
         
         if id_bien_padre == '':
@@ -123,7 +123,7 @@ class CatalogoBienesCreate(generics.CreateAPIView):
         id_bien_padre = data['id_bien_padre']
         bien_padre = None
         
-        if nivel_jerarquico < 1 or nivel_jerarquico > 5 or nivel_jerarquico == None:
+        if nivel_jerarquico < 1 or nivel_jerarquico > 6 or nivel_jerarquico == None:
             raise ValidationError('El nivel jerarquico esta fuera de rango')
 
         if id_bien_padre != None:
@@ -344,7 +344,7 @@ class CatalogoBienesGetList(generics.ListAPIView):
                     'id_nodo': data['id_bien'],
                     'editar': True,
                     'eliminar': False if CatalogoBienes.objects.filter(id_bien_padre=data['id_bien']).exists() else True,
-                    'crear': data['nivel_jerarquico'] != 5,
+                    'crear': data['nivel_jerarquico'] != 6,
                     'bien': data,
                 },
                 'children': self.get_catalogo_bienes(data['id_bien'], key)})

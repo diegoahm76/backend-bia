@@ -25,7 +25,7 @@ class SolicitudesTramites(models.Model):
     cod_relacion_con_el_titular = models.CharField(max_length=2, choices=cod_relacion_persona_titular_CHOICES, db_column='T273codRelacionConElTitular')
     cod_tipo_operacion_tramite = models.CharField(max_length=1, choices=cod_tipo_operacion_tramite_CHOICES, db_column='T273codTipoOperacionTramite')
     nombre_proyecto = models.CharField(max_length=255, db_column='T273nombreProyecto')
-    costo_proyecto = models.DecimalField(max_digits=19, decimal_places=2, db_column='T273costoProyecto')
+    costo_proyecto = models.DecimalField(max_digits=12, decimal_places=2, db_column='T273costoProyecto')
     pago = models.BooleanField(default=False, db_column='T273pago')
     id_pago_evaluacion = models.IntegerField(null=True, blank=True, db_column='T273Id_PagoEvaluacion')
     id_medio_solicitud = models.ForeignKey(MediosSolicitud, on_delete=models.CASCADE, db_column='T273Id_MedioSolicitud')
@@ -151,6 +151,8 @@ class PermisosAmbSolicitudesTramite(models.Model):
     descripcion_direccion = models.CharField(max_length=250, null=True, blank=True, db_column='T280descripcionDireccion')
     coordenada_x = models.CharField(max_length=20, null=True, blank=True, db_column='T280coordenadaX')
     coordenada_y = models.CharField(max_length=20, null=True, blank=True, db_column='T280coordenadaY')
+    cod_municipio = models.ForeignKey(Municipio, on_delete=models.CASCADE, db_column='T280cod_Municipio')
+    direccion = models.CharField(max_length=255, db_column='T280direccion')
 
     def __str__(self):
         return str(self.id_permiso_amb_solicitud_tramite)
@@ -241,7 +243,10 @@ class AnexosTramite(models.Model):
     id_respuesta_solicitud = models.ForeignKey('RespuestaSolicitudesAlRequerimiento', on_delete=models.SET_NULL, null=True, blank=True, db_column='T287Id_RespuestaSolicitud')
     id_acto_administrativo = models.ForeignKey('ActosAdministrativos', on_delete=models.SET_NULL, null=True, blank=True, db_column='T287Id_ActoAdministrativo')
     id_recurso_reposicion = models.ForeignKey(RecursosReposicion, on_delete=models.SET_NULL, null=True, blank=True, db_column='T287Id_RecursoReposicion')
-    id_anexo = models.ForeignKey(Anexos, on_delete=models.CASCADE, db_column='T287Id_Anexo')
+    id_anexo = models.ForeignKey(Anexos, blank=True, null=True, on_delete=models.SET_NULL, db_column='T287Id_Anexo')
+    nombre = models.CharField(max_length=255, db_column='T287nombre')
+    descripcion = models.CharField(max_length=255, db_column='T287descripcion')
+    id_archivo = models.ForeignKey(ArchivosDigitales, on_delete=models.CASCADE, db_column='T287Id_Archivo')
 
     def __str__(self):
         return str(self.id_anexo_tramite)

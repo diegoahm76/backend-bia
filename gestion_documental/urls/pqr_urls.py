@@ -20,4 +20,9 @@ urlpatterns = [
     path('tipos_pqr/eliminar-medio-solicitud/<int:id_medio_solicitud>/',views.MediosSolicitudDelete.as_view(), name='eliminar-medio-solicitud'),
     path('tipos_pqr/actualizar-medio-solicitud/<int:id_medio_solicitud>/',views.MediosSolicitudUpdate.as_view(), name='actualizar-medio-solicitud'),
 
+    #Respuesta_Solicitud_PQRSDF
+    path('tipos_pqr/get/<str:pk>/', views.TiposPQRGet.as_view(), name='get-tipos-radicado'),
+
+
+
 ]
