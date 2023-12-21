@@ -18,21 +18,22 @@ from transversal.models.organigrama_models import (
 from seguridad.models import User
 from seguridad.utils import Util
 from transversal.models.personas_models import Personas
-from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
+from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental, UnidadesSeccionResponsableTemporal
 from gestion_documental.models.tca_models import TablasControlAcceso
 from gestion_documental.models.trd_models import TablaRetencionDocumental
+from gestion_documental.views.ccd_views import BusquedaCCDHomologacionView
 
-from gestion_documental.views.activacion_ccd_views import (
-    CCDCambioActualPut,
-)
+from gestion_documental.views.activacion_ccd_views import CCDCambioActualPut
 
 
 from transversal.serializers.activacion_organigrama_serializers import (
     OrganigramaCambioActualSerializer,
+    UnidadesOrganizacionalesSerializer
 )
 
 from transversal.serializers.activacion_organigrama_serializers import (
     OrganigramaSerializer,
+    UnidadesDelegacionSerializer
     
 )
 
@@ -118,6 +119,7 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
     def put(self, request):
         data = request.data
         ccd_actual = CuadrosClasificacionDocumental.objects.filter(actual=True).first()
+        response_org = None
         
         data_auditoria = {
             'id_usuario': request.user.id_usuario,
@@ -143,6 +145,7 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
             raise NotFound("El organigrama seleccionado no existe")
         
         if not ccd_actual:
+
             data_activar['justificacion_nueva_version'] = data['justificacion']
             response_org = self.activar_organigrama(organigrama_seleccionado, data_desactivar, data_activar, data_auditoria)
         
@@ -158,31 +161,32 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
             if ccd_seleccionado.fecha_terminado == None or ccd_seleccionado.fecha_retiro_produccion != None:
                 raise ValidationError('El CCD seleccionado no se encuentra terminado o ha sido retirado de producción')
             
-            data_activar['justificacion_nueva_version'] = data['justificacion']
-            response_org = self.activar_organigrama(organigrama_seleccionado, data_desactivar, data_activar, data_auditoria)
+            instancia_validacion = ValidacionUnidadesDelegacionActualView()
+            validar_delegacion = instancia_validacion.validar_delegacion(ccd_seleccionado)
 
-            # Activar CCD
-            data_activar_ccd = data_activar
-            data_activar_ccd['justificacion_nueva_version'] = "ACTIVACIÓN AUTOMÁTICA DESDE EL PROCESO DE 'CAMBIO DE ORGANIGRAMA ACTUAL'"
-            ccd_activar = CCDCambioActualPut()
-            response_ccd = ccd_activar.activar_ccd(ccd_seleccionado, organigrama_seleccionado.id_organigrama, data_desactivar, data_activar, data_auditoria)
+            if validar_delegacion == []:
 
-            if response_ccd.status_code != status.HTTP_200_OK:
-                return response_ccd
+                data_activar['justificacion_nueva_version'] = data['justificacion']
+                response_org = self.activar_organigrama(organigrama_seleccionado, data_desactivar, data_activar, data_auditoria)
+
+                # Activar CCD
+                data_activar_ccd = data_activar
+                data_activar_ccd['justificacion_nueva_version'] = "ACTIVACIÓN AUTOMÁTICA DESDE EL PROCESO DE 'CAMBIO DE ORGANIGRAMA ACTUAL'"
+                ccd_activar = CCDCambioActualPut()
+                response_ccd = ccd_activar.activar_ccd(ccd_seleccionado, organigrama_seleccionado.id_organigrama, data_desactivar, data_activar, data_auditoria)
+
+                if response_ccd.status_code != status.HTTP_200_OK:
+                    return response_ccd
             
+            else:
+                return Response({'success':False, 'detail':'Existen Unidades Organizacionales del CCD Actual sin delegación de responsable en el CCD a Activar', 'data':validar_delegacion}, status=status.HTTP_403_FORBIDDEN)
+                
         if response_org.status_code != status.HTTP_200_OK:
             return response_org
 
         return Response({'success':True, 'detail':'Organigrama Activado'}, status=status.HTTP_200_OK)
     
 
-# TODO: Verificar que se hayan completado los módulos en el siguiente orden:
-# 1. Homologación de Secciones Persistentes del CCD.
-#    - Asegurarse de que el usuario haya marcado correctamente las secciones persistentes del CCD actual en el módulo correspondiente.
-# 2. Asignación de Secciones Responsables del CCD.
-#    - Confirmar que se hayan asignado responsables para las secciones no persistentes en el nuevo CCD.
-# 3. Delegación de Oficinas Responsables de Expedientes del CCD.
-#    - Validar que no queden unidades organizacionales sin asignar en el proceso de delegación.
 
 # TODO: Realizar las siguientes validaciones al ingresar al módulo de Activación del Organigrama:
 # 1. Validar que no exista ninguna unidad organizacional del CCD ACTUAL sin delegación de responsable en el CCD NUEVO.
@@ -191,9 +195,34 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
 # 2. Verificar la correcta identificación de las Agrupaciones Documentales persistentes del CCD ACTUAL en el CCD NUEVO.
 #    - Revisar la identificación en las tablas T224CatSeries_UndOrg_CCD, T225UndsSeccionPersisten_Tmp y T226AgrupacionesDocPersisten_Tmp.
 #    - Generar un mensaje de error indicando las Agrupaciones Documentales no identificadas correctamente.
+    
+class ValidacionUnidadesDelegacionActualView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UnidadesDelegacionSerializer
+
+    def validar_delegacion(self, id_ccd_nuevo):
+        ccd_filro = BusquedaCCDHomologacionView().get_validacion_ccd()
+
+        try:
+            ccd_nuevo = ccd_filro.get(id_ccd=id_ccd_nuevo)
+        except CuadrosClasificacionDocumental.DoesNotExist:
+            raise NotFound('CCD no encontrado o no cumple con TRD y TCA terminados')
+        
+        try:
+            ccd_actual = CuadrosClasificacionDocumental.objects.get(actual=True)
+        except CuadrosClasificacionDocumental.DoesNotExist:
+            raise NotFound('CCD no se encuentra como actual')
+
+        unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=ccd_nuevo.id_ccd)
+        ids_unidad_ccd_actual = [unidad.id_unidad_seccion_actual.id_unidad_organizacional for unidad in unidades_responsables]        
+        
+        unidades_organizacionales_actual = UnidadesOrganizacionales.objects.filter(id_organigrama=ccd_actual.id_organigrama.id_organigrama).exclude(id_unidad_organizacional__in=ids_unidad_ccd_actual)
+        
+        serializer = self.serializer_class(unidades_organizacionales_actual, many=True)
+
+        return serializer.data
 
 # TODO: Mostrar mensajes de error y deseleccionar el CCD elegido si las validaciones anteriores no se cumplen.
-# - Mensaje de error si hay unidades sin delegación en el nuevo CCD.
 # - Mensaje de error si hay Agrupaciones Documentales persistentes no identificadas correctamente.
 
 # TODO: Combinar las consultas de unidades activas del organigrama actual y sus registros de delegación en una sola instrucción de base de datos.
@@ -204,10 +233,38 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
 # - Consultar la tabla temporal T227UndsSeccionResponsables_Tmp para obtener las asignaciones de unidades entre el CCD DESACTIVANDO y el CCD ACTIVANDO.
 # - Actualizar la tabla T019UnidadesOrganizacionales de acuerdo con la información obtenida de T227.
 # - Agregar comentarios detallados para cada subproceso adicional que se deba realizar después de las validaciones y procesos actuales.
+    
+class ActualizarUnidadesSeccionResponsable(views.APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def actualizar_agrupacion_documental(self, id_ccd_nuevo, data_auditoria):
+        unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=id_ccd_nuevo, id_unidad_seccion_actual_padre=F('id_unidad_seccion_actual'))
+        unidades = UnidadesOrganizacionales.objects.filter(id_unidad_org_actual_admin_series__in=[unidad.id_unidad_seccion_actual.id_unidad_organizacional for unidad in unidades_responsables])
+
+        for unidad in unidades:
+            for unidad_responsable in unidades_responsables:
+                if unidad.id_unidad_org_actual_admin_series == unidad_responsable.id_unidad_seccion_actual:
+                    unidad.id_unidad_org_actual_admin_series = unidad_responsable.id_unidad_seccion_nueva
+                    unidad.save()
+        
+        
+        # # Auditoria Actualizar Unidades Seccion Responsable
+        # descripcion = {"NombreOrganigrama":str(organigrama_actual.nombre),"VersionOrganigrama":str(organigrama_actual.version)}
+        # valores_actualizados={'previous':"previous_activacion_organigrama", 'current':"organigrama_seleccionado"}
+        # data_auditoria['descripcion'] = descripcion
+        # data_auditoria['valores_actualizados'] = valores_actualizados
+        # Util.save_auditoria(data_auditoria)
 
 # TODO: Subproceso 2 - Cambiar unidades organizacionales responsables de expedientes y documentos en todo el sistema.
 # - Consultar la tabla temporal T227UndsSeccionResponsables_Tmp para obtener las asignaciones de unidades entre el CCD DESACTIVANDO y el CCD ACTIVANDO.
 # - Actualizar la tabla T236ExpedientesDocumentales y T237DocumentosDeArchivo_Expediente según las asignaciones obtenidas.
+                    
+class ActualizarExpedientesDocumentos(views.APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def actualizar_expedientes_documentos(self, id_ccd_nuevo, data_auditoria):
+        unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=id_ccd_nuevo, id_unidad_seccion_actual_padre=F('id_unidad_seccion_actual'))
+        unidades = UnidadesOrganizacionales.objects.filter(id_unidad_org_actual_admin_series__in=[unidad.id_unidad_seccion_actual.id_unidad_organizacional for unidad in unidades_responsables])
 
 # TODO: Subproceso 3 - Cambiar unidades organizacionales con permisos sobre Agrupaciones Documentales en todos los CCD
 # - Consultar la tabla temporal T227UndsSeccionResponsables_Tmp para obtener las asignaciones de unidades entre el CCD DESACTIVANDO y el CCD ACTIVANDO.
