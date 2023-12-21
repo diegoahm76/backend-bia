@@ -2,6 +2,7 @@ from rest_framework import serializers
 from gestion_documental.models.trd_models import TablaRetencionDocumental
 from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
 from gestion_documental.models.tca_models import TablasControlAcceso
+from transversal.models.organigrama_models import UnidadesOrganizacionales
 
 
 class CCDSerializer(serializers.ModelSerializer):
