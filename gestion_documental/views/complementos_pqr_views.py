@@ -426,12 +426,12 @@ class RadicarComplementoPQRSDF(generics.CreateAPIView):
             with transaction.atomic():
                 id_complemento_PQRSDF = request.data['id_complemento_PQRSDF']
                 id_persona_guarda = request.data['id_persona_guarda']
-                data_radicado_pqrsdf = self.radicar_complemento_pqrsdf(request, id_complemento_PQRSDF, id_persona_guarda, False)
+                data_radicado_pqrsdf = self.radicar_complemento_pqrsdf(request, id_complemento_PQRSDF, id_persona_guarda, False, "Complemento del Titular a una PQRSDF")
                 return Response({'success':True, 'detail':'Se creo el radicado para el complemento PQRSDF', 'data': data_radicado_pqrsdf}, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
-    def radicar_complemento_pqrsdf(self, request, id_complemento_PQRSDF, id_persona_guarda, isSolicitud):
+    def radicar_complemento_pqrsdf(self, request, id_complemento_PQRSDF, id_persona_guarda, isSolicitud, modulo_radica):
         fecha_actual = datetime.now()
         complemento_pqr_instance = ComplementosUsu_PQR.objects.filter(idComplementoUsu_PQR = id_complemento_PQRSDF).first()
         previous_instance = copy.copy(complemento_pqr_instance)
@@ -441,7 +441,7 @@ class RadicarComplementoPQRSDF(generics.CreateAPIView):
         data_for_create['fecha_actual'] = fecha_actual
         data_for_create['id_usuario'] = id_persona_guarda
         data_for_create['tipo_radicado'] = "E"
-        data_for_create['modulo_radica'] = "Complemento del Titular a una PQRSDF"
+        data_for_create['modulo_radica'] = modulo_radica
         radicadoCreate = RadicadoCreate()
         data_radicado = radicadoCreate.post(data_for_create)
         data_radicado['asunto'] = complemento_pqr_instance.asunto
@@ -622,7 +622,7 @@ class RadicarRespuestaSolicitud(generics.CreateAPIView):
                 id_persona_guarda = request.data['id_persona_guarda']
                 fecha_actual = datetime.now()
                 radicarComplementoPQRSDF = RadicarComplementoPQRSDF()
-                data_radicado_pqrsdf = radicarComplementoPQRSDF.radicar_complemento_pqrsdf(request, id_complemento_PQRSDF, id_persona_guarda, True)
+                data_radicado_pqrsdf = radicarComplementoPQRSDF.radicar_complemento_pqrsdf(request, id_complemento_PQRSDF, id_persona_guarda, True, "Respuesta del Titular a Una Solicitud sobre PQRSDF")
                 
                 #Obtiene datos necesarios para la actualización del estado
                 estado_respondida = EstadosSolicitudes.objects.filter(nombre='RESPONDIDA').first()
