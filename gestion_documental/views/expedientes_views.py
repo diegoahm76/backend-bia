@@ -175,6 +175,13 @@ class AperturaExpedienteCreate(generics.CreateAPIView):
                 instance_carpeta.id_expediente = expediente_creado
                 instance_carpeta.save()
         
+        # CREAR INDICE - PENDIENTE VALIDAR SI ES CORRECTO REALIZARLO ASÍ
+        IndicesElectronicosExp.objects.create(
+            id_expediente_doc = expediente_creado,
+            fecha_indice_electronico = current_date,
+            abierto = True
+        )
+        
         # AUDITORIA
         usuario = request.user.id_usuario
         descripcion = {

@@ -55,38 +55,43 @@ class GetRadicadosImprimir(generics.ListAPIView):
         data_radicados = []
         for radicado in radicados:
             pqrsdf_instance = PQRSDF.objects.all()
-            if radicado.id_modulo_que_radica == 1:
-                pqrsdf = pqrsdf_instance.filter(id_radicado = radicado.id_radicado).first()
-                if pqrsdf:
-                    data_radicados.append(self.set_data_to_serializer(radicado, pqrsdf.id_persona_titular_id, pqrsdf.asunto))
-
-            elif radicado.id_modulo_que_radica == 2:
-                solicitud_pqrsdf = SolicitudAlUsuarioSobrePQRSDF.objects.filter(id_radicado_salida = radicado.id_radicado).first()
-                if solicitud_pqrsdf:
-                    pqrsdf = pqrsdf_instance.filter(id_PQRSDF = solicitud_pqrsdf.id_pqrsdf_id).first()
+            modulo_radica = modulos_radican.objects.filter(id_ModuloQueRadica=radicado.id_modulo_que_radica).first()
+            if modulo_radica:
+                if modulo_radica.nombre == "PQRSDF":
+                    pqrsdf = pqrsdf_instance.filter(id_radicado = radicado.id_radicado).first()
                     if pqrsdf:
-                        data_radicados.append(self.set_data_to_serializer(radicado, pqrsdf.id_persona_titular_id, solicitud_pqrsdf.asunto))
+                        data_radicados.append(self.set_data_to_serializer(radicado, pqrsdf.id_persona_titular_id, pqrsdf.asunto))
 
-            elif radicado.id_modulo_que_radica == 3 or radicado.id_modulo_que_radica == 4:
-                complemento_pqrsdf = ComplementosUsu_PQR.objects.filter(id_radicado = radicado.id_radicado).first()
-                if complemento_pqrsdf:
-                    pqrsdf = pqrsdf_instance.filter(id_PQRSDF = complemento_pqrsdf.id_PQRSDF_id).first()
-                    if pqrsdf:
-                        data_radicados.append(self.set_data_to_serializer(radicado, pqrsdf.id_persona_titular_id, complemento_pqrsdf.asunto))
+                elif modulo_radica.nombre == "Solicitud al Titular sobre la PQRSDF":
+                    solicitud_pqrsdf = SolicitudAlUsuarioSobrePQRSDF.objects.filter(id_radicado_salida = radicado.id_radicado).first()
+                    if solicitud_pqrsdf:
+                        pqrsdf = pqrsdf_instance.filter(id_PQRSDF = solicitud_pqrsdf.id_pqrsdf_id).first()
+                        if pqrsdf:
+                            data_radicados.append(self.set_data_to_serializer(radicado, pqrsdf.id_persona_titular_id, solicitud_pqrsdf.asunto))
 
-            elif radicado.id_modulo_que_radica == 5:
-                respuesta_pqrsdf = RespuestaPQR.objects.filter(id_radicado_salida = radicado.id_radicado).first()
-                if respuesta_pqrsdf:
-                    pqrsdf = pqrsdf_instance.filter(id_PQRSDF = respuesta_pqrsdf.id_pqrsdf_id).first()
-                    if pqrsdf:
-                        data_radicados.append(self.set_data_to_serializer(radicado, pqrsdf.id_persona_titular_id, respuesta_pqrsdf.asunto))
+                elif modulo_radica.nombre == "Respuesta del Titular a Una Solicitud sobre PQRSDF" or modulo_radica.nombre == "Complemento del Titular a una PQRSDF":
+                    complemento_pqrsdf = ComplementosUsu_PQR.objects.filter(id_radicado = radicado.id_radicado).first()
+                    if complemento_pqrsdf:
+                        pqrsdf = pqrsdf_instance.filter(id_PQRSDF = complemento_pqrsdf.id_PQRSDF_id).first()
+                        if pqrsdf:
+                            data_radicados.append(self.set_data_to_serializer(radicado, pqrsdf.id_persona_titular_id, complemento_pqrsdf.asunto))
 
-            #Para las dos ultimas condiciones aun no definen tabla en BD
-            elif radicado.id_modulo_que_radica == 6:
-                pass
+                elif modulo_radica.nombre == "Respuesta de la Entidad a una PQRSDF":
+                    respuesta_pqrsdf = RespuestaPQR.objects.filter(id_radicado_salida = radicado.id_radicado).first()
+                    if respuesta_pqrsdf:
+                        pqrsdf = pqrsdf_instance.filter(id_PQRSDF = respuesta_pqrsdf.id_pqrsdf_id).first()
+                        if pqrsdf:
+                            data_radicados.append(self.set_data_to_serializer(radicado, pqrsdf.id_persona_titular_id, respuesta_pqrsdf.asunto))
 
-            elif radicado.id_modulo_que_radica == 7:
-                pass
+                #Para las dos ultimas condiciones aun no definen tabla en BD
+                elif modulo_radica.nombre == "Trámites y Servicios":
+                    pass
+
+                elif modulo_radica.nombre == "Otros":
+                    pass
+
+            else:
+                raise ValidationError("El modulo que radica no existe en la base de datos")
         
         return data_radicados
     
@@ -101,8 +106,6 @@ class GetRadicadosImprimir(generics.ListAPIView):
         data['asunto'] = asunto
 
         return data
-    
-
 
 #LISTAR_SOLICITUD_OTRO_POR_ID_PERSONA_TITULAR
 class GetOTROSForStatus(generics.ListAPIView):
