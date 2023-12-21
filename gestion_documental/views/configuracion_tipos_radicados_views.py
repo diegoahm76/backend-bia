@@ -286,7 +286,7 @@ class ConfigTiposRadicadoAgnoGenerarN(generics.UpdateAPIView):
         data_in=data
         print(data_in)
         hoy = date.today()
-        age=hoy.year+1
+        age=hoy.year
         # # Obtener la instancia existente para actualizar
         instance =ConfigTiposRadicadoAgno.objects.filter(agno_radicado=age,cod_tipo_radicado=data_in['cod_tipo_radicado']).first()
 
