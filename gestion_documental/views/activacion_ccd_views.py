@@ -4,9 +4,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import NotFound, PermissionDenied
 from gestion_documental.models.tca_models import TablasControlAcceso
 from gestion_documental.models.trd_models import TablaRetencionDocumental
-from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
-from transversal.models.organigrama_models import Organigramas
-from gestion_documental.serializers.activacion_ccd_serializers import CCDSerializer, CCDPosiblesSerializer, TRDSerializer, TCASerializer
+from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental, UnidadesSeccionResponsableTemporal
+from transversal.models.organigrama_models import Organigramas, UnidadesOrganizacionales
+from gestion_documental.serializers.activacion_ccd_serializers import (
+    CCDSerializer, 
+    CCDPosiblesSerializer, 
+    TRDSerializer, 
+    TCASerializer
+)
 from seguridad.utils import Util
 
 from django.db import transaction
@@ -242,4 +247,3 @@ class CCDCambioActualPut(generics.UpdateAPIView):
 
         return Response({'success':True, 'detail':'Cuadro de clasificacion docuemntal activado'}, status=status.HTTP_200_OK)
     
-        

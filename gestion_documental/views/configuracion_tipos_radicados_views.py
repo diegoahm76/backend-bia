@@ -199,12 +199,13 @@ class ConfigTiposRadicadoAgnoCreate(generics.CreateAPIView):
             
             data_in['id_persona_config_implementacion']=data_in['user']
             data_in['fecha_inicial_config_implementacion'] = timezone.now()
+            data_in['consecutivo_actual'] = consecutivo_inicial-1
         try:
             if 'cantidad_digitos' in data_in and data_in['cantidad_digitos']:
                 if data_in['cantidad_digitos'] > 20:
                     raise ValidationError('La cantidad de digitos no puede ser mayor a 20')
 
-
+            
             print(data_in)
             serializer = ConfigTiposRadicadoAgnoCreateSerializer(data=data_in)
             serializer.is_valid(raise_exception=True)
@@ -279,7 +280,7 @@ class ConfigTiposRadicadoAgnoGenerarN(generics.UpdateAPIView):
     serializer_class = ConfigTiposRadicadoAgnoUpDateSerializer
     queryset = ConfigTiposRadicadoAgno.objects.all()
     permission_classes = [IsAuthenticated]
-
+    vista_creacion_configuracion =ConfigTiposRadicadoAgnoCreate()
     def generar_n_radicado(self,data):
         
         data_in=data
@@ -288,17 +289,55 @@ class ConfigTiposRadicadoAgnoGenerarN(generics.UpdateAPIView):
         age=hoy.year
         # # Obtener la instancia existente para actualizar
         instance =ConfigTiposRadicadoAgno.objects.filter(agno_radicado=age,cod_tipo_radicado=data_in['cod_tipo_radicado']).first()
+
         if not instance:
-            raise NotFound("No se existe este tipo de configuracion de radicado.")
+            tipos_radicado =TIPOS_RADICADO_CHOICES
+
+            for data,name in tipos_radicado:
+                auxiliar = ConfigTiposRadicadoAgno.objects.filter(cod_tipo_radicado=data,agno_radicado=age).first()
+                if not auxiliar:
+                    conf_agno_anterior = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=age-1,cod_tipo_radicado=data).first()
+                    print(conf_agno_anterior.prefijo_consecutivo)
+                    nueva_configuracion = {
+                                        'user':None,
+                                        'direccion' : data_in['direccion'],
+                                        'agno_radicado':age,
+                                        'cod_tipo_radicado':conf_agno_anterior.cod_tipo_radicado,
+                                        'prefijo_consecutivo':conf_agno_anterior.prefijo_consecutivo,
+                                        'consecutivo_inicial':1,
+                                        'cantidad_digitos':conf_agno_anterior.cantidad_digitos,
+                                        'implementar':conf_agno_anterior.implementar,
+                                        }
+                    respuesta = self.vista_creacion_configuracion.crear_config_tipos_radicado_agno(nueva_configuracion)
+                    if respuesta.status_code != status.HTTP_201_CREATED:
+                        return respuesta
+
+            instance =ConfigTiposRadicadoAgno.objects.filter(agno_radicado=age,cod_tipo_radicado=data_in['cod_tipo_radicado']).first()
+            #raise NotFound("No se existe este tipo de configuracion de radicado.")
         
+        ##Verificamos si es de tipo ENTRADA O SALIDA
+        ##ENTRADA
+
         if not instance.implementar:
-            instance =ConfigTiposRadicadoAgno.objects.filter(agno_radicado=age,cod_tipo_radicado='U').first()
-            if not instance: 
-                raise NotFound("No se existe este tipo de configuracion de radicado.")
-        # print(instance.implementar)
-        # print(instance.prefijo_consecutivo)
-        # print(instance.consecutivo_inicial)
-        # print(instance.consecutivo_actual)
+            if instance.cod_tipo_radicado in ['E','S']:
+
+                if not instance.implementar:
+                    instance =ConfigTiposRadicadoAgno.objects.filter(agno_radicado=age,cod_tipo_radicado='U').first()
+
+
+        if not instance.implementar:
+            return Response({
+            'success': True,
+            'detail': 'Este tipo de radicado no se encuentra configurado para este año',
+                }, status=status.HTTP_200_OK)
+           
+
+            
+                    
+       
+        #instance =ConfigTiposRadicadoAgno.objects.filter(agno_radicado=age,cod_tipo_radicado='U').first()
+
+
         new_data={}
         new_data['consecutivo_actual'] = instance.consecutivo_actual+1
         new_data['id_persona_consecutivo_actual'] = data_in['id_persona']
@@ -309,7 +348,7 @@ class ConfigTiposRadicadoAgnoGenerarN(generics.UpdateAPIView):
             
         instance = serializer.save()
         numero_con_ceros = str(instance.consecutivo_actual).zfill(instance.cantidad_digitos)
-        radicado_nuevo= instance.prefijo_consecutivo+'-'+numero_con_ceros
+        radicado_nuevo= instance.prefijo_consecutivo+'-'+str(instance.agno_radicado)+'-'+numero_con_ceros
         
         
         #raise ValidationError("siu generando radicado")
@@ -325,7 +364,7 @@ class ConfigTiposRadicadoAgnoGenerarN(generics.UpdateAPIView):
         usuario = request.user.persona.id_persona
         #direccion=#
         data_in['user']=usuario#id_persona_config_implementacion
-
+        data_in['direccion']=Util.get_client_ip(request)
         response= self.generar_n_radicado(data_in,)
         return response
 
