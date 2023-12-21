@@ -172,8 +172,7 @@ class Productos(models.Model):
         Planes, on_delete=models.CASCADE, db_column='T506IdPlan')
     id_programa = models.ForeignKey(
         Programa, on_delete=models.CASCADE, db_column='T506IdPrograma')
-    fecha_creacion: models.DateField(
-        null=True, blank=True, db_column='T506fechaCreacion')
+    fecha_creacion = models.DateField(null=True, blank=True, db_column='T506fechaCreacion')    
     cumplio = models.BooleanField(default=False, db_column='T506cumplio')
 
     def __str__(self):
@@ -199,8 +198,7 @@ class Actividad(models.Model):
         Proyecto, on_delete=models.CASCADE, db_column='T507IdProyecto')
     id_programa = models.ForeignKey(
         Programa, on_delete=models.CASCADE, db_column='T507IdPrograma')
-    fecha_creacion = models.DateField(
-        null=True, blank=True, db_column='T507fechaCreacion')
+    fecha_creacion = models.DateField(null=True, blank=True, db_column='T507fechaCreacion')
     cumplio = models.BooleanField(default=False, db_column='T507cumplio')
 
     def __str__(self):
@@ -295,8 +293,7 @@ class Indicador(models.Model):
         Proyecto, on_delete=models.CASCADE, db_column='T512IdProyecto')
     id_programa = models.ForeignKey(
         Programa, on_delete=models.CASCADE, db_column='T512IdPrograma')
-    fecha_creacion = models.DateField(
-        null=True, blank=True, db_column='T512fechaCreacion')
+    fecha_creacion = models.DateField(null=True, blank=True, db_column='T512fechaCreacion')
     cumplio = models.BooleanField(default=False, db_column='T512cumplio')
 
     def __str__(self):

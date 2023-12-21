@@ -119,10 +119,6 @@ class CrearPlanes(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
-        planes = self.queryset.filter(nombre_plan=data["nombre_plan"]).first()
-        print('PLANESSSS', planes)
-        if planes:
-            return Response({'success': False, 'detail': 'El plan ya existe'}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -140,8 +136,6 @@ class ActualizarPlanes(generics.UpdateAPIView):
         # data['id_persona_modifica'] = persona_logeada
 
         planes = self.get_object()
-        if planes.nombre_plan != data["nombre_plan"] and self.queryset.filter(nombre_plan=data["nombre_plan"]).exists():
-            return Response({'success': False, 'detail': 'El plan ya existe'}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(planes, data=data, partial=True)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -219,10 +213,6 @@ class EjeEstractegicoCreate(generics.ListCreateAPIView):
 
     def post(self,request):
         data = request.data
-        eje = self.queryset.filter(nombre=data["nombre"]).first()
-        print('eje estrategico', eje)
-        if eje:
-            return Response({'success': False, 'detail': 'El eje estratégico ya existe'}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -313,9 +303,6 @@ class ObjetivoCreate(generics.ListCreateAPIView):
 
     def post(self,request):
         data = request.data
-        objetivo = self.queryset.filter(nombre_objetivo=data["nombre_objetivo"]).first()
-        if objetivo:
-            return Response({'success': False, 'detail': 'El objetivo ya existe'}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -434,9 +421,6 @@ class ProgramaCreate(generics.ListCreateAPIView):
 
     def post(self,request):
         data = request.data
-        programa = self.queryset.filter(nombre_programa=data["nombre_programa"]).first()
-        if programa:
-            return Response({'success': False, 'detail': 'El programa ya existe'}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -563,9 +547,6 @@ class ProyectoCreate(generics.ListCreateAPIView):
 
     def post(self,request):
         data = request.data
-        proyecto = self.queryset.filter(nombre_proyecto=data["nombre_proyecto"]).first()
-        if proyecto:
-            return Response({'success': False, 'detail': 'El proyecto ya existe'}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -692,9 +673,6 @@ class ProductosCreate(generics.ListCreateAPIView):
 
     def post(self,request):
         data = request.data
-        producto = self.queryset.filter(nombre_producto=data["nombre_producto"]).first()
-        if producto:
-            return Response({'success': False, 'detail': 'El producto ya existe'}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -821,9 +799,6 @@ class ActividadCreate(generics.ListCreateAPIView):
 
     def post(self,request):
         data = request.data
-        actividad = self.queryset.filter(nombre_actividad=data["nombre_actividad"]).first()
-        if actividad:
-            return Response({'success': False, 'detail': 'La actividad ya existe'}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -1211,9 +1186,6 @@ class RubroCreate(generics.ListCreateAPIView):
 
     def post(self,request):
         data = request.data
-        rubro = self.queryset.filter(cod_pre=data["cod_pre"]).first()
-        if rubro:
-            return Response({'success': False, 'detail': 'Codigo ya existe '}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -1304,9 +1276,6 @@ class IndicadorCreate(generics.ListCreateAPIView):
 
     def post(self,request):
         data = request.data
-        indicador = self.queryset.filter(nombre_indicador=data["nombre_indicador"]).first()
-        if indicador:
-            return Response({'success': False, 'detail': 'El indicador ya existe'}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -1507,9 +1476,6 @@ class MetaCreate(generics.ListCreateAPIView):
 
     def post(self,request):
         data = request.data
-        meta = self.queryset.filter(nombre_meta=data["nombre_meta"]).first()
-        if meta:
-            return Response({'success': False, 'detail': 'La meta ya existe'}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -1712,9 +1678,6 @@ class SubprogramaCreate(generics.ListCreateAPIView):
 
     def post(self,request):
         data = request.data
-        subprograma = self.queryset.filter(nombre_subprograma=data["nombre_subprograma"]).first()
-        if subprograma:
-            return Response({'success': False, 'detail': 'El subprograma ya existe'}, status=status.HTTP_403_FORBIDDEN)
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
