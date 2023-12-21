@@ -94,7 +94,6 @@ class RegistrosConfiguracion(models.Model):
         verbose_name_plural = 'Registros configuración'
 
 
-
 class TipoCobro(models.Model):
     id_tipo_cobro = models.AutoField(primary_key=True, db_column='T441IdTipoCobro')  
     nombre_tipo_cobro = models.CharField(max_length=255, db_column='T441NombreTipoCobro')
@@ -107,7 +106,6 @@ class TipoCobro(models.Model):
         verbose_name_plural = 'Tipo Cobro'
 
 
-
 class TipoRenta(models.Model):
     id_tipo_renta = models.AutoField(primary_key=True, db_column='T442IdTipoRenta')  
     nombre_tipo_renta = models.CharField(max_length=255, db_column='T442NombreTipoRenta')
@@ -116,8 +114,6 @@ class TipoRenta(models.Model):
         db_table = 'T442TipoRenta'
         verbose_name = 'Tipo Renta'
         verbose_name_plural = 'Tipos de Renta'
-
-
 
 
 class Variables(models.Model):
@@ -132,7 +128,6 @@ class Variables(models.Model):
         verbose_name_plural = 'Variables'
 
 
-
 class ValoresVariables(models.Model):
     id_valores_variables = models.AutoField(primary_key=True, db_column='T444IdValoresVariables')
     variables = models.ForeignKey(Variables, on_delete=models.CASCADE, db_column='T444IdVariables', related_name='valores_variables_variables')
@@ -144,7 +139,6 @@ class ValoresVariables(models.Model):
         db_table = 'T444ValoresVariables'
         verbose_name = 'Valores Variables'
         verbose_name_plural = 'Valores Variables'
-
 
 
 class LeyesLiquidacion(models.Model):
