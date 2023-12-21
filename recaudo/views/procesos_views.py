@@ -377,8 +377,15 @@ class CategoriaAtributoView(generics.ListAPIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+  
+    def delete(self, request, pk):
+        try:
+            categoria = CategoriaAtributo.objects.get(pk=pk)
+        except CategoriaAtributo.DoesNotExist:
+            return Response({'success': False, 'error': 'La categoría no existe'}, status=status.HTTP_404_NOT_FOUND)
 
-
+        categoria.delete()
+        return Response({'success': True, 'message': 'Categoría eliminada exitosamente'}, status=status.HTTP_200_OK)
 class EtapasFiltradoView(generics.ListAPIView):
     #permission_classes = [IsAuthenticated]
 

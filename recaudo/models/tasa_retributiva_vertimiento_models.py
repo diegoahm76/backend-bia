@@ -7,7 +7,10 @@ class documento_formulario_recuado(models.Model):
     id_persona = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE,db_column='TXXXId_Persona')	
     radicado = models.CharField(max_length=225, db_column='TXXXRadicado')
     id_archivo_sistema	= models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.CASCADE, db_column='TXXXId_ArchivoEnSistema')
-    
+    ids_destinatarios_personas = models.CharField(max_length=225, db_column='TXXXIds_Destinatarios_Personas')
+    ids_destinatarios_unidades = models.CharField(max_length=225, db_column='TXXXIds_Destinatarios_Unidades')
+
+
 
     class Meta:
         db_table = 'TXXXDocumentoFormularioRecuado'
