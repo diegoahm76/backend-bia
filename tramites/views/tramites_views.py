@@ -338,6 +338,22 @@ class RadicarCreateView(generics.CreateAPIView):
         
         return Response({'success': True, 'detail':'Se realizó la radicación correctamente', 'data':radicado_response}, status=status.HTTP_201_CREATED)   
 
+class RadicarGetView(generics.ListAPIView):
+    serializer_class = RadicadoPostSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_solicitud_tramite):
+        solicitud = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
+        if not solicitud:
+            raise NotFound('No se encontró el trámite del OPA elegido')
+        
+        if not solicitud.id_radicado:
+            raise ValidationError('El trámite aún no ha sido radicado')
+        
+        serializer = self.serializer_class(solicitud.id_radicado, context={'request': request})
+        
+        return Response({'success': True, 'detail':'Se encontró la información de la radicación', 'data':serializer.data}, status=status.HTTP_200_OK)
+
 class RadicarVolverEnviarGetView(generics.ListAPIView):
     serializer_class = RadicadoPostSerializer
     permission_classes = [IsAuthenticated]
