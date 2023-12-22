@@ -56,16 +56,16 @@ class TareasAsignadasCreate(generics.CreateAPIView):
 
     def crear_asignacion_tarea(self,data):
         data_in = data
-        id_bandeja_tareas = data_in['id_bandeja_tareas']
-        bandeja_tareas = BandejaTareasPersona.objects.filter(id_persona=id_bandeja_tareas).first()
+        # id_bandeja_tareas = data_in['id_bandeja_tareas']
+        # bandeja_tareas = BandejaTareasPersona.objects.filter(id_persona=id_bandeja_tareas).first()
 
-        if not bandeja_tareas:
-            raise NotFound('No se encontro la bandeja de tareas')
+        # if not bandeja_tareas:
+        #     raise NotFound('No se encontro la bandeja de tareas')
         
-        tareas_asignadas = TareasAsignadas.objects.filter(id_bandeja_tareas=id_bandeja_tareas).first()
+        # tareas_asignadas = TareasAsignadas.objects.filter(id_bandeja_tareas=id_bandeja_tareas).first()
 
-        if tareas_asignadas:
-            raise ValidationError('Ya existe una asignacion de tareas para esta bandeja de tareas')
+        # if tareas_asignadas:
+        #     raise ValidationError('Ya existe una asignacion de tareas para esta bandeja de tareas')
         
         serializer = TareasAsignadasCreateSerializer(data=data_in)
         serializer.is_valid(raise_exception=True)
@@ -83,12 +83,10 @@ class TareaBandejaTareasPersonaCreate(generics.CreateAPIView):
     serializer_class = TareaBandejaTareasPersonaCreateSerializer
     queryset = TareaBandejaTareasPersona.objects.all()
     permission_classes = [IsAuthenticated]
-    def post(self, request):
-        id_persona = None
-        data = request.data
-        ##
-      
-      
+
+
+    def crear_tarea(self,data):
+        
         id_persona = data['id_persona']
         bandeja = BandejaTareasPersona.objects.filter(id_persona=id_persona).first()
         id_bandeja =None
@@ -101,11 +99,38 @@ class TareaBandejaTareasPersonaCreate(generics.CreateAPIView):
                 return respuesta_bandeja
             id_bandeja = respuesta_bandeja.data['data']['id_bandeja_tareas_persona']
   
-      
+        data['id_bandeja_tareas_persona'] = id_bandeja
         serializer = TareaBandejaTareasPersonaCreateSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_201_CREATED)
+
+    def post(self, request):
+
+        data = request.data
+        respuesta = self.crear_tarea(data)
+        # id_persona = None
+        # data = request.data
+        # ##
+      
+      
+        # id_persona = data['id_persona']
+        # bandeja = BandejaTareasPersona.objects.filter(id_persona=id_persona).first()
+        # id_bandeja =None
+        # if bandeja:
+        #     id_bandeja = bandeja.id_bandeja_tareas_persona
+        # else:
+        #     vista_bandeja = BandejaTareasPersonaCreate()
+        #     respuesta_bandeja = vista_bandeja.crear_bandeja(data)
+        #     if respuesta_bandeja.status_code != status.HTTP_201_CREATED:
+        #         return respuesta_bandeja
+        #     id_bandeja = respuesta_bandeja.data['data']['id_bandeja_tareas_persona']
+  
+      
+        # serializer = TareaBandejaTareasPersonaCreateSerializer(data=data)
+        # serializer.is_valid(raise_exception=True)
+        # instance = serializer.save()
+        # return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_201_CREATED)
       
         
 

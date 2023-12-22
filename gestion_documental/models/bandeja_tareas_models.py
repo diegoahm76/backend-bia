@@ -20,7 +20,7 @@ class TareasAsignadas(models.Model):
 
     id_tarea_asignada = models.AutoField(primary_key=True, db_column='T315IdTareaAsignada')
     cod_tipo_tarea = models.CharField(max_length=4, choices=TIPOS_TAREA_CHOICES, db_column='T315codTipoTarea')
-    id_asignacion = models.IntegerField(null=True,unique=True,db_column='T315idAsignacion')
+    id_asignacion = models.IntegerField(null=True,db_column='T315idAsignacion')
     fecha_asignacion = models.DateTimeField(db_column='T315fechaAsignacion')
     comentario_asignacion = models.CharField(max_length=255, null=True, db_column='T315comentarioAsignacion')
     cod_estado_asignacion = models.CharField(max_length=2, null= True,choices=ESTADO_ASIGNACION_CHOICES, db_column='T315codEstadoAsignacion')
@@ -41,7 +41,8 @@ class TareasAsignadas(models.Model):
 
         db_table = 'T315TareasAsignadas'  
         verbose_name = 'Tarea Asignada'  
-        verbose_name_plural = 'Tareas Asignadas' 
+        verbose_name_plural = 'Tareas Asignadas'
+        unique_together = ['id_asignacion', 'cod_tipo_tarea'] 
         # constraints = [
         #     models.UniqueConstraint(fields=['id_asignacion'], name='unique_asignacion_constraint')
         # ]

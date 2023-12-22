@@ -12,6 +12,7 @@ from gestion_documental.choices.pqrsdf_choices import (
 from gestion_documental.choices.tipo_zonas_choices import TIPO_ZONAS_CHOICES
 
 
+
 from gestion_documental.models.expedientes_models import ArchivosDigitales, DocumentosDeArchivoExpediente, ExpedientesDocumentales
 from gestion_documental.models.trd_models import TipologiasDoc
 from seguridad.models import Personas
@@ -330,30 +331,14 @@ class BandejaTareasPersona(models.Model):
 class TareaBandejaTareasPersona(models.Model):
     id_tarea_bandeja_tareas_persona = models.AutoField(primary_key=True, db_column='T265IdTarea_BandejaTareas_Persona')
     id_bandeja_tareas_persona = models.ForeignKey(BandejaTareasPersona,on_delete=models.CASCADE, db_column='T265Id_BandejaTareas_Persona')
-    cod_tipo_tarea = models.CharField(
-        max_length=4,
-        db_column='T265codTipoTarea',
-        choices=COD_TIPO_TAREA_CHOICES
-    )
-    id_asignacion = models.IntegerField(db_column='T265idAsignacion')
-    cod_estado_asignacion = models.CharField(
-        max_length=2,
-        db_column='T265codEstadoAsignacion',
-        choices=COD_ESTADO_ASIGNACION_CHOICES
-    )
-    cod_estado_solicitud = models.CharField(
-        max_length=2,
-        db_column='T265codEstadoSolicitud',
-        choices=COD_ESTADO_SOLICITUD_CHOICES
-    )
+    id_tarea_asignada = models.ForeignKey('TareasAsignadas',on_delete=models.CASCADE, db_column='T265Id_TareaAsignada')
     es_responsable_ppal = models.BooleanField(db_column='T265esResponsablePpal')
-    fecha_respondido = models.DateTimeField(db_column='T265fechaRespondido', null=True)
-    ya_respondido_por_un_delegado = models.BooleanField(db_column='T265yaRespondidoPorUnDelegado')
-    id_asignacion_padre_inmediata = models.IntegerField(db_column='T265idAsignacionPadre_Inmediata', null=True)
+    fecha_leida = models.DateTimeField(db_column='T265fechaLeida', null=True)
+    leida = models.BooleanField(db_column='T265leida',default=False)   
 
     class Meta:
         db_table = 'T265Tareas_BandejaTareas_Persona'
-        unique_together = ('id_asignacion', )
+        unique_together = ('id_bandeja_tareas_persona', 'id_tarea_asignada')
 
 
 class AsignacionPQR(models.Model):
