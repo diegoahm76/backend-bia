@@ -131,10 +131,11 @@ class Variables(models.Model):
 class ValoresVariables(models.Model):
     id_valores_variables = models.AutoField(primary_key=True, db_column='T444IdValoresVariables')
     variables = models.ForeignKey(Variables, on_delete=models.CASCADE, db_column='T444IdVariables', related_name='valores_variables_variables')
-    fecha_inicio =  models.DateTimeField(auto_now_add=True, db_column='T444FechaInicio')  
+    fecha_inicio = models.DateTimeField(auto_now_add=True, db_column='T444FechaInicio')  
     fecha_fin = models.DateField(db_column='T444FechaFin')
     valor = models.DecimalField(max_digits=10, decimal_places=2, db_column='T444Valor')
-    descripccion = models.CharField(max_length=255, db_column='T444Descripccion')
+    descripccion = models.CharField(max_length=255, db_column='T444Descripcion')  # Corregir el nombre de la columna
+
     class Meta:
         db_table = 'T444ValoresVariables'
         verbose_name = 'Valores Variables'

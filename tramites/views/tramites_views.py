@@ -8,8 +8,13 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
+from gestion_documental.models.radicados_models import EstadosSolicitudes, T262Radicados
 from gestion_documental.models.trd_models import FormatosTiposMedio
+from gestion_documental.serializers.pqr_serializers import RadicadoPostSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
+from gestion_documental.views.configuracion_tipos_radicados_views import ConfigTiposRadicadoAgnoGenerarN
+from gestion_documental.views.pqr_views import RadicadoCreate
+from seguridad.utils import Util
 
 from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, PermisosAmbientales, SolicitudesTramites
 from tramites.serializers.tramites_serializers import AnexosGetSerializer, AnexosUpdateSerializer, InicioTramiteCreateSerializer, ListTramitesGetSerializer, PersonaTitularInfoGetSerializer, TramiteListGetSerializer
@@ -286,11 +291,88 @@ class AnexosGetView(generics.ListAPIView):
         
         return Response({'success':True, 'detail':'Se encontraron los siguientes anexos del trámite', 'data':serializer_get.data}, status=status.HTTP_200_OK)
 
-# class RadicarCreateView(generics.CreateAPIView):
-#     serializer_class = AnexosGetSerializer
-#     permission_classes = [IsAuthenticated]
+class RadicarCreateView(generics.CreateAPIView):
+    serializer_class = AnexosGetSerializer
+    permission_classes = [IsAuthenticated]
     
-#     def create(self, request):
-#         data = request.data
+    def create(self, request, id_solicitud_tramite):
+        data = request.data
+        current_date = datetime.now()
         
-#         return Response({'success': True, 'detail':'Se realizó la creación del inicio del trámite correctamente'}, status=status.HTTP_201_CREATED)   
+        solicitud = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
+        if not solicitud:
+            raise NotFound('No se encontró el trámite del OPA elegido')
+        
+        if solicitud.id_radicado:
+            raise ValidationError('El trámite ya ha sido radicado')
+        
+        data['fecha_actual'] = current_date
+        data['id_usuario'] = request.user.id_usuario
+        data['tipo_radicado'] = "E" # VALIDAR
+        data['modulo_radica'] = "Trámites y Servicios" # VALIDAR
+        
+        radicado_class = RadicadoCreate()
+        radicado_response = radicado_class.post(data)
+        
+        id_radicado = radicado_response.get('id_radicado')
+        numero_radicado = radicado_response.get('nro_radicado')
+        
+        # ACTUALIZAR SOLICITUD
+        radicado = T262Radicados.objects.filter(id_radicado=id_radicado).first()
+        if not radicado:
+            raise NotFound('No se encontró el radicado generado')
+        
+        estado_solicitud = EstadosSolicitudes.objects.filter(id_estado_solicitud=2).first()
+        if not estado_solicitud:
+            raise NotFound('No se encontró el estado de la solicitud')
+        
+        solicitud.id_radicado = radicado
+        solicitud.fecha_radicado = current_date
+        solicitud.id_estado_actual_solicitud = estado_solicitud
+        solicitud.save()
+        
+        # ENVIAR CORREO CON RADICADO
+        subject = "OPA radicado con éxito - "
+        template = "envio-radicado-opas.html"
+        Util.notificacion(request.user.persona,subject,template,nombre_de_usuario=request.user.nombre_de_usuario,numero_radicado=numero_radicado)
+        
+        return Response({'success': True, 'detail':'Se realizó la radicación correctamente', 'data':radicado_response}, status=status.HTTP_201_CREATED)   
+
+class RadicarGetView(generics.ListAPIView):
+    serializer_class = RadicadoPostSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_solicitud_tramite):
+        solicitud = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
+        if not solicitud:
+            raise NotFound('No se encontró el trámite del OPA elegido')
+        
+        if not solicitud.id_radicado:
+            raise ValidationError('El trámite aún no ha sido radicado')
+        
+        serializer = self.serializer_class(solicitud.id_radicado, context={'request': request})
+        
+        return Response({'success': True, 'detail':'Se encontró la información de la radicación', 'data':serializer.data}, status=status.HTTP_200_OK)
+
+class RadicarVolverEnviarGetView(generics.ListAPIView):
+    serializer_class = RadicadoPostSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_solicitud_tramite):
+        solicitud = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
+        if not solicitud:
+            raise NotFound('No se encontró el trámite del OPA elegido')
+        
+        if not solicitud.id_radicado:
+            raise ValidationError('El trámite aún no ha sido radicado')
+        
+        numero_radicado = solicitud.id_radicado.nro_radicado
+        
+        # ENVIAR CORREO CON RADICADO
+        subject = "OPA radicado con éxito - "
+        template = "envio-radicado-opas.html"
+        Util.notificacion(request.user.persona,subject,template,nombre_de_usuario=request.user.nombre_de_usuario,numero_radicado=numero_radicado)
+        
+        serializer = self.serializer_class(solicitud.id_radicado, context={'request': request})
+        
+        return Response({'success': True, 'detail':'Se volvió a enviar la radicación correctamente', 'data':serializer.data}, status=status.HTTP_200_OK)   
