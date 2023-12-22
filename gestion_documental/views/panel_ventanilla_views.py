@@ -599,30 +599,14 @@ class AsignacionPQRCreate(generics.CreateAPIView):
         #Crear tarea y asignacion de tarea
        
         id_persona_asiganada = serializer.data['id_persona_asignada']
-        print(id_persona_asiganada)
-        ##Buscamos la bandeja de la persona 
-        # bandeja_persona = BandejaTareasPersona.objects.filter(id_persona=id_persona_asiganada).first()
-        # #En caso de no existir la bandeja de la persona creamos la bandeja
-       
-        # if not bandeja_persona:
-        #     vista_bandeja = BandejaTareasPersonaCreate()
-        #     data_bandeja = {}
-        #     data_bandeja['id_persona'] = id_persona_asiganada
-        #     respuesta_bandeja = vista_bandeja.crear_bandeja(data_bandeja)
-        #     if respuesta_bandeja.status_code != status.HTTP_201_CREATED:
-        #         return respuesta_bandeja
-        #     id_bandeja =respuesta_bandeja.data['data']['id_bandeja_tareas_persona']
-        # else:
-        #     id_bandeja = bandeja_persona.id_bandeja_tareas_persona
+
+ 
         #Creamos la tarea 315
         data_tarea = {}
         data_tarea['cod_tipo_tarea'] = 'Rpqr'
         data_tarea['id_asignacion'] = serializer.data['id_asignacion_pqr']
         data_tarea['fecha_asignacion'] = datetime.now()
-        #data_tarea['comentario_asignacion'] = None
-        #data_tarea['cod_estado_asignacion'] = None
-        #data_tarea['justificacion_rechazo'] = None
-        #data_tarea['fecha_respondido'] = None
+
         data_tarea['cod_estado_solicitud'] = 'Ep'
         vista_tareas = TareasAsignadasCreate()    
         respuesta_tareas = vista_tareas.crear_asignacion_tarea(data_tarea)
@@ -636,16 +620,13 @@ class AsignacionPQRCreate(generics.CreateAPIView):
         data_tarea_bandeja_asignacion = {}
         data_tarea_bandeja_asignacion['id_persona'] = id_persona_asiganada
         data_tarea_bandeja_asignacion['id_tarea_asignada'] = id_tarea_asiganada
-        data_tarea_bandeja_asignacion['cod_tipo_tarea'] = 'Rpqr'
+        data_tarea_bandeja_asignacion['es_responsable_ppal'] = True
+        respuesta_relacion = vista_asignacion.crear_tarea(data_tarea_bandeja_asignacion)
+        if respuesta_relacion.status_code != status.HTTP_201_CREATED:
+            return respuesta_relacion
         
-        print(respuesta_tareas)
-        raise ValidationError("NONE")    
 
-        
-        #raise ValidationError("NONE")
-        data_tarea = {}
-
-        return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':serializer.data,'estado':data_estado}, status=status.HTTP_200_OK)
+        return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':serializer.data,'estado':data_estado,'tarea':respuesta_relacion.data['data']}, status=status.HTTP_200_OK)
 
 
 
