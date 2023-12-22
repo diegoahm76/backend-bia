@@ -10,6 +10,7 @@ from datetime import datetime
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from gestion_documental.models.radicados_models import EstadosSolicitudes, T262Radicados
 from gestion_documental.models.trd_models import FormatosTiposMedio
+from gestion_documental.serializers.pqr_serializers import RadicadoPostSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.configuracion_tipos_radicados_views import ConfigTiposRadicadoAgnoGenerarN
 from gestion_documental.views.pqr_views import RadicadoCreate
@@ -336,3 +337,26 @@ class RadicarCreateView(generics.CreateAPIView):
         Util.notificacion(request.user.persona,subject,template,nombre_de_usuario=request.user.nombre_de_usuario,numero_radicado=numero_radicado)
         
         return Response({'success': True, 'detail':'Se realizó la radicación correctamente', 'data':radicado_response}, status=status.HTTP_201_CREATED)   
+
+class RadicarVolverEnviarGetView(generics.ListAPIView):
+    serializer_class = RadicadoPostSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_solicitud_tramite):
+        solicitud = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
+        if not solicitud:
+            raise NotFound('No se encontró el trámite del OPA elegido')
+        
+        if not solicitud.id_radicado:
+            raise ValidationError('El trámite aún no ha sido radicado')
+        
+        numero_radicado = solicitud.id_radicado.nro_radicado
+        
+        # ENVIAR CORREO CON RADICADO
+        subject = "OPA radicado con éxito - "
+        template = "envio-radicado-opas.html"
+        Util.notificacion(request.user.persona,subject,template,nombre_de_usuario=request.user.nombre_de_usuario,numero_radicado=numero_radicado)
+        
+        serializer = self.serializer_class(solicitud.id_radicado, context={'request': request})
+        
+        return Response({'success': True, 'detail':'Se volvió a enviar la radicación correctamente', 'data':serializer.data}, status=status.HTTP_200_OK)   
