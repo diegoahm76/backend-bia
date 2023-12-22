@@ -101,7 +101,7 @@ urlpatterns = [
     path('api/gestor/radicados/',include('gestion_documental.urls.radicados_urls')),
     path('api/gestor/central-digitalizacion/',include('gestion_documental.urls.central_digitalizacion_urls')),
     path('api/gestor/complementos-pqr/',include('gestion_documental.urls.complementos_pqr_urls')),
-    
+    path('api/gestor/bandeja-tareas/',include('gestion_documental.urls.bandeja_tareas_urls')),
     
     #ALMACEN
     path('api/almacen/hoja-de-vida/', include('almacen.urls.hoja_de_vida_urls')),

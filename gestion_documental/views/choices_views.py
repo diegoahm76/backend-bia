@@ -1,4 +1,6 @@
 from gestion_documental.choices.central_digitalizacion_choices import ESTADO_SOLICITUD_CHOICES, TIPO_SOLICITUD_CHOICES
+from gestion_documental.choices.estado_asignacion_choices import ESTADO_ASIGNACION_CHOICES
+from gestion_documental.choices.estado_solicitud_choices import ESTADO_SOLICITUD_TAREA_CHOICES
 from gestion_documental.choices.rango_edad_choices import RANGO_EDAD_LIST
 from gestion_documental.choices.tipo_clasificacion_choices import tipo_clasificacion_CHOICES
 from gestion_documental.choices.tipo_zonas_choices import TIPO_ZONAS_CHOICES
@@ -33,6 +35,8 @@ from gestion_documental.choices.codigo_forma_presentacion_choices import cod_for
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+
+from gestion_documental.choices.tipos_tareas_choices import TIPOS_TAREA_CHOICES
 
 
 class TipoClasificacion(APIView):
@@ -193,3 +197,22 @@ class CodFormaPresentacion(APIView):
     def get(self, request):
         choices = cod_forma_presentacion_CHOICES
         return Response(choices)
+    
+#BANDEJA DE TAREAS
+class TipoTarea(APIView):
+    def get(self, request):
+        choices = TIPOS_TAREA_CHOICES
+        return Response({'success': True, 'detail':'Se encontraron los siguientes registros', 'data':choices}, status=status.HTTP_200_OK)
+       
+    
+class EstadoAsignacionTarea(APIView):
+    def get(self, request):
+        choices = ESTADO_ASIGNACION_CHOICES 
+
+        return Response({'success': True, 'detail':'Se encontraron los siguientes registros', 'data':choices}, status=status.HTTP_200_OK)
+#ESTADO_SOLICITUD_CHOICES
+class EstadoSolicitudTarea(APIView):
+    def get(self, request):
+        choices = ESTADO_SOLICITUD_TAREA_CHOICES 
+
+        return Response({'success': True, 'detail':'Se encontraron los siguientes registros', 'data':choices}, status=status.HTTP_200_OK)
