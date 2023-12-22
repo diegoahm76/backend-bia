@@ -56,16 +56,16 @@ class TareasAsignadasCreate(generics.CreateAPIView):
 
     def crear_asignacion_tarea(self,data):
         data_in = data
-        id_bandeja_tareas = data_in['id_bandeja_tareas']
-        bandeja_tareas = BandejaTareasPersona.objects.filter(id_persona=id_bandeja_tareas).first()
+        # id_bandeja_tareas = data_in['id_bandeja_tareas']
+        # bandeja_tareas = BandejaTareasPersona.objects.filter(id_persona=id_bandeja_tareas).first()
 
-        if not bandeja_tareas:
-            raise NotFound('No se encontro la bandeja de tareas')
+        # if not bandeja_tareas:
+        #     raise NotFound('No se encontro la bandeja de tareas')
         
-        tareas_asignadas = TareasAsignadas.objects.filter(id_bandeja_tareas=id_bandeja_tareas).first()
+        # tareas_asignadas = TareasAsignadas.objects.filter(id_bandeja_tareas=id_bandeja_tareas).first()
 
-        if tareas_asignadas:
-            raise ValidationError('Ya existe una asignacion de tareas para esta bandeja de tareas')
+        # if tareas_asignadas:
+        #     raise ValidationError('Ya existe una asignacion de tareas para esta bandeja de tareas')
         
         serializer = TareasAsignadasCreateSerializer(data=data_in)
         serializer.is_valid(raise_exception=True)
