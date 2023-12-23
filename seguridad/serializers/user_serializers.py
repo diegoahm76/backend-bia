@@ -222,6 +222,8 @@ class LoginSerializer(serializers.ModelSerializer):
 
     email = serializers.CharField(max_length=255, min_length=3,read_only=True)
     telefono_celular = serializers.CharField(max_length=15, read_only=True)
+    tipo_documento = serializers.CharField(max_length=2, read_only=True)
+    numero_documento = serializers.CharField(max_length=20, read_only=True)
     password= serializers.CharField(max_length=68, min_length=6, write_only=True)
     nombre_de_usuario = serializers.CharField(max_length=68, min_length=6)
     nombre = serializers.CharField(read_only=True)
@@ -240,7 +242,7 @@ class LoginSerializer(serializers.ModelSerializer):
     
     class Meta:
         model=Login
-        fields= ['email', 'telefono_celular', 'password', 'nombre_de_usuario', 'nombre', 'tokens', 'is_superuser', 'id_usuario', 'tipo_usuario', 'id_persona', 'tipo_persona', 'id_unidad_organizacional_actual', 'nombre_unidad_organizacional', 'activated_at', 'profile_img', 'permisos', 'representante_legal']
+        fields= ['email', 'telefono_celular', 'tipo_documento', 'numero_documento', 'password', 'nombre_de_usuario', 'nombre', 'tokens', 'is_superuser', 'id_usuario', 'tipo_usuario', 'id_persona', 'tipo_persona', 'id_unidad_organizacional_actual', 'nombre_unidad_organizacional', 'activated_at', 'profile_img', 'permisos', 'representante_legal']
     
     def validate(self, attrs):
         nombre_de_usuario = attrs.get('nombre_de_usuario', '').lower()
@@ -273,6 +275,8 @@ class LoginSerializer(serializers.ModelSerializer):
         return {
             'email': user.persona.email,
             'telefono_celular': user.persona.telefono_celular,
+            'tipo_documento': user.persona.tipo_documento.cod_tipo_documento,
+            'numero_documento': user.persona.numero_documento,
             'nombre_de_usuario': user.nombre_de_usuario,
             'nombre':nombre,
             'tokens': tokens,

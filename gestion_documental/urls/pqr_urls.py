@@ -21,7 +21,11 @@ urlpatterns = [
     path('tipos_pqr/actualizar-medio-solicitud/<int:id_medio_solicitud>/',views.MediosSolicitudUpdate.as_view(), name='actualizar-medio-solicitud'),
 
     #Respuesta_Solicitud_PQRSDF
-    path('tipos_pqr/get/<str:pk>/', views.TiposPQRGet.as_view(), name='get-tipos-radicado'),
+    
+    path('crear-respuesta-pqrsdf/', views.RespuestaPQRSDFCreate.as_view(), name='crear-respuesta-pqrsdf'),
+    path('get_respuesta_pqrsdf-panel/<int:id_pqrsdf>/', views.GetRespuestaPQRSDFForPanel.as_view(), name='get_respuesta_pqrsdf-panel'),
+
+
 
 
 
