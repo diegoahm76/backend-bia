@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, TiposPQR, MediosSolicitud
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, TiposPQR, MediosSolicitud
 from transversal.models.personas_models import Personas
 
 class TiposPQRGetSerializer(serializers.ModelSerializer):
@@ -318,4 +318,87 @@ class InfoDenunciasPQRSDFPutSerializer(serializers.ModelSerializer):
 class ArchivosSerializer(serializers.ModelSerializer):
     class Meta:
         model = ArchivosDigitales
+        fields = '__all__'
+
+
+#Respuesta_PQRSDF
+
+class RespuestaPQRSDFPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RespuestaPQR
+        fields = '__all__'       
+
+class AnexoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos
+        fields = '__all__'
+
+class AnexoRespuestaPQRSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos_PQR
+        fields = '__all__'
+
+
+
+
+
+class RespuestaPQRSDFPanelSerializer(serializers.ModelSerializer):
+    denuncia = serializers.SerializerMethodField()
+    anexos = serializers.SerializerMethodField()
+
+    def get_denuncia(self, obj):
+        denuncia = InfoDenuncias_PQRSDF.objects.filter(id_PQRSDF = obj.id_PQRSDF).first()
+        if denuncia:
+            return InfoDenunciasPQRSDFSerializer(denuncia).data
+        return None
+    
+    def get_anexos(self, obj):
+        anexos_pqr = Anexos_PQR.objects.filter(id_PQRSDF = obj.id_PQRSDF)
+        anexos = []
+
+        if anexos_pqr:
+            for anexo_pqr in anexos_pqr:
+                anexo = Anexos.objects.filter(id_anexo = anexo_pqr.id_anexo_id).first()
+                anexos.append(AnexosPqrsdfPanelSerializer(anexo).data)
+        return anexos
+    
+    def to_representation(self, instance):
+        # Organiza la representación para mostrar primero la data del modelo principal y luego los datos anexos
+        representation = super().to_representation(instance)
+        reordered_representation = {
+            'id_PQRSDF': representation['id_pqrsdf'],
+            'cod_tipo_PQRSDF': representation['cod_tipo_PQRSDF'],
+            'id_persona_titular': representation['id_persona_titular'],
+            'id_persona_interpone': representation['id_persona_interpone'],
+            'cod_relacion_con_el_titular': representation['cod_relacion_con_el_titular'],
+            'es_anonima': representation['es_anonima'],
+            'fecha_registro': representation['fecha_registro'],
+            'id_medio_solicitud': representation['id_medio_solicitud'],
+            'cod_forma_presentacion': representation['cod_forma_presentacion'],
+            'asunto': representation['asunto'],
+            'descripcion': representation['descripcion'],
+            'cantidad_anexos': representation['cantidad_anexos'],
+            'nro_folios_totales': representation['nro_folios_totales'],
+            'requiere_rta': representation['requiere_rta'],
+            'dias_para_respuesta': representation['dias_para_respuesta'],
+            'id_sucursal_especifica_implicada': representation['id_sucursal_especifica_implicada'],
+            'id_persona_recibe': representation['id_persona_recibe'],
+            'id_sucursal_recepcion_fisica': representation['id_sucursal_recepcion_fisica'],
+            'id_radicado': representation['id_radicado'],
+            'fecha_radicado': representation['fecha_radicado'],
+            'requiere_digitalizacion': representation['requiere_digitalizacion'],
+            'fecha_envio_definitivo_a_digitalizacion': representation['fecha_envio_definitivo_a_digitalizacion'],
+            'fecha_digitalizacion_completada': representation['fecha_digitalizacion_completada'],
+            'fecha_rta_final_gestion': representation['fecha_rta_final_gestion'],
+            'id_persona_rta_final_gestion': representation['id_persona_rta_final_gestion'],
+            'id_estado_actual_solicitud': representation['id_estado_actual_solicitud'],
+            'fecha_ini_estado_actual': representation['fecha_ini_estado_actual'],
+            'id_doc_dearch_exp': representation['id_doc_dearch_exp'],
+            'id_expediente_doc': representation['id_expediente_doc'],
+            'denuncia': representation['denuncia'],
+            'anexos': representation['anexos']
+        }
+        return reordered_representation
+    class Meta:
+        model = RespuestaPQR
         fields = '__all__'
