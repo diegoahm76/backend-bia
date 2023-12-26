@@ -322,7 +322,7 @@ class SolicitudDeDigitalizacion(models.Model):
 class BandejaTareasPersona(models.Model):
     id_bandeja_tareas_persona = models.AutoField(primary_key=True, db_column='T264IdBandejaTareas_Persona')
     id_persona = models.ForeignKey('transversal.Personas', models.CASCADE, db_column='T264Id_Persona')
-
+    pendientes_leer = models.BooleanField(db_column='T264pendientesLeer')
     class Meta:
         db_table = 'T264BandejasTareas_Persona'
         unique_together = ('id_persona',)

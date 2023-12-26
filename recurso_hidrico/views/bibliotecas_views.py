@@ -1,6 +1,7 @@
 import copy
 import json
 from collections import Counter
+import os
 from django.forms import model_to_dict
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
@@ -11,6 +12,7 @@ from rest_framework import status
 from datetime import datetime,date,timedelta
 from django.db.models import Max
 from django.db import transaction
+from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, DatosCarteraAforos, DatosRegistroLaboratorio, DatosSesionPruebaBombeo, Instrumentos, ParametrosLaboratorio, Pozos, PruebasBombeo, ResultadosLaboratorio, Secciones, SesionesPruebaBombeo,Subsecciones
 from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentoUpdateSerializer, ArchivosInstrumentosGetSerializer, CarteraAforosDeleteSerializer, CarteraAforosGetSerializer, CarteraAforosPostSerializer, CarteraAforosUpdateSerializer, CuencasGetByInstrumentoSerializer, CuencasGetSerializer, CuencasInstrumentoDeleteSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, DatosCarteraAforosDeleteSerializer, DatosCarteraAforosGetSerializer, DatosCarteraAforosPostSerializer, DatosCarteraAforosUpdateSerializer, DatosRegistroLaboratorioDeleteSerializer, DatosRegistroLaboratorioGetSerializer, DatosRegistroLaboratorioPostSerializer, DatosRegistroLaboratorioUpdateSerializer, DatosSesionPruebaBombeoDeleteSerializer, DatosSesionPruebaBombeoGetSerializer, DatosSesionPruebaBombeoPostSerializer, DatosSesionPruebaBombeoPutSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoBusquedaAvanzadaSerializer, InstrumentoCuencasGetSerializer, InstrumentosDeleteSerializer, InstrumentosPostSerializer, InstrumentosSerializer, InstrumentosUpdateSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer, PruebasBombeoDeleteSerializer, PruebasBombeoGetSerializer, PruebasBombeoPostSerializer, PruebasBombeoUpdateSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, ResultadosLaboratorioDeleteSerializer, ResultadosLaboratorioGetSerializer, ResultadosLaboratorioPostSerializer, ResultadosLaboratorioUpdateSerializer, SeccionSerializer, SeccionesSerializer, SesionesPruebaBombeoDeleteSerializer, SesionesPruebaBombeoGetSerializer, SesionesPruebaBombeoPostSerializer, SesionesPruebaBombeoPutSerializer, SubseccionBusquedaAvanzadaSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
 from seguridad.utils import Util
@@ -1045,6 +1047,28 @@ class ArchivosInstrumentoCreate(generics.CreateAPIView):
     serializer_class = ArchivosInstrumentoPostSerializer
 
     def crear_archivo(self, data):
+
+        archivo = data['ruta_archivo']
+        ruta = os.path.join("home", "BIA", "Otros", "Instrumentos")
+        
+        # Crea el archivo digital y obtiene su ID
+        data_archivo = {
+            'es_Doc_elec_archivo': False,
+            'ruta': ruta,
+        }
+        vista_archivos = ArchivosDgitalesCreate()
+        respuesta = vista_archivos.crear_archivo(data_archivo, archivo)
+
+        if respuesta.status_code != status.HTTP_201_CREATED:
+            return respuesta
+
+        data_archivo = respuesta.data['data']
+        id_archivo = data_archivo['id_archivo_digital']
+        data['ruta_archivo'] =id_archivo
+
+        print(data_archivo)
+        
+        print()
         serializer = ArchivosInstrumentoPostSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -1178,10 +1202,12 @@ class InstrumentoCreate(generics.CreateAPIView):
             fecha_actual = datetime.now().date()
             
             formato = "%Y-%m-%dT%H:%M:%S"
-            fecha_datetime = datetime.strptime(data_in['fecha_creacion_instrumento'], formato).date()
+            formato_fecha= '%Y-%m-%d'
+            fecha_datetime = datetime.strptime(data_in['fecha_creacion_instrumento'], formato_fecha).date()
             if(fecha_datetime>fecha_actual):
                 raise ValidationError("La fecha de creacion no puese superar la actual.")
-            formato_fecha= '%Y-%m-%d'
+            #raise ValidationError(data_in['fecha_creacion_instrumento'])
+            
             if 'fecha_fin_vigencia' in data_in:
                 fin_vigencia= datetime.strptime(data_in['fecha_fin_vigencia'], formato_fecha).date()
 
