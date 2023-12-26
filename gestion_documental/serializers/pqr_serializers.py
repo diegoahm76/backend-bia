@@ -343,17 +343,10 @@ class AnexoRespuestaPQRSerializer(serializers.ModelSerializer):
 
 
 class RespuestaPQRSDFPanelSerializer(serializers.ModelSerializer):
-    denuncia = serializers.SerializerMethodField()
     anexos = serializers.SerializerMethodField()
-
-    def get_denuncia(self, obj):
-        denuncia = InfoDenuncias_PQRSDF.objects.filter(id_PQRSDF = obj.id_PQRSDF).first()
-        if denuncia:
-            return InfoDenunciasPQRSDFSerializer(denuncia).data
-        return None
     
     def get_anexos(self, obj):
-        anexos_pqr = Anexos_PQR.objects.filter(id_PQRSDF = obj.id_PQRSDF)
+        anexos_pqr = Anexos_PQR.objects.filter(id_PQRSDF=obj.id_pqrsdf)
         anexos = []
 
         if anexos_pqr:
@@ -367,35 +360,17 @@ class RespuestaPQRSDFPanelSerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
         reordered_representation = {
             'id_PQRSDF': representation['id_pqrsdf'],
-            'cod_tipo_PQRSDF': representation['cod_tipo_PQRSDF'],
-            'id_persona_titular': representation['id_persona_titular'],
-            'id_persona_interpone': representation['id_persona_interpone'],
-            'cod_relacion_con_el_titular': representation['cod_relacion_con_el_titular'],
-            'es_anonima': representation['es_anonima'],
-            'fecha_registro': representation['fecha_registro'],
-            'id_medio_solicitud': representation['id_medio_solicitud'],
-            'cod_forma_presentacion': representation['cod_forma_presentacion'],
+            'id_respuesta_pqr': representation['id_respuesta_pqr'],
+            'fecha_respuesta': representation['fecha_respuesta'],
+            'descripcion': representation['descripcion'],
             'asunto': representation['asunto'],
             'descripcion': representation['descripcion'],
             'cantidad_anexos': representation['cantidad_anexos'],
             'nro_folios_totales': representation['nro_folios_totales'],
-            'requiere_rta': representation['requiere_rta'],
-            'dias_para_respuesta': representation['dias_para_respuesta'],
-            'id_sucursal_especifica_implicada': representation['id_sucursal_especifica_implicada'],
-            'id_persona_recibe': representation['id_persona_recibe'],
-            'id_sucursal_recepcion_fisica': representation['id_sucursal_recepcion_fisica'],
-            'id_radicado': representation['id_radicado'],
-            'fecha_radicado': representation['fecha_radicado'],
-            'requiere_digitalizacion': representation['requiere_digitalizacion'],
-            'fecha_envio_definitivo_a_digitalizacion': representation['fecha_envio_definitivo_a_digitalizacion'],
-            'fecha_digitalizacion_completada': representation['fecha_digitalizacion_completada'],
-            'fecha_rta_final_gestion': representation['fecha_rta_final_gestion'],
-            'id_persona_rta_final_gestion': representation['id_persona_rta_final_gestion'],
-            'id_estado_actual_solicitud': representation['id_estado_actual_solicitud'],
-            'fecha_ini_estado_actual': representation['fecha_ini_estado_actual'],
-            'id_doc_dearch_exp': representation['id_doc_dearch_exp'],
-            'id_expediente_doc': representation['id_expediente_doc'],
-            'denuncia': representation['denuncia'],
+            'id_persona_responde': representation['id_persona_responde'],
+            'id_radicado_salida': representation['id_radicado_salida'],
+            'fecha_radicado_salida': representation['fecha_radicado_salida'],
+            'id_doc_archivo_exp': representation['id_doc_archivo_exp'],
             'anexos': representation['anexos']
         }
         return reordered_representation
