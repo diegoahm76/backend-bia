@@ -1115,11 +1115,8 @@ class ArchivosInstrumentoGetByInstrumento(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def get(self,request,pk):
-        
         archivos = ArchivosInstrumento.objects.filter(id_instrumento=pk)
-                
         serializer = self.serializer_class(archivos,many=True)
-        
         if not archivos:
             raise NotFound("Este instrumento no cuenta con archivos.")
         return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
@@ -1134,10 +1131,8 @@ class ArchivosInstrumentoGetByResultadosLaboratorio(generics.ListAPIView):
     
     def get(self,request,lab):
         
-        archivos = ArchivosInstrumento.objects.filter(id_resultado_laboratorio=lab)
-                
+        archivos = ArchivosInstrumento.objects.filter(id_resultado_laboratorio=lab)    
         serializer = self.serializer_class(archivos,many=True)
-        
         if not archivos:
             raise NotFound("Este resultado de laboratorio no cuenta con archivos.")
         return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
@@ -1152,9 +1147,7 @@ class ArchivosInstrumentoGetByPruebasBombeo(generics.ListAPIView):
     def get(self,request,pru):
         
         archivos = ArchivosInstrumento.objects.filter(id_prueba_bombeo=pru)
-                
         serializer = self.serializer_class(archivos,many=True)
-        
         if not archivos:
             raise NotFound("Esta prueba de bombeo no cuenta con archivos.")
         return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
@@ -1168,8 +1161,7 @@ class ArchivosInstrumentoGetByCarteraAforos(generics.ListAPIView):
     
     def get(self,request,ca):
         
-        archivos = ArchivosInstrumento.objects.filter(id_cartera_aforo=ca)
-                
+        archivos = ArchivosInstrumento.objects.filter(id_cartera_aforo=ca)        
         serializer = self.serializer_class(archivos,many=True)
         
         if not archivos:
