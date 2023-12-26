@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, TiposPQR, MediosSolicitud
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, TiposPQR, MediosSolicitud
 from transversal.models.personas_models import Personas
 
 class TiposPQRGetSerializer(serializers.ModelSerializer):
@@ -318,4 +318,62 @@ class InfoDenunciasPQRSDFPutSerializer(serializers.ModelSerializer):
 class ArchivosSerializer(serializers.ModelSerializer):
     class Meta:
         model = ArchivosDigitales
+        fields = '__all__'
+
+
+#Respuesta_PQRSDF
+
+class RespuestaPQRSDFPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RespuestaPQR
+        fields = '__all__'       
+
+class AnexoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos
+        fields = '__all__'
+
+class AnexoRespuestaPQRSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos_PQR
+        fields = '__all__'
+
+
+
+
+
+class RespuestaPQRSDFPanelSerializer(serializers.ModelSerializer):
+    anexos = serializers.SerializerMethodField()
+    
+    def get_anexos(self, obj):
+        anexos_pqr = Anexos_PQR.objects.filter(id_PQRSDF=obj.id_pqrsdf)
+        anexos = []
+
+        if anexos_pqr:
+            for anexo_pqr in anexos_pqr:
+                anexo = Anexos.objects.filter(id_anexo = anexo_pqr.id_anexo_id).first()
+                anexos.append(AnexosPqrsdfPanelSerializer(anexo).data)
+        return anexos
+    
+    def to_representation(self, instance):
+        # Organiza la representación para mostrar primero la data del modelo principal y luego los datos anexos
+        representation = super().to_representation(instance)
+        reordered_representation = {
+            'id_PQRSDF': representation['id_pqrsdf'],
+            'id_respuesta_pqr': representation['id_respuesta_pqr'],
+            'fecha_respuesta': representation['fecha_respuesta'],
+            'descripcion': representation['descripcion'],
+            'asunto': representation['asunto'],
+            'descripcion': representation['descripcion'],
+            'cantidad_anexos': representation['cantidad_anexos'],
+            'nro_folios_totales': representation['nro_folios_totales'],
+            'id_persona_responde': representation['id_persona_responde'],
+            'id_radicado_salida': representation['id_radicado_salida'],
+            'fecha_radicado_salida': representation['fecha_radicado_salida'],
+            'id_doc_archivo_exp': representation['id_doc_archivo_exp'],
+            'anexos': representation['anexos']
+        }
+        return reordered_representation
+    class Meta:
+        model = RespuestaPQR
         fields = '__all__'
