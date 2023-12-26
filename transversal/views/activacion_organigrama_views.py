@@ -18,9 +18,18 @@ from transversal.models.organigrama_models import (
 from seguridad.models import User
 from seguridad.utils import Util
 from transversal.models.personas_models import Personas
-from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental, UnidadesSeccionResponsableTemporal
-from gestion_documental.models.tca_models import TablasControlAcceso
-from gestion_documental.models.trd_models import TablaRetencionDocumental
+from transversal.models.alertas_models import PersonasAAlertar, AlertasProgramadas
+
+from gestion_documental.models import (
+    CuadrosClasificacionDocumental,
+    UnidadesSeccionResponsableTemporal,
+    TablasControlAcceso,
+    TablaRetencionDocumental,
+    ExpedientesDocumentales, 
+    DocumentosDeArchivoExpediente,
+    PermisosUndsOrgActualesSerieExpCCD
+)
+
 from gestion_documental.views.ccd_views import BusquedaCCDHomologacionView
 
 from gestion_documental.views.activacion_ccd_views import CCDCambioActualPut
@@ -28,10 +37,7 @@ from gestion_documental.views.activacion_ccd_views import CCDCambioActualPut
 
 from transversal.serializers.activacion_organigrama_serializers import (
     OrganigramaCambioActualSerializer,
-    UnidadesOrganizacionalesSerializer
-)
-
-from transversal.serializers.activacion_organigrama_serializers import (
+    UnidadesOrganizacionalesSerializer,
     OrganigramaSerializer,
     UnidadesDelegacionSerializer
     
@@ -234,7 +240,7 @@ class ValidacionUnidadesDelegacionActualView(generics.ListAPIView):
 # - Actualizar la tabla T019UnidadesOrganizacionales de acuerdo con la información obtenida de T227.
 # - Agregar comentarios detallados para cada subproceso adicional que se deba realizar después de las validaciones y procesos actuales.
     
-class ActualizarUnidadesSeccionResponsable(views.APIView):
+class ActualizarUnidadesSeccionResponsable(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
     
     def actualizar_agrupacion_documental(self, id_ccd_nuevo, data_auditoria):
@@ -259,24 +265,125 @@ class ActualizarUnidadesSeccionResponsable(views.APIView):
 # - Consultar la tabla temporal T227UndsSeccionResponsables_Tmp para obtener las asignaciones de unidades entre el CCD DESACTIVANDO y el CCD ACTIVANDO.
 # - Actualizar la tabla T236ExpedientesDocumentales y T237DocumentosDeArchivo_Expediente según las asignaciones obtenidas.
                     
-class ActualizarExpedientesDocumentos(views.APIView):
+class ActualizarExpedientesDocumentos(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
     
     def actualizar_expedientes_documentos(self, id_ccd_nuevo, data_auditoria):
-        unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=id_ccd_nuevo, id_unidad_seccion_actual_padre=F('id_unidad_seccion_actual'))
-        unidades = UnidadesOrganizacionales.objects.filter(id_unidad_org_actual_admin_series__in=[unidad.id_unidad_seccion_actual.id_unidad_organizacional for unidad in unidades_responsables])
+        unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=id_ccd_nuevo)
+        expedientes_documentales = ExpedientesDocumentales.objects.all()
+        documentos_archivo = DocumentosDeArchivoExpediente.objects.all()
+
+        for expediente in expedientes_documentales:
+            for unidad_responsable in unidades_responsables:
+                if expediente.id_und_org_oficina_respon_actual == unidad_responsable.id_unidad_seccion_actual:
+                    expediente.id_und_org_oficina_respon_actual = unidad_responsable.id_unidad_seccion_nueva
+                    expediente.save()
+
+        for documento in documentos_archivo:
+            for unidad_responsable in unidades_responsables:
+                if documento.id_und_org_oficina_respon_actual == unidad_responsable.id_unidad_seccion_actual:
+                    documento.id_und_org_oficina_respon_actual = unidad_responsable.id_unidad_seccion_nueva
+                    documento.save()
+
+        # # Auditoria Actualizar Expedientes Documentos 
+                    
+        # descripcion = {"NombreOrganigrama":str(organigrama_actual.nombre),"VersionOrganigrama":str(organigrama_actual.version)}
+        # valores_actualizados={'previous':"previous_activacion_organigrama", 'current':"organigrama_seleccionado"}
+        # data_auditoria['descripcion'] = descripcion
+        # data_auditoria['valores_actualizados'] = valores_actualizados
+        # Util.save_auditoria(data_auditoria)
+
+
+        
 
 # TODO: Subproceso 3 - Cambiar unidades organizacionales con permisos sobre Agrupaciones Documentales en todos los CCD
 # - Consultar la tabla temporal T227UndsSeccionResponsables_Tmp para obtener las asignaciones de unidades entre el CCD DESACTIVANDO y el CCD ACTIVANDO.
 # - Actualizar la tabla T221Permisos_UndsOrgActuales_SerieExped_CCD según las asignaciones obtenidas.
+                    
+class ActualizarPermisosUnidades(generics.UpdateAPIView):
+
+    def actualizar_permisos_unidades(self, id_ccd_nuevo, data_auditoria):
+        unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=id_ccd_nuevo)
+        permisos_unidades = PermisosUndsOrgActualesSerieExpCCD.objects.all()
+
+        for permiso in permisos_unidades:
+            for unidad_responsable in unidades_responsables:
+                if permiso.id_und_organizacional_actual == unidad_responsable.id_unidad_seccion_actual:
+                    permiso.id_und_organizacional_actual = unidad_responsable.id_unidad_seccion_nueva
+                    permiso.save()
+
+        # # Auditoria Actualizar Permisos Unidades 
+                    
+        # descripcion = {"NombreOrganigrama":str(organigrama_actual.nombre),"VersionOrganigrama":str(organigrama_actual.version)}
+        # valores_actualizados={'previous':"previous_activacion_organigrama", 'current':"organigrama_seleccionado"}
+        # data_auditoria['descripcion'] = descripcion
+        # data_auditoria['valores_actualizados'] = valores_actualizados
+        # Util.save_auditoria(data_auditoria)
 
 # TODO: Subproceso 4 - Cambiar unidades organizacionales en la configuración de ALERTAS EXISTENTES en el sistema.
 # - Consultar la tabla temporal T227UndsSeccionResponsables_Tmp para obtener las asignaciones de unidades entre el CCD DESACTIVANDO y el CCD ACTIVANDO.
 # - Actualizar la tabla T042PersonasAAlertar_ClaseAlerta y T043AlertasProgramadas según las asignaciones obtenidas.
+                    
+class ActualizarAlertas(generics.UpdateAPIView):
+
+    def actualizar_alertas(self, id_ccd_nuevo, data_auditoria):
+        unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=id_ccd_nuevo)
+        personas_alertar = PersonasAAlertar.objects.all()
+        alertas_programadas = AlertasProgramadas.objects.all()
+
+        for persona_alerta in personas_alertar:
+            for unidad_responsable in unidades_responsables:
+                if persona_alerta.id_unidad_org_lider == unidad_responsable.id_unidad_seccion_actual:
+                    persona_alerta.id_unidad_org_lider = unidad_responsable.id_unidad_seccion_nueva
+                    persona_alerta.save()
+
+        for alerta_programada in alertas_programadas:
+            for unidad_responsable in unidades_responsables:
+                if alerta_programada.id_und_org_lider_implicada == unidad_responsable.id_unidad_seccion_actual:
+                    alerta_programada.id_und_org_lider_implicada = unidad_responsable.id_unidad_seccion_nueva
+                    alerta_programada.save()
+
+        for alerta_programada in alertas_programadas:
+            for unidad_responsable in unidades_responsables:
+                if alerta_programada.id_und_org_lider_alertar == unidad_responsable.id_unidad_seccion_actual:
+                    alerta_programada.id_und_org_lider_implicada = unidad_responsable.id_unidad_seccion_nueva
+                    alerta_programada.save()
+
+        # # Auditoria Actualizar Alertas 
+                    
+        # descripcion = {"NombreOrganigrama":str(organigrama_actual.nombre),"VersionOrganigrama":str(organigrama_actual.version)}
+        # valores_actualizados={'previous':"previous_activacion_organigrama", 'current':"organigrama_seleccionado"}
+        # data_auditoria['descripcion'] = descripcion
+        # data_auditoria['valores_actualizados'] = valores_actualizados
+        # Util.save_auditoria(data_auditoria)
 
 # TODO: Subproceso 5 - Crear registros de CONTROL DE ACCESO para las clasificaciones del CCD que se está ACTIVANDO.
 # - Consultar la tabla T222CtrlAcceso_ClasificacionExp_CCD para obtener los registros correspondientes al CCD DESACTIVANDO.
 # - Insertar nuevos registros en la tabla T222CtrlAcceso_ClasificacionExp_CCD para el CCD ACTIVANDO, utilizando la información obtenida en la consulta.
+
+class ActualizarControlAcceso(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UnidadesDelegacionSerializer
+
+    def actualizar_control_acceso(self, id_ccd_nuevo, data_auditoria):
+        unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=id_ccd_nuevo)
+        permisos_unidades = PermisosUndsOrgActualesSerieExpCCD.objects.all()
+
+        for permiso in permisos_unidades:
+            for unidad_responsable in unidades_responsables:
+                if permiso.id_und_organizacional_actual == unidad_responsable.id_unidad_seccion_actual:
+                    permiso.id_und_organizacional_actual = unidad_responsable.id_unidad_seccion_nueva
+                    permiso.save()
+
+        # # Auditoria Actualizar Permisos Unidades 
+                    
+        # descripcion = {"NombreOrganigrama":str(organigrama_actual.nombre),"VersionOrganigrama":str(organigrama_actual.version)}
+        # valores_actualizados={'previous':"previous_activacion_organigrama", 'current':"organigrama_seleccionado"}
+        # data_auditoria['descripcion'] = descripcion
+        # data_auditoria['valores_actualizados'] = valores_actualizados
+        # Util.save_auditoria(data_auditoria)
+
+
 
 # TODO: Subproceso 6 - Crear registros de CONTROL DE ACCESO para las exclusiones de Agrupaciones Documentales del CCD que se está ACTIVANDO.
 # - Consultar la tabla T222CtrlAcceso_ClasificacionExp_CCD para obtener los registros correspondientes al CCD DESACTIVANDO y con exclusiones de Agrupaciones Documentales.

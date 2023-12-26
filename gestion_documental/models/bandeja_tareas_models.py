@@ -3,34 +3,29 @@
 #T265 YA CREADAS
 
 from django.db import models
+from gestion_documental.choices.estado_asignacion_choices import ESTADO_ASIGNACION_CHOICES
+from gestion_documental.choices.estado_reasignacion_choices import ESTADO_REASIGNACION_CHOICES
+from gestion_documental.choices.estado_solicitud_choices import ESTADO_SOLICITUD_TAREA_CHOICES
+from gestion_documental.choices.tipos_tareas_choices import TIPOS_TAREA_CHOICES
 
 from gestion_documental.models.radicados_models import ComplementosUsu_PQR
 
+
+
+
+
+
 class TareasAsignadas(models.Model):
-    TIPOS_TAREA_CHOICES = [
-        ('Rpqr', 'Responder PQRSDF'),
-        ('Rtra', 'Responder Trámite'),
-        # Agrega otros tipos según sea necesario
-    ]
 
-    ESTADO_ASIGNACION_CHOICES = [
-        ('Ac', 'Aceptado'),
-        ('Re', 'Rechazado'),
-    ]
 
-    ESTADO_SOLICITUD_CHOICES = [
-        ('De', 'Delegada'),
-        ('Re', 'Respondida'),
-        ('Ep', 'En proceso'),
-    ]
     id_tarea_asignada = models.AutoField(primary_key=True, db_column='T315IdTareaAsignada')
     cod_tipo_tarea = models.CharField(max_length=4, choices=TIPOS_TAREA_CHOICES, db_column='T315codTipoTarea')
-    id_asignacion = models.IntegerField(null=True,unique=True,db_column='T315idAsignacion')
+    id_asignacion = models.IntegerField(null=True,db_column='T315idAsignacion')
     fecha_asignacion = models.DateTimeField(db_column='T315fechaAsignacion')
     comentario_asignacion = models.CharField(max_length=255, null=True, db_column='T315comentarioAsignacion')
-    cod_estado_asignacion = models.CharField(max_length=2, choices=ESTADO_ASIGNACION_CHOICES, db_column='T315codEstadoAsignacion')
+    cod_estado_asignacion = models.CharField(max_length=2, null= True,choices=ESTADO_ASIGNACION_CHOICES, db_column='T315codEstadoAsignacion')
     justificacion_rechazo = models.CharField(max_length=255, null=True, db_column='T315justificacionRechazo')
-    cod_estado_solicitud = models.CharField(max_length=2, choices=ESTADO_SOLICITUD_CHOICES, db_column='T315codEstadoSolicitud')
+    cod_estado_solicitud = models.CharField(max_length=2, choices=ESTADO_SOLICITUD_TAREA_CHOICES, db_column='T315codEstadoSolicitud')
     fecha_respondido = models.DateTimeField(null=True, db_column='T315fechaRespondido')
     nombre_persona_que_responde = models.CharField(max_length=255, null=True, db_column='T315nombrePersonaQueResponde')
     ya_respondido_por_un_delegado = models.BooleanField(default=False, db_column='T315yaRespondidoPorUnDelegado')
@@ -46,17 +41,14 @@ class TareasAsignadas(models.Model):
 
         db_table = 'T315TareasAsignadas'  
         verbose_name = 'Tarea Asignada'  
-        verbose_name_plural = 'Tareas Asignadas' 
+        verbose_name_plural = 'Tareas Asignadas'
+        unique_together = ['id_asignacion', 'cod_tipo_tarea'] 
         # constraints = [
         #     models.UniqueConstraint(fields=['id_asignacion'], name='unique_asignacion_constraint')
         # ]
 
 class ReasignacionesTareas(models.Model):
-    ESTADO_REASIGNACION_CHOICES = [
-        ('Ep', 'En espera'),
-        ('Ac', 'Aceptada'),
-        ('Re', 'Rechazada'),
-    ]
+
 
     id_reasignacion_tarea = models.AutoField(primary_key=True, db_column='T316IdReasignacionTarea')
     id_tarea_asignada = models.ForeignKey(
@@ -81,7 +73,6 @@ class ReasignacionesTareas(models.Model):
         verbose_name_plural = 'Reasignaciones de Tareas'
 
 
-from django.db import models
 
 class AdicionalesDeTareas(models.Model):
     id_adicional_de_tarea = models.AutoField(primary_key=True, db_column='T317IdAdicionalDeTarea')
@@ -105,3 +96,5 @@ class AdicionalesDeTareas(models.Model):
         verbose_name = 'Adicional de Tarea'
         verbose_name_plural = 'Adicionales de Tareas'
         unique_together = ['id_complemento_usu_pqr', 'id_tarea_asignada']
+
+
