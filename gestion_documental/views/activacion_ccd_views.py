@@ -18,6 +18,20 @@ from django.db import transaction
 from datetime import datetime
 import copy
 
+# TODO: Realizar consulta en la tabla T225UndsSeccionPersisten_Tmp
+# TODO: Realizar consultas en las tablas T224CatSeries_UndOrg_CCD, T225UndsSeccionPersisten_Tmp y T226AgrupacionesDocPersisten_Tmp
+# TODO: Validar que se haya realizado la homologación de secciones
+# TODO: Mostrar mensaje al usuario indicando que debe diligenciar el módulo "1. Homologación de Secciones Persistentes del CCD"
+# TODO: Deseleccionar el CCD elegido por el usuario
+
+# TODO: Validar agrupaciones documentales persistentes
+# TODO: Mostrar mensaje al usuario indicando las unidades y agrupaciones documentales que deberían ser persistentes
+# TODO: Deseleccionar el CCD elegido por el usuario
+
+# TODO: Continuar con el proceso de Activación del CCD
+# TODO: Resto del código de activación del CCD
+
+
 class CCDActualGetView(generics.ListAPIView):
     serializer_class = CCDSerializer
     permission_classes = [IsAuthenticated]
@@ -246,4 +260,62 @@ class CCDCambioActualPut(generics.UpdateAPIView):
             return response_ccd
 
         return Response({'success':True, 'detail':'Cuadro de clasificacion docuemntal activado'}, status=status.HTTP_200_OK)
+    
+
+# TODO: Subproceso 1: Activar CCD
+#   - Crear registros de CONTROL DE ACCESO para las clasificaciones de PUBLICO, CLASIFICADO y RESERVADO del CCD que se está ACTIVANDO
+#   - Consultar registros en la tabla T222CtrlAcceso_ClasificacionExp_CCD donde T222Id_CCD sea igual al ID del CCD que se está DESACTIVANDO y T222Id_CatSerie_UndOrg_CCD sea NULL
+# TODO: Para cada registro encontrado, realizar un INSERT en la misma tabla T222 cambiando T222ID_CCD por el ID del CCD que se está ACTIVANDO
+#   - Insertar en la tabla T222 replicando los mismos valores, excepto la PK, cambiando T222ID_CCD por el ID del CCD que se está ACTIVANDO
+# TODO: Crear un registro de auditoría con la información especificada
+#   - Insertar un nuevo registro de auditoría con TzId_Usuario, TzId_Modulo, TzSubsistema, TzCod_PermisoAccion, TzfechaAccion, TzdirIp y Tzdescripcion
+
+
+
+
+# TODO: Subproceso 2: Activar CCD
+#   - Crear registros de CONTROL DE ACCESO para las EXCLUSIONES de AGRUPACIONES DOCUMENTALES del CCD que se está ACTIVANDO
+#   - Consultar registros en la tabla T222CtrlAcceso_ClasificacionExp_CCD donde T222Id_CCD sea el del CCD que se está DESACTIVANDO y T222Cod_ClasificacionExp sea NULL
+
+# TODO: Para cada registro de exclusión encontrado, buscar si aparece en la tabla de agrupaciones PERSISTENTES del CCD que se está ACTIVANDO
+#   - Consultar registros en las tablas T225UndsSeccionPersisten_Tmp (maestro) y T226AgrupacionesDocPersisten_Tmp (detalle) usando inner join
+
+# TODO: Para cada registro hallado en el paso anterior, insertar la exclusión en la tabla T222CtrlAcceso_ClasificacionExp_CCD para el CCD que se está ACTIVANDO
+#   - Insertar registros en la tabla T222 replicando los valores, excepto la PK, cambiando T222ID_CCD por el ID del CCD que se está ACTIVANDO y T222Id_CatSerie_UndOrg_CCD por el ID de la unidad organizacional persistente nueva
+
+# TODO: Crear un registro de auditoría con la información especificada
+#   - Insertar un nuevo registro de auditoría con TzId_Usuario, TzId_Modulo, TzSubsistema, TzCod_PermisoAccion, TzfechaAccion, TzdirIp y Tzdescripcion
+
+# TODO: Subproceso 3: Activar CCD
+# TODO: Buscar las Series de Agrupaciones Documentales Persistentes del CCD Nuevo
+#   - Consultar registros en las tablas T225UndsSeccionPersisten_Tmp (maestro) y T226AgrupacionesDocPersisten_Tmp (detalle) donde T225IdUndSeccionPersiste_Tmp = T226Id_UndSeccionPersiste_Tmp y T225Id_CCDNuevo = IdCCD a ACTIVAR
+
+# TODO: Para cada registro encontrado, buscar los registros en la tabla T221Permisos_UndsOrgActuales_SerieExped_CCD
+#   - Consultar registros en la tabla T221Permisos_UndsOrgActuales_SerieExped_CCD donde T221Id_CatSerie_UndOrg_CCD = T226Id_CatSerie_UndOrg_CCDActual (campo hallado en el párrafo b)
+
+# TODO: Realizar un INSERT en la tabla T221Permisos_UndsOrgActuales_SerieExped_CCD para el CCD que se está ACTIVANDO basado en los registros encontrados
+#   - Para cada registro encontrado en el segundo paso:
+#     - Insertar un nuevo registro en la tabla T221Permisos_UndsOrgActuales_SerieExped_CCD replicando todos los valores, excepto la PK y el campo T221Id_CatSerie_UndOrg_CCD, el cual se debe cambiar por el valor del campo T226Id_CatSerie_UndOrg_CCDNueva (hallado en el párrafo b)
+
+# TODO: Crear un registro de auditoría con la información especificada
+#   - Insertar un nuevo registro de auditoría con TzId_Usuario, TzId_Modulo, TzSubsistema, TzCod_PermisoAccion, TzfechaAccion, TzdirIp y Tzdescripcion
+
+    
+
+# TODO: Subproceso 4: Activar CCD
+# TODO: Buscar las Series de Agrupaciones Documentales Persistentes del CCD Nuevo
+#   - Consultar registros en las tablas T225UndsSeccionPersisten_Tmp (maestro) y T226AgrupacionesDocPersisten_Tmp (detalle) donde T225IdUndSeccionPersiste_Tmp = T226Id_UndSeccionPersiste_Tmp y T225Id_CCDNuevo = IdCCD a ACTIVAR
+
+# TODO: Para cada registro encontrado, buscar los registros en la tabla T245ConfigTiposExpedienteAgno
+#   - Consultar registros en la tabla T245ConfigTiposExpedienteAgno donde T245Id_CatSerie_UndOrg_CCD = T226Id_CatSerie_UndOrg_CCDActual (campo hallado en el párrafo b) y T245AgnoExpediente = (al año actual o al año inmediatamente posterior al actual: actual+1)
+
+# TODO: Realizar un INSERT en la tabla T245ConfigTiposExpedienteAgno para el CCD que se está ACTIVANDO basado en los registros encontrados
+#   - Para cada registro encontrado en el segundo paso:
+#     - Insertar un nuevo registro en la tabla T245ConfigTiposExpedienteAgno replicando todos los valores, excepto la PK y el campo T245Id_CatSerie_UndOrg_CCD, el cual se debe cambiar por el valor del campo T226Id_CatSerie_UndOrg_CCDNueva (hallado en el párrafo b)
+
+# TODO: Crear un registro de auditoría con la información especificada
+#   - Insertar un nuevo registro de auditoría con TzId_Usuario, TzId_Modulo, TzSubsistema, TzCod_PermisoAccion, TzfechaAccion, TzdirIp y Tzdescripcion
+
+# TODO: Borrar todos los registros existentes en las tablas temporales T225UndsSeccionPersisten_TMP, T226AgrupacionesDocPersisten_TMP y T227UndsSeccionResponsables_TMP
+
     

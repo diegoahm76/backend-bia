@@ -23,12 +23,19 @@ from transversal.models.alertas_models import PersonasAAlertar, AlertasProgramad
 from gestion_documental.models import (
     CuadrosClasificacionDocumental,
     UnidadesSeccionResponsableTemporal,
+    UnidadesSeccionPersistenteTemporal,
+    AgrupacionesDocumentalesPersistenteTemporal,
     TablasControlAcceso,
     TablaRetencionDocumental,
     ExpedientesDocumentales, 
     DocumentosDeArchivoExpediente,
-    PermisosUndsOrgActualesSerieExpCCD
+    PermisosUndsOrgActualesSerieExpCCD,
+    ConfiguracionTipoExpedienteAgno,
+    ConfigTipologiasDocAgno,
+    ConsecPorNivelesTipologiasDocAgno
 )
+
+from gestion_documental.views.ctrl_acceso_views import CtrlAccesoClasificacionExpCCD
 
 from gestion_documental.views.ccd_views import BusquedaCCDHomologacionView
 
@@ -39,8 +46,12 @@ from transversal.serializers.activacion_organigrama_serializers import (
     OrganigramaCambioActualSerializer,
     UnidadesOrganizacionalesSerializer,
     OrganigramaSerializer,
-    UnidadesDelegacionSerializer
-    
+    UnidadesDelegacionSerializer,
+    CtrlAccesoClasificacionExpCCDSerializer,
+    PermisosUndsOrgActualesSerieExpCCDSerializer,
+    ConfiguracionTipoExpedienteAgnoSerializer,
+    ConsecPorNivelesTipologiasDocAgnoSerializer,
+
 )
 
 
@@ -345,9 +356,19 @@ class ActualizarAlertas(generics.UpdateAPIView):
 
         for alerta_programada in alertas_programadas:
             for unidad_responsable in unidades_responsables:
-                if alerta_programada.id_und_org_lider_alertar == unidad_responsable.id_unidad_seccion_actual:
-                    alerta_programada.id_und_org_lider_implicada = unidad_responsable.id_unidad_seccion_nueva
-                    alerta_programada.save()
+                alertas_split = alerta_programada.id_und_org_lider_alertar.split('|')
+                for alerta_split in alertas_split:
+                    alertas_aux = []
+                    if alerta_split == unidad_responsable.id_unidad_seccion_actual:
+                        alertas_aux.append(unidad_responsable.id_unidad_seccion_nueva)
+
+            unidades_nuevas = ''
+            for alerta in alertas_aux:
+                unidades_nuevas += alerta + '|'
+
+            alerta_programada.id_und_org_lider_alertar = unidades_nuevas
+            alerta_programada.save()
+
 
         # # Auditoria Actualizar Alertas 
                     
@@ -363,17 +384,23 @@ class ActualizarAlertas(generics.UpdateAPIView):
 
 class ActualizarControlAcceso(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = UnidadesDelegacionSerializer
+    serializer_class = CtrlAccesoClasificacionExpCCDSerializer
 
     def actualizar_control_acceso(self, id_ccd_nuevo, data_auditoria):
-        unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=id_ccd_nuevo)
-        permisos_unidades = PermisosUndsOrgActualesSerieExpCCD.objects.all()
+        ccd_actual = CuadrosClasificacionDocumental.objects.get(actual=True)
+        control_acceso = CtrlAccesoClasificacionExpCCD.objects.filter(id_ccd=ccd_actual.id_ccd, id_cat_serie_und_org_ccd=None)
 
-        for permiso in permisos_unidades:
-            for unidad_responsable in unidades_responsables:
-                if permiso.id_und_organizacional_actual == unidad_responsable.id_unidad_seccion_actual:
-                    permiso.id_und_organizacional_actual = unidad_responsable.id_unidad_seccion_nueva
-                    permiso.save()
+        datos_control_acceso = self.serializer_class(control_acceso, many=True).data
+
+        for dato in datos_control_acceso:
+            dato['id_ccd'] = id_ccd_nuevo
+            del dato['id_ctrl_acceso_clasif_exp_ccd']
+
+        serializer = self.serializer_class(data=datos_control_acceso, many=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({'success':True, 'detail':'Control de Acceso generado'}, status=status.HTTP_200_OK)
 
         # # Auditoria Actualizar Permisos Unidades 
                     
@@ -391,11 +418,72 @@ class ActualizarControlAcceso(generics.ListCreateAPIView):
 # - Realizar las consultas necesarias para determinar las Agrupaciones Documentales PERSISTENTES en el CCD NUEVO.
 # - Insertar nuevos registros en la tabla T222CtrlAcceso_ClasificacionExp_CCD para el CCD ACTIVANDO, utilizando la información obtenida en las consultas.
 
+class ActualizarControlAcceso(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = CtrlAccesoClasificacionExpCCDSerializer
+
+    def actualizar_control_acceso_agrupaciones(self, id_ccd_nuevo, data_auditoria):
+        ccd_actual = CuadrosClasificacionDocumental.objects.get(actual=True)
+        control_accesos = CtrlAccesoClasificacionExpCCD.objects.filter(id_ccd=ccd_actual.id_ccd, cod_clasificacion_exp=None)
+        unidades_peristentes = UnidadesSeccionPersistenteTemporal.objects.filter(id_ccd_nuevo=id_ccd_nuevo)
+        id_unidades_peristentes = [unidad.id_unidad_seccion_temporal for unidad in unidades_peristentes]
+        agrupaciones_persistentes = AgrupacionesDocumentalesPersistenteTemporal.objects.filter(id_unidad_seccion_temporal__in=id_unidades_peristentes)
+        data_complete = []
+
+        for control in control_accesos:
+            dato = self.serializer_class(control).data
+            for agrupacion in agrupaciones_persistentes:
+                if control.id_cat_serie_und_org_ccd.id_cat_serie_und == agrupacion.id_cat_serie_unidad_ccd_actual.id_cat_serie_und:
+                    dato['id_ccd'] = id_ccd_nuevo
+                    dato['id_cat_serie_und_org_ccd'] = agrupacion.id_cat_serie_unidad_ccd_nueva.id_cat_serie_und
+                    del dato['id_ctrl_acceso_clasif_exp_ccd']
+                    data_complete.append(dato)
+
+        serializer = self.serializer_class(data=data_complete, many=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({'success':True, 'detail':'Control de Acceso agrupaciones generado'}, status=status.HTTP_200_OK)
+
+
 # TODO: Subproceso 7 - Crear registros de PERMISOS de las unidades organizacionales nuevas sobre las SERIES DE AGRUPACIONES DOCUMENTALES persistentes del CCD NUEVO.
 # - Consultar las Series de Agrupaciones Documentales PERSISTENTES en el CCD NUEVO (tabla T226AgrupacionesDocPersisten_Tmp).
 # - Para cada Serie de Agrupación Documental PERSISTENTE encontrada, buscar los registros de permisos correspondientes en T221Permisos_UndsOrgActuales_SerieExped_CCD.
 # - Realizar consultas en la tabla T221Permisos_UndsOrgActuales_SerieExped_CCD para obtener los permisos actuales de las unidades organizacionales sobre las Series de Agrupaciones Documentales en el CCD que se está DESACTIVANDO.
 # - Para cada registro de permisos obtenido, realizar un INSERT en T221Permisos_UndsOrgActuales_SerieExped_CCD para el CCD NUEVO, replicando los valores excepto el campo T221Id_CatSerie_UndOrg_CCD, el cual se debe cambiar por el valor de la Serie de Agrupación Documental PERSISTENTE en el CCD NUEVO.
+    
+class ActualizarPermisosUnidades(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = PermisosUndsOrgActualesSerieExpCCDSerializer
+
+    def actualizar_permisos_unidad_agrupaciones(self, id_ccd_nuevo, data_auditoria):
+        permisos_serie = PermisosUndsOrgActualesSerieExpCCD.objects.all()
+        unidades_peristentes = UnidadesSeccionPersistenteTemporal.objects.filter(id_ccd_nuevo=id_ccd_nuevo)
+        id_unidades_peristentes = [unidad.id_unidad_seccion_temporal for unidad in unidades_peristentes]
+        agrupaciones_persistentes = AgrupacionesDocumentalesPersistenteTemporal.objects.filter(id_unidad_seccion_temporal__in=id_unidades_peristentes)
+        data_complete = []
+
+        for permiso in permisos_serie:
+            dato = self.serializer_class(permiso).data
+            for agrupacion in agrupaciones_persistentes:
+                if permiso.id_cat_serie_und_org_ccd.id_cat_serie_und == agrupacion.id_cat_serie_unidad_ccd_actual.id_cat_serie_und:
+                    dato['id_cat_serie_und_org_ccd'] = agrupacion.id_cat_serie_unidad_ccd_nueva.id_cat_serie_und
+                    del dato['id_permisos_und_org_actual_serie_exp_ccd']
+                    data_complete.append(dato)
+
+        serializer = self.serializer_class(data=data_complete, many=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({'success':True, 'detail':'Permisos unidad serie Actualizado'}, status=status.HTTP_200_OK)
+
+        # # Auditoria Actualizar Permisos Unidades 
+                    
+        # descripcion = {"NombreOrganigrama":str(organigrama_actual.nombre),"VersionOrganigrama":str(organigrama_actual.version)}
+        # valores_actualizados={'previous':"previous_activacion_organigrama", 'current':"organigrama_seleccionado"}
+        # data_auditoria['descripcion'] = descripcion
+        # data_auditoria['valores_actualizados'] = valores_actualizados
+        # Util.save_auditoria(data_auditoria)
 
 # TODO: Subproceso 8 - Crear registros de CONSECUTIVOS de AGRUPACIONES DOCUMENTALES para las Series persistentes en el CCD NUEVO.
 # - Consultar las Series de Agrupaciones Documentales PERSISTENTES en el CCD NUEVO (tabla T226AgrupacionesDocPersisten_Tmp).
@@ -403,17 +491,111 @@ class ActualizarControlAcceso(generics.ListCreateAPIView):
 # - Realizar consultas en la tabla T245ConfigTiposExpedienteAgno para obtener los consecutivos actuales de las agrupaciones documentales en el CCD que se está DESACTIVANDO.
 # - Para cada registro de consecutivos obtenido, realizar un INSERT en T245ConfigTiposExpedienteAgno para el CCD NUEVO, replicando los valores excepto la PK y el campo T245Id_CatSerie_UndOrg_CCD, el cual se debe cambiar por el valor de la Serie de Agrupación Documental al que este persistió en el CCD NUEVO.
 
+class ActualizarPermisosUnidades(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ConfiguracionTipoExpedienteAgnoSerializer
+
+    def actualizar_permisos_unidad_agrupaciones(self, id_ccd_nuevo, data_auditoria):
+        unidades_peristentes = UnidadesSeccionPersistenteTemporal.objects.filter(id_ccd_nuevo=id_ccd_nuevo)
+        id_unidades_peristentes = [unidad.id_unidad_seccion_temporal for unidad in unidades_peristentes]
+        agrupaciones_persistentes = AgrupacionesDocumentalesPersistenteTemporal.objects.filter(id_unidad_seccion_temporal__in=id_unidades_peristentes)
+        current_year = datetime.now().year
+        configuraciones_expedientes = ConfiguracionTipoExpedienteAgno.objects.filter(agno_expediente__in=[current_year, current_year + 1])
+
+        data_complete = []
+
+        for configuracion in configuraciones_expedientes:
+            dato = self.serializer_class(configuracion).data
+            for agrupacion in agrupaciones_persistentes:
+                if configuracion.id_cat_serie_undorg_ccd.id_cat_serie_und == agrupacion.id_cat_serie_unidad_ccd_actual.id_cat_serie_und:
+                    dato['id_cat_serie_und_org_ccd'] = agrupacion.id_cat_serie_unidad_ccd_nueva.id_cat_serie_und
+                    del dato['id_config_tipo_expediente_agno']
+                    data_complete.append(dato)
+
+        serializer = self.serializer_class(data=data_complete, many=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({'success':True, 'detail':'Permisos unidad serie Actualizado'}, status=status.HTTP_200_OK)
+
+        # # Auditoria Actualizar Permisos Unidades 
+                    
+        # descripcion = {"NombreOrganigrama":str(organigrama_actual.nombre),"VersionOrganigrama":str(organigrama_actual.version)}
+        # valores_actualizados={'previous':"previous_activacion_organigrama", 'current':"organigrama_seleccionado"}
+        # data_auditoria['descripcion'] = descripcion
+        # data_auditoria['valores_actualizados'] = valores_actualizados
+        # Util.save_auditoria(data_auditoria)
+
 # TODO: Subproceso 9 - Crear registros de CONSECUTIVOS de TIPOLOGÍAS DOCUMENTALES para Unidades Organizacionales del tipo Sección/Subsección marcadas como PERSISTENTES en el CCD NUEVO.
 # - Consultar las Unidades Organizacionales del tipo Sección/Subsección PERSISTENTES en el CCD NUEVO (tabla T225UndsSeccionPersisten_Tmp).
 # - Para cada Unidad Organizacional del tipo Sección/Subsección PERSISTENTE encontrada, buscar los registros de consecutivos correspondientes en las tablas T246ConfigTipologiasDocAgno y T247ConsecPorNiveles_TipologiasDocAgno.
 # - Realizar consultas en las tablas T246ConfigTipologiasDocAgno y T247ConsecPorNiveles_TipologiasDocAgno para obtener los consecutivos actuales de las tipologías documentales en el CCD que se está DESACTIVANDO.
 # - Para cada registro de consecutivos obtenido, realizar un INSERT en T247ConsecPorNiveles_TipologiasDocAgno para el CCD NUEVO, replicando los valores excepto la PK y el campo T247Id_UnidadOrganizacional, el cual se debe cambiar por el valor de la Unidad Organizacional a la que esta persistió, es decir por el campo T225Id_UndSeccionNueva (hallado en el párrafo “b”), tampoco se replica el del campo T247Id_TRD, pues aquí debe ir la de la TRD nueva a activar.
 
+class CrearTipologias(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ConsecPorNivelesTipologiasDocAgnoSerializer
+
+    def actualizar_tipologias(self, id_ccd_nuevo, data_auditoria):
+        unidades_peristentes = UnidadesSeccionPersistenteTemporal.objects.filter(id_ccd_nuevo=id_ccd_nuevo)
+        current_year = datetime.now().year
+        configuracion_tipologias = ConfigTipologiasDocAgno.objects.filter(agno_tipologia__in=[current_year, current_year + 1])
+        ids_conf_tipologias = [conf_tipologia.id_config_tipologia_doc_agno for conf_tipologia in configuracion_tipologias]
+        consecutivos_niveles = ConsecPorNivelesTipologiasDocAgno.objects.filter(id_config_tipologia_doc_agno__in=ids_conf_tipologias)
+        
+        data_complete = []
+
+        for consecutivo in consecutivos_niveles:
+            dato = self.serializer_class(consecutivo).data
+            for unidad in unidades_peristentes:
+                if consecutivo.id_unidad_organizacional == unidad.id_unidad_seccion_actual:
+                    dato['id_unidad_organizacional'] = unidad.id_unidad_seccion_nueva
+                    del dato['id_consec_nivel_tipologias_doc_agno']
+                    del dato['id_trd']
+                    data_complete.append(dato)
+
+        serializer = self.serializer_class(data=data_complete, many=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({'success':True, 'detail':'Consecutivos unidad serie Actualizado'}, status=status.HTTP_200_OK)
+
+
 # TODO: Subproceso 10 - Agregar la NUEVA unidad organizacional sugerida de los colaboradores de la entidad al módulo de TRASLADO MASIVO DE UNIDADES ORGANIZACIONALES.
 # -  Asegurarse de ejecutar este subproceso después de las instrucciones del módulo de ACTIVACIÓN DE ORGANIGRAMA, en el apartado “Durante la activación de un nuevo organigrama”.
 # -  Buscar todas las personas asociadas a una unidad organizacional del organigrama actual y la unidad del nuevo organigrama delegada para dicha unidad organizacional.
 # -  Insertar registros en la tabla T026TemporalPersonasUnidad con los datos obtenidos, es decir, T010IdPersona, T227Id_UndSeccionActual, T227Id_UndSeccionNueva.
 # -  Evitar sobre-escribir registros existentes en T026 si ya hay uno para la misma persona.
+    
+class TemporalPersonaUnidadCrearView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ConsecPorNivelesTipologiasDocAgnoSerializer
+
+    def crear_personas_temporales(self, id_ccd_nuevo, data_auditoria):
+        unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=id_ccd_nuevo)
+        ids_unidades_responsbles_actual = [unidad_actual.id_unidad_seccion_actual for unidad_actual in unidades_responsables]
+        personas_temporal = TemporalPersonasUnidad.objects.filter(id_unidad_org_anterior__in=ids_unidades_responsbles_actual)
+        ids_personas_temporal = [persona.id_persona.id_persona for persona in personas_temporal]
+        personas = Personas.objects.filter(id_unidad_organizacional_actual__in=ids_unidades_responsbles_actual).exclude(id_persona__in=ids_personas_temporal)
+
+        
+        data_complete = []
+
+        for persona in personas:
+            dato = {}
+            for unidad in unidades_responsables:
+                if persona.id_unidad_organizacional_actual == unidad.id_unidad_seccion_actual:
+                    dato['id_persona'] = persona.id_persona
+                    dato['id_unidad_org_anterior'] = unidad.id_unidad_seccion_actual
+                    dato['id_unidad_org_nueva'] = unidad.id_unidad_seccion_nueva
+                    data_complete.append(dato)
+
+        serializer = self.serializer_class(data=data_complete, many=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+
+
 
 # TODO: Generar registros de auditoría para cada subproceso adicional.
 # - Incluir información detallada como el usuario, módulo, fecha, dirección IP, descripción y valores actualizados.
