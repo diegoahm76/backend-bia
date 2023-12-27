@@ -126,6 +126,10 @@ class TareasAsignadasGetSerializer(serializers.ModelSerializer):
         id_pqrsdf = pqrsdf.id_PQRSDF
         return id_pqrsdf
 
+class TareasAsignadasGetJustificacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TareasAsignadas
+        fields = ['id_tarea_asignada','justificacion_rechazo']
 
 
     
