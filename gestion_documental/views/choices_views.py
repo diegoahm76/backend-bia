@@ -37,6 +37,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from gestion_documental.choices.tipos_tareas_choices import TIPOS_TAREA_CHOICES
+from gestion_documental.choices.pqrsdf_choices import TIPOS_PQR
 
 
 class TipoClasificacion(APIView):
@@ -216,3 +217,9 @@ class EstadoSolicitudTarea(APIView):
         choices = ESTADO_SOLICITUD_TAREA_CHOICES 
 
         return Response({'success': True, 'detail':'Se encontraron los siguientes registros', 'data':choices}, status=status.HTTP_200_OK)
+    
+#TIPO_PQRSDF
+class TipoPqrsdf(APIView):
+    def get(self, request):
+        choices = TIPOS_PQR
+        return Response(choices)

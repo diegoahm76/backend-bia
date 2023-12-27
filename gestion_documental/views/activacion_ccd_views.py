@@ -34,14 +34,12 @@ from gestion_documental.models import (
     PermisosUndsOrgActualesSerieExpCCD,
     ConfiguracionTipoExpedienteAgno,
     ConfigTipologiasDocAgno,
-    ConsecPorNivelesTipologiasDocAgno
+    ConsecPorNivelesTipologiasDocAgno,
+    
 )
 
 from gestion_documental.views.ctrl_acceso_views import CtrlAccesoClasificacionExpCCD
 
-from gestion_documental.views.ccd_views import BusquedaCCDHomologacionView
-
-from gestion_documental.views.activacion_ccd_views import CCDCambioActualPut
 
 
 # TODO: Realizar consulta en la tabla T225UndsSeccionPersisten_Tmp
