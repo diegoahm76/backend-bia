@@ -26,6 +26,8 @@ urlpatterns=[
     path('eliminar-ejes-estrategicos/<str:pk>/',views.EjeEstractegicoDelete.as_view(),name='eliminarejesestrategicos'),
     path('consultar-ejes-estrategicos-id/<str:pk>/',views.EjeEstractegicoDetail.as_view(),name='consultarejesestrategicosid'),
     path('consultar-ejes-estrategicos-id-planes/<str:pk>/',views.EjeEstractegicoListIdPlanes.as_view(),name='consultarejesestrategicosidplanes'),
+    # Busqueda Avanzada eje por nombre plan, y nombre
+    path('busqueda-avanzada-ejes/', views.BusquedaAvanzadaEjes.as_view(), name='busquedaavanzadaejes'),    
     # Objetivos
     path('consultar-objetivos/',views.ObjetivoList.as_view(),name='consultarobjetivos'),
     path('crear-objetivos/',views.ObjetivoCreate.as_view(),name='crearobjetivos'),
@@ -33,6 +35,8 @@ urlpatterns=[
     path('eliminar-objetivos/<str:pk>/',views.ObjetivoDelete.as_view(),name='eliminarobjetivos'),
     path('consultar-objetivos-id/<str:pk>/',views.ObjetivoDetail.as_view(),name='consultarobjetivosid'),
     path('consultar-objetivos-id-planes/<str:pk>/',views.ObjetivoListIdPlanes.as_view(),name='consultarobjetivosidplanes'),
+    # Busqueda Avanzada objetivo por nombre plan y nombre_objetivo
+    path('busqueda-avanzada-objetivos/', views.BusquedaAvanzadaObjetivos.as_view(), name='busquedaavanzadaobjetivos'),
     # Programas
     path('consultar-programas/',views.ProgramaList.as_view(),name='consultarprogramas'),
     path('crear-programas/',views.ProgramaCreate.as_view(),name='crearprogramas'),

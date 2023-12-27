@@ -204,6 +204,26 @@ class EjeEstractegicoList(generics.ListCreateAPIView):
             raise NotFound('No se encontraron resultados.')
         return Response({'success': True, 'detail': 'Listado de Ejes Estratégicos.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+# Busqueda Avanzada eje por nombre plan, y nombre
+
+class BusquedaAvanzadaEjes(generics.ListAPIView):
+    queryset = EjeEstractegico.objects.all()
+    serializer_class = EjeEstractegicoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        nombre_plan = request.query_params.get('nombre_plan', '')
+        nombre_eje = request.query_params.get('nombre', '')
+
+        # Realiza la búsqueda utilizando el campo 'nombre_eje' en el modelo
+        queryset = EjeEstractegico.objects.filter(nombre__icontains=nombre_eje, id_plan__nombre_plan__icontains=nombre_plan)
+
+        if not queryset.exists():
+            raise NotFound('No se encontraron resultados.')
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
+
 # Crear un Eje Estratégico    
 
 class EjeEstractegicoCreate(generics.ListCreateAPIView):
@@ -294,6 +314,26 @@ class ObjetivoList(generics.ListCreateAPIView):
             raise NotFound('No se encontraron resultados.')
         return Response({'success': True, 'detail': 'Listado de Objetivos.', 'data': serializer.data}, status=status.HTTP_200_OK)
         
+# Busqueda Avanzada objetivo por nombre plan y nombre_objetivo
+
+class BusquedaAvanzadaObjetivos(generics.ListAPIView):
+    queryset = Objetivo.objects.all()
+    serializer_class = ObjetivoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        nombre_plan = request.query_params.get('nombre_plan', '')
+        nombre_objetivo = request.query_params.get('nombre_objetivo', '')
+
+        # Realiza la búsqueda utilizando el campo 'nombre_objetivo' en el modelo
+        queryset = Objetivo.objects.filter(nombre_objetivo__icontains=nombre_objetivo, id_plan__nombre_plan__icontains=nombre_plan)
+
+        if not queryset.exists():
+            raise NotFound('No se encontraron resultados.')
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
+
 # Crear un Objetivo
 
 class ObjetivoCreate(generics.ListCreateAPIView):
