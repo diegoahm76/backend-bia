@@ -377,3 +377,21 @@ class RespuestaPQRSDFPanelSerializer(serializers.ModelSerializer):
     class Meta:
         model = RespuestaPQR
         fields = '__all__'
+
+class PQRSDFGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PQRSDF
+        fields = '__all__'
+
+    numero_radicado = serializers.SerializerMethodField()
+
+    def get_numero_radicado(self, pqrsdf):
+        if pqrsdf.id_radicado:
+            radicado = T262Radicados.objects.get(pk=pqrsdf.id_radicado.id_radicado)
+            return f"{radicado.prefijo_radicado}-{radicado.agno_radicado}-{radicado.nro_radicado}"
+        return None
+    
+class EstadosSolicitudesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EstadosSolicitudes
+        fields = '__all__'
