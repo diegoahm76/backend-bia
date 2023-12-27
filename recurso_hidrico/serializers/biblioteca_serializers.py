@@ -2,6 +2,7 @@ from rest_framework import serializers
 from unittest.util import _MAX_LENGTH
 from wsgiref.validate import validator
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
+from gestion_documental.serializers.expedientes_serializers import ArchivosDigitalesSerializer
 from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, DatosCarteraAforos, DatosRegistroLaboratorio, DatosSesionPruebaBombeo, Instrumentos, ParametrosLaboratorio, Pozos, PruebasBombeo, ResultadosLaboratorio, Secciones, SesionesPruebaBombeo,Subsecciones
 from transversal.models.personas_models import Personas
 
@@ -172,10 +173,15 @@ class ArchivosInstrumentoBusquedaAvanzadaSerializer(serializers.ModelSerializer)
 
 
 class ArchivosInstrumentosGetSerializer(serializers.ModelSerializer):
-        class Meta:
-            model=ArchivosInstrumento
-            fields='__all__'
-
+        
+    ruta_archivo = serializers.SerializerMethodField()
+    class Meta:
+        model=ArchivosInstrumento
+        fields='__all__'
+    def get_ruta_archivo(self, obj):
+        
+        data_serializador = ArchivosDigitalesSerializer(obj.ruta_archivo).data
+        return data_serializador['ruta_archivo']
 
 #Configuraciones basicas
 
