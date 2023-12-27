@@ -217,7 +217,7 @@ class Anexos(models.Model):
     numero_folios = models.SmallIntegerField(db_column='T258numeroFolios')
     ya_digitalizado = models.BooleanField(db_column='T258yaDigitalizado')
     observacion_digitalizacion = models.CharField(max_length=100, db_column='T258observacionDigitalizacion', null=True)
-    id_docu_arch_exp = models.ForeignKey(DocumentosDeArchivoExpediente,on_delete=models.CASCADE,db_column='T258Id_DocuDeArch_Exp', null=True)
+    id_docu_arch_exp = models.ForeignKey(DocumentosDeArchivoExpediente, blank=True, null=True, on_delete=models.SET_NULL, db_column='T258Id_DocuDeArch_Exp')
 
     class Meta:
         #managed = False  # Evita que Django gestione esta tabla en la base de datos.
@@ -236,7 +236,7 @@ class MetadatosAnexosTmp(models.Model):
     tiene_replica_fisica = models.BooleanField(db_column='T260tieneReplicaFisica',null=True)
     nro_folios_documento = models.SmallIntegerField(db_column='T260nroFoliosDocumento',null=True)
     cod_origen_archivo = models.CharField(max_length=1, choices=origen_archivo_CHOICES, db_column='T260codOrigenArchivo',null=True)
-    id_tipologia_doc = models.ForeignKey(TipologiasDoc, on_delete=models.CASCADE, db_column='T260Id_TipologiaDoc', null=True)
+    id_tipologia_doc = models.ForeignKey(TipologiasDoc, on_delete=models.SET_NULL, blank=True, null=True, db_column='T260Id_TipologiaDoc')
     cod_tipologia_doc_Prefijo = models.CharField(max_length=10, db_column='T260codTipologiaDoc_Prefijo', null=True)
     cod_tipologia_doc_agno = models.SmallIntegerField(db_column='T260codTipologiaDoc_Agno', null=True)
     cod_tipologia_doc_Consecutivo = models.CharField(max_length=20, db_column='T260codTipologiaDoc_Consecutivo', null=True)
