@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from gestion_documental.models.bandeja_tareas_models import TareasAsignadas
 from gestion_documental.models.radicados_models import PQRSDF, BandejaTareasPersona, TareaBandejaTareasPersona
-from gestion_documental.serializers.bandeja_tareas_serializers import BandejaTareasPersonaCreateSerializer, TareaBandejaTareasPersonaCreateSerializer, TareaBandejaTareasPersonaUpdateSerializer, TareasAsignadasCreateSerializer, TareasAsignadasGetSerializer, TareasAsignadasUpdateSerializer
+from gestion_documental.serializers.bandeja_tareas_serializers import BandejaTareasPersonaCreateSerializer, TareaBandejaTareasPersonaCreateSerializer, TareaBandejaTareasPersonaUpdateSerializer, TareasAsignadasCreateSerializer, TareasAsignadasGetJustificacionSerializer, TareasAsignadasGetSerializer, TareasAsignadasUpdateSerializer
 from gestion_documental.serializers.ventanilla_pqrs_serializers import PQRSDFGetSerializer
 from transversal.models.personas_models import Personas
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
@@ -26,6 +26,7 @@ class BandejaTareasPersonaCreate(generics.CreateAPIView):
 
     def crear_bandeja(self,data):
         data_in = data
+        data_in['pendientes_leer'] = True
         id_persona = data_in['id_persona']
         persona = Personas.objects.filter(id_persona=id_persona).first()
 
@@ -92,7 +93,7 @@ class TareaBandejaTareasPersonaCreate(generics.CreateAPIView):
         bandeja = BandejaTareasPersona.objects.filter(id_persona=id_persona).first()
         id_bandeja =None
         if bandeja:
-            id_bandeja = bandeja.id_bandeja_tareas_persona
+            id_bandeja = bandeja.id_bandeja_tareas_persona#BandejaTareasPersona
         else:
             vista_bandeja = BandejaTareasPersonaCreate()
             respuesta_bandeja = vista_bandeja.crear_bandeja(data)
@@ -250,6 +251,27 @@ class TareasAsignadasAceptarUpdate(generics.UpdateAPIView):
         serializer.save()
         
         return Response({'success':True,'detail':"Se actualizo la actividad Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
+    
+
+class TareasAsignadasJusTarea(generics.UpdateAPIView):
+
+    serializer_class = TareasAsignadasGetJustificacionSerializer
+    queryset = TareasAsignadas.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self, request,id):
+        
+        tarea = TareasAsignadas.objects.filter(id_tarea_asignada=id).first()
+        
+        if not tarea:
+            raise NotFound('No se encontro la tarea')
+        if not tarea.cod_estado_asignacion == 'Ac':
+            raise NotFound('Esta tarea fue aceptada')
+        
+        serializer = self.serializer_class(tarea)
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data,}, status=status.HTTP_200_OK)
+        
+        
+
 
 
 
