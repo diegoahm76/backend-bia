@@ -1090,49 +1090,60 @@ class RespuestaPQRSDFCreate(generics.CreateAPIView):
 
     @transaction.atomic
     def post(self, request):
-        # try:
+        try:
             with transaction.atomic():
                 data_respuesta_pqrsdf = json.loads(request.data.get('respuesta_pqrsdf', ''))
                 isCreateForWeb = ast.literal_eval(request.data.get('isCreateForWeb', ''))
-                id_persona_guarda = ast.literal_eval(request.data.get('id_persona_guarda', ''))
+                user = request.user
+
+                persona = user.persona
 
                 fecha_actual = datetime.now()
+                id_persona_responde = persona
                 valores_creados_detalles = []
 
                 util_respuesta_PQR = Util_Respuesta_PQR()
                 anexos = util_respuesta_PQR.set_archivo_in_anexo(data_respuesta_pqrsdf['anexos'], request.FILES, "create")
                 
-                #Crea el respuesta pqrsdf
-                data_respuesta_PQRSDF_creado = self.create_respuesta_pqrsdf(data_respuesta_pqrsdf, fecha_actual)
-                
-                #Guarda los anexos en la tabla T258 y la relación entre los anexos y el PQRSDF en la tabla T259 si tiene anexos
+                # Verificar si la PQRSDF ya tiene respuesta
+                pqrsdf_id = data_respuesta_pqrsdf['id_pqrsdf']
+                respuesta_existente = RespuestaPQR.objects.filter(id_pqrsdf=pqrsdf_id).exists()
+
+                if respuesta_existente:
+                    # Si ya hay una respuesta, retornar un mensaje indicando que la PQRSDF ya tiene respuesta
+                    return Response({'success': False, 'detail': 'Esta PQRSDF ya tiene una respuesta generada.'}, status=status.HTTP_400_BAD_REQUEST)
+
+                # Crea la respuesta pqrsdf si no hay respuesta existente
+                data_respuesta_PQRSDF_creado = self.create_respuesta_pqrsdf(data_respuesta_pqrsdf, fecha_actual, id_persona_responde)
+
+                # Guarda los anexos en la tabla T258 y la relación entre los anexos y el PQRSDF en la tabla T259 si tiene anexos
                 if anexos:
                     anexosCreate = AnexosRespuestaCreate()
-                    valores_creados_detalles = anexosCreate.create_anexos_respuesta_pqrsdf(anexos, data_respuesta_PQRSDF_creado['id_respuesta_pqr'], isCreateForWeb, fecha_actual)
+                    valores_creados_detalles = anexosCreate.create_anexos_respuesta_pqrsdf(anexos, data_respuesta_PQRSDF_creado['id_respuesta_pqr'], isCreateForWeb, fecha_actual, id_persona_responde)
                     update_requiere_digitalizacion = all(anexo.get('ya_digitalizado', False) for anexo in anexos)
                     if update_requiere_digitalizacion:
                         data_respuesta_PQRSDF_creado = self.update_requiereDigitalizacion_pqrsdf(data_respuesta_PQRSDF_creado)
 
-                # #Auditoria
+                # # Auditoria
                 # descripcion_auditoria = self.set_descripcion_auditoria(data_respuesta_PQRSDF_creado)
                 # self.auditoria(request, descripcion_auditoria, isCreateForWeb, valores_creados_detalles)
 
-                
-                return Response({'success':True, 'detail':'Se creo el PQRSDF correctamente', 'data':data_respuesta_PQRSDF_creado}, status=status.HTTP_201_CREATED)
-        
-        # except Exception as e:
-        #     return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'success': True, 'detail': 'Se creó el PQRSDF correctamente', 'data': data_respuesta_PQRSDF_creado}, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
       
-    def create_respuesta_pqrsdf(self, data, fecha_actual):
+    def create_respuesta_pqrsdf(self, data, fecha_actual, id_persona_responde):
         data_respuesta_pqrsdf = self.set_data_pqrsdf(data, fecha_actual)
+        data_respuesta_pqrsdf['id_persona_responde'] = id_persona_responde.id_persona  # Asegúrate de agregar esta línea
         serializer = self.serializer_class(data=data_respuesta_pqrsdf)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return serializer.data
-    
+
     def update_requiereDigitalizacion_pqrsdf(self, data_respuesta_PQRSDF_creado):
         PrsdfUpdate = RespuestaPQRSDFUpdate()
-        pqr_respuesta_instance = RespuestaPQR.objects.filter(id_respuesta_pqr = data_respuesta_PQRSDF_creado['id_respuesta_pqr']).first()
+        pqr_respuesta_instance = RespuestaPQR.objects.filter(id_respuesta_pqr=data_respuesta_PQRSDF_creado['id_respuesta_pqr']).first()
         data_respuesta_pqrsdf_update = copy.deepcopy(data_respuesta_PQRSDF_creado)
         data_respuesta_pqrsdf_update['requiere_digitalizacion'] = False
         pqrsdf_update = PrsdfUpdate.update_respuesta_pqrsdf(pqr_respuesta_instance, data_respuesta_pqrsdf_update)
@@ -1141,17 +1152,14 @@ class RespuestaPQRSDFCreate(generics.CreateAPIView):
     def set_data_pqrsdf(self, data, fecha_actual):
         data['fecha_respuesta'] = data['fecha_ini_estado_actual'] = fecha_actual
         data['requiere_digitalizacion'] = True if data['cantidad_anexos'] != 0 else False
-    
         return data
 
     def set_descripcion_auditoria(self, pqrsdf):
         tipo_pqrsdf = TiposPQR.objects.filter(cod_tipo_pqr=pqrsdf['cod_tipo_PQRSDF']).first()
-
-        persona = Personas.objects.filter(id_persona = pqrsdf['id_persona_titular']).first()
+        persona = Personas.objects.filter(id_persona=pqrsdf['id_persona_titular']).first()
         persona_serializer = PersonasFilterSerializer(persona)
         nombre_persona_titular = persona_serializer.data['nombre_completo'] if persona_serializer.data['tipo_persona'] == 'N' else persona_serializer.data['razon_social']
-
-        medioSolicitud = MediosSolicitud.objects.filter(id_medio_solicitud = pqrsdf['id_medio_solicitud']).first()
+        medioSolicitud = MediosSolicitud.objects.filter(id_medio_solicitud=pqrsdf['id_medio_solicitud']).first()
 
         data = {
             'TipoPQRSDF': str(tipo_pqrsdf.nombre),
@@ -1306,7 +1314,7 @@ class RespuestaPQRSDFUpdate(generics.RetrieveUpdateAPIView):
 class AnexosRespuestaCreate(generics.CreateAPIView):
     serializer_class = AnexosPostSerializer
     
-    def create_anexos_respuesta_pqrsdf(self, anexos, id_respuesta_pqr, isCreateForWeb, fecha_actual):
+    def create_anexos_respuesta_pqrsdf(self, anexos, id_respuesta_pqr, isCreateForWeb, fecha_actual, id_persona_responde ):
         nombres_anexos = [anexo['nombre_anexo'] for anexo in anexos]
         nombres_anexos_auditoria = []
         # Validar que no haya valores repetidos
@@ -1602,9 +1610,9 @@ class GetRespuestaPQRSDFForPanel(generics.RetrieveAPIView):
             
             if data_pqrsdf:
                 serializador = self.serializer_class(data_pqrsdf, many = False)
-                return Response({'success':True, 'detail':'Se encontro el PQRSDF por el id consultado','data':serializador.data},status=status.HTTP_200_OK)
+                return Response({'success':True, 'detail':'Se encontro La siguiente respuesta a la PQRSDF por el id consultado','data':serializador.data},status=status.HTTP_200_OK)
             else:
-                raise NotFound('No Se encontro el PQRSDF por el id consultado')
+                raise NotFound('No Se encontro respuesta a la PQRSDF por el id consultado')
         # except Exception as e:
         #     return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
