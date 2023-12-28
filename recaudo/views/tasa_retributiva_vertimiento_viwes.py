@@ -16,7 +16,7 @@ class CrearDocumentoFormularioRecuado(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         try:
             respuesta_archivo={}
-            archivo = request.FILES.get('archivo')
+              = request.FILES.get('archivo')
 
             if archivo:
                 id_archivos = []
@@ -42,14 +42,9 @@ class CrearDocumentoFormularioRecuado(generics.CreateAPIView):
         except ValidationError as e:
             raise ValidationError({'error': 'Error al crear el registro', 'detail': e.detail})
 
-# class DocumentoFormularioRecaudoGET(generics.ListAPIView):
-#     queryset = documento_formulario_recuado.objects.all()
-#     serializer_class = documento_formulario_recuados_Getserializer
-#     def get(self,request):
-#         instance=self.queryset
-#         serializer = self.serializer_class(instance,many=True)
 
-#         return Response({'success':True, 'detail':'se encontraron los siguientes registros', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
 
 class DocumentoFormularioRecaudoGET(generics.ListAPIView):
     queryset = documento_formulario_recuado.objects.all()
