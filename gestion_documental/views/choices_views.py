@@ -37,6 +37,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from gestion_documental.choices.tipos_tareas_choices import TIPOS_TAREA_CHOICES
+from gestion_documental.choices.tipos_transferencia_choices import TIPOS_TRANSFERENCIA
 
 
 class TipoClasificacion(APIView):
@@ -214,5 +215,10 @@ class EstadoAsignacionTarea(APIView):
 class EstadoSolicitudTarea(APIView):
     def get(self, request):
         choices = ESTADO_SOLICITUD_TAREA_CHOICES 
+
+        return Response({'success': True, 'detail':'Se encontraron los siguientes registros', 'data':choices}, status=status.HTTP_200_OK)
+class TiposTransferencias(APIView):
+    def get(self, request):
+        choices = TIPOS_TRANSFERENCIA 
 
         return Response({'success': True, 'detail':'Se encontraron los siguientes registros', 'data':choices}, status=status.HTTP_200_OK)
