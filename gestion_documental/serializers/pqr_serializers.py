@@ -378,7 +378,15 @@ class RespuestaPQRSDFPanelSerializer(serializers.ModelSerializer):
         model = RespuestaPQR
         fields = '__all__'
 
+
+class PersonasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Personas
+        fields = '__all__'
+
 class PQRSDFGetSerializer(serializers.ModelSerializer):
+    id_persona_recibe = PersonasSerializer(read_only=True)  # Agrega esta línea
+
     class Meta:
         model = PQRSDF
         fields = '__all__'
