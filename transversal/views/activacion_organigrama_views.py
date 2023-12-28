@@ -51,7 +51,7 @@ from transversal.serializers.activacion_organigrama_serializers import (
     PermisosUndsOrgActualesSerieExpCCDSerializer,
     ConfiguracionTipoExpedienteAgnoSerializer,
     ConsecPorNivelesTipologiasDocAgnoSerializer,
-
+    TemporalPersonasUnidadSerializer
 )
 
 
@@ -251,7 +251,7 @@ class ValidacionUnidadesDelegacionActualView(generics.ListAPIView):
 # - Actualizar la tabla T019UnidadesOrganizacionales de acuerdo con la información obtenida de T227.
 # - Agregar comentarios detallados para cada subproceso adicional que se deba realizar después de las validaciones y procesos actuales.
     
-class ActualizarUnidadesSeccionResponsable(generics.UpdateAPIView):
+class ActualizarUnidadesSeccionResponsableActOrgView(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
     
     def actualizar_agrupacion_documental(self, id_ccd_nuevo, data_auditoria):
@@ -276,7 +276,7 @@ class ActualizarUnidadesSeccionResponsable(generics.UpdateAPIView):
 # - Consultar la tabla temporal T227UndsSeccionResponsables_Tmp para obtener las asignaciones de unidades entre el CCD DESACTIVANDO y el CCD ACTIVANDO.
 # - Actualizar la tabla T236ExpedientesDocumentales y T237DocumentosDeArchivo_Expediente según las asignaciones obtenidas.
                     
-class ActualizarExpedientesDocumentos(generics.UpdateAPIView):
+class ActualizarExpedientesDocumentosActOrgView(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
     
     def actualizar_expedientes_documentos(self, id_ccd_nuevo, data_auditoria):
@@ -311,7 +311,7 @@ class ActualizarExpedientesDocumentos(generics.UpdateAPIView):
 # - Consultar la tabla temporal T227UndsSeccionResponsables_Tmp para obtener las asignaciones de unidades entre el CCD DESACTIVANDO y el CCD ACTIVANDO.
 # - Actualizar la tabla T221Permisos_UndsOrgActuales_SerieExped_CCD según las asignaciones obtenidas.
                     
-class ActualizarPermisosUnidades(generics.UpdateAPIView):
+class ActualizarPermisosUnidadesActOrgView(generics.UpdateAPIView):
 
     def actualizar_permisos_unidades(self, id_ccd_nuevo, data_auditoria):
         unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=id_ccd_nuevo)
@@ -335,7 +335,7 @@ class ActualizarPermisosUnidades(generics.UpdateAPIView):
 # - Consultar la tabla temporal T227UndsSeccionResponsables_Tmp para obtener las asignaciones de unidades entre el CCD DESACTIVANDO y el CCD ACTIVANDO.
 # - Actualizar la tabla T042PersonasAAlertar_ClaseAlerta y T043AlertasProgramadas según las asignaciones obtenidas.
                     
-class ActualizarAlertas(generics.UpdateAPIView):
+class ActualizarAlertasActOrgView(generics.UpdateAPIView):
 
     def actualizar_alertas(self, id_ccd_nuevo, data_auditoria):
         unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=id_ccd_nuevo)
@@ -382,7 +382,7 @@ class ActualizarAlertas(generics.UpdateAPIView):
 # - Consultar la tabla T222CtrlAcceso_ClasificacionExp_CCD para obtener los registros correspondientes al CCD DESACTIVANDO.
 # - Insertar nuevos registros en la tabla T222CtrlAcceso_ClasificacionExp_CCD para el CCD ACTIVANDO, utilizando la información obtenida en la consulta.
 
-class ActualizarControlAcceso(generics.ListCreateAPIView):
+class ActualizarControlAccesoActOrgView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = CtrlAccesoClasificacionExpCCDSerializer
 
@@ -418,7 +418,7 @@ class ActualizarControlAcceso(generics.ListCreateAPIView):
 # - Realizar las consultas necesarias para determinar las Agrupaciones Documentales PERSISTENTES en el CCD NUEVO.
 # - Insertar nuevos registros en la tabla T222CtrlAcceso_ClasificacionExp_CCD para el CCD ACTIVANDO, utilizando la información obtenida en las consultas.
 
-class ActualizarControlAcceso(generics.ListCreateAPIView):
+class ActualizarControlAccesoAgrupacionesActOrgView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = CtrlAccesoClasificacionExpCCDSerializer
 
@@ -452,7 +452,7 @@ class ActualizarControlAcceso(generics.ListCreateAPIView):
 # - Realizar consultas en la tabla T221Permisos_UndsOrgActuales_SerieExped_CCD para obtener los permisos actuales de las unidades organizacionales sobre las Series de Agrupaciones Documentales en el CCD que se está DESACTIVANDO.
 # - Para cada registro de permisos obtenido, realizar un INSERT en T221Permisos_UndsOrgActuales_SerieExped_CCD para el CCD NUEVO, replicando los valores excepto el campo T221Id_CatSerie_UndOrg_CCD, el cual se debe cambiar por el valor de la Serie de Agrupación Documental PERSISTENTE en el CCD NUEVO.
     
-class ActualizarPermisosUnidades(generics.ListCreateAPIView):
+class ActualizarPermisosUnidadesAgrupacionesActOrgView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = PermisosUndsOrgActualesSerieExpCCDSerializer
 
@@ -491,11 +491,11 @@ class ActualizarPermisosUnidades(generics.ListCreateAPIView):
 # - Realizar consultas en la tabla T245ConfigTiposExpedienteAgno para obtener los consecutivos actuales de las agrupaciones documentales en el CCD que se está DESACTIVANDO.
 # - Para cada registro de consecutivos obtenido, realizar un INSERT en T245ConfigTiposExpedienteAgno para el CCD NUEVO, replicando los valores excepto la PK y el campo T245Id_CatSerie_UndOrg_CCD, el cual se debe cambiar por el valor de la Serie de Agrupación Documental al que este persistió en el CCD NUEVO.
 
-class ActualizarPermisosUnidades(generics.ListCreateAPIView):
+class ActualizarConsecutivosActOrgView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ConfiguracionTipoExpedienteAgnoSerializer
 
-    def actualizar_permisos_unidad_agrupaciones(self, id_ccd_nuevo, data_auditoria):
+    def actualizar_consecutivos(self, id_ccd_nuevo, data_auditoria):
         unidades_peristentes = UnidadesSeccionPersistenteTemporal.objects.filter(id_ccd_nuevo=id_ccd_nuevo)
         id_unidades_peristentes = [unidad.id_unidad_seccion_temporal for unidad in unidades_peristentes]
         agrupaciones_persistentes = AgrupacionesDocumentalesPersistenteTemporal.objects.filter(id_unidad_seccion_temporal__in=id_unidades_peristentes)
@@ -532,7 +532,7 @@ class ActualizarPermisosUnidades(generics.ListCreateAPIView):
 # - Realizar consultas en las tablas T246ConfigTipologiasDocAgno y T247ConsecPorNiveles_TipologiasDocAgno para obtener los consecutivos actuales de las tipologías documentales en el CCD que se está DESACTIVANDO.
 # - Para cada registro de consecutivos obtenido, realizar un INSERT en T247ConsecPorNiveles_TipologiasDocAgno para el CCD NUEVO, replicando los valores excepto la PK y el campo T247Id_UnidadOrganizacional, el cual se debe cambiar por el valor de la Unidad Organizacional a la que esta persistió, es decir por el campo T225Id_UndSeccionNueva (hallado en el párrafo “b”), tampoco se replica el del campo T247Id_TRD, pues aquí debe ir la de la TRD nueva a activar.
 
-class CrearTipologias(generics.ListCreateAPIView):
+class CrearTipologiasActOrgView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ConsecPorNivelesTipologiasDocAgnoSerializer
 
@@ -567,9 +567,9 @@ class CrearTipologias(generics.ListCreateAPIView):
 # -  Insertar registros en la tabla T026TemporalPersonasUnidad con los datos obtenidos, es decir, T010IdPersona, T227Id_UndSeccionActual, T227Id_UndSeccionNueva.
 # -  Evitar sobre-escribir registros existentes en T026 si ya hay uno para la misma persona.
     
-class TemporalPersonaUnidadCrearView(generics.ListCreateAPIView):
+class TemporalPersonaUnidadCrearActOrgView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = ConsecPorNivelesTipologiasDocAgnoSerializer
+    serializer_class = TemporalPersonasUnidadSerializer
 
     def crear_personas_temporales(self, id_ccd_nuevo, data_auditoria):
         unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=id_ccd_nuevo)
