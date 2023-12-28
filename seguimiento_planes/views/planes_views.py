@@ -1276,6 +1276,32 @@ class RubroDetail(generics.RetrieveAPIView):
         serializer = RubroSerializer(rubro)
         return Response({'success': True, 'detail': 'Rubro encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+# Busqueda Avanzada rubros por cod_pre, cuenta, nombre programa, nombre proyecto, nombre producto, nombre actividad, nombre indicador
+
+class BusquedaAvanzadaRubros(generics.ListAPIView):
+    queryset = Rubro.objects.all()
+    serializer_class = RubroSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        cod_pre = request.query_params.get('cod_pre', '')
+        cuenta = request.query_params.get('cuenta', '')
+        nombre_programa = request.query_params.get('nombre_programa', '')
+        nombre_plan = request.query_params.get('nombre_plan', '')
+        nombre_proyecto = request.query_params.get('nombre_proyecto', '')
+        nombre_producto = request.query_params.get('nombre_producto', '')
+        nombre_actividad = request.query_params.get('nombre_actividad', '')
+        nombre_indicador = request.query_params.get('nombre_indicador', '')
+
+        # Realiza la búsqueda utilizando el campo 'nombre_rubro' en el modelo
+        queryset = Rubro.objects.filter(cod_pre__icontains=cod_pre, cuenta__icontains=cuenta, id_actividad__nombre_actividad__icontains=nombre_actividad, id_actividad__id_producto__nombre_producto__icontains=nombre_producto, id_actividad__id_producto__id_proyecto__nombre_proyecto__icontains=nombre_proyecto, id_actividad__id_producto__id_proyecto__id_programa__nombre_programa__icontains=nombre_programa, id_actividad__id_producto__id_proyecto__id_plan__nombre_plan__icontains=nombre_plan, id_actividad__id_producto__id_proyecto__id_plan__id_indicador__nombre_indicador__icontains=nombre_indicador)
+
+        if not queryset.exists():
+            raise NotFound('No se encontraron resultados.')
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
+
 # ---------------------------------------- Indicador ----------------------------------------
 
 # Listar todos los Indicadores
@@ -1782,6 +1808,25 @@ class SubprogramaListIdPrograma(generics.ListAPIView):
         serializer = SubprogramaSerializer(subprograma, many=True)
         return Response({'success': True, 'detail': 'Subprograma encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
     
+# Busqueda Avanzada subprogramas por nombre programa y nombre subprograma
+    
+class BusquedaAvanzadaSubprogramas(generics.ListAPIView):
+    queryset = Subprograma.objects.all()
+    serializer_class = SubprogramaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        nombre_programa = request.query_params.get('nombre_programa', '')
+        nombre_subprograma = request.query_params.get('nombre_subprograma', '')
+
+        # Realiza la búsqueda utilizando el campo 'nombre_subprograma' en el modelo
+        queryset = Subprograma.objects.filter(nombre_subprograma__icontains=nombre_subprograma, id_programa__nombre_programa__icontains=nombre_programa)
+
+        if not queryset.exists():
+            raise NotFound('No se encontraron resultados.')
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # CONSULTA TOTAL
 class PlanesGetAll(generics.ListAPIView):
