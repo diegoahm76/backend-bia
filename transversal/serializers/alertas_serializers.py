@@ -1,5 +1,7 @@
 
 from rest_framework import serializers
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.serializers.expedientes_serializers import ArchivosDigitalesSerializer
 
 from transversal.models.alertas_models import AlertasBandejaAlertaPersona, AlertasGeneradas, AlertasProgramadas, BandejaAlertaPersona, ConfiguracionClaseAlerta, FechaClaseAlerta, PersonasAAlertar
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
@@ -77,7 +79,10 @@ class PersonasAAlertarDeleteSerializer(serializers.ModelSerializer):
             fields=('__all__')
 
 
-
+class AlertasGeneradasPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AlertasGeneradas
+        fields = '__all__'
 class AlertasProgramadasPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = AlertasProgramadas
@@ -124,14 +129,28 @@ class AlertasBandejaAlertaPersonaGetSerializer(serializers.ModelSerializer):
     nombre_modulo=serializers.ReadOnlyField(source='id_alerta_generada.id_modulo_destino.ruta_formulario', default=None)
     ultima_repeticion=serializers.ReadOnlyField(source='id_alerta_generada.es_ultima_repeticion', default=None)
     mensaje=serializers.ReadOnlyField(source='id_alerta_generada.mensaje', default=None)
-
+    documento = serializers.SerializerMethodField()
     def get_tipo_alerta(self, obj):
         for cod,nombre in CATEGORIA_ALERTA_CHOICES:
              if obj.id_alerta_generada.cod_categoria_alerta==cod:
                   return nombre
         return obj.id_alerta_generada.cod_categoria_alerta
     tipo_alerta = serializers.SerializerMethodField()
+    def get_documento (self, obj):
+        serializador_digital = ArchivosDigitalesSerializer
+        generada = obj.id_alerta_generada
 
+        if generada:
+
+            if generada.nombre_clase_alerta =='Alerta de Generación de Documento':
+               
+                id_elemento =generada.id_elemento_implicado
+                archivo = ArchivosDigitales.objects.filter(id_archivo_digital=id_elemento).first()
+                data_archivo = serializador_digital(archivo).data
+                if archivo:
+                     return data_archivo['ruta_archivo']
+        
+        return None
     
     #cod_categoria_clase_alerta_display = serializers.CharField(source='get_cod_categoria_clase_alerta_display', read_only=True)
     #nivel_prioridad_display = serializers.CharField(source='get_nivel_prioridad_display', read_only=True)
