@@ -1,7 +1,6 @@
 from django.contrib import admin
 
 from recaudo.models.base_models import (
-    VariablesBase,
     NaturalezaJuridica,
     Ubicaciones,
     RangosEdad,
@@ -53,7 +52,6 @@ from recaudo.models.liquidaciones_models import (
 )
 
 #Base
-admin.site.register(VariablesBase),
 admin.site.register(NaturalezaJuridica),
 admin.site.register(Ubicaciones),
 admin.site.register(RangosEdad),

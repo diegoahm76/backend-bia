@@ -26,6 +26,8 @@ urlpatterns=[
     path('eliminar-ejes-estrategicos/<str:pk>/',views.EjeEstractegicoDelete.as_view(),name='eliminarejesestrategicos'),
     path('consultar-ejes-estrategicos-id/<str:pk>/',views.EjeEstractegicoDetail.as_view(),name='consultarejesestrategicosid'),
     path('consultar-ejes-estrategicos-id-planes/<str:pk>/',views.EjeEstractegicoListIdPlanes.as_view(),name='consultarejesestrategicosidplanes'),
+    # Busqueda Avanzada eje por nombre plan, y nombre
+    path('busqueda-avanzada-ejes/', views.BusquedaAvanzadaEjes.as_view(), name='busquedaavanzadaejes'),    
     # Objetivos
     path('consultar-objetivos/',views.ObjetivoList.as_view(),name='consultarobjetivos'),
     path('crear-objetivos/',views.ObjetivoCreate.as_view(),name='crearobjetivos'),
@@ -33,6 +35,8 @@ urlpatterns=[
     path('eliminar-objetivos/<str:pk>/',views.ObjetivoDelete.as_view(),name='eliminarobjetivos'),
     path('consultar-objetivos-id/<str:pk>/',views.ObjetivoDetail.as_view(),name='consultarobjetivosid'),
     path('consultar-objetivos-id-planes/<str:pk>/',views.ObjetivoListIdPlanes.as_view(),name='consultarobjetivosidplanes'),
+    # Busqueda Avanzada objetivo por nombre plan y nombre_objetivo
+    path('busqueda-avanzada-objetivos/', views.BusquedaAvanzadaObjetivos.as_view(), name='busquedaavanzadaobjetivos'),
     # Programas
     path('consultar-programas/',views.ProgramaList.as_view(),name='consultarprogramas'),
     path('crear-programas/',views.ProgramaCreate.as_view(),name='crearprogramas'),
@@ -102,6 +106,8 @@ urlpatterns=[
     path('actualizar-rubros/<str:pk>/',views.RubroUpdate.as_view(),name='actualizarrubros'),
     path('eliminar-rubros/<str:pk>/',views.RubroDelete.as_view(),name='eliminarrubros'),
     path('consultar-rubros-id/<str:pk>/',views.RubroDetail.as_view(),name='consultarrubrosid'),
+    # Busqueda Avanzada rubros por cod_pre, cuenta, nombre programa, nombre proyecto, nombre producto, nombre actividad, nombre indicador
+    path('busqueda-avanzada-rubros/', views.BusquedaAvanzadaRubros.as_view(), name='busquedaavanzadarubros'),
     # Indicadores
     path('consultar-indicadores/',views.IndicadorList.as_view(),name='consultarindicadores'),
     path('crear-indicadores/',views.IndicadorCreate.as_view(),name='crearindicadores'),
@@ -143,4 +149,6 @@ urlpatterns=[
     path('eliminar-subprogramas/<str:pk>/',views.SubprogramaDelete.as_view(),name='eliminarsubprogramas'),
     path('consultar-subprogramas-id/<str:pk>/',views.SubprogramaDetail.as_view(),name='consultarsubprogramasid'),
     path('consultar-subprogramas-id-programa/<str:pk>/',views.SubprogramaListIdPrograma.as_view(),name='consultarsubprogramasidprograma'),
+    # Busqueda Avanzada subprogramas por nombre programa y nombre subprograma
+    path('busqueda-avanzada-subprogramas/', views.BusquedaAvanzadaSubprogramas.as_view(), name='busquedaavanzadasubprogramas'),
 ]
