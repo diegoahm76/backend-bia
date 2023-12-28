@@ -116,20 +116,52 @@ class TareaBandejaTareasPersonaCreate(generics.CreateAPIView):
 
 class TareasAsignadasGetByPersona(generics.ListAPIView):
     serializer_class = TareasAsignadasGetSerializer
-    queryset = TareasAsignadas.objects.all()
+    queryset = TareaBandejaTareasPersona.objects.all()
     permission_classes = [IsAuthenticated]
 
     
     def get(self, request,id):
+        filter={}
+       
         bandeja_tareas= BandejaTareasPersona.objects.filter(id_persona=id).first()
 
         if not bandeja_tareas:
             raise NotFound('No se encontro la bandeja de tareas')
         id_bandeja = bandeja_tareas.id_bandeja_tareas_persona
         #Buscamos la asignacion de tareas de la bandeja de tareas
-        tareas_asignadas = TareaBandejaTareasPersona.objects.filter(id_bandeja_tareas_persona=id_bandeja)
-        if not tareas_asignadas:
-            raise NotFound('No se encontro tareas asignadas')
+
+
+       
+        # if not tareas_asignadas:
+        #     raise NotFound('No se encontro tareas asignadas')
+        
+
+        filter['id_bandeja_tareas_persona']= id_bandeja
+
+        for key, value in request.query_params.items():
+
+            if key == 'tipo_tarea':
+                if value !='':
+                    filter['id_tarea_asignada__cod_tipo_tarea'] = value
+            if key == 'estado_asignacion':
+                if value != '':
+                    filter['id_tarea_asignada__cod_estado_asignacion'] = value
+            if key == 'estado_tarea':
+                if value != '':
+                    filter['id_tarea_asignada__cod_estado_solicitud'] = value
+            if key == 'fecha_inicio':
+                if value != '':
+                    
+                    filter['id_tarea_asignada__fecha_asignacion__gte'] = datetime.strptime(value, '%Y-%m-%d').date()
+            if key == 'fecha_fin':
+                if value != '':
+                    filter['id_tarea_asignada__fecha_asignacion__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
+        #id_tarea_asignada
+                    
+        print(filter)
+        #.filter(**filter).order_by('fecha_radicado')
+        tareas_asignadas = self.get_queryset().filter(**filter).order_by('id_tarea_asignada__fecha_asignacion')
+        #tareas_asignadas = TareaBandejaTareasPersona.objects.filter(id_bandeja_tareas_persona=id_bandeja)
         tareas = [tarea.id_tarea_asignada for tarea in tareas_asignadas]
        
 
