@@ -524,6 +524,28 @@ class PersonaLiderUnidadGet(generics.ListAPIView):
         #return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':{'seccion':serializer_unidad.data,'hijos':serializer.data}}, status=status.HTTP_200_OK)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data}, status=status.HTTP_200_OK)
     
+class AsignacionPQRUpdate(generics.UpdateAPIView):
+
+    serializer_class = AsignacionPQRPostSerializer
+    permission_classes = [IsAuthenticated]
+    queryset =AsignacionPQR.objects.all()
+
+    def actualizar_asignacion(self,data,pk):
+        data_in = data
+        instance = AsignacionPQR.objects.filter(id_asignacion_pqr=pk).first()
+
+        if not instance:
+            raise NotFound("No existen registros")
+        serializer = AsignacionPQRPostSerializer(instance,data=data_in,partial=True)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        return Response	({'succes': True, 'detail':'Se actualizo el registro', 'data':serializer.data}, status=status.HTTP_200_OK)
+
+    def put(self, request, pk):
+        data_in = request.data
+        respuesta = self.actualizar_asignacion(data_in,pk)
+        return respuesta
+       
 
 class AsignacionPQRCreate(generics.CreateAPIView):
     serializer_class = AsignacionPQRPostSerializer
