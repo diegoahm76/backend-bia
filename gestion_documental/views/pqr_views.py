@@ -1659,11 +1659,7 @@ class ReportesPQRSDFSearch(generics.ListAPIView):
             queryset = queryset.filter(id_estado_actual_solicitud=id_estado_actual_solicitud)
 
         if id_und_org_seccion_asignada:
-            try:
-                asignacion = AsignacionPQR.objects.get(id_und_org_seccion_asignada=id_und_org_seccion_asignada)
-                queryset = queryset.filter(id__in=[asignacion.id_pqrsdf.id])
-            except ObjectDoesNotExist:
-                queryset = PQRSDF.objects.none()
+            queryset = queryset.filter(asignacionpqr__id_und_org_seccion_asignada=id_und_org_seccion_asignada)
 
         if cod_tipo_pqrsdf:
             queryset = queryset.filter(cod_tipo_pqrsdf=cod_tipo_pqrsdf)
