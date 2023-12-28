@@ -1,0 +1,9 @@
+[
+  {
+    "model": "recaudo.LeyesLiquidacion",
+    "pk" : 1,
+    "fields" : {
+      "ley": "Ley 99 de 1993 Artículo 42, Decreto 901 de 1997, Resoluciones 0273 de 1997 y 0372 de 1998 del Ministerio del Medio Ambiente, Acuerdo 011 del 2000 de CORMACARENA(Por medio del cual se creó El Fondo Regional de Descontaminación), Decreto 2667 de 2012, Decreto 1076 de 2015 y Resolución PS-GJ.1.2.6.23.1974 de 2023"
+    }
+  }
+]
