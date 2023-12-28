@@ -26,7 +26,7 @@ urlpatterns = [
     path('get_respuesta_pqrsdf-panel/<int:id_pqrsdf>/', views.GetRespuestaPQRSDFForPanel.as_view(), name='get_respuesta_pqrsdf-panel'),
 
     #Reportes_PQRSDF
-    path('busqueda-avanzada-reportes/', views.PQRSDFSearch.as_view(), name='crear-respuesta-pqrsdf'),
+    path('busqueda-avanzada-reportes/', views.ReportesPQRSDFSearch.as_view(), name='buscar-reportes-pqrsdf'),
     path('get-estado-solicitud/', views.EstadosSolicitudesList.as_view(), name='listar-estados-solicitud'),
 
 
