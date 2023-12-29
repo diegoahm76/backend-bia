@@ -94,6 +94,8 @@ class TareaBandejaTareasPersonaCreate(generics.CreateAPIView):
         id_bandeja =None
         if bandeja:
             id_bandeja = bandeja.id_bandeja_tareas_persona#BandejaTareasPersona
+            bandeja.pendientes_leer = True
+            bandeja.save()
         else:
             vista_bandeja = BandejaTareasPersonaCreate()
             respuesta_bandeja = vista_bandeja.crear_bandeja(data)
@@ -189,7 +191,7 @@ class TareaBandejaTareasPersonaUpdate(generics.UpdateAPIView):#ACTUALIZACION ASI
     serializer_class = TareaBandejaTareasPersonaUpdateSerializer
     queryset = TareaBandejaTareasPersona.objects.all()
     permission_classes = [IsAuthenticated]
-
+    
     def actualizacion_asignacion_tarea(self,data,pk):
        
         instance = TareaBandejaTareasPersona.objects.filter(id_tarea_asignada=pk).first()
@@ -197,10 +199,21 @@ class TareaBandejaTareasPersonaUpdate(generics.UpdateAPIView):#ACTUALIZACION ASI
         if not instance:
             raise NotFound("No se existe un registro con este codigo.")
         
-        instance_previous=copy.copy(instance)
+
+
+        
         serializer = self.serializer_class(instance,data=data, partial=True)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        instance =serializer.save()
+                #verifica si la bandeja de tareas tiene pendientes por leer y cambia el estado segun el caso
+        bandeja_tareas = instance.id_bandeja_tareas_persona
+        tareas = TareaBandejaTareasPersona.objects.filter(id_bandeja_tareas_persona=bandeja_tareas,leida=False)
+        if tareas.count() == 0:
+            bandeja_tareas.pendientes_leer = False
+            bandeja_tareas.save()
+      
+
+
         
         return Response({'success':True,'detail':"Se actualizo la actividad Correctamente.","data":serializer.data},status=status.HTTP_200_OK)
 

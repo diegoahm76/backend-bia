@@ -223,3 +223,6 @@ class TipoPqrsdf(APIView):
     def get(self, request):
         choices = TIPOS_PQR
         return Response(choices)
+    
+
+    
