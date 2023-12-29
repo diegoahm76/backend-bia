@@ -16,7 +16,7 @@ class CrearDocumentoFormularioRecuado(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         try:
             respuesta_archivo={}
-              = request.FILES.get('archivo')
+            archivo = request.FILES.get('archivo')
 
             if archivo:
                 id_archivos = []
