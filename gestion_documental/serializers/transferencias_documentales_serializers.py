@@ -2,10 +2,10 @@ from django.forms import model_to_dict
 from rest_framework import serializers
 from gestion_documental.models.ccd_models import SeriesDoc, SubseriesDoc
 from gestion_documental.models.depositos_models import BandejaEstante, CajaBandeja, CarpetaCaja, Deposito, EstanteDeposito
-from gestion_documental.models.expedientes_models import ExpedientesDocumentales
+from gestion_documental.models.expedientes_models import DocumentosDeArchivoExpediente, ExpedientesDocumentales
 
 from gestion_documental.models.transferencias_documentales_models import TransferenciasDocumentales
-from gestion_documental.models.trd_models import TablaRetencionDocumental
+from gestion_documental.models.trd_models import TablaRetencionDocumental, TipologiasDoc
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from transversal.models.personas_models import Personas
 
@@ -61,7 +61,6 @@ class HistoricoTransferenciasSerializer(serializers.ModelSerializer):
         model = TransferenciasDocumentales
         fields = '__all__'
 
-
 class ExpedienteSerializer(serializers.ModelSerializer):
     codigo_completo = serializers.SerializerMethodField()
     nombre_trd_origen = serializers.SerializerMethodField()
@@ -75,6 +74,8 @@ class ExpedienteSerializer(serializers.ModelSerializer):
     nombre_und_org_oficina_respon_actual = serializers.SerializerMethodField()
     nombre_estado = serializers.ReadOnlyField(source='get_estado_display')
     ubicacion_expediente = serializers.SerializerMethodField()
+    documentos = serializers.SerializerMethodField()
+    
 
     def get_codigo_completo(self, obj):
         codigo_list = [obj.codigo_exp_und_serie_subserie, obj.codigo_exp_Agno, obj.codigo_exp_consec_por_agno]
@@ -135,15 +136,15 @@ class ExpedienteSerializer(serializers.ModelSerializer):
             if deposito_filtrado is not None:
                 indice_deposito = depositos.index(deposito_filtrado)
                 estantes = depositos[indice_deposito]['estantes']
-                estante_filtrado = next((item_estante for item_estante in estantes if item_estante.id_estante_deposito == estanteDeposito.id_estante_deposito), None)
+                estante_filtrado = next((item_estante for item_estante in estantes if item_estante['id_estante_deposito'] == estanteDeposito['id_estante_deposito']), None)
                 if estante_filtrado is not None:
                     indice_estante = depositos[indice_deposito]['estantes'].index(estante_filtrado)
                     bandejas = depositos[indice_deposito]['estantes'][indice_estante]['bandejas']
-                    bandeja_filtrada = next((item_bandeja for item_bandeja in bandejas if item_bandeja.id_bandeja_estante == bandejaEstante.id_bandeja_estante), None)
+                    bandeja_filtrada = next((item_bandeja for item_bandeja in bandejas if item_bandeja['id_bandeja_estante'] == bandejaEstante['id_bandeja_estante']), None)
                     if bandeja_filtrada is not None:
                         indice_bandeja = depositos[indice_deposito]['estantes'][indice_estante]['bandejas'].index(bandeja_filtrada)
                         cajas = depositos[indice_deposito]['estantes'][indice_estante]['bandejas'][indice_bandeja]['cajas']
-                        caja_filtrada = next((item_caja for item_caja in cajas if item_caja.id_caja_bandeja == cajaBandeja.id_caja_bandeja), None)
+                        caja_filtrada = next((item_caja for item_caja in cajas if item_caja['id_caja_bandeja'] == cajaBandeja['id_caja_bandeja']), None)
                         if caja_filtrada is not None:
                             indice_caja = depositos[indice_deposito]['estantes'][indice_estante]['bandejas'][indice_bandeja]['cajas'].index(caja_filtrada)
                             depositos[indice_deposito]['estantes'][indice_estante]['bandejas'][indice_bandeja]['cajas'][indice_caja]['carpetas'].append(carpetaCaja)
@@ -168,7 +169,14 @@ class ExpedienteSerializer(serializers.ModelSerializer):
                 depositos.append(deposito)
         
         return depositos
-
+    
+    def get_documentos(self, obj):
+        lista_documentos = []
+        documentos = DocumentosDeArchivoExpediente.objects.all().filter(id_expediente_documental = obj.id_expediente_documental, id_doc_de_arch_del_cual_es_anexo = None).order_by('orden_en_expediente')
+        if documentos:
+            documentos_serializer = DocumentosDeArchivoExpedienteSerializer(documentos, many = True)
+            lista_documentos = documentos_serializer.data
+        return lista_documentos
 
     class Meta:
         model =  ExpedientesDocumentales
@@ -201,5 +209,54 @@ class ExpedienteSerializer(serializers.ModelSerializer):
             'nombre_und_org_oficina_respon_actual',
             'estado',
             'nombre_estado',
-            'ubicacion_expediente'
+            'ubicacion_expediente',
+            'documentos'
         ]
+
+class DocumentosDeArchivoExpedienteSerializer(serializers.ModelSerializer):
+    nombre_origen_archivo = serializers.ReadOnlyField(source='get_cod_origen_archivo_display')
+    nombre_categoria_archivo = serializers.ReadOnlyField(source='get_cod_categoria_archivo_display')
+    nombre_tipologia_documental = serializers.SerializerMethodField()
+    anexos = serializers.SerializerMethodField()
+
+
+    def get_nombre_tipologia_documental(self, obj):
+        nombre_tipologia_documental = ''
+        if obj.id_tipologia_documental_id:
+            tipologia = TipologiasDoc.objects.all().filter(id_tipologia_documental = obj.id_tipologia_documental_id).first()
+            nombre_tipologia_documental = tipologia.nombre
+        else:
+            nombre_tipologia_documental = obj.tipologia_no_creada_trd
+        
+        return nombre_tipologia_documental
+
+    def get_anexos(self, obj):
+        anexos = DocumentosDeArchivoExpediente.objects.all().filter(id_doc_de_arch_del_cual_es_anexo = obj.id_expediente_documental_id)
+        anexos_serializer = AnexosDocumentosSerializer(anexos, many = True)
+        return anexos_serializer.data
+
+    class Meta:
+        model =  DocumentosDeArchivoExpediente
+        fields = [
+            'id_documento_de_archivo_exped',
+            'identificacion_doc_en_expediente',
+            'fecha_creacion_doc',
+            'fecha_incorporacion_doc_a_Exp',
+            'cantidad_anexos',
+            'cod_origen_archivo',
+            'nombre_origen_archivo',
+            'cod_categoria_archivo',
+            'nombre_categoria_archivo',
+            'id_tipologia_documental',
+            'tipologia_no_creada_trd',
+            'nombre_tipologia_documental',
+            'nro_folios_del_doc',
+            'asunto',
+            'descripcion',
+            'anexos'
+        ]
+
+class AnexosDocumentosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  DocumentosDeArchivoExpediente
+        fields = '__all__'
