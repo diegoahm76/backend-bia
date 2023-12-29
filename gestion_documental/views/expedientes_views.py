@@ -175,6 +175,13 @@ class AperturaExpedienteCreate(generics.CreateAPIView):
                 instance_carpeta.id_expediente = expediente_creado
                 instance_carpeta.save()
         
+        # CREAR INDICE - PENDIENTE VALIDAR SI ES CORRECTO REALIZARLO ASÍ
+        IndicesElectronicosExp.objects.create(
+            id_expediente_doc = expediente_creado,
+            fecha_indice_electronico = current_date,
+            abierto = True
+        )
+        
         # AUDITORIA
         usuario = request.user.id_usuario
         descripcion = {
@@ -405,9 +412,13 @@ class ExpedienteSearch(generics.ListAPIView):
         trd_nombre = self.request.query_params.get('trd_nombre', '').strip()
         id_persona_titular_exp_complejo = self.request.query_params.get('id_persona_titular_exp_complejo')
         ubicacion_desactualizada = self.request.query_params.get('ubicacion_desactualizada', '').strip()
+        codigo_exp_consec_por_agno = self.request.query_params.get('codigo_exp_consec_por_agno', '').strip()
+        fecha_inicio_expediente = self.request.query_params.get('fecha_inicio_expediente', '').strip()
+        fecha_fin_expediente = self.request.query_params.get('fecha_fin_expediente', '').strip()
 
 
 
+        
 
         # Filtrar por atributos específicos referentes a un expediente (unión de parámetros)
         queryset = ExpedientesDocumentales.objects.filter(estado='A')  # Filtrar por estado 'A'
@@ -463,6 +474,19 @@ class ExpedienteSearch(generics.ListAPIView):
         if ubicacion_desactualizada.lower() in ['true', 'false']:
             ubicacion_desactualizada_bool = ubicacion_desactualizada.lower() == 'true'
             queryset = queryset.filter(ubicacion_fisica_esta_actualizada=ubicacion_desactualizada_bool)
+
+
+        if codigo_exp_consec_por_agno:
+            queryset = queryset.filter(codigo_exp_consec_por_agno=codigo_exp_consec_por_agno)
+
+        if fecha_inicio_expediente and not fecha_fin_expediente:
+            queryset = queryset.filter(fecha_apertura_expediente__gte=fecha_inicio_expediente)
+
+        if not fecha_inicio_expediente and fecha_fin_expediente :
+            queryset = queryset.filter(fecha_apertura_expediente__lte=fecha_fin_expediente)
+
+        if fecha_inicio_expediente and fecha_fin_expediente:
+            queryset = queryset.filter(fecha_apertura_expediente__gte=fecha_inicio_expediente, fecha_apertura_expediente__lte=fecha_fin_expediente)
 
         return queryset
 
@@ -1259,6 +1283,11 @@ class ExpedienteSearchCerrado(generics.ListAPIView):
         palabras_clave_expediente = self.request.query_params.get('palabras_clave_expediente', '').strip()
         codigos_uni_serie_subserie = self.request.query_params.get('codigos_uni_serie_subserie', '').strip()
         trd_nombre = self.request.query_params.get('trd_nombre', '').strip()
+        ubicacion_desactualizada = self.request.query_params.get('ubicacion_desactualizada', '').strip()
+        codigo_exp_consec_por_agno = self.request.query_params.get('codigo_exp_consec_por_agno', '').strip()
+        fecha_inicio_expediente = self.request.query_params.get('fecha_inicio_expediente', '').strip()
+        fecha_fin_expediente = self.request.query_params.get('fecha_fin_expediente', '').strip()
+
 
 
 
@@ -1308,6 +1337,25 @@ class ExpedienteSearchCerrado(generics.ListAPIView):
             search_vector = SearchVector('palabras_clave_expediente')
             search_query = SearchQuery(palabras_clave_expediente)
             queryset = queryset.annotate(rank=SearchRank(search_vector, search_query)).filter(rank__gt=0)
+
+        # Nuevo filtro para expedientes con ubicación física desactualizada
+        if ubicacion_desactualizada.lower() in ['true', 'false']:
+            ubicacion_desactualizada_bool = ubicacion_desactualizada.lower() == 'true'
+            queryset = queryset.filter(ubicacion_fisica_esta_actualizada=ubicacion_desactualizada_bool)
+
+
+        if codigo_exp_consec_por_agno:
+            queryset = queryset.filter(codigo_exp_consec_por_agno=codigo_exp_consec_por_agno)
+
+        if fecha_inicio_expediente and not fecha_fin_expediente:
+            queryset = queryset.filter(fecha_apertura_expediente__gte=fecha_inicio_expediente)
+
+        if not fecha_inicio_expediente and fecha_fin_expediente :
+            queryset = queryset.filter(fecha_apertura_expediente__lte=fecha_fin_expediente)
+
+        if fecha_inicio_expediente and fecha_fin_expediente:
+            queryset = queryset.filter(fecha_apertura_expediente__gte=fecha_inicio_expediente, fecha_apertura_expediente__lte=fecha_fin_expediente)
+
 
         return queryset
 
@@ -1884,11 +1932,15 @@ class ExpedientesSearchAll(generics.ListAPIView):
         codigos_uni_serie_subserie = self.request.query_params.get('codigos_uni_serie_subserie', '').strip()
         id_trd_origen = self.request.query_params.get('id_trd_origen', '')
         id_persona_titular_exp_complejo = self.request.query_params.get('id_persona_titular_exp_complejo')
+        ubicacion_desactualizada = self.request.query_params.get('ubicacion_desactualizada', '').strip()
+        codigo_exp_consec_por_agno = self.request.query_params.get('codigo_exp_consec_por_agno', '').strip()
+        fecha_inicio_expediente = self.request.query_params.get('fecha_inicio_expediente', '').strip()
+        fecha_fin_expediente = self.request.query_params.get('fecha_fin_expediente', '').strip()
 
 
 
         # Filtrar por atributos específicos referentes a un expediente (unión de parámetros)
-        queryset = ExpedientesDocumentales.objects.all()  # Filtrar por estado 'A'
+        queryset = ExpedientesDocumentales.objects.all()
         if titulo_expediente:
             queryset = queryset.filter(titulo_expediente__icontains=titulo_expediente)
 
@@ -1917,6 +1969,24 @@ class ExpedientesSearchAll(generics.ListAPIView):
             search_vector = SearchVector('palabras_clave_expediente')
             search_query = SearchQuery(palabras_clave_expediente)
             queryset = queryset.annotate(rank=SearchRank(search_vector, search_query)).filter(rank__gt=0)
+
+        # Nuevo filtro para expedientes con ubicación física desactualizada
+        if ubicacion_desactualizada.lower() in ['true', 'false']:
+            ubicacion_desactualizada_bool = ubicacion_desactualizada.lower() == 'true'
+            queryset = queryset.filter(ubicacion_fisica_esta_actualizada=ubicacion_desactualizada_bool)
+
+        if codigo_exp_consec_por_agno:
+            queryset = queryset.filter(codigo_exp_consec_por_agno=codigo_exp_consec_por_agno)
+
+        if fecha_inicio_expediente and not fecha_fin_expediente:
+            queryset = queryset.filter(fecha_apertura_expediente__gte=fecha_inicio_expediente)
+
+        if not fecha_inicio_expediente and fecha_fin_expediente :
+            queryset = queryset.filter(fecha_apertura_expediente__lte=fecha_fin_expediente)
+
+        if fecha_inicio_expediente and fecha_fin_expediente:
+            queryset = queryset.filter(fecha_apertura_expediente__gte=fecha_inicio_expediente, fecha_apertura_expediente__lte=fecha_fin_expediente)
+
 
         return queryset
 
@@ -2124,6 +2194,10 @@ class ExpedienteSearchConUbicacionDesactualizada(generics.ListAPIView):
         trd_nombre = self.request.query_params.get('trd_nombre', '').strip()
         id_persona_titular_exp_complejo = self.request.query_params.get('id_persona_titular_exp_complejo')
         ubicacion_desactualizada = self.request.query_params.get('ubicacion_desactualizada', '').strip()
+        ubicacion_desactualizada = self.request.query_params.get('ubicacion_desactualizada', '').strip()
+        codigo_exp_consec_por_agno = self.request.query_params.get('codigo_exp_consec_por_agno', '').strip()
+        fecha_inicio_expediente = self.request.query_params.get('fecha_inicio_expediente', '').strip()
+        fecha_fin_expediente = self.request.query_params.get('fecha_fin_expediente', '').strip()
 
         queryset = ExpedientesDocumentales.objects.all() 
 
@@ -2177,6 +2251,18 @@ class ExpedienteSearchConUbicacionDesactualizada(generics.ListAPIView):
         if ubicacion_desactualizada.lower() in ['true', 'false']:
             ubicacion_desactualizada_bool = ubicacion_desactualizada.lower() == 'true'
             queryset = queryset.filter(ubicacion_fisica_esta_actualizada=ubicacion_desactualizada_bool)
+
+        if codigo_exp_consec_por_agno:
+            queryset = queryset.filter(codigo_exp_consec_por_agno=codigo_exp_consec_por_agno)
+
+        if fecha_inicio_expediente and not fecha_fin_expediente:
+            queryset = queryset.filter(fecha_apertura_expediente__gte=fecha_inicio_expediente)
+
+        if not fecha_inicio_expediente and fecha_fin_expediente :
+            queryset = queryset.filter(fecha_apertura_expediente__lte=fecha_fin_expediente)
+
+        if fecha_inicio_expediente and fecha_fin_expediente:
+            queryset = queryset.filter(fecha_apertura_expediente__gte=fecha_inicio_expediente, fecha_apertura_expediente__lte=fecha_fin_expediente)
 
         return queryset
 

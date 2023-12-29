@@ -1430,6 +1430,7 @@ class ConsultaExpedientesGetSerializer(serializers.ModelSerializer):
             'id_subserie_origen',
             'nombre_subserie_origen',
             'codigo_exp_Agno',
+            'codigo_exp_consec_por_agno',
             'id_persona_titular_exp_complejo',
             'nombre_persona_titular'
         ]

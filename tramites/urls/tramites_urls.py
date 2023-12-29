@@ -10,5 +10,7 @@ urlpatterns = [
     path('opa/tramites/inicio-tramite/update/<str:id_solicitud_tramite>/', views.InicioTramiteUpdateView.as_view(), name='inicio-tramite-update'),
     path('opa/tramites/anexos/update/<str:id_solicitud_tramite>/', views.AnexosUpdateView.as_view(), name='anexos-update'),
     path('opa/tramites/anexos/get/<str:id_solicitud_tramite>/', views.AnexosGetView.as_view(), name='anexos-get'),
-    # path('opa/tramites/radicar/create/<str:id_solicitud_tramite>/', views.RadicarCreateView.as_view(), name='radicar-create'),
+    path('opa/tramites/radicar/create/<str:id_solicitud_tramite>/', views.RadicarCreateView.as_view(), name='radicar-create'),
+    path('opa/tramites/radicar/get/<str:id_solicitud_tramite>/', views.RadicarGetView.as_view(), name='radicar-get'),
+    path('opa/tramites/radicar/volver-enviar/<str:id_solicitud_tramite>/', views.RadicarVolverEnviarGetView.as_view(), name='radicar-volver-enviar'),
 ]

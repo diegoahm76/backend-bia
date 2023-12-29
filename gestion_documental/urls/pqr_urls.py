@@ -20,8 +20,15 @@ urlpatterns = [
     path('tipos_pqr/eliminar-medio-solicitud/<int:id_medio_solicitud>/',views.MediosSolicitudDelete.as_view(), name='eliminar-medio-solicitud'),
     path('tipos_pqr/actualizar-medio-solicitud/<int:id_medio_solicitud>/',views.MediosSolicitudUpdate.as_view(), name='actualizar-medio-solicitud'),
 
-    #Respuesta_Solicitud_PQRSDF
-    path('tipos_pqr/get/<str:pk>/', views.TiposPQRGet.as_view(), name='get-tipos-radicado'),
+    #Respuesta_Solicitud_PQRSDF_104
+    
+    path('crear-respuesta-pqrsdf/', views.RespuestaPQRSDFCreate.as_view(), name='crear-respuesta-pqrsdf'),
+    path('get_respuesta_pqrsdf-panel/<int:id_pqrsdf>/', views.GetRespuestaPQRSDFForPanel.as_view(), name='get_respuesta_pqrsdf-panel'),
+
+    #Reportes_PQRSDF_109
+    path('busqueda-avanzada-reportes/', views.ReportesPQRSDFSearch.as_view(), name='buscar-reportes-pqrsdf'),
+    path('get-estado-solicitud/', views.EstadosSolicitudesList.as_view(), name='listar-estados-solicitud'),
+
 
 
 

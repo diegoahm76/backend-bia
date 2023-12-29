@@ -1956,23 +1956,13 @@ class OficinasDelegacionTemporalCreateView(generics.CreateAPIView):
             raise NotFound('No se encontraron todas las unidades organizacionales')
         
         unidad_responsable = self.crear_unidad_persistente_responsable_tmp(data_in)
-        
-        # unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd, es_registro_asig_seccion_responsable=True)
-        # unidades_persistentes = UnidadesSeccionPersistenteTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd)
 
         unidades_delegadas_existentes = UnidadesSeccionResponsableTemporal.objects.filter(
             id_ccd_nuevo=ccd.id_ccd, es_registro_asig_seccion_responsable=False, 
             id_unidad_seccion_actual_padre=unidad_responsable).exclude(id_unidad_seccion_actual=unidad_responsable)
         
-        # unidades_responsables_set = set(
-        #     (unidad.id_unidad_seccion_actual.id_unidad_organizacional, unidad.id_unidad_seccion_nueva.id_unidad_organizacional)
-        #     for unidad in unidades_responsables
-        # )
-
-        # unidades_persistentes_set = set(
-        #     (unidad.id_unidad_seccion_actual.id_unidad_organizacional, unidad.id_unidad_seccion_nueva.id_unidad_organizacional)
-        #     for unidad in unidades_persistentes
-        # )
+        
+        
 
         oficinas_existentes_set = set(
             (unidad.id_unidad_seccion_actual.id_unidad_organizacional, unidad.id_unidad_seccion_nueva.id_unidad_organizacional)
@@ -1996,6 +1986,7 @@ class OficinasDelegacionTemporalCreateView(generics.CreateAPIView):
             serializer = self.serializer_class(data=data)
             serializer.is_valid(raise_exception=True)
             unidades_responsables_create = serializer.save()
+            
 
         unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=ccd.id_ccd)
         unidades_responsables_data = self.serializer_class(unidades_responsables, many=True).data

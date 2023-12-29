@@ -2,7 +2,12 @@ from rest_framework import serializers
 from gestion_documental.models.trd_models import TablaRetencionDocumental
 from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
 from gestion_documental.models.tca_models import TablasControlAcceso
-
+from transversal.models.organigrama_models import UnidadesOrganizacionales
+from gestion_documental.models.trd_models import TablaRetencionDocumental, ConsecPorNivelesTipologiasDocAgno
+from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
+from gestion_documental.models.ctrl_acceso_models import CtrlAccesoClasificacionExpCCD
+from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
+from gestion_documental.models.conf__tipos_exp_models import ConfiguracionTipoExpedienteAgno
 
 class CCDSerializer(serializers.ModelSerializer):
     usado = serializers.SerializerMethodField()
@@ -70,3 +75,29 @@ class CCDActivarSerializer(serializers.ModelSerializer):
         model= CuadrosClasificacionDocumental
         fields=['fecha_puesta_produccion', 'justificacion_puesta_produccion', 'actual']
 
+
+class CtrlAccesoClasificacionExpCCDSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model= CtrlAccesoClasificacionExpCCD
+        fields= '__all__'
+
+
+class PermisosUndsOrgActualesSerieExpCCDSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model= PermisosUndsOrgActualesSerieExpCCD
+        fields= '__all__'
+
+
+class ConfiguracionTipoExpedienteAgnoSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model= ConfiguracionTipoExpedienteAgno
+        fields= '__all__'
+
+
+class ConsecPorNivelesTipologiasDocAgnoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConsecPorNivelesTipologiasDocAgno
+        fields = '__all__'
