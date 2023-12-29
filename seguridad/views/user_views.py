@@ -6,6 +6,8 @@ from django.urls import reverse
 from django.shortcuts import redirect
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from seguridad.permissions.permissions_user import PermisoCrearUsuarios, PermisoActualizarUsuarios, PermisoActualizarInterno, PermisoActualizarExterno
 from seguridad.permissions.permissions_roles import PermisoDelegarRolSuperUsuario, PermisoConsultarDelegacionSuperUsuario
 from rest_framework.response import Response
@@ -24,7 +26,7 @@ from transversal.serializers.personas_serializers import PersonasFilterSerialize
 from seguridad.utils import Util
 from django.contrib.auth.hashers import make_password
 from rest_framework import status
-import jwt
+import jwt, os
 from django.conf import settings
 from seguridad.serializers.user_serializers import EmailVerificationSerializer, RecuperarUsuarioSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserPutAdminSerializer,  UserPutSerializer, UserSerializer, UserSerializerWithToken, UserRolesSerializer, RegisterSerializer  ,LoginSerializer, DesbloquearUserSerializer, SetNewPasswordUnblockUserSerializer, HistoricoActivacionSerializers, UsuarioBasicoSerializer, UsuarioFullSerializer, UsuarioInternoAExternoSerializers
 from rest_framework.generics import RetrieveUpdateAPIView
@@ -67,8 +69,84 @@ class UpdateUserProfile(generics.UpdateAPIView):
         return self.request.user
 
     def patch(self, request, *args, **kwargs):
+        data = request.data
+        data._mutable=True
+        esta_retirando_foto = data.get('esta_retirando_foto')
+        esta_retirando_foto = True if esta_retirando_foto == 'true' else False
+        
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        file = request.FILES.get('profile_img', None)
+        
+        if file:
+            archivo_digital_class = ArchivosDgitalesCreate()
+            file_size = archivo_digital_class.obtener_tamano_archivo(file)
+            
+            nombre = file.name
+            nombre_sin_extension, extension = os.path.splitext(nombre)
+            extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+            
+            if extension_sin_punto.lower() not in ['jpg', 'jpeg', 'png']:
+                raise ValidationError('La extensión del archivo no es válida')
+            
+            if file_size > 50:
+                raise ValidationError('El tamaño del archivo excede el límite permitido de 50kb')
+            
+            # CASO 1
+            if not esta_retirando_foto and not request.user.id_archivo_foto:
+                # CREAR ARCHIVO EN T238
+                ruta = os.path.join("home", "BIA", "Otros", "FotosPerfil")
+
+                current_date = datetime.now().date()
+                formatted_date = current_date.strftime('%d%m%Y')
+                nombre_archivo = f"Pf-{request.user.id_usuario:008d}-{formatted_date}"
+                file.name = nombre_archivo+'.'+extension_sin_punto
+
+                # Crea el archivo digital y obtiene su ID
+                data_archivo = {
+                    'es_Doc_elec_archivo': False,
+                    'ruta': ruta,
+                    'md5_hash': nombre_archivo,
+                    'nombre_cifrado': False
+                }
+                
+                respuesta = archivo_digital_class.crear_archivo(data_archivo, file)
+                data['id_archivo_foto'] = respuesta.data.get('data').get('id_archivo_digital')
+            # CASO 2
+            elif not esta_retirando_foto and request.user.id_archivo_foto:
+                # ELIMINAR ARCHIVO EN FILESYSTEM
+                request.user.id_archivo_foto.ruta_archivo.delete()
+                
+                current_date = datetime.now()
+                formatted_date = current_date.date().strftime('%d%m%Y')
+                nombre_archivo = f"Pf-{request.user.id_usuario:008d}-{formatted_date}"
+                
+                # ACTUALIZAR ARCHIVO EN T238
+                ruta = os.path.join("home", "BIA", "Otros", "FotosPerfil")
+                nombre_nuevo = nombre_archivo+'.'+extension_sin_punto
+                ruta_completa = os.path.join(settings.MEDIA_ROOT, ruta, nombre_nuevo)
+            
+                if not os.path.exists(os.path.join(settings.MEDIA_ROOT, ruta)):
+                    os.makedirs(os.path.join(settings.MEDIA_ROOT, ruta))
+                    
+                # Guarda el archivo
+                with open(ruta_completa, 'wb') as destination:
+                    for chunk in file.chunks():
+                        destination.write(chunk)
+                
+                request.user.id_archivo_foto.ruta_archivo = os.path.relpath(ruta_completa, settings.MEDIA_ROOT)
+                request.user.id_archivo_foto.nombre_de_Guardado = nombre_archivo
+                request.user.id_archivo_foto.formato = extension_sin_punto
+                request.user.id_archivo_foto.tamagno_kb = file_size
+                request.user.id_archivo_foto.fecha_creacion_doc = current_date
+                request.user.id_archivo_foto.save()
+        else:
+            # CASO 3
+            if esta_retirando_foto:
+                request.user.id_archivo_foto.ruta_archivo.delete()
+                request.user.id_archivo_foto.delete()
+                data['id_archivo_foto'] = None
+            
+        serializer = self.get_serializer(instance, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
 
         if 'password' not in request.data:
@@ -103,7 +181,12 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, pk):
+        data = request.data
         user_loggedin = request.user.id_usuario
+        esta_retirando_foto = data.get('esta_retirando_foto')
+        esta_retirando_foto = True if esta_retirando_foto == 'true' else False
+        
+        file = request.FILES.get('profile_img', None)
 
         if int(pk) == 1:
             raise ValidationError('No se puede actualizar el super usuario')
@@ -112,15 +195,30 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
             user = User.objects.filter(id_usuario=pk).first()
             id_usuario_operador = request.user.id_usuario
             fecha_operacion = datetime.now()
-            justificacion_activacion = request.data.get('justificacion_activacion', '')
-            justificacion_bloqueo = request.data.get('justificacion_bloqueo', '')
+            justificacion_activacion = data.get('justificacion_activacion', '')
+            justificacion_bloqueo = data.get('justificacion_bloqueo', '')
             previous_user = copy.copy(user)
 
             if user:
                 id_usuario_afectado = user.id_usuario
                 
-                user_serializer = self.serializer_class(user, data=request.data)
+                user_serializer = self.serializer_class(user, data=data)
                 user_serializer.is_valid(raise_exception=True)
+                
+                if file:
+                    archivo_digital_class = ArchivosDgitalesCreate()
+                    file_size = archivo_digital_class.obtener_tamano_archivo(file)
+                    
+                    nombre = file.name
+                    nombre_sin_extension, extension = os.path.splitext(nombre)
+                    extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+                    
+                    if extension_sin_punto.lower() not in ['jpg', 'jpeg', 'png']:
+                        raise ValidationError('La extensión del archivo no es válida')
+                    
+                    if file_size > 50:
+                        raise ValidationError('El tamaño del archivo excede el límite permitido de 50kb')
+                
                 tipo_usuario_ant = user.tipo_usuario
                 tipo_usuario_act = user_serializer.validated_data.get('tipo_usuario')
                 sucursal_entidad_ant = user.sucursal_defecto
@@ -150,26 +248,26 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                         raise PermissionDenied('Una persona jurídica no puede tener un usuario de tipo interno')
                     
                 # Validación NO desactivar externo activo
-                if user.tipo_usuario == 'E' and user.is_active and 'is_active' in request.data and str(request.data['is_active']).lower() == "false":
+                if user.tipo_usuario == 'E' and user.is_active and 'is_active' in data and str(data['is_active']).lower() == "false":
                     raise PermissionDenied('No se puede desactivar un usuario externo activo')
 
                 # Validación SE PUEDE desactivar interno
-                if user.tipo_usuario == 'I' and str(user.is_active).lower() != str(request.data['is_active']).lower():
+                if user.tipo_usuario == 'I' and str(user.is_active).lower() != str(data['is_active']).lower():
                     # user.is_active = False
                     if not user.is_active:
                         if user.persona.id_cargo is None or user.persona.fecha_a_finalizar_cargo_actual <= datetime.now().date():
                             raise PermissionDenied('La persona propietaria del usuario no tiene cargo actual o la fecha final del cargo ha vencido, por lo cual no puede activar su usuario')
                         
-                    if 'justificacion_activacion' not in request.data or not request.data['justificacion_activacion']:
+                    if 'justificacion_activacion' not in data or not data['justificacion_activacion']:
                         raise ValidationError('Se requiere una justificación para cambiar el estado de activación del usuario')
-                    justificacion = request.data['justificacion_activacion']
+                    justificacion = data['justificacion_activacion']
                 
                 # Validación bloqueo/desbloqueo usuario
-                if str(user.is_blocked).lower() != str(request.data['is_blocked']).lower():
+                if str(user.is_blocked).lower() != str(data['is_blocked']).lower():
                     # user.is_active = False  
-                    if 'justificacion_bloqueo' not in request.data or not request.data['justificacion_bloqueo']:
+                    if 'justificacion_bloqueo' not in data or not data['justificacion_bloqueo']:
                         raise ValidationError('Se requiere una justificación para cambiar el estado de bloqueo del usuario')
-                    justificacion = request.data['justificacion_bloqueo']
+                    justificacion = data['justificacion_bloqueo']
 
                 # Validacion de sucursal
                 if tipo_usuario_act == 'E' and sucursal_entidad_act is not None:
@@ -185,7 +283,7 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                 roles_actuales = UsuariosRol.objects.filter(id_usuario=pk)
                 
                 lista_roles_bd = [rol.id_rol.id_rol for rol in roles_actuales]
-                lista_roles_json = request.data.getlist("roles")
+                lista_roles_json = data.getlist("roles")
                 
                 lista_roles_json = [int(a) for a in lista_roles_json]
                 
@@ -244,6 +342,65 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
                     Util.save_auditoria_maestro_detalle(auditoria_data)
                 
                 user_actualizado = user_serializer.save()
+                
+                if file:
+                    # CASO 1
+                    if not esta_retirando_foto and not user.id_archivo_foto:
+                        # CREAR ARCHIVO EN T238
+                        ruta = os.path.join("home", "BIA", "Otros", "FotosPerfil")
+
+                        current_date = datetime.now().date()
+                        formatted_date = current_date.strftime('%d%m%Y')
+                        nombre_archivo = f"Pf-{user.id_usuario:008d}-{formatted_date}"
+                        file.name = nombre_archivo+'.'+extension_sin_punto
+
+                        # Crea el archivo digital y obtiene su ID
+                        data_archivo = {
+                            'es_Doc_elec_archivo': False,
+                            'ruta': ruta,
+                            'md5_hash': nombre_archivo,
+                            'nombre_cifrado': False
+                        }
+                        
+                        respuesta = archivo_digital_class.crear_archivo(data_archivo, file)
+                        archivo_digital = ArchivosDigitales.objects.filter(id_archivo_digital=respuesta.data.get('data').get('id_archivo_digital')).first()
+                        user.id_archivo_foto = archivo_digital
+                        user.save()
+                    # CASO 2
+                    elif not esta_retirando_foto and user.id_archivo_foto:
+                        # ELIMINAR ARCHIVO EN FILESYSTEM
+                        user.id_archivo_foto.ruta_archivo.delete()
+                        
+                        current_date = datetime.now()
+                        formatted_date = current_date.date().strftime('%d%m%Y')
+                        nombre_archivo = f"Pf-{user.id_usuario:008d}-{formatted_date}"
+                        
+                        # ACTUALIZAR ARCHIVO EN T238
+                        ruta = os.path.join("home", "BIA", "Otros", "FotosPerfil")
+                        nombre_nuevo = nombre_archivo+'.'+extension_sin_punto
+                        ruta_completa = os.path.join(settings.MEDIA_ROOT, ruta, nombre_nuevo)
+                    
+                        if not os.path.exists(os.path.join(settings.MEDIA_ROOT, ruta)):
+                            os.makedirs(os.path.join(settings.MEDIA_ROOT, ruta))
+                            
+                        # Guarda el archivo
+                        with open(ruta_completa, 'wb') as destination:
+                            for chunk in file.chunks():
+                                destination.write(chunk)
+                        
+                        user.id_archivo_foto.ruta_archivo = os.path.relpath(ruta_completa, settings.MEDIA_ROOT)
+                        user.id_archivo_foto.nombre_de_Guardado = nombre_archivo
+                        user.id_archivo_foto.formato = extension_sin_punto
+                        user.id_archivo_foto.tamagno_kb = file_size
+                        user.id_archivo_foto.fecha_creacion_doc = current_date
+                        user.id_archivo_foto.save()
+                else:
+                    # CASO 3
+                    if esta_retirando_foto:
+                        user.id_archivo_foto.ruta_archivo.delete()
+                        user.id_archivo_foto.delete()
+                        user.id_archivo_foto = None
+                        user.save()
 
                 # HISTORICO 
                 usuario_afectado = User.objects.get(id_usuario=id_usuario_afectado)
@@ -540,6 +697,8 @@ class RegisterView(generics.CreateAPIView):
         usuario_logueado = request.user.id_usuario
         persona = Personas.objects.filter(id_persona=data['persona']).first()
         
+        file = request.FILES.get('profile_img', None)
+        
         # ASIGNAR USUARIO CREADO COMO ID_USUARIO_CREADOR
         data['id_usuario_creador'] = usuario_logueado
         
@@ -593,6 +752,43 @@ class RegisterView(generics.CreateAPIView):
             raise ValidationError('Deben existir todos los roles asignados')
 
         user_serializer=serializer.save()
+        
+        if file:
+            archivo_digital_class = ArchivosDgitalesCreate()
+            file_size = archivo_digital_class.obtener_tamano_archivo(file)
+            
+            nombre = file.name
+            nombre_sin_extension, extension = os.path.splitext(nombre)
+            extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+            
+            if extension_sin_punto.lower() not in ['jpg', 'jpeg', 'png']:
+                raise ValidationError('La extensión del archivo no es válida')
+            
+            if file_size > 50:
+                raise ValidationError('El tamaño del archivo excede el límite permitido de 50kb')
+            
+            # CASO 1
+                
+            # CREAR ARCHIVO EN T238
+            ruta = os.path.join("home", "BIA", "Otros", "FotosPerfil")
+
+            current_date = datetime.now().date()
+            formatted_date = current_date.strftime('%d%m%Y')
+            nombre_archivo = f"Pf-{user_serializer.id_usuario:008d}-{formatted_date}"
+            file.name = nombre_archivo+'.'+extension_sin_punto
+
+            # Crea el archivo digital y obtiene su ID
+            data_archivo = {
+                'es_Doc_elec_archivo': False,
+                'ruta': ruta,
+                'md5_hash': nombre_archivo,
+                'nombre_cifrado': False
+            }
+            
+            respuesta = archivo_digital_class.crear_archivo(data_archivo, file)
+            archivo_digital = ArchivosDigitales.objects.filter(id_archivo_digital=respuesta.data.get('data').get('id_archivo_digital')).first()
+            user_serializer.id_archivo_foto = archivo_digital
+            user_serializer.save()
 
         for rol in roles:
             UsuariosRol.objects.create(
@@ -1096,11 +1292,10 @@ class SetNewPasswordApiView(generics.GenericAPIView):
 @api_view(['POST'])
 def uploadImage(request):
     data = request.data
-    print(data)
     user_id = data['id_usuario']
     user = User.objects.get(id_usuario=user_id)
 
-    user.profile_img = request.FILES.get('image')
+    user.profile_img = request.FILES.get('image') # EDITAR
     user.save()
 
     return Response('Image was uploaded')
