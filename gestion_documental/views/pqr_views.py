@@ -1620,9 +1620,36 @@ class GetRespuestaPQRSDFForPanel(generics.RetrieveAPIView):
         #     return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
             
 #REPORTES_PQRSDF
+            
 
+def get_tipo_pqrsdf_descripcion(cod_tipo_pqrsdf):
+    tipo_mapping = {
+        "PG": "Petición General",
+        "PD": "Petición De Documentos o Información",
+        "PC": "Petición De Consulta",
+        "Q": "Queja",
+        "R": "Reclamo",
+        "S": "Sugerencia",
+        "D": "Denuncia",
+        "F": "Felicitación",
+    }
+
+    return tipo_mapping.get(cod_tipo_pqrsdf, "Tipo Desconocido")
 class ReportesPQRSDFSearch(generics.ListAPIView):
     serializer_class = PQRSDFGetSerializer
+    def get_tipo_pqrsdf_descripcion(self, cod_tipo_pqrsdf):
+        tipo_mapping = {
+            "PG": "Petición General",
+            "PD": "Petición De Documentos o Información",
+            "PC": "Petición De Consulta",
+            "Q": "Queja",
+            "R": "Reclamo",
+            "S": "Sugerencia",
+            "D": "Denuncia",
+            "F": "Felicitación",
+        }
+
+        return tipo_mapping.get(cod_tipo_pqrsdf, "Tipo Desconocido")
 
     def get_queryset(self):
         estados_pqrsdf = EstadosSolicitudes.objects.filter(
@@ -1717,6 +1744,7 @@ class ReportesPQRSDFSearch(generics.ListAPIView):
             data.append({
                 'id_pqrsdf': pqrsdf.id_PQRSDF,
                 'tipo_pqrsdf': pqrsdf.cod_tipo_PQRSDF,
+                'tipo_pqrsdf_descripcion': get_tipo_pqrsdf_descripcion(pqrsdf.cod_tipo_PQRSDF),
                 'medio_solicitud': medio_solicitud_nombre,
                 'sucursal_recepcion': sucursal_recepcion,
                 'numero_radicado': numero_radicado,
