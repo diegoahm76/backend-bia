@@ -1,4 +1,5 @@
 from django.db import models
+from gestion_documental.models.expedientes_models import ArchivosDigitales
 from recurso_hidrico.models.bibliotecas_models import Instrumentos
 
 from transversal.models.personas_models import Personas
@@ -79,8 +80,8 @@ class EvidenciasAvance(models.Model):
     id_evidencia_avance = models.AutoField(primary_key=True, editable=False, db_column="T604IdEvidencia_Avance_Py_Pg_PORH")
     id_avance = models.ForeignKey(AvancesProyecto, on_delete=models.CASCADE, db_column="T604Id_Avance_Py_Pg_PORH")
     nombre_archivo = models.CharField(max_length=255, db_column="T604nombreArchivo")
-    id_archivo = models.CharField(db_column="T604Id_Archivo", max_length=255)
-    
+    #id_archivo = models.CharField(db_column="T604Id_Archivo", max_length=255)
+    id_archivo = models.ForeignKey(ArchivosDigitales,on_delete=models.CASCADE, db_column="T604Id_Archivo")
     def __str__(self):
         return str(self.id_evidencia_avance)
     
