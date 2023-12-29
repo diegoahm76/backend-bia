@@ -55,5 +55,5 @@ class SubZonaHidrica(models.Model):
         db_table = 'T623SubZonasHidricas'
         verbose_name = 'Sub Zona Hidrica'
         verbose_name_plural = 'Sub Zona Hidricas'
-        unique_together = ['nombre_sub_zona_hidrica', 'id_zona_hidrica']
+        unique_together = ['nombre_sub_zona_hidrica', 'id_zona_hidrica','codigo_rio']
         
