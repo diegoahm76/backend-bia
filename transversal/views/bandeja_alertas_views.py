@@ -43,7 +43,7 @@ class AlertasBandejaAlertaPersonaGetByBandeja(generics.ListAPIView):
 
            
         items = AlertasBandejaAlertaPersona.objects.filter(id_bandeja_alerta_persona=pk)
-                
+
         
         if not items:
             raise NotFound("La bandeja no tiene items de alertas porfavor comunicarse con un administrador.")

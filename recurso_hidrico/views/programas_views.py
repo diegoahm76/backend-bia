@@ -7,6 +7,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from datetime import datetime,date,timedelta
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from recurso_hidrico.models.bibliotecas_models import Instrumentos
 from seguridad.utils import Util
 
@@ -641,12 +643,28 @@ class RegistroAvance(generics.CreateAPIView):
             if repetido:
                 raise ValidationError("Existe mas de un archivo con el nombre: "+repetido)
             else:
+                data_archivos =[]
+                vista_archivos = ArchivosDgitalesCreate()
+                ruta = "home,BIA,Otros,RecursoHidrico,Avances"
+                for archivo in archivos:
+                    respuesta_archivo = vista_archivos.crear_archivo({"ruta":ruta,'es_Doc_elec_archivo':False},archivo)
+                    data_archivo = respuesta_archivo.data['data']
+                    if respuesta_archivo.status_code != status.HTTP_201_CREATED:
+                        return respuesta_archivo
+                    data_archivos.append(data_archivo)
 
-                for i in range(len(archivos)):
+                
+                
+      
+
+                for i in range(len(data_archivos)):
+                    archivo_ins=ArchivosDigitales.objects.filter(id_archivo_digital=data_archivos[i]['id_archivo_digital']).first()
+                    if not archivo_ins:
+                        raise NotFound("No existe el archivo.")
                     avance=EvidenciasAvance.objects.create(
                         id_avance = creacion_avance,
                         nombre_archivo = nombre_archivos[i],                
-                        id_archivo = i
+                        id_archivo = archivo_ins
                     )
                     usuario = request.user.id_usuario
                     direccion=Util.get_client_ip(request)

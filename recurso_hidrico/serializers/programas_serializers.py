@@ -2,6 +2,7 @@ from rest_framework import serializers
 from unittest.util import _MAX_LENGTH
 from wsgiref.validate import validator
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
+from gestion_documental.serializers.expedientes_serializers import ArchivosDigitalesSerializer
 from recurso_hidrico.models.bibliotecas_models import Instrumentos
 from recurso_hidrico.models.programas_models import ActividadesProyectos, AvancesProyecto, EvidenciasAvance, ProgramasPORH, ProyectosPORH
 
@@ -161,9 +162,16 @@ class AvanceConEvidenciasSerializer(serializers.ModelSerializer):
 
 
 class EvidenciaAvanceSerializer(serializers.ModelSerializer):
+    ruta_archivo = serializers.SerializerMethodField()
+
+    def get_ruta_archivo(self, obj):
+        archivo = obj.id_archivo
+        serializador = ArchivosDigitalesSerializer(archivo)
+        ruta = serializador.data['ruta_archivo']
+        return ruta
     class Meta:
         model = EvidenciasAvance
-        fields = ('id_evidencia_avance', 'nombre_archivo', )
+        fields = ('id_evidencia_avance', 'nombre_archivo','ruta_archivo' )
 
 
 
