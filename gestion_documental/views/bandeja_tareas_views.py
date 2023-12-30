@@ -10,13 +10,15 @@ from django.db import transaction
 from rest_framework import generics,status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+
 from gestion_documental.models.bandeja_tareas_models import TareasAsignadas
-from gestion_documental.models.radicados_models import PQRSDF, BandejaTareasPersona, TareaBandejaTareasPersona
+from gestion_documental.models.radicados_models import PQRSDF, AsignacionPQR, BandejaTareasPersona, TareaBandejaTareasPersona
 from gestion_documental.serializers.bandeja_tareas_serializers import BandejaTareasPersonaCreateSerializer, TareaBandejaTareasPersonaCreateSerializer, TareaBandejaTareasPersonaUpdateSerializer, TareasAsignadasCreateSerializer, TareasAsignadasGetJustificacionSerializer, TareasAsignadasGetSerializer, TareasAsignadasUpdateSerializer
 from gestion_documental.serializers.ventanilla_pqrs_serializers import PQRSDFGetSerializer
+
 from transversal.models.personas_models import Personas
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
-from transversal.models.base_models import ApoderadoPersona
+
 
 class BandejaTareasPersonaCreate(generics.CreateAPIView):
     serializer_class = BandejaTareasPersonaCreateSerializer
@@ -258,6 +260,15 @@ class TareasAsignadasRechazarUpdate(generics.UpdateAPIView):
         serializer = self.serializer_class(instance,data=data_in, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        #cambia el estado de la tarea en la t268
+        id_asignacion = instance.id_asignacion
+        asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=id_asignacion).first()
+
+        if not asignacion:
+            raise NotFound("No se encontro la asignacion")
+        asignacion.cod_estado_asignacion = 'Re'
+        asignacion.justificacion_rechazo = data_in['justificacion_rechazo']
+        asignacion.save()
         
         return Response({'success':True,'detail':"Se actualizo la actividad Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
 
@@ -266,7 +277,7 @@ class TareasAsignadasAceptarUpdate(generics.UpdateAPIView):
     queryset = TareasAsignadas.objects.all()
     permission_classes = [IsAuthenticated]
     vista_asignacion = TareaBandejaTareasPersonaUpdate()
-
+   
     def put(self,request,pk):
         
         
@@ -294,8 +305,19 @@ class TareasAsignadasAceptarUpdate(generics.UpdateAPIView):
         serializer = self.serializer_class(instance,data=data_in, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        
-        return Response({'success':True,'detail':"Se actualizo la actividad Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
+        #cambio de estado en asignacion en la t268
+        id_asignacion = instance.id_asignacion
+        print(id_asignacion)
+        #asignacion = AsignacionPQR.objects.filter(id_asignacion=id_pqrsdf)
+        asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=id_asignacion).first()
+
+        if not asignacion:
+            raise NotFound("No se encontro la asignacion")
+        asignacion.cod_estado_asignacion = 'Ac'
+        asignacion.save()
+        print(asignacion.id_pqrsdf)
+
+        return Response({'success':True,'detail':"Se acepto la pqrsdf Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
     
 
 class TareasAsignadasJusTarea(generics.UpdateAPIView):
