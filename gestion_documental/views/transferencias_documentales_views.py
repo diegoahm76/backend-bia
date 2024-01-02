@@ -6,6 +6,7 @@ from gestion_documental.models.ctrl_acceso_models import CtrlAccesoClasificacion
 from gestion_documental.models.expedientes_models import ExpedientesDocumentales, IndicesElectronicosExp
 from django.db.models import Q
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
+from gestion_documental.models.tca_models import CatSeriesUnidadOrgCCD_TRD_TCA
 
 from gestion_documental.models.transferencias_documentales_models import TransferenciasDocumentales
 from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD
@@ -116,8 +117,8 @@ class GetPermisosUsuario(generics.RetrieveAPIView):
                     else:
                         permisos = self.validaciones_ctrl_acceso_clasificacionExp_CCD(expediente, unidad_persona_logueada, organigrama_actual)
                     
-                    if permisos['consultar'] is False and permisos['descarga'] is False:
-                        permisos = self.validacion_permisos_unds_org_actuales(expediente, unidad_persona_logueada.id_unidad_organizacional)
+                    if permisos['consultar'] is False or permisos['descarga'] is False:
+                        permisos = self.validacion_permisos_unds_org_actuales(expediente, unidad_persona_logueada.id_unidad_organizacional, permisos)
                 else:
                    raise ValidationError("error': 'La unidad a la que pertenece el usuario logueado no es del organigrama actual.") 
 
@@ -135,8 +136,14 @@ class GetPermisosUsuario(generics.RetrieveAPIView):
         if ctrlAccesoClasificacionExpCCD:
             permisos = self.validaciones_ctrl_acceso_clasificacionExp_CCD_existe(ctrlAccesoClasificacionExpCCD, unidad_persona_logueada, expediente, organigrama_actual)
         else:
-            pass
-            
+            permisos['consulta'] = False
+            permisos['descarga'] = False
+            id_ccd = catSeriesUnidadOrgCCDTRD.id_trd.id_ccd_id
+            catSeriesUnidadOrgCCD_TRD_TCA = CatSeriesUnidadOrgCCD_TRD_TCA.objects.all().filter(id_cat_serie_und_ccd_trd = catSeriesUnidadOrgCCDTRD.id_catserie_unidadorg).first()
+
+            if id_ccd and catSeriesUnidadOrgCCD_TRD_TCA:
+                ctrlAccesoClasificacionExpCCD = CtrlAccesoClasificacionExpCCD.objects.all().filter(id_ccd = id_ccd, cod_clasificacion_exp = catSeriesUnidadOrgCCD_TRD_TCA.cod_clas_expediente_id).first()
+                permisos = self.validaciones_ctrl_acceso_clasificacionExp_CCD_existe(ctrlAccesoClasificacionExpCCD, unidad_persona_logueada, expediente, organigrama_actual)
         return permisos
     
     def validaciones_ctrl_acceso_clasificacionExp_CCD_existe(self, ctrlAccesoClasificacionExpCCD, unidad_persona_logueada, expediente, organigrama_actual):
@@ -158,11 +165,11 @@ class GetPermisosUsuario(generics.RetrieveAPIView):
                 
                 #Validación 3
                 if permisos['consulta'] is False or permisos['descarga'] is False:
-                    permisos = self.validate_seccionesActualesNivel(ctrlAccesoClasificacionExpCCD, und_seccion_propietaria_serie, organigrama_actual.id_organigrama, unidad_persona_logueada.id_nivel_organigrama_id, permisos)
+                    permisos = self.validate_seccionesActualesNivel(ctrlAccesoClasificacionExpCCD, und_seccion_propietaria_serie, unidad_persona_logueada.id_nivel_organigrama_id, permisos)
             
             #Validación 4
             if permisos['consulta'] is False or permisos['descarga'] is False:
-                permisos = self.validate_unidadesHijas(expediente['id_und_org_oficina_respon_actual'], und_seccion_propietaria_serie, permisos)
+                permisos = self.validate_unidades_hijas_y_nivel(expediente['id_und_org_oficina_respon_actual'], und_seccion_propietaria_serie, unidad_persona_logueada, permisos)
         
         return permisos
         
@@ -179,22 +186,18 @@ class GetPermisosUsuario(generics.RetrieveAPIView):
         return permisos
     
     def validate_seccionRaizOrgActual(self, ctrlAccesoClasificacionExpCCD, unidad_persona_logueada, permisos):
-        #TODO: CUADRAR PARA QUE SI YA TENGO UNO DE LOS PERMISOS EN TRUE NO SE PIERDA ESTE DATO SINO QUE SOLO SE SETEE EL FALSE
-        permisos = {}
-        permisos['consulta'] = False
-        permisos['descarga'] = False
+        permisos['consulta'] = permisos['consulta'] if permisos['consulta'] is True else False
+        permisos['descarga'] = permisos['descarga'] if permisos['descarga'] is True else False
 
         if unidad_persona_logueada.unidad_raiz is True:
-            permisos['consulta'] = ctrlAccesoClasificacionExpCCD.seccion_raiz_organi_actual_consultar
-            permisos['descarga'] = ctrlAccesoClasificacionExpCCD.seccion_raiz_organi_actual_descargar
+            permisos['consulta'] = ctrlAccesoClasificacionExpCCD.seccion_raiz_organi_actual_consultar if permisos['consulta'] is False else permisos['consulta']
+            permisos['descarga'] = ctrlAccesoClasificacionExpCCD.seccion_raiz_organi_actual_descargar if permisos['descarga'] is False else permisos['descarga']
 
         return permisos
     
-    def validate_seccionesActualesNivel(self, ctrlAccesoClasificacionExpCCD, und_seccion_propietaria_serie, id_organigrama, id_nivel_organigrama_persona_logueada, permisos):
-        #TODO: CUADRAR PARA QUE SI YA TENGO UNO DE LOS PERMISOS EN TRUE NO SE PIERDA ESTE DATO SINO QUE SOLO SE SETEE EL FALSE
-        permisos = {}
-        permisos['consulta'] = False
-        permisos['descarga'] = False
+    def validate_seccionesActualesNivel(self, ctrlAccesoClasificacionExpCCD, und_seccion_propietaria_serie, id_nivel_organigrama_persona_logueada, permisos):
+        permisos['consulta'] = permisos['consulta'] if permisos['consulta'] is True else False
+        permisos['descarga'] = permisos['descarga'] if permisos['descarga'] is True else False
         
         und_org_actual_admin_series = self.queryset_unidades.filter(id_unidad_organizacional = und_seccion_propietaria_serie.id_unidad_org_actual_admin_series).first()
         nivel_organigrama_actual_admin_series = NivelesOrganigrama.objects.all().filter(id_nivel_organigrama = und_org_actual_admin_series.id_nivel_organigrama_id).first()
@@ -204,24 +207,47 @@ class GetPermisosUsuario(generics.RetrieveAPIView):
         
         
         if nivel_igual_superior is True or nivel_inferior is True:
-            consultar = True if ctrlAccesoClasificacionExpCCD.secciones_actuales_mismo_o_sup_nivel_respon_consulta is True or ctrlAccesoClasificacionExpCCD.secciones_actuales_inf_nivel_respon_consultar else False
-            descargar = True if ctrlAccesoClasificacionExpCCD.secciones_actuales_mismo_o_sup_nivel_respon_descargar is True or ctrlAccesoClasificacionExpCCD.secciones_actuales_inf_nivel_respon_descargar is True else False
+            consultar = True if ctrlAccesoClasificacionExpCCD.secciones_actuales_mismo_o_sup_nivel_respon_consulta is True or ctrlAccesoClasificacionExpCCD.secciones_actuales_inf_nivel_respon_consultar is True else permisos['consulta']
+            descargar = True if ctrlAccesoClasificacionExpCCD.secciones_actuales_mismo_o_sup_nivel_respon_descargar is True or ctrlAccesoClasificacionExpCCD.secciones_actuales_inf_nivel_respon_descargar is True else permisos['descarga']
             permisos['consulta'] = consultar
             permisos['descarga'] = descargar
 
         return permisos
     
-    def validate_unidadesHijas(self, id_und_org_oficina_respon_actual, und_seccion_propietaria_serie, permisos):
-        #TODO: Validación pendiente
-        #TODO: CUADRAR PARA QUE SI YA TENGO UNO DE LOS PERMISOS EN TRUE NO SE PIERDA ESTE DATO SINO QUE SOLO SE SETEE EL FALSE
-        pass
+    def validate_unidades_hijas_y_nivel(self, ctrlAccesoClasificacionExpCCD, id_und_org_oficina_respon_actual, und_seccion_propietaria_serie, unidad_persona_logueada, permisos):
+        permisos['consulta'] = permisos['consulta'] if permisos['consulta'] is True else False
+        permisos['descarga'] = permisos['descarga'] if permisos['descarga'] is True else False
 
-    def validacion_permisos_unds_org_actuales(self, expediente, id_unidad_organizacional_persona_logueada):
-        permisos = {}
+        und_org_oficina_respon_actual = self.queryset_unidades.filter(id_unidad_organizacional = id_und_org_oficina_respon_actual).first()
+        nivel_organigrama_actual_resp_act = NivelesOrganigrama.objects.all().filter(id_nivel_organigrama = und_org_oficina_respon_actual.id_nivel_organigrama_id).first()
+        nivel_organigrama_persona_logueada = NivelesOrganigrama.objects.all().filter(id_nivel_organigrama = unidad_persona_logueada.id_nivel_organigrama_id).first()
+        nivel_igual_superior = True if nivel_organigrama_persona_logueada.orden_nivel <= nivel_organigrama_actual_resp_act.orden_nivel else False
+        nivel_inferior = True if nivel_organigrama_persona_logueada.orden_nivel > nivel_organigrama_actual_resp_act.orden_nivel else False
+        
+        if Q(nivel_igual_superior is True or nivel_inferior is True) and Q(self.validate_unidades_hijas(und_seccion_propietaria_serie.id_unidad_organizacional, unidad_persona_logueada.id_unidad_organizacional)):
+            consultar = True if ctrlAccesoClasificacionExpCCD.unds_org_sec_respon_mismo_o_sup_nivel_resp_exp_consultar is True or ctrlAccesoClasificacionExpCCD.unds_org_sec_respon_inf_nivel_resp_exp_consultar is True else permisos['consulta']
+            descargar = True if ctrlAccesoClasificacionExpCCD.unds_org_sec_respon_mismo_o_sup_nivel_resp_exp_descargar is True or ctrlAccesoClasificacionExpCCD.unds_org_sec_respon_inf_nivel_resp_exp_descargar is True else permisos['descarga']
+            permisos['consulta'] = consultar
+            permisos['descarga'] = descargar
+            
+    
+        return permisos
+    
+    def validate_unidades_hijas(self, id_unidad_org_padre, id_und_org_hijo):
+        validate = False
+        if id_und_org_hijo:
+            hijo = self.queryset_unidades.filter(id_unidad_organizacional = id_und_org_hijo).first()
+            if hijo.id_unidad_org_padre and hijo.id_unidad_org_padre == id_unidad_org_padre:
+                validate = True
+            else:
+                self.validate_unidades_hijas(id_unidad_org_padre, hijo.id_unidad_org_padre)
+        return validate
+
+    def validacion_permisos_unds_org_actuales(self, expediente, id_unidad_organizacional_persona_logueada, permisos):
         catSeriesUnidadOrgCCDTRD = CatSeriesUnidadOrgCCDTRD.objects.all().filter(id_catserie_unidadorg = expediente['id_cat_serie_und_org_ccd_trd_prop'])
         permisosUndsOrgActualesSerieExpCCD = PermisosUndsOrgActualesSerieExpCCD.objects.all().filter(id_cat_serie_und_org_ccd = catSeriesUnidadOrgCCDTRD.id_cat_serie_und_id, id_und_organizacional_actual = id_unidad_organizacional_persona_logueada).first()
-        permisos['consulta'] = permisosUndsOrgActualesSerieExpCCD.consultar_expedientes_no_propios
-        permisos['descarga'] = permisosUndsOrgActualesSerieExpCCD.descargar_expedientes_no_propios
+        permisos['consulta'] = permisosUndsOrgActualesSerieExpCCD.consultar_expedientes_no_propios if permisos['consulta'] is False else permisos['consulta']
+        permisos['descarga'] = permisosUndsOrgActualesSerieExpCCD.descargar_expedientes_no_propios if permisos['descarga'] is False else permisos['descarga']
 
         return permisos
         
