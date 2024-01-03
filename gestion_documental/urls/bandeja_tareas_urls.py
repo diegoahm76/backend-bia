@@ -16,4 +16,7 @@ urlpatterns = [
     path('tareas-asignada-aceptar/update/<str:pk>/',views.TareasAsignadasAceptarUpdate.as_view(),name='update-tareas-asignadas'),
     #TareaBandejaTareasPersonaUpdate
     path('tarea-bandeja-asignacion/update/<str:tarea>/',views.TareaBandejaTareasPersonaUpdate.as_view(),name='update-tarea-bandeja-tareas-persona'),
+    #TareasAsignadasJusTarea
+    path('tareas-asignadas-jus-rechazo/get/<str:id>/',views.TareasAsignadasJusTarea.as_view(),name='update-tareas-asignadas-jus-tarea'),
+    
     ]

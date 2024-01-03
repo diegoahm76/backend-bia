@@ -1,7 +1,11 @@
 from rest_framework import serializers
-from gestion_documental.models.trd_models import TablaRetencionDocumental
+from gestion_documental.models.trd_models import TablaRetencionDocumental, ConsecPorNivelesTipologiasDocAgno
 from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental
-from transversal.models import Organigramas, UnidadesOrganizacionales
+from gestion_documental.models.ctrl_acceso_models import CtrlAccesoClasificacionExpCCD
+from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
+from gestion_documental.models.conf__tipos_exp_models import ConfiguracionTipoExpedienteAgno
+from transversal.models import Organigramas, UnidadesOrganizacionales, TemporalPersonasUnidad
+
 
 class OrganigramaSerializer(serializers.ModelSerializer):
     usado = serializers.SerializerMethodField()
@@ -33,3 +37,36 @@ class UnidadesOrganizacionalesSerializer(serializers.ModelSerializer):
     class Meta:
         model = UnidadesOrganizacionales
         fields = ['id_unidad_org_actual_admin_series']
+
+
+class CtrlAccesoClasificacionExpCCDSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model= CtrlAccesoClasificacionExpCCD
+        fields= '__all__'
+
+
+class PermisosUndsOrgActualesSerieExpCCDSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model= PermisosUndsOrgActualesSerieExpCCD
+        fields= '__all__'
+
+
+class ConfiguracionTipoExpedienteAgnoSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model= ConfiguracionTipoExpedienteAgno
+        fields= '__all__'
+
+
+class ConsecPorNivelesTipologiasDocAgnoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConsecPorNivelesTipologiasDocAgno
+        fields = '__all__'
+
+
+class TemporalPersonasUnidadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TemporalPersonasUnidad
+        fields = '__all__'

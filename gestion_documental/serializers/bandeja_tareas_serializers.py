@@ -41,16 +41,29 @@ class TareasAsignadasGetSerializer(serializers.ModelSerializer):
     tipo_tarea =serializers.ReadOnlyField(source='get_cod_tipo_tarea_display',default=None)
     asignado_por = serializers.SerializerMethodField()
     asignado_para = serializers.SerializerMethodField()
+    #fecha asignacion
+    #comentario asignacion
     radicado = serializers.SerializerMethodField()
     fecha_radicado =  serializers.SerializerMethodField()
     dias_para_respuesta = serializers.SerializerMethodField()
-    estado_asignacion = serializers.ReadOnlyField(source='get_cod_estado_asignacion_display',default=None)
+    estado_tarea = serializers.ReadOnlyField(source='get_cod_estado_asignacion_display',default=None)
     id_pqrsdf = serializers.SerializerMethodField()
-    class Meta:
+    respondida_por = serializers.ReadOnlyField(source='nombre_persona_que_responde',default=None)
+    tarea_reasignada_a = serializers.SerializerMethodField()
+    unidad_org_destino = serializers.SerializerMethodField()
+    estado_reasignacion_tarea = serializers.SerializerMethodField()
+    class Meta:#
         model = TareasAsignadas
         #fields = '__all__'
-        fields =['id_tarea_asignada','id_pqrsdf','tipo_tarea','asignado_por','asignado_para','fecha_asignacion','radicado','fecha_radicado','dias_para_respuesta','requerimientos_pendientes_respuesta','estado_asignacion']
-
+        fields =['id_tarea_asignada','id_pqrsdf','tipo_tarea','asignado_por','asignado_para','fecha_asignacion',
+                 'comentario_asignacion','radicado','fecha_radicado','dias_para_respuesta',
+                 'requerimientos_pendientes_respuesta','estado_tarea','fecha_respondido','respondida_por','tarea_reasignada_a','unidad_org_destino','estado_reasignacion_tarea']
+    def get_tarea_reasignada_a(self,obj):
+        return None
+    def get_estado_reasignacion_tarea(self,obj):
+        return None
+    def get_unidad_org_destino(self,obj):
+        return None
     def get_asignado_por(self,obj):
         #buscamos la asignacion
         asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=obj.id_asignacion).first()
@@ -126,6 +139,10 @@ class TareasAsignadasGetSerializer(serializers.ModelSerializer):
         id_pqrsdf = pqrsdf.id_PQRSDF
         return id_pqrsdf
 
+class TareasAsignadasGetJustificacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TareasAsignadas
+        fields = ['id_tarea_asignada','justificacion_rechazo']
 
 
     

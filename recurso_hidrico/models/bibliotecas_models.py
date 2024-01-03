@@ -1,4 +1,5 @@
 from django.db import models
+from gestion_documental.models.expedientes_models import ArchivosDigitales
 #from django.contrib.gis.db import models
 from transversal.models.personas_models import Personas
 
@@ -262,7 +263,8 @@ class ArchivosInstrumento(models.Model):
         ('INS', 'Instrumento')
     ], db_column='T611codTipoDeArchivo')
     nombre_archivo = models.CharField(max_length=255, db_column='T611nombreArchivo')
-    ruta_archivo = models.FileField(max_length=255, upload_to='recurso_hidrico/archivos_instrumento/', db_column='T611rutaArchivo')
+    #ruta_archivo = models.FileField(max_length=255, upload_to='recurso_hidrico/archivos_instrumento/', db_column='T611rutaArchivo')
+    ruta_archivo = models.ForeignKey(ArchivosDigitales,null=True,on_delete=models.CASCADE,max_length=255, db_column='T611Id_ArchivoDigital')
     fecha_cargado = models.DateField(auto_now=True, db_column='T611fechaCargado')
     id_cartera_aforo = models.ForeignKey(CarteraAforos, null=True, blank=True, on_delete=models.CASCADE, db_column='T611Id_CarteraAforo')
     id_prueba_bombeo = models.ForeignKey(PruebasBombeo, null=True, blank=True, on_delete=models.CASCADE, db_column='T611Id_PruebaBombeo')

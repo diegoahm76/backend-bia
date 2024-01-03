@@ -92,6 +92,9 @@ class TramiteListGetSerializer(serializers.ModelSerializer):
     cod_tipo_permiso_ambiental = serializers.ReadOnlyField(source='id_permiso_ambiental.cod_tipo_permiso_ambiental', default=None)
     tipo_permiso_ambiental = serializers.CharField(source='id_permiso_ambiental.get_cod_tipo_permiso_ambiental_display')
     permiso_ambiental = serializers.ReadOnlyField(source='id_permiso_ambiental.nombre', default=None)
+    municipio = serializers.ReadOnlyField(source='cod_municipio.nombre', default=None)
+    cod_departamento = serializers.SerializerMethodField()
+    departamento = serializers.SerializerMethodField()
     
     def get_nombre_persona_titular(self, obj):
         nombre_persona_titular = None
@@ -117,7 +120,19 @@ class TramiteListGetSerializer(serializers.ModelSerializer):
                 nombre_persona_interpone = nombre_persona_interpone if nombre_persona_interpone != "" else None
         return nombre_persona_interpone
     
-    # SERIALIZERMETHODFIELD ARCHIVOS
+    def get_cod_departamento(self, obj):
+        cod_departamento = None
+        departamento = Departamento.objects.filter(cod_departamento=obj.cod_municipio.cod_municipio[:2]).first() if obj.cod_municipio else None
+        if departamento:
+            cod_departamento = departamento.cod_departamento
+        return cod_departamento
+    
+    def get_departamento(self, obj):
+        departamento_nombre = None
+        departamento = Departamento.objects.filter(cod_departamento=obj.cod_municipio.cod_municipio[:2]).first() if obj.cod_municipio else None
+        if departamento:
+            departamento_nombre = departamento.nombre
+        return departamento_nombre
     
     class Meta:
         model = PermisosAmbSolicitudesTramite
@@ -140,11 +155,11 @@ class TramiteListGetSerializer(serializers.ModelSerializer):
             'cod_tipo_permiso_ambiental',
             'tipo_permiso_ambiental',
             'permiso_ambiental',
-            # 'cod_departamento',
-            # 'departamento',
-            # 'cod_municipio',
-            # 'municipio',
-            # 'direccion',
+            'cod_departamento',
+            'departamento',
+            'cod_municipio',
+            'municipio',
+            'direccion',
             'descripcion_direccion',
             'coordenada_x',
             'coordenada_y'
@@ -157,9 +172,26 @@ class AnexosUpdateSerializer(serializers.ModelSerializer):
         fields = '__all__'
         
 class AnexosGetSerializer(serializers.ModelSerializer):
-    formato = serializers.ReadOnlyField(source='id_archivo.formato', default=None)
-    tamagno_kb = serializers.ReadOnlyField(source='id_archivo.tamagno_kb', default=None)
-    ruta_archivo = serializers.ReadOnlyField(source='id_archivo.ruta_archivo.url', default=None)
+    nombre = serializers.SerializerMethodField()
+    descripcion = serializers.SerializerMethodField()
+    formato = serializers.SerializerMethodField()
+    tamagno_kb = serializers.SerializerMethodField()
+    ruta_archivo = serializers.SerializerMethodField()
+    
+    def get_nombre(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().nombre_original_archivo
+    
+    def get_descripcion(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().descripcion
+    
+    def get_formato(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().id_archivo_sistema.formato
+    
+    def get_tamagno_kb(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().id_archivo_sistema.tamagno_kb
+    
+    def get_ruta_archivo(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().id_archivo_sistema.ruta_archivo.url
     
     class Meta:
         model = AnexosTramite
@@ -167,7 +199,7 @@ class AnexosGetSerializer(serializers.ModelSerializer):
             'id_anexo_tramite',
             'id_solicitud_tramite',
             'id_permiso_amb_solicitud_tramite',
-            'id_archivo',
+            'id_anexo',
             'nombre',
             'descripcion',
             'formato',

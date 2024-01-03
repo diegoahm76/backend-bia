@@ -159,9 +159,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     activated_at = models.DateTimeField(blank=True, null=True, db_column='TzfechaActivacionInicial')
     last_login = models.DateTimeField(blank=True, null=True, db_column='TzfechaUltimoLogin')
     tipo_usuario = models.CharField(max_length=1, default='E', choices=tipo_usuario_CHOICES, db_column='TztipoUsuario')
-    profile_img = models.ImageField(null=True, blank=True, default='/placeholder.png', upload_to='seguridad/usuarios/', db_column='TzrutaFoto') #Juan Camilo Text Choices
-    # email = models.EmailField(blank=True,null=True db_column='TzemailUsuario') #Añadido por Juan
     sucursal_defecto = models.ForeignKey(SucursalesEmpresas, on_delete=models.SET_NULL, null=True, blank=True, db_column='TzId_SucursalPorDefecto')
+    id_archivo_foto = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, null=True, blank=True, db_column='TzId_ArchivoFoto')
     
     USERNAME_FIELD = 'nombre_de_usuario'
     REQUIRED_FIELDS = []

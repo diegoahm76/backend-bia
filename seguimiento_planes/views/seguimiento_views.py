@@ -75,7 +75,36 @@ class FuenteFinanciacionIndicadoresDelete(generics.DestroyAPIView):
         fuente = self.get_object(pk)
         fuente.delete()
         return Response({'success': True, 'detail': 'Se eliminó el registro de fuente de financiación indicadores correctamente.', 'data': []}, status=status.HTTP_200_OK)
+
+# Busqueda avanzada de fuentes de financiacion indicadores por nombre fuente, nombre proyecto, nombre producto, nombre actividad, nombre indicador
     
+class BusquedaAvanzadaFuentesFinanciacionIndicadores(generics.ListAPIView):
+    queryset = FuenteFinanciacionIndicadores.objects.all()
+    serializer_class = FuenteFinanciacionIndicadoresSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        nombre_fuente = request.GET.get('nombre_fuente')
+        nombre_proyecto = request.GET.get('nombre_proyecto')
+        nombre_producto = request.GET.get('nombre_producto')
+        nombre_actividad = request.GET.get('nombre_actividad')
+        nombre_indicador = request.GET.get('nombre_indicador')
+        if nombre_fuente:
+            fuentes = self.queryset.filter(nombre_fuente__icontains=nombre_fuente)
+        elif nombre_proyecto:
+            fuentes = self.queryset.filter(nombre_proyecto__icontains=nombre_proyecto)
+        elif nombre_producto:
+            fuentes = self.queryset.filter(nombre_producto__icontains=nombre_producto)
+        elif nombre_actividad:
+            fuentes = self.queryset.filter(nombre_actividad__icontains=nombre_actividad)
+        elif nombre_indicador:
+            fuentes = self.queryset.filter(nombre_indicador__icontains=nombre_indicador)
+        else:
+            fuentes = self.queryset.all()
+        serializer = FuenteFinanciacionIndicadoresSerializer(fuentes, many=True)
+        if not fuentes:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros:', 'data': serializer.data}, status=status.HTTP_200_OK)
 # ---------------------------------------- Sectores tabla básica ----------------------------------------
 
 # Listar todos los registros de sectores
@@ -212,6 +241,39 @@ class DetalleInversionCuentasDelete(generics.DestroyAPIView):
         detalle = self.get_object(pk)
         detalle.delete()
         return Response({'success': True, 'detail': 'Se eliminó el registro de detalle de inversión cuentas correctamente.', 'data': []}, status=status.HTTP_200_OK)
+
+# Busqueda avanzada de detalle de inversión cuentas por cuenta, nombre programa, nombre subprograma, nombre proyecto, nombre actividad, nombre indicador
+
+class BusquedaAvanzadaDetalleInversionCuentas(generics.ListAPIView):
+    queryset = DetalleInversionCuentas.objects.all()
+    serializer_class = DetalleInversionCuentasSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        cuenta = request.GET.get('cuenta')
+        nombre_programa = request.GET.get('nombre_programa')
+        nombre_subprograma = request.GET.get('nombre_subprograma')
+        nombre_proyecto = request.GET.get('nombre_proyecto')
+        nombre_actividad = request.GET.get('nombre_actividad')
+        nombre_indicador = request.GET.get('nombre_indicador')
+        if cuenta:
+            detalle = self.queryset.filter(cuenta__icontains=cuenta)
+        elif nombre_programa:
+            detalle = self.queryset.filter(nombre_programa__icontains=nombre_programa)
+        elif nombre_subprograma:
+            detalle = self.queryset.filter(nombre_subprograma__icontains=nombre_subprograma)
+        elif nombre_proyecto:
+            detalle = self.queryset.filter(nombre_proyecto__icontains=nombre_proyecto)
+        elif nombre_actividad:
+            detalle = self.queryset.filter(nombre_actividad__icontains=nombre_actividad)
+        elif nombre_indicador:
+            detalle = self.queryset.filter(nombre_indicador__icontains=nombre_indicador)
+        else:
+            detalle = self.queryset.all()
+        serializer = DetalleInversionCuentasSerializer(detalle, many=True)
+        if not detalle:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros:', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # ---------------------------------------- Modalidades tabla básica ----------------------------------------
 
@@ -721,6 +783,30 @@ class ConceptoPOAIDelete(generics.DestroyAPIView):
         concepto.delete()
         return Response({'success': True, 'detail': 'Se eliminó el registro de concepto POAI correctamente.', 'data': []}, status=status.HTTP_200_OK)
 
+# busqueda avanzada de conceptos POAI por concepto, nombre y nombre indicador
+
+class BusquedaAvanzadaConceptoPOAI(generics.ListAPIView):
+    queryset = ConceptoPOAI.objects.all()
+    serializer_class = ConceptoPOAISerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        concepto = request.GET.get('concepto')
+        nombre = request.GET.get('nombre')
+        nombre_indicador = request.GET.get('nombre_indicador')
+        if concepto:
+            conceptos = self.queryset.filter(concepto__icontains=concepto)
+        elif nombre:
+            conceptos = self.queryset.filter(nombre__icontains=nombre)
+        elif nombre_indicador:
+            conceptos = self.queryset.filter(nombre_indicador__icontains=nombre_indicador)
+        else:
+            conceptos = self.queryset.all()
+        serializer = ConceptoPOAISerializer(conceptos, many=True)
+        if not conceptos:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros de conceptos POAI:', 'data': serializer.data}, status=status.HTTP_200_OK)
+
 # ---------------------------------------- Fuentes de financiación ----------------------------------------
 
 # Listar todos los registros de fuentes de financiación
@@ -785,69 +871,26 @@ class FuenteFinanciacionDelete(generics.DestroyAPIView):
         fuente.delete()
         return Response({'success': True, 'detail': 'Se eliminó el registro de fuente de financiación correctamente.', 'data': []}, status=status.HTTP_200_OK)
 
-# ---------------------------------------- Fuentes de financiación  ----------------------------------------
+#Busqueda Avanzada de fuentes de financiación por nombre_fuente, concepto
 
-# Listar todos los registros de fuentes de financiación 
-
-class FuenteFinanciacionList(generics.ListAPIView):
+class BusquedaAvanzadaFuenteFinanciacion(generics.ListAPIView):
     queryset = FuenteFinanciacion.objects.all()
     serializer_class = FuenteFinanciacionSerializer
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
-        fuentes = self.get_queryset()
+        nombre_fuente = request.GET.get('nombre_fuente')
+        concepto = request.GET.get('concepto')
+        if nombre_fuente:
+            fuentes = self.queryset.filter(nombre_fuente__icontains=nombre_fuente)
+        elif concepto:
+            fuentes = self.queryset.filter(concepto__icontains=concepto)
+        else:
+            fuentes = self.queryset.all()
         serializer = FuenteFinanciacionSerializer(fuentes, many=True)
         if not fuentes:
             raise NotFound("No se encontraron resultados para esta consulta.")
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros de fuentes de financiación:', 'data': serializer.data}, status=status.HTTP_200_OK)
-
-# Crear un registro de fuente de financiación
-
-class FuenteFinanciacionCreate(generics.CreateAPIView):
-    serializer_class = FuenteFinanciacionSerializer
-    permission_classes = (IsAuthenticated,)
-
-    def post(self, request):
-        serializer = FuenteFinanciacionSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'success': True, 'detail': 'Se creó el registro de fuente de financiación correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
-        else:
-            print(serializer.errors)  # Imprime los errores de validación
-            raise ValidationError('Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo.')
-
-# Actualizar un registro de fuente de financiación
-
-class FuenteFinanciacionUpdate(generics.UpdateAPIView):
-    queryset = FuenteFinanciacion.objects.all()
-    serializer_class = FuenteFinanciacionSerializer
-    permission_classes = (IsAuthenticated,)
-
-    def put(self, request, pk):
-        data = request.data
-        fuente = self.get_object()
-        serializer = self.serializer_class(fuente, data=data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response({'success': True, 'detail': 'Se actualizó el registro de fuente de financiación correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
-
-# Eliminar un registro de fuente de financiación
-
-class FuenteFinanciacionDelete(generics.DestroyAPIView):
-    queryset = FuenteFinanciacion.objects.all()
-    serializer_class = FuenteFinanciacionSerializer
-    permission_classes = (IsAuthenticated,)
-
-    def get_object(self, pk):
-        try:
-            return FuenteFinanciacion.objects.get(pk=pk)
-        except FuenteFinanciacion.DoesNotExist:
-            raise NotFound("No se encontró un registro de fuente de financiación con este ID.")
-
-    def delete(self, request, pk):
-        fuente = self.get_object(pk)
-        fuente.delete()
-        return Response({'success': True, 'detail': 'Se eliminó el registro de fuente de financiación correctamente.', 'data': []}, status=status.HTTP_200_OK)
     
 # ---------------------------------------- Banco Proyecto ----------------------------------------
 
@@ -896,7 +939,6 @@ class BancoProyectoUpdate(generics.UpdateAPIView):
         return Response({'success': True, 'detail': 'Se actualizó el banco de proyecto correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # Eliminar un registro de banco de proyecto
-
 class BancoProyectoDelete(generics.DestroyAPIView):
     queryset = BancoProyecto.objects.all()
     serializer_class = BancoProyectoSerializer
@@ -912,6 +954,36 @@ class BancoProyectoDelete(generics.DestroyAPIView):
         banco = self.get_object(pk)
         banco.delete()
         return Response({'success': True, 'detail': 'Se eliminó el banco de proyecto correctamente.', 'data': []}, status=status.HTTP_200_OK)
+
+# Busqueda avanzada banco proyecto por objeto_contrato, nombre_proyecto, nombre_actividad, nombre_indicador y nombre_meta
+    
+class BusquedaAvanzadaBancoProyecto(generics.ListAPIView):
+    queryset = BancoProyecto.objects.all()
+    serializer_class = BancoProyectoSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        objeto_contrato = request.GET.get('objeto_contrato')
+        nombre_proyecto = request.GET.get('nombre_proyecto')
+        nombre_actividad = request.GET.get('nombre_actividad')
+        nombre_indicador = request.GET.get('nombre_indicador')
+        nombre_meta = request.GET.get('nombre_meta')
+        if objeto_contrato:
+            bancos = self.queryset.filter(objeto_contrato__icontains=objeto_contrato)
+        elif nombre_proyecto:
+            bancos = self.queryset.filter(nombre_proyecto__icontains=nombre_proyecto)
+        elif nombre_actividad:
+            bancos = self.queryset.filter(nombre_actividad__icontains=nombre_actividad)
+        elif nombre_indicador:
+            bancos = self.queryset.filter(nombre_indicador__icontains=nombre_indicador)
+        elif nombre_meta:
+            bancos = self.queryset.filter(nombre_meta__icontains=nombre_meta)
+        else:
+            bancos = self.queryset.all()
+        serializer = BancoProyectoSerializer(bancos, many=True)
+        if not bancos:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes bancos de proyecto:', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # ---------------------------------------- Plan Anual de adquisiciones ----------------------------------------
 
@@ -977,6 +1049,35 @@ class PlanAnualAdquisicionesDelete(generics.DestroyAPIView):
         plan.delete()
         return Response({'success': True, 'detail': 'Se eliminó el plan anual de adquisiciones correctamente.', 'data': []}, status=status.HTTP_200_OK)
 
+# Busqueda avanzada de planes anuales de adquisiciones por descripcion, nombre_plan, nombre_modalidad, nombre_fuente, nombre_unidad
+
+class BusquedaAvanzadaPlanAnualAdquisiciones(generics.ListAPIView):
+    queryset = PlanAnualAdquisiciones.objects.all()
+    serializer_class = PlanAnualAdquisicionesSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        descripcion = request.GET.get('descripcion')
+        nombre_plan = request.GET.get('nombre_plan')
+        nombre_modalidad = request.GET.get('nombre_modalidad')
+        nombre_fuente = request.GET.get('nombre_fuente')
+        nombre_unidad = request.GET.get('nombre_unidad')
+        if descripcion:
+            planes = self.queryset.filter(descripcion__icontains=descripcion)
+        elif nombre_plan:
+            planes = self.queryset.filter(nombre_plan__icontains=nombre_plan)
+        elif nombre_modalidad:
+            planes = self.queryset.filter(nombre_modalidad__icontains=nombre_modalidad)
+        elif nombre_fuente:
+            planes = self.queryset.filter(nombre_fuente__icontains=nombre_fuente)
+        elif nombre_unidad:
+            planes = self.queryset.filter(nombre_unidad__icontains=nombre_unidad)
+        else:
+            planes = self.queryset.all()
+        serializer = PlanAnualAdquisicionesSerializer(planes, many=True)
+        if not planes:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes planes anuales de adquisiciones:', 'data': serializer.data}, status=status.HTTP_200_OK)
 # ---------------------------------------- PAA CodgigoUNSP ----------------------------------------
 
 # Listar todos los registros de PAA CodgigoUNSP
@@ -1071,70 +1172,6 @@ class SeguimientoPAIList(generics.ListAPIView):
         if not seguimientos:
             raise NotFound("No se encontraron resultados para esta consulta.")
         return Response({'success': True, 'detail': 'Se encontraron los siguientes seguimientos PAI:', 'data': serializer.data}, status=status.HTTP_200_OK)
-
-# Crear un registro de seguimiento PAI
-
-class SeguimientoPAICreate(generics.CreateAPIView):
-    serializer_class = SeguimientoPAISerializer
-    permission_classes = (IsAuthenticated,)
-
-    def post(self, request):
-        serializer = SeguimientoPAISerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'success': True, 'detail': 'Se creó el seguimiento PAI correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
-        else:
-            print(serializer.errors)  # Imprime los errores de validación
-            raise ValidationError('Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo.')
-
-# Actualizar un registro de seguimiento PAI
-
-class SeguimientoPAIUpdate(generics.UpdateAPIView):
-    queryset = SeguimientoPAI.objects.all()
-    serializer_class = SeguimientoPAISerializer
-    permission_classes = (IsAuthenticated,)
-
-    def put(self, request, pk):
-        data = request.data
-        seguimiento = self.get_object()
-        serializer = self.serializer_class(seguimiento, data=data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response({'success': True, 'detail': 'Se actualizó el seguimiento PAI correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
-
-# Eliminar un registro de seguimiento PAI
-
-class SeguimientoPAIDelete(generics.DestroyAPIView):
-    queryset = SeguimientoPAI.objects.all()
-    serializer_class = SeguimientoPAISerializer
-    permission_classes = (IsAuthenticated,)
-
-    def get_object(self, pk):
-        try:
-            return SeguimientoPAI.objects.get(pk=pk)
-        except SeguimientoPAI.DoesNotExist:
-            raise NotFound("No se encontró un seguimiento PAI con este ID.")
-
-    def delete(self, request, pk):
-        seguimiento = self.get_object(pk)
-        seguimiento.delete()
-        return Response({'success': True, 'detail': 'Se eliminó el seguimiento PAI correctamente.', 'data': []}, status=status.HTTP_200_OK)
-
-# ---------------------------------------- Seguimiento PAI ----------------------------------------
-
-# Listar todos los registros de seguimiento PAI
-
-class SeguimientoPAIList(generics.ListAPIView):
-    queryset = SeguimientoPAI.objects.all()
-    serializer_class = SeguimientoPAISerializer
-    permission_classes = (IsAuthenticated,)
-
-    def get(self, request):
-        seguimientos = self.get_queryset()
-        serializer = SeguimientoPAISerializer(seguimientos, many=True)
-        if not seguimientos:
-            raise NotFound("No se encontraron resultados para esta consulta.")
-        return Response({'success': True, 'detail': 'Se encontraron los siguientes seguimientos PAI:', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 # Listar por periodo de tiempo
 
@@ -1207,31 +1244,40 @@ class SeguimientoPAIDelete(generics.DestroyAPIView):
         return Response({'success': True, 'detail': 'Se eliminó el seguimiento PAI correctamente.', 'data': []}, status=status.HTTP_200_OK)
 
 # Busqueda avanzada de seguimiento PAI
+    
 class BusquedaAvanzadaSeguimientoPAI(generics.ListAPIView):
     queryset = SeguimientoPAI.objects.all()
     serializer_class = SeguimientoPAISerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
-    def get(self, request, *args, **kwargs):
-        nombre_proyecto = request.query_params.get('nombre_proyecto', '')
-        nombre_producto = request.query_params.get('nombre_producto', '')
-        nombre_actividad = request.query_params.get('nombre_actividad', '')
-        # nombre_unidad = request.query_params.get('nombre_unidad', '')
-
-        # Realiza la búsqueda utilizando los campos correspondientes en los modelos relacionados
-        queryset = SeguimientoPAI.objects.filter(
-            id_proyecto__nombre_proyecto__icontains=nombre_proyecto,
-            id_producto__nombre_producto__icontains=nombre_producto,
-            id_actividad__nombre_actividad__icontains=nombre_actividad,
-            # id_unidad_organizacional__nombre__icontains=nombre_unidad
-        )
-
-        if not queryset.exists():
-            raise NotFound('No se encontraron resultados.')
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
-
+    def get(self, request):
+        nombre_programa = request.GET.get('nombre_programa')
+        nombre_proyecto = request.GET.get('nombre_proyecto')
+        nombre_producto = request.GET.get('nombre_producto')
+        nombre_actividad = request.GET.get('nombre_actividad')
+        nombre_unidad = request.GET.get('nombre_unidad')
+        nombre_indicador = request.GET.get('nombre_indicador')
+        nombre_meta = request.GET.get('nombre_meta')
+        if nombre_programa:
+            seguimientos = self.queryset.filter(id_programa__nombre_programa__icontains=nombre_programa)
+        elif nombre_proyecto:
+            seguimientos = self.queryset.filter(id_proyecto__nombre_proyecto__icontains=nombre_proyecto)
+        elif nombre_producto:
+            seguimientos = self.queryset.filter(id_producto__nombre_producto__icontains=nombre_producto)
+        elif nombre_actividad:
+            seguimientos = self.queryset.filter(id_actividad__nombre_actividad__icontains=nombre_actividad)
+        elif nombre_unidad:
+            seguimientos = self.queryset.filter(id_unidad_organizacional__nombre__icontains=nombre_unidad)
+        elif nombre_indicador:
+            seguimientos = self.queryset.filter(id_indicador__nombre_indicador__icontains=nombre_indicador)
+        elif nombre_meta:
+            seguimientos = self.queryset.filter(id_meta__nombre_meta__icontains=nombre_meta)
+        else:
+            seguimientos = self.queryset.all()
+        serializer = SeguimientoPAISerializer(seguimientos, many=True)
+        if not seguimientos:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes seguimientos PAI:', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # ---------------------------------------- Seguimiento PAI Documentos ----------------------------------------
 
