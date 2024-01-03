@@ -37,11 +37,8 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from gestion_documental.choices.tipos_tareas_choices import TIPOS_TAREA_CHOICES
-<<<<<<< HEAD
 from gestion_documental.choices.tipos_transferencia_choices import TIPOS_TRANSFERENCIA
-=======
 from gestion_documental.choices.pqrsdf_choices import TIPOS_PQR
->>>>>>> develop
 
 
 class TipoClasificacion(APIView):
