@@ -260,3 +260,13 @@ class AnexosDocumentosSerializer(serializers.ModelSerializer):
     class Meta:
         model =  DocumentosDeArchivoExpediente
         fields = '__all__'
+
+class CrearTransferenciaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  TransferenciasDocumentales
+        fields = '__all__'
+
+class UpdateExpedienteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  ExpedientesDocumentales
+        fields = '__all__'
