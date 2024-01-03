@@ -57,7 +57,8 @@ urlpatterns = [
 
     #OPAS TramiteListOpasGetView
     path('opas/tramite/get/',views.TramiteListOpasGetView.as_view(),name='listar-tramite-opas'),
-
+    #108 continuar con asignaciona grupo 
+    path('pqrsdf/asignacion/grupo/update/<str:pk>/',views.ComplementosUsu_PQRPut.as_view(),name='actualizar-asignacion-grupo'),
 
     
     

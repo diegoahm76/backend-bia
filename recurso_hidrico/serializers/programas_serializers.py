@@ -171,7 +171,7 @@ class EvidenciaAvanceSerializer(serializers.ModelSerializer):
         return ruta
     class Meta:
         model = EvidenciasAvance
-        fields = ('id_evidencia_avance', 'nombre_archivo','ruta_archivo' )
+        fields = ('id_evidencia_avance', 'nombre_archivo','ruta_archivo')
 
 
 

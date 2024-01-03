@@ -595,8 +595,8 @@ class AsignacionPQRCreate(generics.CreateAPIView):
 
                 break
             aux = aux.id_unidad_org_padre
-        if contador == 0:
-            raise ValidationError("No se puede realizar la asignación de la PQRSDF a una  unidad organizacional seleccionada porque no tiene serie  documental de PQRSDF")
+        # if contador == 0:
+        #     raise ValidationError("No se puede realizar la asignación de la PQRSDF a una  unidad organizacional seleccionada porque no tiene serie  documental de PQRSDF")
         data_in['consecutivo_asign_x_pqrsdf'] = ultimo_consec 
         data_in['fecha_asignacion'] = datetime.now()
         data_in['id_persona_asigna'] = request.user.persona.id_persona
@@ -1014,8 +1014,30 @@ class InfoDenuncias_PQRSDFGetByPQRSDF(generics.ListAPIView):
         serializador = self.serializer_class(instance,many=True)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data,}, status=status.HTTP_200_OK)
 
+#Continuar con asignacion a grupo  entrega 108
+    
 
-#SolicitudesTramites OPAS
+class ComplementosUsu_PQRPut(generics.UpdateAPIView):
+    serializer_class = ComplementosUsu_PQRPutSerializer
+    queryset = ComplementosUsu_PQR.objects.all()
+    permission_classes = [IsAuthenticated]
+    def put(self, request,pk):
+        instance = self.get_queryset().filter(idComplementoUsu_PQR=pk).first()
+
+
+        if not instance:
+            raise NotFound("No existen registros")
+        pqrsdf_asociada = instance.id_PQRSDF
+        print(pqrsdf_asociada)
+
+        asignacion = AsignacionPQR.objects.filter(id_pqrsdf=pqrsdf_asociada.id_PQRSDF).first()
+        print(asignacion)
+        print(asignacion.cod_estado_asignacion)
+        data_in = request.data
+        raise ValidationError("No se puede actualizar")
+
+
+        
 
 
 class TramiteListOpasGetView(generics.ListAPIView):
