@@ -32,6 +32,8 @@ urlpatterns = [
     path('subseccion-grupo/get/<str:uni>/',views.SubseccionGrupoVentanillaGet.as_view(),name='listar-subseccion'),
     path('persona-lider/get/<str:uni>/',views.PersonaLiderUnidadGet.as_view(),name='listar-persona-lider'),
     path('asignar-pqrsdf/create/',views.AsignacionPQRCreate.as_view(),name='crear-asignacion-grupo'),
+
+    path('asignar-pqrsdf/update/<str:pk>/',views.AsignacionPQRUpdate.as_view(),name='actualizar-asignacion-grupo'),
     path('asignar-pqrsdf/get/<str:pqr>/',views.AsignacionPQRGet.as_view(),name='listar-asignacion-grupo'),
     #ENTREGA 99 
     path('pqrsdf/titular/get/<str:pqr>/',views.PQRSDFPersonaTitularGet.as_view(),name='listar-persona-titular-pqrsdf'),
@@ -55,7 +57,8 @@ urlpatterns = [
 
     #OPAS TramiteListOpasGetView
     path('opas/tramite/get/',views.TramiteListOpasGetView.as_view(),name='listar-tramite-opas'),
-
+    #108 continuar con asignaciona grupo 
+    path('pqrsdf/asignacion/grupo/update/<str:pk>/',views.ComplementosUsu_PQRPut.as_view(),name='actualizar-asignacion-grupo'),
 
     
     

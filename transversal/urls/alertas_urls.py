@@ -19,7 +19,9 @@ urlpatterns = [
     path("alertas_programadas/create/", views.AlertasProgramadasCreate.as_view(), name="create-alertas-programadas"),
     path("alertas_programadas/update/<str:pk>/", views.AlertasProgramadasUpdate.as_view(), name="update-alertas-programadas"),
     path('proyectosporh/get-proyectos-vigentes-alerta/',views.AlertaProyectosVigentesGet.as_view(),name='get-proyectos-vigentes'),
-    #FIN RECURSO_HIDRICO
+    #ALERTAS EVENTO INMEDIATO 
+    #AlertaEventoInmediadoCreate
+    path("alerta_evento_inmediado/create/", views.AlertaEventoInmediadoCreate.as_view(), name="create-alerta-evento-inmediado"),
     #BANDEJA DE ALERTAS
     path('bandeja_alerta_persona/get-bandeja-by-persona/<str:pk>/',bandejas_views.BandejaAlertaPersonaGetByPersona.as_view(),name='get-bandeja-persona'),
     path('alertas_bandeja_Alerta_persona/get-alerta_bandeja-by-bandeja/<str:pk>/',bandejas_views.AlertasBandejaAlertaPersonaGetByBandeja.as_view(),name='get-bandeja-persona'),
