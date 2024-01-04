@@ -11,9 +11,9 @@ from rest_framework import generics,status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
-from gestion_documental.models.bandeja_tareas_models import TareasAsignadas
+from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, TareasAsignadas
 from gestion_documental.models.radicados_models import PQRSDF, AsignacionPQR, BandejaTareasPersona, TareaBandejaTareasPersona
-from gestion_documental.serializers.bandeja_tareas_serializers import BandejaTareasPersonaCreateSerializer, TareaBandejaTareasPersonaCreateSerializer, TareaBandejaTareasPersonaUpdateSerializer, TareasAsignadasCreateSerializer, TareasAsignadasGetJustificacionSerializer, TareasAsignadasGetSerializer, TareasAsignadasUpdateSerializer
+from gestion_documental.serializers.bandeja_tareas_serializers import AdicionalesDeTareasGetByTareaSerializer, BandejaTareasPersonaCreateSerializer, TareaBandejaTareasPersonaCreateSerializer, TareaBandejaTareasPersonaUpdateSerializer, TareasAsignadasCreateSerializer, TareasAsignadasGetJustificacionSerializer, TareasAsignadasGetSerializer, TareasAsignadasUpdateSerializer
 from gestion_documental.serializers.ventanilla_pqrs_serializers import PQRSDFGetSerializer
 
 from transversal.models.personas_models import Personas
@@ -309,12 +309,13 @@ class TareasAsignadasAceptarUpdate(generics.UpdateAPIView):
         id_asignacion = instance.id_asignacion
         print(id_asignacion)
         #asignacion = AsignacionPQR.objects.filter(id_asignacion=id_pqrsdf)
-        asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=id_asignacion).first()
+        asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=id_asignacion, cod_estado_asignacion__isnull=True).first()
 
         if not asignacion:
             raise NotFound("No se encontro la asignacion")
         asignacion.cod_estado_asignacion = 'Ac'
         asignacion.save()
+        
         print(asignacion.id_pqrsdf)
 
         return Response({'success':True,'detail':"Se acepto la pqrsdf Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
@@ -337,8 +338,22 @@ class TareasAsignadasJusTarea(generics.UpdateAPIView):
         serializer = self.serializer_class(tarea)
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data,}, status=status.HTTP_200_OK)
         
+
         
 
 
 
 
+class ComplementoTareaGetByTarea(generics.ListAPIView):
+    serializer_class = AdicionalesDeTareasGetByTareaSerializer
+    queryset = AdicionalesDeTareas.objects.all()
+
+    def get(self, request,tarea):
+        complemento = AdicionalesDeTareas.objects.filter(id_tarea_asignada=tarea)
+        
+        print(complemento)
+        if not complemento:
+            raise NotFound("No se encontro el complemento")
+      
+        serializer = self.serializer_class(complemento,many=True)
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data,}, status=status.HTTP_200_OK)
