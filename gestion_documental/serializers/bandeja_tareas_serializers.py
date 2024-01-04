@@ -161,7 +161,7 @@ class AdicionalesDeTareasGetByTareaSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdicionalesDeTareas
       
-        fields =['id_adicional_de_tarea','tipo','titular','asunto','cantidad_anexos','radicado','fecha_radicado','fecha_de_adicion']
+        fields =['id_adicional_de_tarea','id_complemento_usu_pqr','tipo','titular','asunto','cantidad_anexos','radicado','fecha_radicado','fecha_de_adicion']
 
     def get_tipo(self,obj):
         complemento = obj.id_complemento_usu_pqr
