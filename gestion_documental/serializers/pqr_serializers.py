@@ -119,6 +119,8 @@ class PQRSDFSerializer(serializers.ModelSerializer):
 class PQRSDFPanelSerializer(serializers.ModelSerializer):
     denuncia = serializers.SerializerMethodField()
     anexos = serializers.SerializerMethodField()
+    tipo_pqrsdf_descripcion = serializers.SerializerMethodField()
+
 
     def get_denuncia(self, obj):
         denuncia = InfoDenuncias_PQRSDF.objects.filter(id_PQRSDF = obj.id_PQRSDF).first()
@@ -136,12 +138,29 @@ class PQRSDFPanelSerializer(serializers.ModelSerializer):
                 anexos.append(AnexosPqrsdfPanelSerializer(anexo).data)
         return anexos
     
+
+    def get_tipo_pqrsdf_descripcion(self, obj):
+        cod_tipo_pqrsdf = obj.cod_tipo_PQRSDF
+        tipo_mapping = {
+            "PG": "Petición General",
+            "PD": "Petición De Documentos o Información",
+            "PC": "Petición De Consulta",
+            "Q": "Queja",
+            "R": "Reclamo",
+            "S": "Sugerencia",
+            "D": "Denuncia",
+            "F": "Felicitación",
+        }
+
+        return tipo_mapping.get(cod_tipo_pqrsdf, "Tipo Desconocido")
+    
     def to_representation(self, instance):
         # Organiza la representación para mostrar primero la data del modelo principal y luego los datos anexos
         representation = super().to_representation(instance)
         reordered_representation = {
             'id_PQRSDF': representation['id_PQRSDF'],
             'cod_tipo_PQRSDF': representation['cod_tipo_PQRSDF'],
+            'tipo_pqrsdf_descripcion': representation['tipo_pqrsdf_descripcion'],  # Nueva línea
             'id_persona_titular': representation['id_persona_titular'],
             'id_persona_interpone': representation['id_persona_interpone'],
             'cod_relacion_con_el_titular': representation['cod_relacion_con_el_titular'],
@@ -378,7 +397,15 @@ class RespuestaPQRSDFPanelSerializer(serializers.ModelSerializer):
         model = RespuestaPQR
         fields = '__all__'
 
+
+class PersonasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Personas
+        fields = '__all__'
+
 class PQRSDFGetSerializer(serializers.ModelSerializer):
+    id_persona_recibe = PersonasSerializer(read_only=True)  # Agrega esta línea
+
     class Meta:
         model = PQRSDF
         fields = '__all__'

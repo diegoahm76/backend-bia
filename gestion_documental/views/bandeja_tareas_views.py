@@ -10,13 +10,15 @@ from django.db import transaction
 from rest_framework import generics,status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+
 from gestion_documental.models.bandeja_tareas_models import TareasAsignadas
-from gestion_documental.models.radicados_models import PQRSDF, BandejaTareasPersona, TareaBandejaTareasPersona
+from gestion_documental.models.radicados_models import PQRSDF, AsignacionPQR, BandejaTareasPersona, TareaBandejaTareasPersona
 from gestion_documental.serializers.bandeja_tareas_serializers import BandejaTareasPersonaCreateSerializer, TareaBandejaTareasPersonaCreateSerializer, TareaBandejaTareasPersonaUpdateSerializer, TareasAsignadasCreateSerializer, TareasAsignadasGetJustificacionSerializer, TareasAsignadasGetSerializer, TareasAsignadasUpdateSerializer
 from gestion_documental.serializers.ventanilla_pqrs_serializers import PQRSDFGetSerializer
+
 from transversal.models.personas_models import Personas
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
-from transversal.models.base_models import ApoderadoPersona
+
 
 class BandejaTareasPersonaCreate(generics.CreateAPIView):
     serializer_class = BandejaTareasPersonaCreateSerializer
@@ -94,6 +96,8 @@ class TareaBandejaTareasPersonaCreate(generics.CreateAPIView):
         id_bandeja =None
         if bandeja:
             id_bandeja = bandeja.id_bandeja_tareas_persona#BandejaTareasPersona
+            bandeja.pendientes_leer = True
+            bandeja.save()
         else:
             vista_bandeja = BandejaTareasPersonaCreate()
             respuesta_bandeja = vista_bandeja.crear_bandeja(data)
@@ -116,20 +120,52 @@ class TareaBandejaTareasPersonaCreate(generics.CreateAPIView):
 
 class TareasAsignadasGetByPersona(generics.ListAPIView):
     serializer_class = TareasAsignadasGetSerializer
-    queryset = TareasAsignadas.objects.all()
+    queryset = TareaBandejaTareasPersona.objects.all()
     permission_classes = [IsAuthenticated]
 
     
     def get(self, request,id):
+        filter={}
+       
         bandeja_tareas= BandejaTareasPersona.objects.filter(id_persona=id).first()
 
         if not bandeja_tareas:
             raise NotFound('No se encontro la bandeja de tareas')
         id_bandeja = bandeja_tareas.id_bandeja_tareas_persona
         #Buscamos la asignacion de tareas de la bandeja de tareas
-        tareas_asignadas = TareaBandejaTareasPersona.objects.filter(id_bandeja_tareas_persona=id_bandeja)
-        if not tareas_asignadas:
-            raise NotFound('No se encontro tareas asignadas')
+
+
+       
+        # if not tareas_asignadas:
+        #     raise NotFound('No se encontro tareas asignadas')
+        
+
+        filter['id_bandeja_tareas_persona']= id_bandeja
+
+        for key, value in request.query_params.items():
+
+            if key == 'tipo_tarea':
+                if value !='':
+                    filter['id_tarea_asignada__cod_tipo_tarea'] = value
+            if key == 'estado_asignacion':
+                if value != '':
+                    filter['id_tarea_asignada__cod_estado_asignacion'] = value
+            if key == 'estado_tarea':
+                if value != '':
+                    filter['id_tarea_asignada__cod_estado_solicitud'] = value
+            if key == 'fecha_inicio':
+                if value != '':
+                    
+                    filter['id_tarea_asignada__fecha_asignacion__gte'] = datetime.strptime(value, '%Y-%m-%d').date()
+            if key == 'fecha_fin':
+                if value != '':
+                    filter['id_tarea_asignada__fecha_asignacion__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
+        #id_tarea_asignada
+                    
+        print(filter)
+        #.filter(**filter).order_by('fecha_radicado')
+        tareas_asignadas = self.get_queryset().filter(**filter).order_by('id_tarea_asignada__fecha_asignacion')
+        #tareas_asignadas = TareaBandejaTareasPersona.objects.filter(id_bandeja_tareas_persona=id_bandeja)
         tareas = [tarea.id_tarea_asignada for tarea in tareas_asignadas]
        
 
@@ -157,7 +193,7 @@ class TareaBandejaTareasPersonaUpdate(generics.UpdateAPIView):#ACTUALIZACION ASI
     serializer_class = TareaBandejaTareasPersonaUpdateSerializer
     queryset = TareaBandejaTareasPersona.objects.all()
     permission_classes = [IsAuthenticated]
-
+    
     def actualizacion_asignacion_tarea(self,data,pk):
        
         instance = TareaBandejaTareasPersona.objects.filter(id_tarea_asignada=pk).first()
@@ -165,10 +201,21 @@ class TareaBandejaTareasPersonaUpdate(generics.UpdateAPIView):#ACTUALIZACION ASI
         if not instance:
             raise NotFound("No se existe un registro con este codigo.")
         
-        instance_previous=copy.copy(instance)
+
+
+        
         serializer = self.serializer_class(instance,data=data, partial=True)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        instance =serializer.save()
+                #verifica si la bandeja de tareas tiene pendientes por leer y cambia el estado segun el caso
+        bandeja_tareas = instance.id_bandeja_tareas_persona
+        tareas = TareaBandejaTareasPersona.objects.filter(id_bandeja_tareas_persona=bandeja_tareas,leida=False)
+        if tareas.count() == 0:
+            bandeja_tareas.pendientes_leer = False
+            bandeja_tareas.save()
+      
+
+
         
         return Response({'success':True,'detail':"Se actualizo la actividad Correctamente.","data":serializer.data},status=status.HTTP_200_OK)
 
@@ -213,6 +260,15 @@ class TareasAsignadasRechazarUpdate(generics.UpdateAPIView):
         serializer = self.serializer_class(instance,data=data_in, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        #cambia el estado de la tarea en la t268
+        id_asignacion = instance.id_asignacion
+        asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=id_asignacion).first()
+
+        if not asignacion:
+            raise NotFound("No se encontro la asignacion")
+        asignacion.cod_estado_asignacion = 'Re'
+        asignacion.justificacion_rechazo = data_in['justificacion_rechazo']
+        asignacion.save()
         
         return Response({'success':True,'detail':"Se actualizo la actividad Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
 
@@ -221,7 +277,7 @@ class TareasAsignadasAceptarUpdate(generics.UpdateAPIView):
     queryset = TareasAsignadas.objects.all()
     permission_classes = [IsAuthenticated]
     vista_asignacion = TareaBandejaTareasPersonaUpdate()
-
+   
     def put(self,request,pk):
         
         
@@ -249,8 +305,19 @@ class TareasAsignadasAceptarUpdate(generics.UpdateAPIView):
         serializer = self.serializer_class(instance,data=data_in, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        
-        return Response({'success':True,'detail':"Se actualizo la actividad Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
+        #cambio de estado en asignacion en la t268
+        id_asignacion = instance.id_asignacion
+        print(id_asignacion)
+        #asignacion = AsignacionPQR.objects.filter(id_asignacion=id_pqrsdf)
+        asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=id_asignacion).first()
+
+        if not asignacion:
+            raise NotFound("No se encontro la asignacion")
+        asignacion.cod_estado_asignacion = 'Ac'
+        asignacion.save()
+        print(asignacion.id_pqrsdf)
+
+        return Response({'success':True,'detail':"Se acepto la pqrsdf Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
     
 
 class TareasAsignadasJusTarea(generics.UpdateAPIView):

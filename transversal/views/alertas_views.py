@@ -13,15 +13,16 @@ from gestion_documental.views.configuracion_tipos_radicados_views import actuali
 from recurso_hidrico.models.programas_models import ProyectosPORH
 from recurso_hidrico.serializers.programas_serializers import GenerardorMensajeProyectosPORHGetSerializer, ProyectosPORHSerializer
 from transversal.funtions.alertas import alerta_proyectos_vigentes_porh, generar_alerta_segundo_plano
-from transversal.models.alertas_models import AlertasProgramadas, ConfiguracionClaseAlerta, FechaClaseAlerta, PersonasAAlertar
+from transversal.models.alertas_models import AlertasGeneradas, AlertasProgramadas, BandejaAlertaPersona, ConfiguracionClaseAlerta, FechaClaseAlerta, PersonasAAlertar
 from seguridad.models import Personas
-from transversal.serializers.alertas_serializers import AlertasProgramadasPostSerializer, AlertasProgramadasUpdateSerializer, ConfiguracionClaseAlertaGetSerializer, ConfiguracionClaseAlertaUpdateSerializer, FechaClaseAlertaDeleteSerializer, FechaClaseAlertaGetSerializer, FechaClaseAlertaPostSerializer, PersonasAAlertarDeleteSerializer, PersonasAAlertarGetSerializer, PersonasAAlertarPostSerializer
+from transversal.serializers.alertas_serializers import AlertasBandejaAlertaPersonaPostSerializer, AlertasGeneradasPostSerializer, AlertasProgramadasPostSerializer, AlertasProgramadasUpdateSerializer, ConfiguracionClaseAlertaGetSerializer, ConfiguracionClaseAlertaUpdateSerializer, FechaClaseAlertaDeleteSerializer, FechaClaseAlertaGetSerializer, FechaClaseAlertaPostSerializer, PersonasAAlertarDeleteSerializer, PersonasAAlertarGetSerializer, PersonasAAlertarPostSerializer
 from django.db import transaction 
 from django.db.models import Q
 from seguridad.choices.subsistemas_choices import subsistemas_CHOICES
 from seguridad.choices.perfiles_sistema_choices import PERFIL_SISTEMA_CHOICES
 # from background_task import background
-
+from django.template.loader import render_to_string
+from seguridad.utils import Util
 class ConfiguracionClaseAlertaUpdate(generics.UpdateAPIView):
     serializer_class = ConfiguracionClaseAlertaUpdateSerializer
     queryset = ConfiguracionClaseAlerta.objects.all()
@@ -416,7 +417,86 @@ class PersonasAAlertarGetByConfAlerta(generics.ListAPIView):
         return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':diccionario_ordenado},status=status.HTTP_200_OK)
 
 
- 
+class AlertaEventoInmediadoCreate(generics.CreateAPIView):
+    queryset = AlertasGeneradas.objects.all()
+    serializer_class = AlertasGeneradasPostSerializer
+    permission_classes = [IsAuthenticated]
+
+
+    def crear_alerta_evento_inmediato(self,data_in):
+   
+        #configuracion = ConfiguracionClaseAlerta.objects.filter(cod_clase_alerta=data_in['cod_clase_alerta']).first()
+        data_alerga_generada={}
+
+
+        programada = ConfiguracionClaseAlerta.objects.filter(cod_clase_alerta=data_in['cod_clase_alerta']).first()
+
+        if not programada:
+            raise NotFound("No existe la alerta") 
+        data_alerga_generada['nombre_clase_alerta']=programada.nombre_clase_alerta
+   
+  
+        data_alerga_generada['mensaje'] = programada.mensaje_base_dia#VALIDAR CAMPO <1000
+
+
+        data_alerga_generada['cod_categoria_alerta']=programada.cod_categoria_clase_alerta
+        data_alerga_generada['nivel_prioridad']=programada.nivel_prioridad
+    
+        data_alerga_generada['id_modulo_generador'] = programada.id_modulo_generador.id_modulo
+
+        data_alerga_generada['envio_email']=programada.envios_email
+
+
+        if  'id_elemento_implicado' in data_in:
+            data_alerga_generada['id_elemento_implicado']=data_in['id_elemento_implicado']
+        serializer =AlertasGeneradasPostSerializer(data=data_alerga_generada)
+        serializer.is_valid(raise_exception=True)
+        instance=serializer.save()
+
+
+        bandejas_notificaciones=BandejaAlertaPersona.objects.filter(id_persona=data_in['id_persona']).first()
+        if bandejas_notificaciones:
+            #print(bandejas_notificaciones.id_persona.id_persona)
+                alerta_bandeja={}
+                alerta_bandeja['leido']=False
+                alerta_bandeja['archivado']=False
+                email_persona=bandejas_notificaciones.id_persona
+          
+                if programada.envios_email:
+                    if  email_persona and email_persona.email:
+                        alerta_bandeja['email_usado'] = email_persona.email
+                        subject = programada.nombre_clase_alerta
+                        template = "alerta.html"
+                        context = {'Nombre_alerta':programada.nombre_clase_alerta,'primer_nombre': email_persona.primer_nombre,"mensaje":data_alerga_generada['mensaje']}
+                        template = render_to_string((template), context)
+                        email_data = {'template': template, 'email_subject': subject, 'to_email':email_persona.email}
+                        Util.send_email(email_data)
+                        alerta_bandeja['fecha_envio_email']=datetime.now()
+
+                    else:
+                        alerta_bandeja['email_usado'] = None
+                else:
+                    alerta_bandeja['email_usado'] = None
+
+                alerta_bandeja['id_alerta_generada']=instance.id_alerta_generada
+                alerta_bandeja['id_bandeja_alerta_persona']=bandejas_notificaciones.id_bandeja_alerta
+                
+                #print(alerta_bandeja)
+                
+                serializer_alerta_bandeja=AlertasBandejaAlertaPersonaPostSerializer(data=alerta_bandeja)
+                bandejas_notificaciones.pendientes_leer=True
+                bandejas_notificaciones.save()
+                serializer_alerta_bandeja.is_valid(raise_exception=True)
+                instance_alerta_bandeja=serializer_alerta_bandeja.save()
+                print(serializer_alerta_bandeja.data)
+
+        return Response({'success':True,'detail':'Se creo la alerta correctamente.','data':serializer.data},status=status.HTTP_200_OK)
+
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        respuesta = self.crear_alerta_evento_inmediato(data)
+        return respuesta
+        raise ValidationError("No se puede crear una alerta inmediata")
 
 
 class AlertasProgramadasCreate(generics.CreateAPIView):

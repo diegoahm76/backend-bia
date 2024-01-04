@@ -10,13 +10,14 @@ from rest_framework.exceptions import ValidationError, NotFound, PermissionDenie
 from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
 from gestion_documental.models.expedientes_models import ArchivosDigitales
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MediosSolicitud, MetadatosAnexosTmp, RespuestaPQR, T262Radicados, TiposPQR, modulos_radican
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MediosSolicitud, MetadatosAnexosTmp, RespuestaPQR, T262Radicados, TiposPQR, modulos_radican
 from rest_framework.response import Response
 from gestion_documental.models.trd_models import FormatosTiposMedio
-from gestion_documental.serializers.pqr_serializers import AnexoRespuestaPQRSerializer, AnexoSerializer, AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, EstadosSolicitudesSerializer, InfoDenunciasPQRSDFPostSerializer, InfoDenunciasPQRSDFPutSerializer, InfoDenunciasPQRSDFSerializer, MediosSolicitudCreateSerializer, MediosSolicitudDeleteSerializer, MediosSolicitudSearchSerializer, MediosSolicitudUpdateSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, PQRSDFGetSerializer, PQRSDFPanelSerializer, PQRSDFPostSerializer, PQRSDFPutSerializer, PQRSDFSerializer, RadicadoPostSerializer, RespuestaPQRSDFPanelSerializer, RespuestaPQRSDFPostSerializer, TiposPQRGetSerializer, TiposPQRUpdateSerializer
+from gestion_documental.serializers.pqr_serializers import AnexoRespuestaPQRSerializer, AnexoSerializer, AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, EstadosSolicitudesSerializer, InfoDenunciasPQRSDFPostSerializer, InfoDenunciasPQRSDFPutSerializer, InfoDenunciasPQRSDFSerializer, MediosSolicitudCreateSerializer, MediosSolicitudDeleteSerializer, MediosSolicitudSearchSerializer, MediosSolicitudUpdateSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, PQRSDFGetSerializer, PQRSDFPanelSerializer, PQRSDFPostSerializer, PQRSDFPutSerializer, PQRSDFSerializer, PersonasSerializer, RadicadoPostSerializer, RespuestaPQRSDFPanelSerializer, RespuestaPQRSDFPostSerializer, TiposPQRGetSerializer, TiposPQRUpdateSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.configuracion_tipos_radicados_views import ConfigTiposRadicadoAgnoGenerarN
 from gestion_documental.views.panel_ventanilla_views import Estados_PQRCreate, Estados_PQRDelete
+from django.core.exceptions import ObjectDoesNotExist
 from seguridad.utils import Util
 
 from django.db.models import Q
@@ -1590,7 +1591,8 @@ class Util_Respuesta_PQR:
                 {"nombre archivo": nombre, "archivo":archivo} for nombre, archivo in archivos.items() if nombre_archivo_proceso in nombre
             ]
             if len(anexos)!= len(archivos_filter) and proceso == "create":
-                raise ValidationError("Se debe tener la misma cantidad de archivos y anexos.")
+                return Response({"detail": "Se debe tener la misma cantidad de archivos y anexos."}, status=status.HTTP_400_BAD_REQUEST)
+                # raise ValidationError("Se debe tener la misma cantidad de archivos y anexos.")
             
             for anexo in anexos:
                 nombre_archivo_completo = nombre_archivo_proceso + "-" + anexo['nombre_anexo']
@@ -1617,15 +1619,42 @@ class GetRespuestaPQRSDFForPanel(generics.RetrieveAPIView):
         # except Exception as e:
         #     return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
             
+#REPORTES_PQRSDF
+            
 
+def get_tipo_pqrsdf_descripcion(cod_tipo_pqrsdf):
+    tipo_mapping = {
+        "PG": "Petición General",
+        "PD": "Petición De Documentos o Información",
+        "PC": "Petición De Consulta",
+        "Q": "Queja",
+        "R": "Reclamo",
+        "S": "Sugerencia",
+        "D": "Denuncia",
+        "F": "Felicitación",
+    }
 
-class PQRSDFSearch(generics.ListAPIView):
+    return tipo_mapping.get(cod_tipo_pqrsdf, "Tipo Desconocido")
+class ReportesPQRSDFSearch(generics.ListAPIView):
     serializer_class = PQRSDFGetSerializer
-    permission_classes = [IsAuthenticated]
+    def get_tipo_pqrsdf_descripcion(self, cod_tipo_pqrsdf):
+        tipo_mapping = {
+            "PG": "Petición General",
+            "PD": "Petición De Documentos o Información",
+            "PC": "Petición De Consulta",
+            "Q": "Queja",
+            "R": "Reclamo",
+            "S": "Sugerencia",
+            "D": "Denuncia",
+            "F": "Felicitación",
+        }
+
+        return tipo_mapping.get(cod_tipo_pqrsdf, "Tipo Desconocido")
 
     def get_queryset(self):
-        # Obtener estados de solicitudes aplicables para PQRSDF
-        estados_pqrsdf = EstadosSolicitudes.objects.filter(aplica_para_pqrsdf=True).exclude(nombre__in=[
+        estados_pqrsdf = EstadosSolicitudes.objects.filter(
+            aplica_para_pqrsdf=True
+        ).exclude(nombre__in=[
             'SOLICITUD DE DIGITALIZACION ENVIADA',
             'SOLICITUD DIGITALIZACIÓN RESPONDIDA',
             'SOLICITUD AL USUARIO ENVIADA',
@@ -1633,9 +1662,14 @@ class PQRSDFSearch(generics.ListAPIView):
         ])
 
         titular_id = self.request.query_params.get('id_persona_titular')
-        titular = get_object_or_404(Personas, id=titular_id) if titular_id else None
+        titular = get_object_or_404(Personas, id_persona=titular_id) if titular_id else None
+
         fecha_desde = self.request.query_params.get('fecha_desde')
         fecha_hasta = self.request.query_params.get('fecha_hasta')
+
+        id_estado_actual_solicitud = self.request.query_params.get('id_estado_actual_solicitud')
+        id_und_org_seccion_asignada = self.request.query_params.get('id_und_org_seccion_asignada')
+        cod_tipo_pqrsdf = self.request.query_params.get('cod_tipo_pqrsdf')
 
         queryset = PQRSDF.objects.filter(id_estado_actual_solicitud__in=estados_pqrsdf)
 
@@ -1648,48 +1682,84 @@ class PQRSDFSearch(generics.ListAPIView):
         if fecha_hasta:
             queryset = queryset.filter(fecha_registro__lte=fecha_hasta)
 
+        if id_estado_actual_solicitud:
+            queryset = queryset.filter(id_estado_actual_solicitud=id_estado_actual_solicitud)
+
+        if id_und_org_seccion_asignada:
+            queryset = queryset.filter(asignacionpqr__id_und_org_seccion_asignada=id_und_org_seccion_asignada)
+
+        if cod_tipo_pqrsdf:
+            queryset = queryset.filter(cod_tipo_pqrsdf=cod_tipo_pqrsdf)
+
         return queryset
 
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
         if not queryset.exists():
-            raise NotFound('No se encontraron datos que coincidan con los criterios de búsqueda.')
+            return Response({
+                'success': False,
+                'detail': 'No se encontraron datos que coincidan con los criterios de búsqueda.'
+            }, status=status.HTTP_404_NOT_FOUND)
 
         serializer = PQRSDFGetSerializer(queryset, many=True)
+
+        # Modificar el retorno del JSON aquí para incluir la información adicional
+        data = []
+        for pqrsdf in queryset:
+            if pqrsdf.id_radicado:
+                try:
+                    radicado = T262Radicados.objects.get(id_radicado=pqrsdf.id_radicado.id_radicado)
+                    numero_radicado = f'{radicado.prefijo_radicado}-{radicado.agno_radicado}-{radicado.nro_radicado}'
+                    fecha_radicado = radicado.fecha_radicado
+                except T262Radicados.DoesNotExist:
+                    numero_radicado = 'N/A'
+                    fecha_radicado = 'N/A'
+            else:
+                numero_radicado = 'N/A'
+                fecha_radicado = 'N/A'
+
+            # Verificar si id_sucursal_recepcion_fisica es None antes de acceder a descripcion_sucursal
+            sucursal_recepcion = pqrsdf.id_sucursal_especifica_implicada.descripcion_sucursal if pqrsdf.id_sucursal_especifica_implicada else 'N/A'
+
+            try:
+                medio_solicitud_nombre = pqrsdf.id_medio_solicitud.nombre
+            except MediosSolicitud.DoesNotExist:
+                medio_solicitud_nombre = 'N/A'
+
+            # Obtener el nombre completo de la persona que recibe
+            persona_recibe_data = pqrsdf.id_persona_recibe
+            if persona_recibe_data:
+                nombre_completo = ' '.join(
+                    filter(None, [
+                        persona_recibe_data.primer_nombre,
+                        persona_recibe_data.segundo_nombre,
+                        persona_recibe_data.primer_apellido,
+                        persona_recibe_data.segundo_apellido,
+                    ])
+                )
+            else:
+                nombre_completo = 'N/A'
+
+            data.append({
+                'id_pqrsdf': pqrsdf.id_PQRSDF,
+                'tipo_pqrsdf': pqrsdf.cod_tipo_PQRSDF,
+                'tipo_pqrsdf_descripcion': get_tipo_pqrsdf_descripcion(pqrsdf.cod_tipo_PQRSDF),
+                'medio_solicitud': medio_solicitud_nombre,
+                'sucursal_recepcion': sucursal_recepcion,
+                'numero_radicado': numero_radicado,
+                'fecha_radicado': fecha_radicado,
+                'persona_recibe': nombre_completo,
+                'fecha_solicitud': pqrsdf.fecha_registro
+            })
 
         return Response({
             'success': True,
             'detail': 'Se encontraron los siguientes registros.',
-            'data': serializer.data
+            'data': data
         }, status=status.HTTP_200_OK)
+    
 
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-
-        # Filtros adicionales
-        tipo_pqrsdf = self.request.query_params.get('tipo_pqrsdf')
-        medio_solicitud = self.request.query_params.get('medio_solicitud')
-        sucursal_recepcion = self.request.query_params.get('sucursal_recepcion')
-
-        if tipo_pqrsdf:
-            queryset = queryset.filter(tipo_pqrsdf=tipo_pqrsdf)
-
-        if medio_solicitud:
-            queryset = queryset.filter(id_medio_solicitud__nombre=medio_solicitud)
-
-        if sucursal_recepcion:
-            queryset = queryset.filter(id_sucursal_recepcion_fisica__nombre=sucursal_recepcion)
-
-        # Resto del código...
-
-        serializer = PQRSDFGetSerializer(queryset, many=True)
-
-        return Response({
-            'success': True,
-            'detail': 'Se encontraron los siguientes registros.',
-            'data': serializer.data
-        }, status=status.HTTP_200_OK)
     
 class EstadosSolicitudesList(generics.ListAPIView):
     serializer_class = EstadosSolicitudesSerializer

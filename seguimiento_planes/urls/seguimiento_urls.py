@@ -7,6 +7,8 @@ urlpatterns=[
     path('crear-fuentes-financiacion-indicadores/',views.FuenteFinanciacionIndicadoresCreate.as_view(),name='crearfuentesfinanciacionindicadores'),
     path('actualizar-fuentes-financiacion-indicadores/<str:pk>/',views.FuenteFinanciacionIndicadoresUpdate.as_view(),name='actualizarfuentesfinanciacionindicadores'),
     path('eliminar-fuentes-financiacion-indicadores/<str:pk>/',views.FuenteFinanciacionIndicadoresDelete.as_view(),name='eliminarfuentesfinanciacionindicadores'),
+    # Busqueda avanzada de fuentes de financiacion indicadores por nombre fuente, nombre proyecto, nombre producto, nombre actividad, nombre indicador
+    path('consultar-fuentes-financiacion-indicadores-avanzado/',views.BusquedaAvanzadaFuentesFinanciacionIndicadores.as_view(),name='consultarfuentesfinanciacionindicadoresavanzado'),
     # Sectores
     path('consultar-sectores/',views.SectorList.as_view(),name='consultarsectores'),
     path('crear-sectores/',views.SectorCreate.as_view(),name='crearsectores'),
@@ -17,6 +19,8 @@ urlpatterns=[
     path('crear-detalle-inversion-cuentas/',views.DetalleInversionCuentasCreate.as_view(),name='creardetalleinversioncuentas'),
     path('actualizar-detalle-inversion-cuentas/<str:pk>/',views.DetalleInversionCuentasUpdate.as_view(),name='actualizardetalleinversioncuentas'),
     path('eliminar-detalle-inversion-cuentas/<str:pk>/',views.DetalleInversionCuentasDelete.as_view(),name='eliminardetalleinversioncuentas'),
+    # Busqueda avanzada de detalle de inversión cuentas por cuenta, nombre programa, nombre subprograma, nombre proyecto, nombre actividad, nombre indicador
+    path('consultar-detalle-inversion-cuentas-avanzado/',views.BusquedaAvanzadaDetalleInversionCuentas.as_view(),name='consultardetalleinversioncuentasavanzado'),
     # Modalidades
     path('consultar-modalidades/',views.ModalidadList.as_view(),name='consultarmodalidades'),
     path('crear-modalidades/',views.ModalidadCreate.as_view(),name='crearmodalidades'),
@@ -52,21 +56,29 @@ urlpatterns=[
     path('crear-conceptos-poai/',views.ConceptoPOAICreate.as_view(),name='crearconceptospoai'),
     path('actualizar-conceptos-poai/<str:pk>/',views.ConceptoPOAIUpdate.as_view(),name='actualizarconceptospoai'),
     path('eliminar-conceptos-poai/<str:pk>/',views.ConceptoPOAIDelete.as_view(),name='eliminarconceptospoai'),
+    # busqueda avanzada de conceptos POAI por concepto, nombre y nombre indicador
+    path('consultar-conceptos-poai-avanzado/',views.BusquedaAvanzadaConceptoPOAI.as_view(),name='consultarconceptospoaiavanzado'),
     # Fuente de financiacion
     path('consultar-fuentes-financiacion/',views.FuenteFinanciacionList.as_view(),name='consultarfuentesfinanciacion'),
     path('crear-fuentes-financiacion/',views.FuenteFinanciacionCreate.as_view(),name='crearfuentesfinanciacion'),
     path('actualizar-fuentes-financiacion/<str:pk>/',views.FuenteFinanciacionUpdate.as_view(),name='actualizarfuentesfinanciacion'),
     path('eliminar-fuentes-financiacion/<str:pk>/',views.FuenteFinanciacionDelete.as_view(),name='eliminarfuentesfinanciacion'),
+    #Busqueda Avanzada de fuentes de financiación por nombre_fuente, concepto
+    path('consultar-fuentes-financiacion-avanzado/',views.BusquedaAvanzadaFuenteFinanciacion.as_view(),name='consultarfuentesfinanciacionavanzado'),
     # Banco de proyectos
     path('consultar-banco-proyectos/',views.BancoProyectoList.as_view(),name='consultarbanco_proyectos'),
     path('crear-banco-proyectos/',views.BancoProyectoCreate.as_view(),name='crearbanco_proyectos'),
     path('actualizar-banco-proyectos/<str:pk>/',views.BancoProyectoUpdate.as_view(),name='actualizarbanco_proyectos'),
     path('eliminar-banco-proyectos/<str:pk>/',views.BancoProyectoDelete.as_view(),name='eliminarbanco_proyectos'),
+    # Busqueda avanzada banco proyecto por objeto_contrato, nombre_proyecto, nombre_actividad, nombre_indicador y nombre_meta
+    path('consultar-banco-proyectos-avanzado/',views.BusquedaAvanzadaBancoProyecto.as_view(),name='consultarbanco_proyectosavanzado'),
     # Plan anual de adquisiciones
     path('consultar-plan-anual-adquisiciones/',views.PlanAnualAdquisicionesList.as_view(),name='consultarplan_anual_adquisiciones'),
     path('crear-plan-anual-adquisiciones/',views.PlanAnualAdquisicionesCreate.as_view(),name='crearplan_anual_adquisiciones'),
     path('actualizar-plan-anual-adquisiciones/<str:pk>/',views.PlanAnualAdquisicionesUpdate.as_view(),name='actualizarplan_anual_adquisiciones'),
     path('eliminar-plan-anual-adquisiciones/<str:pk>/',views.PlanAnualAdquisicionesDelete.as_view(),name='eliminarplan_anual_adquisiciones'),
+    # Busqueda avanzada de planes anuales de adquisiciones por descripcion, nombre_plan, nombre_modalidad, nombre_fuente, nombre_unidad
+    path('consultar-plan-anual-adquisiciones-avanzado/',views.BusquedaAvanzadaPlanAnualAdquisiciones.as_view(),name='consultarplan_anual_adquisicionesavanzado'),
     # PAA Codigos UNSP
     path('consultar-paa-codigos-unsp/',views.PAACodUNSPList.as_view(),name='consultarpaacodigosunsp'),
     path('crear-paa-codigos-unsp/',views.PAACodUNSPCreate.as_view(),name='crearpaacodigosunsp'),
@@ -81,6 +93,8 @@ urlpatterns=[
     path('consultar-seguimiento-pai-avanzado/',views.BusquedaAvanzadaSeguimientoPAI.as_view(),name='consultarseguimientopaiavanzado'),
     # Listar por periodo de tiempo SeguimientoPAIListPeriodo
     path('consultar-seguimiento-pai-periodo/',views.SeguimientoPAIListPeriodo.as_view(),name='consultarseguimientopaiperiodo'),
+    # Busqueda avanzada de seguimiento PAI
+    path('consultar-seguimiento-pai-avanzado/',views.BusquedaAvanzadaSeguimientoPAI.as_view(),name='consultarseguimientopaiavanzado'),
     # Seguimiento PAI Documentos
     path('consultar-seguimiento-pai-documentos/',views.SeguimientoPAIDocumentosList.as_view(),name='consultarseguimientopaidocumentos'),
     path('crear-seguimiento-pai-documentos/',views.SeguimientoPAIDocumentosCreate.as_view(),name='crearseguimientopaidocumentos'),
