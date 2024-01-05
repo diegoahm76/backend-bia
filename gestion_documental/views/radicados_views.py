@@ -1096,3 +1096,5 @@ class RadicadoCreate(generics.CreateAPIView):
         radicado['id_modulo_que_radica'] = modulo_radica.id_ModuloQueRadica if modulo_radica else None
 
         return radicado
+    
+#Consulta_Estado_Solicitud_Otros
