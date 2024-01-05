@@ -4,9 +4,11 @@ from rest_framework.serializers import ReadOnlyField
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, TareasAsignadas
 
-from gestion_documental.models.radicados_models import AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, TareaBandejaTareasPersona
+from gestion_documental.models.radicados_models import PQRSDF, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
 from datetime import timedelta
 from datetime import datetime
+
+from transversal.models.personas_models import Personas
 
 class BandejaTareasPersonaCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -203,4 +205,78 @@ class AdicionalesDeTareasGetByTareaSerializer(serializers.ModelSerializer):
             return complemento.id_radicado.fecha_radicado
         return None
 
+#REQUERIMIENTO SOBRE PQRSDF 103
+class PQRSDFTitularGetBandejaTareasSerializer(serializers.ModelSerializer):
+    nombres = serializers.SerializerMethodField()
+    apellidos = serializers.SerializerMethodField() 
+    tipo_documento = serializers.ReadOnlyField(source='tipo_documento.nombre',default=None)
+    unidad_organizacional_actual = serializers.ReadOnlyField(source='id_unidad_organizacional_actual.nombre',default=None)
+    class Meta:
+        model = Personas
+        fields = ['nombres','apellidos','tipo_documento','numero_documento','unidad_organizacional_actual']
+    def obtener_nombres(self, persona):
+        nombres = [
+            persona.primer_nombre,
+            persona.segundo_nombre,
+        ]
+        return ' '.join(item for item in nombres if item is not None)
 
+    def obtener_apellidos(self, persona):
+        apellidos = [
+            persona.primer_apellido,
+            persona.segundo_apellido,
+        ]
+        return ' '.join(item for item in apellidos if item is not None)
+
+    def get_nombres(self, obj):
+        if obj:
+            return self.obtener_nombres(obj)
+        return None
+
+    def get_apellidos(self, obj):
+        if obj:
+            return self.obtener_apellidos(obj)
+        return None
+
+
+class PQRSDFDetalleRequerimiento(serializers.ModelSerializer):
+   
+    estado_actual = serializers.ReadOnlyField(source='id_estado_actual_solicitud.nombre',default=None)
+    radicado = serializers.SerializerMethodField()
+    fecha_radicado_entrada = serializers.ReadOnlyField(source='fecha_radicado',default=None)
+    tipo = serializers.CharField(source='get_cod_tipo_PQRSDF_display')
+    class Meta:
+        model = PQRSDF
+        fields = ['tipo','id_PQRSDF','estado_actual','radicado','fecha_radicado_entrada','asunto','descripcion']
+
+    def get_radicado(self, obj):
+        cadena = ""
+        if obj.id_radicado:
+            cadena= str(obj.id_radicado.prefijo_radicado)+'-'+str(obj.id_radicado.agno_radicado)+'-'+str(obj.id_radicado.nro_radicado)
+            return cadena
+        
+class RequerimientoSobrePQRSDFGetSerializer(serializers.ModelSerializer):
+    tipo_tramite = serializers.SerializerMethodField()
+    numero_radicado = serializers.SerializerMethodField()
+    estado = serializers.ReadOnlyField(source='id_estado_actual_solicitud.nombre',default=None)
+    class Meta:
+        model = SolicitudAlUsuarioSobrePQRSDF
+        # fields = ['id_solicitud_al_usuario_sobre_pqrsdf']
+        fields = ['id_solicitud_al_usuario_sobre_pqrsdf','tipo_tramite','fecha_radicado_salida','numero_radicado','estado']
+
+    def get_tipo_tramite(self,obj):
+        return "Requerimiento a una solicitud"
+    def get_numero_radicado(self,obj):
+        cadena = ""
+        if obj.id_radicado_salida:
+            cadena= str(obj.id_radicado_salida.prefijo_radicado)+'-'+str(obj.id_radicado_salida.agno_radicado)+'-'+str(obj.id_radicado_salida.nro_radicado)
+            return cadena
+        return 'SIN RADICAR'
+
+#reasignacion de tarea
+class TareasAsignadasGetDetalleByIdSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TareasAsignadas
+        fields = '__all__'
+    
+ 

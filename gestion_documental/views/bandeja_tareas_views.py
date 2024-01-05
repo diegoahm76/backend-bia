@@ -12,12 +12,12 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
 from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, TareasAsignadas
-from gestion_documental.models.radicados_models import PQRSDF, AsignacionPQR, BandejaTareasPersona, TareaBandejaTareasPersona
-from gestion_documental.serializers.bandeja_tareas_serializers import AdicionalesDeTareasGetByTareaSerializer, BandejaTareasPersonaCreateSerializer, TareaBandejaTareasPersonaCreateSerializer, TareaBandejaTareasPersonaUpdateSerializer, TareasAsignadasCreateSerializer, TareasAsignadasGetJustificacionSerializer, TareasAsignadasGetSerializer, TareasAsignadasUpdateSerializer
+from gestion_documental.models.radicados_models import PQRSDF, AsignacionPQR, BandejaTareasPersona, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
+from gestion_documental.serializers.bandeja_tareas_serializers import AdicionalesDeTareasGetByTareaSerializer, BandejaTareasPersonaCreateSerializer, PQRSDFDetalleRequerimiento, PQRSDFTitularGetBandejaTareasSerializer, RequerimientoSobrePQRSDFGetSerializer, TareaBandejaTareasPersonaCreateSerializer, TareaBandejaTareasPersonaUpdateSerializer, TareasAsignadasCreateSerializer, TareasAsignadasGetJustificacionSerializer, TareasAsignadasGetSerializer, TareasAsignadasUpdateSerializer
 from gestion_documental.serializers.ventanilla_pqrs_serializers import PQRSDFGetSerializer
 
 from transversal.models.personas_models import Personas
-from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
+from rest_framework.exceptions import ValidationError,NotFound
 
 
 class BandejaTareasPersonaCreate(generics.CreateAPIView):
@@ -332,7 +332,7 @@ class TareasAsignadasJusTarea(generics.UpdateAPIView):
         
         if not tarea:
             raise NotFound('No se encontro la tarea')
-        if not tarea.cod_estado_asignacion == 'Ac':
+        if  tarea.cod_estado_asignacion == 'Ac':
             raise NotFound('Esta tarea fue aceptada')
         
         serializer = self.serializer_class(tarea)
@@ -357,3 +357,69 @@ class ComplementoTareaGetByTarea(generics.ListAPIView):
       
         serializer = self.serializer_class(complemento,many=True)
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data,}, status=status.HTTP_200_OK)
+    
+
+
+#detalle tarea 
+    
+#ENTREGA 103 REQUERIMIENTO SOBRE PQRSDF 
+class PQRSDFPersonaTitularGet(generics.ListAPIView):
+    serializer_class = PQRSDFTitularGetBandejaTareasSerializer
+    queryset = PQRSDF.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self,request,pqr):
+        
+        instance = self.get_queryset().filter(id_PQRSDF=pqr).first()
+        if not instance:
+            raise NotFound("No existen registros")
+        persona_titular = instance.id_persona_titular 
+        serializer = self.serializer_class(persona_titular)
+
+        
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data}, status=status.HTTP_200_OK)
+
+
+class PQRSDFPersonaRequerimientoGet(generics.ListAPIView):
+    serializer_class = PQRSDFTitularGetBandejaTareasSerializer
+    queryset = PQRSDF.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self,request):
+        persona = request.user.persona
+        
+
+        serializer = self.serializer_class(persona)
+
+        #return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':{'seccion':serializer_unidad.data,'hijos':serializer.data}}, status=status.HTTP_200_OK)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data}, status=status.HTTP_200_OK)
+    
+
+class PQRSDFDetalleRequerimientoGet(generics.ListAPIView):
+    serializer_class = PQRSDFDetalleRequerimiento
+    queryset = PQRSDF.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self,request,pqr):
+        
+        instance = self.get_queryset().filter(id_PQRSDF=pqr).first()
+        if not instance:
+            raise NotFound("No existen registros")
+        persona_titular = instance.id_persona_titular 
+        serializer = self.serializer_class(instance)
+
+      
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data}, status=status.HTTP_200_OK)
+    
+
+class RequerimientosPQRSDFGetByPQRSDF(generics.ListAPIView):
+
+    serializer_class = RequerimientoSobrePQRSDFGetSerializer
+    queryset =SolicitudAlUsuarioSobrePQRSDF.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self, request,pqr):
+        
+        instance = self.get_queryset().filter(id_pqrsdf=pqr,cod_tipo_oficio='R')
+        if not instance:
+            raise NotFound("No existen registros")
+        
+        serializador = self.serializer_class(instance,many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data,}, status=status.HTTP_200_OK)
+
