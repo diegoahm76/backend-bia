@@ -41,6 +41,7 @@ urlpatterns = [
     path('tipo-transferencia/',views.TiposTransferencias.as_view(), name='tipo-transferencia'),
     path('tipo-pqrsdf/',views.TipoPqrsdf.as_view(), name='tipo-pqrsdf'),
     path('tipo-solicitud-pqrsdf/',views.TipoSolicitudPQRSDF.as_view(), name='tipo-pqrsdf'),
+    path('estado-solicitud-pqrsdf/',views.EstadoSolicitud.as_view(), name='estado-pqrsdf'),
     
     
 ]

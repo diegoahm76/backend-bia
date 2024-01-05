@@ -6,7 +6,13 @@ import json
 import os
 import subprocess
 from django.http import HttpResponse
+from django.utils import timezone
+from django.db.models import F, ExpressionWrapper, fields
 from django.forms import model_to_dict
+from django.db.models import F, ExpressionWrapper, fields
+from django.db.models import Value as V
+from django.db.models import IntegerField
+from django.db.models.functions import Now, ExtractDay
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework import generics,status
@@ -1931,7 +1937,6 @@ class ConsultaEstadoPQRSDF(generics.ListAPIView):
         try:
             
             if estado_actual_nombre == 'RESPONDIDA':
-                print('aaaaa')
                 # Obtener los registros correspondientes en T269
                 registros_t269 = RespuestaPQR.objects.filter(id_pqrsdf=pqrsdf.id_PQRSDF)
 
@@ -2047,16 +2052,35 @@ class ConsultaEstadoPQRSDF(generics.ListAPIView):
             }
 
             if estado_solicitud == 'VENCIDO':
-                fecha_limite_vencido = datetime.now() - timedelta(days=1)
+                # Utilizar ExpressionWrapper para calcular la diferencia en días
+                dias_faltantes_expression = ExpressionWrapper(
+                    ExtractDay(F('fecha_radicado') + V(timezone.timedelta(days=1)) - Now()),
+                    output_field=fields.IntegerField()
+                )
+                
+                # Filtrar por PQRSDF en estado 'RADICADO' y 'Tiempo Para Respuesta' <= -1
+                queryset = queryset.annotate(dias_faltantes=dias_faltantes_expression)
                 queryset = queryset.filter(
                     Q(id_estado_actual_solicitud__nombre='RADICADO') &
-                    (Q(fecha_radicado__isnull=True) | Q(fecha_radicado__lt=fecha_limite_vencido))
+                    (Q(fecha_radicado__isnull=True) | Q(dias_faltantes__lte=-1))
+                ).distinct()
+            elif estado_solicitud == 'RADICADO':
+                # Utilizar ExpressionWrapper para calcular la diferencia en días
+                dias_faltantes_expression = ExpressionWrapper(
+                    ExtractDay(F('fecha_radicado') + V(timezone.timedelta(days=1)) - Now()),
+                    output_field=fields.IntegerField()
                 )
+                
+                # Filtrar por PQRSDF en estado 'RADICADO' y 'Tiempo Para Respuesta' > -1
+                queryset = queryset.annotate(dias_faltantes=dias_faltantes_expression)
+                queryset = queryset.filter(
+                    Q(id_estado_actual_solicitud__nombre='RADICADO') &
+                    (Q(fecha_radicado__isnull=True) | Q(dias_faltantes__gt=-1))
+                ).distinct()
             else:
                 estado_mapping_value = estado_mapping.get(estado_solicitud, '')
                 if estado_mapping_value:
                     queryset = queryset.filter(id_estado_actual_solicitud__nombre=estado_mapping_value)
-                
 
         return queryset
 
