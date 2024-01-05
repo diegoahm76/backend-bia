@@ -2145,6 +2145,7 @@ class ConsultaEstadoPQRSDF(generics.ListAPIView):
                 'Persona Que Radicó': f"{pqrsdf.id_radicado.id_persona_radica.primer_nombre} {pqrsdf.id_radicado.id_persona_radica.segundo_nombre} {pqrsdf.id_radicado.id_persona_radica.primer_apellido} {pqrsdf.id_radicado.id_persona_radica.segundo_apellido}" if pqrsdf.id_radicado and pqrsdf.id_radicado.id_persona_radica else 'N/A',
                 'Tiempo Para Respuesta': dias_faltantes if dias_faltantes is not None else 'N/A',
                 'Estado': estado_nombre,
+                'Ubicacion en la corporacion':ubicacion_corporacion,
                 'Documento': documento_info['valor'],
                 'URL_Documento': documento_info.get('url', None),
                 'Archivo': documento_info.get('archivo', {}),
