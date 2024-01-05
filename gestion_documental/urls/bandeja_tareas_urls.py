@@ -21,7 +21,9 @@ urlpatterns = [
     path('pqrsdf/persona/requerimiento/get/',views.PQRSDFPersonaRequerimientoGet.as_view(),name='get-pqrsdf-requerimiento-by-pqr'),
     path('pqrsdf/detalle-requerimiento/get/<str:pqr>/',views.PQRSDFDetalleRequerimientoGet.as_view(),name='get-pqrsdf-detalle-requerimiento-by-pqr'),
     path('pqrsdf/requerimiento/get/<str:pqr>/',views.RequerimientosPQRSDFGetByPQRSDF.as_view(),name='get-requerimientos-by-pqr'),
-    #RequerimientoSobrePQRSDFCreate
     path('pqrsdf/requerimiento/create/',views.RequerimientoSobrePQRSDFCreate.as_view(),name='crear-requerimientos-pqrsdf'),
+    path('pqrsdf/requerimientos/anexos/get/<str:re>/',views.AnexosFGetByRequerimiento.as_view(),name='listar-anexos-requerimiento'),
+    #MetadatosAnexosRequerimientoGetByIdAnexo
+    path('pqrsdf/requerimientos/anexos/metadatos/get/<str:pk>/',views.MetadatosAnexosRequerimientoGetByIdAnexo.as_view(),name='listar-metadatos-anexos-requer'),
     #Reasignacion de tarea 
     ]

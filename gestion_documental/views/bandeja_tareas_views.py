@@ -15,10 +15,10 @@ from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
 
 from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, TareasAsignadas
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, AsignacionPQR, BandejaTareasPersona, Estados_PQR, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, Estados_PQR, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
 from gestion_documental.models.trd_models import TipologiasDoc
 from gestion_documental.serializers.bandeja_tareas_serializers import AdicionalesDeTareasGetByTareaSerializer, Anexos_RequerimientoCreateSerializer, BandejaTareasPersonaCreateSerializer, PQRSDFDetalleRequerimiento, PQRSDFTitularGetBandejaTareasSerializer, RequerimientoSobrePQRSDFCreateSerializer, RequerimientoSobrePQRSDFGetSerializer, TareaBandejaTareasPersonaCreateSerializer, TareaBandejaTareasPersonaUpdateSerializer, TareasAsignadasCreateSerializer, TareasAsignadasGetJustificacionSerializer, TareasAsignadasGetSerializer, TareasAsignadasUpdateSerializer
-from gestion_documental.serializers.ventanilla_pqrs_serializers import AnexosCreateSerializer, Estados_PQRPostSerializer, MetadatosAnexosTmpCreateSerializer, PQRSDFGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer
+from gestion_documental.serializers.ventanilla_pqrs_serializers import Anexos_PQRAnexosGetSerializer, AnexosCreateSerializer, Estados_PQRPostSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, PQRSDFGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer
 from gestion_documental.utils import UtilsGestor
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from seguridad.utils import Util
@@ -644,3 +644,32 @@ class RequerimientoSobrePQRSDFCreate(generics.CreateAPIView):
         Util.save_auditoria_maestro_detalle(auditoria_data)
 
         return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'data':serializer.data,"estado":data_respuesta_estado_asociado,'anexos':data_anexos,'relacion_pqr':relacion_pqr}, status=status.HTTP_200_OK)
+
+
+class AnexosFGetByRequerimiento(generics.ListAPIView):
+
+    serializer_class = Anexos_PQRAnexosGetSerializer
+    queryset = Anexos_PQR.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self, request,re):
+        
+        instance = self.get_queryset().filter(id_solicitud_usu_sobre_PQR=re)
+        if not instance:
+            raise NotFound("No existen registros")
+        
+        serializador = self.serializer_class(instance,many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data,}, status=status.HTTP_200_OK)
+       
+class MetadatosAnexosRequerimientoGetByIdAnexo(generics.ListAPIView):
+
+    serializer_class = MetadatosAnexosTmpGetSerializer
+    queryset =MetadatosAnexosTmp.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self, request,pk):
+        
+        instance = self.get_queryset().filter(id_anexo=pk).first()
+        if not instance:
+            raise NotFound("No existen registros")
+        
+        serializador = self.serializer_class(instance)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data,}, status=status.HTTP_200_OK)
