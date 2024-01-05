@@ -20,7 +20,8 @@ urlpatterns = [
     path('pqrsdf/titular/get/<str:pqr>/',views.PQRSDFPersonaTitularGet.as_view(),name='get-pqrsdf-titular-by-pqr'),
     path('pqrsdf/persona/requerimiento/get/',views.PQRSDFPersonaRequerimientoGet.as_view(),name='get-pqrsdf-requerimiento-by-pqr'),
     path('pqrsdf/detalle-requerimiento/get/<str:pqr>/',views.PQRSDFDetalleRequerimientoGet.as_view(),name='get-pqrsdf-detalle-requerimiento-by-pqr'),
-    #RequerimientosPQRSDFGetByPQRSDF
-    path('pqrsdf/requerimiento/get/<str:pqr>/',views.RequerimientosPQRSDFGetByPQRSDF.as_view(),name='get-requerimientos-by-pqr')
+    path('pqrsdf/requerimiento/get/<str:pqr>/',views.RequerimientosPQRSDFGetByPQRSDF.as_view(),name='get-requerimientos-by-pqr'),
+    #RequerimientoSobrePQRSDFCreate
+    path('pqrsdf/requerimiento/create/',views.RequerimientoSobrePQRSDFCreate.as_view(),name='crear-requerimientos-pqrsdf'),
     #Reasignacion de tarea 
     ]

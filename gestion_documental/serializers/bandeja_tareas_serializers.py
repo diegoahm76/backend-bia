@@ -4,7 +4,7 @@ from rest_framework.serializers import ReadOnlyField
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, TareasAsignadas
 
-from gestion_documental.models.radicados_models import PQRSDF, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
+from gestion_documental.models.radicados_models import PQRSDF, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
 from datetime import timedelta
 from datetime import datetime
 
@@ -273,6 +273,16 @@ class RequerimientoSobrePQRSDFGetSerializer(serializers.ModelSerializer):
             return cadena
         return 'SIN RADICAR'
 
+class RequerimientoSobrePQRSDFCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SolicitudAlUsuarioSobrePQRSDF
+        fields = '__all__'
+
+
+class Anexos_RequerimientoCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos_PQR
+        fields = '__all__'
 #reasignacion de tarea
 class TareasAsignadasGetDetalleByIdSerializer(serializers.ModelSerializer):
     class Meta:
