@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
@@ -276,7 +277,10 @@ class ComplementosUsu_PQRPutSerializer(serializers.ModelSerializer):
         model = ComplementosUsu_PQR
         fields = '__all__'
 
-
+class AdicionalesDeTareasCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdicionalesDeTareas
+        fields = '__all__'
 
 class SolicitudDeDigitalizacionGetSerializer(serializers.ModelSerializer):
     estado_digitalizacion = serializers.SerializerMethodField()
