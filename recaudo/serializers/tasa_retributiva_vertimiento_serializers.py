@@ -11,9 +11,13 @@ class documento_formulario_recuados_serializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+
+
 class documento_formulario_recuados_Getserializer(serializers.ModelSerializer):
     nombre_completo = serializers.SerializerMethodField()
     ruta_archivo = serializers.SerializerMethodField()
+    formato = serializers.SerializerMethodField()
+    fecha_creacion_doc = serializers.SerializerMethodField()
     class Meta:
         model = documento_formulario_recuado
         fields = '__all__'
@@ -25,8 +29,22 @@ class documento_formulario_recuados_Getserializer(serializers.ModelSerializer):
         nombre_completo = nombre_completo if nombre_completo != "" else None
         return nombre_completo
     
+    def get_formato(self, obj):
+    
+        archivo = ArchivosDigitales.objects.filter(id_archivo_digital = obj.id_archivo_sistema.id_archivo_digital).first()
+        data = ArchivosSerializer(archivo).data
+        return data['formato']
+    
+    def get_fecha_creacion_doc(self, obj):
+    
+        archivo = ArchivosDigitales.objects.filter(id_archivo_digital = obj.id_archivo_sistema.id_archivo_digital).first()
+        data = ArchivosSerializer(archivo).data
+        return data['fecha_creacion_doc']    
+    
     def get_ruta_archivo(self, obj):
     
         archivo = ArchivosDigitales.objects.filter(id_archivo_digital = obj.id_archivo_sistema.id_archivo_digital).first()
         data = ArchivosSerializer(archivo).data
         return data
+    
+

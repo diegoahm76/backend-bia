@@ -47,6 +47,15 @@ TIPOS_OFICIO_CHOICES = (
 
 )
 
+
+TIPO_SOLICITUD_PQRSDF = (
+    ('PQ', 'PQRSDF'),
+    ('TS', 'Tramites y servicios'),
+    ('OP', 'OPAS'),
+    ('OT', 'Otros'),
+
+)
+
 def choices_to_list(choices):
     choices_list = []
     for choice in choices:
