@@ -2052,9 +2052,15 @@ class ConsultaEstadoPQRSDF(generics.ListAPIView):
             }
 
             if estado_solicitud == 'VENCIDO':
+                # Calcular tiempo de respuesta
+                tiempo_respuesta = F('fecha_radicado') + ExpressionWrapper(
+                    timedelta(days=1) * F('dias_para_respuesta'),
+                    output_field=fields.DurationField()
+                )
+                
                 # Utilizar ExpressionWrapper para calcular la diferencia en días
                 dias_faltantes_expression = ExpressionWrapper(
-                    ExtractDay(F('fecha_radicado') + V(timezone.timedelta(days=1)) - Now()),
+                    ExtractDay(tiempo_respuesta - Now()),
                     output_field=fields.IntegerField()
                 )
                 
@@ -2062,12 +2068,18 @@ class ConsultaEstadoPQRSDF(generics.ListAPIView):
                 queryset = queryset.annotate(dias_faltantes=dias_faltantes_expression)
                 queryset = queryset.filter(
                     Q(id_estado_actual_solicitud__nombre='RADICADO') &
-                    (Q(fecha_radicado__isnull=True) | Q(dias_faltantes__lte=-1))
+                    (Q(fecha_radicado__isnull=True) | Q(dias_faltantes__lte=0))
                 ).distinct()
             elif estado_solicitud == 'RADICADO':
+                # Calcular tiempo de respuesta
+                tiempo_respuesta = F('fecha_radicado') + ExpressionWrapper(
+                    timedelta(days=1) * F('dias_para_respuesta'),
+                    output_field=fields.DurationField()
+                )
+                
                 # Utilizar ExpressionWrapper para calcular la diferencia en días
                 dias_faltantes_expression = ExpressionWrapper(
-                    ExtractDay(F('fecha_radicado') + V(timezone.timedelta(days=1)) - Now()),
+                    ExtractDay(tiempo_respuesta - Now()),
                     output_field=fields.IntegerField()
                 )
                 
@@ -2075,7 +2087,7 @@ class ConsultaEstadoPQRSDF(generics.ListAPIView):
                 queryset = queryset.annotate(dias_faltantes=dias_faltantes_expression)
                 queryset = queryset.filter(
                     Q(id_estado_actual_solicitud__nombre='RADICADO') &
-                    (Q(fecha_radicado__isnull=True) | Q(dias_faltantes__gt=-1))
+                    (Q(fecha_radicado__isnull=True) | Q(dias_faltantes__gt=0))
                 ).distinct()
             else:
                 estado_mapping_value = estado_mapping.get(estado_solicitud, '')
