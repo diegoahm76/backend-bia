@@ -16,6 +16,8 @@ urlpatterns = [
     path('tarea-bandeja-asignacion/update/<str:tarea>/',views.TareaBandejaTareasPersonaUpdate.as_view(),name='update-tarea-bandeja-tareas-persona'),
     path('tareas-asignadas-jus-rechazo/get/<str:id>/',views.TareasAsignadasJusTarea.as_view(),name='update-tareas-asignadas-jus-tarea'),
     path('complemento-tarea/get-by-tarea/<str:tarea>/',views.ComplementoTareaGetByTarea.as_view(),name='get-complemento-tarea-by-tarea'),
+    #ComplementosUsu_PQRGetDetalleById
+    path('complemento/get-detalle-by-id/<str:pk>/',views.ComplementosUsu_PQRGetDetalleById.as_view(),name='get-complemento-tarea-detalle-by-id'),
     #ENTREGA 103 REQUERIMIENTO SOBRE PQRSDF
     path('pqrsdf/titular/get/<str:pqr>/',views.PQRSDFPersonaTitularGet.as_view(),name='get-pqrsdf-titular-by-pqr'),
     path('pqrsdf/persona/requerimiento/get/',views.PQRSDFPersonaRequerimientoGet.as_view(),name='get-pqrsdf-requerimiento-by-pqr'),
