@@ -73,6 +73,7 @@ urlpatterns = [
     path('api/transversal/lideres/',include('transversal.urls.lideres_urls')),
     path('api/transversal/alertas/',include('transversal.urls.alertas_urls')),
     path('api/transversal/email/', include('transversal.urls.email_urls')),
+    path('api/transversal/sms/', include('transversal.urls.sms_urls')),
     
     
 
