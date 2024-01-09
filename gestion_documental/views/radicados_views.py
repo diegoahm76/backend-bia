@@ -1098,6 +1098,9 @@ class RadicadoCreate(generics.CreateAPIView):
 
         return radicado
     
+
+################################################################################################################################################################################
+    
 #Consulta_Estado_Solicitud_Otros
     
 class ConsultaEstadoOTROS(generics.ListAPIView):
@@ -1149,35 +1152,45 @@ class ConsultaEstadoOTROS(generics.ListAPIView):
         elif estado_actual and estado_actual.nombre == 'EN GESTION':
             try:
                 asignacion = AsignacionOtros.objects.filter(
-                    T303Id_Otros=otros.id_otros,
-                    T303codEstadoAsignacion='Ac'
-                ).latest('T303FechaAsignacion')
+                    id_otros=otros,
+                    cod_estado_asignacion='Ac'
+                ).latest('fecha_asignacion')
 
                 tarea_reasignada = ReasignacionesTareas.objects.filter(
-                    T316Id_TareaAsignada=asignacion.id_asignacion_otros,
-                    T316codEstadoReasignacion='Ac'
+                    id_tarea_asignada=asignacion.id_asignacion_otros,
+                    cod_estado_reasignacion='Ac'
                 ).first()
 
                 if tarea_reasignada:
-                    persona_reasignada = Personas.objects.get(
-                        T010IdPersona=tarea_reasignada.id_persona_a_quien_se_reasigna
-                    )
-                    unidad_reasignada = persona_reasignada.id_unidad_organizacional_actual
+                    # Si hay reasignación
+                    if tarea_reasignada.cod_estado_reasignacion == 'Ep':
+                        # Reasignación en espera
+                        unidad_reasignada = tarea_reasignada.id_und_org_reasignada
+                    elif tarea_reasignada.cod_estado_reasignacion == 'Re':
+                        # Reasignación rechazada
+                        unidad_reasignada = tarea_reasignada.id_und_org_reasignada
+                    elif tarea_reasignada.cod_estado_reasignacion == 'Ac':
+                        # Reasignación aceptada
+                        persona_reasignada = Personas.objects.get(id_persona=tarea_reasignada.id_persona_a_quien_se_reasigna)
+                        unidad_reasignada = persona_reasignada.id_unidad_organizacional_actual
 
-                    if unidad_reasignada.cod_agrupacion_documental == 'SEC':
-                        return f'SECCION - {unidad_reasignada.codigo} - {unidad_reasignada.nombre}'
-                    elif unidad_reasignada.cod_agrupacion_documental == 'SUB':
-                        return f'SUBSECCION - {unidad_reasignada.codigo} - {unidad_reasignada.nombre}'
-                    elif unidad_reasignada.cod_agrupacion_documental is None:
-                        return f'{unidad_reasignada.codigo} - {unidad_reasignada.nombre}'
+                    if unidad_reasignada:
+                        if unidad_reasignada.cod_agrupacion_documental == 'SEC':
+                            return f'SECCION - {unidad_reasignada.codigo} - {unidad_reasignada.nombre}'
+                        elif unidad_reasignada.cod_agrupacion_documental == 'SUB':
+                            return f'SUBSECCION - {unidad_reasignada.codigo} - {unidad_reasignada.nombre}'
+                        elif unidad_reasignada.cod_agrupacion_documental is None:
+                            return f'{unidad_reasignada.codigo} - {unidad_reasignada.nombre}'
 
-                unidad_asignada = unidad_reasignada if unidad_reasignada else asignacion.id_und_org_seccion_asignada
-                if unidad_asignada.cod_agrupacion_documental == 'SEC':
-                    return f'SECCION - {unidad_asignada.codigo} - {unidad_asignada.nombre}'
-                elif unidad_asignada.cod_agrupacion_documental == 'SUB':
-                    return f'SUBSECCION - {unidad_asignada.codigo} - {unidad_asignada.nombre}'
-                elif unidad_asignada.cod_agrupacion_documental is None:
-                    return f'{unidad_asignada.codigo} - {unidad_asignada.nombre}'
+                # Si no hay reasignación, mostrar la unidad original
+                unidad_asignada = asignacion.id_und_org_seccion_asignada
+                if unidad_asignada:
+                    if unidad_asignada.cod_agrupacion_documental == 'SEC':
+                        return f'SECCION - {unidad_asignada.codigo} - {unidad_asignada.nombre}'
+                    elif unidad_asignada.cod_agrupacion_documental == 'SUB':
+                        return f'SUBSECCION - {unidad_asignada.codigo} - {unidad_asignada.nombre}'
+                    elif unidad_asignada.cod_agrupacion_documental is None:
+                        return f'{unidad_asignada.codigo} - {unidad_asignada.nombre}'
 
             except AsignacionOtros.DoesNotExist:
                 pass
@@ -1203,7 +1216,7 @@ class ConsultaEstadoOTROS(generics.ListAPIView):
         estado_solicitud = self.request.query_params.get('estado_solicitud')
         id_persona_titular = self.request.query_params.get('id_persona_titular')
         id_persona_interpone = self.request.query_params.get('id_persona_interpone')
-        cod_relacion_con_el_titular = self.request.query_params.get('cod_relacion_con_el_titular')
+        cod_relacion_titular = self.request.query_params.get('cod_relacion_titular')
 
         queryset = Otros.objects.filter(id_estado_actual_solicitud__in=estados_otros)
 
@@ -1216,8 +1229,8 @@ class ConsultaEstadoOTROS(generics.ListAPIView):
         if id_persona_interpone:
             queryset = queryset.filter(id_persona_interpone=id_persona_interpone)
        
-        if cod_relacion_con_el_titular:
-                queryset = queryset.filter(cod_relacion_con_el_titular=cod_relacion_con_el_titular)
+        if cod_relacion_titular:
+                queryset = queryset.filter(cod_relacion_titular=cod_relacion_titular)
 
         if radicado:
             try:
