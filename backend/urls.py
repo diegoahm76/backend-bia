@@ -73,6 +73,7 @@ urlpatterns = [
     path('api/transversal/lideres/',include('transversal.urls.lideres_urls')),
     path('api/transversal/alertas/',include('transversal.urls.alertas_urls')),
     path('api/transversal/email/', include('transversal.urls.email_urls')),
+    path('api/transversal/sms/', include('transversal.urls.sms_urls')),
     
     
 
@@ -174,6 +175,7 @@ urlpatterns = [
     # TRAMITES
     path('api/tramites/',include('tramites.urls.tramites_urls')),
     path('api/tramites/choices/',include('tramites.urls.choices_urls')),
+    path('api/tramites/listas/',include('tramites.urls.listas_urls')),
 
 
     

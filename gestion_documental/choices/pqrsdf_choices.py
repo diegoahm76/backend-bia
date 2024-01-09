@@ -56,6 +56,16 @@ TIPO_SOLICITUD_PQRSDF = (
 
 )
 
+ESTADO_SOLICITUD_PQRSDF = (
+    ('RA', 'RADICADO'),
+    ('VP', 'EN VENTANILLA CON PENDIENTES'),
+    ('VS', 'EN VENTANILLA SIN PENDIENTES'),
+    ('EG', 'EN GESTION'),
+    ('EG', 'EN GESTION'),
+    ('RP', 'RESPONDIDO'),
+    ('VC', 'VENCIDO'),
+)
+
 def choices_to_list(choices):
     choices_list = []
     for choice in choices:

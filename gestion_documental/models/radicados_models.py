@@ -362,6 +362,28 @@ class AsignacionPQR(models.Model):
         unique_together = (('id_pqrsdf', 'consecutivo_asign_x_pqrsdf'), )
 
 
+
+class AsignacionOtros(models.Model):
+    id_asignacion_otros = models.AutoField(primary_key=True,db_column='T303IdAsignacion_Otros')
+    id_otros = models.ForeignKey(Otros,on_delete=models.CASCADE,db_column='T303Id_Otros')
+    consecutivo_asign_x_otros = models.SmallIntegerField(db_column='T303consecutivoAsignXOtros')
+    fecha_asignacion = models.DateTimeField(db_column='T303fechaAsignacion')
+    id_persona_asigna = models.ForeignKey('transversal.Personas',on_delete=models.CASCADE,db_column='T303Id_PersonaAsigna',related_name='persona_asigna_otros')
+    id_persona_asignada = models.ForeignKey('transversal.Personas',on_delete=models.CASCADE,db_column='T303Id_PersonaAsignada',related_name='persona_asignada_otros')
+    cod_estado_asignacion = models.CharField(max_length=2,
+                                             choices=[('Ac', 'Aceptado'),('Re', 'Rechazado')],
+                                             db_column='T303codEstadoAsignacion',null=True,blank=True)
+    fecha_eleccion_estado = models.DateTimeField(db_column='T303fechaEleccionEstado',null=True,blank=True)
+    justificacion_rechazo = models.CharField(max_length=250,null=True,blank=True,db_column='T303justificacionRechazo')
+    asignacion_de_ventanilla = models.BooleanField(db_column='T303asignacionDeVentanilla')
+    id_und_org_seccion_asignada = models.ForeignKey(UnidadesOrganizacionales,on_delete=models.CASCADE,null=True,blank=True,db_column='T303Id_UndOrgSeccion_Asignada',related_name='unidad_asignada_otros')
+    id_und_org_oficina_asignada = models.ForeignKey(UnidadesOrganizacionales,on_delete=models.CASCADE,null=True,blank=True,db_column='T303Id_UndOrgOficina_Asignada')
+
+    class Meta:
+        db_table = 'T303Asignacion_Otros'
+        unique_together = (('id_otros', 'consecutivo_asign_x_otros'), )
+
+
 class RespuestaPQR(models.Model):
     id_respuesta_pqr = models.AutoField(primary_key=True,db_column='T269IdRespuesta_PQR')
     id_pqrsdf = models.ForeignKey(PQRSDF,on_delete=models.CASCADE,db_column='T269Id_PQRSDF')
