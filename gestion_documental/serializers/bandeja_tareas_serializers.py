@@ -3,8 +3,9 @@ from rest_framework import serializers
 from rest_framework.serializers import ReadOnlyField
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, TareasAsignadas
+from gestion_documental.models.expedientes_models import ArchivosDigitales
 
-from gestion_documental.models.radicados_models import PQRSDF, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TareaBandejaTareasPersona
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TareaBandejaTareasPersona
 from datetime import timedelta
 from datetime import datetime
 
@@ -260,6 +261,39 @@ class ComplementosUsu_PQRGetByIdSerializer(serializers.ModelSerializer):
         return numero_solicitudes
 
 
+class AnexosComplementoGetByComBandejaTareasSerializer(serializers.ModelSerializer):
+
+    medio_almacenamiento = serializers.CharField(source='get_cod_medio_almacenamiento_display', default=None)
+    complemento = serializers.SerializerMethodField()
+    class Meta:
+        model = Anexos
+        fields = '__all__'  
+    def get_complemento(self, obj):
+        return True
+
+class MetadatosAnexoerializerGet(serializers.ModelSerializer):
+    origen_archivo = serializers.CharField(source='get_cod_origen_archivo_display', default=None)
+    categoria_archivo = serializers.CharField(source='get_cod_categoria_archivo_display', default=None)
+    nombre_tipologia_documental = serializers.CharField(source='id_tipologia_doc.nombre', default=None)
+    numero_folios = serializers.SerializerMethodField()
+    fecha_creacion_archivo = serializers.ReadOnlyField(source='id_archivo_sistema.fecha_creacion_doc',default=None)
+    palabras_clave_doc = serializers.SerializerMethodField()
+    class Meta:
+        model = MetadatosAnexosTmp
+        fields = ['id_metadatos_anexo_tmp','asunto','numero_folios','fecha_creacion_archivo','origen_archivo','categoria_archivo','tiene_replica_fisica','es_version_original','palabras_clave_doc','nombre_tipologia_documental','descripcion']
+    def get_numero_folios(self, obj):
+        return obj.nro_folios_documento
+    
+    def get_palabras_clave_doc(self, obj):
+        if obj.palabras_clave_doc:
+            lista_datos =  obj.palabras_clave_doc.split("|")
+            return lista_datos
+        return None
+
+class TareasAnexoArchivosDigitalesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ArchivosDigitales
+        fields = ['ruta_archivo','nombre_de_Guardado']
 #REQUERIMIENTO SOBRE PQRSDF 103
 class PQRSDFTitularGetBandejaTareasSerializer(serializers.ModelSerializer):
     nombres = serializers.SerializerMethodField()
