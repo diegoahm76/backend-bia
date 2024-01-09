@@ -49,7 +49,7 @@ class ConfiguracionTipoExpedienteAgnoUpdateSerializer(serializers.ModelSerialize
 class SecSubUnidadOrgaGetSerializer(serializers.ModelSerializer):
     class Meta:
         model=UnidadesOrganizacionales
-        fields=['id_unidad_organizacional','nombre']
+        fields=['id_unidad_organizacional','codigo','nombre']
 #CatalogosSeries
 class CatalogosSeriesSecSubGetSerializer(serializers.ModelSerializer):
     nombre_serie_doc=serializers.ReadOnlyField(source='id_serie_doc.nombre',default=None)
@@ -62,15 +62,19 @@ class CatalogosSeriesSecSubGetSerializer(serializers.ModelSerializer):
 class XXGetSerializer(serializers.ModelSerializer):
     #accesos_unidades_organizacionales = CatalogosSeriesSecSubGetSerializer(many=True, read_only=True)
     id_serie_doc=serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_serie_doc.id_serie_doc',default=None)
+    cod_serie_doc=serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_serie_doc.codigo',default=None)
     nombre_serie_doc=serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_serie_doc.nombre',default=None)
     id_subserie_doc=serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.id_subserie_doc',default=None)
+    cod_subserie_doc=serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.codigo',default=None)
     nombre_subserie_doc=serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.nombre',default=None)
     class Meta:
         model= CatSeriesUnidadOrgCCDTRD
         fields=['id_catserie_unidadorg',
             'id_serie_doc',
+            'cod_serie_doc',
             'nombre_serie_doc',
             'id_subserie_doc',
+            'cod_subserie_doc',
             'nombre_subserie_doc']
     
 #CatSeriesUnidadOrgCCDTRD
