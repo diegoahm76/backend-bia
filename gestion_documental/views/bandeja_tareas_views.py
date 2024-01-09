@@ -15,9 +15,9 @@ from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
 
 from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, TareasAsignadas
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, Estados_PQR, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
 from gestion_documental.models.trd_models import TipologiasDoc
-from gestion_documental.serializers.bandeja_tareas_serializers import AdicionalesDeTareasGetByTareaSerializer, Anexos_RequerimientoCreateSerializer, BandejaTareasPersonaCreateSerializer, PQRSDFDetalleRequerimiento, PQRSDFTitularGetBandejaTareasSerializer, RequerimientoSobrePQRSDFCreateSerializer, RequerimientoSobrePQRSDFGetSerializer, TareaBandejaTareasPersonaCreateSerializer, TareaBandejaTareasPersonaUpdateSerializer, TareasAsignadasCreateSerializer, TareasAsignadasGetJustificacionSerializer, TareasAsignadasGetSerializer, TareasAsignadasUpdateSerializer
+from gestion_documental.serializers.bandeja_tareas_serializers import AdicionalesDeTareasGetByTareaSerializer, Anexos_RequerimientoCreateSerializer, BandejaTareasPersonaCreateSerializer, ComplementosUsu_PQRGetByIdSerializer, PQRSDFDetalleRequerimiento, PQRSDFTitularGetBandejaTareasSerializer, RequerimientoSobrePQRSDFCreateSerializer, RequerimientoSobrePQRSDFGetSerializer, TareaBandejaTareasPersonaCreateSerializer, TareaBandejaTareasPersonaUpdateSerializer, TareasAsignadasCreateSerializer, TareasAsignadasGetJustificacionSerializer, TareasAsignadasGetSerializer, TareasAsignadasUpdateSerializer
 from gestion_documental.serializers.ventanilla_pqrs_serializers import Anexos_PQRAnexosGetSerializer, AnexosCreateSerializer, Estados_PQRPostSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, PQRSDFGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer
 from gestion_documental.utils import UtilsGestor
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
@@ -366,7 +366,20 @@ class ComplementoTareaGetByTarea(generics.ListAPIView):
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data,}, status=status.HTTP_200_OK)
     
 
+class ComplementosUsu_PQRGetDetalleById(generics.ListAPIView):
 
+    serializer_class = ComplementosUsu_PQRGetByIdSerializer
+    queryset =ComplementosUsu_PQR.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self, request,pk):
+        
+        instance = self.get_queryset().filter(idComplementoUsu_PQR=pk).first()
+        if not instance:
+            raise NotFound("No existen registros")
+        
+        serializador = self.serializer_class(instance)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data,}, status=status.HTTP_200_OK)
+    
 #detalle tarea 
     
 #ENTREGA 103 REQUERIMIENTO SOBRE PQRSDF 
