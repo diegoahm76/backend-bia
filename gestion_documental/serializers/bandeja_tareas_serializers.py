@@ -328,6 +328,12 @@ class PQRSDFTitularGetBandejaTareasSerializer(serializers.ModelSerializer):
         return None
 
 
+
+class DetalleRequerimientoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SolicitudAlUsuarioSobrePQRSDF
+        fields = ['id_solicitud_al_usuario_sobre_pqrsdf','asunto','descripcion','fecha_solicitud']
+
 class PQRSDFDetalleRequerimiento(serializers.ModelSerializer):
    
     estado_actual = serializers.ReadOnlyField(source='id_estado_actual_solicitud.nombre',default=None)
