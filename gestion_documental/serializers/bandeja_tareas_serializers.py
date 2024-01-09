@@ -3,8 +3,9 @@ from rest_framework import serializers
 from rest_framework.serializers import ReadOnlyField
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, TareasAsignadas
+from gestion_documental.models.expedientes_models import ArchivosDigitales
 
-from gestion_documental.models.radicados_models import PQRSDF, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TareaBandejaTareasPersona
 from datetime import timedelta
 from datetime import datetime
 
@@ -205,6 +206,94 @@ class AdicionalesDeTareasGetByTareaSerializer(serializers.ModelSerializer):
             return complemento.id_radicado.fecha_radicado
         return None
 
+
+
+class ComplementosUsu_PQRGetByIdSerializer(serializers.ModelSerializer):
+    tipo = serializers.SerializerMethodField()
+    nombre_completo_titular = serializers.SerializerMethodField()
+    radicado = serializers.SerializerMethodField()
+    numero_solicitudes = serializers.SerializerMethodField()
+    es_complemento = serializers.SerializerMethodField()
+    medio_solicitud = serializers.ReadOnlyField(source='id_medio_solicitud.nombre')
+    nombre_completo_recibe = serializers.SerializerMethodField()
+    class Meta:
+        model = ComplementosUsu_PQR
+        fields = ['idComplementoUsu_PQR','tipo','nombre_completo_titular','asunto','cantidad_anexos','radicado','fecha_radicado','requiere_digitalizacion','numero_solicitudes','es_complemento','complemento_asignado_unidad','fecha_complemento','medio_solicitud','nro_folios_totales','nombre_completo_recibe','asunto','descripcion']
+    
+    def get_es_complemento(self, obj):
+        return True
+    def get_tipo(self, obj):
+        return "Complemento de PQRSDF"
+    
+    def get_nombre_completo_recibe(self, obj):
+        if obj.id_persona_recibe:
+            nombre_completo_responsable = None
+            nombre_list = [obj.id_persona_recibe.primer_nombre, obj.id_persona_recibe.segundo_nombre,
+                            obj.id_persona_recibe.primer_apellido, obj.id_persona_recibe.segundo_apellido]
+            nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+            return nombre_completo_responsable
+        else:
+            return 'No Identificado'
+    def get_nombre_completo_titular(self, obj):
+
+        if obj.id_persona_interpone:
+            nombre_completo_responsable = None
+            nombre_list = [obj.id_persona_interpone.primer_nombre, obj.id_persona_interpone.segundo_nombre,
+                            obj.id_persona_interpone.primer_apellido, obj.id_persona_interpone.segundo_apellido]
+            nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+            return nombre_completo_responsable
+        else:
+            if obj.es_anonima:
+                return "Anonimo"
+            else:
+                return 'No Identificado'
+    def get_radicado(self, obj):
+        cadena = ""
+        if obj.id_radicado:
+            cadena= str(obj.id_radicado.prefijo_radicado)+'-'+str(obj.id_radicado.agno_radicado)+'-'+str(obj.id_radicado.nro_radicado)
+            return cadena
+    def get_numero_solicitudes(self, obj):
+            
+        id= obj.idComplementoUsu_PQR
+        numero_solicitudes = SolicitudDeDigitalizacion.objects.filter(id_complemento_usu_pqr=id).count()
+        return numero_solicitudes
+
+
+class AnexosComplementoGetByComBandejaTareasSerializer(serializers.ModelSerializer):
+
+    medio_almacenamiento = serializers.CharField(source='get_cod_medio_almacenamiento_display', default=None)
+    complemento = serializers.SerializerMethodField()
+    class Meta:
+        model = Anexos
+        fields = '__all__'  
+    def get_complemento(self, obj):
+        return True
+
+class MetadatosAnexoerializerGet(serializers.ModelSerializer):
+    origen_archivo = serializers.CharField(source='get_cod_origen_archivo_display', default=None)
+    categoria_archivo = serializers.CharField(source='get_cod_categoria_archivo_display', default=None)
+    nombre_tipologia_documental = serializers.CharField(source='id_tipologia_doc.nombre', default=None)
+    numero_folios = serializers.SerializerMethodField()
+    fecha_creacion_archivo = serializers.ReadOnlyField(source='id_archivo_sistema.fecha_creacion_doc',default=None)
+    palabras_clave_doc = serializers.SerializerMethodField()
+    class Meta:
+        model = MetadatosAnexosTmp
+        fields = ['id_metadatos_anexo_tmp','asunto','numero_folios','fecha_creacion_archivo','origen_archivo','categoria_archivo','tiene_replica_fisica','es_version_original','palabras_clave_doc','nombre_tipologia_documental','descripcion']
+    def get_numero_folios(self, obj):
+        return obj.nro_folios_documento
+    
+    def get_palabras_clave_doc(self, obj):
+        if obj.palabras_clave_doc:
+            lista_datos =  obj.palabras_clave_doc.split("|")
+            return lista_datos
+        return None
+
+class TareasAnexoArchivosDigitalesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ArchivosDigitales
+        fields = ['ruta_archivo','nombre_de_Guardado']
 #REQUERIMIENTO SOBRE PQRSDF 103
 class PQRSDFTitularGetBandejaTareasSerializer(serializers.ModelSerializer):
     nombres = serializers.SerializerMethodField()
