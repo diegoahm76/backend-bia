@@ -32,6 +32,10 @@ urlpatterns = [
     #Consulta_Estado_Solicitud_PQRSDF_111
     path('consulta-estado-pqrsdf/', views.ConsultaEstadoPQRSDF.as_view(), name='listar-estados-solicitud'),
 
+    #Consulta_Estado_Solicitud_PQRSDF_114
+    path('consulta-estado-pqrsdf/', views.ConsultaEstadoPQRSDF.as_view(), name='listar-estados-solicitud'),
+    
+
 
 
 ]

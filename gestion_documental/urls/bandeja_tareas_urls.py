@@ -16,12 +16,18 @@ urlpatterns = [
     path('tarea-bandeja-asignacion/update/<str:tarea>/',views.TareaBandejaTareasPersonaUpdate.as_view(),name='update-tarea-bandeja-tareas-persona'),
     path('tareas-asignadas-jus-rechazo/get/<str:id>/',views.TareasAsignadasJusTarea.as_view(),name='update-tareas-asignadas-jus-tarea'),
     path('complemento-tarea/get-by-tarea/<str:tarea>/',views.ComplementoTareaGetByTarea.as_view(),name='get-complemento-tarea-by-tarea'),
+    path('complemento/get-detalle-by-id/<str:pk>/',views.ComplementosUsu_PQRGetDetalleById.as_view(),name='get-complemento-tarea-detalle-by-id'),
+    path('complemento/get-anexos-by-id/<str:pk>/',views.ComplementoPQRSDFInfoAnexosGet.as_view(),name='get-complemento-tarea-anexos-by-id'),
+    path('complemento/get-metadatos-by-anexo/<str:pk>/',views.ComplementoMetaDataGetByIdAnexo.as_view(),name='get-complemento-tarea-metadatos-by-id'),
+    path('complemento/get-documento-digital-by-id/<str:pk>/',views.DocumentoDigitalAnexoGet.as_view(),name='get-complemento-tarea-documento-digital-by-id'),
     #ENTREGA 103 REQUERIMIENTO SOBRE PQRSDF
     path('pqrsdf/titular/get/<str:pqr>/',views.PQRSDFPersonaTitularGet.as_view(),name='get-pqrsdf-titular-by-pqr'),
     path('pqrsdf/persona/requerimiento/get/',views.PQRSDFPersonaRequerimientoGet.as_view(),name='get-pqrsdf-requerimiento-by-pqr'),
     path('pqrsdf/detalle-requerimiento/get/<str:pqr>/',views.PQRSDFDetalleRequerimientoGet.as_view(),name='get-pqrsdf-detalle-requerimiento-by-pqr'),
     path('pqrsdf/requerimiento/get/<str:pqr>/',views.RequerimientosPQRSDFGetByPQRSDF.as_view(),name='get-requerimientos-by-pqr'),
-    #RequerimientoSobrePQRSDFCreate
     path('pqrsdf/requerimiento/create/',views.RequerimientoSobrePQRSDFCreate.as_view(),name='crear-requerimientos-pqrsdf'),
+    path('pqrsdf/requerimientos/anexos/get/<str:re>/',views.AnexosFGetByRequerimiento.as_view(),name='listar-anexos-requerimiento'),
+    #MetadatosAnexosRequerimientoGetByIdAnexo
+    path('pqrsdf/requerimientos/anexos/metadatos/get/<str:pk>/',views.MetadatosAnexosRequerimientoGetByIdAnexo.as_view(),name='listar-metadatos-anexos-requer'),
     #Reasignacion de tarea 
     ]
