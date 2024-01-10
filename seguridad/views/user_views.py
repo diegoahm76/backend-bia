@@ -21,8 +21,8 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.db.models import Q
 from django.contrib.sites.shortcuts import get_current_site
-from transversal.models.base_models import Shortener
-from transversal.serializers.personas_serializers import PersonasFilterSerializer, PersonasSerializer
+from transversal.models.base_models import ApoderadoPersona, Shortener
+from transversal.serializers.personas_serializers import ApoderadoPersonaGetSerializer, PersonasFilterSerializer, PersonasSerializer, RepresentanteLegalGetSerializer
 from seguridad.utils import Util
 from django.contrib.auth.hashers import make_password
 from rest_framework import status
@@ -1042,16 +1042,23 @@ class LoginApiView(generics.CreateAPIView):
                     if login_error:
                         login_error.contador = 0
                         login_error.save()
-                        
-                    representante_legal=Personas.objects.filter(representante_legal=user.persona.id_persona).values()
-                    representante_legal_list=[{'id_persona':representante['id_persona'],'razon_social':representante['razon_social'],'NUIP':representante['numero_documento']}for representante in representante_legal]
+                    
+                    # REPRESENTANTE LEGAL
+                    representante_legal=Personas.objects.filter(representante_legal=user.persona.id_persona)
+                    representante_legal_list=RepresentanteLegalGetSerializer(representante_legal, many=True)
+                    representante_legal_list=representante_legal_list.data
+                    
+                    # APODERADOS
+                    apoderados=ApoderadoPersona.objects.filter(persona_apoderada=user.persona.id_persona)
+                    apoderados_list=ApoderadoPersonaGetSerializer(apoderados, many=True)
+                    apoderados_list=apoderados_list.data
                     
                     # DEFINIR SI UN USUARIO SI O SI DEBE TENER UN PERMISO O NO
                     permisos_list = permisos_list[0] if permisos_list else []
                     
                     serializer_data = serializer.data
                     
-                    user_info={'userinfo':serializer_data,'permisos':permisos_list,'representante_legal':representante_legal_list}
+                    user_info={'userinfo':serializer_data,'permisos':permisos_list,'representante_legal':representante_legal_list, 'apoderados':apoderados_list}
                     sms = "Bia Cormacarena te informa que se ha registrado una conexion con el usuario " + user.nombre_de_usuario + " en la fecha " + str(datetime.now(pytz.timezone('America/Bogota')))
                     
                     if user.persona.telefono_celular:
