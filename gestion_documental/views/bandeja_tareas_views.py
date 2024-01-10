@@ -22,6 +22,7 @@ from gestion_documental.serializers.ventanilla_pqrs_serializers import Anexos_PQ
 from gestion_documental.utils import UtilsGestor
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from seguridad.utils import Util
+from transversal.models.organigrama_models import UnidadesOrganizacionales
 
 from transversal.models.personas_models import Personas
 from rest_framework.exceptions import ValidationError,NotFound
@@ -703,6 +704,7 @@ class RequerimientoSobrePQRSDFCreate(generics.CreateAPIView):
             serializer_relacion.is_valid(raise_exception=True)
             intance_3 =serializer_relacion.save()  
             relacion_pqr.append(serializer_relacion.data)
+        
         descripcion = {"IdPqrsdf":intance.id_pqrsdf,"IdPersonaSolicita":intance.id_persona_solicita,"fecha_solicitud":intance.fecha_solicitud}
         direccion=Util.get_client_ip(request)
         auditoria_data = {
@@ -715,7 +717,22 @@ class RequerimientoSobrePQRSDFCreate(generics.CreateAPIView):
             "valores_creados_detalles": valores_creados_detalles
             }
         Util.save_auditoria_maestro_detalle(auditoria_data)
+        #BUSCA LA TAREA Y COLOCA LOS ATRIBUTOS DE REQUERIMIENTOS PENDIENTES A TRUE
+        if  not 'id_tarea' in request.data:
+            raise ValidationError("Debe enviarse la id de la tarea")
+        tarea = TareasAsignadas.objects.filter(id_tarea_asignada=request.data['id_tarea']).first()
 
+        if not tarea:
+            raise ValidationError("No se encontro la tarea")
+        asignacion_tarea = TareaBandejaTareasPersona.objects.filter(id_tarea_asignada=tarea.id_tarea_asignada,es_responsable_ppal=True)
+        if asignacion_tarea:
+            tarea.requerimientos_pendientes_respuesta = True
+            tarea.save()
+
+
+
+        print(tarea)
+        
         return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'data':serializer.data,"estado":data_respuesta_estado_asociado,'anexos':data_anexos,'relacion_pqr':relacion_pqr}, status=status.HTTP_200_OK)
 
 
@@ -746,3 +763,15 @@ class MetadatosAnexosRequerimientoGetByIdAnexo(generics.ListAPIView):
         
         serializador = self.serializer_class(instance)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data,}, status=status.HTTP_200_OK)
+    
+
+#Reasignacion de tarea
+    
+class UnidadOrganizacionalUsuarioBajndeja(generics.ListAPIView):
+    serializer_class = None
+    queryset = UnidadesOrganizacionales.objects.all()
+    def get(self,request,pk):
+        persona = Personas.objects.filter(id_persona=pk).first()
+        if not persona:
+            raise NotFound("No existen Persona")
+        unidad = persona.id_unidad_organizacional_actual
