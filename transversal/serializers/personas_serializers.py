@@ -663,6 +663,71 @@ class ApoderadoPersonaSerializer(serializers.ModelSerializer):
         model = ApoderadoPersona
         fields = '__all__'
         
+class ApoderadoPersonaGetSerializer(serializers.ModelSerializer):
+    id_persona = serializers.ReadOnlyField(source='persona_poderdante.id_persona', default=None)
+    numero_documento = serializers.ReadOnlyField(source='persona_poderdante.numero_documento', default=None)
+    nombre_persona_poderdante = serializers.SerializerMethodField()
+    cod_relacion_con_el_titular = serializers.SerializerMethodField()
+    id_usuario = serializers.SerializerMethodField()
+    
+    def get_cod_relacion_con_el_titular(self, obj):
+        return 'AP'
+    
+    def get_id_usuario(self, obj):
+        id_usuario = None
+        usuario = obj.persona_poderdante.user_set.all()
+        if usuario:
+            usuario = usuario.exclude(id_usuario=1).first()
+            id_usuario = usuario.id_usuario
+            
+        return id_usuario
+    
+    def get_nombre_persona_poderdante(self, obj):
+        nombre_persona_poderdante = None
+        if obj.persona_poderdante.tipo_persona == 'N':
+            nombre_list = [obj.persona_poderdante.primer_nombre, obj.persona_poderdante.segundo_nombre, obj.persona_poderdante.primer_apellido, obj.persona_poderdante.segundo_apellido]
+            nombre_persona_poderdante = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_poderdante = nombre_persona_poderdante.upper()
+        if obj.persona_poderdante.tipo_persona == 'J':
+            nombre_persona_poderdante = obj.persona_poderdante.razon_social
+        return nombre_persona_poderdante
+    
+    class Meta:
+        model = ApoderadoPersona
+        fields = [
+            'id_apoderados_persona',
+            'id_persona',
+            'numero_documento',
+            'nombre_persona_poderdante',
+            'cod_relacion_con_el_titular',
+            'id_usuario'
+        ]
+        
+class RepresentanteLegalGetSerializer(serializers.ModelSerializer):
+    cod_relacion_con_el_titular = serializers.SerializerMethodField()
+    id_usuario = serializers.SerializerMethodField()
+    
+    def get_cod_relacion_con_el_titular(self, obj):
+        return 'RL'
+    
+    def get_id_usuario(self, obj):
+        id_usuario = None
+        usuario = obj.user_set.all()
+        if usuario:
+            usuario = usuario.exclude(id_usuario=1).first()
+            id_usuario = usuario.id_usuario
+            
+        return id_usuario
+    
+    class Meta:
+        model = Personas
+        fields = [
+            'id_persona',
+            'razon_social',
+            'numero_documento',
+            'cod_relacion_con_el_titular',
+            'id_usuario'
+        ]
         
 class ApoderadoPersonaPostSerializer(serializers.ModelSerializer):
     class Meta:
