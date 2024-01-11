@@ -363,36 +363,64 @@ class AnexoRespuestaPQRSerializer(serializers.ModelSerializer):
 
 class RespuestaPQRSDFPanelSerializer(serializers.ModelSerializer):
     anexos = serializers.SerializerMethodField()
-    
+    nombre_estado_actual_solicitud = serializers.SerializerMethodField()
+    numero_radicado_entrada = serializers.SerializerMethodField()
+    fecha_radicado_entrada = serializers.SerializerMethodField()
+
     def get_anexos(self, obj):
+        # Agrega tu lógica para obtener anexos aquí
         anexos_pqr = Anexos_PQR.objects.filter(id_PQRSDF=obj.id_pqrsdf)
         anexos = []
 
         if anexos_pqr:
             for anexo_pqr in anexos_pqr:
-                anexo = Anexos.objects.filter(id_anexo = anexo_pqr.id_anexo_id).first()
+                anexo = Anexos.objects.filter(id_anexo=anexo_pqr.id_anexo_id).first()
                 anexos.append(AnexosPqrsdfPanelSerializer(anexo).data)
+
         return anexos
-    
+
+    def get_nombre_estado_actual_solicitud(self, obj):
+        # Obtiene el nombre del estado actual de la solicitud
+        estado_actual = obj.id_pqrsdf.id_estado_actual_solicitud.nombre if obj.id_pqrsdf.id_estado_actual_solicitud else None
+        return estado_actual
+
+    def get_numero_radicado_entrada(self, obj):
+        # Obtiene el número de radicado de la PQRSDF
+        pqrsdf_instance = obj.id_pqrsdf
+        if pqrsdf_instance and pqrsdf_instance.id_radicado:
+            radicado_instance = pqrsdf_instance.id_radicado
+            numero_radicado_entrada = f"{radicado_instance.prefijo_radicado}-{radicado_instance.agno_radicado}-{radicado_instance.nro_radicado}"
+            return numero_radicado_entrada
+        return None
+
+    def get_fecha_radicado_entrada(self, obj):
+        pqrsdf_instance = obj.id_pqrsdf
+        if pqrsdf_instance and pqrsdf_instance.fecha_radicado:
+            fecha_radicado_entrada = pqrsdf_instance.fecha_radicado
+            return fecha_radicado_entrada
+        return None
+
     def to_representation(self, instance):
-        # Organiza la representación para mostrar primero la data del modelo principal y luego los datos anexos
         representation = super().to_representation(instance)
         reordered_representation = {
-            'id_PQRSDF': representation['id_pqrsdf'],
-            'id_respuesta_pqr': representation['id_respuesta_pqr'],
-            'fecha_respuesta': representation['fecha_respuesta'],
-            'descripcion': representation['descripcion'],
-            'asunto': representation['asunto'],
-            'descripcion': representation['descripcion'],
-            'cantidad_anexos': representation['cantidad_anexos'],
-            'nro_folios_totales': representation['nro_folios_totales'],
-            'id_persona_responde': representation['id_persona_responde'],
-            'id_radicado_salida': representation['id_radicado_salida'],
-            'fecha_radicado_salida': representation['fecha_radicado_salida'],
-            'id_doc_archivo_exp': representation['id_doc_archivo_exp'],
-            'anexos': representation['anexos']
+            'id_PQRSDF': representation.get('id_pqrsdf'),
+            'id_respuesta_pqr': representation.get('id_respuesta_pqr'),
+            'fecha_respuesta': representation.get('fecha_respuesta'),
+            'asunto': representation.get('asunto'),
+            'descripcion': representation.get('descripcion'),
+            'cantidad_anexos': representation.get('cantidad_anexos'),
+            'nro_folios_totales': representation.get('nro_folios_totales'),
+            'id_persona_responde': representation.get('id_persona_responde'),
+            'id_radicado_salida': representation.get('id_radicado_salida'),
+            'fecha_radicado_salida': representation.get('fecha_radicado_salida'),
+            'id_doc_archivo_exp': representation.get('id_doc_archivo_exp'),
+            'nombre_estado_actual_solicitud': representation.get('nombre_estado_actual_solicitud'),
+            'numero_radicado_entrada': representation.get('numero_radicado_entrada'),
+            'fecha_radicado_entrada': representation.get('fecha_radicado_entrada'),
+            'anexos': representation.get('anexos')
         }
         return reordered_representation
+
     class Meta:
         model = RespuestaPQR
         fields = '__all__'

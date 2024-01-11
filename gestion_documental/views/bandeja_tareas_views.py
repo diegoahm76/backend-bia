@@ -13,15 +13,17 @@ from rest_framework.permissions import IsAuthenticated
 
 from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
 
-from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, TareasAsignadas
+from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, ReasignacionesTareas, TareasAsignadas
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
 from gestion_documental.models.trd_models import TipologiasDoc
-from gestion_documental.serializers.bandeja_tareas_serializers import AdicionalesDeTareasGetByTareaSerializer, Anexos_RequerimientoCreateSerializer, AnexosComplementoGetByComBandejaTareasSerializer, BandejaTareasPersonaCreateSerializer, ComplementosUsu_PQRGetByIdSerializer, MetadatosAnexoerializerGet, PQRSDFDetalleRequerimiento, PQRSDFTitularGetBandejaTareasSerializer, RequerimientoSobrePQRSDFCreateSerializer, RequerimientoSobrePQRSDFGetSerializer, TareaBandejaTareasPersonaCreateSerializer, TareaBandejaTareasPersonaUpdateSerializer, TareasAnexoArchivosDigitalesSerializer, TareasAsignadasCreateSerializer, TareasAsignadasGetJustificacionSerializer, TareasAsignadasGetSerializer, TareasAsignadasUpdateSerializer
+from gestion_documental.serializers.bandeja_tareas_serializers import AdicionalesDeTareasGetByTareaSerializer, Anexos_RequerimientoCreateSerializer, AnexosComplementoGetByComBandejaTareasSerializer, BandejaTareasPersonaCreateSerializer, ComplementosUsu_PQRGetByIdSerializer, DetalleRequerimientoSerializer, LiderUnidadGetSerializer, MetadatosAnexoerializerGet, PQRSDFDetalleRequerimiento, PQRSDFTitularGetBandejaTareasSerializer, PersonaUnidadSerializer, ReasignacionesTareasCreateSerializer, ReasignacionesTareasgetByIdSerializer, RequerimientoSobrePQRSDFCreateSerializer, RequerimientoSobrePQRSDFGetSerializer, TareaBandejaTareasPersonaCreateSerializer, TareaBandejaTareasPersonaUpdateSerializer, TareasAnexoArchivosDigitalesSerializer, TareasAsignadasCreateSerializer, TareasAsignadasGetJustificacionSerializer, TareasAsignadasGetSerializer, TareasAsignadasUpdateSerializer, UnidadOrganizacionalBandejaTareasSerializer
 from gestion_documental.serializers.ventanilla_pqrs_serializers import Anexos_PQRAnexosGetSerializer, AnexosCreateSerializer, Estados_PQRPostSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, PQRSDFGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer
 from gestion_documental.utils import UtilsGestor
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from seguridad.utils import Util
+from transversal.models.lideres_models import LideresUnidadesOrg
+from transversal.models.organigrama_models import UnidadesOrganizacionales
 
 from transversal.models.personas_models import Personas
 from rest_framework.exceptions import ValidationError,NotFound
@@ -427,7 +429,6 @@ class DocumentoDigitalAnexoGet(generics.ListAPIView):
     queryset =Anexos.objects.all()
     permission_classes = [IsAuthenticated]
 
-
     def get (self, request,pk):
       
         instance =Anexos.objects.filter(id_anexo=pk).first()
@@ -475,15 +476,15 @@ class PQRSDFPersonaRequerimientoGet(generics.ListAPIView):
     
 
 class PQRSDFDetalleRequerimientoGet(generics.ListAPIView):
-    serializer_class = PQRSDFDetalleRequerimiento
-    queryset = PQRSDF.objects.all()
+    serializer_class = DetalleRequerimientoSerializer
+    queryset = SolicitudAlUsuarioSobrePQRSDF.objects.all()
     permission_classes = [IsAuthenticated]
-    def get(self,request,pqr):
+    def get(self,request,pk):
         
-        instance = self.get_queryset().filter(id_PQRSDF=pqr).first()
+        instance = self.get_queryset().filter(id_solicitud_al_usuario_sobre_pqrsdf=pk).first()
         if not instance:
             raise NotFound("No existen registros")
-        persona_titular = instance.id_persona_titular 
+        
         serializer = self.serializer_class(instance)
 
       
@@ -704,6 +705,7 @@ class RequerimientoSobrePQRSDFCreate(generics.CreateAPIView):
             serializer_relacion.is_valid(raise_exception=True)
             intance_3 =serializer_relacion.save()  
             relacion_pqr.append(serializer_relacion.data)
+        
         descripcion = {"IdPqrsdf":intance.id_pqrsdf,"IdPersonaSolicita":intance.id_persona_solicita,"fecha_solicitud":intance.fecha_solicitud}
         direccion=Util.get_client_ip(request)
         auditoria_data = {
@@ -716,7 +718,22 @@ class RequerimientoSobrePQRSDFCreate(generics.CreateAPIView):
             "valores_creados_detalles": valores_creados_detalles
             }
         Util.save_auditoria_maestro_detalle(auditoria_data)
+        #BUSCA LA TAREA Y COLOCA LOS ATRIBUTOS DE REQUERIMIENTOS PENDIENTES A TRUE
+        if  not 'id_tarea' in request.data:
+            raise ValidationError("Debe enviarse la id de la tarea")
+        tarea = TareasAsignadas.objects.filter(id_tarea_asignada=request.data['id_tarea']).first()
 
+        if not tarea:
+            raise ValidationError("No se encontro la tarea")
+        asignacion_tarea = TareaBandejaTareasPersona.objects.filter(id_tarea_asignada=tarea.id_tarea_asignada,es_responsable_ppal=True)
+        if asignacion_tarea:
+            tarea.requerimientos_pendientes_respuesta = True
+            tarea.save()
+
+
+
+        print(tarea)
+        
         return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'data':serializer.data,"estado":data_respuesta_estado_asociado,'anexos':data_anexos,'relacion_pqr':relacion_pqr}, status=status.HTTP_200_OK)
 
 
@@ -747,3 +764,111 @@ class MetadatosAnexosRequerimientoGetByIdAnexo(generics.ListAPIView):
         
         serializador = self.serializer_class(instance)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data,}, status=status.HTTP_200_OK)
+    
+
+#Reasignacion de tarea
+    
+class UnidadOrganizacionalUsuarioBandeja(generics.ListAPIView):
+    serializer_class = UnidadOrganizacionalBandejaTareasSerializer
+    queryset = UnidadesOrganizacionales.objects.all()
+    def get(self,request,pk):
+        persona = Personas.objects.filter(id_persona=pk).first()
+        if not persona:
+            raise NotFound("No existen Persona")
+        unidad = persona.id_unidad_organizacional_actual
+        if not unidad:
+            raise NotFound("Este Usuario no tiene unidad organizacional asignada")
+        serializer = self.serializer_class(unidad)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+
+
+class UnidadOrganizacionalHijasByUnidadId(generics.ListAPIView):
+    serializer_class = UnidadOrganizacionalBandejaTareasSerializer
+    queryset = UnidadesOrganizacionales.objects.all()
+
+    def get_units_recursive(self, unidad):
+        """
+        Función recursiva para obtener todas las unidades asociadas a una unidad dada.
+
+        Args:
+            unidad: La unidad organizacional actual.
+
+        Returns:
+            Lista de unidades asociadas.
+        """
+        unidades_asociadas = [unidad]
+
+        # Obtiene las unidades hijas recursivamente
+        unidades_hijas = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre=unidad.id_unidad_organizacional)
+        for unidad_hija in unidades_hijas:
+            unidades_asociadas.extend(self.get_units_recursive(unidad_hija))
+
+        return unidades_asociadas
+    def get(self,request,pk):
+    
+
+        unidad_padre = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=pk)
+
+        unidades_asociadas = self.get_units_recursive(unidad_padre)
+
+        serializer = self.serializer_class(unidades_asociadas, many=True)
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+class PersonaLiderUnidadGetByUnidad(generics.ListAPIView):
+    serializer_class = LiderUnidadGetSerializer
+    queryset = UnidadesOrganizacionales.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self,request,uni):
+        
+        unidad = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = uni).first()
+        if not unidad:
+            raise NotFound("No existen registros")
+        
+        lider = LideresUnidadesOrg.objects.filter(id_unidad_organizacional = unidad.id_unidad_organizacional).first()
+        if not lider:
+            raise ValidationError("No tiene lider asignado")
+        if not lider.id_persona:
+            raise ValidationError("No tiene lider asignado")
+        serializer = self.serializer_class(lider)
+
+
+        #return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':{'seccion':serializer_unidad.data,'hijos':serializer.data}}, status=status.HTTP_200_OK)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data}, status=status.HTTP_200_OK)
+
+class PersonasUnidadGetByUnidad(generics.ListAPIView):
+    serializer_class = PersonaUnidadSerializer
+    queryset = Personas.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self,request,uni):
+        
+        unidad = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = uni).first()
+        if not unidad:
+            raise NotFound("No existen registros")
+        personas = Personas.objects.filter(id_unidad_organizacional_actual=uni)
+        seralizer = self.serializer_class(personas,many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':seralizer.data}, status=status.HTTP_200_OK)
+    
+
+class ReasignacionesTareasCreate(generics.CreateAPIView):
+    serializer_class = ReasignacionesTareasCreateSerializer
+    queryset = ReasignacionesTareas.objects.all()
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        data_in = request.data
+        data_in['fecha_reasignacion'] = datetime.now()
+        data_in['cod_estado_reasignacion'] = 'Ep'
+        serializer = self.serializer_class(data=data_in)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'data':serializer.data}, status=status.HTTP_200_OK)
+    
+class ReasignacionesTareasgetById(generics.ListAPIView):
+    serializer_class = ReasignacionesTareasgetByIdSerializer
+    queryset = ReasignacionesTareas.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self, request,pk):
+        instance = self.get_queryset().filter(id_tarea_asignada=pk)
+        if not instance:
+            raise NotFound("No existen registros")
+        serializer = self.serializer_class(instance,many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data}, status=status.HTTP_200_OK)
