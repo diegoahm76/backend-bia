@@ -66,7 +66,6 @@ class Cartera(models.Model):
     id_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T413Id_Deudor')
     id_documento_cobro = models.ForeignKey(DocumentosCobro, on_delete=models.CASCADE, db_column='T413Id_DocumentoCobro')
     id_expediente = models.ForeignKey(Expedientes, on_delete=models.CASCADE, db_column='T413Id_Expediente')
-    id_tipo_renta = models.ForeignKey(TipoRenta, on_delete=models.CASCADE, db_column='T413Id_TipoRenta')
 
     def calcular_valor_total(self):
         return self.valor_sancion + self.valor_intereses
