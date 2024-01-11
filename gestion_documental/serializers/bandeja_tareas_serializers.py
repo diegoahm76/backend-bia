@@ -2,12 +2,14 @@
 from rest_framework import serializers
 from rest_framework.serializers import ReadOnlyField
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
-from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, TareasAsignadas
+from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, ReasignacionesTareas, TareasAsignadas
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TareaBandejaTareasPersona
 from datetime import timedelta
 from datetime import datetime
+from transversal.models.lideres_models import LideresUnidadesOrg
+from transversal.models.organigrama_models import UnidadesOrganizacionales
 
 from transversal.models.personas_models import Personas
 
@@ -328,6 +330,12 @@ class PQRSDFTitularGetBandejaTareasSerializer(serializers.ModelSerializer):
         return None
 
 
+
+class DetalleRequerimientoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SolicitudAlUsuarioSobrePQRSDF
+        fields = ['id_solicitud_al_usuario_sobre_pqrsdf','asunto','descripcion','fecha_solicitud']
+
 class PQRSDFDetalleRequerimiento(serializers.ModelSerializer):
    
     estado_actual = serializers.ReadOnlyField(source='id_estado_actual_solicitud.nombre',default=None)
@@ -378,4 +386,79 @@ class TareasAsignadasGetDetalleByIdSerializer(serializers.ModelSerializer):
         model = TareasAsignadas
         fields = '__all__'
     
+class UnidadOrganizacionalBandejaTareasSerializer(serializers.ModelSerializer):
+   
+    agrupacion_documental =serializers.ReadOnlyField(source='get_cod_agrupacion_documental_display',default=None)
+    class Meta:
+        model = UnidadesOrganizacionales
+        fields = ['id_unidad_organizacional','codigo','nombre','agrupacion_documental']
  
+class LiderUnidadGetSerializer(serializers.ModelSerializer):
+   
+    lider = serializers.SerializerMethodField()
+    cargo = serializers.SerializerMethodField()
+    cargo =serializers.ReadOnlyField(source='id_persona.id_cargo.nombre',default=None)
+   # solicitud_actual = serializers.SerializerMethodField()
+    class Meta:
+        model = LideresUnidadesOrg
+        fields = ['id_unidad_organizacional','id_persona','lider','cargo']
+
+        
+    def get_lider(self, obj):
+
+        if obj.id_persona:
+            nombre_completo_responsable = None
+            nombre_list = [obj.id_persona.primer_nombre, obj.id_persona.segundo_nombre,
+                            obj.id_persona.primer_apellido, obj.id_persona.segundo_apellido]
+            nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+            return nombre_completo_responsable
+        else :
+         
+            return None
+        
+
+
+class PersonaUnidadSerializer(serializers.ModelSerializer):
+    nombre_completo = serializers.SerializerMethodField()
+    cargo =serializers.ReadOnlyField(source='id_cargo.nombre',default=None)
+    class Meta:
+        model = Personas
+        fields = ['id_persona','nombre_completo','cargo','id_cargo']
+
+    def get_nombre_completo(self, obj):
+        nombre_completo = None
+        nombre_list = [obj.primer_nombre, obj.segundo_nombre, obj.primer_apellido, obj.segundo_apellido]
+        nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+        return nombre_completo.upper()
+    
+class ReasignacionesTareasCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReasignacionesTareas
+        fields = '__all__'
+
+class ReasignacionesTareasgetByIdSerializer(serializers.ModelSerializer):
+    persona_reasignada = serializers.SerializerMethodField()
+    cargo =serializers.ReadOnlyField(source='id_persona_a_quien_se_reasigna.id_cargo.nombre',default=None)
+    unidad_organizacional = serializers.SerializerMethodField()
+    estado_asignacion = serializers.ReadOnlyField(source='get_cod_estado_reasignacion_display',default=None)
+    class Meta:
+        model = ReasignacionesTareas
+        fields = ['id_reasignacion_tarea','fecha_reasignacion','persona_reasignada','cargo','unidad_organizacional','comentario_reasignacion','estado_asignacion','justificacion_reasignacion_rechazada']
+
+    def get_persona_reasignada(self, obj):
+        persona = obj.id_persona_a_quien_se_reasigna
+        nombre_completo = None
+        if persona:
+
+            nombre_list = [persona.primer_nombre, persona.segundo_nombre, persona.primer_apellido, persona.segundo_apellido]
+            nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+            return nombre_completo.upper()
+    def  get_unidad_organizacional(self, obj):
+        persona = obj.id_persona_a_quien_se_reasigna
+        if persona:
+            unidad = persona.id_unidad_organizacional_actual
+            if unidad:
+                serializador_unidad = UnidadOrganizacionalBandejaTareasSerializer(unidad)
+                return serializador_unidad.data
+        return None
