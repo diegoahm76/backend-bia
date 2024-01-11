@@ -13,6 +13,7 @@ from tramites.lists.cod_tipo_solicitud_al_requerimiento_list import cod_tipo_sol
 from tramites.lists.cod_calendario_habiles_list import cod_calendario_habiles_LIST
 from tramites.lists.cod_tipo_solicitud_juridica_list import cod_tipo_solicitud_juridica_LIST
 from tramites.lists.cod_estado_solicitud_juridica_list import cod_estado_solicitud_juridica_LIST
+from gestion_documental.choices.tipo_radicado_choices import cod_tipos_radicados_LIST
 
 class GetListCodTipoOperacionTramite(APIView):
     def get(self, request):
@@ -53,3 +54,7 @@ class GetListCodTipoSolicitudJuridica(APIView):
 class GetListCodEstadoSolicitudJuridica(APIView):
     def get(self, request):
         return Response(cod_estado_solicitud_juridica_LIST, status=status.HTTP_200_OK)
+    
+class GetListTiposRadicado(APIView):
+    def get(self, request):
+        return Response(cod_tipos_radicados_LIST, status=status.HTTP_200_OK)
