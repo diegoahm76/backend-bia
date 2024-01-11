@@ -19,9 +19,121 @@ from seguridad.utils import Util
 from django.db.models import Max
 
 from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, PermisosAmbientales, SolicitudesTramites
-from tramites.serializers.tramites_serializers import AnexosGetSerializer, AnexosUpdateSerializer, InicioTramiteCreateSerializer, ListTramitesGetSerializer, PersonaTitularInfoGetSerializer, TramiteListGetSerializer
+from tramites.serializers.tramites_serializers import AnexosGetSerializer, AnexosUpdateSerializer, GeneralTramitesGetSerializer, InicioTramiteCreateSerializer, ListTramitesGetSerializer, PersonaTitularInfoGetSerializer, TramiteListGetSerializer
 from transversal.models.base_models import Municipio
 from transversal.models.personas_models import Personas
+
+class GeneralTramitesCreateView(generics.CreateAPIView):
+    serializer_class = InicioTramiteCreateSerializer
+    serializer_anexos_class = AnexosUpdateSerializer
+    serializer_get_tramite_class = GeneralTramitesGetSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def create(self, request):
+        data = request.data
+        data_tramite = json.loads(data['data_tramite'])
+        archivos = request.FILES.getlist('archivos')
+        current_date = datetime.now()
+        
+        data_tramite['fecha_inicio_tramite'] = datetime.now()
+        data_tramite['id_persona_interpone'] = request.user.persona.id_persona
+        data_tramite['id_persona_registra'] = request.user.persona.id_persona
+        data_tramite['id_medio_solicitud'] = 2
+        data_tramite['id_estado_actual_solicitud'] = 1
+        data_tramite['fecha_ini_estado_actual'] = datetime.now()
+        
+        serializer = self.serializer_class(data=data_tramite)
+        serializer.is_valid(raise_exception=True)
+        tramite_creado = serializer.save()
+        
+        # CREAR ANEXOS
+        for index, (archivo) in enumerate(archivos):
+            cont = index + 1
+            
+            # VALIDAR FORMATO ARCHIVO 
+            archivo_nombre = archivo.name
+            nombre_sin_extension, extension = os.path.splitext(archivo_nombre)
+            extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+            
+            formatos_tipos_medio_list = FormatosTiposMedio.objects.all().values_list('nombre', flat=True)
+            
+            if extension_sin_punto.lower() not in list(formatos_tipos_medio_list) and extension_sin_punto.upper() not in list(formatos_tipos_medio_list):
+                raise ValidationError(f'El formato del anexo {archivo_nombre} no es válido')
+            
+            # CREAR ARCHIVO EN T238
+            # Obtiene el año actual para determinar la carpeta de destino
+            current_year = datetime.now().year
+            ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year))
+
+            # Calcula el hash MD5 del archivo
+            md5_hash = hashlib.md5()
+            for chunk in archivo.chunks():
+                md5_hash.update(chunk)
+
+            # Obtiene el valor hash MD5
+            md5_value = md5_hash.hexdigest()
+
+            # Crea el archivo digital y obtiene su ID
+            data_archivo = {
+                'es_Doc_elec_archivo': True,
+                'ruta': ruta,
+                'md5_hash': md5_value  # Agregamos el hash MD5 al diccionario de datos
+            }
+            
+            # CREAR ARCHIVO EN T238
+            archivo_class = ArchivosDgitalesCreate()
+            respuesta = archivo_class.crear_archivo(data_archivo, archivo)
+            archivo_digital_instance = ArchivosDigitales.objects.filter(id_archivo_digital=respuesta.data.get('data').get('id_archivo_digital')).first()
+            
+            # CREAR ANEXO EN T258
+            anexo_creado = Anexos.objects.create(
+                nombre_anexo = nombre_sin_extension,
+                orden_anexo_doc = cont,
+                cod_medio_almacenamiento = 'Na',
+                numero_folios = 0,
+                ya_digitalizado = False
+            )
+            
+            # CREAR ANEXO EN T260
+            MetadatosAnexosTmp.objects.create(
+                id_anexo = anexo_creado,
+                nombre_original_archivo = nombre_sin_extension,
+                fecha_creacion_doc = current_date.date(),
+                id_archivo_sistema = archivo_digital_instance
+            )
+            
+            # CREAR DOCUMENTO EN 
+            data_anexo = {}
+            data_anexo['id_solicitud_tramite'] = tramite_creado.id_solicitud_tramite
+            data_anexo['id_anexo'] = anexo_creado.id_anexo
+            
+            serializer_anexos_crear = self.serializer_anexos_class(data=data_anexo)
+            serializer_anexos_crear.is_valid(raise_exception=True)
+            serializer_anexos_crear.save()
+        
+        # RADICAR TRAMITE
+        data_radicar = {}
+        data_radicar['fecha_actual'] = current_date
+        data_radicar['id_usuario'] = request.user.id_usuario
+        data_radicar['tipo_radicado'] = data_tramite['tipo_radicado']
+        data_radicar['modulo_radica'] = "Trámites y Servicios"
+        
+        radicado_class = RadicadoCreate()
+        radicado_response = radicado_class.post(data_radicar)
+        
+        id_radicado = radicado_response.get('id_radicado')
+        radicado = T262Radicados.objects.filter(id_radicado=id_radicado).first()
+        estado_solicitud = EstadosSolicitudes.objects.filter(id_estado_solicitud=2).first()
+        
+        tramite_creado.id_radicado = radicado
+        tramite_creado.fecha_radicado = current_date
+        tramite_creado.id_estado_actual_solicitud = estado_solicitud
+        tramite_creado.save()
+        
+        tramite_instance_updated = SolicitudesTramites.objects.filter(id_solicitud_tramite=tramite_creado.id_solicitud_tramite).first()
+        serializer_tramite = self.serializer_get_tramite_class(tramite_instance_updated)
+        
+        return Response({'success': True, 'detail':'Se realizó la creación del del trámite correctamente', 'data': serializer_tramite.data}, status=status.HTTP_201_CREATED)   
 
 class ListTramitesGetView(generics.ListAPIView):
     serializer_class = ListTramitesGetSerializer
