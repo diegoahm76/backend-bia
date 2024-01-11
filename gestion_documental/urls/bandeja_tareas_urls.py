@@ -29,5 +29,11 @@ urlpatterns = [
     path('pqrsdf/requerimientos/anexos/get/<str:re>/',views.AnexosFGetByRequerimiento.as_view(),name='listar-anexos-requerimiento'),
     #MetadatosAnexosRequerimientoGetByIdAnexo
     path('pqrsdf/requerimientos/anexos/metadatos/get/<str:pk>/',views.MetadatosAnexosRequerimientoGetByIdAnexo.as_view(),name='listar-metadatos-anexos-requer'),
-    #Reasignacion de tarea 
-    ]
+    #REASIGNACION
+    path('unidad-organizacional/persona/get/<str:pk>/',views.UnidadOrganizacionalUsuarioBandeja.as_view(),name='listar-unidad-organizacional-usuario'),
+    path('unidad-organizacional/hijas/get/<str:pk>/',views.UnidadOrganizacionalHijasByUnidadId.as_view(),name='listar-unidad-organizacional-hijas'),
+    path('unidad-organizacional/persona-lider/get/<str:uni>/',views.PersonaLiderUnidadGetByUnidad.as_view(),name='listar-persona-lider-unidad'),
+    path('unidad-organizacional/personas/get/<str:uni>/',views.PersonasUnidadGetByUnidad.as_view(),name='listar-personas-unidad'),
+    path('reasignaciones/tareas/create/',views.ReasignacionesTareasCreate.as_view(),name='crear-reasignaciones-tareas'),
+    path('reasignaciones/tareas/get/<str:pk>/',views.ReasignacionesTareasgetById.as_view(),name='listar-reasignaciones-tareas'),
+]
