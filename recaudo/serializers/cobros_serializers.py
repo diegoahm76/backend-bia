@@ -45,13 +45,12 @@ class TipoRentaSerializer(serializers.ModelSerializer):
 class CarteraGeneralSerializer(serializers.ModelSerializer):
     id_deudor = DeudorSerializer(many=False)
     id_rango = RangosEdadSerializer(many=False)
-    id_tipo_renta = TipoRentaSerializer(many=False)
     proceso_cartera = serializers.SerializerMethodField()
 
     class Meta:
         model = Cartera
         fields = ('id', 'nombre', 'dias_mora', 'valor_intereses', 'valor_sancion', 'inicio', 'fin', 'id_rango', 'codigo_contable', 'fecha_facturacion', 'fecha_notificacion',
-                  'fecha_ejecutoriado', 'numero_factura', 'monto_inicial', 'tipo_cobro', 'id_deudor', 'proceso_cartera', 'id_tipo_renta')
+                  'fecha_ejecutoriado', 'numero_factura', 'monto_inicial', 'tipo_cobro', 'id_deudor', 'proceso_cartera')
 
     def get_proceso_cartera(self, obj):
         procesos_cartera = obj.proceso_cartera.filter(fin__isnull=True)
