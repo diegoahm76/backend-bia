@@ -29,7 +29,6 @@ from docxtpl import DocxTemplate
 from django.conf import settings
 import calendar
 
-
 class OpcionesLiquidacionBaseView(generics.ListAPIView):
     queryset = OpcionesLiquidacionBase.objects.all()
     serializer_class = OpcionesLiquidacionBaseSerializer
@@ -252,6 +251,7 @@ class ExpedientesDeudorGetView(generics.ListAPIView):
 
 
 def obtener_dias_por_mes(anio):
+    #TODO: Aqui se modifica la cantidad de dias por mes
     dias_por_mes = {}
     for mes in range(1, 13):
         dias_por_mes[mes] = calendar.monthrange(anio, mes)[1]
