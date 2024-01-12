@@ -122,6 +122,7 @@ class GeneralTramitesCreateView(generics.CreateAPIView):
         radicado_response = radicado_class.post(data_radicar)
         
         id_radicado = radicado_response.get('id_radicado')
+        radicado_nuevo = radicado_response.get('radicado_nuevo')
         radicado = T262Radicados.objects.filter(id_radicado=id_radicado).first()
         estado_solicitud = EstadosSolicitudes.objects.filter(id_estado_solicitud=2).first()
         
@@ -132,8 +133,10 @@ class GeneralTramitesCreateView(generics.CreateAPIView):
         
         tramite_instance_updated = SolicitudesTramites.objects.filter(id_solicitud_tramite=tramite_creado.id_solicitud_tramite).first()
         serializer_tramite = self.serializer_get_tramite_class(tramite_instance_updated)
+        serializer_tramite_data = serializer_tramite.data
+        serializer_tramite_data['radicado_nuevo'] = radicado_nuevo
         
-        return Response({'success': True, 'detail':'Se realizó la creación del del trámite correctamente', 'data': serializer_tramite.data}, status=status.HTTP_201_CREATED)   
+        return Response({'success': True, 'detail':'Se realizó la creación del del trámite correctamente', 'data': serializer_tramite_data}, status=status.HTTP_201_CREATED)   
 
 class ListTramitesGetView(generics.ListAPIView):
     serializer_class = ListTramitesGetSerializer
