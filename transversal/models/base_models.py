@@ -130,7 +130,7 @@ class ClasesTerceroPersona(models.Model):
         unique_together = (('id_persona', 'id_clase_tercero'),)
         
 class ApoderadoPersona(models.Model):
-    id_apoderados_persona = models.SmallAutoField(primary_key= True, editable= False, db_column="T013IdApoderados_persona")
+    id_apoderados_persona = models.SmallAutoField(primary_key= True, editable= False, db_column="T013IdApoderados_Persona")
     persona_poderdante = models.ForeignKey(Personas, on_delete=models.CASCADE, related_name='persona_poderdante', db_column='T013Id_PersonaPoderdante')
     persona_apoderada = models.ForeignKey(Personas, on_delete=models.CASCADE, related_name='persona_apoderada', db_column='T013Id_PersonaApoderada')
     id_proceso = models.IntegerField(db_column='T013Id_Proceso')
