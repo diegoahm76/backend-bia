@@ -122,7 +122,7 @@ class ValoresVariables(models.Model):
     fecha_fin = models.DateField(db_column='T444FechaFin')
     valor = models.DecimalField(max_digits=10, decimal_places=2, db_column='T444Valor')
     descripccion = models.CharField(max_length=255, db_column='T444Descripcion')  # Corregir el nombre de la columna
-
+    estado=models.BooleanField(db_column='T444Estado',null=True,default=True)  # Cambiado a campo booleano
     class Meta:
         db_table = 'T444ValoresVariables'
         verbose_name = 'Valores Variables'
