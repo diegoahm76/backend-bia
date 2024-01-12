@@ -23,4 +23,14 @@ urlpatterns = [
     path('expedientes-deudor/get/<int:id_deudor>/', views.ExpedientesDeudorGetView.as_view(), name='expedientes-deudor'),
 
     path('calculos/', views.CalculosLiquidacionBaseView.as_view(), name='calculos-liquidacion'),
+
+
+
+
+    path('liquidacion-pdf_miguel/<int:pk>/', views.liquidacionPdfpruebaMigueluno, name='descargar-liquidacion-pdff'),
+    
+    path('liquidacion-pdf_miguel_dos/<int:pk>/', views.liquidacionPdfpruebaMigueldos, name='descargar-liquidacion-pdff'),
+
+
+    
 ]
