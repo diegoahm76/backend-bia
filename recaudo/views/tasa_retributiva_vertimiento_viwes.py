@@ -1,10 +1,11 @@
 
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
-from recaudo.models.tasa_retributiva_vertimiento_models import documento_formulario_recuado
-from recaudo.serializers.tasa_retributiva_vertimiento_serializers import documento_formulario_recuados_Getserializer, documento_formulario_recuados_serializer
+from recaudo.models.tasa_retributiva_vertimiento_models import CaptacionMensualAgua, CoordenadasSitioCaptacion, FactoresUtilizacion, InformacionFuente, T0444Formulario, documento_formulario_recuado
+from recaudo.serializers.tasa_retributiva_vertimiento_serializers import CaptacionMensualAguaSerializer, CoordenadasSitioCaptacionSerializer, FactoresUtilizacionSerializer, InformacionFuenteSerializer, T0444FormularioSerializer, documento_formulario_recuados_Getserializer, documento_formulario_recuados_serializer
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework import generics,status
+from rest_framework.views import APIView
 
 
 
@@ -40,9 +41,7 @@ class CrearDocumentoFormularioRecuado(generics.CreateAPIView):
             else:
                 raise ValidationError("No se proporcionó ningún archivo.")
         except ValidationError as e:
-            raise ValidationError({'error': 'Error al crear el registro', 'detail': e.detail})
-
-
+            raise ValidationError(e.detail)
 
 
 
@@ -54,5 +53,18 @@ class DocumentoFormularioRecaudoGET(generics.ListAPIView):
         instance = self.get_queryset()
         serializer = self.serializer_class(instance, many=True)
 
-        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+
+
+
+class T0444444FormularioView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = T0444FormularioSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return   Response({'success': True, 'detail': 'Registro creado correctamente', 'data': serializer.data},
+                                status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
