@@ -2,7 +2,7 @@ from rest_framework import serializers
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, TiposPQR, MediosSolicitud
-from transversal.models.personas_models import Personas
+from transversal.models.personas_models import Personas, UnidadesOrganizacionales
 
 class TiposPQRGetSerializer(serializers.ModelSerializer):
     cod_tipo_pqr_legible = serializers.SerializerMethodField()
@@ -477,7 +477,23 @@ class PQRSDFGetSerializer(serializers.ModelSerializer):
             radicado = T262Radicados.objects.get(pk=pqrsdf.id_radicado.id_radicado)
             return f"{radicado.prefijo_radicado}-{radicado.agno_radicado}-{radicado.nro_radicado}"
         return None
-    
+
+class PersonaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Personas
+        fields = fields = [
+            'id_persona',
+            'tipo_documento',
+            'numero_documento',
+            'primer_nombre',
+            'primer_apellido'
+        ]
+
+
+class UnidadOrganizacionalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UnidadesOrganizacionales
+        fields = '__all__'
 class EstadosSolicitudesSerializer(serializers.ModelSerializer):
     class Meta:
         model = EstadosSolicitudes
