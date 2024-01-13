@@ -38,7 +38,10 @@ urlpatterns = [
     path('tipo-tarea/',views.TipoTarea.as_view(), name='tipo-tarea'),
     path('estado-asignacion-tarea/',views.EstadoAsignacionTarea.as_view(), name='estado-asignacion-tarea'),
     path('estado-solicitud-tarea/',views.EstadoSolicitudTarea.as_view(), name='estado-solicitud-tarea'),
+    path('tipo-transferencia/',views.TiposTransferencias.as_view(), name='tipo-transferencia'),
     path('tipo-pqrsdf/',views.TipoPqrsdf.as_view(), name='tipo-pqrsdf'),
+    path('tipo-solicitud-pqrsdf/',views.TipoSolicitudPQRSDF.as_view(), name='tipo-pqrsdf'),
+    path('estado-solicitud-pqrsdf/',views.EstadoSolicitud.as_view(), name='estado-pqrsdf'),
     
     
 ]

@@ -1,7 +1,7 @@
 from django.db import models
 from recaudo.models.liquidaciones_models import LiquidacionesBase, Deudores, Expedientes
 from recaudo.models.planes_pagos_models import TasasInteres
-from recaudo.models.base_models import RangosEdad
+from recaudo.models.base_models import RangosEdad, TipoRenta
 
 
 class DocumentosCobro(models.Model):
@@ -66,6 +66,7 @@ class Cartera(models.Model):
     id_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T413Id_Deudor')
     id_documento_cobro = models.ForeignKey(DocumentosCobro, on_delete=models.CASCADE, db_column='T413Id_DocumentoCobro')
     id_expediente = models.ForeignKey(Expedientes, on_delete=models.CASCADE, db_column='T413Id_Expediente')
+    tipo_renta = models.CharField(max_length=255, db_column='T413tipoRenta', null=True, blank=True)
 
     def calcular_valor_total(self):
         return self.valor_sancion + self.valor_intereses

@@ -1,19 +1,28 @@
 
 import ast
 import copy
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import json
 import os
+import subprocess
+from django.http import HttpResponse
+from django.utils import timezone
+from django.db.models import F, ExpressionWrapper, fields
 from django.forms import model_to_dict
+from django.db.models import F, ExpressionWrapper, fields
+from django.db.models import Value as V
+from django.db.models import IntegerField
+from django.db.models.functions import Now, ExtractDay
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.models.expedientes_models import ArchivosDigitales
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MediosSolicitud, MetadatosAnexosTmp, RespuestaPQR, T262Radicados, TiposPQR, modulos_radican
+from gestion_documental.models.expedientes_models import ArchivosDigitales , DocumentosDeArchivoExpediente
+from gestion_documental.models.bandeja_tareas_models import TareasAsignadas, ReasignacionesTareas
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MediosSolicitud, MetadatosAnexosTmp, RespuestaPQR, T262Radicados, TiposPQR, modulos_radican
 from rest_framework.response import Response
 from gestion_documental.models.trd_models import FormatosTiposMedio
-from gestion_documental.serializers.pqr_serializers import AnexoRespuestaPQRSerializer, AnexoSerializer, AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, EstadosSolicitudesSerializer, InfoDenunciasPQRSDFPostSerializer, InfoDenunciasPQRSDFPutSerializer, InfoDenunciasPQRSDFSerializer, MediosSolicitudCreateSerializer, MediosSolicitudDeleteSerializer, MediosSolicitudSearchSerializer, MediosSolicitudUpdateSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, PQRSDFGetSerializer, PQRSDFPanelSerializer, PQRSDFPostSerializer, PQRSDFPutSerializer, PQRSDFSerializer, PersonasSerializer, RadicadoPostSerializer, RespuestaPQRSDFPanelSerializer, RespuestaPQRSDFPostSerializer, TiposPQRGetSerializer, TiposPQRUpdateSerializer
+from gestion_documental.serializers.pqr_serializers import AnexoRespuestaPQRSerializer, PersonaSerializer,UnidadOrganizacionalSerializer, AnexoSerializer, AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, EstadosSolicitudesSerializer, InfoDenunciasPQRSDFPostSerializer, InfoDenunciasPQRSDFPutSerializer, InfoDenunciasPQRSDFSerializer, MediosSolicitudCreateSerializer, MediosSolicitudDeleteSerializer, MediosSolicitudSearchSerializer, MediosSolicitudUpdateSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, PQRSDFGetSerializer, PQRSDFPanelSerializer, PQRSDFPostSerializer, PQRSDFPutSerializer, PQRSDFSerializer, PersonasSerializer, RadicadoPostSerializer, RespuestaPQRSDFPanelSerializer, RespuestaPQRSDFPostSerializer, TiposPQRGetSerializer, TiposPQRUpdateSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.configuracion_tipos_radicados_views import ConfigTiposRadicadoAgnoGenerarN
 from gestion_documental.views.panel_ventanilla_views import Estados_PQRCreate, Estados_PQRDelete
@@ -276,7 +285,7 @@ class PQRSDFUpdate(generics.RetrieveUpdateAPIView):
             serializer.save()
             return serializer.data
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
     
     def procesa_denuncia(self, denuncia, cod_tipo_PQRSDF_DB, cod_tipo_PQRSDF, id_PQRSDF):
         if cod_tipo_PQRSDF_DB == 'D' and cod_tipo_PQRSDF == 'D':
@@ -588,10 +597,12 @@ class RadicadoCreate(generics.CreateAPIView):
             serializer = self.serializer_class(data=radicado_data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            return serializer.data
+            serializer_data = serializer.data
+            serializer_data['radicado_nuevo'] = config_tipos_radicado['radicado_nuevo']
+            return serializer_data
 
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
 
 
     def get_config_tipos_radicado(self, request):
@@ -635,7 +646,7 @@ class DenunciasCreate(generics.CreateAPIView):
             return serializer.data
 
         except Exception as e:
-          raise ({'success': False, 'detail': str(e)})
+          raise ValidationError(str(e))
         
 class DenunciasUpdate(generics.RetrieveUpdateAPIView):
     serializer_class = InfoDenunciasPQRSDFPutSerializer
@@ -653,7 +664,7 @@ class DenunciasUpdate(generics.RetrieveUpdateAPIView):
                 raise ValidationError("No se encuentra la denuncia que intenta actualziar")
 
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})   
+            raise ValidationError(str(e))   
 
 
 class DenunciasDelete(generics.RetrieveAPIView):
@@ -667,7 +678,7 @@ class DenunciasDelete(generics.RetrieveAPIView):
                 denuncia.delete()
             return True
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
 
 
 
@@ -720,7 +731,7 @@ class AnexosCreate(generics.CreateAPIView):
             return serializer.data
 
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
 
     def crear_archivos(self, uploaded_file, fecha_creacion):
         #Valida extensión del archivo
@@ -775,7 +786,7 @@ class AnexosUpdate(generics.RetrieveUpdateAPIView):
             return nombres_anexos_auditoria
 
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
         
     def update_anexo(self, anexo_db, anexo_update):
         serializer = self.serializer_class(anexo_db, data=anexo_update, many=False)
@@ -806,7 +817,7 @@ class AnexosDelete(generics.RetrieveDestroyAPIView):
             return nombres_anexos_auditoria
             
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
 
 class AnexosPQRCreate(generics.CreateAPIView):
     serializer_class = AnexosPQRSDFPostSerializer
@@ -819,7 +830,7 @@ class AnexosPQRCreate(generics.CreateAPIView):
             return serializer.data
 
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
         
 class AnexosPQRDelete(generics.RetrieveDestroyAPIView):
     serializer_class = AnexosPQRSDFSerializer
@@ -847,7 +858,7 @@ class MetadatosPQRCreate(generics.CreateAPIView):
             return serializer.data
 
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
         
     def set_data_metadato(self, data_metadatos):
         metadato = {}
@@ -891,7 +902,7 @@ class MetadatosPQRUpdate(generics.RetrieveUpdateAPIView):
                 raise NotFound('No se encontró el metadato que intenta actualizar')
                 
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
     
     def actualizar_archivo(self, archivo, fecha_actual, id_archivo_anterior):
         #Borra archivo anterior del metadato
@@ -917,7 +928,7 @@ class MetadatosPQRDelete(generics.RetrieveDestroyAPIView):
             else:
                 raise NotFound('No se encontró ningún metadato con estos parámetros')
         except Exception as e:
-          raise({'success': False, 'detail': str(e)})
+          raise ValidationError(str(e))
         
 class ArchivoDelete(generics.RetrieveDestroyAPIView):
     serializer_class = ArchivosSerializer
@@ -931,7 +942,7 @@ class ArchivoDelete(generics.RetrieveDestroyAPIView):
             else:
                 raise NotFound('No se encontró ningún metadato con estos parámetros') 
         except Exception as e:
-          raise({'success': False, 'detail': str(e)})
+          raise ValidationError(str(e))
 
 ############################## UTILS ###########################################################
 class Util_PQR:
@@ -1231,7 +1242,7 @@ class RespuestaPQRSDFUpdate(generics.RetrieveUpdateAPIView):
             serializer.save()
             return serializer.data
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
     
 
     def procesa_anexos(self, anexos, archivos, id_respuesta_PQR, isCreateForWeb, fecha_actual):
@@ -1360,7 +1371,7 @@ class AnexosRespuestaCreate(generics.CreateAPIView):
             return serializer.data
 
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
 
     def crear_archivos(self, uploaded_file, fecha_creacion):
         #Valida extensión del archivo
@@ -1415,7 +1426,7 @@ class AnexosRespuestaUpdate(generics.RetrieveUpdateAPIView):
             return nombres_anexos_auditoria
 
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
         
     def update_anexo(self, anexo_db, anexo_update):
         serializer = self.serializer_class(anexo_db, data=anexo_update, many=False)
@@ -1446,7 +1457,7 @@ class AnexosRespuestaDelete(generics.RetrieveDestroyAPIView):
             return nombres_anexos_auditoria
             
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
 
 class AnexosRespuestaPQRCreate(generics.CreateAPIView):
     serializer_class = AnexosPQRSDFPostSerializer
@@ -1557,7 +1568,7 @@ class MetadatosRespuestaPQRDelete(generics.RetrieveDestroyAPIView):
             else:
                 raise NotFound('No se encontró ningún metadato con estos parámetros')
         except Exception as e:
-          raise({'success': False, 'detail': str(e)})
+          raise ValidationError(str(e))
         
 class ArchivoDelete(generics.RetrieveDestroyAPIView):
     serializer_class = ArchivosSerializer
@@ -1571,7 +1582,7 @@ class ArchivoDelete(generics.RetrieveDestroyAPIView):
             else:
                 raise NotFound('No se encontró ningún metadato con estos parámetros') 
         except Exception as e:
-          raise({'success': False, 'detail': str(e)})
+          raise ValidationError(str(e))
 
 ############################## UTILS ###########################################################
 class Util_Respuesta_PQR:
@@ -1788,3 +1799,949 @@ class EstadosSolicitudesList(generics.ListAPIView):
             'detail': 'Se encontraron los siguientes registros.',
             'data': serializer.data
         }, status=status.HTTP_200_OK)
+
+
+##########################################################################################################################################################################################################
+    
+#CONSULTA_ESTADO_SOLICITUD_PQRSDF
+class ConsultaEstadoPQRSDF(generics.ListAPIView):
+    serializer_class = PQRSDFGetSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_tipo_pqrsdf_descripcion(self, cod_tipo_pqrsdf):
+        tipo_mapping = {
+            "PG": "Petición General",
+            "PD": "Petición De Documentos o Información",
+            "PC": "Petición De Consulta",
+            "Q": "Queja",
+            "R": "Reclamo",
+            "S": "Sugerencia",
+            "D": "Denuncia",
+            "F": "Felicitación",
+        }
+
+        return tipo_mapping.get(cod_tipo_pqrsdf, "Tipo Desconocido")
+
+    def get_estado_solicitud_nombre(self, id_estado_solicitud, fecha_radicado=None, dias_para_respuesta=None):
+        # Verificar si es VENCIDO y ajustar la lógica
+        if dias_para_respuesta is not None and fecha_radicado:
+            tiempo_respuesta = fecha_radicado + timedelta(days=dias_para_respuesta)
+            today = datetime.now()
+            
+            # Verificar si es VENCIDO
+            if today > tiempo_respuesta:
+                return 'VENCIDO'
+
+        # Verificar si ya es un objeto de estado o un ID
+        if isinstance(id_estado_solicitud, EstadosSolicitudes):
+            estado = id_estado_solicitud
+        else:
+            try:
+                estado = EstadosSolicitudes.objects.get(id_estado_solicitud=id_estado_solicitud)
+            except EstadosSolicitudes.DoesNotExist:
+                return "Estado Desconocido"
+
+        return estado.nombre
+
+
+    def get_location_info(self, pqrsdf):
+        estado_actual = pqrsdf.id_estado_actual_solicitud
+
+        if estado_actual and estado_actual.nombre in ['RADICADO', 'EN VENTANILLA CON PENDIENTES', 'EN VENTANILLA SIN PENDIENTES']:
+            return 'EN VENTANILLA'
+
+        elif estado_actual and estado_actual.nombre == 'EN GESTION':
+            # Obtener información de la asignación actual
+            try:
+                asignacion = AsignacionPQR.objects.filter(
+                    id_pqrsdf=pqrsdf,
+                    cod_estado_asignacion='Ac'
+                ).latest('fecha_asignacion')
+
+                # Validar si la asignación ha sido reasignada
+                tarea_reasignada = ReasignacionesTareas.objects.filter(
+                    id_tarea_asignada=asignacion.id_asignacion_pqr,
+                    cod_estado_reasignacion='Ac'
+                ).first()
+
+                if tarea_reasignada:
+                    # Obtener información de la reasignación
+                    if tarea_reasignada.cod_estado_reasignacion == 'Ep':
+                        # Reasignación en espera
+                        unidad_reasignada = tarea_reasignada.id_und_org_reasignada
+                    elif tarea_reasignada.cod_estado_reasignacion == 'Re':
+                        # Reasignación rechazada
+                        unidad_reasignada = tarea_reasignada.id_und_org_reasignada
+                    elif tarea_reasignada.cod_estado_reasignacion == 'Ac':
+                        # Reasignación aceptada
+                        persona_reasignada = Personas.objects.get(
+                            id_persona=tarea_reasignada.id_persona_a_quien_se_reasigna
+                        )
+                        unidad_reasignada = persona_reasignada.id_unidad_organizacional_actual
+
+                    if unidad_reasignada:
+                        if unidad_reasignada.cod_agrupacion_documental == 'SEC':
+                            return f'SECCION - {unidad_reasignada.codigo} - {unidad_reasignada.nombre}'
+                        elif unidad_reasignada.codigo == 'SUB':
+                            return f'SUBSECCION - {unidad_reasignada.codigo} - {unidad_reasignada.nombre}'
+                        elif unidad_reasignada.cod_agrupacion_documental is None:
+                            return f'{unidad_reasignada.codigo} - {unidad_reasignada.nombre}'
+
+                # Obtener información de la asignación original
+                unidad_asignada = asignacion.id_und_org_seccion_asignada
+                if unidad_asignada:
+                    if unidad_asignada.cod_agrupacion_documental == 'SEC':
+                        return f'SECCION - {unidad_asignada.codigo} - {unidad_asignada.nombre}'
+                    elif unidad_asignada.cod_agrupacion_documental == 'SUB':
+                        return f'SUBSECCION - {unidad_asignada.codigo} - {unidad_asignada.nombre}'
+                    elif unidad_asignada.cod_agrupacion_documental is None:
+                        return f'{unidad_asignada.codigo} - {unidad_asignada.nombre}'
+
+            except AsignacionPQR.DoesNotExist:
+                pass
+
+
+        elif estado_actual and estado_actual.nombre == 'RESPONDIDA':
+            # Obtener información de la respuesta
+            respuestas = RespuestaPQR.objects.filter(id_pqrsdf=pqrsdf.id_PQRSDF)
+
+            if respuestas.exists():
+                # Tomar la primera respuesta para obtener la ubicación
+                respuesta = respuestas.first()
+                persona_responde = respuesta.id_persona_responde
+
+                # Asegúrate de que el campo exista y tenga el nombre correcto en el modelo 'Personas'
+                if hasattr(persona_responde, 'id_unidad_organizacional_actual'):
+                    unidad_responde = persona_responde.id_unidad_organizacional_actual
+
+                    # Asegúrate de que los nombres de los campos coincidan con el modelo 'UnidadesOrganizacionales'
+                    if unidad_responde.cod_agrupacion_documental == 'SEC':
+                        return f'SECCION - {unidad_responde.nombre}'
+                    elif unidad_responde.cod_agrupacion_documental == 'SUB':
+                        return f'SUBSECCION - {unidad_responde.nombre}'
+                    elif unidad_responde.cod_agrupacion_documental is None:
+                        return f'{unidad_responde.codigo} - {unidad_responde.nombre}'
+
+        elif estado_actual and estado_actual.nombre == 'VENCIDO':
+            # Obtener información de la asignación cuando la PQRSDF está vencida
+            try:
+                asignacion = AsignacionPQR.objects.filter(
+                    T268Id_PQRSDF=pqrsdf.id_PQRSDF,
+                    T268codEstadoAsignacion='Ac'
+                ).latest('T268FechaAsignacion')
+
+                unidad_asignada = asignacion.id_und_org_seccion_asignada
+                if unidad_asignada.cod_agrupacion_documental == 'SEC':
+                    return f'SECCION - {unidad_asignada.nombre}'
+                elif unidad_asignada.cod_agrupacion_documental == 'SUB':
+                    return f'SUBSECCION - {unidad_asignada.nombre}'
+                else:
+                    return f'{unidad_asignada.codigo} - {unidad_asignada.nombre}'
+
+            except AsignacionPQR.DoesNotExist:
+                pass
+
+        return None
+    
+
+    def get_documento_info(self, pqrsdf, *args, **kwargs):
+        estado_actual_nombre = pqrsdf.id_estado_actual_solicitud.nombre if pqrsdf.id_estado_actual_solicitud else None
+
+        try:
+            
+            if estado_actual_nombre == 'RESPONDIDA':
+                # Obtener los registros correspondientes en T269
+                registros_t269 = RespuestaPQR.objects.filter(id_pqrsdf=pqrsdf.id_PQRSDF)
+
+                if registros_t269.exists():
+                    primer_registro_t269 = registros_t269.first()
+                    
+                    # Obtener el registro en T237DocumentosDeArchivo_Expediente
+                    registros_t237 = DocumentosDeArchivoExpediente.objects.filter(
+                        id_documento_de_archivo_exped=primer_registro_t269.id_doc_archivo_exp.id_documento_de_archivo_exped
+                    )
+
+                    if registros_t237.exists():
+                        registro_t237 = registros_t237.first()
+
+                        # Obtener el registro en T238ArchivosDigitales
+                        try:
+                            registro_t238 = ArchivosDigitales.objects.get(
+                                id_archivo_digital=registro_t237.id_archivo_sistema.id_archivo_digital
+                            )
+
+                            return {
+                                'tipo': 'HIPERVINCULO',
+                                'valor': 'RESPUESTA',
+                                'archivo': {
+                                    'id_archivo_digital': registro_t238.id_archivo_digital,
+                                    'nombre_de_Guardado': registro_t238.nombre_de_Guardado,
+                                    'formato': registro_t238.formato,
+                                    'tamagno_kb': registro_t238.tamagno_kb,
+                                    'ruta_archivo': registro_t238.ruta_archivo.url,
+                                    'fecha_creacion_doc': registro_t238.fecha_creacion_doc,
+                                    'es_Doc_elec_archivo': registro_t238.es_Doc_elec_archivo,
+                                },
+                                'url': f'/api/abrir_archivo/{registro_t238.id_archivo_digital}/',
+                            }
+
+                        except ArchivosDigitales.DoesNotExist:
+                            pass
+
+        except (RespuestaPQR.DoesNotExist, DocumentosDeArchivoExpediente.DoesNotExist, ArchivosDigitales.DoesNotExist):
+            pass
+
+        return {'tipo': 'No Aplica', 'valor': 'No Aplica'}
+
+
+
+    def get_queryset(self):
+        estados_pqrsdf = EstadosSolicitudes.objects.filter(
+            aplica_para_pqrsdf=True
+        ).exclude(nombre__in=[
+            'SOLICITUD DE DIGITALIZACION ENVIADA',
+            'SOLICITUD DIGITALIZACIÓN RESPONDIDA',
+            'SOLICITUD AL USUARIO ENVIADA',
+            'SOLICITUD AL USUARIO RESPONDIDA'
+        ])
+
+        tipo_solicitud = self.request.query_params.get('tipo_solicitud')
+        tipo_pqrsdf = self.request.query_params.get('tipo_pqrsdf')
+        radicado = self.request.query_params.get('radicado')
+        fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
+        fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
+        estado_solicitud = self.request.query_params.get('estado_solicitud')
+        id_persona_titular = self.request.query_params.get('id_persona_titular')
+        id_persona_interpone = self.request.query_params.get('id_persona_interpone')
+        cod_relacion_con_el_titular = self.request.query_params.get('cod_relacion_con_el_titular')
+
+        queryset = PQRSDF.objects.filter(id_estado_actual_solicitud__in=estados_pqrsdf)
+
+        if tipo_solicitud:
+            queryset = queryset.filter(cod_tipo_PQRSDF=tipo_solicitud)
+    
+
+        if tipo_pqrsdf:
+            queryset = queryset.filter(cod_tipo_PQRSDF=tipo_pqrsdf)
+
+        if id_persona_titular:
+            queryset = queryset.filter(id_persona_titular=id_persona_titular)
+
+        if id_persona_interpone:
+            queryset = queryset.filter(id_persona_interpone=id_persona_interpone)
+       
+        if cod_relacion_con_el_titular:
+                queryset = queryset.filter(cod_relacion_con_el_titular=cod_relacion_con_el_titular)
+
+        if radicado:
+            try:
+                prefijo, agno, numero = radicado.split('-')
+            except ValueError:
+                raise ValidationError('El campo "Radicado" debe tener el formato correcto: (PREFIJO) - (AGNO) - (NUMERO_RADICADO).')
+            
+            queryset = queryset.filter(
+                id_radicado__prefijo_radicado=prefijo,
+                id_radicado__agno_radicado=agno,
+                id_radicado__nro_radicado=numero
+            )
+    
+
+        if fecha_radicado_desde:
+            queryset = queryset.filter(fecha_radicado__gte=fecha_radicado_desde)
+
+
+        if fecha_radicado_hasta:
+            queryset = queryset.filter(fecha_radicado__lte=fecha_radicado_hasta)
+        
+
+        if estado_solicitud:
+            estado_mapping = {
+                'RADICADO': 'RADICADO',
+                'EN VENTANILLA CON PENDIENTES': 'EN VENTANILLA CON PENDIENTES',
+                'EN VENTANILLA SIN PENDIENTES': 'EN VENTANILLA SIN PENDIENTES',
+                'EN GESTION': 'EN GESTION',
+                'RESPONDIDA': 'RESPONDIDA',
+                'VENCIDO': 'VENCIDO'
+            }
+
+            if estado_solicitud == 'VENCIDO':
+                # Calcular tiempo de respuesta
+                tiempo_respuesta = F('fecha_radicado') + ExpressionWrapper(
+                    timedelta(days=1) * F('dias_para_respuesta'),
+                    output_field=fields.DurationField()
+                )
+                
+                # Utilizar ExpressionWrapper para calcular la diferencia en días
+                dias_faltantes_expression = ExpressionWrapper(
+                    ExtractDay(tiempo_respuesta - Now()),
+                    output_field=fields.IntegerField()
+                )
+                
+                # Filtrar por PQRSDF en estado 'RADICADO' y 'Tiempo Para Respuesta' <= -1
+                queryset = queryset.annotate(dias_faltantes=dias_faltantes_expression)
+                queryset = queryset.filter(
+                    Q(id_estado_actual_solicitud__nombre='RADICADO') &
+                    (Q(fecha_radicado__isnull=True) | Q(dias_faltantes__lte=0))
+                ).distinct()
+            elif estado_solicitud == 'RADICADO':
+                # Calcular tiempo de respuesta
+                tiempo_respuesta = F('fecha_radicado') + ExpressionWrapper(
+                    timedelta(days=1) * F('dias_para_respuesta'),
+                    output_field=fields.DurationField()
+                )
+                
+                # Utilizar ExpressionWrapper para calcular la diferencia en días
+                dias_faltantes_expression = ExpressionWrapper(
+                    ExtractDay(tiempo_respuesta - Now()),
+                    output_field=fields.IntegerField()
+                )
+                
+                # Filtrar por PQRSDF en estado 'RADICADO' y 'Tiempo Para Respuesta' > -1
+                queryset = queryset.annotate(dias_faltantes=dias_faltantes_expression)
+                queryset = queryset.filter(
+                    Q(id_estado_actual_solicitud__nombre='RADICADO') &
+                    (Q(fecha_radicado__isnull=True) | Q(dias_faltantes__gt=0))
+                ).distinct()
+            else:
+                estado_mapping_value = estado_mapping.get(estado_solicitud, '')
+                if estado_mapping_value:
+                    queryset = queryset.filter(id_estado_actual_solicitud__nombre=estado_mapping_value)
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            return Response({
+                'success': False,
+                'detail': 'No se encontraron datos que coincidan con los criterios de búsqueda.'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        data = []
+        today = datetime.now().date()
+
+        for pqrsdf in queryset:
+            # Titular
+            if pqrsdf.id_persona_titular:
+                titular_data = pqrsdf.id_persona_titular
+                if titular_data.tipo_persona == 'N':
+                    titular_nombre = f'{titular_data.primer_nombre} {titular_data.segundo_nombre} {titular_data.primer_apellido} {titular_data.segundo_apellido}'
+                elif titular_data.tipo_persona == 'J':
+                    titular_nombre = titular_data.razon_social
+                else:
+                    titular_nombre = 'Anónimo'
+            else:
+                titular_nombre = 'Anónimo'
+
+            # Estado
+            estado_nombre = self.get_estado_solicitud_nombre(pqrsdf.id_estado_actual_solicitud)
+
+            # Obtener información de ubicación
+            ubicacion_corporacion = self.get_location_info(pqrsdf)
+
+            # Obtener información del documento
+            documento_info = self.get_documento_info(pqrsdf)
+
+
+            # Cálculo de días para respuesta
+            if pqrsdf.fecha_radicado and pqrsdf.dias_para_respuesta is not None:
+                tiempo_respuesta = pqrsdf.fecha_radicado + timedelta(days=pqrsdf.dias_para_respuesta)
+                dias_faltantes = (tiempo_respuesta - datetime.now()).days
+
+                # Determinar el estado VENCIDO
+                if dias_faltantes <= -1:
+                    estado_nombre = 'VENCIDO'
+                else:
+                    estado_nombre = self.get_estado_solicitud_nombre(pqrsdf.id_estado_actual_solicitud, pqrsdf.fecha_radicado, pqrsdf.dias_para_respuesta)
+            else:
+                dias_faltantes = None
+
+
+            data.append({
+                'Id_PQRSDF': pqrsdf.id_PQRSDF,
+                'Tipo de Solicitud': 'PQRSDF',
+                'Tipo de PQRSDF': pqrsdf.cod_tipo_PQRSDF,
+                'tipo_pqrsdf_descripcion': get_tipo_pqrsdf_descripcion(pqrsdf.cod_tipo_PQRSDF),
+                'Titular': titular_nombre,
+                'Asunto': pqrsdf.asunto,
+                'Radicado': f"{pqrsdf.id_radicado.prefijo_radicado}-{pqrsdf.id_radicado.agno_radicado}-{pqrsdf.id_radicado.nro_radicado}" if pqrsdf.id_radicado else 'N/A',
+                'Fecha de Radicado': pqrsdf.fecha_radicado,
+                'Persona Que Radicó': f"{pqrsdf.id_radicado.id_persona_radica.primer_nombre} {pqrsdf.id_radicado.id_persona_radica.segundo_nombre} {pqrsdf.id_radicado.id_persona_radica.primer_apellido} {pqrsdf.id_radicado.id_persona_radica.segundo_apellido}" if pqrsdf.id_radicado and pqrsdf.id_radicado.id_persona_radica else 'N/A',
+                'Tiempo Para Respuesta': dias_faltantes if dias_faltantes is not None else 'N/A',
+                'Id_estado': pqrsdf.id_estado_actual_solicitud.id_estado_solicitud,
+                'Estado': estado_nombre,
+                'Ubicacion en la corporacion':ubicacion_corporacion,
+                'Documento': documento_info['valor'],
+                'URL_Documento': documento_info.get('url', None),
+                'Archivo': documento_info.get('archivo', {}),
+                
+            })
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes registros.',
+            'data': data
+        }, status=status.HTTP_200_OK)
+    
+
+##########################################################################################################################################################################################################
+    
+#CONSULTA_ESTADO_SOLICITUD_WORKFLOW
+class ConsultaEstadoWorkFlow(generics.ListAPIView):
+    serializer_class = PQRSDFGetSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_tipo_pqrsdf_descripcion(self, cod_tipo_pqrsdf):
+        tipo_mapping = {
+            "PG": "Petición General",
+            "PD": "Petición De Documentos o Información",
+            "PC": "Petición De Consulta",
+            "Q": "Queja",
+            "R": "Reclamo",
+            "S": "Sugerencia",
+            "D": "Denuncia",
+            "F": "Felicitación",
+        }
+
+        return tipo_mapping.get(cod_tipo_pqrsdf, "Tipo Desconocido")
+
+    def get_estado_solicitud_nombre(self, id_estado_solicitud, fecha_radicado=None, dias_para_respuesta=None):
+        # Verificar si es VENCIDO y ajustar la lógica
+        if dias_para_respuesta is not None and fecha_radicado:
+            tiempo_respuesta = fecha_radicado + timedelta(days=dias_para_respuesta)
+            today = datetime.now()
+            
+            # Verificar si es VENCIDO
+            if today > tiempo_respuesta:
+                return 'VENCIDO'
+
+        # Verificar si ya es un objeto de estado o un ID
+        if isinstance(id_estado_solicitud, EstadosSolicitudes):
+            estado = id_estado_solicitud
+        else:
+            try:
+                estado = EstadosSolicitudes.objects.get(id_estado_solicitud=id_estado_solicitud)
+            except EstadosSolicitudes.DoesNotExist:
+                return "Estado Desconocido"
+
+        return estado.nombre
+
+
+    def get_location_info(self, pqrsdf):
+        estado_actual = pqrsdf.id_estado_actual_solicitud
+
+        if estado_actual and estado_actual.nombre in ['RADICADO', 'EN VENTANILLA CON PENDIENTES', 'EN VENTANILLA SIN PENDIENTES']:
+            return 'EN VENTANILLA'
+
+        elif estado_actual and estado_actual.nombre == 'EN GESTION':
+            # Obtener información de la asignación actual
+            try:
+                asignacion = AsignacionPQR.objects.filter(
+                    id_pqrsdf=pqrsdf,
+                    cod_estado_asignacion='Ac'
+                ).latest('fecha_asignacion')
+
+                # Validar si la asignación ha sido reasignada
+                tarea_reasignada = ReasignacionesTareas.objects.filter(
+                    id_tarea_asignada=asignacion.id_asignacion_pqr,
+                    cod_estado_reasignacion='Ac'
+                ).first()
+
+                if tarea_reasignada:
+                    # Obtener información de la reasignación
+                    if tarea_reasignada.cod_estado_reasignacion == 'Ep':
+                        # Reasignación en espera
+                        unidad_reasignada = tarea_reasignada.id_und_org_reasignada
+                    elif tarea_reasignada.cod_estado_reasignacion == 'Re':
+                        # Reasignación rechazada
+                        unidad_reasignada = tarea_reasignada.id_und_org_reasignada
+                    elif tarea_reasignada.cod_estado_reasignacion == 'Ac':
+                        # Reasignación aceptada
+                        persona_reasignada = Personas.objects.get(
+                            id_persona=tarea_reasignada.id_persona_a_quien_se_reasigna
+                        )
+                        unidad_reasignada = persona_reasignada.id_unidad_organizacional_actual
+
+                    if unidad_reasignada:
+                        if unidad_reasignada.cod_agrupacion_documental == 'SEC':
+                            return f'SECCION - {unidad_reasignada.codigo} - {unidad_reasignada.nombre}'
+                        elif unidad_reasignada.codigo == 'SUB':
+                            return f'SUBSECCION - {unidad_reasignada.codigo} - {unidad_reasignada.nombre}'
+                        elif unidad_reasignada.cod_agrupacion_documental is None:
+                            return f'{unidad_reasignada.codigo} - {unidad_reasignada.nombre}'
+
+                # Obtener información de la asignación original
+                unidad_asignada = asignacion.id_und_org_seccion_asignada
+                if unidad_asignada:
+                    if unidad_asignada.cod_agrupacion_documental == 'SEC':
+                        return f'SECCION - {unidad_asignada.codigo} - {unidad_asignada.nombre}'
+                    elif unidad_asignada.cod_agrupacion_documental == 'SUB':
+                        return f'SUBSECCION - {unidad_asignada.codigo} - {unidad_asignada.nombre}'
+                    elif unidad_asignada.cod_agrupacion_documental is None:
+                        return f'{unidad_asignada.codigo} - {unidad_asignada.nombre}'
+
+            except AsignacionPQR.DoesNotExist:
+                pass
+
+
+        elif estado_actual and estado_actual.nombre == 'RESPONDIDA':
+            # Obtener información de la respuesta
+            respuestas = RespuestaPQR.objects.filter(id_pqrsdf=pqrsdf.id_PQRSDF)
+
+            if respuestas.exists():
+                # Tomar la primera respuesta para obtener la ubicación
+                respuesta = respuestas.first()
+                persona_responde = respuesta.id_persona_responde
+
+                # Asegúrate de que el campo exista y tenga el nombre correcto en el modelo 'Personas'
+                if hasattr(persona_responde, 'id_unidad_organizacional_actual'):
+                    unidad_responde = persona_responde.id_unidad_organizacional_actual
+
+                    # Asegúrate de que los nombres de los campos coincidan con el modelo 'UnidadesOrganizacionales'
+                    if unidad_responde.cod_agrupacion_documental == 'SEC':
+                        return f'SECCION - {unidad_responde.nombre}'
+                    elif unidad_responde.cod_agrupacion_documental == 'SUB':
+                        return f'SUBSECCION - {unidad_responde.nombre}'
+                    elif unidad_responde.cod_agrupacion_documental is None:
+                        return f'{unidad_responde.codigo} - {unidad_responde.nombre}'
+
+        elif estado_actual and estado_actual.nombre == 'VENCIDO':
+            # Obtener información de la asignación cuando la PQRSDF está vencida
+            try:
+                asignacion = AsignacionPQR.objects.filter(
+                    T268Id_PQRSDF=pqrsdf.id_PQRSDF,
+                    T268codEstadoAsignacion='Ac'
+                ).latest('T268FechaAsignacion')
+
+                unidad_asignada = asignacion.id_und_org_seccion_asignada
+                if unidad_asignada.cod_agrupacion_documental == 'SEC':
+                    return f'SECCION - {unidad_asignada.nombre}'
+                elif unidad_asignada.cod_agrupacion_documental == 'SUB':
+                    return f'SUBSECCION - {unidad_asignada.nombre}'
+                else:
+                    return f'{unidad_asignada.codigo} - {unidad_asignada.nombre}'
+
+            except AsignacionPQR.DoesNotExist:
+                pass
+
+        return None
+    
+
+    def get_documento_info(self, pqrsdf, *args, **kwargs):
+        estado_actual_nombre = pqrsdf.id_estado_actual_solicitud.nombre if pqrsdf.id_estado_actual_solicitud else None
+
+        try:
+            
+            if estado_actual_nombre == 'RESPONDIDA':
+                # Obtener los registros correspondientes en T269
+                registros_t269 = RespuestaPQR.objects.filter(id_pqrsdf=pqrsdf.id_PQRSDF)
+
+                if registros_t269.exists():
+                    primer_registro_t269 = registros_t269.first()
+                    
+                    # Obtener el registro en T237DocumentosDeArchivo_Expediente
+                    registros_t237 = DocumentosDeArchivoExpediente.objects.filter(
+                        id_documento_de_archivo_exped=primer_registro_t269.id_doc_archivo_exp.id_documento_de_archivo_exped
+                    )
+
+                    if registros_t237.exists():
+                        registro_t237 = registros_t237.first()
+
+                        # Obtener el registro en T238ArchivosDigitales
+                        try:
+                            registro_t238 = ArchivosDigitales.objects.get(
+                                id_archivo_digital=registro_t237.id_archivo_sistema.id_archivo_digital
+                            )
+
+                            return {
+                                'tipo': 'HIPERVINCULO',
+                                'valor': 'RESPUESTA',
+                                'archivo': {
+                                    'id_archivo_digital': registro_t238.id_archivo_digital,
+                                    'nombre_de_Guardado': registro_t238.nombre_de_Guardado,
+                                    'formato': registro_t238.formato,
+                                    'tamagno_kb': registro_t238.tamagno_kb,
+                                    'ruta_archivo': registro_t238.ruta_archivo.url,
+                                    'fecha_creacion_doc': registro_t238.fecha_creacion_doc,
+                                    'es_Doc_elec_archivo': registro_t238.es_Doc_elec_archivo,
+                                },
+                                'url': f'/api/abrir_archivo/{registro_t238.id_archivo_digital}/',
+                            }
+
+                        except ArchivosDigitales.DoesNotExist:
+                            pass
+
+        except (RespuestaPQR.DoesNotExist, DocumentosDeArchivoExpediente.DoesNotExist, ArchivosDigitales.DoesNotExist):
+            pass
+
+        return {'tipo': 'No Aplica', 'valor': 'No Aplica'}
+
+
+
+    def get_queryset(self):
+        estados_pqrsdf = EstadosSolicitudes.objects.filter(
+            aplica_para_pqrsdf=True
+        ).exclude(nombre__in=[
+            'SOLICITUD DE DIGITALIZACION ENVIADA',
+            'SOLICITUD DIGITALIZACIÓN RESPONDIDA',
+            'SOLICITUD AL USUARIO ENVIADA',
+            'SOLICITUD AL USUARIO RESPONDIDA'
+        ])
+
+        tipo_solicitud = self.request.query_params.get('tipo_solicitud')
+        tipo_pqrsdf = self.request.query_params.get('tipo_pqrsdf')
+        radicado = self.request.query_params.get('radicado')
+        fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
+        fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
+        estado_solicitud = self.request.query_params.get('estado_solicitud')
+        id_persona_titular = self.request.query_params.get('id_persona_titular')
+        id_persona_interpone = self.request.query_params.get('id_persona_interpone')
+        cod_relacion_con_el_titular = self.request.query_params.get('cod_relacion_con_el_titular')
+
+        queryset = PQRSDF.objects.filter(id_estado_actual_solicitud__in=estados_pqrsdf)
+
+        if tipo_solicitud:
+            queryset = queryset.filter(cod_tipo_PQRSDF=tipo_solicitud)
+    
+
+        if tipo_pqrsdf:
+            queryset = queryset.filter(cod_tipo_PQRSDF=tipo_pqrsdf)
+
+        if id_persona_titular:
+            queryset = queryset.filter(id_persona_titular=id_persona_titular)
+
+        if id_persona_interpone:
+            queryset = queryset.filter(id_persona_interpone=id_persona_interpone)
+       
+        if cod_relacion_con_el_titular:
+                queryset = queryset.filter(cod_relacion_con_el_titular=cod_relacion_con_el_titular)
+
+        if radicado:
+            try:
+                prefijo, agno, numero = radicado.split('-')
+            except ValueError:
+                raise ValidationError('El campo "Radicado" debe tener el formato correcto: (PREFIJO) - (AGNO) - (NUMERO_RADICADO).')
+            
+            queryset = queryset.filter(
+                id_radicado__prefijo_radicado=prefijo,
+                id_radicado__agno_radicado=agno,
+                id_radicado__nro_radicado=numero
+            )
+    
+
+        if fecha_radicado_desde:
+            queryset = queryset.filter(fecha_radicado__gte=fecha_radicado_desde)
+
+
+        if fecha_radicado_hasta:
+            queryset = queryset.filter(fecha_radicado__lte=fecha_radicado_hasta)
+        
+
+        if estado_solicitud:
+            estado_mapping = {
+                'RADICADO': 'RADICADO',
+                'EN VENTANILLA CON PENDIENTES': 'EN VENTANILLA CON PENDIENTES',
+                'EN VENTANILLA SIN PENDIENTES': 'EN VENTANILLA SIN PENDIENTES',
+                'EN GESTION': 'EN GESTION',
+                'RESPONDIDA': 'RESPONDIDA',
+                'VENCIDO': 'VENCIDO'
+            }
+
+            if estado_solicitud == 'VENCIDO':
+                # Calcular tiempo de respuesta
+                tiempo_respuesta = F('fecha_radicado') + ExpressionWrapper(
+                    timedelta(days=1) * F('dias_para_respuesta'),
+                    output_field=fields.DurationField()
+                )
+                
+                # Utilizar ExpressionWrapper para calcular la diferencia en días
+                dias_faltantes_expression = ExpressionWrapper(
+                    ExtractDay(tiempo_respuesta - Now()),
+                    output_field=fields.IntegerField()
+                )
+                
+                # Filtrar por PQRSDF en estado 'RADICADO' y 'Tiempo Para Respuesta' <= -1
+                queryset = queryset.annotate(dias_faltantes=dias_faltantes_expression)
+                queryset = queryset.filter(
+                    Q(id_estado_actual_solicitud__nombre='RADICADO') &
+                    (Q(fecha_radicado__isnull=True) | Q(dias_faltantes__lte=0))
+                ).distinct()
+            elif estado_solicitud == 'RADICADO':
+                # Calcular tiempo de respuesta
+                tiempo_respuesta = F('fecha_radicado') + ExpressionWrapper(
+                    timedelta(days=1) * F('dias_para_respuesta'),
+                    output_field=fields.DurationField()
+                )
+                
+                # Utilizar ExpressionWrapper para calcular la diferencia en días
+                dias_faltantes_expression = ExpressionWrapper(
+                    ExtractDay(tiempo_respuesta - Now()),
+                    output_field=fields.IntegerField()
+                )
+                
+                # Filtrar por PQRSDF en estado 'RADICADO' y 'Tiempo Para Respuesta' > -1
+                queryset = queryset.annotate(dias_faltantes=dias_faltantes_expression)
+                queryset = queryset.filter(
+                    Q(id_estado_actual_solicitud__nombre='RADICADO') &
+                    (Q(fecha_radicado__isnull=True) | Q(dias_faltantes__gt=0))
+                ).distinct()
+            else:
+                estado_mapping_value = estado_mapping.get(estado_solicitud, '')
+                if estado_mapping_value:
+                    queryset = queryset.filter(id_estado_actual_solicitud__nombre=estado_mapping_value)
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            return Response({
+                'success': False,
+                'detail': 'No se encontraron datos que coincidan con los criterios de búsqueda.'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        data = []
+        today = datetime.now().date()
+
+        for pqrsdf in queryset:
+            # Titular
+            if pqrsdf.id_persona_titular:
+                titular_data = pqrsdf.id_persona_titular
+                if titular_data.tipo_persona == 'N':
+                    titular_nombre = f'{titular_data.primer_nombre} {titular_data.segundo_nombre} {titular_data.primer_apellido} {titular_data.segundo_apellido}'
+                elif titular_data.tipo_persona == 'J':
+                    titular_nombre = titular_data.razon_social
+                else:
+                    titular_nombre = 'Anónimo'
+            else:
+                titular_nombre = 'Anónimo'
+
+            # Estado
+            estado_nombre = self.get_estado_solicitud_nombre(pqrsdf.id_estado_actual_solicitud)
+
+            # Obtener información de ubicación
+            ubicacion_corporacion = self.get_location_info(pqrsdf)
+
+            # Obtener información del documento
+            documento_info = self.get_documento_info(pqrsdf)
+
+
+            # Cálculo de días para respuesta
+            if pqrsdf.fecha_radicado and pqrsdf.dias_para_respuesta is not None:
+                tiempo_respuesta = pqrsdf.fecha_radicado + timedelta(days=pqrsdf.dias_para_respuesta)
+                dias_faltantes = (tiempo_respuesta - datetime.now()).days
+
+                # Determinar el estado VENCIDO
+                if dias_faltantes <= -1:
+                    estado_nombre = 'VENCIDO'
+                else:
+                    estado_nombre = self.get_estado_solicitud_nombre(pqrsdf.id_estado_actual_solicitud, pqrsdf.fecha_radicado, pqrsdf.dias_para_respuesta)
+            else:
+                dias_faltantes = None
+
+
+            data.append({
+                'Id_PQRSDF': pqrsdf.id_PQRSDF,
+                'Tipo de Solicitud': 'PQRSDF',
+                'Tipo de PQRSDF': pqrsdf.cod_tipo_PQRSDF,
+                'tipo_pqrsdf_descripcion': get_tipo_pqrsdf_descripcion(pqrsdf.cod_tipo_PQRSDF),
+                'Titular': titular_nombre,
+                'Asunto': pqrsdf.asunto,
+                'Radicado': f"{pqrsdf.id_radicado.prefijo_radicado}-{pqrsdf.id_radicado.agno_radicado}-{pqrsdf.id_radicado.nro_radicado}" if pqrsdf.id_radicado else 'N/A',
+                'Fecha de Radicado': pqrsdf.fecha_radicado,
+                'Persona Que Radicó': f"{pqrsdf.id_radicado.id_persona_radica.primer_nombre} {pqrsdf.id_radicado.id_persona_radica.segundo_nombre} {pqrsdf.id_radicado.id_persona_radica.primer_apellido} {pqrsdf.id_radicado.id_persona_radica.segundo_apellido}" if pqrsdf.id_radicado and pqrsdf.id_radicado.id_persona_radica else 'N/A',
+                'Tiempo Para Respuesta': dias_faltantes if dias_faltantes is not None else 'N/A',
+                'Estado': estado_nombre,
+                'Ubicacion en la corporacion':ubicacion_corporacion,
+                'Documento': documento_info['valor'],
+                'URL_Documento': documento_info.get('url', None),
+                'Archivo': documento_info.get('archivo', {}),
+                
+            })
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes registros.',
+            'data': data
+        }, status=status.HTTP_200_OK)
+    
+
+#CONSULTA_DE_WORKFLOW
+class ListarInformacionArbolWorkflow(generics.ListAPIView):
+    def get(self, request, id_PQRSDF):
+        try:
+            pqrsdf = PQRSDF.objects.get(id_PQRSDF=id_PQRSDF)
+        except PQRSDF.DoesNotExist:
+            return Response({"error": "PQRSDF no encontrado"}, status=404)
+
+        arbol_solicitudes = []
+
+        #GUARDADO
+        if pqrsdf.id_estado_actual_solicitud.nombre == "GUARDADO":
+            arbol_solicitudes.append({"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},)
+            
+        #RADICADO    
+        elif pqrsdf.id_estado_actual_solicitud.nombre == "RADICADO":
+            arbol_solicitudes.extend([{"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
+                                      {"solicitud": "RADICADO", "fecha_radicado": pqrsdf.fecha_radicado}])
+
+        #EN VENTANILLA CON PENIDENTES
+        elif pqrsdf.id_estado_actual_solicitud.nombre == "EN VENTANILLA CON PENDIENTES":
+            arbol_solicitudes.extend([
+                {"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
+                {"solicitud": "RADICADO","fecha_radicado": pqrsdf.fecha_radicado},
+                {"solicitud": "EN VENTANILLA CON PENDIENTES"}
+            ])
+
+        #SOLICITUD DE DIGITALIZACION ENVIADA    
+        elif pqrsdf.id_estado_actual_solicitud.nombre == "SOLICITUD DE DIGITALIZACION ENVIADA":
+            arbol_solicitudes.extend([
+                {"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
+                {"solicitud": "RADICADO","fecha_radicado": pqrsdf.fecha_radicado},
+                {"solicitud": "EN VENTANILLA CON PENDIENTES"},
+                {"solicitud": "SOLICITUD DE DIGITALIZACION ENVIADA"}
+            ])
+
+        #SOLICITUD DIGITALIZACIÓN RESPONDIDA  
+        elif pqrsdf.id_estado_actual_solicitud.nombre == "SOLICITUD DIGITALIZACIÓN RESPONDIDA":
+            arbol_solicitudes.extend([
+                {"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
+                {"solicitud": "RADICADO","fecha_radicado": pqrsdf.fecha_radicado},
+                {"solicitud": "EN VENTANILLA CON PENDIENTES"},
+                {"solicitud": "SOLICITUD DE DIGITALIZACION ENVIADA"},
+                {"solicitud": "SOLICITUD DIGITALIZACIÓN RESPONDIDA"},
+            ])
+
+        #SOLICITUD AL USUARIO ENVIADA  
+        elif pqrsdf.id_estado_actual_solicitud.nombre == "SOLICITUD AL USUARIO ENVIADA":
+            arbol_solicitudes.extend([
+                {"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
+                {"solicitud": "RADICADO","fecha_radicado": pqrsdf.fecha_radicado},
+                {"solicitud": "EN VENTANILLA CON PENDIENTES"},
+                {"solicitud": "SOLICITUD AL USUARIO ENVIADA"},
+            ])
+
+
+        #SOLICITUD AL USUARIO RESPONDIDA    
+        elif pqrsdf.id_estado_actual_solicitud.nombre == "SOLICITUD AL USUARIO RESPONDIDA":
+            arbol_solicitudes.extend([
+                {"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
+                {"solicitud": "RADICADO","fecha_radicado": pqrsdf.fecha_radicado},
+                {"solicitud": "EN VENTANILLA CON PENDIENTES"},
+                {"solicitud": "SOLICITUD AL USUARIO ENVIADA"},
+                {"solicitud": "SOLICITUD AL USUARIO RESPONDIDA"},
+            ])
+
+        #EN VENTANILLA SIN PENDIENTES
+        elif pqrsdf.id_estado_actual_solicitud.nombre == "EN VENTANILLA SIN PENDIENTES":
+            arbol_solicitudes.extend([
+                {"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
+                {"solicitud": "RADICADO","fecha_radicado": pqrsdf.fecha_radicado},
+                {"solicitud": "EN VENTANILLA CON PENDIENTES"},
+                {"solicitud": "EN VENTANILLA SIN PENDIENTES"}
+            ])
+
+
+        #EN GESTION
+        elif pqrsdf.id_estado_actual_solicitud.nombre == "EN GESTION":
+            asignacion_en_gestion = AsignacionPQR.objects.filter(id_pqrsdf=pqrsdf).first()
+
+            if asignacion_en_gestion:
+                persona_asignada_data = {}
+                unidad_asignada_data = {}
+
+                if asignacion_en_gestion.id_persona_asignada:
+                    persona_asignada_data = PersonaSerializer(asignacion_en_gestion.id_persona_asignada).data
+
+                if asignacion_en_gestion.id_und_org_seccion_asignada:
+                    unidad_asignada_data = UnidadOrganizacionalSerializer(asignacion_en_gestion.id_und_org_seccion_asignada).data
+
+                arbol_solicitudes.extend([
+                    {"solicitud": "GUARDADO", "fecha_registro": pqrsdf.fecha_registro},
+                    {"solicitud": "RADICADO", "fecha_radicado": pqrsdf.fecha_radicado},
+                    {"solicitud": "EN VENTANILLA CON PENDIENTES"},
+                    {"solicitud": "EN VENTANILLA SIN PENDIENTES"},
+                    {"solicitud": "EN GESTION", "persona_asignada": persona_asignada_data, "unidad_asignada": unidad_asignada_data}
+                ])
+            else:
+                arbol_solicitudes.extend([
+                    {"solicitud": "GUARDADO", "fecha_registro": pqrsdf.fecha_registro},
+                    {"solicitud": "RADICADO", "fecha_radicado": pqrsdf.fecha_radicado},
+                    {"solicitud": "EN VENTANILLA CON PENDIENTES"},
+                    {"solicitud": "EN VENTANILLA SIN PENDIENTES"},
+                    {"solicitud": "EN GESTION" ", no se le ha asignado una (persona),ni una (unidad organizacion)"}
+        ])
+        
+        #RESPONDIDA    
+        elif pqrsdf.id_estado_actual_solicitud.nombre == "RESPONDIDA":
+            asignacion_en_gestion = AsignacionPQR.objects.filter(id_pqrsdf=pqrsdf).first()
+
+            if asignacion_en_gestion:
+                persona_asignada_data = {}
+                unidad_asignada_data = {}
+
+                if asignacion_en_gestion.id_persona_asignada:
+                    persona_asignada_data = PersonaSerializer(asignacion_en_gestion.id_persona_asignada).data
+
+                if asignacion_en_gestion.id_und_org_seccion_asignada:
+                    unidad_asignada_data = UnidadOrganizacionalSerializer(asignacion_en_gestion.id_und_org_seccion_asignada).data
+
+                arbol_solicitudes.extend([
+                    {"solicitud": "GUARDADO", "fecha_registro": pqrsdf.fecha_registro},
+                    {"solicitud": "RADICADO", "fecha_radicado": pqrsdf.fecha_radicado},
+                    {"solicitud": "EN VENTANILLA CON PENDIENTES"},
+                    {"solicitud": "EN VENTANILLA SIN PENDIENTES"},
+                    {"solicitud": "EN GESTION", "persona_asignada": persona_asignada_data, "unidad_asignada": unidad_asignada_data},
+                    {"solicitud": "RESPONDIDA"}
+                ])
+            else:
+                arbol_solicitudes.extend([
+                    {"solicitud": "GUARDADO", "fecha_registro": pqrsdf.fecha_registro},
+                    {"solicitud": "RADICADO", "fecha_radicado": pqrsdf.fecha_radicado},
+                    {"solicitud": "EN VENTANILLA CON PENDIENTES"},
+                    {"solicitud": "EN VENTANILLA SIN PENDIENTES"},
+                    {"solicitud": "EN GESTION" "no se le ha asignado una (persona),ni una (unidad organizacion)"},
+                    {"solicitud": "RESPONDIDA"},
+        ])
+
+        #NOTIFICADA
+        elif pqrsdf.id_estado_actual_solicitud.nombre == "NOTIFICADA":
+            asignacion_en_gestion = AsignacionPQR.objects.filter(id_pqrsdf=pqrsdf).first()
+
+            if asignacion_en_gestion:
+                persona_asignada_data = {}
+                unidad_asignada_data = {}
+
+                if asignacion_en_gestion.id_persona_asignada:
+                    persona_asignada_data = PersonaSerializer(asignacion_en_gestion.id_persona_asignada).data
+
+                if asignacion_en_gestion.id_und_org_seccion_asignada:
+                    unidad_asignada_data = UnidadOrganizacionalSerializer(asignacion_en_gestion.id_und_org_seccion_asignada).data
+
+                arbol_solicitudes.extend([
+                    {"solicitud": "GUARDADO", "fecha_registro": pqrsdf.fecha_registro},
+                    {"solicitud": "RADICADO", "fecha_radicado": pqrsdf.fecha_radicado},
+                    {"solicitud": "EN VENTANILLA CON PENDIENTES"},
+                    {"solicitud": "EN VENTANILLA SIN PENDIENTES"},
+                    {"solicitud": "EN GESTION", "persona_asignada": persona_asignada_data, "unidad_asignada": unidad_asignada_data},
+                    {"solicitud": "RESPONDIDA"},
+                    {"solicitud": "NOTIFICADA"}
+                ])
+            else:
+                arbol_solicitudes.extend([
+                    {"solicitud": "GUARDADO", "fecha_registro": pqrsdf.fecha_registro},
+                    {"solicitud": "RADICADO", "fecha_radicado": pqrsdf.fecha_radicado},
+                    {"solicitud": "EN VENTANILLA CON PENDIENTES"},
+                    {"solicitud": "EN VENTANILLA SIN PENDIENTES"},
+                    {"solicitud": "EN GESTION" "no se le ha asignado una (persona),ni una (unidad organizacion)"},
+                    {"solicitud": "RESPONDIDA"},
+                    {"solicitud": "NOTIFICADA"},
+        ])
+
+        serializer = PQRSDFSerializer(pqrsdf)
+        data = serializer.data
+        data["arbol_solicitudes"] = arbol_solicitudes
+
+        return Response(data)

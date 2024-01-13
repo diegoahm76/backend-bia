@@ -39,6 +39,7 @@ from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
 from transversal.models.organigrama_models import Organigramas
 from django.db.models.functions import Concat
 from django.db.models import Value as V
+from gestion_documental.utils import UtilsGestor
 
 from transversal.models.personas_models import Personas
 
@@ -89,6 +90,9 @@ class ConfiguracionExpedienteGet(generics.ListAPIView):
         
         if not config_expediente:
             raise NotFound('La Serie-Subserie-Unidad seleccionada no cuenta con una configuración, debe elegir otra')
+        
+        # VALIDAR SI TIENE PERMISO DE CREACIÓN EXP
+        # permiso_crear = UtilsGestor.validar_permisos_unds_org_actuales_crear_exp(request.user.persona, config_expediente.id_cat_serie_undorg_ccd.id_catserie_unidadorg, current_year)
         
         serializer = self.serializer_class(config_expediente)
         
@@ -1588,7 +1592,7 @@ class ListExpedientesComplejosGet(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, id_catserie_unidadorg):
-        expedientes = ExpedientesDocumentales.objects.filter(id_cat_serie_und_org_ccd_trd_prop=id_catserie_unidadorg)
+        expedientes = ExpedientesDocumentales.objects.filter(id_cat_serie_und_org_ccd_trd_prop=id_catserie_unidadorg, estado='A')
         if not expedientes:
             raise NotFound("No se encontró expedientes para la tripleta del TRD seleccionado")
         

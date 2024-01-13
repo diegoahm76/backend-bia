@@ -23,6 +23,9 @@ urlpatterns = [
      path('otros/get_otros/<str:id_persona_titular>/', views.GetOTROSForStatus.as_view(), name='get-pqrsdf'),
      path('otros/get_otros-panel/<int:id_otros>/', views.GetOTROSForPanel.as_view(), name='get_pqrsdf-panel'),
 
+     #Consulta_Estado_Solicitud_Otros_112
+     path('otros/consulta-estado-otros/', views.ConsultaEstadoOTROS.as_view(), name='listar-estados-otros'),
+
 
 
 

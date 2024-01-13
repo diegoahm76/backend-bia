@@ -12,7 +12,8 @@ from gestion_documental.models.trd_models import FormatosTiposMedio
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, ComplementosUsu_PQR, EstadosSolicitudes, MediosSolicitud, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, TiposPQR, modulos_radican
+from gestion_documental.models.bandeja_tareas_models import TareasAsignadas, ReasignacionesTareas
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, ComplementosUsu_PQR, EstadosSolicitudes, MediosSolicitud, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, TiposPQR, modulos_radican
 from gestion_documental.serializers.radicados_serializers import AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, MedioSolicitudSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, OTROSPanelSerializer, OTROSSerializer, OtrosPostSerializer, OtrosSerializer, PersonasFilterSerializer, RadicadoPostSerializer, RadicadosImprimirSerializer ,PersonasSerializer
 from transversal.models.personas_models import Personas
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
@@ -694,7 +695,7 @@ class HistoricoEstadosCreate(generics.CreateAPIView):
 
     def set_data_estado(self, data_OTROS, nombre_estado, id_persona_guarda, fecha_actual):
         data_estado = {}
-        data_estado['Otros'] = data_OTROS['id_otros']
+        data_estado['id_otros'] = data_OTROS['id_otros']
         data_estado['fecha_iniEstado'] = fecha_actual
         data_estado['persona_genera_estado'] = None if id_persona_guarda == 0 else id_persona_guarda
 
@@ -1096,3 +1097,223 @@ class RadicadoCreate(generics.CreateAPIView):
         radicado['id_modulo_que_radica'] = modulo_radica.id_ModuloQueRadica if modulo_radica else None
 
         return radicado
+    
+
+################################################################################################################################################################################
+    
+#Consulta_Estado_Solicitud_Otros
+    
+class ConsultaEstadoOTROS(generics.ListAPIView):
+    serializer_class = OtrosPostSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_tipo_pqrsdf_descripcion(self, cod_tipo_pqrsdf):
+        tipo_mapping = {
+            "PG": "Petición General",
+            "PD": "Petición De Documentos o Información",
+            "PC": "Petición De Consulta",
+            "Q": "Queja",
+            "R": "Reclamo",
+            "S": "Sugerencia",
+            "D": "Denuncia",
+            "F": "Felicitación",
+        }
+
+        return tipo_mapping.get(cod_tipo_pqrsdf, "Tipo Desconocido")
+
+    def get_estado_solicitud_nombre(self, id_estado_solicitud, fecha_radicado=None, dias_para_respuesta=None):
+        # Verificar si es VENCIDO y ajustar la lógica
+        if dias_para_respuesta is not None and fecha_radicado:
+            tiempo_respuesta = fecha_radicado + timedelta(days=dias_para_respuesta)
+            today = datetime.now()
+            
+            # Verificar si es VENCIDO
+            if today > tiempo_respuesta:
+                return 'VENCIDO'
+
+        # Verificar si ya es un objeto de estado o un ID
+        if isinstance(id_estado_solicitud, EstadosSolicitudes):
+            estado = id_estado_solicitud
+        else:
+            try:
+                estado = EstadosSolicitudes.objects.get(id_estado_solicitud=id_estado_solicitud)
+            except EstadosSolicitudes.DoesNotExist:
+                return "Estado Desconocido"
+
+        return estado.nombre
+
+
+    def get_location_info(self, otros):
+        estado_actual = otros.id_estado_actual_solicitud
+
+        if estado_actual and estado_actual.nombre in ['RADICADO', 'EN VENTANILLA CON PENDIENTES', 'EN VENTANILLA SIN PENDIENTES']:
+            return 'EN VENTANILLA'
+
+        elif estado_actual and estado_actual.nombre == 'EN GESTION':
+            try:
+                asignacion = AsignacionOtros.objects.filter(
+                    id_otros=otros,
+                    cod_estado_asignacion='Ac'
+                ).latest('fecha_asignacion')
+
+                tarea_reasignada = ReasignacionesTareas.objects.filter(
+                    id_tarea_asignada=asignacion.id_asignacion_otros,
+                    cod_estado_reasignacion='Ac'
+                ).first()
+
+                if tarea_reasignada:
+                    # Si hay reasignación
+                    if tarea_reasignada.cod_estado_reasignacion == 'Ep':
+                        # Reasignación en espera
+                        unidad_reasignada = tarea_reasignada.id_und_org_reasignada
+                    elif tarea_reasignada.cod_estado_reasignacion == 'Re':
+                        # Reasignación rechazada
+                        unidad_reasignada = tarea_reasignada.id_und_org_reasignada
+                    elif tarea_reasignada.cod_estado_reasignacion == 'Ac':
+                        # Reasignación aceptada
+                        persona_reasignada = Personas.objects.get(id_persona=tarea_reasignada.id_persona_a_quien_se_reasigna)
+                        unidad_reasignada = persona_reasignada.id_unidad_organizacional_actual
+
+                    if unidad_reasignada:
+                        if unidad_reasignada.cod_agrupacion_documental == 'SEC':
+                            return f'SECCION - {unidad_reasignada.codigo} - {unidad_reasignada.nombre}'
+                        elif unidad_reasignada.cod_agrupacion_documental == 'SUB':
+                            return f'SUBSECCION - {unidad_reasignada.codigo} - {unidad_reasignada.nombre}'
+                        elif unidad_reasignada.cod_agrupacion_documental is None:
+                            return f'{unidad_reasignada.codigo} - {unidad_reasignada.nombre}'
+
+                # Si no hay reasignación, mostrar la unidad original
+                unidad_asignada = asignacion.id_und_org_seccion_asignada
+                if unidad_asignada:
+                    if unidad_asignada.cod_agrupacion_documental == 'SEC':
+                        return f'SECCION - {unidad_asignada.codigo} - {unidad_asignada.nombre}'
+                    elif unidad_asignada.cod_agrupacion_documental == 'SUB':
+                        return f'SUBSECCION - {unidad_asignada.codigo} - {unidad_asignada.nombre}'
+                    elif unidad_asignada.cod_agrupacion_documental is None:
+                        return f'{unidad_asignada.codigo} - {unidad_asignada.nombre}'
+
+            except AsignacionOtros.DoesNotExist:
+                pass
+
+        return None
+        
+
+
+    def get_queryset(self):
+        estados_otros = EstadosSolicitudes.objects.filter(
+            aplica_para_otros=True
+        ).exclude(nombre__in=[
+            'SOLICITUD DE DIGITALIZACION ENVIADA',
+            'SOLICITUD DIGITALIZACIÓN RESPONDIDA',
+            'SOLICITUD AL USUARIO ENVIADA',
+            'SOLICITUD AL USUARIO RESPONDIDA'
+        ])
+
+        tipo_solicitud = self.request.query_params.get('tipo_solicitud')
+        radicado = self.request.query_params.get('radicado')
+        fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
+        fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
+        estado_solicitud = self.request.query_params.get('estado_solicitud')
+        id_persona_titular = self.request.query_params.get('id_persona_titular')
+        id_persona_interpone = self.request.query_params.get('id_persona_interpone')
+        cod_relacion_titular = self.request.query_params.get('cod_relacion_titular')
+
+        queryset = Otros.objects.filter(id_estado_actual_solicitud__in=estados_otros)
+
+        if tipo_solicitud:
+            queryset = queryset.filter(cod_tipo_solicitud=tipo_solicitud)
+
+        if id_persona_titular:
+            queryset = queryset.filter(id_persona_titular=id_persona_titular)
+
+        if id_persona_interpone:
+            queryset = queryset.filter(id_persona_interpone=id_persona_interpone)
+       
+        if cod_relacion_titular:
+                queryset = queryset.filter(cod_relacion_titular=cod_relacion_titular)
+
+        if radicado:
+            try:
+                prefijo, agno, numero = radicado.split('-')
+            except ValueError:
+                raise ValidationError('El campo "Radicado" debe tener el formato correcto: (PREFIJO) - (AGNO) - (NUMERO_RADICADO).')
+            
+            queryset = queryset.filter(
+                id_radicados__prefijo_radicado=prefijo,
+                id_radicados__agno_radicado=agno,
+                id_radicados__nro_radicado=numero
+            )
+
+        if fecha_radicado_desde:
+            queryset = queryset.filter(fecha_radicado__gte=fecha_radicado_desde)
+
+        if fecha_radicado_hasta:
+            queryset = queryset.filter(fecha_radicado__lte=fecha_radicado_hasta)
+
+        if estado_solicitud:
+            # Mapeo de nombres de estados
+            estado_mapping = {
+                'RADICADO': 'RADICADO',
+                'EN VENTANILLA CON PENDIENTES': 'EN VENTANILLA CON PENDIENTES',
+                'EN VENTANILLA SIN PENDIENTES': 'EN VENTANILLA SIN PENDIENTES',
+                'EN GESTION': 'EN GESTION',
+            }
+
+            # Filtrar por el estado de solicitud correspondiente
+            estado_mapping_value = estado_mapping.get(estado_solicitud, '')
+            if estado_mapping_value:
+                queryset = queryset.filter(id_estado_actual_solicitud__nombre=estado_mapping_value)
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            return Response({
+                'success': False,
+                'detail': 'No se encontraron datos que coincidan con los criterios de búsqueda.'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        data = []
+        today = datetime.now().date()
+
+        for otros in queryset:
+            # Titular
+            if otros.id_persona_titular:
+                titular_data = otros.id_persona_titular
+                if titular_data.tipo_persona == 'N':
+                    titular_nombre = f'{titular_data.primer_nombre} {titular_data.segundo_nombre} {titular_data.primer_apellido} {titular_data.segundo_apellido}'
+                elif titular_data.tipo_persona == 'J':
+                    titular_nombre = titular_data.razon_social
+                else:
+                    titular_nombre = 'Anónimo'
+            else:
+                titular_nombre = 'Anónimo'
+
+            # Estado
+            estado_nombre = self.get_estado_solicitud_nombre(otros.id_estado_actual_solicitud)
+
+            # Obtener información de ubicación
+            ubicacion_corporacion = self.get_location_info(otros)
+
+
+
+            data.append({
+                'Id_otros': otros.id_otros,
+                'Tipo de Solicitud': 'OTROS',
+                'Titular': titular_nombre,
+                'Asunto': otros.asunto,
+                'Radicado': f"{otros.id_radicados.prefijo_radicado}-{otros.id_radicados.agno_radicado}-{otros.id_radicados.nro_radicado}" if otros.id_radicados else 'N/A',
+                'Fecha de Radicado': otros.fecha_radicado,
+                'Persona Que Radicó': f"{otros.id_radicados.id_persona_radica.primer_nombre} {otros.id_radicados.id_persona_radica.segundo_nombre} {otros.id_radicados.id_persona_radica.primer_apellido} {otros.id_radicados.id_persona_radica.segundo_apellido}" if otros.id_radicados and otros.id_radicados.id_persona_radica else 'N/A',
+                'Estado': estado_nombre,
+                'Ubicacion en la corporacion':ubicacion_corporacion,
+                
+            })
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron los siguientes registros.',
+            'data': data
+        }, status=status.HTTP_200_OK)

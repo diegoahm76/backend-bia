@@ -17,7 +17,7 @@ from gestion_documental.choices.tipo_origen_doc_choices import tipo_origen_doc_C
 from gestion_documental.choices.tipo_subsistema_creado_choices import tipo_subsistema_creado_CHOICES
 from gestion_documental.choices.tipo_radicado_choices import TIPOS_RADICADO_CHOICES
 from gestion_documental.choices.operacion_realizada_choices import operacion_realizada_CHOICES
-from gestion_documental.choices.pqrsdf_choices import cond_tipos_pqr_list
+from gestion_documental.choices.pqrsdf_choices import ESTADO_SOLICITUD_PQRSDF, TIPO_SOLICITUD_PQRSDF, cond_tipos_pqr_list
 from gestion_documental.choices.tipo_dato_alojar_choices import tipo_dato_alojar_CHOICES
 from gestion_documental.choices.tipo_acceso_choices import tipo_acceso_list
 from gestion_documental.choices.tipo_elemento_choices import tipo_elemento_CHOICES
@@ -37,6 +37,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from gestion_documental.choices.tipos_tareas_choices import TIPOS_TAREA_CHOICES
+from gestion_documental.choices.tipos_transferencia_choices import TIPOS_TRANSFERENCIA
 from gestion_documental.choices.pqrsdf_choices import TIPOS_PQR
 
 
@@ -217,6 +218,11 @@ class EstadoSolicitudTarea(APIView):
         choices = ESTADO_SOLICITUD_TAREA_CHOICES 
 
         return Response({'success': True, 'detail':'Se encontraron los siguientes registros', 'data':choices}, status=status.HTTP_200_OK)
+class TiposTransferencias(APIView):
+    def get(self, request):
+        choices = TIPOS_TRANSFERENCIA 
+
+        return Response({'success': True, 'detail':'Se encontraron los siguientes registros', 'data':choices}, status=status.HTTP_200_OK)
     
 #TIPO_PQRSDF
 class TipoPqrsdf(APIView):
@@ -224,5 +230,15 @@ class TipoPqrsdf(APIView):
         choices = TIPOS_PQR
         return Response(choices)
     
-
+#TIPO_SOLICITUD_PQRSDF
+class TipoSolicitudPQRSDF(APIView):
+    def get(self, request):
+        choices = TIPO_SOLICITUD_PQRSDF
+        return Response(choices)
+    
+#TIPO_SOLICITUD_PQRSDF
+class EstadoSolicitud(APIView):
+    def get(self, request):
+        choices = ESTADO_SOLICITUD_PQRSDF
+        return Response(choices)
     
