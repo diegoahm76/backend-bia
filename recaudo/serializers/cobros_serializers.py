@@ -50,7 +50,7 @@ class CarteraGeneralSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cartera
         fields = ('id', 'nombre', 'dias_mora', 'valor_intereses', 'valor_sancion', 'inicio', 'fin', 'id_rango', 'codigo_contable', 'fecha_facturacion', 'fecha_notificacion',
-                  'fecha_ejecutoriado', 'numero_factura', 'monto_inicial', 'tipo_cobro', 'id_deudor', 'proceso_cartera')
+                  'fecha_ejecutoriado', 'numero_factura', 'monto_inicial', 'tipo_cobro', 'id_deudor', 'proceso_cartera', 'tipo_renta')
 
     def get_proceso_cartera(self, obj):
         procesos_cartera = obj.proceso_cartera.filter(fin__isnull=True)
