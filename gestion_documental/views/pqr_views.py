@@ -22,7 +22,7 @@ from gestion_documental.models.bandeja_tareas_models import TareasAsignadas, Rea
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MediosSolicitud, MetadatosAnexosTmp, RespuestaPQR, T262Radicados, TiposPQR, modulos_radican
 from rest_framework.response import Response
 from gestion_documental.models.trd_models import FormatosTiposMedio
-from gestion_documental.serializers.pqr_serializers import AnexoRespuestaPQRSerializer, AnexoSerializer, AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, EstadosSolicitudesSerializer, InfoDenunciasPQRSDFPostSerializer, InfoDenunciasPQRSDFPutSerializer, InfoDenunciasPQRSDFSerializer, MediosSolicitudCreateSerializer, MediosSolicitudDeleteSerializer, MediosSolicitudSearchSerializer, MediosSolicitudUpdateSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, PQRSDFGetSerializer, PQRSDFPanelSerializer, PQRSDFPostSerializer, PQRSDFPutSerializer, PQRSDFSerializer, PersonasSerializer, RadicadoPostSerializer, RespuestaPQRSDFPanelSerializer, RespuestaPQRSDFPostSerializer, TiposPQRGetSerializer, TiposPQRUpdateSerializer
+from gestion_documental.serializers.pqr_serializers import AnexoRespuestaPQRSerializer, PersonaSerializer,UnidadOrganizacionalSerializer, AnexoSerializer, AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, EstadosSolicitudesSerializer, InfoDenunciasPQRSDFPostSerializer, InfoDenunciasPQRSDFPutSerializer, InfoDenunciasPQRSDFSerializer, MediosSolicitudCreateSerializer, MediosSolicitudDeleteSerializer, MediosSolicitudSearchSerializer, MediosSolicitudUpdateSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, PQRSDFGetSerializer, PQRSDFPanelSerializer, PQRSDFPostSerializer, PQRSDFPutSerializer, PQRSDFSerializer, PersonasSerializer, RadicadoPostSerializer, RespuestaPQRSDFPanelSerializer, RespuestaPQRSDFPostSerializer, TiposPQRGetSerializer, TiposPQRUpdateSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.configuracion_tipos_radicados_views import ConfigTiposRadicadoAgnoGenerarN
 from gestion_documental.views.panel_ventanilla_views import Estados_PQRCreate, Estados_PQRDelete
@@ -2578,20 +2578,24 @@ class ListarInformacionArbolWorkflow(generics.ListAPIView):
 
         arbol_solicitudes = []
 
+        #GUARDADO
         if pqrsdf.id_estado_actual_solicitud.nombre == "GUARDADO":
             arbol_solicitudes.append({"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},)
             
+        #RADICADO    
         elif pqrsdf.id_estado_actual_solicitud.nombre == "RADICADO":
             arbol_solicitudes.extend([{"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
                                       {"solicitud": "RADICADO", "fecha_radicado": pqrsdf.fecha_radicado}])
 
-
+        #EN VENTANILLA CON PENIDENTES
         elif pqrsdf.id_estado_actual_solicitud.nombre == "EN VENTANILLA CON PENDIENTES":
             arbol_solicitudes.extend([
                 {"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
                 {"solicitud": "RADICADO","fecha_radicado": pqrsdf.fecha_radicado},
                 {"solicitud": "EN VENTANILLA CON PENDIENTES"}
             ])
+
+        #SOLICITUD DE DIGITALIZACION ENVIADA    
         elif pqrsdf.id_estado_actual_solicitud.nombre == "SOLICITUD DE DIGITALIZACION ENVIADA":
             arbol_solicitudes.extend([
                 {"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
@@ -2599,6 +2603,8 @@ class ListarInformacionArbolWorkflow(generics.ListAPIView):
                 {"solicitud": "EN VENTANILLA CON PENDIENTES"},
                 {"solicitud": "SOLICITUD DE DIGITALIZACION ENVIADA"}
             ])
+
+        #SOLICITUD DIGITALIZACIÓN RESPONDIDA  
         elif pqrsdf.id_estado_actual_solicitud.nombre == "SOLICITUD DIGITALIZACIÓN RESPONDIDA":
             arbol_solicitudes.extend([
                 {"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
@@ -2607,6 +2613,8 @@ class ListarInformacionArbolWorkflow(generics.ListAPIView):
                 {"solicitud": "SOLICITUD DE DIGITALIZACION ENVIADA"},
                 {"solicitud": "SOLICITUD DIGITALIZACIÓN RESPONDIDA"},
             ])
+
+        #SOLICITUD AL USUARIO ENVIADA  
         elif pqrsdf.id_estado_actual_solicitud.nombre == "SOLICITUD AL USUARIO ENVIADA":
             arbol_solicitudes.extend([
                 {"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
@@ -2614,6 +2622,9 @@ class ListarInformacionArbolWorkflow(generics.ListAPIView):
                 {"solicitud": "EN VENTANILLA CON PENDIENTES"},
                 {"solicitud": "SOLICITUD AL USUARIO ENVIADA"},
             ])
+
+
+        #SOLICITUD AL USUARIO RESPONDIDA    
         elif pqrsdf.id_estado_actual_solicitud.nombre == "SOLICITUD AL USUARIO RESPONDIDA":
             arbol_solicitudes.extend([
                 {"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
@@ -2622,6 +2633,8 @@ class ListarInformacionArbolWorkflow(generics.ListAPIView):
                 {"solicitud": "SOLICITUD AL USUARIO ENVIADA"},
                 {"solicitud": "SOLICITUD AL USUARIO RESPONDIDA"},
             ])
+
+        #EN VENTANILLA SIN PENDIENTES
         elif pqrsdf.id_estado_actual_solicitud.nombre == "EN VENTANILLA SIN PENDIENTES":
             arbol_solicitudes.extend([
                 {"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
@@ -2630,21 +2643,20 @@ class ListarInformacionArbolWorkflow(generics.ListAPIView):
                 {"solicitud": "EN VENTANILLA SIN PENDIENTES"}
             ])
 
+
+        #EN GESTION
         elif pqrsdf.id_estado_actual_solicitud.nombre == "EN GESTION":
             asignacion_en_gestion = AsignacionPQR.objects.filter(id_pqrsdf=pqrsdf).first()
 
             if asignacion_en_gestion:
-                persona_asignada_data = {
-                    "id_persona_asignada": asignacion_en_gestion.id_persona_asignada.id,
-                    "nombre_persona_asignada": asignacion_en_gestion.id_persona_asignada.nombre,  # Reemplaza con el nombre real del campo
-                    # Otros campos relevantes de Personas
-                }
+                persona_asignada_data = {}
+                unidad_asignada_data = {}
 
-                unidad_asignada_data = {
-                    "id_und_org_seccion_asignada": asignacion_en_gestion.id_und_org_seccion_asignada.id_unidad_organizacional,
-                    "nombre_und_org_seccion_asignada": asignacion_en_gestion.id_und_org_seccion_asignada.nombre,  # Reemplaza con el nombre real del campo
-                    # Otros campos relevantes de UnidadesOrganizacionales
-                }
+                if asignacion_en_gestion.id_persona_asignada:
+                    persona_asignada_data = PersonaSerializer(asignacion_en_gestion.id_persona_asignada).data
+
+                if asignacion_en_gestion.id_und_org_seccion_asignada:
+                    unidad_asignada_data = UnidadOrganizacionalSerializer(asignacion_en_gestion.id_und_org_seccion_asignada).data
 
                 arbol_solicitudes.extend([
                     {"solicitud": "GUARDADO", "fecha_registro": pqrsdf.fecha_registro},
@@ -2659,28 +2671,74 @@ class ListarInformacionArbolWorkflow(generics.ListAPIView):
                     {"solicitud": "RADICADO", "fecha_radicado": pqrsdf.fecha_radicado},
                     {"solicitud": "EN VENTANILLA CON PENDIENTES"},
                     {"solicitud": "EN VENTANILLA SIN PENDIENTES"},
-                    {"solicitud": "EN GESTION"}
-                ])
-            
+                    {"solicitud": "EN GESTION" ", no se le ha asignado una (persona),ni una (unidad organizacion)"}
+        ])
+        
+        #RESPONDIDA    
         elif pqrsdf.id_estado_actual_solicitud.nombre == "RESPONDIDA":
-            arbol_solicitudes.extend([
-                {"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
-                {"solicitud": "RADICADO"},
-                {"solicitud": "EN VENTANILLA CON PENDIENTES"},
-                {"solicitud": "EN VENTANILLA SIN PENDIENTES"},
-                {"solicitud": "EN GESTION"},
-                {"solicitud": "RESPONDIDA"}
-            ])
+            asignacion_en_gestion = AsignacionPQR.objects.filter(id_pqrsdf=pqrsdf).first()
+
+            if asignacion_en_gestion:
+                persona_asignada_data = {}
+                unidad_asignada_data = {}
+
+                if asignacion_en_gestion.id_persona_asignada:
+                    persona_asignada_data = PersonaSerializer(asignacion_en_gestion.id_persona_asignada).data
+
+                if asignacion_en_gestion.id_und_org_seccion_asignada:
+                    unidad_asignada_data = UnidadOrganizacionalSerializer(asignacion_en_gestion.id_und_org_seccion_asignada).data
+
+                arbol_solicitudes.extend([
+                    {"solicitud": "GUARDADO", "fecha_registro": pqrsdf.fecha_registro},
+                    {"solicitud": "RADICADO", "fecha_radicado": pqrsdf.fecha_radicado},
+                    {"solicitud": "EN VENTANILLA CON PENDIENTES"},
+                    {"solicitud": "EN VENTANILLA SIN PENDIENTES"},
+                    {"solicitud": "EN GESTION", "persona_asignada": persona_asignada_data, "unidad_asignada": unidad_asignada_data},
+                    {"solicitud": "RESPONDIDA"}
+                ])
+            else:
+                arbol_solicitudes.extend([
+                    {"solicitud": "GUARDADO", "fecha_registro": pqrsdf.fecha_registro},
+                    {"solicitud": "RADICADO", "fecha_radicado": pqrsdf.fecha_radicado},
+                    {"solicitud": "EN VENTANILLA CON PENDIENTES"},
+                    {"solicitud": "EN VENTANILLA SIN PENDIENTES"},
+                    {"solicitud": "EN GESTION" "no se le ha asignado una (persona),ni una (unidad organizacion)"},
+                    {"solicitud": "RESPONDIDA"},
+        ])
+
+        #NOTIFICADA
         elif pqrsdf.id_estado_actual_solicitud.nombre == "NOTIFICADA":
-            arbol_solicitudes.extend([
-                {"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
-                {"solicitud": "RADICADO"},
-                {"solicitud": "EN VENTANILLA CON PENDIENTES"},
-                {"solicitud": "EN VENTANILLA SIN PENDIENTES"},
-                {"solicitud": "EN GESTION"},
-                {"solicitud": "RESPONDIDA"},
-                {"solicitud": "NOTIFICADA"}
-            ])
+            asignacion_en_gestion = AsignacionPQR.objects.filter(id_pqrsdf=pqrsdf).first()
+
+            if asignacion_en_gestion:
+                persona_asignada_data = {}
+                unidad_asignada_data = {}
+
+                if asignacion_en_gestion.id_persona_asignada:
+                    persona_asignada_data = PersonaSerializer(asignacion_en_gestion.id_persona_asignada).data
+
+                if asignacion_en_gestion.id_und_org_seccion_asignada:
+                    unidad_asignada_data = UnidadOrganizacionalSerializer(asignacion_en_gestion.id_und_org_seccion_asignada).data
+
+                arbol_solicitudes.extend([
+                    {"solicitud": "GUARDADO", "fecha_registro": pqrsdf.fecha_registro},
+                    {"solicitud": "RADICADO", "fecha_radicado": pqrsdf.fecha_radicado},
+                    {"solicitud": "EN VENTANILLA CON PENDIENTES"},
+                    {"solicitud": "EN VENTANILLA SIN PENDIENTES"},
+                    {"solicitud": "EN GESTION", "persona_asignada": persona_asignada_data, "unidad_asignada": unidad_asignada_data},
+                    {"solicitud": "RESPONDIDA"},
+                    {"solicitud": "NOTIFICADA"}
+                ])
+            else:
+                arbol_solicitudes.extend([
+                    {"solicitud": "GUARDADO", "fecha_registro": pqrsdf.fecha_registro},
+                    {"solicitud": "RADICADO", "fecha_radicado": pqrsdf.fecha_radicado},
+                    {"solicitud": "EN VENTANILLA CON PENDIENTES"},
+                    {"solicitud": "EN VENTANILLA SIN PENDIENTES"},
+                    {"solicitud": "EN GESTION" "no se le ha asignado una (persona),ni una (unidad organizacion)"},
+                    {"solicitud": "RESPONDIDA"},
+                    {"solicitud": "NOTIFICADA"},
+        ])
 
         serializer = PQRSDFSerializer(pqrsdf)
         data = serializer.data
