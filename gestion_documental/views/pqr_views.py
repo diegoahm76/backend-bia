@@ -285,7 +285,7 @@ class PQRSDFUpdate(generics.RetrieveUpdateAPIView):
             serializer.save()
             return serializer.data
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
     
     def procesa_denuncia(self, denuncia, cod_tipo_PQRSDF_DB, cod_tipo_PQRSDF, id_PQRSDF):
         if cod_tipo_PQRSDF_DB == 'D' and cod_tipo_PQRSDF == 'D':
@@ -597,10 +597,12 @@ class RadicadoCreate(generics.CreateAPIView):
             serializer = self.serializer_class(data=radicado_data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            return serializer.data
+            serializer_data = serializer.data
+            serializer_data['radicado_nuevo'] = config_tipos_radicado['radicado_nuevo']
+            return serializer_data
 
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
 
 
     def get_config_tipos_radicado(self, request):
@@ -644,7 +646,7 @@ class DenunciasCreate(generics.CreateAPIView):
             return serializer.data
 
         except Exception as e:
-          raise ({'success': False, 'detail': str(e)})
+          raise ValidationError(str(e))
         
 class DenunciasUpdate(generics.RetrieveUpdateAPIView):
     serializer_class = InfoDenunciasPQRSDFPutSerializer
@@ -662,7 +664,7 @@ class DenunciasUpdate(generics.RetrieveUpdateAPIView):
                 raise ValidationError("No se encuentra la denuncia que intenta actualziar")
 
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})   
+            raise ValidationError(str(e))   
 
 
 class DenunciasDelete(generics.RetrieveAPIView):
@@ -676,7 +678,7 @@ class DenunciasDelete(generics.RetrieveAPIView):
                 denuncia.delete()
             return True
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
 
 
 
@@ -729,7 +731,7 @@ class AnexosCreate(generics.CreateAPIView):
             return serializer.data
 
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
 
     def crear_archivos(self, uploaded_file, fecha_creacion):
         #Valida extensión del archivo
@@ -784,7 +786,7 @@ class AnexosUpdate(generics.RetrieveUpdateAPIView):
             return nombres_anexos_auditoria
 
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
         
     def update_anexo(self, anexo_db, anexo_update):
         serializer = self.serializer_class(anexo_db, data=anexo_update, many=False)
@@ -815,7 +817,7 @@ class AnexosDelete(generics.RetrieveDestroyAPIView):
             return nombres_anexos_auditoria
             
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
 
 class AnexosPQRCreate(generics.CreateAPIView):
     serializer_class = AnexosPQRSDFPostSerializer
@@ -828,7 +830,7 @@ class AnexosPQRCreate(generics.CreateAPIView):
             return serializer.data
 
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
         
 class AnexosPQRDelete(generics.RetrieveDestroyAPIView):
     serializer_class = AnexosPQRSDFSerializer
@@ -856,7 +858,7 @@ class MetadatosPQRCreate(generics.CreateAPIView):
             return serializer.data
 
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
         
     def set_data_metadato(self, data_metadatos):
         metadato = {}
@@ -900,7 +902,7 @@ class MetadatosPQRUpdate(generics.RetrieveUpdateAPIView):
                 raise NotFound('No se encontró el metadato que intenta actualizar')
                 
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
     
     def actualizar_archivo(self, archivo, fecha_actual, id_archivo_anterior):
         #Borra archivo anterior del metadato
@@ -926,7 +928,7 @@ class MetadatosPQRDelete(generics.RetrieveDestroyAPIView):
             else:
                 raise NotFound('No se encontró ningún metadato con estos parámetros')
         except Exception as e:
-          raise({'success': False, 'detail': str(e)})
+          raise ValidationError(str(e))
         
 class ArchivoDelete(generics.RetrieveDestroyAPIView):
     serializer_class = ArchivosSerializer
@@ -940,7 +942,7 @@ class ArchivoDelete(generics.RetrieveDestroyAPIView):
             else:
                 raise NotFound('No se encontró ningún metadato con estos parámetros') 
         except Exception as e:
-          raise({'success': False, 'detail': str(e)})
+          raise ValidationError(str(e))
 
 ############################## UTILS ###########################################################
 class Util_PQR:
@@ -1240,7 +1242,7 @@ class RespuestaPQRSDFUpdate(generics.RetrieveUpdateAPIView):
             serializer.save()
             return serializer.data
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
     
 
     def procesa_anexos(self, anexos, archivos, id_respuesta_PQR, isCreateForWeb, fecha_actual):
@@ -1369,7 +1371,7 @@ class AnexosRespuestaCreate(generics.CreateAPIView):
             return serializer.data
 
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
 
     def crear_archivos(self, uploaded_file, fecha_creacion):
         #Valida extensión del archivo
@@ -1424,7 +1426,7 @@ class AnexosRespuestaUpdate(generics.RetrieveUpdateAPIView):
             return nombres_anexos_auditoria
 
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
         
     def update_anexo(self, anexo_db, anexo_update):
         serializer = self.serializer_class(anexo_db, data=anexo_update, many=False)
@@ -1455,7 +1457,7 @@ class AnexosRespuestaDelete(generics.RetrieveDestroyAPIView):
             return nombres_anexos_auditoria
             
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
 
 class AnexosRespuestaPQRCreate(generics.CreateAPIView):
     serializer_class = AnexosPQRSDFPostSerializer
@@ -1566,7 +1568,7 @@ class MetadatosRespuestaPQRDelete(generics.RetrieveDestroyAPIView):
             else:
                 raise NotFound('No se encontró ningún metadato con estos parámetros')
         except Exception as e:
-          raise({'success': False, 'detail': str(e)})
+          raise ValidationError(str(e))
         
 class ArchivoDelete(generics.RetrieveDestroyAPIView):
     serializer_class = ArchivosSerializer
@@ -1580,7 +1582,7 @@ class ArchivoDelete(generics.RetrieveDestroyAPIView):
             else:
                 raise NotFound('No se encontró ningún metadato con estos parámetros') 
         except Exception as e:
-          raise({'success': False, 'detail': str(e)})
+          raise ValidationError(str(e))
 
 ############################## UTILS ###########################################################
 class Util_Respuesta_PQR:

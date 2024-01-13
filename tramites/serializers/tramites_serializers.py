@@ -54,9 +54,10 @@ class GeneralTramitesGetSerializer(serializers.ModelSerializer):
     estado_actual_solicitud = serializers.ReadOnlyField(source='id_estado_actual_solicitud.nombre', default=None)
     cod_tipo_radicado = serializers.ReadOnlyField(source='id_radicado.cod_tipo_radicado', default=None)
     tipo_radicado = serializers.ReadOnlyField(source='id_radicado.get_cod_tipo_radicado_display', default=None)
-    id_modulo_radica = serializers.ReadOnlyField(source='id_radicado.id_modulo_radica', default=None)
-    modulo_radica = serializers.SerializerMethodField()
+    id_modulo_radica = serializers.ReadOnlyField(source='id_radicado.id_modulo_que_radica.id_ModuloQueRadica', default=None)
+    modulo_radica = serializers.ReadOnlyField(source='id_radicado.id_modulo_que_radica.nombre', default=None)
     numero_radicado = serializers.ReadOnlyField(source='id_radicado.nro_radicado', default=None)
+    agno_radicado = serializers.ReadOnlyField(source='id_radicado.agno_radicado', default=None)
     anexos = serializers.SerializerMethodField()
     
     def get_nombre_persona_titular(self, obj):
@@ -95,9 +96,6 @@ class GeneralTramitesGetSerializer(serializers.ModelSerializer):
                 nombre_persona_registra = nombre_persona_registra if nombre_persona_registra != "" else None
         return nombre_persona_registra
     
-    def get_modulo_radica(self, obj):
-        return "Trámites y Servicios"
-    
     def get_anexos(self, obj):
         anexos_instances = AnexosTramite.objects.filter(id_solicitud_tramite=obj.id_solicitud_tramite)
         serializer_get = AnexosGetSerializer(anexos_instances, many=True)
@@ -126,6 +124,7 @@ class GeneralTramitesGetSerializer(serializers.ModelSerializer):
             'fecha_ini_estado_actual',
             'id_radicado',
             'numero_radicado',
+            'agno_radicado',
             'fecha_radicado',
             'cod_tipo_radicado',
             'tipo_radicado',

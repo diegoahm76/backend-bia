@@ -630,6 +630,7 @@ class ArchivosDigitalesCreateSerializer(serializers.ModelSerializer):
              raise serializers.ValidationError(str(e))
 
 class ListExpedientesComplejosSerializer(serializers.ModelSerializer):
+    tipo_expediente = serializers.CharField(source='get_cod_tipo_expediente_display', default=None)
     carpetas_caja = serializers.SerializerMethodField()
     documentos_agregados = serializers.SerializerMethodField()
     
@@ -725,6 +726,8 @@ class ListExpedientesComplejosSerializer(serializers.ModelSerializer):
             'titulo_expediente',
             'descripcion_expediente',
             'fecha_apertura_expediente',
+            'cod_tipo_expediente',
+            'tipo_expediente',
             'carpetas_caja',
             'documentos_agregados'
         ]
