@@ -7,9 +7,8 @@ import os
 import subprocess
 from django.http import HttpResponse
 from django.utils import timezone
-from django.db.models import F, ExpressionWrapper, fields
+from django.db.models import F, ExpressionWrapper, fields, Count
 from django.forms import model_to_dict
-from django.db.models import F, ExpressionWrapper, fields
 from django.db.models import Value as V
 from django.db.models import IntegerField
 from django.db.models.functions import Now, ExtractDay
@@ -2745,3 +2744,319 @@ class ListarInformacionArbolWorkflow(generics.ListAPIView):
         data["arbol_solicitudes"] = arbol_solicitudes
 
         return Response(data)
+    
+
+
+#INDICADORES_PQRSDF
+    
+
+#PERIOCIDAD
+class IndicadorPeriocidad(generics.ListAPIView):
+    serializer_class = PQRSDFPostSerializer  # Usa el serializador proporcionado
+
+    def get_queryset(self):
+        # Filtrar PQRSDF con estado diferente de "guardado"
+        queryset = PQRSDF.objects.exclude(id_estado_actual_solicitud__nombre='GUARDADO')
+
+        fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
+        fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
+
+        if fecha_radicado_desde:
+            queryset = queryset.filter(fecha_radicado__gte=fecha_radicado_desde)
+
+        if fecha_radicado_hasta:
+            queryset = queryset.filter(fecha_radicado__lte=fecha_radicado_hasta)
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Obtener indicadores por medio de solicitud
+        indicadores = queryset.values('id_medio_solicitud__nombre', 'id_medio_solicitud').annotate(
+            cantidad_pqrsdf=Count('id_PQRSDF')
+        )
+
+        # Obtener el total de PQRSDF con estado diferente de "guardado"
+        total_pqrsdf = queryset.count()
+
+        # Devolver los resultados
+        return Response({
+            'success': True,
+            'detail': 'Indicadores de PQRSDF por periocidad.',
+            'data': {
+                'indicadores_por_medio_solicitud': [
+                    {
+                        'id_medio_solicitud': indicador['id_medio_solicitud'],
+                        'nombre_medio_solicitud': indicador['id_medio_solicitud__nombre'],
+                        'cantidad_pqrsdf': indicador['cantidad_pqrsdf'],
+                    }
+                    for indicador in indicadores
+                ],
+                'total_pqrsdf': total_pqrsdf
+            }
+        }, status=status.HTTP_200_OK)
+
+#PRIMER_INDICADOR_ATENCION_PQRSDF
+class IndicadorAtencionPQRSDF(generics.ListAPIView):
+    serializer_class = PQRSDFPostSerializer  # Usa el serializador proporcionado
+
+    def get_queryset(self):
+        # Filtrar PQRSDF recibidos (excluir los que están en estado 'guardado')
+        queryset = PQRSDF.objects.exclude(id_estado_actual_solicitud__nombre='GUARDADO')
+
+        fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
+        fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
+
+        if fecha_radicado_desde:
+            queryset = queryset.filter(fecha_radicado__gte=fecha_radicado_desde)
+
+        if fecha_radicado_hasta:
+            queryset = queryset.filter(fecha_radicado__lte=fecha_radicado_hasta)
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Filtrar PQRSDF respondidos (en estado 'respondida' o 'notificada')
+        queryset_respondidos = queryset.filter(
+            id_estado_actual_solicitud__nombre__in=['RESPONDIDA', 'NOTIFICADA']
+        )
+
+        # Filtrar PQRSDF no respondidos (cualquier estado diferente a 'respondida' o 'notificada')
+        queryset_no_respondidos = queryset.exclude(
+            id_estado_actual_solicitud__nombre__in=['RESPONDIDA', 'NOTIFICADA']
+        )
+
+        # Número de PQRSDF recibidos
+        num_pqrsdf_recibidos = queryset.count()
+
+        # Número de PQRSDF respondidos
+        num_pqrsdf_respondidos = queryset_respondidos.count()
+
+        # Número de PQRSDF no respondidos
+        num_pqrsdf_no_respondidos = queryset_no_respondidos.count()
+
+        # Calcular el porcentaje de PQRSDF respondidos y no respondidos
+        porcentaje_respondidos = 0
+        porcentaje_no_respondidos = 0
+
+        if num_pqrsdf_recibidos > 0:
+            porcentaje_respondidos = (num_pqrsdf_respondidos / num_pqrsdf_recibidos) * 100
+            porcentaje_no_respondidos = (num_pqrsdf_no_respondidos / num_pqrsdf_recibidos) * 100
+
+        # Calcular el rango de cumplimiento
+        rango_cumplimiento = 'Excelente' if porcentaje_respondidos >= 80 else ('Regular' if 60 <= porcentaje_respondidos <= 79 else 'Deficiente')
+
+        # Devolver los resultados
+        return Response({
+            'success': True,
+            'detail': 'Indicador de atención a PQRSDF.',
+            'data': {
+                'num_pqrsdf_recibidos': num_pqrsdf_recibidos,
+                'num_pqrsdf_respondidos': num_pqrsdf_respondidos,
+                'num_pqrsdf_no_respondidos': num_pqrsdf_no_respondidos,
+                'porcentaje_respondidos': porcentaje_respondidos,
+                'porcentaje_no_respondidos': porcentaje_no_respondidos,
+                'rango_cumplimiento': rango_cumplimiento
+            }
+        }, status=status.HTTP_200_OK)
+    
+
+#SEGUNDO_INDICADOR_PETICIONES_PQRSDF
+class IndicadorAtencionDerechosPetecion(generics.ListAPIView):
+    serializer_class = PQRSDFPostSerializer  # Usa el serializador proporcionado
+
+    def get_queryset(self):
+        # Filtrar PQRSDF recibidos de tipo 'PG', 'PD', 'PC' (excluir los que están en estado 'guardado')
+        queryset = PQRSDF.objects.filter(
+            cod_tipo_PQRSDF__in=['PG', 'PD', 'PC']
+        ).exclude(id_estado_actual_solicitud__nombre='GUARDADO')
+
+        fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
+        fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
+
+        if fecha_radicado_desde:
+            queryset = queryset.filter(fecha_radicado__gte=fecha_radicado_desde)
+
+        if fecha_radicado_hasta:
+            queryset = queryset.filter(fecha_radicado__lte=fecha_radicado_hasta)
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Filtrar PQRSDF de tipo 'PG', 'PD', 'PC' respondidos (en estado 'respondida' o 'notificada')
+        queryset_respondidos = queryset.filter(
+            id_estado_actual_solicitud__nombre__in=['RESPONDIDA', 'NOTIFICADA']
+        )
+
+        # Número de PQRSDF recibidos de tipo 'PG', 'PD', 'PC'
+        num_peticiones_recibidos = queryset.count()
+
+        # Número de PQRSDF de tipo 'PG', 'PD', 'PC' respondidos
+        num_peticiones_respondidos = queryset_respondidos.count()
+
+        # Calcular el porcentaje de PQRSDF respondidos y no respondidos
+        porcentaje_respondidos = 0
+        porcentaje_no_respondidos = 0
+
+        if num_peticiones_recibidos > 0:
+            porcentaje_respondidos = (num_peticiones_respondidos / num_peticiones_recibidos) * 100
+            porcentaje_no_respondidos = 100 - porcentaje_respondidos
+
+        # Calcular el indicador de atención
+        indicador_atencion = 0
+        if num_peticiones_recibidos > 0:
+            indicador_atencion = (num_peticiones_respondidos / num_peticiones_recibidos) * 100
+
+        # Calcular el rango de cumplimiento
+        rango_cumplimiento = 'Excelente' if indicador_atencion >= 80 else ('Regular' if 60 <= indicador_atencion <= 79 else 'Deficiente')
+
+        # Devolver los resultados
+        return Response({
+            'success': True,
+            'detail': 'Indicador de atención a Derechos de Petición.',
+            'data': {
+                'num_peticiones_recibidos': num_peticiones_recibidos,
+                'num_peticiones_respondidos': num_peticiones_respondidos,
+                'porcentaje_respondidos': porcentaje_respondidos,
+                'porcentaje_no_respondidos': porcentaje_no_respondidos,
+                'indicador_atencion': indicador_atencion,
+                'rango_cumplimiento': rango_cumplimiento
+            }
+        }, status=status.HTTP_200_OK)
+    
+
+#TERCER_INDICADOR_QUEJAS_PQRSDF
+class IndicadorAtencionQuejas(generics.ListAPIView):
+    serializer_class = PQRSDFPostSerializer  # Usa el serializador proporcionado
+
+    def get_queryset(self):
+        # Filtrar PQRSDF recibidas de tipo 'Q' (excluir las que están en estado 'guardado')
+        queryset = PQRSDF.objects.filter(
+            cod_tipo_PQRSDF='Q'
+        ).exclude(id_estado_actual_solicitud__nombre='GUARDADO')
+
+        fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
+        fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
+
+        if fecha_radicado_desde:
+            queryset = queryset.filter(fecha_radicado__gte=fecha_radicado_desde)
+
+        if fecha_radicado_hasta:
+            queryset = queryset.filter(fecha_radicado__lte=fecha_radicado_hasta)
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Filtrar PQRSDF de tipo 'Q' respondidas (en estado 'respondida' o 'notificada')
+        queryset_respondidas = queryset.filter(
+            id_estado_actual_solicitud__nombre__in=['RESPONDIDA', 'NOTIFICADA']
+        )
+
+        # Número de PQRSDF recibidas de tipo 'Q'
+        num_quejas_recibidas = queryset.count()
+
+        # Número de PQRSDF de tipo 'Q' respondidas
+        num_quejas_respondidas = queryset_respondidas.count()
+
+        # Calcular el porcentaje de Quejas respondidas y no respondidas
+        porcentaje_respondidas = 0
+        porcentaje_no_respondidas = 0
+
+        if num_quejas_recibidas > 0:
+            porcentaje_respondidas = (num_quejas_respondidas / num_quejas_recibidas) * 100
+            porcentaje_no_respondidas = 100 - porcentaje_respondidas
+
+        # Calcular el indicador de atención
+        indicador_atencion = 0
+        if num_quejas_recibidas > 0:
+            indicador_atencion = (num_quejas_respondidas / num_quejas_recibidas) * 100
+
+        # Calcular el rango de cumplimiento
+        rango_cumplimiento = 'Excelente' if indicador_atencion >= 80 else ('Regular' if 60 <= indicador_atencion <= 79 else 'Deficiente')
+
+        # Devolver los resultados
+        return Response({
+            'success': True,
+            'detail': 'Indicador de atención a Quejas.',
+            'data': {
+                'num_quejas_recibidas': num_quejas_recibidas,
+                'num_quejas_respondidas': num_quejas_respondidas,
+                'porcentaje_respondidas': porcentaje_respondidas,
+                'porcentaje_no_respondidas': porcentaje_no_respondidas,
+                'indicador_atencion': indicador_atencion,
+                'rango_cumplimiento': rango_cumplimiento
+            }
+        }, status=status.HTTP_200_OK)
+    
+
+#CUARTO_INDICADOR_RECLAMOS_PQRSDF
+class IndicadorAtencionReclamos(generics.ListAPIView):
+    serializer_class = PQRSDFPostSerializer  # Usa el serializador proporcionado
+
+    def get_queryset(self):
+        # Filtrar PQRSDF de tipo 'R' (Reclamos) recibidos (excluir los que están en estado 'guardado')
+        queryset = PQRSDF.objects.filter(
+            cod_tipo_PQRSDF='R'
+        ).exclude(id_estado_actual_solicitud__nombre='GUARDADO')
+
+        fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
+        fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
+
+        if fecha_radicado_desde:
+            queryset = queryset.filter(fecha_radicado__gte=fecha_radicado_desde)
+
+        if fecha_radicado_hasta:
+            queryset = queryset.filter(fecha_radicado__lte=fecha_radicado_hasta)
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Filtrar PQRSDF de tipo 'R' respondidos (en estado 'respondida' o 'notificada')
+        queryset_respondidos = queryset.filter(
+            id_estado_actual_solicitud__nombre__in=['RESPONDIDA', 'NOTIFICADA']
+        )
+
+        # Número de PQRSDF recibidos de tipo 'R'
+        num_reclamos_recibidos = queryset.count()
+
+        # Número de PQRSDF de tipo 'R' respondidos
+        num_reclamos_respondidos = queryset_respondidos.count()
+
+        # Calcular el porcentaje de Reclamos respondidos y no respondidos
+        porcentaje_respondidos = 0
+        porcentaje_no_respondidos = 0
+
+        if num_reclamos_recibidos > 0:
+            porcentaje_respondidos = (num_reclamos_respondidos / num_reclamos_recibidos) * 100
+            porcentaje_no_respondidos = 100 - porcentaje_respondidos
+
+        # Calcular el indicador de atención
+        indicador_atencion = 0
+        if num_reclamos_recibidos > 0:
+            indicador_atencion = (num_reclamos_respondidos / num_reclamos_recibidos) * 100
+
+        # Calcular el rango de cumplimiento
+        rango_cumplimiento = 'Excelente' if indicador_atencion >= 80 else ('Regular' if 60 <= indicador_atencion <= 79 else 'Deficiente')
+
+        # Devolver los resultados
+        return Response({
+            'success': True,
+            'detail': 'Indicador de atención a Reclamos.',
+            'data': {
+                'num_reclamos_recibidos': num_reclamos_recibidos,
+                'num_reclamos_respondidos': num_reclamos_respondidos,
+                'porcentaje_respondidos': porcentaje_respondidos,
+                'porcentaje_no_respondidos': porcentaje_no_respondidos,
+                'indicador_atencion': indicador_atencion,
+                'rango_cumplimiento': rango_cumplimiento
+            }
+        }, status=status.HTTP_200_OK)
