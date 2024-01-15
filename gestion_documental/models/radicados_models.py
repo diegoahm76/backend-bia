@@ -177,6 +177,7 @@ class Estados_PQR(models.Model):
     PQRSDF = models.ForeignKey(PQRSDF,on_delete=models.CASCADE,db_column='T255Id_PQRSDF', null=True)
     solicitud_usu_sobre_PQR = models.ForeignKey('SolicitudAlUsuarioSobrePQRSDF',on_delete=models.CASCADE,db_column='T255Id_SolicitudAlUsuSobrePQR', null=True)#PENDIENTE MODELO T266
     id_otros = models.ForeignKey(Otros,on_delete=models.SET_NULL, blank=True, null=True,db_column='T255Id_Otros')
+    id_tramite = models.ForeignKey('tramites.SolicitudesTramites', models.SET_NULL, db_column='T255Id_SolicitudTramite', blank=True, null=True)
     estado_solicitud = models.ForeignKey(EstadosSolicitudes,on_delete=models.CASCADE,db_column='T255Id_EstadoSolicitud')
     fecha_iniEstado = models.DateTimeField(db_column='T255fechaIniEstado')
     persona_genera_estado = models.ForeignKey('transversal.Personas',on_delete=models.CASCADE,db_column='T255Id_PersonaGeneraEstado', null=True)
