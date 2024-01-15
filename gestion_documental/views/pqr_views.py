@@ -3060,3 +3060,70 @@ class IndicadorAtencionReclamos(generics.ListAPIView):
                 'rango_cumplimiento': rango_cumplimiento
             }
         }, status=status.HTTP_200_OK)
+    
+
+#QUINTO_INDICADOR_SUGERENCIAS_PQRSDF
+class IndicadorSugerenciasRadicadas(generics.ListAPIView):
+    serializer_class = PQRSDFPostSerializer  # Usa el serializador proporcionado
+
+    def get_queryset(self):
+        # Filtrar PQRSDF de tipo 'S' (Sugerencia) radicadas (en estado 'radicado')
+        queryset = PQRSDF.objects.filter(
+            cod_tipo_PQRSDF='S',
+            id_estado_actual_solicitud__nombre='RADICADO'
+        )
+
+        fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
+        fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
+
+        if fecha_radicado_desde:
+            queryset = queryset.filter(fecha_radicado__gte=fecha_radicado_desde)
+
+        if fecha_radicado_hasta:
+            queryset = queryset.filter(fecha_radicado__lte=fecha_radicado_hasta)
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Filtrar PQRSDF de tipo 'S' respondidas (en estado 'respondida' o 'notificada')
+        queryset_respondidas = queryset.filter(
+            id_estado_actual_solicitud__nombre__in=['RESPONDIDA', 'NOTIFICADA']
+        )
+
+        # Número de PQRSDF radicadas de tipo 'S'
+        num_sugerencias_radicadas = queryset.count()
+
+        # Número de PQRSDF de tipo 'S' respondidas
+        num_sugerencias_respondidas = queryset_respondidas.count()
+
+        # Calcular el porcentaje de Sugerencias respondidas y no respondidas
+        porcentaje_respondidos = 0
+        porcentaje_no_respondidos = 0
+
+        if num_sugerencias_radicadas > 0:
+            porcentaje_respondidos = (num_sugerencias_respondidas / num_sugerencias_radicadas) * 100
+            porcentaje_no_respondidos = 100 - porcentaje_respondidos
+
+        # Calcular el indicador de atención
+        indicador_atencion = 0
+        if num_sugerencias_radicadas > 0:
+            indicador_atencion = (num_sugerencias_respondidas / num_sugerencias_radicadas) * 100
+
+        # Calcular el rango de cumplimiento
+        rango_cumplimiento = 'Excelente' if indicador_atencion >= 80 else ('Regular' if 60 <= indicador_atencion <= 79 else 'Deficiente')
+
+        # Devolver los resultados
+        return Response({
+            'success': True,
+            'detail': 'Indicador de Sugerencias radicadas.',
+            'data': {
+                'num_sugerencias_radicadas': num_sugerencias_radicadas,
+                'num_sugerencias_respondidas': num_sugerencias_respondidas,
+                'porcentaje_respondidos': porcentaje_respondidos,
+                'porcentaje_no_respondidos': porcentaje_no_respondidos,
+                'indicador_atencion': indicador_atencion,
+                'rango_cumplimiento': rango_cumplimiento
+            }
+        }, status=status.HTTP_200_OK)

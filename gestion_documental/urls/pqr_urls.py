@@ -41,5 +41,6 @@ urlpatterns = [
      path('indicadores/indicador-derechos-peticion/', views.IndicadorAtencionDerechosPetecion.as_view(), name='indicador-atencion-derechos-peticion'),
      path('indicadores/indicador-quejas/', views.IndicadorAtencionQuejas.as_view(), name='indicador-atencion-quejas'),
      path('indicadores/indicador-reclamos/', views.IndicadorAtencionReclamos.as_view(), name='indicador-atencion-reclamos'),
+     path('indicadores/indicador-sugerencias/', views.IndicadorSugerenciasRadicadas.as_view(), name='indicador-atencion-sugerencias'),
 
 ]
