@@ -15,3 +15,7 @@ def generar_alerta():
 # 	print("TAREA FINALIZADA")
 
 
+def actualizar_estado_variable_recuado():
+	print("Dato actualizado")
+
+
