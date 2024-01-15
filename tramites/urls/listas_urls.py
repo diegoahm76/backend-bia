@@ -12,4 +12,5 @@ urlpatterns = [
     path('cod-calendario-habiles/', views_transversal.GetListCodCalendarioHabiles.as_view(), name='get-cod-calendario-habiles'),
     path('cod-tipo-solicitud-juridica/', views_transversal.GetListCodTipoSolicitudJuridica.as_view(), name='get-cod-tipo-solicitud-juridica'),
     path('cod-estado-solicitud-juridica/', views_transversal.GetListCodEstadoSolicitudJuridica.as_view(), name='get-cod-estado-solicitud-juridica'),
+    path('tipos-radicado/', views_transversal.GetListTiposRadicado.as_view(), name='get-tipos-radicado'),
 ]

@@ -21,7 +21,6 @@ urlpatterns = [
     path('tipos_pqr/actualizar-medio-solicitud/<int:id_medio_solicitud>/',views.MediosSolicitudUpdate.as_view(), name='actualizar-medio-solicitud'),
 
     #Respuesta_Solicitud_PQRSDF_104
-    
     path('crear-respuesta-pqrsdf/', views.RespuestaPQRSDFCreate.as_view(), name='crear-respuesta-pqrsdf'),
     path('get_respuesta_pqrsdf-panel/<int:id_pqrsdf>/', views.GetRespuestaPQRSDFForPanel.as_view(), name='get_respuesta_pqrsdf-panel'),
 
@@ -34,8 +33,14 @@ urlpatterns = [
 
     #Consulta_Estado_Solicitud_PQRSDF_114
     path('consulta-estado-pqrsdf/', views.ConsultaEstadoPQRSDF.as_view(), name='listar-estados-solicitud'),
+    path('listar_informacion_arbol/<int:id_PQRSDF>/', views.ListarInformacionArbolWorkflow.as_view(), name='listar-workflow-solicitud'),
     
-
-
+    #Indicadores_PQRSDF_115
+     path('indicadores/indicador-periocidad/', views.IndicadorPeriocidad.as_view(), name='indicador-pqrsdf-periocidad'),
+     path('indicadores/indicador-atencion-pqrsdf/', views.IndicadorAtencionPQRSDF.as_view(), name='indicador-atencion-pqrsdf'),
+     path('indicadores/indicador-derechos-peticion/', views.IndicadorAtencionDerechosPetecion.as_view(), name='indicador-atencion-derechos-peticion'),
+     path('indicadores/indicador-quejas/', views.IndicadorAtencionQuejas.as_view(), name='indicador-atencion-quejas'),
+     path('indicadores/indicador-reclamos/', views.IndicadorAtencionReclamos.as_view(), name='indicador-atencion-reclamos'),
+     path('indicadores/indicador-sugerencias/', views.IndicadorSugerenciasRadicadas.as_view(), name='indicador-atencion-sugerencias'),
 
 ]

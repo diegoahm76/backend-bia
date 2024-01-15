@@ -6,7 +6,7 @@ from transversal.choices.tipo_cambio_masivo_choices import tipo_cambio_masivo_CH
 
 class Organigramas(models.Model):
     id_organigrama = models.SmallAutoField(primary_key=True, editable=False, db_column='T017IdOrganigrama')
-    nombre = models.CharField(max_length=50, unique=True, db_column='T017nombre')
+    nombre = models.CharField(max_length=120, unique=True, db_column='T017nombre')
     fecha_terminado = models.DateTimeField(null=True, blank=True,db_column='T017fechaTerminado')
     descripcion = models.CharField(max_length=255, db_column='T017descripcion')
     fecha_puesta_produccion = models.DateTimeField(null=True, blank=True, db_column='T017fechaPuestaEnProduccion')
