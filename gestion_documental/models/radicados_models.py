@@ -306,14 +306,16 @@ class ComplementosUsu_PQR(models.Model):
 
 class SolicitudDeDigitalizacion(models.Model):
     id_solicitud_de_digitalizacion = models.AutoField(primary_key=True, db_column='T263IdSolicitudDeDigitalizacion')
-    id_pqrsdf = models.ForeignKey('Pqrsdf', models.CASCADE, db_column='T263Id_PQRSDF', blank=True, null=True)
-    id_complemento_usu_pqr = models.ForeignKey(ComplementosUsu_PQR, models.CASCADE, db_column='T263Id_ComplementoUsu_PQR', blank=True, null=True)
+    id_pqrsdf = models.ForeignKey('Pqrsdf', models.SET_NULL, db_column='T263Id_PQRSDF', blank=True, null=True)
+    id_complemento_usu_pqr = models.ForeignKey(ComplementosUsu_PQR, models.SET_NULL, db_column='T263Id_ComplementoUsu_PQR', blank=True, null=True)
+    id_otro = models.ForeignKey(Otros, models.SET_NULL, db_column='T263Id_Otro', blank=True, null=True)
+    id_tramite = models.ForeignKey('tramites.SolicitudesTramites', models.SET_NULL, db_column='T263Id_SolicitudTramite', blank=True, null=True)
     fecha_solicitud = models.DateTimeField(db_column='T263fechaSolicitud')
     fecha_rta_solicitud = models.DateTimeField(db_column='T263fechaRtaSolicitud', blank=True, null=True)
     observacion_digitalizacion = models.CharField(max_length=255, db_column='T263observacionDigitalizacion',null=True, blank=True)
     digitalizacion_completada = models.BooleanField(db_column='T263digitalizacionCompletada')
     devuelta_sin_completar = models.BooleanField(db_column='T263devueltaSinCompletar')
-    id_persona_digitalizo = models.ForeignKey('transversal.Personas', models.CASCADE, db_column='T263Id_PersonaDigitalizo', blank=True, null=True)
+    id_persona_digitalizo = models.ForeignKey('transversal.Personas', models.SET_NULL, db_column='T263Id_PersonaDigitalizo', blank=True, null=True)
 
     class Meta:
         db_table = 'T263SolicitudesDeDigitalizacion'
