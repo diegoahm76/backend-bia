@@ -29,7 +29,6 @@ from docxtpl import DocxTemplate
 from django.conf import settings
 import calendar
 
-
 class OpcionesLiquidacionBaseView(generics.ListAPIView):
     queryset = OpcionesLiquidacionBase.objects.all()
     serializer_class = OpcionesLiquidacionBaseSerializer
@@ -252,6 +251,7 @@ class ExpedientesDeudorGetView(generics.ListAPIView):
 
 
 def obtener_dias_por_mes(anio):
+    #TODO: Aqui se modifica la cantidad de dias por mes
     dias_por_mes = {}
     for mes in range(1, 13):
         dias_por_mes[mes] = calendar.monthrange(anio, mes)[1]
@@ -338,3 +338,102 @@ class CalculosLiquidacionBaseView(generics.GenericAPIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+
+
+#------------------------------stiven prueba--------------------------------------------
+    
+
+from io import BytesIO
+from django.http import HttpResponse
+
+def liquidacionPdfpruebaMigueluno(request, pk):
+    ley = LeyesLiquidacion.objects.all().first()
+    liquidacion = LiquidacionesBase.objects.filter(pk=pk).get()
+    info = CalculosLiquidacionBase.objects.filter(id_liquidacion=liquidacion.id).get()
+
+    context = {
+        'rp': liquidacion.id,  # referencia pago
+        'limite_pago': liquidacion.vencimiento,
+        'doc_cobro': '',
+        'ley': ley.ley if ley.ley is not None else '',
+        'fecha_impresion': liquidacion.fecha_liquidacion,
+        'anio': liquidacion.fecha_liquidacion.year,
+        'cedula': liquidacion.id_deudor.identificacion,
+        'titular': liquidacion.id_deudor.nombres.upper() + ' ' + liquidacion.id_deudor.apellidos.upper(),
+        'representante_legal': '',
+        'direccion': liquidacion.id_deudor.ubicacion_id.nombre.upper(),
+        'telefono': liquidacion.id_deudor.telefono,
+        'expediente': liquidacion.id_expediente.cod_expediente,
+        'exp_resolucion': liquidacion.id_expediente.numero_resolucion,
+        'nombre_fuente': str(info.calculos['nombre_fuente']).upper(),
+        'predio': str(info.calculos['predio']).upper(),
+        'municipio': str(info.calculos['municipio']).upper(),
+        'caudal_consecionado': info.calculos['caudal_consecionado'],
+        'uso': str(info.calculos['uso']).upper(),
+        'fr': info.calculos['factor_regional'],  # factor regional
+        'tt': info.calculos['tarifa_tasa'],  # tarifa de la tasa
+        'numero_cuota': liquidacion.periodo_liquidacion,
+        'valor_cuota': liquidacion.valor,
+        'codigo_barras': '',
+        'factor_costo_oportunidad': info.calculos['factor_costo_oportunidad']
+    }
+
+    pathToTemplate = str(settings.BASE_DIR) + '/recaudo/templates/TUA.docx'
+    outputPath = str(settings.BASE_DIR) + '/recaudo/templates/output.docx'
+
+    doc = DocxTemplate(pathToTemplate)
+    doc.render(context)
+    
+    # Crear un objeto BytesIO para almacenar el contenido del documento en memoria
+    output = BytesIO()
+
+    # Guardar el documento renderizado en el objeto BytesIO
+    doc.save(output)
+
+    # Crear una respuesta HTTP con el contenido del BytesIO
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+    response['Content-Disposition'] = 'attachment; filename=output.docx'
+    response.write(output.getvalue())
+
+    # Devolver la respuesta HTTP
+    return response
+
+
+from django.http import JsonResponse
+import base64
+
+
+def liquidacionPdfpruebaMigueldos(request, pk):
+    ley = LeyesLiquidacion.objects.all().first()
+    liquidacion = LiquidacionesBase.objects.filter(pk=pk).get()
+    info = CalculosLiquidacionBase.objects.filter(id_liquidacion=liquidacion.id).get()
+
+    context = {
+        'rp': liquidacion.id,
+        # ... (otros campos del contexto)
+    }
+
+    path_to_template = str(settings.BASE_DIR) + '/recaudo/templates/TUA.docx'
+
+    # Crear un objeto BytesIO para almacenar el contenido del documento en memoria
+    output = BytesIO()
+
+    # Renderizar y guardar el documento en BytesIO
+    doc = DocxTemplate(path_to_template)
+    doc.render(context)
+    doc.save(output)
+
+    # Convertir el contenido a base64
+    encoded_content = base64.b64encode(output.getvalue()).decode('utf-8')
+
+    # Crear un objeto JSON para enviar al frontend
+    response_data = {
+        'content': encoded_content,
+        'filename': 'output.docx',
+    }
+
+    # Enviar la respuesta como JSON
+    return JsonResponse(response_data)

@@ -93,7 +93,7 @@ class EstadosSolicitudes(models.Model):
 
 class T262Radicados(models.Model):
     id_radicado = models.AutoField(primary_key=True, db_column='T262IdRadicado')
-    id_modulo_que_radica = models.SmallIntegerField(db_column='T262Id_ModuloQueRadica')
+    id_modulo_que_radica = models.ForeignKey('modulos_radican',on_delete=models.CASCADE,db_column='T262Id_ModuloQueRadica')
     cod_tipo_radicado = models.CharField(max_length=1, choices=TIPOS_RADICADO_CHOICES, db_column='T262codTipoRadicado')
     prefijo_radicado = models.CharField(max_length=10, db_column='T262prefijoRadicado')
     agno_radicado = models.SmallIntegerField(db_column='T262agnoRadicado')
