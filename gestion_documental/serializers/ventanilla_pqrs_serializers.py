@@ -833,3 +833,27 @@ class TramitePutSerializer(serializers.ModelSerializer):
     class Meta:
         model = SolicitudesTramites
         fields = '__all__'
+
+
+class OPAGetHistoricoSerializer(serializers.ModelSerializer):
+
+
+    tipo_solicitud = serializers.SerializerMethodField()
+    radicado = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PermisosAmbSolicitudesTramite
+        fields = ['id_solicitud_tramite','tipo_solicitud','radicado']
+        
+    def get_tipo_solicitud(self, obj):
+        return "OPA"
+    
+    def get_radicado(self, obj):
+
+        cadena = ""
+        if obj.id_solicitud_tramite.id_radicado:
+            cadena= str(obj.id_solicitud_tramite.id_radicado.prefijo_radicado)+'-'+str(obj.id_solicitud_tramite.id_radicado.agno_radicado)+'-'+str(obj.id_solicitud_tramite.id_radicado.nro_radicado)
+            return cadena
+        return None
+    # SERIALIZERMETHODFIELD ARCHIVOS
+    
