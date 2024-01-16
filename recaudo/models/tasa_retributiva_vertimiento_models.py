@@ -109,6 +109,7 @@ class T0444Formulario(models.Model):
 
     tipoUsuario = models.CharField(max_length=15, choices=TIPO_USUARIO_CHOICES)
     otrotipo = models.CharField(max_length=255, blank=True, null=True)
+    idpersona = models.CharField(max_length=255, blank=True, null=True)
     razonSocial = models.CharField(max_length=255)
     nit = models.PositiveIntegerField()
     nombreRepresentanteLegal = models.CharField(max_length=255)
