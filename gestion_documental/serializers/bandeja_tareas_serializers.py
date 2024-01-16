@@ -5,7 +5,7 @@ from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, ReasignacionesTareas, TareasAsignadas
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TareaBandejaTareasPersona
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, MetadatosAnexosTmp, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TareaBandejaTareasPersona
 from datetime import timedelta
 from datetime import datetime
 from transversal.models.lideres_models import LideresUnidadesOrg
@@ -583,3 +583,21 @@ class ReasignacionesTareasgetByIdTareaSerializer(serializers.ModelSerializer):
             nombre_completo = ' '.join(item for item in nombre_list if item is not None)
             return nombre_completo.upper()
         return None
+    
+
+
+
+class RespuestasPQRGetSeralizer(serializers.ModelSerializer):
+    persona_responde = serializers.SerializerMethodField()
+    class Meta:
+        model = RespuestaPQR
+        fields = ['id_respuesta_pqr','fecha_respuesta','persona_responde']
+
+    def get_persona_responde(self, obj):
+        persona = obj.id_persona_responde
+        nombre_completo = None
+        if persona:
+
+            nombre_list = [persona.primer_nombre, persona.segundo_nombre, persona.primer_apellido, persona.segundo_apellido]
+            nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+            return nombre_completo.upper()

@@ -3,7 +3,7 @@ from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
-from tramites.models.tramites_models import PermisosAmbSolicitudesTramite
+from tramites.models.tramites_models import PermisosAmbSolicitudesTramite, SolicitudesTramites
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from transversal.models.personas_models import Personas
@@ -828,3 +828,8 @@ class OPAGetSerializer(serializers.ModelSerializer):
             'coordenada_y'
         ]
 
+class TramitePutSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = SolicitudesTramites
+        fields = '__all__'
