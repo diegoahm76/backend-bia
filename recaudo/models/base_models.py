@@ -126,7 +126,8 @@ class Variables(models.Model):
     tipo_cobro = models.ForeignKey('TipoCobro', on_delete=models.CASCADE, db_column='T443IdTipoCobro', related_name='variables_tipo_cobro')
     tipo_renta = models.ForeignKey(TipoRenta, on_delete=models.CASCADE, db_column='T443IdTipoRenta', related_name='variables_tipo_renta')
     valor_varaible = models.DecimalField(max_digits=10, decimal_places=2, db_column='T443valor_varaible')
-    numero_dias_variable=models.IntegerField(db_column='T443numero_dias_variable')
+    
+    numero_dias_variable = models.IntegerField(db_column='T443numero_dias_variable', null=True, default=None)
     class Meta:
         db_table = 'T443Variables'
         verbose_name = 'Variables'

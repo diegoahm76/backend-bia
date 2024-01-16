@@ -27,7 +27,7 @@ urlpatterns = [
 
 
 
-    path('liquidacion-pdf_miguel/<int:pk>/', views.liquidacionPdfpruebaMigueluno, name='descargar-liquidacion-pdjhf'),
+    path('liquidacion-pdf_miguel/<int:pk>/', views.liquidacionPdfpruebaMigueluno.as_view(), name='descargar-liquidacion-pdjhf'),
     
     path('liquidacion-pdf_miguel_dos/<int:pk>/', views.liquidacionPdfpruebaMigueldos, name='descargar-liquidacion-pdff'),
 
