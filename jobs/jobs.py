@@ -16,6 +16,7 @@ def generar_alerta():
 
 
 def actualizar_estado_variable_recuado():
-	print("Dato actualizado")
+	# print("Dato actualizado")
+	pass
 
 
