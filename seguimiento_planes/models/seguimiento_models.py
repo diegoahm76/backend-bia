@@ -4,6 +4,9 @@ from recurso_hidrico.models.bibliotecas_models import Cuencas
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from transversal.models.personas_models import Personas
 from gestion_documental.models.expedientes_models import ArchivosDigitales
+from transversal.models.base_models import (
+    ClasesTerceroPersona
+)
 
 class FuenteFinanciacionIndicadores(models.Model):
     id_fuente = models.AutoField(primary_key=True, editable=False, db_column='T516IdFuente')
@@ -339,3 +342,76 @@ class SeguimientoPAIDocumentos(models.Model): # Tabla intermedia
         db_table = "T531SeguiminetoPAIDocumentos"
         verbose_name = "Seguimiento PAI Documentos"
         verbose_name_plural = "Seguimiento PAI Documentos"
+
+class SeguimientoPOAI(models.Model):
+    id_seguimiento: models.AutoField(primary_key=True, editable=False, db_column='T532IdSeguiPOAI')
+    id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T528IdPlan')
+    id_programa = models.ForeignKey(Programa, on_delete=models.CASCADE, db_column='T532IdPrograma')
+    id_proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, db_column='T532IdProyecto')
+    id_producto = models.ForeignKey(Productos, on_delete=models.CASCADE, db_column='T532IdProducto')
+    id_actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, db_column='T532IdActividad')
+    id_indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T532IdIndicador')
+    id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T532IdMeta')
+    id_concepto = models.ForeignKey(ConceptoPOAI, on_delete=models.CASCADE, db_column='T532IdConcepto')
+    id_sector: models.ForeignKey(Sector, on_delete=models.CASCADE, db_column='T532IdSector')
+    id_fuente_financiacion = models.ForeignKey(FuenteFinanciacion, on_delete=models.CASCADE, db_column='T532IdFuenteFinanciacion')
+    id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T532IdUnidadOrganizacional')
+    id_detalle_inversion = models.ForeignKey(DetalleInversionCuentas, on_delete=models.CASCADE, db_column='T532IdDetalleInversion')
+    id_banco_proyecto = models.ForeignKey(BancoProyecto, on_delete=models.CASCADE, db_column='T532IdBancoProyecto')
+    id_modalidad = models.ForeignKey(Modalidad, on_delete=models.CASCADE, db_column='T532IdModalidad')
+    id_ubicacion = models.ForeignKey(Ubicaciones, on_delete=models.CASCADE, db_column='T532IdUbicacion')
+    id_clase_tercero = models.ForeignKey(ClasesTerceroPersona, on_delete=models.CASCADE, db_column='T532IdClaseTercero')
+    porcentaje_pto = models.BigIntegerField(null=True, blank=True, db_column='T532porcentajePTO')
+    vano_1 = models.BigIntegerField(null=True, blank=True, db_column='T532vano1')
+    vano_2 = models.BigIntegerField(null=True, blank=True, db_column='T532vano2')
+    vano_3 = models.BigIntegerField(null=True, blank=True, db_column='T532vano3')
+    vano_4 = models.BigIntegerField(null=True, blank=True, db_column='T532vano4')
+    valor_total = models.BigIntegerField(null=True, blank=True, db_column='T532valorTotal')
+    numero_cdp_paa = models.BigIntegerField(null=True, blank=True, db_column='T532numeroCDP_PAA')
+    numero_rp_paa = models.BigIntegerField(null=True, blank=True, db_column='T532numeroRP_PAA')
+    valor_seguimiento_banco_paa = models.BigIntegerField(null=True, blank=True, db_column='T532valorSeguimientoBanco_PAA')
+    valor_cdp_paa = models.BigIntegerField(null=True, blank=True, db_column='T532valorCDP_PAA')
+    valor_rp_paa = models.BigIntegerField(null=True, blank=True, db_column='T532valorRP_PAA')
+    fecha_termiacion = models.DateField(null=True, blank=True, db_column='T532fechaTermiacion')
+    duracion = models.BigIntegerField(null=True, blank=True, db_column='T532duracion')
+    valor_mesual_paoi = models.BigIntegerField(null=True, blank=True, db_column='T532valorMesualPAOI')
+    mes_oferta_paa = models.CharField(
+        max_length=3, choices=[
+            ('ENE', 'Enero'),
+            ('FEB', 'Febrero'),
+            ('MAR', 'Marzo'),
+            ('ABR', 'Abril'),
+            ('MAY', 'Mayo'),
+            ('JUN', 'Junio'),
+            ('JUL', 'Julio'),
+            ('AGO', 'Agosto'),
+            ('SEP', 'Septiembre'),
+            ('OCT', 'Octubre'),
+            ('NOV', 'Noviembre'),
+            ('DIC', 'Diciembre'),
+        ], db_column='T532mesOfertaPAA')
+    mes_solicita = models.CharField(
+        max_length=3, choices=[
+            ('ENE', 'Enero'),
+            ('FEB', 'Febrero'),
+            ('MAR', 'Marzo'),
+            ('ABR', 'Abril'),
+            ('MAY', 'Mayo'),
+            ('JUN', 'Junio'),
+            ('JUL', 'Julio'),
+            ('AGO', 'Agosto'),
+            ('SEP', 'Septiembre'),
+            ('OCT', 'Octubre'),
+            ('NOV', 'Noviembre'),
+            ('DIC', 'Diciembre'),
+        ], db_column='T532mesSolicita')
+    valor_pagado = models.BigIntegerField(null=True, blank=True, db_column='T532valorPagado')
+    valor_obligado = models.BigIntegerField(null=True, blank=True, db_column='T532valorObligado')
+    valor_saldo = models.BigIntegerField(null=True, blank=True, db_column='T532valorSaldo')
+    porcentaje_ejecuta = models.BigIntegerField(null=True, blank=True, db_column='T532porcentajeEjecuta')
+    numero_contrato = models.BigIntegerField(null=True, blank=True, db_column='T532numeroContrato')
+    numerp_rp = models.BigIntegerField(null=True, blank=True, db_column='T532numerRP_RP')
+    fecha_rp = models.DateField(null=True, blank=True, db_column='T532fechaRP')
+    valor_cdp = models.BigIntegerField(null=True, blank=True, db_column='T532valorCDP')
+    fecha_cdp = models.DateField(null=True, blank=True, db_column='T532fechaCDP')
+    observaciones = models.TextField(null=True, blank=True, db_column='T532observaciones')
