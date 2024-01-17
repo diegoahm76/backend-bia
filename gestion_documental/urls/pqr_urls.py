@@ -35,6 +35,17 @@ urlpatterns = [
     path('consulta-estado-pqrsdf/', views.ConsultaEstadoPQRSDF.as_view(), name='listar-estados-solicitud'),
     path('listar_informacion_arbol/<int:id_PQRSDF>/', views.ListarInformacionArbolWorkflow.as_view(), name='listar-workflow-solicitud'),
     
-
+    #Indicadores_PQRSDF_115
+     path('indicadores/indicador-periocidad/', views.IndicadorPeriocidad.as_view(), name='indicador-pqrsdf-periocidad'),
+     path('indicadores/indicador-atencion-pqrsdf/', views.IndicadorAtencionPQRSDF.as_view(), name='indicador-atencion-pqrsdf'),
+     path('indicadores/indicador-derechos-peticion/', views.IndicadorAtencionDerechosPetecion.as_view(), name='indicador-atencion-derechos-peticion'),
+     path('indicadores/indicador-quejas/', views.IndicadorAtencionQuejas.as_view(), name='indicador-atencion-quejas'),
+     path('indicadores/indicador-reclamos/', views.IndicadorAtencionReclamos.as_view(), name='indicador-atencion-reclamos'),
+     path('indicadores/indicador-sugerencias/', views.IndicadorSugerenciasRadicadas.as_view(), name='indicador-atencion-sugerencias'),
+     path('indicadores/indicador-pqrsdf-contestadas-oportunamente/', views.IndicadorPQRSDFContestadosOportunamente.as_view(), name='indicador-pqrsdf-contestadas-oportunamente'),
+     path('indicadores/indicador-peticiones-contestadas-oportunamente/', views.IndicadorPeticionesContestadasOportunamente.as_view(), name='indicador-peticiones-contestadas-oportunamente'),
+     path('indicadores/indicador-quejas-contestadas-oportunamente/', views.IndicadorQuejasContestadasOportunamente.as_view(), name='indicador-quejas-contestadas-oportunamente'),
+     path('indicadores/indicador-reclamos-contestadas-oportunamente/', views.IndicadorReclamosContestadosOportunamente.as_view(), name='indicador-reclamos-contestadas-oportunamente'),
+     path('indicadores/indicador-denuncias-contestadas-oportunamente/', views.IndicadorDenunciasContestadasOportunamente.as_view(), name='indicador-denuncias-contestadas-oportunamente'),
 
 ]

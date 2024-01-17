@@ -36,4 +36,10 @@ urlpatterns = [
     path('unidad-organizacional/personas/get/<str:uni>/',views.PersonasUnidadGetByUnidad.as_view(),name='listar-personas-unidad'),
     path('reasignaciones/tareas/create/',views.ReasignacionesTareasCreate.as_view(),name='crear-reasignaciones-tareas'),
     path('reasignaciones/tareas/get/<str:pk>/',views.ReasignacionesTareasgetById.as_view(),name='listar-reasignaciones-tareas'),
+    #ReasignacionTareasAsignadasJusTarea
+    path('reasignaciones/tareas/jus/get/<str:pk>/',views.ReasignacionTareasAsignadasJusTarea.as_view(),name='listar-reasignaciones-tareas-jus'),
+    #ReasignacionTareasGetByIdTarea
+    path('seguimiento-tarea/tareas/get/<str:pk>/',views.ReasignacionTareasGetByIdTarea.as_view(),name='listar-reasignaciones-tareas-id'),
+
+    path('seguimiento-tarea/respuesta/pqrsdf/get/<str:pqr>/',views.RespuestaPQRSDFByPQR.as_view(),name='listar-respuesta-pqrsdf'),
 ]

@@ -15,9 +15,9 @@ from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
 
 from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, ReasignacionesTareas, TareasAsignadas
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, MetadatosAnexosTmp, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
 from gestion_documental.models.trd_models import TipologiasDoc
-from gestion_documental.serializers.bandeja_tareas_serializers import AdicionalesDeTareasGetByTareaSerializer, Anexos_RequerimientoCreateSerializer, AnexosComplementoGetByComBandejaTareasSerializer, BandejaTareasPersonaCreateSerializer, ComplementosUsu_PQRGetByIdSerializer, DetalleRequerimientoSerializer, LiderUnidadGetSerializer, MetadatosAnexoerializerGet, PQRSDFDetalleRequerimiento, PQRSDFTitularGetBandejaTareasSerializer, PersonaUnidadSerializer, ReasignacionesTareasCreateSerializer, ReasignacionesTareasgetByIdSerializer, RequerimientoSobrePQRSDFCreateSerializer, RequerimientoSobrePQRSDFGetSerializer, TareaBandejaTareasPersonaCreateSerializer, TareaBandejaTareasPersonaUpdateSerializer, TareasAnexoArchivosDigitalesSerializer, TareasAsignadasCreateSerializer, TareasAsignadasGetJustificacionSerializer, TareasAsignadasGetSerializer, TareasAsignadasUpdateSerializer, UnidadOrganizacionalBandejaTareasSerializer
+from gestion_documental.serializers.bandeja_tareas_serializers import AdicionalesDeTareasGetByTareaSerializer, Anexos_RequerimientoCreateSerializer, AnexosComplementoGetByComBandejaTareasSerializer, BandejaTareasPersonaCreateSerializer, ComplementosUsu_PQRGetByIdSerializer, DetalleRequerimientoSerializer, LiderUnidadGetSerializer, MetadatosAnexoerializerGet, PQRSDFDetalleRequerimiento, PQRSDFTitularGetBandejaTareasSerializer, PersonaUnidadSerializer, ReasignacionesTareasCreateSerializer, ReasignacionesTareasgetByIdSerializer, ReasignacionesTareasgetByIdTareaSerializer, RequerimientoSobrePQRSDFCreateSerializer, RequerimientoSobrePQRSDFGetSerializer, RespuestasPQRGetSeralizer, TareaBandejaTareasPersonaCreateSerializer, TareaBandejaTareasPersonaUpdateSerializer, TareasAnexoArchivosDigitalesSerializer, TareasAsignadasCreateSerializer, TareasAsignadasGetJustificacionSerializer, TareasAsignadasGetSerializer, TareasAsignadasUpdateSerializer, UnidadOrganizacionalBandejaTareasSerializer
 from gestion_documental.serializers.ventanilla_pqrs_serializers import Anexos_PQRAnexosGetSerializer, AnexosCreateSerializer, Estados_PQRPostSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, PQRSDFGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer
 from gestion_documental.utils import UtilsGestor
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
@@ -269,15 +269,26 @@ class TareasAsignadasRechazarUpdate(generics.UpdateAPIView):
         serializer = self.serializer_class(instance,data=data_in, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        #EN CASO DE SER UN REGISTRO FRUTO DE DE UNA REASIGNACION EL PROCESO 
+        if instance.id_tarea_asignada_padre_inmediata:
+            reasignacion = ReasignacionesTareas.objects.filter(id_tarea_asignada = instance.id_tarea_asignada_padre_inmediata,cod_estado_reasignacion='Ep').first()
+            if not reasignacion:
+                raise NotFound("No se encontro la reasignacion")
+            #raise ValidationError(reasignacion.comentario_reasignacion)
+        
+            reasignacion.cod_estado_reasignacion = 'Re'
+            reasignacion.justificacion_reasignacion_rechazada = data_in['justificacion_rechazo']
+            reasignacion.save()
+        else:
         #cambia el estado de la tarea en la t268
-        id_asignacion = instance.id_asignacion
-        asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=id_asignacion).first()
+            id_asignacion = instance.id_asignacion
+            asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=id_asignacion).first()
 
-        if not asignacion:
-            raise NotFound("No se encontro la asignacion")
-        asignacion.cod_estado_asignacion = 'Re'
-        asignacion.justificacion_rechazo = data_in['justificacion_rechazo']
-        asignacion.save()
+            if not asignacion:
+                raise NotFound("No se encontro la asignacion")
+            asignacion.cod_estado_asignacion = 'Re'
+            asignacion.justificacion_rechazo = data_in['justificacion_rechazo']
+            asignacion.save()
         
         return Response({'success':True,'detail':"Se actualizo la actividad Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
 
@@ -348,7 +359,7 @@ class TareasAsignadasJusTarea(generics.UpdateAPIView):
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data,}, status=status.HTTP_200_OK)
         
 
-        
+
 
 
 
@@ -852,15 +863,45 @@ class PersonasUnidadGetByUnidad(generics.ListAPIView):
 class ReasignacionesTareasCreate(generics.CreateAPIView):
     serializer_class = ReasignacionesTareasCreateSerializer
     queryset = ReasignacionesTareas.objects.all()
+    vista_tareas = TareasAsignadasCreate()
     permission_classes = [IsAuthenticated]
     def post(self, request):
         data_in = request.data
         data_in['fecha_reasignacion'] = datetime.now()
         data_in['cod_estado_reasignacion'] = 'Ep'
+
+        tarea = TareasAsignadas.objects.filter(id_tarea_asignada=data_in['id_tarea_asignada']).first()
+        if not tarea:
+            raise NotFound("No existen registros de tareas")
+        tarea.cod_estado_solicitud = 'De'
+        tarea.save()
         serializer = self.serializer_class(data=data_in)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'data':serializer.data}, status=status.HTTP_200_OK)
+        ##CREAR NUEVO REGISTRO DE REASIGNACION DE TAREA
+        data_tarea = {}
+        data_tarea['cod_tipo_tarea'] = 'Rpqr'
+        data_tarea['id_asignacion'] = None
+        data_tarea['fecha_asignacion'] = datetime.now()
+        data_tarea['cod_estado_solicitud'] = 'Ep'
+        data_tarea['id_tarea_asignada_padre_inmediata'] = tarea.id_tarea_asignada
+        respuesta_tareas = self.vista_tareas.crear_asignacion_tarea(data_tarea)
+        if respuesta_tareas.status_code != status.HTTP_201_CREATED:
+            return respuesta_tareas
+
+        data_tarea_respuesta =respuesta_tareas.data['data']
+
+        #ASIGNO LA NUEVA TAREA A LA BANDEJA DE LA PERSONA 
+        vista_asignar_tarea =TareaBandejaTareasPersonaCreate()
+        data_tarea_bandeja_asignacion = {}
+        data_tarea_bandeja_asignacion['id_persona'] = data_in['id_persona_a_quien_se_reasigna']
+        data_tarea_bandeja_asignacion['id_tarea_asignada'] = data_tarea_respuesta['id_tarea_asignada']
+        data_tarea_bandeja_asignacion['es_responsable_ppal'] = False
+        respuesta_relacion = vista_asignar_tarea.crear_tarea(data_tarea_bandeja_asignacion)
+        if respuesta_relacion.status_code != status.HTTP_201_CREATED:
+            return respuesta_relacion
+
+        return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'data':serializer.data,'data_tarea_respuesta':data_tarea_respuesta}, status=status.HTTP_200_OK)
     
 class ReasignacionesTareasgetById(generics.ListAPIView):
     serializer_class = ReasignacionesTareasgetByIdSerializer
@@ -872,3 +913,62 @@ class ReasignacionesTareasgetById(generics.ListAPIView):
             raise NotFound("No existen registros")
         serializer = self.serializer_class(instance,many=True)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data}, status=status.HTTP_200_OK)
+
+class ReasignacionTareasAsignadasJusTarea(generics.UpdateAPIView):
+
+    serializer_class = TareasAsignadasGetJustificacionSerializer
+    queryset = TareasAsignadas.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self, request,pk):
+        
+        tarea = TareasAsignadas.objects.filter(id_tarea_asignada=pk).first()
+        
+        reasignacion = ReasignacionesTareas.objects.filter(id_tarea_asignada=pk,cod_estado_reasignacion='Re').order_by('-fecha_reasignacion').first()
+        if not reasignacion:
+            raise ValidationError('la tarea no fue rechazada')
+        data = {}
+        data['id_tarea_asignada'] = tarea.id_tarea_asignada
+        data['tarea_hija'] = reasignacion.id_tarea_asignada.id_tarea_asignada
+        data['justificacion_rechazo'] = reasignacion.justificacion_reasignacion_rechazada
+
+
+        
+        serializer = self.serializer_class(tarea)
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': data,}, status=status.HTTP_200_OK)
+        
+class ReasignacionTareasGetByIdTarea(generics.UpdateAPIView):
+
+    serializer_class = ReasignacionesTareasgetByIdTareaSerializer
+    queryset = TareasAsignadas.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self, request,pk):
+        
+        tarea = TareasAsignadas.objects.filter(id_tarea_asignada=pk).first()
+        if not tarea:
+            raise NotFound("No existen registros")
+        
+        reasignacion = ReasignacionesTareas.objects.filter(id_tarea_asignada=pk)
+        if not reasignacion:
+            raise ValidationError('la tarea no fue rechazada')
+
+
+        serializer = self.serializer_class(reasignacion,many=True)
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data,}, status=status.HTTP_200_OK)
+    
+
+class RespuestaPQRSDFByPQR(generics.UpdateAPIView):
+
+    serializer_class = RespuestasPQRGetSeralizer
+    queryset = RespuestaPQR.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self, request,pqr):
+        
+        respuesta = self.get_queryset().filter(id_pqrsdf=pqr)
+        if not respuesta:
+            raise NotFound("No existen registros")
+
+        serializer = self.serializer_class(respuesta,many=True)
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data,}, status=status.HTTP_200_OK)
+        
+
+        

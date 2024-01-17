@@ -26,6 +26,8 @@ class InformacionFuente(models.Model):
     nombreFuente = models.CharField(max_length=255)
     caudalConcesionado = models.CharField(max_length=255)
     sistemaMedicionAguaCaptada = models.CharField(max_length=255)
+    cordenadaX = models.FloatField()
+    cordenadaY = models.FloatField()
 
     def __str__(self):
         return f"aT452_{self.numero} - {self.nombreFuente}"
@@ -35,16 +37,16 @@ class InformacionFuente(models.Model):
         verbose_name_plural = 'Información de Fuentes'
 
 
-class CoordenadasSitioCaptacion(models.Model):
-    cordenadaX = models.FloatField()
-    cordenadaY = models.FloatField()
+# class CoordenadasSitioCaptacion(models.Model):
+#     cordenadaX = models.FloatField()
+#     cordenadaY = models.FloatField()
 
-    def __str__(self):
-        return f"T453_{self.cordenadaX}, {self.cordenadaY}"
+#     def __str__(self):
+#         return f"T453_{self.cordenadaX}, {self.cordenadaY}"
 
-    class Meta:
-        verbose_name = 'Coordenadas de Sitio de Captación'
-        verbose_name_plural = 'Coordenadas de Sitios de Captación'
+#     class Meta:
+#         verbose_name = 'Coordenadas de Sitio de Captación'
+#         verbose_name_plural = 'Coordenadas de Sitios de Captación'
 
 
 class FactoresUtilizacion(models.Model):
@@ -92,6 +94,9 @@ class CaptacionMensualAgua(models.Model):
         verbose_name_plural = 'Captaciones Mensuales de Agua'
 
 
+
+
+
 class T0444Formulario(models.Model):
     TIPO_USUARIO_CHOICES = [
         ('EMPRESARIAL', 'Empresarial'),
@@ -104,6 +109,7 @@ class T0444Formulario(models.Model):
 
     tipoUsuario = models.CharField(max_length=15, choices=TIPO_USUARIO_CHOICES)
     otrotipo = models.CharField(max_length=255, blank=True, null=True)
+    idpersona = models.CharField(max_length=255, blank=True, null=True)
     razonSocial = models.CharField(max_length=255)
     nit = models.PositiveIntegerField()
     nombreRepresentanteLegal = models.CharField(max_length=255)
@@ -118,7 +124,7 @@ class T0444Formulario(models.Model):
     numConcesion = models.PositiveIntegerField()
     fechaCreacion = models.DateTimeField(auto_now_add=True)
     informacionFuentesAbastecimiento = models.ManyToManyField(InformacionFuente)
-    coordenadasSitioCaptacion = models.OneToOneField(CoordenadasSitioCaptacion, on_delete=models.CASCADE)
+    # coordenadasSitioCaptacion = models.OneToOneField(CoordenadasSitioCaptacion, on_delete=models.CASCADE)
     factoresUtilizacion = models.OneToOneField(FactoresUtilizacion, on_delete=models.CASCADE)
     captacionesMensualesAgua = models.ManyToManyField(CaptacionMensualAgua)
 
@@ -128,3 +134,38 @@ class T0444Formulario(models.Model):
     class Meta:
         verbose_name = 'T457ormulario '
         verbose_name_plural = 'T467Formularios '
+
+
+
+
+
+
+class CarteraPrincipal(models.Model):
+    id_cartera = models.AutoField(primary_key=True, db_column='T457IdCarteraPrincipal')
+    fecha = models.DateField(db_column='T457Fecha')
+    t908_cod_cia = models.CharField(max_length=255, db_column='T457T908CodCia')
+    tipo_renta = models.CharField(max_length=255, db_column='T457TipoRenta')
+    cuenta_contable = models.CharField(max_length=255, db_column='T457CuentaContable')
+    nit = models.CharField(max_length=255, db_column='T457Nit')
+    nombre_deudor = models.CharField(max_length=255, db_column='T457NombreDeudor')
+    fecha_fact = models.DateField(db_column='T457FechaFact')
+    fecha_notificacion = models.DateField(db_column='T457FechaNotificacion')
+    fecha_en_firme = models.DateField(db_column='T457FechaEnFirme')
+    corte_desde = models.DateField(db_column='T457CorteDesde')
+    corte_hasta = models.DateField(db_column='T457CorteHasta')
+    num_factura = models.CharField(max_length=255, db_column='T457NumFactura')
+    num_liquidacion = models.CharField(max_length=255, db_column='T457NumLiquidacion')
+    periodo = models.CharField(max_length=255, db_column='T457Periodo')
+    agno = models.PositiveIntegerField(db_column='T457Agno')
+    expediente = models.CharField(max_length=255, db_column='T457Expediente')
+    num_resolucion = models.CharField(max_length=255, db_column='T457NumResolucion')
+    recurso = models.CharField(max_length=255, db_column='T457Recurso')
+    doc_auto = models.CharField(max_length=255, db_column='T457DocAuto')
+    saldo_capital = models.DecimalField(max_digits=10, decimal_places=2, db_column='T457SaldoCapital')
+    saldo_interes = models.DecimalField(max_digits=10, decimal_places=2, db_column='T457SaldoInteres')
+    dias_mora = models.PositiveIntegerField(db_column='T457DiasMora')
+
+    class Meta:
+        db_table = 'T457CarteraPrincipal'
+        verbose_name = 'Cartera Principal'
+        verbose_name_plural = 'Carteras Principales'
