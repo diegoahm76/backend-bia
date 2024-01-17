@@ -2,7 +2,7 @@ from rest_framework import serializers
 from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
 from tramites.models.tramites_models import PermisosAmbSolicitudesTramite, SolicitudesTramites
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
@@ -751,12 +751,18 @@ class OPAGetSerializer(serializers.ModelSerializer):
     requiere_digitalizacion = serializers.ReadOnlyField(source='id_solicitud_tramite.requiere_digitalizacion', default=None)
     def get_nombre_sucursal(self, obj):
         return 'NO APLICA'
+    
+
     def get_radicado(self, obj):
         cadena = ""
-        if obj.id_solicitud_tramite.id_radicado:
-            cadena= str(obj.id_solicitud_tramite.id_radicado.prefijo_radicado)+'-'+str(obj.id_solicitud_tramite.id_radicado.agno_radicado)+'-'+str(obj.id_solicitud_tramite.id_radicado.nro_radicado)
+        radicado = obj.id_solicitud_tramite.id_radicado
+        if radicado:
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=radicado.agno_radicado,cod_tipo_radicado=radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(instance_config_tipo_radicado.consecutivo_actual).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
             return cadena
-        else:
+        else: 
             return 'SIN RADICAR'
 
     def get_cantidad_anexos(self, obj):
@@ -840,14 +846,14 @@ class OPADetalleHistoricoSerializer(serializers.ModelSerializer):
     nombre_proyecto = serializers.ReadOnlyField(source='id_solicitud_tramite.nombre_proyecto', default=None)
     costo_proyecto = serializers.ReadOnlyField(source='id_solicitud_tramite.costo_proyecto', default=None)
     cantidad_predios = serializers.ReadOnlyField(source='id_solicitud_tramite.cantidad_predios', default=None)
-    solicitudes = serializers.SerializerMethodField()
-    respuestas = serializers.SerializerMethodField()
+    solicitud_actual = serializers.SerializerMethodField()
+    registros = serializers.SerializerMethodField()
     class Meta:
         model = PermisosAmbSolicitudesTramite
-        fields = ['id_tramite','titular','nombre_proyecto','costo_proyecto','cantidad_predios','solicitudes','respuestas']
+        fields = ['id_tramite','titular','nombre_proyecto','costo_proyecto','cantidad_predios','solicitud_actual','registros']
     
 
-    def get_solicitudes(self, obj):
+    def get_solicitud_actual(self, obj):
         id_tramite = obj.id_solicitud_tramite.id_solicitud_tramite
         data = []
         solicitudes = SolicitudDeDigitalizacion.objects.filter(id_tramite=id_tramite)
@@ -859,7 +865,7 @@ class OPADetalleHistoricoSerializer(serializers.ModelSerializer):
            
         return data
     
-    def get_respuestas(self,obj):
+    def get_registros(self,obj):
         id_tramite = obj.id_solicitud_tramite.id_solicitud_tramite
         data = []
         solicitudes = SolicitudDeDigitalizacion.objects.filter(id_tramite=id_tramite)
@@ -882,23 +888,38 @@ class OPADetalleHistoricoSerializer(serializers.ModelSerializer):
 class OPAGetHistoricoSerializer(serializers.ModelSerializer):
 
 
-    tipo_solicitud = serializers.SerializerMethodField()
-    radicado = serializers.SerializerMethodField()
+    
+   
+    cabecera = serializers.SerializerMethodField()
     detalle = serializers.SerializerMethodField()
     class Meta:
         model = PermisosAmbSolicitudesTramite
-        fields = ['id_solicitud_tramite','tipo_solicitud','radicado','detalle']
+        fields = ['cabecera','detalle']
         
-    def get_tipo_solicitud(self, obj):
-        return "OPA"
-    
-    def get_radicado(self, obj):
-
+    def get_cabecera(self, obj):
         cadena = ""
         if obj.id_solicitud_tramite.id_radicado:
             cadena= str(obj.id_solicitud_tramite.id_radicado.prefijo_radicado)+'-'+str(obj.id_solicitud_tramite.id_radicado.agno_radicado)+'-'+str(obj.id_solicitud_tramite.id_radicado.nro_radicado)
-            return cadena
+            #return cadena
+            return {'id_solicitud_tramite':obj.id_solicitud_tramite.id_solicitud_tramite,'radicado':cadena}
         return None
+        return serializer.data
+    def get_tipo_solicitud(self, obj):
+        return "OPA"
+    
+
+    def get_radicado(self, obj):
+        cadena = ""
+        radicado = obj.id_solicitud_tramite.id_radicado
+        if radicado:
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=radicado.agno_radicado,cod_tipo_radicado=radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(instance_config_tipo_radicado.consecutivo_actual).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+            print(instance_config_tipo_radicado.cantidad_digitos)
+            return cadena
+        else: 
+            return 'SIN RADICAR'
+
     def get_detalle(self, obj):
         serializer = OPADetalleHistoricoSerializer(obj)
         return serializer.data

@@ -1077,11 +1077,29 @@ class ComplementosUsu_PQRPut(generics.UpdateAPIView):
 class TramiteListOpasGetView(generics.ListAPIView):
     serializer_class = OPAGetSerializer
     permission_classes = [IsAuthenticated]
-    
+    queryset = PermisosAmbSolicitudesTramite.objects.all()
     def get(self, request):
-        tramites_opas = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite__id_medio_solicitud=2,id_solicitud_tramite__id_radicado__isnull=False ,id_permiso_ambiental__cod_tipo_permiso_ambiental = 'O')
+        
 
-        serializer = self.serializer_class(tramites_opas, many=True)
+        filter={}
+        filter['id_solicitud_tramite__id_medio_solicitud'] = 2
+        filter['id_permiso_ambiental__cod_tipo_permiso_ambiental'] = 'O'
+        filter['id_solicitud_tramite__id_radicado__isnull'] = False
+        
+        for key, value in request.query_params.items():
+
+        
+            if key == 'fecha_inicio':
+                if value != '':
+                    
+                    filter['fecha_radicado__gte'] = datetime.strptime(value, '%Y-%m-%d').date()
+            if key == 'fecha_fin':
+                if value != '':
+                    filter['fecha_radicado__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
+
+        #tramites_opas = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite__id_medio_solicitud=2,id_solicitud_tramite__id_radicado__isnull=False ,id_permiso_ambiental__cod_tipo_permiso_ambiental = 'O')
+        instance = self.get_queryset().filter(**filter).order_by('fecha_radicado')
+        serializer = self.serializer_class(instance, many=True)
         
         return Response({'success': True, 'detail':'Se encontró la siguiente información', 'data': serializer.data}, status=status.HTTP_200_OK)
 class VistaCreadoraArchivo3(generics.CreateAPIView):
