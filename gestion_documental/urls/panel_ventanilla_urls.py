@@ -62,5 +62,11 @@ urlpatterns = [
     path('opas/historico/get/',views.OPAFGetHitorico.as_view(),name='listar-historico-opas'),
 
     
+    # OTROS
+    path('otros/get/', views.OtrosGet.as_view(),name='listar-otros'),
+    path('otros/estados_solicitudes/get/', views.OtrosEstadosSolicitudesGet.as_view(),name='listar-estados-solicitud-otros'),
+    path('otros/solicitudd_digitalizacion/create/', views.OtrosSolicitudDeDigitalizacionCreate.as_view(),name='crear-solicitud-digitalizacion-otros'),
+    path('otros/anexo/get/<str:id_otros>/',views.OtrosInfoGet.as_view(),name='get-otros-anexo'),
+    path('asignar-otros/create/',views.AsignacionOtrosCreate.as_view(),name='crear-asignacion-grupo-otros'),
 
 ]
