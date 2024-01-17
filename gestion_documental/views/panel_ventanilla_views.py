@@ -6,10 +6,10 @@ from gestion_documental.models.bandeja_tareas_models import TareasAsignadas
 from gestion_documental.models.ccd_models import CatalogosSeriesUnidad
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, T262Radicados
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, Otros, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, T262Radicados
 from gestion_documental.models.trd_models import TipologiasDoc
 from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
-from gestion_documental.serializers.ventanilla_pqrs_serializers import AdicionalesDeTareasCreateSerializer, AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_OTROSSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, InfoDenuncias_PQRSDFGetByPqrsdfSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, OPADetalleHistoricoSerializer, OPAGetHistoricoSerializer, OPAGetSerializer, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, TramitePutSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer
+from gestion_documental.serializers.ventanilla_pqrs_serializers import AdicionalesDeTareasCreateSerializer, AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionOtrosPostSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_OTROSSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, InfoDenuncias_PQRSDFGetByPqrsdfSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, OPADetalleHistoricoSerializer, OPAGetHistoricoSerializer, OPAGetSerializer, OtrosGetSerializer, OtrosPutSerializer, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, TramitePutSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.bandeja_tareas_views import  TareaBandejaTareasPersonaCreate, TareasAsignadasCreate
 from seguridad.utils import Util
@@ -1091,6 +1091,7 @@ class VistaCreadoraArchivo3(generics.CreateAPIView):
         respuesta= UtilsGestor.generar_archivo_blanco(data)
         return respuesta
     
+
 #PANEL DE VENTANILLA OPAS
 class SolicitudDeDigitalizacionOPACreate(generics.CreateAPIView):
     serializer_class = SolicitudDeDigitalizacionPostSerializer
@@ -1187,3 +1188,245 @@ class OPAFGetHitorico(generics.ListAPIView):
 
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
     
+    
+    
+# OTROS
+
+class OtrosGet(generics.ListAPIView):
+    serializer_class = OtrosGetSerializer
+    queryset = Otros.objects.annotate(
+        mezcla=Concat(F('id_radicados__prefijo_radicado'),
+                    Value('-'), F('id_radicados__agno_radicado'),
+                    Value('-'), F('id_radicados__nro_radicado'),
+                    output_field=CharField()
+                )
+        )                         
+    permission_classes = [IsAuthenticated]
+
+    def get (self, request):
+        data_respuesta = []
+        filter={}
+        
+        for key, value in request.query_params.items():
+            if key == 'radicado':
+                if value !='':
+                    filter['mezcla__icontains'] = value
+            if key =='estado_actual_solicitud':
+                if value != '':
+                    filter['id_estado_actual_solicitud__nombre__icontains'] = value
+            if key == 'fecha_inicio':
+                if value != '':
+                    filter['fecha_radicado__gte'] = datetime.strptime(value, '%Y-%m-%d').date()
+            if key == 'fecha_fin':
+                if value != '':
+                    filter['fecha_radicado__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
+        
+        filter['id_radicados__isnull'] = False
+        instance = self.get_queryset().filter(**filter).order_by('fecha_radicado')
+        
+        if not instance:
+            raise NotFound("No existen registros")
+
+        serializador = self.serializer_class(instance, many=True)
+        data_respuesta = serializador.data
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_respuesta,}, status=status.HTTP_200_OK)
+
+class OtrosEstadosSolicitudesGet(generics.ListAPIView):
+    serializer_class = EstadosSolicitudesGetSerializer
+    queryset =EstadosSolicitudes.objects.filter(aplica_para_otros=True)
+    permission_classes = [IsAuthenticated]
+    
+    def get (self, request):
+        queryset = self.queryset.all()
+        if not queryset:
+            raise NotFound("No existen registros")
+
+        serializador = self.serializer_class(queryset,many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data,}, status=status.HTTP_200_OK)
+
+class OtrosSolicitudDeDigitalizacionCreate(generics.CreateAPIView):
+    serializer_class = SolicitudDeDigitalizacionPostSerializer
+    serializer_otros = OtrosPutSerializer
+    queryset =SolicitudDeDigitalizacion.objects.all()
+    permission_classes = [IsAuthenticated]
+    creador_estados = Estados_PQRCreate
+    
+    def post(self, request):
+        fecha_actual = datetime.now()    
+        otro = Otros.objects.filter(id_otros=request.data['id_otros']).first()
+        if not otro:
+            raise NotFound("No existe registros de Otros")
+        
+        if  not otro.requiere_digitalizacion:
+            raise ValidationError("No requiere digitalizacion")
+        
+        if otro.id_estado_actual_solicitud:
+            if otro.id_estado_actual_solicitud.id_estado_solicitud == 3:
+                raise ValidationError('No se puede realizar la solicitud porque tiene pendientes')
+        
+        solicitudes = SolicitudDeDigitalizacion.objects.filter(id_otro=request.data['id_otros'])
+        for solicitud in solicitudes:
+            if  not solicitud.fecha_rta_solicitud:
+                raise ValidationError('No se puede realizar la solicitud porque tiene pendientes')
+            
+        #CREA UN ESTADO NUEVO DE PQR T255
+        data_estado = {}
+        data_estado['id_otros'] = request.data['id_otros']
+        data_estado['estado_solicitud'] = 3
+        data_estado['fecha_iniEstado'] = fecha_actual
+        respuesta_estado = self.creador_estados.crear_estado(self,data_estado)
+        data_respuesta_estado_asociado = respuesta_estado.data['data']
+        print("data_respuesta_estado_asociado: ", data_respuesta_estado_asociado)
+        
+        #ASOCIAR ESTADO
+        data_estado_asociado = {}
+        data_estado_asociado['id_otros'] = request.data['id_otros'] 
+        data_estado_asociado['estado_solicitud'] = 9
+        data_estado_asociado['estado_PQR_asociado'] = data_respuesta_estado_asociado['id_estado_PQR']
+        data_estado_asociado['fecha_iniEstado'] = fecha_actual
+        respuesta_estado_asociado = self.creador_estados.crear_estado(self,data_estado_asociado)
+        
+        
+        #CAMBIAMOS EL ESTADO ACTUAL DE LA PQRSDF  self.serializer_class(unidad_medida,data)
+        serializador_otros = self.serializer_otros(otro, data = {
+            'id_estado_actual_solicitud':3,
+            'fecha_envio_definitivo_digitalizacion':datetime.now()
+            }, partial=True
+        )
+        serializador_otros.is_valid(raise_exception=True)
+        serializador_otros.save()
+       
+        data_in = request.data
+        data_in['id_otro'] = data_in['id_otros']
+        data_in['fecha_solicitud'] = fecha_actual
+        data_in['digitalizacion_completada'] = False
+        data_in['devuelta_sin_completar'] = False
+        serializer = self.serializer_class(data=data_in)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        
+        return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':serializer.data,'estados':respuesta_estado_asociado.data['data']}, status=status.HTTP_200_OK)
+
+class OtrosInfoGet(generics.ListAPIView):
+    serializer_class = AnexosGetSerializer
+    queryset = Otros.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get (self, request, id_otros):
+        data=[]
+        instance = Otros.objects.filter(id_otros=id_otros).first()
+
+        if not instance:
+            raise NotFound("No existen el registro de otros ingresado")
+        
+        anexos_pqrs = Anexos_PQR.objects.filter(id_otros=instance.id_otros)
+        for x in anexos_pqrs:
+            info_anexo = x.id_anexo
+            data_anexo = self.serializer_class(info_anexo)
+            data.append(data_anexo.data)
+        
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data,}, status=status.HTTP_200_OK)
+
+class AsignacionOtrosCreate(generics.CreateAPIView):
+    serializer_class = AsignacionOtrosPostSerializer
+    queryset = AsignacionOtros.objects.all()
+    permission_classes = [IsAuthenticated]
+    creador_estados = Estados_PQRCreate
+    
+    def post(self, request):
+        #CODIGO DE SERIE DOCUMENTAL DE PQRSDF
+        codigo = 39      
+        contador = 0  
+        data_in = request.data
+
+        if not 'id_otros' in data_in:
+            raise ValidationError("No se envio el registro de otros elegido")
+        
+        instance= AsignacionOtros.objects.filter(id_otros = data_in['id_otros'])
+        for asignacion in instance:
+            #print(asignacion)
+            if asignacion.cod_estado_asignacion == 'Ac':
+                raise ValidationError("La solicitud  ya fue Aceptada.")
+            if  not asignacion.cod_estado_asignacion:
+                raise ValidationError("La solicitud esta pendiente por respuesta.")
+        max_consecutivo = AsignacionOtros.objects.filter(id_otros=data_in['id_otros']).aggregate(Max('consecutivo_asign_x_id_otros'))
+
+        if max_consecutivo['consecutivo_asign_x_otros__max'] == None:
+             ultimo_consec= 1
+        else:
+            ultimo_consec = max_consecutivo['consecutivo_asign_x_id_otros__max'] + 1
+        
+        unidad_asignar = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=data_in['id_und_org_seccion_asignada']).first()
+        if not unidad_asignar:
+            raise ValidationError("No existe la unidad asignada")
+        #VALIDACION ENTREGA 102 SERIE PQRSDF
+        aux = unidad_asignar
+        while aux:
+            
+            #print(str(aux.id_unidad_organizacional)+str(aux.cod_agrupacion_documental))
+            if aux.cod_agrupacion_documental == 'SEC':
+               
+                catalogos = CatalogosSeriesUnidad.objects.filter(id_unidad_organizacional=aux.id_unidad_organizacional,id_catalogo_serie__id_subserie_doc__isnull=True)
+                #print(catalogos)
+                contador = 0
+                for catalogo in catalogos:
+                    #print(str(catalogo.id_catalogo_serie.id_serie_doc.id_serie_doc)+"###"+str(catalogo.id_catalogo_serie.id_serie_doc.codigo)+" "+str(catalogo.id_catalogo_serie.id_serie_doc.nombre))
+                    if int(catalogo.id_catalogo_serie.id_serie_doc.codigo) == codigo:
+                        contador += 1
+
+                break
+            aux = aux.id_unidad_org_padre
+        # if contador == 0:
+        #     raise ValidationError("No se puede realizar la asignación de la PQRSDF a una  unidad organizacional seleccionada porque no tiene serie  documental de PQRSDF")
+        data_in['consecutivo_asign_x_pqrsdf'] = ultimo_consec 
+        data_in['fecha_asignacion'] = datetime.now()
+        data_in['id_persona_asigna'] = request.user.persona.id_persona
+        data_in['cod_estado_asignacion'] = None
+        data_in['asignacion_de_ventanilla'] = True
+
+
+        #ASOCIAR ESTADO
+        data_estado_asociado = {}
+        data_estado_asociado['id_otros'] = request.data['id_otros'] 
+        data_estado_asociado['estado_solicitud'] = 5
+        #data_estado_asociado['estado_PQR_asociado'] 
+        data_estado_asociado['fecha_iniEstado'] =  datetime.now()
+        data_estado_asociado['persona_genera_estado'] = request.user.persona.id_persona
+        #raise ValidationError("NONE")
+        respuesta_estado_asociado = self.creador_estados.crear_estado(self,data_estado_asociado)
+        data_estado = respuesta_estado_asociado.data['data']
+        serializer = self.serializer_class(data=data_in)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        #Crear tarea y asignacion de tarea
+       
+        id_persona_asiganada = serializer.data['id_persona_asignada']
+
+ 
+        #Creamos la tarea 315
+        data_tarea = {}
+        data_tarea['cod_tipo_tarea'] = 'Rpqr'
+        data_tarea['id_asignacion'] = serializer.data['id_asignacion_pqr']
+        data_tarea['fecha_asignacion'] = datetime.now()
+
+        data_tarea['cod_estado_solicitud'] = 'Ep'
+        vista_tareas = TareasAsignadasCreate()    
+        respuesta_tareas = vista_tareas.crear_asignacion_tarea(data_tarea)
+        if respuesta_tareas.status_code != status.HTTP_201_CREATED:
+            return respuesta_tareas
+        data_tarea_respuesta= respuesta_tareas.data['data']
+        #Teniendo la bandeja de tareas,la tarea ahora tenemos que asignar esa tarea a la bandeja de tareas
+        id_tarea_asiganada = data_tarea_respuesta['id_tarea_asignada']
+        vista_asignacion = TareaBandejaTareasPersonaCreate()
+
+        data_tarea_bandeja_asignacion = {}
+        data_tarea_bandeja_asignacion['id_persona'] = id_persona_asiganada
+        data_tarea_bandeja_asignacion['id_tarea_asignada'] = id_tarea_asiganada
+        data_tarea_bandeja_asignacion['es_responsable_ppal'] = True
+        respuesta_relacion = vista_asignacion.crear_tarea(data_tarea_bandeja_asignacion)
+        if respuesta_relacion.status_code != status.HTTP_201_CREATED:
+            return respuesta_relacion
+        
+
+        return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':serializer.data,'estado':data_estado,'tarea':respuesta_relacion.data['data']}, status=status.HTTP_200_OK)
