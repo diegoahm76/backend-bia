@@ -834,16 +834,60 @@ class TramitePutSerializer(serializers.ModelSerializer):
         model = SolicitudesTramites
         fields = '__all__'
 
+class OPADetalleHistoricoSerializer(serializers.ModelSerializer):
+    id_tramite = serializers.ReadOnlyField(source='id_solicitud_tramite.id_solicitud_tramite')
+    titular = serializers.SerializerMethodField()
+    nombre_proyecto = serializers.ReadOnlyField(source='id_solicitud_tramite.nombre_proyecto', default=None)
+    costo_proyecto = serializers.ReadOnlyField(source='id_solicitud_tramite.costo_proyecto', default=None)
+    cantidad_predios = serializers.ReadOnlyField(source='id_solicitud_tramite.cantidad_predios', default=None)
+    solicitudes = serializers.SerializerMethodField()
+    respuestas = serializers.SerializerMethodField()
+    class Meta:
+        model = PermisosAmbSolicitudesTramite
+        fields = ['id_tramite','titular','nombre_proyecto','costo_proyecto','cantidad_predios','solicitudes','respuestas']
+    
+
+    def get_solicitudes(self, obj):
+        id_tramite = obj.id_solicitud_tramite.id_solicitud_tramite
+        data = []
+        solicitudes = SolicitudDeDigitalizacion.objects.filter(id_tramite=id_tramite)
+        for solicitud in solicitudes:
+            
+          
+            estado = Estados_PQR.objects.filter(fecha_iniEstado=solicitud.fecha_solicitud,estado_solicitud=9).first()
+            data.append({'id_solicitud_de_digitalizacion':solicitud.id_solicitud_de_digitalizacion,'accion':estado.estado_solicitud.nombre,'fecha_solicitud':solicitud.fecha_solicitud})
+           
+        return data
+    
+    def get_respuestas(self,obj):
+        id_tramite = obj.id_solicitud_tramite.id_solicitud_tramite
+        data = []
+        solicitudes = SolicitudDeDigitalizacion.objects.filter(id_tramite=id_tramite)
+        for solicitud in solicitudes:
+            data.append({'id':solicitud.id_solicitud_de_digitalizacion,'accion':'SOLICITUD DIGITALIZACIÓN RESPONDIDA','digitalizacion_completada':solicitud.digitalizacion_completada,'fecha_rta_solicitud':solicitud.fecha_rta_solicitud,'observacio':solicitud.observacion_digitalizacion})
+        return data
+        
+    def get_titular(self, obj):
+        nombre_persona_titular = None
+        if obj.id_solicitud_tramite.id_persona_titular:
+            if obj.id_solicitud_tramite.id_persona_titular.tipo_persona == 'J':
+                nombre_persona_titular = obj.id_solicitud_tramite.id_persona_titular.razon_social
+            else:
+                nombre_list = [obj.id_solicitud_tramite.id_persona_titular.primer_nombre, obj.id_solicitud_tramite.id_persona_titular.segundo_nombre,
+                                obj.id_solicitud_tramite.id_persona_titular.primer_apellido, obj.id_solicitud_tramite.id_persona_titular.segundo_apellido]
+                nombre_persona_titular = ' '.join(item for item in nombre_list if item is not None)
+                nombre_persona_titular = nombre_persona_titular if nombre_persona_titular != "" else None
+        return nombre_persona_titular
 
 class OPAGetHistoricoSerializer(serializers.ModelSerializer):
 
 
     tipo_solicitud = serializers.SerializerMethodField()
     radicado = serializers.SerializerMethodField()
-
+    detalle = serializers.SerializerMethodField()
     class Meta:
         model = PermisosAmbSolicitudesTramite
-        fields = ['id_solicitud_tramite','tipo_solicitud','radicado']
+        fields = ['id_solicitud_tramite','tipo_solicitud','radicado','detalle']
         
     def get_tipo_solicitud(self, obj):
         return "OPA"
@@ -855,5 +899,8 @@ class OPAGetHistoricoSerializer(serializers.ModelSerializer):
             cadena= str(obj.id_solicitud_tramite.id_radicado.prefijo_radicado)+'-'+str(obj.id_solicitud_tramite.id_radicado.agno_radicado)+'-'+str(obj.id_solicitud_tramite.id_radicado.nro_radicado)
             return cadena
         return None
+    def get_detalle(self, obj):
+        serializer = OPADetalleHistoricoSerializer(obj)
+        return serializer.data
     # SERIALIZERMETHODFIELD ARCHIVOS
     
