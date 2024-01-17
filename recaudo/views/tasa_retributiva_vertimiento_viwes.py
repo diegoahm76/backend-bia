@@ -1,7 +1,7 @@
 
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
-from recaudo.models.tasa_retributiva_vertimiento_models import CaptacionMensualAgua, CoordenadasSitioCaptacion, FactoresUtilizacion, InformacionFuente, T0444Formulario, documento_formulario_recuado
-from recaudo.serializers.tasa_retributiva_vertimiento_serializers import CaptacionMensualAguaSerializer, CoordenadasSitioCaptacionSerializer, FactoresUtilizacionSerializer, InformacionFuenteSerializer, T0444FormularioSerializer, documento_formulario_recuados_Getserializer, documento_formulario_recuados_serializer
+from recaudo.models.tasa_retributiva_vertimiento_models import  CaptacionMensualAgua, T0444Formulario, documento_formulario_recuado
+from recaudo.serializers.tasa_retributiva_vertimiento_serializers import  T0444FormularioSerializer, documento_formulario_recuados_Getserializer, documento_formulario_recuados_serializer
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework import generics,status
@@ -68,3 +68,14 @@ class T0444444FormularioView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+
+class TipoUsuarioOptionsView(generics.ListAPIView):
+    def get(self, request, *args, **kwargs):
+        tipo_usuario_choices = dict(T0444Formulario.TIPO_USUARIO_CHOICES)
+        return Response({'tipo_usuario_choices': tipo_usuario_choices})
+    
+
+class CaptacionMensualAguaViwes(generics.ListAPIView):
+    def get(self, request, *args, **kwargs):
+        MES_CHOICESs = dict(CaptacionMensualAgua.MES_CHOICES)
+        return Response({'meses': MES_CHOICESs})

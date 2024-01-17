@@ -7,9 +7,8 @@ import os
 import subprocess
 from django.http import HttpResponse
 from django.utils import timezone
-from django.db.models import F, ExpressionWrapper, fields
+from django.db.models import F, ExpressionWrapper, fields, Count, Func,DateTimeField
 from django.forms import model_to_dict
-from django.db.models import F, ExpressionWrapper, fields
 from django.db.models import Value as V
 from django.db.models import IntegerField
 from django.db.models.functions import Now, ExtractDay
@@ -22,7 +21,7 @@ from gestion_documental.models.bandeja_tareas_models import TareasAsignadas, Rea
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MediosSolicitud, MetadatosAnexosTmp, RespuestaPQR, T262Radicados, TiposPQR, modulos_radican
 from rest_framework.response import Response
 from gestion_documental.models.trd_models import FormatosTiposMedio
-from gestion_documental.serializers.pqr_serializers import AnexoRespuestaPQRSerializer, AnexoSerializer, AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, EstadosSolicitudesSerializer, InfoDenunciasPQRSDFPostSerializer, InfoDenunciasPQRSDFPutSerializer, InfoDenunciasPQRSDFSerializer, MediosSolicitudCreateSerializer, MediosSolicitudDeleteSerializer, MediosSolicitudSearchSerializer, MediosSolicitudUpdateSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, PQRSDFGetSerializer, PQRSDFPanelSerializer, PQRSDFPostSerializer, PQRSDFPutSerializer, PQRSDFSerializer, PersonasSerializer, RadicadoPostSerializer, RespuestaPQRSDFPanelSerializer, RespuestaPQRSDFPostSerializer, TiposPQRGetSerializer, TiposPQRUpdateSerializer
+from gestion_documental.serializers.pqr_serializers import AnexoRespuestaPQRSerializer, PersonaSerializer,UnidadOrganizacionalSerializer, AnexoSerializer, AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, EstadosSolicitudesSerializer, InfoDenunciasPQRSDFPostSerializer, InfoDenunciasPQRSDFPutSerializer, InfoDenunciasPQRSDFSerializer, MediosSolicitudCreateSerializer, MediosSolicitudDeleteSerializer, MediosSolicitudSearchSerializer, MediosSolicitudUpdateSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, PQRSDFGetSerializer, PQRSDFPanelSerializer, PQRSDFPostSerializer, PQRSDFPutSerializer, PQRSDFSerializer, PersonasSerializer, RadicadoPostSerializer, RespuestaPQRSDFPanelSerializer, RespuestaPQRSDFPostSerializer, TiposPQRGetSerializer, TiposPQRUpdateSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.configuracion_tipos_radicados_views import ConfigTiposRadicadoAgnoGenerarN
 from gestion_documental.views.panel_ventanilla_views import Estados_PQRCreate, Estados_PQRDelete
@@ -2578,20 +2577,24 @@ class ListarInformacionArbolWorkflow(generics.ListAPIView):
 
         arbol_solicitudes = []
 
+        #GUARDADO
         if pqrsdf.id_estado_actual_solicitud.nombre == "GUARDADO":
             arbol_solicitudes.append({"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},)
             
+        #RADICADO    
         elif pqrsdf.id_estado_actual_solicitud.nombre == "RADICADO":
             arbol_solicitudes.extend([{"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
                                       {"solicitud": "RADICADO", "fecha_radicado": pqrsdf.fecha_radicado}])
 
-
+        #EN VENTANILLA CON PENIDENTES
         elif pqrsdf.id_estado_actual_solicitud.nombre == "EN VENTANILLA CON PENDIENTES":
             arbol_solicitudes.extend([
                 {"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
                 {"solicitud": "RADICADO","fecha_radicado": pqrsdf.fecha_radicado},
                 {"solicitud": "EN VENTANILLA CON PENDIENTES"}
             ])
+
+        #SOLICITUD DE DIGITALIZACION ENVIADA    
         elif pqrsdf.id_estado_actual_solicitud.nombre == "SOLICITUD DE DIGITALIZACION ENVIADA":
             arbol_solicitudes.extend([
                 {"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
@@ -2599,6 +2602,8 @@ class ListarInformacionArbolWorkflow(generics.ListAPIView):
                 {"solicitud": "EN VENTANILLA CON PENDIENTES"},
                 {"solicitud": "SOLICITUD DE DIGITALIZACION ENVIADA"}
             ])
+
+        #SOLICITUD DIGITALIZACIÓN RESPONDIDA  
         elif pqrsdf.id_estado_actual_solicitud.nombre == "SOLICITUD DIGITALIZACIÓN RESPONDIDA":
             arbol_solicitudes.extend([
                 {"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
@@ -2607,6 +2612,8 @@ class ListarInformacionArbolWorkflow(generics.ListAPIView):
                 {"solicitud": "SOLICITUD DE DIGITALIZACION ENVIADA"},
                 {"solicitud": "SOLICITUD DIGITALIZACIÓN RESPONDIDA"},
             ])
+
+        #SOLICITUD AL USUARIO ENVIADA  
         elif pqrsdf.id_estado_actual_solicitud.nombre == "SOLICITUD AL USUARIO ENVIADA":
             arbol_solicitudes.extend([
                 {"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
@@ -2614,6 +2621,9 @@ class ListarInformacionArbolWorkflow(generics.ListAPIView):
                 {"solicitud": "EN VENTANILLA CON PENDIENTES"},
                 {"solicitud": "SOLICITUD AL USUARIO ENVIADA"},
             ])
+
+
+        #SOLICITUD AL USUARIO RESPONDIDA    
         elif pqrsdf.id_estado_actual_solicitud.nombre == "SOLICITUD AL USUARIO RESPONDIDA":
             arbol_solicitudes.extend([
                 {"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
@@ -2622,6 +2632,8 @@ class ListarInformacionArbolWorkflow(generics.ListAPIView):
                 {"solicitud": "SOLICITUD AL USUARIO ENVIADA"},
                 {"solicitud": "SOLICITUD AL USUARIO RESPONDIDA"},
             ])
+
+        #EN VENTANILLA SIN PENDIENTES
         elif pqrsdf.id_estado_actual_solicitud.nombre == "EN VENTANILLA SIN PENDIENTES":
             arbol_solicitudes.extend([
                 {"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
@@ -2630,21 +2642,20 @@ class ListarInformacionArbolWorkflow(generics.ListAPIView):
                 {"solicitud": "EN VENTANILLA SIN PENDIENTES"}
             ])
 
+
+        #EN GESTION
         elif pqrsdf.id_estado_actual_solicitud.nombre == "EN GESTION":
             asignacion_en_gestion = AsignacionPQR.objects.filter(id_pqrsdf=pqrsdf).first()
 
             if asignacion_en_gestion:
-                persona_asignada_data = {
-                    "id_persona_asignada": asignacion_en_gestion.id_persona_asignada.id,
-                    "nombre_persona_asignada": asignacion_en_gestion.id_persona_asignada.nombre,  # Reemplaza con el nombre real del campo
-                    # Otros campos relevantes de Personas
-                }
+                persona_asignada_data = {}
+                unidad_asignada_data = {}
 
-                unidad_asignada_data = {
-                    "id_und_org_seccion_asignada": asignacion_en_gestion.id_und_org_seccion_asignada.id_unidad_organizacional,
-                    "nombre_und_org_seccion_asignada": asignacion_en_gestion.id_und_org_seccion_asignada.nombre,  # Reemplaza con el nombre real del campo
-                    # Otros campos relevantes de UnidadesOrganizacionales
-                }
+                if asignacion_en_gestion.id_persona_asignada:
+                    persona_asignada_data = PersonaSerializer(asignacion_en_gestion.id_persona_asignada).data
+
+                if asignacion_en_gestion.id_und_org_seccion_asignada:
+                    unidad_asignada_data = UnidadOrganizacionalSerializer(asignacion_en_gestion.id_und_org_seccion_asignada).data
 
                 arbol_solicitudes.extend([
                     {"solicitud": "GUARDADO", "fecha_registro": pqrsdf.fecha_registro},
@@ -2659,31 +2670,774 @@ class ListarInformacionArbolWorkflow(generics.ListAPIView):
                     {"solicitud": "RADICADO", "fecha_radicado": pqrsdf.fecha_radicado},
                     {"solicitud": "EN VENTANILLA CON PENDIENTES"},
                     {"solicitud": "EN VENTANILLA SIN PENDIENTES"},
-                    {"solicitud": "EN GESTION"}
-                ])
-            
+                    {"solicitud": "EN GESTION" ", no se le ha asignado una (persona),ni una (unidad organizacion)"}
+        ])
+        
+        #RESPONDIDA    
         elif pqrsdf.id_estado_actual_solicitud.nombre == "RESPONDIDA":
-            arbol_solicitudes.extend([
-                {"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
-                {"solicitud": "RADICADO"},
-                {"solicitud": "EN VENTANILLA CON PENDIENTES"},
-                {"solicitud": "EN VENTANILLA SIN PENDIENTES"},
-                {"solicitud": "EN GESTION"},
-                {"solicitud": "RESPONDIDA"}
-            ])
+            asignacion_en_gestion = AsignacionPQR.objects.filter(id_pqrsdf=pqrsdf).first()
+
+            if asignacion_en_gestion:
+                persona_asignada_data = {}
+                unidad_asignada_data = {}
+
+                if asignacion_en_gestion.id_persona_asignada:
+                    persona_asignada_data = PersonaSerializer(asignacion_en_gestion.id_persona_asignada).data
+
+                if asignacion_en_gestion.id_und_org_seccion_asignada:
+                    unidad_asignada_data = UnidadOrganizacionalSerializer(asignacion_en_gestion.id_und_org_seccion_asignada).data
+
+                arbol_solicitudes.extend([
+                    {"solicitud": "GUARDADO", "fecha_registro": pqrsdf.fecha_registro},
+                    {"solicitud": "RADICADO", "fecha_radicado": pqrsdf.fecha_radicado},
+                    {"solicitud": "EN VENTANILLA CON PENDIENTES"},
+                    {"solicitud": "EN VENTANILLA SIN PENDIENTES"},
+                    {"solicitud": "EN GESTION", "persona_asignada": persona_asignada_data, "unidad_asignada": unidad_asignada_data},
+                    {"solicitud": "RESPONDIDA"}
+                ])
+            else:
+                arbol_solicitudes.extend([
+                    {"solicitud": "GUARDADO", "fecha_registro": pqrsdf.fecha_registro},
+                    {"solicitud": "RADICADO", "fecha_radicado": pqrsdf.fecha_radicado},
+                    {"solicitud": "EN VENTANILLA CON PENDIENTES"},
+                    {"solicitud": "EN VENTANILLA SIN PENDIENTES"},
+                    {"solicitud": "EN GESTION" "no se le ha asignado una (persona),ni una (unidad organizacion)"},
+                    {"solicitud": "RESPONDIDA"},
+        ])
+
+        #NOTIFICADA
         elif pqrsdf.id_estado_actual_solicitud.nombre == "NOTIFICADA":
-            arbol_solicitudes.extend([
-                {"solicitud": "GUARDADO","fecha_registro": pqrsdf.fecha_registro},
-                {"solicitud": "RADICADO"},
-                {"solicitud": "EN VENTANILLA CON PENDIENTES"},
-                {"solicitud": "EN VENTANILLA SIN PENDIENTES"},
-                {"solicitud": "EN GESTION"},
-                {"solicitud": "RESPONDIDA"},
-                {"solicitud": "NOTIFICADA"}
-            ])
+            asignacion_en_gestion = AsignacionPQR.objects.filter(id_pqrsdf=pqrsdf).first()
+
+            if asignacion_en_gestion:
+                persona_asignada_data = {}
+                unidad_asignada_data = {}
+
+                if asignacion_en_gestion.id_persona_asignada:
+                    persona_asignada_data = PersonaSerializer(asignacion_en_gestion.id_persona_asignada).data
+
+                if asignacion_en_gestion.id_und_org_seccion_asignada:
+                    unidad_asignada_data = UnidadOrganizacionalSerializer(asignacion_en_gestion.id_und_org_seccion_asignada).data
+
+                arbol_solicitudes.extend([
+                    {"solicitud": "GUARDADO", "fecha_registro": pqrsdf.fecha_registro},
+                    {"solicitud": "RADICADO", "fecha_radicado": pqrsdf.fecha_radicado},
+                    {"solicitud": "EN VENTANILLA CON PENDIENTES"},
+                    {"solicitud": "EN VENTANILLA SIN PENDIENTES"},
+                    {"solicitud": "EN GESTION", "persona_asignada": persona_asignada_data, "unidad_asignada": unidad_asignada_data},
+                    {"solicitud": "RESPONDIDA"},
+                    {"solicitud": "NOTIFICADA"}
+                ])
+            else:
+                arbol_solicitudes.extend([
+                    {"solicitud": "GUARDADO", "fecha_registro": pqrsdf.fecha_registro},
+                    {"solicitud": "RADICADO", "fecha_radicado": pqrsdf.fecha_radicado},
+                    {"solicitud": "EN VENTANILLA CON PENDIENTES"},
+                    {"solicitud": "EN VENTANILLA SIN PENDIENTES"},
+                    {"solicitud": "EN GESTION" "no se le ha asignado una (persona),ni una (unidad organizacion)"},
+                    {"solicitud": "RESPONDIDA"},
+                    {"solicitud": "NOTIFICADA"},
+        ])
 
         serializer = PQRSDFSerializer(pqrsdf)
         data = serializer.data
         data["arbol_solicitudes"] = arbol_solicitudes
 
         return Response(data)
+    
+
+
+#INDICADORES_PQRSDF
+    
+
+#PERIOCIDAD
+class IndicadorPeriocidad(generics.ListAPIView):
+    serializer_class = PQRSDFPostSerializer  # Usa el serializador proporcionado
+
+    def get_queryset(self):
+        # Filtrar PQRSDF con estado diferente de "guardado"
+        queryset = PQRSDF.objects.exclude(id_estado_actual_solicitud__nombre='GUARDADO').exclude(id_radicado__isnull=True)
+
+        fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
+        fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
+
+        if fecha_radicado_desde:
+            queryset = queryset.filter(fecha_radicado__gte=fecha_radicado_desde)
+
+        if fecha_radicado_hasta:
+            queryset = queryset.filter(fecha_radicado__lte=fecha_radicado_hasta)
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Obtener indicadores por medio de solicitud
+        indicadores = queryset.values('id_medio_solicitud__nombre', 'id_medio_solicitud').annotate(
+            cantidad_pqrsdf=Count('id_PQRSDF')
+        )
+
+        # Obtener el total de PQRSDF con estado diferente de "guardado"
+        total_pqrsdf = queryset.count()
+
+        # Devolver los resultados
+        return Response({
+            'success': True,
+            'detail': 'Indicadores de PQRSDF por periocidad.',
+            'data': {
+                'indicadores_por_medio_solicitud': [
+                    {
+                        'id_medio_solicitud': indicador['id_medio_solicitud'],
+                        'nombre_medio_solicitud': indicador['id_medio_solicitud__nombre'],
+                        'cantidad_pqrsdf': indicador['cantidad_pqrsdf'],
+                    }
+                    for indicador in indicadores
+                ],
+                'total_pqrsdf': total_pqrsdf
+            }
+        }, status=status.HTTP_200_OK)
+
+#PRIMER_INDICADOR_ATENCION_PQRSDF
+class IndicadorAtencionPQRSDF(generics.ListAPIView):
+    serializer_class = PQRSDFPostSerializer  # Usa el serializador proporcionado
+
+    def get_queryset(self):
+        # Filtrar PQRSDF recibidos (excluir los que están en estado 'guardado')
+        queryset = PQRSDF.objects.exclude(id_estado_actual_solicitud__nombre='GUARDADO').exclude(id_radicado__isnull=True)
+
+        fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
+        fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
+
+        if fecha_radicado_desde:
+            queryset = queryset.filter(fecha_radicado__gte=fecha_radicado_desde)
+
+        if fecha_radicado_hasta:
+            queryset = queryset.filter(fecha_radicado__lte=fecha_radicado_hasta)
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Filtrar PQRSDF respondidos (en estado 'respondida' o 'notificada')
+        queryset_respondidos = queryset.filter(
+            id_estado_actual_solicitud__nombre__in=['RESPONDIDA', 'NOTIFICADA']
+        )
+
+        # Filtrar PQRSDF no respondidos (cualquier estado diferente a 'respondida' o 'notificada')
+        queryset_no_respondidos = queryset.exclude(
+            id_estado_actual_solicitud__nombre__in=['RESPONDIDA', 'NOTIFICADA']
+        )
+
+        # Número de PQRSDF recibidos
+        num_pqrsdf_recibidos = queryset.count()
+
+        # Número de PQRSDF respondidos
+        num_pqrsdf_respondidos = queryset_respondidos.count()
+
+        # Número de PQRSDF no respondidos
+        num_pqrsdf_no_respondidos = queryset_no_respondidos.count()
+
+        # Calcular el porcentaje de PQRSDF respondidos y no respondidos
+        porcentaje_respondidos = 0
+        porcentaje_no_respondidos = 0
+
+        if num_pqrsdf_recibidos > 0:
+            porcentaje_respondidos = (num_pqrsdf_respondidos / num_pqrsdf_recibidos) * 100
+            porcentaje_no_respondidos = (num_pqrsdf_no_respondidos / num_pqrsdf_recibidos) * 100
+
+        # Calcular el rango de cumplimiento
+        rango_cumplimiento = 'Excelente' if porcentaje_respondidos >= 80 else ('Regular' if 60 <= porcentaje_respondidos <= 79 else 'Deficiente')
+
+        # Devolver los resultados
+        return Response({
+            'success': True,
+            'detail': 'Indicador de atención a PQRSDF.',
+            'data': {
+                'num_pqrsdf_recibidos': num_pqrsdf_recibidos,
+                'num_pqrsdf_respondidos': num_pqrsdf_respondidos,
+                'num_pqrsdf_no_respondidos': num_pqrsdf_no_respondidos,
+                'porcentaje_respondidos': porcentaje_respondidos,
+                'porcentaje_no_respondidos': porcentaje_no_respondidos,
+                'rango_cumplimiento': rango_cumplimiento
+            }
+        }, status=status.HTTP_200_OK)
+    
+
+#SEGUNDO_INDICADOR_PETICIONES_PQRSDF
+class IndicadorAtencionDerechosPetecion(generics.ListAPIView):
+    serializer_class = PQRSDFPostSerializer  # Usa el serializador proporcionado
+
+    def get_queryset(self):
+        # Filtrar PQRSDF recibidos de tipo 'PG', 'PD', 'PC' (excluir los que están en estado 'guardado')
+        queryset = PQRSDF.objects.filter(
+            cod_tipo_PQRSDF__in=['PG', 'PD', 'PC']
+        ).exclude(id_estado_actual_solicitud__nombre='GUARDADO').exclude(id_radicado__isnull=True)
+
+        fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
+        fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
+
+        if fecha_radicado_desde:
+            queryset = queryset.filter(fecha_radicado__gte=fecha_radicado_desde)
+
+        if fecha_radicado_hasta:
+            queryset = queryset.filter(fecha_radicado__lte=fecha_radicado_hasta)
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Filtrar PQRSDF de tipo 'PG', 'PD', 'PC' respondidos (en estado 'respondida' o 'notificada')
+        queryset_respondidos = queryset.filter(
+            id_estado_actual_solicitud__nombre__in=['RESPONDIDA', 'NOTIFICADA']
+        )
+
+        # Número de PQRSDF recibidos de tipo 'PG', 'PD', 'PC'
+        num_peticiones_recibidos = queryset.count()
+
+        # Número de PQRSDF de tipo 'PG', 'PD', 'PC' respondidos
+        num_peticiones_respondidos = queryset_respondidos.count()
+
+        # Calcular el porcentaje de PQRSDF respondidos y no respondidos
+        porcentaje_respondidos = 0
+        porcentaje_no_respondidos = 0
+
+        if num_peticiones_recibidos > 0:
+            porcentaje_respondidos = (num_peticiones_respondidos / num_peticiones_recibidos) * 100
+            porcentaje_no_respondidos = 100 - porcentaje_respondidos
+
+        # Calcular el indicador de atención
+        indicador_atencion = 0
+        if num_peticiones_recibidos > 0:
+            indicador_atencion = (num_peticiones_respondidos / num_peticiones_recibidos) * 100
+
+        # Calcular el rango de cumplimiento
+        rango_cumplimiento = 'Excelente' if indicador_atencion >= 80 else ('Regular' if 60 <= indicador_atencion <= 79 else 'Deficiente')
+
+        # Devolver los resultados
+        return Response({
+            'success': True,
+            'detail': 'Indicador de atención a Derechos de Petición.',
+            'data': {
+                'num_peticiones_recibidos': num_peticiones_recibidos,
+                'num_peticiones_respondidos': num_peticiones_respondidos,
+                'porcentaje_respondidos': porcentaje_respondidos,
+                'porcentaje_no_respondidos': porcentaje_no_respondidos,
+                'indicador_atencion': indicador_atencion,
+                'rango_cumplimiento': rango_cumplimiento
+            }
+        }, status=status.HTTP_200_OK)
+    
+
+#TERCER_INDICADOR_QUEJAS_PQRSDF
+class IndicadorAtencionQuejas(generics.ListAPIView):
+    serializer_class = PQRSDFPostSerializer  # Usa el serializador proporcionado
+
+    def get_queryset(self):
+        # Filtrar PQRSDF recibidas de tipo 'Q' (excluir las que están en estado 'guardado')
+        queryset = PQRSDF.objects.filter(
+            cod_tipo_PQRSDF='Q'
+        ).exclude(id_estado_actual_solicitud__nombre='GUARDADO').exclude(id_radicado__isnull=True)
+
+        fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
+        fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
+
+        if fecha_radicado_desde:
+            queryset = queryset.filter(fecha_radicado__gte=fecha_radicado_desde)
+
+        if fecha_radicado_hasta:
+            queryset = queryset.filter(fecha_radicado__lte=fecha_radicado_hasta)
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Filtrar PQRSDF de tipo 'Q' respondidas (en estado 'respondida' o 'notificada')
+        queryset_respondidas = queryset.filter(
+            id_estado_actual_solicitud__nombre__in=['RESPONDIDA', 'NOTIFICADA']
+        )
+
+        # Número de PQRSDF recibidas de tipo 'Q'
+        num_quejas_recibidas = queryset.count()
+
+        # Número de PQRSDF de tipo 'Q' respondidas
+        num_quejas_respondidas = queryset_respondidas.count()
+
+        # Calcular el porcentaje de Quejas respondidas y no respondidas
+        porcentaje_respondidas = 0
+        porcentaje_no_respondidas = 0
+
+        if num_quejas_recibidas > 0:
+            porcentaje_respondidas = (num_quejas_respondidas / num_quejas_recibidas) * 100
+            porcentaje_no_respondidas = 100 - porcentaje_respondidas
+
+        # Calcular el indicador de atención
+        indicador_atencion = 0
+        if num_quejas_recibidas > 0:
+            indicador_atencion = (num_quejas_respondidas / num_quejas_recibidas) * 100
+
+        # Calcular el rango de cumplimiento
+        rango_cumplimiento = 'Excelente' if indicador_atencion >= 80 else ('Regular' if 60 <= indicador_atencion <= 79 else 'Deficiente')
+
+        # Devolver los resultados
+        return Response({
+            'success': True,
+            'detail': 'Indicador de atención a Quejas.',
+            'data': {
+                'num_quejas_recibidas': num_quejas_recibidas,
+                'num_quejas_respondidas': num_quejas_respondidas,
+                'porcentaje_respondidas': porcentaje_respondidas,
+                'porcentaje_no_respondidas': porcentaje_no_respondidas,
+                'indicador_atencion': indicador_atencion,
+                'rango_cumplimiento': rango_cumplimiento
+            }
+        }, status=status.HTTP_200_OK)
+    
+
+#CUARTO_INDICADOR_RECLAMOS_PQRSDF
+class IndicadorAtencionReclamos(generics.ListAPIView):
+    serializer_class = PQRSDFPostSerializer  # Usa el serializador proporcionado
+
+    def get_queryset(self):
+        # Filtrar PQRSDF de tipo 'R' (Reclamos) recibidos (excluir los que están en estado 'guardado')
+        queryset = PQRSDF.objects.filter(
+            cod_tipo_PQRSDF='R'
+        ).exclude(id_estado_actual_solicitud__nombre='GUARDADO').exclude(id_radicado__isnull=True)
+
+        fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
+        fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
+
+        if fecha_radicado_desde:
+            queryset = queryset.filter(fecha_radicado__gte=fecha_radicado_desde)
+
+        if fecha_radicado_hasta:
+            queryset = queryset.filter(fecha_radicado__lte=fecha_radicado_hasta)
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Filtrar PQRSDF de tipo 'R' respondidos (en estado 'respondida' o 'notificada')
+        queryset_respondidos = queryset.filter(
+            id_estado_actual_solicitud__nombre__in=['RESPONDIDA', 'NOTIFICADA']
+        )
+
+        # Número de PQRSDF recibidos de tipo 'R'
+        num_reclamos_recibidos = queryset.count()
+
+        # Número de PQRSDF de tipo 'R' respondidos
+        num_reclamos_respondidos = queryset_respondidos.count()
+
+        # Calcular el porcentaje de Reclamos respondidos y no respondidos
+        porcentaje_respondidos = 0
+        porcentaje_no_respondidos = 0
+
+        if num_reclamos_recibidos > 0:
+            porcentaje_respondidos = (num_reclamos_respondidos / num_reclamos_recibidos) * 100
+            porcentaje_no_respondidos = 100 - porcentaje_respondidos
+
+        # Calcular el indicador de atención
+        indicador_atencion = 0
+        if num_reclamos_recibidos > 0:
+            indicador_atencion = (num_reclamos_respondidos / num_reclamos_recibidos) * 100
+
+        # Calcular el rango de cumplimiento
+        rango_cumplimiento = 'Excelente' if indicador_atencion >= 80 else ('Regular' if 60 <= indicador_atencion <= 79 else 'Deficiente')
+
+        # Devolver los resultados
+        return Response({
+            'success': True,
+            'detail': 'Indicador de atención a Reclamos.',
+            'data': {
+                'num_reclamos_recibidos': num_reclamos_recibidos,
+                'num_reclamos_respondidos': num_reclamos_respondidos,
+                'porcentaje_respondidos': porcentaje_respondidos,
+                'porcentaje_no_respondidos': porcentaje_no_respondidos,
+                'indicador_atencion': indicador_atencion,
+                'rango_cumplimiento': rango_cumplimiento
+            }
+        }, status=status.HTTP_200_OK)
+    
+
+#QUINTO_INDICADOR_SUGERENCIAS_PQRSDF
+class IndicadorSugerenciasRadicadas(generics.ListAPIView):
+    serializer_class = PQRSDFPostSerializer  # Usa el serializador proporcionado
+
+    def get_queryset(self):
+        # Filtrar PQRSDF radicadas (excluir los que están en estado 'guardado')
+        queryset = PQRSDF.objects.all()
+
+        # Filtrar PQRSDF de tipo 'S' (Sugerencia) radicadas (en estado 'radicado')
+        queryset_sugerencias = queryset.filter(
+            cod_tipo_PQRSDF='S',
+        )
+
+        fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
+        fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
+
+        if fecha_radicado_desde:
+            queryset = queryset.filter(fecha_radicado__gte=fecha_radicado_desde)
+
+        if fecha_radicado_hasta:
+            queryset = queryset.filter(fecha_radicado__lte=fecha_radicado_hasta)
+
+        return queryset, queryset_sugerencias
+
+    def get(self, request, *args, **kwargs):
+        queryset, queryset_sugerencias = self.get_queryset()
+
+        # Número de PQRSDF radicadas
+        num_pqrsdf_radicadas = queryset.count()
+
+        # Número total de Sugerencias
+        num_sugerencias_total = queryset_sugerencias.count()
+
+        # Número de Sugerencias radicadas
+        num_sugerencias_radicadas = queryset_sugerencias.filter(id_radicado__isnull=False).count()
+
+        # Número de Sugerencias no radicadas
+        num_sugerencias_no_radicadas = queryset_sugerencias.filter(id_radicado__isnull=True).count()
+
+        # Calcular el porcentaje de Sugerencias radicadas y no radicadas
+        porcentaje_sugerencias_radicadas = 0
+        porcentaje_sugerencias_no_radicadas = 0
+
+        if num_sugerencias_total > 0:
+            porcentaje_sugerencias_radicadas = (num_sugerencias_radicadas / num_sugerencias_total) * 100
+            porcentaje_sugerencias_no_radicadas = (num_sugerencias_no_radicadas / num_sugerencias_total) * 100
+
+        # Calcular el rango de cumplimiento
+        rango_cumplimiento = 'Excelente' if porcentaje_sugerencias_radicadas >= 80 else ('Regular' if 60 <= porcentaje_sugerencias_radicadas <= 79 else 'Deficiente')
+
+        # Devolver los resultados
+        return Response({
+            'success': True,
+            'detail': 'Indicador de Sugerencias radicadas.',
+            'data': {
+                'num_pqrsdf_radicadas': num_pqrsdf_radicadas,
+                'num_sugerencias_radicadas': num_sugerencias_radicadas,
+                'num_sugerencias_no_radicadas': num_sugerencias_no_radicadas,
+                'porcentaje_sugerencias_radicadas': porcentaje_sugerencias_radicadas,
+                'porcentaje_sugerencias_no_radicadas': porcentaje_sugerencias_no_radicadas,
+                'rango_cumplimiento': rango_cumplimiento
+            }
+        }, status=status.HTTP_200_OK)
+    
+
+
+#OCTAVO_INDICADOR_PQRSDF_CONTESTADOS_OPORTUNAMENTE
+class IndicadorPQRSDFContestadosOportunamente(generics.ListAPIView):
+    serializer_class = PQRSDFPostSerializer  # Ajusta el serializador según tus necesidades
+
+    def get_queryset(self):
+        # Filtrar PQRSDF recibidos (excluir los que están en estado 'GUARDADO' y sin radicado)
+        queryset_recibidos = PQRSDF.objects.exclude(
+            Q(id_radicado__isnull=True)
+        )
+
+        fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
+        fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
+
+        if fecha_radicado_desde:
+            queryset_recibidos = queryset_recibidos.filter(fecha_radicado__gte=fecha_radicado_desde)
+
+        if fecha_radicado_hasta:
+            queryset_recibidos = queryset_recibidos.filter(fecha_radicado__lte=fecha_radicado_hasta)
+
+        return queryset_recibidos
+
+    def get(self, request, *args, **kwargs):
+        queryset_recibidos = self.get_queryset()
+
+        # Obtener todos los resultados de la consulta
+        results = list(queryset_recibidos)
+
+        # Filtrar los resultados después de recuperarlos
+        queryset_contestados_dentro_del_termino = [
+            pqrsdf for pqrsdf in results
+            if pqrsdf.dias_para_respuesta is not None and
+            (pqrsdf.fecha_radicado + timedelta(days=pqrsdf.dias_para_respuesta)) >= datetime.now()and
+            pqrsdf.id_estado_actual_solicitud.nombre in ['NOTIFICADA', 'CERRADA', 'RESPONDIDA']
+        ]
+
+        num_pqrsdf_contestados_dentro_del_termino = len(queryset_contestados_dentro_del_termino)
+
+        # Número total de PQRSDF recibidos
+        num_pqrsdf_recibidos = len(results)
+
+        # Calcular porcentajes
+        porcentaje_contestados_dentro_del_termino = (num_pqrsdf_contestados_dentro_del_termino / num_pqrsdf_recibidos) * 100
+        porcentaje_no_contestados_dentro_del_termino = 100 - porcentaje_contestados_dentro_del_termino
+
+        # Calcular rango de cumplimiento
+        rango_cumplimiento = 'Excelente' if porcentaje_contestados_dentro_del_termino >= 80 else (
+            'Regular' if 60 <= porcentaje_contestados_dentro_del_termino <= 79 else 'Deficiente'
+        )
+
+        # Retornar resultados
+        return Response({
+            'success': True,
+            'detail': 'Indicador de PQRSDF contestados oportunamente.',
+            'data': {
+                'num_pqrsdf_recibidos': num_pqrsdf_recibidos,
+                'num_pqrsdf_contestados_oportunamente': num_pqrsdf_contestados_dentro_del_termino,
+                'porcentaje_contestados_oportunamente': porcentaje_contestados_dentro_del_termino,
+                'porcentaje_contestados_inoportunamente': porcentaje_no_contestados_dentro_del_termino,
+                'rango_cumplimiento': rango_cumplimiento
+            }
+        }, status=status.HTTP_200_OK)
+    
+
+#NOVENO_INDICADOR_PETICIONES_CONTESTADOS_OPORTUNAMENTE
+
+class IndicadorPeticionesContestadasOportunamente(generics.ListAPIView):
+    serializer_class = PQRSDFPostSerializer  # Ajusta el serializador según tus necesidades
+
+    def get_queryset(self):
+        # Filtrar peticiones recibidas (excluir las que están en estado 'GUARDADO' y sin radicado)
+        queryset_recibidas = PQRSDF.objects.exclude(
+            Q(id_radicado__isnull=True)
+        ).filter(cod_tipo_PQRSDF__in=['PG', 'PD', 'PC'])
+
+        fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
+        fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
+
+        if fecha_radicado_desde:
+            queryset_recibidas = queryset_recibidas.filter(fecha_radicado__gte=fecha_radicado_desde)
+
+        if fecha_radicado_hasta:
+            queryset_recibidas = queryset_recibidas.filter(fecha_radicado__lte=fecha_radicado_hasta)
+
+        return queryset_recibidas
+
+    def get(self, request, *args, **kwargs):
+        queryset_recibidas = self.get_queryset()
+
+        # Obtener todos los resultados de la consulta
+        results = list(queryset_recibidas)
+
+        # Filtrar los resultados después de recuperarlos
+        queryset_contestadas_dentro_del_termino = [
+            pqrsdf for pqrsdf in results
+            if pqrsdf.dias_para_respuesta is not None and
+            (pqrsdf.fecha_radicado + timedelta(days=pqrsdf.dias_para_respuesta)) >= datetime.now()and
+            pqrsdf.id_estado_actual_solicitud.nombre in ['NOTIFICADA', 'CERRADA', 'RESPONDIDA']
+        ]
+
+        num_peticiones_contestadas_dentro_del_termino = len(queryset_contestadas_dentro_del_termino)
+
+        # Número total de Peticiones recibidas
+        num_peticiones_recibidas = len(results)
+
+        # Calcular porcentajes
+        porcentaje_contestadas_dentro_del_termino = (num_peticiones_contestadas_dentro_del_termino / num_peticiones_recibidas) * 100
+        porcentaje_no_contestadas_dentro_del_termino = 100 - porcentaje_contestadas_dentro_del_termino
+
+        # Calcular rango de cumplimiento
+        rango_cumplimiento = 'Excelente' if porcentaje_contestadas_dentro_del_termino >= 80 else (
+            'Regular' if 60 <= porcentaje_contestadas_dentro_del_termino <= 79 else 'Deficiente'
+        )
+
+        # Retornar resultados
+        return Response({
+            'success': True,
+            'detail': 'Indicador de Peticiones Contestadas Oportunamente.',
+            'data': {
+                'num_peticiones_recibidas': num_peticiones_recibidas,
+                'num_peticiones_contestadas_oportunamente': num_peticiones_contestadas_dentro_del_termino,
+                'porcentaje_contestadas_oportunamente': porcentaje_contestadas_dentro_del_termino,
+                'porcentaje_contestadas_inoportunamente': porcentaje_no_contestadas_dentro_del_termino,
+                'rango_cumplimiento': rango_cumplimiento
+            }
+        }, status=status.HTTP_200_OK)
+    
+#DECIMO_INDICADOR_QUEJAS_CONTESTADOS_OPORTUNAMENTE
+class IndicadorQuejasContestadasOportunamente(generics.ListAPIView):
+    serializer_class = PQRSDFPostSerializer  # Ajusta el serializador según tus necesidades
+
+    def get_queryset(self):
+        # Filtrar quejas recibidas (excluir las que están en estado 'GUARDADO' y sin radicado)
+        queryset_recibidas = PQRSDF.objects.exclude(
+            Q(id_radicado__isnull=True)
+        ).filter(cod_tipo_PQRSDF='Q')
+
+        fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
+        fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
+
+        if fecha_radicado_desde:
+            queryset_recibidas = queryset_recibidas.filter(fecha_radicado__gte=fecha_radicado_desde)
+
+        if fecha_radicado_hasta:
+            queryset_recibidas = queryset_recibidas.filter(fecha_radicado__lte=fecha_radicado_hasta)
+
+        return queryset_recibidas
+
+    def get(self, request, *args, **kwargs):
+        queryset_recibidas = self.get_queryset()
+
+        # Obtener todos los resultados de la consulta
+        results = list(queryset_recibidas)
+
+        # Filtrar los resultados después de recuperarlos
+        queryset_contestadas_dentro_del_termino = [
+            pqrsdf for pqrsdf in results
+            if pqrsdf.dias_para_respuesta is not None and
+            (pqrsdf.fecha_radicado + timedelta(days=pqrsdf.dias_para_respuesta)) >= datetime.now()and
+            pqrsdf.id_estado_actual_solicitud.nombre in ['NOTIFICADA', 'CERRADA', 'RESPONDIDA']
+        ]
+
+        num_quejas_contestadas_dentro_del_termino = len(queryset_contestadas_dentro_del_termino)
+
+        # Número total de Quejas recibidas
+        num_quejas_recibidas = len(results)
+
+        # Calcular porcentajes con verificación para evitar división por cero
+        porcentaje_contestadas_dentro_del_termino = 0 if num_quejas_recibidas == 0 else (num_quejas_contestadas_dentro_del_termino / num_quejas_recibidas) * 100
+        porcentaje_no_contestadas_dentro_del_termino = 100 - porcentaje_contestadas_dentro_del_termino if num_quejas_recibidas > 0 else 0
+
+        # Calcular rango de cumplimiento
+        rango_cumplimiento = 'Excelente' if porcentaje_contestadas_dentro_del_termino >= 80 else (
+            'Regular' if 60 <= porcentaje_contestadas_dentro_del_termino <= 79 else 'Deficiente'
+        )
+
+        # Retornar resultados
+        return Response({
+            'success': True,
+            'detail': 'Indicador de Quejas Contestadas Oportunamente.',
+            'data': {
+                'num_quejas_recibidas': num_quejas_recibidas,
+                'num_quejas_contestadas_oportunamente': num_quejas_contestadas_dentro_del_termino,
+                'porcentaje_contestadas_oportunamente': porcentaje_contestadas_dentro_del_termino,
+                'porcentaje_contestadas_inoportunamente': porcentaje_no_contestadas_dentro_del_termino,
+                'rango_cumplimiento': rango_cumplimiento
+            }
+        }, status=status.HTTP_200_OK)
+
+#UNDECIMO_INDICADOR_RECLAMOS_CONTESTADOS_OPORTUNAMENTE
+class IndicadorReclamosContestadosOportunamente(generics.ListAPIView):
+    serializer_class = PQRSDFPostSerializer  # Ajusta el serializador según tus necesidades
+
+    def get_queryset(self):
+        # Filtrar reclamos recibidos (excluir los que están en estado 'GUARDADO' y sin radicado)
+        queryset_recibidos = PQRSDF.objects.exclude(
+            Q(id_radicado__isnull=True)
+        ).filter(cod_tipo_PQRSDF='R')
+
+        fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
+        fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
+
+        if fecha_radicado_desde:
+            queryset_recibidos = queryset_recibidos.filter(fecha_radicado__gte=fecha_radicado_desde)
+
+        if fecha_radicado_hasta:
+            queryset_recibidos = queryset_recibidos.filter(fecha_radicado__lte=fecha_radicado_hasta)
+
+        return queryset_recibidos
+
+    def get(self, request, *args, **kwargs):
+        queryset_recibidos = self.get_queryset()
+
+        # Obtener todos los resultados de la consulta
+        results = list(queryset_recibidos)
+
+        # Filtrar los resultados después de recuperarlos
+        queryset_contestados_dentro_del_termino = [
+            pqrsdf for pqrsdf in results
+            if pqrsdf.dias_para_respuesta is not None and
+            (pqrsdf.fecha_radicado + timedelta(days=pqrsdf.dias_para_respuesta)) >= datetime.now() and
+            pqrsdf.id_estado_actual_solicitud.nombre in ['NOTIFICADA', 'CERRADA', 'RESPONDIDA']
+        ]
+
+        num_reclamos_contestados_dentro_del_termino = len(queryset_contestados_dentro_del_termino)
+
+        # Número total de Reclamos recibidos
+        num_reclamos_recibidos = len(results)
+
+        # Calcular porcentajes con verificación para evitar división por cero
+        porcentaje_contestados_dentro_del_termino = 0 if num_reclamos_recibidos == 0 else (num_reclamos_contestados_dentro_del_termino / num_reclamos_recibidos) * 100
+        porcentaje_no_contestados_dentro_del_termino = 100 - porcentaje_contestados_dentro_del_termino if num_reclamos_recibidos > 0 else 0
+
+        # Calcular rango de cumplimiento
+        rango_cumplimiento = 'Excelente' if porcentaje_contestados_dentro_del_termino >= 80 else (
+            'Regular' if 60 <= porcentaje_contestados_dentro_del_termino <= 79 else 'Deficiente'
+        )
+
+        # Retornar resultados
+        return Response({
+            'success': True,
+            'detail': 'Indicador de Reclamos Contestados Oportunamente.',
+            'data': {
+                'num_reclamos_recibidos': num_reclamos_recibidos,
+                'num_reclamos_contestados_oportunamente': num_reclamos_contestados_dentro_del_termino,
+                'porcentaje_contestados_oportunamente': porcentaje_contestados_dentro_del_termino,
+                'porcentaje_no_contestados_inoportunamente': porcentaje_no_contestados_dentro_del_termino,
+                'rango_cumplimiento': rango_cumplimiento
+            }
+        }, status=status.HTTP_200_OK)
+
+
+#DUODECIMO_INDICADOR_DENUNCIAS_CONTESTADOS_OPORTUNAMENTE
+class IndicadorDenunciasContestadasOportunamente(generics.ListAPIView):
+    serializer_class = PQRSDFPostSerializer  # Ajusta el serializador según tus necesidades
+
+    def get_queryset(self):
+        # Filtrar denuncias ambientales recibidas (excluir las que están en estado 'GUARDADO' y sin radicado)
+        queryset_recibidas = PQRSDF.objects.exclude(
+            Q(id_radicado__isnull=True) |
+            Q(id_estado_actual_solicitud__nombre='GUARDADO')
+        ).filter(cod_tipo_PQRSDF='D')
+
+        fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
+        fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
+
+        if fecha_radicado_desde:
+            queryset_recibidas = queryset_recibidas.filter(fecha_radicado__gte=fecha_radicado_desde)
+
+        if fecha_radicado_hasta:
+            queryset_recibidas = queryset_recibidas.filter(fecha_radicado__lte=fecha_radicado_hasta)
+
+        return queryset_recibidas
+
+    def get(self, request, *args, **kwargs):
+        queryset_recibidas = self.get_queryset()
+
+        # Obtener todos los resultados de la consulta
+        results = list(queryset_recibidas)
+
+        # Filtrar los resultados después de recuperarlos
+        queryset_contestadas_dentro_del_termino = [
+            pqrsdf for pqrsdf in results
+            if pqrsdf.dias_para_respuesta is not None and
+            (pqrsdf.fecha_radicado + timedelta(days=pqrsdf.dias_para_respuesta)) >= datetime.now()and
+            pqrsdf.id_estado_actual_solicitud.nombre in ['NOTIFICADA', 'CERRADA', 'RESPONDIDA']
+        ]
+
+        num_denuncias_contestadas_dentro_del_termino = len(queryset_contestadas_dentro_del_termino)
+
+        # Número total de Denuncias Ambientales recibidas
+        num_denuncias_recibidas = len(results)
+
+        # Calcular porcentajes con verificación para evitar división por cero
+        porcentaje_contestadas_dentro_del_termino = 0 if num_denuncias_recibidas == 0 else (num_denuncias_contestadas_dentro_del_termino / num_denuncias_recibidas) * 100
+        porcentaje_no_contestadas_dentro_del_termino = 100 - porcentaje_contestadas_dentro_del_termino if num_denuncias_recibidas > 0 else 0
+
+        # Calcular rango de cumplimiento
+        rango_cumplimiento = 'Excelente' if porcentaje_contestadas_dentro_del_termino >= 80 else (
+            'Regular' if 60 <= porcentaje_contestadas_dentro_del_termino <= 79 else 'Deficiente'
+        )
+
+        # Retornar resultados
+        return Response({
+            'success': True,
+            'detail': 'Indicador de Denuncias Ambientales Contestadas Oportunamente.',
+            'data': {
+                'num_denuncias_recibidas': num_denuncias_recibidas,
+                'num_denuncias_contestadas_oportunamente': num_denuncias_contestadas_dentro_del_termino,
+                'porcentaje_contestadas_oportunamente': porcentaje_contestadas_dentro_del_termino,
+                'porcentaje_no_contestadas_inoportunamente': porcentaje_no_contestadas_dentro_del_termino,
+                'rango_cumplimiento': rango_cumplimiento
+            }
+        }, status=status.HTTP_200_OK)

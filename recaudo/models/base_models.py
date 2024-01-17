@@ -84,7 +84,7 @@ class RegistrosConfiguracion(models.Model):
 class TipoCobro(models.Model):
     id_tipo_cobro = models.AutoField(primary_key=True, db_column='T441IdTipoCobro')  
     nombre_tipo_cobro = models.CharField(max_length=255, db_column='T441NombreTipoCobro')
-    valor_tipo_cobro = models.DecimalField(max_digits=10, decimal_places=2, db_column='T441valor_tipo_cobro')
+    # valor_tipo_cobro = models.DecimalField(max_digits=10, decimal_places=2, db_column='T441valor_tipo_cobro')
 
 
     class Meta:
@@ -96,7 +96,7 @@ class TipoCobro(models.Model):
 class TipoRenta(models.Model):
     id_tipo_renta = models.AutoField(primary_key=True, db_column='T442IdTipoRenta')  
     nombre_tipo_renta = models.CharField(max_length=255, db_column='T442NombreTipoRenta')
-    valor_tipo_renta = models.DecimalField(max_digits=10, decimal_places=2, db_column='T442valor_tipo_renta')
+    # valor_tipo_renta = models.DecimalField(max_digits=10, decimal_places=2, db_column='T442valor_tipo_renta')
     class Meta:
         db_table = 'T442TipoRenta'
         verbose_name = 'Tipo Renta'
@@ -108,7 +108,9 @@ class Variables(models.Model):
     nombre = models.CharField(max_length=255, db_column='T443Nombre')
     tipo_cobro = models.ForeignKey('TipoCobro', on_delete=models.CASCADE, db_column='T443IdTipoCobro', related_name='variables_tipo_cobro')
     tipo_renta = models.ForeignKey(TipoRenta, on_delete=models.CASCADE, db_column='T443IdTipoRenta', related_name='variables_tipo_renta')
-
+    valor_varaible = models.DecimalField(max_digits=10, decimal_places=2, db_column='T443valor_varaible')
+    
+    numero_dias_variable = models.IntegerField(db_column='T443numero_dias_variable', null=True, default=None)
     class Meta:
         db_table = 'T443Variables'
         verbose_name = 'Variables'

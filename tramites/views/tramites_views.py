@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from gestion_documental.models.expedientes_models import ArchivosDigitales
-from gestion_documental.models.radicados_models import Anexos, EstadosSolicitudes, MetadatosAnexosTmp, T262Radicados
+from gestion_documental.models.radicados_models import Anexos, ConfigTiposRadicadoAgno, EstadosSolicitudes, MetadatosAnexosTmp, T262Radicados
 from gestion_documental.models.trd_models import FormatosTiposMedio
 from gestion_documental.serializers.pqr_serializers import RadicadoPostSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
@@ -466,7 +466,7 @@ class RadicarCreateView(generics.CreateAPIView):
         radicado_response = radicado_class.post(data)
         
         id_radicado = radicado_response.get('id_radicado')
-        numero_radicado = radicado_response.get('nro_radicado')
+        radicado_nuevo = radicado_response.get('radicado_nuevo')
         
         # ACTUALIZAR SOLICITUD
         radicado = T262Radicados.objects.filter(id_radicado=id_radicado).first()
@@ -485,7 +485,7 @@ class RadicarCreateView(generics.CreateAPIView):
         # ENVIAR CORREO CON RADICADO
         subject = "OPA radicado con éxito - "
         template = "envio-radicado-opas.html"
-        Util.notificacion(request.user.persona,subject,template,nombre_de_usuario=request.user.nombre_de_usuario,numero_radicado=numero_radicado)
+        Util.notificacion(request.user.persona,subject,template,nombre_de_usuario=request.user.nombre_de_usuario,numero_radicado=radicado_nuevo)
         
         return Response({'success': True, 'detail':'Se realizó la radicación correctamente', 'data':radicado_response}, status=status.HTTP_201_CREATED)   
 
@@ -501,9 +501,15 @@ class RadicarGetView(generics.ListAPIView):
         if not solicitud.id_radicado:
             raise ValidationError('El trámite aún no ha sido radicado')
         
-        serializer = self.serializer_class(solicitud.id_radicado, context={'request': request})
+        instance_config_tipo_radicado =ConfigTiposRadicadoAgno.objects.filter(agno_radicado=solicitud.id_radicado.agno_radicado,cod_tipo_radicado=solicitud.id_radicado.cod_tipo_radicado).first()
+        numero_con_ceros = str(instance_config_tipo_radicado.consecutivo_actual).zfill(instance_config_tipo_radicado.cantidad_digitos)
+        radicado_nuevo= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
         
-        return Response({'success': True, 'detail':'Se encontró la información de la radicación', 'data':serializer.data}, status=status.HTTP_200_OK)
+        serializer = self.serializer_class(solicitud.id_radicado, context={'request': request})
+        serializer_data = serializer.data
+        serializer_data['radicado_nuevo'] = radicado_nuevo
+        
+        return Response({'success': True, 'detail':'Se encontró la información de la radicación', 'data':serializer_data}, status=status.HTTP_200_OK)
 
 class RadicarVolverEnviarGetView(generics.ListAPIView):
     serializer_class = RadicadoPostSerializer
@@ -517,13 +523,17 @@ class RadicarVolverEnviarGetView(generics.ListAPIView):
         if not solicitud.id_radicado:
             raise ValidationError('El trámite aún no ha sido radicado')
         
-        numero_radicado = solicitud.id_radicado.nro_radicado
+        instance_config_tipo_radicado =ConfigTiposRadicadoAgno.objects.filter(agno_radicado=solicitud.id_radicado.agno_radicado,cod_tipo_radicado=solicitud.id_radicado.cod_tipo_radicado).first()
+        numero_con_ceros = str(instance_config_tipo_radicado.consecutivo_actual).zfill(instance_config_tipo_radicado.cantidad_digitos)
+        radicado_nuevo= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
         
         # ENVIAR CORREO CON RADICADO
         subject = "OPA radicado con éxito - "
         template = "envio-radicado-opas.html"
-        Util.notificacion(request.user.persona,subject,template,nombre_de_usuario=request.user.nombre_de_usuario,numero_radicado=numero_radicado)
+        Util.notificacion(request.user.persona,subject,template,nombre_de_usuario=request.user.nombre_de_usuario,numero_radicado=radicado_nuevo)
         
         serializer = self.serializer_class(solicitud.id_radicado, context={'request': request})
+        serializer_data = serializer.data
+        serializer_data['radicado_nuevo'] = radicado_nuevo
         
-        return Response({'success': True, 'detail':'Se volvió a enviar la radicación correctamente', 'data':serializer.data}, status=status.HTTP_200_OK)   
+        return Response({'success': True, 'detail':'Se volvió a enviar la radicación correctamente', 'data':serializer_data}, status=status.HTTP_200_OK)   

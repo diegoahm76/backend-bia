@@ -39,7 +39,8 @@ urlpatterns = [
 
 
 
-
+            #funcion para calcular los dias de el mes
+        path('calculadoradiasmeses/', viwes.CalculadoraDiasMeses.as_view(), name='registros-calculadora-dias-meses'),
 
 
     ]
