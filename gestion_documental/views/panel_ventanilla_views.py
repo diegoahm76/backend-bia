@@ -46,9 +46,9 @@ class EstadosSolicitudesGet(generics.ListAPIView):
 #PQRSDF
 class PQRSDFGet(generics.ListAPIView):
     serializer_class = PQRSDFGetSerializer
-    #queryset =PQRSDF.objects.all()
-    queryset = PQRSDF.objects.annotate(mezcla=Concat(F('id_radicado__prefijo_radicado'), Value('-'), F('id_radicado__agno_radicado'),
-                                                      Value('-'), F('id_radicado__nro_radicado'), output_field=CharField()))
+    queryset =PQRSDF.objects.all()
+    # queryset = PQRSDF.objects.annotate(mezcla=Concat(F('id_radicado__prefijo_radicado'), Value('-'), F('id_radicado__agno_radicado'),
+    #                                                   Value('-'), F('id_radicado__nro_radicado'), output_field=CharField()))
                                               
     permission_classes = [IsAuthenticated]
 
@@ -60,9 +60,9 @@ class PQRSDFGet(generics.ListAPIView):
         
         for key, value in request.query_params.items():
 
-            if key == 'radicado':
-                if value !='':
-                    filter['mezcla__icontains'] = value
+            # if key == 'radicado':
+            #     if value !='':
+            #         filter['mezcla__icontains'] = value
             if key =='estado_actual_solicitud':
                 if value != '':
                     filter['id_estado_actual_solicitud__nombre__icontains'] = value    
@@ -81,16 +81,22 @@ class PQRSDFGet(generics.ListAPIView):
                 if value != '':
                     filter['cod_tipo_PQRSDF__icontains'] = value
         
-        if tipo_busqueda == 'PQRSDF':
-            filter['id_radicado__isnull'] = False
-            instance = self.get_queryset().filter(**filter).order_by('fecha_radicado')
-            
-            if not instance:
-                raise NotFound("No existen registros")
 
-            serializador = self.serializer_class(instance,many=True)
-            data_respuesta = serializador.data
-        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_respuesta,}, status=status.HTTP_200_OK)
+        filter['id_radicado__isnull'] = False
+        instance = self.get_queryset().filter(**filter).order_by('fecha_radicado')
+        radicado_value = request.query_params.get('radicado')
+        print(radicado_value)
+        if not instance:
+            raise NotFound("No existen registros")
+
+        serializador = self.serializer_class(instance,many=True)
+        data_respuesta = serializador.data
+        data_validada =[]
+        if radicado_value != '':
+            data_validada = [item for item in serializador.data if radicado_value in item.get('radicado', '')]
+        else :
+            data_validada = data_respuesta
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_validada,}, status=status.HTTP_200_OK)
     
 
 class PQRSDFGetDetalle(generics.ListAPIView):
@@ -1092,13 +1098,13 @@ class TramiteListOpasGetView(generics.ListAPIView):
             if key == 'fecha_inicio':
                 if value != '':
                     
-                    filter['fecha_radicado__gte'] = datetime.strptime(value, '%Y-%m-%d').date()
+                    filter['id_solicitud_tramite__fecha_radicado__gte'] = datetime.strptime(value, '%Y-%m-%d').date()
             if key == 'fecha_fin':
                 if value != '':
-                    filter['fecha_radicado__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
+                    filter['id_solicitud_tramite__fecha_radicado__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
 
         #tramites_opas = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite__id_medio_solicitud=2,id_solicitud_tramite__id_radicado__isnull=False ,id_permiso_ambiental__cod_tipo_permiso_ambiental = 'O')
-        instance = self.get_queryset().filter(**filter).order_by('fecha_radicado')
+        instance = self.get_queryset().filter(**filter).order_by('id_solicitud_tramite__fecha_radicado')
         serializer = self.serializer_class(instance, many=True)
         
         return Response({'success': True, 'detail':'Se encontró la siguiente información', 'data': serializer.data}, status=status.HTTP_200_OK)
