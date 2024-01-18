@@ -1947,51 +1947,52 @@ class ConsultaEstadoPQRSDF(generics.ListAPIView):
         estado_actual_nombre = pqrsdf.id_estado_actual_solicitud.nombre if pqrsdf.id_estado_actual_solicitud else None
 
         try:
-            
             if estado_actual_nombre == 'RESPONDIDA':
                 # Obtener los registros correspondientes en T269
                 registros_t269 = RespuestaPQR.objects.filter(id_pqrsdf=pqrsdf.id_PQRSDF)
 
                 if registros_t269.exists():
                     primer_registro_t269 = registros_t269.first()
-                    
+
                     # Obtener el registro en T237DocumentosDeArchivo_Expediente
-                    registros_t237 = DocumentosDeArchivoExpediente.objects.filter(
-                        id_documento_de_archivo_exped=primer_registro_t269.id_doc_archivo_exp.id_documento_de_archivo_exped
-                    )
+                    id_doc_archivo_exped = getattr(primer_registro_t269.id_doc_archivo_exp, 'id_documento_de_archivo_exped', None)
 
-                    if registros_t237.exists():
-                        registro_t237 = registros_t237.first()
+                    if id_doc_archivo_exped:
+                        # Obtener el registro en T237DocumentosDeArchivo_Expediente
+                        registro_t237 = DocumentosDeArchivoExpediente.objects.filter(
+                            id_documento_de_archivo_exped=id_doc_archivo_exped
+                        ).first()
 
-                        # Obtener el registro en T238ArchivosDigitales
-                        try:
-                            registro_t238 = ArchivosDigitales.objects.get(
-                                id_archivo_digital=registro_t237.id_archivo_sistema.id_archivo_digital
-                            )
+                        if registro_t237:
+                            # Obtener el registro en T238ArchivosDigitales
+                            registro_t238 = getattr(registro_t237.id_archivo_sistema, 'id_archivo_digital', None)
 
-                            return {
-                                'tipo': 'HIPERVINCULO',
-                                'valor': 'RESPUESTA',
-                                'archivo': {
-                                    'id_archivo_digital': registro_t238.id_archivo_digital,
-                                    'nombre_de_Guardado': registro_t238.nombre_de_Guardado,
-                                    'formato': registro_t238.formato,
-                                    'tamagno_kb': registro_t238.tamagno_kb,
-                                    'ruta_archivo': registro_t238.ruta_archivo.url,
-                                    'fecha_creacion_doc': registro_t238.fecha_creacion_doc,
-                                    'es_Doc_elec_archivo': registro_t238.es_Doc_elec_archivo,
-                                },
-                                'url': f'/api/abrir_archivo/{registro_t238.id_archivo_digital}/',
-                            }
+                            if registro_t238:
+                                try:
+                                    registro_t238 = ArchivosDigitales.objects.get(id_archivo_digital=registro_t238)
 
-                        except ArchivosDigitales.DoesNotExist:
-                            pass
+                                    return {
+                                        'tipo': 'HIPERVINCULO',
+                                        'valor': 'RESPUESTA',
+                                        'archivo': {
+                                            'id_archivo_digital': registro_t238.id_archivo_digital,
+                                            'nombre_de_Guardado': registro_t238.nombre_de_Guardado,
+                                            'formato': registro_t238.formato,
+                                            'tamagno_kb': registro_t238.tamagno_kb,
+                                            'ruta_archivo': registro_t238.ruta_archivo.url,
+                                            'fecha_creacion_doc': registro_t238.fecha_creacion_doc,
+                                            'es_Doc_elec_archivo': registro_t238.es_Doc_elec_archivo,
+                                        },
+                                        'url': f'/api/abrir_archivo/{registro_t238.id_archivo_digital}/',
+                                    }
+
+                                except ArchivosDigitales.DoesNotExist:
+                                    pass
 
         except (RespuestaPQR.DoesNotExist, DocumentosDeArchivoExpediente.DoesNotExist, ArchivosDigitales.DoesNotExist):
             pass
 
         return {'tipo': 'No Aplica', 'valor': 'No Aplica'}
-
 
 
     def get_queryset(self):
