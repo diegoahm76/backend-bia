@@ -5,7 +5,7 @@ from transversal.models.organigrama_models import UnidadesOrganizacionales
 from transversal.models.personas_models import Personas
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 from transversal.models.base_models import (
-    ClasesTerceroPersona
+    ClasesTercero
 )
 
 class FuenteFinanciacionIndicadores(models.Model):
@@ -360,7 +360,7 @@ class SeguimientoPOAI(models.Model):
     id_banco_proyecto = models.ForeignKey(BancoProyecto, on_delete=models.CASCADE, db_column='T532IdBancoProyecto')
     id_modalidad = models.ForeignKey(Modalidad, on_delete=models.CASCADE, db_column='T532IdModalidad')
     id_ubicacion = models.ForeignKey(Ubicaciones, on_delete=models.CASCADE, db_column='T532IdUbicacion')
-    id_clase_tercero = models.ForeignKey(ClasesTerceroPersona, on_delete=models.CASCADE, db_column='T532IdClaseTercero')
+    id_clase_tercero = models.ForeignKey(ClasesTercero, on_delete=models.CASCADE, db_column='T532IdClaseTercero')
     porcentaje_pto = models.BigIntegerField(null=True, blank=True, db_column='T532porcentajePTO')
     vano_1 = models.BigIntegerField(null=True, blank=True, db_column='T532vano1')
     vano_2 = models.BigIntegerField(null=True, blank=True, db_column='T532vano2')
