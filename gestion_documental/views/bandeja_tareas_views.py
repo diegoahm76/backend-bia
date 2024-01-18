@@ -179,7 +179,15 @@ class TareasAsignadasGetByPersona(generics.ListAPIView):
        
 
         serializer = self.serializer_class(tareas, many=True)
-        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+
+        
+        radicado_value = request.query_params.get('radicado')
+        data_validada =[]
+        if radicado_value != '':
+            data_validada = [item for item in serializer.data if radicado_value in item.get('radicado', '')]
+        else :
+            data_validada = serializer.data
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_validada,}, status=status.HTTP_200_OK)
 
 
 #detalle de una pqrsdf por id
