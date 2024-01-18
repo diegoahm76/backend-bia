@@ -1,5 +1,7 @@
 TIPOS_TAREA_CHOICES = [
-        ('Rpqr', 'Responder PQRSDF'),
-        ('Rtra', 'Responder Trámite'),
+        ('Rpqr', 'RESPONDER PQRSDF'),
+        ('Rtra', 'RESPONDER TRÁMITE'),
+        ('ROpa', 'RESPONDER OPA'),
+        ('ROtro', 'RESPONDER OTRO'),
         # Agrega otros tipos según sea necesario
     ]

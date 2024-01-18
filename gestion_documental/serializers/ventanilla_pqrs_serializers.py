@@ -975,7 +975,7 @@ class OtrosGetSerializer(serializers.ModelSerializer):
         cadena = ""
         if obj.id_radicados:
             instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=obj.id_radicados.agno_radicado,cod_tipo_radicado=obj.id_radicados.cod_tipo_radicado).first()
-            numero_con_ceros = str(instance_config_tipo_radicado.consecutivo_actual).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            numero_con_ceros = str(obj.id_radicados.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
             cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
         
             return cadena
@@ -1127,3 +1127,124 @@ class AsignacionOtrosPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = AsignacionOtros
         fields = '__all__'
+
+class AsignacionOtrosGetSerializer(serializers.ModelSerializer):
+    accion = serializers.SerializerMethodField()
+    asignado_para = serializers.SerializerMethodField()
+    estado_asignado = serializers.SerializerMethodField()
+    grupo = serializers.SerializerMethodField()
+    sec_sub = serializers.SerializerMethodField()
+    
+    def get_accion(self,obj):
+        return "ASIGNACION DE OTROS"
+    
+    def get_asignado_para(self,obj):
+        if obj.id_persona_asignada:
+            nombre_completo_responsable = None
+            nombre_list = [obj.id_persona_asignada.primer_nombre, obj.id_persona_asignada.segundo_nombre,
+                            obj.id_persona_asignada.primer_apellido, obj.id_persona_asignada.segundo_apellido]
+            nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+            return nombre_completo_responsable
+        else:
+            return None
+        
+    def get_estado_asignado(self,obj):
+        estado = obj.cod_estado_asignacion
+        if not estado:
+            return "EN ESPERA"
+        if estado == 'Ac':
+            return "ACEPTADO"
+        if estado == 'Re':
+            return "RECHAZADO"
+        
+    def get_grupo(self,obj):
+        return ''
+    
+    def get_sec_sub(self,obj):
+        if obj.id_und_org_seccion_asignada:
+           unidad = UnidadesOrganizacionalesSecSubVentanillaGetSerializer(obj.id_und_org_seccion_asignada)
+           data = unidad.data
+           return data['nombre_unidad']
+    
+    class Meta:
+        model = AsignacionOtros
+        fields = [
+            'id_asignacion_otros',
+            'consecutivo_asign_x_otros',
+            'accion',
+            'fecha_asignacion',
+            'fecha_eleccion_estado',
+            'asignado_para',
+            'sec_sub',
+            'grupo',
+            'estado_asignado',
+            'justificacion_rechazo'
+        ]
+        
+class OtrosDetalleHistoricoSerializer(serializers.ModelSerializer):
+    titular = serializers.SerializerMethodField()
+    solicitud_actual = serializers.SerializerMethodField()
+    registros = serializers.SerializerMethodField()
+    
+    def get_solicitud_actual(self, obj):
+        data = []
+        solicitudes = SolicitudDeDigitalizacion.objects.filter(id_otro=obj.id_otros)
+        for solicitud in solicitudes:
+            estado = Estados_PQR.objects.filter(fecha_iniEstado=solicitud.fecha_solicitud,estado_solicitud=9).first()
+            data.append({'id_solicitud_de_digitalizacion':solicitud.id_solicitud_de_digitalizacion,'accion':estado.estado_solicitud.nombre,'fecha_solicitud':solicitud.fecha_solicitud})
+           
+        return data
+    
+    def get_registros(self,obj):
+        data = []
+        solicitudes = SolicitudDeDigitalizacion.objects.filter(id_otro=obj.id_otros)
+        for solicitud in solicitudes:
+            data.append({'id':solicitud.id_solicitud_de_digitalizacion,'accion':'SOLICITUD DIGITALIZACIÓN RESPONDIDA','digitalizacion_completada':solicitud.digitalizacion_completada,'fecha_rta_solicitud':solicitud.fecha_rta_solicitud,'observacion':solicitud.observacion_digitalizacion})
+        return data
+        
+    def get_titular(self, obj):
+        nombre_persona_titular = None
+        if obj.id_persona_titular:
+            if obj.id_persona_titular.tipo_persona == 'J':
+                nombre_persona_titular = obj.id_persona_titular.razon_social
+            else:
+                nombre_list = [obj.id_persona_titular.primer_nombre, obj.id_persona_titular.segundo_nombre,
+                                obj.id_persona_titular.primer_apellido, obj.id_persona_titular.segundo_apellido]
+                nombre_persona_titular = ' '.join(item for item in nombre_list if item is not None)
+                nombre_persona_titular = nombre_persona_titular if nombre_persona_titular != "" else None
+        return nombre_persona_titular
+    
+    class Meta:
+        model = Otros
+        fields = [
+            'id_otros',
+            'titular',
+            'cantidad_anexos',
+            'asunto',
+            'solicitud_actual',
+            'registros'
+        ]
+        
+class OtrosGetHistoricoSerializer(serializers.ModelSerializer):
+    cabecera = serializers.SerializerMethodField()
+    detalle = serializers.SerializerMethodField()
+    
+    def get_cabecera(self, obj):
+        cadena = ""
+        if obj.id_radicados:
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=obj.id_radicados.agno_radicado,cod_tipo_radicado=obj.id_radicados.cod_tipo_radicado).first()
+            numero_con_ceros = str(obj.id_radicados.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+            
+            return {'id_otros':obj.id_otros, 'radicado':cadena}
+        return None
+
+    def get_detalle(self, obj):
+        serializer = OtrosDetalleHistoricoSerializer(obj)
+        return serializer.data
+    
+    class Meta:
+        model = Otros
+        fields = ['cabecera','detalle']
+    

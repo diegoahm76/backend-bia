@@ -502,7 +502,7 @@ class RadicarGetView(generics.ListAPIView):
             raise ValidationError('El trámite aún no ha sido radicado')
         
         instance_config_tipo_radicado =ConfigTiposRadicadoAgno.objects.filter(agno_radicado=solicitud.id_radicado.agno_radicado,cod_tipo_radicado=solicitud.id_radicado.cod_tipo_radicado).first()
-        numero_con_ceros = str(instance_config_tipo_radicado.consecutivo_actual).zfill(instance_config_tipo_radicado.cantidad_digitos)
+        numero_con_ceros = str(solicitud.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
         radicado_nuevo= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
         
         serializer = self.serializer_class(solicitud.id_radicado, context={'request': request})
@@ -524,7 +524,7 @@ class RadicarVolverEnviarGetView(generics.ListAPIView):
             raise ValidationError('El trámite aún no ha sido radicado')
         
         instance_config_tipo_radicado =ConfigTiposRadicadoAgno.objects.filter(agno_radicado=solicitud.id_radicado.agno_radicado,cod_tipo_radicado=solicitud.id_radicado.cod_tipo_radicado).first()
-        numero_con_ceros = str(instance_config_tipo_radicado.consecutivo_actual).zfill(instance_config_tipo_radicado.cantidad_digitos)
+        numero_con_ceros = str(solicitud.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
         radicado_nuevo= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
         
         # ENVIAR CORREO CON RADICADO
