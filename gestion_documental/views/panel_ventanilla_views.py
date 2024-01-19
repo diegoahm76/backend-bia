@@ -27,6 +27,8 @@ import json
 
 
 from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
+from transversal.models.personas_models import Personas
+from transversal.views.alertas_views import AlertaEventoInmediadoCreate
 
 class EstadosSolicitudesGet(generics.ListAPIView):
     serializer_class = EstadosSolicitudesGetSerializer
@@ -653,7 +655,28 @@ class AsignacionPQRCreate(generics.CreateAPIView):
         respuesta_relacion = vista_asignacion.crear_tarea(data_tarea_bandeja_asignacion)
         if respuesta_relacion.status_code != status.HTTP_201_CREATED:
             return respuesta_relacion
-        
+        #CREAMOS LA ALERTA DE ASIGNACION A GRUPO 
+
+        persona =Personas.objects.filter(id_persona = id_persona_asiganada).first()
+        nombre_completo_persona = ''
+        if persona:
+            nombre_list = [persona.primer_nombre, persona.segundo_nombre,
+                            persona.primer_apellido, persona.segundo_apellido]
+            nombre_completo_persona = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_persona = nombre_completo_persona if nombre_completo_persona != "" else None
+       
+        mensaje = "Tipo de solicitud : PQRSDF \n Unidad Organizacional : "+unidad_asignar.nombre+" \n Lider de Unidad Organizacional: "+nombre_completo_persona+" \n Fecha de asignacion : "+str(serializer.data['fecha_asignacion'])
+        vista_alertas_programadas = AlertaEventoInmediadoCreate()
+        data_alerta = {}
+        data_alerta['cod_clase_alerta'] = 'Gst_SlALid'
+        data_alerta['id_persona'] = id_persona_asiganada
+        data_alerta['id_elemento_implicado'] = serializer.data['id_asignacion_pqr']
+        data_alerta['informacion_complemento_mensaje'] = mensaje
+
+        respuesta_alerta = vista_alertas_programadas.crear_alerta_evento_inmediato(data_alerta)
+        if respuesta_alerta.status_code != status.HTTP_200_OK:
+            return respuesta_alerta
+
 
         return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':serializer.data,'estado':data_estado,'tarea':respuesta_relacion.data['data']}, status=status.HTTP_200_OK)
 
