@@ -19,7 +19,7 @@ class TareasAsignadas(models.Model):
 
 
     id_tarea_asignada = models.AutoField(primary_key=True, db_column='T315IdTareaAsignada')
-    cod_tipo_tarea = models.CharField(max_length=4, choices=TIPOS_TAREA_CHOICES, db_column='T315codTipoTarea')
+    cod_tipo_tarea = models.CharField(max_length=5, choices=TIPOS_TAREA_CHOICES, db_column='T315codTipoTarea')
     id_asignacion = models.IntegerField(null=True,db_column='T315idAsignacion')
     fecha_asignacion = models.DateTimeField(db_column='T315fechaAsignacion')
     comentario_asignacion = models.CharField(max_length=255, null=True, db_column='T315comentarioAsignacion')
