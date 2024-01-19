@@ -1947,51 +1947,52 @@ class ConsultaEstadoPQRSDF(generics.ListAPIView):
         estado_actual_nombre = pqrsdf.id_estado_actual_solicitud.nombre if pqrsdf.id_estado_actual_solicitud else None
 
         try:
-            
             if estado_actual_nombre == 'RESPONDIDA':
                 # Obtener los registros correspondientes en T269
                 registros_t269 = RespuestaPQR.objects.filter(id_pqrsdf=pqrsdf.id_PQRSDF)
 
                 if registros_t269.exists():
                     primer_registro_t269 = registros_t269.first()
-                    
+
                     # Obtener el registro en T237DocumentosDeArchivo_Expediente
-                    registros_t237 = DocumentosDeArchivoExpediente.objects.filter(
-                        id_documento_de_archivo_exped=primer_registro_t269.id_doc_archivo_exp.id_documento_de_archivo_exped
-                    )
+                    id_doc_archivo_exped = getattr(primer_registro_t269.id_doc_archivo_exp, 'id_documento_de_archivo_exped', None)
 
-                    if registros_t237.exists():
-                        registro_t237 = registros_t237.first()
+                    if id_doc_archivo_exped:
+                        # Obtener el registro en T237DocumentosDeArchivo_Expediente
+                        registro_t237 = DocumentosDeArchivoExpediente.objects.filter(
+                            id_documento_de_archivo_exped=id_doc_archivo_exped
+                        ).first()
 
-                        # Obtener el registro en T238ArchivosDigitales
-                        try:
-                            registro_t238 = ArchivosDigitales.objects.get(
-                                id_archivo_digital=registro_t237.id_archivo_sistema.id_archivo_digital
-                            )
+                        if registro_t237:
+                            # Obtener el registro en T238ArchivosDigitales
+                            registro_t238 = getattr(registro_t237.id_archivo_sistema, 'id_archivo_digital', None)
 
-                            return {
-                                'tipo': 'HIPERVINCULO',
-                                'valor': 'RESPUESTA',
-                                'archivo': {
-                                    'id_archivo_digital': registro_t238.id_archivo_digital,
-                                    'nombre_de_Guardado': registro_t238.nombre_de_Guardado,
-                                    'formato': registro_t238.formato,
-                                    'tamagno_kb': registro_t238.tamagno_kb,
-                                    'ruta_archivo': registro_t238.ruta_archivo.url,
-                                    'fecha_creacion_doc': registro_t238.fecha_creacion_doc,
-                                    'es_Doc_elec_archivo': registro_t238.es_Doc_elec_archivo,
-                                },
-                                'url': f'/api/abrir_archivo/{registro_t238.id_archivo_digital}/',
-                            }
+                            if registro_t238:
+                                try:
+                                    registro_t238 = ArchivosDigitales.objects.get(id_archivo_digital=registro_t238)
 
-                        except ArchivosDigitales.DoesNotExist:
-                            pass
+                                    return {
+                                        'tipo': 'HIPERVINCULO',
+                                        'valor': 'RESPUESTA',
+                                        'archivo': {
+                                            'id_archivo_digital': registro_t238.id_archivo_digital,
+                                            'nombre_de_Guardado': registro_t238.nombre_de_Guardado,
+                                            'formato': registro_t238.formato,
+                                            'tamagno_kb': registro_t238.tamagno_kb,
+                                            'ruta_archivo': registro_t238.ruta_archivo.url,
+                                            'fecha_creacion_doc': registro_t238.fecha_creacion_doc,
+                                            'es_Doc_elec_archivo': registro_t238.es_Doc_elec_archivo,
+                                        },
+                                        'url': f'/api/abrir_archivo/{registro_t238.id_archivo_digital}/',
+                                    }
+
+                                except ArchivosDigitales.DoesNotExist:
+                                    pass
 
         except (RespuestaPQR.DoesNotExist, DocumentosDeArchivoExpediente.DoesNotExist, ArchivosDigitales.DoesNotExist):
             pass
 
         return {'tipo': 'No Aplica', 'valor': 'No Aplica'}
-
 
 
     def get_queryset(self):
@@ -2756,7 +2757,7 @@ class IndicadorPeriocidad(generics.ListAPIView):
 
     def get_queryset(self):
         # Filtrar PQRSDF con estado diferente de "guardado"
-        queryset = PQRSDF.objects.exclude(id_estado_actual_solicitud__nombre='GUARDADO').exclude(id_radicado__isnull=True)
+        queryset = PQRSDF.objects.exclude(id_radicado__isnull=True)
 
         fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
         fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
@@ -2803,7 +2804,7 @@ class IndicadorAtencionPQRSDF(generics.ListAPIView):
 
     def get_queryset(self):
         # Filtrar PQRSDF recibidos (excluir los que están en estado 'guardado')
-        queryset = PQRSDF.objects.exclude(id_estado_actual_solicitud__nombre='GUARDADO').exclude(id_radicado__isnull=True)
+        queryset = PQRSDF.objects.exclude(id_radicado__isnull=True)
 
         fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
         fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
@@ -2821,12 +2822,12 @@ class IndicadorAtencionPQRSDF(generics.ListAPIView):
 
         # Filtrar PQRSDF respondidos (en estado 'respondida' o 'notificada')
         queryset_respondidos = queryset.filter(
-            id_estado_actual_solicitud__nombre__in=['RESPONDIDA', 'NOTIFICADA']
+            id_estado_actual_solicitud__nombre__in=['RESPONDIDA', 'NOTIFICADA', 'CERRADA']
         )
 
         # Filtrar PQRSDF no respondidos (cualquier estado diferente a 'respondida' o 'notificada')
         queryset_no_respondidos = queryset.exclude(
-            id_estado_actual_solicitud__nombre__in=['RESPONDIDA', 'NOTIFICADA']
+            id_estado_actual_solicitud__nombre__in=['RESPONDIDA', 'NOTIFICADA', 'CERRADA']
         )
 
         # Número de PQRSDF recibidos
@@ -2872,7 +2873,7 @@ class IndicadorAtencionDerechosPetecion(generics.ListAPIView):
         # Filtrar PQRSDF recibidos de tipo 'PG', 'PD', 'PC' (excluir los que están en estado 'guardado')
         queryset = PQRSDF.objects.filter(
             cod_tipo_PQRSDF__in=['PG', 'PD', 'PC']
-        ).exclude(id_estado_actual_solicitud__nombre='GUARDADO').exclude(id_radicado__isnull=True)
+        ).exclude(id_radicado__isnull=True)
 
         fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
         fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
@@ -2890,7 +2891,7 @@ class IndicadorAtencionDerechosPetecion(generics.ListAPIView):
 
         # Filtrar PQRSDF de tipo 'PG', 'PD', 'PC' respondidos (en estado 'respondida' o 'notificada')
         queryset_respondidos = queryset.filter(
-            id_estado_actual_solicitud__nombre__in=['RESPONDIDA', 'NOTIFICADA']
+            id_estado_actual_solicitud__nombre__in=['RESPONDIDA', 'NOTIFICADA', 'CERRADA']
         )
 
         # Número de PQRSDF recibidos de tipo 'PG', 'PD', 'PC'
@@ -2938,7 +2939,7 @@ class IndicadorAtencionQuejas(generics.ListAPIView):
         # Filtrar PQRSDF recibidas de tipo 'Q' (excluir las que están en estado 'guardado')
         queryset = PQRSDF.objects.filter(
             cod_tipo_PQRSDF='Q'
-        ).exclude(id_estado_actual_solicitud__nombre='GUARDADO').exclude(id_radicado__isnull=True)
+        ).exclude(id_radicado__isnull=True)
 
         fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
         fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
@@ -2956,7 +2957,7 @@ class IndicadorAtencionQuejas(generics.ListAPIView):
 
         # Filtrar PQRSDF de tipo 'Q' respondidas (en estado 'respondida' o 'notificada')
         queryset_respondidas = queryset.filter(
-            id_estado_actual_solicitud__nombre__in=['RESPONDIDA', 'NOTIFICADA']
+            id_estado_actual_solicitud__nombre__in=['RESPONDIDA', 'NOTIFICADA', 'CERRADA']
         )
 
         # Número de PQRSDF recibidas de tipo 'Q'
@@ -3004,7 +3005,7 @@ class IndicadorAtencionReclamos(generics.ListAPIView):
         # Filtrar PQRSDF de tipo 'R' (Reclamos) recibidos (excluir los que están en estado 'guardado')
         queryset = PQRSDF.objects.filter(
             cod_tipo_PQRSDF='R'
-        ).exclude(id_estado_actual_solicitud__nombre='GUARDADO').exclude(id_radicado__isnull=True)
+        ).exclude(id_radicado__isnull=True)
 
         fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
         fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
@@ -3022,7 +3023,7 @@ class IndicadorAtencionReclamos(generics.ListAPIView):
 
         # Filtrar PQRSDF de tipo 'R' respondidos (en estado 'respondida' o 'notificada')
         queryset_respondidos = queryset.filter(
-            id_estado_actual_solicitud__nombre__in=['RESPONDIDA', 'NOTIFICADA']
+            id_estado_actual_solicitud__nombre__in=['RESPONDIDA', 'NOTIFICADA', 'CERRADA']
         )
 
         # Número de PQRSDF recibidos de tipo 'R'
@@ -3156,14 +3157,14 @@ class IndicadorPQRSDFContestadosOportunamente(generics.ListAPIView):
         results = list(queryset_recibidos)
 
         # Filtrar los resultados después de recuperarlos
-        queryset_contestados_dentro_del_termino = [
+        queryset_contestadas_oportunamente = [
             pqrsdf for pqrsdf in results
-            if pqrsdf.dias_para_respuesta is not None and
-            (pqrsdf.fecha_radicado + timedelta(days=pqrsdf.dias_para_respuesta)) >= datetime.now()and
+            if pqrsdf.fecha_rta_final_gestion is not None and
+            (pqrsdf.fecha_radicado + timedelta(days=pqrsdf.dias_para_respuesta)) - pqrsdf.fecha_rta_final_gestion and
             pqrsdf.id_estado_actual_solicitud.nombre in ['NOTIFICADA', 'CERRADA', 'RESPONDIDA']
         ]
 
-        num_pqrsdf_contestados_dentro_del_termino = len(queryset_contestados_dentro_del_termino)
+        num_pqrsdf_contestados_dentro_del_termino = len(queryset_contestadas_oportunamente)
 
         # Número total de PQRSDF recibidos
         num_pqrsdf_recibidos = len(results)
@@ -3220,14 +3221,14 @@ class IndicadorPeticionesContestadasOportunamente(generics.ListAPIView):
         results = list(queryset_recibidas)
 
         # Filtrar los resultados después de recuperarlos
-        queryset_contestadas_dentro_del_termino = [
+        queryset_contestadas_oportunamente = [
             pqrsdf for pqrsdf in results
-            if pqrsdf.dias_para_respuesta is not None and
-            (pqrsdf.fecha_radicado + timedelta(days=pqrsdf.dias_para_respuesta)) >= datetime.now()and
+            if pqrsdf.fecha_rta_final_gestion is not None and
+            (pqrsdf.fecha_radicado + timedelta(days=pqrsdf.dias_para_respuesta)) - pqrsdf.fecha_rta_final_gestion and
             pqrsdf.id_estado_actual_solicitud.nombre in ['NOTIFICADA', 'CERRADA', 'RESPONDIDA']
         ]
 
-        num_peticiones_contestadas_dentro_del_termino = len(queryset_contestadas_dentro_del_termino)
+        num_peticiones_contestadas_dentro_del_termino = len(queryset_contestadas_oportunamente)
 
         # Número total de Peticiones recibidas
         num_peticiones_recibidas = len(results)
@@ -3282,14 +3283,14 @@ class IndicadorQuejasContestadasOportunamente(generics.ListAPIView):
         results = list(queryset_recibidas)
 
         # Filtrar los resultados después de recuperarlos
-        queryset_contestadas_dentro_del_termino = [
+        queryset_contestadas_oportunamente = [
             pqrsdf for pqrsdf in results
-            if pqrsdf.dias_para_respuesta is not None and
-            (pqrsdf.fecha_radicado + timedelta(days=pqrsdf.dias_para_respuesta)) >= datetime.now()and
+            if pqrsdf.fecha_rta_final_gestion is not None and
+            (pqrsdf.fecha_radicado + timedelta(days=pqrsdf.dias_para_respuesta)) - pqrsdf.fecha_rta_final_gestion and
             pqrsdf.id_estado_actual_solicitud.nombre in ['NOTIFICADA', 'CERRADA', 'RESPONDIDA']
         ]
 
-        num_quejas_contestadas_dentro_del_termino = len(queryset_contestadas_dentro_del_termino)
+        num_quejas_contestadas_dentro_del_termino = len(queryset_contestadas_oportunamente)
 
         # Número total de Quejas recibidas
         num_quejas_recibidas = len(results)
@@ -3344,14 +3345,14 @@ class IndicadorReclamosContestadosOportunamente(generics.ListAPIView):
         results = list(queryset_recibidos)
 
         # Filtrar los resultados después de recuperarlos
-        queryset_contestados_dentro_del_termino = [
+        queryset_contestadas_oportunamente = [
             pqrsdf for pqrsdf in results
-            if pqrsdf.dias_para_respuesta is not None and
-            (pqrsdf.fecha_radicado + timedelta(days=pqrsdf.dias_para_respuesta)) >= datetime.now() and
+            if pqrsdf.fecha_rta_final_gestion is not None and
+            (pqrsdf.fecha_radicado + timedelta(days=pqrsdf.dias_para_respuesta)) - pqrsdf.fecha_rta_final_gestion and
             pqrsdf.id_estado_actual_solicitud.nombre in ['NOTIFICADA', 'CERRADA', 'RESPONDIDA']
         ]
 
-        num_reclamos_contestados_dentro_del_termino = len(queryset_contestados_dentro_del_termino)
+        num_reclamos_contestados_dentro_del_termino = len(queryset_contestadas_oportunamente)
 
         # Número total de Reclamos recibidos
         num_reclamos_recibidos = len(results)
@@ -3408,25 +3409,25 @@ class IndicadorDenunciasContestadasOportunamente(generics.ListAPIView):
         results = list(queryset_recibidas)
 
         # Filtrar los resultados después de recuperarlos
-        queryset_contestadas_dentro_del_termino = [
+        queryset_contestadas_oportunamente = [
             pqrsdf for pqrsdf in results
-            if pqrsdf.dias_para_respuesta is not None and
-            (pqrsdf.fecha_radicado + timedelta(days=pqrsdf.dias_para_respuesta)) >= datetime.now()and
+            if pqrsdf.fecha_rta_final_gestion is not None and
+            (pqrsdf.fecha_radicado + timedelta(days=pqrsdf.dias_para_respuesta)) - pqrsdf.fecha_rta_final_gestion and
             pqrsdf.id_estado_actual_solicitud.nombre in ['NOTIFICADA', 'CERRADA', 'RESPONDIDA']
         ]
 
-        num_denuncias_contestadas_dentro_del_termino = len(queryset_contestadas_dentro_del_termino)
+        num_denuncias_contestadas_oportunamente = len(queryset_contestadas_oportunamente)
 
         # Número total de Denuncias Ambientales recibidas
         num_denuncias_recibidas = len(results)
 
         # Calcular porcentajes con verificación para evitar división por cero
-        porcentaje_contestadas_dentro_del_termino = 0 if num_denuncias_recibidas == 0 else (num_denuncias_contestadas_dentro_del_termino / num_denuncias_recibidas) * 100
-        porcentaje_no_contestadas_dentro_del_termino = 100 - porcentaje_contestadas_dentro_del_termino if num_denuncias_recibidas > 0 else 0
+        porcentaje_contestadas_oportunamente = 0 if num_denuncias_recibidas == 0 else (num_denuncias_contestadas_oportunamente / num_denuncias_recibidas) * 100
+        porcentaje_no_contestadas_oportunamente = 100 - porcentaje_contestadas_oportunamente if num_denuncias_recibidas > 0 else 0
 
         # Calcular rango de cumplimiento
-        rango_cumplimiento = 'Excelente' if porcentaje_contestadas_dentro_del_termino >= 80 else (
-            'Regular' if 60 <= porcentaje_contestadas_dentro_del_termino <= 79 else 'Deficiente'
+        rango_cumplimiento = 'Excelente' if porcentaje_contestadas_oportunamente >= 80 else (
+            'Regular' if 60 <= porcentaje_contestadas_oportunamente <= 79 else 'Deficiente'
         )
 
         # Retornar resultados
@@ -3435,9 +3436,73 @@ class IndicadorDenunciasContestadasOportunamente(generics.ListAPIView):
             'detail': 'Indicador de Denuncias Ambientales Contestadas Oportunamente.',
             'data': {
                 'num_denuncias_recibidas': num_denuncias_recibidas,
-                'num_denuncias_contestadas_oportunamente': num_denuncias_contestadas_dentro_del_termino,
-                'porcentaje_contestadas_oportunamente': porcentaje_contestadas_dentro_del_termino,
-                'porcentaje_no_contestadas_inoportunamente': porcentaje_no_contestadas_dentro_del_termino,
+                'num_denuncias_contestadas_oportunamente': num_denuncias_contestadas_oportunamente,
+                'porcentaje_contestadas_oportunamente': porcentaje_contestadas_oportunamente,
+                'porcentaje_no_contestadas_oportunamente': porcentaje_no_contestadas_oportunamente,
+                'rango_cumplimiento': rango_cumplimiento
+            }
+        }, status=status.HTTP_200_OK)
+
+
+
+#INDICADOR_PQRSDF_VENCIDAS
+class IndicadorVencimientoPQRSDF(generics.ListAPIView):
+    serializer_class = PQRSDFPostSerializer  # Ajusta el serializador según tus necesidades
+
+    def get_queryset(self):
+        # Filtrar PQRSDF recibidas (excluir las que están en estado 'GUARDADO' y sin radicado)
+        queryset_recibidas = PQRSDF.objects.exclude(
+            Q(id_radicado__isnull=True) |
+            Q(id_estado_actual_solicitud__nombre='GUARDADO')
+        )
+
+        fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
+        fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
+
+        if fecha_radicado_desde:
+            queryset_recibidas = queryset_recibidas.filter(fecha_radicado__gte=fecha_radicado_desde)
+
+        if fecha_radicado_hasta:
+            queryset_recibidas = queryset_recibidas.filter(fecha_radicado__lte=fecha_radicado_hasta)
+
+        return queryset_recibidas
+
+    def get(self, request, *args, **kwargs):
+        queryset_recibidas = self.get_queryset()
+
+        # Obtener todos los resultados de la consulta
+        results = list(queryset_recibidas)
+
+        # Filtrar los resultados después de recuperarlos
+        queryset_vencidas = [
+            pqrsdf for pqrsdf in results
+            if pqrsdf.fecha_rta_final_gestion is not None and
+            (pqrsdf.fecha_radicado + timedelta(days=pqrsdf.dias_para_respuesta)) - pqrsdf.fecha_rta_final_gestion
+        ]
+
+        num_pqrsdf_vencidas = len(queryset_vencidas)
+
+        # Número total de PQRSDF recibidas
+        num_pqrsdf_recibidas = len(results)
+
+        # Calcular porcentajes con verificación para evitar división por cero
+        porcentaje_vencidas = 0 if num_pqrsdf_recibidas == 0 else (num_pqrsdf_vencidas / num_pqrsdf_recibidas) * 100
+        porcentaje_oportunas = 100 - porcentaje_vencidas if num_pqrsdf_recibidas > 0 else 0
+
+        # Calcular rango de cumplimiento
+        rango_cumplimiento = 'Excelente' if porcentaje_oportunas >= 80 else (
+            'Regular' if 60 <= porcentaje_oportunas <= 79 else 'Deficiente'
+        )
+
+        # Retornar resultados
+        return Response({
+            'success': True,
+            'detail': 'Indicador de Vencimiento de PQRSDF.',
+            'data': {
+                'num_pqrsdf_recibidas': num_pqrsdf_recibidas,
+                'num_pqrsdf_vencidas': num_pqrsdf_vencidas,
+                'porcentaje_vencidas': porcentaje_vencidas,
+                'porcentaje_oportunas': porcentaje_oportunas,
                 'rango_cumplimiento': rango_cumplimiento
             }
         }, status=status.HTTP_200_OK)
