@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, Sector, DetalleInversionCuentas, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, FuenteFinanciacion, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos
+from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, Sector, DetalleInversionCuentas, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, FuenteFinanciacion, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos, SeguimientoPOAI
 
 class FuenteFinanciacionIndicadoresSerializer(serializers.ModelSerializer):
 
@@ -155,10 +155,13 @@ class PlanAnualAdquisicionesSerializer(serializers.ModelSerializer):
     nombre_plan = serializers.ReadOnlyField(source='id_plan.nombre_plan', default=None)
     nombre_intervalo = serializers.ReadOnlyField(source='id_intervalo.nombre_intervalo', default=None)
     nombre_modalidad = serializers.ReadOnlyField(source='id_modalidad.nombre_modalidad', default=None)
+    codigo_modalidad = serializers.ReadOnlyField(source='id_modalidad.codigo_modalidad', default=None)
     nombre_fuente = serializers.ReadOnlyField(source='id_recurso_paa.nombre_fuente', default=None)
     nombre_estado = serializers.ReadOnlyField(source='id_estado_vf.nombre_estado', default=None)
     nombre_unidad = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
     nombre_ubicacion = serializers.ReadOnlyField(source='id_ubicaion.nombre_ubicacion', default=None)
+    email_persona_responsable = serializers.ReadOnlyField(source='id_persona_responsable.email', default=None)
+    telefono_persona_responsable = serializers.ReadOnlyField(source='id_persona_responsable.telefono_celular', default=None)
     persona_responsable = serializers.SerializerMethodField()
     
     def get_persona_responsable(self, obj):
@@ -197,4 +200,18 @@ class SeguimientoPAISerializer(serializers.ModelSerializer):
 class SeguimientoPAIDocumentosSerializer(serializers.ModelSerializer):
     class Meta:
             model = SeguimientoPAIDocumentos
+            fields = '__all__'
+
+class SeguimientoPOAISerializer(serializers.ModelSerializer):
+    nombre_programa = serializers.ReadOnlyField(source='id_programa.nombre_programa', default=None)
+    nombre_proyecto = serializers.ReadOnlyField(source='id_proyecto.nombre_proyecto', default=None)
+    nombre_producto = serializers.ReadOnlyField(source='id_producto.nombre_producto', default=None)
+    nombre_actividad = serializers.ReadOnlyField(source='id_actividad.nombre_actividad', default=None)
+    nombre_unidad = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
+    nombre_indicador = serializers.ReadOnlyField(source='id_indicador.nombre_indicador', default=None)
+    nombre_meta = serializers.ReadOnlyField(source='id_meta.nombre_meta', default=None)
+    codigo_modalidad = serializers.ReadOnlyField(source='id_modalidad.codigo_modalidad', default=None)
+
+    class Meta:
+            model = SeguimientoPOAI
             fields = '__all__'

@@ -1898,6 +1898,22 @@ class OficinasDelegacionTemporalCreateView(generics.CreateAPIView):
     serializer_class = OficinasDelegacionTemporalSerializer
     permission_classes = [IsAuthenticated]
 
+    def busqueda_oficinas_hija(self, id_unidad_org_padre, id_ccd_nuevo):
+        unidades_delegadas = UnidadesSeccionResponsableTemporal.objects.filter(
+            id_ccd_nuevo=id_ccd_nuevo, es_registro_asig_seccion_responsable=False, 
+            id_unidad_seccion_actual_padre=id_unidad_org_padre).exclude(id_unidad_seccion_actual=id_unidad_org_padre)
+        
+        oficinas_set = set(
+            (unidad.id_unidad_seccion_actual.id_unidad_organizacional, unidad.id_unidad_seccion_nueva.id_unidad_organizacional)
+            for unidad in unidades_delegadas
+        )
+
+        for unidad in unidades_delegadas:
+            oficinas_hijas = self.busqueda_oficinas_hija(unidad.id_unidad_seccion_actual.id_unidad_organizacional, id_ccd_nuevo)
+            oficinas_set = oficinas_set.union(oficinas_hijas)
+
+        return oficinas_set
+
     def crear_unidad_persistente_responsable_tmp(self, data_in):
         
         unidades_responsables_set = set(
@@ -1957,17 +1973,16 @@ class OficinasDelegacionTemporalCreateView(generics.CreateAPIView):
         
         unidad_responsable = self.crear_unidad_persistente_responsable_tmp(data_in)
 
-        unidades_delegadas_existentes = UnidadesSeccionResponsableTemporal.objects.filter(
-            id_ccd_nuevo=ccd.id_ccd, es_registro_asig_seccion_responsable=False, 
-            id_unidad_seccion_actual_padre=unidad_responsable).exclude(id_unidad_seccion_actual=unidad_responsable)
-        
-        
-        
+        # unidades_delegadas_existentes = UnidadesSeccionResponsableTemporal.objects.filter(
+        #     id_ccd_nuevo=ccd.id_ccd, es_registro_asig_seccion_responsable=False, 
+        #     id_unidad_seccion_actual_padre=unidad_responsable).exclude(id_unidad_seccion_actual=unidad_responsable)
 
-        oficinas_existentes_set = set(
-            (unidad.id_unidad_seccion_actual.id_unidad_organizacional, unidad.id_unidad_seccion_nueva.id_unidad_organizacional)
-            for unidad in unidades_delegadas_existentes
-        )
+        # oficinas_existentes_set = set(
+        #     (unidad.id_unidad_seccion_actual.id_unidad_organizacional, unidad.id_unidad_seccion_nueva.id_unidad_organizacional)
+        #     for unidad in unidades_delegadas_existentes
+        # )
+
+        oficinas_existentes_set = self.busqueda_oficinas_hija(unidad_responsable, ccd.id_ccd)
 
         oficinas_a_eliminar = oficinas_existentes_set - oficinas_nuevas_set
         oficinas_a_crear = oficinas_nuevas_set - oficinas_existentes_set

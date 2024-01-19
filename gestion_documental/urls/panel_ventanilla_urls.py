@@ -52,15 +52,23 @@ urlpatterns = [
     path('pqrsdf/archivo/create/',views.VistaCreadoraArchivo3.as_view(),name='crear-archivo'),
 
     #ARREGLOS ENTREGA 107
-    #InfoDenuncias_PQRSDFGetByPQRSDF lista denuncias por pqrsdf
     path('pqrsdf/denuncias/get/<str:pqr>/',views.InfoDenuncias_PQRSDFGetByPQRSDF.as_view(),name='listar-denuncias-pqrsdf'),
-
-    #OPAS TramiteListOpasGetView
     path('opas/tramite/get/',views.TramiteListOpasGetView.as_view(),name='listar-tramite-opas'),
-    #108 continuar con asignaciona grupo 
     path('pqrsdf/asignacion/grupo/update/<str:pk>/',views.ComplementosUsu_PQRPut.as_view(),name='actualizar-asignacion-grupo'),
+    #OPAS
+    #SolicitudDeDigitalizacionOPACreate
+    path('opas/solicitud_digitalizacion/create/',views.SolicitudDeDigitalizacionOPACreate.as_view(),name='crear-solicitud-opas'),
+ 
+    path('opas/historico/get/',views.OPAFGetHitorico.as_view(),name='listar-historico-opas'),
 
     
-    
+    # OTROS
+    path('otros/get/', views.OtrosGet.as_view(),name='listar-otros'),
+    path('otros/estados_solicitudes/get/', views.OtrosEstadosSolicitudesGet.as_view(),name='listar-estados-solicitud-otros'),
+    path('otros/solicitudd_digitalizacion/create/', views.OtrosSolicitudDeDigitalizacionCreate.as_view(),name='crear-solicitud-digitalizacion-otros'),
+    path('otros/anexo/get/<str:id_otros>/',views.OtrosInfoGet.as_view(),name='get-otros-anexo'),
+    path('asignar-otros/create/',views.AsignacionOtrosCreate.as_view(),name='crear-asignacion-grupo-otros'),
+    path('asignar-otros/get/<str:id_otros>/',views.AsignacionOtrosGet.as_view(),name='listar-asignacion-grupo-otros'),
+    path('otros/historico/get/',views.OtrosGetHistorico.as_view(),name='listar-historico-opas'),
 
 ]

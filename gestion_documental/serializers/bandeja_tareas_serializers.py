@@ -5,7 +5,7 @@ from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, ReasignacionesTareas, TareasAsignadas
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TareaBandejaTareasPersona
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, MetadatosAnexosTmp, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TareaBandejaTareasPersona
 from datetime import timedelta
 from datetime import datetime
 from transversal.models.lideres_models import LideresUnidadesOrg
@@ -93,6 +93,7 @@ class TareasAsignadasGetSerializer(serializers.ModelSerializer):
             return None
         return reasignacion.get_cod_estado_reasignacion_display()
         return None
+    
     def get_unidad_org_destino(self,obj):
         return None
     def get_asignado_por(self,obj):
@@ -148,6 +149,7 @@ class TareasAsignadasGetSerializer(serializers.ModelSerializer):
         nombre_completo = nombre_completo if nombre_completo != "" else None
         return nombre_completo
     
+
     def get_radicado(self,obj):
         #buscamos la asignacion
         asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=obj.id_asignacion).first()
@@ -162,10 +164,16 @@ class TareasAsignadasGetSerializer(serializers.ModelSerializer):
             
         pqrsdf = asignacion.id_pqrsdf
         cadena = ""
+
+
+        cadena = ""
         if pqrsdf.id_radicado:
-            cadena= str(pqrsdf.id_radicado.prefijo_radicado)+'-'+str(pqrsdf.id_radicado.agno_radicado)+'-'+str(pqrsdf.id_radicado.nro_radicado)
-            return cadena
-        else: return cadena
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=pqrsdf.id_radicado.agno_radicado,cod_tipo_radicado=pqrsdf.id_radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(pqrsdf.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+        return cadena
+        
 
     def get_fecha_radicado(self,obj):
         #buscamos la asignacion
@@ -583,3 +591,21 @@ class ReasignacionesTareasgetByIdTareaSerializer(serializers.ModelSerializer):
             nombre_completo = ' '.join(item for item in nombre_list if item is not None)
             return nombre_completo.upper()
         return None
+    
+
+
+
+class RespuestasPQRGetSeralizer(serializers.ModelSerializer):
+    persona_responde = serializers.SerializerMethodField()
+    class Meta:
+        model = RespuestaPQR
+        fields = ['id_respuesta_pqr','fecha_respuesta','persona_responde']
+
+    def get_persona_responde(self, obj):
+        persona = obj.id_persona_responde
+        nombre_completo = None
+        if persona:
+
+            nombre_list = [persona.primer_nombre, persona.segundo_nombre, persona.primer_apellido, persona.segundo_apellido]
+            nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+            return nombre_completo.upper()

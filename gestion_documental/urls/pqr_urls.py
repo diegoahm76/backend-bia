@@ -42,5 +42,11 @@ urlpatterns = [
      path('indicadores/indicador-quejas/', views.IndicadorAtencionQuejas.as_view(), name='indicador-atencion-quejas'),
      path('indicadores/indicador-reclamos/', views.IndicadorAtencionReclamos.as_view(), name='indicador-atencion-reclamos'),
      path('indicadores/indicador-sugerencias/', views.IndicadorSugerenciasRadicadas.as_view(), name='indicador-atencion-sugerencias'),
+     path('indicadores/indicador-pqrsdf-contestadas-oportunamente/', views.IndicadorPQRSDFContestadosOportunamente.as_view(), name='indicador-pqrsdf-contestadas-oportunamente'),
+     path('indicadores/indicador-peticiones-contestadas-oportunamente/', views.IndicadorPeticionesContestadasOportunamente.as_view(), name='indicador-peticiones-contestadas-oportunamente'),
+     path('indicadores/indicador-quejas-contestadas-oportunamente/', views.IndicadorQuejasContestadasOportunamente.as_view(), name='indicador-quejas-contestadas-oportunamente'),
+     path('indicadores/indicador-reclamos-contestadas-oportunamente/', views.IndicadorReclamosContestadosOportunamente.as_view(), name='indicador-reclamos-contestadas-oportunamente'),
+     path('indicadores/indicador-denuncias-contestadas-oportunamente/', views.IndicadorDenunciasContestadasOportunamente.as_view(), name='indicador-denuncias-contestadas-oportunamente'),
+     path('indicadores/indicador-pqrsdf-vencidas/', views.IndicadorVencimientoPQRSDF.as_view(), name='indicador-pqrsdf-vencidas'),
 
 ]
