@@ -15,6 +15,7 @@ from recurso_hidrico.serializers.programas_serializers import GenerardorMensajeP
 from transversal.funtions.alertas import alerta_proyectos_vigentes_porh, generar_alerta_segundo_plano
 from transversal.models.alertas_models import AlertasGeneradas, AlertasProgramadas, BandejaAlertaPersona, ConfiguracionClaseAlerta, FechaClaseAlerta, PersonasAAlertar
 from seguridad.models import Personas
+from transversal.models.entidades_models import ConfiguracionEntidad
 from transversal.serializers.alertas_serializers import AlertasBandejaAlertaPersonaPostSerializer, AlertasGeneradasPostSerializer, AlertasProgramadasPostSerializer, AlertasProgramadasUpdateSerializer, ConfiguracionClaseAlertaGetSerializer, ConfiguracionClaseAlertaUpdateSerializer, FechaClaseAlertaDeleteSerializer, FechaClaseAlertaGetSerializer, FechaClaseAlertaPostSerializer, PersonasAAlertarDeleteSerializer, PersonasAAlertarGetSerializer, PersonasAAlertarPostSerializer
 from django.db import transaction 
 from django.db.models import Q
@@ -422,7 +423,24 @@ class AlertaEventoInmediadoCreate(generics.CreateAPIView):
     serializer_class = AlertasGeneradasPostSerializer
     permission_classes = [IsAuthenticated]
 
-
+    def buscar_persona_perfil(self,cod_perfil):
+        perfiles_actuales=ConfiguracionEntidad.objects.first()
+        if cod_perfil == 'Dire':
+            if perfiles_actuales.id_persona_director_actual:
+                id_responsable=(perfiles_actuales.id_persona_director_actual.id_persona)
+        elif cod_perfil == 'CAlm':
+            if perfiles_actuales.id_persona_coord_almacen_actual:
+                id_responsable=(perfiles_actuales.id_persona_coord_almacen_actual.id_persona)
+        elif cod_perfil == 'RTra':
+            if perfiles_actuales.id_persona_respon_transporte_actual:
+                id_responsable=(perfiles_actuales.id_persona_respon_transporte_actual.id_persona)
+        elif cod_perfil == 'CViv':
+            if perfiles_actuales.id_persona_coord_viveros_actual:
+                id_responsable=(perfiles_actuales.id_persona_coord_viveros_actual.id_persona)
+        elif cod_perfil == 'Alma':
+            if perfiles_actuales.id_persona_almacenista:
+                id_responsable=(perfiles_actuales.id_persona_almacenista.id_persona)
+        return id_responsable
     def crear_alerta_evento_inmediato(self,data_in):
    
         #configuracion = ConfiguracionClaseAlerta.objects.filter(cod_clase_alerta=data_in['cod_clase_alerta']).first()
@@ -433,10 +451,15 @@ class AlertaEventoInmediadoCreate(generics.CreateAPIView):
 
         if not programada:
             raise NotFound("No existe la alerta") 
+        
+        if not programada.activa:
+            return Response({'success':True,'detail':'La alerta se encuentra desactivada','data':{}},status=status.HTTP_200_OK) 
         data_alerga_generada['nombre_clase_alerta']=programada.nombre_clase_alerta
    
   
         data_alerga_generada['mensaje'] = programada.mensaje_base_dia#VALIDAR CAMPO <1000
+        if 'informacion_complemento_mensaje' in data_in:
+            data_alerga_generada['mensaje']=programada.mensaje_base_dia +'\n'+ data_in['informacion_complemento_mensaje']
 
 
         data_alerga_generada['cod_categoria_alerta']=programada.cod_categoria_clase_alerta
@@ -445,6 +468,7 @@ class AlertaEventoInmediadoCreate(generics.CreateAPIView):
         data_alerga_generada['id_modulo_generador'] = programada.id_modulo_generador.id_modulo
 
         data_alerga_generada['envio_email']=programada.envios_email
+        data_alerga_generada['es_ultima_repeticion'] = True
 
 
         if  'id_elemento_implicado' in data_in:
@@ -453,7 +477,20 @@ class AlertaEventoInmediadoCreate(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         instance=serializer.save()
 
+        #BUSCAMOS LAS PERSONAS A ALERTAR
+        personas_a_alertar=PersonasAAlertar.objects.filter(cod_clase_alerta=data_in['cod_clase_alerta'])
+        personas = []
+        for persona in personas_a_alertar:
+            print(persona)
+            if persona.id_persona:
+                personas.append(persona.id_persona.id_persona)
+            if persona.perfil_sistema:
+                id_persona = self.buscar_persona_perfil(persona.perfil_sistema)
+                personas.append(id_persona)
+        print(personas)
 
+
+        raise ValidationError("VIOLENTE")
         bandejas_notificaciones=BandejaAlertaPersona.objects.filter(id_persona=data_in['id_persona']).first()
         if bandejas_notificaciones:
             #print(bandejas_notificaciones.id_persona.id_persona)

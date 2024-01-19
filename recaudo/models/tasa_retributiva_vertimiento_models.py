@@ -55,6 +55,9 @@ class FactoresUtilizacion(models.Model):
     numeroPorcinos = models.PositiveIntegerField()
     numeroHectareas = models.PositiveIntegerField()
     consumoNumeroUsuarios = models.PositiveIntegerField()
+    consumoNumeroBovinos = models.PositiveIntegerField()
+    consumoNumeroPorcinos = models.PositiveIntegerField()
+    consumoNumeroHectareas = models.PositiveIntegerField()
 
     def __str__(self):
         return f"T454_{self.numeroUsuarios} - {self.numeroBovinos} - {self.numeroPorcinos} - {self.numeroHectareas}"
@@ -141,31 +144,55 @@ class T0444Formulario(models.Model):
 
 
 class CarteraPrincipal(models.Model):
-    id_cartera = models.AutoField(primary_key=True, db_column='T457IdCarteraPrincipal')
-    fecha = models.DateField(db_column='T457Fecha')
-    t908_cod_cia = models.CharField(max_length=255, db_column='T457T908CodCia')
-    tipo_renta = models.CharField(max_length=255, db_column='T457TipoRenta')
-    cuenta_contable = models.CharField(max_length=255, db_column='T457CuentaContable')
-    nit = models.CharField(max_length=255, db_column='T457Nit')
-    nombre_deudor = models.CharField(max_length=255, db_column='T457NombreDeudor')
-    fecha_fact = models.DateField(db_column='T457FechaFact')
-    fecha_notificacion = models.DateField(db_column='T457FechaNotificacion')
-    fecha_en_firme = models.DateField(db_column='T457FechaEnFirme')
-    corte_desde = models.DateField(db_column='T457CorteDesde')
-    corte_hasta = models.DateField(db_column='T457CorteHasta')
-    num_factura = models.CharField(max_length=255, db_column='T457NumFactura')
-    num_liquidacion = models.CharField(max_length=255, db_column='T457NumLiquidacion')
-    periodo = models.CharField(max_length=255, db_column='T457Periodo')
-    agno = models.PositiveIntegerField(db_column='T457Agno')
-    expediente = models.CharField(max_length=255, db_column='T457Expediente')
-    num_resolucion = models.CharField(max_length=255, db_column='T457NumResolucion')
-    recurso = models.CharField(max_length=255, db_column='T457Recurso')
-    doc_auto = models.CharField(max_length=255, db_column='T457DocAuto')
-    saldo_capital = models.DecimalField(max_digits=10, decimal_places=2, db_column='T457SaldoCapital')
-    saldo_interes = models.DecimalField(max_digits=10, decimal_places=2, db_column='T457SaldoInteres')
-    dias_mora = models.PositiveIntegerField(db_column='T457DiasMora')
+    T457id_cartera = models.AutoField(primary_key=True, db_column='T457IdCarteraPrincipal')
+    T457fecha = models.DateField(db_column='T457Fecha')
+    T457t908_cod_cia = models.CharField(max_length=255, db_column='T457T908CodCia')
+    T457tipo_renta = models.CharField(max_length=255, db_column='T457TipoRenta')
+    T457cuenta_contable = models.CharField(max_length=255, db_column='T457CuentaContable')
+    T457nit = models.CharField(max_length=255, db_column='T457Nit')
+    T457nombre_deudor = models.CharField(max_length=255, db_column='T457NombreDeudor')
+    T457fecha_fact = models.DateField(db_column='T457FechaFact')
+    T457fecha_notificacion = models.DateField(db_column='T457FechaNotificacion')
+    T457fecha_en_firme = models.DateField(db_column='T457FechaEnFirme')
+    T457corte_desde = models.DateField(db_column='T457CorteDesde')
+    T457corte_hasta = models.DateField(db_column='T457CorteHasta')
+    T457num_factura = models.CharField(max_length=255, db_column='T457NumFactura')
+    T457num_liquidacion = models.CharField(max_length=255, db_column='T457NumLiquidacion')
+    T457periodo = models.CharField(max_length=255, db_column='T457Periodo')
+    T457agno = models.PositiveIntegerField(db_column='T457Agno')
+    T457expediente = models.CharField(max_length=255, db_column='T457Expediente')
+    T457num_resolucion = models.CharField(max_length=255, db_column='T457NumResolucion')
+    T457recurso = models.CharField(max_length=255, db_column='T457Recurso')
+    T457doc_auto = models.CharField(max_length=255, db_column='T457DocAuto')
+    T457saldo_capital = models.DecimalField(max_digits=10, decimal_places=2, db_column='T457SaldoCapital')
+    T457saldo_interes = models.DecimalField(max_digits=10, decimal_places=2, db_column='T457SaldoInteres')
+    T457dias_mora = models.PositiveIntegerField(db_column='T457DiasMora')
 
     class Meta:
         db_table = 'T457CarteraPrincipal'
         verbose_name = 'Cartera Principal'
         verbose_name_plural = 'Carteras Principales'
+
+
+    # T457id_cartera 
+    # T457fecha
+    # T457t908_cod_cia
+    # T457tipo_renta
+    # T457cuenta_contable 
+    # T457nit 
+    # T457nombre_deudor
+    # T457fecha_fact 
+    # T457fecha_notificacion 
+    # T457fecha_en_firme
+    # T457corte_desde
+    # T457corte_hasta 
+    # T457num_factura
+    # T457num_liquidacion 
+    # T457agno 
+    # T457expediente 
+    # T457num_resolucion
+    # T457recurso 
+    # T457doc_auto 
+    # T457saldo_capital 
+    # T457saldo_interes
+    # T457dias_mora
