@@ -351,3 +351,31 @@ class Actualizar_ValoresVariables(generics.UpdateAPIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
     
+
+#_____________________________________________________
+    
+import calendar
+
+class CalculadoraDiasMeses(generics.CreateAPIView):
+    def post(self, request, *args, **kwargs):
+        # Obtener los meses y el año del cuerpo de la solicitud
+        meses = request.data.get('meses', [])
+        año = request.data.get('año', None)
+
+        try:
+            if año is not None:
+                # Convertir los meses a enteros
+                meses = [int(mes) for mes in meses]
+
+                # Realizar la lógica para sumar los días de los meses seleccionados en el año proporcionado
+                suma_dias = sum([calendar.monthrange(int(año), mes)[1] for mes in meses])
+
+                # Devolver la respuesta en formato JSON
+                return Response({'suma_dias': suma_dias})
+            else:
+                return Response({'error': 'Año no proporcionado'}, status=400)
+        except ValueError:
+            # Manejar el caso en el que los meses proporcionados no sean válidos
+            return Response({'error': 'Alguno de los meses proporcionados no es válido'}, status=400)
+
+        
