@@ -1236,7 +1236,136 @@ class OPAFGetHitorico(generics.ListAPIView):
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
     
     
+class AsignacionOPACreate(generics.CreateAPIView):
+    serializer_class = AsignacionPQRPostSerializer
+    queryset =AsignacionPQR.objects.all()
+    permission_classes = [IsAuthenticated]
+    creador_estados = Estados_PQRCreate
+    def post(self, request):
+        #CODIGO DE SERIE DOCUMENTAL DE PQRSDF
+        codigo= 39      
+        contador = 0  
+        data_in = request.data
+
+        if not 'id_pqrsdf' in data_in:
+            raise ValidationError("No se envio la pqrsdf")
+        
+        instance= AsignacionPQR.objects.filter(id_pqrsdf = data_in['id_pqrsdf'])
+        for asignacion in instance:
+            #print(asignacion)
+            if asignacion.cod_estado_asignacion == 'Ac':
+                raise ValidationError("La solicitud  ya fue Aceptada.")
+            if  not asignacion.cod_estado_asignacion:
+                raise ValidationError("La solicitud esta pendiente por respuesta.")
+        max_consecutivo = AsignacionPQR.objects.filter(id_pqrsdf=data_in['id_pqrsdf']).aggregate(Max('consecutivo_asign_x_pqrsdf'))
+
+        if max_consecutivo['consecutivo_asign_x_pqrsdf__max'] == None:
+             ultimo_consec= 1
+        else:
+            ultimo_consec = max_consecutivo['consecutivo_asign_x_pqrsdf__max'] + 1
+        
+        unidad_asignar = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=data_in['id_und_org_seccion_asignada']).first()
+        if not unidad_asignar:
+            raise ValidationError("No existe la unidad asignada")
+        #VALIDACION ENTREGA 102 SERIE PQRSDF
+        aux = unidad_asignar
+        while aux:
+            
+            #print(str(aux.id_unidad_organizacional)+str(aux.cod_agrupacion_documental))
+            if aux.cod_agrupacion_documental == 'SEC':
+               
+                catalogos = CatalogosSeriesUnidad.objects.filter(id_unidad_organizacional=aux.id_unidad_organizacional,id_catalogo_serie__id_subserie_doc__isnull=True)
+                #print(catalogos)
+                contador = 0
+                for catalogo in catalogos:
+                    #print(str(catalogo.id_catalogo_serie.id_serie_doc.id_serie_doc)+"###"+str(catalogo.id_catalogo_serie.id_serie_doc.codigo)+" "+str(catalogo.id_catalogo_serie.id_serie_doc.nombre))
+                    if int(catalogo.id_catalogo_serie.id_serie_doc.codigo) == codigo:
+                        contador += 1
+
+                break
+            aux = aux.id_unidad_org_padre
+        # if contador == 0:
+        #     raise ValidationError("No se puede realizar la asignación de la PQRSDF a una  unidad organizacional seleccionada porque no tiene serie  documental de PQRSDF")
+        data_in['consecutivo_asign_x_pqrsdf'] = ultimo_consec 
+        data_in['fecha_asignacion'] = datetime.now()
+        data_in['id_persona_asigna'] = request.user.persona.id_persona
+        data_in['cod_estado_asignacion'] = None
+        data_in['asignacion_de_ventanilla'] = True
+
+
+        #ASOCIAR ESTADO
+        data_estado_asociado = {}
+        data_estado_asociado['PQRSDF'] = request.data['id_pqrsdf'] 
+        data_estado_asociado['estado_solicitud'] = 5
+        #data_estado_asociado['estado_PQR_asociado'] 
+        data_estado_asociado['fecha_iniEstado'] =  datetime.now()
+        data_estado_asociado['persona_genera_estado'] = request.user.persona.id_persona
+        #raise ValidationError("NONE")
+        respuesta_estado_asociado = self.creador_estados.crear_estado(self,data_estado_asociado)
+        data_estado = respuesta_estado_asociado.data['data']
+        serializer = self.serializer_class(data=data_in)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        #Crear tarea y asignacion de tarea
+       
+        id_persona_asiganada = serializer.data['id_persona_asignada']
+
+ 
+        #Creamos la tarea 315
+        data_tarea = {}
+        data_tarea['cod_tipo_tarea'] = 'Rpqr'
+        data_tarea['id_asignacion'] = serializer.data['id_asignacion_pqr']
+        data_tarea['fecha_asignacion'] = datetime.now()
+
+        data_tarea['cod_estado_solicitud'] = 'Ep'
+        vista_tareas = TareasAsignadasCreate()    
+        respuesta_tareas = vista_tareas.crear_asignacion_tarea(data_tarea)
+        if respuesta_tareas.status_code != status.HTTP_201_CREATED:
+            return respuesta_tareas
+        data_tarea_respuesta= respuesta_tareas.data['data']
+        #Teniendo la bandeja de tareas,la tarea ahora tenemos que asignar esa tarea a la bandeja de tareas
+        id_tarea_asiganada = data_tarea_respuesta['id_tarea_asignada']
+        vista_asignacion = TareaBandejaTareasPersonaCreate()
+
+        data_tarea_bandeja_asignacion = {}
+        data_tarea_bandeja_asignacion['id_persona'] = id_persona_asiganada
+        data_tarea_bandeja_asignacion['id_tarea_asignada'] = id_tarea_asiganada
+        data_tarea_bandeja_asignacion['es_responsable_ppal'] = True
+        respuesta_relacion = vista_asignacion.crear_tarea(data_tarea_bandeja_asignacion)
+        if respuesta_relacion.status_code != status.HTTP_201_CREATED:
+            return respuesta_relacion
+        #CREAMOS LA ALERTA DE ASIGNACION A GRUPO 
+
+        persona =Personas.objects.filter(id_persona = id_persona_asiganada).first()
+        nombre_completo_persona = ''
+        if persona:
+            nombre_list = [persona.primer_nombre, persona.segundo_nombre,
+                            persona.primer_apellido, persona.segundo_apellido]
+            nombre_completo_persona = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_persona = nombre_completo_persona if nombre_completo_persona != "" else None
+       
+        mensaje = "Tipo de solicitud : PQRSDF \n Unidad Organizacional : "+unidad_asignar.nombre+" \n Lider de Unidad Organizacional: "+nombre_completo_persona+" \n Fecha de asignacion : "+str(serializer.data['fecha_asignacion'])
+        vista_alertas_programadas = AlertaEventoInmediadoCreate()
+        data_alerta = {}
+        data_alerta['cod_clase_alerta'] = 'Gst_SlALid'
+        data_alerta['id_persona'] = id_persona_asiganada
+        data_alerta['id_elemento_implicado'] = serializer.data['id_asignacion_pqr']
+        data_alerta['informacion_complemento_mensaje'] = mensaje
+
+        respuesta_alerta = vista_alertas_programadas.crear_alerta_evento_inmediato(data_alerta)
+        if respuesta_alerta.status_code != status.HTTP_200_OK:
+            return respuesta_alerta
+
+
+        return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':serializer.data,'estado':data_estado,'tarea':respuesta_relacion.data['data']}, status=status.HTTP_200_OK)
     
+
+
+
+
+
+
 # OTROS
 
 class OtrosGet(generics.ListAPIView):
