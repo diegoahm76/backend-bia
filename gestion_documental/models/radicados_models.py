@@ -373,8 +373,8 @@ class AsignacionTramites(models.Model):
     id_persona_asigna = models.ForeignKey('transversal.Personas',on_delete = models.CASCADE,db_column='T279Id_PersonaAsigna',related_name='persona_asigna_tramite')
     id_persona_asignada =  models.ForeignKey('transversal.Personas',on_delete = models.CASCADE,db_column='T279Id_PersonaAsignada',related_name='persona_asignada_tramites')
     cod_estado_asignacion = models.CharField(max_length=2,
-                                             choices=[('Ac', 'Aceptado'),('Re', 'Rechazado')], db_column='T279codEstadoAsignacion')
-    fecha_eleccion_estado = models.DateTimeField(db_column='T279fechaEleccionEstado')
+                                             choices=[('Ac', 'Aceptado'),('Re', 'Rechazado')], db_column='T279codEstadoAsignacion',null=True,blank=True)
+    fecha_eleccion_estado = models.DateTimeField(db_column='T279fechaEleccionEstado',null=True,blank=True)
     justificacion_rechazo = models.CharField(db_column='T279justificacionRechazo', max_length=250, null=True, blank=True)
     asignacion_de_ventanilla = models.BooleanField(db_column='T279asignacionDeVentanilla')
     id_und_org_seccion_asignada = models.ForeignKey(UnidadesOrganizacionales,on_delete=models.SET_NULL,null=True,blank=True,db_column='T279Id_UndOrgSeccion_Asignada',related_name='unidad_asignada_tramites')

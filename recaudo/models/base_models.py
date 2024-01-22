@@ -96,6 +96,8 @@ class TipoCobro(models.Model):
 class TipoRenta(models.Model):
     id_tipo_renta = models.AutoField(primary_key=True, db_column='T442IdTipoRenta')  
     nombre_tipo_renta = models.CharField(max_length=255, db_column='T442NombreTipoRenta')
+    tipo_cobro_asociado = models.ForeignKey(TipoCobro, on_delete=models.CASCADE, db_column='T442IdTipoCobroAsociado', related_name='tiporenta_tipo_cobro')
+
     # valor_tipo_renta = models.DecimalField(max_digits=10, decimal_places=2, db_column='T442valor_tipo_renta')
     class Meta:
         db_table = 'T442TipoRenta'

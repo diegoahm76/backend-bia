@@ -2,7 +2,7 @@ from rest_framework import serializers
 from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, Otros, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, AsignacionTramites, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, Otros, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
 from tramites.models.tramites_models import PermisosAmbSolicitudesTramite, SolicitudesTramites
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
@@ -934,7 +934,12 @@ class OPAGetHistoricoSerializer(serializers.ModelSerializer):
         serializer = OPADetalleHistoricoSerializer(obj)
         return serializer.data
     # SERIALIZERMETHODFIELD ARCHIVOS
-    
+
+
+class AsignacionTramitesPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AsignacionTramites
+        fields = '__all__'
 # OTROS
 
 class OtrosGetSerializer(serializers.ModelSerializer):
