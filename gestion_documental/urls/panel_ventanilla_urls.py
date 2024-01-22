@@ -58,8 +58,9 @@ urlpatterns = [
     #OPAS
     #SolicitudDeDigitalizacionOPACreate
     path('opas/solicitud_digitalizacion/create/',views.SolicitudDeDigitalizacionOPACreate.as_view(),name='crear-solicitud-opas'),
- 
     path('opas/historico/get/',views.OPAFGetHitorico.as_view(),name='listar-historico-opas'),
+    #AsignacionOPACreate
+    path('opas/asignacion/create/',views.AsignacionOPACreate.as_view(),name='crear-asignacion-opas'),
 
     
     # OTROS

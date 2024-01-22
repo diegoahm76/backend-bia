@@ -373,7 +373,7 @@ class AsignacionTramites(models.Model):
     id_persona_asigna = models.ForeignKey('transversal.Personas',on_delete = models.CASCADE,db_column='T279Id_PersonaAsigna',related_name='persona_asigna_tramite')
     id_persona_asignada =  models.ForeignKey('transversal.Personas',on_delete = models.CASCADE,db_column='T279Id_PersonaAsignada',related_name='persona_asignada_tramites')
     cod_estado_asignacion = models.CharField(max_length=2,
-                                             choices=[('Ac', 'Aceptado'),('Re', 'Rechazado')], db_column='T279codEstadoAsignacion')
+                                             choices=[('Ac', 'Aceptado'),('Re', 'Rechazado')], db_column='T279codEstadoAsignacion',null=True,blank=True)
     fecha_eleccion_estado = models.DateTimeField(db_column='T279fechaEleccionEstado')
     justificacion_rechazo = models.CharField(db_column='T279justificacionRechazo', max_length=250, null=True, blank=True)
     asignacion_de_ventanilla = models.BooleanField(db_column='T279asignacionDeVentanilla')
