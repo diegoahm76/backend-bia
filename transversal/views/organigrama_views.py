@@ -741,7 +741,7 @@ class GetOrganigrama(generics.ListAPIView):
     def get(self, request):
         consulta = request.query_params.get('pk')
         if consulta == None:
-            organigramas = Organigramas.objects.all()
+            organigramas = Organigramas.objects.all().order_by('nombre')
             serializador = self.serializer_class(organigramas,many=True)
             if len(organigramas) == 0:
                 raise NotFound( 'Aún no hay organigramas registrados')
