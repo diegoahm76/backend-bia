@@ -367,7 +367,7 @@ class AsignacionPQR(models.Model):
 
 class AsignacionTramites(models.Model):
     id_asignacion_tramite = models.AutoField(db_column='T279IdAsignacion_Tramite', primary_key=True)
-    id_solicitud_tramite = models.IntegerField(db_column='T279Id_SolicitudTramite')
+    id_solicitud_tramite = models.ForeignKey('tramites.SolicitudesTramites',on_delete=models.CASCADE,db_column='T279Id_SolicitudTramite')
     consecutivo_asign_x_tramite = models.SmallIntegerField(db_column='T279consecutivoAsignXTramite', null=True, blank=True)
     fecha_asignacion = models.DateTimeField(db_column='T279fechaAsignacion', null=True, blank=True)
     id_persona_asigna = models.ForeignKey('transversal.Personas',on_delete = models.CASCADE,db_column='T279Id_PersonaAsigna',related_name='persona_asigna_tramite')

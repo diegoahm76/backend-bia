@@ -35,7 +35,7 @@ urlpatterns = [
 
     path('asignar-pqrsdf/update/<str:pk>/',views.AsignacionPQRUpdate.as_view(),name='actualizar-asignacion-grupo'),
     path('asignar-pqrsdf/get/<str:pqr>/',views.AsignacionPQRGet.as_view(),name='listar-asignacion-grupo'),
-    path('asignacion-opas/get/<str:tra>/',views.AsignacionOPASGet.as_view(),name='listar-asignacion-otros'),
+   
     
     #ENTREGA 99 
     path('pqrsdf/titular/get/<str:pqr>/',views.PQRSDFPersonaTitularGet.as_view(),name='listar-persona-titular-pqrsdf'),
@@ -58,12 +58,10 @@ urlpatterns = [
     path('opas/tramite/get/',views.TramiteListOpasGetView.as_view(),name='listar-tramite-opas'),
     path('pqrsdf/asignacion/grupo/update/<str:pk>/',views.ComplementosUsu_PQRPut.as_view(),name='actualizar-asignacion-grupo'),
     #OPAS
-    #SolicitudDeDigitalizacionOPACreate
     path('opas/solicitud_digitalizacion/create/',views.SolicitudDeDigitalizacionOPACreate.as_view(),name='crear-solicitud-opas'),
     path('opas/historico/get/',views.OPAFGetHitorico.as_view(),name='listar-historico-opas'),
-    #AsignacionOPACreate
     path('opas/asignacion/create/',views.AsignacionOPACreate.as_view(),name='crear-asignacion-opas'),
-
+    path('asignacion-opas/get/<str:tra>/',views.AsignacionOPASGet.as_view(),name='listar-asignacion-otros'),
     
     # OTROS
     path('otros/get/', views.OtrosGet.as_view(),name='listar-otros'),

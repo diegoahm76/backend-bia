@@ -1129,8 +1129,16 @@ class TramiteListOpasGetView(generics.ListAPIView):
         #tramites_opas = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite__id_medio_solicitud=2,id_solicitud_tramite__id_radicado__isnull=False ,id_permiso_ambiental__cod_tipo_permiso_ambiental = 'O')
         instance = self.get_queryset().filter(**filter).order_by('id_solicitud_tramite__fecha_radicado')
         serializer = self.serializer_class(instance, many=True)
+
+        radicado_value = request.query_params.get('radicado')
+        data_respuesta = serializer.data
+        data_validada =[]
+        if radicado_value != '':
+            data_validada = [item for item in serializer.data if radicado_value in item.get('radicado', '')]
+        else :
+            data_validada = data_respuesta
         
-        return Response({'success': True, 'detail':'Se encontró la siguiente información', 'data': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail':'Se encontró la siguiente información', 'data': data_validada}, status=status.HTTP_200_OK)
 class VistaCreadoraArchivo3(generics.CreateAPIView):
 
     def post(self,request):
