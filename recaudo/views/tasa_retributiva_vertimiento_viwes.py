@@ -52,8 +52,7 @@ class DocumentoFormularioRecaudoGET(generics.ListAPIView):
     def get(self, request):
         instance = self.get_queryset()
         serializer = self.serializer_class(instance, many=True)
-
-
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
 
