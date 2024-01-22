@@ -184,7 +184,7 @@ class TRDCambioActualPut(generics.UpdateAPIView):
         return Response({'success':True, 'detail':'Tabla de retencion documental activado'}, status=status.HTTP_200_OK)
         
 
-@transaction.atomic
+
 class CCDCambioActualPut(generics.UpdateAPIView):
     serializer_class = CCDSerializer
     permission_classes = [IsAuthenticated]
@@ -238,7 +238,7 @@ class CCDCambioActualPut(generics.UpdateAPIView):
 
         return Response({'success':True, 'detail':'Cuadro de clasificacion docuemntal activado'}, status=status.HTTP_200_OK)
 
-
+    @transaction.atomic
     def put(self, request):
         data = request.data
         ccd_actual = CuadrosClasificacionDocumental.objects.filter(actual=True).first()
