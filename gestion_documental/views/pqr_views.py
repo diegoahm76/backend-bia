@@ -592,7 +592,7 @@ class RadicadoCreate(generics.CreateAPIView):
     def post(self, data_radicado):
         try:
             config_tipos_radicado = self.get_config_tipos_radicado(data_radicado)
-            radicado_data = self.set_data_radicado(config_tipos_radicado, data_radicado['fecha_actual'], data_radicado['id_usuario'], data_radicado['modulo_radica'])
+            radicado_data = self.set_data_radicado(config_tipos_radicado, data_radicado['fecha_actual'], data_radicado['id_persona'], data_radicado['modulo_radica'])
             serializer = self.serializer_class(data=radicado_data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
@@ -606,7 +606,7 @@ class RadicadoCreate(generics.CreateAPIView):
 
     def get_config_tipos_radicado(self, request):
         data_request = {
-            'id_persona': request['id_usuario'],
+            'id_persona': request['id_persona'],
             'cod_tipo_radicado': request['tipo_radicado'],
             'fecha_actual': request['fecha_actual']
         }
@@ -617,14 +617,14 @@ class RadicadoCreate(generics.CreateAPIView):
         else:
             return config_tipos_radicado_data
         
-    def set_data_radicado(self, config_tipos_radicado, fecha_actual, id_usuario, modulo_radica):
+    def set_data_radicado(self, config_tipos_radicado, fecha_actual, id_persona, modulo_radica):
         radicado = {}
         radicado['cod_tipo_radicado'] = config_tipos_radicado['cod_tipo_radicado']
         radicado['prefijo_radicado'] = config_tipos_radicado['prefijo_consecutivo']
         radicado['agno_radicado'] = config_tipos_radicado['agno_radicado']
         radicado['nro_radicado'] = config_tipos_radicado['consecutivo_actual']
         radicado['fecha_radicado'] = fecha_actual
-        radicado['id_persona_radica'] = id_usuario
+        radicado['id_persona_radica'] = id_persona
 
         modulo_radica = modulos_radican.objects.filter(nombre=modulo_radica).first()
         radicado['id_modulo_que_radica'] = modulo_radica.id_ModuloQueRadica

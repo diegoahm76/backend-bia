@@ -39,6 +39,7 @@ from rest_framework import status
 from gestion_documental.choices.tipos_tareas_choices import TIPOS_TAREA_CHOICES
 from gestion_documental.choices.tipos_transferencia_choices import TIPOS_TRANSFERENCIA
 from gestion_documental.choices.pqrsdf_choices import TIPOS_PQR
+from gestion_documental.choices.cod_estado_eliminacion_choices import COD_ESTADO_ELIMINACION_CHOICES
 
 
 class TipoClasificacion(APIView):
@@ -240,5 +241,10 @@ class TipoSolicitudPQRSDF(APIView):
 class EstadoSolicitud(APIView):
     def get(self, request):
         choices = ESTADO_SOLICITUD_PQRSDF
+        return Response(choices)
+    
+class CodEstadoEliminacion(APIView):
+    def get(self, request):
+        choices = COD_ESTADO_ELIMINACION_CHOICES
         return Response(choices)
     

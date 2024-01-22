@@ -106,7 +106,6 @@ urlpatterns=[
     path('crear-seguimiento-poai/',views.SeguimientoPOAICreate.as_view(),name='crearseguimientopoai'),
     path('actualizar-seguimiento-poai/<str:pk>/',views.SeguimientoPOAIUpdate.as_view(),name='actualizarseguimientopoai'),
     path('eliminar-seguimiento-poai/<str:pk>/',views.SeguimientoPOAIDelete.as_view(),name='eliminarseguimientopoai'),
-    path('consultar-seguimiento-poai-avanzado/',views.BusquedaAvanzadaSeguimientoPOAI.as_view(),name='consultarseguimientopoaiavanzado'),
     # Busqueda avanzada de seguimiento POAI por nombre plan, nombre programa, nombre proyecto, nombre producto, nombre actividad, nombre indicador, nombre meta, nombre, concepto, cuenta, objeto_contrato, codigo_modalidad, 
     path('consultar-seguimiento-poai-avanzado/',views.BusquedaAvanzadaSeguimientoPOAI.as_view(),name='consultarseguimientopoaiavanzado'),
     ]
