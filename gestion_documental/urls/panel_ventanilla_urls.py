@@ -35,6 +35,8 @@ urlpatterns = [
 
     path('asignar-pqrsdf/update/<str:pk>/',views.AsignacionPQRUpdate.as_view(),name='actualizar-asignacion-grupo'),
     path('asignar-pqrsdf/get/<str:pqr>/',views.AsignacionPQRGet.as_view(),name='listar-asignacion-grupo'),
+    path('asignacion-opas/get/<str:tra>/',views.AsignacionOPASGet.as_view(),name='listar-asignacion-otros'),
+    
     #ENTREGA 99 
     path('pqrsdf/titular/get/<str:pqr>/',views.PQRSDFPersonaTitularGet.as_view(),name='listar-persona-titular-pqrsdf'),
 
