@@ -1245,17 +1245,17 @@ class AsignacionOPACreate(generics.CreateAPIView):
 
         data_in = request.data
 
-        if not 'id_asignacion_tramite' in data_in:
+        if not 'id_solicitud_tramite' in data_in:
             raise ValidationError("No se envio la pqrsdf")
         
-        instance= AsignacionTramites.objects.filter(id_asignacion_tramite = data_in['id_asignacion_tramite'])
+        instance= AsignacionTramites.objects.filter(id_solicitud_tramite = data_in['id_solicitud_tramite'])
         for asignacion in instance:
             #print(asignacion)
             if asignacion.cod_estado_asignacion == 'Ac':
                 raise ValidationError("La solicitud  ya fue Aceptada.")
             if  not asignacion.cod_estado_asignacion:
                 raise ValidationError("La solicitud esta pendiente por respuesta.")
-        max_consecutivo = AsignacionTramites.objects.filter(id_asignacion_tramite=data_in['id_asignacion_tramite']).aggregate(Max('consecutivo_asign_x_tramite'))
+        max_consecutivo = AsignacionTramites.objects.filter(id_solicitud_tramite=data_in['id_solicitud_tramite']).aggregate(Max('consecutivo_asign_x_tramite'))
 
         if max_consecutivo['consecutivo_asign_x_tramite__max'] == None:
              ultimo_consec= 1
@@ -1275,7 +1275,7 @@ class AsignacionOPACreate(generics.CreateAPIView):
 
         #ASOCIAR ESTADO
         data_estado_asociado = {}
-        data_estado_asociado['id_tramite'] = request.data['id_asignacion_tramite'] 
+        data_estado_asociado['id_tramite'] = request.data['id_solicitud_tramite'] 
         data_estado_asociado['estado_solicitud'] = 5
         #data_estado_asociado['estado_PQR_asociado'] 
         data_estado_asociado['fecha_iniEstado'] =  datetime.now()
@@ -1287,7 +1287,7 @@ class AsignacionOPACreate(generics.CreateAPIView):
         serializer = self.serializer_class(data=data_in)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        raise ValidationError('AQUI VAMOS?')
+        
         #Crear tarea y asignacion de tarea
        
         id_persona_asiganada = serializer.data['id_persona_asignada']
@@ -1331,7 +1331,7 @@ class AsignacionOPACreate(generics.CreateAPIView):
         data_alerta = {}
         data_alerta['cod_clase_alerta'] = 'Gst_SlALid'
         data_alerta['id_persona'] = id_persona_asiganada
-        data_alerta['id_elemento_implicado'] = serializer.data['id_asignacion_pqr']
+        data_alerta['id_elemento_implicado'] = serializer.data['id_asignacion_tramite']
         data_alerta['informacion_complemento_mensaje'] = mensaje
 
         respuesta_alerta = vista_alertas_programadas.crear_alerta_evento_inmediato(data_alerta)

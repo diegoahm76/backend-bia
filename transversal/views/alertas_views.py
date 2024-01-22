@@ -16,6 +16,7 @@ from transversal.funtions.alertas import alerta_proyectos_vigentes_porh, generar
 from transversal.models.alertas_models import AlertasGeneradas, AlertasProgramadas, BandejaAlertaPersona, ConfiguracionClaseAlerta, FechaClaseAlerta, PersonasAAlertar
 from seguridad.models import Personas
 from transversal.models.entidades_models import ConfiguracionEntidad
+from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.serializers.alertas_serializers import AlertasBandejaAlertaPersonaPostSerializer, AlertasGeneradasPostSerializer, AlertasProgramadasPostSerializer, AlertasProgramadasUpdateSerializer, ConfiguracionClaseAlertaGetSerializer, ConfiguracionClaseAlertaUpdateSerializer, FechaClaseAlertaDeleteSerializer, FechaClaseAlertaGetSerializer, FechaClaseAlertaPostSerializer, PersonasAAlertarDeleteSerializer, PersonasAAlertarGetSerializer, PersonasAAlertarPostSerializer
 from django.db import transaction 
 from django.db.models import Q
@@ -423,6 +424,14 @@ class AlertaEventoInmediadoCreate(generics.CreateAPIView):
     serializer_class = AlertasGeneradasPostSerializer
     permission_classes = [IsAuthenticated]
 
+
+    def buscar_persona_lider(self,id_unidad):
+        ids_personas =[]
+        lideres_unidad_orga=LideresUnidadesOrg.objects.filter(id_unidad_organizacional=id_unidad)
+        for lider in lideres_unidad_orga:
+            ids_personas.append(lider.id_persona.id_persona)
+        return ids_personas
+    
     def buscar_persona_perfil(self,cod_perfil):
         perfiles_actuales=ConfiguracionEntidad.objects.first()
         if cod_perfil == 'Dire':
@@ -487,6 +496,11 @@ class AlertaEventoInmediadoCreate(generics.CreateAPIView):
             if persona.perfil_sistema:
                 id_persona = self.buscar_persona_perfil(persona.perfil_sistema)
                 personas.append(id_persona)
+            if persona.id_unidad_org_lider:
+                ids_persona = self.buscar_persona_lider(persona.id_unidad_org_lider)
+                personas.append(ids_persona)
+            #BUSCAMOS LOS LIDERES DE GRUPO
+        
         print(personas)
 
 
