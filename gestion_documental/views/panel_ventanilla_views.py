@@ -1255,18 +1255,18 @@ class AsignacionOPACreate(generics.CreateAPIView):
                 raise ValidationError("La solicitud  ya fue Aceptada.")
             if  not asignacion.cod_estado_asignacion:
                 raise ValidationError("La solicitud esta pendiente por respuesta.")
-        max_consecutivo = AsignacionPQR.objects.filter(id_pqrsdf=data_in['id_pqrsdf']).aggregate(Max('consecutivo_asign_x_pqrsdf'))
+        max_consecutivo = AsignacionTramites.objects.filter(id_asignacion_tramite=data_in['id_asignacion_tramite']).aggregate(Max('consecutivo_asign_x_tramite'))
 
-        if max_consecutivo['consecutivo_asign_x_pqrsdf__max'] == None:
+        if max_consecutivo['consecutivo_asign_x_tramite__max'] == None:
              ultimo_consec= 1
         else:
-            ultimo_consec = max_consecutivo['consecutivo_asign_x_pqrsdf__max'] + 1
+            ultimo_consec = max_consecutivo['consecutivo_asign_x_tramite__max'] + 1
         
         unidad_asignar = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=data_in['id_und_org_seccion_asignada']).first()
         if not unidad_asignar:
             raise ValidationError("No existe la unidad asignada")
 
-        data_in['consecutivo_asign_x_pqrsdf'] = ultimo_consec 
+        data_in['consecutivo_asign_x_tramite'] = ultimo_consec 
         data_in['fecha_asignacion'] = datetime.now()
         data_in['id_persona_asigna'] = request.user.persona.id_persona
         data_in['cod_estado_asignacion'] = None
@@ -1275,7 +1275,7 @@ class AsignacionOPACreate(generics.CreateAPIView):
 
         #ASOCIAR ESTADO
         data_estado_asociado = {}
-        data_estado_asociado['PQRSDF'] = request.data['id_pqrsdf'] 
+        data_estado_asociado['id_tramite'] = request.data['id_asignacion_tramite'] 
         data_estado_asociado['estado_solicitud'] = 5
         #data_estado_asociado['estado_PQR_asociado'] 
         data_estado_asociado['fecha_iniEstado'] =  datetime.now()
@@ -1283,19 +1283,20 @@ class AsignacionOPACreate(generics.CreateAPIView):
         #raise ValidationError("NONE")
         respuesta_estado_asociado = self.creador_estados.crear_estado(self,data_estado_asociado)
         data_estado = respuesta_estado_asociado.data['data']
+        print(data_in)
         serializer = self.serializer_class(data=data_in)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-
+        raise ValidationError('AQUI VAMOS?')
         #Crear tarea y asignacion de tarea
        
         id_persona_asiganada = serializer.data['id_persona_asignada']
 
  
-        #Creamos la tarea 315
+        #Creamos la tarea 315 #pendiente panel de ventanilla de tramite
         data_tarea = {}
-        data_tarea['cod_tipo_tarea'] = 'Rpqr'
-        data_tarea['id_asignacion'] = serializer.data['id_asignacion_pqr']
+        data_tarea['cod_tipo_tarea'] = 'ROpa'
+        data_tarea['id_asignacion'] = serializer.data['id_asignacion_tramite']
         data_tarea['fecha_asignacion'] = datetime.now()
 
         data_tarea['cod_estado_solicitud'] = 'Ep'
