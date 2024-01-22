@@ -94,7 +94,7 @@ class PQRSDFGet(generics.ListAPIView):
         serializador = self.serializer_class(instance,many=True)
         data_respuesta = serializador.data
         data_validada =[]
-        if radicado_value != '':
+        if radicado_value and radicado_value != '':
             data_validada = [item for item in serializador.data if radicado_value in item.get('radicado', '')]
         else :
             data_validada = data_respuesta
@@ -1133,7 +1133,7 @@ class TramiteListOpasGetView(generics.ListAPIView):
         radicado_value = request.query_params.get('radicado')
         data_respuesta = serializer.data
         data_validada =[]
-        if radicado_value != '':
+        if radicado_value and radicado_value != '':
             data_validada = [item for item in serializer.data if radicado_value in item.get('radicado', '')]
         else :
             data_validada = data_respuesta

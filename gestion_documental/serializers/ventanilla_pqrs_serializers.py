@@ -768,7 +768,7 @@ class OPAGetSerializer(serializers.ModelSerializer):
         radicado = obj.id_solicitud_tramite.id_radicado
         if radicado:
             instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=radicado.agno_radicado,cod_tipo_radicado=radicado.cod_tipo_radicado).first()
-            numero_con_ceros = str(instance_config_tipo_radicado.consecutivo_actual).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            numero_con_ceros = str(radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
             cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
         
             return cadena

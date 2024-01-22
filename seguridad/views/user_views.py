@@ -7,6 +7,8 @@ from django.shortcuts import redirect
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.models.trd_models import FormatosTiposMedio
+from gestion_documental.serializers.trd_serializers import FormatosTiposMedioGetSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from seguridad.permissions.permissions_user import PermisoCrearUsuarios, PermisoActualizarUsuarios, PermisoActualizarInterno, PermisoActualizarExterno
 from seguridad.permissions.permissions_roles import PermisoDelegarRolSuperUsuario, PermisoConsultarDelegacionSuperUsuario
@@ -1057,8 +1059,14 @@ class LoginApiView(generics.CreateAPIView):
                     permisos_list = permisos_list[0] if permisos_list else []
                     
                     serializer_data = serializer.data
+
+                    #TAMAÑO MAXIMO DE ARCHIVOS
+                    #FormatosTiposMedioGetSerializer
+                    maximo_archivo = FormatosTiposMedio.objects.filter(control_tamagno_max__isnull=False)
                     
-                    user_info={'userinfo':serializer_data,'permisos':permisos_list,'representante_legal':representante_legal_list, 'apoderados':apoderados_list}
+                    data_archivos = FormatosTiposMedioGetSerializer(maximo_archivo, many=True)
+                    
+                    user_info={'userinfo':serializer_data,'permisos':permisos_list,'representante_legal':representante_legal_list, 'apoderados':apoderados_list,'tamagno_archivos':data_archivos.data}
                     sms = "Bia Cormacarena te informa que se ha registrado una conexion con el usuario " + user.nombre_de_usuario + " en la fecha " + str(datetime.now(pytz.timezone('America/Bogota')))
                     
                     if user.persona.telefono_celular:
