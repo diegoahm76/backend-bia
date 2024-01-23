@@ -1,4 +1,5 @@
 from django.db import models
+from gestion_documental.choices.cod_estado_eliminacion_choices import COD_ESTADO_ELIMINACION_CHOICES
 
 from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD,TablaRetencionDocumental,TipologiasDoc
 from transversal.models.organigrama_models import UnidadesOrganizacionales
@@ -55,6 +56,7 @@ class ExpedientesDocumentales(models.Model):
     id_unidad_org_oficina_respon_original = models.ForeignKey(UnidadesOrganizacionales, related_name='id_unidad_org_oficina_respon_original',on_delete=models.CASCADE, db_column='T236Id_UnidadOrgOficinaRespon_Original')
     id_und_org_oficina_respon_actual = models.ForeignKey(UnidadesOrganizacionales,related_name='expedientes_respon_actual', on_delete=models.CASCADE, db_column='T236Id_UndOrgOficinaRespon_Actual')
     id_persona_responsable_actual	= models.ForeignKey(Personas, related_name='id_persona_responsable_actual',blank=True,null=True,on_delete=models.SET_NULL, db_column='T236Id_PersonaResponsableActual')
+    id_eliminacion_exp = models.ForeignKey('EliminacionDocumental', on_delete=models.SET_NULL, null=True, blank=True, db_column='T236Id_EliminacionExp')
 
     class Meta:
         db_table = 'T236ExpedientesDocumentales'
@@ -256,3 +258,19 @@ class ConcesionesAccesoAExpsYDocs(models.Model):
         db_table = 'T272ConcesionesAccesoAExpsYDocs'
         verbose_name = 'Concesion Acceso a Exps y Docs'
         verbose_name_plural = 'Concesiones Acceso a Exps y Docs'
+        
+class EliminacionDocumental(models.Model):
+    id_eliminacion_documental = models.AutoField(primary_key=True, db_column='T304IdEliminacionDocumental')
+    id_persona_elimino = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T304Id_PersonaElimino')
+    estado = models.CharField(max_length=1, choices=COD_ESTADO_ELIMINACION_CHOICES, db_column='T304estado')
+    fecha_publicacion = models.DateTimeField(auto_now_add=True, db_column='T304fechaPublicacion')
+    fecha_eliminacion = models.DateTimeField(null=True, blank=True, db_column='T304fechaEliminacion')
+    nro_expedientes_eliminados = models.IntegerField(db_column='T304nroExpedientesEliminados')
+    dias_publicacion = models.SmallIntegerField(db_column='T304diasPublicacion')
+    tiene_observaciones = models.BooleanField(null=True, blank=True, db_column='T304tieneObservaciones')
+    observaciones = models.CharField(max_length=250, blank=True, null=True, db_column='T304observaciones')
+
+    class Meta:
+        db_table = 'T304EliminacionDocumental'
+        verbose_name = 'Eliminacion Documental'
+        verbose_name_plural = 'Eliminaciones Documentales'

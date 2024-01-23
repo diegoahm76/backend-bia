@@ -87,7 +87,6 @@ class OrganigramasPosiblesGetListView(generics.ListAPIView):
         return Response({'success':True, 'detail':'Los organigramas posibles para activar son los siguientes', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
-@transaction.atomic
 class OrganigramaCambioActualPutView(generics.UpdateAPIView):
     serializer_class = OrganigramaCambioActualSerializer
     permission_classes = [IsAuthenticated]
@@ -132,7 +131,7 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
 
         return Response({'success':True, 'detail':'Organigrama Activado'}, status=status.HTTP_200_OK)
 
-
+    @transaction.atomic
     def put(self, request):
         data = request.data
         ccd_actual = CuadrosClasificacionDocumental.objects.filter(actual=True).first()

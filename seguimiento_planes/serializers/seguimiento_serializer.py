@@ -211,6 +211,13 @@ class SeguimientoPOAISerializer(serializers.ModelSerializer):
     nombre_indicador = serializers.ReadOnlyField(source='id_indicador.nombre_indicador', default=None)
     nombre_meta = serializers.ReadOnlyField(source='id_meta.nombre_meta', default=None)
     codigo_modalidad = serializers.ReadOnlyField(source='id_modalidad.codigo_modalidad', default=None)
+    concepto = serializers.ReadOnlyField(source='id_concepto.concepto', default=None)
+    sector = serializers.ReadOnlyField(source='id_sector.nombre_sector', default=None)
+    nombre_fuente = serializers.ReadOnlyField(source='id_fuente.nombre_fuente', default=None)
+    cuenta = serializers.ReadOnlyField(source='id_detalle_inversion.cuenta', default=None)
+    objeto_contrato = serializers.ReadOnlyField(source='id_banco_proyecto.objeto_contrato', default=None)
+    ubicacion = serializers.ReadOnlyField(source='id_ubicacion.nombre_ubicacion', default=None)
+    clase_tercero = serializers.ReadOnlyField(source='id_tercero.nombre', default=None)
 
     class Meta:
             model = SeguimientoPOAI
