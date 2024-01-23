@@ -46,7 +46,6 @@ class CrearDocumentoFormularioRecuado(generics.CreateAPIView):
                 #data_alerta['id_persona'] = id_persona_asiganada
                 data_alerta['id_elemento_implicado'] = data_archivo_id
                 
-
                 respuesta_alerta = vista_alertas_programadas.crear_alerta_evento_inmediato(data_alerta)
                 if respuesta_alerta.status_code != status.HTTP_200_OK:
                     return respuesta_alerta
