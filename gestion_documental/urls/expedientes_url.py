@@ -91,7 +91,11 @@ urlpatterns = [
      #Indice_Electronico_Expedientes_Documentales
      path('expedientes/indice-electronico/<str:id_expediente_doc>/', views.ExpedienteIndiceElectronicoXML.as_view(), name='detalle-expediente-get'),
 
-
+     #Eliminación de Expedientes Documentales
+     path('expedientes/eliminacion/historial/get/',views.EliminacionHistorialGetView.as_view(), name='eliminacion-historial-get'),
+     path('expedientes/eliminacion/publicar/create/',views.PublicarCreateView.as_view(), name='publicar-create'),
+     path('expedientes/eliminacion/publicar/update/<str:id_eliminacion_documental>/',views.PublicarUpdateView.as_view(), name='publicar-update'),
+     
 
 
 
