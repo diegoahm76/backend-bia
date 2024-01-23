@@ -19,7 +19,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
 from django.db.models import F, Value, CharField
 from django.db.models.functions import Concat
-from tramites.models.tramites_models import PermisosAmbSolicitudesTramite, SolicitudesTramites
+from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, SolicitudesTramites
 from transversal.models.lideres_models import LideresUnidadesOrg
 from django.db.models import Max
 from transversal.models.organigrama_models import Organigramas, UnidadesOrganizacionales
@@ -1385,6 +1385,75 @@ class EstadosSolicitudesTramitesGet(generics.ListAPIView):
 
         serializador = self.serializer_class(instance,many=True)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data,}, status=status.HTTP_200_OK)
+    
+
+class OpaAnexoInfoGet(generics.ListAPIView):
+    serializer_class = AnexosGetSerializer
+    queryset =PermisosAmbSolicitudesTramite.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,tra):
+        data=[]
+        instance =PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite=tra).first()
+        if not instance:
+                raise NotFound("No existen registros")
+        
+        tramite = instance.id_solicitud_tramite
+        tabla_intermedia_anexos_tramites = AnexosTramite.objects.filter(id_solicitud_tramite=tramite)
+
+
+        print(tabla_intermedia_anexos_tramites)
+        #raise ValidationError("AQUI VAMOS")
+        #anexos_pqrs = Anexos_PQR.objects.filter(id_PQRSDF=instance)
+        for x in tabla_intermedia_anexos_tramites:
+            info_anexo =x.id_anexo
+            data_anexo = self.serializer_class(info_anexo)
+            data.append(data_anexo.data)
+        
+        
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data,}, status=status.HTTP_200_OK)
+
+class OPASAnexoDocumentoDigitalGet(generics.ListAPIView):
+    serializer_class = AnexoArchivosDigitalesSerializer
+    queryset =Anexos.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,pk):
+      
+        instance =Anexos.objects.filter(id_anexo=pk).first()
+
+        if not instance:
+                raise NotFound("No existen registros")
+        
+        meta_data = MetadatosAnexosTmp.objects.filter(id_anexo=instance.id_anexo).first()
+        if not meta_data:
+            raise NotFound("No existen registros")
+        archivo = meta_data.id_archivo_sistema
+        serializer= self.serializer_class(archivo)
+
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':{'id_anexo':instance.id_anexo,**serializer.data},}, status=status.HTTP_200_OK)
+class OPAAnexoMetaDataGet(generics.ListAPIView):
+    serializer_class = MetadatosAnexosTmpSerializerGet
+    queryset =Anexos.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,pk):
+      
+        instance =Anexos.objects.filter(id_anexo=pk).first()
+
+        if not instance:
+                raise NotFound("No existen registros")
+        
+        meta_data = MetadatosAnexosTmp.objects.filter(id_anexo=instance.id_anexo).first()
+        if not meta_data:
+            raise NotFound("No existen registros")
+   
+        serializer= self.serializer_class(meta_data)
+
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':{'id_anexo':instance.id_anexo,**serializer.data},}, status=status.HTTP_200_OK)
 
 # OTROS
 

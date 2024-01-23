@@ -63,7 +63,9 @@ urlpatterns = [
     path('opas/asignacion/create/',views.AsignacionOPACreate.as_view(),name='crear-asignacion-opas'),
     path('asignacion-opas/get/<str:tra>/',views.AsignacionOPASGet.as_view(),name='listar-asignacion-opas'),
     path('opas/estados_solicitudes/get/', views.EstadosSolicitudesTramitesGet.as_view(),name='listar-estados_solicitud'),
-
+    path('opas/anexo/get/<str:tra>/',views.OpaAnexoInfoGet.as_view(),name='get-opas-anexo'),
+    path('opas/anexo/documento/get/<str:pk>/',views.OPASAnexoDocumentoDigitalGet.as_view(),name='get-opas-anexo'),
+    path('opas/anexo-documento/meta-data/get/<str:pk>/',views.OPAAnexoMetaDataGet.as_view(),name='get-pqrsdf-id'),
     # OTROS
     path('otros/get/', views.OtrosGet.as_view(),name='listar-otros'),
     path('otros/estados_solicitudes/get/', views.OtrosEstadosSolicitudesGet.as_view(),name='listar-estados-solicitud-otros'),

@@ -861,6 +861,22 @@ class OPAGetRefacSerializer(serializers.ModelSerializer):
     persona_asignada  = serializers.SerializerMethodField()
     estado_asignacion_grupo = serializers.SerializerMethodField()
     unidad_asignada = serializers.SerializerMethodField()
+    tiene_anexos = serializers.SerializerMethodField()
+
+
+    def get_tiene_anexos(self, obj):
+        instance =PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite=obj.id_solicitud_tramite).first()
+
+        if not instance:
+            return False
+        tramite = instance.id_solicitud_tramite
+        tabla_intermedia_anexos_tramites = AnexosTramite.objects.filter(id_solicitud_tramite=tramite)
+     
+        if not tabla_intermedia_anexos_tramites:
+            return False
+        else:
+            return True
+
     def get_tipo_solicitud(self, obj):
         return "OPA"
     # SERIALIZERMETHODFIELD ARCHIVOS
@@ -953,7 +969,7 @@ class OPAGetRefacSerializer(serializers.ModelSerializer):
                     return None
     class Meta:
         model = PermisosAmbSolicitudesTramite
-        fields = ['tipo_solicitud','nombre_completo_titular','costo_proyecto','pagado','cantidad_predios','cantidad_anexos','radicado','fecha_radicado','id_sede','sede','requiere_digitalizacion','estado_actual','estado_asignacion_grupo','persona_asignada','unidad_asignada']
+        fields = ['id_solicitud_tramite','tipo_solicitud','nombre_completo_titular','costo_proyecto','pagado','cantidad_predios','cantidad_anexos','radicado','fecha_radicado','id_sede','sede','requiere_digitalizacion','estado_actual','estado_asignacion_grupo','persona_asignada','unidad_asignada','tiene_anexos']
 
 class AsignacionTramiteOpaGetSerializer(serializers.ModelSerializer):
     accion = serializers.SerializerMethodField()
