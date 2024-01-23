@@ -1146,6 +1146,7 @@ class TramiteListOpasGetView(generics.ListAPIView):
         if nombre_titular_value and nombre_titular_value != '':
             data_validada = [item for item in data_validada if nombre_titular_value in item.get('nombre_completo_titular', '')]
         
+        
         return Response({'success': True, 'detail':'Se encontró la siguiente información', 'data': data_validada}, status=status.HTTP_200_OK)
 class VistaCreadoraArchivo3(generics.CreateAPIView):
 

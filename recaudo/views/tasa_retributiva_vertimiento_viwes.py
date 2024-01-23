@@ -7,6 +7,8 @@ from rest_framework.response import Response
 from rest_framework import generics,status
 from rest_framework.views import APIView
 
+from transversal.views.alertas_views import AlertaEventoInmediadoCreate
+
 
 
 class CrearDocumentoFormularioRecuado(generics.CreateAPIView):
@@ -35,6 +37,18 @@ class CrearDocumentoFormularioRecuado(generics.CreateAPIView):
                 serializer = self.serializer_class(data=request.data)
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
+
+                #GENERA ALERTA DE EVEMTO INMEDIATO 
+
+                vista_alertas_programadas = AlertaEventoInmediadoCreate()
+                data_alerta = {}
+                data_alerta['cod_clase_alerta'] = 'Rec_GenDoc'
+                #data_alerta['id_persona'] = id_persona_asiganada
+                data_alerta['id_elemento_implicado'] = data_archivo_id
+                
+                respuesta_alerta = vista_alertas_programadas.crear_alerta_evento_inmediato(data_alerta)
+                if respuesta_alerta.status_code != status.HTTP_200_OK:
+                    return respuesta_alerta
 
                 return Response({'success': True, 'detail': 'Registro creado correctamente', 'data': serializer.data},
                                 status=status.HTTP_201_CREATED)

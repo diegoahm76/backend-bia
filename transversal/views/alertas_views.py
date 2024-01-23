@@ -502,8 +502,9 @@ class AlertaEventoInmediadoCreate(generics.CreateAPIView):
             #BUSCAMOS LOS LIDERES DE GRUPO
         
         print(personas)
-
-        personas.append(data_in['id_persona']) #PENDIENTE VALIDAR SI SE REPITEN LAS PERSONAS
+        if 'id_persona' in data_in:
+            personas.append(data_in['id_persona']) #PENDIENTE VALIDAR SI SE REPITEN LAS PERSONAS
+       
         #raise ValidationError("VIOLENTE")
 
         respuesta = []
