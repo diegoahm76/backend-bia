@@ -1127,18 +1127,24 @@ class TramiteListOpasGetView(generics.ListAPIView):
             if key == 'fecha_fin':
                 if value != '':
                     filter['id_solicitud_tramite__fecha_radicado__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
-
+            if key == 'nombre_proyecto':
+                if value != '':
+                    filter['id_solicitud_tramite__nombre_proyecto__icontains']= value
         #tramites_opas = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite__id_medio_solicitud=2,id_solicitud_tramite__id_radicado__isnull=False ,id_permiso_ambiental__cod_tipo_permiso_ambiental = 'O')
         instance = self.get_queryset().filter(**filter).order_by('id_solicitud_tramite__fecha_radicado')
         serializer = self.serializer_class(instance, many=True)
 
         radicado_value = request.query_params.get('radicado')
+        nombre_titular_value = request.query_params.get('nombre_titular')
         data_respuesta = serializer.data
         data_validada =[]
         if radicado_value and radicado_value != '':
             data_validada = [item for item in serializer.data if radicado_value in item.get('radicado', '')]
         else :
             data_validada = data_respuesta
+
+        if nombre_titular_value and nombre_titular_value != '':
+            data_validada = [item for item in data_validada if nombre_titular_value in item.get('nombre_completo_titular', '')]
         
         return Response({'success': True, 'detail':'Se encontró la siguiente información', 'data': data_validada}, status=status.HTTP_200_OK)
 class VistaCreadoraArchivo3(generics.CreateAPIView):

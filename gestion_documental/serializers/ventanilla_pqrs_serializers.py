@@ -858,6 +858,7 @@ class OPAGetRefacSerializer(serializers.ModelSerializer):
     sede = serializers.ReadOnlyField(source='id_solicitud_tramite.id_sucursal_recepcion_fisica.descripcion_sucursal', default=None)
     requiere_digitalizacion = serializers.ReadOnlyField(source='id_solicitud_tramite.requiere_digitalizacion', default=None)
     estado_actual = serializers.ReadOnlyField(source='id_solicitud_tramite.id_estado_actual_solicitud.nombre', default=None)
+    nombre_proyecto = serializers.ReadOnlyField(source='id_solicitud_tramite.nombre_proyecto', default=None)
     persona_asignada  = serializers.SerializerMethodField()
     estado_asignacion_grupo = serializers.SerializerMethodField()
     unidad_asignada = serializers.SerializerMethodField()
@@ -969,7 +970,7 @@ class OPAGetRefacSerializer(serializers.ModelSerializer):
                     return None
     class Meta:
         model = PermisosAmbSolicitudesTramite
-        fields = ['id_solicitud_tramite','tipo_solicitud','nombre_completo_titular','costo_proyecto','pagado','cantidad_predios','cantidad_anexos','radicado','fecha_radicado','id_sede','sede','requiere_digitalizacion','estado_actual','estado_asignacion_grupo','persona_asignada','unidad_asignada','tiene_anexos']
+        fields = ['id_solicitud_tramite','tipo_solicitud','nombre_proyecto','nombre_completo_titular','costo_proyecto','pagado','cantidad_predios','cantidad_anexos','radicado','fecha_radicado','id_sede','sede','requiere_digitalizacion','estado_actual','estado_asignacion_grupo','persona_asignada','unidad_asignada','tiene_anexos']
 
 class AsignacionTramiteOpaGetSerializer(serializers.ModelSerializer):
     accion = serializers.SerializerMethodField()
