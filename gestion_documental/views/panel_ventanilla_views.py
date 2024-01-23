@@ -1116,7 +1116,9 @@ class TramiteListOpasGetView(generics.ListAPIView):
         filter['id_solicitud_tramite__id_radicado__isnull'] = False
         
         for key, value in request.query_params.items():
-
+            if key =='estado_actual_solicitud':
+                if value != '':
+                    filter['id_solicitud_tramite__id_estado_actual_solicitud__nombre__icontains'] = value 
         
             if key == 'fecha_inicio':
                 if value != '':

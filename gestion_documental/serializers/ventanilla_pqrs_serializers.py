@@ -859,7 +859,7 @@ class OPAGetRefacSerializer(serializers.ModelSerializer):
     requiere_digitalizacion = serializers.ReadOnlyField(source='id_solicitud_tramite.requiere_digitalizacion', default=None)
     estado_actual = serializers.ReadOnlyField(source='id_solicitud_tramite.id_estado_actual_solicitud.nombre', default=None)
     persona_asignada  = serializers.SerializerMethodField()
-    estado_asignacion_unidad = serializers.SerializerMethodField()
+    estado_asignacion_grupo = serializers.SerializerMethodField()
     unidad_asignada = serializers.SerializerMethodField()
     def get_tipo_solicitud(self, obj):
         return "OPA"
@@ -892,12 +892,43 @@ class OPAGetRefacSerializer(serializers.ModelSerializer):
 
         
         return conteo_anexos
-    def get_estado_asignacion_unidad(self,obj):
+    def get_estado_asignacion_grupo(self,obj):
         
-        return 'pendiente'
+        estado_asignacion_grupo = AsignacionTramites.objects.filter(id_solicitud_tramite=obj.id_solicitud_tramite).first()
+        if estado_asignacion_grupo:
+            if estado_asignacion_grupo.cod_estado_asignacion:
+                if estado_asignacion_grupo.cod_estado_asignacion == 'Ac':
+                    return "Aceptado"
+                if estado_asignacion_grupo.cod_estado_asignacion == 'Re':
+                    return "Rechazado"
+                if estado_asignacion_grupo.cod_estado_asignacion == '':
+                    return None
+            else:
+                return None
+        else:
+            return None
     
     def get_persona_asignada(self,obj):
-        return 'pendiente'
+        estado_asignacion_grupo = AsignacionTramites.objects.filter(id_solicitud_tramite=obj.id_solicitud_tramite).first()
+        if estado_asignacion_grupo:
+
+            if estado_asignacion_grupo.cod_estado_asignacion == 'Ac':
+                if estado_asignacion_grupo.id_persona_asignada:
+                    nombre_completo_responsable = None
+                    nombre_list = [estado_asignacion_grupo.id_persona_asignada.primer_nombre, estado_asignacion_grupo.id_persona_asignada.segundo_nombre,
+                                estado_asignacion_grupo.id_persona_asignada.primer_apellido, estado_asignacion_grupo.id_persona_asignada.segundo_apellido]
+                    nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+                    return nombre_completo_responsable
+                else:
+                    return 'No tiene persona asignada'
+            else:
+                if estado_asignacion_grupo.cod_estado_asignacion == 'Re':
+                    return 'La solicitud fue rechazada'
+                if estado_asignacion_grupo.cod_estado_asignacion == '':
+                    return None         
+                if estado_asignacion_grupo.cod_estado_asignacion == None:
+                    return None
+        
     def get_unidad_asignada(self,obj):
             
         id = obj.id_solicitud_tramite
@@ -922,7 +953,7 @@ class OPAGetRefacSerializer(serializers.ModelSerializer):
                     return None
     class Meta:
         model = PermisosAmbSolicitudesTramite
-        fields = ['tipo_solicitud','nombre_completo_titular','costo_proyecto','pagado','cantidad_predios','cantidad_anexos','radicado','fecha_radicado','id_sede','sede','requiere_digitalizacion','estado_actual','estado_asignacion_unidad','persona_asignada','unidad_asignada']
+        fields = ['tipo_solicitud','nombre_completo_titular','costo_proyecto','pagado','cantidad_predios','cantidad_anexos','radicado','fecha_radicado','id_sede','sede','requiere_digitalizacion','estado_actual','estado_asignacion_grupo','persona_asignada','unidad_asignada']
 
 class AsignacionTramiteOpaGetSerializer(serializers.ModelSerializer):
     accion = serializers.SerializerMethodField()
