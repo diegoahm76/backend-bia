@@ -415,3 +415,11 @@ class SeguimientoPOAI(models.Model):
     valor_cdp = models.BigIntegerField(null=True, blank=True, db_column='T532valorCDP')
     fecha_cdp = models.DateField(null=True, blank=True, db_column='T532fechaCDP')
     observaciones = models.TextField(null=True, blank=True, db_column='T532observaciones')
+
+    def __str__(self):
+        return str(self.id_seguimiento)
+    
+    class Meta:
+        db_table = "T532SeguiminetoPOAI"
+        verbose_name = "Seguimiento POAI"
+        verbose_name_plural = "Seguimiento POAI"

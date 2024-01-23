@@ -2,8 +2,8 @@ from rest_framework import serializers
 from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, Otros, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
-from tramites.models.tramites_models import PermisosAmbSolicitudesTramite, SolicitudesTramites
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, AsignacionTramites, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, Otros, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
+from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, SolicitudesTramites
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from transversal.models.personas_models import Personas
@@ -768,7 +768,7 @@ class OPAGetSerializer(serializers.ModelSerializer):
         radicado = obj.id_solicitud_tramite.id_radicado
         if radicado:
             instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=radicado.agno_radicado,cod_tipo_radicado=radicado.cod_tipo_radicado).first()
-            numero_con_ceros = str(instance_config_tipo_radicado.consecutivo_actual).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            numero_con_ceros = str(radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
             cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
         
             return cadena
@@ -843,6 +843,128 @@ class OPAGetSerializer(serializers.ModelSerializer):
             'coordenada_x',
             'coordenada_y'
         ]
+
+class OPAGetRefacSerializer(serializers.ModelSerializer):
+    
+    tipo_solicitud = serializers.SerializerMethodField()
+    nombre_completo_titular = serializers.SerializerMethodField()
+    costo_proyecto = serializers.ReadOnlyField(source='id_solicitud_tramite.costo_proyecto', default=None)
+    pagado = serializers.ReadOnlyField(source = 'id_solicitud_tramite.pago',default=None)
+    cantidad_predios = serializers.ReadOnlyField(source='id_solicitud_tramite.cantidad_predios', default=None)
+    cantidad_anexos = serializers.SerializerMethodField()
+    radicado = serializers.SerializerMethodField()
+    fecha_radicado = serializers.ReadOnlyField(source='id_solicitud_tramite.fecha_radicado', default=None)
+    id_sede = serializers.ReadOnlyField(source='id_solicitud_tramite.id_sucursal_recepcion_fisica', default=None)
+    sede = serializers.ReadOnlyField(source='id_solicitud_tramite.id_sucursal_recepcion_fisica.descripcion_sucursal', default=None)
+    requiere_digitalizacion = serializers.ReadOnlyField(source='id_solicitud_tramite.requiere_digitalizacion', default=None)
+    estado_actual = serializers.ReadOnlyField(source='id_solicitud_tramite.id_estado_actual_solicitud.nombre', default=None)
+    persona_asignada  = serializers.SerializerMethodField()
+    estado_asignacion_unidad = serializers.SerializerMethodField()
+    unidad_asignada = serializers.SerializerMethodField()
+    def get_tipo_solicitud(self, obj):
+        return "OPA"
+    # SERIALIZERMETHODFIELD ARCHIVOS
+    def get_nombre_completo_titular(self, obj):
+        nombre_persona_titular = None
+        if obj.id_solicitud_tramite.id_persona_titular:
+            if obj.id_solicitud_tramite.id_persona_titular.tipo_persona == 'J':
+                nombre_persona_titular = obj.id_solicitud_tramite.id_persona_titular.razon_social
+            else:
+                nombre_list = [obj.id_solicitud_tramite.id_persona_titular.primer_nombre, obj.id_solicitud_tramite.id_persona_titular.segundo_nombre,
+                                obj.id_solicitud_tramite.id_persona_titular.primer_apellido, obj.id_solicitud_tramite.id_persona_titular.segundo_apellido]
+                nombre_persona_titular = ' '.join(item for item in nombre_list if item is not None)
+                nombre_persona_titular = nombre_persona_titular if nombre_persona_titular != "" else None
+        return nombre_persona_titular
+    
+    def get_radicado(self, obj):
+        cadena = ""
+        radicado = obj.id_solicitud_tramite.id_radicado
+        if radicado:
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=radicado.agno_radicado,cod_tipo_radicado=radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+            return cadena
+        else: 
+            return 'SIN RADICAR'
+    def get_cantidad_anexos(self, obj):
+        conteo_anexos = AnexosTramite.objects.filter(id_solicitud_tramite=obj.id_solicitud_tramite).count()
+
+        
+        return conteo_anexos
+    def get_estado_asignacion_unidad(self,obj):
+        
+        return 'pendiente'
+    
+    def get_persona_asignada(self,obj):
+        return 'pendiente'
+    def get_unidad_asignada(self,obj):
+            
+        id = obj.id_solicitud_tramite
+        estado_asignacion_grupo = AsignacionTramites.objects.filter(id_solicitud_tramite=id).order_by('-id_asignacion_tramite').first()
+
+        if estado_asignacion_grupo:
+            if estado_asignacion_grupo.cod_estado_asignacion == 'Ac':#
+
+                
+                if estado_asignacion_grupo.id_und_org_seccion_asignada:
+                    return estado_asignacion_grupo.id_und_org_seccion_asignada.nombre
+                
+                if estado_asignacion_grupo.id_und_org_oficina_asignada:
+                    return estado_asignacion_grupo.id_und_org_oficina_asignada.nombre
+                
+            else:
+                if estado_asignacion_grupo.cod_estado_asignacion == 'Re':
+                    return 'La solicitud fue rechazada'
+                if estado_asignacion_grupo.cod_estado_asignacion == '':
+                    return None
+                if estado_asignacion_grupo.cod_estado_asignacion == None:
+                    return None
+    class Meta:
+        model = PermisosAmbSolicitudesTramite
+        fields = ['tipo_solicitud','nombre_completo_titular','costo_proyecto','pagado','cantidad_predios','cantidad_anexos','radicado','fecha_radicado','id_sede','sede','requiere_digitalizacion','estado_actual','estado_asignacion_unidad','persona_asignada','unidad_asignada']
+
+class AsignacionTramiteOpaGetSerializer(serializers.ModelSerializer):
+    accion = serializers.SerializerMethodField()
+    asignado_para = serializers.SerializerMethodField()
+    estado_asignado = serializers.SerializerMethodField()
+    grupo = serializers.SerializerMethodField()
+    sec_sub = serializers.SerializerMethodField()
+    class Meta:
+        model = AsignacionTramites
+        fields = ['id_solicitud_tramite','consecutivo_asign_x_tramite','accion','fecha_asignacion','fecha_eleccion_estado','asignado_para','sec_sub','grupo','estado_asignado','justificacion_rechazo']
+    def get_accion(self,obj):
+        return "ASIGNACION DE Opa"
+    def get_asignado_para(self,obj):
+          if obj.id_persona_asignada:
+            nombre_completo_responsable = None
+            nombre_list = [obj.id_persona_asignada.primer_nombre, obj.id_persona_asignada.segundo_nombre,
+                            obj.id_persona_asignada.primer_apellido, obj.id_persona_asignada.segundo_apellido]
+            nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+            return nombre_completo_responsable
+          else:
+              
+              return None
+    def get_estado_asignado(self,obj):
+        estado = obj.cod_estado_asignacion
+        if not estado:
+            return "EN ESPERA"
+        if estado == 'Ac':
+            return "ACEPTADO"
+        if estado == 'Re':
+            return "RECHAZADO"
+    def get_grupo(self,obj):
+        return ''
+    
+    def get_sec_sub(self,obj):
+        if obj.id_und_org_seccion_asignada:
+           unidad = UnidadesOrganizacionalesSecSubVentanillaGetSerializer(obj.id_und_org_seccion_asignada)
+           data = unidad.data
+           return data['nombre_unidad']
+        
+#ENTREGA 99
+
 
 class TramitePutSerializer(serializers.ModelSerializer):
 
@@ -934,7 +1056,12 @@ class OPAGetHistoricoSerializer(serializers.ModelSerializer):
         serializer = OPADetalleHistoricoSerializer(obj)
         return serializer.data
     # SERIALIZERMETHODFIELD ARCHIVOS
-    
+
+
+class AsignacionTramitesPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AsignacionTramites
+        fields = '__all__'
 # OTROS
 
 class OtrosGetSerializer(serializers.ModelSerializer):

@@ -216,7 +216,12 @@ class FormatosTiposMedioPostSerializer(serializers.ModelSerializer):
                message='No puede registrar un tipo de medio más de una vez con el mismo nombre'
            )
         ]
-
+class FormatosTiposMedioGetSerializer(serializers.ModelSerializer):
+   
+       
+    class Meta:
+        model = FormatosTiposMedio
+        fields = ['id_formato_tipo_medio','nombre','control_tamagno_max','tamagno_max_mb']
 
 class FormatosTiposMedioPutSerializer(serializers.ModelSerializer):
     nombre = serializers.CharField(max_length=30)

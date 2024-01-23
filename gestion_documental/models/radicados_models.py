@@ -365,6 +365,25 @@ class AsignacionPQR(models.Model):
         unique_together = (('id_pqrsdf', 'consecutivo_asign_x_pqrsdf'), )
 
 
+class AsignacionTramites(models.Model):
+    id_asignacion_tramite = models.AutoField(db_column='T279IdAsignacion_Tramite', primary_key=True)
+    id_solicitud_tramite = models.ForeignKey('tramites.SolicitudesTramites',on_delete=models.CASCADE,db_column='T279Id_SolicitudTramite')
+    consecutivo_asign_x_tramite = models.SmallIntegerField(db_column='T279consecutivoAsignXTramite', null=True, blank=True)
+    fecha_asignacion = models.DateTimeField(db_column='T279fechaAsignacion', null=True, blank=True)
+    id_persona_asigna = models.ForeignKey('transversal.Personas',on_delete = models.CASCADE,db_column='T279Id_PersonaAsigna',related_name='persona_asigna_tramite')
+    id_persona_asignada =  models.ForeignKey('transversal.Personas',on_delete = models.CASCADE,db_column='T279Id_PersonaAsignada',related_name='persona_asignada_tramites')
+    cod_estado_asignacion = models.CharField(max_length=2,
+                                             choices=[('Ac', 'Aceptado'),('Re', 'Rechazado')], db_column='T279codEstadoAsignacion',null=True,blank=True)
+    fecha_eleccion_estado = models.DateTimeField(db_column='T279fechaEleccionEstado',null=True,blank=True)
+    justificacion_rechazo = models.CharField(db_column='T279justificacionRechazo', max_length=250, null=True, blank=True)
+    asignacion_de_ventanilla = models.BooleanField(db_column='T279asignacionDeVentanilla')
+    id_und_org_seccion_asignada = models.ForeignKey(UnidadesOrganizacionales,on_delete=models.SET_NULL,null=True,blank=True,db_column='T279Id_UndOrgSeccion_Asignada',related_name='unidad_asignada_tramites')
+    id_und_org_oficina_asignada = models.ForeignKey(UnidadesOrganizacionales,on_delete=models.SET_NULL,null=True,blank=True,db_column='T279Id_UndOrgOficina_Asignada')
+    class Meta:
+        db_table = 'T279Asignacion_Tramites'
+        unique_together = (('id_solicitud_tramite', 'consecutivo_asign_x_tramite'),)
+
+
 
 class AsignacionOtros(models.Model):
     id_asignacion_otros = models.AutoField(primary_key=True,db_column='T303IdAsignacion_Otros')
