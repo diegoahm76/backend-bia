@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import hashlib
 import os
 import json
@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 from gestion_documental.models.conf__tipos_exp_models import ConfiguracionTipoExpedienteAgno
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
 from gestion_documental.models.depositos_models import CarpetaCaja
-from gestion_documental.models.expedientes_models import ConcesionesAccesoAExpsYDocs, DobleVerificacionTmp, EliminacionDocumental, ExpedientesDocumentales,ArchivosDigitales,DocumentosDeArchivoExpediente,IndicesElectronicosExp,Docs_IndiceElectronicoExp,CierresReaperturasExpediente,ArchivosSoporte_CierreReapertura
+from gestion_documental.models.expedientes_models import ConcesionesAccesoAExpsYDocs, DobleVerificacionTmp, EliminacionDocumental, ExpedientesDocumentales,ArchivosDigitales,DocumentosDeArchivoExpediente,IndicesElectronicosExp,Docs_IndiceElectronicoExp,CierresReaperturasExpediente,ArchivosSoporte_CierreReapertura, InventarioDocumental
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from django.shortcuts import get_object_or_404
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
@@ -30,7 +30,7 @@ from gestion_documental.serializers.expedientes_serializers import  AgregarArchi
 from gestion_documental.serializers.depositos_serializers import  CarpetaCajaGetOrdenSerializer
 from rest_framework.response import Response
 from rest_framework import status
-from django.db.models import Max 
+from django.db.models import Max, Sum
 from django.db.models import Q, F
 from rest_framework.parsers import FileUploadParser
 from rest_framework.response import Response
@@ -3147,20 +3147,31 @@ class PublicarCreateView(generics.CreateAPIView):
         serializer_eliminacion.is_valid(raise_exception=True)
         eliminacion = serializer_eliminacion.save()
         
-        # Guardar en T305
-        # data_inventario = {}
-        
         # Actualizar cada expediente
-        for expediente in expedientes:
+        for count, expediente in enumerate(expedientes, start=1):
             expediente_doc = ExpedientesDocumentales.objects.filter(id_expediente_documental=expediente).first()
             expediente_doc.id_eliminacion_exp = eliminacion
             expediente_doc.save()
+            
+            documentos_exp = expediente_doc.documentosdearchivoexpediente_set.aggregate(total_folios=Sum('nro_folios_del_doc'))
+            total_folios = documentos_exp['total_folios']
+            
+            # Guardar en T305
+            InventarioDocumental.objects.create(
+                nro_orden=count,
+                nombre_expediente=expediente_doc.titulo_expediente,
+                nombre_serie=expediente_doc.id_serie_origen.nombre,
+                nombre_subserie=expediente_doc.id_subserie_origen.nombre if expediente_doc.id_subserie_origen else None,
+                fecha_folio_inicial=expediente_doc.fecha_folio_inicial,
+                fecha_folio_final=expediente_doc.fecha_folio_final,
+                nro_folios=total_folios,
+                id_eliminacion_exp=eliminacion
+            )
         
         return Response({'success':True, 'detail':'Se encontraron los siguientes registros de eliminaciones', 'data': serializer_eliminacion.data}, status=status.HTTP_201_CREATED)
 
 class PublicarUpdateView(generics.UpdateAPIView):
     serializer_class = EliminacionHistorialGetSerializer
-    # serializer_class_inventario = InventarioCreateSerializer
     permission_classes = [IsAuthenticated]
     
     def update(self, request, id_eliminacion_documental):
@@ -3185,5 +3196,29 @@ class PublicarUpdateView(generics.UpdateAPIView):
             
             eliminacion_documental.nro_expedientes_eliminados = eliminacion_documental.nro_expedientes_eliminados - 1
             eliminacion_documental.save()
+            
+            inventario_doc = InventarioDocumental.objects.filter(id_eliminacion_exp=eliminacion_documental, nombre_expediente=expediente_doc.titulo_expediente).first()
+            inventario_doc.delete()
         
         return Response({'success':True, 'detail':'Actualización realizada con éxito'}, status=status.HTTP_201_CREATED)
+
+class EliminacionDeleteView(generics.DestroyAPIView):
+    serializer_class = EliminacionHistorialGetSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self, request, id_eliminacion_documental):
+        eliminacion_documental = EliminacionDocumental.objects.filter(id_eliminacion_documental=id_eliminacion_documental).first()
+        if not eliminacion_documental:
+            raise NotFound('No se encontró la eliminación documental')
+        
+        if eliminacion_documental.estado == 'E':
+            raise ValidationError('No puede actualizar una eliminación que ya fue ejecutada')
+        
+        fecha_max_eliminacion = eliminacion_documental.fecha_publicacion + timedelta(days=eliminacion_documental.dias_publicacion)
+        dias_restantes = (fecha_max_eliminacion - datetime.now()).days
+        dias_restantes = dias_restantes if dias_restantes > 0 else 0
+        
+        if dias_restantes > 0:
+            raise ValidationError('No puede eliminar la eliminación documental porque aún no ha pasado el tiempo limite para la eliminación')
+        
+        return Response({'success':True, 'detail':'Eliminación realizada con éxito'}, status=status.HTTP_200_OK)

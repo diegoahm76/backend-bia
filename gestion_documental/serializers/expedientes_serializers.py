@@ -1615,28 +1615,3 @@ class EliminacionHistorialGetSerializer(serializers.ModelSerializer):
     class Meta:
         model =  EliminacionDocumental
         fields = '__all__'
-        
-# class InventarioCreateSerializer(serializers.ModelSerializer):
-#     desc_estado = serializers.CharField(source='get_estado_display', read_only=True)
-#     dias_restantes = serializers.SerializerMethodField()
-    
-#     def get_dias_restantes(self, obj):
-#         dias_restantes = 0
-#         if obj.id_estado == 'P':
-#             fecha_max_eliminacion = obj.fecha_publicacion + timedelta(days=obj.dias_publicacion)
-#             dias_restantes = (fecha_max_eliminacion - datetime.now()).days
-#             dias_restantes = dias_restantes if dias_restantes > 0 else 0
-#         return dias_restantes
-
-#     def get_nombre_persona_elimino(self, obj):
-#         nombre_persona_titular_exp_complejo = None
-#         if obj.id_persona_elimino:
-#             nombre_list = [obj.id_persona_elimino.primer_nombre, obj.id_persona_elimino.segundo_nombre,
-#                             obj.id_persona_elimino.primer_apellido, obj.id_persona_elimino.segundo_apellido]
-#             nombre_persona_titular_exp_complejo = ' '.join(item for item in nombre_list if item is not None)
-#             nombre_persona_titular_exp_complejo = nombre_persona_titular_exp_complejo if nombre_persona_titular_exp_complejo != "" else None
-#         return nombre_persona_titular_exp_complejo
-    
-#     class Meta:
-#         model =  InventarioDocume
-#         fields = '__all__'
