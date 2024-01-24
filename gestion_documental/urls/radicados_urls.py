@@ -4,8 +4,12 @@ from gestion_documental.views import radicados_views as views
 
 urlpatterns = [
 
+
+
      path('imprimir-radicado/', views.GetRadicadosImprimir.as_view(), name='imprimir-radicado'),
 
+    
+     path('get-historico-radicados/', views.GetHistoricoRadicados.as_view(), name='get-historico-radicados'),
 
 
      #OTROS

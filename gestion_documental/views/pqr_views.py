@@ -506,7 +506,7 @@ class RadicarPQRSDF(generics.CreateAPIView):
         #Crea el radicado
         data_for_create = {}
         data_for_create['fecha_actual'] = fecha_actual
-        data_for_create['id_usuario'] = id_persona_guarda
+        data_for_create['id_persona'] = id_persona_guarda
         data_for_create['tipo_radicado'] = "E"
         data_for_create['modulo_radica'] = "PQRSDF"
         radicadoCreate = RadicadoCreate()
