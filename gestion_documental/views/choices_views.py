@@ -17,7 +17,7 @@ from gestion_documental.choices.tipo_origen_doc_choices import tipo_origen_doc_C
 from gestion_documental.choices.tipo_subsistema_creado_choices import tipo_subsistema_creado_CHOICES
 from gestion_documental.choices.tipo_radicado_choices import TIPOS_RADICADO_CHOICES
 from gestion_documental.choices.operacion_realizada_choices import operacion_realizada_CHOICES
-from gestion_documental.choices.pqrsdf_choices import ESTADO_SOLICITUD_PQRSDF, TIPO_SOLICITUD_PQRSDF, cond_tipos_pqr_list
+from gestion_documental.choices.pqrsdf_choices import ESTADO_SOLICITUD_PQRSDF, TIPO_SOLICITUD_PQRSDF, cond_tipos_pqr_list, RADICACION_CORREOS
 from gestion_documental.choices.tipo_dato_alojar_choices import tipo_dato_alojar_CHOICES
 from gestion_documental.choices.tipo_acceso_choices import tipo_acceso_list
 from gestion_documental.choices.tipo_elemento_choices import tipo_elemento_CHOICES
@@ -248,3 +248,7 @@ class CodEstadoEliminacion(APIView):
         choices = COD_ESTADO_ELIMINACION_CHOICES
         return Response(choices)
     
+class RadicacionCorreo(APIView):
+    def get(self, request):
+        choices = RADICACION_CORREOS
+        return Response(choices)
